@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2016 - pancake */
+/* radare - LGPL - Copyright 2006-2018 - pancake */
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
@@ -666,8 +666,6 @@ R_API int r_config_readonly(RConfig *cfg, const char *key) {
 
 static void _ht_node_free_kv(HtKv *kv) {
 	free (kv->key);
-	//we do not free kv->value because there is other reference 
-	free (kv);
 }
 
 R_API RConfig* r_config_new(void *user) {

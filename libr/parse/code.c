@@ -12,7 +12,9 @@ static void appendstring(const char *msg, char **s) {
 		printf ("%s\n", msg);
 	} else if (*s) {
 		char *p = malloc (strlen (msg) + strlen (*s) + 1);
-		if (!p) return;
+		if (!p) {
+			return;
+		}
 		strcpy (p, *s);
 		free (*s);
 		*s = p;
@@ -76,7 +78,9 @@ static int typeload(void *p, const char *k, const char *v) {
 R_API char *r_parse_c_file(RAnal *anal, const char *path) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
-	if (!T) return NULL;
+	if (!T) {
+		return NULL;
+	}
 	tcc_set_callback (T, &appendstring, &str);
 	sdb_foreach (anal->sdb_types, typeload, anal);
 	if (tcc_add_file (T, path) == -1) {
@@ -90,10 +94,15 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path) {
 R_API char *r_parse_c_string(RAnal *anal, const char *code) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
-	if (!T) return NULL;
+	if (!T) {
+		return NULL;
+	}
 	tcc_set_callback (T, &appendstring, &str);
 	sdb_foreach (anal->sdb_types, typeload, NULL);
-	tcc_compile_string (T, code);
+	if (tcc_compile_string (T, code) != 0) {
+		free (str);
+		str = NULL;
+	}
 	tcc_delete (T);
 	return str;
 }

@@ -48,7 +48,7 @@ typedef enum {
 	R_REG_NAME_A8,
 	R_REG_NAME_A9,
 	/* retval */
-	R_REG_NAME_R0, // arguments
+	R_REG_NAME_R0, // return registers
 	R_REG_NAME_R1,
 	R_REG_NAME_R2,
 	R_REG_NAME_R3,
@@ -145,6 +145,7 @@ R_API RRegSet *r_reg_regset_get(RReg *r, int type);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
+R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
 R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API const char *r_reg_get_role(int role);

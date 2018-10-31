@@ -26,6 +26,7 @@ static inline void r_str_rmch(char *s, char ch) {
 	}
 }
 
+#define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
@@ -68,6 +69,7 @@ R_API char *r_str_new(const char *str);
 R_API int r_snprintf (char *string, int len, const char *fmt, ...);
 R_API bool r_str_is_ascii(const char *str);
 R_API int r_str_is_printable(const char *str);
+R_API int r_str_is_printable_limited(const char *str, int size);
 R_API bool r_str_is_printable_incl_newlines(const char *str);
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen);
 R_API char *r_str_newf(const char *fmt, ...);
@@ -100,7 +102,7 @@ R_API const char *r_str_lchr(const char *str, char chr);
 R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr);
 R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr);
 R_API char *r_str_ichr(char *str, char chr);
-R_API int r_str_ccmp(const char *dst, const char *orig, int ch);
+R_API bool r_str_ccmp(const char *dst, const char *orig, int ch);
 R_API int r_str_cmp(const char *dst, const char *orig, int len);
 R_API int r_str_casecmp(const char *dst, const char *orig);
 R_API int r_str_ncasecmp(const char *dst, const char *orig, size_t n);
@@ -133,7 +135,7 @@ R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_unescape(char *buf);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);
-R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors);
 R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash);
 R_API char *r_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);

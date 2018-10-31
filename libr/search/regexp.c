@@ -14,8 +14,9 @@ R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len)
 	r_list_foreach (s->kws, iter, kw) {
 		int reflags = R_REGEX_EXTENDED;
 
-		if (kw->icase)
+		if (kw->icase) {
 			reflags |= R_REGEX_ICASE;
+		}
 
 		if (r_regex_comp (&compiled, (char *)kw->bin_keyword, reflags)) {
 			eprintf ("Cannot compile '%s' regexp\n", kw->bin_keyword);

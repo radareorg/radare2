@@ -7,9 +7,9 @@
 #include <sys/types.h>
 
 // TODO: implement the rap API in r_socket ?
-#define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):NULL)
-#define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
-#define RIORAP_IS_VALID(x) ((x) && (x->data) && (x->plugin == &r_io_plugin_rap))
+#define RIORAP_FD(x) (((x)->data)?(((RIORap*)((x)->data))->client):NULL)
+#define RIORAP_IS_LISTEN(x) (((RIORap*)((x)->data))->listener)
+#define RIORAP_IS_VALID(x) ((x) && ((x)->data) && ((x)->plugin == &r_io_plugin_rap))
 
 static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RSocket *s = RIORAP_FD (fd);
@@ -97,7 +97,9 @@ static int rap__close(RIODesc *fd) {
 			free (fd->data);
 			fd->data = NULL;
 		}
-	} else eprintf ("rap__close: fdesc is not a r_io_rap plugin\n");
+	} else {
+		eprintf ("rap__close: fdesc is not a r_io_rap plugin\n");
+	}
 	return ret;
 }
 
@@ -115,7 +117,7 @@ static ut64 rap__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	memset (tmp, 0, 9);
 	ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret != 9 || tmp[0] != (RMT_SEEK | RMT_REPLY)) {
-		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n", 
+		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n",
 		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
@@ -334,7 +336,9 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 		int ir, tr = 0;
 		do {
 			ir = r_socket_read_block (s, (ut8*)ptr + tr, i - tr);
-			if (ir < 1) break;
+			if (ir < 1) {
+				break;
+			}
 			tr += ir;
 		} while (tr < i);
 		// TODO: use io->cb_printf() with support for \x00
@@ -371,7 +375,7 @@ RIOPlugin r_io_plugin_rap = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_rap,
 	.version = R2_VERSION

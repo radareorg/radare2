@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -265,4 +265,23 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 		last_delta = delta;
 	}
 	return UT64_MAX;
+}
+
+/* return true if an instruction starts at a given address of the given
+ * basic block. */
+R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
+	ut16 off, inst_off;
+	int i;
+
+	if (!r_anal_bb_is_in_offset (bb, addr)) {
+		return false;
+	}
+	off = addr - bb->addr;
+	for (i = 0; i < bb->ninstr; i++) {
+		inst_off = r_anal_bb_offset_inst (bb, i);
+		if (off == inst_off) {
+			return true;
+		}
+	}
+	return false;
 }

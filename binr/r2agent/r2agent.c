@@ -97,18 +97,23 @@ int main(int argc, char **argv) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
+
+	(void)r_cons_new ();
+
 	while (!r_cons_singleton ()->context->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
 		rs = r_socket_http_accept (s, 0, timeout);
-		if (!rs) continue;
+		if (!rs) {
+			continue;
+		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {
 				// TODO: show page here?
 				int pid = atoi (rs->path + 11);
 				if (pid > 0) {
-					kill (pid, 9);
+					kill (pid, SIGKILL);
 				}
 			} else if (!strncmp (rs->path, "/file/open/", 11)) {
 				int pid;
@@ -149,6 +154,7 @@ int main(int argc, char **argv) {
 		free (result_heap);
 		result_heap = NULL;
 	}
+	r_cons_free ();
 	r_socket_free (s);
 	return 0;
 }

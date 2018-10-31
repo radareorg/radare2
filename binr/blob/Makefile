@@ -27,6 +27,7 @@ LDFLAGS+=-L../../libr/socket -lr_socket
 LDFLAGS+=-L../../libr/bin -lr_bin
 LDFLAGS+=-L../../libr/reg -lr_reg
 LDFLAGS+=-L../../libr/asm -lr_asm
+LDFLAGS+=-L../../libr/lang -lr_lang
 LDFLAGS+=-L../../libr/egg -lr_egg
 LDFLAGS+=-L../../libr/core -lr_core
 LDFLAGS+=-L../../libr/anal -lr_anal

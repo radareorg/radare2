@@ -27,39 +27,41 @@
 		
 		
 
-R_API void r_vector_init(RVector *vec, size_t elem_size) {
+R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void *free_user) {
 	vec->a = NULL;
 	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
+	vec->free = free;
+	vec->free_user = free_user;
 }
 
-R_API RVector *r_vector_new(size_t elem_size) {
+R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user) {
 	RVector *vec = R_NEW (RVector);
 	if (!vec) {
 		return NULL;
 	}
-	r_vector_init (vec, elem_size);
+	r_vector_init (vec, elem_size, free, free_user);
 	return vec;
 }
 
-static void vector_free_elems(RVector *vec, RVectorFree elem_free, void *user) {
-	if (elem_free) {
+static void vector_free_elems(RVector *vec) {
+	if (vec->free) {
 		while (vec->len > 0) {
-			elem_free (r_vector_index_ptr (vec, --vec->len), user);
+			vec->free (r_vector_index_ptr (vec, --vec->len), vec->free_user);
 		}
 	} else {
 		vec->len = 0;
 	}
 }
 
-R_API void r_vector_clear(RVector *vec, RVectorFree elem_free, void *user) {
-	vector_free_elems (vec, elem_free, user);
+R_API void r_vector_clear(RVector *vec) {
+	vector_free_elems (vec);
 	R_FREE (vec->a);
 	vec->capacity = 0;
 }
 
-R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user) {
-	vector_free_elems (vec, elem_free, user);
+R_API void r_vector_free(RVector *vec) {
+	vector_free_elems (vec);
 	free (vec->a);
 	free (vec);
 }
@@ -68,6 +70,8 @@ static bool vector_clone(RVector *dst, RVector *src) {
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
+	dst->free = src->free;
+	dst->free_user = src->free_user;
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {
@@ -130,7 +134,9 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 		memmove ((char *)p + vec->elem_size, p, vec->elem_size * (vec->len - index));
 	}
 	vec->len++;
-	r_vector_assign (vec, p, x);
+	if (x) {
+		r_vector_assign (vec, p, x);
+	}
 	return p;
 }
 
@@ -144,7 +150,9 @@ R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_
 		memmove ((char *)p + sz, p, vec->elem_size * (vec->len - index));
 	}
 	vec->len += count;
-	memcpy (p, first, sz);
+	if (first) {
+		memcpy (p, first, sz);
+	}
 	return p;
 }
 
@@ -156,14 +164,18 @@ R_API void r_vector_pop(RVector *vec, void *into) {
 }
 
 R_API void r_vector_pop_front(RVector *vec, void *into) {
-	return r_vector_remove_at (vec, 0, into);
+	r_vector_remove_at (vec, 0, into);
 }
 
 R_API void *r_vector_push(RVector *vec, void *x) {
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
-	return r_vector_assign_at (vec, vec->len++, x);
+	void *p = r_vector_index_ptr (vec, vec->len++);
+	if (x) {
+		r_vector_assign (vec, p, x);
+	}
+	return p;
 }
 
 R_API void *r_vector_push_front(RVector *vec, void *x) {
@@ -196,8 +208,7 @@ static void pvector_free_elem(void *e, void *user) {
 
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free) {
-	r_vector_init (&vec->v, sizeof (void *));
-	vec->free = free;
+	r_vector_init (&vec->v, sizeof (void *), free ? pvector_free_elem : NULL, free);
 }
 
 R_API RPVector *r_pvector_new(RPVectorFree free) {
@@ -210,11 +221,15 @@ R_API RPVector *r_pvector_new(RPVectorFree free) {
 }
 
 R_API void r_pvector_clear(RPVector *vec) {
-	r_vector_clear (&vec->v, vec->free ? pvector_free_elem : NULL, vec->free);
+	r_vector_clear (&vec->v);
 }
 
 R_API void r_pvector_free(RPVector *vec) {
-	r_vector_free (&vec->v, vec->free ? pvector_free_elem : NULL, vec->free);
+	if (!vec) {
+		return;
+	}
+	r_vector_clear (&vec->v);
+	free (vec);
 }
 
 R_API void **r_pvector_contains(RPVector *vec, void *x) {
@@ -233,6 +248,16 @@ R_API void *r_pvector_remove_at(RPVector *vec, size_t index) {
 	return r;
 }
 
+R_API void r_pvector_remove_data(RPVector *vec, void *x) {
+	void **el = r_pvector_contains (vec, x);
+	if (!el) {
+		return;
+	}
+
+	size_t index = el - (void **)vec->v.a;
+	r_vector_remove_at (&vec->v, index, NULL);
+}
+
 R_API void *r_pvector_pop(RPVector *vec) {
 	void *r = r_pvector_at (vec, vec->v.len - 1);
 	r_vector_pop (&vec->v, NULL);
@@ -247,17 +272,20 @@ R_API void *r_pvector_pop_front(RPVector *vec) {
 
 // CLRS Quicksort. It is slow, but simple.
 static void quick_sort(void **a, size_t n, RPVectorComparator cmp) {
-	if (n <= 1) return;
+	if (n <= 1) {
+		return;
+	}
 	int i = rand() % n, j = 0;
 	void *t, *pivot = a[i];
 	a[i] = a[n - 1];
-	for (i = 0; i < n - 1; i++)
+	for (i = 0; i < n - 1; i++) {
 		if (cmp (a[i], pivot) < 0) {
 			t = a[i];
 			a[i] = a[j];
 			a[j] = t;
 			j++;
 		}
+	}
 	a[n - 1] = a[j];
 	a[j] = pivot;
 	quick_sort (a, j, cmp);

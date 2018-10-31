@@ -1,16 +1,18 @@
 files = [
   'lang.c',
-  'p/c.c',
+  # included in lang.c
+  #'p/c.c',
   #'p/cpipe.c',
-  'p/lib.c',
-  'p/pipe.c',
-  'p/rust.c',
-  'p/vala.c'
+  #'p/lib.c',
+  #'p/pipe.c',
+  #'p/rust.c',
+  #'p/vala.c'
+  #'p/zig.c',
 ]
 
 r_lang = library('r_lang', files,
   include_directories: [platform_inc],
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [r_util_dep, r_cons_dep],
   install: true,
   implicit_include_directories: false,

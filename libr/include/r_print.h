@@ -31,6 +31,7 @@ typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
+typedef char *(*RPrintHasRefs)(void *user, ut64 addr, bool verbose);
 
 typedef struct r_print_zoom_t {
 	ut8 *buf;
@@ -46,10 +47,11 @@ typedef struct r_print_t {
 	char datefmt[32];
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
-	void (*cb_printf)(const char *str, ...);
+	PrintfCallback cb_printf;
 	char *(*cb_color)(int idx, int last, bool bg);
+	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
-	void (*oprintf)(const char *str, ...);
+	PrintfCallback oprintf;
 	int interrupt;
 	int big_endian;
 	int width;
@@ -75,7 +77,7 @@ typedef struct r_print_t {
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RPrintColorFor colorfor;
-	RPrintColorFor hasrefs;
+	RPrintHasRefs hasrefs;
 	RPrintCommentCallback get_comments;
 	Sdb *formats;
 	Sdb *sdb_types;
@@ -127,6 +129,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height);
 R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz);
+R_API void r_print_hexdump_simple(const ut8 *buf, int len);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
@@ -184,6 +187,9 @@ R_API ut32 r_print_rowoff(RPrint *p, int i);
 R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite);
 R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size);
+
+R_API const char* r_print_rowlog(RPrint *print, const char *str);
+R_API void r_print_rowlog_done(RPrint *print, const char *str);
 
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);

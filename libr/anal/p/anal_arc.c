@@ -1017,8 +1017,9 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	const ut8 *b = (ut8 *)data;
 	memset (op, '\0', sizeof (RAnalOp));
 
-	if (anal->bits == 16)
+	if (anal->bits == 16) {
 		return arcompact_op (anal, op, addr, data, len);
+	}
 
 	/* ARCtangent A4 */
 	op->size = 4;
@@ -1149,7 +1150,7 @@ RAnalPlugin r_anal_plugin_arc = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_arc,
 	.version = R2_VERSION,

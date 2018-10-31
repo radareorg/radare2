@@ -45,21 +45,21 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	bool has_dol_extension = false;
 	DolHeader *dol;
 	char *lowername, *ext;
 	if (!bf || sz < sizeof (DolHeader)) {
-		return NULL;
+		return false;
 	}
 	dol = R_NEW0 (DolHeader);
 	if (!dol) {
-		return NULL;
+		return false;
 	}
 	lowername = strdup (bf->file);
 	if (!lowername) {
 		free (dol);
-		return NULL;
+		return false;
 	}
 	r_str_case (lowername, 0);
 	ext = strstr (lowername, ".dol");
@@ -71,12 +71,13 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 		r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
 		// r_buf_fread_at (bf->buf, 0, (void*)dol, "67i", 1);
 		if (bf && bf->o && bf->o->bin_obj) {
-			bf->o->bin_obj = dol;
+			*bin_obj = bf->o->bin_obj = dol;
 		}
-		return (void *) dol;
+		free (dol);
+		return true;
 	}
 	free (dol);
-	return NULL;
+	return false;
 }
 
 static bool load(RBinFile *bf) {
@@ -85,7 +86,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes,
+	load_bytes (bf, &bf->o->bin_obj, bytes,
 		sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
@@ -114,7 +115,7 @@ static RList *sections(RBinFile *bf) {
 		s->vaddr = dol->text_vaddr[i];
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
-		s->srwx = r_str_rwx ("r-x");
+		s->perm = r_str_rwx ("r-x");
 		s->add = true;
 		r_list_append (ret, s);
 	}
@@ -129,7 +130,7 @@ static RList *sections(RBinFile *bf) {
 		s->vaddr = dol->data_vaddr[i];
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
-		s->srwx = r_str_rwx ("r--");
+		s->perm = r_str_rwx ("r--");
 		s->add = true;
 		r_list_append (ret, s);
 	}
@@ -140,7 +141,7 @@ static RList *sections(RBinFile *bf) {
 	s->vaddr = dol->bss_addr;
 	s->size = dol->bss_size;
 	s->vsize = s->size;
-	s->srwx = r_str_rwx ("rw-");
+	s->perm = r_str_rwx ("rw-");
 	s->add = true;
 	r_list_append (ret, s);
 
@@ -202,7 +203,7 @@ RBinPlugin r_bin_plugin_dol = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dol,
 	.version = R2_VERSION

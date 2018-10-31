@@ -650,7 +650,7 @@ static uint8_t *parse_pp_string(uint8_t *p,
 {
 	int c;
 	p++;
-	for (;;) {
+	while (tcc_nerr () == 0) {
 		c = *p;
 		if (c == sep) {
 			break;
@@ -662,6 +662,7 @@ static uint8_t *parse_pp_string(uint8_t *p,
 unterminated_string:
 				/* XXX: indicate line number of start of string */
 				tcc_error ("missing terminating %c character", sep);
+				return NULL;
 			} else if (c == '\\') {
 				/* escape : just skip \[\r]\n */
 				PEEKC_EOB (c, p);
@@ -672,6 +673,7 @@ unterminated_string:
 					PEEKC_EOB (c, p);
 					if (c != '\n') {
 						expect ("'\n' after '\r'");
+						return NULL;
 					}
 					file->line_num++;
 					p++;
@@ -722,7 +724,7 @@ static void preprocess_skip(void)
 redo_start:
 	start_of_line = 1;
 	in_warn_or_error = 0;
-	for (;;) {
+	while (tcc_nerr () == 0) {
 redo_no_start:
 		c = *p;
 		switch (c) {
@@ -742,6 +744,7 @@ redo_no_start:
 			c = handle_eob ();
 			if (c == CH_EOF) {
 				expect ("#endif");
+				return;
 			} else if (c == '\\') {
 				ch = file->buf_ptr[0];
 				handle_stray_noerror ();
@@ -755,6 +758,9 @@ redo_no_start:
 				goto _default;
 			}
 			p = parse_pp_string (p, c, NULL);
+			if (p == NULL) {
+				return;
+			}
 			break;
 		/* skip comments */
 		case '/':
@@ -926,18 +932,21 @@ static void tok_str_add2(TokenString *s, int t, CValue *cv)
 	case TOK_LSTR:
 	{
 		int nb_words;
-		CString *cstr;
 
 		nb_words = (sizeof(CString) + cv->cstr->size + 3) >> 2;
-		while ((len + nb_words) > s->allocated_len)
+		while ((len + nb_words) > s->allocated_len) {
 			str = tok_str_realloc (s);
-		cstr = (CString *) (str + len);
-		cstr->data = NULL;
-		cstr->size = cv->cstr->size;
-		cstr->data_allocated = NULL;
-		cstr->size_allocated = cstr->size;
-		memcpy ((char *) cstr + sizeof(CString),
-			cv->cstr->data, cstr->size);
+		}
+		CString cstr = {0};
+		cstr.data = NULL;
+		cstr.size = cv->cstr->size;
+		cstr.data_allocated = NULL;
+		cstr.size_allocated = cstr.size;
+
+		ut8 *p = (ut8*)(str + len);
+		memcpy (p, &cstr, sizeof (CString));
+		memcpy (p + sizeof (CString),
+			cv->cstr->data, cstr.size);
 		len += nb_words;
 	}
 	break;
@@ -1062,9 +1071,14 @@ ST_INLN void define_push(int v, int macro_type, int *str, Sym *first_arg)
 	}
 
 	s = sym_push2 (&define_stack, v, macro_type, 0);
+	if (!s) {
+		return;
+	}
 	s->d = str;
 	s->next = first_arg;
-	table_ident[v - TOK_IDENT]->sym_define = s;
+	if (v >= TOK_IDENT) {
+		table_ident[v - TOK_IDENT]->sym_define = s;
+	}
 }
 
 /* undefined a define symbol. Its name is just set to zero */
@@ -1124,6 +1138,9 @@ ST_FUNC Sym *label_push(Sym **ptop, int v, int flags)
 {
 	Sym *s, **ps;
 	s = sym_push2 (ptop, v, 0, 0);
+	if (!s) {
+		return s;
+	}
 	s->r = flags;
 	ps = &table_ident[v - TOK_IDENT]->sym_label;
 	if (ptop == &global_label_stack) {
@@ -1248,6 +1265,9 @@ ST_FUNC void parse_define(void)
 				tcc_error ("badly punctuated parameter list");
 			}
 			s = sym_push2 (&define_stack, varg | SYM_FIELD, is_vaargs, 0);
+			if (!s) {
+				return;
+			}
 			*ps = s;
 			ps = &s->next;
 			if (tok != ',') {
@@ -1572,7 +1592,7 @@ include_trynext:
 			int filepath_len;
 			char *e = file->filename + strlen (file->filename);
 			while (e > file->filename) {
-				if (*e == '/') {
+				if (*e == R_SYS_DIR[0]) {
 					break;
 				}
 				e--;
@@ -1581,9 +1601,9 @@ include_trynext:
 			memcpy (filepath, file->filename, filepath_len);
 			strcpy (filepath + filepath_len, buf);
 			if (tcc_open (s1, filepath) < 0) {
-				snprintf (filepath, sizeof (filepath),
+				int len = snprintf (filepath, sizeof (filepath),
 					"/usr/include/%s", buf);
-				if (tcc_open (s1, filepath) < 0) {
+				if (len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
 					tcc_error ("include file '%s' not found", filepath);
 				} else {
 					fprintf (stderr, "#include \"%s\"\n", filepath);
@@ -1986,6 +2006,7 @@ num_too_long:
 			}
 			if (ch != 'p' && ch != 'P') {
 				expect ("exponent");
+				return;
 			}
 			ch = *p++;
 			s = 1;
@@ -1998,6 +2019,7 @@ num_too_long:
 			}
 			if (ch < '0' || ch > '9') {
 				expect ("exponent digits");
+				return;
 			}
 			while (ch >= '0' && ch <= '9') {
 				exp_val = exp_val * 10 + ch - '0';
@@ -2061,6 +2083,7 @@ float_frac_parse:
 				}
 				if (ch < '0' || ch > '9') {
 					expect ("exponent digits");
+					return;
 				}
 				while (ch >= '0' && ch <= '9') {
 					if (q >= token_buf + STRING_MAX_SIZE) {
@@ -2435,6 +2458,7 @@ parse_num:
 			PEEKC (c, p);
 			if (c != '.') {
 				expect ("'.'");
+				return;
 			}
 			PEEKC (c, p);
 			tok = TOK_DOTS;
@@ -2455,6 +2479,9 @@ str_const:
 			/* parse the string */
 			cstr_new (&str);
 			p = parse_pp_string (p, sep, &str);
+			if (!p) {
+				return;
+			}
 			cstr_ccat (&str, '\0');
 
 			/* eval the escape (should be done as TOK_PPNUM) */
@@ -2663,7 +2690,7 @@ ST_FUNC void next_nomacro(void)
 {
 	do {
 		next_nomacro_spc ();
-	} while (is_space (tok));
+	} while (tcc_nerr () == 0 && is_space (tok));
 }
 
 /* substitute args in macro_str and return allocated string */
@@ -2678,7 +2705,7 @@ static int *macro_arg_subst(Sym **nested_list, const int *macro_str, Sym *args)
 
 	tok_str_new (&str);
 	last_tok = 0;
-	while (1) {
+	while (tcc_nerr () == 0) {
 		TOK_GET (&t, &macro_str, &cval);
 		if (!t) {
 			break;
@@ -2873,7 +2900,7 @@ redo:
 			args = NULL;
 			sa = s->next;
 			/* NOTE: empty args are allowed, except if no args */
-			for (;;) {
+			while (tcc_nerr () == 0) {
 				/* handle '()' case */
 				if (!args && !sa && tok == ')') {
 					break;
@@ -2905,6 +2932,9 @@ redo:
 				str.len -= spc;
 				tok_str_add (&str, 0);
 				sa1 = sym_push2 (&args, sa->v & ~SYM_FIELD, sa->type.t, 0);
+				if (!sa1) {
+					return -1;
+				}
 				sa1->d = str.str;
 				sa = sa->next;
 				if (tok == ')') {
@@ -2918,6 +2948,7 @@ redo:
 				}
 				if (tok != ',') {
 					expect (",");
+					return 1;
 				}
 				next_nomacro ();
 			}
@@ -2938,7 +2969,9 @@ redo:
 			}
 			mstr_allocated = 1;
 		}
-		sym_push2 (nested_list, s->v, 0, 0);
+		if (sym_push2 (nested_list, s->v, 0, 0) == 0) {
+			return -1;
+		}
 		macro_subst (tok_str, nested_list, mstr, can_read_stream);
 		/* pop nested defined symbol */
 		sa1 = *nested_list;
@@ -3010,14 +3043,14 @@ static inline int *macro_twosharps(const int *macro_str)
 
 				tcc_open_bf (tcc_state, ":paste:", cstr.size);
 				memcpy (file->buffer, cstr.data, cstr.size);
-				for (;;) {
+				while (tcc_nerr () == 0) {
 					next_nomacro1 ();
 					if (0 == *file->buf_ptr) {
 						break;
 					}
 					tok_str_add2 (&macro_str1, tok, &tokc);
 					tcc_warning ("pasting \"%.*s\" and \"%s\" does not give a valid preprocessing token",
-						n, cstr.data, (char *) cstr.data + n);
+						n, (char *) cstr.data, (char *) cstr.data + n);
 				}
 				tcc_close ();
 				cstr_free (&cstr);
@@ -3057,7 +3090,7 @@ static void macro_subst(TokenString *tok_str, Sym **nested_list,
 	spc = 0;
 	force_blank = 0;
 
-	while (1) {
+	while (tcc_nerr () == 0) {
 		/* NOTE: ptr == NULL can only happen if tokens are read from
 		   file stream due to a macro function call */
 		if (ptr == NULL) {
@@ -3264,7 +3297,7 @@ ST_FUNC int tcc_preprocess(TCCState *s1)
 	file_ref = NULL;
 	iptr = s1->include_stack_ptr;
 
-	for (;;) {
+	while (tcc_nerr () == 0) {
 		next ();
 		if (tok == TOK_EOF) {
 			break;

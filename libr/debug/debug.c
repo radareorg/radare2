@@ -17,6 +17,9 @@ R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 	if (!dbg || !dbg->h || !dbg->h->info) {
 		return NULL;
 	}
+	if (dbg->pid < 0) {
+		return NULL;
+	}
 	return dbg->h->info (dbg, arg);
 }
 
@@ -164,9 +167,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 
 	/* inform the user of what happened */
 	if (dbg->hitinfo) {
-		//eprintf ("hit %spoint at: %"PFMT64x "\n",
-		//		b->trace ? "trace" : "break", pc);
-		r_cons_printf ("hit %spoint at: %"PFMT64x "\n",
+		eprintf ("hit %spoint at: %" PFMT64x "\n",
 			b->trace ? "trace" : "break", pc);
 	}
 
@@ -273,7 +274,9 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 		} else {
 			//module holds the address
 			addr = (ut64)r_num_math (dbg->num, module);
-			if (!addr) return NULL;
+			if (!addr) {
+				return NULL;
+			}
 			detect_module = true;
 		}
 		r_debug_map_sync (dbg);
@@ -540,7 +543,9 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		free (backup);
 		free (orig);
 		eprintf ("ra0=0x%08"PFMT64x"\n", ra0);
-	} else eprintf ("r_debug_execute: Cannot get program counter\n");
+	} else {
+		eprintf ("r_debug_execute: Cannot get program counter\n");
+	}
 	return (ra0);
 }
 
@@ -582,8 +587,9 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		return false;
 	}
 
-	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))
+	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid)) {
 		return false;
+	}
 
 	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", pid));
 
@@ -922,14 +928,17 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	}
 
 	if (dbg->h && dbg->h->step_over) {
-		for (; steps_taken < steps; steps_taken++)
-			if (!dbg->h->step_over (dbg))
+		for (; steps_taken < steps; steps_taken++) {
+			if (!dbg->h->step_over (dbg)) {
 				return steps_taken;
+			}
+		}
 		return steps_taken;
 	}
 
-	if (!dbg->anal || !dbg->reg)
+	if (!dbg->anal || !dbg->reg) {
 		return steps_taken;
+	}
 
 	// Initial refill
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
@@ -1263,8 +1272,9 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 
 	// step first, we dont want to check current optype
 	for (;;) {
-		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false))
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			break;
+		}
 
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full
@@ -1277,8 +1287,9 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return false;
 		}
-		if (op.type == type)
+		if (op.type == type) {
 			break;
+		}
 		// Step over and repeat
 		ret = over
 			? r_debug_step_over (dbg, 1)
@@ -1353,7 +1364,11 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	}
 
 	/* Get previous state */
-	before = r_list_head (dbg->sessions)->data; //XXX: currently use first session.
+	RListIter *iter = r_list_head (dbg->sessions);
+	before = iter? iter->data: NULL; //XXX: currently use first session.
+	if (!iter || !before) {
+		return false;
+	}
 
 	end_addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	//eprintf ("before session (%d) 0x%08"PFMT64x"=> to 0x%08"PFMT64x"\n", before->key.id, before->key.addr, end_addr);
@@ -1459,8 +1474,9 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	for (;;) {
 		RDebugReasonType reason;
 
-		if (r_cons_singleton ()->context->breaked)
+		if (r_cons_singleton ()->context->breaked) {
 			break;
+		}
 #if __linux__
 		// step is needed to avoid dupped contsc results
 		/* XXX(jjd): actually one stop is before the syscall, the other is
@@ -1485,6 +1501,11 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
+
+		if (dbg->corebind.core && dbg->corebind.syshit) {
+			dbg->corebind.syshit (dbg->corebind.core);
+		}
+
 		if (n_sc == -1) {
 			continue;
 		}
@@ -1609,10 +1630,13 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	}
 	if (!strcmp (dbg->iob.io->desc->plugin->name, "gdb")) {		//this is very bad
 		// Tell gdb that we want baddr, not full mem map
-		dbg->iob.system(dbg->iob.io, "baddr");
+		dbg->iob.system (dbg->iob.io, "baddr");
 	}
 	int pid = r_io_desc_get_pid (dbg->iob.io->desc);
 	int tid = r_io_desc_get_tid (dbg->iob.io->desc);
+	if (pid < 0 || tid < 0) {
+		return 0LL;
+	}
 	if (r_debug_attach (dbg, pid) == -1) {
 		return 0LL;
 	}

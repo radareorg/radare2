@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flag.h>
@@ -27,6 +26,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 3, "add.w",  "1 = 2 + 3"},
 		{ 0, "adf",  "1 = 2 + 3"},
 		{ 0, "adrp",  "1 = 2"},
+		{ 0, "adr",  "1 = 2"},
 		{ 0, "and",  "1 = 2 & 3"},
 		{ 0, "ands",  "1 &= 2"},
 		{ 0, "asls",  "1 = 2 << 3"},
@@ -47,13 +47,16 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "bx lr",  "ret"},
 		{ 0, "bxeq",  "je 1"},
 		{ 0, "cmf",  "if (1 == 2)"},
+		{ 0, "cmn",  "if (1 != 2)"},
 		{ 0, "cmp",  "if (1 == 2)"},
+		{ 0, "fcmp",  "if (1 == 2)"},
 		{ 0, "tst",  "if (1 == 2)"},
 		{ 0, "dvf",  "1 = 2 / 3"},
 		{ 0, "eor",  "1 = 2 ^ 3"},
 		{ 0, "fdv",  "1 = 2 / 3"},
 		{ 0, "fml",  "1 = 2 * 3"},
 		{ 2, "ldr",  "1 = 2"},
+		{ 2, "ldrh",  "1 = (word)2"},
 		{ 2, "ldrb",  "1 = (byte) 2"},
 		{ 2, "ldrsb",  "1 = (byte) 2"},
 		{ 2, "ldr.w",  "1 = 2"},
@@ -66,14 +69,24 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsl",  "1 = 2 << 3"},
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "mov",  "1 = 2"},
+		{ 0, "fmov",  "1 = 2"},
 		{ 0, "mvn",  "1 = ~2"},
 		{ 0, "movz",  "1 = 2"},
 		{ 0, "movk",  "1 = 2"},
 		{ 0, "movn",  "1 = 2"},
+		{ 0, "neg",  "1 = !2"},
+		{ 0, "sxtw",  "1 = 2"},
+		{ 0, "stur",  "2 = 1"},
+		{ 0, "stp",  "3 = (1, 2)"},
+		{ 0, "ldp",  "(1, 2) = 3"},
 		{ 0, "vmov.i32",  "1 = 2"},
 		{ 0, "muf",  "1 = 2 * 3"},
 		{ 0, "mul",  "1 = 2 * 3"},
+		{ 0, "fmul",  "1 = 2 * 3"},
 		{ 0, "muls",  "1 = 2 * 3"},
+		{ 0, "div",  "1 = 2 / 3"},
+		{ 0, "fdiv",  "1 = 2 / 3"},
+		{ 0, "udiv",  "1 = (unsigned) 2 / 3"},
 		{ 0, "orr",  "1 = 2 | 3"},
 		{ 0, "rmf",  "1 = 2 % 3"},
 		{ 0, "bge",  "(>=) goto 1"},
@@ -93,6 +106,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 3, "strh.w",  "2 + 3 = (half) 1"},
 		{ 3, "sub",  "1 = 2 - 3"},
 		{ 3, "subs",  "1 = 2 - 3"},
+		{ 3, "fsub",  "1 = 2 - 3"},
 		{ 2, "sub",  "1 -= 2"}, // THUMB
 		{ 2, "subs",  "1 -= 2"}, // THUMB
 		{ 0, "swp",  "swap(1, 2)"},
@@ -177,19 +191,21 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr==' '; ptr++);
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
 			strncpy (w0, buf, sizeof (w0) - 1);
 			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
-			if (*ptr == '(') { 
-				ptr = strchr (ptr+1, ')'); 
+			if (*ptr == '(') {
+				ptr = strchr (ptr+1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']'); 
+				ptr = strchr (ptr+1, ']');
 			}
-			if (ptr && *ptr == '{') { 
-				ptr = strchr (ptr+1, '}'); 
+			if (ptr && *ptr == '{') {
+				ptr = strchr (ptr+1, '}');
 			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
@@ -199,14 +215,18 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr==' '; ptr++);
+				for (++ptr; *ptr == ' '; ptr++) {
+					;
+				}
 				strncpy (w1, optr, sizeof (w1) - 1);
 				strncpy (w2, ptr, sizeof (w2) - 1);
 				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr==' '; ptr++);
+					for (++ptr; *ptr == ' '; ptr++) {
+						;
+					}
 					strncpy (w2, optr, sizeof (w2) - 1);
 					strncpy (w3, ptr, sizeof (w3) - 1);
 				}
@@ -235,7 +255,8 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	RList *spargs, *bpargs;
+	RList *spargs = NULL;
+	RList *bpargs = NULL;
 	RAnalVar *var;
 	RListIter *iter;
 	char *oldstr, *newstr;
@@ -373,6 +394,8 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 		free (oldstr);
 	}
+	r_list_free (bpargs);
+	r_list_free (spargs);
 	if (len > strlen (tstr)) {
 		strncpy (str, tstr, strlen (tstr));
 		str[strlen (tstr)] = 0;
@@ -393,7 +416,7 @@ RParsePlugin r_parse_plugin_arm_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_arm_pseudo,
 	.version = R2_VERSION

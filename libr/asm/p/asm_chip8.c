@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2017 - maijin */
+/* radare - LGPL3 - Copyright 2017-2018 - maijin */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -10,75 +10,77 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	uint8_t nibble = opcode & 0x0F;
 	uint16_t nnn = opcode & 0x0FFF;
 	uint8_t kk = opcode & 0xFF;
+	const char *buf_asm = "invalid";
 	switch (opcode & 0xF000) {
 	case 0x0000:
 		if (opcode == 0x00E0) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "cls");
+			buf_asm = "cls";
 		} else if (opcode == 0x00EE) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "ret");
+			buf_asm = "ret";
 		} else if ((opcode & 0xFFF0) == 0x00C0) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "scd  0x%01x", nibble);
+			buf_asm = sdb_fmt ("scd  0x%01x", nibble);
 		} else if (opcode == 0x00FB) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "scr");
+			buf_asm = "scr";
 		} else if (opcode == 0x00FC) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "scl");
+			buf_asm = "scl";
 		} else if (opcode == 0x00FD) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "exit");
+			buf_asm = "exit";
 		} else if (opcode == 0x00FE) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "low");
+			buf_asm = "low";
 		} else if (opcode == 0x00FF) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "high");
+			buf_asm = "high";
 		}
 		break;
-	case 0x1000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "jp 0x%03x", nnn); break;
-	case 0x2000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "call 0x%03x", nnn); break;
-	case 0x3000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "se v%1x, 0x%02x", x, kk); break;
-	case 0x4000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "sne v%1x, 0x%02x", x, kk); break;
-	case 0x5000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "se v%1x, v%1x", x, y); break;
-	case 0x6000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld v%1x, 0x%02x", x, kk); break;
-	case 0x7000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "add v%1x, 0x%02x", x, kk); break;
+	case 0x1000: buf_asm = sdb_fmt ("jp 0x%03x", nnn); break;
+	case 0x2000: buf_asm = sdb_fmt ("call 0x%03x", nnn); break;
+	case 0x3000: buf_asm = sdb_fmt ("se v%1x, 0x%02x", x, kk); break;
+	case 0x4000: buf_asm = sdb_fmt ("sne v%1x, 0x%02x", x, kk); break;
+	case 0x5000: buf_asm = sdb_fmt ("se v%1x, v%1x", x, y); break;
+	case 0x6000: buf_asm = sdb_fmt ("ld v%1x, 0x%02x", x, kk); break;
+	case 0x7000: buf_asm = sdb_fmt ("add v%1x, 0x%02x", x, kk); break;
 	case 0x8000: {
 		switch (nibble) {
-		case 0x0: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld v%1x, v%1x", x, y); break;
-		case 0x1: snprintf (op->buf_asm, R_ASM_BUFSIZE, "or v%1x, v%1x", x, y); break;
-		case 0x2: snprintf (op->buf_asm, R_ASM_BUFSIZE, "and v%1x, v%1x", x, y); break;
-		case 0x3: snprintf (op->buf_asm, R_ASM_BUFSIZE, "xor v%1x, v%1x", x, y); break;
-		case 0x4: snprintf (op->buf_asm, R_ASM_BUFSIZE, "add v%1x, v%1x", x, y); break;
-		case 0x5: snprintf (op->buf_asm, R_ASM_BUFSIZE, "sub v%1x, v%1x", x, y); break;
-		case 0x6: snprintf (op->buf_asm, R_ASM_BUFSIZE, "shr v%1x, v%1x", x, y); break;
-		case 0x7: snprintf (op->buf_asm, R_ASM_BUFSIZE, "subn v%1x, v%1x", x, y); break;
-		case 0xE: snprintf (op->buf_asm, R_ASM_BUFSIZE, "shl v%1x, v%1x", x, y); break;
+		case 0x0: buf_asm = sdb_fmt ("ld v%1x, v%1x", x, y); break;
+		case 0x1: buf_asm = sdb_fmt ("or v%1x, v%1x", x, y); break;
+		case 0x2: buf_asm = sdb_fmt ("and v%1x, v%1x", x, y); break;
+		case 0x3: buf_asm = sdb_fmt ("xor v%1x, v%1x", x, y); break;
+		case 0x4: buf_asm = sdb_fmt ("add v%1x, v%1x", x, y); break;
+		case 0x5: buf_asm = sdb_fmt ("sub v%1x, v%1x", x, y); break;
+		case 0x6: buf_asm = sdb_fmt ("shr v%1x, v%1x", x, y); break;
+		case 0x7: buf_asm = sdb_fmt ("subn v%1x, v%1x", x, y); break;
+		case 0xE: buf_asm = sdb_fmt ("shl v%1x, v%1x", x, y); break;
 		}
 	} break;
-	case 0x9000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "sne v%1x, v%1x", x, y); break;
-	case 0xA000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld i, 0x%03x", nnn); break;
-	case 0xB000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "jp v0, 0x%03x", nnn); break;
-	case 0xC000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "rnd v%1x, 0x%02x", x, kk); break;
-	case 0xD000: snprintf (op->buf_asm, R_ASM_BUFSIZE, "drw v%1x, v%1x, 0x%01x", x, y, nibble); break;
+	case 0x9000: buf_asm = sdb_fmt ("sne v%1x, v%1x", x, y); break;
+	case 0xA000: buf_asm = sdb_fmt ("ld i, 0x%03x", nnn); break;
+	case 0xB000: buf_asm = sdb_fmt ("jp v0, 0x%03x", nnn); break;
+	case 0xC000: buf_asm = sdb_fmt ("rnd v%1x, 0x%02x", x, kk); break;
+	case 0xD000: buf_asm = sdb_fmt ("drw v%1x, v%1x, 0x%01x", x, y, nibble); break;
 	case 0xE000: {
 		if (kk == 0x9E) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "skp v%1x", x);
+			buf_asm = sdb_fmt ("skp v%1x", x);
 		} else if (kk == 0xA1) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "sknp v%1x", x);
+			buf_asm = sdb_fmt ("sknp v%1x", x);
 		}
 	} break;
 	case 0xF000: {
 		switch (kk) {
-		case 0x07: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld v%1x, dt", x); break;
-		case 0x0A: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld v%1x, k", x); break;
-		case 0x15: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld dt, v%1x", x); break;
-		case 0x18: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld st, v%1x", x); break;
-		case 0x1E: snprintf (op->buf_asm, R_ASM_BUFSIZE, "add i, v%1x", x); break;
-		case 0x29: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld f, v%1x", x); break;
-		case 0x33: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld b, v%1x", x); break;
-		case 0x55: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld [i], v%1x", x); break;
-		case 0x65: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld v%1x, [i]", x); break;
-		case 0x30: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld hf, v%1x", x); break;
-		case 0x75: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld r, v%1x", x); break;
-		case 0x85: snprintf (op->buf_asm, R_ASM_BUFSIZE, "ld v%1x, r", x); break;
+		case 0x07: buf_asm = sdb_fmt ("ld v%1x, dt", x); break;
+		case 0x0A: buf_asm = sdb_fmt ("ld v%1x, k", x); break;
+		case 0x15: buf_asm = sdb_fmt ("ld dt, v%1x", x); break;
+		case 0x18: buf_asm = sdb_fmt ("ld st, v%1x", x); break;
+		case 0x1E: buf_asm = sdb_fmt ("add i, v%1x", x); break;
+		case 0x29: buf_asm = sdb_fmt ("ld f, v%1x", x); break;
+		case 0x33: buf_asm = sdb_fmt ("ld b, v%1x", x); break;
+		case 0x55: buf_asm = sdb_fmt ("ld [i], v%1x", x); break;
+		case 0x65: buf_asm = sdb_fmt ("ld v%1x, [i]", x); break;
+		case 0x30: buf_asm = sdb_fmt ("ld hf, v%1x", x); break;
+		case 0x75: buf_asm = sdb_fmt ("ld r, v%1x", x); break;
+		case 0x85: buf_asm = sdb_fmt ("ld v%1x, r", x); break;
 		}
 	} break;
 	}
+	r_strbuf_set (&op->buf_asm, buf_asm);
 	op->size = 2;
 	return op->size;
 }
@@ -93,9 +95,9 @@ RAsmPlugin r_asm_plugin_chip8 = {
 };
 
 #ifndef CORELIB
-struct RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_chip8
-		.version = R2_VERSION
+	.data = &r_asm_plugin_chip8,
+	.version = R2_VERSION
 };
 #endif

@@ -21,8 +21,8 @@ static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 	}
 	ptr = s;
 	do {
-		const char *str = sdb_const_anext (ptr, &next);
-		block_start = sdb_atoi (str);
+		next = sdb_const_anext (ptr);
+		block_start = sdb_atoi (ptr);
 
 		if (start == block_start) { // case 5
 			return start;
@@ -398,7 +398,7 @@ RCorePlugin r_core_plugin_a2f = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
 	.data = &r_core_plugin_a2f,
 	.version = R2_VERSION

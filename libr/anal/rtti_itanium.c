@@ -8,10 +8,12 @@
 #define vmi_class_type_info_name "obj.vtablefor__cxxabiv1::__vmi_class_type_info"
 #define class_type_info_name "obj.vtablefor__cxxabiv1::__class_type_info"
 #define si_class_type_info_name "obj.vtablefor__cxxabiv1::__si_class_type_info"
+#define NAME_BUF_SIZE 64
 
 typedef struct class_type_info_t {
 	ut32 vtable_addr;
 	ut32 name_addr;
+	char *name;
 } class_type_info;
 
 typedef struct base_class_type_info_t {
@@ -26,12 +28,14 @@ typedef struct base_class_type_info_t {
 typedef struct si_class_type_info_t {
 	ut32 vtable_addr;
 	ut32 name_addr;
+	char *name;
 	ut32 base_class_addr;
 } si_class_type_info;
 
 typedef struct vmi_class_type_info_t {
 	ut32 vtable_addr;
 	ut32 name_addr;
+	char *name;
 	int vmi_flags;
 	int vmi_base_count;
 	base_class_type_info *vmi_bases;
@@ -56,6 +60,16 @@ static bool rtti_itanium_read_class_type_info (RVTableContext *context, ut64 add
 		return false;
 	}
 	cti->name_addr = at;
+	ut8 buf[NAME_BUF_SIZE];
+	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof(buf))) {
+		return false;
+	}
+	size_t name_len = r_str_len_utf8 ((const char *)buf) + 1;
+	cti->name = malloc (name_len);
+	if (!cti->name) {
+		return false;
+	}
+	memcpy (cti->name, buf, name_len);
 	return true;
 }
 
@@ -73,6 +87,16 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
 		return false;
 	}
 	vmi_cti->name_addr = at;
+	ut8 buf[NAME_BUF_SIZE];
+	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof(buf))) {
+		return false;
+	}
+	size_t name_len = r_str_len_utf8 ((const char *)buf) + 1;
+	vmi_cti->name = malloc (name_len);
+	if (!vmi_cti->name) {
+		return false;
+	}
+	memcpy (vmi_cti->name, buf, name_len);
 	addr += context->word_size;
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
@@ -82,11 +106,15 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
 	}
-	if (at < 1) {
+	if (at < 1 || at > 0xfffff) {
+		eprintf ("Error reading vmi_base_count\n");
 		return false;
 	}
 	vmi_cti->vmi_base_count = at;
 	vmi_cti->vmi_bases = calloc (sizeof (base_class_type_info), vmi_cti->vmi_base_count);
+	if (!vmi_cti->vmi_bases) {
+		return false;
+	}
 	ut64 tmp_addr = addr + 0x4;
 
 	int i;
@@ -118,6 +146,16 @@ static bool rtti_itanium_read_si_class_type_info (RVTableContext *context, ut64 
 		return false;
 	}
 	si_cti->name_addr = at;
+	ut8 buf[NAME_BUF_SIZE];
+	if (!context->anal->iob.read_at (context->anal->iob.io, at, buf, sizeof(buf))) {
+		return false;
+	}
+	size_t name_len = r_str_len_utf8 ((const char *)buf) + 1;
+	si_cti->name = malloc (name_len);
+	if (!si_cti->name) {
+		return false;
+	}
+	memcpy (si_cti->name, buf, name_len);
 	if (!context->read_addr (context->anal, addr + 2 * context->word_size, &at)) {
 		return false;
 	}
@@ -128,10 +166,12 @@ static bool rtti_itanium_read_si_class_type_info (RVTableContext *context, ut64 
 static void rtti_itanium_print_class_type_info (class_type_info *cti, ut64 addr, const char *prefix) {
 	r_cons_printf ("%sType Info at 0x%08"PFMT64x ":\n"
 			"%s  Reference to RTTI's type class: 0x%08"PFMT32x "\n"
-			"%s  Reference to type's name: 0x%08"PFMT32x "\n",
+			"%s  Reference to type's name: 0x%08"PFMT32x "\n"
+			"%s  Type Name: %s\n",
 			prefix, addr,
 			prefix, cti->vtable_addr,
-			prefix, cti->name_addr);
+			prefix, cti->name_addr,
+			prefix, cti->name + 1);
 }
 
 static void rtti_itanium_print_class_type_info_json (class_type_info *cti, ut64 addr) {
@@ -144,11 +184,13 @@ static void rtti_itanium_print_vmi_class_type_info (vmi_class_type_info *vmi_cti
 	r_cons_printf ("%sVMI Type Info at 0x%08"PFMT64x ":\n"
 			"%s  Reference to RTTI's type class: 0x%08"PFMT32x "\n"
 			"%s  Reference to type's name: 0x%08"PFMT32x "\n"
+			"%s  Type Name: %s\n"
 			"%s  Flags: 0x%x" "\n"
 			"%s  Count of base classes: 0x%x" "\n",
 			prefix, addr,
 			prefix, vmi_cti->vtable_addr,
 			prefix, vmi_cti->name_addr,
+			prefix, vmi_cti->name + 1,
 			prefix, vmi_cti->vmi_flags,
 			prefix, vmi_cti->vmi_base_count);
 
@@ -184,10 +226,12 @@ static void rtti_itanium_print_si_class_type_info (si_class_type_info *si_cti, u
 	r_cons_printf ("%sSI Type Info at 0x%08"PFMT64x ":\n"
 			"%s  Reference to RTTI's type class: 0x%08"PFMT32x "\n"
 			"%s  Reference to type's name: 0x%08"PFMT32x "\n"
+			"%s  Type Name: %s\n"
 			"%s  Reference to parent's type name: 0x%08"PFMT32x "\n",
 			prefix, addr,
 			prefix, si_cti->vtable_addr,
 			prefix, si_cti->name_addr,
+			prefix, si_cti->name + 1,
 			prefix, si_cti->base_class_addr);
 }
 
@@ -264,8 +308,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		eprintf ("No RTTI found\n");
 		return false;
 	}
-
-	if (r_str_cmp (flag->name, vmi_class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, vmi_class_type_info_name, r_str_len_utf8 (flag->name))) {
 		vmi_class_type_info vmi_cti;
 		if (!rtti_itanium_read_vmi_class_type_info (context, colAddr, &vmi_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
@@ -278,7 +321,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		}
 	}
 
-	if (r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
 		si_class_type_info si_cti;
 		if (!rtti_itanium_read_si_class_type_info (context, colAddr, &si_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
@@ -291,7 +334,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		}
 	}
 
-	if (r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
 		class_type_info cti;
 		if (!rtti_itanium_read_class_type_info (context, colAddr, &cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);

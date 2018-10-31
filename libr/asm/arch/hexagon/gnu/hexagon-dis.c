@@ -19,7 +19,7 @@
 
 #include "ansidecl.h"
 #include "libiberty.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "opcode/hexagon.h"
 #include "mybfd.h"
 //#include "elf/hexagon.h"

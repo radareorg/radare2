@@ -46,7 +46,6 @@ R_API int r_mixed_key_check(RMixed *m, int key, int sz) {
 static void _mixed_free_kv(HtKv *kv) {
 	free (kv->key);
 	r_list_free (kv->value);
-	free (kv);
 }
 
 #define R_MIXED_KEY(m,x,y,z) r_mixed_key(m, r_offsetof(x,z), sizeof(y->z))
@@ -112,8 +111,8 @@ R_API void *r_mixed_get0 (RMixed *m, int key, ut64 value) {
 
 
 R_API int r_mixed_add(RMixed *m, void *p) {
-	SdbHash *ht;
-	SdbHash *ht64;
+	SdbHt *ht;
+	SdbHt *ht64;
 	RList *list = NULL;
 	ut64 value;
 	int i, size, ret = false;;
@@ -182,8 +181,8 @@ R_API bool r_mixed_change_end(RMixed *m, void *p) {
 	void *q;
 	for (i = 0; i < RMIXED_MAXKEYS; i++) {
 		if (m->keys[i]) {
-			SdbHash *ht = m->keys[i]->hash.ht;
-			SdbHash *ht64 = m->keys[i]->hash.ht64;
+			SdbHt *ht = m->keys[i]->hash.ht;
+			SdbHt *ht64 = m->keys[i]->hash.ht64;
 			ut64 newstate = r_mixed_get_value (i, m->keys[i]->size, p);
 			if (newstate != m->state[i]) {
 				// rehash this pointer

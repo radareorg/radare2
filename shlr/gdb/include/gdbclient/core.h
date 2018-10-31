@@ -28,11 +28,17 @@
 #define CMD_RBP				"z0"
 #define CMD_HBP				"Z1"
 #define CMD_RHBP			"z1"
+#define CMD_HWW				"Z2"
+#define CMD_RHWW			"z2"
+#define CMD_HWR				"Z3"
+#define CMD_RHWR			"z3"
+#define CMD_HWA				"Z4"
+#define CMD_RHWA			"z4"
 #define CMD_QRCMD			"qRcmd,"
-#define CMD_C					"vCont"
-#define CMD_C_CONT		"c"
+#define CMD_C				"vCont"
+#define CMD_C_CONT			"c"
 #define CMD_C_CONT_SIG		"C"
-#define CMD_C_STEP		"s"
+#define CMD_C_STEP			"s"
 
 enum Breakpoint {
 	BREAKPOINT,

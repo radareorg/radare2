@@ -93,18 +93,6 @@ static const char **attr_at(RConsCanvas *c, int loc) {
 	return NULL;
 }
 
-static void sort_attrs(RConsCanvas *c) {
-	int i, j;
-	RConsCanvasAttr value;
-	for (i = 1; i < c->attrslen; i++) {
-		value = c->attrs[i];
-		for (j = i - 1; j >= 0 && c->attrs[j].loc > value.loc; j--) {
-			c->attrs[j + 1] = c->attrs[j];
-		}
-		c->attrs[j + 1] = value;
-	}
-}
-
 static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	if (!c->color) {
 		return;
@@ -114,6 +102,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	s = attr_at (c, loc);
 
 	if (s) {
+#if 0
 		if (*s != 0 && strlen (*s) > 2 && *(*s + 2) == '0') {
 			if (strlen (c->attr) == 5 && *(c->attr + 2) != '0') {
 				char tmp[9];
@@ -124,12 +113,15 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 				c->attr = r_str_const (tmp);
 			}
 		}
+#endif
 		*s = c->attr;
 	} else {
-		c->attrs[c->attrslen].loc = loc;
-		c->attrs[c->attrslen].a = c->attr;
+		for (i = c->attrslen; i > 0 && loc < c->attrs[i - 1].loc; i--) {
+			c->attrs[i] = c->attrs[i - 1];
+		}
+		c->attrs[i].loc = loc;
+		c->attrs[i].a = c->attr;
 		c->attrslen++;
-		sort_attrs (c);
 	}
 
 	for (i = 1; i < length; i++) {
@@ -416,7 +408,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	for (y = 0; y < c->h; y++) {
 		olen += c->blen[y] + 1;
 	}
-	o = calloc (1, olen * (CONS_MAX_ATTR_SZ));
+	o = calloc (1, olen * CONS_MAX_ATTR_SZ);
 	if (!o) {
 		return NULL;
 	}

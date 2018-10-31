@@ -40,7 +40,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 
 static RThread *thread = NULL;
 
-static int loading_thread(RThread *th) {
+static RThreadFunctionRet loading_thread(RThread *th) {
 	const char *tok = "\\|/-";
 	int i = 0;
 	if (th) {
@@ -50,7 +50,7 @@ static int loading_thread(RThread *th) {
 			i++;
 		}
 	}
-	return 0;
+	return R_TH_STOP;
 }
 
 static void loading_start() {
@@ -59,8 +59,7 @@ static void loading_start() {
 }
 
 static void loading_stop() {
-	r_th_kill (thread, true);
-	r_th_free (thread);
+	r_th_kill_free (thread);
 	thread = NULL;
 }
 
@@ -185,14 +184,15 @@ static int main_help(int line) {
 		" file         ${filename}.r2\n"
 		"Plugins:\n"
 		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
-		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
+		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
+		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
+		" R_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		"Paths:\n"
@@ -220,22 +220,26 @@ static int main_print_var(const char *var_name) {
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "MAGICPATH", magicpath },
-		{ "PREFIX", R2_PREFIX },
-		{ "INCDIR", R2_INCDIR },
-		{ "LIBDIR", R2_LIBDIR },
-		{ "LIBEXT", R_LIB_EXT },
-		{ "RCONFIGHOME", confighome },
-		{ "RDATAHOME", datahome },
-		{ "RCACHEHOME", cachehome },
-		{ "LIBR_PLUGINS", plugins },
-		{ "USER_PLUGINS", homeplugins },
-		{ "USER_ZIGNS", homezigns },
+		{ "R2_MAGICPATH", magicpath },
+		{ "R2_PREFIX", R2_PREFIX },
+		{ "R2_INCDIR", R2_INCDIR },
+		{ "R2_LIBDIR", R2_LIBDIR },
+		{ "R2_LIBEXT", R_LIB_EXT },
+		{ "R2_RCONFIGHOME", confighome },
+		{ "R2_RDATAHOME", datahome },
+		{ "R2_RCACHEHOME", cachehome },
+		{ "R2_LIBR_PLUGINS", plugins },
+		{ "R2_USER_PLUGINS", homeplugins },
+		{ "R2_USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
+	int delta = 0;
+	if (var_name && strncmp (var_name, "R2_", 3)) {
+		delta = 3;
+	}
 	if (var_name) {
 		while (r2_vars[i].name) {
-			if (!strcmp (r2_vars[i].name, var_name)) {
+			if (!strcmp (r2_vars[i].name + delta, var_name)) {
 				printf ("%s\n", r2_vars[i].value);
 				break;
 			}
@@ -260,7 +264,7 @@ static int main_print_var(const char *var_name) {
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
-static int rabin_delegate(RThread *th) {
+static RThreadFunctionRet rabin_delegate(RThread *th) {
 	RIODesc *d = r_io_desc_get (r.io, r.file->fd);
 	if (rabin_cmd && r_file_exists (d->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
@@ -290,7 +294,7 @@ static int rabin_delegate(RThread *th) {
 	if (th) {
 		eprintf ("rabin2: done\n");
 	}
-	return 0;
+	return R_TH_STOP;
 }
 #endif
 
@@ -391,6 +395,30 @@ static bool mustSaveHistory(RConfig *c) {
 	return true;
 }
 
+// Try to set the correct scr.color for the current terminal.
+static void set_color_default(void) {
+	char *tmp = r_sys_getenv ("COLORTERM");
+	if (tmp) {
+		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
+		}
+	} else {
+		tmp = r_sys_getenv ("TERM");
+		if (!tmp) {
+			return;
+		}
+		if (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit")) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
+		} else if (r_str_endswith (tmp, "256color")) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_256);
+		} else if (!strcmp (tmp, "dumb")) {
+			// Dumb terminals don't get color by default.
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
+		}
+	}
+	free (tmp);
+}
+
 #if EMSCRIPTEN
 #include <emscripten.h>
 static RCore *core = NULL;
@@ -449,12 +477,11 @@ int main(int argc, char **argv, char **envp) {
 	int do_connect = 0;
 	bool fullfile = false;
 	int has_project;
-	int prefile = 0;
 	bool zerosep = false;
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
- 	int ret, c, perms = R_IO_READ | R_IO_EXEC;
+ 	int ret, c, perms = R_PERM_RX;
 	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
@@ -486,6 +513,13 @@ int main(int argc, char **argv, char **envp) {
 
 	bool noStderr = false;
 
+#ifdef __UNIX
+	sigset_t sigBlockMask;
+	sigemptyset (&sigBlockMask);
+	sigaddset (&sigBlockMask, SIGWINCH);
+	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
+#endif
+
 	r_sys_set_environ (envp);
 
 	if ((tmp = r_sys_getenv ("R_DEBUG"))) {
@@ -507,11 +541,8 @@ int main(int argc, char **argv, char **envp) {
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
-		prefile = 1;
 		argc--;
 		argv++;
-	} else {
-		prefile = 0;
 	}
 
 	// -H option without argument
@@ -520,6 +551,8 @@ int main(int argc, char **argv, char **envp) {
 		LISTS_FREE ();
 		return 0;
 	}
+
+	set_color_default ();
 
 	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuX"
 #if USE_THREADS
@@ -690,10 +723,10 @@ int main(int argc, char **argv, char **envp) {
 		case 'V':
 			return verify_version (1);
 		case 'w':
-			perms |= R_IO_WRITE;
+			perms |= R_PERM_W;
 			break;
 		case 'x':
-			perms &= ~R_IO_EXEC;
+			perms &= ~R_PERM_X;
 			r_config_set (r.config, "io.exec", "false");
 			break;
 		default:
@@ -766,8 +799,12 @@ int main(int argc, char **argv, char **envp) {
 
 	if (help > 0) {
 		LISTS_FREE ();
+		free (pfile);
 		return main_help (help > 1? 2: 0);
 	}
+#if __WINDOWS__
+	pfile = r_acp_to_utf8 (pfile);
+#endif // __WINDOWS__
 	if (customRarunProfile) {
 		char *tfn = r_file_temp (".rarun2");
 		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
@@ -781,6 +818,7 @@ int main(int argc, char **argv, char **envp) {
 	if (debug == 1) {
 		if (optind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
+			LISTS_FREE ();
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[optind];
@@ -813,16 +851,8 @@ int main(int argc, char **argv, char **envp) {
 	}
 	ret = run_commands (NULL, prefiles, false);
 	r_list_free (prefiles);
+	prefiles = NULL;
 
-#if 0
-	// if "- -i" is used we will open malloc:// instead
-	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
-	if (prefile) {
-		optind = 1;
-		argc = 2;
-		argv[1] = "-";
-	}
-#endif
 	r_bin_force_plugin (r.bin, forcebin);
 
 	//cverify_version (0);
@@ -830,6 +860,7 @@ int main(int argc, char **argv, char **envp) {
 		const char *uri = argv[optind];
 		if (optind >= argc) {
 			eprintf ("Missing URI for -C\n");
+			LISTS_FREE ();
 			return 1;
 		}
 		if (!strncmp (uri, "http://", 7)) {
@@ -837,6 +868,7 @@ int main(int argc, char **argv, char **envp) {
 		} else {
 			r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
 		}
+		LISTS_FREE ();
 		return 0;
 	}
 
@@ -847,6 +879,10 @@ int main(int argc, char **argv, char **envp) {
 	case 2:
 		r_config_set (r.config, "bin.rawstr", "true");
 		break;
+	}
+	if (zflag > 3) {
+		eprintf ("Sleeping now...\n");
+		r_sys_sleep (zflag);
 	}
 
 	if (run_rc) {
@@ -878,28 +914,42 @@ int main(int argc, char **argv, char **envp) {
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
+			LISTS_FREE ();
 			return 1;
 		}
 		if (chdir (argv[optind])) {
 			eprintf ("[d] Cannot open directory\n");
+			LISTS_FREE ();
 			return 1;
 		}
 	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
 		int sz;
 		/* stdin/batch mode */
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
-		close (0);
+		eprintf ("^D\n");
+#if __UNIX__
+		// TODO: keep flags :?
+		freopen ("/dev/tty", "rb", stdin);
+		freopen ("/dev/tty","w",stdout);
+		freopen ("/dev/tty","w",stderr);
+#else
+		eprintf ("Cannot reopen stdin without UNIX\n");
+		return 1;
+#endif
 		if (buf && sz > 0) {
-			char path[128];
-			snprintf (path, sizeof (path) - 1, "malloc://%d", sz);
+			char *path = r_str_newf ("malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
+			free (path);
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
 				eprintf ("[=] Cannot open '%s'\n", path);
+				LISTS_FREE ();
 				return 1;
 			}
-			r_io_write_at (r.io, 0, buf, sz);
+			r_io_map_new (r.io, fh->fd, 7, 0LL, mapaddr,
+					r_io_fd_size (r.io, fh->fd));
+			r_io_write_at (r.io, mapaddr, buf, sz);
 			r_core_block_read (&r);
 			free (buf);
 			// TODO: load rbin thing
@@ -917,9 +967,10 @@ int main(int argc, char **argv, char **envp) {
 			}
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
-			perms = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
+			perms = R_PERM_RWX;
 			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
+				LISTS_FREE ();
 				return 1;
 			}
 			if (debug == 2) {
@@ -929,11 +980,14 @@ int main(int argc, char **argv, char **envp) {
 					if (!haveRarunProfile) {
 						pfile = strdup (argv[optind++]);
 					}
-					perms = R_IO_READ | R_IO_EXEC; // XXX. should work with rw too
+					perms = R_PERM_RX; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://")) {
 						optind--; // take filename
 					}
+#if __WINDOWS__
+					pfile = r_acp_to_utf8 (pfile);
+#endif // __WINDOWS__
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					iod = (r.io && fh) ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
@@ -942,8 +996,7 @@ int main(int argc, char **argv, char **envp) {
 						if (addr == UINT64_MAX) {
 							addr = r_config_get_i (r.config, "bin.baddr");
 						}
-						if (filepath && r_file_exists (filepath)
-						    && !r_file_is_directory (filepath)) {
+						if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
 							if (newpath) {
 								if (iod) {
@@ -957,8 +1010,7 @@ int main(int argc, char **argv, char **envp) {
 							}
 						} else if (is_valid_gdb_file (fh)) {
 							filepath = iod->name;
-							if (r_file_exists (filepath)
-							    && !r_file_is_directory (filepath)) {
+							if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 								if (addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}
@@ -1005,6 +1057,9 @@ int main(int argc, char **argv, char **envp) {
 					R_FREE (path);
 				}
 #else
+#	if __WINDOWS__
+				f = r_acp_to_utf8 (f);
+#	endif // __WINDOWS__
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
@@ -1045,18 +1100,25 @@ int main(int argc, char **argv, char **envp) {
 				R_FREE (pfile);
 				while (optind < argc) {
 					pfile = argv[optind++];
+#if __WINDOWS__
+					pfile = r_acp_to_utf8 (pfile);
+#endif // __WINDOWS__
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if ((perms & R_IO_WRITE) && !fh) {
-						if (r_io_create (r.io, pfile, 0644, 0)) {
-							fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					if (!fh && perms & R_PERM_W) {
+						perms |= R_PERM_CREAT;
+						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					}
+					if (perms & R_PERM_CREAT) {
+						if (fh) {
+							r_config_set_i (r.config, "io.va", false);
 						} else {
-							eprintf ("r_io_create: Permission denied.\n");
+							 eprintf ("r_io_create: Permission denied.\n");
 						}
 					}
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-						if (perms & R_IO_EXEC) {
-							iod->flags |= R_IO_EXEC;
+						if (perms & R_PERM_X) {
+							iod->perm |= R_PERM_X;
 						}
 						if (run_anal > 0) {
 #if USE_THREADS
@@ -1077,12 +1139,10 @@ int main(int argc, char **argv, char **envp) {
 								(void)r_core_bin_load (&r, filepath, baddr);
 							}
 						} else {
-							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod), true);
-							// r_io_map_new (r.io, iod->fd, iod->flags, 0LL, 0LL, r_io_desc_size (iod));
+							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
 							if (run_anal < 0) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
-								r_core_cmdf (&r, "Sf");
 								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
 							}
 						}
@@ -1105,8 +1165,8 @@ int main(int argc, char **argv, char **envp) {
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 						if (iod) {
-							perms = iod->flags;
-							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
+							perms = iod->perm;
+							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod));
 						}
 					}
 				}
@@ -1142,6 +1202,13 @@ int main(int argc, char **argv, char **envp) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
 						eprintf ("asm.bits %d\n", obj->info->bits);
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
+						ut64 bitness = r_config_get_i (r.config, "asm.bits");
+						if (bitness == 32) {
+							eprintf ("glibc.fc_offset = 0x00148\n");
+							r_config_set_i (r.config, "dbg.glibc.fc_offset", 0x00148);
+						}
+#endif
 					}
 				}
 			}
@@ -1156,7 +1223,7 @@ int main(int argc, char **argv, char **envp) {
 		if (!fh) {
 			if (pfile && *pfile) {
 				r_cons_flush ();
-				if (perms & R_IO_WRITE) {
+				if (perms & R_PERM_W) {
 					eprintf ("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
 					eprintf ("[r] Cannot open '%s'\n", pfile);
@@ -1164,10 +1231,12 @@ int main(int argc, char **argv, char **envp) {
 			} else {
 				eprintf ("Missing file to open\n");
 			}
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (!r.file) { // no given file
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && r.bin->cur->o->info->rclass && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
 			const char *fstype = r.bin->cur->o->info->bclass;
@@ -1275,12 +1344,15 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 		}
+	} else {
+		r_core_block_read (&r);
 	}
 	{
-		const char *global_rc = R2_PREFIX"/share/radare2/radare2rc";
+		char *global_rc = r_str_r2_prefix (R2_GLOBAL_RC);
 		if (r_file_exists (global_rc)) {
 			(void)r_core_run_script (&r, global_rc);
 		}
+		free (global_rc);
 	}
 	// only analyze if file contains entrypoint
 	{
@@ -1312,13 +1384,14 @@ int main(int argc, char **argv, char **envp) {
 	if (fullfile) {
 		r_core_block_size (&r, r_io_desc_size (iod));
 	}
-	if (perms & R_IO_WRITE) {
+	if (perms & R_PERM_W) {
 		r_core_cmd0 (&r, "omfg+w");
 	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
 	r_list_free (evals);
 	r_list_free (files);
+	cmds = evals = files = NULL;
 	if (ret) {
 		ret = 0;
 		goto beach;
@@ -1373,15 +1446,19 @@ int main(int argc, char **argv, char **envp) {
 					r.num->value = 0;
 					break;
 				}
-				if (lock) r_th_lock_enter (lock);
+				if (lock) {
+					r_th_lock_enter (lock);
+				}
 				/* -1 means invalid command, -2 means quit prompt loop */
 				if ((ret = r_core_prompt_exec (&r)) == -2) {
 					break;
 				}
-				if (lock) r_th_lock_leave (lock);
+				if (lock) {
+					r_th_lock_leave (lock);
+				}
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					// eprintf ("rabin thread end \n");
-					r_th_free (rabin_th);
+					r_th_kill_free (rabin_th);
 					r_th_lock_free (lock);
 					lock = NULL;
 					rabin_th = NULL;
@@ -1399,6 +1476,15 @@ int main(int argc, char **argv, char **envp) {
 				bool y_kill_debug = (ret & 4) >> 2;
 				bool y_save_project = (ret & 8) >> 3;
 
+				if (r_core_task_running_tasks_count (&r) > 0) {
+					if (r_cons_yesno ('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
+						r_core_task_break_all (&r);
+						r_core_task_join (&r, r.main_task, -1);
+					} else {
+						continue;
+					}
+				}
+
 				if (debug) {
 					if (no_question_debug) {
 						if (r_config_get_i (r.config, "dbg.exitkills") && y_kill_debug){
@@ -1412,7 +1498,9 @@ int main(int argc, char **argv, char **envp) {
 							} else {
 								r_debug_detach (r.dbg, r.dbg->pid);
 							}
-						} else continue;
+						} else {
+							continue;
+						}
 					}
 				}
 
@@ -1463,6 +1551,7 @@ beach:
 	free (file);
 	r_str_const_free (NULL);
 	r_cons_free ();
+	LISTS_FREE ();
 	return ret;
 }
 #endif // EMSCRIPTEN

@@ -13,14 +13,15 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	if (!check_bytes (buf, sz)) {
-		return NULL;
+		return false;
 	}
-	return r_bin_wasm_init (bf);
+	*bin_obj = r_bin_wasm_init (bf);
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -29,8 +30,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -51,16 +51,29 @@ static RList *sections(RBinFile *bf);
 static RList *entries(RBinFile *bf) {
 	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
-	RList *ret;
+	RList *ret = NULL;
 	RBinAddr *ptr = NULL;
 	ut64 addr = 0x0;
 
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	if (!(addr = (ut64) r_bin_wasm_get_entrypoint (bin))) {
-		r_list_free (ret);
-		return NULL;
+
+	addr = (ut64) r_bin_wasm_get_entrypoint (bin);
+	if (!addr) {
+		RList *codes = r_bin_wasm_get_codes (bin);
+		if (codes) {
+			RListIter *iter;
+			RBinWasmCodeEntry *func;
+			r_list_foreach (codes, iter, func) {
+				addr = func->code;
+				break;
+			}
+		}
+		if (!addr) {
+			r_list_free (ret);
+			return NULL;
+		}
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = addr;
@@ -101,7 +114,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr = sec->offset;
 		ptr->add = true;
 		// TODO permissions
-		ptr->srwx = 0;
+		ptr->perm = 0;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -256,10 +269,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static ut64 size(RBinFile *bf) {
-	if (!bf->o->info) {
-		bf->o->info = info (bf);
-	}
-	if (!bf->o->info) {
+	if (!bf || !bf->buf) {
 		return 0;
 	}
 	return bf->buf->length;
@@ -268,7 +278,7 @@ static ut64 size(RBinFile *bf) {
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	RBuffer *buf = r_buf_new ();
-#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) x, y)
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)
 #define D(x) r_buf_append_ut32 (buf, x)
 	B ("\x00" "asm", 4);
 	B ("\x01\x00\x00\x00", 4);
@@ -296,7 +306,7 @@ RBinPlugin r_bin_plugin_wasm = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_wasm,
 	.version = R2_VERSION

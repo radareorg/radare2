@@ -113,7 +113,7 @@ static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	mmo = fd->data;
 	addr = io->off;
-	if ( !(mmo->flags & R_IO_WRITE)) {
+	if ( !(mmo->flags & R_PERM_W)) {
 		return -1;
 	}
 	if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
@@ -129,12 +129,11 @@ static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static RIODesc *r_io_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	RIOMMapFileObj *mmo;
-	const char* name = !strncmp (file, "mmap://", 7) ? file + 7 : file;
-	if (!(mmo = r_io_mmap_create_new_file (io, name, mode, flags))) {
-		return NULL;
+	if (!strncmp (file, "mmap://", 7)) {
+		file += 7;
 	}
-	return r_io_desc_new (io, &r_io_plugin_mmap, mmo->filename, flags, mode, mmo);
+	RIOMMapFileObj *mmo = r_io_mmap_create_new_file (io, file, mode, flags);
+	return mmo? r_io_desc_new (io, &r_io_plugin_mmap, mmo->filename, flags, mode, mmo): NULL;
 }
 
 static ut64 r_io_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -163,7 +162,9 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int flags, int mode) {
-	if (!r_io_mmap_check (file) ) return NULL;
+	if (!r_io_mmap_check (file)) {
+		return NULL;
+	}
 	return r_io_mmap_open (io, file, flags, mode);
 }
 
@@ -204,7 +205,7 @@ struct r_io_plugin_t r_io_plugin_mmap = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mmap,
 	.version = R2_VERSION

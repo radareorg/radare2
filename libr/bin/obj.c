@@ -10,6 +10,7 @@ R_API void r_bin_object_free(void /*RBinObject*/ *o_) {
 	if (!o) {
 		return;
 	}
+	free (o->regstate);
 	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
 	R_FREE (o);
@@ -25,6 +26,7 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
+	o->regstate = NULL;
 	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
 		free (o);
 		return NULL;
@@ -55,9 +57,8 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		if (sz < bsz) {
 			bsz = sz;
 		}
-		o->bin_obj = plugin->load_bytes (binfile, bytes + offset, sz,
-						 loadaddr, sdb);
-		if (!o->bin_obj) {
+		if (!plugin->load_bytes (binfile, &o->bin_obj, bytes + offset, sz,
+					 loadaddr, sdb)) {
 			bprintf (
 				"Error in r_bin_object_new: load_bytes failed "
 				"for %s plugin\n",
@@ -100,15 +101,42 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	return o;
 }
 
+static void filter_classes(RBinFile *bf, RList *list) {
+	Sdb *db = sdb_new0 ();
+	RListIter *iter, *iter2;
+	RBinClass *cls;
+	RBinSymbol *sym;
+	r_list_foreach (list, iter, cls) {
+		if (!cls->name) {
+			continue;
+		}
+		int namepad_len = strlen (cls->name) + 32;
+		char *namepad = malloc (namepad_len + 1);
+		if (namepad) {
+			strcpy (namepad, cls->name);
+			r_bin_filter_name (bf, db, cls->index, namepad, namepad_len);
+			free (cls->name);
+			cls->name = namepad;
+			r_list_foreach (cls->methods, iter2, sym) {
+				if (sym->name) {
+					r_bin_filter_sym (bf, db, sym->vaddr, sym);
+				}
+			}
+		} else {
+			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
+		}
+	}
+	sdb_free (db);
+}
+
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	RBinObject *old_o;
 	RBinPlugin *cp;
 	int i, minlen;
-	// int type;
+	bool isSwift = false;
 
-	if (!binfile || !o || !o->plugin) {
-		return false;
-	}
+	r_return_val_if_fail (binfile && o && o->plugin, false);
+
 	RBin *bin = binfile->rbin;
 	old_o = binfile->o;
 	cp = o->plugin;
@@ -141,6 +169,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (cp->size) {
 		o->size = cp->size (binfile);
 	}
+	// XXX this is expensive because is O(n^n)
 	if (cp->binsym) {
 		for (i = 0; i < R_BIN_SYM_LAST; i++) {
 			o->binsym[i] = cp->binsym (binfile, i);
@@ -175,7 +204,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 				o->symbols->free = r_bin_symbol_free;
 				REBASE_PADDR (o, o->symbols, RBinSymbol);
 				if (bin->filter) {
-					r_bin_filter_symbols (o->symbols);
+					r_bin_filter_symbols (binfile, o->symbols);
 				}
 			}
 		}
@@ -191,7 +220,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		}
 		REBASE_PADDR (o, o->sections, RBinSection);
 		if (bin->filter) {
-			r_bin_filter_sections (o->sections);
+			r_bin_filter_sections (binfile, o->sections);
 		}
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
@@ -214,14 +243,15 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
 		if (cp->classes) {
 			o->classes = cp->classes (binfile);
-			if (r_bin_lang_swift (binfile)) {
+			isSwift = r_bin_lang_swift (binfile);
+			if (isSwift) {
 				o->classes = r_bin_classes_from_symbols (binfile, o);
 			}
 		} else {
 			o->classes = r_bin_classes_from_symbols (binfile, o);
 		}
 		if (bin->filter) {
-			r_bin_filter_classes (o->classes);
+			filter_classes (binfile, o->classes);
 		}
 		// cache addr=class+method
 		if (o->classes) {
@@ -256,13 +286,18 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		o->mem = cp->mem (binfile);
 	}
 	if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		o->lang = r_bin_load_languages (binfile);
+		if (isSwift) {
+			o->lang = R_BIN_NM_SWIFT;
+		} else {
+			o->lang = r_bin_load_languages (binfile);
+		}
 	}
 	binfile->o = old_o;
 	return true;
 }
 
 R_API RBinObject *r_bin_object_get_cur(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
 	return r_bin_file_object_get_cur (r_bin_cur (bin));
 }
 
@@ -278,9 +313,7 @@ static void r_bin_mem_free(void *data) {
 
 R_API void r_bin_object_delete_items(RBinObject *o) {
 	ut32 i = 0;
-	if (!o) {
-		return;
-	}
+	r_return_if_fail (o);
 	sdb_free (o->addr2klassmethod);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
@@ -319,38 +352,42 @@ R_API void r_bin_object_delete_items(RBinObject *o) {
 R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {
 	RBinObject *obj = NULL;
 	RListIter *iter = NULL;
-	RBinInfo *info = NULL;
+
+	r_return_val_if_fail (binfile && arch && name, NULL);
+
 	r_list_foreach (binfile->objs, iter, obj) {
-		info = obj->info;
+		RBinInfo *info = obj->info;
 		if (info && info->arch && info->file &&
-		   (bits == info->bits) &&
+			(bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
 			!strcmp (info->file, name)) {
-			break;
+			return obj;
 		}
-		obj = NULL;
 	}
-	return obj;
+	return NULL;
 }
 
 R_API ut64 r_bin_object_get_baddr(RBinObject *o) {
-	return o? o->baddr + o->baddr_shift: UT64_MAX;
+	r_return_val_if_fail (o, UT64_MAX);
+	return o->baddr + o->baddr_shift;
 }
 
-R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
+R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	RBinFile *binfile = NULL;
 	RBinObject *obj = NULL;
-	int res = false;
+	bool res = false;
+
+	r_return_val_if_fail (bin, false);
 
 	if (binfile_id == UT32_MAX) {
 		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
-		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
+		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
 	} else if (binobj_id == UT32_MAX) {
 		binfile = r_bin_file_find_by_id (bin, binfile_id);
-		obj = binfile? binfile->o: NULL;
+		obj = binfile ? binfile->o : NULL;
 	} else {
 		binfile = r_bin_file_find_by_id (bin, binfile_id);
-		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
+		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
 	}
 	if (binfile && bin->cur == binfile) {
 		bin->cur = NULL;
@@ -370,13 +407,15 @@ R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 }
 
 R_API void r_bin_object_set_baddr(RBinObject *o, ut64 baddr) {
-	if (!o || baddr == UT64_MAX) {
-		return;
+	r_return_if_fail (o);
+	if (baddr != UT64_MAX) {
+		o->baddr_shift = baddr - o->baddr;
 	}
-	o->baddr_shift = baddr - o->baddr;
 }
 
-R_API void r_bin_object_filter_strings (RBinObject *bo) {
+R_API void r_bin_object_filter_strings(RBinObject *bo) {
+	r_return_if_fail (bo);
+
 	RList *strings = bo->strings;
 	RBinString *ptr;
 	RListIter *iter;
@@ -406,4 +445,3 @@ R_API void r_bin_object_filter_strings (RBinObject *bo) {
 		}
 	}
 }
-

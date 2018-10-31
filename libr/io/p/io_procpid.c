@@ -18,8 +18,8 @@ typedef struct {
 	int pid;
 } RIOProcpid;
 
-#define RIOPROCPID_PID(x) (((RIOProcpid*)x->data)->pid)
-#define RIOPROCPID_FD(x) (((RIOProcpid*)x->data)->fd)
+#define RIOPROCPID_PID(x) (((RIOProcpid*)(x)->data)->pid)
+#define RIOPROCPID_FD(x) (((RIOProcpid*)(x)->data)->fd)
 
 static int __waitpid(int pid) {
 	int st = 0;
@@ -146,7 +146,7 @@ struct r_io_plugin_t r_io_plugin_procpid = {
 #endif
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_procpid,
 	.version = R2_VERSION

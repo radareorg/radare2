@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 /* --------------------------------------------------------- */
-#define R2P(x) ((R2Pipe*)x->data)
+#define R2P(x) ((R2Pipe*)(x)->data)
 
 // TODO: add r2p_assert
 
@@ -17,20 +17,25 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char *bufn, bufnum[4096];
 	int i, rv, rescount = -1;
 	char *res, *r;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	bufn = bufnum;
 	*bufn = 0;
-	for (i=0; i<count; i++) {
-		int bufn_sz = sizeof (bufnum) - (bufn-bufnum);
-		snprintf (bufn, bufn_sz, "%s%d", i?",":"", buf[i]);
+	for (i = 0; i < count; i++) {
+		int bufn_sz = sizeof (bufnum) - (bufn - bufnum);
+		snprintf (bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
 		bufn += strlen (bufn);
 	}
-	snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"write\",\"address\":%"PFMT64d",\"data\":[%s]}",
+	int len = snprintf (fmt, sizeof (fmt),
+		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
 		io->off, bufnum);
+	if (len >= sizeof (fmt)) {
+		eprintf ("r2p_write: error, fmt string has been truncated\n");
+		return -1;
+	}
 	rv = r2p_write (R2P (fd), fmt);
-	if (rv <1) {
+	if (rv < 1) {
 		eprintf ("r2p_write: error\n");
 		return -1;
 	}
@@ -116,9 +121,10 @@ beach:
 }
 
 static int __close(RIODesc *fd) {
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
-	r2p_free (fd->data);
+	}
+	r2p_close (fd->data);
 	fd->data = NULL;
 	return 0;
 }
@@ -184,7 +190,7 @@ RIOPlugin r_io_plugin_r2pipe = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_r2pipe,
 	.version = R2_VERSION

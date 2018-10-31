@@ -36,7 +36,7 @@ case "$1" in
 	STATIC_BUILD=0
 	STRIP=arm-eabi-strip
 	;;
-"aarch64")
+arm64|aarch64)
 	NDK_ARCH=aarch64
 	STATIC_BUILD=0
 	STRIP=aarch64-linux-android-strip
@@ -46,8 +46,8 @@ case "$1" in
 	STATIC_BUILD=0
 	STRIP=strip
 	;;
-aarch64-static|static-aarch64)
-	NDK_ARCH=aarch64
+arm64-static|static-arm64)
+	NDK_ARCH=arm64
 	STATIC_BUILD=1
 	;;
 arm-static|static-arm)
@@ -76,7 +76,7 @@ local)
 	NDK_ARCH=local
 	;;
 ""|"-h")
-	echo "Usage: android-build.sh [local|arm|aarch64|x86|mips|mips64][-static]"
+	echo "Usage: android-build.sh [local|arm|arm64|x86|mips|mips64][-static]"
 	exit 1
 	;;
 *)
@@ -113,9 +113,11 @@ if [ "${BUILD}" = 1 ]; then
 		# dup
 		echo ./configure --with-compiler=android \
 			--with-ostype=android \
+			--without-libuv \
 			--prefix=${PREFIX} ${CFGFLAGS}
 
-		./configure --with-compiler=android --with-ostype=android \
+		./configure --with-compiler=android --without-libuv \
+			--with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1
 		make -s -j 4 || exit 1
 	fi

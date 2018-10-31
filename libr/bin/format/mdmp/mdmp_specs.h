@@ -133,6 +133,12 @@ typedef enum minidump_stream_type_t {
 	MEMORY_INFO_LIST_STREAM		= 16,
 	THREAD_INFO_LIST_STREAM		= 17,
 	HANDLE_OPERATION_LIST_STREAM	= 18,
+	TOKEN_STREAM	= 19,
+	JAVASCRIPT_DATA_STREAM	= 20,
+	SYSTEM_MEMORY_INFO_STREAM	= 21,
+	PROCESS_VM_COUNTERS_STREAM	= 22,
+	IPT_TRACE_STREAM	= 23,
+	THREAD_NAMES_STREAM	= 24,
 	LAST_RESERVED_STREAM		= 0xffff
 } minidump_stream_type;
 
@@ -593,6 +599,23 @@ struct minidump_thread_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
 	ut32	number_of_entries;
+});
+
+/* Contains a token information. */
+R_PACKED (
+struct minidump_token_info {
+	ut32	token_size;
+	ut32	token_id;
+	ut64	token_handle;
+});
+
+/* Contains a list of token information. */
+R_PACKED (
+struct minidump_token_info_list {
+	ut32	size_of_list;
+	ut32	number_of_entries;
+	ut32	list_header_size;
+	ut32	element_header_size;
 });
 
 /* Contains information about a module that has been unloaded. This information

@@ -16988,10 +16988,11 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 		  switch (Field_m_Slot_inst_get (insn))
 		    {
 		    case 0:
-		      if (Field_s_Slot_inst_get (insn) == 0 &&
-			  Field_n_Slot_inst_get (insn) == 0)
-			return 79; /* ill */
-		      break;
+			    if (Field_s_Slot_inst_get (insn) == 0 &&
+				    Field_n_Slot_inst_get (insn) == 0) {
+				    return 79; /* ill */
+			    }
+			    break;
 		    case 2:
 		      switch (Field_n_Slot_inst_get (insn))
 			{
@@ -17070,21 +17071,24 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 		  switch (Field_s_Slot_inst_get (insn))
 		    {
 		    case 0:
-		      if (Field_t_Slot_inst_get (insn) == 0)
-			return 3; /* syscall */
-		      break;
+			    if (Field_t_Slot_inst_get (insn) == 0) {
+				    return 3; /* syscall */
+			    }
+			    break;
 		    case 1:
-		      if (Field_t_Slot_inst_get (insn) == 0)
-			return 4; /* simcall */
-		      break;
+			    if (Field_t_Slot_inst_get (insn) == 0) {
+				    return 4; /* simcall */
+			    }
+			    break;
 		    }
 		  break;
 		case 6:
 		  return 120; /* rsil */
 		case 7:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 317; /* waiti */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 317; /* waiti */
+			}
+			break;
 		case 8:
 		  return 367; /* any4 */
 		case 9:
@@ -17105,29 +17109,35 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 	      switch (Field_r_Slot_inst_get (insn))
 		{
 		case 0:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 102; /* ssr */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 102; /* ssr */
+			}
+			break;
 		case 1:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 103; /* ssl */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 103; /* ssl */
+			}
+			break;
 		case 2:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 104; /* ssa8l */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 104; /* ssa8l */
+			}
+			break;
 		case 3:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 105; /* ssa8b */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 105; /* ssa8b */
+			}
+			break;
 		case 4:
-		  if (Field_thi3_Slot_inst_get (insn) == 0)
-		    return 106; /* ssai */
-		  break;
+			if (Field_thi3_Slot_inst_get (insn) == 0) {
+				return 106; /* ssai */
+			}
+			break;
 		case 8:
-		  if (Field_s_Slot_inst_get (insn) == 0)
-		    return 13; /* rotw */
-		  break;
+			if (Field_s_Slot_inst_get (insn) == 0) {
+				return 13; /* rotw */
+			}
+			break;
 		case 14:
 		  return 448; /* nsa */
 		case 15:
@@ -17142,9 +17152,10 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 		case 3:
 		  return 434; /* ritlb0 */
 		case 4:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 432; /* iitlb */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 432; /* iitlb */
+			}
+			break;
 		case 5:
 		  return 433; /* pitlb */
 		case 6:
@@ -17156,9 +17167,10 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 		case 11:
 		  return 429; /* rdtlb0 */
 		case 12:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 427; /* idtlb */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 427; /* idtlb */
+			}
+			break;
 		case 13:
 		  return 428; /* pdtlb */
 		case 14:
@@ -17343,17 +17355,20 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 	    case 8:
 	      return 108; /* src */
 	    case 9:
-	      if (Field_s_Slot_inst_get (insn) == 0)
-		return 109; /* srl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0) {
+			    return 109; /* srl */
+		    }
+		    break;
 	    case 10:
-	      if (Field_t_Slot_inst_get (insn) == 0)
-		return 107; /* sll */
-	      break;
+		    if (Field_t_Slot_inst_get (insn) == 0) {
+			    return 107; /* sll */
+		    }
+		    break;
 	    case 11:
-	      if (Field_s_Slot_inst_get (insn) == 0)
-		return 110; /* sra */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0) {
+			    return 110; /* sra */
+		    }
+		    break;
 	    case 12:
 	      return 296; /* mul16u */
 	    case 13:
@@ -17374,11 +17389,13 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 		case 9:
 		  return 413; /* sdct */
 		case 14:
-		  if (Field_t_Slot_inst_get (insn) == 0)
-		    return 359; /* rfdo */
-		  if (Field_t_Slot_inst_get (insn) == 1)
-		    return 360; /* rfdd */
-		  break;
+			if (Field_t_Slot_inst_get (insn) == 0) {
+				return 359; /* rfdo */
+			}
+			if (Field_t_Slot_inst_get (insn) == 1) {
+				return 360; /* rfdd */
+			}
+			break;
 		case 15:
 		  return 437; /* ldpte */
 		}
@@ -17957,438 +17974,508 @@ Slot_inst_decode (const xtensa_insnbuf insn)
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 8:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 287; /* mula.dd.ll.ldinc */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 287; /* mula.dd.ll.ldinc */
+		    }
+		    break;
 	    case 9:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 289; /* mula.dd.hl.ldinc */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 289; /* mula.dd.hl.ldinc */
+		    }
+		    break;
 	    case 10:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 291; /* mula.dd.lh.ldinc */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 291; /* mula.dd.lh.ldinc */
+		    }
+		    break;
 	    case 11:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 293; /* mula.dd.hh.ldinc */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 293; /* mula.dd.hh.ldinc */
+		    }
+		    break;
 	    }
 	  break;
 	case 1:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 8:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 286; /* mula.dd.ll.lddec */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 286; /* mula.dd.ll.lddec */
+		    }
+		    break;
 	    case 9:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 288; /* mula.dd.hl.lddec */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 288; /* mula.dd.hl.lddec */
+		    }
+		    break;
 	    case 10:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 290; /* mula.dd.lh.lddec */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 290; /* mula.dd.lh.lddec */
+		    }
+		    break;
 	    case 11:
-	      if (Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 292; /* mula.dd.hh.lddec */
-	      break;
+		    if (Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 292; /* mula.dd.hh.lddec */
+		    }
+		    break;
 	    }
 	  break;
 	case 2:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 4:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 242; /* mul.dd.ll */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 242; /* mul.dd.ll */
+		    }
+		    break;
 	    case 5:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 243; /* mul.dd.hl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 243; /* mul.dd.hl */
+		    }
+		    break;
 	    case 6:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 244; /* mul.dd.lh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 244; /* mul.dd.lh */
+		    }
+		    break;
 	    case 7:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 245; /* mul.dd.hh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 245; /* mul.dd.hh */
+		    }
+		    break;
 	    case 8:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 270; /* mula.dd.ll */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 270; /* mula.dd.ll */
+		    }
+		    break;
 	    case 9:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 271; /* mula.dd.hl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 271; /* mula.dd.hl */
+		    }
+		    break;
 	    case 10:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 272; /* mula.dd.lh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 272; /* mula.dd.lh */
+		    }
+		    break;
 	    case 11:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 273; /* mula.dd.hh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 273; /* mula.dd.hh */
+		    }
+		    break;
 	    case 12:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 274; /* muls.dd.ll */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 274; /* muls.dd.ll */
+		    }
+		    break;
 	    case 13:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 275; /* muls.dd.hl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 275; /* muls.dd.hl */
+		    }
+		    break;
 	    case 14:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 276; /* muls.dd.lh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 276; /* muls.dd.lh */
+		    }
+		    break;
 	    case 15:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 277; /* muls.dd.hh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 277; /* muls.dd.hh */
+		    }
+		    break;
 	    }
 	  break;
 	case 3:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 4:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 234; /* mul.ad.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 234; /* mul.ad.ll */
+		    }
+		    break;
 	    case 5:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 235; /* mul.ad.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 235; /* mul.ad.hl */
+		    }
+		    break;
 	    case 6:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 236; /* mul.ad.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 236; /* mul.ad.lh */
+		    }
+		    break;
 	    case 7:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 237; /* mul.ad.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 237; /* mul.ad.hh */
+		    }
+		    break;
 	    case 8:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 254; /* mula.ad.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 254; /* mula.ad.ll */
+		    }
+		    break;
 	    case 9:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 255; /* mula.ad.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 255; /* mula.ad.hl */
+		    }
+		    break;
 	    case 10:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 256; /* mula.ad.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 256; /* mula.ad.lh */
+		    }
+		    break;
 	    case 11:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 257; /* mula.ad.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 257; /* mula.ad.hh */
+		    }
+		    break;
 	    case 12:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 258; /* muls.ad.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 258; /* muls.ad.ll */
+		    }
+		    break;
 	    case 13:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 259; /* muls.ad.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 259; /* muls.ad.hl */
+		    }
+		    break;
 	    case 14:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 260; /* muls.ad.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 260; /* muls.ad.lh */
+		    }
+		    break;
 	    case 15:
-	      if (Field_r_Slot_inst_get (insn) == 0 &&
-		  Field_t3_Slot_inst_get (insn) == 0 &&
-		  Field_tlo_Slot_inst_get (insn) == 0)
-		return 261; /* muls.ad.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0 &&
+			    Field_t3_Slot_inst_get (insn) == 0 &&
+			    Field_tlo_Slot_inst_get (insn) == 0) {
+			    return 261; /* muls.ad.hh */
+		    }
+		    break;
 	    }
 	  break;
 	case 4:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 8:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 279; /* mula.da.ll.ldinc */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 279; /* mula.da.ll.ldinc */
+		    }
+		    break;
 	    case 9:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 281; /* mula.da.hl.ldinc */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 281; /* mula.da.hl.ldinc */
+		    }
+		    break;
 	    case 10:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 283; /* mula.da.lh.ldinc */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 283; /* mula.da.lh.ldinc */
+		    }
+		    break;
 	    case 11:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 285; /* mula.da.hh.ldinc */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 285; /* mula.da.hh.ldinc */
+		    }
+		    break;
 	    }
 	  break;
 	case 5:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 8:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 278; /* mula.da.ll.lddec */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 278; /* mula.da.ll.lddec */
+		    }
+		    break;
 	    case 9:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 280; /* mula.da.hl.lddec */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 280; /* mula.da.hl.lddec */
+		    }
+		    break;
 	    case 10:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 282; /* mula.da.lh.lddec */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 282; /* mula.da.lh.lddec */
+		    }
+		    break;
 	    case 11:
-	      if (Field_r3_Slot_inst_get (insn) == 0)
-		return 284; /* mula.da.hh.lddec */
-	      break;
+		    if (Field_r3_Slot_inst_get (insn) == 0) {
+			    return 284; /* mula.da.hh.lddec */
+		    }
+		    break;
 	    }
 	  break;
 	case 6:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 4:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 238; /* mul.da.ll */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 238; /* mul.da.ll */
+		    }
+		    break;
 	    case 5:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 239; /* mul.da.hl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 239; /* mul.da.hl */
+		    }
+		    break;
 	    case 6:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 240; /* mul.da.lh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 240; /* mul.da.lh */
+		    }
+		    break;
 	    case 7:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 241; /* mul.da.hh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 241; /* mul.da.hh */
+		    }
+		    break;
 	    case 8:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 262; /* mula.da.ll */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 262; /* mula.da.ll */
+		    }
+		    break;
 	    case 9:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 263; /* mula.da.hl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 263; /* mula.da.hl */
+		    }
+		    break;
 	    case 10:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 264; /* mula.da.lh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 264; /* mula.da.lh */
+		    }
+		    break;
 	    case 11:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 265; /* mula.da.hh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 265; /* mula.da.hh */
+		    }
+		    break;
 	    case 12:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 266; /* muls.da.ll */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 266; /* muls.da.ll */
+		    }
+		    break;
 	    case 13:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 267; /* muls.da.hl */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 267; /* muls.da.hl */
+		    }
+		    break;
 	    case 14:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 268; /* muls.da.lh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 268; /* muls.da.lh */
+		    }
+		    break;
 	    case 15:
-	      if (Field_s_Slot_inst_get (insn) == 0 &&
-		  Field_w_Slot_inst_get (insn) == 0 &&
-		  Field_r3_Slot_inst_get (insn) == 0)
-		return 269; /* muls.da.hh */
-	      break;
+		    if (Field_s_Slot_inst_get (insn) == 0 &&
+			    Field_w_Slot_inst_get (insn) == 0 &&
+			    Field_r3_Slot_inst_get (insn) == 0) {
+			    return 269; /* muls.da.hh */
+		    }
+		    break;
 	    }
 	  break;
 	case 7:
 	  switch (Field_op1_Slot_inst_get (insn))
 	    {
 	    case 0:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 230; /* umul.aa.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 230; /* umul.aa.ll */
+		    }
+		    break;
 	    case 1:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 231; /* umul.aa.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 231; /* umul.aa.hl */
+		    }
+		    break;
 	    case 2:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 232; /* umul.aa.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 232; /* umul.aa.lh */
+		    }
+		    break;
 	    case 3:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 233; /* umul.aa.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 233; /* umul.aa.hh */
+		    }
+		    break;
 	    case 4:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 226; /* mul.aa.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 226; /* mul.aa.ll */
+		    }
+		    break;
 	    case 5:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 227; /* mul.aa.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 227; /* mul.aa.hl */
+		    }
+		    break;
 	    case 6:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 228; /* mul.aa.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 228; /* mul.aa.lh */
+		    }
+		    break;
 	    case 7:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 229; /* mul.aa.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 229; /* mul.aa.hh */
+		    }
+		    break;
 	    case 8:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 246; /* mula.aa.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 246; /* mula.aa.ll */
+		    }
+		    break;
 	    case 9:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 247; /* mula.aa.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 247; /* mula.aa.hl */
+		    }
+		    break;
 	    case 10:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 248; /* mula.aa.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 248; /* mula.aa.lh */
+		    }
+		    break;
 	    case 11:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 249; /* mula.aa.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 249; /* mula.aa.hh */
+		    }
+		    break;
 	    case 12:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 250; /* muls.aa.ll */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 250; /* muls.aa.ll */
+		    }
+		    break;
 	    case 13:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 251; /* muls.aa.hl */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 251; /* muls.aa.hl */
+		    }
+		    break;
 	    case 14:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 252; /* muls.aa.lh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 252; /* muls.aa.lh */
+		    }
+		    break;
 	    case 15:
-	      if (Field_r_Slot_inst_get (insn) == 0)
-		return 253; /* muls.aa.hh */
-	      break;
+		    if (Field_r_Slot_inst_get (insn) == 0) {
+			    return 253; /* muls.aa.hh */
+		    }
+		    break;
 	    }
 	  break;
 	case 8:
-	  if (Field_op1_Slot_inst_get (insn) == 0 &&
-	      Field_t_Slot_inst_get (insn) == 0 &&
-	      Field_rhi_Slot_inst_get (insn) == 0)
-	    return 295; /* ldinc */
-	  break;
+		if (Field_op1_Slot_inst_get (insn) == 0 &&
+			Field_t_Slot_inst_get (insn) == 0 &&
+			Field_rhi_Slot_inst_get (insn) == 0) {
+			return 295; /* ldinc */
+		}
+		break;
 	case 9:
-	  if (Field_op1_Slot_inst_get (insn) == 0 &&
-	      Field_t_Slot_inst_get (insn) == 0 &&
-	      Field_rhi_Slot_inst_get (insn) == 0)
-	    return 294; /* lddec */
-	  break;
+		if (Field_op1_Slot_inst_get (insn) == 0 &&
+			Field_t_Slot_inst_get (insn) == 0 &&
+			Field_rhi_Slot_inst_get (insn) == 0) {
+			return 294; /* lddec */
+		}
+		break;
 	}
       break;
     case 5:
@@ -18538,13 +18625,15 @@ Slot_inst16b_decode (const xtensa_insnbuf insn)
 	    case 2:
 	      return 325; /* break.n */
 	    case 3:
-	      if (Field_s_Slot_inst16b_get (insn) == 0)
-		return 34; /* nop.n */
-	      break;
+		    if (Field_s_Slot_inst16b_get (insn) == 0) {
+			    return 34; /* nop.n */
+		    }
+		    break;
 	    case 6:
-	      if (Field_s_Slot_inst16b_get (insn) == 0)
-		return 30; /* ill.n */
-	      break;
+		    if (Field_s_Slot_inst16b_get (insn) == 0) {
+			    return 30; /* ill.n */
+		    }
+		    break;
 	    }
 	  break;
 	}
@@ -18576,60 +18665,78 @@ Slot_xt_flix64_slot2_decode (const xtensa_insnbuf insn)
   switch (Field_combined3e2c5767_fld36xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn))
     {
     case 0:
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 1)
-	return 41; /* add */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 5)
-	return 42; /* sub */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 2)
-	return 43; /* addx2 */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 3)
-	return 49; /* and */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 4)
-	return 450; /* sext */
-      break;
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 1) {
+		    return 41; /* add */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 5) {
+		    return 42; /* sub */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 2) {
+		    return 43; /* addx2 */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 3) {
+		    return 49; /* and */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 4) {
+		    return 450; /* sext */
+	    }
+	    break;
     case 1:
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 1)
-	return 27; /* addi.n */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 2)
-	return 44; /* addx4 */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 3)
-	return 50; /* or */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 5)
-	return 51; /* xor */
-      if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 4)
-	return 113; /* srli */
-      break;
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 1) {
+		    return 27; /* addi.n */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 2) {
+		    return 44; /* addx4 */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 3) {
+		    return 50; /* or */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 5) {
+		    return 51; /* xor */
+	    }
+	    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 4) {
+		    return 113; /* srli */
+	    }
+	    break;
     }
-  if (Field_combined3e2c5767_fld37xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6)
-    return 33; /* movi.n */
-  if (Field_combined3e2c5767_fld39xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 2 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
-      Field_combined3e2c5767_fld63xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0)
-    return 32; /* mov.n */
-  if (Field_combined3e2c5767_fld41xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 3 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
-      Field_combined3e2c5767_fld65xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0)
-    return 97; /* nop */
-  if (Field_combined3e2c5767_fld42xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 8 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
-      Field_combined3e2c5767_fld64xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0)
-    return 96; /* abs */
-  if (Field_combined3e2c5767_fld44xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 9 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
-      Field_combined3e2c5767_fld64xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0)
-    return 95; /* neg */
-  if (Field_combined3e2c5767_fld45xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 5 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
-      Field_combined3e2c5767_fld66xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0)
-    return 110; /* sra */
-  if (Field_combined3e2c5767_fld47xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 3 &&
-      Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
-      Field_combined3e2c5767_fld68xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0)
-    return 109; /* srl */
-  if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 7)
-    return 112; /* srai */
-  return 0;
+    if (Field_combined3e2c5767_fld37xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6) {
+	    return 33; /* movi.n */
+    }
+    if (Field_combined3e2c5767_fld39xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 2 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
+	    Field_combined3e2c5767_fld63xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0) {
+	    return 32; /* mov.n */
+    }
+    if (Field_combined3e2c5767_fld41xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 3 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
+	    Field_combined3e2c5767_fld65xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0) {
+	    return 97; /* nop */
+    }
+    if (Field_combined3e2c5767_fld42xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 8 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
+	    Field_combined3e2c5767_fld64xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0) {
+	    return 96; /* abs */
+    }
+    if (Field_combined3e2c5767_fld44xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 9 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
+	    Field_combined3e2c5767_fld64xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0) {
+	    return 95; /* neg */
+    }
+    if (Field_combined3e2c5767_fld45xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 5 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
+	    Field_combined3e2c5767_fld66xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0) {
+	    return 110; /* sra */
+    }
+    if (Field_combined3e2c5767_fld47xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 3 &&
+	    Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 6 &&
+	    Field_combined3e2c5767_fld68xt_flix64_slot2_Slot_xt_flix64_slot2_get (insn) == 0) {
+	    return 109; /* srl */
+    }
+    if (Field_op0_s5_Slot_xt_flix64_slot2_get (insn) == 7) {
+	    return 112; /* srai */
+    }
+    return 0;
 }
 
 static int
@@ -18638,143 +18745,148 @@ Slot_xt_flix64_slot0_decode (const xtensa_insnbuf insn)
   switch (Field_op0_xt_flix64_slot0_Slot_xt_flix64_slot0_get (insn))
     {
     case 0:
-      if (Field_combined3e2c5767_fld7_Slot_xt_flix64_slot0_get (insn) == 2)
-	return 78; /* extui */
-      switch (Field_op1_Slot_xt_flix64_slot0_get (insn))
-	{
-	case 0:
-	  switch (Field_op2_Slot_xt_flix64_slot0_get (insn))
-	    {
+	    if (Field_combined3e2c5767_fld7_Slot_xt_flix64_slot0_get (insn) == 2) {
+		    return 78; /* extui */
+	    }
+	    switch (Field_op1_Slot_xt_flix64_slot0_get (insn)) {
 	    case 0:
-	      if (Field_r_Slot_xt_flix64_slot0_get (insn) == 2)
-		{
-		  if (Field_s_Slot_xt_flix64_slot0_get (insn) == 0)
-		    {
-		      if (Field_t_Slot_xt_flix64_slot0_get (insn) == 15)
-			return 97; /* nop */
+		    switch (Field_op2_Slot_xt_flix64_slot0_get (insn)) {
+		    case 0:
+			    if (Field_r_Slot_xt_flix64_slot0_get (insn) == 2) {
+				    if (Field_s_Slot_xt_flix64_slot0_get (insn) == 0) {
+					    if (Field_t_Slot_xt_flix64_slot0_get (insn) == 15) {
+						    return 97; /* nop */
+					    }
+				    }
+			    }
+			    break;
+		    case 1:
+			    return 49; /* and */
+		    case 2:
+			    return 50; /* or */
+		    case 3:
+			    return 51; /* xor */
+		    case 4:
+			    switch (Field_r_Slot_xt_flix64_slot0_get (insn)) {
+			    case 0:
+				    if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0) {
+					    return 102; /* ssr */
+				    }
+				    break;
+			    case 1:
+				    if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0) {
+					    return 103; /* ssl */
+				    }
+				    break;
+			    case 2:
+				    if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0) {
+					    return 104; /* ssa8l */
+				    }
+				    break;
+			    case 3:
+				    if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0) {
+					    return 105; /* ssa8b */
+				    }
+				    break;
+			    case 4:
+				    if (Field_thi3_Slot_xt_flix64_slot0_get (insn) == 0) {
+					    return 106; /* ssai */
+				    }
+				    break;
+			    case 14:
+				    return 448; /* nsa */
+			    case 15:
+				    return 449; /* nsau */
+			    }
+			    break;
+		    case 6:
+			    switch (Field_s_Slot_xt_flix64_slot0_get (insn)) {
+			    case 0:
+				    return 95; /* neg */
+			    case 1:
+				    return 96; /* abs */
+			    }
+			    break;
+		    case 8:
+			    return 41; /* add */
+		    case 9:
+			    return 43; /* addx2 */
+		    case 10:
+			    return 44; /* addx4 */
+		    case 11:
+			    return 45; /* addx8 */
+		    case 12:
+			    return 42; /* sub */
+		    case 13:
+			    return 46; /* subx2 */
+		    case 14:
+			    return 47; /* subx4 */
+		    case 15:
+			    return 48; /* subx8 */
 		    }
-		}
-	      break;
+		    break;
 	    case 1:
-	      return 49; /* and */
+		    if (Field_combined3e2c5767_fld11_Slot_xt_flix64_slot0_get (insn) == 1) {
+			    return 112; /* srai */
+		    }
+		    if (Field_combined3e2c5767_fld9_Slot_xt_flix64_slot0_get (insn) == 0) {
+			    return 111; /* slli */
+		    }
+		    switch (Field_op2_Slot_xt_flix64_slot0_get (insn)) {
+		    case 4:
+			    return 113; /* srli */
+		    case 8:
+			    return 108; /* src */
+		    case 9:
+			    if (Field_s_Slot_xt_flix64_slot0_get (insn) == 0) {
+				    return 109; /* srl */
+			    }
+			    break;
+		    case 10:
+			    if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0) {
+				    return 107; /* sll */
+			    }
+			    break;
+		    case 11:
+			    if (Field_s_Slot_xt_flix64_slot0_get (insn) == 0) {
+				    return 110; /* sra */
+			    }
+			    break;
+		    case 12:
+			    return 296; /* mul16u */
+		    case 13:
+			    return 297; /* mul16s */
+		    }
+		    break;
 	    case 2:
-	      return 50; /* or */
+		    if (Field_op2_Slot_xt_flix64_slot0_get (insn) == 8) {
+			    return 461; /* mull */
+		    }
+		    break;
 	    case 3:
-	      return 51; /* xor */
-	    case 4:
-	      switch (Field_r_Slot_xt_flix64_slot0_get (insn))
-		{
-		case 0:
-		  if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0)
-		    return 102; /* ssr */
-		  break;
-		case 1:
-		  if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0)
-		    return 103; /* ssl */
-		  break;
-		case 2:
-		  if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0)
-		    return 104; /* ssa8l */
-		  break;
-		case 3:
-		  if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0)
-		    return 105; /* ssa8b */
-		  break;
-		case 4:
-		  if (Field_thi3_Slot_xt_flix64_slot0_get (insn) == 0)
-		    return 106; /* ssai */
-		  break;
-		case 14:
-		  return 448; /* nsa */
-		case 15:
-		  return 449; /* nsau */
-		}
-	      break;
-	    case 6:
-	      switch (Field_s_Slot_xt_flix64_slot0_get (insn))
-		{
-		case 0:
-		  return 95; /* neg */
-		case 1:
-		  return 96; /* abs */
-		}
-	      break;
-	    case 8:
-	      return 41; /* add */
-	    case 9:
-	      return 43; /* addx2 */
-	    case 10:
-	      return 44; /* addx4 */
-	    case 11:
-	      return 45; /* addx8 */
-	    case 12:
-	      return 42; /* sub */
-	    case 13:
-	      return 46; /* subx2 */
-	    case 14:
-	      return 47; /* subx4 */
-	    case 15:
-	      return 48; /* subx8 */
-	    }
-	  break;
-	case 1:
-	  if (Field_combined3e2c5767_fld11_Slot_xt_flix64_slot0_get (insn) == 1)
-	    return 112; /* srai */
-	  if (Field_combined3e2c5767_fld9_Slot_xt_flix64_slot0_get (insn) == 0)
-	    return 111; /* slli */
-	  switch (Field_op2_Slot_xt_flix64_slot0_get (insn))
-	    {
-	    case 4:
-	      return 113; /* srli */
-	    case 8:
-	      return 108; /* src */
-	    case 9:
-	      if (Field_s_Slot_xt_flix64_slot0_get (insn) == 0)
-		return 109; /* srl */
-	      break;
-	    case 10:
-	      if (Field_t_Slot_xt_flix64_slot0_get (insn) == 0)
-		return 107; /* sll */
-	      break;
-	    case 11:
-	      if (Field_s_Slot_xt_flix64_slot0_get (insn) == 0)
-		return 110; /* sra */
-	      break;
-	    case 12:
-	      return 296; /* mul16u */
-	    case 13:
-	      return 297; /* mul16s */
-	    }
-	  break;
-	case 2:
-	  if (Field_op2_Slot_xt_flix64_slot0_get (insn) == 8)
-	    return 461; /* mull */
-	  break;
-	case 3:
-	  switch (Field_op2_Slot_xt_flix64_slot0_get (insn))
-	    {
-	    case 2:
-	      return 450; /* sext */
-	    case 3:
-	      return 443; /* clamps */
-	    case 4:
-	      return 444; /* min */
-	    case 5:
-	      return 445; /* max */
-	    case 6:
-	      return 446; /* minu */
-	    case 7:
-	      return 447; /* maxu */
-	    case 8:
-	      return 91; /* moveqz */
-	    case 9:
-	      return 92; /* movnez */
-	    case 10:
-	      return 93; /* movltz */
-	    case 11:
-	      return 94; /* movgez */
-	    }
-	  break;
+		    switch (Field_op2_Slot_xt_flix64_slot0_get (insn)) {
+		    case 2:
+			    return 450; /* sext */
+		    case 3:
+			    return 443; /* clamps */
+		    case 4:
+			    return 444; /* min */
+		    case 5:
+			    return 445; /* max */
+		    case 6:
+			    return 446; /* minu */
+		    case 7:
+			    return 447; /* maxu */
+		    case 8:
+			    return 91; /* moveqz */
+		    case 9:
+			    return 92; /* movnez */
+		    case 10:
+			    return 93; /* movltz */
+		    case 11:
+			    return 94; /* movgez */
+		    }
+		    break;
 	}
       break;
     case 2:
@@ -18803,158 +18915,192 @@ Slot_xt_flix64_slot0_decode (const xtensa_insnbuf insn)
 	}
       break;
     }
-  if (Field_op0_xt_flix64_slot0_s3_Slot_xt_flix64_slot0_get (insn) == 1)
-    return 85; /* l32r */
-  if (Field_sae4_Slot_xt_flix64_slot0_get (insn) == 0 &&
-      Field_combined3e2c5767_fld8_Slot_xt_flix64_slot0_get (insn) == 3 &&
-      Field_op0_xt_flix64_slot0_s3_Slot_xt_flix64_slot0_get (insn) == 0 &&
-      Field_combined3e2c5767_fld49xt_flix64_slot0_Slot_xt_flix64_slot0_get (insn) == 0)
-    return 32; /* mov.n */
-  return 0;
+    if (Field_op0_xt_flix64_slot0_s3_Slot_xt_flix64_slot0_get (insn) == 1) {
+	    return 85; /* l32r */
+    }
+    if (Field_sae4_Slot_xt_flix64_slot0_get (insn) == 0 &&
+	    Field_combined3e2c5767_fld8_Slot_xt_flix64_slot0_get (insn) == 3 &&
+	    Field_op0_xt_flix64_slot0_s3_Slot_xt_flix64_slot0_get (insn) == 0 &&
+	    Field_combined3e2c5767_fld49xt_flix64_slot0_Slot_xt_flix64_slot0_get (insn) == 0) {
+	    return 32; /* mov.n */
+    }
+    return 0;
 }
 
 static int
 Slot_xt_flix64_slot1_decode (const xtensa_insnbuf insn)
 {
-  if (Field_combined3e2c5767_fld19xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 1)
-    return 78; /* extui */
-  switch (Field_combined3e2c5767_fld20xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn))
-    {
-    case 0:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 90; /* movi */
-      break;
-    case 2:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 1)
-	return 39; /* addi */
-      break;
-    case 3:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 1)
-	return 40; /* addmi */
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-	  Field_combined3e2c5767_fld16_Slot_xt_flix64_slot1_get (insn) == 0)
-	return 51; /* xor */
-      break;
+	if (Field_combined3e2c5767_fld19xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0 &&
+		Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 1) {
+		return 78; /* extui */
+	}
+	switch (Field_combined3e2c5767_fld20xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn)) {
+	case 0:
+		if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+			return 90; /* movi */
+		}
+		break;
+	case 2:
+		if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 1) {
+			return 39; /* addi */
+		}
+		break;
+	case 3:
+		if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 1) {
+			return 40; /* addmi */
+		}
+		if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+			Field_combined3e2c5767_fld16_Slot_xt_flix64_slot1_get (insn) == 0) {
+			return 51; /* xor */
+		}
+		break;
     }
   switch (Field_combined3e2c5767_fld21xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn))
     {
     case 8:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 111; /* slli */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 111; /* slli */
+	    }
+	    break;
     case 16:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 112; /* srai */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 112; /* srai */
+	    }
+	    break;
     case 19:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-	  Field_combined3e2c5767_fld57xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-	return 107; /* sll */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+		    Field_combined3e2c5767_fld57xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+		    return 107; /* sll */
+	    }
+	    break;
     }
   switch (Field_combined3e2c5767_fld22xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn))
     {
     case 18:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 41; /* add */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 41; /* add */
+	    }
+	    break;
     case 19:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 45; /* addx8 */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 45; /* addx8 */
+	    }
+	    break;
     case 20:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 43; /* addx2 */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 43; /* addx2 */
+	    }
+	    break;
     case 21:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 49; /* and */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 49; /* and */
+	    }
+	    break;
     case 22:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 91; /* moveqz */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 91; /* moveqz */
+	    }
+	    break;
     case 23:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 94; /* movgez */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 94; /* movgez */
+	    }
+	    break;
     case 24:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 44; /* addx4 */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 44; /* addx4 */
+	    }
+	    break;
     case 25:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 93; /* movltz */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 93; /* movltz */
+	    }
+	    break;
     case 26:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 92; /* movnez */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 92; /* movnez */
+	    }
+	    break;
     case 27:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 296; /* mul16u */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 296; /* mul16u */
+	    }
+	    break;
     case 28:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 297; /* mul16s */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 297; /* mul16s */
+	    }
+	    break;
     case 29:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 461; /* mull */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 461; /* mull */
+	    }
+	    break;
     case 30:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 50; /* or */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 50; /* or */
+	    }
+	    break;
     case 31:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 450; /* sext */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 450; /* sext */
+	    }
+	    break;
     case 34:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 108; /* src */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 108; /* src */
+	    }
+	    break;
     case 36:
-      if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2)
-	return 113; /* srli */
-      break;
+	    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2) {
+		    return 113; /* srli */
+	    }
+	    break;
     }
-  if (Field_combined3e2c5767_fld23xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 280 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld51xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 32; /* mov.n */
-  if (Field_combined3e2c5767_fld25xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 281 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld52xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 81; /* jx */
-  if (Field_combined3e2c5767_fld26xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 141 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld60xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 103; /* ssl */
-  if (Field_combined3e2c5767_fld28xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 71 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld54xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 97; /* nop */
-  if (Field_combined3e2c5767_fld30xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 148 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld53xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 95; /* neg */
-  if (Field_combined3e2c5767_fld32xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 149 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld53xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 110; /* sra */
-  if (Field_combined3e2c5767_fld33xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 75 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld58xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 109; /* srl */
-  if (Field_combined3e2c5767_fld35xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 5 &&
-      Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
-      Field_combined3e2c5767_fld62xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0)
-    return 42; /* sub */
-  if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 3)
-    return 80; /* j */
-  return 0;
+    if (Field_combined3e2c5767_fld23xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 280 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld51xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 32; /* mov.n */
+    }
+    if (Field_combined3e2c5767_fld25xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 281 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld52xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 81; /* jx */
+    }
+    if (Field_combined3e2c5767_fld26xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 141 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld60xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 103; /* ssl */
+    }
+    if (Field_combined3e2c5767_fld28xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 71 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld54xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 97; /* nop */
+    }
+    if (Field_combined3e2c5767_fld30xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 148 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld53xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 95; /* neg */
+    }
+    if (Field_combined3e2c5767_fld32xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 149 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld53xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 110; /* sra */
+    }
+    if (Field_combined3e2c5767_fld33xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 75 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld58xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 109; /* srl */
+    }
+    if (Field_combined3e2c5767_fld35xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 5 &&
+	    Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 2 &&
+	    Field_combined3e2c5767_fld62xt_flix64_slot1_Slot_xt_flix64_slot1_get (insn) == 0) {
+	    return 42; /* sub */
+    }
+    if (Field_op0_s4_Slot_xt_flix64_slot1_get (insn) == 3) {
+	    return 80; /* j */
+    }
+    return 0;
 }
 
 static int
@@ -18963,105 +19109,130 @@ Slot_xt_flix64_slot3_decode (const xtensa_insnbuf insn)
   switch (Field_op0_s6_Slot_xt_flix64_slot3_get (insn))
     {
     case 1:
-      if (Field_combined3e2c5767_fld71_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 516; /* bbci.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld71_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 516; /* bbci.w18 */
+	    }
+	    break;
     case 2:
-      if (Field_combined3e2c5767_fld71_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 517; /* bbsi.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld71_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 517; /* bbsi.w18 */
+	    }
+	    break;
     case 3:
-      if (Field_combined3e2c5767_fld89xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 526; /* ball.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld89xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 526; /* ball.w18 */
+	    }
+	    break;
     case 4:
-      if (Field_combined3e2c5767_fld87xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 524; /* bany.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld87xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 524; /* bany.w18 */
+	    }
+	    break;
     case 5:
-      if (Field_combined3e2c5767_fld91xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 528; /* bbc.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld91xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 528; /* bbc.w18 */
+	    }
+	    break;
     case 6:
-      if (Field_combined3e2c5767_fld92xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 529; /* bbs.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld92xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 529; /* bbs.w18 */
+	    }
+	    break;
     case 7:
-      if (Field_combined3e2c5767_fld81xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 518; /* beq.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld81xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 518; /* beq.w18 */
+	    }
+	    break;
     case 8:
-      if (Field_combined3e2c5767_fld75xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 510; /* beqi.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld75xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 510; /* beqi.w18 */
+	    }
+	    break;
     case 9:
-      if (Field_combined3e2c5767_fld83xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 520; /* bge.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld83xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 520; /* bge.w18 */
+	    }
+	    break;
     case 10:
-      if (Field_combined3e2c5767_fld77xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 512; /* bgei.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld77xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 512; /* bgei.w18 */
+	    }
+	    break;
     case 11:
-      if (Field_combined3e2c5767_fld85xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 522; /* bgeu.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld85xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 522; /* bgeu.w18 */
+	    }
+	    break;
     case 12:
-      if (Field_combined3e2c5767_fld79xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 514; /* bgeui.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld79xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 514; /* bgeui.w18 */
+	    }
+	    break;
     case 13:
-      if (Field_combined3e2c5767_fld84xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 521; /* blt.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld84xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 521; /* blt.w18 */
+	    }
+	    break;
     case 14:
-      if (Field_combined3e2c5767_fld78xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 513; /* blti.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld78xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 513; /* blti.w18 */
+	    }
+	    break;
     case 15:
-      if (Field_combined3e2c5767_fld86xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 523; /* bltu.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld86xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 523; /* bltu.w18 */
+	    }
+	    break;
     case 16:
-      if (Field_combined3e2c5767_fld80xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 515; /* bltui.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld80xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 515; /* bltui.w18 */
+	    }
+	    break;
     case 17:
-      if (Field_combined3e2c5767_fld90xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 527; /* bnall.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld90xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 527; /* bnall.w18 */
+	    }
+	    break;
     case 18:
-      if (Field_combined3e2c5767_fld82xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 519; /* bne.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld82xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 519; /* bne.w18 */
+	    }
+	    break;
     case 19:
-      if (Field_combined3e2c5767_fld76xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 511; /* bnei.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld76xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 511; /* bnei.w18 */
+	    }
+	    break;
     case 20:
-      if (Field_combined3e2c5767_fld88xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 525; /* bnone.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld88xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 525; /* bnone.w18 */
+	    }
+	    break;
     case 21:
-      if (Field_combined3e2c5767_fld70xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 506; /* beqz.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld70xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 506; /* beqz.w18 */
+	    }
+	    break;
     case 22:
-      if (Field_combined3e2c5767_fld73xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 508; /* bgez.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld73xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 508; /* bgez.w18 */
+	    }
+	    break;
     case 23:
-      if (Field_combined3e2c5767_fld74xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 509; /* bltz.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld74xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 509; /* bltz.w18 */
+	    }
+	    break;
     case 24:
-      if (Field_combined3e2c5767_fld72xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 507; /* bnez.w18 */
-      break;
+	    if (Field_combined3e2c5767_fld72xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 507; /* bnez.w18 */
+	    }
+	    break;
     case 25:
-      if (Field_combined3e2c5767_fld93xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0)
-	return 97; /* nop */
-      break;
+	    if (Field_combined3e2c5767_fld93xt_flix64_slot3_Slot_xt_flix64_slot3_get (insn) == 0) {
+		    return 97; /* nop */
+	    }
+	    break;
     }
   return 0;
 }
@@ -21235,17 +21406,22 @@ static xtensa_format_internal formats[] = {
 static int
 format_decoder (const xtensa_insnbuf insn)
 {
-  if ((insn[0] & 0x8) == 0 && (insn[1] & 0) == 0)
-    return 0; /* x24 */
-  if ((insn[0] & 0xc) == 0x8 && (insn[1] & 0) == 0)
-    return 1; /* x16a */
-  if ((insn[0] & 0xe) == 0xc && (insn[1] & 0) == 0)
-    return 2; /* x16b */
-  if ((insn[0] & 0xf) == 0xe && (insn[1] & 0) == 0)
-    return 3; /* xt_format1 */
-  if ((insn[0] & 0xf) == 0xf && (insn[1] & 0x80000000) == 0)
-    return 4; /* xt_format2 */
-  return -1;
+	if ((insn[0] & 0x8) == 0 && (insn[1] & 0) == 0) {
+		return 0; /* x24 */
+	}
+	if ((insn[0] & 0xc) == 0x8 && (insn[1] & 0) == 0) {
+		return 1; /* x16a */
+	}
+	if ((insn[0] & 0xe) == 0xc && (insn[1] & 0) == 0) {
+		return 2; /* x16b */
+	}
+	if ((insn[0] & 0xf) == 0xe && (insn[1] & 0) == 0) {
+		return 3; /* xt_format1 */
+	}
+	if ((insn[0] & 0xf) == 0xf && (insn[1] & 0x80000000) == 0) {
+		return 4; /* xt_format2 */
+	}
+	return -1;
 }
 
 static int length_table[16] = {

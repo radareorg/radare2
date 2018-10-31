@@ -25,7 +25,7 @@
 #include <ansidecl.h>
 #include <string.h>
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "arc.h"
 #include "arc-ext.h"
 #include "arc-dis.h"
@@ -51,11 +51,11 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
     if dbg is 1 then this definition is required
   */
 #undef _NELEM
-#define _NELEM(ary)	(sizeof(ary) / sizeof(ary[0]))
+#define _NELEM(ary)	(sizeof(ary) / sizeof((ary)[0]))
 
-#define BIT(word,n)       ((word) & (1 << n))
+#define BIT(word,n)       ((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)    (((word) << (sizeof(word)*8-1 - e)) >> (s+(sizeof(word)*8-1 - e)))
+#define BITS(word,s,e)    (((word) << (sizeof(word)*8-1 - (e))) >> ((s)+(sizeof(word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)      (BITS ((word), 27, 31))
 #define FIELDA(word)      (BITS ((word), 0, 5))
@@ -72,41 +72,41 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
  * FIELDS_AC is the 11-bit signed immediate value used for
  * GP-relative instructions.
  */
-#define FIELDS_AC(word)   (BITS (((signed int) word), 0, 8))
+#define FIELDS_AC(word)   (BITS (((signed int) (word)), 0, 8))
 
 /*
  * FIELDD is signed in all of its uses, so we make sure argument is
  * treated as signed for bit shifting purposes.
  */
-#define FIELDD(word)      (BITS (((signed int) word), 16, 23))
+#define FIELDD(word)      (BITS (((signed int) (word)), 16, 23))
 
 /*
  * FIELDD9 is the 9-bit signed immediate value used for
  * load/store instructions.
  */
-#define FIELDD9(word)     ((BITS(((signed int)word),15,15) << 8) | (BITS((word),16,23)))
+#define FIELDD9(word)     ((BITS(((signed int)(word)),15,15) << 8) | (BITS((word),16,23)))
 
 /*
  * FIELDS is the 12-bit signed immediate value
  */
-#define FIELDS(word)      ((BITS(((signed int)word),0,5) << 6) | (BITS((word),6,11)))					\
+#define FIELDS(word)      ((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11)))					\
 
 /*
  * FIELD S9 is the 9-bit signed immediate value used for
  * bbit0/bbit instruction
  */
-#define FIELDS9(word)     (((BITS(((signed int)word),15,15) << 7) | (BITS((word),17,23))) << 1)
-#define FIELDS9_FLAG(word)     (((BITS(((signed int)word),0,5) << 6) | (BITS((word),6,11))) )
+#define FIELDS9(word)     (((BITS(((signed int)(word)),15,15) << 7) | (BITS((word),17,23))) << 1)
+#define FIELDS9_FLAG(word)     (((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11))) )
 
 #define PUT_NEXT_WORD_IN(a) {		\
 	if (is_limm==1 && !NEXT_WORD(1))       	\
 	  mwerror(state, "Illegal limm reference in last instruction!\n"); \
           if (info->endian == BFD_ENDIAN_LITTLE) { \
-            a = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
-            a |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
+            (a) = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
+            (a) |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
           } \
           else { \
-            a = state->words[1]; \
+            (a) = state->words[1]; \
           } \
 	}
 
@@ -145,7 +145,7 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 	}
 
 #define CHECK_FIELD(field) {			\
-	if (field == 62) {			\
+	if ((field) == 62) {			\
 	  is_limm++;				\
 	  field##isReg = 0;			\
 	  PUT_NEXT_WORD_IN(field);		\
@@ -277,40 +277,45 @@ static short int enable_insn_stream = 0;
 static const char *
 core_reg_name(struct arcDisState *state, int val)
 {
-  if (state->coreRegName)
-    return (*state->coreRegName)(state->_this, val);
-  return 0;
+	if (state->coreRegName) {
+		return (*state->coreRegName) (state->_this, val);
+	}
+	return 0;
 }
 
 static const char *
 aux_reg_name(struct arcDisState *state, int val)
 {
-  if (state->auxRegName)
-    return (*state->auxRegName)(state->_this, val);
-  return 0;
+	if (state->auxRegName) {
+		return (*state->auxRegName) (state->_this, val);
+	}
+	return 0;
 }
 
 static const char *
 cond_code_name(struct arcDisState *state, int val)
 {
-  if (state->condCodeName)
-    return (*state->condCodeName)(state->_this, val);
-  return 0;
+	if (state->condCodeName) {
+		return (*state->condCodeName) (state->_this, val);
+	}
+	return 0;
 }
 
 static const char *
 instruction_name(struct arcDisState *state, int op1, int op2, int *flags)
 {
-  if (state->instName)
-    return (*state->instName)(state->_this, op1, op2, flags);
-  return 0;
+	if (state->instName) {
+		return (*state->instName) (state->_this, op1, op2, flags);
+	}
+	return 0;
 }
 
 static void
 mwerror(struct arcDisState *state, const char *msg)
 {
-  if (state->err != 0)
-    (*state->err)(state->_this, (msg));
+	if (state->err != 0) {
+		(*state->err) (state->_this, (msg));
+	}
 }
 
 static const char *
@@ -344,36 +349,37 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
   p = format;
   regMap[0] = 0;
   regMap[1] = 0;
-  while (1)
-    switch(*p++) {
-    case 0: goto DOCOMM; /*(return) */
-    default:
-      *bp++ = p[-1];
-      break;
-    case '%':
-      size = 0;
-      leading_zero = 0;
-    RETRY: ;
-      switch(*p++)
-	{
-	case '0':
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-	  {
-	    /* size. */
-	    size = p[-1]-'0';
-	    if (size == 0) leading_zero = 1; /* e.g. %08x */
-	    while (*p >= '0' && *p <= '9')
-	      size = size*10+*p-'0', p++;
-	    goto RETRY;
-	  }
+  while (1) {
+	  switch (*p++) {
+	  case 0: goto DOCOMM; /*(return) */
+	  default:
+		  *bp++ = p[-1];
+		  break;
+	  case '%':
+		  size = 0;
+		  leading_zero = 0;
+	  RETRY:;
+		  switch (*p++) {
+		  case '0':
+		  case '1':
+		  case '2':
+		  case '3':
+		  case '4':
+		  case '5':
+		  case '6':
+		  case '7':
+		  case '8':
+		  case '9': {
+			  /* size. */
+			  size = p[-1] - '0';
+			  if (size == 0) {
+				  leading_zero = 1; /* e.g. %08x */
+			  }
+			  while (*p >= '0' && *p <= '9') {
+				  size = size * 10 + *p - '0', p++;
+			  }
+			  goto RETRY;
+		  }
 #define inc_bp() bp = bp+strlen(bp)
 
 	case 'h':
@@ -385,32 +391,41 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	     * We add underscores for easy reading.
 	     */
 #define CDT_DEBUG
-	    if (u > 65536)
+	    if (u > 65536) {
 #ifndef CDT_DEBUG
 	      sprintf(bp,"0x%x_%04x",u >> 16, u & 0xffff);
 #else
 	      sprintf(bp,"0x%08x",u);
 #endif // CDT_DEBUG
-	    else
-	      sprintf(bp,"0x%x",u);
+	    } else {
+		    sprintf (bp, "0x%x", u);
+	    }
 	    inc_bp();
 	  }
 	  break;
 	case 'X': case 'x':
 	  {
 	    int val = va_arg(ap,int);
-	    if (size != 0)
-	      if (leading_zero) sprintf(bp,"%0*x",size,val);
-	      else sprintf(bp,"%*x",size,val);
-	    else sprintf(bp,"%x",val);
+	    if (size != 0) {
+		    if (leading_zero) {
+			    sprintf (bp, "%0*x", size, val);
+		    } else {
+			    sprintf (bp, "%*x", size, val);
+		    }
+	    } else {
+		    sprintf (bp, "%x", val);
+	    }
 	    inc_bp();
 	  }
 	  break;
 	case 'd':
 	  {
 	    int val = va_arg(ap,int);
-	    if (size != 0) sprintf(bp,"%*d",size,val);
-	    else sprintf(bp,"%d",val);
+	    if (size != 0) {
+		    sprintf (bp, "%*d", size, val);
+	    } else {
+		    sprintf (bp, "%d", val);
+	    }
 	    inc_bp();
 	  }
 	  break;
@@ -420,7 +435,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    int val = va_arg(ap,int);
 
 #define REG2NAME(num, name) case num: sprintf(bp,""name); \
-			regMap[(num<32)?0:1] |= 1<<(num-((num<32)?0:32)); break;
+			regMap[((num)<32)?0:1] |= 1<<((num)-(((num)<32)?0:32)); break;
 	    switch (val)
 	      {
 		REG2NAME(26, "gp");
@@ -435,8 +450,11 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 		{
 		  const char *ext;
 		  ext = core_reg_name(state, val);
-		  if (ext) sprintf(bp, "%s", ext);
-		  else     sprintf(bp,"r%d",val);
+		  if (ext) {
+			  sprintf (bp, "%s", ext);
+		  } else {
+			  sprintf (bp, "r%d", val);
+		  }
 		}break;
 	      }
 	    inc_bp();
@@ -448,14 +466,16 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    int val = va_arg(ap,int);
 	    char *ret;
 	    ret = arc_aux_reg_name(val);
-	    if(ret)
-	      sprintf(bp,"%s",ret);
-	    else
-	      {
-		const char *ext;
-		  ext = aux_reg_name(state, val);
-		  if (ext) sprintf(bp, "%s", ext);
-		  else     my_sprintf(state, bp,"%h",val);
+	    if (ret) {
+		    sprintf (bp, "%s", ret);
+	    } else {
+		    const char *ext;
+		    ext = aux_reg_name (state, val);
+		    if (ext) {
+			    sprintf (bp, "%s", ext);
+		    } else {
+			    my_sprintf (state, bp, "%h", val);
+		    }
 	      }
 
 	    inc_bp();
@@ -513,8 +533,8 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  fprintf(stderr,"?? format %c\n",p[-1]);
 	  break;
 	}
-    }
-
+	  }
+  }
 
  DOCOMM:
   *bp = 0;
@@ -540,34 +560,46 @@ write_instr_name_(struct arcDisState *state,
 		  int addrWriteBack,
 		  int directMem)
 {
-  if(!instrName)
-	return;
-  strncpy(state->instrBuffer, instrName, sizeof(state->instrBuffer)-1);
-  if (cond > 0)
-    {
-      int condlim = 0; /* condition code limit*/
-      const char *cc = 0;
-      if (!condCodeIsPartOfName) strcat(state->instrBuffer, ".");
-      condlim = 18;
-      if (cond < condlim)
-	cc = condName[cond];
-      else
-	cc = cond_code_name(state, cond);
-      if (!cc) cc = "???";
-      strcat(state->instrBuffer, cc);
+	if (!instrName) {
+		return;
+	}
+	strncpy (state->instrBuffer, instrName, sizeof (state->instrBuffer) - 1);
+	if (cond > 0) {
+		int condlim = 0; /* condition code limit*/
+		const char *cc = 0;
+		if (!condCodeIsPartOfName) {
+			strcat (state->instrBuffer, ".");
+		}
+		condlim = 18;
+		if (cond < condlim) {
+			cc = condName[cond];
+		} else {
+			cc = cond_code_name (state, cond);
+		}
+		if (!cc) {
+			cc = "???";
+		}
+		strcat (state->instrBuffer, cc);
     }
-  if (flag) strcat(state->instrBuffer, ".f");
-  if (state->nullifyMode)
-    if (strstr(state->instrBuffer, ".d") == NULL)
-      strcat(state->instrBuffer, ".d");
-  if (signExtend)    strcat(state->instrBuffer, ".x");
-  switch (addrWriteBack)
-  {
+    if (flag) {
+	    strcat (state->instrBuffer, ".f");
+    }
+    if (state->nullifyMode) {
+	    if (strstr (state->instrBuffer, ".d") == NULL) {
+		    strcat (state->instrBuffer, ".d");
+	    }
+    }
+    if (signExtend) {
+	    strcat (state->instrBuffer, ".x");
+    }
+    switch (addrWriteBack) {
     case 1: strcat(state->instrBuffer, ".a"); break;
     case 2: strcat(state->instrBuffer, ".ab"); break;
     case 3: strcat(state->instrBuffer, ".as"); break;
   }
-  if (directMem)     strcat(state->instrBuffer, ".di");
+  if (directMem) {
+	  strcat (state->instrBuffer, ".di");
+  }
 }
 
 #define write_instr_name()	{\
@@ -625,9 +657,10 @@ bfd_getm32_ac (data)
 static int
 sign_extend (int value, int bits)
 {
-  if (BIT(value, (bits-1)))
-    value |= (0xffffffff << bits);
-  return value;
+	if (BIT (value, (bits - 1))) {
+		value |= (0xffffffff << bits);
+	}
+	return value;
 }
 
 /* dsmOneArcInst - This module is used to identify the instruction
@@ -673,21 +706,24 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
   state->sourceType = ARC_UNDEFINED;
 
   /* ARCtangent-A5 basecase instruction and little-endian mode */
-  if ((info->endian == BFD_ENDIAN_LITTLE) && (state->instructionLen == 4))
-    state->words[0] = bfd_getm32(state->words[0]);
+  if ((info->endian == BFD_ENDIAN_LITTLE) && (state->instructionLen == 4)) {
+	  state->words[0] = bfd_getm32 (state->words[0]);
+  }
 
   if (state->instructionLen == 4)
   {
-    if (!NEXT_WORD(0))
-      return 0;
-    /* Get the major opcode of the ARCtangent-A5 32-bit instruction. */
-    state->_opcode = OPCODE(state->words[0]);
+	  if (!NEXT_WORD (0)) {
+		  return 0;
+	  }
+	  /* Get the major opcode of the ARCtangent-A5 32-bit instruction. */
+	  state->_opcode = OPCODE (state->words[0]);
   }
   else
   {
     /* ARCompact 16-bit instruction */
-    if (!NEXT_WORD_AC(0))
-      return 0;
+    if (!NEXT_WORD_AC (0)) {
+	    return 0;
+    }
     /* Get the major opcode of the ARCompact 16-bit instruction. */
     state->_opcode = OPCODE_AC(state->words[0]);
   }
@@ -726,11 +762,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       switch (BITS(state->words[0],16,16))
       {
 	case 0:
-	  if (!instrName)
-	    instrName = "bl";
-	  decodingClass = 13;
-      	  condCodeIsPartOfName = 1;
-	  break;
+		if (!instrName) {
+			instrName = "bl";
+		}
+		decodingClass = 13;
+		condCodeIsPartOfName = 1;
+		break;
 	case 1:
 	  switch (BITS(state->words[0],0,3))
 	  {
@@ -837,11 +874,13 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  instrName = "j";
         case 34:
         case 35:
-	  if (!instrName) instrName = "jl";
-	  decodingClass = 4;
-	  condCodeIsPartOfName = 1;
-          state->isBranch = 1;
-	  break;
+		if (!instrName) {
+			instrName = "jl";
+		}
+		decodingClass = 4;
+		condCodeIsPartOfName = 1;
+		state->isBranch = 1;
+		break;
         case 40:
 	  instrName = "lp";
 	  decodingClass = 11;
@@ -884,17 +923,19 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	      {
 	      case 1 : instrName = "sleep"; decodingClass = 32; break;
 	      case 2 :
-		if((info->mach) == ARC_MACH_ARC7)
-		  instrName = "trap0";
-		else
-		  instrName = "swi";
-		break;
+		      if ((info->mach) == ARC_MACH_ARC7) {
+			      instrName = "trap0";
+		      } else {
+			      instrName = "swi";
+		      }
+		      break;
 	      case 3:
 
-		if(BITS(state->words[0],22,23) == 1)
-		  instrName = "sync" ;
+		      if (BITS (state->words[0], 22, 23) == 1) {
+			      instrName = "sync";
+		      }
 
-		break;
+		      break;
 	      case 4 : instrName = "rtie" ; break;
 	      case 5 : instrName = "brk"; break;
 	      default:
@@ -2028,15 +2069,24 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
           switch(BITS(state->words[0],5,7))
 	  {
             case 0 : instrName = "j_s";
-            case 2 : if (!instrName) instrName = "jl_s";
-	             state->isBranch = 1;
-		     state->nullifyMode = BR_exec_when_no_jump;
-		     break;
-            case 1 : if (!instrName) instrName = "j_s.d";
-            case 3 : if (!instrName) instrName = "jl_s.d";
-          	     state->isBranch = 1;
-		     state->nullifyMode = BR_exec_always;
-		     break;
+            case 2 :
+		    if (!instrName) {
+			    instrName = "jl_s";
+		    }
+		    state->isBranch = 1;
+		    state->nullifyMode = BR_exec_when_no_jump;
+		    break;
+            case 1 :
+		    if (!instrName) {
+			    instrName = "j_s.d";
+		    }
+	    case 3 :
+		    if (!instrName) {
+			    instrName = "jl_s.d";
+		    }
+		    state->isBranch = 1;
+		    state->nullifyMode = BR_exec_always;
+		    break;
             case 6 : instrName = "sub_s.ne";
 	             decodingClass = 35;
 	             break;
@@ -2051,19 +2101,24 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
 
 	        case 4: instrName = "jeq_s [blink]";
-		case 5: if (!instrName) instrName = "jne_s [blink]";
+		case 5:
+			if (!instrName) {
+				instrName = "jne_s [blink]";
+			}
 		case 6:
-		  if (!instrName)
-		    instrName = "j_s [blink]";
-		  state->isBranch = 1;
-		  state->nullifyMode = BR_exec_when_no_jump;
-		  break;
+			if (!instrName) {
+				instrName = "j_s [blink]";
+			}
+			state->isBranch = 1;
+			state->nullifyMode = BR_exec_when_no_jump;
+			break;
 		case 7:
-		  if (!instrName)
-		    instrName = "j_s.d [blink]";
-		  state->isBranch = 1;
-		  state->nullifyMode = BR_exec_always;
-		  break;
+			if (!instrName) {
+				instrName = "j_s.d [blink]";
+			}
+			state->isBranch = 1;
+			state->nullifyMode = BR_exec_always;
+			break;
                 default:
 		  instrName = "??? (2[3])";
 	      	  state->flow = invalid_instr;
@@ -2178,11 +2233,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         case 3: instrName = "stb_s"; break;
         case 4: instrName = "add_s"; break;
         case 5:
-      	  if (!BITS(state->words[0],8,8))
-	    instrName = "add_s";
-	  else
-	    instrName = "sub_s";
-	  break;
+		if (!BITS (state->words[0], 8, 8)) {
+			instrName = "add_s";
+		} else {
+			instrName = "sub_s";
+		}
+		break;
         case 6: instrName = "pop_s"; decodingClass = 31; break;
         case 7: instrName = "push_s"; decodingClass = 31; break;
 	default:
@@ -2219,19 +2275,21 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
     case op_ADD_CMP:
     /* ARCompact 16-bit Add/compare immediate */
       decodingClass = 21;  /* default for major opcode 0x1c ... */
-      if (BIT(state->words[0],7))
-	instrName = "cmp_s";
-      else
-	instrName = "add_s";
+      if (BIT (state->words[0], 7)) {
+	      instrName = "cmp_s";
+      } else {
+	      instrName = "add_s";
+      }
       break;
 
     case op_BR_S:
     /* ARCompact 16-bit Branch conditionally on reg z/nz */
       decodingClass = 25; /* Default for BR_S instruction ... */
-      if (BIT(state->words[0],7))
-	instrName = "brne_s";
-      else
-	instrName = "breq_s";
+      if (BIT (state->words[0], 7)) {
+	      instrName = "brne_s";
+      } else {
+	      instrName = "breq_s";
+      }
       state->isBranch = 1;
       break;
 
@@ -2278,30 +2336,29 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
    * instead of all over this crazy switch case. */
   if (state->flow == invalid_instr)
     {
-      if (!((state->_opcode == op_SIMD) && enable_simd))
-	instrName = instruction_name(state,state->_opcode,
-				     state->words[0],
-				     &flags);
+	  if (!((state->_opcode == op_SIMD) && enable_simd)) {
+		  instrName = instruction_name (state, state->_opcode,
+			  state->words[0],
+			  &flags);
+	  }
 
-      if (state->instructionLen == 2)
-	{
-	  switch (flags)
-	    {
-	    case AC_SYNTAX_3OP:
-	      decodingClass = 22;
-	      break;
-	    case AC_SYNTAX_2OP:
-	      decodingClass = 14;
-	      break;
-	    case AC_SYNTAX_1OP:
-	      decodingClass = 36;
-	      break;
-	    case AC_SYNTAX_NOP:
-	      decodingClass = 26;
-	      break;
-	    default:
-	      mwerror(state, "Invalid syntax class\n");
-	    }
+	  if (state->instructionLen == 2) {
+		  switch (flags) {
+		  case AC_SYNTAX_3OP:
+			  decodingClass = 22;
+			  break;
+		  case AC_SYNTAX_2OP:
+			  decodingClass = 14;
+			  break;
+		  case AC_SYNTAX_1OP:
+			  decodingClass = 36;
+			  break;
+		  case AC_SYNTAX_NOP:
+			  decodingClass = 26;
+			  break;
+		  default:
+			  mwerror (state, "Invalid syntax class\n");
+		  }
 	}
       else
 	{
@@ -2364,8 +2421,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       	  else
 	  {
             FIELD_B();
-      	    if (!fieldBisReg)
-	      fieldB = fieldC;
+	    if (!fieldBisReg) {
+		    fieldB = fieldC;
+	    }
 	  }
       	  CHECK_FIELD_A();
       	  CHECK_FLAG();
@@ -2401,11 +2459,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
           /* Say ea is not present, so only one of us will do the
 	     name lookup. */
 	  state->_offset += fieldB, state->_ea_present = 0;
-	  if (is_limm)
-	    fieldAisReg = fieldA = 0;
-	  else
-	    fieldA = fieldB;
-      	  CHECK_FLAG();
+	  if (is_limm) {
+		  fieldAisReg = fieldA = 0;
+	  } else {
+		  fieldA = fieldB;
+	  }
+	  CHECK_FLAG();
 	  break;
 
 	case 3:
@@ -2422,12 +2481,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  {
 	    fieldAisReg = fieldA = 0;
             FIELD_C();
-            if (BIT(state->words[0],5))
-	      fieldCisReg = 0;
-	    else if (fieldC == 62)
-	    {
-              fieldCisReg = 0;
-	      fieldC = fieldB;
+	    if (BIT (state->words[0], 5)) {
+		    fieldCisReg = 0;
+	    } else if (fieldC == 62) {
+		    fieldCisReg = 0;
+		    fieldC = fieldB;
 	    }
 	  }
 	  else
@@ -2464,12 +2522,16 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       FIELD_B();
       CHECK_FLAG();
 
-      if (BITS(state->words[0],22,23) == 1 )
-	fieldCisReg = 0;
-      if (fieldCisReg) state->ea_reg1 = fieldC;
-      /* field C is either a shimm (same as fieldC) or limm (different!) */
-      /* Say ea is not present, so only one of us will do the name lookup. */
-      else state->_offset += fieldB, state->_ea_present = 0;
+      if (BITS (state->words[0], 22, 23) == 1) {
+	      fieldCisReg = 0;
+      }
+      if (fieldCisReg) {
+	      state->ea_reg1 = fieldC;
+	      /* field C is either a shimm (same as fieldC) or limm (different!) */
+	      /* Say ea is not present, so only one of us will do the name lookup. */
+      } else {
+	      state->_offset += fieldB, state->_ea_present = 0;
+      }
 
       write_instr_name();
       WRITE_FORMAT_x(B);
@@ -2490,8 +2552,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	if (is_limm)
 	{
 	  FIELD_B();
-	  if (!fieldBisReg)
-	    fieldB = fieldC;
+	  if (!fieldBisReg) {
+		  fieldB = fieldC;
+	  }
 	}
 	else
 	{
@@ -2513,10 +2576,13 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (subopcode == 3)
 	CHECK_COND();
 
-      if (fieldCisReg) state->ea_reg1 = fieldC;
-      /* field C is either a shimm (same as fieldC) or limm (different!) */
-      /* Say ea is not present, so only one of us will do the name lookup. */
-      else state->_offset += fieldB, state->_ea_present = 0;
+      if (fieldCisReg) {
+	      state->ea_reg1 = fieldC;
+	      /* field C is either a shimm (same as fieldC) or limm (different!) */
+	      /* Say ea is not present, so only one of us will do the name lookup. */
+      } else {
+	      state->_offset += fieldB, state->_ea_present = 0;
+      }
 
       write_instr_name();
       if (mul)
@@ -2617,11 +2683,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       strcat(formatString,
 	     IS_REG(C)?"[%r]":"%s"); /* address/label name */
 
-      if (IS_REG(C))
-	my_sprintf(state, state->operandBuffer, formatString, fieldC);
-      else
-	my_sprintf(state, state->operandBuffer, formatString,
-		   post_address(state, fieldC));
+      if (IS_REG (C)) {
+	      my_sprintf (state, state->operandBuffer, formatString, fieldC);
+      } else {
+	      my_sprintf (state, state->operandBuffer, formatString,
+		      post_address (state, fieldC));
+      }
       break;
 
     case 5:
@@ -2640,19 +2707,30 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (is_limm)
       {
         FIELD_C();
-        if (!fieldCisReg)
-          fieldC = fieldB;
+	if (!fieldCisReg) {
+		fieldC = fieldB;
+	}
       }
       else
       {
         CHECK_FIELD_C();
       }
-      if (dbg) printf("5:b reg %d %d c reg %d %d  \n",
-		      fieldBisReg,fieldB,fieldCisReg,fieldC);
+      if (dbg) {
+	      printf ("5:b reg %d %d c reg %d %d  \n",
+		      fieldBisReg, fieldB, fieldCisReg, fieldC);
+      }
       state->_offset = 0;
       state->_ea_present = 1;
-      if (fieldBisReg) state->ea_reg1 = fieldB; else state->_offset += fieldB;
-      if (fieldCisReg) state->ea_reg2 = fieldC; else state->_offset += fieldC;
+      if (fieldBisReg) {
+	      state->ea_reg1 = fieldB;
+      } else {
+	      state->_offset += fieldB;
+      }
+      if (fieldCisReg) {
+	      state->ea_reg2 = fieldC;
+      } else {
+	      state->_offset += fieldC;
+      }
       state->_mem_load = 1;
 
       directMem     = BIT(state->words[0],15);
@@ -2671,23 +2749,22 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       write_instr_name();
 
       /* Check for prefetch or ld 0,...*/
-      if(IS_REG(A))
-	WRITE_FORMAT_x_COMMA_LB(A);
-      else
-	{
-	  strcat(formatString,"%*");
-	  WRITE_FORMAT_LB();
+      if (IS_REG (A)) {
+	      WRITE_FORMAT_x_COMMA_LB (A);
+      } else {
+	      strcat (formatString, "%*");
+	      WRITE_FORMAT_LB ();
 	}
 
+	if (fieldBisReg || fieldB != 0) {
+		WRITE_FORMAT_x (B);
+	} else {
+		fieldB = fieldC;
+	}
 
-      if (fieldBisReg || fieldB != 0)
-	WRITE_FORMAT_x(B);
-      else
-	fieldB = fieldC;
-
-      WRITE_FORMAT_COMMA_x_RB(C);
-      my_sprintf(state, state->operandBuffer, formatString, fieldA, fieldB, fieldC);
-      break;
+	WRITE_FORMAT_COMMA_x_RB (C);
+	my_sprintf (state, state->operandBuffer, formatString, fieldA, fieldB, fieldC);
+	break;
 
     case 6:
       /* LD instruction. */
@@ -2704,30 +2781,35 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
 
-      if (dbg) eprintf("6:b reg %d %d c 0x%x  \n",
-				 fieldBisReg,fieldB,fieldC);
+      if (dbg) {
+	      eprintf ("6:b reg %d %d c 0x%x  \n",
+		      fieldBisReg, fieldB, fieldC);
+      }
       state->_ea_present = 1;
       state->_offset = fieldC;
       state->_mem_load = 1;
-      if (fieldBisReg) state->ea_reg1 = fieldB;
-      /* field B is either a shimm (same as fieldC) or limm (different!) */
-      /* Say ea is not present, so only one of us will do the name lookup. */
-      else state->_offset += fieldB, state->_ea_present = 0;
+      if (fieldBisReg) {
+	      state->ea_reg1 = fieldB;
+	      /* field B is either a shimm (same as fieldC) or limm (different!) */
+	      /* Say ea is not present, so only one of us will do the name lookup. */
+      } else {
+	      state->_offset += fieldB, state->_ea_present = 0;
+      }
 
       directMem     = BIT(state->words[0],11);
       /* Check if address writeback is allowed before decoding the
 	 address writeback field of a load instruction.*/
-      if (fieldBisReg && (fieldB != 62))
-        addrWriteBack = BITS(state->words[0],9,10);
+      if (fieldBisReg && (fieldB != 62)) {
+	      addrWriteBack = BITS (state->words[0], 9, 10);
+      }
       signExtend    = BIT(state->words[0],6);
 
       write_instr_name();
-      if(IS_REG(A))
-	WRITE_FORMAT_x_COMMA_LB(A);
-      else
-	{
-	  strcat(formatString,"%*");
-	  WRITE_FORMAT_LB();
+      if (IS_REG (A)) {
+	      WRITE_FORMAT_x_COMMA_LB (A);
+      } else {
+	      strcat (formatString, "%*");
+	      WRITE_FORMAT_LB ();
 	}
       if (!fieldBisReg)
 	{
@@ -2752,18 +2834,22 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldAisReg=0;
 
       /* [B,A offset] */
-      if (dbg) eprintf("7:b reg %d %x off %x\n",
-				 fieldBisReg,fieldB,fieldA);
+      if (dbg) {
+	      eprintf ("7:b reg %d %x off %x\n",
+		      fieldBisReg, fieldB, fieldA);
+      }
       state->_ea_present = 1;
       state->_offset = fieldA;
-      if (fieldBisReg) state->ea_reg1 = fieldB;
-      /*
+      if (fieldBisReg) {
+	      state->ea_reg1 = fieldB;
+	      /*
        * field B is either a shimm (same as fieldA) or limm (different!)
        * Say ea is not present, so only one of us will do the name lookup.
        * (for is_limm we do the name translation here).
        */
-      else
-	state->_offset += fieldB, state->_ea_present = 0;
+      } else {
+	      state->_offset += fieldB, state->_ea_present = 0;
+      }
 
       directMem     = BIT(state->words[0],5);
       addrWriteBack = BITS(state->words[0],3,4);
@@ -2792,9 +2878,10 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
           if (is_limm)
           {
        	    FIELD_C();
-      	    if (!fieldCisReg)
-	      fieldC = fieldB;
-      	  }
+	    if (!fieldCisReg) {
+		    fieldC = fieldB;
+	    }
+	  }
       	  else
 	  {
 	    CHECK_FIELD_C();
@@ -2962,27 +3049,26 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	fieldA = fieldA << 1;
       }
 
-      if ((state->_opcode == op_BC  && (BIT(state->words[0],16))) ||
- 	  (state->_opcode == op_BLC && (BIT(state->words[0],17))))
-	/* unconditional branch s25 or branch and link d25 */
-        fieldA = sign_extend(fieldA, 25);
-      else
-	/* conditional branch s21 or branch and link d21 */
-        fieldA = sign_extend(fieldA, 21);
+      if ((state->_opcode == op_BC && (BIT (state->words[0], 16))) ||
+	      (state->_opcode == op_BLC && (BIT (state->words[0], 17)))) {
+	      /* unconditional branch s25 or branch and link d25 */
+	      fieldA = sign_extend (fieldA, 25);
+      } else {
+	      /* conditional branch s21 or branch and link d21 */
+	      fieldA = sign_extend (fieldA, 21);
+      }
 
       fieldA += (addr & ~0x3);
 
-      if (BIT(state->words[0],16) && state->_opcode == op_BC)
-        CHECK_NULLIFY();
-      else
-	/* Checking for bl unconditionally FIX For Bug #553 */
-	if((state->_opcode == op_BLC && BITS(state->words[0],16,17) == 2 )
-	   ||(state->_opcode == op_BC && (BIT(state->words[0],16))))
-	    CHECK_NULLIFY();
-	  else
-	    CHECK_COND_NULLIFY();
-
-
+      if (BIT (state->words[0], 16) && state->_opcode == op_BC) {
+	      CHECK_NULLIFY ();
+      } else
+	      /* Checking for bl unconditionally FIX For Bug #553 */
+	      if ((state->_opcode == op_BLC && BITS (state->words[0], 16, 17) == 2) || (state->_opcode == op_BC && (BIT (state->words[0], 16)))) {
+	      CHECK_NULLIFY ();
+      } else {
+	      CHECK_COND_NULLIFY ();
+      }
 
       write_instr_name();
       /* This address could be a label we know.  Convert it. */
@@ -3010,15 +3096,16 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         fieldA = fieldAisReg = 0;
 	WRITE_FORMAT_x(A);
         WRITE_FORMAT_COMMA_x(B);
+      } else {
+	      WRITE_FORMAT_x (B);
       }
-      else
-        WRITE_FORMAT_x(B);
       WRITE_FORMAT_COMMA_x(C);
       WRITE_NOP_COMMENT();
-      if (mul)
-        my_sprintf(state, state->operandBuffer, formatString, 0, fieldB, fieldC);
-      else
-        my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
+      if (mul) {
+	      my_sprintf (state, state->operandBuffer, formatString, 0, fieldB, fieldC);
+      } else {
+	      my_sprintf (state, state->operandBuffer, formatString, fieldB, fieldC);
+      }
       break;
 
     case 15:
@@ -3114,12 +3201,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       /* Stack pointer-based instructions [major opcode 0x18] */
 
-      if (BITS(state->words[0],5,7) == 5)
-        fieldA = 28;
-      else
-      {
-        FIELD_B_AC();
-	fieldA = fieldB;
+      if (BITS (state->words[0], 5, 7) == 5) {
+	      fieldA = 28;
+      } else {
+	      FIELD_B_AC ();
+	      fieldA = fieldB;
       }
       fieldB = 28; /* Field B is the stack pointer register */
       fieldC = (FIELDU_AC(state->words[0])) << 2;
@@ -3188,10 +3274,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       /* add/cmp/btst instructions [major opcode 28] */
 
       FIELD_B_AC();
-      if (state->_opcode == op_Su5)
-        fieldC = (BITS(state->words[0],0,4));
-      else
-        fieldC = (BITS(state->words[0],0,6));
+      if (state->_opcode == op_Su5) {
+	      fieldC = (BITS (state->words[0], 0, 4));
+      } else {
+	      fieldC = (BITS (state->words[0], 0, 6));
+      }
       fieldCisReg = 0;
       write_instr_name();
 
@@ -3393,9 +3480,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (BITS(state->words[0],0,4) == 1)
       {
         FIELD_B_AC();
+      } else if (BITS (state->words[0], 0, 4) == 17) {
+	      fieldB = 31;
       }
-      else if (BITS(state->words[0],0,4) == 17)
-	fieldB = 31;
 
       write_instr_name();
 
@@ -3420,13 +3507,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       write_instr_name();
 
-      if (!fieldC)
-        state->operandBuffer[0] = '\0';
-      else
-      {
-        WRITE_FORMAT_x(C);
-        WRITE_NOP_COMMENT();
-        my_sprintf(state, state->operandBuffer, formatString, fieldC);
+      if (!fieldC) {
+	      state->operandBuffer[0] = '\0';
+      } else {
+	      WRITE_FORMAT_x (C);
+	      WRITE_NOP_COMMENT ();
+	      my_sprintf (state, state->operandBuffer, formatString, fieldC);
       }
       break;
 
@@ -3459,11 +3545,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
     FIELD_B();
     directMem = BIT(state->words[0],15);
 
-
-    if (BITS(state->words[0],22,23) == 1 )
-      fieldCisReg = 0;
-    if (fieldCisReg)
-      state->ea_reg1 = fieldC;
+    if (BITS (state->words[0], 22, 23) == 1) {
+	    fieldCisReg = 0;
+    }
+    if (fieldCisReg) {
+	    state->ea_reg1 = fieldC;
+    }
 
     write_instr_name();
     WRITE_FORMAT_x_COMMA_LB(B);
@@ -3536,8 +3623,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       {
 	FIELD_U8();
 
-	if (simd_scale_u8>0)
-	  fieldC = fieldC << simd_scale_u8;
+	if (simd_scale_u8 > 0) {
+		fieldC = fieldC << simd_scale_u8;
+	}
       }
 
     fieldCisReg = 0;
@@ -3604,8 +3692,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
      %C*/
     CHECK_FIELD_C();
 
-    if (BITS(state->words[0], 17, 23) == 55)
-      fieldCisReg = 0;
+    if (BITS (state->words[0], 17, 23) == 55) {
+	    fieldCisReg = 0;
+    }
 
     write_instr_name();
     WRITE_FORMAT_x(C);
@@ -3697,10 +3786,10 @@ parse_disassembler_options (char *options)
 	    }
 	  
 	  p = strchr (p, ',');
-	  
-	  if (p != NULL)
-		p++;
-	  
+
+	  if (p != NULL) {
+		  p++;
+	  }
     }
 	
 }
@@ -3747,10 +3836,11 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
     s.instructionLen = 2;
     s.words[0] = (buffer[lowbyte] << 8) | buffer[highbyte];
     status = (*info->read_memory_func) (address + 2, buffer, 4, info);
-    if (info->endian == BFD_ENDIAN_LITTLE)
-      s.words[1] = bfd_getl32(buffer);
-    else
-      s.words[1] = bfd_getb32(buffer);
+    if (info->endian == BFD_ENDIAN_LITTLE) {
+	    s.words[1] = bfd_getl32 (buffer);
+    } else {
+	    s.words[1] = bfd_getb32 (buffer);
+    }
   }
   else
   {
@@ -3761,18 +3851,20 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
       (*info->memory_error_func) (status, address + 2, info);
       return -1;
     }
-    if (info->endian == BFD_ENDIAN_LITTLE)
-      s.words[0] = bfd_getl32(buffer);
-    else
-      s.words[0] = bfd_getb32(buffer);
+    if (info->endian == BFD_ENDIAN_LITTLE) {
+	    s.words[0] = bfd_getl32 (buffer);
+    } else {
+	    s.words[0] = bfd_getb32 (buffer);
+    }
 
     /* always read second word in case of limm */
     /* we ignore the result since last insn may not have a limm */
     status = (*info->read_memory_func) (address + 4, buffer, 4, info);
-    if (info->endian == BFD_ENDIAN_LITTLE)
-      s.words[1] = bfd_getl32(buffer);
-    else
-      s.words[1] = bfd_getb32(buffer);
+    if (info->endian == BFD_ENDIAN_LITTLE) {
+	    s.words[1] = bfd_getl32 (buffer);
+    } else {
+	    s.words[1] = bfd_getb32 (buffer);
+    }
   }
 
   s._this = &s;
@@ -3794,12 +3886,13 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
       {
         /* Show instruction stream from MSB to LSB*/
 
-        if (s.instructionLen == 2)
-          (*func) (stream, "    %04x ", (unsigned int) s.words[0]);
-        else
-          (*func) (stream, "%08x ",     (unsigned int) s.words[0]);
+	if (s.instructionLen == 2) {
+		(*func) (stream, "    %04x ", (unsigned int)s.words[0]);
+	} else {
+		(*func) (stream, "%08x ", (unsigned int)s.words[0]);
+	}
 
-        (*func) (stream, "    ");
+	(*func) (stream, "    ");
       }
 
     /* if the operand is actually in the instruction buffer */
@@ -3830,9 +3923,9 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
         addr = s.addresses[operand[i] - '0'];
         (*info->print_address_func) ((bfd_vma) addr, info);
         //(*func) (stream, "\n");
-      }
-    else
-      (*func) (stream, "%s", operand);
+    } else {
+	    (*func) (stream, "%s", operand);
+    }
   }
 
   /* We print max bytes for instruction */
@@ -3880,10 +3973,11 @@ arcAnalyzeInstr
     s.instructionLen = 2;
     s.words[0] = (buffer[lowbyte] << 8) | buffer[highbyte];
     status = (*info->read_memory_func) (address + 2, buffer, 4, info);
-    if (info->endian == BFD_ENDIAN_LITTLE)
-      s.words[1] = bfd_getl32(buffer);
-    else
-      s.words[1] = bfd_getb32(buffer);
+    if (info->endian == BFD_ENDIAN_LITTLE) {
+	    s.words[1] = bfd_getl32 (buffer);
+    } else {
+	    s.words[1] = bfd_getb32 (buffer);
+    }
   }
   else
   {
@@ -3895,18 +3989,20 @@ arcAnalyzeInstr
       s.instructionLen = -1;
       return s;
     }
-    if (info->endian == BFD_ENDIAN_LITTLE)
-      s.words[0] = bfd_getl32(buffer);
-    else
-      s.words[0] = bfd_getb32(buffer);
+    if (info->endian == BFD_ENDIAN_LITTLE) {
+	    s.words[0] = bfd_getl32 (buffer);
+    } else {
+	    s.words[0] = bfd_getb32 (buffer);
+    }
 
     /* always read second word in case of limm */
     /* we ignore the result since last insn may not have a limm */
     status = (*info->read_memory_func) (address + 4, buffer, 4, info);
-    if (info->endian == BFD_ENDIAN_LITTLE)
-      s.words[1] = bfd_getl32(buffer);
-    else
-      s.words[1] = bfd_getb32(buffer);
+    if (info->endian == BFD_ENDIAN_LITTLE) {
+	    s.words[1] = bfd_getl32 (buffer);
+    } else {
+	    s.words[1] = bfd_getb32 (buffer);
+    }
   }
 
   s._this = &s;

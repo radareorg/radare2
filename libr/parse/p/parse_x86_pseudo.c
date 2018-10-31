@@ -181,21 +181,29 @@ static int parse (RParse *p, const char *data, char *str) {
 			ptr = end;
 		}
 		*ptr = '\0';
-		if (ptr != end) for (++ptr; *ptr == ' '; ptr++);
+		if (ptr != end) {
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
+		}
 		r_str_ncpy (w0, buf, sizeof (w0));
 		r_str_ncpy (w1, ptr, sizeof (w1));
 		optr = ptr;
 		ptr = strchr (ptr, ',');
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++);
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
 			r_str_ncpy (w1, optr, sizeof (w1));
 			r_str_ncpy (w2, ptr, sizeof (w2));
 			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++);
+				for (++ptr; *ptr == ' '; ptr++) {
+					;
+				}
 				r_str_ncpy (w2, optr, sizeof (w2));
 				r_str_ncpy (w3, ptr, sizeof (w3));
 			}
@@ -244,7 +252,7 @@ static int parse (RParse *p, const char *data, char *str) {
 			r_str_ncpy (wa[3], wa[2], sizeof (w3));
 			r_str_ncpy (wa[2], wa[1], sizeof (w2));
 		}
-		
+
 		replace (nw, wa, str);
 
 	} else if ((strstr (w1, "ax") || strstr (w1, "ah") || strstr (w1, "al")) && !p->retleave_asm) {
@@ -503,7 +511,7 @@ RParsePlugin r_parse_plugin_x86_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_x86_pseudo,
 	.version = R2_VERSION

@@ -31,25 +31,25 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 
 	switch (mbi->Protect) {
 	case PAGE_EXECUTE:
-		perm = R_IO_EXEC;
+		perm = R_PERM_X;
 		break;
 	case PAGE_EXECUTE_READ:
-		perm = R_IO_READ | R_IO_EXEC;
+		perm = R_PERM_RX;
 		break;
 	case PAGE_EXECUTE_READWRITE:
-		perm = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
+		perm = R_PERM_RWX;
 		break;
 	case PAGE_READONLY:
-		perm = R_IO_READ;
+		perm = R_PERM_R;
 		break;
 	case PAGE_READWRITE:
-		perm = R_IO_READ | R_IO_WRITE;
+		perm = R_PERM_RW;
 		break;
 	case PAGE_WRITECOPY:
-		perm = R_IO_WRITE;
+		perm = R_PERM_W;
 		break;
 	case PAGE_EXECUTE_WRITECOPY:
-		perm = R_IO_EXEC;
+		perm = R_PERM_X;
 		break;
 	default:
 		perm = 0;
@@ -59,9 +59,8 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 		perror ("r_str_newf");
 		goto err_add_map;
 	}
-	mr = r_debug_map_new (map_name,
-				addr,
-				addr + len, perm, mbi->Type == MEM_PRIVATE);
+	mr = r_debug_map_new (map_name, addr,
+		addr + len, perm, mbi->Type == MEM_PRIVATE);
 	if (mr) {
 		r_list_append (list, mr);
 	}

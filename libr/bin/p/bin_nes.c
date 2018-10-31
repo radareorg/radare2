@@ -11,9 +11,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, INES_MAGIC, 4));
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -40,7 +39,9 @@ static RBinInfo* info(RBinFile *bf) {
 
 static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) return;
+	if (!ptr) {
+		return;
+	}
 	ptr->name = strdup (name? name: "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
@@ -99,7 +100,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = ROM_SIZE;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
@@ -219,7 +220,7 @@ RBinPlugin r_bin_plugin_nes = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nes,
 	.version = R2_VERSION

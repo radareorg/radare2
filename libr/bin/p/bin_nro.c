@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - pancake */
+/* radare2 - LGPL - Copyright 2017-2018 - pancake */
 
 // TODO: Support NRR and MODF
 #include <r_types.h>
@@ -7,7 +7,7 @@
 #include <r_bin.h>
 #include "nxo/nxo.h"
 
-#define NRO_OFF(x) sizeof (NXOStart) + r_offsetof (NROHeader, x)
+#define NRO_OFF(x) (sizeof (NXOStart) + r_offsetof (NROHeader, x))
 #define NRO_OFFSET_MODMEMOFF r_offsetof (NXOStart, mod_memoffset)
 
 // starting at 0x10 (16th byte)
@@ -37,10 +37,10 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (!bin) {
-		return NULL;
+		return false;
 	}
 	ut64 ba = baddr (bf);
 	bin->methods_list = r_list_newf ((RListFree)free);
@@ -48,7 +48,8 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
 	parseMod (bf->buf, bin, mod0, ba);
-	return (void *) bin;//(size_t) check_bytes (buf, sz);
+	*bin_obj = bin;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -58,7 +59,7 @@ static bool load(RBinFile *bf) {
 	const ut64 sz = r_buf_size (bf->buf);
 	const ut64 la = bf->o->loadaddr;
 	const ut8 *bytes = r_buf_buffer (bf->buf);
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, la, bf->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 	return bf->o->bin_obj != NULL;
 }
 
@@ -119,7 +120,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = false;
 	r_list_append (ret, ptr);
 
@@ -136,7 +137,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
-		ptr->srwx = R_BIN_SCN_READABLE; // rw-
+		ptr->perm = R_PERM_R; // rw-
 		ptr->add = false;
 		r_list_append (ret, ptr);
 	} else {
@@ -154,7 +155,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
 		ptr->vaddr = sig0 + ba;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	} else {
@@ -170,7 +171,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (text_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -183,7 +184,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (ro_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE; // r-x
+	ptr->perm = R_PERM_R; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -196,7 +197,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (data_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE; // rw-
+	ptr->perm = R_PERM_RW;
 	ptr->add = true;
 	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
@@ -289,7 +290,7 @@ RBinPlugin r_bin_plugin_nro = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nro,
 	.version = R2_VERSION

@@ -11,9 +11,9 @@
 #define R_MIDFLAGS_REALIGN 2
 #define R_MIDFLAGS_SYMALIGN 3
 
-#define COLOR(ds, field) (ds->show_color ? ds->field : "")
-#define COLOR_ARG(ds, field) (ds->show_color && ds->show_color_args ? ds->field : "")
-#define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
+#define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
+#define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
+#define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
 // ugly globals but meh
@@ -37,7 +37,7 @@ static const char* r_vline_u[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
-	"⁝", // LINE_UP
+	"╎", // LINE_UP
 	// "↑", // LINE_UP
 	//"┌", // LUP_CORNER
 	"┘", // LUP_CORNER
@@ -53,7 +53,7 @@ static const char* r_vline_uc[] = {
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
 	// "↑", // LINE_UP
-	"⋮", // LINE_UP
+	"╎", // LINE_UP
 	// "≀", // LINE_UP
 	//"┌", // LUP_CORNER
 	"╯", // LUP_CORNER
@@ -87,6 +87,7 @@ typedef struct {
 	bool capitalize;
 	bool show_flgoff;
 	bool hasMidflag;
+	bool hasMidbb;
 	int atabs;
 	int atabsonce;
 	int atabsoff;
@@ -100,6 +101,7 @@ typedef struct {
 	bool show_lines_bb;
 	bool show_lines_ret;
 	bool show_lines_call;
+	bool show_lines_fcn;
 	int linesright;
 	int tracespace;
 	int cyclespace;
@@ -127,6 +129,8 @@ typedef struct {
 	bool show_emu_write;
 	bool show_section;
 	int show_section_col;
+	bool show_section_perm;
+	bool show_section_name;
 	bool show_symbols;
 	int show_symbols_col;
 	bool show_offseg;
@@ -136,11 +140,11 @@ typedef struct {
 	bool show_reloff;
 	bool show_reloff_flags;
 	bool show_comments;
+	bool show_usercomments;
 	bool show_jmphints;
 	bool show_leahints;
 	bool show_slow;
 	int cmtcol;
-	bool show_lines_fcn;
 	bool show_calls;
 	bool show_cmtflgrefs;
 	bool show_cycles;
@@ -174,6 +178,7 @@ typedef struct {
 	bool show_vars;
 	int show_varsum;
 	int midflags;
+	bool midbb;
 	bool midcursor;
 	bool show_noisy_comments;
 	ut64 asm_highlight;
@@ -305,14 +310,13 @@ static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
-static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_sysregs(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds, int pos);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
-static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out);
+static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
@@ -338,11 +342,6 @@ static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr > b->addr);
-}
-
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
 	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->assembler->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
@@ -365,13 +364,12 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 static const char * get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
-	RIOSection *s;
 	if (oaddr == addr) {
 		return section;
 	}
-	s = r_io_section_vget (core->io, addr);
+	RIOSection *s = r_io_section_vget (core->io, addr);
 	if (s) {
-		snprintf (section, sizeof (section)-1, "%10s ", s->name);
+		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
 	} else {
 		RListIter *iter;
 		RDebugMap *map;
@@ -444,21 +442,7 @@ static void ds_comment_lineup(RDisasmState *ds) {
 	_ALIGN;
 }
 
-static void ds_begin_comment(RDisasmState *ds) {
-	if (ds->show_comment_right) {
-		_ALIGN;
-	} else {
-		if (ds->use_json) {
-			ds_begin_json_line (ds);
-		}
-		ds_pre_xrefs (ds, false);
-	}
-}
-
-static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-
+static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
 	if (ds->show_comments) {
 		if (ds->show_comment_right && align) {
 			ds_align_comment (ds);
@@ -472,19 +456,36 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = r_str_escape_latin1 (buffer, false, true);
+		char *escstr = r_str_escape_latin1 (buffer, false, true, true);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);
 		}
 	}
 
-	if (!ds->show_comment_right && align) {
+	if (!ds->show_comment_right && nl) {
 		ds_newline (ds);
 	}
+}
 
+static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	ds_comment_ (ds, align, align, format, ap);
 	va_end (ap);
 }
+
+#define DS_COMMENT_FUNC(name, align, nl) \
+	static void ds_comment_##name(RDisasmState *ds, const char *format, ...) { \
+		va_list ap; \
+		va_start (ap, format); \
+		ds_comment_ (ds, align, nl, format, ap); \
+		va_end (ap); \
+	}
+
+DS_COMMENT_FUNC (start, true, false)
+DS_COMMENT_FUNC (middle, false, false)
+DS_COMMENT_FUNC (end, false, true)
 
 static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *format, ...) {
 	va_list ap;
@@ -587,6 +588,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
 	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
+	ds->midbb = r_config_get_i (core->config, "asm.bb.middle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -628,6 +630,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
+	ds->show_section_perm = r_config_get_i (core->config, "asm.section.perm");
+	ds->show_section_name = r_config_get_i (core->config, "asm.section.name");
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
@@ -645,8 +649,8 @@ static RDisasmState * ds_init(RCore *core) {
 		ut64 addr = r_reg_getv (core->anal->reg, "SP") - (size / 2);
 		emustack_min = addr;
 		emustack_max = addr + size;
-		ds->stackFd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
-		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_IO_RW, 0LL, addr, size, true);
+		ds->stackFd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
+		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_PERM_RW, 0LL, addr, size);
 		if (!map) {
 			r_io_fd_close (core->io, ds->stackFd);
 			eprintf ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
@@ -664,6 +668,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
+	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
 	ds->show_leahints = r_config_get_i (core->config, "asm.leahints");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
@@ -801,6 +806,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 	}
 }
 
+#if 0
 static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
 	RCore *core = ds->core;
 	RAnal *anal = core->anal;
@@ -816,6 +822,7 @@ static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut
 		anal->reflines = anal->reflines2 = NULL;
 	}
 }
+#endif
 
 static void ds_free(RDisasmState *ds) {
 	if (!ds) {
@@ -828,6 +835,7 @@ static void ds_free(RDisasmState *ds) {
 			r_io_fd_close (ds->core->io, ds->stackFd);
 		}
 	}
+	r_asm_op_fini (&ds->asmop);
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
 	ds_print_esil_anal_fini (ds);
@@ -847,7 +855,7 @@ static void ds_free(RDisasmState *ds) {
 /* XXX move to r_print */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color) {
 	char *spacer = NULL;
-	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
+	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
 	char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
 	RAnalFunction *f = ds->show_color_args ? fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL) : NULL;
@@ -897,7 +905,7 @@ static bool ds_must_strip(RDisasmState *ds) {
 }
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
-	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
+	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
 	const char *color_reset = line_highlighted (ds) ? ds->color_linehl : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
 	ds->opstr = asm_str? asm_str: source;
@@ -906,10 +914,11 @@ static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	if (!ds->opstr) {
-		ds->opstr = strdup (ds->asmop.buf_asm);
+		ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 	}
 	/* initialize */
 	core->parser->hint = ds->hint;
+	ds->hint = NULL;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
@@ -940,7 +949,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	char *asm_str = colorize_asm_string (core, ds, print_color);
 	asm_str = ds_sub_jumps (ds, asm_str);
 	if (ds->immtrim) {
-		r_parse_immtrim (ds->opstr);
+		char *res = r_parse_immtrim (ds->opstr);
+		if (res) {
+			ds->opstr = res;
+		}
 		free (asm_str);
 		return;
 	}
@@ -974,10 +986,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					ut64 killme = UT64_MAX;
 					const int be = core->assembler->big_endian;
 					r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
-					core->parser->relsub_addr = (int)killme;
+					core->parser->relsub_addr = killme;
 				}
 			}
-			r_parse_filter (core->parser, core->flags, asm_str,
+			r_parse_filter (core->parser, ds->vat, core->flags, asm_str,
 				ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
@@ -1082,18 +1094,6 @@ static void ds_newline(RDisasmState *ds) {
 	}
 }
 
-static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
-	ds_setup_pre (ds, false, false);
-	if (ds->pre != DS_PRE_NONE && ds->pre != DS_PRE_EMPTY) {
-		ds->pre = no_fcnlines ? DS_PRE_EMPTY : DS_PRE_FCN_MIDDLE;
-	}
-	ds_print_pre (ds);
-	char *tmp = ds->line;
-	ds->line = ds->refline2;
-	ds_print_lines_left (ds);
-	ds->line = tmp;
-}
-
 static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	RListIter *iter;
@@ -1119,6 +1119,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		if (cmt) {
 			_ds_comment_align_ (ds, true, false);
 			ds_comment (ds, true, "; (%s)", cmt);
+			free (cmt);
 		}
 		if (ref->type & R_ANAL_REF_TYPE_CALL) {
 			RAnalOp aop;
@@ -1158,10 +1159,15 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	if (r_list_length (xrefs) > ds->maxrefs) {
+		ds_begin_json_line (ds);
 		ds_pre_xrefs (ds, false);
-		ds_comment (ds, false, "%s; XREFS(%d)\n",
+		ds_comment (ds, false, "%s; XREFS(%d)",
 			ds->show_color? ds->pal_comment: "",
 			r_list_length (xrefs));
+		if (ds->show_color) {
+			ds_print_color_reset (ds);
+		}
+		ds_newline (ds);
 		r_list_free (xrefs);
 		return;
 	} else if (r_list_length (xrefs) > ds->foldxrefs) {
@@ -1169,6 +1175,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols -= 15;
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;
+		ds_begin_json_line (ds);
 		ds_pre_xrefs (ds, false);
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
@@ -1178,6 +1185,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				if (iter->n) {
 					ds_print_color_reset (ds);
 					ds_newline (ds);
+					ds_begin_json_line (ds);
 					ds_pre_xrefs (ds, false);
 					ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 				}
@@ -1259,19 +1267,22 @@ static void ds_show_xrefs(RDisasmState *ds) {
 
 static void ds_atabs_option(RDisasmState *ds) {
 	int n, i = 0, comma = 0, word = 0;
-	int size, brackets = 0;
+	int brackets = 0;
 	char *t, *b;
 	if (!ds || !ds->atabs) {
 		return;
 	}
-	size = strlen (ds->asmop.buf_asm) * (ds->atabs + 1) * 4;
-	if (size < 1 || size < strlen (ds->asmop.buf_asm)) {
+	int bufasm_len = r_strbuf_length (&ds->asmop.buf_asm);
+	int size = bufasm_len * (ds->atabs + 1) * 4;
+	if (size < 1 || size < bufasm_len) {
 		return;
 	}
 	free (ds->opstr);
 	ds->opstr = b = malloc (size + 1);
-	strncpy (b, ds->asmop.buf_asm, R_MIN (size, R_ASM_BUFSIZE));
-	b[size] = 0;
+	if (!b) {
+		return;
+	}
+	strcpy (b, r_asm_op_get_asm (&ds->asmop));
 	for (; *b; b++, i++) {
 		if (*b == '(' || *b == '[') {
 			brackets++;
@@ -1334,6 +1345,8 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
 					ds_begin_json_line (ds);
+					// this reloc is displayed already as a flag comment
+					// this is unnecessary imho
 					r_cons_printf ("(%s)", fi->name);
 					ds_newline (ds);
 				}
@@ -1347,6 +1360,25 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			return i;
 		}
 	}
+	return 0;
+}
+
+static int handleMidBB(RCore *core, RDisasmState *ds) {
+	int i;
+	// Unfortunately, can't just check the addr of the last insn byte since
+	// a bb (and fcn) can be as small as 1 byte, and advancing i based on
+	// bb->size is unsound if basic blocks can nest or overlap
+	for (i = 1; i < ds->oplen; i++) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
+		if (fcn) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (fcn, ds->at + i);
+			if (bb && bb->addr > ds->at) {
+				ds->hasMidbb = true;
+				return bb->addr - ds->at;
+			}
+		}
+	}
+	ds->hasMidbb = false;
 	return 0;
 }
 
@@ -1364,10 +1396,13 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	if (ds->midflags) {
 		(void)handleMidFlags (core, ds, false);
 	}
+	if (ds->midbb) {
+		(void)handleMidBB (core, ds);
+	}
 	if (p) {
 		res[0] = 'b';
 	}
-	if (ds->hasMidflag) {
+	if (ds->hasMidflag || ds->hasMidbb) {
 		res[1] = '~';
 	}
 	if (q) {
@@ -1382,6 +1417,32 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		}
 	}
 	r_cons_strcat (res);
+}
+
+static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
+	ds_setup_pre (ds, false, false);
+	if (ds->pre != DS_PRE_NONE && ds->pre != DS_PRE_EMPTY) {
+		ds->pre = no_fcnlines ? DS_PRE_EMPTY : DS_PRE_FCN_MIDDLE;
+	}
+	ds_print_pre (ds);
+	char *tmp = ds->line;
+	ds->line = ds->refline2;
+	ds_print_lines_left (ds);
+	if (!ds->show_offset && ds->show_marks) {
+		ds_print_show_cursor (ds);
+	}
+	ds->line = tmp;
+}
+
+static void ds_begin_comment(RDisasmState *ds) {
+	if (ds->show_comment_right) {
+		_ALIGN;
+	} else {
+		if (ds->use_json) {
+			ds_begin_json_line (ds);
+		}
+		ds_pre_xrefs (ds, false);
+	}
 }
 
 static int var_comparator(const RAnalVar *a, const RAnalVar *b){
@@ -1399,11 +1460,27 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
-	const char *pfx = is_var ? "var" : "arg";
-	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
+	const char *pfx = is_var ? "var" : "arg", *constr = NULL;
+	RStrBuf *constr_buf = NULL;
+	bool cond = false;
+	if (ds->core && ds->core->anal) {
+		constr_buf = var_get_constraint (ds->core->anal, var);
+		if (constr_buf) {
+			constr = r_strbuf_get (constr_buf);
+			if (constr[0]) {
+				cond = true;
+			}
+		}
+	}
+	r_cons_printf ("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
 			COLOR_ARG (ds, color_func_var_type), var->type,
 			r_str_endswith (var->type, "*") ? "" : " ",
-			var->name, COLOR_ARG (ds, color_func_var_addr), base, sign, delta);
+			var->name, COLOR_ARG (ds, color_func_var_addr),
+			cond? " { ":"",
+			cond? constr: "",
+			cond? "} ":"",
+			base, sign, delta);
+	r_strbuf_free (constr_buf);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
@@ -1498,17 +1575,15 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
-	bool demangle, call;
-	const char *lang;
 	char *fcn_name;
 	char *sign;
 
 	if (!ds->show_functions) {
 		return;
 	}
-	demangle = r_config_get_i (core->config, "bin.demangle");
-	call = r_config_get_i (core->config, "asm.calls");
-	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
+	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	bool call = r_config_get_i (core->config, "asm.calls");
+	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (!f || (f->addr != ds->at)) {
 		return;
@@ -1542,15 +1617,6 @@ static void ds_show_functions(RDisasmState *ds) {
 		default:
 			fcntype = "loc"; break;
 		}
-#if SLOW_BUT_OK
-		int corner = (f->size <= ds->analop.size) ? RDWN_CORNER : LINE_VERT;
-		corner = LINE_VERT; // 99% of cases
-		RFlagItem *item = r_flag_get_i (core->flags, f->addr);
-		corner = item ? LINE_VERT : RDWN_CORNER;
-		if (item) {
-			corner = 0;
-		}
-#endif
 		//ds_set_pre (ds, core->cons->vline[CORNER_TL]);
 		if (ds->show_lines_fcn) {
 			ds->pre = DS_PRE_FCN_HEAD;
@@ -1576,20 +1642,29 @@ static void ds_show_functions(RDisasmState *ds) {
 	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars && ds->show_varsum) {
 		RList *vars = r_anal_var_list (core->anal, f, 'b');
-		r_list_join(vars, r_anal_var_list (core->anal, f, 'r'));
-		r_list_join(vars, r_anal_var_list (core->anal, f, 's'));
-		printVarSummary(ds, vars);
+		RList *rvars = r_anal_var_list (core->anal, f, 'r');
+		RList *svars = r_anal_var_list (core->anal, f, 's');
+		r_list_join (vars, rvars);
+		r_list_join (vars, svars);
+		printVarSummary (ds, vars);
 		r_list_free (vars);
+		r_list_free (rvars);
+		r_list_free (svars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
+		char *fname = NULL;
+		Sdb *TDB = core->anal->sdb_types;
 		RList *args = r_anal_var_list (core->anal, f, 'b');
 		RList *regs = r_anal_var_list (core->anal, f, 'r');
 		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
+		if (fcn_name) {
+			fname = r_type_func_guess (TDB, fcn_name);
+		}
 		if (call) {
 			ds_begin_json_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
@@ -1597,6 +1672,24 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_cons_printf ("%s %s %s%s (",
 				COLOR_RESET (ds), COLOR (ds, color_fname),
 				fcn_name, COLOR_RESET (ds));
+			if (fname && r_type_func_exist (TDB, fname)) {
+				int i, argc = r_type_func_args_count (TDB, fname);
+				bool comma = true;
+				// This avoids false positives present in argument recovery
+				// and straight away print arguments fetched from types db
+				for (i = 0; i < argc; i++) {
+					char *type = r_type_func_args_type (TDB, fname, i);
+					const char *name = r_type_func_args_name (TDB, fname, i);
+					if (i == argc - 1) {
+						comma = false;
+					}
+					int len = strlen(type);
+					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
+							name, comma?", ":"");
+					free (type);
+				}
+				goto beach;
+			}
 			bool comma = true;
 			bool arg_bp = false;
 			int tmp_len;
@@ -1632,17 +1725,15 @@ static void ds_show_functions(RDisasmState *ds) {
 						var->name, iter->n ? ", " : "");
 				}
 			}
+beach:
+			free (fname);
 			r_cons_printf (");");
 			ds_newline (ds);
 		}
 		r_list_join (args, sp_vars);
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
-			if ((var->kind == 'r') && get_link_var (ds->core->anal, f->addr, var)) {
-				continue;
-			}
 			ds_begin_json_line (ds);
-			char *tmp;
 			int idx;
 			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
@@ -1651,12 +1742,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				idx = 0;
 			}
 			spaces[idx] = 0;
-			ds_setup_print_pre (ds, false, true);
-
-			tmp = ds->line;
-			ds->line = ds->refline2;
-			ds_print_lines_left (ds);
-			ds->line = tmp;
+			ds_pre_xrefs (ds, false);
 
 			if (ds->show_flgoff) {
 				ds_print_offset (ds);
@@ -1695,7 +1781,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (comment) {
 				char *comment_esc = NULL;
 				if (ds->use_json) {
-					comment = comment_esc = ds_esc_str (ds, comment, (int)strlen (comment), NULL);
+					comment = comment_esc = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
 				}
 
 				if (comment) {
@@ -1789,31 +1875,35 @@ static void ds_print_pre(RDisasmState *ds) {
 static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen;
 	RCore *core = ds->core;
-	RFlagItem *item;
 	/* show comment at right? */
 	int scr = ds->show_comment_right;
-	if (!ds->show_comments) {
+	if (!ds->show_comments && !ds->show_usercomments) {
 		return;
 	}
-	//RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	item = r_flag_get_i (core->flags, ds->at);
+	RFlagItem *item = r_flag_get_i (core->flags, ds->at);
 	char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
-			ds->comment = r_str_newf ("%s%s", COLOR_ARG (ds, color_func_var_type), vartype);
+			ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_func_var_type), vartype);
 			free (vartype);
 		} else if (item && item->comment && *item->comment) {
 			ds->ocomment = item->comment;
 			ds->comment = strdup (item->comment);
 		}
 	} else if (vartype) {
-		ds->comment = r_str_newf ("%s%s %s; %s", COLOR_ARG (ds, color_func_var_type), vartype, COLOR (ds, color_usrcmt), comment);
+		ds->comment = r_str_newf ("%s; %s %s%s; %s", COLOR_ARG (ds, color_func_var_type), vartype, Color_RESET, COLOR (ds, color_usrcmt), comment);
 		free (vartype);
 		free (comment);
 	} else {
-		ds->comment = comment;
+		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
+		free (comment);
 	}
+#if 0
+	if (!ds->show_comments) {
+		return;
+	}
+#endif
 	if (!ds->comment || !*ds->comment) {
 		return;
 	}
@@ -1821,7 +1911,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
 		if (ds->ocols + linelen < core->cons->columns) {
 			if (!strchr (ds->comment, '\n')) { // more than one line?
-				ds->show_comment_right = 1;
+				ds->show_comment_right = true;
 			}
 		}
 	}
@@ -1846,12 +1936,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			}
 			free (p);
 		} else {
-			ds->comment = r_str_prefix_all (ds->comment, "; ");
-			if (ds->show_comment_right) {
-				_ALIGN;
-			} else {
-				ds_pre_xrefs (ds, false);
-			}
+			ds_pre_xrefs (ds, false);
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_usrcmt);
 			}
@@ -1885,28 +1970,26 @@ static int flagCmp(const void *a, const void *b) {
 	const RFlagItem *fa = a;
 	const RFlagItem *fb = b;
 	if (fa->realname && fb->realname) {
-		return !strcmp (fa->realname, fb->realname);
+		return strcmp (fa->realname, fb->realname);
 	}
-	return !strcmp (fa->name, fb->name);
+	return strcmp (fa->name, fb->name);
 }
 
 static void ds_show_flags(RDisasmState *ds) {
 	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
-	RAnalFunction *f;
-	const RList /*RFlagList*/ *flaglist;
+	RAnalFunction *f = NULL;
 	if (!ds->show_flags) {
 		return;
 	}
 	RCore *core = ds->core;
-	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	char addr[64];
-	ut64 switch_addr;
+	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
-	flaglist = r_flag_get_list (core->flags, ds->at);
-	RList *uniqlist = r_list_uniq (flaglist, flagCmp);
+	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
+	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
@@ -1930,12 +2013,17 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		ds_begin_json_line (ds);
 
+
+		bool fake_flag_marks = (!ds->show_offset && ds->show_marks);
 		if (ds->show_flgoff) {
 			ds_beginline (ds);
 			ds_print_offset (ds);
-			r_cons_printf (" ");
+			if (!fake_flag_marks) {
+				r_cons_printf (" ");
+			}
 		} else {
-			ds_pre_xrefs (ds, false);
+			bool no_fcn_lines = (f && f->addr == flag->offset);
+			ds_pre_xrefs (ds, no_fcn_lines);
 		}
 
 		if (ds->show_color) {
@@ -1954,7 +2042,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 
-		if (!ds->show_flgoff) {
+		if (!ds->show_flgoff || fake_flag_marks) {
 			r_cons_printf (";-- ");
 		}
 
@@ -2001,6 +2089,7 @@ static void ds_show_flags(RDisasmState *ds) {
 
 static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines_bb) {
+		free (ds->line);
 		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
@@ -2063,6 +2152,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->opstr = strdup (ds->hint->opcode);
 		return true;
 	}
+	r_asm_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
@@ -2107,29 +2197,24 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			}
 			int sz = R_MIN (16, meta->size - (ds->at - meta->from));
 			ds->asmop.size = sz;
-			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
+			r_asm_op_set_hexbuf (&ds->asmop, buf, sz);
 			switch (meta->type) {
 			case R_META_TYPE_STRING:
-				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 11,
-					".string \"%s\"", meta->str);
+				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".string \"%s\"", meta->str));
 				break;
 			// case R_META_TYPE_DATA:
 			//	break;
 			default:
-				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm),
-				          ".hex %.*s", (int)sizeof (ds->asmop.buf_asm) - 6, ds->asmop.buf_hex);
+				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".hex %s", r_asm_op_get_hex (&ds->asmop)));
 				break;
 			}
-			ds->asmop.buf_asm[sizeof (ds->asmop.buf_asm) - 1] = 0;
-			// strcpy (ds->asmop.buf_hex, "0102030405060708");
-			//return i;
 			ds->oplen = sz; //ds->asmop.size;
 			return i;
 		}
 	}
 
 	if (ds->show_nodup) {
-		const char *opname = (ret < 1)? "invalid": ds->asmop.buf_asm;
+		const char *opname = (ret < 1)? "invalid": r_asm_op_get_asm (&ds->asmop);
 		if (ds->prev_ins && !strcmp (ds->prev_ins, opname)) {
 			if (!ds->prev_ins_eq) {
 				ds->prev_ins_eq = true;
@@ -2146,7 +2231,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (ds->prev_ins) {
 			R_FREE (ds->prev_ins);
 		}
-		ds->prev_ins = strdup (ds->asmop.buf_asm);
+		ds->prev_ins = strdup (r_asm_op_get_asm (&ds->asmop));
 	}
 	ds->oplen = ds->asmop.size;
 
@@ -2174,15 +2259,16 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (ds->pseudo) {
 		r_parse_parse (core->parser, ds->opstr
 				? ds->opstr
-				: ds->asmop.buf_asm,
+				: r_asm_op_get_asm (&ds->asmop),
 				ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
 	if (ds->acase) {
-		r_str_case (ds->asmop.buf_asm, 1);
+		r_str_case (r_asm_op_get_asm (&ds->asmop), 1);
 	} else if (ds->capitalize) {
-		ds->asmop.buf_asm[0] = toupper (ds->asmop.buf_asm[0]);
+		char *ba = r_asm_op_get_asm (&ds->asmop);
+		*ba = toupper (*ba);
 	}
 	if (info && mt_sz != UT64_MAX) {
 		ds->oplen = mt_sz;
@@ -2226,7 +2312,9 @@ static void ds_print_lines_right(RDisasmState *ds){
 
 static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) {
 	int pre, post;
-	if (cols < 8) cols = 8;
+	if (cols < 8) {
+		cols = 8;
+	}
 	int outsz = cols + 32;
 	char *out = malloc (outsz);
 	if (!out) {
@@ -2261,7 +2349,20 @@ static void ds_print_lines_left(RDisasmState *ds) {
 	RCore *core = ds->core;
 
 	if (ds->show_section) {
-		char *sect = strdup (get_section_name (core, ds->at));
+		char *str = NULL;
+		if (ds->show_section_perm) {
+			// iosections must die, this should be rbin_section_get
+			RIOSection *s = r_io_section_vget (core->io, ds->at);
+			if (s) {
+				str = strdup (r_str_rwx_i (s->perm));
+			} else {
+				str = strdup ("---");
+			}
+		}
+		if (ds->show_section_name) {
+			str = r_str_appendf (str, " %s", get_section_name (core, ds->at));
+		}
+		char *sect = str? str: strdup ("");
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
 		free (sect);
 	}
@@ -2448,7 +2549,7 @@ static void ds_print_offset(RDisasmState *ds) {
 					ds->show_offseg, seggrn, ds->show_offdec, delta, label);
 		}
 	}
-	if (ds->atabsoff > 0) {
+	if (ds->atabsoff > 0 && ds->show_offset) {
 		if (ds->_tabsoff != ds->atabsoff) {
 			char *b = ds->_tabsbuf;
 			// TODO optimize to avoid down resizing
@@ -2635,7 +2736,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 						esc_bslash = false;
 						/* fallthrough */
 					default:
-						out = r_str_escape_latin1 (mi->str, false, esc_bslash);
+						out = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
 					}
 					if (!out) {
 						break;
@@ -2685,8 +2786,11 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					}
 					ds->oplen = mi->size - delta;
 					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-					if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, mi->size)) {
-						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", mi->size , delta);
+					// TODO do not pass a copy in parameter buf that is possibly to small for this
+					// print operation
+					int size = R_MIN(mi->size, len - idx);
+					if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
+						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
 						r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1, 1);
 					}
 					core->inc = 16; // ds->oplen; //
@@ -2864,7 +2968,9 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		str = flagstr;
 		if (ds->nb > 0) {
 			k = ds->nb - strlen (flagstr) - 1;
-			if (k < 0 || k > sizeof(pad)) k = 0;
+			if (k < 0 || k > sizeof (pad)) {
+				k = 0;
+			}
 			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
 			}
@@ -2884,7 +2990,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			pad[j] = '\0';
 			str = strdup ("");
 		} else {
-			str = strdup (ds->asmop.buf_hex);
+			str = strdup (r_asm_op_get_hex (&ds->asmop));
 			if (r_str_ansi_len (str) > ds->nb) {
 				char *p = (char *)r_str_ansi_chrn (str, ds->nb);
 				if (p)  {
@@ -2944,7 +3050,7 @@ static void ds_print_indent(RDisasmState *ds) {
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->use_json) {
-		char *escaped_str = r_str_escape (ds->opstr);
+		char *escaped_str = r_str_escape_latin1 (ds->opstr, false, true, true);
 		if (escaped_str) {
 			r_cons_strcat (escaped_str);
 		}
@@ -2987,6 +3093,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	if (!label) {
 		return false;
 	}
+	ds_beginline (ds);
 	if (ds->show_color) {
 		r_cons_strcat (ds->color_label);
 		r_cons_printf (" .%s:\n", label);
@@ -2997,6 +3104,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	return true;
 }
 
+#if 0
 static void ds_print_import_name(RDisasmState *ds) {
 	RListIter *iter = NULL;
 	RBinReloc *rel = NULL;
@@ -3022,6 +3130,7 @@ static void ds_print_import_name(RDisasmState *ds) {
 		}
 	}
 }
+#endif
 
 static void ds_print_sysregs(RDisasmState *ds) {
 	RCore *core = ds->core;
@@ -3104,22 +3213,27 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	}
 }
 
-static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
+static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	char *shortcut = r_core_add_asmqjmp (ds->core, addr);
+	int slen = shortcut? strlen (shortcut): 0;
 	if (!pos && !shortcut) {
-		r_cons_printf ("   ");
-		return;
+		r_cons_printf (" ");
+		return 0;
 	}
 	if (pos) {
 		ds_align_comment (ds);
 	}
-	char *ch = pos?  ";": "";
+	const char *ch = pos? ";": "";
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
+	}
+	if (*ch) {
+		slen++;
 	}
 	if (shortcut) {
 		if (ds->core->is_asmqjmps_letter) {
 			r_cons_printf ("%s[g%s]", ch, shortcut);
+			slen++;
 		} else {
 			r_cons_printf ("%s[%s]", ch, shortcut);
 		}
@@ -3134,6 +3248,8 @@ static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 			r_cons_strcat (Color_RESET_NOBG);
 		}
 	}
+	slen++;
+	return slen;
 }
 
 static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
@@ -3167,6 +3283,7 @@ static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
 static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	bool gotShortcut = false;
+	int i, slen = 0;
 
 	if (!core->vmode) {
 		return;
@@ -3186,7 +3303,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (ds->show_leahints) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr > 256) {
-				ds_print_shortcut (ds, ds->analop.ptr, pos);
+				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
 				gotShortcut = true;
 			}
 		}
@@ -3209,9 +3326,9 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 #endif
 		if (ds->show_jmphints) {
 			if (ds->analop.jump != UT64_MAX) {
-				ds_print_shortcut (ds, ds->analop.jump, pos);
+				slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			} else {
-				ds_print_shortcut (ds, ds->analop.ptr, pos);
+				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
 			}
 			gotShortcut = true;
 		}
@@ -3223,7 +3340,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 		if (ds->show_jmphints) {
-			ds_print_shortcut (ds, ds->analop.jump, pos);
+			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
 		break;
@@ -3234,8 +3351,15 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		break;
 	}
 	if (!gotShortcut) {
-		r_cons_strcat ("   ");
+		for (i = 4 - slen; i > 0; i--) {
+			r_cons_strcat (" ");
+		}
+	} else {
+		for (i = 3 - slen; i > 0; i--) {
+			r_cons_strcat (" ");
+		}
 	}
+	r_cons_strcat ("  ");
 }
 
 // align for comment
@@ -3351,14 +3475,14 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 }
 
 /* Do not use this function for escaping JSON! */
-static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out) {
+static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment) {
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
 	bool esc_bslash = ds->core->print->esc_bslash;
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 		break;
 	case R_STRING_ENC_UTF8:
 		escstr = r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash);
@@ -3395,7 +3519,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
 				prefix = "U";
 			} else {
-				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
@@ -3407,8 +3531,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
-			          r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash) :
-			          r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash));
+				r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash) :
+				r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment));
 		}
 	}
 	if (prefix_out) {
@@ -3422,7 +3546,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 		return;
 	}
 	const char *prefix;
-	char *escstr = ds_esc_str (ds, str, len, &prefix);
+	char *escstr = ds_esc_str (ds, str, len, &prefix, false);
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
@@ -3461,7 +3585,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 refaddr = p;
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
-	RFlagItem *f;
+	RFlagItem *f, *f2 = NULL;
+	bool f2_in_opstr = false;  /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
@@ -3530,9 +3655,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (((st64)p) > 0) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
+				ut64 relsub_addr = core->parser->relsub_addr;
+				if (relsub_addr && relsub_addr != p) {
+					f2 = r_flag_get_i2 (core->flags, relsub_addr);
+					if (!f2) {
+						f2 = r_flag_get_i (core->flags, relsub_addr);
+					}
+					f2_in_opstr = f2 && ds->opstr && strstr (ds->opstr, f2->name);
+				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+				    && (!ds->opstr || !strstr (ds->opstr, f->name))
+				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; %s", f->name);
 					ds->printed_flag_addr = p;
@@ -3558,7 +3692,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 			} else {
-				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
@@ -3570,9 +3703,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else {
 					const char *kind, *flag = "";
 					char *msg2 = NULL;
-					f = r_flag_get_i (core->flags, n);
-					if (f) {
-						flag = f->name;
+					RFlagItem *f2_ = r_flag_get_i (core->flags, n);
+					if (f2_) {
+						flag = f2_->name;
 					} else {
 						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
@@ -3596,9 +3729,16 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
-						ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
-							refaddr, refptr, refptrstr, *refptrstr?".":"",
-							n, (flag && *flag) ? " " : "", flag);
+						ds_comment_start (ds, "; [");
+						if (f2_in_opstr) {
+							ds_comment_middle (ds, "%s", f->name);
+							flag_printed = true;
+						} else {
+							ds_comment_middle (ds, "0x%" PFMT64x, refaddr);
+						}
+						ds_comment_end (ds, ":%d]=%s%s0x%" PFMT64x "%s%s",
+								refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
 					}
 					free (msg2);
 				}
@@ -3669,8 +3809,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ds_comment (ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
-				ds_begin_comment (ds);
 				if (ch != ds->chref) {
+					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%c'", ch);
 				}
 			} else if (refaddr > 10) {
@@ -3773,7 +3913,9 @@ static void ds_print_relocs(RDisasmState *ds) {
 		if (rel->import) {
 			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
 		} else if (rel->symbol) {
-			r_cons_printf ("; RELOC %d %s", rel->type, rel->symbol->name);
+			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x " + 0x%" PFMT64x,
+					rel->type, rel->symbol->name,
+					rel->symbol->vaddr, rel->addend);
 		} else {
 			r_cons_printf ("; RELOC %d ", rel->type);
 		}
@@ -3870,7 +4012,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					len = R_DISASM_MAX_STR;
 				}
 #endif
-				char *escstr = ds_esc_str (ds, str, (int)len, &prefix);
+				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
 				const char *escquote = ds->use_json ? "\\\"" : "\"";
 				if (escstr) {
 					if (ds->show_color) {
@@ -4140,7 +4282,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_SWI: {
-		char *s = cmd_syscall_dostr (core, -1);
+		char *s = cmd_syscall_dostr (core, ds->analop.val, at);
 		if (s) {
 			ds_comment_esil (ds, true, true, "; %s", s);
 			free (s);
@@ -4188,16 +4330,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				// remove other comments
 				delete_last_comment (ds);
-				if (ds->show_color) {
-					ds_comment_esil (ds, true, false, ds->pal_comment);
-				}
+				// ds_comment_start (ds, "");
+				ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 				if (fcn_type) {
-					ds_comment_esil (ds, ds->show_color? false : true, false,
-							"; %s%s%s(", r_str_get (fcn_type), (*fcn_type &&
-							fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
+					ds_comment_middle (ds, "; %s%s%s(", r_str_get (fcn_type),
+							(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
 							r_str_get (key));
 					if (!nargs) {
-						ds_comment_esil (ds, false, true, "void)");
+						ds_comment_end (ds, "void)");
 						break;
 					}
 				}
@@ -4215,39 +4355,46 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 						on_stack = true;
 					}
 					if (!arg->size) {
-						ds_comment_esil (ds, false, false, "%s: unk_size", arg->c_type);
+						ds_comment_middle (ds, "%s: unk_size", arg->c_type);
 						warning = true;
 					}
 					nextele = r_list_iter_get_next (iter);
 					if (!arg->fmt) {
 						if (!warning) {
-							ds_comment_esil (ds, false, false, "%s : unk_format", arg->c_type);
+							ds_comment_middle (ds, "%s : unk_format", arg->c_type);
 						} else {
-							ds_comment_esil (ds, false, false, "_format");
+							ds_comment_middle (ds, "_format");
 						}
-						ds_comment_esil (ds, false, false, nextele?", ":")");
+						ds_comment_middle (ds, nextele?", ":")");
 					} else {
 						//print_fcn_arg may need ds_comment_esil
 						print_fcn_arg (core, arg->orig_c_type,
 								arg->name, arg->fmt, arg->src, on_stack);
-						ds_comment_esil (ds, false, false, nextele?", ":")");
+						ds_comment_middle (ds, nextele?", ":")");
 					}
 				}
-				// ds_comment_esil (ds, false, true, "");
+				ds_comment_end (ds, "");
 				break;
 			} else {
 				// function name not resolved
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
-					nargs = fcn->nargs;
+					// @TODO: fcn->nargs should be updated somewhere and used here instead
+					nargs = r_anal_var_count (core->anal, fcn, 's', 1) +
+							r_anal_var_count (core->anal, fcn, 'b', 1) +
+							r_anal_var_count (core->anal, fcn, 'r', 1);
 				}
 				if (nargs > 0) {
-					ds_comment_esil (ds, true, false, "; CALL: ");
-					for (i = 0; i < nargs; i++) {
-						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
-						ds_comment_esil (ds, false, false, "%s0x%"PFMT64x, i?", ":"", v);
+					if (fcn_name) {
+						ds_comment_middle (ds, "; %s(", fcn_name);
+					} else {
+						ds_comment_middle (ds, "; 0x%"PFMT64x"(", pcv);
 					}
-					ds_comment_esil (ds, false, true, "");
+					for (i = 0; i < nargs; i++) {
+						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
+						ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
+					}
+					ds_comment_end (ds, ")");
 				}
 			}
 			r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
@@ -4283,36 +4430,35 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else if (!(name = r_type_func_guess (TDB, fcn->name))) {
 		return;
 	}
-	if (ds->show_color) {
-		r_cons_strcat (ds->pal_comment);
-	}
-	ds_align_comment (ds);
+	ds_begin_comment (ds);
 	const char *fcn_type = r_type_func_ret (TDB, name);
-	if (fcn_type && *fcn_type) {
-		r_cons_printf (
-			"; %s%s%s(", fcn_type,
-			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
-			name);
+	if (!fcn_type || !*fcn_type) {
+		return;
 	}
+	char *cmt = r_str_newf ("; %s%s%s(", fcn_type,
+		fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
+		name);
 	int i, arg_max = r_type_func_args_count (TDB, name);
 	if (!arg_max) {
-		r_cons_printf ("void)");
+		cmt = r_str_append (cmt, "void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
 			char *type = r_type_func_args_type (TDB, name, i);
-			char *tname = r_type_func_args_name (TDB, name, i);
+			const char *tname = r_type_func_args_name (TDB, name, i);
 			if (type && *type) {
-				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
+				cmt = r_str_appendf (cmt, "%s%s%s%s%s", i == 0 ? "": " ", type,
 						type[strlen (type) -1] == '*' ? "": " ",
 						tname, i == arg_max - 1 ? ")": ",");
 			} else if (tname && !strcmp (tname, "...")) {
-				r_cons_printf ("%s%s%s", i == 0 ? "": " ",
+				cmt = r_str_appendf (cmt, "%s%s%s", i == 0 ? "": " ",
 						tname, i == arg_max - 1 ? ")": ",");
 			}
 			free (type);
 		}
 	}
+	ds_comment (ds, true, cmt);
 	ds_print_color_reset (ds);
+	free (cmt);
 	free (name);
 }
 
@@ -4321,7 +4467,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	RCore *core = ds->core;
 	ds_print_relocs (ds);
 	if (ds->asm_describe && !ds->has_description) {
-		char *op, *locase = strdup (ds->asmop.buf_asm);
+		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
 		if (!locase) {
 			return;
 		}
@@ -4333,7 +4479,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		desc = r_asm_describe (core->assembler, locase);
 		free (locase);
 	}
-	if (ds->show_comments) {
+	if (ds->show_usercomments || ds->show_comments) {
 		if (desc && *desc) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
@@ -4349,10 +4495,6 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				if (!desc) {
 					ds_align_comment (ds);
 				}
-				if (ds->show_color) {
-					// r_cons_strcat (ds->color_comment);
-					r_cons_strcat (ds->color_usrcmt);
-				}
 				if (strchr (comment, '\n')) {
 					comment = strdup (comment);
 					if (comment) {
@@ -4366,12 +4508,17 @@ static void ds_print_comments_right(RDisasmState *ds) {
 								char *c = comment + line_indexes[i];
 								char *escstr = NULL;
 								if (ds->use_json) {
-									c = escstr = ds_esc_str (ds, c, (int)strlen (c), NULL);
+									c = escstr = ds_esc_str (ds, c, (int)strlen (c), NULL, true);
 								}
 								ds_print_pre (ds);
-								r_cons_printf ("; %s", c);
-								ds_newline (ds);
-								ds_begin_json_line (ds);
+								if (ds->show_color) {
+									r_cons_strcat (ds->color_usrcmt);
+								}
+								r_cons_printf (i == 0 ? "%s" : "; %s", c);
+								if (i < lines_count - 1) {
+									ds_newline (ds);
+									ds_begin_json_line (ds);
+								}
 								free (escstr);
 							}
 						}
@@ -4381,10 +4528,10 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				} else {
 					char *escstr = NULL;
 					if (ds->use_json) {
-						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL);
+						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
 					}
 					if (comment) {
-						r_cons_printf ("; %s", comment);
+						r_cons_strcat (comment);
 					}
 					free (escstr);
 				}
@@ -4414,15 +4561,23 @@ static char *_find_next_number(char *op) {
 	if (p) {
 		while (*p) {
 			// look for start of next separator or ANSI sequence
-			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) p++;
+			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) {
+				p++;
+			}
 			if (*p == 0x1b) {
 				// skip to end of ANSI sequence (lower or uppercase char)
-				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) p++;
-				if (*p) p++;
+				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
+					p++;
+				}
+				if (*p) {
+					p++;
+				}
 			}
 			if (IS_SEPARATOR (*p)) {
 				// skip to end of separator
-				while (*p && IS_SEPARATOR (*p)) p++;
+				while (*p && IS_SEPARATOR (*p)) {
+					p++;
+				}
 			}
 			if (IS_DIGIT (*p)) {
 				// we found the start of the next number
@@ -4502,7 +4657,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
-	int ret, i, inc, skip_bytes = 0, idx = 0;
+	int ret, i, inc, skip_bytes = 0, skip_bytes_bb = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
@@ -4578,7 +4733,7 @@ toro:
 	ds_print_esil_anal_init (ds);
 	inc = 0;
 	if (!ds->l) {
-		len = ds->l = core->blocksize;
+		ds->l = core->blocksize;
 	}
 
 	r_cons_break_push (NULL, NULL);
@@ -4725,15 +4880,24 @@ toro:
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
 			ds->at -= skip_bytes;
 		}
+		if (ds->midbb) {
+			skip_bytes_bb = handleMidBB (core, ds);
+		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			if (!r_anal_fcn_bbget_in (ds->pdf, ds->at)) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (ds->pdf, ds->at);
+			if (!bb) {
 				inc = ds->oplen;
 				r_anal_op_fini (&ds->analop);
 				if (!sparse) {
 					r_cons_printf ("..\n");
 					sparse = true;
 				}
+				continue;
+			} else if (sparse && bb->addr < ds->at) {
+				inc = -(ds->at - bb->addr);
+				sparse = false;
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 			sparse = false;
@@ -4758,19 +4922,47 @@ toro:
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 			}
+			if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
+				ds_print_calls_hints (ds);
+			}
+			/* respect asm.describe */
+			char *desc = NULL;
+			if (ds->asm_describe && !ds->has_description) {
+				char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
+				if (!locase) {
+					break;
+				}
+				op = strchr (locase, ' ');
+				if (op) {
+					*op = 0;
+				}
+				r_str_case (locase, 0);
+				desc = r_asm_describe (core->assembler, locase);
+				free (locase);
+			}
+			if (desc && *desc) {
+				ds_begin_comment(ds);
+				ds_align_comment (ds);
+				if (ds->show_color) {
+					r_cons_strcat (ds->color_comment);
+				}
+				r_cons_strcat ("; ");
+				r_cons_strcat (desc);
+				ds_print_color_reset (ds);
+				ds_newline(ds);
+				free(desc);
+			}
 		}
 
 		ds_begin_json_line (ds);
-		ds_setup_print_pre (ds, false, false);
-		ds_print_lines_left (ds);
 		// f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		f = fcnIn (ds, ds->addr, 0);
 		if (ds_print_labels (ds, f)) {
 			ds_show_functions (ds);
 			ds_show_xrefs (ds);
-			ds_setup_print_pre (ds, false, false);
-			ds_print_lines_left (ds);
 		}
+		ds_setup_print_pre (ds, false, false);
+		ds_print_lines_left (ds);
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
@@ -4809,7 +5001,7 @@ toro:
 			// ds_print_cc_update (ds);
 
 			ds_cdiv_optimization (ds);
-			if (ds->show_comments && ds->show_comment_right) {
+			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_instruction_mov_lea (ds, idx);
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_sysregs (ds);
@@ -4821,13 +5013,12 @@ toro:
 			}
 		} else {
 			ds_end_line_highlight (ds);
-			if (ds->show_comments && ds->show_comment_right) {
+			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
 			}
 			ds->mi_found = false;
 		}
-
 		core->print->resetbg = true;
 		ds_newline (ds);
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
@@ -4862,6 +5053,9 @@ toro:
 
 		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes) {
 			inc = skip_bytes;
+		}
+		if (ds->midbb && skip_bytes_bb && skip_bytes_bb < inc) {
+			inc = skip_bytes_bb;
 		}
 		if (inc < 1) {
 			inc = 1;
@@ -5058,9 +5252,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 					hasanal = true;
 				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
-				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
+				ds->opstr = (tmpopstr)? tmpopstr: strdup (r_asm_op_get_asm (&ds->asmop));
 			} else if (ds->immtrim) {
-				ds->opstr = strdup (ds->asmop.buf_asm);
+				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 				r_parse_immtrim (ds->opstr);
 			} else if (ds->use_esil) {
 				if (!hasanal) {
@@ -5090,8 +5284,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 					}
 				}
 				core->parser->hint = ds->hint;
-				r_parse_filter (core->parser, core->flags, ds->asmop.buf_asm, ds->str,
-						sizeof (ds->str), core->print->big_endian);
+				ds->hint = NULL;
+				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&ds->asmop),
+					ds->str, sizeof (ds->str), core->print->big_endian);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
 				core->parser->flagspace = ofs;
@@ -5099,10 +5294,11 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				ds->opstr = asm_str;
 				core->parser->flagspace = ofs; // ???
 			} else {
-				ds->opstr = strdup (ds->asmop.buf_asm);
+				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 			}
 			if (ds->immtrim) {
-				ds->opstr = strdup (ds->asmop.buf_asm);
+				free (ds->opstr);
+				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 				r_parse_immtrim (ds->opstr);
 			}
 		}
@@ -5240,6 +5436,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		} else if (i >= nb_bytes) {
 			break;
 		}
+		memset (&asmop, 0, sizeof (RAsmOp));
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
 			r_cons_printf (j > 0 ? ",{" : "{");
@@ -5251,22 +5448,31 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			result = true;
 			continue;
 		}
-		char *opstr = strdup (asmop.buf_asm);
+
+		char opstr[256];
+		strcpy (opstr, r_asm_op_get_asm (&asmop));
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ANAL_OP_MASK_ALL);
 
 		if (ds->pseudo) {
-			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
+			r_parse_parse (core->parser, opstr, opstr);
 		}
 
 		// f = r_anal_get_fcn_in (core->anal, at,
 		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list_dynamic;
-			r_parse_varsub (core->parser, f, at, ds->analop.size,
-				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
+			int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
+			char *ba = malloc (ba_len);
+			if (ba) {
+				strcpy (ba, r_asm_op_get_asm (&asmop));
+				r_parse_varsub (core->parser, f, at, ds->analop.size,
+						ba, ba, ba_len);
+				r_asm_op_set_asm (&asmop, ba);
+				free (ba);
+			}
 		}
 		oplen = r_asm_op_get_size (&asmop);
 		ds->oplen = oplen;
@@ -5284,8 +5490,17 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				core->parser->relsub_addr = killme;
 			}
 		}
-		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str,
-			sizeof (str), core->print->big_endian);
+		{
+			char *aop = r_asm_op_get_asm (&asmop);
+			char *buf = malloc (strlen (aop) + 128);
+			if (buf) {
+				strcpy (buf, aop);
+				r_parse_filter (core->parser, ds->vat, core->flags, buf,
+					str, sizeof (str), core->print->big_endian);
+				r_asm_op_set_asm (&asmop, buf);
+				free (buf);
+			}
+		}
 
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -5318,7 +5533,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 			free (escaped_str);
 		}
-		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
+		r_cons_printf (",\"bytes\":\"%s\"", r_asm_op_get_hex (&asmop));
 		r_cons_printf (",\"family\":\"%s\"",
 				r_anal_op_family_to_string (ds->analop.family));
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (ds->analop.type));
@@ -5400,7 +5615,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		j++; // instructions
 		line++;
 
-		free (opstr);
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
 		result = true;
@@ -5462,31 +5676,29 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			count ++;
 			switch (mode) {
 			case 'i':
-				r_parse_filter (core->parser, core->flags, asmop.buf_asm,
+				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), core->print->big_endian);
 				if (scr_color) {
-					char *buf_asm;
 					RAnalOp aop;
 					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ANAL_OP_MASK_ALL);
-					buf_asm = r_print_colorize_opcode (core->print, str,
+					char *buf_asm = r_print_colorize_opcode (core->print, str,
 							core->cons->pal.reg, core->cons->pal.num, false, f ? f->addr : 0);
-					r_cons_printf ("%s%s\n",
-							r_print_color_op_type (core->print, aop.type),
-							buf_asm);
-					free (buf_asm);
+					if (buf_asm) {
+						r_cons_printf ("%s%s\n", r_print_color_op_type (core->print, aop.type), buf_asm);
+						free (buf_asm);
+					}
 				} else {
-					r_cons_println (asmop.buf_asm);
+					r_cons_println (r_asm_op_get_asm (&asmop));
 				}
 				break;
 			case '=':
 				if (i < 28) {
-					char *str = r_str_newf ("0x%08"PFMT64x" %60s  %s\n",
-							ds->vat, "", asmop.buf_asm);
+					char *str = r_str_newf ("0x%08"PFMT64x" %60s  %s\n", ds->vat, "", r_asm_op_get_asm (&asmop));
 					char *sp = strchr (str, ' ');
 					if (sp) {
 						char *end = sp + 60 + 1;
-						const char *src = asmop.buf_hex;
+						const char *src = r_asm_op_get_hex (&asmop);
 						char *dst = sp + 1 + (i * 2);
 						int len = strlen (src);
 						if (dst < end) {
@@ -5503,11 +5715,12 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				break;
 			case 'j':
 				r_cons_printf ("{\"addr\":%08"PFMT64d",\"bytes\":\"%s\",\"inst\":\"%s\"}%s",
-					addr + i, asmop.buf_hex, asmop.buf_asm, ",");
+					addr + i, r_asm_op_get_hex (&asmop), r_asm_op_get_asm (&asmop), ",");
 				break;
 			default:
 				r_cons_printf ("0x%08"PFMT64x" %20s  %s\n",
-						addr + i, asmop.buf_hex, asmop.buf_asm);
+						addr + i, r_asm_op_get_hex (&asmop),
+						r_asm_op_get_asm (&asmop));
 			}
 		}
 	}
@@ -5520,219 +5733,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	ds_free (ds);
 	return count;
-}
-
-R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	ut32 cur_buf_sz = 0;
-	ut8 *buf = NULL;
-	ut32 len = 0;
-	int ret, idx = 0, i;
-	RListIter *bb_iter;
-	RAnalBlock *bb = NULL;
-	RDisasmState *ds;
-	RList *bb_list = NULL;
-
-	if (!fcn) {
-		return -1;
-	}
-
-	cur_buf_sz = r_anal_fcn_size (fcn) + 1;
-	buf = malloc (cur_buf_sz);
-	if (!buf) {
-		return -1;
-	}
-	len = r_anal_fcn_size (fcn);
-	bb_list = r_list_new();
-	if (!bb_list) {
-		free (buf);
-		return -1;
-	}
-	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
-	// TODO: import values from debugger is possible
-	// TODO: allow to get those register snapshots from traces
-	// TODO: per-function register state trace
-	idx = 0;
-	memset (buf, 0, cur_buf_sz);
-
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, addr);
-	}
-
-	// TODO: All those ds must be print flags
-	ds = ds_init (core);
-	ds->cbytes = cbytes;
-	ds->print = p;
-	ds->l = l;
-	ds->buf = buf;
-	ds->len = r_anal_fcn_size (fcn);
-	ds->addr = fcn->addr;
-	ds->fcn = fcn;
-	ds->stackptr = core->anal->stackptr;
-
-	r_list_foreach (fcn->bbs, bb_iter, bb) {
-		r_list_add_sorted (bb_list, bb, cmpaddr);
-	}
-	// Premptively read the bb data locs for ref lines
-	r_list_foreach (bb_list, bb_iter, bb) {
-		if (idx >= cur_buf_sz) {
-			break;
-		}
-		r_io_read_at (core->io, bb->addr, buf+idx, bb->size);
-		//ret = r_asm_disassemble (core->assembler, &ds->asmop, buf+idx, bb->size);
-		//if (ret > 0) eprintf ("%s\n",ds->asmop.buf_asm);
-		idx += bb->size;
-	}
-	ds_reflines_fcn_init (ds, fcn, buf);
-	core->inc = 0;
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
-	i = idx = 0;
-	r_cons_break_push (NULL, NULL);
-	ds_print_esil_anal_init (ds);
-
-	if (core->io && core->io->debug) {
-		r_debug_map_sync (core->dbg);
-	}
-	r_list_foreach (bb_list, bb_iter, bb) {
-		ut32 bb_size_consumed = 0;
-		// internal loop to consume bb that contain case-like operations
-		ds->at = bb->addr;
-		ds->vat = r_core_pava (core, ds->at);
-		ds->addr = bb->addr;
-		len = bb->size;
-
-		if (len > cur_buf_sz) {
-			free (buf);
-			buf = malloc (cur_buf_sz);
-			ds->buf = buf;
-			if (buf) {
-				cur_buf_sz = len;
-			} else {
-				cur_buf_sz = 0;
-			}
-		}
-		do {
-			ds->printed_str_addr = UT64_MAX;
-			ds->printed_flag_addr = UT64_MAX;
-			// XXX - why is it necessary to set this everytime?
-			r_asm_set_pc (core->assembler, ds->at);
-			if (ds->lines >= ds->l) {
-				break;
-			}
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-
-			ds_update_ref_lines (ds);
-			/* show type links */
-			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
-
-			ds_show_comments_right (ds);
-			ret = ds_disassemble (ds, buf + idx, len - bb_size_consumed);
-			ds_atabs_option (ds);
-			// TODO: store previous oplen in core->dec
-			if (!core->inc) {
-				core->inc = ds->oplen;
-			}
-			r_anal_op_fini (&ds->analop);
-			if (!ds->lastfail) {
-				r_anal_op (core->anal, &ds->analop,
-					ds->at+bb_size_consumed, buf+idx,
-					len-bb_size_consumed, R_ANAL_OP_MASK_ALL);
-			}
-			if (ret < 1) {
-				r_strbuf_init (&ds->analop.esil);
-				ds->analop.type = R_ANAL_OP_TYPE_ILL;
-			}
-			ds_instruction_mov_lea (ds, idx);
-			ds_control_flow_comments (ds);
-			ds_adistrick_comments (ds);
-			/* XXX: This is really cpu consuming.. need to be fixed */
-			ds_show_functions (ds);
-			if (ds_print_labels (ds, fcn)) {
-				ds_show_functions (ds);
-			}
-			ds_show_xrefs (ds);
-			ds_show_flags (ds);
-			ds_setup_print_pre (ds, false, false);
-			ds_print_lines_left (ds);
-			ds_print_offset (ds);
-			ds_print_op_size (ds);
-			ds_print_trace (ds);
-			ds_print_cycles (ds);
-			ds_print_family (ds);
-			ds_print_stackptr (ds);
-			ret = ds_print_meta_infos (ds, buf, len, idx);
-			if (ds->mi_found) {
-				ds->mi_found = false;
-				continue;
-			}
-			/* show cursor */
-			ds_print_show_cursor (ds);
-			ds_print_show_bytes (ds);
-			ds_print_lines_right (ds);
-			ds_build_op_str (ds, true);
-			ds_print_opstr (ds);
-			ds_print_sysregs (ds);
-			ds_print_fcn_name (ds);
-			ds_print_import_name (ds);
-			ds_print_color_reset (ds);
-			ds_print_dwarf (ds);
-			ret = ds_print_middle (ds, ret);
-			ds_print_asmop_payload (ds, buf + idx);
-			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
-				RAsmOp ao; /* disassemble for the vm .. */
-				int os = core->assembler->syntax;
-				r_asm_set_syntax (core->assembler,
-					R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao,
-					buf+idx, len-bb_size_consumed);
-				r_asm_set_syntax (core->assembler, os);
-			}
-			if (ds->shortcut_pos > 0) {
-				ds_print_core_vmode (ds, ds->shortcut_pos);
-			}
-			//ds_print_cc_update (ds);
-			/*if (ds->analop.refptr) {
-				handle_print_refptr (core, ds);
-			} else {
-				handle_print_ptr (core, ds, len, idx);
-			}*/
-			ds_print_ptr (ds, len, idx);
-			ds_cdiv_optimization (ds);
-			ds_print_comments_right (ds);
-			ds_show_refs (ds);
-			ds_print_esil_anal (ds);
-			if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
-				ds_newline (ds);
-			}
-			if (ds->line) {
-				R_FREE (ds->line);
-				R_FREE (ds->refline);
-				R_FREE (ds->refline2);
-			}
-			ds_print_bbline (ds, false);
-
-			bb_size_consumed += ds->oplen;
-			ds->index += ds->oplen;
-			idx += ds->oplen;
-			ds->at += ds->oplen;
-			ds->addr += ds->oplen;
-			ds->lines++;
-
-			R_FREE (ds->opstr);
-		} while (bb_size_consumed < len);
-		i++;
-	}
-	free (buf);
-	r_cons_break_pop ();
-	ds_print_esil_anal_fini (ds);
-
-	ds_free (ds);
-	r_list_free (bb_list);
-	return idx;
 }
 
 static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {
@@ -5911,7 +5911,7 @@ toro:
 			r_cons_println ("invalid"); // ???");
 		} else {
 			if (show_bytes) {
-				r_cons_printf ("%20s  ", asmop.buf_hex);
+				r_cons_printf ("%20s  ", r_asm_op_get_hex (&asmop));
 			}
 			ret = asmop.size;
 			if (!asm_immtrim && (decode || esil)) {
@@ -5927,7 +5927,7 @@ toro:
 					r_cons_println (esil);
 				} else {
 					if (decode) {
-						opstr = (tmpopstr)? tmpopstr: (asmop.buf_asm);
+						opstr = tmpopstr? tmpopstr: r_asm_op_get_asm (&(asmop));
 					} else if (esil) {
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
@@ -5940,7 +5940,7 @@ toro:
 				char opstr[128] = {
 					0
 				};
-				char *asm_str = (char *)&asmop.buf_asm;
+				char *asm_str = r_asm_op_get_asm (&asmop);
 				if (asm_ucase) {
 					r_str_case (asm_str, 1);
 				}
@@ -5949,7 +5949,7 @@ toro:
 				}
 				if (filter) {
 					core->parser->hint = r_anal_hint_get (core->anal, at);
-					r_parse_filter (core->parser, core->flags,
+					r_parse_filter (core->parser, at, core->flags,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
 					asm_str = (char *)&opstr;
 				}

@@ -8,11 +8,13 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
-	if (v) *v = 0LL;
+	if (v) {
+		*v = 0LL;
+	}
 	if (datalen == ST32_MAX) {
 		// WARNING; possible overflow
 		datalen = 0xffff;
-	} 
+	}
 	if (datalen < 0) {
 		return NULL;
 	}
@@ -22,13 +24,17 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
 				sum |= ((ut32) (c & 0x7f) << s);
-				if (!(c & 0x80)) break;
+				if (!(c & 0x80)) {
+					break;
+				}
 			}
 		} else {
 			data++;
 		}
 	}
-	if (v) *v = sum;
+	if (v) {
+		*v = sum;
+	}
 	return data;
 }
 
@@ -39,16 +45,18 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut8 c = 0xff;
 	ut64 s = 0, sum = 0, l = 0;
-	if (data && *data) {
-		do {
-			c = *(data++) & 0xff;
-			sum |= ((ut32) (c&0x7f) << s);
-			s += 7;
-			l++;
-		} while (c & 0x80);
+	do {
+		c = *(data++) & 0xff;
+		sum |= ((ut32) (c&0x7f) << s);
+		s += 7;
+		l++;
+	} while (c & 0x80);
+	if (v) {
+		*v = sum;
 	}
-	if (v) *v = sum;
-	if (datalen) *datalen = l;
+	if (datalen) {
+		*datalen = l;
+	}
 	return data;
 }
 
@@ -67,10 +75,14 @@ R_API const ut8 *r_uleb128_encode(const ut64 s, int *len) {
 		c = 0; //May not be necessary
 		c = source & 0x7f;
 		source >>= 7;
-		if (source) c |= 0x80;
+		if (source) {
+			c |= 0x80;
+		}
 		*(target) = c;
 	} while (source);
-	if (len) *len = l;
+	if (len) {
+		*len = l;
+	}
 	return otarget;
 }
 
@@ -82,38 +94,40 @@ R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 			c = *(data++) & 0x0ff;
 			sum |= ((st64) (c & 0x7f) << s);
 			s += 7;
-			if (!(c & 0x80)) break;
+			if (!(c & 0x80)) {
+				break;
+			}
 		}
 	}
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
 		sum |= -((st64)1 << s);
 	}
-	if (v) *v = sum;
+	if (v) {
+		*v = sum;
+	}
 	return data;
 }
 
-
-//API borrowed from frida
-#define G_GINT64_CONSTANT(val) (val##L)
 
 R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	const ut8 *p = *data;
 	st64 result = 0;
 	int offset = 0;
 	ut8 value;
- 	do {
+	bool cond;
+	do {
 		st64 chunk;
 		value = *p;
 		chunk = value & 0x7f;
 		result |= (chunk << offset);
 		offset += 7;
 	}
-	while (*p++ & 0x80);
+	while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0) {
-		result |= G_GINT64_CONSTANT (-1) << offset;
+		result |= ~0UL << offset;
 	}
- 	*data = p;
+	*data = p;
 	return result;
 }
 
@@ -275,7 +289,7 @@ R_API size_t read_i64_leb128 (const ut8* p, const ut8* max, st64* out_value) {
 		bool sign_bit_set = (p[9] & 0x1);
 		int top_bits = p[9] & 0xfe;
 		if ((sign_bit_set && top_bits != 0x7e) || (!sign_bit_set && top_bits != 0)) {
-			return 0;	
+			return 0;
 		}
 		ut64 result = LEB128_10 (ut64);
 		*out_value = result;

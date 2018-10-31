@@ -48,8 +48,12 @@ def set_global_variables():
         version = f.readline().split()[1].rstrip()
 
     if os.name == 'nt':
-        meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.py')
-        MESON = [sys.executable, meson]
+        meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.exe')
+        if os.path.exists(meson):
+            MESON = [meson]
+        else:
+            meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.py')
+            MESON = [sys.executable, meson]
     else:
         MESON = ['meson']
 
@@ -188,6 +192,7 @@ def win_dist_libr2(**path_fmt):
     copy(r'{BUILDDIR}\r_userconf.h', r'{DIST}\{R2_INCDIR}')
     copy(r'{ROOT}\libr\include\sdb\*.h', r'{DIST}\{R2_INCDIR}\sdb')
     copy(r'{ROOT}\libr\include\r_util\*.h', r'{DIST}\{R2_INCDIR}\r_util')
+    copytree(r'{ROOT}\libr\include\msvc', r'{DIST}\{R2_INCDIR}\msvc')
     makedirs(r'{DIST}\{R2_FORTUNES}')
     copy(r'{ROOT}\doc\fortunes.*', r'{DIST}\{R2_FORTUNES}')
     copytree(r'{ROOT}\libr\bin\d', r'{DIST}\{R2_SDB}\format',

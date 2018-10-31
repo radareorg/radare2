@@ -9,8 +9,8 @@
 #define BLOCK_SIZE 16
 #define r 20
 #define w 32
-#define ROTL(x,y) (((x)<<(y&(w-1))) | ((x)>>(w-(y&(w-1)))))
-#define ROTR(x,y) (((x)>>(y&(w-1))) | ((x)<<(w-(y&(w-1)))))
+#define ROTL(x,y) (((x)<<((y)&(w-1))) | ((x)>>(w-((y)&(w-1)))))
+#define ROTR(x,y) (((x)>>((y)&(w-1))) | ((x)<<(w-((y)&(w-1)))))
 
 struct rc6_state{
 	ut32 S[2*r+4];
@@ -57,7 +57,7 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 		k = (k + 1) % t;
 		j = (j + 1) % c;
 	}
-	
+
 	state->key_size = keylen/8;
 #ifdef _MSC_VER
 	free (L);
@@ -177,7 +177,9 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	const int blocks = len / BLOCK_SIZE;
 
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 
 	int i;
 	if (flag) {
@@ -189,7 +191,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 			rc6_encrypt (&st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
 	}
-	
+
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
 	return true;
@@ -209,7 +211,7 @@ RCryptoPlugin r_crypto_plugin_rc6 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = { 
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rc6,
 	.version = R2_VERSION

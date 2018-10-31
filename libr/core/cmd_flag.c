@@ -507,7 +507,7 @@ rep:
 			while (*flagname==' ') {
 				flagname++;
 			}
-			if (*flagname=='.') {
+			if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
 					eprintf ("TODO: local_del_name has been deprecated\n");
@@ -553,14 +553,19 @@ rep:
 						} else {
 							r_anal_fcn_label_set (core->anal, fcn, name, off);
 						}
-					} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					} else {
+						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					}
 					free (name);
 				}
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-			if (fcn) r_anal_fcn_labels (core->anal, fcn, 0);
-			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+			if (fcn) {
+				r_anal_fcn_labels (core->anal, fcn, 0);
+			} else {
+				eprintf ("Local flags require a function to work.");
+			}
 		}
 		break;
 	case 'l': // "fl"
@@ -820,7 +825,7 @@ rep:
 		r_flag_list (core->flags, *input, input[0]? input + 1: "");
 		break;
 	case 'i': // "fi"
-		if (input[1] == ' ' || input[2] == ' ') {
+		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {
 			char *arg = strdup (r_str_trim_ro (input + 2));
 			if (*arg) {
 				arg = strdup (r_str_trim_ro (input + 2));
@@ -967,12 +972,13 @@ rep:
 		}
 		break;
 	case '?':
+	default:
 		if (input[1]) {
 			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
 		} else {
-		r_core_cmd_help (core, help_msg_f);
-		break;
-	}
+			r_core_cmd_help (core, help_msg_f);
+			break;
+		}
 	}
 	free (str);
 	return 0;

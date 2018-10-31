@@ -23,24 +23,23 @@ R_API const char *r_flag_space_get_i(RFlag *f, int idx) {
 }
 
 R_API const char *r_flag_space_cur(RFlag *f) {
+	r_return_val_if_fail (f, NULL);
 	return r_flag_space_get_i (f, f->space_idx);
 }
 
-R_API int r_flag_space_push(RFlag *f, const char *name) {
-	int ret = false;
-	if (name && *name) {
-		if (f->space_idx != -1 && f->spaces[f->space_idx]) {
-			r_list_push (f->spacestack, f->spaces[f->space_idx]);
-		} else {
-			r_list_push (f->spacestack, "*");
-		}
-		r_flag_space_set (f, name);
-		ret = true;
+R_API bool r_flag_space_push(RFlag *f, const char *name) {
+	r_return_val_if_fail (f && name, false);
+	if (f->space_idx != -1 && f->spaces[f->space_idx]) {
+		r_list_push (f->spacestack, f->spaces[f->space_idx]);
+	} else {
+		r_list_push (f->spacestack, "*");
 	}
-	return ret;
+	r_flag_space_set (f, name);
+	return true;
 }
 
 R_API bool r_flag_space_pop(RFlag *f) {
+	r_return_val_if_fail (f, false);
 	char *p = r_list_pop (f->spacestack);
 	if (p) {
 		if (*p) {
@@ -53,6 +52,7 @@ R_API bool r_flag_space_pop(RFlag *f) {
 
 R_API bool r_flag_space_set_i(RFlag *f, int idx) {
 	int i;
+	r_return_val_if_fail (f, false);
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i]) {
 			f->space_idx = idx;
@@ -93,6 +93,7 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 R_API int r_flag_space_unset(RFlag *f, const char *fs) {
 	RListIter *iter;
 	RFlagItem *fi;
+	r_return_val_if_fail (f, false);
 	int i, count = 0;
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (!f->spaces[i]) {
@@ -130,6 +131,7 @@ static int r_flag_space_count(RFlag *f, int n) {
 }
 
 R_API int r_flag_space_list(RFlag *f, int mode) {
+	r_return_val_if_fail (f, -1);
 	const char *defspace = NULL;
 	int count, len, i, j = 0;
 	bool allSelected = f->space_idx == -1;
@@ -149,7 +151,9 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 					(allSelected || i == f->space_idx)? "true":"false");
 		} else if (mode=='*') {
 			f->cb_printf ("fs %s\n", f->spaces[i]);
-			if (i==f->space_idx) defspace = f->spaces[i];
+			if (i == f->space_idx) {
+				defspace = f->spaces[i];
+			}
 		} else {
 			#define INDENT 5
 			char num0[64], num1[64], spaces[32];
@@ -177,19 +181,17 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 	return j;
 }
 
-R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
+R_API bool r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
 	int i;
+	r_return_val_if_fail (f && nname, false);
 	if (!oname) {
 		if (f->space_idx == -1) {
 			return false;
 		}
 		oname = f->spaces[f->space_idx];
 	}
-	if (!nname) {
-		return false;
-	}
-	while (*oname==' ') oname++;
-	while (*nname==' ') nname++;
+	oname = r_str_trim_ro (oname);
+	nname = r_str_trim_ro (nname);
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
 			free (f->spaces[i]);
@@ -202,16 +204,17 @@ R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
 
 static void print_space_stack(RFlag *f, int ordinal, char *name, bool selected, int mode) {
 	bool first = ordinal == 0;
-	char *ename;
 	switch (mode) {
 	case 'j':
 		if (!first) {
 			f->cb_printf (",");
 		}
-		ename = r_str_escape (name);
+		{
+		char *ename = r_str_escape (name);
 		f->cb_printf ("{\"ordinal\":%d,\"name\":\"%s\",\"selected\":%s}",
 			ordinal, ename, selected? "true":"false");
 		free (ename);
+		}
 		break;
 	case '*':
 		if (first) {

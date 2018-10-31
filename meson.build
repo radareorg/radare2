@@ -84,7 +84,12 @@ cc = meson.get_compiler('c')
 ldl = cc.find_library('dl', required: false)
 pth = cc.find_library('pthread', required: false)
 utl = cc.find_library('util', required: false)
-mth = cc.find_library('m', required: false)
+if host_machine.system() == 'sunos'
+  # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
+  mth = declare_dependency(link_args: '-lm')
+else
+  mth = cc.find_library('m', required: false)
+endif
 
 platform_deps = []
 platform_inc = ['.', 'libr/include']
@@ -99,6 +104,14 @@ if get_option('static_runtime')
     add_project_arguments('/MT', language: 'c')
   endif
 endif
+
+if get_option('default_library') == 'shared'
+  if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
+    add_global_arguments('-fvisibility=hidden', language: 'c')
+  endif
+endif
+
+library_cflags = ['-DCORELIB=1']
 
 if host_machine.system() == 'windows'
   r2_prefix = '.'
@@ -197,6 +210,7 @@ config_h = configure_file(
   configuration: conf_data
 )
 
+# handle magic library
 sys_magic = cc.find_library('magic', required: false)
 use_syslib_magic = false
 
@@ -204,9 +218,70 @@ if sys_magic.found() and get_option('use_sys_magic')
   use_syslib_magic = true
 endif
 
+# handle xxhash library
+sys_xxhash = dependency('xxhash', required: false)
+use_sys_xxhash = false
+if not sys_xxhash.found()
+  sys_xxhash = cc.find_library('xxhash', required: false)
+endif
+
+if sys_xxhash.found() and get_option('use_sys_xxhash')
+  message('Using system xxhash library')
+  use_sys_xxhash = true
+else
+  message('Using bundled xxhash library')
+endif
+
+# handle openssl library
+sys_openssl = dependency('openssl', required: false)
+use_sys_openssl = false
+if sys_openssl.found() and get_option('use_sys_openssl')
+  message('Using system openssl library')
+  use_sys_openssl = true
+else
+  message('Using bundled openssl code')
+endif
+
+# handle libuv library
+if get_option('use_libuv')
+  libuv_dep = dependency('libuv', required: false)
+  use_libuv = libuv_dep.found()
+  if not libuv_dep.found()
+    warning('use_libuv option was set to true, but libuv was not found.')
+  endif
+else
+  use_libuv = false
+endif
+
+if use_libuv
+  message('Using libuv')
+else
+  message('Not using libuv, thus using fallback server implementations')
+endif
+
+have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
+use_ptrace_wrap = ['linux'].contains(host_machine.system())
+
+message('HAVE_PTRACE: @0@'.format(have_ptrace))
+message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
+
+checks_level = get_option('checks_level')
+if checks_level == 9999
+  if get_option('buildtype') == 'release'
+    checks_level = 1
+  else
+    checks_level = 2
+  endif
+endif
+
+message('R2_CHECKS_LEVEL: @0@'.format(checks_level))
+
 userconf = configuration_data()
+userconf.set('R_CHECKS_LEVEL', checks_level)
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
 userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
+userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
+userconf.set('USE_LIB_XXHASH', use_sys_xxhash.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
@@ -222,12 +297,17 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_OPENSSL', 0)
+userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
+userconf.set('HAVE_LIBUV', use_libuv.to_int())
 userconf.set('HAVE_FORK', 1)
+userconf.set('HAVE_PTRACE', have_ptrace.to_int())
+userconf.set('USE_PTRACE_WRAP', use_ptrace_wrap.to_int())
 userconf.set('WITH_GPL', 1)
 if host_machine.system() == 'windows'
+  userconf.set('DATADIR_R2', r2_datdir)
   userconf.set('HAVE_JEMALLOC', 0)
 else
+  userconf.set('DATADIR_R2', join_paths(get_option('datadir'), 'radare2'))
   userconf.set('HAVE_JEMALLOC', 1)
 endif
 if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
@@ -307,8 +387,6 @@ subdir('libr/egg')
 subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
-
-subdir('shlr/sdb')
 
 subdir('libr/anal/d')
 subdir('libr/asm/d')

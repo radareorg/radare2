@@ -6,15 +6,20 @@ extern "C" {
 #endif
 
 typedef enum {
-	PANEL_TYPE_FRAME = 0,
+	PANEL_TYPE_DEFAULT = 0,
 	PANEL_TYPE_MENU = 1
-} PanelType;
+} RPanelType;
 
-typedef struct r_panel_t {
+typedef struct r_panel_pos_t {
 	int x;
 	int y;
 	int w;
 	int h;
+} RPanelPos;
+
+typedef struct r_panel_t {
+	RPanelPos pos;
+	RPanelPos prevPos;
 	int depth;
 	int sx; // scroll-x
 	int sy; // scroll-y
@@ -22,7 +27,7 @@ typedef struct r_panel_t {
 	char *cmd;
 	char *title;
 	bool refresh;
-	PanelType type;
+	RPanelType type;
 	ut64 baseAddr;
 	ut64 addr;
 	char *cmdStrCache;

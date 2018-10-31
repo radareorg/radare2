@@ -113,11 +113,15 @@ R_API char *r_lib_path(const char *libname) {
 	char *env = strdup (".:../../../../../../../windows/system32");
 	const char *ext = ".dll";
 #endif
-	if (!env) env = strdup (".");
+	if (!env) {
+		env = strdup (".");
+	}
 	path0 = env;
 	do {
 		next = strchr (path0, ':');
-		if (next) *next = 0;
+		if (next) {
+			*next = 0;
+		}
 		snprintf (libpath, sizeof (libpath), "%s/%s%s", path0, libname, ext);
 		//eprintf ("--> %s\n", libpath);
 		if (r_file_exists (libpath)) {
@@ -178,8 +182,9 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 	RLibHandler *h;
 	RListIter *iter;
 	r_list_foreach (lib->handlers, iter, h) {
-		if (h->type == type)
+		if (h->type == type) {
 			return h;
+		}
 	}
 	return NULL;
 }
@@ -323,7 +328,9 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);
-	} else r_list_append (lib->plugins, p);
+	} else {
+		r_list_append (lib->plugins, p);
+	}
 
 	return ret;
 }
@@ -341,9 +348,9 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	struct dirent *de;
 	DIR *dh;
 #endif
-#ifdef LIBR_PLUGINS
+#ifdef R2_LIBR_PLUGINS
 	if (!path) {
-		path = LIBR_PLUGINS;
+		path = R2_LIBR_PLUGINS;
 	}
 #endif
 	if (!path) {
@@ -426,8 +433,9 @@ R_API bool r_lib_add_handler(RLib *lib,
 	}
 	if (!handler) {
 		handler = R_NEW (RLibHandler);
-		if (!handler)
+		if (!handler) {
 			return false;
+		}
 		handler->type = type;
 		r_list_append (lib->handlers, handler);
 	}

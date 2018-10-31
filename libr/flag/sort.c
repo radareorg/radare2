@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 pancake */
+/* radare - LGPL - Copyright 2007-2018 pancake */
 
 #include <r_flag.h>
 
@@ -13,30 +13,34 @@ static int ncmp(const void *a, const void *b) {
 static int cmp(const void *a, const void *b) {
 	RFlagItem *fa = (RFlagItem *)a;
 	RFlagItem *fb = (RFlagItem *)b;
-	if (fa->offset > fb->offset) return 1;
-	else if (fa->offset < fb->offset) return -1;
+	if (fa->offset > fb->offset) {
+		return 1;
+	}
+	if (fa->offset < fb->offset) {
+		return -1;
+	}
 	return 0;
 }
 
-R_API int r_flag_sort(RFlag *f, int namesort) {
-	int ret = false;
-	int changes;
+R_API bool r_flag_sort(RFlag *f, int namesort) {
+	r_return_val_if_fail (f, false);
+	bool ret = false;
+	bool changes = false;
 	RFlagItem *flag, *fi = NULL;
 	RListIter *iter, *it_elem;
 	RList *tmp = r_list_new ();
 	// find bigger ones after this
+	if (!tmp) {
+		return false;
+	}
 	do {
-		changes = 0;
+		changes = false;
 		fi = NULL;
 		r_list_foreach (f->flags, iter, flag) {
-			if (!fi) {
+			if (!fi || ((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
 				fi = flag;
 				it_elem = iter;
-				changes = 1;
-			} else if (((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
-				fi = flag;
-				it_elem = iter;
-				changes = 1;
+				changes = true;
 			}
 		}
 		if (fi && changes) {

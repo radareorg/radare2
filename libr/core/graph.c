@@ -8,6 +8,7 @@
 static int mousemode = 0;
 static int disMode = 0;
 static int discroll = 0;
+static bool graphCursor = false;
 static const char *mousemodes[] = {
 	"canvas-y",
 	"canvas-x",
@@ -45,16 +46,16 @@ static const char *mousemodes[] = {
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
-#define hash_set(sdb, k, v) (sdb_num_set (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) k), (ut64) (size_t) v, 0))
-#define hash_get(sdb, k) (sdb_num_get (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) k), NULL))
+#define hash_set(sdb, k, v) (sdb_num_set (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) (k)), (ut64) (size_t) (v), 0))
+#define hash_get(sdb, k) (sdb_num_get (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) (k)), NULL))
 #define hash_get_rnode(sdb, k) ((RGraphNode *) (size_t) hash_get (sdb, k))
 #define hash_get_rlist(sdb, k) ((RList *) (size_t) hash_get (sdb, k))
 #define hash_get_int(sdb, k) ((int) hash_get (sdb, k))
 /* dont use macros for this */
-#define get_anode(gn) (gn? (RANode *) gn->data: NULL)
+#define get_anode(gn) ((gn)? (RANode *) (gn)->data: NULL)
 
 #define graph_foreach_anode(list, it, pos, anode)\
-	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (RANode *) pos->data); it = it->n)
+	if (list) for ((it) = (list)->head; (it) && ((pos) = (it)->data) && (pos) && ((anode) = (RANode *) (pos)->data); (it) = (it)->n)
 
 struct len_pos_t {
 	int len;
@@ -235,7 +236,8 @@ static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int
 	char *shortcut = sdb_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
 	if (shortcut) {
 		if (g->can->color) {
-			strncat (title, sdb_fmt ("\x1b[33m[g%s]",  shortcut), left);
+			// XXX: do not hardcode color here
+			strncat (title, sdb_fmt (Color_YELLOW"[g%s]",  shortcut), left);
 		} else {
 			strncat (title, sdb_fmt ("[g%s]", shortcut), left);
 		}
@@ -1007,7 +1009,10 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 
 			graph_foreach_anode (neigh, itk, gk, ak) {
 				if (ak->klass < c) {
-					r_list_append (heap, (void *) (size_t) (ak->x - an->x));
+					size_t d = (ak->x - an->x);
+					if (d > 0) {
+						r_list_append (heap, (void *) d);
+					}
 				}
 			}
 		}
@@ -1976,7 +1981,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		return NULL;
 	}
 	r_config_save_num (hc, "asm.lines", "asm.bytes",
-		"asm.cmt.col", "asm.marks", "asm.marks", "asm.offset",
+		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
@@ -2326,8 +2331,16 @@ static void update_seek(RConsCanvas *can, RANode *n, int force) {
 	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
 
 	if (doscroll) {
-		can->sx = -n->x - n->w / 2 + w / 2;
-		can->sy = -n->y - n->h / 8 + h / 4;
+		if (n->w > w) { //too big for centering
+			can->sx = -n->x;
+		} else {
+			can->sx = -n->x - n->w / 2 + w / 2;
+		}
+		if (n->h > h) { //too big for centering
+			can->sy = -n->y;
+		} else {
+			can->sy = -n->y - n->h / 8 + h / 4;
+		}
 	}
 }
 
@@ -2857,7 +2870,9 @@ static void agraph_print_edges(RAGraph *g) {
 					r_cons_canvas_line (g->can, bx, by, bx, b->y + b->h, &style);
 				}
 				if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-					tm->edgectr += 1;
+					if (tm) {
+						tm->edgectr++;
+					}
 				}
 				break;
 			case 1:
@@ -3116,7 +3131,8 @@ static void agraph_prev_node(RAGraph *g) {
 static void agraph_update_title(RAGraph *g, RAnalFunction *fcn) {
 	const char *mode_str = g->is_callgraph? mode2str (g, "CG"): mode2str (g, "BB");
 	char *new_title = r_str_newf (
-		"[0x%08"PFMT64x "]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s mov-speed:%d",
+		"%s[0x%08"PFMT64x "]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s mov-speed:%d",
+		graphCursor? "(cursor)": "",
 		fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 		g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
 	r_agraph_set_title (g, new_title);
@@ -3347,7 +3363,7 @@ static void agraph_init(RAGraph *g) {
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->hints = 1;
-	g->movspeed = DEFAULT_SPEED; // r_config_get_i (g->core->config, "graph.scroll");
+	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0 ();
 }
 
@@ -3355,6 +3371,32 @@ static void free_anode(RANode *n) {
 	free (n->title);
 	free (n->body);
 	free (n);
+}
+
+static void graphNodeMove(RAGraph *g, int dir, int speed) {
+	int delta = (dir == 'k')? -1: 1;
+	if (dir == 'H') {
+		return;
+	}
+	if (dir == 'h' || dir == 'l') {
+		// horizontal scroll
+		if (is_mini (g)) {
+			discroll = 0;
+		} else {
+			int delta = (dir == 'l')? 1: -1;
+			move_current_node (g, speed * delta, 0);
+		}
+		return;
+	}
+	RCore *core = NULL;
+	// vertical scroll
+	if (is_mini (g)) {
+		discroll += (delta * speed);
+	} else if (g->is_dis) {
+		r_core_cmdf (core, "so %d", (delta * 4) * speed);
+	} else {
+		move_current_node (g, 0, delta * speed);
+	}
 }
 
 static void agraph_free_nodes(const RAGraph *g) {
@@ -3589,8 +3631,9 @@ R_API void r_agraph_reset(RAGraph *g) {
 	r_graph_reset (g->graph);
 	r_agraph_set_title (g, NULL);
 	sdb_reset (g->db);
-	r_list_purge (g->edges);
-
+	if (g->edges) {
+		r_list_purge (g->edges);
+	}
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
 	g->x = g->y = g->w = g->h = 0;
@@ -3649,11 +3692,10 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 
 	r_cons_get_size (&rows);
 	r_cons_gotoxy (0, rows);
+	r_cons_clear_line (0);
 	r_cons_printf (Color_RESET);
 	r_cons_printf (h);
 	r_cons_flush ();
-	r_cons_clear_line (0);
-	r_cons_gotoxy (strlen (h) + 1, rows);
 
 	do {
 		char ch = r_cons_readchar ();
@@ -4041,6 +4083,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" )            - rotate asm.emu and emu.str\n"
 				" Home/End     - go to the top/bottom of the canvas\n"
 				" Page-UP/DOWN - scroll canvas up/down\n"
+				" c            - toggle graph cursor mode\n"
 				" C            - toggle scr.colors\n"
 				" d            - rename function\n"
 				" D            - toggle the mixed graph+disasm mode\n"
@@ -4049,8 +4092,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" F            - enter flag selector\n"
 				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
 				" G            - debug trace callgraph (generated with dtc)\n"
-				" hjkl         - scroll canvas\n"
-				" HJKL         - move node\n"
+				" hjkl/HJKL    - scroll canvas or node depending on graph cursor (uppercase for faster)\n"
 				" m/M          - change mouse modes\n"
 				" n/N          - next/previous scr.nkey (function/flag..)\n"
 				" o            - go/seek to given offset\n"
@@ -4141,6 +4183,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->layout = r_config_get_i (core->config, "graph.layout");
 				g->need_reload_nodes = true;
 			}
+			// TODO: toggle shortcut hotkeys
+			r_core_cmd0 (core, "e!asm.jmphints");
+			r_core_cmd0 (core, "e!asm.leahints");
 			break;
 		case '$':
 			r_core_cmd (core, "sr PC", 0);
@@ -4231,70 +4276,97 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'y':
 			agraph_toggle_mini (g);
 			break;
-		case 'J':
-			if (is_mini (g)) {
-				discroll ++;
-			} else if (g->is_dis) {
-				r_core_cmd0 (core, "so 4");
-			} else if (okey == 27) {
-				// handle page down key
-				can->sy -= PAGEKEY_SPEED * (invscroll? -1: 1);
-			} else {
-				move_current_node (g, 0, movspeed);
-			}
-			break;
-		case 'K':
-			if (is_mini (g)) {
-				discroll --;
-				if (discroll < 0) {
-					discroll = 0;
-				}
-			} else if (g->is_dis) {
-				r_core_cmd0 (core, "so -4");
-			} else if (okey == 27) {
-				// handle page up key
-				can->sy += PAGEKEY_SPEED * (invscroll? -1: 1);
-			} else {
-				move_current_node (g, 0, -movspeed);
-			}
-			break;
-		case 'H':
-			if (is_mini (g)) {
-				discroll = 0;
-			} else if (okey == 27) {
-				// handle home key
-				const RGraphNode *gn = find_near_of (g, NULL, true);
-				g->update_seek_on = get_anode (gn);
-			} else {
-				move_current_node (g, -movspeed, 0);
-			}
-			break;
 		case 'v':
 			r_core_visual_anal (core);
 			break;
-		case 'L':
-			if (is_mini (g)) {
-				discroll = 0;
+		case 'J':
+			// copypaste from 'j'
+			if (graphCursor) {
+				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
+				graphNodeMove (g, 'j', speed * 2);
 			} else {
-				move_current_node (g, movspeed, 0);
+				can->sy -= (5*movspeed) * (invscroll? -1: 1);
 			}
+			break;
+		case 'K':
+			if (graphCursor) {
+				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
+				graphNodeMove (g, 'k', speed * 2);
+			} else {
+				can->sy += (5*movspeed) * (invscroll? -1: 1);
+			}
+			break;
+		case 'H':
+			if (graphCursor) {
+				// move node canvas faster
+				graphNodeMove (g, 'h', movspeed * 2);
+			} else {
+				// scroll canvas faster
+				if (okey == 27) {
+					// handle home key
+					const RGraphNode *gn = find_near_of (g, NULL, true);
+					g->update_seek_on = get_anode (gn);
+				} else {
+					can->sx += (5 * movspeed) * (invscroll? -1: 1);
+				}
+			}
+			break;
+		case 'L':
+			if (graphCursor) {
+				graphNodeMove (g, 'l', movspeed * 2);
+			} else {
+				if (is_mini (g)) {
+					discroll = 0;
+				} else {
+					can->sx -= (5 * movspeed) * (invscroll? -1: 1);
+				}
+			}
+			break;
+		case 'c':
+			graphCursor = !graphCursor;
 			break;
 		case 'j':
 			if (g->is_dis) {
 				r_core_cmd0 (core, "so 1");
 			} else {
-				can->sy -= movspeed * (invscroll? -1: 1);
+				if (graphCursor) {
+					int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
+					graphNodeMove (g, 'j', speed);
+				} else {
+					// scroll canvas
+					can->sy -= movspeed * (invscroll? -1: 1);
+				}
 			}
 			break;
 		case 'k':
 			if (g->is_dis) {
 				r_core_cmd0 (core, "so -1");
 			} else {
-				can->sy += movspeed * (invscroll? -1: 1);
+				if (graphCursor) {
+					int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
+					graphNodeMove (g, 'k', speed);
+				} else {
+					// scroll canvas
+					can->sy += movspeed * (invscroll? -1: 1);
+				}
 			}
 			break;
-		case 'l': can->sx -= movspeed * (invscroll? -1: 1); break;
-		case 'h': can->sx += movspeed * (invscroll? -1: 1); break;
+		case 'l':
+			if (graphCursor) {
+				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
+				graphNodeMove (g, 'l', speed);
+			} else {
+				can->sx -= movspeed * (invscroll? -1: 1);
+			}
+			break;
+		case 'h':
+			if (graphCursor) {
+				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
+				graphNodeMove (g, 'h', speed);
+			} else {
+				can->sx += movspeed * (invscroll? -1: 1);
+			}
+			break;
 		case '^':
 			  {
 				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -4330,7 +4402,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '/':
 			showcursor (core, true);
 			r_config_set_i (core->config, "scr.interactive", true);
-			r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 			r_config_set_i (core->config, "scr.interactive", false);
 			showcursor (core, false);
 			break;

@@ -9,7 +9,7 @@ typedef struct {
 	libgdbr_t desc;
 } RIOGdb;
 
-#define UNKNOWN -1
+#define UNKNOWN (-1)
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
@@ -104,8 +104,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 				return NULL;
 			}
 			RDebugMap *map;
-			if (!(map = r_debug_map_new ("", baddr, baddr,
-						     R_IO_READ | R_IO_EXEC, 0))) {
+			if (!(map = r_debug_map_new ("", baddr, baddr, R_PERM_RX, 0))) {
 				r_list_free (retlist);
 				return NULL;
 			}
@@ -196,9 +195,9 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		perm = 0;
 		for (i = 0; perms[i] && i < 5; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			case 'p': map_is_shared = false; break;
 			case 's': map_is_shared = true; break;
 			}
@@ -274,8 +273,9 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
 	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
 	if (reg) {
-		if (dbg->anal->bits != reg->size)
+		if (dbg->anal->bits != reg->size) {
 			bits = reg->size;
+		}
 	}
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
@@ -296,7 +296,9 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	RRegItem* current = NULL;
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
-		if (!current) break;
+		if (!current) {
+			break;
+		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
 		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
@@ -972,21 +974,49 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 }
 
 static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
-	int ret, bpsize;
+	int ret = 0, bpsize;
 	if (!b) {
 		return false;
 	}
-
 	bpsize = b->size;
-	// TODO handle rwx and conditions
-	if (set)
-		ret = b->hw?
-			gdbr_set_hwbp (desc, b->addr, "", bpsize):
-			gdbr_set_bp (desc, b->addr, "", bpsize);
-	else
-		ret = b->hw?
-			gdbr_remove_hwbp (desc, b->addr, bpsize):
-			gdbr_remove_bp (desc, b->addr, bpsize);
+        // TODO handle conditions
+	switch (b->perm) {
+	case R_BP_PROT_EXEC : {
+		if (set) {
+			ret = b->hw?
+					gdbr_set_hwbp (desc, b->addr, "", bpsize):
+					gdbr_set_bp (desc, b->addr, "", bpsize);
+		} else {
+			ret = b->hw ? gdbr_remove_hwbp (desc, b->addr, bpsize) : gdbr_remove_bp (desc, b->addr, bpsize);
+		}
+		break;
+	}
+	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
+	case R_PERM_W: {
+		if (set) {
+			gdbr_set_hww (desc, b->addr, "", 1);
+		} else {
+			gdbr_remove_hww (desc, b->addr, 1);
+		}
+		break;
+	}
+	case R_PERM_R: {
+		if (set) {
+			gdbr_set_hwr (desc, b->addr, "", 1);
+		} else {
+			gdbr_remove_hwr (desc, b->addr, 1);
+		}
+		break;
+	}
+	case R_PERM_ACCESS: {
+		if (set) {
+			gdbr_set_hwa (desc, b->addr, "", 1);
+		} else {
+			gdbr_remove_hwa (desc, b->addr, 1);
+		}
+		break;
+	}
+	}
 	return !ret;
 }
 
@@ -1077,7 +1107,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_gdb,
 	.version = R2_VERSION

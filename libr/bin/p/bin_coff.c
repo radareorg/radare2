@@ -19,15 +19,15 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	RBuffer *tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
-	void *res = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
+	*bin_obj = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
 	r_buf_free (tbuf);
-	return res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -37,8 +37,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj ? true: false;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -151,15 +150,15 @@ static RList *sections(RBinFile *bf) {
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
 			ptr->add = true;
-			ptr->srwx = 0;
+			ptr->perm = 0;
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
-				ptr->srwx |= R_BIN_SCN_READABLE;
+				ptr->perm |= R_PERM_R;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
-				ptr->srwx |= R_BIN_SCN_WRITABLE;
+				ptr->perm |= R_PERM_W;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
+				ptr->perm |= R_PERM_X;
 			}
 			r_list_append (ret, ptr);
 		}
@@ -379,7 +378,7 @@ RBinPlugin r_bin_plugin_coff = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_coff,
 	.version = R2_VERSION

@@ -7,25 +7,34 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	const char *p;
 	int ret, olen, len = 0, bufsz = 32768, delta = 0;
 	char *dn, *res, *buf = malloc (bufsz + 32); // XXX: use r_buffer here
-	if (!buf) return NULL;
+	if (!buf) {
+		return NULL;
+	}
 
 	r_socket_block_time (s, 1, 5);
 	res = NULL;
 	olen = r_socket_read_block (s, (unsigned char*) buf, bufsz);
-	if (olen < 1) goto fail;
+	if (olen < 1) {
+		goto fail;
+	}
 	buf[olen] = 0;
 	if ((dn = (char*)r_str_casestr (buf, "\n\n"))) {
 		delta += 2;
 	} else if ((dn = (char*)r_str_casestr (buf, "\r\n\r\n"))) {
 		delta += 4;
-	} else goto fail;
+	} else {
+		goto fail;
+	}
 
 	olen -= delta;
 	*dn = 0; // chop headers
 	/* Parse Len */
 	p = r_str_casestr (buf, "Content-Length: ");
-	if (p) len = atoi (p+16);
-	else len = olen - (dn - buf);
+	if (p) {
+		len = atoi (p + 16);
+	} else {
+		len = olen - (dn - buf);
+	}
 
 	if (len >0) {
 		if (len > olen) {
@@ -34,8 +43,9 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 			do {
 				ret = r_socket_read_block (s,
 					(ut8*) res+olen, len-olen);
-				if (ret < 1)
+				if (ret < 1) {
 					break;
+				}
 				olen += ret;
 			} while (olen<len);
 			res[len] = 0;
@@ -46,12 +56,16 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 				res[len] = 0;
 			}
 		}
-	} else res = NULL;
+	} else {
+		res = NULL;
+	}
 fail:
 	free (buf);
 // is 's' free'd? isnt this going to cause a double free?
 	r_socket_close (s);
-	if (rlen) *rlen = len;
+	if (rlen) {
+		*rlen = len;
+	}
 	return res;
 }
 
@@ -60,10 +74,16 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
-	if (!uri) return NULL;
+	if (!uri) {
+		return NULL;
+	}
 
-	if (code) *code = 0;
-	if (rlen) *rlen = 0;
+	if (code) {
+		*code = 0;
+	}
+	if (rlen) {
+		*rlen = 0;
+	}
 	host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
@@ -80,8 +100,11 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 		path = port;
 	}
 	path = strchr (path, '/');
-	if (!path) path = "";
-	else *path++ = 0;
+	if (!path) {
+		path = "";
+	} else {
+		*path++ = 0;
+	}
 	s = r_socket_new (ssl);
 	if (!s) {
 		eprintf ("r_socket_http_get: Cannot create socket\n");
@@ -110,7 +133,9 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
-	if (!uri) return NULL;
+	if (!uri) {
+		return NULL;
+	}
 
 	host = strstr (uri, "://");
 	if (!host) {
@@ -120,15 +145,17 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 	}
 	host += 3;
 	port = strchr (host, ':');
-	if (!port)
+	if (!port) {
 		port = (ssl)?"443":"80";
-	else
+	} else {
 		*port++ = 0;
+	}
 	path = strchr (host, '/');
-	if (!path)
+	if (!path) {
 		path = "";
-	else
+	} else {
 		*path++ = 0;
+	}
 	s = r_socket_new (ssl);
 	if (!s) {
 		printf ("Cannot create socket\n");

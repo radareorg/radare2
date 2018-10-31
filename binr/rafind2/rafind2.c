@@ -12,12 +12,9 @@
 #include <r_lib.h>
 #include <r_io.h>
 
-static struct r_io_t *io;
-static RIODesc *fd = NULL;
 static int showstr = 0;
 static int rad = 0;
 static int align = 0;
-struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
 static char *mask = NULL;
 static int nonstop = 0;
@@ -83,7 +80,9 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 static int show_help(char *argv0, int line) {
 	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file|dir ..\n", argv0);
-	if (line) return 0;
+	if (line) {
+		return 0;
+	}
 	printf (
 	" -a [align] only accept aligned hits\n"
 	" -b [size]  set block size\n"
@@ -111,11 +110,14 @@ static int show_help(char *argv0, int line) {
 static int rafind_open(char *file);
 
 static int rafind_open_file(char *file) {
-	const char *kw;
 	RListIter *iter;
+	RIO *io = NULL;
+	RSearch *rs = NULL;
+	const char *kw;
 	bool last = false;
-	int ret;
+	int ret, result = 0;
 
+	buf = NULL;
 	if (!quiet) {
 		printf ("File: %s\n", file);
 	}
@@ -128,29 +130,43 @@ static int rafind_open_file(char *file) {
 	}
 
 	io = r_io_new ();
-	fd = r_io_open_nomap (io, file, R_IO_READ, 0);
-	if (!fd) {
-		eprintf ("Cannot open file '%s'\n", file);
+	if (!io) {
 		return 1;
 	}
 
-	r_cons_new ();
+	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
+		eprintf ("Cannot open file '%s'\n", file);
+		result = 1;
+		goto err;
+	}
+
 	rs = r_search_new (mode);
-	if (!rs) return 1;
+	if (!rs) {
+		result = 1;
+		goto err;
+	}
+
 	buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
-		return 1;
+		result = 1;
+		goto err;
 	}
 	rs->align = align;
 	r_search_set_callback (rs, &hit, buf);
 	if (to == -1) {
-		to = r_io_size(io);
+		to = r_io_size (io);
 	}
+
+	if (!r_cons_new ()) {
+		result = 1;
+		goto err;
+	}
+
 	if (mode == R_SEARCH_STRING) {
 		/* TODO: implement using api */
 		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
-		return 0;
+		goto done;
 	}
 	if (mode == R_SEARCH_MAGIC) {
 		char *tostr = (to && to != UT64_MAX)?
@@ -164,7 +180,17 @@ static int rafind_open_file(char *file) {
 		r_sandbox_system (cmd, 1);
 		free (cmd);
 		free (tostr);
-		return 0;
+		goto done;
+	}
+	if (mode == R_SEARCH_ESIL) {
+		r_list_foreach (keywords, iter, kw) {
+			char *cmd = r_str_newf ("r2 -qc \"/E %s\" %s", kw, file);
+			if (cmd) {
+				r_sandbox_system (cmd, 1);
+				free (cmd);
+			}
+		}
+		goto done;
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
@@ -182,8 +208,8 @@ static int rafind_open_file(char *file) {
 
 	curfile = file;
 	r_search_begin (rs);
-	(void) r_io_seek (io, from, R_IO_SEEK_SET);
-	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
+	(void)r_io_seek (io, from, R_IO_SEEK_SET);
+	result = 0;
 	for (cur = from; !last && cur < to; cur += bsize) {
 		if ((cur + bsize) > to) {
 			bsize = to - cur;
@@ -194,8 +220,8 @@ static int rafind_open_file(char *file) {
 			if (nonstop) {
 				continue;
 			}
-		//	eprintf ("Error reading at 0x%08"PFMT64x"\n", cur);
-			return 1;
+			result = 1;
+			break;
 		}
 		if (ret != bsize && ret > 0) {
 			bsize = ret;
@@ -206,9 +232,13 @@ static int rafind_open_file(char *file) {
 			break;
 		}
 	}
-	rs = r_search_free (rs);
+done:
+	r_cons_free ();
+err:
 	free (buf);
-	return 0;
+	r_search_free (rs);
+	r_io_free (io);
+	return result;
 }
 
 static int rafind_open_dir(char *dir) {
@@ -248,7 +278,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:rqnhvZ")) != -1) {
+	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, optarg);
@@ -268,6 +298,10 @@ int main(int argc, char **argv) {
 		case 'e':
 			mode = R_SEARCH_REGEXP;
 			hexstr = 0;
+			r_list_append (keywords, optarg);
+			break;
+		case 'E':
+			mode = R_SEARCH_ESIL;
 			r_list_append (keywords, optarg);
 			break;
 		case 's':

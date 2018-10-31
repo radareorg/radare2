@@ -11,17 +11,22 @@ typedef struct {
 	char *url;
 } RIOR2Web;
 
-#define rFD(x) (((RIOR2Web*)x->data)->fd)
-#define rURL(x) (((RIOR2Web*)x->data)->url)
+#define rFD(x) (((RIOR2Web*)(x)->data)->fd)
+#define rURL(x) (((RIOR2Web*)(x)->data)->url)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	int code, rlen;
 	char *out, *url, *hexbuf;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
-	if (count * 3 < count) return -1;
+	}
+	if (count * 3 < count) {
+		return -1;
+	}
 	hexbuf = malloc (count * 3);
-	if (!hexbuf) return -1;
+	if (!hexbuf) {
+		return -1;
+	}
 	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
 	url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
@@ -37,18 +42,23 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	int code, rlen;
 	char *out, *url;
 	int ret = 0;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	url = r_str_newf ("%s/p8%%20%d@%"PFMT64d,
 		rURL(fd), count, io->off);
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen>0) {
 		ut8 *tmp = malloc (rlen+1);
-		if (!tmp) goto beach;
+		if (!tmp) {
+			goto beach;
+		}
 		ret = r_hex_str2bin (out, tmp);
 		memcpy (buf, tmp, R_MIN (count, rlen));
 		free (tmp);
-		if (ret<0) ret = -ret;
+		if (ret < 0) {
+			ret = -ret;
+		}
 	}
 
 beach:
@@ -59,8 +69,9 @@ beach:
 
 static int __close(RIODesc *fd) {
 	RIOR2Web *riom;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	riom = fd->data;
 	free (riom->url);
 	riom->url = NULL;
@@ -92,7 +103,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOR2Web *mal = R_NEW0 (RIOR2Web);
-		if (!mal) return NULL;
+		if (!mal) {
+			return NULL;
+		}
 		char *url = r_str_newf ("http://%s/?V", pathname+8);
 		//eprintf  ("URL:(%s)\n", url);
 		out = r_socket_http_get (url, &code, &rlen);
@@ -140,7 +153,7 @@ RIOPlugin r_io_plugin_r2web = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_r2web,
 	.version = R2_VERSION

@@ -472,9 +472,12 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					break;
 				}
 				name[PE_NAME_LENGTH] = '\0';
-				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
+				int len = snprintf (import_name, sizeof (import_name), "%s_%s", dll_name, name);
+				if (len >= sizeof (import_name)) {
+					eprintf ("Import name '%s' has been truncated.\n", import_name);
+				}
 			}
-			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
+			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t)))) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
@@ -636,6 +639,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
+	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
 	int bufsz, i, shsz;
 	SymbolRecord* sr;
 	ut64 text_off = 0LL;
@@ -659,11 +663,11 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	if (!buf) {
 		return NULL;
 	}
-	exports_sz = sizeof(struct r_bin_pe_export_t) * num;
+	exports_sz = export_t_sz * num;
 	if (exports) {
 		int osz = sz;
 		sz += exports_sz;
-		exports = realloc (exports, sz);
+		exports = realloc (exports, sz + export_t_sz);
 		if (!exports) {
 			free (buf);
 			return NULL;
@@ -671,7 +675,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exp = (struct r_bin_pe_export_t*) (((const ut8*) exports) + osz);
 	} else {
 		sz = exports_sz;
-		exports = malloc (sz);
+		exports = malloc (sz + export_t_sz);
 		exp = exports;
 	}
 
@@ -726,11 +730,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin);
 static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->num_sections = bin->nt_headers->file_header.NumberOfSections;
-	int sections_size;
 	if (bin->num_sections < 1) {
 		return true;
 	}
-	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
+	int sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		sections_size = bin->size;
 		bin->num_sections = bin->size / sizeof (PE_(image_section_header));
@@ -1385,7 +1388,7 @@ static void free_StringFileInfo(StringFileInfo* stringFileInfo) {
 	}
 }
 
-#define align32(x) x = ((x & 0x3) == 0)? x: (x & ~0x3) + 0x4;
+#define align32(x) x = (((x) & 0x3) == 0)? (x): ((x) & ~0x3) + 0x4;
 
 static void free_VS_VERSIONINFO(PE_VS_VERSIONINFO* vs_VersionInfo) {
 	if (vs_VersionInfo) {
@@ -2255,7 +2258,7 @@ static char* _resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHt *dirs) {
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
@@ -2396,7 +2399,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	Pe_image_resource_directory *rs_directory = bin->resource_directory;
 	ut32 curRes = 0;
 	int totalRes = 0;
-	SdbHash *dirs = sdb_ht_new (); //to avoid infinite loops
+	SdbHt *dirs = sdb_ht_new (); //to avoid infinite loops
 	if (!dirs) {
 		return;
 	}
@@ -2569,7 +2572,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 				"trying to fix it but i do not promise nothing\n");
 		}
 		for (i = 0; i < bin->num_sections; i++) {
-			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
 				paddr = 1;
@@ -2603,7 +2606,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		struct r_bin_pe_section_t* sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
 			//If there is a section with x without w perm is a good candidate to be the entrypoint
-			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
+			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].perm & PE_IMAGE_SCN_MEM_WRITE)) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
 				break;
@@ -2714,13 +2717,16 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			snprintf (export_name, sizeof (export_name) - 1, "%s_%s", dll_name, function_name);
+			int len = snprintf (export_name, sizeof (export_name), "%s_%s", dll_name, function_name);
+			if (len >= sizeof (export_name)) {
+				eprintf ("Export name '%s' has been truncated\n", export_name);
+			}
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
 			exports[i].ordinal = function_ordinal;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
-			memcpy (exports[i].name,      export_name,    PE_NAME_LENGTH);
+			memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
 			exports[i].name[PE_NAME_LENGTH] = '\0';
 			exports[i].last = 0;
 		}
@@ -2773,7 +2779,7 @@ static void get_nb10(ut8* dbg_data, int dbg_data_len, SCV_NB10_HEADER* res) {
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
 	#define SIZEOF_FILE_NAME 255
 	int i = 0;
-	const char* basename;
+	const char* dbgname;
 	if (!dbg_data) {
 		return 0;
 	}
@@ -2800,9 +2806,9 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 				rsds_hdr.guid.data4[6],
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
-			basename = r_file_basename ((char*) rsds_hdr.file_name);
+			dbgname = (char*) rsds_hdr.file_name;
 			strncpy (res->file_name, (const char*)
-				basename, sizeof (res->file_name));
+				dbgname, sizeof (res->file_name));
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
@@ -3003,7 +3009,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_import_directory) * curr_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
-	SdbHash* lib_map = NULL;
+	SdbHt* lib_map = NULL;
 	ut64 off; //cache value
 	int index = 0;
 	int len = 0;
@@ -3248,7 +3254,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			}
 			//look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
-				if (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+				if (sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 					addr_beg = sections[j].paddr;
 					addr_end = addr_beg + sections[j].size;
 					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
@@ -3271,7 +3277,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 				sections[i].paddr = entry->paddr;
 				sections[i].vaddr = entry->vaddr - base_addr;
 				sections[i].size = sections[i].vsize = new_section_size;
-				sections[i].flags = new_perm;
+				sections[i].perm = new_perm;
 			}
 			goto out_function;
 		}
@@ -3296,14 +3302,18 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 		}
 	}
 	//we need to create another section in order to load the entrypoint
-	sections = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	void *ss = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	if (!ss) {
+		goto out_function;
+	}
+	bin->sections = sections = ss;
 	i = bin->num_sections;
 	sections[i].last = 0;
 	strcpy ((char*) sections[i].name, "blob");
 	sections[i].paddr = entry->paddr;
 	sections[i].vaddr = entry->vaddr - base_addr;
 	sections[i].size = sections[i].vsize = new_section_size;
-	sections[i].flags = new_perm;
+	sections[i].perm = new_perm;
 	sections[i + 1].last = 1;
 	*sects = sections;
 out_function:
@@ -3384,7 +3394,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 			}
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
-		sections[j].flags = shdr[i].Characteristics;
+		sections[j].perm = shdr[i].Characteristics;
 		sections[j].last = 0;
 		j++;
 	}
@@ -3424,7 +3434,7 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return subsystem? strdup (subsystem): NULL;
 }
 
-#define HASCHR(x) bin->nt_headers->file_header.Characteristics & x
+#define HASCHR(x) (bin->nt_headers->file_header.Characteristics & (x))
 
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers) {
@@ -3498,9 +3508,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
 	free (bin->tls_directory);
-	if (bin->sections) {
-		free (bin->sections);
-	}
+	free (bin->sections);
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);

@@ -334,7 +334,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 		return false;
 	}
 	/* if the map doesn't have r/w quit right here */
-	if ((!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
+	if ((!(perms & R_PERM_R) && !(perms & R_PERM_W))) {
 		free (identity);
 		return false;
 	}
@@ -649,7 +649,7 @@ static int get_info_mappings(linux_map_entry_t *me_head, size_t *maps_size) {
 	int n_entries;
 	for (n_entries = 0, p = me_head; p; p = p->n) {
 		/* We don't count maps which does not have r/w perms */
-		if (((p->perms & R_IO_READ) || (p->perms & R_IO_WRITE)) && p->dumpeable) {
+		if (((p->perms & R_PERM_R) || (p->perms & R_PERM_W)) && p->dumpeable) {
 			*maps_size += p->end_addr - p->start_addr;
 			n_entries++;
 		}
@@ -723,7 +723,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset
 
 	/* write program headers */
 	for (me_p = maps; me_p; me_p = me_p->n) {
-		if ((!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) || !me_p->dumpeable) {
+		if ((!(me_p->perms & R_PERM_R) && !(me_p->perms & R_PERM_W)) || !me_p->dumpeable) {
 			continue;
 		}
 		phdr.p_type = PT_LOAD;

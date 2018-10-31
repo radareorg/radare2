@@ -149,13 +149,13 @@ RDebugPlugin r_debug_plugin_esil = {
 	.wait = &__esil_wait,
 	.stop = __esil_stop,
 	.kill = __esil_kill,
-	.breakpoint = (RBreakpointCallback)&__esil_breakpoint,
+	.breakpoint = __esil_breakpoint,
 	.reg_profile = __esil_reg_profile,
 	.reg_read = __reg_read,
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_esil,
 	.version = R2_VERSION

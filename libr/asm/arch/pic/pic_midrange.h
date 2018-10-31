@@ -98,6 +98,6 @@ typedef enum {
 
 PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr);
 const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode);
-int pic_midrange_disassemble (RAsm *a, RAsmOp *op, const ut8 *b, int l);
+int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l);
 
 #endif // PIC_MIDRANGE_H

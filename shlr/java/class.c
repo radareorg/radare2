@@ -2225,6 +2225,7 @@ R_API ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const ut
 				}
 			} else {
 				IFDBG eprintf("Failed to read Field %d\n", i);
+				break;
 			}
 		}
 	}
@@ -2295,7 +2296,7 @@ R_API ut64 r_bin_java_parse_methods(RBinJavaObj *bin, const ut64 offset, const u
 			// get main code attr
 			bin->main_code_attr = r_bin_java_get_attr_from_field (method, R_BIN_JAVA_ATTR_TYPE_CODE_ATTR, 0);
 		} else if (method && (!strcmp ((const char *) method->name, "<init>") || !strcmp ((const char *) method->name, "init")))   {
-			IFDBG eprintf("FOund an init function.\n");
+			IFDBG eprintf("Found an init function.\n");
 			bin->entrypoint = method;
 			bin->entrypoint_code_attr = r_bin_java_get_attr_from_field (method, R_BIN_JAVA_ATTR_TYPE_CODE_ATTR, 0);
 		} else if (method && (!strcmp ((const char *) method->name, "<cinit>") || !strcmp ((const char *) method->name, "cinit")))   {
@@ -2405,7 +2406,7 @@ R_API RList *r_bin_java_get_entrypoints(RBinJavaObj *bin) {
 			if (addr) {
 				addr->vaddr = addr->paddr = \
 					r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
-				addr->haddr = fm_type->file_offset;
+				addr->hpaddr = fm_type->file_offset;
 				r_list_append (ret, addr);
 			}
 		}
@@ -2650,7 +2651,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "constant_pool");
 			section->size = bin->cp_size;
 			section->paddr = bin->cp_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE;
+			section->perm = R_PERM_R;
 			section->add = true;
 			r_list_append (sections, section);
 		}
@@ -2662,7 +2663,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "fields");
 			section->size = bin->fields_size;
 			section->paddr = bin->fields_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE;
+			section->perm = R_PERM_R;
 			section->add = true;
 			r_list_append (sections, section);
 			section = NULL;
@@ -2675,7 +2676,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 					snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
 					section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 					section->paddr = fm_type->attr_offset + baddr;
-					section->srwx = R_BIN_SCN_READABLE;
+					section->perm = R_PERM_R;
 					section->add = true;
 					r_list_append (sections, section);
 				}
@@ -2688,7 +2689,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "methods");
 			section->size = bin->methods_size;
 			section->paddr = bin->methods_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			section->perm = R_PERM_RX;
 			section->add = true;
 			r_list_append (sections, section);
 			section = NULL;
@@ -2701,7 +2702,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 					snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
 					section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 					section->paddr = fm_type->attr_offset + baddr;
-					section->srwx = R_BIN_SCN_READABLE;
+					section->perm = R_PERM_R;
 					section->add = true;
 					r_list_append (sections, section);
 				}
@@ -2714,7 +2715,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "interfaces");
 			section->size = bin->interfaces_size;
 			section->paddr = bin->interfaces_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE;
+			section->perm = R_PERM_R;
 			section->add = true;
 			r_list_append (sections, section);
 		}
@@ -2726,7 +2727,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "attributes");
 			section->size = bin->attrs_size;
 			section->paddr = bin->attrs_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE;
+			section->perm = R_PERM_R;
 			section->add = true;
 			r_list_append (sections, section);
 		}
@@ -2823,7 +2824,9 @@ R_API RList *r_bin_java_get_lib_names(RBinJavaObj *bin) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS &&
 		(bin->cf2.this_class != cp_obj->info.cp_class.name_idx || !is_class_interface (bin, cp_obj))) {
 			char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
-			r_list_append (lib_names, name);
+			if (name) {
+				r_list_append (lib_names, name);
+			}
 		}
 	}
 	return lib_names;
@@ -3001,6 +3004,23 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 		}
 	}
 	bin->lang = "java";
+	if (bin->cf.major[1] >= 46) {
+		switch (bin->cf.major[1]) {
+			static char lang[10];
+			int langid;
+			case 46:
+			case 47:
+			case 48:
+				langid = 2 + (bin->cf.major[1] - 46);
+				snprintf (lang, sizeof(lang) - 1, "java 1.%d", langid);
+				bin->lang = lang;
+				break;
+			default:
+				langid = 5 + (bin->cf.major[1] - 49);
+				snprintf (lang, sizeof(lang) - 1, "java %d", langid);
+				bin->lang = lang;
+		}
+	}
 	imports = r_bin_java_get_imports (bin);
 	r_list_foreach (imports, iter, imp) {
 		sym = R_NEW0 (RBinSymbol);
@@ -3105,7 +3125,7 @@ R_API void r_bin_java_attribute_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
 		IFDBG eprintf("Deleting attr %s, %p\n", attr->name, attr);
-		if (attr && attr->metas && attr->metas->type_info && attr->metas->type_info) {
+		if (attr && attr->metas && attr->metas->type_info) {
 			RBinJavaAttrMetas *a = attr->metas->type_info;
 			if (a && a->allocs && a->allocs->delete_obj) {
 				a->allocs->delete_obj (attr);
@@ -3581,6 +3601,7 @@ R_API RBinJavaAttrInfo *r_bin_java_enclosing_methods_attr_new(ut8 *buffer, ut64 
 	ut64 offset = 6;
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr || sz < 10) {
+		free (attr);
 		return NULL;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_ENCLOSING_METHOD_ATTR;
@@ -3980,6 +4001,7 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(ut8 *buffe
 		}
 		if (offset + 10 > sz) {
 			eprintf ("oob");
+			free (lvattr);
 			break;
 		}
 		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
@@ -6363,7 +6385,9 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 		case R_BIN_JAVA_EV_TAG_STRING:
 			// Delete the CP Type Object
 			obj = element_value->value.const_value.const_value_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			}
 			break;
 		case R_BIN_JAVA_EV_TAG_ENUM:
 			// Delete the CP Type Objects
@@ -6380,7 +6404,9 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 		case R_BIN_JAVA_EV_TAG_CLASS:
 			// Delete the CP Type Object
 			obj = element_value->value.class_value.class_info_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			}
 			break;
 		case R_BIN_JAVA_EV_TAG_ARRAY:
 			// Delete the Element Value array List
@@ -8577,8 +8603,7 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		result->value._str = R_NEW0 (struct  java_const_value_str_t);
 		result->value._str->len = length;
 		if (length > 0) {
-			result->value._str->str = malloc (length);
-			memcpy (result->value._str->str, string_str, length);
+			result->value._str->str = r_str_ndup (string_str, length);
 		} else {
 			result->value._str->str = strdup ("");
 		}

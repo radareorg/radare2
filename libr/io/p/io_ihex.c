@@ -49,7 +49,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RBufferSparse *rbs;
 	RListIter *iter;
 
-	if (!fd || !fd->data || (fd->flags & R_IO_WRITE) == 0 || count <= 0) {
+	if (!fd || !fd->data || (fd->perm & R_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
 	rih = fd->data;
@@ -123,8 +123,9 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	int j;
 	ut32 i;	//has to be bigger than size !
 
-	if (size <1 || !fd || !b)
+	if (size < 1 || !fd || !b) {
 		return -1;
+	}
 
 	for (i = 0; (i + 0x10) < size; i += 0x10) {
 		cks = 0x10;
@@ -135,16 +136,19 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 		}
 		cks = 0 - cks;
 		if (fprintf (fd, ":10%04x00%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-			(i+start_addr)&0xffff, b[0], b[1], b[2], b[3], b[4], b[5], b[6],
-			b[7], b[8], b[9], b[10], b[11], b[12], b[13],
-			b[14], b[15], cks) < 0) return -1;
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+			    (i + start_addr) & 0xffff, b[0], b[1], b[2], b[3], b[4], b[5], b[6],
+			    b[7], b[8], b[9], b[10], b[11], b[12], b[13],
+			    b[14], b[15], cks) < 0) {
+			return -1;
+		}
 		start_addr += 0x10;
 		b += 0x10;
 		if ((start_addr & 0xffff) < 0x10) {
 			//addr rollover: write ext address record
-			if (fw04b (fd, start_addr >> 16) < 0)
+			if (fw04b (fd, start_addr >> 16) < 0) {
 				return -1;
+			}
 		}
 	}
 	if (i == size) {
@@ -160,8 +164,9 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	}
 	cks -= j;
 
-	if (fprintf (fd, ":%02X%04X00%.*s%02X\n", j, last_addr, 2*j, linebuf,cks) < 0)
+	if (fprintf (fd, ":%02X%04X00%.*s%02X\n", j, last_addr, 2 * j, linebuf, cks) < 0) {
 		return -1;
+	}
 	return 0;
 }
 
@@ -314,7 +319,9 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			sec_size = 0;
 
 			eol = strchr (str + 1, ':');
-			if (eol) *eol = 0;
+			if (eol) {
+				*eol = 0;
+			}
 			cksum = bc;
 			cksum += addr_tmp>>8;
 			cksum += addr_tmp;
@@ -342,7 +349,9 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			if (eol) {
 				// checksum
 				byte=0;	//break checksum if sscanf failed
-				if (sscanf (str+9+ 4, "%02x", &byte) !=1) cksum=1;
+				if (sscanf (str + 9 + 4, "%02x", &byte) != 1) {
+					cksum = 1;
+				}
 				cksum += byte;
 				if (cksum != 0) {
 					ut8 fixedcksum = 0-(cksum-byte);
@@ -425,7 +434,7 @@ RIOPlugin r_io_plugin_ihex = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_hex,
 	.version = R2_VERSION

@@ -3,19 +3,14 @@
 #include <r_io.h>
 #include <r_util.h>
 #include <r_types.h>
+#include "io_private.h"
 
 // TODO: we may probably take care of this when the binfiles have an associated list of fds
 #define REUSE_NULL_MAPS 1
 
-static int __access_log_e_cmp (const void *a, const void *b) {
-	RIOAccessLogElement *A = (RIOAccessLogElement *)a;
-	RIOAccessLogElement *B = (RIOAccessLogElement *)b;
-	return (A->buf_idx > B->buf_idx);
-}
-
 typedef struct {
 	const char *uri;
-	int flags;
+	int perm;
 	RIODesc *desc;
 } FindFile;
 
@@ -24,17 +19,17 @@ typedef struct {
 static bool findFile(void *user, void *data, ut32 id) {
 	FindFile *res = (FindFile*)user;
 	RIODesc *desc = (RIODesc*)data;
-	if (desc->flags && res->flags && !strcmp (desc->uri, res->uri)) {
+	if (desc->perm && res->perm && !strcmp (desc->uri, res->uri)) {
 		res->desc = desc;
 		return false;
 	}
 	return true;
 }
 
-static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
 	FindFile arg = {
 		.uri = uri,
-		.flags = flags,
+		.perm = perm,
 		.desc = NULL,
 	};
 	r_id_storage_foreach (io->files, findFile, &arg);
@@ -43,13 +38,13 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 
 #else
 
-static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
 	return NULL;
 }
 
 #endif
 
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
+bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
 	RIODesc *desc = NULL;
 	char *uri = NULL;
 	bool reused = false;
@@ -60,11 +55,11 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	ut64 gap = sec->vsize - sec->size;
 	if (null) {
 		uri = r_str_newf ("null://%"PFMT64u, gap);
-		desc = findReusableFile (io, uri, sec->flags);
+		desc = findReusableFile (io, uri, sec->perm);
 		if (desc) {
 			RIOMap *map = r_io_map_get (io, at);
 			if (!map) {
-				r_io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
+				io_map_new (io, desc->fd, desc->perm, 0LL, at, gap, false);
 			}
 			reused = true;
 		}
@@ -72,14 +67,14 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 		uri = r_str_newf ("malloc://%"PFMT64u, gap);
 	}
 	if (!desc) {
-		desc = r_io_open_at (io, uri, sec->flags, 664, at);
+		desc = r_io_open_at (io, uri, sec->perm, 0664, at);
 	}
 	free (uri);
 	if (!desc) {
 		return false;
 	}
 	if (do_skyline) {
-		r_io_map_calculate_skyline (io);
+		io_map_calculate_skyline (io);
 	}
 	// this works, because new maps are allways born on the top
 	RIOMap *map = r_io_map_get (io, at);
@@ -96,9 +91,9 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	return true;
 }
 
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
+bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
 	RIOMap *map = NULL;
-	int flags = 0;
+	int perm = 0;
 	RIODesc *desc;
 	if (!io || !sec) {
 		return false;
@@ -107,14 +102,14 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch,
 	if (!desc) {
 		return false;
 	}
-	flags = sec->flags;
+	perm = sec->perm;
 	//create file map for patching
 	if (patch) {
 		//add -w to the map for patching if needed
-		//if the file was not opened with -w desc->flags won't have that bit active
-		flags = flags | desc->flags;
+		//if the file was not opened with -w desc->perm won't have that bit active
+		perm = perm | desc->perm;
 	}
-	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
+	map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -123,29 +118,6 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch,
 	return false;
 }
 
-
-R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
-	if (!io || !sec) {
-		return false;
-	}
-	if (sec->vsize - sec->size > 0) {
-		ut64 at = sec->vaddr + sec->size;
-		if (!r_io_create_mem_map (io, sec, at, false, true)) {
-			return false;
-		}
-		RIOMap *map = r_io_map_get (io, at);
-		r_io_map_set_name (map, sdb_fmt ("mem.%s", sec->name));
-			
-	}
-	if (sec->size) {
-		if (!r_io_create_file_map (io, sec, sec->size, false, true)) {
-			return false;
-		}
-		RIOMap *map = r_io_map_get (io, sec->vaddr);
-		r_io_map_set_name (map, sdb_fmt ("fmap.%s", sec->name));
-	}
-	return true;
-}
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
@@ -168,7 +140,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	}
 	if (io->va) {
 		if ((map = r_io_map_get (io, offset))) {
-			return ((map->flags & hasperm) == hasperm);
+			return ((map->perm & hasperm) == hasperm);
 		}
 		return false;
 	}
@@ -178,7 +150,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	if (r_io_desc_size (io->desc) <= offset) {
 		return false;
 	}
-	return ((io->desc->flags & hasperm) == hasperm);
+	return ((io->desc->perm & hasperm) == hasperm);
 }
 
 // this is wrong, there is more than big and little endian
@@ -209,105 +181,4 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 		return false;
 	}
 	return true;
-}
-
-R_API RIOAccessLog *r_io_accesslog_new() {
-	RIOAccessLog *log = R_NEW0 (RIOAccessLog);
-	if (!log) {
-		return NULL;
-	}
-	if (!(log->log = r_list_newf (free))) {
-		free (log);
-		return NULL;
-	}
-	return log;
-}
-
-R_API void r_io_accesslog_free(RIOAccessLog *log) {
-	if (log) {
-		r_list_free (log->log);
-	}
-	free (log);
-}
-
-R_API void r_io_accesslog_sort(RIOAccessLog *log) {
-	if (!log || !log->log) {
-		return;
-	}
-	r_list_sort (log->log, __access_log_e_cmp);
-}
-
-R_API void r_io_accesslog_sqash_ignore_gaps(RIOAccessLog *log) {
-	RListIter *iter, *ator;
-	RIOAccessLogElement *ale, *ela;
-	if (!log || !log->log || !log->log->length) {
-		return;
-	}
-	if (!log->log->sorted) {
-		r_list_sort (log->log, __access_log_e_cmp);
-	}
-	r_list_foreach_safe (log->log, iter, ator, ale) {
-		if (iter->p) {
-			ela = (RIOAccessLogElement *)iter->p->data;
-			if ((ale->len == ale->expect_len) && (ela->len == ela->expect_len)) {
-				if (ela->mapid != ale->mapid) {
-					ela->mapid = 0;			//what to do with fd?
-				}
-				ela->flags &= ale->flags;
-				ela->len += (ale->buf_idx - ela->buf_idx) + ale->len;
-				r_list_delete (log->log, iter);
-			}
-		}
-	}
-}
-
-R_API void r_io_accesslog_sqash_byflags(RIOAccessLog *log, int flags) {
-	RListIter *iter, *ator;
-	RIOAccessLogElement *ale, *ela;
-	if (!log || !log->log || !log->log->length) {
-		return;
-	}
-	if (!log->log->sorted) {
-		r_list_sort (log->log, __access_log_e_cmp);
-	}
-	r_list_foreach_safe (log->log, iter, ator, ale) {
-		if (iter->p) {
-			ela = (RIOAccessLogElement *)iter->p->data;
-			if (((ale->flags & flags) == (ela->flags & flags)) &&
-				((ale->flags & flags) == flags) &&
-				(ale->len == ale->expect_len) &&	//only sqash on succes
-				(ela->len == ela->expect_len) &&
-				((ela->buf_idx + ela->len) == ale->buf_idx)) {
-				if (ela->mapid != ale->mapid) {
-					ela->mapid = 0;			//what to do with fd?
-				}
-				ela->flags &= (ale->flags & flags);
-				ela->len += ale->len;
-				r_list_delete (log->log, iter);
-			}
-		}
-	}
-}
-
-//gets first buffer that matches with the flags and frees the element
-R_API ut8 *r_io_accesslog_getf_buf_byflags(RIOAccessLog *log, int flags, ut64 *addr, int *len) {
-	RListIter *iter;
-	RIOAccessLogElement *ale;
-	ut8 *ret;
-	if (!log || !log->log || !log->log->length) {
-		return NULL;
-	}
-	if (!log->log->sorted) {
-		r_list_sort (log->log, __access_log_e_cmp);
-	}
-	r_list_foreach (log->log, iter, ale) {
-		if (((ale->flags & flags) == flags) && (ale->len == ale->expect_len)) {
-			ret = &log->buf[ale->buf_idx];
-			*len = ale->len;
-			*addr = ale->vaddr;		//what about pa?
-			r_list_delete (log->log, iter);
-			return ret;
-		}
-	}
-	return NULL;
 }

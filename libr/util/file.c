@@ -26,6 +26,24 @@
 #include <process.h>
 #endif
 
+
+static int file_stat (const char *file, struct stat* const pStat) {
+	if (!file || !pStat) {
+		return -1;
+	}
+#if __WINDOWS__
+	wchar_t *wfile = r_utf8_to_utf16 (file);
+	if (!wfile) {
+		return -1;
+	}
+	int ret = _wstat (wfile, pStat);
+	free (wfile);
+	return ret;
+#else // __WINDOWS__
+	return stat (file, pStat);
+#endif // __WINDOWS__
+}
+
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -84,14 +102,16 @@ R_API char *r_file_dirname (const char *path) {
 		*ptr = 0;
 	} else {
 		ptr = (char*)r_str_rchr (newpath, NULL, '\\');
-		if (ptr) *ptr = 0;
+		if (ptr) {
+			*ptr = 0;
+		}
 	}
 	return newpath;
 }
 
 R_API bool r_file_is_regular(const char *str) {
 	struct stat buf = {0};
-	if (!str || !*str || stat (str, &buf) == -1) {
+	if (!str || !*str || file_stat (str, &buf) == -1) {
 		return false;
 	}
 	return ((S_IFREG & buf.st_mode) == S_IFREG)? true: false;
@@ -102,7 +122,7 @@ R_API bool r_file_is_directory(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
-	if (stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
 #ifdef S_IFBLK
@@ -137,20 +157,11 @@ R_API bool r_file_exists(const char *str) {
 		}
 	}
 #endif
-#ifdef _MSC_VER
-	WIN32_FIND_DATAA FindFileData;
-	HANDLE handle = FindFirstFileA (str, &FindFileData);
-	int found = handle != INVALID_HANDLE_VALUE;
-	if (found) {
-		FindClose (handle);
-	}
-	return found > 0;
-#else
-	if (stat (str, &buf) == -1) {
+
+	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return (S_ISREG (buf.st_mode))? true: false;
-#endif
+	return S_IFREG == (S_IFREG & buf.st_mode)? true: false;
 }
 
 R_API long r_file_proc_size(FILE *fd) {
@@ -163,7 +174,7 @@ R_API long r_file_proc_size(FILE *fd) {
 
 R_API ut64 r_file_size(const char *str) {
 	struct stat buf = {0};
-	if (stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) == -1) {
 		return 0;
 	}
 	return (ut64)buf.st_size;
@@ -186,8 +197,9 @@ R_API char *r_file_abspath(const char *file) {
 		ret = r_str_home (file + 2);
 	} else {
 #if __UNIX__ || __CYGWIN__
-		if (cwd && *file != '/')
-			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
+		if (cwd && *file != '/') {
+			ret = r_str_newf ("%s" R_SYS_DIR "%s", cwd, file);
+		}
 #elif __WINDOWS__ && !__CYGWIN__
 		// Network path
 		if (!strncmp (file, "\\\\", 2)) {
@@ -203,11 +215,10 @@ R_API char *r_file_abspath(const char *file) {
 		ret = strdup (file);
 	}
 #if __UNIX__
-	char resolved_path[PATH_MAX] = {0};
-	char *abspath = realpath (ret, resolved_path);
+	char *abspath = realpath (ret, NULL);
 	if (abspath) {
 		free (ret);
-		ret = strdup (abspath);
+		ret = abspath;
 	}
 #endif
 	return ret;
@@ -247,12 +258,12 @@ R_API char *r_file_path(const char *bin) {
 					return file;
 				}
 				str = ptr + 1;
+				free (file);
 			}
 		} while (ptr);
 	}
 	free (path_env);
 	free (path);
-	free (file);
 	return strdup (bin);
 }
 
@@ -476,11 +487,12 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 				}
 			}
 			ptr = str + i;
-			for (i = 0; ptr[i]; i++)
+			for (i = 0; ptr[i]; i++) {
 				if (ptr[i] == '\n') {
 					ptr[i] = '\0';
 					break;
 				}
+			}
 			ptr = strdup (ptr);
 		}
 		free (str);

@@ -1,9 +1,13 @@
-/* radare - Copyright 2009-2017 - pancake, nibble */
+/* radare - Copyright 2009-2018 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
 #include "gdb/include/libgdbr.h"
 #include "gdb/include/gdbserver/core.h"
+
+#if HAVE_LIBUV
+#include <uv.h>
+#endif
 
 #if 0
 SECURITY IMPLICATIONS
@@ -16,7 +20,6 @@ SECURITY IMPLICATIONS
 - follow symlinks
 #endif
 
-#define USE_THREADS 1
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
@@ -59,9 +62,11 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 		const char *http_log_file = r_config_get (core->config, "http.logfile");
 		if (http_log_file && *http_log_file) {
 			char * msg = calloc (4096, 1);
-			vsnprintf (msg, 4095, fmt, ap);
-			r_file_dump (http_log_file, (const ut8*)msg, -1, true);
-			free (msg);
+			if (msg) {
+				vsnprintf (msg, 4095, fmt, ap);
+				r_file_dump (http_log_file, (const ut8*)msg, -1, true);
+				free (msg);
+			}
 		} else {
 			vfprintf (stderr, fmt, ap);
 		}
@@ -157,8 +162,9 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		} else if (*buf=='/') {
 			eprintf ("Unknown command: %s\n", buf);
 		} else {
-			snprintf (msg, sizeof (msg) - 1, "T [%s] %s", me, buf);
-			free (rtrcmd (T, msg));
+			char *cmd = r_str_newf ("T [%s] %s", me, buf);
+			free (rtrcmd (T, cmd));
+			free (cmd);
 		}
 	}
 beach:
@@ -327,8 +333,16 @@ TODO:
 			case '*': free (rtrcmd (T, "b+16")); break;
 			case '-': free (rtrcmd (T, "b-1")); break;
 			case '/': free (rtrcmd (T, "b-16")); break;
-			case 'p': cmdidx++; if (!cmds[cmdidx]) cmdidx = 0; break;
-			case 'P': cmdidx--; if (cmdidx<0) cmdidx = 2; break;
+			case 'p': cmdidx++;
+				if (!cmds[cmdidx]) {
+					cmdidx = 0;
+				}
+				break;
+			case 'P': cmdidx--;
+				if (cmdidx < 0) {
+					cmdidx = 2;
+				}
+				break;
 			case 'q': return false;
 			}
 		}
@@ -366,7 +380,9 @@ static char *rtr_dir_files (const char *path) {
 	RList *files = r_sys_dir (path);
 	eprintf ("Listing directory %s\n", path);
 	r_list_foreach (files, iter, file) {
-		if (file[0] == '.') continue;
+		if (file[0] == '.') {
+			continue;
+		}
 		ptr = r_str_appendf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
 			path, file, file);
 	}
@@ -505,6 +521,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	ut8 *newblk, *origblk = core->block;
 
 	newblk = malloc (core->blocksize);
+	if (!newblk) {
+		r_socket_free (s);
+		return 1;
+	}
 	memcpy (newblk, core->block, core->blocksize);
 
 	core->block = newblk;
@@ -546,7 +566,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
 		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
-
 
 		if (!rs) {
 			r_sys_usleep (100);
@@ -847,7 +866,7 @@ the_end:
 	return ret;
 }
 
-static int r_core_rtr_http_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -862,10 +881,10 @@ static int r_core_rtr_http_thread (RThread *th) {
 		int p = r_config_get_i (ht->core->config, "http.port");
 		r_config_set_i (ht->core->config, "http.port",  p + 1);
 		if (p >= r_config_get_i (ht->core->config, "http.maxport")) {
-			return false;
+			return R_TH_STOP;
 		}
 	}
-	return ret;
+	return ret ? R_TH_REPEAT : R_TH_STOP;
 }
 
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
@@ -877,7 +896,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	if (launch == '-') {
 		if (httpthread) {
 			eprintf ("Press ^C to stop the webserver\n");
-			r_th_free (httpthread);
+			r_th_kill_free (httpthread);
 			httpthread = NULL;
 		} else {
 			eprintf ("No webserver running\n");
@@ -1265,7 +1284,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!r_core_file_open (core, file, R_IO_READ, 0)) {
+	if (!r_core_file_open (core, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}
@@ -1369,8 +1388,9 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 R_API void r_core_rtr_list(RCore *core) {
 	int i;
 	for (i = 0; i < RTR_MAX_HOSTS; i++) {
-		if (!rtr_host[i].fd)
+		if (!rtr_host[i].fd) {
 			continue;
+		}
 		r_cons_printf ("%i - ", rtr_host[i].fd->fd);
 		switch (rtr_host[i].proto) {
 		case RTR_PROT_HTTP: r_cons_printf ( "http://"); break;
@@ -1408,8 +1428,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		proto = RTR_PROT_RAP;
 		host = input;
 	}
-	while (*host && IS_WHITECHAR (*host))
+	while (*host && IS_WHITECHAR (*host)) {
 		host++;
+	}
 
 	if (!(ptr = strchr (host, ':'))) {
 		ptr = host;
@@ -1461,8 +1482,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				for (;;) {
 					r_line_set_prompt (prompt);
 					res = r_line_readline ();
-					if (!res || !*res) break;
-					if (*res == 'q') break;
+					if (!res || !*res) {
+						break;
+					}
+					if (*res == 'q') {
+						break;
+					}
 					if (!strcmp (res, "!sh")) {
 						for (;;) {
 							r_line_set_prompt (prompt2);
@@ -1476,7 +1501,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 							if (str) {
 								str[len] = 0;
 								res = strstr (str, "\n\n");
-								if (res) res = strstr (res+1, "\n\n");
+								if (res) {
+									res = strstr (res + 1, "\n\n");
+								}
 								res = res? res + 2: str;
 								const char *tail = (res[strlen (res) - 1] == '\n')? "": "\n";
 								printf ("%s%s", res, tail);
@@ -1496,15 +1523,25 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						rtr_textlog_chat (core, T);
 					} else {
 						ptr = r_str_uri_encode (res);
-						if (ptr) res = ptr;
+						if (ptr) {
+							res = ptr;
+						}
 						char *uri = r_str_newf ("http://%s:%s/%s%s", host, port, file, res);
-						if (ptr == res) free (ptr);
+						if (ptr == res) {
+							free (ptr);
+						}
 						str = r_socket_http_get (uri, NULL, &len);
 						if (str && len > 0) {
 							str[len] = 0;
 							res = strstr (str, "\n\n");
-							if (res) res = strstr (res+1, "\n\n");
-							if (res) res += 2; else res = str;
+							if (res) {
+								res = strstr (res + 1, "\n\n");
+							}
+							if (res) {
+								res += 2;
+							} else {
+								res = str;
+							}
 							printf ("%s%s", res, (*res && res[strlen (res)-1] == '\n') ? "" : "\n");
 							r_line_hist_add (str);
 						}
@@ -1518,10 +1555,14 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				if (str) {
 					str[len] = 0;
 					res = strstr (str, "\n\n");
-					if (res) res = strstr (res + 1, "\n\n");
+					if (res) {
+						res = strstr (res + 1, "\n\n");
+					}
 					printf ("%s", res? res + 2: str);
 					free (str);
-				} else eprintf ("HTTP connection has failed\n");
+				} else {
+					eprintf ("HTTP connection has failed\n");
+				}
 				free (http_uri);
 			}
 			r_socket_free (fd);
@@ -1597,15 +1638,17 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 
 	if (IS_DIGIT(input[0])) {
 		fd = r_num_math (core->num, input);
-		for (i = 0; i < RTR_MAX_HOSTS; i++)
+		for (i = 0; i < RTR_MAX_HOSTS; i++) {
 			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
 				r_socket_free (rtr_host[i].fd);
 				rtr_host[i].fd = NULL;
 				if (rtr_n == i) {
-					for (rtr_n = 0; !rtr_host[rtr_n].fd \
-						&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+					for (rtr_n = 0; !rtr_host[rtr_n].fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+						;
+					}
 				}
 				break;
+			}
 		}
 	} else {
 		for (i = 0; i < RTR_MAX_HOSTS; i++) {
@@ -1626,9 +1669,9 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	prompt[0] = 0;
 	if (IS_DIGIT (input[0])) {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd \
-			&& rtr_host[rtr_n].fd->fd != fd \
-			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd && rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+			;
+		}
 	}
 
 	while (!r_cons_is_breaked ()) {
@@ -1671,7 +1714,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	char *file = r_str_newf ("rap://%s", input);
-	int flags = R_IO_READ | R_IO_WRITE;
+	int flags = R_PERM_RW;
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
@@ -1687,7 +1730,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
-static int r_core_rtr_rap_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -1695,7 +1738,7 @@ static int r_core_rtr_rap_thread (RThread *th) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	return r_core_rtr_rap_run (rt->core, rt->input);
+	return r_core_rtr_rap_run (rt->core, rt->input) ? R_TH_REPEAT : R_TH_STOP;
 }
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
@@ -1831,7 +1874,9 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 		//r_socket_write (s, "px\n", 3);
 		for (;;) {
 			int ret = r_socket_read (s, buf, sizeof (buf));
-			if (ret < 1) break;
+			if (ret < 1) {
+				break;
+			}
 			buf[ret] = 0;
 			rbuf = r_str_append (rbuf, (const char *)buf);
 		}
@@ -1841,6 +1886,206 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	r_socket_free (s);
 	return rbuf;
 }
+
+
+
+#if HAVE_LIBUV
+
+typedef struct rtr_cmds_context_t {
+	uv_tcp_t server;
+	RPVector clients;
+	void *bed;
+} rtr_cmds_context;
+
+typedef struct rtr_cmds_client_context_t {
+	RCore *core;
+	char buf[4096];
+	char *res;
+	size_t len;
+	uv_tcp_t *client;
+} rtr_cmds_client_context;
+
+static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
+	uv_loop_t *loop = client->loop;
+	rtr_cmds_context *context = loop->data;
+	if (remove) {
+		size_t i;
+		for (i = 0; i < r_pvector_len (&context->clients); i++) {
+			if (r_pvector_at (&context->clients, i) == client) {
+				r_pvector_remove_at (&context->clients, i);
+				break;
+			}
+		}
+	}
+	rtr_cmds_client_context *client_context = client->data;
+	uv_close ((uv_handle_t *) client, (uv_close_cb) free);
+	free (client_context->res);
+	free (client_context);
+}
+
+static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+	rtr_cmds_client_context *context = handle->data;
+	buf->base = context->buf + context->len;
+	buf->len = sizeof (context->buf) - context->len - 1;
+}
+
+static void rtr_cmds_write(uv_write_t *req, int status) {
+	rtr_cmds_client_context *context = req->data;
+
+	if (status) {
+		eprintf ("Write error: %s\n", uv_strerror (status));
+	}
+
+	free (req);
+	rtr_cmds_client_close (context->client, true);
+}
+
+static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+	rtr_cmds_context *context = client->loop->data;
+	rtr_cmds_client_context *client_context = client->data;
+
+	if (nread < 0) {
+		if (nread != UV_EOF) {
+			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
+		}
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
+		return;
+	} else if (nread == 0) {
+		return;
+	}
+
+	buf->base[nread] = '\0';
+	char *end = strchr (buf->base, '\n');
+	if (!end) {
+		return;
+	}
+	*end = '\0';
+
+	r_cons_sleep_end (context->bed);
+	client_context->res = r_core_cmd_str (client_context->core, (const char *)client_context->buf);
+	context->bed = r_cons_sleep_begin ();
+
+	if (!client_context->res || !*client_context->res) {
+		free (client_context->res);
+		client_context->res = strdup ("\n");
+	}
+
+	if (!client_context->res || (!r_config_get_i (client_context->core->config, "scr.prompt") &&
+				 !strcmp ((char *)buf, "q!")) ||
+				 !strcmp ((char *)buf, ".--")) {
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
+		return;
+	}
+
+	uv_write_t *req = R_NEW (uv_write_t);
+	req->data = client_context;
+	uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
+	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
+	uv_read_stop (client);
+}
+
+static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
+	if (status < 0) {
+		eprintf ("New connection error: %s\n", uv_strerror (status));
+		return;
+	}
+
+	rtr_cmds_context *context = server->loop->data;
+
+	uv_tcp_t *client = R_NEW (uv_tcp_t);
+	if (!client) {
+		return;
+	}
+
+	uv_tcp_init (server->loop, client);
+	if (uv_accept (server, (uv_stream_t *)client) == 0) {
+		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
+		if (!client_context) {
+			uv_close ((uv_handle_t *)client, NULL);
+			return;
+		}
+
+		client_context->core = server->data;
+		client_context->len = 0;
+		client_context->buf[0] = '\0';
+		client_context->res = NULL;
+		client_context->client = client;
+		client->data = client_context;
+
+		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
+
+		r_pvector_push (&context->clients, client);
+	} else {
+		uv_close ((uv_handle_t *)client, NULL);
+	}
+}
+
+static void rtr_cmds_stop(uv_async_t *handle) {
+	uv_close ((uv_handle_t *) handle, NULL);
+
+	rtr_cmds_context *context = handle->loop->data;
+
+	uv_close ((uv_handle_t *) &context->server, NULL);
+
+	void **it;
+	r_pvector_foreach (&context->clients, it) {
+		uv_tcp_t *client = *it;
+		rtr_cmds_client_close (client, false);
+	}
+}
+
+static void rtr_cmds_break(uv_async_t *async) {
+	uv_async_send (async);
+}
+
+R_API int r_core_rtr_cmds(RCore *core, const char *port) {
+	if (!port || port[0] == '?') {
+		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		return 0;
+	}
+
+	uv_loop_t *loop = R_NEW (uv_loop_t);
+	if (!loop) {
+		return 0;
+	}
+	uv_loop_init (loop);
+
+	rtr_cmds_context context;
+	r_pvector_init (&context.clients, NULL);
+	loop->data = &context;
+
+	context.server.data = core;
+	uv_tcp_init (loop, &context.server);
+
+	struct sockaddr_in addr;
+	bool local = (bool) r_config_get_i(core->config, "tcp.islocal");
+	int porti = r_socket_port_by_name (port);
+	uv_ip4_addr (local ? "127.0.0.1" : "0.0.0.0", porti, &addr);
+
+	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
+	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
+	if (r) {
+		eprintf ("Failed to listen: %s\n", uv_strerror (r));
+		goto beach;
+	}
+
+	uv_async_t stop_async;
+	uv_async_init (loop, &stop_async, rtr_cmds_stop);
+
+	r_cons_break_push ((RConsBreak) rtr_cmds_break, &stop_async);
+	context.bed = r_cons_sleep_begin ();
+	uv_run (loop, UV_RUN_DEFAULT);
+	r_cons_sleep_end (context.bed);
+	r_cons_break_pop ();
+
+beach:
+	uv_loop_close (loop);
+	free (loop);
+	r_pvector_clear (&context.clients);
+	return 0;
+}
+
+#else
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	unsigned char buf[4097];
@@ -1870,9 +2115,11 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		void *bed = r_cons_sleep_begin ();
 		ch = r_socket_accept (s);
 		buf[0] = 0;
 		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
+		r_cons_sleep_end (bed);
 		if (ret > 0) {
 			buf[ret] = 0;
 			for (i = 0; buf[i]; i++) {
@@ -1887,11 +2134,13 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 				break;
 			}
 			str = r_core_cmd_str (core, (const char *)buf);
+			bed = r_cons_sleep_begin ();
 			if (str && *str)  {
 				r_socket_write (ch, str, strlen (str));
 			} else {
 				r_socket_write (ch, "\n", 1);
 			}
+			r_cons_sleep_end (bed);
 			free (str);
 		}
 		r_socket_close (ch);
@@ -1903,3 +2152,5 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	r_socket_free (ch);
 	return 0;
 }
+
+#endif

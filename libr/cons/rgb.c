@@ -111,9 +111,15 @@ R_API void r_cons_rgb_init(void) {
 R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	const char *q = 0;
 	ut8 isbg = 0, bold = 127;
-	if (!p) return 0;
-	if (*p == 0x1b) p++;
-	if (*p != '[') p--;
+	if (!p) {
+		return 0;
+	}
+	if (*p == 0x1b) {
+		p++;
+	}
+	if (*p != '[') {
+		p--;
+	}
 	switch (p[1]) {
 	case '1': bold = 255; p += 2; break;
 	case '3': isbg = 0; break;
@@ -129,18 +135,30 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 		} else { // 16M colors (truecolor)
 			/* complex rgb */
 			p += 6;
-			if (r) *r = atoi (p);
+			if (r) {
+				*r = atoi (p);
+			}
 			q = strchr (p, ';');
-			if (!q) return 0;
-			if (g) *g = atoi (q + 1);
+			if (!q) {
+				return 0;
+			}
+			if (g) {
+				*g = atoi (q + 1);
+			}
 			q = strchr (q + 1, ';');
-			if (!q) return 0;
-			if (b) *b = atoi (q + 1);
+			if (!q) {
+				return 0;
+			}
+			if (b) {
+				*b = atoi (q + 1);
+			}
 		}
 		return 1;
 	} else {
 		/* plain ansi escape codes */
-		if (a) *a = isbg;
+		if (a) {
+			*a = isbg;
+		}
 		switch (p[2]) {
 		case '0': SETRGB (0, 0, 0); break;
 		case '1': SETRGB (bold, 0, 0); break;
@@ -204,12 +222,18 @@ static void r_cons_rgb_gen(char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 
 	case COLOR_MODE_16: // ansi 16 colors
 		{
 		fgbg -= 8;
-		ut8 k = (r + g + b) / 3;
-		r = (r >= k) ? 1 : 0;
-		g = (g >= k) ? 1 : 0;
-		b = (b >= k) ? 1 : 0;
-		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		written = snprintf (outstr + i, sz - i, "%dm", fgbg + k);
+		if (r == g && g == b) {
+			r = (r > 0x7f) ? 1 : 0;
+			g = (g > 0x7f) ? 1 : 0;
+			b = (b > 0x7f) ? 1 : 0;
+		} else {
+			ut8 k = (r + g + b) / 3;
+			r = (r >= k) ? 1 : 0;
+			g = (g >= k) ? 1 : 0;
+			b = (b >= k) ? 1 : 0;
+		}
+		ut8 c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
+		written = snprintf (outstr + i, sz - i, "%dm", fgbg + c);
 		}
 		break;
 	}
@@ -246,13 +270,29 @@ R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	const char *str = NULL;
-	if (r == 0x00 && g == b && g == 0) str = "black";
-	if (r == 0xff && g == b && g == 0xff) str = "white";
-	if (r == 0xff && g == b && g == 0) str = "red";
-	if (g == 0xff && r == b && r == 0) str = "green";
-	if (b == 0xff && r == g && r == 0) str = "blue";
-	if (r == 0xff && g == 0xff && b == 0x00) str = "yellow";
-	if (r == 0x00 && g == 0xff && b == 0xff) str = "cyan";
-	if (r == 0xff && g == 0x00 && b == 0xff) str = "magenta";
+	if (r == 0x00 && g == b && g == 0) {
+		str = "black";
+	}
+	if (r == 0xff && g == b && g == 0xff) {
+		str = "white";
+	}
+	if (r == 0xff && g == b && g == 0) {
+		str = "red";
+	}
+	if (g == 0xff && r == b && r == 0) {
+		str = "green";
+	}
+	if (b == 0xff && r == g && r == 0) {
+		str = "blue";
+	}
+	if (r == 0xff && g == 0xff && b == 0x00) {
+		str = "yellow";
+	}
+	if (r == 0x00 && g == 0xff && b == 0xff) {
+		str = "cyan";
+	}
+	if (r == 0xff && g == 0x00 && b == 0xff) {
+		str = "magenta";
+	}
 	return str? strdup (str) : r_str_newf ("#%02x%02x%02x", r, g, b);
 }

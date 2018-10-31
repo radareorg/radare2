@@ -120,6 +120,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	child = r_sys_fork ();
 	if (child == -1) {
 		/* error */
+		perror ("pipe run");
 	} else if (!child) {
 		/* children */
 		r_sandbox_system (code, 1);
@@ -142,7 +143,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));
+			void *bed = r_cons_sleep_begin ();
 			ret = read (output[0], buf, sizeof (buf) - 1);
+			r_cons_sleep_end (bed);
 			if (ret < 1 || !buf[0]) {
 				break;
 			}
@@ -177,7 +180,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	if (safe_in != -1) {
 		close (safe_in);
 	}
-	waitpid (child, NULL, 0);
+	waitpid (child, NULL, WNOHANG);
 	return true;
 #else
 #if __WINDOWS__

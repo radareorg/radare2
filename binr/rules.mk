@@ -18,28 +18,7 @@ endif
 OBJ+=${BIN}.o
 BEXE=${BIN}${EXT_EXE}
 
-# ifeq ($(WITHNONPIC),1)
-# ## LDFLAGS+=$(addsuffix /lib${BINDEPS}.a,$(addprefix ../../libr/,$(subst r_,,$(BINDEPS))))
-# LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.${EXT_AR} ; done )
-# LDFLAGS+=../../shlr/sdb/src/libsdb.a
-# ifeq (1,$(WITH_GPL))
-# LDFLAGS+=../../shlr/grub/libgrubfs.a
-# endif
-# LDFLAGS+=../../shlr/gdb/lib/libgdbr.a
-# LDFLAGS+=../../shlr/windbg/libr_windbg.a
-# LDFLAGS+=../../shlr/capstone/libcapstone.a
-# LDFLAGS+=../../shlr/java/libr_java.a
-# LDFLAGS+=../../libr/socket/libr_socket.a
-# LDFLAGS+=../../libr/util/libr_util.a
-# ifneq (${OSTYPE},haiku)
-# ifneq ($(CC),cccl)
-# LDFLAGS+=-lm
-# endif
-# endif
-# endif
-
 LDFLAGS+=${DL_LIBS}
-LDFLAGS+=${LINK}
 ifneq (${ANDROID},1)
 ifneq (${OSTYPE},windows)
 ifneq (${OSTYPE},linux)
@@ -60,24 +39,38 @@ endif
 # Rules for programs #
 #--------------------#
 
+LDFLAGS+=-lm
 # For some reason w32 builds contain -shared in LDFLAGS. boo!
 
 ifneq ($(BIN)$(BINS),)
 
+ifeq ($(OSTYPE),linux)
+LDFLAGS+=-static
+endif
+
 all: ${BEXE} ${BINS}
+
+ifeq ($(WITH_LIBR),1)
+${BINS}: ${OBJS}
+	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LDFLAGS)
+
+${BEXE}: ${OBJ} ${SHARED_OBJ}
+	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
+else
 
 ${BINS}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo CC $@
 endif
-	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} -o $@
+	${CC} ${CFLAGS} $@.c ${OBJS} ${REAL_LDFLAGS} $(LINK) -o $@
 
 # -static fails because -ldl -lpthread static-gcc ...
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifneq ($(SILENT),)
 	@echo LD $@
 endif
-	${CC} ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(REAL_LDFLAGS) $(LINK)
+endif
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

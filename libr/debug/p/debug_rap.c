@@ -74,7 +74,7 @@ RDebugPlugin r_debug_plugin_rap = {
 	.attach = &r_debug_rap_attach,
 	.detach = &r_debug_rap_detach,
 	.wait = &r_debug_rap_wait,
-	.breakpoint = (RBreakpointCallback)&r_debug_rap_breakpoint,
+	.breakpoint = r_debug_rap_breakpoint,
 	.reg_read = &r_debug_rap_reg_read,
 	.reg_write = &r_debug_rap_reg_write,
 	.reg_profile = (void *)r_debug_rap_reg_profile,
@@ -83,7 +83,7 @@ RDebugPlugin r_debug_plugin_rap = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_rap,
 	.version = R2_VERSION

@@ -9,7 +9,7 @@ R_API bool r_bin_lang_swift(RBinFile *binfile) {
 	RListIter *iter;
 	if (info) {
 		r_list_foreach (o->symbols, iter, sym) {
-			if (strstr (sym->name, "swift_once")) {
+			if (sym->name && strstr (sym->name, "swift_once")) {
 				info->lang = "swift";
 				return true;
 			}

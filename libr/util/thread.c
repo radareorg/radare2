@@ -26,6 +26,10 @@ static void *_r_th_launcher(void *_th) {
 		r_th_lock_leave (th->lock);
 		th->running = true;
 		ret = th->fun (th);
+		if (ret < 0) {
+			// th has been freed
+			return 0;
+		}
 		th->running = false;
 		r_th_lock_enter (th->lock);
 	} while (ret);
@@ -43,7 +47,7 @@ R_API int r_th_push_task(struct r_th_t *th, void *user) {
 }
 
 R_API R_TH_TID r_th_self(void) {
-#if HAVE_PTRACE || __APPLE__
+#if HAVE_PTHREAD
 	return pthread_self ();
 #elif __WINDOWS__
 	return (HANDLE)GetCurrentThreadId ();
@@ -79,7 +83,7 @@ R_API void r_th_break(RThread *th) {
 }
 
 R_API bool r_th_kill(RThread *th, bool force) {
-	if (!th) {
+	if (!th || !th->tid) {
 		return false;
 	}
 	th->breaked = true;
@@ -182,12 +186,20 @@ R_API void *r_th_free(struct r_th_t *th) {
 	if (!th) {
 		return NULL;
 	}
-	r_th_kill (th, true);
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	CloseHandle (th->tid);
 #endif
 	r_th_lock_free (th->lock);
 	free (th);
+	return NULL;
+}
+
+R_API void *r_th_kill_free(struct r_th_t *th) {
+	if (!th) {
+		return NULL;
+	}
+	r_th_kill (th, true);
+	r_th_free (th);
 	return NULL;
 }
 

@@ -13,6 +13,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_search);
 
 enum {
+	R_SEARCH_ESIL,
 	R_SEARCH_KEYWORD,
 	R_SEARCH_REGEXP,
 	R_SEARCH_PATTERN,
@@ -61,7 +62,6 @@ typedef struct r_search_t {
 	ut64 nhits;
 	ut64 maxhits; // search.maxhits
 	RList *hits;
-	RMemoryPool *pool;
 	int distance;
 	int inverse;
 	bool overlap; // whether two matches can overlap

@@ -165,7 +165,19 @@ enum LoadCommandType {
 	LC_LINKER_OPTION        = 0x0000002Du,
 	LC_LINKER_OPTIMIZATION_HINT = 0x0000002Eu,
 	LC_VERSION_MIN_TVOS     = 0x0000002Fu,
-	LC_VERSION_MIN_WATCHOS  = 0x00000030u
+	LC_VERSION_MIN_WATCHOS  = 0x00000030u,
+	LC_BUILD_VERSION = 0x32u
+/*
+Load command 9
+       cmd LC_BUILD_VERSION
+   cmdsize 32
+  platform macos
+       sdk 10.14
+     minos 10.14
+    ntools 1
+      tool ld
+   version 409.11
+*/
 };
 
 enum {
@@ -1050,7 +1062,8 @@ static inline void SET_COMM_ALIGN (uint16_t *n_desc, uint8_t align) {
 enum {
 	// Capability bits used in the definition of cpu_type.
 	CPU_ARCH_MASK  = 0xff000000,   // Mask for architecture bits
-	CPU_ARCH_ABI64 = 0x01000000    // 64 bit ABI
+	CPU_ARCH_ABI64 = 0x01000000,   // 64 bit ABI
+	CPU_ARCH_ABI32 = 0x02000000    // Used for ARM64_32 (new Apple Watch)
 };
 
 // Constants for the cputype field.
@@ -1066,6 +1079,7 @@ enum CPUType {
 	CPU_TYPE_HPPA      = 11,
 	CPU_TYPE_ARM       = 12,
 	CPU_TYPE_ARM64     = CPU_TYPE_ARM | CPU_ARCH_ABI64,
+	CPU_TYPE_ARM64_32  = CPU_TYPE_ARM | CPU_ARCH_ABI32,
 	CPU_TYPE_MC88000   = 13,
 	CPU_TYPE_SPARC     = 14,
 	CPU_TYPE_I860      = 15,

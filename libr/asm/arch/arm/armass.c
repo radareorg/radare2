@@ -47,8 +47,9 @@ enum {
 };
 
 static int strcmpnull(const char *a, const char *b) {
-	if (!a || !b)
+	if (!a || !b) {
 		return -1;
+	}
 	return strcmp (a, b);
 }
 
@@ -601,13 +602,17 @@ static char *getrange(char *s) {
 			p = s+1;
 			*p=0;
 		}
-		if (*s == '[' || *s == ']')
-			memmove (s, s+1, strlen (s+1)+1);
-		if (*s == '}')
+		if (*s == '[' || *s == ']') {
+			memmove (s, s + 1, strlen (s + 1) + 1);
+		}
+		if (*s == '}') {
 			*s = 0;
+		}
 		s++;
 	}
-	while (p && *p == ' ') p++;
+	while (p && *p == ' ') {
+		p++;
+	}
 	return p;
 }
 
@@ -656,8 +661,12 @@ static st32 getlistmask(char *input) {
 	}
 	otemp = temp;
 	while (*input != '\0') {
-		for (; *input == ' '; input++);
-		for (i = 0; input[i] != ',' && input[i] != '\0'; i++);
+		for (; *input == ' '; input++) {
+			;
+		}
+		for (i = 0; input[i] != ',' && input[i] != '\0'; i++) {
+			;
+		}
 		strncpy (temp, input, i);
 		temp[i] = 0;
 
@@ -666,7 +675,9 @@ static st32 getlistmask(char *input) {
 			input++;
 		}
 
-		for (i = 0; temp[i] != '-' && temp[i] != '\0'; i++);
+		for (i = 0; temp[i] != '-' && temp[i] != '\0'; i++) {
+			;
+		}
 		if (i == strlen (temp)) {
 			tempres = getreg (temp);
 			if (tempres == -1 || tempres > 15) {
@@ -966,7 +977,9 @@ void collect_list(char *input[]) {
 	int conc = 0;
 	int start, end = 0;
 	int arrsz;
-	for (arrsz = 1; input[arrsz] != NULL; arrsz++);
+	for (arrsz = 1; input[arrsz] != NULL; arrsz++) {
+		;
+	}
 
 	for (i = 0; input[i]; i++) {
 		if (conc) {
@@ -1112,7 +1125,9 @@ static ut32 getshift(const char *str) {
 //			i|=1; // use reg
 			i |= (1 << 4); // bitshift
 			i |= shift << 4; // set shift mode
-			if (shift == 6) i |= (1 << 20);
+			if (shift == 6) {
+				i |= (1 << 20);
+			}
 		} else {
 			char *bracket = strchr (arg, ']');
 			if (bracket) {
@@ -1120,7 +1135,9 @@ static ut32 getshift(const char *str) {
 			}
 			// ensure only the bottom 5 bits are used
 			i &= 0x1f;
-			if (!i) i = 32;
+			if (!i) {
+				i = 32;
+			}
 			i = (i * 8);
 			i |= shift; // lsl, ror, ...
 			i = i << 4;
@@ -1133,8 +1150,9 @@ static ut32 getshift(const char *str) {
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	int i;
 	memset (ao, 0, sizeof (ArmOpcode));
-	if (strlen (str)+1>=sizeof (ao->op))
+	if (strlen (str) + 1 >= sizeof (ao->op)) {
 		return;
+	}
 	strncpy (ao->op, str, sizeof (ao->op)-1);
 	strcpy (ao->opstr, ao->op);
 	ao->a[0] = strchr (ao->op, ' ');
@@ -1142,7 +1160,9 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 		if (ao->a[i]) {
 			*ao->a[i] = 0;
 			ao->a[i+1] = strchr (++ao->a[i], ',');
-		} else break;
+		} else {
+			break;
+		}
 	}
 	if (ao->a[i]) {
 		*ao->a[i] = 0;
@@ -2790,9 +2810,10 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (ldrsel == 0) {
 				ao->a[1][strlen (ao->a[1]) - 1] = '\0';
 				ao->a[2] = "0]";
-			} else 
+			} else {
 				return -1;
-		        }
+			}
+			}
 			// intentional fallthrough
 		case THUMB_REG_BRACKREG_CONSTBRACK: {
 			st32 num = getnummemend (ao->a[2]);
@@ -4574,8 +4595,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "stc", L_BIT | TWO_BIT))) {
+	} else if ((m = opmask (ao->op, "stc", L_BIT | TWO_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_COPROC_COREG_BRACKREGBRACK: {
@@ -4673,8 +4693,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "stm", FD_BIT | DB_BIT | IA_BIT | EA_BIT))) {
+	} else if ((m = opmask (ao->op, "stm", FD_BIT | DB_BIT | IA_BIT | EA_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		bool wb = false;
 		switch (argt) {
@@ -4720,8 +4739,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else 
-	if ((m = opmask (ao->op, "str", B_BIT | T_BIT | D_BIT | H_BIT))) {
+	} else if ((m = opmask (ao->op, "str", B_BIT | T_BIT | D_BIT | H_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		ut32 strsel = m & (B_BIT | H_BIT | D_BIT);
 		switch (argt) {
@@ -6044,7 +6062,9 @@ static int findyz(int x, int *y, int *z) {
 	for (i = 0;i < 0xff; i++) {
 		for (j = 0;j < 0xf;j++) {
 			int v = i << j;
-			if (v > x) continue;
+			if (v > x) {
+				continue;
+			}
 			if (v == x) {
 				*y = i;
 				*z = 16 - (j / 2);
@@ -6064,155 +6084,164 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
-			if (ao->a[0] || ops[i].type == TYPE_BKP)
-			switch (ops[i].type) {
-			case TYPE_MEM:
-				if (!strncmp (ops[i].name, "strex", 5)) {
-					rex = 1;
-				}
-				getrange (ao->a[0]);
-				getrange (ao->a[1]);
-				getrange (ao->a[2]);
-				if (ao->a[0] && ao->a[1]) {
-					char rn[8];
-					strncpy (rn, ao->a[1], 7);
-					int r0 = getreg (ao->a[0]);
-					int r1 = getreg (ao->a[1]);
-					if ( (r0 < 0 || r0 > 15) || (r1 > 15 || r1 < 0) ) {
-						return 0;
+			if (ao->a[0] || ops[i].type == TYPE_BKP) {
+				switch (ops[i].type) {
+				case TYPE_MEM:
+					if (!strncmp (ops[i].name, "strex", 5)) {
+						rex = 1;
 					}
-					ao->o |= r0 << 20;
-					if (!strcmp (ops[i].name, "strd")) {
-						r1 = getreg (ao->a[2]);
-						if (r1 == -1) {
+					if (!strcmp (ops[i].name, "str") || !strcmp (ops[i].name, "ldr")) {
+						if (!ao->a[2]) {
+							ao->a[2] = "0";
+						}
+					}
+					getrange (ao->a[0]);
+					getrange (ao->a[1]);
+					getrange (ao->a[2]);
+					if (ao->a[0] && ao->a[1]) {
+						char rn[8];
+						strncpy (rn, ao->a[1], 7);
+						int r0 = getreg (ao->a[0]);
+						int r1 = getreg (ao->a[1]);
+						if ((r0 < 0 || r0 > 15) || (r1 > 15 || r1 < 0)) {
+							return 0;
+						}
+						ao->o |= r0 << 20;
+						if (!strcmp (ops[i].name, "strd")) {
+							r1 = getreg (ao->a[2]);
+							if (r1 == -1) {
+								break;
+							}
+							ao->o |= r1 << 8;
+							if (ao->a[3]) {
+								char *bracket = strchr (ao->a[3], ']');
+								if (bracket) {
+									*bracket = '\0';
+								}
+								int num = getnum (ao->a[3]);
+								ao->o |= (num & 0x0f) << 24;
+								ao->o |= ((num >> 4) & 0x0f) << 16;
+							}
 							break;
 						}
-						ao->o |= r1 << 8;
-						if (ao->a[3]) {
-							char *bracket = strchr (ao->a[3], ']');
-							if (bracket) {
-								*bracket = '\0';
-							}
-							int num = getnum (ao->a[3]);
-							ao->o |= (num & 0x0f) << 24;
-							ao->o |= ((num >> 4) & 0x0f) << 16;
-						}
-						break;
-					}
-					if (!strcmp (ops[i].name, "strh")) {
-						ao->o |=  r1 << 8;
-						if (ao->a[2]) {
-							reg = getreg (ao->a[2]);
-							if (reg != -1) {
-								ao->o |= reg << 24;
+						if (!strcmp (ops[i].name, "strh")) {
+							ao->o |= r1 << 8;
+							if (ao->a[2]) {
+								reg = getreg (ao->a[2]);
+								if (reg != -1) {
+									ao->o |= reg << 24;
+								} else {
+									ao->o |= 1 << 14;
+									ao->o |= getnum (ao->a[2]) << 24;
+								}
 							} else {
 								ao->o |= 1 << 14;
-								ao->o |= getnum (ao->a[2]) << 24;
 							}
+							break;
+						}
+						if (rex) {
+							ao->o |= r1 << 24;
 						} else {
-							ao->o |= 1 << 14;
+							ao->o |= r1 << 8; // delta
 						}
-						break;
-					}
-					if (rex) {
-						ao->o |=  r1 << 24;
 					} else {
-						ao->o |=  r1 << 8; // delta
-					}
-				} else {
-					return 0;
-				}
-
-				ret = getreg (ao->a[2]);
-				if (ret != -1) {
-					if (rex) {
-						ao->o |= 1;
-						ao->o |= (ret & 0x0f) << 8;
-					} else {
-						ao->o |= (strstr (str,"],")) ? 6 : 7;
-						ao->o |= (ret & 0x0f) << 24;
-					}
-					if (ao->a[3]) {
-						shift = getshift (ao->a[3]);
-						low = shift & 0xFF;
-						high = shift & 0xFF00;
-						ao->o |= low << 24;
-						ao->o |= high << 8;
-					}
-				} else {
-					int num = getnum (ao->a[2]) & 0xfff;
-					if (err) {
-						break;
-					}
-					if (rex) {
-						ao->o |= 1;
-					} else {
-						ao->o |= (strstr (str, "],")) ? 4 : 5;
-					}
-					ao->o |= 1;
-					ao->o |= (num & 0xff) << 24;
-					ao->o |= ((num >> 8) & 0xf) << 16;
-				}
-
-				break;
-			case TYPE_IMM:
-				if (*ao->a[0] ++== '{') {
-					for (j = 0; j < 16; j++) {
-						if (ao->a[j] && *ao->a[j]) {
-							getrange (ao->a[j]); // XXX filter regname string
-							reg = getreg (ao->a[j]);
-							if (reg != -1) {
-								if (reg < 8)
-									ao->o |= 1 << (24 + reg);
-								else
-									ao->o |= 1 << (8 + reg);
-							}
-						}
-					}
-				} else ao->o |= getnum (ao->a[0]) << 24; // ???
-				break;
-			case TYPE_BRA:
-				if ((ret = getreg (ao->a[0])) == -1) {
-					// TODO: control if branch out of range
-					ret = (getnum (ao->a[0]) - (int)ao->off - 8) / 4;
-					if (ret >= 0x00800000 || ret < (int)0xff800000) {
-						eprintf("Branch into out of range\n");
 						return 0;
 					}
-					ao->o |= ((ret >> 16) & 0xff) << 8;
-					ao->o |= ((ret >> 8) & 0xff) << 16;
-					ao->o |= ((ret) & 0xff) << 24;
-				} else {
-					eprintf("This branch does not accept reg as arg\n");
-					return 0;
-				}
-				break;
-			case TYPE_BKP:
-				ao->o |= 0x70 << 24;
-				if (ao->a[0]) {
-					int n = getnum (ao->a[0]);
-					ao->o |= ((n & 0xf) << 24);
-					ao->o |= (((n >> 4) & 0xff) << 16);
-				}
-				break;
-			case TYPE_BRR:
-				if ((ret = getreg (ao->a[0])) == -1) {
-					ut32 dst = getnum (ao->a[0]);
-					dst -= (ao->off + 8);
-					if (dst & 0x2) {
-						ao->o = 0xfb;
+
+					ret = getreg (ao->a[2]);
+					if (ret != -1) {
+						if (rex) {
+							ao->o |= 1;
+							ao->o |= (ret & 0x0f) << 8;
+						} else {
+							ao->o |= (strstr (str, "],")) ? 6 : 7;
+							ao->o |= (ret & 0x0f) << 24;
+						}
+						if (ao->a[3]) {
+							shift = getshift (ao->a[3]);
+							low = shift & 0xFF;
+							high = shift & 0xFF00;
+							ao->o |= low << 24;
+							ao->o |= high << 8;
+						}
 					} else {
-						ao->o = 0xfa;
+						int num = getnum (ao->a[2]) & 0xfff;
+						if (err) {
+							break;
+						}
+						if (rex) {
+							ao->o |= 1;
+						} else {
+							ao->o |= (strstr (str, "],")) ? 4 : 5;
+						}
+						ao->o |= 1;
+						ao->o |= (num & 0xff) << 24;
+						ao->o |= ((num >> 8) & 0xf) << 16;
 					}
-					dst /= 4;
-					ao->o |= ((dst >> 16) & 0xff) << 8;
-					ao->o |= ((dst >> 8) & 0xff) << 16;
-					ao->o |= ((dst) & 0xff) << 24;
-					return 4;
-				} else ao->o |= (getreg (ao->a[0]) << 24);
-				break;
-			case TYPE_HLT:
-				{
+
+					break;
+				case TYPE_IMM:
+					if (*ao->a[0]++ == '{') {
+						for (j = 0; j < 16; j++) {
+							if (ao->a[j] && *ao->a[j]) {
+								getrange (ao->a[j]); // XXX filter regname string
+								reg = getreg (ao->a[j]);
+								if (reg != -1) {
+									if (reg < 8) {
+										ao->o |= 1 << (24 + reg);
+									} else {
+										ao->o |= 1 << (8 + reg);
+									}
+								}
+							}
+						}
+					} else {
+						ao->o |= getnum (ao->a[0]) << 24; // ???
+					}
+					break;
+				case TYPE_BRA:
+					if ((ret = getreg (ao->a[0])) == -1) {
+						// TODO: control if branch out of range
+						ret = (getnum (ao->a[0]) - (int)ao->off - 8) / 4;
+						if (ret >= 0x00800000 || ret < (int)0xff800000) {
+							eprintf ("Branch into out of range\n");
+							return 0;
+						}
+						ao->o |= ((ret >> 16) & 0xff) << 8;
+						ao->o |= ((ret >> 8) & 0xff) << 16;
+						ao->o |= ((ret)&0xff) << 24;
+					} else {
+						eprintf ("This branch does not accept reg as arg\n");
+						return 0;
+					}
+					break;
+				case TYPE_BKP:
+					ao->o |= 0x70 << 24;
+					if (ao->a[0]) {
+						int n = getnum (ao->a[0]);
+						ao->o |= ((n & 0xf) << 24);
+						ao->o |= (((n >> 4) & 0xff) << 16);
+					}
+					break;
+				case TYPE_BRR:
+					if ((ret = getreg (ao->a[0])) == -1) {
+						ut32 dst = getnum (ao->a[0]);
+						dst -= (ao->off + 8);
+						if (dst & 0x2) {
+							ao->o = 0xfb;
+						} else {
+							ao->o = 0xfa;
+						}
+						dst /= 4;
+						ao->o |= ((dst >> 16) & 0xff) << 8;
+						ao->o |= ((dst >> 8) & 0xff) << 16;
+						ao->o |= ((dst)&0xff) << 24;
+						return 4;
+					} else {
+						ao->o |= (getreg (ao->a[0]) << 24);
+					}
+					break;
+				case TYPE_HLT: {
 					ut32 o = 0, n = getnum (ao->a[0]);
 					o |= ((n >> 12) & 0xf) << 8;
 					o |= ((n >> 8) & 0xf) << 20;
@@ -6272,8 +6301,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						return 0;
 					}
 				}
-				if (0xff == ((ao->o >> 16) & 0xff))
+				if (0xff == ((ao->o >> 16) & 0xff)) {
 					return 0;
+				}
 				}
 				break;
 			case TYPE_MOV:
@@ -6380,8 +6410,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				} else {
 					ao->o |= (a << 8);
 					ao->o |= (b << 24);
-					if (ao->a[2])
+					if (ao->a[2]) {
 						ao->o |= getshift (ao->a[2]);
+					}
 				}
 				if (ao->a[2]) {
 					int n = getnum (ao->a[2]);
@@ -6501,6 +6532,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg << 24;
 
 				break;
+			}
 			}
 			return 1;
 		}

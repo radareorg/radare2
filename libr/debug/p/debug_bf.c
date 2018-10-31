@@ -29,9 +29,11 @@ static struct bfvm_regs r;
 
 static int is_io_bf(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
-	if (d && d->plugin && d->plugin->name)
-		if (!strcmp ("bdescbg", d->plugin->name))
+	if (d && d->plugin && d->plugin->name) {
+		if (!strcmp ("bdescbg", d->plugin->name)) {
 			return true;
+		}
+	}
 	return false;
 }
 
@@ -40,10 +42,12 @@ static int r_debug_bf_step_over(RDebug *dbg) {
 	int op, oop = 0;
 	for (;;) {
 		op = bfvm_op (o->bfvm);
-		if (oop != 0 && op != oop)
+		if (oop != 0 && op != oop) {
 			break;
-		if (bfvm_in_trap (o->bfvm))
+		}
+		if (bfvm_in_trap (o->bfvm)) {
 			break;
+		}
 		bfvm_step (o->bfvm, 0);
 		oop = op;
 	}
@@ -58,12 +62,15 @@ static int r_debug_bf_step(RDebug *dbg) {
 
 static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	RIOBdescbg *o;
-	if (!dbg)
+	if (!dbg) {
 		return false;
-	if (!is_io_bf (dbg))
+	}
+	if (!is_io_bf (dbg)) {
 		return 0;
-	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data))
+	}
+	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
 		return 0;
+	}
 	o = dbg->iob.io->desc->data;
 	r.pc = o->bfvm->eip;
 	r.ptr = o->bfvm->ptr;
@@ -81,12 +88,15 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	RIOBdescbg *o;
-	if (!dbg)
+	if (!dbg) {
 		return false;
-	if (!is_io_bf (dbg))
+	}
+	if (!is_io_bf (dbg)) {
 		return 0;
-	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data))
+	}
+	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
 		return 0;
+	}
 	o = dbg->iob.io->desc->data;
 	memcpy (&r, buf, sizeof (r));
 	o->bfvm->eip = r.pc;
@@ -119,8 +129,9 @@ static int r_debug_bf_wait(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bf_attach(RDebug *dbg, int pid) {
-	if (!is_io_bf (dbg))
+	if (!is_io_bf (dbg)) {
 		return false;
+	}
 #if 0
 	RIOBdescbg *o;
 	o = dbg->iob.io->desc->data;
@@ -153,7 +164,7 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	);
 }
 
-static int r_debug_bf_breakpoint (void *bp, RBreakpointItem *b, bool set) {
+static int r_debug_bf_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }
@@ -168,7 +179,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	BfvmCPU *c = o->bfvm;
 	RList *list = r_list_newf ((RListFree)r_debug_map_free);
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	r_list_append (list, r_debug_map_new (
 		"code", 0, 4096, 6, 0));
 	r_list_append (list, r_debug_map_new (
@@ -209,7 +222,7 @@ RDebugPlugin r_debug_plugin_bf = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bf,
 	.version = R2_VERSION

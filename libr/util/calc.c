@@ -45,14 +45,30 @@ static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
-	if (v.d) n.d = (n.d - (n.d/v.d)); else n.d = 0;
-	if (v.n) n.n %= v.n; else n.n = 0;
+	if (v.d) {
+		n.d = (n.d - (n.d / v.d));
+	} else {
+		n.d = 0;
+	}
+	if (v.n) {
+		n.n %= v.n;
+	} else {
+		n.n = 0;
+	}
 	return n;
 }
 
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
-	if (v.d) n.d /= v.d; else n.d = 0;
-	if (v.n) n.n /= v.n; else n.n = 0;
+	if (v.d) {
+		n.d /= v.d;
+	} else {
+		n.d = 0;
+	}
+	if (v.n) {
+		n.n /= v.n;
+	} else {
+		n.n = 0;
+	}
 	return n;
 }
 
@@ -214,7 +230,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d;
-	char str[R_NUMCALC_STRSZ]; // TODO: move into the heap?
+	char str[R_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
 	int i = 0;
 	char c;
 	str[0] = 0;
@@ -316,8 +332,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		return nc->curr_tok = RNCNUMBER;
 
 #define isvalidchar(x) \
-	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
-	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || (x>='0'&&x<='9'))
+	(isalnum(x) || (x)==':' || (x)=='$' || (x)=='.' || (x)=='_' || (x)=='?' || (x)=='\\' \
+	|| (x)==' ' || (x)=='[' || (x)==']' || (x)=='}' || (x)=='{' || ((x)>='0'&&(x)<='9'))
 
 	default:
 		{

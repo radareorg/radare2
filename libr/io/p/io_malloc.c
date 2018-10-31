@@ -18,7 +18,7 @@ static inline ut32 _io_malloc_sz(RIODesc *desc) {
 	}
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	return mal? mal->size: 0;
-} 
+}
 
 static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 	if (!desc) {
@@ -28,7 +28,7 @@ static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 	if (mal) {
 		mal->size = sz;
 	}
-} 
+}
 
 static inline ut8* _io_malloc_buf(RIODesc *desc) {
 	if (!desc) {
@@ -182,7 +182,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->buf = calloc (1, mal->size + 1);
 		}
 		if (mal->buf) {
-			return r_io_desc_new (io, &r_io_plugin_malloc, pathname, R_IO_RW | rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_malloc, pathname, R_PERM_RW | rw, mode, mal);
 		}
 		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
 		free (mal);
@@ -204,7 +204,7 @@ RIOPlugin r_io_plugin_malloc = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_malloc,
 	.version = R2_VERSION

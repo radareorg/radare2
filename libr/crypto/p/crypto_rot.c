@@ -6,11 +6,11 @@
 int mod(int a, int b) {
 	if (b < 0) {
 		return mod (-a, -b);
-	}   
+	}
 	int ret = a % b;
 	if (ret < 0) {
 		ret += b;
-	}   
+	}
 	return ret;
 }
 
@@ -19,7 +19,7 @@ static bool rot_init(ut8 *rotkey, const ut8 *key, int keylen) {
 		int i = atoi ((const char *)key);
 		*rotkey = (ut8)mod (i, 26);
 		return true;
-	}   
+	}
 	return false;
 }
 
@@ -71,7 +71,9 @@ static bool rot_use(const char *algo) {
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 	if (flag == 0) {
 		rot_crypt (rot_key, buf, obuf, len);
 	} else if (flag == 1) {
@@ -96,7 +98,7 @@ RCryptoPlugin r_crypto_plugin_rot = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rot,
 	.version = R2_VERSION

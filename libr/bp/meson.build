@@ -14,7 +14,7 @@ files = [
 
 r_bp = library('r_bp', files,
   include_directories: [platform_inc],
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,

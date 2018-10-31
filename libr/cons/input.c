@@ -46,8 +46,8 @@ static int parseMouseEvent() {
 	int ch = r_cons_readchar ();
 	/* Skip the x/y coordinates */
 #if USE_CLICK
-	int x = r_cons_readchar() - 33;
-	int y = r_cons_readchar() - 33;
+	int x = r_cons_readchar () - 33;
+	int y = r_cons_readchar () - 33;
 #else
 	(void) r_cons_readchar ();
 	(void) r_cons_readchar ();
@@ -89,7 +89,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	I->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
-	case 0xc3: r_cons_readchar(); ch='K'; break; // emacs repag (alt + v)
+	case 0xc3: r_cons_readchar (); ch='K'; break; // emacs repag (alt + v)
 	case 0x16: ch='J'; break; // emacs avpag (ctrl + v)
 	case 0x10: ch='k'; break; // emacs up (ctrl + p)
 	case 0x0e: ch='j'; break; // emacs down (ctrl + n)
@@ -194,8 +194,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			} // F9-F12 not yet supported!!
 			break;
-		case '5': ch = 'K'; r_cons_readchar(); break; // repag
-		case '6': ch = 'J'; r_cons_readchar(); break; // avpag
+		case '5': ch = 'K'; r_cons_readchar (); break; // repag
+		case '6': ch = 'J'; r_cons_readchar (); break; // avpag
 		/* arrow keys */
 		case 'A': ch = 'k'; break; // up
 		case 'B': ch = 'j'; break; // down
@@ -222,6 +222,7 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	r_cons_enable_mouse (false);
 	r_cons_flush ();
 #endif
+	errno = 0;
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
 	}
@@ -232,8 +233,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (color) {
 		const char *p = cons->pal.input;
 		int len = p? strlen (p): 0;
-		if (len>0)
+		if (len > 0) {
 			fwrite (p, len, 1, stdout);
+		}
 		fflush (stdout);
 	}
 	if (!fgets (buf, len, cons->fdin)) {
@@ -250,14 +252,11 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		RETURN (-2);
 	}
 	buf[strlen (buf)-1] = '\0';
-	if (color) printf (Color_RESET);
+	if (color) {
+		printf (Color_RESET);
+	}
 	ret = strlen (buf);
 beach:
-#if __UNIX__
-	if (errno == EINTR) {
-		ret = 0;
-	}
-#endif
 	//r_cons_enable_mouse (mouse);
 	return ret;
 }
@@ -453,6 +452,11 @@ R_API void r_cons_switchbuf(bool active) {
 	bufactive = active;
 }
 
+#if !(__WINDOWS__ && !__CYGWIN__)
+extern volatile sig_atomic_t sigwinchFlag;
+extern void resizeWin(void);
+#endif
+
 R_API int r_cons_readchar() {
 	void *bed;
 	char buf[2];
@@ -484,7 +488,31 @@ R_API int r_cons_readchar() {
 #else
 	r_cons_set_raw (1);
 	bed = r_cons_sleep_begin ();
-	ssize_t ret = read (0, buf, 1);
+
+	// Blocks until either stdin has something to read or a signal happens.
+	// This serves to check if the terminal window was resized. It avoids the race
+	// condition that could happen if we did not use pselect or select in case SIGWINCH
+	// was handled immediately before the blocking call (select or read). The race is
+	// prevented from happening by having SIGWINCH blocked process-wide except for in
+	// pselect (that is what pselect is for).
+	fd_set readfds;
+	sigset_t sigmask;
+	FD_ZERO (&readfds);
+	FD_SET (STDIN_FILENO, &readfds);
+	r_signal_sigmask (0, NULL, &sigmask);
+	sigdelset (&sigmask, SIGWINCH);
+	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
+		if (errno == EBADF) {
+			eprintf ("r_cons_readchar (): EBADF\n");
+			return -1;
+		}
+		if (sigwinchFlag) {
+			sigwinchFlag = 0;
+			resizeWin ();
+		}
+	}
+
+	ssize_t ret = read (STDIN_FILENO, buf, 1);
 	r_cons_sleep_end (bed);
 	if (ret != 1) {
 		return -1;
@@ -518,14 +546,51 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	return key == 'y';
 }
 
+R_API char *r_cons_password(const char *msg) {
+	int i = 0;
+	char buf[256] = {0};
+	printf ("\r%s", msg);
+	fflush (stdout);
+	r_cons_set_raw (1);
+#if __UNIX__
+	RCons *a = r_cons_singleton();
+	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
+	// //  required to make therm/iterm show the key
+	// // cannot read when enabled in this way
+	// a->term_raw.c_lflag |= ICANON;
+	tcsetattr (0, TCSADRAIN, &a->term_raw);
+	signal (SIGTSTP, SIG_IGN);
+#endif
+	while (i < sizeof (buf)) {
+		int ch = r_cons_readchar ();
+		if (ch == 127) { // backspace
+			if (i < 1) {
+				break;
+			}
+			i--;
+			continue;
+		}
+		if (ch == '\r' || ch == '\n') {
+			break;
+		}
+		buf[i++] = ch;
+	}
+	buf[i] = 0;
+	r_cons_set_raw (0);
+	printf ("\n");
+#if __UNIX__
+	signal (SIGTSTP, SIG_DFL);
+#endif
+	return strdup (buf);
+}
+
 R_API char *r_cons_input(const char *msg) {
-	char *oprompt = r_line_get_prompt (); //r_cons_singleton ()->line->prompt);
+	char *oprompt = r_line_get_prompt ();
 	if (!oprompt) {
 		return NULL;
 	}
 	char buf[1024];
 	if (msg) {
-		//r_cons_printf ("%s\n", msg);
 		r_line_set_prompt (msg);
 	} else {
 		r_line_set_prompt ("");

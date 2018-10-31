@@ -375,7 +375,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	if (!task) {
 		if (pid > 0 && !strncmp (file, "smach://", 8)) {
-			kill (pid, 9);
+			kill (pid, SIGKILL);
 			eprintf ("Child killed\n");
 		}
 #if 0
@@ -384,7 +384,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		 * what was this intended to check anyway ? */
 		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
 			eprintf ("Child killed\n");
-			kill (pid, 9);
+			kill (pid, SIGKILL);
 		}
 #endif
 		switch (errno) {
@@ -418,10 +418,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		: strdup ("kernel");
 	if (!strncmp (file, "smach://", 8)) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
-			       rw | R_IO_EXEC, mode, iodd);
+			       rw | R_PERM_X, mode, iodd);
 	} else {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, file,
-			       rw | R_IO_EXEC, mode, iodd);
+			       rw | R_PERM_X, mode, iodd);
 	}
 	ret->name = pidpath;
 	return ret;
@@ -557,7 +557,7 @@ RIOPlugin r_io_plugin_mach = {
 #endif
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION

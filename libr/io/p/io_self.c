@@ -18,14 +18,15 @@
 #include <mach/task.h>
 #include <mach/task_info.h>
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
+#elif __FreeBSD__
+#include <sys/sysctl.h>
+#include <sys/user.h>
+#include <libutil.h>
+bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
 #endif
-
-#define PERM_READ 4
-#define PERM_WRITE 2
-#define PERM_EXEC 1
 
 typedef struct {
 	char *name;
@@ -73,8 +74,9 @@ static int update_self_regions(RIO *io, int pid) {
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
-	if (!fd)
+	if (!fd) {
 		return false;
+	}
 
 	while (!feof (fd)) {
 		line[0]='\0';
@@ -98,9 +100,9 @@ static int update_self_regions(RIO *io, int pid) {
 		perm = 0;
 		for (i = 0; i < 4 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			}
 		}
 		self_sections[self_sections_count].from = r_num_get (NULL, region);
@@ -113,6 +115,8 @@ static int update_self_regions(RIO *io, int pid) {
 	fclose (fd);
 
 	return true;
+#elif __FreeBSD__
+	return bsd_proc_vmmaps(io, pid);
 #else
 #ifdef _MSC_VER
 #pragma message ("Not yet implemented for this platform")
@@ -129,8 +133,9 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
-	if (r_sandbox_enable (0))
+	if (r_sandbox_enable (0)) {
 		return NULL;
+	}
 	io->va = true; // nop
 	ret = update_self_regions (io, pid);
 	if (ret) {
@@ -143,7 +148,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int left, perm;
 	if (self_in_section (io, io->off, &left, &perm)) {
-		if (perm & R_IO_READ) {
+		if (perm & R_PERM_R) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			memcpy (buf, ptr, newlen);
@@ -154,7 +159,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	if (fd->flags & R_IO_WRITE) {
+	if (fd->perm & R_PERM_W) {
 		int left, perm;
 		if (self_in_section (io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
@@ -200,7 +205,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			return NULL;
 		}
 		/* do nothing here */
-		kill (getpid (), 9);
+		kill (getpid (), SIGKILL);
 #endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
@@ -361,7 +366,7 @@ RIOPlugin r_io_plugin_self = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION
@@ -478,9 +483,8 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 
 			self_sections[self_sections_count].from = prev_address;
 			self_sections[self_sections_count].to = prev_address+prev_size;
-			self_sections[self_sections_count].perm = PERM_READ; //prev_info.protection;
+			self_sections[self_sections_count].perm = R_PERM_R; //prev_info.protection;
 			self_sections_count++;
-
 			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
 			}
@@ -506,6 +510,91 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 		}
 	 }
 }
+#elif __FreeBSD__
+bool bsd_proc_vmmaps(RIO *io, int pid) {
+	int mib[4] = {
+		CTL_KERN, KERN_PROC, KERN_PROC_VMMAP, pid
+	};
+	size_t size;
+	bool ret = false;
+	int s = sysctl (mib, sizeof (mib), NULL, &size, NULL, 0);
+	if (s == -1) {
+		eprintf ("sysctl failed\n");
+		return false;
+	}
+	ut8 *p = malloc (size);
+	if (p) {
+		size = size * 4 / 3;
+		s = sysctl (mib, sizeof (mib), p, &size, NULL, 0);
+		if (s == -1) {
+			eprintf ("sysctl failed\n");
+			goto exit;
+		}
+		ut8 *p_start = p;
+		ut8 *p_end = p + size;
+		int n = 0;
+
+		while (p_start < p_end) {
+			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
+			size_t sz = entry->kve_structsize;
+			if (sz == 0) {
+				break;
+			}
+			p_start += sz;
+			n ++;
+		}
+
+		struct kinfo_vmentry *entries = calloc(n, sizeof(*entries));
+		if (!entries) {
+			eprintf ("entries allocation failed\n");
+			goto exit;
+		}
+
+		p_start = p;
+
+		while (p_start < p_end) {
+			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
+			size_t sz = entry->kve_structsize;
+			int perm = 0;
+			if (sz == 0) {
+				break;
+			}
+
+			if (entry->kve_protection & KVME_PROT_READ) {
+				perm |= R_PERM_R;
+			}
+			if (entry->kve_protection & KVME_PROT_WRITE) {
+				perm |= R_PERM_W;
+			}
+			if (entry->kve_protection & KVME_PROT_EXEC) {
+				perm |= R_PERM_X;
+			}
+
+			if (entry->kve_path[0] != '\0') {
+				io->cb_printf (" %p - %p (%s)\n",
+					(void *)entry->kve_start,
+					(void *)entry->kve_end,
+					entry->kve_path);
+			}
+
+			self_sections[self_sections_count].from = entry->kve_start;
+			self_sections[self_sections_count].to = entry->kve_end;
+			self_sections[self_sections_count].name = strdup (entry->kve_path);
+			self_sections[self_sections_count].perm = perm;
+			self_sections_count++;
+			p_start += sz;
+		}
+
+		free (entries);
+		ret = true;
+	} else {
+		eprintf ("buffer allocation failed\n");
+	}
+
+exit:
+	free (p);
+	return ret;
+}
 #endif
 
 #else // DEBUGGER
@@ -515,7 +604,7 @@ RIOPlugin r_io_plugin_self = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION

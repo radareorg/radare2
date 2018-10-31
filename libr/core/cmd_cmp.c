@@ -5,7 +5,7 @@
 static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "Compare a plain with escaped chars string",
-	"c*", " [string]", "Compare a plain with escaped chars string (output r2 commands)",
+	"c*", " [string]", "Same as above, but printing r2 commands instead",
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
 	"cat", " [file]", "Show contents of file (see pwd, ls)",
@@ -18,7 +18,7 @@ static const char *help_msg_c[] = {
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte value (silent returns in $?",
+	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
 	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
 	"cw", "[?] [us?] [...]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
@@ -326,7 +326,7 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	RAsmOp op, op2;
-	int i, j, iseq;
+	int i, j;
 	char colpad[80];
 	int hascolor = r_config_get_i (core->config, "scr.color");
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
@@ -350,10 +350,10 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				buf + j, core->blocksize - j);
 
 			// show output
-			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
-			memset (colpad, ' ', sizeof(colpad));
+			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm);
+			memset (colpad, ' ', sizeof (colpad));
 			{
-				int pos = strlen (op.buf_asm);
+				int pos = strlen (r_strbuf_get (&op.buf_asm));
 				pos = (pos > cols)? 0: cols - pos;
 				colpad[pos] = 0;
 			}
@@ -363,7 +363,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 			r_cons_printf (" 0x%08"PFMT64x "  %s %s",
 				core->offset + i, op.buf_asm, colpad);
 			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n",
-				iseq? '=': '!', off + j, op2.buf_asm);
+				iseq? '=': '!', off + j, r_strbuf_get (&op2.buf_asm));
 			if (hascolor) {
 				r_cons_printf (Color_RESET);
 			}
@@ -390,7 +390,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				buf + j, core->blocksize - j);
 
 			// show output
-			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
+			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm); // (!strcmp (op.buf_asm, op2.buf_asm));
 			if (iseq) {
 				r_cons_printf (" 0x%08"PFMT64x "  %s\n",
 					core->offset + i, op.buf_asm);

@@ -1,54 +1,67 @@
 #include "sdbht.h"
 
-SDB_API SdbHash* sdb_ht_new() {
-	return ht_new ((DupValue)strdup, (HtKvFreeFunc)sdb_kv_free, (CalcSize)strlen);
+void sdbkv_fini(SdbKv *kv) {
+	free (kv->base.key);
+	free (kv->base.value);
 }
 
-static bool sdb_ht_internal_insert(SdbHash* ht, const char* key,
+SDB_API SdbHt* sdb_ht_new() {
+	SdbHt *ht = ht_new ((DupValue)strdup, (HtKvFreeFunc)sdbkv_fini, (CalcSize)strlen);
+	if (ht) {
+		ht->elem_size = sizeof (SdbKv);
+	}
+	return ht;
+}
+
+static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
 				    const char* value, bool update) {
 	if (!ht || !key || !value) {
 		return false;
 	}
-	SdbKv* kvp = calloc (1, sizeof (SdbKv));
-	if (kvp) {
-		kvp->key = strdup ((void *)key);
-		kvp->value = strdup ((void *)value);
-		kvp->key_len = strlen ((void *)kvp->key);
-		kvp->expire = 0;
-		kvp->value_len = strlen ((void *)kvp->value);
-		return ht_insert_kv (ht, (HtKv*)kvp, update);
+	SdbKv kvp = {{ 0 }};
+	kvp.base.key = strdup ((void *)key);
+	if (!kvp.base.key) {
+		goto err;
 	}
+	kvp.base.value = strdup ((void *)value);
+	if (!kvp.base.value) {
+		goto err;
+	}
+	kvp.base.key_len = strlen ((void *)kvp.base.key);
+	kvp.base.value_len = strlen ((void *)kvp.base.value);
+	kvp.expire = 0;
+	return ht_insert_kv (ht, (HtKv*)&kvp, update);
+
+ err:
+	free (kvp.base.key);
+	free (kvp.base.value);
 	return false;
 }
 
-SDB_API bool sdb_ht_insert(SdbHash* ht, const char* key, const char* value) {
+SDB_API bool sdb_ht_insert(SdbHt* ht, const char* key, const char* value) {
 	return sdb_ht_internal_insert (ht, key, value, false);
 }
 
-SDB_API bool sdb_ht_insert_kvp(SdbHash* ht, SdbKv *kvp, bool update) {
+SDB_API bool sdb_ht_insert_kvp(SdbHt* ht, SdbKv *kvp, bool update) {
 	return ht_insert_kv (ht, (HtKv*)kvp, update);
 }
 
-SDB_API bool sdb_ht_update(SdbHash *ht, const char *key, const char*value) {
+SDB_API bool sdb_ht_update(SdbHt *ht, const char *key, const char*value) {
 	return sdb_ht_internal_insert (ht, key, value, true);
 }
 
-SDB_API SdbKv* sdb_ht_find_kvp(SdbHash* ht, const char* key, bool* found) {
+SDB_API SdbKv* sdb_ht_find_kvp(SdbHt* ht, const char* key, bool* found) {
 	return (SdbKv *)ht_find_kv (ht, key, found);
 }
 
-SDB_API char* sdb_ht_find(SdbHash* ht, const char* key, bool* found) {
+SDB_API char* sdb_ht_find(SdbHt* ht, const char* key, bool* found) {
 	return (char *)ht_find (ht, key, found);
 }
 
-SDB_API void sdb_ht_free(SdbHash *ht) {
+SDB_API void sdb_ht_free(SdbHt *ht) {
 	ht_free (ht);
 }
 
-SDB_API bool sdb_ht_delete(SdbHash* ht, const char *key) {
+SDB_API bool sdb_ht_delete(SdbHt* ht, const char *key) {
 	return ht_delete (ht, key);
-}
-
-SDB_API void sdb_ht_free_deleted(SdbHash* ht) {
-	ht_free_deleted (ht);
 }

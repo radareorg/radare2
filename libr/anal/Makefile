@@ -4,7 +4,7 @@ EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean
 
 NAME=r_anal
-DEPS=r_util r_reg r_syscall r_search r_cons r_flag
+DEPS=r_util r_reg r_syscall r_search r_cons r_flag r_hash
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 CFLAGS+=-I$(LTOP)/asm/arch/include
 
@@ -31,6 +31,7 @@ OBJLIBS=meta.o reflines.o op.o fcn.o bb.o var.o
 OBJLIBS+=cond.o value.o cc.o diff.o
 OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o
 OBJLIBS+=anal_ex.o switch.o state.o cycles.o
+OBJLIBS+=esil_sources.o esil_interrupt.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 OBJLIBS+=esil2reil.o pin.o session.o vtable.o rtti.o
 OBJLIBS+=rtti_msvc.o rtti_itanium.o

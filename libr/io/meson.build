@@ -1,5 +1,4 @@
 files = [
-  'iobuf.c',
   'cache.c',
   'desc.c',
   'fd.c',
@@ -55,20 +54,27 @@ if host_machine.system() == 'windows'
   ]
 endif
 
+
+r_io_deps = [
+  r_util_dep,
+  r_socket_dep,
+  sdb_dep,
+  bochs_dep,
+  gdb_dep,
+  windbg_dep,
+  qnx_dep,
+  zip_dep,
+  ar_dep
+]
+
+if use_ptrace_wrap
+  r_io_deps += ptrace_wrap_dep
+endif
+
 r_io = library('r_io', files,
   include_directories: platform_inc,
-  dependencies: [
-    r_util_dep,
-    r_socket_dep,
-    sdb_dep,
-    bochs_dep,
-    gdb_dep,
-    windbg_dep,
-    qnx_dep,
-    zip_dep,
-    ar_dep
-  ],
-  c_args: ['-DCORELIB=1'],
+  dependencies: r_io_deps,
+  c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

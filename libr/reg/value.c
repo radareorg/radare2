@@ -1,15 +1,15 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
 
 typedef ut32 ut27;
-static ut27 r_read_me27(const ut8* buf, int boff) {
-        ut27 ret = 0;
-        r_mem_copybits_delta ((ut8*)&ret, 18, buf, boff, 9);
-        r_mem_copybits_delta ((ut8*)&ret, 9, buf, boff + 9, 9);
-        r_mem_copybits_delta ((ut8*)&ret, 0, buf, boff + 18, 9);
-        return ret;
+static ut27 r_read_me27(const ut8 *buf, int boff) {
+	ut27 ret = 0;
+	r_mem_copybits_delta ((ut8 *)&ret, 18, buf, boff, 9);
+	r_mem_copybits_delta ((ut8 *)&ret, 9, buf, boff + 9, 9);
+	r_mem_copybits_delta ((ut8 *)&ret, 0, buf, boff + 18, 9);
+	return ret;
 }
 
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
@@ -24,8 +24,8 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	switch (item->size) {
 	case 80: // word + qword
 		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
-			val->v80.Low = *((ut64 *)(regset->arena->bytes+off));
-			val->v80.High =*((ut16 *)(regset->arena->bytes+off+8));
+			val->v80.Low = *((ut64 *)(regset->arena->bytes + off));
+			val->v80.High = *((ut16 *)(regset->arena->bytes + off + 8));
 		} else {
 			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		}
@@ -33,17 +33,17 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		break;
 	case 96: // dword + qword
 		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
-			val->v96.Low = *((ut64 *)(regset->arena->bytes+off));
-			val->v96.High =*((ut32 *)(regset->arena->bytes+off+8));
+			val->v96.Low = *((ut64 *)(regset->arena->bytes + off));
+			val->v96.High = *((ut32 *)(regset->arena->bytes + off + 8));
 		} else {
 			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		}
 		ret = val->v96.Low;
 		break;
-	case 128:// qword + qword
+	case 128: // qword + qword
 		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
-			val->v128.Low = *((ut64 *)(regset->arena->bytes+off));
-			val->v128.High =*((ut64 *)(regset->arena->bytes+off+8));
+			val->v128.Low = *((ut64 *)(regset->arena->bytes + off));
+			val->v128.High = *((ut64 *)(regset->arena->bytes + off + 8));
 		} else {
 			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		}
@@ -59,69 +59,64 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 }
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
-	RRegSet *regset;
-	int off;
-	ut64 ret = 0LL;
-	if (!reg || !item) {
+	if (!reg || !item || item->offset == -1) {
 		return 0LL;
 	}
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
 	switch (item->size) {
-	case 1:
-		{
+	case 1: {
 		int offset = item->offset / 8;
 		if (offset + item->size >= regset->arena->size) {
 			break;
 		}
-		ret = (regset->arena->bytes[offset] &
-		       (1 << (item->offset % 8))) ? 1 : 0;
-		}
-		break;
+		return (regset->arena->bytes[offset] &
+			       (1 << (item->offset % 8)))
+			? 1
+			: 0;
+	} break;
 	case 4:
 		if (regset->arena->size - off - 1 >= 0) {
-			ret = (r_read_at_ble8 (regset->arena->bytes, off)) & 0xF;
+			return (r_read_at_ble8 (regset->arena->bytes, off)) & 0xF;
 		}
 		break;
 	case 8:
 		if (regset->arena->size - off - 1 >= 0) {
-			ret = r_read_at_ble8 (regset->arena->bytes, off);
+			return r_read_at_ble8 (regset->arena->bytes, off);
 		}
 		break;
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
-			ret = r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
+			return r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
 		}
 		break;
 	case 27:
 		if (off + 3 < regset->arena->size) {
-			ret = r_read_me27 (regset->arena->bytes + off, 0);
+			return r_read_me27 (regset->arena->bytes + off, 0);
 		}
 		break;
 	case 32:
 		if (off + 4 <= regset->arena->size) {
-			ret = r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
-		} else {
-			eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
+			return r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
 		}
+		eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
 		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
-			ret = r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
-		} else {
-			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+			return r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
 		}
+		eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
-		ret = (ut64)r_reg_get_longdouble (reg, item);
+		return (ut64)r_reg_get_longdouble (reg, item);
 		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
 	}
-	return ret;
+	return 0LL;
 }
 
 R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
@@ -165,7 +160,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		}
 		break;
 	case 8:
-		r_write_ble8 (src, (ut8)(value & UT8_MAX));
+		r_write_ble8 (src, (ut8) (value & UT8_MAX));
 		break;
 	case 1:
 		if (value) {
@@ -193,8 +188,8 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	fits_in_arena = (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
 	if (src && fits_in_arena) {
 		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-					BITS2BYTES (item->offset),
-				src, item->size);
+				BITS2BYTES (item->offset),
+			src, item->size);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);

@@ -23,10 +23,10 @@ CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20180723
+CS_UPD=20180916
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 CS_BRA=master
-CS_TIP=782ea67e17a391ca0d3faafdc365b335a1a8930a
+CS_TIP=e2c1cd46c06744beaceff42dd882de3a90f0a37c
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -46,9 +46,13 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 endif
+ifeq (1,$(USE_PTRACE_WRAP))
+MODS+=ptrace-wrap
+endif
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 SPP_URL=git://github.com/radare/spp
+PTRACE_WRAP_URL=git://github.com/thestr4ng3r/ptrace-wrap
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
@@ -133,8 +137,8 @@ endif
 	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
-F=README.md config.mk src Makefile meson.build msvc
-SYNCFILES=$(addprefix sdb.vc/,${F})
+SDB_F=README.md config.mk src Makefile meson.build msvc
+SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
 
 libgdbr:
@@ -155,7 +159,7 @@ sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
 	git clone --depth 1 ${SDB_URL} sdb.vc
 	mkdir -p sdb
-	cp -rf ${SYNCFILES} sdb
+	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
 	mkdir -p $I/sdb
 	rm -f src/sdb_version.h
@@ -168,6 +172,26 @@ sdb-sync sync-sdb:
 	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
 	git add $I/sdb*
 	git add sdb
+
+.PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap
+PTRACE_WRAP_F=include src README.md COPYING
+PTRACE_WRAP_SYNCFILES=$(addprefix ptrace-wrap.vc/,${PTRACE_WRAP_F})
+
+ptrace-wrap-sync sync-ptrace-wrap:
+	rm -rf ptrace-wrap ptrace-wrap.vc
+	git clone --depth 1 ${PTRACE_WRAP_URL} ptrace-wrap.vc
+	mkdir -p ptrace-wrap
+	cp -rf ${PTRACE_WRAP_SYNCFILES} ptrace-wrap
+	sed -e "s, library(, static_library(," -e "s,project(,# project(," -e "s,subdir(,# subdir(," ptrace-wrap.vc/meson.build > ptrace-wrap/meson.build
+	printf "include ../../libr/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
+	rm -rf ptrace-wrap.vc
+	printf "CFLAGS+=-I\$$(STOP)/ptrace-wrap/include\nLINK+=\$$(STOP)/ptrace-wrap/libptrace_wrap.\$$(EXT_AR)\n" > ptrace-wrap/deps.mk
+
+ptrace-wrap:
+	$(MAKE) -C ptrace-wrap all
+
+ptrace-wrap-clean clean-ptrace-wrap:
+	$(MAKE) -C ptrace-wrap clean
 
 $(TCCLIB) libr_tcc/libr_tcc.${EXT_AR}:
 	cd libr_tcc ; $(MAKE)
@@ -243,7 +267,7 @@ ifeq ($(WITHOUT_PULL),1)
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
-	-cd capstone ; $(GIT) reset --hard
+	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
 	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif

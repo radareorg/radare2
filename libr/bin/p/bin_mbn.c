@@ -38,11 +38,21 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 		if (sb.vaddr < 0x100 || sb.psize > bufsz) { // NAND
 			return false;
 		}
-		if (sb.cert_va < sb.vaddr) return false;
-		if (sb.cert_sz >= 0xf0000) return false;
-		if (sb.sign_va < sb.vaddr) return false;
-		if (sb.sign_sz >= 0xf0000) return false;
-		if (sb.load_index < 1 || sb.load_index > 0x40) return false; // should be 0x19 ?
+		if (sb.cert_va < sb.vaddr) {
+			return false;
+		}
+		if (sb.cert_sz >= 0xf0000) {
+			return false;
+		}
+		if (sb.sign_va < sb.vaddr) {
+			return false;
+		}
+		if (sb.sign_sz >= 0xf0000) {
+			return false;
+		}
+		if (sb.load_index < 1 || sb.load_index > 0x40) {
+			return false; // should be 0x19 ?
+		}
 #if 0
 		eprintf ("V=%d\n", sb.version);
 		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
@@ -61,15 +71,15 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 	return false;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void*)(size_t)check_bytes (buf, sz);
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
 	if (bf && bf->buf) {
 		const ut8 *bytes = r_buf_buffer (bf->buf);
 		ut64 sz = r_buf_size (bf->buf);
-		return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb) != NULL;
+		return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	}
 	return false;
 }
@@ -122,7 +132,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = sb.psize;
 	ptr->paddr = sb.paddr + 40;
 	ptr->vaddr = sb.vaddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
 	r_list_append (ret, ptr);
@@ -135,7 +145,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = sb.sign_sz;
 	ptr->paddr = sb.sign_va - sb.vaddr;
 	ptr->vaddr = sb.sign_va;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
 	r_list_append (ret, ptr);
@@ -149,7 +159,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->vsize = sb.cert_sz;
 		ptr->paddr = sb.cert_va - sb.vaddr;
 		ptr->vaddr = sb.cert_va;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->has_strings = true;
 		ptr->add = true;
 		r_list_append (ret, ptr);
@@ -202,7 +212,7 @@ RBinPlugin r_bin_plugin_mbn = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mbn,
 	.version = R2_VERSION

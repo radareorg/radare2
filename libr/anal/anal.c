@@ -160,15 +160,6 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	return true;
 }
 
-// TODO: Must be deprecated
-R_API void r_anal_list(RAnal *anal) {
-	RAnalPlugin *h;
-	RListIter *it;
-	r_list_foreach (anal->plugins, it, h) {
-		anal->cb_printf ("anal %-10s %s\n", h->name, h->desc);
-	}
-}
-
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
@@ -188,13 +179,6 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 				if (change) {
 					r_anal_set_fcnsign (anal, NULL);
 				}
-	#if 1
-				/* invalidate esil state? really ? */
-				if (anal->esil) {
-					r_anal_esil_free (anal->esil);
-					anal->esil = NULL;
-				}
-	#endif
 				return true;
 			}
 		}
@@ -353,6 +337,14 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	}
 }
 
+R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color) {
+	RAnalBlock *bbi;
+	bbi = r_anal_bb_from_offset (anal, addr);
+	if (bbi) {
+		bbi->colorize = color;
+	}
+}
+
 R_API RList* r_anal_get_fcns (RAnal *anal) {
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
@@ -505,18 +497,21 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	return true;
 }
 
-static int noreturn_dropall(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
-	if (!strcmp (v, "func")) {
-		sdb_unset (anal->sdb_types, K_NORET_FUNC(k), 0);
-	}
-	return 1;
+static int is_func(void *p, const char *k, const char *v) {
+	return !strcmp (v, "func");
 }
 
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
 	if (!strcmp (expr, "*")) {
-		sdb_foreach (TDB, noreturn_dropall, anal);
+		SdbList *noreturns = sdb_foreach_list_filter (TDB, is_func, false);
+		SdbListIter *it;
+		SdbKv *kv;
+
+		ls_foreach (noreturns, it, kv) {
+			sdb_unset (TDB, K_NORET_FUNC(sdbkv_key (kv)), 0);
+		}
+		ls_free (noreturns);
 		return true;
 	} else {
 		const char *fcnname = NULL;
@@ -611,17 +606,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	int oss = anal->flb.f->space_strict;
-	int ofs = anal->flb.f->space_idx;
-	anal->flb.set_fs (anal->flb.f, "imports");
-	anal->flb.f->space_strict = true;
-	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-	if (!fi) {
-		anal->flb.set_fs (anal->flb.f, "symbols");
-		fi = anal->flb.get_at (anal->flb.f, addr, false);
-	}
-	anal->flb.f->space_idx = ofs;
-	anal->flb.f->space_strict = oss;
+	RFlagItem *fi = r_flag_get_i2 (anal->flb.f, addr);
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->name)) {
 			return true;
@@ -648,7 +633,7 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
 		//just grab when hint->bit changes with the previous one
 		ls_foreach (sdb_range, iter, kv) {
-			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (kv->key + 5), kv->value);
+			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (sdbkv_key (kv) + 5), sdbkv_value (kv));
 			if (hint->bits && range_bits != hint->bits) {
 				RAnalRange *range = R_NEW0 (RAnalRange);
 				if (range) {

@@ -8,6 +8,7 @@ files = [
 
 r_flag = library('r_flag', files,
   include_directories: [platform_inc],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     sdb_dep

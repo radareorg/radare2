@@ -14,7 +14,9 @@ R_API void r_bp_traptrace_free(void *ptr) {
 
 R_API RList *r_bp_traptrace_new() {
 	RList *list = r_list_new();
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	list->free = &r_bp_traptrace_free;
 	return list;
 }
@@ -36,7 +38,9 @@ R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard) {
 			r_bp_traptrace_free (trace);
 			// XXX: This segfaults
 			//r_list_delete (bp->traces, r_list_iter_cur (iter));
-		} else memset (trace->bits, 0x00, trace->bitlen);
+		} else {
+			memset (trace->bits, 0x00, trace->bitlen);
+		}
 	}
 	if (hard) {
 		// XXX: traces not freed correctly (memleak)
@@ -54,8 +58,9 @@ R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 		if (addr>=trace->addr && addr<=trace->addr_end) {
 			delta = (int)(addr-trace->addr);
 			for (i=delta; i<trace->length; i++) {
-				if (R_BIT_CHK (trace->bits, i))
-					return addr+i;
+				if (R_BIT_CHK (trace->bits, i)) {
+					return addr + i;
+				}
 			}
 		}
 	}
@@ -68,16 +73,20 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	ut64 len;
 	int bitlen;
 	/* cannot map addr 0 */
-	if (from == 0LL)
+	if (from == 0LL) {
 		return false;
-	if (from>to)
+	}
+	if (from > to) {
 		return false;
+	}
 	len = to-from;
-	if (len >= ST32_MAX)
+	if (len >= ST32_MAX) {
 		return false;
+	}
 	buf = (ut8*) malloc ((int)len);
-	if (!buf)
+	if (!buf) {
 		return false;
+	}
 	trap = (ut8*) malloc ((int)len+4);
 	if (!trap) {
 		free (buf);
@@ -141,8 +150,9 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp) {
 	RBreakpointTrace *trace;
 	r_list_foreach (bp->traces, iter, trace) {
 		for (i = 0; i < trace->bitlen; i++) {
-			if (R_BIT_CHK (trace->bits, i))
-				eprintf ("  - 0x%08"PFMT64x"\n", trace->addr + (i<<4));
+			if (R_BIT_CHK (trace->bits, i)) {
+				eprintf ("  - 0x%08" PFMT64x "\n", trace->addr + (i << 4));
+			}
 		}
 	}
 }
@@ -155,9 +165,11 @@ R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
 	// TODO: do we really need len?
 		if (from>=trace->addr && from+len<=trace->addr_end) {
 			delta = (int) (from-trace->addr);
-			if (R_BIT_CHK (trace->bits, delta))
-			if (trace->traps[delta]==0x00)
-				return false; // already traced..debugger should stop
+			if (R_BIT_CHK (trace->bits, delta)) {
+				if (trace->traps[delta] == 0x00) {
+					return false; // already traced..debugger should stop
+				}
+			}
 			R_BIT_SET (trace->bits, delta);
 			return true;
 		}

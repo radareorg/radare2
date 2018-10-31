@@ -21,7 +21,7 @@
    MA 02110-1301, USA.  */
 
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "opcode/nios2.h"
 #include "libiberty.h"
 #include <string.h>
@@ -59,41 +59,39 @@ nios2_init_opcode_hash (void)
   unsigned int i;
   register const struct nios2_opcode *op;
 
-  for (i = 0; i <= OP_MASK_OP; ++i)
-    nios2_hash[0] = NULL;
-  for (i = 0; i <= OP_MASK_OP; i++)
-    for (op = nios2_opcodes; op < &nios2_opcodes[NUMOPCODES]; op++)
-      {
-	nios2_opcode_hash *new_hash;
-	nios2_opcode_hash **bucket = NULL;
+  for (i = 0; i <= OP_MASK_OP; ++i) {
+	  nios2_hash[0] = NULL;
+  }
+  for (i = 0; i <= OP_MASK_OP; i++) {
+	  for (op = nios2_opcodes; op < &nios2_opcodes[NUMOPCODES]; op++) {
+		  nios2_opcode_hash *new_hash;
+		  nios2_opcode_hash **bucket = NULL;
 
-	if ((op->pinfo & NIOS2_INSN_MACRO) == NIOS2_INSN_MACRO)
-	  {
-	    if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP)
-		&& (op->pinfo & (NIOS2_INSN_MACRO_MOV | NIOS2_INSN_MACRO_MOVI)
-		    & 0x7fffffff))
-	      bucket = &(nios2_ps_hash[i]);
-	  }
-	else if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP))
-	  bucket = &(nios2_hash[i]);
+		  if ((op->pinfo & NIOS2_INSN_MACRO) == NIOS2_INSN_MACRO) {
+			  if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP) && (op->pinfo & (NIOS2_INSN_MACRO_MOV | NIOS2_INSN_MACRO_MOVI) & 0x7fffffff)) {
+				  bucket = &(nios2_ps_hash[i]);
+			  }
+		  } else if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP)) {
+			  bucket = &(nios2_hash[i]);
+		  }
 
-	if (bucket)
-	  {
-	    new_hash =
-	      (nios2_opcode_hash *) malloc (sizeof (nios2_opcode_hash));
-	    if (!new_hash)
-	      {
-		fprintf (stderr,
-			 "error allocating memory...broken disassembler\n");
-		abort ();
-	      }
-	    new_hash->opcode = op;
-	    new_hash->next = NULL;
-	    while (*bucket)
-	      bucket = &((*bucket)->next);
-	    *bucket = new_hash;
+		  if (bucket) {
+			  new_hash =
+				  (nios2_opcode_hash *)malloc (sizeof (nios2_opcode_hash));
+			  if (!new_hash) {
+				  fprintf (stderr,
+					  "error allocating memory...broken disassembler\n");
+				  abort ();
+			  }
+			  new_hash->opcode = op;
+			  new_hash->next = NULL;
+			  while (*bucket) {
+				  bucket = &((*bucket)->next);
+			  }
+			  *bucket = new_hash;
+		  }
 	  }
-      }
+  }
   nios2_hash_init = 1;
 #ifdef DEBUG_HASHTABLE
   for (i = 0; i <= OP_MASK_OP; ++i)
@@ -130,20 +128,25 @@ nios2_find_opcode_hash (unsigned long opcode)
   nios2_opcode_hash *entry;
 
   /* Build a hash table to shorten the search time.  */
-  if (!nios2_hash_init)
-    nios2_init_opcode_hash ();
+  if (!nios2_hash_init) {
+	  nios2_init_opcode_hash ();
+  }
 
   /* First look in the pseudo-op hashtable.  */
   for (entry = nios2_ps_hash[(opcode >> OP_SH_OP) & OP_MASK_OP];
-       entry; entry = entry->next)
-    if (entry->opcode->match == (opcode & entry->opcode->mask))
-      return entry->opcode;
+	  entry; entry = entry->next) {
+	  if (entry->opcode->match == (opcode & entry->opcode->mask)) {
+		  return entry->opcode;
+	  }
+  }
 
   /* Otherwise look in the main hashtable.  */
   for (entry = nios2_hash[(opcode >> OP_SH_OP) & OP_MASK_OP];
-       entry; entry = entry->next)
-    if (entry->opcode->match == (opcode & entry->opcode->mask))
-      return entry->opcode;
+	  entry; entry = entry->next) {
+	  if (entry->opcode->match == (opcode & entry->opcode->mask)) {
+		  return entry->opcode;
+	  }
+  }
 
   return NULL;
 }
@@ -161,12 +164,12 @@ nios2_coprocessor_regs (void)
   if (!cached)
     {
       int i;
-      for (i = NUMREGNAMES; i < nios2_num_regs; i++)
-	if (!strcmp (nios2_regs[i].name, "c0"))
-	  {
-	    cached = nios2_regs + i;
-	    break;
-	  }
+      for (i = NUMREGNAMES; i < nios2_num_regs; i++) {
+	      if (!strcmp (nios2_regs[i].name, "c0")) {
+		      cached = nios2_regs + i;
+		      break;
+	      }
+      }
       assert (cached);
     }
   return cached;
@@ -181,12 +184,12 @@ nios2_control_regs (void)
   if (!cached)
     {
       int i;
-      for (i = NUMREGNAMES; i < nios2_num_regs; i++)
-	if (!strcmp (nios2_regs[i].name, "status"))
-	  {
-	    cached = nios2_regs + i;
-	    break;
-	  }
+      for (i = NUMREGNAMES; i < nios2_num_regs; i++) {
+	      if (!strcmp (nios2_regs[i].name, "status")) {
+		      cached = nios2_regs + i;
+		      break;
+	      }
+      }
       assert (cached);
     }
   return cached;
@@ -213,44 +216,47 @@ nios2_print_insn_arg (const char *argptr,
     case 'd':
       i = GET_INSN_FIELD (RRD, opcode);
 
-      if (GET_INSN_FIELD (OP, opcode) == OP_MATCH_CUSTOM
-	  && GET_INSN_FIELD (CUSTOM_C, opcode) == 0)
-	reg_base = nios2_coprocessor_regs ();
-      else
-	reg_base = nios2_regs;
+      if (GET_INSN_FIELD (OP, opcode) == OP_MATCH_CUSTOM && GET_INSN_FIELD (CUSTOM_C, opcode) == 0) {
+	      reg_base = nios2_coprocessor_regs ();
+      } else {
+	      reg_base = nios2_regs;
+      }
 
-      if (i < NUMREGNAMES)
-	(*info->fprintf_func) (info->stream, "%s", reg_base[i].name);
-      else
-	(*info->fprintf_func) (info->stream, "unknown");
+      if (i < NUMREGNAMES) {
+	      (*info->fprintf_func) (info->stream, "%s", reg_base[i].name);
+      } else {
+	      (*info->fprintf_func) (info->stream, "unknown");
+      }
       break;
     case 's':
       i = GET_INSN_FIELD (RRS, opcode);
 
-      if (GET_INSN_FIELD (OP, opcode) == OP_MATCH_CUSTOM
-	  && GET_INSN_FIELD (CUSTOM_A, opcode) == 0)
-	reg_base = nios2_coprocessor_regs ();
-      else
-	reg_base = nios2_regs;
+      if (GET_INSN_FIELD (OP, opcode) == OP_MATCH_CUSTOM && GET_INSN_FIELD (CUSTOM_A, opcode) == 0) {
+	      reg_base = nios2_coprocessor_regs ();
+      } else {
+	      reg_base = nios2_regs;
+      }
 
-      if (i < NUMREGNAMES)
-	(*info->fprintf_func) (info->stream, "%s", reg_base[i].name);
-      else
-	(*info->fprintf_func) (info->stream, "unknown");
+      if (i < NUMREGNAMES) {
+	      (*info->fprintf_func) (info->stream, "%s", reg_base[i].name);
+      } else {
+	      (*info->fprintf_func) (info->stream, "unknown");
+      }
       break;
     case 't':
       i = GET_INSN_FIELD (RRT, opcode);
 
-      if (GET_INSN_FIELD (OP, opcode) == OP_MATCH_CUSTOM
-	  && GET_INSN_FIELD (CUSTOM_B, opcode) == 0)
-	reg_base = nios2_coprocessor_regs ();
-      else
-	reg_base = nios2_regs;
+      if (GET_INSN_FIELD (OP, opcode) == OP_MATCH_CUSTOM && GET_INSN_FIELD (CUSTOM_B, opcode) == 0) {
+	      reg_base = nios2_coprocessor_regs ();
+      } else {
+	      reg_base = nios2_regs;
+      }
 
-      if (i < NUMREGNAMES)
-	(*info->fprintf_func) (info->stream, "%s", reg_base[i].name);
-      else
-	(*info->fprintf_func) (info->stream, "unknown");
+      if (i < NUMREGNAMES) {
+	      (*info->fprintf_func) (info->stream, "%s", reg_base[i].name);
+      } else {
+	      (*info->fprintf_func) (info->stream, "unknown");
+      }
       break;
     case 'i':
       /* 16-bit signed immediate.  */
@@ -344,12 +350,12 @@ nios2_disassemble (bfd_vma address, unsigned long opcode,
 	    {
 	      (*info->fprintf_func) (info->stream, "nop");
 	      is_nop = TRUE;
-	    }
-	  else
-	    (*info->fprintf_func) (info->stream, "%s", op->name);
-	}
-      else
-	(*info->fprintf_func) (info->stream, "%s", op->name);
+	  } else {
+		  (*info->fprintf_func) (info->stream, "%s", op->name);
+	  }
+      } else {
+	      (*info->fprintf_func) (info->stream, "%s", op->name);
+      }
 
       if (!is_nop)
 	{
@@ -395,10 +401,11 @@ print_insn_nios2 (bfd_vma address, disassemble_info *info,
   if (status == 0)
     {
       unsigned long insn;
-      if (endianness == BFD_ENDIAN_BIG)
-	insn = (unsigned long) bfd_getb32 (buffer);
-      else
-	insn = (unsigned long) bfd_getl32 (buffer);
+      if (endianness == BFD_ENDIAN_BIG) {
+	      insn = (unsigned long)bfd_getb32 (buffer);
+      } else {
+	      insn = (unsigned long)bfd_getl32 (buffer);
+      }
       status = nios2_disassemble (address, insn, info);
     }
   else

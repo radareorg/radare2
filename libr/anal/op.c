@@ -101,6 +101,32 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	return res;
 }
 
+static int defaultCycles(RAnalOp *op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_PUSH:
+	case R_ANAL_OP_TYPE_POP:
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		return 2;
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_NOP:
+		return 1;
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_SWI:
+		return 4;
+	case R_ANAL_OP_TYPE_SYNC:
+		return 4;
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		return 4;
+	default:
+		return 1;
+	}
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
 	//len will end up in memcmp so check for negative
 	if (!anal || len < 0) {
@@ -147,6 +173,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return R_MIN (2, len); // HACK
 	}
 	op->type = R_ANAL_OP_TYPE_MOV;
+	if (op->cycles == 0) {
+		op->cycles = defaultCycles (op);
+	}
 	return R_MIN (2, len); // HACK
 }
 
@@ -209,8 +238,10 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 			if (div == 0) {
 				eprintf ("r_anal_op_execute: division by zero\n");
 				eprintf ("TODO: throw RAnalException\n");
-			} else r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0])/div);
+			} else {
+				r_anal_value_set_ut64 (anal, op->dst,
+					r_anal_value_to_ut64 (anal, op->src[0]) / div);
+			}
 			}
 			break;
 		case R_ANAL_OP_TYPE_MUL:
@@ -265,6 +296,7 @@ R_API bool r_anal_op_nonlinear(int t) {
 	case R_ANAL_OP_TYPE_ILL:
 	case R_ANAL_OP_TYPE_UNK:
 	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_RET:
 		return true;
 	default:
 		return false;
@@ -327,6 +359,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_STORE : return "store";
 	case R_ANAL_OP_TYPE_SUB   : return "sub";
 	case R_ANAL_OP_TYPE_SWI   : return "swi";
+	case R_ANAL_OP_TYPE_CSWI  : return "cswi";
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
@@ -362,9 +395,15 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
-	if (!r0) r0 = strdup ("?");
-	if (!a0) a0 = strdup ("?");
-	if (!a1) a1 = strdup ("?");
+	if (!r0) {
+		r0 = strdup ("?");
+	}
+	if (!a0) {
+		a0 = strdup ("?");
+	}
+	if (!a1) {
+		a1 = strdup ("?");
+	}
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -413,12 +452,18 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
 			cstr = r_anal_cond_to_string (bb->cond);
-			if (f) snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
-			else snprintf (ret, sizeof (ret), "if (%s) 0x%"PFMT64x"()", cstr, op->jump);
+			if (f) {
+				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
+			} else {
+				snprintf (ret, sizeof (ret), "if (%s) 0x%" PFMT64x "()", cstr, op->jump);
+			}
 			free (cstr);
 		} else {
-			if (f) snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
-			else snprintf (ret, sizeof (ret), "if (unk) 0x%"PFMT64x"()", op->jump);
+			if (f) {
+				snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
+			} else {
+				snprintf (ret, sizeof (ret), "if (unk) 0x%" PFMT64x "()", op->jump);
+			}
 		}
 		break;
 	case R_ANAL_OP_TYPE_ADD:
@@ -445,22 +490,30 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_DIV:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s /= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_AND:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s &= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_OR:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s |= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_XOR:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s ^= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		snprintf (ret, sizeof (ret), "%s -> %s", r0, a0);
@@ -540,7 +593,6 @@ R_API const char *r_anal_stackop_tostring(int s) {
 }
 
 R_API const char *r_anal_op_family_to_string(int n) {
-	static char num[32];
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
@@ -548,22 +600,43 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_SSE: return "sse";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
+	case R_ANAL_OP_FAMILY_THREAD: return "thrd";
+	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
+	case R_ANAL_OP_FAMILY_IO: return "io";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
-	default:
-		snprintf (num, sizeof (num), "%d", n);
-		break;
 	}
-	return num;
+	return NULL;
 }
 
 R_API int r_anal_op_family_from_string(const char *f) {
 	// TODO: use array of strings or so ..
-	if (!strcmp (f, "cpu")) return R_ANAL_OP_FAMILY_CPU;
-	if (!strcmp (f, "fpu")) return R_ANAL_OP_FAMILY_FPU;
-	if (!strcmp (f, "mmx")) return R_ANAL_OP_FAMILY_MMX;
-	if (!strcmp (f, "sse")) return R_ANAL_OP_FAMILY_SSE;
-	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
-	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
+	if (!strcmp (f, "cpu")) {
+		return R_ANAL_OP_FAMILY_CPU;
+	}
+	if (!strcmp (f, "fpu")) {
+		return R_ANAL_OP_FAMILY_FPU;
+	}
+	if (!strcmp (f, "mmx")) {
+		return R_ANAL_OP_FAMILY_MMX;
+	}
+	if (!strcmp (f, "sse")) {
+		return R_ANAL_OP_FAMILY_SSE;
+	}
+	if (!strcmp (f, "priv")) {
+		return R_ANAL_OP_FAMILY_PRIV;
+	}
+	if (!strcmp (f, "virt")) {
+		return R_ANAL_OP_FAMILY_VIRT;
+	}
+	if (!strcmp (f, "crpt")) {
+		return R_ANAL_OP_FAMILY_CRYPTO;
+	}
+	if (!strcmp (f, "io")) {
+		return R_ANAL_OP_FAMILY_IO;
+	}
+	if (!strcmp (f, "thrd")) {
+		return R_ANAL_OP_FAMILY_THREAD;
+	}
 	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
 

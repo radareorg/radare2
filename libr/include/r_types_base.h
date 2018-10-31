@@ -14,6 +14,19 @@
 #define st8 signed char
 #define boolt int
 
+#if defined(_MSC_VER)
+# define R_ALIGNED(x) __declspec(align(x))
+#else
+# define R_ALIGNED(x) __attribute__((aligned(x)))
+#endif
+
+typedef R_ALIGNED(1) ut16 uut16;
+typedef R_ALIGNED(1) ut32 uut32;
+typedef R_ALIGNED(1) ut64 uut64;
+typedef R_ALIGNED(1) st16 ust16;
+typedef R_ALIGNED(1) st32 ust32;
+typedef R_ALIGNED(1) st64 ust64;
+
 typedef union {
 	ut8 v8;
 	ut16 v16;
@@ -46,13 +59,9 @@ typedef struct _utX{
 
 #include <stdbool.h>
 
-#define R_ERROR -2
 #define R_FAIL -1
-#define R_FALSE 0
-#define R_TRUE 1
-#define R_TRUFAE 2
-#define R_NOTNULL (void*)(size_t)1
 #define R_EMPTY { 0 }
+#define R_EMPTY2 {{ 0 }}
 
 /* limits */
 #undef UT64_MAX

@@ -1,11 +1,17 @@
-files = run_command(glob_cmd + ['*']).stdout().strip().split(';')
+files = [
+  'alloc',
+  'env',
+  'fs',
+  'network',
+  'process',
+  'stdout',
+  'string'
+]
 
 script = '''#script
 import os
 from sys import argv
 for fname in argv[1:]:
-    if any(ex in fname for ex in ('meson.build', 'Makefile')):
-        continue
     with open(fname) as f:
         text = ' '.join(f.read().splitlines())
     print('ft %s %s' % (os.path.basename(fname), text))

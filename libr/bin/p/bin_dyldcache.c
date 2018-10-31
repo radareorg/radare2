@@ -176,9 +176,15 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 
 static int prot2perm(int x) {
 	int r = 0;
-	if (x&1) r |= 4;
-	if (x&2) r |= 2;
-	if (x&4) r |= 1;
+	if (x & 1) {
+		r |= 4;
+	}
+	if (x & 2) {
+		r |= 2;
+	}
+	if (x & 4) {
+		r |= 1;
+	}
 	return r;
 }
 
@@ -294,7 +300,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	int i;
 	for (i = 0; i < cache->hdr->mappingCount; ++i) {
 		int perm = prot2perm (cache->maps[i].initProt);
-		if (!(perm & R_BIN_SCN_EXECUTABLE)) {
+		if (!(perm & R_PERM_X)) {
 			start_of_data = cache->maps[i].fileOffset;// + bf->o->boffset;
 			break;
 		}
@@ -828,7 +834,7 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	}
 
 	RDyldCache *cache = R_NEW0 (RDyldCache);
-	strncpy ((char*) cache->magic, "dyldcac", 7);
+	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = fbuf;
 	cache->hdr = read_cache_header (fbuf);
 	if (!cache->hdr) {
@@ -866,15 +872,15 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return cache;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return (void *) (size_t) check_bytes (buf, sz);
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
-	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL) != NULL;
+	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -1038,7 +1044,7 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
-		ptr->srwx = sections[i].srwx;
+		ptr->perm = sections[i].perm;
 		r_list_append (ret, ptr);
 	}
 	free (sections);
@@ -1074,7 +1080,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr = cache->maps[i].fileOffset;// + bf->o->boffset;
 		ptr->vaddr = cache->maps[i].address;
 		ptr->add = true;
-		ptr->srwx = prot2perm (cache->maps[i].initProt);
+		ptr->perm = prot2perm (cache->maps[i].initProt);
 		r_list_append (ret, ptr);
 	}
 
@@ -1309,7 +1315,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dyldcache,
 	.version = R2_VERSION

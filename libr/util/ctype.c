@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2013-2018 - pancake, oddcoder, sivaramaaa */
 
-#include "r_util.h"
+#include <r_util.h>
 
 R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
@@ -31,18 +31,21 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 	}
 	if (!strcmp (type, "enum")) {
 		return R_TYPE_ENUM;
-	} else if (!strcmp (type, "struct")){
+	}
+	if (!strcmp (type, "struct")) {
 		return R_TYPE_STRUCT;
-	} else if (!strcmp (type, "union")){
+	}
+	if (!strcmp (type, "union")) {
 		return R_TYPE_UNION;
-	} else if (!strcmp (type, "type")){
+	}
+	if (!strcmp (type, "type")) {
 		return R_TYPE_BASIC;
 	}
 	return -1;
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
-	char *p, *val, var[130], var2[130];
+	char *p, var[130];
 	int n;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
@@ -52,11 +55,20 @@ R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 		RTypeEnum *member = R_NEW0 (RTypeEnum);
-		snprintf (var2, sizeof (var2), "%s.%s", var, p);
-		val = sdb_array_get (TDB, var2, 0, NULL);
-		member->name = p;
-		member->val = val;
-		r_list_append (res, member);
+		if (member) {
+			char *var2 = r_str_newf ("%s.%s", var, p);
+			if (var2) {
+				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				if (val) {
+					member->name = p;
+					member->val = val;
+					r_list_append (res, member);
+				} else {
+					free (member);
+					free (var2);
+				}
+			}
+		}
 	}
 	return res;
 }
@@ -69,7 +81,7 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 	if (member) {
 		q = sdb_fmt ("enum.%s.%s", name, member);
 	} else {
-		q = sdb_fmt ("enum.%s.0x%x", name, val);
+		q = sdb_fmt ("enum.%s.0x%"PFMT64x, name, val);
 	}
 	return sdb_get (TDB, q, 0);
 }
@@ -218,8 +230,8 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
 		// TODO: Add unions support
-		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
-			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+		if (!strncmp (sdbkv_value (kv), "struct", 6) && strncmp (sdbkv_key (kv), "struct.", 7)) {
+			char *res = r_type_get_struct_memb (TDB, sdbkv_key (kv), offset);
 			if (res) {
 				r_list_append (offtypes, res);
 			}
@@ -242,13 +254,13 @@ R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
 		SdbListIter *sdb_iter;
 		SdbList *sdb_list = sdb_foreach_list (TDB, true);
 		ls_foreach (sdb_list, sdb_iter, kv) {
-			if (strncmp (kv->key, "link.", strlen ("link."))) {
+			if (strncmp (sdbkv_key (kv), "link.", strlen ("link."))) {
 				continue;
 			}
-			const char *linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
+			const char *linkptr = sdb_fmt ("0x%s", sdbkv_key (kv) + strlen ("link."));
 			ut64 baseaddr = r_num_math (NULL, linkptr);
 			int delta = (addr > baseaddr)? addr - baseaddr: -1;
-			res = r_type_get_struct_memb (TDB, kv->value, delta);
+			res = r_type_get_struct_memb (TDB, sdbkv_value (kv), delta);
 			if (res) {
 				break;
 			}
@@ -432,6 +444,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 			sdb_unset (TDB, sdb_fmt ("enum.%s.0x%x", name, member->val), 0);
 		}
 		sdb_unset (TDB, name, 0);
+		r_list_free (list);
 	} else {
 		eprintf ("Unrecognized type \"%s\"\n", kind);
 	}
@@ -453,7 +466,7 @@ R_API int r_type_func_args_count(Sdb *TDB, const char *func_name) {
 	return sdb_num_get (TDB, query, 0);
 }
 
-R_API char *r_type_func_args_type(Sdb *TDB, const char *func_name, int i) {
+R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i) {
 	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (TDB, query, 0);
 	if (ret) {
@@ -467,7 +480,7 @@ R_API char *r_type_func_args_type(Sdb *TDB, const char *func_name, int i) {
 	return NULL;
 }
 
-R_API char *r_type_func_args_name(Sdb *TDB, const char *func_name, int i) {
+R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i) {
 	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (TDB, query, 0);
 	if (get) {
@@ -479,7 +492,7 @@ R_API char *r_type_func_args_name(Sdb *TDB, const char *func_name, int i) {
 
 #define MIN_MATCH_LEN 4
 
-static char *type_func_try_guess(Sdb *TDB, char *name) {
+static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
 	const char *res;
 	if (r_str_nlen (name, MIN_MATCH_LEN) < MIN_MATCH_LEN) {
 		return NULL;
@@ -496,14 +509,13 @@ static char *type_func_try_guess(Sdb *TDB, char *name) {
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //   to additional information added around name
-R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
+R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	int offset = 0;
 	char *str = func_name;
 	char *result = NULL;
 	char *first, *last;
-	if (!func_name) {
-		return NULL;
-	}
+	r_return_val_if_fail (TDB, false);
+	r_return_val_if_fail (func_name, false);
 
 	size_t slen = strlen (str);
 	if (slen < MIN_MATCH_LEN) {
@@ -511,8 +523,7 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	}
 
 	if (slen > 4) { // were name-matching so ignore autonamed
-		if ((str[0] == 'f' && str[1] == 'c' && str[2] == 'n' && str[3] == '.') ||
-		    (str[0] == 'l' && str[1] == 'o' && str[2] == 'c' && str[3] == '.')) {
+		if (!strncmp (str, "fcn.", 4) || !strncmp (str, "loc.", 4)) {
 			return NULL;
 		}
 	}
@@ -522,16 +533,34 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	}
 	slen -= offset;
 	str += offset;
+	// strip common prefixes from standard lib functions
 	if (!strncmp (str, "__isoc99_", 9)) {
 		str += 9;
+	} else if (!strncmp (str, "__libc_", 7) && !strstr(str,"_main")) {
+		str += 7;
+	} else if (!strncmp (str, "__GI_", 5)) {
+		str += 5;
 	}
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
+
+	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
+		return result;
+	}
+
 	str = strdup (str);
 	// some names are in format module.dll_function_number, try to remove those
 	// also try module.dll_function and function_number
 	if ((first = strchr (str, '_'))) {
+		// check if the prefix is actually "dll_" otherwise don't try to
+		// interpret the name
+		const char *dll = "dll";
+		char *dll_ptr = first - strlen (dll);
+		if (dll_ptr < str || strncmp (dll_ptr, dll, strlen (dll))) {
+			goto out;
+		}
+
 		last = (char *)r_str_lchr (first, '_');
 		if (!last) {
 			goto out;

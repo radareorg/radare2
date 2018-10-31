@@ -27,7 +27,7 @@ struct r_bin_pe_section_t {
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
-	ut64 flags;
+	ut64 perm;
 	int last;
 };
 
@@ -72,7 +72,7 @@ typedef struct _PE_RESOURCE {
 	Pe_image_resource_data_entry *data;
 } r_pe_resource;
 
-#define GUIDSTR_LEN 34
+#define GUIDSTR_LEN 41
 #define DBG_FILE_NAME_LEN 255
 
 typedef struct SDebugInfo {

@@ -18,7 +18,7 @@ if [ -z "${R2_PLUGINS_CFG}" ]; then
 fi
 cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
-./configure --prefix="$PREFIX" --with-libr --without-gpl || exit 1
+./configure --prefix="$PREFIX" --with-libr --without-libuv --without-gpl || exit 1
 #--disable-loadlibs || exit 1
 make -j8 || exit 1
 rm -rf "${SDKDIR}"
@@ -32,10 +32,10 @@ AR=`uname -m`
 SF=r2sdk-${OS}-${AR}
 
 (
-cd ${WRKDIR}
-mv r2-sdk ${SF}
-zip -r ${SF}.zip ${SF}
+cd "${WRKDIR}"
+mv r2-sdk "${SF}"
+zip -r "${SF}".zip "${SF}"
 )
-mv ${WRKDIR}/${SF} .
-mv ${WRKDIR}/${SF}.zip .
-ln -fs ${SF} r2sdk
+mv "${WRKDIR}/${SF}" .
+mv "${WRKDIR}/${SF}".zip .
+ln -fs "${SF}" r2sdk

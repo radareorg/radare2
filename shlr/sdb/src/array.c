@@ -210,15 +210,9 @@ SDB_API int sdb_array_set_num(Sdb *s, const char *key, int idx, ut64 val,
 }
 
 SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
-	char valstr10[SDB_NUM_BUFSZ], valstr16[SDB_NUM_BUFSZ];
-	char *v10 = sdb_itoa (val, valstr10, 10);
-	char *v16 = sdb_itoa (val, valstr16, 16);
-	// TODO: optimize
-	// TODO: check cas vs mycas
-	if (sdb_array_contains (s, key, v10, NULL)) {
-		return 0;
-	}
-	return sdb_array_add (s, key, v16, cas); // TODO: v10 or v16
+	char buf[SDB_NUM_BUFSZ];
+	char *v = sdb_itoa (val, buf, SDB_NUM_BASE);
+	return sdb_array_add (s, key, v, cas);
 }
 
 // XXX: index should be supressed here? if its a set we shouldnt change the index
@@ -226,7 +220,7 @@ SDB_API int sdb_array_add(Sdb *s, const char *key, const char *val, ut32 cas) {
 	if (sdb_array_contains (s, key, val, NULL)) {
 		return 0;
 	}
-	return sdb_array_set (s, key, -1, val, cas);
+	return sdb_array_insert (s, key, -1, val, cas);
 }
 
 SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 cas) {
@@ -260,7 +254,7 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 			if (astrcmp (vals[i], str_p) < 0) {
 				break;
 			}
-			sdb_const_anext (str_p, &str_p);
+			str_p = sdb_const_anext (str_p);
 			if (!str_p) {
 				str_p = str_e;
 			}
@@ -301,7 +295,7 @@ SDB_API int sdb_array_add_sorted_num(Sdb *s, const char *key, ut64 val,
 		if (val <= sdb_atoi (n)) {
 			break;
 		}
-		sdb_const_anext (n, &n);
+		n = sdb_const_anext (n);
 	}
 	return sdb_array_insert_num (s, key, n? i: -1, val, cas);
 }
@@ -501,20 +495,20 @@ SDB_API bool sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *
 	if (!s || !key || !val) {
 		return false;
 	}
-	const char *list = sdb_const_get (s, key, cas);
-	const char *next, *ptr = list;
-	const int vlen = strlen (val);
-	if (list && *list) {
-		do {
-			const char *str = sdb_const_anext (ptr, &next);
-			int len = next? (int)(size_t)(next - str) - 1 : (int)strlen (str);
-			if (len == vlen) {
-				if (!memcmp (str, val, len)) {
-					return true;
-				}
+	const char *next, *ptr = sdb_const_get (s, key, cas);
+	if (ptr && *ptr) {
+		size_t vlen = strlen (val);
+		while (1) {
+			next = strchr (ptr, SDB_RS);
+			size_t len = next ? (size_t)(next - ptr) : strlen (ptr);
+			if (len == vlen && !memcmp (ptr, val, len)) {
+				return true;
 			}
-			ptr = next;
-		} while (next);
+			if (!next) {
+				break;
+			}
+			ptr = next + 1;
+		}
 	}
 	return false;
 }

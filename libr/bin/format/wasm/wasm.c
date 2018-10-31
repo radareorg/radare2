@@ -145,7 +145,9 @@ static size_t consume_locals_r (RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
 		}
 		j++;
 	}
-	if (j != count) goto beach;
+	if (j != count) {
+		goto beach;
+	}
 	return j;
 beach:
 	free (out->locals);
@@ -843,67 +845,67 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 		ptr->offset = b->cur;
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
-			eprintf("custom section: 0x%x, ", (ut32)b->cur);
+			// eprintf("custom section: 0x%x, ", (ut32)b->cur);
 			if (!(consume_u32_r (b, max, &ptr->name_len))) {
 				goto beach;
 			}
 			if (consume_str_r (b, max, ptr->name_len, ptr->name) < ptr->name_len) {
 				goto beach;
 			}
-			eprintf("name: %s\n", ptr->name);
+			// eprintf("name: %s\n", ptr->name);
 			break;
 		case R_BIN_WASM_SECTION_TYPE:
-			eprintf("section type: 0x%x, ", (ut32)b->cur);
+			// eprintf("section type: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "type");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_IMPORT:
-			eprintf("section import: 0x%x, ", (ut32)b->cur);
+			// eprintf("section import: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "import");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_FUNCTION:
-			eprintf("section function: 0x%x, ", (ut32)b->cur);
+			// eprintf("section function: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "function");
 			ptr->name_len = 8;
 			break;
 		case R_BIN_WASM_SECTION_TABLE:
-			eprintf("section table: 0x%x, ", (ut32)b->cur);
+			// eprintf("section table: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "table");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_MEMORY:
-			eprintf("section memory: 0x%x, ", (ut32)b->cur);
+			// eprintf("section memory: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "memory");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_GLOBAL:
-			eprintf("section global: 0x%x, ", (ut32)b->cur);
+			// eprintf("section global: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "global");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_EXPORT:
-			eprintf("section export: 0x%x, ", (ut32)b->cur);
+			// eprintf("section export: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "export");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_START:
-			eprintf("section start: 0x%x\n", (ut32)b->cur);
+			// eprintf("section start: 0x%x\n", (ut32)b->cur);
 			strcpy (ptr->name, "start");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_ELEMENT:
-			eprintf("section element: 0x%x, ", (ut32)b->cur);
+			// eprintf("section element: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "element");
 			ptr->name_len = 7;
 			break;
 		case R_BIN_WASM_SECTION_CODE:
-			eprintf("section code: 0x%x, ", (ut32)b->cur);
+			// eprintf("section code: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "code");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_DATA:
-			eprintf("section data: 0x%x, ", (ut32)b->cur);
+			// eprintf("section data: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "data");
 			ptr->name_len = 4;
 			break;
@@ -917,7 +919,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			if (!(consume_u32_r (b, max, &ptr->count))) {
 				goto beach;
 			}
-			eprintf("count %d\n", ptr->count);
+			// eprintf("count %d\n", ptr->count);
 		}
 		ptr->payload_data = b->cur;
 		ptr->payload_len = ptr->size - (ptr->payload_data - ptr->offset);

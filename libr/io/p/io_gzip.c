@@ -18,7 +18,7 @@ static inline ut32 _io_malloc_sz(RIODesc *desc) {
 	}
 	RIOGzip *mal = (RIOGzip*)desc->data;
 	return mal? mal->size: 0;
-} 
+}
 
 static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 	if (!desc) {
@@ -28,7 +28,7 @@ static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 	if (mal) {
 		mal->size = sz;
 	}
-} 
+}
 
 static inline ut8* _io_malloc_buf(RIODesc *desc) {
 	if (!desc) {
@@ -191,7 +191,7 @@ RIOPlugin r_io_plugin_gzip = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gzip,
 	.version = R2_VERSION

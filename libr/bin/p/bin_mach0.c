@@ -32,12 +32,15 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return strdup ((char*) bin->signature);
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	RBuffer *tbuf = r_buf_new ();
+	if (!tbuf) {
+		return false;
+	}
 	r_buf_set_bytes (tbuf, buf, sz);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
@@ -46,7 +49,8 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
@@ -64,19 +68,17 @@ static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 }
 
 static bool load(RBinFile *bf) {
-	void *res;
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 
 	if (!bf || !bf->o) {
 		return false;
 	}
-	res = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	if (!bf->o || !res) {
-		MACH0_(mach0_free) (res);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	if (!bf->o || !bf->o->bin_obj) {
+		MACH0_(mach0_free) (bf->o->bin_obj);
 		return false;
 	}
-	bf->o->bin_obj = res;
 	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
 	bf->o->kv = mo->kv; // NOP
 	sdb_ns_set (bf->sdb, "info", mo->kv);
@@ -116,7 +118,7 @@ static RList* sections(RBinFile *bf) {
 	RBinObject *obj = bf ? bf->o : NULL;
 	int i;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)free))) {
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {
@@ -138,6 +140,7 @@ static RList* sections(RBinFile *bf) {
 				ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
 			}
 		}
+
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);
 		ptr->size = sections[i].size;
@@ -148,22 +151,22 @@ static RList* sections(RBinFile *bf) {
 		if (!ptr->vaddr) {
 			// XXX(lowlyw) this is a valid macho, but rarely will anything
 			// be mapped at va = 0
-			eprintf ("mapping text to va = 0\n");
+			// eprintf ("mapping text to va = 0\n");
 			// ptr->vaddr = ptr->paddr;
 		}
-		ptr->srwx = sections[i].srwx;
+		ptr->perm = sections[i].perm;
 		r_list_append (ret, ptr);
 	}
 	free (sections);
 	return ret;
 }
 
-static RBinAddr* newEntry(ut64 haddr, ut64 paddr, int type, int bits) {
+static RBinAddr* newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
-		ptr->haddr = haddr;
+		ptr->hpaddr = hpaddr;
 		ptr->bits = bits;
 		ptr->type = type;
 		//realign due to thumb
@@ -175,7 +178,7 @@ static RBinAddr* newEntry(ut64 haddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors (RBinFile *bf, RList *ret, int bits) {
+static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	RList *secs = sections (bf);
 	RListIter *iter;
 	RBinSection *sec;
@@ -192,18 +195,26 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 			if (!buf) {
 				continue;
 			}
-			(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+			int read = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+			if (read < sec->size) {
+				eprintf ("process_constructors: cannot process section %s\n", sec->name);
+				continue;
+			}
 			if (bits == 32) {
-				for (i = 0; i < sec->size; i += 4) {
+				for (i = 0; i + 3 < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
-					r_list_append (ret, ba);
+					if (ba) {
+						r_list_append (ret, ba);
+					}
 				}
 			} else {
-				for (i = 0; i < sec->size; i += 8) {
+				for (i = 0; i + 7 < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
-					r_list_append (ret, ba);
+					if (ba) {
+						r_list_append (ret, ba);
+					}
 				}
 			}
 			free (buf);
@@ -229,7 +240,7 @@ static RList* entries(RBinFile *bf) {
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + obj->boffset;
 		ptr->vaddr = entry->addr;
-		ptr->haddr = entry->haddr;
+		ptr->hpaddr = entry->haddr;
 		ptr->bits = bits;
 		//realign due to thumb
 		if (bits == 16) {
@@ -277,6 +288,8 @@ static RList* symbols(RBinFile *bf) {
 	}
 	bool isStripped = false;
 	wordsize = MACH0_(get_bits) (obj->bin_obj);
+
+	// OLD CODE
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
 	}
@@ -322,8 +335,13 @@ static RList* symbols(RBinFile *bf) {
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
 		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
+		if (!strncmp (ptr->name, "__Z", 3)) {
+			lang = "c++";
+		}
 		if (!strncmp (ptr->name, "type.", 5)) {
 			lang = "go";
+		} else if (!strcmp (ptr->name, "_rust_oom")) {
+			lang = "rust";
 		}
 		r_list_append (ret, ptr);
 	}
@@ -362,6 +380,11 @@ static RList* symbols(RBinFile *bf) {
 			}
 		}
 	}
+
+	if (bin->has_blocks_ext) {
+		lang = !strcmp (lang, "c++") ? "c++ blocks ext." : "c blocks ext.";
+	}
+
 	bin->lang = lang;
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
@@ -391,6 +414,9 @@ static RList* imports(RBinFile *bf) {
 		return ret;
 	}
 	bin->has_canary = false;
+	bin->has_retguard = -1;
+	bin->has_sanitizers = false;
+	bin->has_blocks_ext = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
@@ -419,6 +445,13 @@ static RList* imports(RBinFile *bf) {
 		}
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
+		}
+		if (!strcmp (name, "__asan_init") ||
+                   !strcmp (name, "__tsan_init")) {
+			bin->has_sanitizers = true;
+		}
+		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+			bin->has_blocks_ext = true;
 		}
 		r_list_append (ret, ptr);
 	}
@@ -493,21 +526,26 @@ static RBinInfo* info(RBinFile *bf) {
 	char *str;
 	RBinInfo *ret;
 
-	if (!bf || !bf->o)
+	if (!bf || !bf->o) {
 		return NULL;
+	}
 
 	ret = R_NEW0 (RBinInfo);
-	if (!ret)
+	if (!ret) {
 		return NULL;
+	}
 
 	bin = bf->o->bin_obj;
-	if (bf->file)
+	if (bf->file) {
 		ret->file = strdup (bf->file);
+	}
 	if ((str = MACH0_(get_class) (bf->o->bin_obj))) {
 		ret->bclass = str;
 	}
 	if (bin) {
 		ret->has_canary = bin->has_canary;
+		ret->has_retguard = -1;
+		ret->has_sanitizers = bin->has_sanitizers;
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
 	}
@@ -536,8 +574,9 @@ static RBinInfo* info(RBinFile *bf) {
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 4) {
 		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
+			!memcmp (buf, "\xfe\xed\xfa\xce", 4)) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -575,10 +614,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	}
 #endif
 
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
+#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
 #define D(x) r_buf_append_ut32(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
-#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)y,z)
+#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
 #define WZ(x,y) p_tmp=buf->length;Z(x);W(p_tmp,y,strlen(y))
 
 	/* MACH0 HEADER */
@@ -881,7 +920,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach0,
 	.version = R2_VERSION

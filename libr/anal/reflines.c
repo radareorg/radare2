@@ -121,6 +121,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if (mi) {
 				ptr += mi->size;
 				addr += mi->size;
+				free (mi->str);
 				continue;
 			}
 		}
@@ -193,7 +194,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if (min < 0) {
 				min = 0;
 			}
-			while (free_levels[++min] == 1);
+			while (free_levels[++min] == 1) {
+				;
+			}
 		} else {
 			free_levels[el->r->level - 1] = 0;
 			if (min > el->r->level - 1) {
@@ -321,8 +324,9 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 		RAnalRefline *ref;
 		RListIter *iter;
 		r_list_foreach (list, iter, ref) {
-			if ((ref->to > addr) && (ref->to < addr+len))
+			if ((ref->to > addr) && (ref->to < addr + len)) {
 				return true;
+			}
 		}
 	}
 	return false;

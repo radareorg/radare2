@@ -183,12 +183,12 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *tbuf;
 	struct r_bin_mdmp_obj *res;
 
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 
 	tbuf = r_buf_new ();
@@ -198,7 +198,12 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	}
 	r_buf_free (tbuf);
 
-	return res;
+	if (res) {
+		*bin_obj = res;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 static bool load(RBinFile *bf) {
@@ -209,9 +214,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-
-	return bf->o->bin_obj ? true : false;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -241,7 +244,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strncpy(ptr->name, "Memory_Section", 14);
+		strcpy (ptr->name, "Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
 		ptr->vaddr = memory->start_of_memory_range;
@@ -249,7 +252,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 	}
@@ -260,7 +263,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strncpy(ptr->name, "Memory_Section", 14);
+		strcpy (ptr->name, "Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
 		ptr->vaddr = memory64->start_of_memory_range;
@@ -268,7 +271,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 
@@ -280,6 +283,9 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
+		if (module->module_name_rva > obj->b->length) {
+			continue;
+		}
 
 		str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
 		r_str_utf16_to_utf8 ((ut8 *)ptr->name, R_BIN_SIZEOF_STRINGS, (const ut8 *)&(str->buffer), str->length, obj->endian);
@@ -290,7 +296,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
-		ptr->srwx = 0;
+		ptr->perm = 0;
 
 		r_list_append (ret, ptr);
 
@@ -342,7 +348,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module->start_of_memory_range;
 		ptr->size = location? location->data_size: 0;
-		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_perm (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -364,7 +370,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module64->start_of_memory_range;
 		ptr->size = module64->data_size;
-		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_perm (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -488,7 +494,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mdmp,
 	.version = R2_VERSION

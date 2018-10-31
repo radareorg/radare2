@@ -97,8 +97,8 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !__APPLE__
-static int r_debug_handle_signals (RDebug *dbg) {
+#if __WINDOWS__ || (!__APPLE__ && defined(WAIT_ON_ALL_CHILDREN))
+static int r_debug_handle_signals(RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);
 #else
@@ -209,7 +209,7 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #elif __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
-	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
+	return r_debug_ptrace (dbg, PTRACE_DETACH, pid, NULL, NULL);
 #endif
 }
 
@@ -217,10 +217,11 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
 #if __linux__
 	linux_set_options (dbg, pid);
-	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
+	return r_debug_ptrace (dbg, PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "PC");
-	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0);
+	errno = 0;
+	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
 #else
 	eprintf ("TODO: continue syscall not implemented yet\n");
 	return -1;
@@ -272,7 +273,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
 
-	int ret = ptrace (PTRACE_CONT, pid, NULL, contsig);
+	int ret = r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, (r_ptrace_data_t)(size_t)contsig);
 	if (ret) {
 		perror ("PTRACE_CONT");
 	}
@@ -284,7 +285,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		if (list) {
 			r_list_foreach (list, it, th) {
 				if (th->pid && th->pid != pid) {
-					ptrace (PTRACE_CONT, tid, NULL, contsig);
+					r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
 				}
 			}
 		}
@@ -483,7 +484,11 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 
 	/* we don't know what to do yet, let's try harder to figure it out. */
+#if __FreeBSD__
+	if (reason == R_DEBUG_REASON_TRAP) {
+#else
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
+#endif
 		if (WIFEXITED (status)) {
 			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
 			reason = R_DEBUG_REASON_DEAD;
@@ -501,13 +506,19 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
+#if __FreeBSD__ || __OpenBSD__ || __NetBSD__
+			reason = R_DEBUG_REASON_BREAKPOINT;
+#else
 			if (!r_debug_handle_signals (dbg)) {
 				return R_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
+#endif
+#ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
 			eprintf ("child continued...\n");
 			reason = R_DEBUG_REASON_NONE;
+#endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
 			eprintf ("EEK DEAD DEBUGEE!\n");
@@ -936,13 +947,13 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 static int io_perms_to_prot (int io_perms) {
 	int prot_perms = PROT_NONE;
 
-	if (io_perms & R_IO_READ) {
+	if (io_perms & R_PERM_R) {
 		prot_perms |= PROT_READ;
 	}
-	if (io_perms & R_IO_WRITE) {
+	if (io_perms & R_PERM_W) {
 		prot_perms |= PROT_WRITE;
 	}
-	if (io_perms & R_IO_EXEC) {
+	if (io_perms & R_PERM_X) {
 		prot_perms |= PROT_EXEC;
 	}
 	return prot_perms;
@@ -982,7 +993,7 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	if (!r_egg_compile (dbg->egg)) {
 		eprintf ("Cannot compile.\n");
 		goto err_linux_map_alloc;
-	}	
+	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
 		goto err_linux_map_alloc;
@@ -1023,7 +1034,7 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	if (!r_egg_compile (dbg->egg)) {
 		eprintf ("Cannot compile.\n");
 		goto err_linux_map_dealloc;
-	}	
+	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
 		goto err_linux_map_dealloc;
@@ -1041,19 +1052,19 @@ err_linux_map_dealloc:
 static int io_perms_to_prot (int io_perms) {
 	int prot_perms;
 
-	if ((io_perms & R_IO_RWX) == R_IO_RWX) {
+	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {
 		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_IO_WRITE | R_IO_EXEC)) == (R_IO_WRITE | R_IO_EXEC)) {
+	} else if ((io_perms & (R_PERM_W | R_PERM_X)) == (R_PERM_W | R_PERM_X)) {
 		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_IO_READ | R_IO_EXEC)) == (R_IO_READ | R_IO_EXEC)) {
+	} else if ((io_perms & (R_PERM_R | R_PERM_X)) == (R_PERM_R | R_PERM_X)) {
 		prot_perms = PAGE_EXECUTE_READ;
-	} else if ((io_perms & R_IO_RW) == R_IO_RW) {
+	} else if ((io_perms & R_PERM_RW) == R_PERM_RW) {
 		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_IO_WRITE) {
+	} else if (io_perms & R_PERM_W) {
 		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_IO_EXEC) {
+	} else if (io_perms & R_PERM_X) {
 		prot_perms = PAGE_EXECUTE;
-	} else if (io_perms & R_IO_READ) {
+	} else if (io_perms & R_PERM_R) {
 		prot_perms = PAGE_READONLY;
 	} else {
 		prot_perms = PAGE_NOACCESS;
@@ -1086,7 +1097,7 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;
 #elif __linux__
-	return linux_map_alloc (dbg, addr, size);	
+	return linux_map_alloc (dbg, addr, size);
 #else
 	// malloc not implemented for this platform
 	return NULL;
@@ -1121,7 +1132,9 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 
 #if !__WINDOWS__ && !__APPLE__
 static void _map_free(RDebugMap *map) {
-	if (!map) return;
+	if (!map) {
+		return;
+	}
 	free (map->name);
 	free (map->file);
 	free (map);
@@ -1188,7 +1201,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	while (!feof (fd)) {
 		size_t line_len;
 		bool map_is_shared = false;
-		ut64 map_start, map_end, offset;
+		ut64 map_start, map_end;
 
 		if (!fgets (line, sizeof (line), fd)) {
 			break;
@@ -1221,6 +1234,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			name[0] = '\0';
 		}
 #else
+		ut64 offset = 0;;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
 		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
 		if (i == 3) {
@@ -1245,9 +1259,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		perm = 0;
 		for (i = 0; i < 5 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			case 'p': map_is_shared = false; break;
 			case 's': map_is_shared = true; break;
 			}
@@ -1328,7 +1342,9 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 
 static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 	bool ret = false;
-	if (pid == 0) pid = dbg->pid;
+	if (pid == 0) {
+		pid = dbg->pid;
+	}
 #if __WINDOWS__ && !__CYGWIN__
 	if (sig==0)
 		ret = true;
@@ -1523,8 +1539,7 @@ static bool arm64_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int r_debug_native_bp (void *bp_, RBreakpointItem *b, bool set) {
-	RBreakpoint *bp = (RBreakpoint *)bp_;
+static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	RDebug *dbg = bp->user;
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
@@ -1799,11 +1814,12 @@ static RList *r_debug_desc_native_list (int pid) {
 		case KF_TYPE_UNKNOWN:
 		default: type = '-'; break;
 		}
-		perm = (kve->kf_flags & KF_FLAG_READ)?R_IO_READ:0;
-		perm |= (kve->kf_flags & KF_FLAG_WRITE)?R_IO_WRITE:0;
-		desc = r_debug_desc_new (kve->kf_fd, str, perm, type,
-					kve->kf_offset);
-		if (!desc) break;
+		perm = (kve->kf_flags & KF_FLAG_READ)? R_PERM_R: 0;
+		perm |= (kve->kf_flags & KF_FLAG_WRITE)? R_PERM_W: 0;
+		desc = r_debug_desc_new (kve->kf_fd, str, perm, type, kve->kf_offset);
+		if (!desc) {
+			break;
+		}
 		r_list_append (ret, desc);
 	}
 
@@ -1974,7 +1990,7 @@ RDebugPlugin r_debug_plugin_native = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_native,
 	.version = R2_VERSION

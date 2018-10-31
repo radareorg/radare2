@@ -3,7 +3,12 @@ capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   message('Use bundled capstone')
 
-  capstone_path = join_paths(meson.current_build_dir(), 'capstone')
+  if get_option('capstone_in_builddir')
+    capstone_path = join_paths(meson.current_build_dir(), 'capstone')
+  else
+    capstone_path = join_paths(meson.current_source_dir(), 'capstone')
+  endif
+
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
     if not git_exe.found()
@@ -11,7 +16,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = '782ea67e17a391ca0d3faafdc365b335a1a8930a'
+    CS_TIP = 'e2c1cd46c06744beaceff42dd882de3a90f0a37c'
     CS_BRA = 'master'
 
     capstone_git_user = 'aquynh'
@@ -31,8 +36,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     patches_files = [
       'capstone-calloc.patch',
-      'fix-m68k-oob.patch',
-      'fix-underflow-tms.patch',
       'fix-x86-16.patch',
       'sparc-crash.patch',
       'sstream-null.patch'
@@ -139,6 +142,8 @@ endif
 
 
 # handle sdb dependency
+# NOTE: copying most of the stuff from sdb to here for the moment, since we
+# should use subpackages to handle this well
 sdb_files = [
   'sdb/src/array.c',
   'sdb/src/base64.c',
@@ -174,6 +179,32 @@ sdb_dep = declare_dependency(
   link_with: libr2sdb,
   include_directories: sdb_inc
 )
+
+sdb_platform_inc = []
+if host_machine.system() == 'windows'
+  sdb_platform_inc = include_directories('sdb/msvc')
+endif
+
+# Create sdb_version.h
+sdb_version = '1.2.0'
+run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
+
+sdb_exe = executable('sdb', 'sdb/src/main.c',
+  include_directories: [
+    sdb_platform_inc,
+    include_directories(['sdb/src'])
+  ],
+  link_with: [libr2sdb],
+  implicit_include_directories: false
+)
+
+sdb_gen_cmd = [
+  py3_exe,
+  '-c',
+  'from sys import argv; __import__("os").system("@0@ %s = <%s" % (argv[1], argv[2]))'.format(sdb_exe.full_path()),
+  '@OUTPUT@',
+  '@INPUT@'
+]
 
 
 # handle bochs dependency
@@ -485,12 +516,12 @@ endif
 
 # handle grub dependency
 grub_files = [
-  'grub/fs/affs.c',
+  #'grub/fs/affs.c',
   #'grub/fs/afs.c',
   #'grub/fs/afs_be.c',
   #'grub/fs/befs.c',
   #'grub/fs/befs_be.c',
-  'grub/fs/btrfs.c',
+  #'grub/fs/btrfs.c',
   'grub/fs/cpio.c',
   'grub/fs/ext2.c',
   'grub/fs/fat.c',
@@ -501,8 +532,8 @@ grub_files = [
   'grub/fs/iso9660.c',
   'grub/fs/jfs.c',
   'grub/fs/minix.c',
-  'grub/fs/minix2.c',
-  'grub/fs/nilfs2.c',
+  #'grub/fs/minix2.c',
+  #'grub/fs/nilfs2.c',
   'grub/fs/ntfs.c',
   'grub/fs/ntfscomp.c',
   'grub/fs/reiserfs.c',
@@ -587,3 +618,9 @@ ar_dep = declare_dependency(
   link_with: libr2ar,
   include_directories: ar_inc
 )
+
+
+# handle ptrace-wrap dependency
+if use_ptrace_wrap
+  subdir('ptrace-wrap')
+endif

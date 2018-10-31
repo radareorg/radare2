@@ -6,17 +6,27 @@ files = [
   'hamdist.c',
   'hash.c',
   'luhn.c',
-  'md4.c',
-  'md5.c',
-  'sha1.c',
-  'sha2.c',
-  'state.c',
-  'xxhash.c'
+  'state.c'
 ]
+
+dependencies = [mth, r_util_dep]
+
+if use_sys_xxhash
+  dependencies += [sys_xxhash]
+else
+  files += ['xxhash.c']
+endif
+
+if use_sys_openssl
+  dependencies += [sys_openssl]
+else
+  files += ['md4.c', 'md5.c', 'sha1.c', 'sha2.c']
+endif
 
 r_hash = library('r_hash', files,
   include_directories: [platform_inc],
-  dependencies: [mth, r_util_dep],
+  c_args: library_cflags,
+  dependencies: dependencies,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

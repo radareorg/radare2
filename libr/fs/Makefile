@@ -6,7 +6,9 @@ SHLR=../../shlr/
 
 include ../config.mk
 CFLAGS+=-I$(SHLR)/grub/include
+ifeq ($(WITH_GPL),1)
 LDFLAGS+=$(SHLR)/grub/libgrubfs.a
+endif
 
 EXTRA_TARGETS=plugins
 foo:

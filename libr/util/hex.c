@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */ 
+/* radare - LGPL - Copyright 2007-2018 - pancake */
+
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
@@ -388,9 +389,13 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	int i, idx;
 	char tmp[5], *out;
 
-	if ((len + 1) * 2 < len) return NULL;
+	if ((len + 1) * 2 < len) {
+		return NULL;
+	}
 	out = malloc ((len + 1) * 2);
-	if (!out) return NULL;
+	if (!out) {
+		return NULL;
+	}
 	for (i = idx = 0; i < len; i++, idx += 2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
 		memcpy (out+idx, tmp, 2);
@@ -436,7 +441,9 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 	}
 
 	if (nibbles % 2) {
-		if (out) r_hex_to_byte (&out[nibbles/2], '0');
+		if (out) {
+			r_hex_to_byte (&out[nibbles / 2], '0');
+		}
 		return -(nibbles+1) / 2;
 	}
 
@@ -448,16 +455,25 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	int len, ilen = strlen (in)+1;
 	int has_nibble = 0;
 	memcpy (out, in, ilen);
-	for (ptr=out; *ptr; ptr++) if (*ptr=='.') *ptr = '0';
+	for (ptr = out; *ptr; ptr++) {
+		if (*ptr == '.') {
+			*ptr = '0';
+		}
+	}
 	len = r_hex_str2bin ((char*)out, out);
 	if (len<0) { has_nibble = 1; len = -(len+1); }
 	if (len != -1) {
 		memcpy (mask, in, ilen);
-		if (has_nibble)
-			memcpy (mask+ilen, "f0", 3);
-		for (ptr=mask; *ptr; ptr++) *ptr = (*ptr=='.')?'0':'f';
+		if (has_nibble) {
+			memcpy (mask + ilen, "f0", 3);
+		}
+		for (ptr = mask; *ptr; ptr++) {
+			*ptr = (*ptr == '.') ? '0' : 'f';
+		}
 		len = r_hex_str2bin ((char*)mask, mask);
-		if (len<0) len++;
+		if (len < 0) {
+			len++;
+		}
 	}
 	return len;
 }
@@ -465,16 +481,19 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 	switch (n) {
 	case 1:
-		if ((in&UT8_GT0))
-			return UT64_8U|in;
+		if ((in & UT8_GT0)) {
+			return UT64_8U | in;
+		}
 		return in&UT8_MAX;
 	case 2:
-		if ((in&UT16_GT0))
-			return UT64_16U|in;
+		if ((in & UT16_GT0)) {
+			return UT64_16U | in;
+		}
 		return in&UT16_MAX;
 	case 4:
-		if ((in&UT32_GT0))
-			return UT64_32U|in;
+		if ((in & UT32_GT0)) {
+			return UT64_32U | in;
+		}
 		return in&UT32_MAX;
 	case 8:
 		return in&UT64_MAX;
@@ -485,14 +504,18 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 // Check if str contains only hexademical characters and return length of bytes
 R_API int r_hex_str_is_valid(const char* str) {
 	int i;
+	int len = 0;
 	if (!strncmp (str, "0x", 2)) {
 		str += 2;
 	}
-	for (i = 0; str[i] != '\0' && str[i] != ' '; i++) {
+	for (i = 0; str[i] != '\0'; i++) {
 		if (IS_HEXCHAR (str[i])) {
+			len++;
+		}
+		if (IS_HEXCHAR (str[i]) || IS_WHITESPACE (str[i])) {
 			continue;
 		}
 		return -1; //if we're here, then str isnt valid
 	}
-	return i;
+	return len;
 }

@@ -24,7 +24,7 @@ fi
 
 new_env='
 R2_ENV_IS_SET=1
-LIBR_PLUGINS=${pfx}/lib/radare2
+R2_LIBR_PLUGINS=${pfx}/lib/radare2
 PATH=$pfx/bin:${PATH}
 LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH

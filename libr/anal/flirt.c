@@ -794,7 +794,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 				goto err_exit;
 			}
 		}
-		if ((int) ref_function_name_length < 0) {
+		if ((int) ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
 			goto err_exit;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {

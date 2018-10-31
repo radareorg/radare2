@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,21 +11,18 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		/* hacky check to avoid detecting multidex bins as bios */
 		/* need better fix for this */
 		if (!memcmp (buf, "dex", 3)) {
-			return 0;
+			return false;
 		}
 		/* Check if this a 'jmp' opcode */
 		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	if (!check_bytes (buf, sz)) {
-		return NULL;
-	}
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
@@ -80,14 +77,26 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "bootblk");
+	strcpy (ptr->name, "bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = bf->buf->length - ptr->size;
 	ptr->vaddr = 0xf0000;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
-	            R_BIN_SCN_EXECUTABLE;
+	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
+	// If image bigger than 128K - add one more section
+	if (bf->size >= 0x20000) {
+		if (!(ptr = R_NEW0 (RBinSection))) {
+			return ret;
+		}
+		strcpy (ptr->name, "_e000"); // Maps to 0xE000:0000 segment
+		ptr->vsize = ptr->size = 0x10000;
+		ptr->paddr = bf->buf->length - 2 * ptr->size;
+		ptr->vaddr = 0xe0000;
+		ptr->perm = R_PERM_RWX;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
@@ -123,7 +132,7 @@ RBinPlugin r_bin_plugin_bios = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bios,
 	.version = R2_VERSION

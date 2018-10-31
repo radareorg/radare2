@@ -20,6 +20,8 @@ CFLAGS+=-DCORELIB
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
 OBJS=parse.o code.o ${STATIC_OBJS}
 
+pre:
+
 bins:
 #	@cd t && ${MAKE} all
 

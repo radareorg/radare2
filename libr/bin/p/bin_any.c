@@ -42,6 +42,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->type = get_filetype (bf);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
+	ret->has_retguard = -1;
 	if (R_SYS_BITS & R_SYS_BITS_64) {
 		ret->bits = 64;
 	} else {
@@ -80,7 +81,7 @@ RBinPlugin r_bin_plugin_any = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_any,
 	.version = R2_VERSION

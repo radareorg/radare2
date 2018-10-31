@@ -28,86 +28,88 @@
 #define VPCEXT2(y,x) ((y)[2]==(x))
 
 void decompile_vm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	const char *buf_asm = "invalid";
 	if (len > 3 && buf[0] == 0x0F && buf[1] == 0x3F && (VPCEXT2 (buf, 0x01) || VPCEXT2 (buf, 0x05) || VPCEXT2 (buf, 0x07) || VPCEXT2 (buf, 0x0D) || VPCEXT2 (buf, 0x10))) {
-		if(a->syntax == R_ASM_SYNTAX_ATT) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "vpcext $0x%x, $0x%x", buf[3], buf[2]);
+		if (a->syntax == R_ASM_SYNTAX_ATT) {
+			buf_asm = sdb_fmt ("vpcext $0x%x, $0x%x", buf[3], buf[2]);
 		} else {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "vpcext %xh, %xh", buf[2], buf[3]);
+			buf_asm = sdb_fmt ("vpcext %xh, %xh", buf[2], buf[3]);
 		}
 		op->size = 4;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 1 && buf[4] == 0) {
 		/* 0F C6 28 01 00 vmcpuid */
-		strcpy (op->buf_asm, "vmcpuid");
+		buf_asm ="vmcpuid";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x00) {
 		/* 0F C6 28 00 00 vmgetinfo */
-		strcpy (op->buf_asm, "vmgetinfo");
+		buf_asm ="vmgetinfo";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x01) {
 		/* 0F C6 28 00 01 vmsetinfo */
-		strcpy (op->buf_asm, "vmsetinfo");
+		buf_asm ="vmsetinfo";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x02) {
 		/* 0F C6 28 00 02 vmdxdsbl */
-		strcpy (op->buf_asm, "vmdxdsbl");
+		buf_asm ="vmdxdsbl";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x03) {
 		/* 0F C6 28 00 03 vmdxenbl */
-		strcpy (op->buf_asm, "vmdxenbl");
+		buf_asm ="vmdxenbl";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x01 && buf[4] == 0x00) {
 		/* 0F C6 28 01 00 vmcpuid */
-		strcpy (op->buf_asm, "vmcpuid");
+		buf_asm ="vmcpuid";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x01 && buf[4] == 0x01) {
 		/* 0F C6 28 01 01 vmhlt */
-		strcpy (op->buf_asm, "vmhlt");
+		buf_asm ="vmhlt";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x01 && buf[4] == 0x02) {
 		/* 0F C6 28 01 02 vmsplaf */
-		strcpy (op->buf_asm, "vmsplaf");
+		buf_asm ="vmsplaf";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x00) {
 		/* 0F C6 28 02 00 vmpushfd */
-		strcpy (op->buf_asm, "vmpushfd");
+		buf_asm ="vmpushfd";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x01) {
 		/* 0F C6 28 02 01 vmpopfd */
-		strcpy (op->buf_asm, "vmpopfd");
+		buf_asm ="vmpopfd";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x02) {
 		/* 0F C6 28 02 02 vmcli */
-		strcpy (op->buf_asm, "vmcli");
+		buf_asm ="vmcli";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x03) {
 		/* 0F C6 28 02 03 vmsti */
-		strcpy (op->buf_asm, "vmsti");
+		buf_asm ="vmsti";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x02 && buf[4] == 0x04) {
 		/* 0F C6 28 02 04 vmiretd */
-		strcpy (op->buf_asm, "vmiretd");
+		buf_asm ="vmiretd";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x00) {
 		/* 0F C6 28 03 00 vmsgdt */
-		strcpy (op->buf_asm, "vmsgdt");
+		buf_asm ="vmsgdt";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x01) {
 		/* 0F C6 28 03 01 vmsidt */
-		strcpy (op->buf_asm, "vmsidt");
+		buf_asm ="vmsidt";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x02) {
 		/* 0F C6 28 03 02 vmsldt */
-		strcpy (op->buf_asm, "vmsldt");
+		buf_asm ="vmsldt";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x03 && buf[4] == 0x03) {
 		/* 0F C6 28 03 03 vmstr */
-		strcpy (op->buf_asm, "vmstr");
+		buf_asm ="vmstr";
 		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x04 && buf[4] == 0x00) {
 		/* 0F C6 28 04 00 vmsdte */
-		strcpy (op->buf_asm, "vmsdte");
+		buf_asm ="vmsdte";
 		op->size = 5;
 	}
+	r_asm_op_set_asm (op, buf_asm);
 }
 
 #undef VPCEXT2

@@ -46,7 +46,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x01: // move
-	case 0x07: // move-object		
+	case 0x07: // move-object
 	case 0x04: // mov-wide
 		op->type = R_ANAL_OP_TYPE_MOV;
 		{
@@ -110,9 +110,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		/* pass thru */
 	case 0x81: // int-to-long
-	case 0x82: // 
-	case 0x83: // 
-	case 0x84: // 
+	case 0x82: //
+	case 0x83: //
+	case 0x84: //
 	case 0x8d: // int-to-byte
 	case 0x8f: // int-to-short
 	case 0x20: // instance-of
@@ -140,7 +140,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xfd: //sget-object
 	case 0x55: //iget-bool
 	case 0x60: // sget
-	case 0x61: // 
+	case 0x61: //
 	case 0x62: //
 	case 0x64: // sget-byte
 	case 0x65: // sget-char
@@ -163,7 +163,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x4c: //aput-wide
 	case 0x4d: // aput-object
 	case 0x4e: // aput-bool
-	case 0x4f: // 
+	case 0x4f: //
 	case 0x5e: //iput-char
 	case 0xfc: //iput-object-volatile
 	case 0xf5: //iput-quick
@@ -496,7 +496,7 @@ RAnalPlugin r_anal_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_dalvik,
 	.version = R2_VERSION

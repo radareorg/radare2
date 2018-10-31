@@ -17,7 +17,9 @@ static bool _is_any(const char *str, ...) {
 	va_start (va, str);
 	while (true) {
 		cur = va_arg (va, char *);
-		if (!cur) break;
+		if (!cur) {
+			break;
+		}
 		if (!strcmp (str, cur)) {
 			va_end (va);
 			return true;
@@ -72,13 +74,18 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return -1;
 	}
-	if (!o || !o->name) return op->size;
+	if (!o || !o->name) {
+		return op->size;
+	}
 
 	for (; o < &riscv_opcodes[NUMOPCODES]; o++) {
 		// XXX ASAN segfault if ( !(o->match_func)(o, word) ) continue;
-		if ( no_alias && (o->pinfo & INSN_ALIAS) ) continue;
-		if ( isdigit ((int)(o->subset[0])) && atoi (o->subset) != xlen) continue;
-		else {
+		if (no_alias && (o->pinfo & INSN_ALIAS)) {
+			continue;
+		}
+		if (isdigit ((int)(o->subset[0])) && atoi (o->subset) != xlen) {
+			continue;
+		} else {
 			break;
 		}
 	}
@@ -174,7 +181,7 @@ RAnalPlugin r_anal_plugin_riscv = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_riscv,
 	.version = R2_VERSION

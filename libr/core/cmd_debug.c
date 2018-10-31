@@ -22,7 +22,7 @@ static const char *help_msg_d[] = {
 	"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dc", "[?]", "Continue execution",
 	"dd", "[?]", "File descriptors (!fd in r1)",
-	"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
+	"de", "[-sc] [perm] [rm] [e]", "Debug with ESIL (see de?)",
 	"dg", " <file>", "Generate a core-file (WIP)",
 	"dH", " [handler]", "Transplant process to a new handler",
 	"di", "[?]", "Show debugger backend information (See dh)",
@@ -76,8 +76,8 @@ static const char *help_msg_db[] = {
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
 	"dbx", " [expr]", "Set expression for bp in current offset",
-	"dbw", " <addr> <rw>", "Add watchpoint",
-	"drx", " number addr len rwx", "Modify hardware breakpoint",
+	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
+	"drx", " number addr len perm", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
 };
@@ -96,6 +96,11 @@ static const char *help_msg_dbt[] = {
 	NULL
 };
 
+static const char *help_msg_dbw[] = {
+	"Usage: dbw", "<addr> <r/w/rw>"," # Add watchpoint",
+	NULL
+};
+
 static const char *help_msg_dc[] = {
 	"Usage: dc", "", "Execution continuation commands",
 	"dc", "", "Continue execution of all children",
@@ -110,7 +115,6 @@ static const char *help_msg_dc[] = {
 #endif
 	"dcf", "", "Continue until fork (TODO)",
 	"dck", " <signal> <pid>", "Continue sending signal to process",
-	"dco", " <num>", "Step over <num> instructions",
 	"dcp", "", "Continue until program code (mapped io section)",
 	"dcr", "", "Continue until ret (uses step over)",
 	"dcs", "[?] <num>", "Continue until syscall",
@@ -153,10 +157,10 @@ static const char *help_msg_dd[] = {
 };
 
 static const char *help_msg_de[] = {
-	"Usage:", "de", "[-sc] [rwx] [rm] [expr]",
+	"Usage:", "de", "[-sc] [perm] [rm] [expr]",
 	"de", "", "List esil watchpoints",
 	"de-*", "", "Delete all esil watchpoints",
-	"de", " [rwx] [rm] [addr|reg|from..to]", "Stop on condition",
+	"de", " [perm] [rm] [addr|reg|from..to]", "Stop on condition",
 	"dec", "", "Continue execution until matching expression",
 	"des", "[?] [N]", "Step-in N instructions with esildebug",
 	"desu", " [addr]", "Esildebug until specific address",
@@ -214,9 +218,9 @@ static const char *help_msg_dm[] = {
 	"dmi.", "", "List closest symbol to the current address",
 	"dmiv", "", "Show address of given symbol for given lib",
 	"dmj", "", "List memmaps in JSON format",
-	"dml", " <file>", "Load contents of file into the current map region (see Sl)",
+	"dml", " <file>", "Load contents of file into the current map region",
 	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
-	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
+	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
 	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
 	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
 	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
@@ -307,6 +311,7 @@ static const char *help_msg_dr[] = {
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
+	"dra", "[?]", "Manage register arenas. see ara?",
 	"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"drc", " [name]", "Related to conditional flag registers",
 	"drC", "", "Show register profile comments",
@@ -334,7 +339,7 @@ static const char *help_msg_dr[] = {
 	"drt", "[?]", "Show all register types",
 	"drw"," <hexnum>", "Set contents of the register arena",
 	"drx", "[?]", "Show all debug registers",
-	"drx", " idx addr len rwx", "Modify hardware breakpoint",
+	"drx", " idx addr len perm", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	".dr", "*", "Include common register values in flags",
 	".dr", "-", "Unflag all registers",
@@ -790,15 +795,16 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
-		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.buf_asm);
+		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, r_asm_op_get_asm (&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
+			const char *buf_asm = r_asm_op_get_asm (&asmop);
 			if (regex) {
-				if (r_regex_match (instr, "e", asmop.buf_asm)) {
+				if (r_regex_match (instr, "e", buf_asm)) {
 					eprintf ("Stop.\n");
 					break;
 				}
 			} else {
-				if (strstr (asmop.buf_asm, instr)) {
+				if (strstr (buf_asm, instr)) {
 					eprintf ("Stop.\n");
 					break;
 				}
@@ -1255,7 +1261,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		r_debug_snap_all (core->dbg, 0);
 		break;
 	case 'w':
-		r_debug_snap_all (core->dbg, R_IO_RW);
+		r_debug_snap_all (core->dbg, R_PERM_RW);
 		break;
 	case 0:
 	case 'j':
@@ -1411,68 +1417,8 @@ beach:
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
-static int cmd_dbg_map_heap_glibc_32 (RCore *core, const char *input);
-static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
-
-static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
-	RListIter *iter;
-	char buf[20] = R_EMPTY;
-	int offset, i, j = 0;
-	int bd = -1;
-	RBinFile *old_cur = r_bin_cur (core->bin);
-
-	RBinOptions *bo = r_bin_options_new (0LL, 0LL, 0);
-	if (!bo) {
-		eprintf ("Could not create RBinOptions\n");
-		goto out_error;
-	}
-	bo->iofd = -1;
-
-	bd = r_bin_open (core->bin, path, bo);
-	if (bd < 0) {
-		eprintf ("Could not open binary\n");
-		goto out_error;
-	}
-
-	RBinFile *binfile = r_bin_file_find_by_id (core->bin, (unsigned int) bd);
-	if (!binfile || !binfile->o) {
-		goto out_error;
-	}
-
-	r_io_map_priorize_for_fd (core->io, binfile->fd);
-
-	RList *sects = binfile->o->sections;
-	RBinSection *s;
-	r_list_foreach (sects, iter, s) {
-		if (strstr (s->name, ".note.gnu.build-id")) {
-			if (r_buf_read_at (binfile->buf, s->vaddr + 16, buf, 20) == 20) {
-				break;
-			}
-			eprintf ("Cannot read from buffer\n");
-			goto out_error;
-		}
-	}
-	for (i = 0; i < 20; i++) {
-		if (i <= 1) {
-			hash[i + 2 * j++] = (ut8) '/';
-		}
-		offset = j + 2 * i;
-		snprintf (hash + offset, hash_len - offset, "%02x", (ut8) buf[i]);
-	}
-	offset = j + 2 * i;
-	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
-out_error:
-	if (bd >= 0) {
-		r_bin_file_delete (core->bin, (unsigned int) bd);
-		r_bin_file_set_cur_binfile (core->bin, old_cur);
-	}
-	r_bin_options_free (bo);
-}
-
-static int str_start_with(const char *ptr, const char *str) {
-	return !strncmp (ptr, str, (size_t)strlen (str));
-}
-
+static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input);
+static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input);
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
 static ut64 addroflib(RCore *core, const char *libname) {
@@ -1607,7 +1553,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'd': // "dmd"
 		switch (input[1]) {
 		case 'a': return dump_maps (core, 0, NULL);
-		case 'w': return dump_maps (core, R_IO_RW, NULL);
+		case 'w': return dump_maps (core, R_PERM_RW, NULL);
 		case ' ': return dump_maps (core, -1, input + 2);
 		case 0: return dump_maps (core, -1, NULL);
 		case '?':
@@ -2330,7 +2276,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		case ' ': {
 				  char *s = strdup (str+2);
-				  char sl, n, rwx;
+				  char sl, n, perm;
 				  int len;
 				  ut64 off;
 
@@ -2340,18 +2286,18 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					  n = (char)r_num_math (core->num, arg(0));
 					  off = r_num_math (core->num, arg(1));
 					  len = (int)r_num_math (core->num, arg(2));
-					  rwx = (char)r_str_rwx (arg (3));
+					  perm = (char)r_str_rwx (arg (3));
 					  if (len == -1) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 						  r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  } else {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-						  r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
+						  r_debug_drx_set (core->dbg, n, off, len, perm, 0);
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  }
 				  } else {
-					eprintf ("|usage: drx n [address] [length] [rwx]\n");
+					eprintf ("|usage: drx n [address] [length] [perm]\n");
 				  }
 				  free (s);
 			  } break;
@@ -3022,7 +2968,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			bpi = r_bp_get_at (core->dbg->bp, core->offset);
 			if (bpi) {
 				r_cons_printf ("breakpoint %s %s %s\n",
-						r_str_rwx_i (bpi->rwx),
+						r_str_rwx_i (bpi->perm),
 						bpi->enabled ?  "enabled" : "disabled",
 						bpi->name ? bpi->name : "");
 			}
@@ -3238,8 +3184,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
 	case '-': // "db-"
-		if (input[2] == '*') r_bp_del_all (core->dbg->bp);
-		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
+		if (input[2] == '*') {
+			r_bp_del_all (core->dbg->bp);
+		} else {
+			#define DB_ARG(x) r_str_word_get0(str, x)
+			char *str = strdup (r_str_trim_ro (input +2));
+			int i = 0;
+			int sl = r_str_word_set0 (str);
+			for ( ; i < sl; i++) {
+				const ut64 addr = r_num_math (core->num, DB_ARG (i));
+				r_bp_del (core->dbg->bp, addr);
+			}
+			free (str);
+		}
 		break;
 	case 'c': // "dbc"
 		if (input[2] == ' ') {
@@ -3290,7 +3247,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot strdup. Your heap is fucked up\n");
 			}
 		} else {
-			eprintf ("Use: dbc [addr] [command]\n");
+			eprintf ("Use: dbC [addr] [command]\n");
 		}
 		break;
 	case 's': // "dbs"
@@ -3365,80 +3322,67 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case 'w': // "dbw"
-		if (input[2] == 'C') { // "dbwC"
-			if (input[3] == ' ') {
-				char *inp = strdup (input + 4);
-				if (inp) {
-					char *arg = strchr (inp, ' ');
-					if (arg) {
-						*arg++ = 0;
-						addr = r_num_math (core->num, inp);
-						bpi = r_bp_get_at (core->dbg->bp, addr);
-						if (bpi) {
-							free (bpi->cond);
-							bpi->cond = strdup (arg);
-						} else {
-							eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
-						}
-					} else {
-						eprintf ("1 Missing argument\n");
-					}
-					free (inp);
-				} else {
-					eprintf ("Cannot strdup. Your heap is fucked up\n");
-				}
-			} else {
-				eprintf ("Use: dbwC [addr] [command]\n");
-			}
-			break;
-		}
 		input++; // skip 'w'
 		watch = true;
 		// passthru
-	case ' ': // "db"
-		for (p = input + 2; *p == ' '; p++);
-		if (*p == '-') {
-			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
-		} else {
-			#define DB_ARG(x) r_str_word_get0(str, x)
-			char *str = strdup (p);
-			int sl = r_str_word_set0 (str);
-			addr = r_num_math (core->num, DB_ARG(0));
-			if (watch) {
-					if (sl == 2) {
-						rw = (strcmp (DB_ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
+	case ' ': ;// "db"
+		#define DB_ARG(x) r_str_word_get0(str, x)
+		char *str = strdup (r_str_trim_ro (input + 2));
+		int i = 0;
+		int sl = r_str_word_set0 (str);
+		// For dbw every second argument is 'rw', so we need to skip it.
+		for ( ; i < sl; i += 1 + (watch ? 1 : 0)) {
+			if (*DB_ARG(i) == '-') {
+				r_bp_del (core->dbg->bp, r_num_math (core->num, DB_ARG (i) + 1));
+			} else {
+				if (watch) {
+					if (sl % 2 == 0) {
+						if (!strcmp (DB_ARG (i + 1), "r")) {
+							rw = R_BP_PROT_READ;
+						} else if (!strcmp (DB_ARG (i + 1), "w")) {
+							rw = R_BP_PROT_WRITE;
+						} else if (!strcmp (DB_ARG (i + 1), "rw")) {
+							rw = R_BP_PROT_ACCESS;
+						} else {
+							r_core_cmd_help (core, help_msg_dbw);
+							free (str);
+							break;
+						}
 					} else {
-						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+						r_core_cmd_help (core, help_msg_dbw);
 						free (str);
 						break;
 					}
-			}
-			if (validAddress (core, addr)) {
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
-				if (bpi) {
-					free (bpi->name);
-					if (!strcmp (input + 2, "$$")) {
-						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
-						if (f) {
-							if (addr > f->offset) {
-								bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+				}
+				addr = r_num_math (core->num, DB_ARG (i));
+				if (validAddress (core, addr)) {
+					bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
+					if (bpi) {
+						free (bpi->name);
+						if (!strcmp (DB_ARG (i), "$$")) {
+							RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+							if (f) {
+								if (addr > f->offset) {
+									bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+								} else {
+									bpi->name = strdup (f->name);
+								}
 							} else {
-								bpi->name = strdup (f->name);
+								bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
 							}
 						} else {
-							bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
+							bpi->name = strdup (DB_ARG (i));
 						}
 					} else {
-						bpi->name = strdup (input + 2);
+						eprintf ("Cannot set breakpoint at '%s'\n", DB_ARG (i));
 					}
 				} else {
-					eprintf ("Cannot set breakpoint at '%s'\n", input + 2);
+					eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory."
+								"See e? dbg.bpinmaps\n", addr);
 				}
-			} else {
-				eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory. See e? dbg.bpinmaps\n", addr);
 			}
-			free (str);
 		}
+		free (str);
 		break;
 	case 'i':
 		core_cmd_dbi (core, input, addr);
@@ -3669,26 +3613,26 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 			char *line = strdup (input + 1);
 			char *p, *q;
 			int done = 0;
-			int rwx = 0, dev = 0;
+			int perm = 0, dev = 0;
 			p = strchr (line, ' ');
 			if (p) {
 				*p++ = 0;
-				if (strchr (line, 'r')) rwx |= R_IO_READ;
-				if (strchr (line, 'w')) rwx |= R_IO_WRITE;
-				if (strchr (line, 'x')) rwx |= R_IO_EXEC;
+				if (strchr (line, 'r')) perm |= R_PERM_R;
+				if (strchr (line, 'w')) perm |= R_PERM_W;
+				if (strchr (line, 'x')) perm |= R_PERM_X;
 				q = strchr (p, ' ');
 				if (q) {
 					*q++ = 0;
 					dev = p[0];
 					if (q) {
-						r_debug_esil_watch (core->dbg, rwx, dev, q);
+						r_debug_esil_watch (core->dbg, perm, dev, q);
 						done = 1;
 					}
 				}
 			}
 			if (!done) {
 				const char *help_de_msg[] = {
-					"Usage:", "de", " [rwx] [reg|mem] [expr]",
+					"Usage:", "de", " [perm] [reg|mem] [expr]",
 					NULL
 				};
 				r_core_cmd_help (core, help_de_msg);
@@ -3939,7 +3883,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			unsigned long steps = 0;
 			long level = 0;
 			const char *pc_name = core->dbg->reg->name[R_REG_NAME_PC];
-			ut64 prev_pc;
+			ut64 prev_pc = UT64_MAX;
 			bool prev_call = false;
 			bool prev_ret = false;
 			const char *sp_name = core->dbg->reg->name[R_REG_NAME_SP];
@@ -4792,7 +4736,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_printf ("%s at 0x%08"PFMT64x"\n", r, core->dbg->stopaddr);
 				}
 				break;
-			case '?': // "dij"
+			case '?': // "di?"
 			default:
 				r_core_cmd_help (core, help_msg_di);
 			}

@@ -9,12 +9,16 @@
 
 #define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
 
-static void nullprinter(const char *a, ...) { }
-static void libc_printf(const char *format, ...) {
+static int nullprinter(const char *a, ...) {
+	return 0;
+}
+static int libc_printf(const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
 	vprintf (format, ap);
 	va_end (ap);
+
+	return 0;
 }
 
 static RPrintIsInterruptedCallback is_interrupted_cb = NULL;
@@ -474,7 +478,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 #define memcat(x, y)\
 	{ \
 		memcpy (x, y, strlen (y));\
-		x += strlen (y);\
+		(x) += strlen (y);\
 	}
 	for (s = str, i = 0; s[0]; i++) {
 		int d_inc = 2;
@@ -604,7 +608,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 			// TODO: some ascii can be bypassed here
 			p->cb_printf ("%%%02x", b);
 		} else {
-			if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
+			if (b == '\\') {
+				p->cb_printf ("\\\\");
+			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
 				p->cb_printf ("\\x%02x", b);
@@ -1037,14 +1043,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				off &= UT32_MAX;
 			}
 			if (p->hasrefs) {
-				const char *rstr = p->hasrefs (p->user, addr + i, false);
+				char *rstr = p->hasrefs (p->user, addr + i, false);
 				if (rstr && *rstr) {
 					printfmt (" @%s", rstr);
 				}
+				free (rstr);
 				rstr = p->hasrefs (p->user, off, true);
 				if (rstr && *rstr) {
 					printfmt ("%s", rstr);
 				}
+				free (rstr);
 			}
 		}
 		if (p && p->use_comments) {
@@ -1071,6 +1079,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		printfmt ("\n");
 	}
+}
+
+R_API void r_print_hexdump_simple(const ut8 *buf, int len) {
+	r_print_hexdump (NULL, 0, buf, len, 16, 16, 0);
 }
 
 static const char* getbytediff(char *fmt, ut8 a, ut8 b) {
@@ -1102,8 +1114,8 @@ static const char* getchardiff(char *fmt, ut8 a, ut8 b) {
 	return fmt;
 }
 
-#define BD(a, b) getbytediff (fmt, a[i + j], b[i + j])
-#define CD(a, b) getchardiff (fmt, a[i + j], b[i + j])
+#define BD(a, b) getbytediff (fmt, (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff (fmt, (a)[i + j], (b)[i + j])
 
 static ut8* M(const ut8 *b, int len) {
 	ut8 *r = malloc (len + 16);
@@ -1431,14 +1443,22 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		if (next < arr[i]) {
 			//if (arr[i]>0 && i>0) p->cb_printf ("  ");
 			if (arr[i] > INC) {
-				for (j = 0; j < next + base; j += INC) p->cb_printf (i? " ": "'");
+				for (j = 0; j < next + base; j += INC) {
+					p->cb_printf (i ? " " : "'");
+				}
 			}
-			for (j = next + INC; j + base < arr[i]; j += INC) p->cb_printf ("_");
+			for (j = next + INC; j + base < arr[i]; j += INC) {
+				p->cb_printf ("_");
+			}
 		} else {
 			if (i == 0) {
-				for (j = INC; j < arr[i] + base; j += INC) p->cb_printf ("'");
+				for (j = INC; j < arr[i] + base; j += INC) {
+					p->cb_printf ("'");
+				}
 			} else {
-				for (j = INC; j < arr[i] + base; j += INC) p->cb_printf (" ");
+				for (j = INC; j < arr[i] + base; j += INC) {
+					p->cb_printf (" ");
+				}
 			}
 		}
 		//for (j=1;j<arr[i]; j+=INC) p->cb_printf (under);
@@ -1634,7 +1654,9 @@ static bool issymbol(char c) {
 static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
+		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++) {
+			;
+		}
 		char tmp = p[z];
 		p[z] = '\0';
 		bool ret = print->exists_var (print, func_addr, p);
@@ -1949,4 +1971,30 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	}
 	p->cb_printf ("\n");
 	free (buf);
+}
+
+R_API const char* r_print_rowlog(RPrint *print, const char *str) {
+	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
+	bool verbose =  print->scr_prompt;
+	if (!verbose) {
+		return NULL;
+	}
+	if (use_color) {
+		eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
+	} else {
+		eprintf ("[ ] %s\r[", str);
+	}
+	return str;
+}
+
+R_API void r_print_rowlog_done(RPrint *print, const char *str) {
+	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
+	bool verbose =  print->scr_prompt;
+	if (verbose) {
+		if (use_color) {
+			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
+		} else {
+			eprintf ("\r[x] %s\n", str);
+		}
+	}
 }

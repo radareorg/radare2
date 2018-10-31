@@ -87,10 +87,10 @@ INST_HANDLER (TRIS) {
 
 INST_HANDLER (RETURN) {
 	op->type = R_ANAL_OP_TYPE_RET;
-	e ("0x1f,stkptr,==,?{,BREAK,},");
+	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
 	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
 	e ("0x01,stkptr,-=,");
-	e ("0xff,stkptr,==,?{,0x1f,stkptr,=,},");
+	e ("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
 }
 
 INST_HANDLER (CALL) {
@@ -99,8 +99,8 @@ INST_HANDLER (CALL) {
 	r_anal_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
-	e ("0x1f,stkptr,==,?{,0xff,stkptr,=,},");
-	e ("0x0f,stkptr,==,?{,0xff,stkptr,=,},");
+	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x01,stkptr,+=,");
 	ef ("0x%x,_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
@@ -300,10 +300,10 @@ INST_HANDLER (MOVLW) {
 INST_HANDLER (RETLW) {
 	op->type = R_ANAL_OP_TYPE_RET;
 	ef ("0x%x,wreg,=,", args->k);
-	e ("0x1f,stkptr,==,?{,BREAK,},");
+	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
 	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
 	e ("0x01,stkptr,-=,");
-	e ("0xff,stkptr,==,?{,0x1f,stkptr,=,},");
+	e ("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
 }
 
 INST_HANDLER (MOVLP) {
@@ -319,8 +319,8 @@ INST_HANDLER (MOVLB) {
 INST_HANDLER (CALLW) {
 	op->type = R_ANAL_OP_TYPE_UCALL;
 	e ("8,pclath,<<,0x%x,+,wreg,2,*,pc,=,");
-	e ("0x1f,stkptr,==,?{,0xff,stkptr,=,},");
-	e ("0x0f,stkptr,==,?{,0xff,stkptr,=,},");
+	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x01,stkptr,+=,");
 	ef ("0x%x,_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
@@ -640,14 +640,13 @@ static RIODesc *cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr,
 	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
 		iob->fd_remap (iob->io, desc->fd, addr);
 	} else {
-		desc = iob->open_at (iob->io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
+		desc = iob->open_at (iob->io, mstr, R_PERM_RW, 0, addr);
 	}
 	free (mstr);
 	return desc;
 }
 
-static bool pic_midrange_reg_write (RReg *reg, const char *regname,
-				    ut32 num) {
+static bool pic_midrange_reg_write (RReg *reg, const char *regname, ut32 num) {
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {
@@ -738,10 +737,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	ut16 b = *(ut16 *)buf;
 	switch (b >> 9) {
 	case 0x76: //call
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_CALL;
 		return op->size;
@@ -764,10 +765,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		r_strbuf_setf (&op->esil, ",");
 		return op->size;
 	case 0xc: //movff
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		return op->size;
@@ -808,10 +811,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		pic18_cond_branch (op, addr, buf, "c");
 		return op->size;
 	case 0xef: //goto
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->cycles = 2;
 		ut32 dword_instr = *(ut32 *)buf;
@@ -865,10 +870,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 
 	switch (b >> 6) { //LFSR
 	case 0x3b8:       //lfsr
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		return op->size;
@@ -1185,7 +1192,7 @@ RAnalPlugin r_anal_plugin_pic = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_pic,
 	.version = R2_VERSION

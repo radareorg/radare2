@@ -22,7 +22,7 @@
    MA 02110-1301, USA.  */
 
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "libhppa.h"
 #include "opcode/hppa.h"
 #include <string.h>
@@ -190,10 +190,11 @@ static void
 fput_fp_reg_r (unsigned reg, disassemble_info *info)
 {
   /* Special case floating point exception registers.  */
-  if (reg < 4)
-    (*info->fprintf_func) (info->stream, "fpe%d", reg * 2 + 1);
-  else
-    (*info->fprintf_func) (info->stream, "%sR", fp_reg_names[reg]);
+  if (reg < 4) {
+	  (*info->fprintf_func) (info->stream, "fpe%d", reg * 2 + 1);
+  } else {
+	  (*info->fprintf_func) (info->stream, "%sR", fp_reg_names[reg]);
+  }
 }
 
 static void
@@ -207,10 +208,11 @@ fput_creg (unsigned reg, disassemble_info *info)
 static void
 fput_const (unsigned num, disassemble_info *info)
 {
-  if ((int) num < 0)
-    (*info->fprintf_func) (info->stream, "-%x", - (int) num);
-  else
-    (*info->fprintf_func) (info->stream, "%x", num);
+	if ((int)num < 0) {
+		(*info->fprintf_func) (info->stream, "-%x", -(int)num);
+	} else {
+		(*info->fprintf_func) (info->stream, "%x", num);
+	}
 }
 
 /* Routines to extract various sized constants out of hppa
@@ -386,8 +388,9 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 #endif
 	  (*info->fprintf_func) (info->stream, "%s", opcode->name);
 
-	  if (!strchr ("cfCY?-+nHNZFIuv{", opcode->args[0]))
-	    (*info->fprintf_func) (info->stream, " ");
+	  if (!strchr ("cfCY?-+nHNZFIuv{", opcode->args[0])) {
+		  (*info->fprintf_func) (info->stream, " ");
+	  }
 	  for (s = opcode->args; *s != '\0'; ++s)
 	    {
 	      switch (*s)
@@ -414,19 +417,21 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		      fput_fp_reg (GET_FIELD (insn, 27, 31), info);
 		      break;
 		    case 'T':
-		      if (GET_FIELD (insn, 25, 25))
-			fput_fp_reg_r (GET_FIELD (insn, 27, 31), info);
-		      else
-			fput_fp_reg (GET_FIELD (insn, 27, 31), info);
-		      break;
+			    if (GET_FIELD (insn, 25, 25)) {
+				    fput_fp_reg_r (GET_FIELD (insn, 27, 31), info);
+			    } else {
+				    fput_fp_reg (GET_FIELD (insn, 27, 31), info);
+			    }
+			    break;
 		    case 'a':
-		      if (GET_FIELD (insn, 25, 25))
-			fput_fp_reg_r (GET_FIELD (insn, 6, 10), info);
-		      else
-			fput_fp_reg (GET_FIELD (insn, 6, 10), info);
-		      break;
+			    if (GET_FIELD (insn, 25, 25)) {
+				    fput_fp_reg_r (GET_FIELD (insn, 6, 10), info);
+			    } else {
+				    fput_fp_reg (GET_FIELD (insn, 6, 10), info);
+			    }
+			    break;
 
-		      /* 'fA' will not generate a space before the register
+			    /* 'fA' will not generate a space before the register
 			 name.  Normally that is fine.  Except that it
 			 causes problems with xmpyu which has no FP format
 			 completer.  */
@@ -435,31 +440,35 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		      /* FALLTHRU */
 
 		    case 'A':
-		      if (GET_FIELD (insn, 24, 24))
-			fput_fp_reg_r (GET_FIELD (insn, 6, 10), info);
-		      else
-			fput_fp_reg (GET_FIELD (insn, 6, 10), info);
-		      break;
+			    if (GET_FIELD (insn, 24, 24)) {
+				    fput_fp_reg_r (GET_FIELD (insn, 6, 10), info);
+			    } else {
+				    fput_fp_reg (GET_FIELD (insn, 6, 10), info);
+			    }
+			    break;
 		    case 'b':
-		      if (GET_FIELD (insn, 25, 25))
-			fput_fp_reg_r (GET_FIELD (insn, 11, 15), info);
-		      else
-			fput_fp_reg (GET_FIELD (insn, 11, 15), info);
-		      break;
+			    if (GET_FIELD (insn, 25, 25)) {
+				    fput_fp_reg_r (GET_FIELD (insn, 11, 15), info);
+			    } else {
+				    fput_fp_reg (GET_FIELD (insn, 11, 15), info);
+			    }
+			    break;
 		    case 'B':
-		      if (GET_FIELD (insn, 19, 19))
-			fput_fp_reg_r (GET_FIELD (insn, 11, 15), info);
-		      else
-			fput_fp_reg (GET_FIELD (insn, 11, 15), info);
-		      break;
+			    if (GET_FIELD (insn, 19, 19)) {
+				    fput_fp_reg_r (GET_FIELD (insn, 11, 15), info);
+			    } else {
+				    fput_fp_reg (GET_FIELD (insn, 11, 15), info);
+			    }
+			    break;
 		    case 'C':
 		      {
 			int reg = GET_FIELD (insn, 21, 22);
 			reg |= GET_FIELD (insn, 16, 18) << 2;
-			if (GET_FIELD (insn, 23, 23) != 0)
-			  fput_fp_reg_r (reg, info);
-			else
-			  fput_fp_reg (reg, info);
+			if (GET_FIELD (insn, 23, 23) != 0) {
+				fput_fp_reg_r (reg, info);
+			} else {
+				fput_fp_reg (reg, info);
+			}
 			break;
 		      }
 		    case 'i':
@@ -512,11 +521,12 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		      /* FALLTHRU */
 
 		    case 'e':
-		      if (GET_FIELD (insn, 30, 30))
-			fput_fp_reg_r (GET_FIELD (insn, 11, 15), info);
-		      else
-			fput_fp_reg (GET_FIELD (insn, 11, 15), info);
-		      break;
+			    if (GET_FIELD (insn, 30, 30)) {
+				    fput_fp_reg_r (GET_FIELD (insn, 11, 15), info);
+			    } else {
+				    fput_fp_reg (GET_FIELD (insn, 11, 15), info);
+			    }
+			    break;
 		    case 'x':
 		      fput_fp_reg (GET_FIELD (insn, 11, 15), info);
 		      break;
@@ -530,8 +540,9 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		  {
 		    int space = GET_FIELD (insn, 16, 17);
 		    /* Zero means implicit addressing, not use of sr0.  */
-		    if (space != 0)
-		      (*info->fprintf_func) (info->stream, "sr%d", space);
+		    if (space != 0) {
+			    (*info->fprintf_func) (info->stream, "sr%d", space);
+		    }
 		  }
 		  break;
 
@@ -623,23 +634,27 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		      (*info->fprintf_func) (info->stream, ",w ");
 		      break;
 		    case 'r':
-		      if (GET_FIELD (insn, 23, 26) == 5)
-			(*info->fprintf_func) (info->stream, ",r");
-		      break;
+			    if (GET_FIELD (insn, 23, 26) == 5) {
+				    (*info->fprintf_func) (info->stream, ",r");
+			    }
+			    break;
 		    case 'Z':
-		      if (GET_FIELD (insn, 26, 26))
-			(*info->fprintf_func) (info->stream, ",m ");
-		      else
-			(*info->fprintf_func) (info->stream, " ");
-		      break;
+			    if (GET_FIELD (insn, 26, 26)) {
+				    (*info->fprintf_func) (info->stream, ",m ");
+			    } else {
+				    (*info->fprintf_func) (info->stream, " ");
+			    }
+			    break;
 		    case 'i':
-		      if (GET_FIELD (insn, 25, 25))
-			(*info->fprintf_func) (info->stream, ",i");
-		      break;
+			    if (GET_FIELD (insn, 25, 25)) {
+				    (*info->fprintf_func) (info->stream, ",i");
+			    }
+			    break;
 		    case 'z':
-		      if (!GET_FIELD (insn, 21, 21))
-			(*info->fprintf_func) (info->stream, ",z");
-		      break;
+			    if (!GET_FIELD (insn, 21, 21)) {
+				    (*info->fprintf_func) (info->stream, ",z");
+			    }
+			    break;
 		    case 'a':
 		      (*info->fprintf_func)
 			(info->stream, "%s",
@@ -656,38 +671,42 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 			 add_compl_names[GET_FIELD (insn, 20, 21)]);
 		      break;
 		    case 'v':
-		      if (GET_FIELD (insn, 20, 20))
-			(*info->fprintf_func) (info->stream, ",tsv");
-		      break;
+			    if (GET_FIELD (insn, 20, 20)) {
+				    (*info->fprintf_func) (info->stream, ",tsv");
+			    }
+			    break;
 		    case 't':
 		      (*info->fprintf_func) (info->stream, ",tc");
-		      if (GET_FIELD (insn, 20, 20))
-			(*info->fprintf_func) (info->stream, ",tsv");
+		      if (GET_FIELD (insn, 20, 20)) {
+			      (*info->fprintf_func) (info->stream, ",tsv");
+		      }
 		      break;
 		    case 'B':
 		      (*info->fprintf_func) (info->stream, ",db");
-		      if (GET_FIELD (insn, 20, 20))
-			(*info->fprintf_func) (info->stream, ",tsv");
+		      if (GET_FIELD (insn, 20, 20)) {
+			      (*info->fprintf_func) (info->stream, ",tsv");
+		      }
 		      break;
 		    case 'b':
 		      (*info->fprintf_func) (info->stream, ",b");
-		      if (GET_FIELD (insn, 20, 20))
-			(*info->fprintf_func) (info->stream, ",tsv");
+		      if (GET_FIELD (insn, 20, 20)) {
+			      (*info->fprintf_func) (info->stream, ",tsv");
+		      }
 		      break;
 		    case 'T':
-		      if (GET_FIELD (insn, 25, 25))
-			(*info->fprintf_func) (info->stream, ",tc");
-		      break;
+			    if (GET_FIELD (insn, 25, 25)) {
+				    (*info->fprintf_func) (info->stream, ",tc");
+			    }
+			    break;
 		    case 'S':
 		      /* EXTRD/W has a following condition.  */
-		      if (*(s + 1) == '?')
-			(*info->fprintf_func)
-			  (info->stream, "%s",
-			   signed_unsigned_names[GET_FIELD (insn, 21, 21)]);
-		      else
-			(*info->fprintf_func)
-			  (info->stream, "%s ",
-			   signed_unsigned_names[GET_FIELD (insn, 21, 21)]);
+		      if (*(s + 1) == '?') {
+			      (*info->fprintf_func) (info->stream, "%s",
+				      signed_unsigned_names[GET_FIELD (insn, 21, 21)]);
+		      } else {
+			      (*info->fprintf_func) (info->stream, "%s ",
+				      signed_unsigned_names[GET_FIELD (insn, 21, 21)]);
+		      }
 		      break;
 		    case 'h':
 		      (*info->fprintf_func)
@@ -713,12 +732,13 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 			m = GET_FIELD (insn, 28, 28);
 			a = GET_FIELD (insn, 29, 29);
 
-			if (m && !a)
-			  fputs_filtered (",ma ", info);
-			else if (m && a)
-			  fputs_filtered (",mb ", info);
-			else
-			  fputs_filtered (" ", info);
+			if (m && !a) {
+				fputs_filtered (",ma ", info);
+			} else if (m && a) {
+				fputs_filtered (",mb ", info);
+			} else {
+				fputs_filtered (" ", info);
+			}
 			break;
 		      }
 
@@ -728,13 +748,14 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 
 			if (opc == 0x16 || opc == 0x1e)
 			  {
-			    if (GET_FIELD (insn, 29, 29) == 0)
-			      fputs_filtered (",ma ", info);
-			    else
-			      fputs_filtered (",mb ", info);
-			  }
-			else
-			  fputs_filtered (" ", info);
+				if (GET_FIELD (insn, 29, 29) == 0) {
+					fputs_filtered (",ma ", info);
+				} else {
+					fputs_filtered (",mb ", info);
+				}
+			} else {
+				fputs_filtered (" ", info);
+			}
 			break;
 		      }
 
@@ -744,22 +765,24 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 
 			if (opc == 0x13 || opc == 0x1b)
 			  {
-			    if (GET_FIELD (insn, 18, 18) == 1)
-			      fputs_filtered (",mb ", info);
-			    else
-			      fputs_filtered (",ma ", info);
+				if (GET_FIELD (insn, 18, 18) == 1) {
+					fputs_filtered (",mb ", info);
+				} else {
+					fputs_filtered (",ma ", info);
+				}
 			  }
 			else if (opc == 0x17 || opc == 0x1f)
 			  {
-			    if (GET_FIELD (insn, 31, 31) == 1)
-			      fputs_filtered (",ma ", info);
-			    else
-			      fputs_filtered (",mb ", info);
+				  if (GET_FIELD (insn, 31, 31) == 1) {
+					  fputs_filtered (",ma ", info);
+				  } else {
+					  fputs_filtered (",mb ", info);
+				  }
+			  } else {
+				  fputs_filtered (" ", info);
 			  }
-			else
-			  fputs_filtered (" ", info);
 
-			break;
+			  break;
 		      }
 		    }
 		  break;
@@ -869,8 +892,9 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 
 			/* If the next character in args is 'n', it will handle
 			   putting out the space.  */
-			if (s[1] != 'n')
-			  (*info->fprintf_func) (info->stream, " ");
+			if (s[1] != 'n') {
+				(*info->fprintf_func) (info->stream, " ");
+			}
 			break;
 		      case 'X':
 			(*info->fprintf_func)
@@ -884,8 +908,9 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 
 			/* If the next character in args is 'n', it will handle
 			   putting out the space.  */
-			if (s[1] != 'n')
-			  (*info->fprintf_func) (info->stream, " ");
+			if (s[1] != 'n') {
+				(*info->fprintf_func) (info->stream, " ");
+			}
 			break;
 		      }
 		    break;
@@ -923,19 +948,21 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		  fput_const (extract_16 (insn), info);
 		  break;
 		case 'n':
-		  if (insn & 0x2)
-		    (*info->fprintf_func) (info->stream, ",n ");
-		  else
-		    (*info->fprintf_func) (info->stream, " ");
-		  break;
+			if (insn & 0x2) {
+				(*info->fprintf_func) (info->stream, ",n ");
+			} else {
+				(*info->fprintf_func) (info->stream, " ");
+			}
+			break;
 		case 'N':
-		  if ((insn & 0x20) && s[1])
-		    (*info->fprintf_func) (info->stream, ",n ");
-		  else if (insn & 0x20)
-		    (*info->fprintf_func) (info->stream, ",n");
-		  else if (s[1])
-		    (*info->fprintf_func) (info->stream, " ");
-		  break;
+			if ((insn & 0x20) && s[1]) {
+				(*info->fprintf_func) (info->stream, ",n ");
+			} else if (insn & 0x20) {
+				(*info->fprintf_func) (info->stream, ",n");
+			} else if (s[1]) {
+				(*info->fprintf_func) (info->stream, " ");
+			}
+			break;
 		case 'w':
 		  (*info->print_address_func)
 		    (memaddr + 8 + extract_12 (insn), info);
@@ -1060,13 +1087,12 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		case 'F':
 		  /* If no destination completer and not before a completer
 		     for fcmp, need a space here.  */
-		  if (s[1] == 'G' || s[1] == '?')
-		    fputs_filtered
-		      (float_format_names[GET_FIELD (insn, 19, 20)], info);
-		  else
-		    (*info->fprintf_func)
-		      (info->stream, "%s ",
-		       float_format_names[GET_FIELD (insn, 19, 20)]);
+		  if (s[1] == 'G' || s[1] == '?') {
+			  fputs_filtered (float_format_names[GET_FIELD (insn, 19, 20)], info);
+		  } else {
+			  (*info->fprintf_func) (info->stream, "%s ",
+				  float_format_names[GET_FIELD (insn, 19, 20)]);
+		  }
 		  break;
 		case 'G':
 		  (*info->fprintf_func)
@@ -1074,23 +1100,23 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		     float_format_names[GET_FIELD (insn, 17, 18)]);
 		  break;
 		case 'H':
-		  if (GET_FIELD (insn, 26, 26) == 1)
-		    (*info->fprintf_func) (info->stream, "%s ",
-					   float_format_names[0]);
-		  else
-		    (*info->fprintf_func) (info->stream, "%s ",
-					   float_format_names[1]);
-		  break;
+			if (GET_FIELD (insn, 26, 26) == 1) {
+				(*info->fprintf_func) (info->stream, "%s ",
+					float_format_names[0]);
+			} else {
+				(*info->fprintf_func) (info->stream, "%s ",
+					float_format_names[1]);
+			}
+			break;
 		case 'I':
 		  /* If no destination completer and not before a completer
 		     for fcmp, need a space here.  */
-		  if (s[1] == '?')
-		    fputs_filtered
-		      (float_format_names[GET_FIELD (insn, 20, 20)], info);
-		  else
-		    (*info->fprintf_func)
-		      (info->stream, "%s ",
-		       float_format_names[GET_FIELD (insn, 20, 20)]);
+		  if (s[1] == '?') {
+			  fputs_filtered (float_format_names[GET_FIELD (insn, 20, 20)], info);
+		  } else {
+			  (*info->fprintf_func) (info->stream, "%s ",
+				  float_format_names[GET_FIELD (insn, 20, 20)]);
+		  }
 		  break;
 
 		case 'J':
@@ -1103,10 +1129,11 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		    int imm10 = GET_FIELD (insn, 18, 27);
 		    int disp;
 
-		    if (sign)
-		      disp = (UT64_MAX << 10) | imm10;
-		    else
-		      disp = imm10;
+		    if (sign) {
+			    disp = (UT64_MAX << 10) | imm10;
+		    } else {
+			    disp = imm10;
+		    }
 
 		    disp <<= 3;
 		    fput_const (disp, info);
@@ -1119,10 +1146,11 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 		    int imm11 = GET_FIELD (insn, 18, 28);
 		    int disp;
 
-		    if (sign)
-		      disp = (UT64_MAX << 11) | imm11;
-		    else
-		      disp = imm11;
+		    if (sign) {
+			    disp = (UT64_MAX << 11) | imm11;
+		    } else {
+			    disp = imm11;
+		    }
 
 		    disp <<= 2;
 		    fput_const (disp, info);
@@ -1165,24 +1193,28 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 			fputs_filtered (",UND ", info);
 			break;
 		      }
-		    if ((sub & 3) == 3)
-		      t = ",t";
-		    if ((sub & 3) == 1)
-		      source = sub & 4 ? fcnv_ufixed_names : fcnv_fixed_names;
-		    if (sub & 2)
-		      dest = sub & 4 ? fcnv_ufixed_names : fcnv_fixed_names;
+		      if ((sub & 3) == 3) {
+			      t = ",t";
+		      }
+		      if ((sub & 3) == 1) {
+			      source = sub & 4 ? fcnv_ufixed_names : fcnv_fixed_names;
+		      }
+		      if (sub & 2) {
+			      dest = sub & 4 ? fcnv_ufixed_names : fcnv_fixed_names;
+		      }
 
-		    (*info->fprintf_func) (info->stream, "%s%s%s ",
-					   t, source[sf], dest[df]);
-		    break;
+		      (*info->fprintf_func) (info->stream, "%s%s%s ",
+			      t, source[sf], dest[df]);
+		      break;
 		  }
 
 		case 'm':
 		  {
 		    int y = GET_FIELD (insn, 16, 18);
 
-		    if (y != 1)
-		      fput_const ((y ^ 1) - 1, info);
+		    if (y != 1) {
+			    fput_const ((y ^ 1) - 1, info);
+		    }
 		  }
 		  break;
 
@@ -1192,8 +1224,9 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 
 		    cbit = GET_FIELD (insn, 16, 18);
 
-		    if (cbit > 0)
-		      (*info->fprintf_func) (info->stream, ",%d", cbit - 1);
+		    if (cbit > 0) {
+			    (*info->fprintf_func) (info->stream, ",%d", cbit - 1);
+		    }
 		    break;
 		  }
 

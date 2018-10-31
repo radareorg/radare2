@@ -123,11 +123,10 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 }
 
 static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
-	int dlen;
 	if (len < 0) {
 		return 0;
 	}
-	dlen = r_hash_calculate (ctx, hash, buf, len);
+	int dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!print) {
 		return 1;
 	}
@@ -248,8 +247,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 0, ule);
 				}
+				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
 				from = ofrom;
 				to = oto;
 			}
@@ -556,6 +556,7 @@ int main(int argc, char **argv) {
 		if (!strcmp (hashstr, "-")) {
 			hashstr = malloc (INSIZE);
 			if (!hashstr) {
+				free (iv);
 				return 1;
 			}
 			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
@@ -571,6 +572,7 @@ int main(int argc, char **argv) {
 			if (hashstr_len < 1) {
 				eprintf ("Invalid hex string\n");
 				free (out);
+				free (iv);
 				return 1;
 			}
 			hashstr = (char *) out;
@@ -583,6 +585,7 @@ int main(int argc, char **argv) {
 		if (from) {
 			if (from >= hashstr_len) {
 				eprintf ("Invalid -f.\n");
+				free (iv);
 				return 1;
 			}
 		}
@@ -626,6 +629,7 @@ int main(int argc, char **argv) {
 				if (str != hashstr) {
 					free (str);
 				}
+				free (iv);
 				return 1;
 			}
 			for (i = 1; i < R_HASH_ALL; i <<= 1) {
@@ -649,12 +653,14 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (optind >= argc) {
+		free (iv);
 		return do_help (1);
 	}
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
 		eprintf ("rahash2: Invalid block size\n");
+		free (iv);
 		return 1;
 	}
 
@@ -675,12 +681,14 @@ int main(int argc, char **argv) {
 				return rt;
 			}
 		} else {
+			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
 				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					if (!r_io_open_nomap (io, uri, R_IO_READ, 0)) {
+					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
@@ -690,14 +698,19 @@ int main(int argc, char **argv) {
 			} else {
 				if (r_file_is_directory (argv[i])) {
 					eprintf ("rahash2: Cannot hash directories\n");
+					free (iv);
 					return 1;
 				}
-				if (!r_io_open_nomap (io, argv[i], R_IO_READ, 0)) {
+				desc = r_io_open_nomap (io, argv[i], R_PERM_R, 0);
+				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+					free (iv);
 					return 1;
 				}
 			}
 			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
+			to = 0;
+			r_io_desc_close (desc);
 		}
 	}
 	free (hashstr);

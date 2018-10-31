@@ -80,7 +80,6 @@ static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *s = R_NEW0 (RBinSection);
 	ut64 sz = r_buf_size (bf->buf);
-
 	if (!(ret = r_list_new ())) {
 		free (s);
 		return NULL;
@@ -90,7 +89,7 @@ static RList *sections(RBinFile *bf) {
 	s->vaddr = 0x8000000;
 	s->size = sz;
 	s->vsize = 0x2000000;
-	s->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+	s->perm = R_PERM_RX;
 	s->add = true;
 
 	r_list_append (ret, s);
@@ -110,7 +109,7 @@ RBinPlugin r_bin_plugin_ningba = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ningba,
 	.version = R2_VERSION

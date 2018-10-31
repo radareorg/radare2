@@ -86,6 +86,53 @@ func.prctl.arg.3=unsigned long,v4
 func.prctl.arg.4=unsigned long,v5
 func.prctl.ret=int
 
+sigaction=func
+func.sigaction.args=3
+func.sigaction.arg.0=int,signum
+func.sigaction.arg.1=const struct sigaction *,act
+func.sigaction.arg.2=struct sigaction *,oldact
+func.sigaction.ret=int
+
+select=func
+func.select.args=5
+func.select.arg.0=int,nfds
+func.select.arg.1=fd_set *,readfds
+func.select.arg.2=fd_set *,writefds
+func.select.arg.3=fd_set *,exceptfds
+func.select.arg.4=struct timeval *,timeout
+func.select.ret=int
+
+nanosleep=func
+func.nanosleep.args=2
+func.nanosleep.arg.0=const struct timespec *,req
+func.nanosleep.arg.1=struct timespec *,rem
+func.nanosleep.ret=int
+
+getsockname=func
+func.getsockname.args=3
+func.getsockname.arg.0=int,sockfd
+func.getsockname.arg.1=struct sockaddr *,addr
+func.getsockname.arg.2=socklen_t *,addrlen
+func.getsockname.ret=int
+
+getsockopt=func
+func.getsockopt.args=5
+func.getsockopt.arg.0=int,sockfd
+func.getsockopt.arg.1=int,level
+func.getsockopt.arg.2=int,optname
+func.getsockopt.arg.3=void *,optval
+func.getsockopt.arg.4=socklen_t *,optlen
+func.getsockopt.ret=int
+
+setsockopt=func
+func.setsockopt.args=5
+func.setsockopt.arg.0=int,sockfd
+func.setsockopt.arg.1=int,level
+func.setsockopt.arg.2=int,optname
+func.setsockopt.arg.3=void *,optval
+func.setsockopt.arg.4=socklen_t,optlen
+func.setsockopt.ret=int
+
 waitpid=func
 func.waitpid.args=3
 func.waitpid.arg.0=pid_t,pid

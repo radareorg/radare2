@@ -63,6 +63,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 	meta->libname = NULL;
+	meta->xtr_type = "fat";
 }
 
 static RBinXtrData * extract(RBin* bin, int idx) {
@@ -152,8 +153,8 @@ static RList * extractall(RBin *bin) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	if (!res) {
-		return NULL;	
-	}	
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
 		data = extract (bin, i);
@@ -198,7 +199,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_fatmach0,
 	.version = R2_VERSION

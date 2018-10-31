@@ -54,7 +54,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBin *rbin = bf->rbin;
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	ut32 toff = readLE32 (bf->buf, NSO_OFF (text_memoffset));
@@ -67,7 +67,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	RBuffer *newbuf = r_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
 
-	if (rbin->iob.io && !(rbin->iob.io->cached & R_IO_WRITE)) {
+	if (rbin->iob.io && !(rbin->iob.io->cached & R_PERM_W)) {
 		eprintf ("Please add \'-e io.cache=true\' option to r2 command\n");
 		goto fail;
 	}
@@ -90,10 +90,12 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	r_buf_free (newbuf);
-	return (void *) bin;
+	*bin_obj = bin;
+	return true;
 fail:
 	r_buf_free (newbuf);
-	return NULL;
+	free (bin);
+	return false;
 }
 
 static bool load(RBinFile *bf) {
@@ -103,8 +105,7 @@ static bool load(RBinFile *bf) {
 	const ut64 sz = r_buf_size (bf->buf);
 	const ut64 la = bf->o->loadaddr;
 	const ut8 *bytes = r_buf_buffer (bf->buf);
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, la, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -165,7 +166,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = readLE32 (b, NSO_OFF (text_memoffset));
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = false;
 	r_list_append (ret, ptr);
 
@@ -178,7 +179,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (text_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (text_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;	// r-x
+	ptr->perm = R_PERM_RX;	// r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -191,7 +192,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (ro_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (ro_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE;	// r--
+	ptr->perm = R_PERM_R;	// r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -204,7 +205,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (data_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (data_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;	// rw-
+	ptr->perm = R_PERM_RW;
 	ptr->add = true;
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		readLE32 (bf->buf, NSO_OFF (bss_size)));
@@ -213,15 +214,11 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
-	if (!bin) {
-		return NULL;
-	}
-	return bin->methods_list;
+	RBinNXOObj *bin = (RBinNXOObj*) bf->o->bin_obj;
+	return bin? bin->methods_list: NULL;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -287,7 +284,7 @@ RBinPlugin r_bin_plugin_nso = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nso,
 	.version = R2_VERSION

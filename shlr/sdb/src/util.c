@@ -268,12 +268,9 @@ SDB_API char *sdb_anext(char *str, char **next) {
 	return str;
 }
 
-SDB_API const char *sdb_const_anext(const char *str, const char **next) {
-	if (next) {
-		const char *p = strchr (str, SDB_RS);
-		*next = p? p + 1: NULL;
-	}
-	return str;
+SDB_API const char *sdb_const_anext(const char *str) {
+	const char *p = strchr (str, SDB_RS);
+	return p ? p + 1 : NULL;
 }
 
 SDB_API ut64 sdb_now () {

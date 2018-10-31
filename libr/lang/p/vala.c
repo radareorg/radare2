@@ -10,6 +10,7 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	void *lib;
 	char *p, name[512], buf[512];
 	char *vapidir, *srcdir, *libname;
+	int len;
 
 	if (strlen (file) > 500) {
 		return false;
@@ -52,34 +53,54 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	// const char *pkgs = "";
 	if (vapidir) {
 		if (*vapidir) {
-			snprintf (buf, sizeof (buf)-1, "valac --disable-warnings -d %s --vapidir=%s --pkg r_core %s -C %s %s",
+			len = snprintf (buf, sizeof (buf), "valac --disable-warnings -d %s --vapidir=%s --pkg r_core %s -C %s %s",
 				srcdir, vapidir, pkgs, name, tail);
+			if (len >= sizeof (buf)) {
+				free (vapidir);
+				free (srcdir);
+				free (libname);
+				return false;
+			}
 		}
 		free (vapidir);
 	} else {
-		snprintf (buf, sizeof (buf) - 1, "valac --disable-warnings -d %s %s --pkg r_core -C %s %s", srcdir, pkgs, name, tail);
-		//snprintf (buf, sizeof (buf) - 1, "valac --disable-warnings -d %s --pkg r_core -C '%s' '%s'", srcdir, name, tail);
+		len = snprintf (buf, sizeof (buf) - 1, "valac --disable-warnings -d %s %s --pkg r_core -C %s %s", srcdir, pkgs, name, tail);
+		if (len >= sizeof (buf)) {
+			free (srcdir);
+			free (libname);
+			return false;
+		}
 	}
 	free (srcdir);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return false;
 	}
-	p = strstr (name, ".vala"); if (p) *p=0;
-	p = strstr (name, ".gs"); if (p) *p=0;
+	p = strstr (name, ".vala");
+	if (p) {
+		*p = 0;
+	}
+	p = strstr (name, ".gs");
+	if (p) {
+		*p = 0;
+	}
 	// TODO: use CC environ if possible
-	snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s."R_LIB_EXT
+	len = snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s." R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core gobject-2.0 %s)", name, libname, libs);
-	if (r_sandbox_system (buf, 1) != 0) {
+	if (len >= sizeof (buf) || r_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return false;
 	}
 
-	snprintf (buf, sizeof (buf), "./lib%s."R_LIB_EXT, libname);
+	len = snprintf (buf, sizeof (buf), "./lib%s." R_LIB_EXT, libname);
 	free (libname);
+	if (len >= sizeof (buf)) {
+		return false;
+	}
+
 	lib = r_lib_dl_open (buf);
 	if (lib) {
-		void (*fcn)(RCore *);
+		void (*fcn) (RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) {
 			fcn (lang->user);
@@ -91,7 +112,11 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 		eprintf ("Cannot open library\n");
 	}
 	r_file_rm (buf); // remove lib
-	snprintf (buf, sizeof (buf) - 1, "%s.c", name); // remove .c
+	len = snprintf (buf, sizeof (buf), "%s.c", name); // remove .c
+	if (len >= sizeof (buf)) {
+		return false;
+	}
+
 	r_file_rm (buf);
 	return 0;
 }

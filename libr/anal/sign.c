@@ -5,6 +5,7 @@
 #include <r_search.h>
 #include <r_util.h>
 #include <r_core.h>
+#include <r_hash.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -85,9 +86,9 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	// name (2)
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
 
-	// Deserialize val: size|bytes|mask|graph|offset|refs
+	// Deserialize val: size|bytes|mask|graph|offset|refs|bbhash
 	n = r_str_split (v2, '|');
-	if (n != 6) {
+	if (n != 7) {
 		retval = false;
 		goto out;
 	}
@@ -145,6 +146,16 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 			r_list_append (it->refs, r_str_newf (r_str_word_get0 (refs, i)));
 		}
 	}
+
+	// basic blocks hash (6)
+	token = r_str_word_get0 (v2, 6);
+	if (token[0] != 0) {
+		it->hash = R_NEW0 (RSignHash);
+		if (!it->hash) {
+			goto out;
+		}
+		it->hash->bbhash = r_str_new (token);
+	}
 out:
 	free (k2);
 	free (v2);
@@ -169,6 +180,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 	int i = 0, len = 0;
 	RSignBytes *bytes = it->bytes;
 	RSignGraph *graph = it->graph;
+	RSignHash *hash = it->hash;
 
 	if (k) {
 		serializeKey (a, it->space, it->name, k);
@@ -196,13 +208,14 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			i++;
 		}
 
-		snprintf (v, R_SIGN_VAL_MAXSZ, "%d|%s|%s|%s|%"PFMT64d"|%s",
+		snprintf (v, R_SIGN_VAL_MAXSZ, "%d|%s|%s|%s|%"PFMT64d"|%s|%s",
 			bytes? bytes->size: 0,
 			bytes? hexbytes: "",
 			bytes? hexmask: "",
 			graph? hexgraph: "",
 			it->offset,
-			refs? refs: "");
+			refs? refs: "",
+			hash? hash->bbhash: "");
 
 		free (hexbytes);
 		free (hexmask);
@@ -262,6 +275,18 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 			r_list_append (dst->refs, r_str_new (ref));
 		}
 	}
+
+	if (src->hash) {
+		if (!dst->hash) {
+			dst->hash = R_NEW0 (RSignHash);
+		}
+			if (!dst->hash) {
+				return;
+			}
+		if (src->hash->bbhash) {
+			dst->hash->bbhash = strdup (src->hash->bbhash);
+		}
+	}
 }
 
 static bool addItem(RAnal *a, RSignItem *it) {
@@ -289,6 +314,61 @@ static bool addItem(RAnal *a, RSignItem *it) {
 out:
 	r_sign_item_free (curit);
 
+	return retval;
+}
+
+static bool addHash(RAnal *a, const char *name, int type, const char *val) {
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		r_sign_item_free (it);
+		return false;
+	}
+	it->name = r_str_new (name);
+	if (!it->name) {
+		r_sign_item_free (it);
+		return false;
+	}
+	it->hash = R_NEW0 (RSignHash);
+	if (!it->hash) {
+		r_sign_item_free (it);
+		return false;
+	}
+
+	switch (type) {
+	case R_SIGN_BBHASH:
+		it->hash->bbhash = strdup(val);
+		break;
+	}
+
+	bool retval = addItem (a, it);
+	r_sign_item_free (it);
+	return retval;
+}
+
+static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
+	bool retval = false;
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		goto beach;
+	}
+	it->name = r_str_new (name);
+	if (!it->name) {
+		goto beach;
+	}
+	it->hash = R_NEW0 (RSignHash);
+	if (!it->hash) {
+		goto beach;
+	}
+
+	char *digest_hex = r_sign_calc_bbhash (a, fcn);
+	if (!digest_hex) {
+		free (digest_hex);
+		goto beach;
+	}
+	it->hash->bbhash = digest_hex;
+	retval = addItem (a, it);
+beach:
+	r_sign_item_free (it);
 	return retval;
 }
 
@@ -339,6 +419,28 @@ fail:
 	}
 	free (it);
 	return false;
+}
+
+R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
+	if (!a || !name || !type || !val || !len) {
+		return false;
+	}
+	if (type != R_SIGN_BBHASH) {
+		eprintf ("error: hash type unknown");
+	}
+	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
+	if (len != digestsize) {
+		eprintf ("error: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
+		return false;
+	}
+	return addHash (a, name, type, val);
+}
+
+R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name) {
+	if (!a || !fcn || !name) {
+		return false;
+	}
+	return addBBHash (a, fcn, name);
 }
 
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
@@ -575,9 +677,29 @@ static void listRefs(RAnal *a, RSignItem *it, int format) {
 	}
 
 	if (format == 'j') {
-		a->cb_printf ("]");
+		a->cb_printf ("],");
 	} else {
 		a->cb_printf ("\n");
+	}
+}
+
+static void listHash(RAnal *a, RSignItem *it, int format) {
+	if (it->hash) {
+		if (format == '*') {
+			if (it->hash->bbhash) {
+				a->cb_printf ("za %s h %s\n", it->name, it->hash->bbhash);
+			}
+		} else if (format == 'j') {
+			a->cb_printf ("\"hash\":{");
+			if (it->hash->bbhash) {
+				a->cb_printf ("\"bbhash\":\"%s\"", it->hash->bbhash);
+			}
+			a->cb_printf ("}");
+		} else {
+			if (it->hash->bbhash) {
+				a->cb_printf ("  bbhash: %s\n", it->hash->bbhash);
+			}
+		}
 	}
 }
 
@@ -647,7 +769,14 @@ static int listCB(void *user, const char *k, const char *v) {
 	if (it->refs) {
 		listRefs (a, it, ctx->format);
 	} else if (ctx->format == 'j') {
-		a->cb_printf ("\"refs\":[]");
+		a->cb_printf ("\"refs\":[],");
+	}
+
+	// Hash
+	if (it->hash) {
+		listHash (a, it, ctx->format);
+	} else if (ctx->format == 'j') {
+		a->cb_printf ("\"hash\":{}");
 	}
 
 	// End item
@@ -679,6 +808,42 @@ R_API void r_sign_list(RAnal *a, int format) {
 	if (format == 'j') {
 		a->cb_printf ("]\n");
 	}
+}
+
+static int cmpaddr(const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr - b->addr);
+}
+
+R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
+	RListIter *iter = NULL;
+	RAnalBlock *bbi = NULL;
+	char *digest_hex = NULL;
+	RHash *ctx = r_hash_new (true, R_ZIGN_HASH);
+	if (!ctx) {
+		goto beach;
+	}
+	r_list_sort (fcn->bbs, &cmpaddr);
+	r_hash_do_begin (ctx, R_ZIGN_HASH);
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		ut8 *buf = malloc (bbi->size);
+		if (!buf) {
+			goto beach;
+		}
+		if (!a->iob.read_at (a->iob.io, bbi->addr, buf, bbi->size)) {
+			goto beach;
+		}
+		if (!r_hash_do_sha256 (ctx, buf, bbi->size)) {
+			goto beach;
+		}
+		free (buf);
+	}
+	r_hash_do_end (ctx, R_ZIGN_HASH);
+
+	digest_hex = r_hex_bin2strdup (ctx->digest, r_hash_size (R_ZIGN_HASH));
+beach:
+	free (ctx);
+	return digest_hex;
 }
 
 struct ctxCountForCB {
@@ -1013,6 +1178,44 @@ R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCal
 	return r_sign_foreach (a, offsetMatchCB, &ctx);
 }
 
+static int hashMatchCB(RSignItem *it, void *user) {
+	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
+	RSignHash *hash = it->hash;
+
+	if (!hash) {
+		return 1;
+	}
+
+	if (!hash->bbhash || hash->bbhash[0] == 0) {
+		return 1;
+	}
+
+	char *digest_hex = NULL;
+	bool retval = false;
+	digest_hex = r_sign_calc_bbhash (ctx->anal, ctx->fcn);
+	if (strcmp (hash->bbhash, digest_hex)) {
+		goto beach;
+	}
+
+	if (ctx->cb) {
+		retval = ctx->cb (it, ctx->fcn, ctx->user);
+	}
+beach:
+	free (digest_hex);
+	return retval;
+}
+
+R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user) {
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
+
+	if (!a || !fcn || !cb) {
+		return false;
+	}
+
+	return r_sign_foreach (a, hashMatchCB, &ctx);
+}
+
+
 static int refsMatchCB(RSignItem *it, void *user) {
 	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
 	RList *refs = NULL;
@@ -1129,6 +1332,10 @@ R_API void r_sign_item_free(RSignItem *item) {
 		free (item->bytes->bytes);
 		free (item->bytes->mask);
 		free (item->bytes);
+	}
+	if (item->hash) {
+		free (item->hash->bbhash);
+		free (item->hash);
 	}
 	free (item->graph);
 	r_list_free (item->refs);
@@ -1268,8 +1475,8 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	if (!a || !file) {
 		return false;
 	}
-	
-	if (sdb_count (a->sdb_zigns) == 0) {
+
+	if (sdb_isempty (a->sdb_zigns)) {
 		eprintf ("WARNING: no zignatures to save\n");
 		return false;
 	}

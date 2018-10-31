@@ -6,30 +6,6 @@
 #include <r_core.h>
 #include <spp/spp.h>
 
-#if 0
-static void __section_list_for_projects (RIO *io, RPrint *print) {
-	int i = 0;
-	SdbListIter *iter;
-	RIOSection *s;
-
-	if (!io || !io->sections || !print || !print->cb_printf) {
-		return;
-	}
-	ls_foreach (io->sections, iter, s) {
-		print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
-			" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-			i, s->paddr, r_str_rwx_i (s->flags), s->vaddr,
-			s->size, s->vsize, s->name);
-		if (s->arch && s->bits) {
-			print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
-				s->bits);
-		}
-		print->cb_printf ("\n");
-		i++;
-	}
-}
-#endif
-
 static bool is_valid_project_name(const char *name) {
 	int i;
 	if (r_str_endswith (name, ".zip")) {
@@ -358,13 +334,13 @@ typedef struct {
 	char *rcPath;
 } ProjectState;
 
-static int projectLoadBackground(RThread *th) {
+static RThreadFunctionRet projectLoadBackground(RThread *th) {
 	ProjectState *ps = th->user;
 	r_core_project_load (ps->core, ps->prjName, ps->rcPath);
 	free (ps->prjName);
 	free (ps->rcPath);
 	free (ps);
-	return 0;
+	return R_TH_STOP;
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {
@@ -535,11 +511,11 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	RListIter *iter;
 	RIOMap *map;
 	if (desc) {
-		r_cons_printf ("ofs %s %s\n", desc->uri, r_str_rwx_i (desc->flags));
+		r_cons_printf ("ofs %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_for_fd (core->io, id))) {
 			r_list_foreach (maps, iter, map) {
 				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
-					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->flags),
+					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i (map->perm),
 					map->name ? " " : "", map->name ? map->name : "");
 			}
 			r_list_free (maps);
@@ -674,12 +650,6 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	{
 		r_core_cmd (core, "fz*", 0);
 		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_SECTIONS) {
-		r_str_write (fd, "# sections\n");
-		r_core_cmd (core, "S*", 0);
-		// __section_list_for_projects (core->io, core->print);
-		// r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");

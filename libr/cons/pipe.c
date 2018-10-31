@@ -39,7 +39,9 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	if (_dup2 (fdn, backup_fd) == -1) {
 #else
 	backup_fd = sysconf (_SC_OPEN_MAX)-(fd-2); // portable getdtablesize()
-	if (backup_fd <2) backup_fd = 2002-(fd-2); // fallback
+	if (backup_fd < 2) {
+		backup_fd = 2002 - (fd - 2); // fallback
+	}
 	if (dup2 (fdn, backup_fd) == -1) {
 #endif
 		eprintf ("Cannot dup stdout to %d\n", backup_fd);
@@ -53,8 +55,9 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 }
 
 R_API void r_cons_pipe_close(int fd) {
-	if (fd == -1)
+	if (fd == -1) {
 		return;
+	}
 	close (fd);
 	if (backup_fd != -1) {
 		dup2 (backup_fd, backup_fdn);

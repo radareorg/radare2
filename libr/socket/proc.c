@@ -22,26 +22,31 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
 #endif
 
-	if (!sp)
+	if (!sp) {
 		return NULL;
+	}
 
 	if (pipe (sp->fd0)==-1) {
 		perror ("pipe");
 		goto error;
 	}
-	if (fcntl (sp->fd0[0], flags) < 0)
+	if (fcntl (sp->fd0[0], flags) < 0) {
 		goto error;
-	if (fcntl (sp->fd0[1], flags) < 0)
+	}
+	if (fcntl (sp->fd0[1], flags) < 0) {
 		goto error;
+	}
 
 	if (pipe (sp->fd1)==-1) {
 		perror ("pipe");
 		goto error;
 	}
-	if (fcntl (sp->fd1[0], flags) < 0)
+	if (fcntl (sp->fd1[0], flags) < 0) {
 		goto error;
-	if (fcntl (sp->fd1[1], flags) < 0)
+	}
+	if (fcntl (sp->fd1[1], flags) < 0) {
 		goto error;
+	}
 
 	sp->pid = r_sys_fork ();
 	switch (sp->pid) {
@@ -71,7 +76,7 @@ error:
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 #if __UNIX__
 	/* this is wrong */
-	kill (sp->pid, 9);
+	kill (sp->pid, SIGKILL);
 	waitpid (sp->pid, NULL, 0); //WNOHANG);
 	close (sp->fd0[0]);
 	close (sp->fd0[1]);

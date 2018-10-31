@@ -1,0 +1,50 @@
+ec ai.exec rgb:6d6
+ec ai.read rgb:66d
+ec ai.write rgb:d66
+ec args rgb:2bc
+ec b0x00 rgb:878585             # 00 bytes
+ec b0x7f rgb:fff
+ec b0xff rgb:abb0b6             # ff bytes
+ec bin rgb:4F1900 0 bold               # operations like xor
+ec btext rgb:66737f             # text section opcode? first byte of opcode
+ec call rgb:A63A00 0 bold              # call instructions
+ec cjmp rgb:376B4C 0 bold underline              # je, jg, etc
+ec cmp rgb:F92672 0 bold               # cmp instructions
+ec comment rgb:001296 0 italic           # r2 renerated comments
+ec creg rgb:025F49 rgb:BFFFCB              # modified registries
+ec flag rgb:912D3A 0 bold              # flags. usually apprears above the current seek
+ec fline rgb:8D0004             # function line. the boundary of a function
+ec flow rgb:376B4C              # lines that show jump destinations
+ec flow2 rgb:ddd
+ec fname rgb:8D0004 0 bold italic             # function name
+ec graph.box rgb:007D96         # unselected boxes in visual graph mode
+ec graph.box2 rgb:D100A7        # currently selected box in visual graph mode
+ec graph.box3 rgb:66d9ef
+ec graph.box4 rgb:66d9ef
+ec graph.current rgb:fff
+ec graph.false rgb:990000       # false line on visual graph mode
+ec graph.true rgb:376B4C        # true line on visual graph mode
+ec graph.trufae rgb:007D96      # lines in graph that does not have true or false
+ec help rgb:2F6F9F 0 italic              # color of help explanation text
+ec input rgb:888
+ec jmp rgb:376B4C 0 bold underline               # jmp instructions
+ec label rgb:66d9ef
+ec linehl rgb:42505e            # highlight color when using asm.highlight
+ec math rgb:761B48 0 bold              # math instructions like sub, add
+ec mov rgb:d9d8d7               # mov instructions
+ec nop rgb:a37acc               # nop instructions
+ec num rgb:761B48               # numbers
+ec offset rgb:2F6F9F            # offset in visual mode
+ec other rgb:4D4D4D
+ec pop rgb:ff7733               # pop instructions
+ec prompt rgb:2F6F9F 0 bold            # color for main r2 prompt
+ec push rgb:ff7733              # push instructions
+ec reg rgb:400080               # register names
+ec ret rgb:F92672 0 bold                  # ret opcode
+ec swi rgb:d66
+ec trap rgb:d66                 
+ec usrcmt rgb:007D96 0 bold           # user comment
+
+ec func_var rgb:400080      # var name in function
+ec func_var_type rgb:305F65 0 italic     # function variable
+ec func_var_addr magenta

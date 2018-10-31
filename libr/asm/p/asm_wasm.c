@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake, cgvwzq */
+/* radare - LGPL - Copyright 2017-2018 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -13,14 +13,14 @@
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	WasmOp wop = {0};
 	int ret = wasm_dis (&wop, buf, len);
-	strncpy (op->buf_asm, wop.txt, sizeof (op->buf_asm));
-	op->buf_asm[sizeof (op->buf_asm) - 1] = 0;
+	r_asm_op_set_asm (op, wop.txt);
 	op->size = ret;
 	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	op->size = wasm_asm (buf, op->buf, sizeof (op->buf));
+	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+	op->size = wasm_asm (buf, opbuf, 32); // XXX hardcoded opsize
 	return op->size;
 }
 
@@ -38,7 +38,7 @@ RAsmPlugin r_asm_plugin_wasm = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_wasm,
 	.version = R2_VERSION

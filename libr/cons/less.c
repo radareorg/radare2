@@ -30,7 +30,9 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 		if (m_addr) {
 			/* in case there's a CSI in the middle of this match*/
 			m_len = r_str_ansi_filter (m_addr, NULL, NULL, m_len);
-			if (m_len<0) m_len = 0;
+			if (m_len < 0) {
+				m_len = 0;
+			}
 			r_strpool_memcat (p, m_addr, m_len);
 			r_strpool_memcat (p, inv[1], linv[1]);
 			offset = m->rm_eo;
@@ -58,9 +60,13 @@ static void printpage (const char *line, int *index, RList **mla, int from, int 
 		color_line (line + index[i], p, mla[i]);
 		r_strpool_ansi_chop (p, w);
 		r_cons_reset_colors ();
-		r_cons_println (p->str);
+		if (i + 1 == to) {
+			r_cons_print (p->str);
+		} else {
+			r_cons_println (p->str);
+		}
 	}
-	r_strpool_free(p);
+	r_strpool_free (p);
 	r_cons_flush ();
 }
 
@@ -138,9 +144,11 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup (loff);
-		if (!clean) return 0;
+		if (!clean) {
+			return 0;
+		}
 		int *cpos = NULL;
-		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, 0);
+		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, -1);
 		m.rm_eo = slen = strlen (clean);
 		r_list_purge (mla[l]);
 		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)) {
@@ -148,9 +156,11 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 				break;
 			}
 			RRegexMatch *ms = R_NEW0 (RRegexMatch);
-			ms->rm_so = cpos[m.rm_so];
-			ms->rm_eo = cpos[m.rm_eo];
-			r_list_append (mla[l], ms);
+			if (ms && cpos) {
+				ms->rm_so = cpos[m.rm_so];
+				ms->rm_eo = cpos[m.rm_eo];
+				r_list_append (mla[l], ms);
+			}
 			m.rm_so = m.rm_eo;
 			m.rm_eo = slen;
 			f = true;
@@ -213,7 +223,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	w = h = 0;
 	while (ui) {
 		w = r_cons_get_size (&h);
-		to = R_MIN (lines_count, from + h - 1);
+		to = R_MIN (lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;
 		}
@@ -252,14 +262,19 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
-		case 'G': from = lines_count-1-h; break;
+		case 'G': from = lines_count-h; break;
 		case -1: // EOF
+		case '\x03': // ^C
 		case 'q': ui = 0; break;
 		case '\r':
 		case '\n':
 		case 'j': from++; break;
 		case 'J': from+=h; break;
-		case 'k': if (from>0) from--; break;
+		case 'k':
+			if (from > 0) {
+				from--;
+			}
+			break;
 		case 'K': from = (from>=h)? from-h: 0;
 			break;
 		case '/': 	/* search */
@@ -269,16 +284,21 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			from = R_MIN(lines_count - 1, from);
 			/* repeat last search if empty string is provided */
 			if (sreg[0]) { /* prepare for a new search */
-				if (rx) r_regex_free(rx);
+				if (rx) {
+					r_regex_free (rx);
+				}
 				rx = r_regex_new(sreg, "");
 			} else { /* we got an empty string */
 				from = next_match(from, mla, lines_count);
 				break;
 			}
-			if (!rx) break;
+			if (!rx) {
+				break;
+			}
 			/* find all occurences */
-			if (all_matches (p, rx, mla, lines, lines_count))
-				from = next_match(from, mla, lines_count);
+			if (all_matches (p, rx, mla, lines, lines_count)) {
+				from = next_match (from, mla, lines_count);
+			}
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
@@ -286,6 +306,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 				from = next_match (from, mla, lines_count);
 			}
 			break;
+		case 'N':
 		case 'p': 	/* previous match */
 			if (rx) {
 				from = prev_match(from, mla);
