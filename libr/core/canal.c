@@ -57,7 +57,7 @@ static RCore *mycore = NULL;
 
 // XXX: copypaste from anal/data.c
 #define MINLEN 1
-static int is_string (const ut8 *buf, int size, int *len) {
+static int is_string(const ut8 *buf, int size, int *len) {
 	int i;
 	if (size < 1) {
 		return 0;
@@ -403,17 +403,19 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		char *name = anal_fcn_autoname (core, fcn, 0);
-		if (name && (!strncmp (fcn->name, "fcn.", 4) || \
-				!strncmp (fcn->name, "sym.func.", 9))) {
+		if (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9)) {
 			RFlagItem *item = r_flag_get (core->flags, fcn->name);
 			if (item) {
-				r_flag_rename (core->flags, item, name);
-			} // else if there's no flag, we will use the function to resolve the name from off
-			free (fcn->name);
-			fcn->name = name;
-		} else {
-			free (name);
+				char *name = anal_fcn_autoname (core, fcn, 0);
+				if (name) {
+					r_flag_rename (core->flags, item, name);
+					free (fcn->name);
+					fcn->name = name;
+				}
+			} else {
+				// there should always be a flag for a function
+				r_warn_if_reached ();
+			}
 		}
 	}
 }
@@ -710,21 +712,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		f = r_flag_get_i2 (core->flags, fcn->addr);
 
-		// XXX sometimes renaming a function here is done wrong.
-#if 0
-		core->flags->space_strict = true;
-		//XXX fcn's API should handle this for us
-		f = r_flag_get_at (core->flags, fcn->addr, true);
-		if (f && f->name && strncmp (f->name, "sect", 4) &&
-		R_FREE (fcn->name);
-		    strncmp (f->name, "sym.func.", 9) &&
-		    strncmp (f->name, "loc", 3)) {
-			fcn->name = strdup (f->name);
-		} else {
-			f = r_flag_get_i2 (core->flags, fcn->addr);
-			if (f && f->name && strncmp (f->name, "sect", 4) &&
-			    strncmp (f->name, "sym.func.", 9)) {
-#else
 		if (f && f->name && strncmp (f->name, "sect", 4)) {
 			if (!strncmp (fcn->name, "loc.", 4)) {
 				R_FREE (fcn->name);
@@ -738,7 +725,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			R_FREE (fcn->name);
 			f = r_flag_get_i (core->flags, fcn->addr);
 			if (f && *f->name && strncmp (f->name, "sect", 4)) {
-#endif
 				fcn->name = strdup (f->name);
 			} else {
 
@@ -3357,7 +3343,7 @@ R_API int r_core_anal_all(RCore *core) {
 	return true;
 }
 
-R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize) {
+R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wordsize) {
 	RAnalData *d;
 	ut64 dstaddr = 0LL;
 	ut8 *buf = core->block;
@@ -3505,7 +3491,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	return as;
 }
 
-R_API void r_core_anal_stats_free (RCoreAnalStats *s) {
+R_API void r_core_anal_stats_free(RCoreAnalStats *s) {
 	free (s);
 }
 
@@ -3689,7 +3675,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	return hooks;
 }
 
-R_API void r_core_anal_undefine (RCore *core, ut64 off) {
+R_API void r_core_anal_undefine(RCore *core, ut64 off) {
 	RAnalFunction *f;
 	r_anal_fcn_del_locs (core->anal, off);
 	f = r_anal_get_fcn_in (core->anal, off, 0);
@@ -3704,7 +3690,7 @@ R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 
 /* Join function at addr2 into function at addr */
 // addr use to be core->offset
-R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
+R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	RListIter *iter;
 	ut64 min = 0;
 	ut64 max = 0;
@@ -3768,7 +3754,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	}
 }
 
-R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
+R_API void r_core_anal_auto_merge(RCore *core, ut64 addr) {
 	/* TODO: implement me */
 }
 
@@ -4345,7 +4331,7 @@ static bool printAnalPaths(RCoreAnalPaths *p) {
 	r_cons_printf ("\n");
 	return (p->count < 1 || --p->count > 0);
 }
-static void analPaths (RCoreAnalPaths *p);
+static void analPaths(RCoreAnalPaths *p);
 
 static void analPathFollow(RCoreAnalPaths *p, ut64 addr) {
 	if (addr == UT64_MAX) {
@@ -4357,7 +4343,7 @@ static void analPathFollow(RCoreAnalPaths *p, ut64 addr) {
 	}
 }
 
-static void analPaths (RCoreAnalPaths *p) {
+static void analPaths(RCoreAnalPaths *p) {
 	RAnalBlock *cur = p->cur;
 	if (!cur) {
 		// eprintf ("eof\n");

@@ -565,7 +565,7 @@ static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
 			|| strstr (fi->name, "entry") || strstr (fi->name, "main")));
 }
 
-static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, RAnalOp *jmp_aop) {
+static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, RAnalOp *jmp_aop) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = {0};
@@ -635,7 +635,7 @@ static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 	return true;
 }
 
-static bool try_get_delta_jmptbl_info (RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case) {
+static bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case) {
 	bool isValid = false, foundCmp = false;
 	int i;
 
@@ -1641,6 +1641,11 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
+	}
+	if (anal->flb.set && anal->flb.push_fs && anal->flb.pop_fs) {
+		anal->flb.push_fs (anal->flb.f, "functions");
+		anal->flb.set (anal->flb.f, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
+		anal->flb.pop_fs (anal->flb.f);
 	}
 	return true;
 }
