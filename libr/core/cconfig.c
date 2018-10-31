@@ -2169,6 +2169,13 @@ static int cb_anal_followdatarefs(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_jmpmid(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.jmpmid = node->i_value;
+	return true;
+}
+
 static int cb_anal_searchstringrefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2440,6 +2447,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmpabove", "true", &cb_anal_jmpabove, "Jump above function pointer");
 	SETCB ("anal.datarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
 	SETCB ("anal.brokenrefs", "false", &cb_anal_brokenrefs, "Follow function references as well if function analysis was failed");
+	SETCB ("anal.jmpmid", "false", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only) [WIP no loops]");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
 	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");

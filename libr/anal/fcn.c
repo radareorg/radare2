@@ -328,6 +328,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
+// TODO: overlapping basic blocks can cause problems here
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -883,6 +884,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		0
 	};
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
+	bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -912,11 +914,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	}
 	bb = bbget (fcn, addr);
 	if (bb) {
-		r_anal_fcn_split_bb (anal, fcn, bb, addr);
-		if (anal->opt.recont) {
-			return R_ANAL_RET_END;
+		if (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bb, addr)) {
+			r_anal_fcn_split_bb (anal, fcn, bb, addr);
+			if (anal->opt.recont) {
+				return R_ANAL_RET_END;
+			}
+			return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 		}
-		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
 	bb = appendBasicBlock (anal, fcn, addr);
@@ -972,7 +976,8 @@ repeat:
 		}
 		if (idx > 0 && !overlapped) {
 			bbg = bbget (fcn, addr + idx);
-			if (bbg && bbg != bb) {
+			if (bbg && bbg != bb
+			    && (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbg, addr + idx))) {
 				bb->jump = addr + idx;
 				overlapped = 1;
 				VERBOSE_ANAL eprintf("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
