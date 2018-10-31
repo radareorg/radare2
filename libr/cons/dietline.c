@@ -170,7 +170,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 	} else {
 		return -1;
 	}
-	if (slen < len) {
+	if (len > slen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {

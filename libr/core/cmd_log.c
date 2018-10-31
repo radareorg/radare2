@@ -11,6 +11,7 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
+	"LL", "", "lock screen",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
@@ -41,6 +42,51 @@ static const char *help_msg_T[] = {
 static void cmd_log_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, L);
 	DEFINE_CMD_DESCRIPTOR (core, T);
+}
+
+static void screenlock(RCore *core) {
+	//  char *pass = r_cons_input ("Enter new password: ");
+	char *pass = r_cons_password (Color_INVERT "Enter new password:"Color_INVERT_RESET);
+	if (!pass || !*pass) {
+		return;
+	}
+	char *again = r_cons_password (Color_INVERT "Type it again:"Color_INVERT_RESET);
+	if (!again || !*again) {
+		return;
+	}
+	if (strcmp (pass, again)) {
+		eprintf ("Password mismatch!\n");
+		return;
+	}
+	bool running = true;
+	r_cons_clear_buffer ();
+	ut64 begin = r_sys_now ();
+	ut64 last = UT64_MAX;
+	ut64 tries = 0;
+	do {
+		r_cons_clear00 ();
+		r_cons_printf ("Retries: %d\n", tries);
+		r_cons_printf ("Locked ts: %s\n", r_time_to_string (begin));
+		if (last != UT64_MAX) {
+			r_cons_printf ("Last try: %s\n", r_time_to_string (last));
+		}
+		r_cons_newline ();
+		r_cons_flush ();
+		char *msg = r_cons_password ("radare2 password: ");
+		if (msg && !strcmp (msg, pass)) {
+			running = false;
+		} else {
+			eprintf ("\nInvalid password.\n");
+			last = r_sys_now ();
+			tries++;
+		}
+		free (msg);
+		int n = r_num_rand (10) + 1;
+		r_sys_usleep (n * 100000);
+	} while (running);
+	r_cons_set_cup (true);
+	free (pass);
+	eprintf ("Unlocked!\n");
 }
 
 static int textlog_chat(RCore *core) {
@@ -188,6 +234,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'a': // "La"
 		r_core_cmd0 (core, "e asm.arch=??");
+		break;
+	case 'L': // "LL"
+		screenlock (core);
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"

@@ -2249,7 +2249,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	int fd = -1;
 	bool printHere = false;
 	sections = r_bin_get_sections (r->bin);
+#if LOAD_BSS_MALLOC
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
+#endif
 	SdbHt *dup_chk_ht = ht_new (NULL, dup_chk_free_kv, NULL);
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";

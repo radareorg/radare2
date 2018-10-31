@@ -142,3 +142,39 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 
 	return ret;
 }
+
+R_API const char *r_time_to_string (ut64 ts) {
+	static char str[128];
+#if __UNIX__
+        struct tm curt; /* current time */
+        time_t l;
+        char *week_str[7]= {
+		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        char *month_str[12]= {
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+        *str = 0;
+        l = ts >> 20;
+        localtime_r (&l, &curt);
+	// XXX localtime is affected by the timezone. 
+
+        if ((curt.tm_wday >= 0 && curt.tm_wday < 7)
+        &&  (curt.tm_mon >= 0 && curt.tm_mon < 12)) {
+		sprintf (str, "%s, %02d %s %d %02d:%02d:%02d GMT + %d",
+			week_str[curt.tm_wday],
+			curt.tm_mday,
+			month_str[curt.tm_mon],
+			curt.tm_year + 1900, curt.tm_hour,
+			curt.tm_min, curt.tm_sec, curt.tm_isdst);
+	}
+#else
+        *str = 0;
+#ifdef _MSC_VER
+#pragma message ("r_time_to_string NOT IMPLEMENTED FOR THIS PLATFORM")
+#else
+#warning r_time_to_string NOT IMPLEMENTED FOR THIS PLATFORM
+#endif
+#endif
+	return str;
+}
