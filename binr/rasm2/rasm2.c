@@ -235,7 +235,7 @@ static int rasm_show_help(int v) {
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
 			" -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
-			" -o [offset]  Set start address for code (default 0)\n"
+			" -o,-@ [addr] Set start address for code (default 0)\n"
 			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
 			" -p           Run SPP over input for assembly\n"
 			" -q           quiet mode\n"
@@ -507,7 +507,7 @@ int main (int argc, char *argv[]) {
 		bits = r_num_math (NULL, r2bits);
 		free (r2bits);
 	}
-	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:Lo:O:pqrs:vw")) != -1) {
+	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vw")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -563,6 +563,7 @@ int main (int argc, char *argv[]) {
 			rasm2_list (a, argv[optind]);
 			ret = 1;
 			goto beach;
+		case '@':
 		case 'o':
 			offset = r_num_math (NULL, optarg);
 			break;
