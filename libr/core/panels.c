@@ -99,7 +99,7 @@ static const char *menus_Analyze[] = {
 };
 
 static const char *menus_Help[] = {
-	"Fortune", "Commands", "2048", "License", "About",
+	"Fortune", "Commands", "2048", "License", "Lock Screen", "About",
 	NULL
 };
 
@@ -1796,6 +1796,12 @@ static int gameCb(void *user) {
 	return 0;
 }
 
+static int screenLock(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "LL");
+	return 0;
+}
+
 static int licenseCb(void *user) {
 	r_cons_message ("Copyright 2006-2018 - pancake - LGPL");
 	return 0;
@@ -2067,6 +2073,8 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Help[i], gameCb);
 		} else if (!strcmp (menus_Help[i], "License")) {
 			addMenu (core, parent, menus_Help[i], licenseCb);
+		} else if (!strcmp (menus_Help[i], "Lock Screen")) {
+			addMenu (core, parent, menus_Help[i], screenLock);
 		} else if (!strcmp (menus_Help[i], "About")) {
 			addMenu (core, parent, menus_Help[i], aboutCb);
 		}
