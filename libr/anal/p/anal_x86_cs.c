@@ -2784,6 +2784,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 #endif
 	}
 	//cs_close (&handle);
+	r_strbuf_fini (&op->opex);
 	return op->size;
 }
 
