@@ -618,13 +618,14 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_bb_is_in_offset (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
+							r_anal_op_free (jmp_op);
 							break;
 						}
 						jmp_addr += jmp_op->size;
 						r_anal_op_free (jmp_op);
 					}
 					int cond = jmp? cond_invert (next_op->cond): next_op->cond;
-					var_add_range (anal, var, cond, aop.ptr);
+					var_add_range (anal, var, cond, aop.val);
 				}
 			}
 			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? true: false;

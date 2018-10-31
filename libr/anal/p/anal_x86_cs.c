@@ -2172,7 +2172,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->stackptr = regsz;
 				op->type |= R_ANAL_OP_TYPE_REG;
 			}
-			op->ptr = INSOP(1).imm;
+			if (INSOP(1).type == X86_OP_IMM) {
+				op->val = INSOP(1).imm;
+			}
 			break;
 		default:
 			switch (INSOP(1).type) {
@@ -2185,6 +2187,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 					op->type |= R_ANAL_OP_TYPE_REG;
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
+				}
+				if (INSOP(0).type == X86_OP_IMM) {
+					op->val = INSOP(0).imm;
 				}
 				break;
 			case X86_OP_IMM:
