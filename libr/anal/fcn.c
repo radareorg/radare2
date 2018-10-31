@@ -328,7 +328,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
-// TODO: overlapping basic blocks can cause problems here
+// TODO: use this function if anal.jmpmid == false
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
