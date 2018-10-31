@@ -75,6 +75,8 @@ typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
+typedef bool (*RFlagPopSpace)(RFlag *f);
+typedef bool (*RFlagPushSpace)(RFlag *f, const char *name);
 
 typedef struct r_flag_bind_t {
 	int init;
@@ -84,6 +86,8 @@ typedef struct r_flag_bind_t {
 	RFlagGetAt get_at;
 	RFlagSet set;
 	RFlagSetSpace set_fs;
+	RFlagPushSpace push_fs;
+	RFlagPopSpace pop_fs;
 } RFlagBind;
 
 #define r_flag_bind_init(x) memset(&x,0,sizeof(x))

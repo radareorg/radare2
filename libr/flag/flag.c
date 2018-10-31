@@ -723,6 +723,8 @@ R_API void r_flag_bind(RFlag *f, RFlagBind *fb) {
 	fb->get_at = r_flag_get_at;
 	fb->set = r_flag_set;
 	fb->set_fs = r_flag_space_set;
+	fb->push_fs = r_flag_space_push;
+	fb->pop_fs = r_flag_space_pop;
 }
 
 R_API int r_flag_count(RFlag *f, const char *glob) {
