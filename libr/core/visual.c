@@ -24,6 +24,39 @@ static const char *printfmtSingle[] = {
 	"pxw", "pxx", "pxA", "pss", "prc", "pxa", "pxr"
 };
 
+#define PRINT_HEX_FORMATS 6
+static const char *printHexFormats[PRINT_HEX_FORMATS] = {
+	"px", "pxa", "pxw", "pxq", "pxr", "dbt;"
+};
+static int currentHexFormat = 0;
+static void nextPrintCommand() {
+	currentHexFormat++;
+	currentHexFormat %= PRINT_HEX_FORMATS;
+}
+static void prevPrintCommand() {
+	currentHexFormat--;
+	if (currentHexFormat < 0) {
+		currentHexFormat = 0;
+	}
+}
+
+static const char *stackPrintCommand(RCore *core) {
+	if (currentHexFormat == 0) {
+		if (r_config_get_i (core->config, "dbg.slow")) {
+			return "pxr";
+		}
+		if (r_config_get_i (core->config, "stack.bytes")) {
+			return "px";
+		}
+		switch (core->assembler->bits) {
+		case 64: return "pxq"; break;
+		case 32: return "pxw"; break;
+		}
+		return "px";
+	}
+	return printHexFormats[currentHexFormat % PRINT_HEX_FORMATS];
+}
+
 static const char *printfmtColumns[] = {
 	"pCx", "pCd $r-1",
 	"pCD",
@@ -1008,8 +1041,8 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	int idx = 0;
 	char cstr[32];
 	ut64 addr = core->offset;
-		int printMode = 0;
-		int lastPrintMode = 3;
+	int printMode = 0;
+	int lastPrintMode = 3;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
@@ -2484,10 +2517,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'p':
-			setprintmode (core, 1);
+			if (core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->print->cur_enabled) {
+				nextPrintCommand ();
+			} else {
+				setprintmode (core, 1);
+			}
 			break;
 		case 'P':
-			setprintmode (core, -1);
+			if (core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->print->cur_enabled) {
+				prevPrintCommand ();
+			} else {
+				setprintmode (core, -1);
+			}
 			break;
 		case '%':
 			if (core->print->cur_enabled) {
@@ -3111,7 +3152,6 @@ static void visual_refresh(RCore *core) {
 		}
 		r_core_visual_title (core, color);
 	}
-
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
 		// disable screen bounds when it's a user-defined command
@@ -3121,9 +3161,7 @@ static void visual_refresh(RCore *core) {
 	} else {
 		if (splitView) {
 			static char debugstr[512];
-			const int ref = r_config_get_i (core->config, "dbg.slow");
-			const int bytes = r_config_get_i (core->config, "stack.bytes");
-			char *pxw = NULL;
+			const char *pxw = NULL;
 			int h = r_num_get (core->num, "$r");
 			int size = (h * 16) / 2;
 			switch (core->printidx) {
@@ -3132,17 +3170,7 @@ static void visual_refresh(RCore *core) {
 				pxw = "pd";
 				break;
 			default:
-				if (ref) {
-					pxw = "pxr";
-				} else if (bytes) {
-					pxw = "px";
-				} else {
-					switch (core->assembler->bits) {
-					case 64: pxw = "pxq"; break;
-					case 32: pxw = "pxw"; break;
-					default: pxw = "px"; break;
-					}
-				}
+				pxw = stackPrintCommand (core);
 			}
 			snprintf (debugstr, sizeof (debugstr),
 					"?0;%s %d @ %"PFMT64d";cl;"
@@ -3262,40 +3290,29 @@ dodo:
 		r_cons_show_cursor (false);
 		r_cons_set_raw (1);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
-		const int bytes = r_config_get_i (core->config, "stack.bytes");
 
 		if (printfmt == printfmtSingle && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
+			const char *reg = r_config_get (core->config, "stack.reg");
 			const int size = r_config_get_i (core->config, "stack.size");
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
 
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;ssr SP;%s;?1;%s;?1;"
-					"ss tmp;f-tmp;pd $r", cmdvhex,
+					"?0;f tmp;ssr %s;%s;?1;%s;?1;"
+					"ss tmp;f-tmp;pd $r", reg, cmdvhex,
 					ref? "drr": "dr=");
 				debugstr[sizeof (debugstr) - 1] = 0;
 			} else {
-				const char *pxw;
-				if (ref) {
-					pxw = "pxr";
-				} else if (bytes) {
-					pxw = "px";
-				} else {
-					switch (core->assembler->bits) {
-					case 64: pxw = "pxq"; break;
-					case 32: pxw = "pxw"; break;
-					default: pxw = "px"; break;
-					}
-				}
+				const char *pxw = stackPrintCommand (core);
 				const char sign = (delta < 0)? '+': '-';
 				const int absdelta = R_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
-					"diq;?0;f tmp;ssr SP;%s %d@$$%c%d;"
+					"diq;?0;f tmp;ssr %s;%s %d@$$%c%d;"
 					"?1;%s;"
 					"?1;ss tmp;f-tmp;afal;pd $r",
-					pxa? "pxa": pxw, size, sign, absdelta,
+					reg, pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}
 			printfmt[2] = debugstr;

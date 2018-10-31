@@ -2752,6 +2752,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), "Default path for projects");
 #endif
 	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
+	SETPREF ("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETPREF ("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF ("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI ("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");
