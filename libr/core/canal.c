@@ -412,7 +412,10 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 					free (fcn->name);
 					fcn->name = name;
 				}
-			} // else if there's no flag, we will use the function to resolve the name from off
+			} else {
+				// there should always be a flag for a function
+				r_warn_if_reached ();
+			}
 		}
 	}
 }
@@ -709,21 +712,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		f = r_flag_get_i2 (core->flags, fcn->addr);
 
-		// XXX sometimes renaming a function here is done wrong.
-#if 0
-		core->flags->space_strict = true;
-		//XXX fcn's API should handle this for us
-		f = r_flag_get_at (core->flags, fcn->addr, true);
-		if (f && f->name && strncmp (f->name, "sect", 4) &&
-		R_FREE (fcn->name);
-		    strncmp (f->name, "sym.func.", 9) &&
-		    strncmp (f->name, "loc", 3)) {
-			fcn->name = strdup (f->name);
-		} else {
-			f = r_flag_get_i2 (core->flags, fcn->addr);
-			if (f && f->name && strncmp (f->name, "sect", 4) &&
-			    strncmp (f->name, "sym.func.", 9)) {
-#else
 		if (f && f->name && strncmp (f->name, "sect", 4)) {
 			if (!strncmp (fcn->name, "loc.", 4)) {
 				R_FREE (fcn->name);
@@ -737,7 +725,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			R_FREE (fcn->name);
 			f = r_flag_get_i (core->flags, fcn->addr);
 			if (f && *f->name && strncmp (f->name, "sect", 4)) {
-#endif
 				fcn->name = strdup (f->name);
 			} else {
 
