@@ -699,44 +699,39 @@ R_API int r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd);
 void r_bin_section_free(RBinSection *bs);
 
 /* obj.c */
-R_API void r_bin_object_free(void /*RBinObject*/ *o_);
-R_API ut64 r_bin_object_get_baddr(RBinObject *o);
-R_API void r_bin_object_filter_strings(RBinObject *bo);
-R_API void r_bin_object_set_baddr(RBinObject *o, ut64 baddr);
-R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
+void r_bin_object_free(void /*RBinObject*/ *o_);
+ut64 r_bin_object_get_baddr(RBinObject *o);
+void r_bin_object_filter_strings(RBinObject *bo);
+void r_bin_object_set_baddr(RBinObject *o, ut64 baddr);
+RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
-R_API RBinObject *r_bin_object_get_cur(RBin *bin);
-R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
+RBinObject *r_bin_object_get_cur(RBin *bin);
+RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
 R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id);
-R_API void r_bin_object_delete_items(RBinObject *o);
+void r_bin_object_delete_items(RBinObject *o);
 
 R_API const char *r_bin_entry_type_string(int etype);
 
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
 R_API int r_bin_demangle_type(const char *str);
-R_API const char *r_bin_lang_tostring (int lang);
+const char *r_bin_lang_tostring(int lang);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
-R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
-R_API bool r_bin_lang_objc(RBinFile *binfile);
-R_API bool r_bin_lang_swift(RBinFile *binfile);
-R_API bool r_bin_lang_cxx(RBinFile *binfile);
-R_API bool r_bin_lang_msvc(RBinFile *binfile);
-R_API bool r_bin_lang_dlang(RBinFile *binfile);
-R_API bool r_bin_lang_rust(RBinFile *binfile);
+int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
+bool r_bin_lang_swift(RBinFile *binfile);
 R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact);
 
 // TODO: rename to r_bin_file_get_class() etc
-R_API RBinClass *r_bin_class_get(RBinFile *binfile, const char *name);
-R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view);
-R_API void r_bin_class_free(RBinClass *c);
-R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs);
-R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name);
-R_API RList *r_bin_classes_from_symbols(RBinFile *bf, RBinObject *o);
+RBinClass *r_bin_class_get(RBinFile *binfile, const char *name);
+RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view);
+void r_bin_class_free(RBinClass *c);
+RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs);
+void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name);
+RList *r_bin_classes_from_symbols(RBinFile *bf, RBinObject *o);
 
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 

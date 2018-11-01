@@ -259,7 +259,7 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
-R_API RList *r_bin_classes_from_symbols(RBinFile *bf, RBinObject *o) {
+RList *r_bin_classes_from_symbols(RBinFile *bf, RBinObject *o) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	RList *symbols = o->symbols;

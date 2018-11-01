@@ -1276,7 +1276,7 @@ R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	return o ? o->classes : NULL;
 }
 
-R_API void r_bin_class_free(RBinClass *c) {
+void r_bin_class_free(RBinClass *c) {
 	free (c->name);
 	free (c->super);
 	r_list_free (c->methods);
@@ -1284,7 +1284,7 @@ R_API void r_bin_class_free(RBinClass *c) {
 	free (c);
 }
 
-R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
+RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 				  const char *super, int view) {
 	if (!binfile || !binfile->o) {
 		return NULL;
@@ -1319,7 +1319,7 @@ R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	return c;
 }
 
-R_API RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
+RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 	r_return_val_if_fail (binfile && binfile->o && name, NULL);
 
 	RBinClass *c;
@@ -1333,7 +1333,7 @@ R_API RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 	return NULL;
 }
 
-R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
+RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	r_return_val_if_fail (binfile, NULL);
 
 	RBinClass *c = r_bin_class_get (binfile, classname);
@@ -1360,7 +1360,7 @@ R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classnam
 	return sym;
 }
 
-R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
+void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
 	//TODO: add_field into class
 	//eprintf ("TODO add field: %s \n", name);
 }

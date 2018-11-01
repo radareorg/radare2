@@ -27,7 +27,6 @@ OBJS+=mangling/demangler.o
 OBJS+=mangling/microsoft_demangle.o
 OBJS+=mangling/objc.o mangling/cxx.o mangling/msvc.o
 OBJS+=mangling/swift.o mangling/swift-sd.o
-OBJS+=mangling/dlang.o
 OBJS+=mangling/java.o
 OBJS+=mangling/rust.o
 OBJS+=pdb/pdb_downloader.o pdb/omap.o pdb/stream_pe.o pdb/gdata.o

@@ -34,7 +34,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	return NULL;
 }
 
-R_API const char *r_bin_lang_tostring (int lang) {
+const char *r_bin_lang_tostring (int lang) {
 	switch (lang) {
 	case R_BIN_NM_SWIFT:
 		return "swift";
