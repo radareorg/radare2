@@ -7244,6 +7244,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (afta)");
 					r_core_cmd0 (core, "afta");
 					r_print_rowlog_done (core->print, oldstr);
+					oldstr = r_print_rowlog (core->print, "analyze data in function gaps (adfg)");
+					r_core_cmd0 (core, ".adfg");
+					r_print_rowlog_done (core->print, oldstr);
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
 				}
