@@ -1526,7 +1526,7 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
-R_API void r_bin_section_free(RBinSection *bs) {
+void r_bin_section_free(RBinSection *bs) {
 	free (bs->format);
 	free (bs);
 }
