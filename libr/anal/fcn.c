@@ -348,6 +348,7 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 static RAnalBlock **bbget_all(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
+	// TODO: remove need for malloc
 	RAnalBlock **bbs = malloc (sizeof (RAnalBlock *) * (r_list_length (fcn->bbs) + 1));
 	RAnalBlock **ptr;
 	r_return_val_if_fail (bbs, NULL);
