@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
 
 #include <r_bin.h>
+#include <bin_private.h>
 
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048

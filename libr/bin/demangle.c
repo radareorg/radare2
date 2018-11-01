@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2018 - pancake */
 
 #include <r_bin.h>
+#include <bin_private.h>
 #include <cxx/demangle.h>
 
 R_API void r_bin_demangle_list(RBin *bin) {

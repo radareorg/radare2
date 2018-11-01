@@ -7,6 +7,7 @@
 #include <r_bin.h>
 #include <r_io.h>
 #include <r_cons.h>
+#include <bin_private.h>
 #include "elf/elf.h"
 
 static RBinInfo* info(RBinFile *bf);

@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <bin_private.h>
 #include "psxexe/psxexe.h"
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
