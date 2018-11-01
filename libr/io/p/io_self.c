@@ -518,27 +518,18 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 }
 #elif __BSD__
 bool bsd_proc_vmmaps(RIO *io, int pid) {
-	size_t size;
 #if __FreeBSD__
+	size_t size;
 	bool ret = false;
 	int mib[4] = {
 		CTL_KERN, KERN_PROC, KERN_PROC_VMMAP, pid
 	};
 	int s = sysctl (mib, 4, NULL, &size, NULL, 0);
-#elif __OpenBSD__
-	int mib[3] = {
-		CTL_KERN, KERN_PROC_VMMAP, pid
-	};
-	size = sizeof (struct kinfo_vmentry);
-	struct kinfo_vmentry entry = { .kve_start = 0 };
-	ut64 endq = 0;
-	int s = sysctl (mib, 3, &entry, &size, NULL, 0);
-#endif
 	if (s == -1) {
 		eprintf ("sysctl failed: %s\n", strerror (errno));
 		return false;
 	}
-#if __FreeBSD__
+
 	ut8 *p = malloc (size);
 	if (p) {
 		size = size * 4 / 3;
@@ -612,6 +603,17 @@ exit:
 	free (p);
 	return ret;
 #elif __OpenBSD__
+	size_t size = sizeof (struct kinfo_vmentry);
+	struct kinfo_vmentry entry = { .kve_start = 0 };
+	ut64 endq = 0;
+	int mib[3] = {
+		CTL_KERN, KERN_PROC_VMMAP, pid
+	};
+	int s = sysctl (mib, 3, &entry, &size, NULL, 0);
+	if (s == -1) {
+		eprintf ("sysctl failed: %s\n", strerror (errno));
+		return false;
+	}
 	while (sysctl (mib, 3, &entry, &size, NULL, 0) != -1) {
 		int perm = 0;
 		if (entry.kve_end == endq) {
@@ -641,6 +643,8 @@ exit:
 	}
 
 	return true;
+#elif __NetBSD__
+#warning "Not implemented yet"
 #endif
 
 }
