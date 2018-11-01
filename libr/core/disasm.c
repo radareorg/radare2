@@ -911,6 +911,17 @@ static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	ds->opstr = asm_str? asm_str: source;
 }
 
+static char *get_op_ireg (void *user, ut64 addr) {
+	RCore *core = (RCore *)user;
+	char *res = NULL;
+	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+	if (op && op->ireg) {
+		res = strdup(op->ireg);
+	}
+	r_anal_op_free (op);
+	return res;
+}
+
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	if (!ds->opstr) {
@@ -925,6 +936,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->varlist = r_anal_var_list_dynamic;
+		core->parser->get_op_ireg = get_op_ireg;
 		r_parse_varsub (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
