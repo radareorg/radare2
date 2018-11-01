@@ -328,7 +328,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
-// TODO: use this function if anal.jmpmid == false
+// Use this function if anal.jmpmid == false
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -342,6 +342,30 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 		}
 	}
 	return NULL;
+}
+
+// Use this function if anal.jmpmid == true
+static RAnalBlock **bbget_all(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	RAnalBlock **bbs = malloc (sizeof (RAnalBlock *) * (r_list_length (fcn->bbs) + 1));
+	RAnalBlock **ptr;
+	r_return_val_if_fail (bbs, NULL);
+	ptr = bbs;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		ut64 eaddr = bb->addr + bb->size;
+		if ((bb->addr >= eaddr && addr == bb->addr)
+		    || (addr >= bb->addr && addr < eaddr)) {
+			*ptr++ = bb;
+		}
+	}
+	if (ptr == bbs) {
+		free (bbs);
+		return NULL;
+	} else {
+		*ptr = NULL;
+		return bbs;
+	}
 }
 
 static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
@@ -866,6 +890,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	const int noncode = anal->opt.noncode;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	RAnalBlock *bb = NULL;
+	RAnalBlock **bbs = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
 	int overlapped = 0;
@@ -912,15 +937,19 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-	bb = bbget (fcn, addr); // TODO: bbget_all()
+	if (anal->opt.jmpmid && x86) {
+		bbs = bbget_all (fcn, addr);
+		bb = bbs ? r_anal_bb_op_starts_at_which (bbs, addr) : NULL;
+		free (bbs);
+	} else {
+		bb = bbget (fcn, addr);
+	}
 	if (bb) {
-		if (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bb, addr)) {
-			r_anal_fcn_split_bb (anal, fcn, bb, addr);
-			if (anal->opt.recont) {
-				return R_ANAL_RET_END;
-			}
-			return R_ANAL_RET_ERROR; // MUST BE NOT DUP
+		r_anal_fcn_split_bb (anal, fcn, bb, addr);
+		if (anal->opt.recont) {
+			return R_ANAL_RET_END;
 		}
+		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
 	bb = appendBasicBlock (anal, fcn, addr);
@@ -975,9 +1004,14 @@ repeat:
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = bbget (fcn, addr + idx); // TODO: bbget_all()
-			if (bbg && bbg != bb
-			    && (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbg, addr + idx))) {
+			if (anal->opt.jmpmid && x86) {
+				bbs = bbget_all (fcn, addr + idx);
+				bbg = bbs ? r_anal_bb_op_starts_at_which (bbs, addr + idx) : NULL;
+				free (bbs);
+			} else {
+				bbg = bbget (fcn, addr + idx);
+			}
+			if (bbg && bbg != bb) {
 				bb->jump = addr + idx;
 				overlapped = 1;
 				VERBOSE_ANAL eprintf("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
@@ -1859,14 +1893,16 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
 	RListIter *iter;
+	bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	if (addr == UT64_MAX) {
 		return 0;
 	}
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	r_list_foreach (fcn->bbs, iter, bbi) { // TODO: bbi should already been given as a parameter
 		if (addr == bbi->addr) {
 			return R_ANAL_RET_DUP;
 		}
-		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
+		if (addr > bbi->addr && addr < bbi->addr + bbi->size
+		    && (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, addr))) {
 			int new_bbi_instr, i;
 			bb = appendBasicBlock (anal, fcn, addr);
 			bb->size = bbi->addr + bbi->size - addr;

@@ -1315,6 +1315,7 @@ R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr);
+R_API RAnalBlock *r_anal_bb_op_starts_at_which(RAnalBlock **bbs, ut64 addr);
 R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb);
 

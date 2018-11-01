@@ -285,3 +285,18 @@ R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
 	}
 	return false;
 }
+
+/* return the first basic block that has an instruction starting at the given
+ * address, or NULL if not found. */
+R_API RAnalBlock *r_anal_bb_op_starts_at_which(RAnalBlock **bbs, ut64 addr) {
+	RAnalBlock **ptr;
+	r_return_val_if_fail (bbs, NULL);
+	ptr = bbs;
+	while (*ptr) {
+		if (r_anal_bb_op_starts_at (*ptr, addr)) {
+			return *ptr;
+		}
+		ptr++;
+	}
+	return NULL;
+}
