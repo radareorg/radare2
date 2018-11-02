@@ -363,10 +363,9 @@ static RAnalBlock **bbget_all(RAnalFunction *fcn, ut64 addr) {
 	if (ptr == bbs) {
 		free (bbs);
 		return NULL;
-	} else {
-		*ptr = NULL;
-		return bbs;
 	}
+	*ptr = NULL;
+	return bbs;
 }
 
 static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
