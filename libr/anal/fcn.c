@@ -351,7 +351,9 @@ static RAnalBlock **bbget_all(RAnalFunction *fcn, ut64 addr) {
 	// TODO: remove need for malloc
 	RAnalBlock **bbs = malloc (sizeof (RAnalBlock *) * (r_list_length (fcn->bbs) + 1));
 	RAnalBlock **ptr;
-	r_return_val_if_fail (bbs, NULL);
+	if (!bbs) {
+		return NULL;
+	}
 	ptr = bbs;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
