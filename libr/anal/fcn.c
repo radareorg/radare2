@@ -328,46 +328,18 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
-// Use this function if anal.jmpmid == false
-static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
+static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr, bool jumpmid) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
-		if (bb->addr >= eaddr && addr == bb->addr) {
-			return bb;
-		}
-		if ((addr >= bb->addr) && (addr < eaddr)) {
+		if (((bb->addr >= eaddr && addr == bb->addr)
+		     || (addr >= bb->addr && addr < eaddr))
+		    && (!jumpmid || r_anal_bb_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}
 	return NULL;
-}
-
-// Use this function if anal.jmpmid == true
-static RAnalBlock **bbget_all(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	// TODO: remove need for malloc
-	RAnalBlock **bbs = malloc (sizeof (RAnalBlock *) * (r_list_length (fcn->bbs) + 1));
-	RAnalBlock **ptr;
-	if (!bbs) {
-		return NULL;
-	}
-	ptr = bbs;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		ut64 eaddr = bb->addr + bb->size;
-		if ((bb->addr >= eaddr && addr == bb->addr)
-		    || (addr >= bb->addr && addr < eaddr)) {
-			*ptr++ = bb;
-		}
-	}
-	if (ptr == bbs) {
-		free (bbs);
-		return NULL;
-	}
-	*ptr = NULL;
-	return bbs;
 }
 
 static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
@@ -892,7 +864,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	const int noncode = anal->opt.noncode;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	RAnalBlock *bb = NULL;
-	RAnalBlock **bbs = NULL;
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
 	int overlapped = 0;
@@ -939,13 +910,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-	if (anal->opt.jmpmid && x86) {
-		bbs = bbget_all (fcn, addr);
-		bb = bbs ? r_anal_bb_op_starts_at_which (bbs, addr) : NULL;
-		free (bbs);
-	} else {
-		bb = bbget (fcn, addr);
-	}
+	bb = bbget (fcn, addr, anal->opt.jmpmid && x86);
 	if (bb) {
 		r_anal_fcn_split_bb (anal, fcn, bb, addr);
 		if (anal->opt.recont) {
@@ -1006,13 +971,7 @@ repeat:
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			if (anal->opt.jmpmid && x86) {
-				bbs = bbget_all (fcn, addr + idx);
-				bbg = bbs ? r_anal_bb_op_starts_at_which (bbs, addr + idx) : NULL;
-				free (bbs);
-			} else {
-				bbg = bbget (fcn, addr + idx);
-			}
+			bbg = bbget (fcn, addr + idx, anal->opt.jmpmid && x86);
 			if (bbg && bbg != bb) {
 				bb->jump = addr + idx;
 				if (anal->opt.jmpmid && x86) {
