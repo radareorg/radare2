@@ -1014,6 +1014,9 @@ repeat:
 			}
 			if (bbg && bbg != bb) {
 				bb->jump = addr + idx;
+				if (anal->opt.jmpmid && x86) {
+					r_anal_fcn_split_bb (anal, fcn, bbg, addr + idx);
+				}
 				overlapped = 1;
 				VERBOSE_ANAL eprintf("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
 				// return R_ANAL_RET_END;
