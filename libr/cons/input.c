@@ -156,6 +156,23 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case '1':
 			ch = r_cons_readchar ();
 			switch (ch) {
+			// Support st/st-256color term and others
+			// for shift+arrows
+			case ';': // arrow+mod
+				ch = r_cons_readchar ();
+				switch (ch) {
+				case '2': // arrow+shift
+					ch = r_cons_readchar ();
+					switch (ch) {
+					case 'A': ch = 'K'; break;
+					case 'B': ch = 'J'; break;
+					case 'C': ch = 'L'; break;
+					case 'D': ch = 'H'; break;
+					}
+					break;
+				// add other modifiers
+				}
+				break;
 			case ':': // arrow+shift
 				ch = r_cons_readchar ();
 				ch = r_cons_readchar ();
@@ -201,7 +218,12 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case 'B': ch = 'j'; break; // down
 		case 'C': ch = 'l'; break; // right
 		case 'D': ch = 'h'; break; // left
-		case 'M': ch = parseMouseEvent(); break;
+		// Support rxvt-unicode term for shift+arrows
+		case 'a': ch = 'K'; break; // shift+up
+		case 'b': ch = 'J'; break; // shift+down
+		case 'c': ch = 'L'; break; // shift+right
+		case 'd': ch = 'H'; break; // shift+left
+		case 'M': ch = parseMouseEvent (); break;
 		}
 		break;
 	}
