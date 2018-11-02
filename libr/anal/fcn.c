@@ -334,7 +334,7 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr, bool jumpmid) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (((bb->addr >= eaddr && addr == bb->addr)
-		     || (addr >= bb->addr && addr < eaddr))
+		     || r_anal_bb_is_in_offset (bb, addr))
 		    && (!jumpmid || r_anal_bb_op_starts_at (bb, addr))) {
 			return bb;
 		}
