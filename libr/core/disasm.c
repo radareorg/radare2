@@ -916,7 +916,7 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	char *res = NULL;
 	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
 	if (op && op->ireg) {
-		res = strdup(op->ireg);
+		res = strdup (op->ireg);
 	}
 	r_anal_op_free (op);
 	return res;
