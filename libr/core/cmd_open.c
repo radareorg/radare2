@@ -880,8 +880,8 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		return;
 	}
 	int bits = core->assembler->bits;
-	char *oldname = r_file_abspath (binpath);
-	char *newfile = r_str_newf ("dbg://%s %s", oldname, args);
+	char *escaped_path = r_str_arg_escape (binpath);
+	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);
 	char *newfile2 = strdup (newfile);
 	desc->uri = newfile;
 	desc->referer = NULL;
@@ -905,7 +905,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	}
 #endif
 	r_core_cmd0 (core, "sr PC");
-	free (oldname);
+	free (escaped_path);
 	free (binpath);
 	free (newfile);
 }
