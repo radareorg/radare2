@@ -3173,6 +3173,7 @@ static ut32 tmp_get_contsize(RAnalFunction *f) {
 
 static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
+	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
 	core->anal->gp = saved_gp;
 	if (fromHere) {
 		if (b->addr < core->offset) {
@@ -3197,9 +3198,11 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (b->parent_stackptr != INT_MAX) {
 		core->anal->stackptr = b->parent_stackptr;
 	}
+	r_config_set_i (core->config, "asm.bb.middle", false);
 	p_type == 'D'
 	? r_core_cmdf (core, "pD %d @0x%"PFMT64x, b->size, b->addr)
 	: r_core_cmdf (core, "pI %d @0x%"PFMT64x, b->size, b->addr);
+	r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {

@@ -2099,14 +2099,16 @@ R_API int r_anal_fcn_count(RAnal *anal, ut64 from, ut64 to) {
 
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
-R_API RAnalBlock *r_anal_fcn_bbget_in(RAnalFunction *fcn, ut64 addr) {
+R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	if (!fcn || addr == UT64_MAX) {
 		return NULL;
 	}
+	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
+		if (addr >= bb->addr && addr < (bb->addr + bb->size)
+		    && (!anal->opt.jmpmid || r_anal_bb_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}

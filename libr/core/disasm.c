@@ -1383,7 +1383,7 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 	for (i = 1; i < ds->oplen; i++) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
 		if (fcn) {
-			RAnalBlock *bb = r_anal_fcn_bbget_in (fcn, ds->at + i);
+			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at + i);
 			if (bb && bb->addr > ds->at) {
 				ds->hasMidbb = true;
 				return bb->addr - ds->at;
@@ -4897,7 +4897,10 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			RAnalBlock *bb = r_anal_fcn_bbget_in (ds->pdf, ds->at);
+			bool orig_jmpmid = core->anal->opt.jmpmid; // TODO: to be removed later
+			core->anal->opt.jmpmid = false;            //
+			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at);
+			core->anal->opt.jmpmid = orig_jmpmid;
 			if (!bb) {
 				inc = ds->oplen;
 				r_anal_op_fini (&ds->analop);
