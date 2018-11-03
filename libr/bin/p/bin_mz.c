@@ -4,10 +4,10 @@
 #include <r_bin.h>
 #include "mz/mz.h"
 
-static Sdb * get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RBinFile *bf) {
 	const struct r_bin_mz_obj_t *bin;
 	if (bf && bf->o && bf->o->bin_obj) {
-		bin = (struct r_bin_mz_obj_t *) bf->o->bin_obj;
+		bin = (struct r_bin_mz_obj_t *)bf->o->bin_obj;
 		if (bin && bin->kv) {
 			return bin->kv;
 		}
@@ -18,7 +18,7 @@ static Sdb * get_sdb(RBinFile *bf) {
 static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	st16 cs = r_read_ble16 (buf + 0x16, false);
 	ut16 ip = r_read_ble16 (buf + 0x14, false);
-	ut32 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
+	ut32 pa = ((r_read_ble16 (buf + 8, false) + cs) << 4) + ip;
 
 	/* A minimal MZ header is 0x1B bytes.  Header length is measured in
 	 * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
@@ -52,16 +52,16 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (length > new_exe_header_offset + 2) {
 		// check for PE
 		if (!memcmp (buf + new_exe_header_offset, "PE", 2) &&
-		    (length > new_exe_header_offset + 0x20) &&
-		    !memcmp (buf + new_exe_header_offset + 0x18, "\x0b\x01", 2)) {
+			(length > new_exe_header_offset + 0x20) &&
+			!memcmp (buf + new_exe_header_offset + 0x18, "\x0b\x01", 2)) {
 			return false;
 		}
 
 		// Check for New Executable, LE/LX or Phar Lap executable
 		if (!memcmp (buf + new_exe_header_offset, "NE", 2) ||
-		    !memcmp (buf + new_exe_header_offset, "LE", 2) ||
-		    !memcmp (buf + new_exe_header_offset, "LX", 2) ||
-		    !memcmp (buf + new_exe_header_offset, "PL", 2)) {
+			!memcmp (buf + new_exe_header_offset, "LE", 2) ||
+			!memcmp (buf + new_exe_header_offset, "LX", 2) ||
+			!memcmp (buf + new_exe_header_offset, "PL", 2)) {
 			if (!checkEntrypoint (buf, length)) {
 				return false;
 			}
@@ -77,7 +77,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz,
-		ut64 loadaddr, Sdb *sdb) {
+	ut64 loadaddr, Sdb *sdb) {
 	struct r_bin_mz_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
@@ -104,79 +104,41 @@ static bool load(RBinFile *bf) {
 }
 
 static int destroy(RBinFile *bf) {
-	r_bin_mz_free ((struct r_bin_mz_obj_t*)bf->o->bin_obj);
+	r_bin_mz_free ((struct r_bin_mz_obj_t *)bf->o->bin_obj);
 	return true;
 }
 
-static RBinAddr* binsym(RBinFile *bf, int type) {
-	ut64 mzaddr = 0;
-	RBinAddr *ret = NULL;
+static RBinAddr *binsym(RBinFile *bf, int type) {
+	RBinAddr *mzaddr = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
-		switch(type) {
+		switch (type) {
 		case R_BIN_SYM_MAIN:
 			mzaddr = r_bin_mz_get_main_vaddr (bf->o->bin_obj);
 			break;
 		}
 	}
-	if (mzaddr && (ret = R_NEW0 (RBinAddr))) {
-		ret->paddr = mzaddr;
-		ret->vaddr = mzaddr;
-	}
-	return ret;
+	return mzaddr;
 }
 
-static RList * entries(RBinFile *bf) {
+static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *res = NULL;
 	if (!(res = r_list_newf (free))) {
 		return NULL;
 	}
-	int entry = r_bin_mz_get_entrypoint (bf->o->bin_obj);
-	if (entry >= 0) {
-		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr = (ut64) entry;
-			ptr->vaddr = (ut64) entry;
-			r_list_append (res, ptr);
-		}
+	ptr = r_bin_mz_get_entrypoint (bf->o->bin_obj);
+	if (ptr) {
+		r_list_append (res, ptr);
 	}
 	return res;
 }
 
-static RList * sections(RBinFile *bf) {
-	const struct r_bin_mz_segment_t *segments = NULL;
-	RBinSection *ptr = NULL;
-	RList *ret = NULL;
-	int i;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
-	if (!(segments = r_bin_mz_get_segments (bf->o->bin_obj))){
-		r_list_free (ret);
-		return NULL;
-	}
-	for (i = 0; !segments[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			free ((void *)segments);
-			r_list_free (ret);
-			return NULL;
-		}
-		ptr->name = r_str_newf ("seg_%03d", i);
-		ptr->size = segments[i].size;
-		ptr->vsize = segments[i].size;
-		ptr->paddr = segments[i].paddr;
-		ptr->vaddr = segments[i].paddr;
-		ptr->perm = r_str_rwx ("rwx");
-		ptr->add = true;
-		r_list_append (ret, ptr);
-	}
-	free ((void *)segments);
-	return ret;
+static RList *sections(RBinFile *bf) {
+	return r_bin_mz_get_segments (bf->o->bin_obj);
 }
 
-static RBinInfo * info(RBinFile *bf) {
-	RBinInfo * const ret = R_NEW0 (RBinInfo);
+static RBinInfo *info(RBinFile *bf) {
+	RBinInfo *const ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -196,44 +158,44 @@ static RBinInfo * info(RBinFile *bf) {
 	ret->has_retguard = -1;
 	ret->has_nx = false;
 	ret->has_pi = false;
-	ret->has_va = false;
+	ret->has_va = true;
 	return ret;
 }
 
 static void header(RBinFile *bf) {
-	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *) bf->o->bin_obj;
-	eprintf("[0000:0000]  Signature           %c%c\n",
+	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->o->bin_obj;
+	eprintf ("[0000:0000]  Signature           %c%c\n",
 		mz->dos_header->signature & 0xFF,
 		mz->dos_header->signature >> 8);
-	eprintf("[0000:0002]  BytesInLastBlock    0x%04x\n",
-	   mz->dos_header->bytes_in_last_block);
-	eprintf("[0000:0004]  BlocksInFile        0x%04x\n",
-	    mz->dos_header->blocks_in_file);
-	eprintf("[0000:0006]  NumRelocs           0x%04x\n",
-	    mz->dos_header->num_relocs);
-	eprintf("[0000:0008]  HeaderParagraphs    0x%04x\n",
-	    mz->dos_header->header_paragraphs);
-	eprintf("[0000:000a]  MinExtraParagraphs  0x%04x\n",
-	    mz->dos_header->min_extra_paragraphs);
-	eprintf("[0000:000c]  MaxExtraParagraphs  0x%04x\n",
-	    mz->dos_header->max_extra_paragraphs);
-	eprintf("[0000:000e]  InitialSs           0x%04x\n",
-	    mz->dos_header->ss);
-	eprintf("[0000:0010]  InitialSp           0x%04x\n",
-	    mz->dos_header->sp);
-	eprintf("[0000:0012]  Checksum            0x%04x\n",
-	    mz->dos_header->checksum);
-	eprintf("[0000:0014]  InitialIp           0x%04x\n",
-	    mz->dos_header->ip);
-	eprintf("[0000:0016]  InitialCs           0x%04x\n",
-	    mz->dos_header->cs);
-	eprintf("[0000:0018]  RelocTableOffset    0x%04x\n",
-	    mz->dos_header->reloc_table_offset);
-	eprintf("[0000:001a]  OverlayNumber       0x%04x\n",
-	    mz->dos_header->overlay_number);
+	eprintf ("[0000:0002]  BytesInLastBlock    0x%04x\n",
+		mz->dos_header->bytes_in_last_block);
+	eprintf ("[0000:0004]  BlocksInFile        0x%04x\n",
+		mz->dos_header->blocks_in_file);
+	eprintf ("[0000:0006]  NumRelocs           0x%04x\n",
+		mz->dos_header->num_relocs);
+	eprintf ("[0000:0008]  HeaderParagraphs    0x%04x\n",
+		mz->dos_header->header_paragraphs);
+	eprintf ("[0000:000a]  MinExtraParagraphs  0x%04x\n",
+		mz->dos_header->min_extra_paragraphs);
+	eprintf ("[0000:000c]  MaxExtraParagraphs  0x%04x\n",
+		mz->dos_header->max_extra_paragraphs);
+	eprintf ("[0000:000e]  InitialSs           0x%04x\n",
+		mz->dos_header->ss);
+	eprintf ("[0000:0010]  InitialSp           0x%04x\n",
+		mz->dos_header->sp);
+	eprintf ("[0000:0012]  Checksum            0x%04x\n",
+		mz->dos_header->checksum);
+	eprintf ("[0000:0014]  InitialIp           0x%04x\n",
+		mz->dos_header->ip);
+	eprintf ("[0000:0016]  InitialCs           0x%04x\n",
+		mz->dos_header->cs);
+	eprintf ("[0000:0018]  RelocTableOffset    0x%04x\n",
+		mz->dos_header->reloc_table_offset);
+	eprintf ("[0000:001a]  OverlayNumber       0x%04x\n",
+		mz->dos_header->overlay_number);
 }
 
-static RList * relocs(RBinFile *bf) {
+static RList *relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *rel = NULL;
 	const struct r_bin_mz_reloc_t *relocs = NULL;
@@ -255,7 +217,7 @@ static RList * relocs(RBinFile *bf) {
 			return NULL;
 		}
 		rel->type = R_BIN_RELOC_16;
-		rel->vaddr = relocs[i].paddr;
+		rel->vaddr = relocs[i].vaddr;
 		rel->paddr = relocs[i].paddr;
 		r_list_append (ret, rel);
 	}
