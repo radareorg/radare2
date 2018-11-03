@@ -4897,7 +4897,10 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
+			bool orig_jmpmid = core->anal->opt.jmpmid; // TODO: to be removed later
+			core->anal->opt.jmpmid = false;            //
 			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at);
+			core->anal->opt.jmpmid = orig_jmpmid;
 			if (!bb) {
 				inc = ds->oplen;
 				r_anal_op_fini (&ds->analop);
