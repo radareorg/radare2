@@ -102,7 +102,7 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 	}
 	if (o) {
 		r_list_foreach (o->libs, iter, lib) {
-			size_t len = strlen(lib);
+			size_t len = strlen (lib);
 			if (!r_str_ncasecmp (str, lib, len)) {
 				str += len;
 				if (*str == '_') {
