@@ -77,10 +77,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	bool isPe = strstr (ft, "pe");
 
 	if (unknownType || !(isMacho || isElf || isPe)) {
-		cantbe.swift = true;
-		cantbe.cxx = true;
-		cantbe.objc = true;
-		cantbe.dlang = true;
+		return R_BIN_NM_NONE;
 	}
 
 	r_list_foreach (o->symbols, iter, sym) {
