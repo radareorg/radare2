@@ -7236,14 +7236,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "z/");
 					r_print_rowlog_done (core->print, oldstr);
 				}
-				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (afta)");
-				r_core_cmd0 (core, "afta");
-				r_print_rowlog_done (core->print, oldstr);
 				if (input[1] == 'a') { // "aaaa"
-					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae $SS @ $S");
+					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
+					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);
 				} else {
+					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (afta)");
+					r_core_cmd0 (core, "afta");
+					r_print_rowlog_done (core->print, oldstr);
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
 				}

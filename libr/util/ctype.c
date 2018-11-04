@@ -548,8 +548,24 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
 		return result;
 	}
-
 	str = strdup (str);
+	// Remove func-number from module_func-number
+	// sym._ExitProcess_4 ==> ExitProcess
+	char *l = (char *)r_str_lchr (str, '_');
+	if (l) {
+		char *tmp = l + 1;
+		char *first = strchr (str, '_');
+		while (tmp && IS_DIGIT (*tmp)) {
+			tmp++;
+		}
+		if (tmp && first && !*tmp) {
+			*l = '\0';
+			if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
+				free (str);
+				return result;
+			}
+		}
+	}
 	// some names are in format module.dll_function_number, try to remove those
 	// also try module.dll_function and function_number
 	if ((first = strchr (str, '_'))) {

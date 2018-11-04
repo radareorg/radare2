@@ -1,3 +1,9 @@
+---
+name: Bug report
+about: Create a report to help us improve
+
+---
+
 # This template is meant for bug reports, if you have a feature request, please be as descriptive as possible and delete the template
 
 Make sure you are testing using the latest git version of radare2 before submitting any issue.

@@ -34,6 +34,7 @@ typedef struct r_parse_t {
 	RAnalHint *hint; // weak anal ref
 	RList *parsers;
 	RAnalVarList varlist;
+	char* (*get_op_ireg)(void *user, ut64 addr);
 	RAnalBind analb;
 } RParse;
 
