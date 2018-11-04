@@ -117,7 +117,7 @@ files = [
   'pdb/tpi.c'
 ]
 
-r_bin_inc = [platform_inc, include_directories('mangling', 'format', '.')]
+r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 r_bin = library('r_bin', files,
   include_directories: r_bin_inc,

@@ -10,7 +10,7 @@ pre: $(LIBSO) $(LIBAR)
 	$(MAKE) -C p
 	$(MAKE) -C d
 
-CFLAGS+=-DCORELIB -Iformat -Imangling -I.
+CFLAGS+=-DCORELIB -Iformat -Imangling
 
 include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}

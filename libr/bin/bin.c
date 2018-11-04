@@ -6,7 +6,7 @@
 #include <r_lib.h>
 #include <r_io.h>
 #include <config.h>
-#include <bin_private.h>
+#include "i/private.h"
 
 R_LIB_VERSION (r_bin);
 

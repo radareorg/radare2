@@ -2,7 +2,7 @@
 
 #include <r_bin.h>
 #include <r_util.h>
-#include <bin_private.h>
+#include "i/private.h"
 
 #define bprintf if(binfile->rbin->verbose)eprintf
 

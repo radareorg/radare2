@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <bin_private.h>
+#include "../i/private.h"
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
 

@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_bin.h>
-#include <bin_private.h>
+#include "../i/private.h"
 
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	char *ret = NULL;

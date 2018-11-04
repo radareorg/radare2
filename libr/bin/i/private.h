@@ -1,5 +1,5 @@
-#ifndef _BIN_PRIVATE_H_
-#define _BIN_PRIVATE_H_
+#ifndef R_BIN_PRIVATE_H_
+#define R_BIN_PRIVATE_H_
 
 #include <r_bin.h>
 #include <r_util.h>
