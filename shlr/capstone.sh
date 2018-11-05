@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 CS_URL="$1" # url
 CS_BRA="$2" # branch name
 CS_TIP="$3" # tip commit
@@ -6,13 +6,13 @@ CS_REV="$4" # revert
 CS_DEPTH_CLONE=10
 
 fatal_msg() {
-	>&2 printf '[capstone] %s\n' "$1"
+	printf '[capstone] %s\n' "$1" >&2
 	exit 1
 }
 
 patch_capstone() {
 	for patchfile in ../capstone-patches/*.patch ; do
-		yes n | patch --reverse --strip 1 --input "${patchfile}"
+		yes n | patch -R -p 1 -i "${patchfile}"
 	done
 }
 
@@ -58,26 +58,26 @@ update_capstone_git() {
 }
 
 if [ -d capstone ] && [ ! -d capstone/.git ]; then
-	>&2 printf '[capstone] release with no git?\n'
+	printf '[capstone] release with no git?\n' >&2
 	cd capstone && patch_capstone
 	cd - || fatal_msg 'Cannot change working directory'
 else
 	clone_capstone
 
 	if [ "${BRANCH}" != "${CS_BRA}" ]; then
-		>&2 printf '[capstone] Reset capstone\n'
+		printf '[capstone] Reset capstone\n' >&2
 		rm -rf capstone
 		clone_capstone
 	fi
 
 	if [ "${HEAD}" = "${CS_TIP}" ]; then
-		>&2 printf '[capstone] Already in TIP, no need to update from git\n'
+		printf '[capstone] Already in TIP, no need to update from git\n' >&2
 		exit 0
 	fi
 
-	>&2 printf '[capstone] Updating capstone from git...\n'
-	>&2 printf 'HEAD %s\n' "${HEAD}"
-	>&2 printf 'TIP %s\n' "${CS_TIP}"
+	printf '[capstone] Updating capstone from git...\n' >&2
+	printf 'HEAD %s\n' "${HEAD}" >&2
+	printf 'TIP %s\n' "${CS_TIP}" >&2
 
 	cd capstone && update_capstone_git
 	cd - || fatal_msg 'Cannot change working directory'
