@@ -1277,7 +1277,7 @@ R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	return o ? o->classes : NULL;
 }
 
-void r_bin_class_free(RBinClass *c) {
+R_IPI void r_bin_class_free(RBinClass *c) {
 	free (c->name);
 	free (c->super);
 	r_list_free (c->methods);
@@ -1285,8 +1285,8 @@ void r_bin_class_free(RBinClass *c) {
 	free (c);
 }
 
-RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
-				  const char *super, int view) {
+R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
+	const char *super, int view) {
 	if (!binfile || !binfile->o) {
 		return NULL;
 	}
@@ -1320,7 +1320,7 @@ RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	return c;
 }
 
-RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
+R_IPI RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 	r_return_val_if_fail (binfile && binfile->o && name, NULL);
 
 	RBinClass *c;
@@ -1334,7 +1334,7 @@ RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 	return NULL;
 }
 
-RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
+R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	r_return_val_if_fail (binfile, NULL);
 
 	RBinClass *c = r_bin_class_get (binfile, classname);
@@ -1361,7 +1361,7 @@ RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, con
 	return sym;
 }
 
-void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
+R_IPI void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
 	//TODO: add_field into class
 	//eprintf ("TODO add field: %s \n", name);
 }
@@ -1527,7 +1527,7 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
-void r_bin_section_free(RBinSection *bs) {
+R_IPI void r_bin_section_free(RBinSection *bs) {
 	free (bs->format);
 	free (bs);
 }

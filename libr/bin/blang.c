@@ -171,7 +171,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	return R_BIN_NM_NONE;
 }
 
-int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
+R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	int type = 0;
 	RBinPlugin *plugin;
 	if (sym && sym[0] == sym[1] && sym[0] == '_') {
@@ -196,4 +196,3 @@ int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	}
 	return type;
 }
-
