@@ -2614,8 +2614,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	}
 
 	const char *name = input;
-	ut64 addr;
-	addr = core->offset;
+	ut64 addr = core->offset;
 	if (input && *input) {
 		name = input + 1;
 		addr = r_num_math (core->num, name);
@@ -2675,7 +2674,16 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	return 0;
 }
 
-static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest);
+static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest);
+
+static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
+	recurse_bb (core, from->jump, dest);
+	recurse_bb (core, from->fail, dest);
+
+	/* same for all calls */
+	// TODO: RAnalBlock must contain a linked list of calls
+	return NULL;
+}
 
 static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	RAnalBlock *bb;
@@ -2687,15 +2695,6 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	}
 	ret = recurse (core, bb, dest);
 	return ret? ret : NULL;
-}
-
-static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
-	recurse_bb (core, from->jump, dest);
-	recurse_bb (core, from->fail, dest);
-
-	/* same for all calls */
-	// TODO: RAnalBlock must contain a linked list of calls
-	return NULL;
 }
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {

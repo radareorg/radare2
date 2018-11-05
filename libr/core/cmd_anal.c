@@ -582,6 +582,7 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
+	"axff", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
 	NULL
 };
@@ -5725,87 +5726,101 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	} break;
-	case 'f': { // "axf"
-		ut8 buf[12];
-		RAsmOp asmop;
-		char *buf_asm = NULL;
-		RList *list, *list_ = NULL;
-		RAnalRef *ref;
-		RListIter *iter;
-		char *space = strchr (input, ' ');
-		RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-
-		if (space) {
-			addr = r_num_math (core->num, space + 1);
-		} else {
-			addr = core->offset;
-		}
-		if (input[1] == '.') { // "axf."
-			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
-			if (!list) {
-				list = r_anal_fcn_get_refs (core->anal, fcn);
+	case 'f':
+		if (input[1] == 'f') {
+			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			RListIter *iter;
+			RAnalRef *refi;
+			RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+			r_list_foreach (refs, iter, refi) {
+				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+				const char *name = f ? f->name: "";
+				r_cons_printf ("%c 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
+					refi->at, refi->addr, name);
 			}
-		} else {
-			list = r_anal_refs_get (core->anal, addr);
-		}
+		} else { // "axf"
+			ut8 buf[12];
+			RAsmOp asmop;
+			char *buf_asm = NULL;
+			RList *list, *list_ = NULL;
+			RAnalRef *ref;
+			RListIter *iter;
+			char *space = strchr (input, ' ');
+			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 
-		if (list) {
-			if (input[1] == 'q') { // "axfq"
-				r_list_foreach (list, iter, ref) {
-					r_cons_printf ("0x%" PFMT64x "\n", ref->at);
+			if (space) {
+				addr = r_num_math (core->num, space + 1);
+			} else {
+				addr = core->offset;
+			}
+			if (input[1] == '.') { // "axf."
+				list = list_ = r_anal_xrefs_get_from (core->anal, addr);
+				if (!list) {
+					list = r_anal_fcn_get_refs (core->anal, fcn);
 				}
-			} else if (input[1] == 'j') { // "axfj"
-				r_cons_print ("[");
-				r_list_foreach (list, iter, ref) {
-					r_io_read_at (core->io, ref->at, buf, 12);
-					r_asm_set_pc (core->assembler, ref->at);
-					r_asm_disassemble (core->assembler, &asmop, buf, 12);
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"to\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
-						ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), r_asm_op_get_asm (&asmop), iter->n? ",": "");
-				}
-				r_cons_print ("]\n");
-			} else if (input[1] == '*') { // "axf*"
-				// TODO: implement multi-line comments
-				r_list_foreach (list, iter, ref) {
-					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%" PFMT64x "\n",
-						ref->at, ref->type, r_asm_op_get_asm (&asmop), iter->n? ",": "");
-				}
-			} else { // "axf"
-				char str[512];
-				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-				r_list_foreach (list, iter, ref) {
-					r_io_read_at (core->io, ref->at, buf, 12);
-					r_asm_set_pc (core->assembler, ref->at);
-					r_asm_disassemble (core->assembler, &asmop, buf, 12);
-					r_parse_filter (core->parser, ref->at, core->flags, r_asm_op_get_asm (&asmop),
-						str, sizeof (str), core->print->big_endian);
-					if (has_color) {
-						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
-					} else {
-						buf_asm = r_str_new (str);
+			} else {
+				list = r_anal_refs_get (core->anal, addr);
+			}
+
+			if (list) {
+				if (input[1] == 'q') { // "axfq"
+					r_list_foreach (list, iter, ref) {
+						r_cons_printf ("0x%" PFMT64x "\n", ref->at);
 					}
-					r_cons_printf ("%c 0x%" PFMT64x " %s",
-						ref->type, ref->at, buf_asm);
-
-					if (ref->type == R_ANAL_REF_TYPE_CALL) {
-						RAnalOp aop;
-						r_anal_op (core->anal, &aop, ref->at, buf, 12, R_ANAL_OP_MASK_BASIC);
-						if (aop.type == R_ANAL_OP_TYPE_UCALL) {
-							cmd_anal_ucall_ref (core, ref->addr);
+				} else if (input[1] == 'j') { // "axfj"
+					r_cons_print ("[");
+					r_list_foreach (list, iter, ref) {
+						r_io_read_at (core->io, ref->at, buf, 12);
+						r_asm_set_pc (core->assembler, ref->at);
+						r_asm_disassemble (core->assembler, &asmop, buf, 12);
+						r_cons_printf ("{\"from\":%" PFMT64u ",\"to\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
+								ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), r_asm_op_get_asm (&asmop), iter->n? ",": "");
+					}
+					r_cons_print ("]\n");
+				} else if (input[1] == '*') { // "axf*"
+					// TODO: implement multi-line comments
+					r_list_foreach (list, iter, ref) {
+						r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%" PFMT64x "\n",
+								ref->at, ref->type, r_asm_op_get_asm (&asmop), iter->n? ",": "");
+					}
+				} else { // "axf"
+					char str[512];
+					int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+					r_list_foreach (list, iter, ref) {
+						r_io_read_at (core->io, ref->at, buf, 12);
+						r_asm_set_pc (core->assembler, ref->at);
+						r_asm_disassemble (core->assembler, &asmop, buf, 12);
+						r_parse_filter (core->parser, ref->at, core->flags, r_asm_op_get_asm (&asmop),
+								str, sizeof (str), core->print->big_endian);
+						if (has_color) {
+							buf_asm = r_print_colorize_opcode (core->print, str,
+									core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+						} else {
+							buf_asm = r_str_new (str);
 						}
+						r_cons_printf ("%c 0x%" PFMT64x " %s",
+								ref->type, ref->at, buf_asm);
+
+						if (ref->type == R_ANAL_REF_TYPE_CALL) {
+							RAnalOp aop;
+							r_anal_op (core->anal, &aop, ref->at, buf, 12, R_ANAL_OP_MASK_BASIC);
+							if (aop.type == R_ANAL_OP_TYPE_UCALL) {
+								cmd_anal_ucall_ref (core, ref->addr);
+							}
+						}
+						r_cons_newline ();
+						free (buf_asm);
 					}
-					r_cons_newline ();
-					free (buf_asm);
+				}
+			} else {
+				if (input[1] == 'j') { // "axfj"
+					r_cons_print ("[]\n");
 				}
 			}
-		} else {
-			if (input[1] == 'j') { // "axfj"
-				r_cons_print ("[]\n");
-			}
+			r_list_free (list);
 		}
-		r_list_free (list);
-	} break;
+		break;
 	case 'F': // "axF"
 		find_refs (core, input + 1);
 		break;
