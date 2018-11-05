@@ -427,7 +427,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	char *ireg = NULL;
 	if (p->get_op_ireg) {
 		ireg = p->get_op_ireg(p->user, addr);
-	}	
+	}
 	r_list_foreach (spargs, spiter, sparg) {
 		// assuming delta always positive?
 		mk_reg_str (p->anal->reg->name[R_REG_NAME_SP], sparg->delta, true, att, ireg, oldstr, sizeof (oldstr));
@@ -504,7 +504,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	char bp[32];
 	if (p->anal->reg->name[R_REG_NAME_BP]) {
 		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
-		if (isupper (*str)) {
+		if (isupper ((ut8)*str)) {
 			r_str_case (bp, true);
 		}
 		bp[sizeof (bp) - 1] = 0;

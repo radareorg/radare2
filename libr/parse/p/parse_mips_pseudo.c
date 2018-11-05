@@ -326,7 +326,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	char bp[32];
 	if (p->anal->reg->name[R_REG_NAME_BP]) {
 		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) -1);
-		if (isupper (*str)) {
+		if (isupper ((ut8)*str)) {
 			r_str_case (bp, true);
 		}
 		bp[sizeof(bp) - 1] = 0;

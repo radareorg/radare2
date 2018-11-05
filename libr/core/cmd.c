@@ -1667,7 +1667,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	SECURITY_ATTRIBUTES sa;
 	HANDLE pipe[2] = {NULL, NULL};
 	int fd_out = -1, cons_out = -1;
-	char *_shell_cmd;
+	char *_shell_cmd = NULL;
 	LPTSTR _shell_cmd_ = NULL;
 
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
@@ -1687,7 +1687,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	si.cb = sizeof (si);
 	_shell_cmd = shell_cmd;
-	while (*_shell_cmd && isspace (*_shell_cmd)) {
+	while (*_shell_cmd && isspace ((ut8)*_shell_cmd)) {
 		_shell_cmd++;
 	}
 	_shell_cmd_ = r_sys_conv_utf8_to_utf16 (_shell_cmd);
@@ -3089,7 +3089,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_list_foreach (obj->sections, it, sec){
 				ut64 addr = sec->vaddr;
 				ut64 size = sec->vsize;
-				// TODO: 
+				// TODO:
 				//if (R_BIN_SCN_EXECUTABLE & sec->perm) {
 				//	continue;
 				//}

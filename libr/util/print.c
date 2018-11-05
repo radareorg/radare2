@@ -1692,7 +1692,8 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
-		if ((ishexprefix (&p[i]) && previous != ':') || (isdigit (p[i]) && issymbol (previous))) {
+		if ((ishexprefix (&p[i]) && previous != ':') \
+		     || (isdigit ((ut8)p[i]) && issymbol (previous))) {
 			int nlen = strlen (num);
 			if (nlen + j >= sizeof (o)) {
 				eprintf ("Colorize buffer is too small\n");
