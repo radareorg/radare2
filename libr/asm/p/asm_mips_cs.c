@@ -3,7 +3,8 @@
 #include <r_asm.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
-#include "../arch/mips/mipsasm.c"
+
+R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 static csh cd = 0;
 #include "cs_mnemonics.c"
