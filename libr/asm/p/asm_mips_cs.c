@@ -3,7 +3,6 @@
 #include <r_asm.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
-#define R_IPI static
 #include "../arch/mips/mipsasm.c"
 
 static csh cd = 0;
