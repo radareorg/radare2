@@ -2,10 +2,13 @@
 
 #include <r_bin.h>
 #include <r_util.h>
+#include "i/private.h"
 
-#define bprintf if(binfile->rbin->verbose)eprintf
+#define bprintf                     \
+	if (binfile->rbin->verbose) \
+	eprintf
 
-R_API void r_bin_object_free(void /*RBinObject*/ *o_) {
+R_IPI void r_bin_object_free(void /*RBinObject*/ *o_) {
 	RBinObject *o = o_;
 	if (!o) {
 		return;
@@ -16,7 +19,7 @@ R_API void r_bin_object_free(void /*RBinObject*/ *o_) {
 	R_FREE (o);
 }
 
-R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
+R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	const ut8 *bytes = binfile? r_buf_buffer (binfile->buf): NULL;
 	ut64 bytes_sz = binfile? r_buf_size (binfile->buf): 0;
 	Sdb *sdb = binfile? binfile->sdb: NULL;
@@ -296,7 +299,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	return true;
 }
 
-R_API RBinObject *r_bin_object_get_cur(RBin *bin) {
+R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	return r_bin_file_object_get_cur (r_bin_cur (bin));
 }
@@ -311,7 +314,7 @@ static void r_bin_mem_free(void *data) {
 	free (mem);
 }
 
-R_API void r_bin_object_delete_items(RBinObject *o) {
+R_IPI void r_bin_object_delete_items(RBinObject *o) {
 	ut32 i = 0;
 	r_return_if_fail (o);
 	sdb_free (o->addr2klassmethod);
@@ -349,7 +352,7 @@ R_API void r_bin_object_delete_items(RBinObject *o) {
 	}
 }
 
-R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {
+R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {
 	RBinObject *obj = NULL;
 	RListIter *iter = NULL;
 
@@ -367,7 +370,7 @@ R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *
 	return NULL;
 }
 
-R_API ut64 r_bin_object_get_baddr(RBinObject *o) {
+R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
 	r_return_val_if_fail (o, UT64_MAX);
 	return o->baddr + o->baddr_shift;
 }
@@ -406,14 +409,14 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	return res;
 }
 
-R_API void r_bin_object_set_baddr(RBinObject *o, ut64 baddr) {
+R_IPI void r_bin_object_set_baddr(RBinObject *o, ut64 baddr) {
 	r_return_if_fail (o);
 	if (baddr != UT64_MAX) {
 		o->baddr_shift = baddr - o->baddr;
 	}
 }
 
-R_API void r_bin_object_filter_strings(RBinObject *bo) {
+R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 	r_return_if_fail (bo);
 
 	RList *strings = bo->strings;

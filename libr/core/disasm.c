@@ -911,6 +911,17 @@ static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	ds->opstr = asm_str? asm_str: source;
 }
 
+static char *get_op_ireg (void *user, ut64 addr) {
+	RCore *core = (RCore *)user;
+	char *res = NULL;
+	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+	if (op && op->ireg) {
+		res = strdup (op->ireg);
+	}
+	r_anal_op_free (op);
+	return res;
+}
+
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	if (!ds->opstr) {
@@ -925,6 +936,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = fcnIn (ds, at, R_ANAL_FCN_TYPE_NULL);
 		core->parser->varlist = r_anal_var_list_dynamic;
+		core->parser->get_op_ireg = get_op_ireg;
 		r_parse_varsub (core->parser, f, at, ds->analop.size,
 			ds->opstr, ds->strsub, sizeof (ds->strsub));
 		if (*ds->strsub) {
@@ -1371,7 +1383,7 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 	for (i = 1; i < ds->oplen; i++) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
 		if (fcn) {
-			RAnalBlock *bb = r_anal_fcn_bbget_in (fcn, ds->at + i);
+			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at + i);
 			if (bb && bb->addr > ds->at) {
 				ds->hasMidbb = true;
 				return bb->addr - ds->at;
@@ -4885,22 +4897,26 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			RAnalBlock *bb = r_anal_fcn_bbget_in (ds->pdf, ds->at);
+			bool orig_jmpmid = core->anal->opt.jmpmid; // TODO: to be removed later
+			core->anal->opt.jmpmid = false;            //
+			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at);
 			if (!bb) {
-				inc = ds->oplen;
+				for (inc = 1; inc < ds->oplen; inc++) {
+					RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at + inc);
+					if (bb) {
+						break;
+					}
+				}
 				r_anal_op_fini (&ds->analop);
 				if (!sparse) {
 					r_cons_printf ("..\n");
 					sparse = true;
 				}
-				continue;
-			} else if (sparse && bb->addr < ds->at) {
-				inc = -(ds->at - bb->addr);
-				sparse = false;
-				r_anal_op_fini (&ds->analop);
+				core->anal->opt.jmpmid = orig_jmpmid;
 				continue;
 			}
 			sparse = false;
+			core->anal->opt.jmpmid = orig_jmpmid;
 		}
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);

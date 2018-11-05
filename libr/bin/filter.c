@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2015 - pancake */
 
 #include <r_bin.h>
+#include "i/private.h"
 
 static void hashify(char *s, ut64 vaddr) {
 	if (!s) {

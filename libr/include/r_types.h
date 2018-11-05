@@ -256,6 +256,8 @@ typedef int (*PrintfCallback)(const char *str, ...);
 #undef R_IPI
 #endif
 
+#define R_IPI
+
 #ifdef R_HEAP
 #undef R_HEAP
 #endif

@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2015-2018 - inisider */
 
+#include "../../i/private.h"
 #include "mach0_classes.h"
 
 #define RO_META (1 << 0)

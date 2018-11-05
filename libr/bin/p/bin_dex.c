@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 #include "dex/dex.h"
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
