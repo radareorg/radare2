@@ -2108,7 +2108,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut6
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-		    && (!anal->opt.jmpmid || r_anal_bb_op_starts_at (bb, addr))) {
+		    && (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}
