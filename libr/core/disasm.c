@@ -4897,8 +4897,6 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			bool orig_jmpmid = core->anal->opt.jmpmid; // TODO: to be removed later
-			core->anal->opt.jmpmid = false;            //
 			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at);
 			if (!bb) {
 				for (inc = 1; inc < ds->oplen; inc++) {
@@ -4912,11 +4910,9 @@ toro:
 					r_cons_printf ("..\n");
 					sparse = true;
 				}
-				core->anal->opt.jmpmid = orig_jmpmid;
 				continue;
 			}
 			sparse = false;
-			core->anal->opt.jmpmid = orig_jmpmid;
 		}
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
