@@ -1526,7 +1526,6 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	db = NULL;
 
 	R_TIME_END;
-
 	return relocs != NULL;
 }
 
