@@ -4900,22 +4900,23 @@ toro:
 			bool orig_jmpmid = core->anal->opt.jmpmid; // TODO: to be removed later
 			core->anal->opt.jmpmid = false;            //
 			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at);
-			core->anal->opt.jmpmid = orig_jmpmid;
 			if (!bb) {
-				inc = ds->oplen;
+				for (inc = 1; inc < ds->oplen; inc++) {
+					RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at + inc);
+					if (bb) {
+						break;
+					}
+				}
 				r_anal_op_fini (&ds->analop);
 				if (!sparse) {
 					r_cons_printf ("..\n");
 					sparse = true;
 				}
-				continue;
-			} else if (sparse && bb->addr < ds->at) {
-				inc = -(ds->at - bb->addr);
-				sparse = false;
-				r_anal_op_fini (&ds->analop);
+				core->anal->opt.jmpmid = orig_jmpmid;
 				continue;
 			}
 			sparse = false;
+			core->anal->opt.jmpmid = orig_jmpmid;
 		}
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
