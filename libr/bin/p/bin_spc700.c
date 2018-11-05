@@ -55,7 +55,7 @@ static RList* sections(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strcpy (ptr->name, "RAM");
+	ptr->name = strdup ("RAM");
 	ptr->paddr = RAM_START_ADDRESS;
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;

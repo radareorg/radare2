@@ -244,7 +244,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strcpy (ptr->name, "Memory_Section");
+		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
 		ptr->vaddr = memory->start_of_memory_range;
@@ -263,7 +263,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strcpy (ptr->name, "Memory_Section");
+		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
 		ptr->vaddr = memory64->start_of_memory_range;
@@ -288,7 +288,8 @@ static RList *sections(RBinFile *bf) {
 		}
 
 		str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, R_BIN_SIZEOF_STRINGS, (const ut8 *)&(str->buffer), str->length, obj->endian);
+		ptr->name = calloc (1, str->length * 4);
+		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4, (const ut8 *)&(str->buffer), str->length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);

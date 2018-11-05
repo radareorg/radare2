@@ -127,7 +127,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("text");
 	ptr->size = r_read_ble32 (buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = r_read_ble32 (buf + 12, false);
@@ -141,7 +141,7 @@ static RList* sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "idata", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("idata");
 		const ut32 idata_start = r_read_ble32 (buf + 40, false);
 		const ut32 idata_end = r_read_ble32 (buf + 44, false);
 		ptr->size = idata_end - idata_start;

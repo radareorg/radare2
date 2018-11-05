@@ -123,7 +123,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (text->name, "text", R_BIN_SIZEOF_STRINGS);
+	text->name = strdup ("text");
 	text->size = bf->buf->length - N64_ROM_START;
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;

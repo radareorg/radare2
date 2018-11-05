@@ -115,7 +115,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "header", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("header");
 	ptr->size = 0x80;
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
@@ -132,7 +132,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 		ut32 mod0sz = readLE32 (bf->buf, mod0 + 4);
-		strncpy (ptr->name, "mod0", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("mod0");
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
@@ -150,7 +150,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 		ut32 sig0sz = readLE32 (bf->buf, sig0 + 4);
-		strncpy (ptr->name, "sig0", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("sig0");
 		ptr->size = sig0sz;
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
@@ -166,7 +166,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("text");
 	ptr->vsize = readLE32 (b, NRO_OFF (text_size));
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (text_memoffset));
@@ -179,7 +179,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "ro", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("ro");
 	ptr->vsize = readLE32 (b, NRO_OFF (ro_size));
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (ro_memoffset));
@@ -192,7 +192,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "data", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("data");
 	ptr->vsize = readLE32 (b, NRO_OFF (data_size));
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (data_memoffset));

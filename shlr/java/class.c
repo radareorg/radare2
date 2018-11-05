@@ -2648,7 +2648,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 	if (bin->cp_count > 0) {
 		section = R_NEW0 (RBinSection);
 		if (section) {
-			strcpy (section->name, "constant_pool");
+			section->name = strdup ("constant_pool");
 			section->size = bin->cp_size;
 			section->paddr = bin->cp_offset + baddr;
 			section->perm = R_PERM_R;
@@ -2660,7 +2660,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 	if (bin->fields_count > 0) {
 		section = R_NEW0 (RBinSection);
 		if (section) {
-			strcpy (section->name, "fields");
+			section->name = strdup ("fields");
 			section->size = bin->fields_size;
 			section->paddr = bin->fields_offset + baddr;
 			section->perm = R_PERM_R;
@@ -2673,7 +2673,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 				}
 				section = R_NEW0 (RBinSection);
 				if (section) {
-					snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
+					section->name = r_str_newf ("attrs.%s", fm_type->name);
 					section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 					section->paddr = fm_type->attr_offset + baddr;
 					section->perm = R_PERM_R;
@@ -2686,7 +2686,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 	if (bin->methods_count > 0) {
 		section = R_NEW0 (RBinSection);
 		if (section) {
-			strcpy (section->name, "methods");
+			section->name = strdup ("methods");
 			section->size = bin->methods_size;
 			section->paddr = bin->methods_offset + baddr;
 			section->perm = R_PERM_RX;
@@ -2699,7 +2699,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 				}
 				section = R_NEW0 (RBinSection);
 				if (section) {
-					snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
+					section->name = r_str_newf ("attrs.%s", fm_type->name);
 					section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 					section->paddr = fm_type->attr_offset + baddr;
 					section->perm = R_PERM_R;
@@ -2712,7 +2712,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 	if (bin->interfaces_count > 0) {
 		section = R_NEW0 (RBinSection);
 		if (section) {
-			strcpy (section->name, "interfaces");
+			section->name = strdup ("interfaces");
 			section->size = bin->interfaces_size;
 			section->paddr = bin->interfaces_offset + baddr;
 			section->perm = R_PERM_R;
@@ -2724,7 +2724,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 	if (bin->attrs_count > 0) {
 		section = R_NEW0 (RBinSection);
 		if (section) {
-			strcpy (section->name, "attributes");
+			section->name = strdup ("attributes");
 			section->size = bin->attrs_size;
 			section->paddr = bin->attrs_offset + baddr;
 			section->perm = R_PERM_R;

@@ -188,7 +188,7 @@ static RList* sections(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				break;
 			}
-			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->name = strdup ((char*)section[i].name);
 			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
 				ptr->is_data = true;
 			}
@@ -229,39 +229,38 @@ static RList* sections(RBinFile *bf) {
 			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
-				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("DYNAMIC");
 				break;
 			case PT_LOAD:
-				snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "LOAD%d", n++);
+				ptr->name = r_str_newf ("LOAD%d", n++);
 				found_load = 1;
 				ptr->add = true;
 				break;
 			case PT_INTERP:
-				strncpy (ptr->name, "INTERP", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("INTERP");
 				break;
 			case PT_GNU_STACK:
-				strncpy (ptr->name, "GNU_STACK", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("GNU_STACK");
 				break;
 			case PT_GNU_RELRO:
-				strncpy (ptr->name, "GNU_RELRO", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("GNU_RELRO");
 				break;
 			case PT_GNU_EH_FRAME:
-				strncpy (ptr->name, "GNU_EH_FRAME", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("GNU_EH_FRAME");
 				break;
 			case PT_PHDR:
-				strncpy (ptr->name, "PHDR", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("PHDR");
 				break;
 			case PT_TLS:
-				strncpy (ptr->name, "TLS", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("TLS");
 				break;
 			case PT_NOTE:
-				strncpy (ptr->name, "NOTE", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("NOTE");
 				break;
 			default:
-				strncpy (ptr->name, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("UNKNOWN");
 				break;
 			}
-			ptr->name[R_BIN_SIZEOF_STRINGS - 1] = '\0';
 			r_list_append (ret, ptr);
 		}
 	}
@@ -275,7 +274,7 @@ static RList* sections(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			sprintf (ptr->name, "uphdr");
+			ptr->name = strdup ("uphdr");
 			ptr->size = bf->size;
 			ptr->vsize = bf->size;
 			ptr->paddr = 0;
@@ -292,7 +291,7 @@ static RList* sections(RBinFile *bf) {
 		if (bf->size < ehdr_size) {
 			ehdr_size = bf->size;
 		}
-		sprintf (ptr->name, "ehdr");
+		ptr->name = strdup ("ehdr");
 		ptr->paddr = 0;
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;

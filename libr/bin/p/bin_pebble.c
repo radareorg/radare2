@@ -108,7 +108,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "relocs");
+	ptr->name = strdup ("relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
 	ptr->perm = R_PERM_RW;
@@ -122,7 +122,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "symtab");
+	ptr->name = strdup ("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = R_PERM_R;
@@ -135,7 +135,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "text");
+	ptr->name = strdup ("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = R_PERM_RWX;
@@ -145,7 +145,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "header");
+	ptr->name = strdup ("header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = R_PERM_R;

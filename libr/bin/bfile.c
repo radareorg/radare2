@@ -511,18 +511,18 @@ R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 	}
 
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
-	// size is set here because the reported size of the object depends on
-	// if loaded from xtr plugin or partially read
-	if (o && !o->size) {
-		o->size = file_sz;
-	}
-
 	if (!o) {
 		if (bf && binfile_created) {
 			r_list_delete_data (bin->binfiles, bf);
 		}
 		return NULL;
 	}
+	// size is set here because the reported size of the object depends on
+	// if loaded from xtr plugin or partially read
+	if (!o->size) {
+		o->size = file_sz;
+	}
+
 #if 0
 	/* WTF */
 	if (strcmp (plugin->name, "any")) {

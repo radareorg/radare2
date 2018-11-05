@@ -77,7 +77,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "bootblk"); // Maps to 0xF000:0000 segment
+	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = bf->buf->length - ptr->size;
 	ptr->vaddr = 0xf0000;
@@ -89,7 +89,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strcpy (ptr->name, "_e000"); // Maps to 0xE000:0000 segment
+		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = bf->buf->length - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;

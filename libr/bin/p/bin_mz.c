@@ -162,7 +162,7 @@ static RList * sections(RBinFile *bf) {
 			r_list_free (ret);
 			return NULL;
 		}
-		sprintf ((char*)ptr->name, "seg_%03d", i);
+		ptr->name = r_str_newf ("seg_%03d", i);
 		ptr->size = segments[i].size;
 		ptr->vsize = segments[i].size;
 		ptr->paddr = segments[i].paddr;

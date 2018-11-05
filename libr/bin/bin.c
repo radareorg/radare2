@@ -1528,6 +1528,7 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 }
 
 R_IPI void r_bin_section_free(RBinSection *bs) {
+	free (bs->name);
 	free (bs->format);
 	free (bs);
 }

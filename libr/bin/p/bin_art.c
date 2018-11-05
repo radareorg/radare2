@@ -167,7 +167,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "load", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("load");
 	ptr->size = bf->buf->length;
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
@@ -179,7 +179,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "bitmap", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
 	ptr->paddr = art.bitmap_offset;
@@ -191,7 +191,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "oat", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("oat");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
@@ -203,7 +203,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "oat_data", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("oat_data");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;

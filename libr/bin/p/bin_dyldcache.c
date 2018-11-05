@@ -1026,15 +1026,14 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 			break;
 		}
 		if (bin->file) {
-			r_snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "%s.%s", bin->file, (char*)sections[i].name);
+			ptr->name = r_str_newf ("%s.%s", bin->file, (char*)sections[i].name);
 		} else {
-			r_snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "%s", (char*)sections[i].name);
+			ptr->name = r_str_newf ("%s", (char*)sections[i].name);
 		}
 		if (strstr (ptr->name, "la_symbol_ptr")) {
 			int len = sections[i].size / 8;
 			ptr->format = r_str_newf ("Cd %d[%d]", 8, len);
 		}
-		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
@@ -1074,7 +1073,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return NULL;
 		}
-		r_snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "cache_map.%d", i);
+		ptr->name = r_str_newf ("cache_map.%d", i);
 		ptr->size = cache->maps[i].size;
 		ptr->vsize = ptr->size;
 		ptr->paddr = cache->maps[i].fileOffset;// + bf->o->boffset;

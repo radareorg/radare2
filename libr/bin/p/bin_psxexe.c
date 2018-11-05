@@ -65,7 +65,7 @@ static RList* sections(RBinFile* bf) {
 
 	sz = r_buf_size (bf->buf);
 
-	strcpy (sect->name, "TEXT");
+	sect->name = strdup ("TEXT");
 	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
 	sect->vaddr = psxheader.t_addr;
