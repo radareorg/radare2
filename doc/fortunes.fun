@@ -263,3 +263,4 @@ This software is sold for home use only and all other rights are expressly rever
 Any commercial use or duplication of this copylefted material without prior licensing is forbidden.
 Violators will be prosecuted.
 This shell has been seized by the Internet's Police.
+OpenBSD might pledge r2 but r2 unveils OpenBSD.

@@ -28,6 +28,11 @@ R_API void r_event_free(REvent *ev) {
 	if (!ev) {
 		return;
 	}
+	ut32 i;
+	for (i = 1; i < R_EVENT_MAX; ++i) {
+		RVector *entry = ht_find (ev->callbacks, (char *)(size_t)i, NULL);
+		r_vector_free (entry);
+	}
 	ht_free (ev->callbacks);
 	free (ev);
 }
