@@ -611,6 +611,8 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
 R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr);
+R_API const char *r_bin_flag_i(RBin *bf, ut64 addr);
+R_API ut64 r_bin_flag(RBin *bf, const char *name);
 
 R_API RBin *r_bin_new(void);
 R_API void *r_bin_free(RBin *bin);

@@ -2,6 +2,7 @@ files = [
   'flag.c',
   'sort.c',
   'tags.c',
+  'item.c',
   'spaces.c',
   'zones.c'
 ]

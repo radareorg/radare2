@@ -2331,6 +2331,7 @@ R_API bool r_core_init(RCore *core) {
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
 	core->flags = r_flag_new ();
+	r_flag_set_callbacks (core->flags, NULL, NULL, NULL);
 	core->flags->cb_printf = r_cons_printf;
 	core->graph = r_agraph_new (r_cons_canvas_new (1, 1));
 	core->graph->need_reload_nodes = false;
