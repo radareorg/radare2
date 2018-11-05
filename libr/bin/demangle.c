@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2018 - pancake */
 
 #include <r_bin.h>
+#include "i/private.h"
 #include <cxx/demangle.h>
 
 R_API void r_bin_demangle_list(RBin *bin) {
@@ -34,7 +35,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	return NULL;
 }
 
-R_API const char *r_bin_lang_tostring (int lang) {
+R_IPI const char *r_bin_lang_tostring(int lang) {
 	switch (lang) {
 	case R_BIN_NM_SWIFT:
 		return "swift";
@@ -54,7 +55,7 @@ R_API const char *r_bin_lang_tostring (int lang) {
 	return NULL;
 }
 
-R_API int r_bin_demangle_type (const char *str) {
+R_API int r_bin_demangle_type(const char *str) {
 	if (!str || !*str) {
 		return R_BIN_NM_NONE;
 	}

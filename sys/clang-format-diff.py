@@ -129,7 +129,7 @@ def main():
 
     # handle functions definitions/declarations: do not use space before (
     for i, l in enumerate(formatted_code):
-        if formatted_code[i].startswith('R_API ') or formatted_code[i].startswith('static '):
+        if formatted_code[i].startswith('R_API ') or formatted_code[i].startswith('static ') or formatted_code[i].startswith('R_IPI '):
             formatted_code[i] = formatted_code[i].replace(' (', '(')
 
         if modified_lines and i not in modified_lines:

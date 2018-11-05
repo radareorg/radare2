@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_bin.h>
+#include "../i/private.h"
 #include "./cxx/demangle.h"
 
 static inline bool is_cxx_symbol (const char *name) {
