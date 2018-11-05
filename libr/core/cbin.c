@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include "r_util.h"
+#include "r_util/r_time.h"
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -1398,16 +1399,17 @@ static bool is_file_reloc(RBinReloc *r) {
 
 static int bin_relocs(RCore *r, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	RList *relocs;
 	RListIter *iter;
 	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	int i = 0;
 
+	R_TIME_BEGIN;
+
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
-	relocs = r_bin_patch_relocs (r->bin);
+	RList *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		relocs = r_bin_get_relocs (r->bin);
 	}
@@ -1522,6 +1524,8 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	R_FREE (sdb_module);
 	sdb_free (db);
 	db = NULL;
+
+	R_TIME_END;
 
 	return relocs != NULL;
 }
@@ -1815,7 +1819,6 @@ static void snFini(SymName *sn) {
 	R_FREE (sn->methflag);
 }
 
-
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (!strncmp (s->name, "imp.", 4)) {
@@ -1824,17 +1827,15 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
-static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
+static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
 	RBinSymbol *symbol;
 	RBinAddr *entry;
 	RListIter *iter;
-	RList *symbols;
-	const char *lang;
 	bool firstexp = true;
 	bool printHere = false;
-	int i = 0, is_arm, lastfs = 's';
+	int i = 0, lastfs = 's';
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		return 0;
@@ -1844,10 +1845,10 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		printHere = true;
 	}
 
-	is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
-	lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
+	bool is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
+	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
-	symbols = r_bin_get_symbols (r->bin);
+	RList *symbols = r_bin_get_symbols (r->bin);
 	r_space_set (&r->anal->meta_spaces, "bin");
 
 	if (IS_MODE_JSON (mode) && !printHere) {
@@ -2105,14 +2106,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 
 	r_space_set (&r->anal->meta_spaces, NULL);
 	return true;
-}
-
-static int bin_exports(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *args) {
-	return bin_symbols_internal (r, mode, laddr, va, at, name, true, args);
-}
-
-static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *args) {
-	return bin_symbols_internal (r, mode, laddr, va, at, name, false, args);
 }
 
 static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 datalen) {
@@ -3335,7 +3328,6 @@ static int bin_signature(RCore *r, int mode) {
 	return false;
 }
 
-
 R_API void r_core_bin_export_info_rad(RCore *core) {
 	Sdb *db = NULL;
 	char *flagname = NULL, *offset = NULL;
@@ -3479,20 +3471,20 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			ret &= bin_relocs (core, mode, va);
 		}
 	}
-	if ((action & R_CORE_BIN_ACC_IMPORTS)) {
-		ret &= bin_imports (core, mode, va, name); // 6s
-	}
-	if ((action & R_CORE_BIN_ACC_EXPORTS)) {
-		ret &= bin_exports (core, mode, loadaddr, va, at, name, chksum);
-	}
-	if ((action & R_CORE_BIN_ACC_SYMBOLS)) {
-		ret &= bin_symbols (core, mode, loadaddr, va, at, name, chksum); // 6s
-	}
 	if ((action & R_CORE_BIN_ACC_LIBS)) {
 		ret &= bin_libs (core, mode);
 	}
-	if ((action & R_CORE_BIN_ACC_CLASSES)) {
-		ret &= bin_classes (core, mode); // 3s
+	if ((action & R_CORE_BIN_ACC_IMPORTS)) { // 5s
+		ret &= bin_imports (core, mode, va, name);
+	}
+	if ((action & R_CORE_BIN_ACC_EXPORTS)) {
+		ret &= bin_symbols (core, mode, loadaddr, va, at, name, true, chksum);
+	}
+	if ((action & R_CORE_BIN_ACC_SYMBOLS)) { // 6s
+		ret &= bin_symbols (core, mode, loadaddr, va, at, name, false, chksum);
+	}
+	if ((action & R_CORE_BIN_ACC_CLASSES)) { // 6s
+		ret &= bin_classes (core, mode);
 	}
 	if ((action & R_CORE_BIN_ACC_SIZE)) {
 		ret &= bin_size (core, mode);
