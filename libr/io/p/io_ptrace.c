@@ -43,8 +43,13 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
+#if defined(__GLIBC__) && defined(__linux__)
 #define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), NULL)
 #define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (void *)(z))
+#else
+#define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), 0)
+#define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (int)(z))
+#endif
 #if __OpenBSD__ || __KFBSD__
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
