@@ -102,27 +102,17 @@ R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) 
 }
 
 R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
-	RListIter *iter;
-	RBinSymbol *sym;
-	const int maxlen = sizeof (sym->name) - 8;
 	Sdb *db = sdb_new0 ();
-	if (!db) {
-		return;
-	}
-	if (maxlen > 0) {
-		r_list_foreach (list, iter, sym) {
-			if (sym && sym->name && *sym->name) {
-				r_bin_filter_name (bf, db, sym->vaddr, sym->name, maxlen);
-			}
-		}
-	} else {
+	if (db) {
+		RListIter *iter;
+		RBinSymbol *sym;
 		r_list_foreach (list, iter, sym) {
 			if (sym && sym->name && *sym->name) {
 				r_bin_filter_sym (bf, db, sym->vaddr, sym);
 			}
 		}
+		sdb_free (db);
 	}
-	sdb_free (db);
 }
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
