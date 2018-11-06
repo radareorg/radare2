@@ -2514,6 +2514,7 @@ static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int 
 
 static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
+	const int pcdelta = thumb? 4 : 8;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
 	if (op->cond == R_ANAL_COND_NV) {
@@ -2808,6 +2809,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 				break;
 			case ARM_REG_IP:
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				break;
+			case ARM_REG_PC:
+				// bx pc is well known without ESIL
+				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->jump = op->addr + pcdelta;
+				op->hint.new_bits = (a->bits == 32)? 16 : 32;
 				break;
 			default:
 				op->type = R_ANAL_OP_TYPE_UJMP;
