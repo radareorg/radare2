@@ -722,13 +722,12 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 }
 
 static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to) {
+	r_return_if_fail (bf && bf->buf);
+
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
 
-	if (!bf || !bf->buf) {
-		return;
-	}
 	if (!raw) {
 		if (!plugin || !plugin->info) {
 			return;
@@ -755,11 +754,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
 			if (bf->rbin->verbose) {
-				eprintf ("WARNING: bin_strings buffer is too big "
-					"(0x%08" PFMT64x
-					")."
-					" Use -zzz or set bin.maxstrbuf "
-					"(RABIN2_MAXSTRBUF) in r2 (rabin2)\n",
+				eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n",
 					size);
 			}
 			return;

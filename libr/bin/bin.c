@@ -1290,8 +1290,8 @@ static RBinClass *class_get(RBinFile *binfile, const char *name) {
 
 	RBinClass *c;
 	RListIter *iter;
-	RList *list = binfile->o->classes;
-	r_list_foreach (list, iter, c) {
+	// TODO: switch to an hashtable to easily get this in O(1)
+	r_list_foreach (binfile->o->classes, iter, c) {
 		if (!strcmp (c->name, name)) {
 			return c;
 		}
