@@ -1803,7 +1803,6 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 	RListIter *iter;
 	bool mid = false;
 	st64 n;
-	int old_num_bbs;
 	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
@@ -1827,7 +1826,6 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		if (bb) {
 			r_list_delete_data (fcn->bbs, bb);
 		}
-		old_num_bbs = r_list_length (fcn->bbs);
 		bbuf = malloc (size);
 		if (bbuf) {
 			anal->iob.read_at (anal->iob.io, addr, bbuf, size);
@@ -1835,11 +1833,17 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			r_anal_fcn_update_tinyrange_bbs (fcn);
 			free (bbuf);
 		}
-		if (old_num_bbs >= r_list_length (fcn->bbs)) {
+		bb = NULL;
+		r_list_foreach (fcn->bbs, iter, bbi) {
+			if (addr == bbi->addr) {
+				bb = bbi;
+				break;
+			}
+		}
+		if (!bb) {
 			eprintf ("fcn_recurse failed\n");
 			return false;
 		}
-		bb = r_list_tail (fcn->bbs)->data;
 	} else {
 		if (!bb) {
 			bb = appendBasicBlock (anal, fcn, addr);
