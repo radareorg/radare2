@@ -391,7 +391,7 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 	if (!binfile) {
 		binfile = r_bin_file_new_from_bytes (
 			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
-			baseaddr, loadaddr, fd, name, NULL, offset, true);
+			baseaddr, loadaddr, fd, name, offset);
 	} else {
 		free (buf_bytes);
 	}
