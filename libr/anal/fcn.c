@@ -1825,12 +1825,14 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			r_list_delete_data (fcn->bbs, bb);
 		}
 		ut8 *bbuf = malloc (size);
-		if (bbuf) {
-			anal->iob.read_at (anal->iob.io, addr, bbuf, size);
-			fcn_recurse (anal, fcn, addr, bbuf, size, 1);
-			r_anal_fcn_update_tinyrange_bbs (fcn);
-			free (bbuf);
+		if (!bbuf) {
+			eprintf ("malloc failed\n");
+			return false;
 		}
+		anal->iob.read_at (anal->iob.io, addr, bbuf, size);
+		fcn_recurse (anal, fcn, addr, bbuf, size, 1);
+		r_anal_fcn_update_tinyrange_bbs (fcn);
+		free (bbuf);
 		bb = r_anal_fcn_bbget_at (fcn, addr);
 		if (!bb) {
 			eprintf ("fcn_recurse failed\n");
