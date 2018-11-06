@@ -2797,6 +2797,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->fail = addr+op->size;
 		}
 		op->jump = IMM(0) & UT32_MAX;
+		// propagate bits to create correctly hints ranges
+		op->hint.new_bits = a->bits;
 		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:

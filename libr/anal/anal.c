@@ -620,7 +620,12 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 
 // based on anal hint we construct a list of RAnalRange to handle
 // better arm/thumb though maybe handy in other contexts
-R_API void r_anal_build_range_on_hints(RAnal *a) {
+/*
+* update: specify whether or not remove hints. This used for analysis meanly
+	   since if we remove beforehand the disasm is screwed up because of later on new
+	   sections are added without taking into account old ranges
+*/
+R_API void r_anal_build_range_on_hints(RAnal *a, bool update) {
 	if (a->bits_hints_changed) {
 		SdbListIter *iter;
 		RListIter *it;
@@ -631,6 +636,9 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 		r_list_free (a->bits_ranges);
 		a->bits_ranges = r_list_newf ((RListFree)free);
 		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
+		if (update) {
+			a->bits_hints_changed = false;
+		}
 		//just grab when hint->bit changes with the previous one
 		ls_foreach (sdb_range, iter, kv) {
 			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (sdbkv_key (kv) + 5), sdbkv_value (kv));
@@ -643,8 +651,11 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 					r_list_append (a->bits_ranges, range);
 				}
 			} else {
-				//remove this hint is not needed
-				r_anal_hint_unset_bits (a, hint->addr);
+				if (update) {
+					//remove this hint is not needed
+					r_anal_hint_unset_bits (a, hint->addr);
+					a->bits_hints_changed = true;
+				}
 			}
 			range_bits = hint->bits;
 			r_anal_hint_free (hint);
@@ -656,7 +667,6 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 			}
 		}
 		ls_free (sdb_range);
-		a->bits_hints_changed = false;
 	}
 }
 
