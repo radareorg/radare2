@@ -57,6 +57,54 @@ R_IPI void r_bin_object_free(void /*RBinObject*/ *o_) {
 	R_FREE (o);
 }
 
+static RList *classes_from_symbols(RBinFile *bf, RBinObject *o) {
+	RBinSymbol *sym;
+	RListIter *iter;
+	RList *symbols = o->symbols;
+	RList *classes = o->classes;
+	if (!classes) {
+		classes = r_list_newf ((RListFree)r_bin_class_free);
+	}
+	r_list_foreach (symbols, iter, sym) {
+		if (sym->name[0] != '_') {
+			continue;
+		}
+		const char *cn = sym->classname;
+		if (cn) {
+			RBinClass *c = r_bin_class_new (bf, sym->classname, NULL, 0);
+			if (!c) {
+				continue;
+			}
+			// swift specific
+			char *dn = sym->dname;
+			char *fn = swiftField (dn, cn);
+			if (fn) {
+				// eprintf ("FIELD %s  %s\n", cn, fn);
+				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL);
+				r_list_append (c->fields, f);
+				free (fn);
+			} else {
+				char *mn = strstr (dn, "..");
+				if (mn) {
+					// eprintf ("META %s  %s\n", sym->classname, mn);
+				} else {
+					char *mn = strstr (dn, cn);
+					if (mn && mn[strlen (cn)] == '.') {
+						mn += strlen (cn) + 1;
+						// eprintf ("METHOD %s  %s\n", sym->classname, mn);
+						r_list_append (c->methods, sym);
+					}
+				}
+			}
+		}
+	}
+	if (r_list_empty (classes)) {
+		r_list_free (classes);
+		return NULL;
+	}
+	return classes;
+}
+
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	const ut8 *bytes = binfile? r_buf_buffer (binfile->buf): NULL;
 	ut64 bytes_sz = binfile? r_buf_size (binfile->buf): 0;
@@ -289,10 +337,10 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			o->classes = cp->classes (binfile);
 			isSwift = r_bin_lang_swift (binfile);
 			if (isSwift) {
-				o->classes = r_bin_classes_from_symbols (binfile, o);
+				o->classes = classes_from_symbols (binfile, o);
 			}
 		} else {
-			o->classes = r_bin_classes_from_symbols (binfile, o);
+			o->classes = classes_from_symbols (binfile, o);
 		}
 		if (bin->filter) {
 			filter_classes (binfile, o->classes);

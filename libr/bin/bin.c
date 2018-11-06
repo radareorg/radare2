@@ -1295,7 +1295,7 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	if (!name) {
 		return NULL;
 	}
-	RBinClass *c = r_bin_class_get (binfile, name);
+	RBinClass *c = class_get (binfile, name);
 	if (c) {
 		if (super) {
 			free (c->super);
@@ -1320,7 +1320,7 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	return c;
 }
 
-R_IPI RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
+static RBinClass *class_get(RBinFile *binfile, const char *name) {
 	r_return_val_if_fail (binfile && binfile->o && name, NULL);
 
 	RBinClass *c;
@@ -1337,7 +1337,7 @@ R_IPI RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	r_return_val_if_fail (binfile, NULL);
 
-	RBinClass *c = r_bin_class_get (binfile, classname);
+	RBinClass *c = class_get (binfile, classname);
 	if (!c) {
 		c = r_bin_class_new (binfile, classname, NULL, 0);
 		if (!c) {
