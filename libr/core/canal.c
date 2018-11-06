@@ -1567,7 +1567,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
-	r_anal_build_range_on_hints (core->anal, false);
 	r_core_seek_archbits (core, at);
 
 	if (core->io->va) {

@@ -967,7 +967,8 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		if (op.hint.new_bits) {
-			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
+			r_anal_hint_set_bits (anal, op.jump,
+					      op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
 			bbg = bbget (fcn, addr + idx, anal->opt.jmpmid && x86);
