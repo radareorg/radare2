@@ -948,7 +948,7 @@ repeat:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if ((len - addrbytes * idx) < 5) {
+		if ((len - addrbytes * idx) < 5 && len == MAXBBSIZE) { // Should use opt.bb_max_size here
 			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
 			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
 			break;
@@ -1828,10 +1828,10 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			r_list_delete_data (fcn->bbs, bb);
 		}
 		old_num_bbs = r_list_length (fcn->bbs);
-		bbuf = malloc (MAXBBSIZE);
+		bbuf = malloc (size);
 		if (bbuf) {
-			anal->iob.read_at (anal->iob.io, addr, bbuf, MAXBBSIZE);
-			fcn_recurse (anal, fcn, addr, bbuf, MAXBBSIZE, 1);
+			anal->iob.read_at (anal->iob.io, addr, bbuf, size);
+			fcn_recurse (anal, fcn, addr, bbuf, size, 1);
 			r_anal_fcn_update_tinyrange_bbs (fcn);
 			free (bbuf);
 		}
