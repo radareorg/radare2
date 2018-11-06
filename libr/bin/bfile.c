@@ -411,6 +411,15 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	return true;
 }
 
+static RBinFile *file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, bool steal_ptr) {
+	RBinFile *bf = r_bin_file_new (bin, file, bytes, sz, file_sz, rawstr,
+		fd, xtrname, bin->sdb, steal_ptr);
+	if (bf) {
+		r_list_append (bin->binfiles, bf);
+	}
+	return bf;
+}
+
 R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset, bool steal_ptr) {
 	ut8 binfile_created = false;
 	RBinPlugin *plugin = NULL;
@@ -426,15 +435,15 @@ R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 
 	if (xtr && xtr->check_bytes (bytes, sz)) {
 		return r_bin_file_xtr_load_bytes (bin, xtr, file,
-						bytes, sz, file_sz, baseaddr, loadaddr, 0,
-						fd, rawstr);
+			bytes, sz, file_sz, baseaddr, loadaddr, 0,
+			fd, rawstr);
 	}
 
-	RBinFile *bf = r_bin_file_create_append (bin, file, bytes, sz, file_sz,
-				       rawstr, fd, xtrname, steal_ptr);
+	RBinFile *bf = file_create_append (bin, file, bytes, sz, file_sz,
+		rawstr, fd, xtrname, steal_ptr);
 	if (!bf) {
 		if (!steal_ptr) { // we own the ptr, free on error
-			free ((void*) bytes);
+			free ((void *)bytes);
 		}
 		return NULL;
 	}
@@ -746,16 +755,6 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	free (a);
 }
 
-// This is an unnecessary piece of overengineering
-R_IPI RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, bool steal_ptr) {
-	RBinFile *bf = r_bin_file_new (bin, file, bytes, sz, file_sz, rawstr,
-		fd, xtrname, bin->sdb, steal_ptr);
-	if (bf) {
-		r_list_append (bin->binfiles, bf);
-	}
-	return bf;
-}
-
 // This function populate RBinFile->xtr_data, that information is enough to
 // create RBinObject when needed using r_bin_file_object_new_from_xtr_data
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
@@ -764,8 +763,8 @@ R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 	}
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		bf = r_bin_file_create_append (bin, filename, bytes, sz,
-					       file_sz, rawstr, fd, xtr->name, false);
+		bf = file_create_append (bin, filename, bytes, sz,
+			file_sz, rawstr, fd, xtr->name, false);
 		if (!bf) {
 			return NULL;
 		}
