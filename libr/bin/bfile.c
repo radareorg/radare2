@@ -385,6 +385,11 @@ R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 		r_list_delete_data (bin->binfiles, bf);
 		return NULL;
 	}
+	// size is set here because the reported size of the object depends on
+	// if loaded from xtr plugin or partially read
+	if (!o->size) {
+		o->size = file_sz;
+	}
 
 	return bf;
 }
