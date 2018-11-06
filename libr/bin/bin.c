@@ -1285,6 +1285,20 @@ R_IPI void r_bin_class_free(RBinClass *c) {
 	free (c);
 }
 
+static RBinClass *class_get(RBinFile *binfile, const char *name) {
+	r_return_val_if_fail (binfile && binfile->o && name, NULL);
+
+	RBinClass *c;
+	RListIter *iter;
+	RList *list = binfile->o->classes;
+	r_list_foreach (list, iter, c) {
+		if (!strcmp (c->name, name)) {
+			return c;
+		}
+	}
+	return NULL;
+}
+
 R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	const char *super, int view) {
 	if (!binfile || !binfile->o) {
@@ -1318,20 +1332,6 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	c->visibility = view;
 	r_list_append (list, c);
 	return c;
-}
-
-static RBinClass *class_get(RBinFile *binfile, const char *name) {
-	r_return_val_if_fail (binfile && binfile->o && name, NULL);
-
-	RBinClass *c;
-	RListIter *iter;
-	RList *list = binfile->o->classes;
-	r_list_foreach (list, iter, c) {
-		if (!strcmp (c->name, name)) {
-			return c;
-		}
-	}
-	return NULL;
 }
 
 R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {

@@ -8,6 +8,16 @@
 	if (binfile->rbin->verbose) \
 	eprintf
 
+static void mem_free(void *data) {
+	RBinMem *mem = (RBinMem *)data;
+	if (mem && mem->mirrors) {
+		mem->mirrors->free = mem_free;
+		r_list_free (mem->mirrors);
+		mem->mirrors = NULL;
+	}
+	free (mem);
+}
+
 static void object_delete_items(RBinObject *o) {
 	ut32 i = 0;
 	r_return_if_fail (o);
@@ -24,7 +34,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->lines);
 	sdb_free (o->kv);
 	if (o->mem) {
-		o->mem->free = r_bin_mem_free;
+		o->mem->free = mem_free;
 	}
 	r_list_free (o->mem);
 	o->mem = NULL;
@@ -55,6 +65,28 @@ R_IPI void r_bin_object_free(void /*RBinObject*/ *o_) {
 	r_bin_info_free (o->info);
 	object_delete_items (o);
 	R_FREE (o);
+}
+
+static char *swiftField(const char *dn, const char *cn) {
+	char *p = strstr (dn, ".getter_");
+	if (!p) {
+		p = strstr (dn, ".setter_");
+		if (!p) {
+			p = strstr (dn, ".method_");
+		}
+	}
+	if (p) {
+		char *q = strstr (dn, cn);
+		if (q && q[strlen (cn)] == '.') {
+			q = strdup (q + strlen (cn) + 1);
+			char *r = strchr (q, '.');
+			if (r) {
+				*r = 0;
+			}
+			return q;
+		}
+	}
+	return NULL;
 }
 
 static RList *classes_from_symbols(RBinFile *bf, RBinObject *o) {
@@ -391,16 +423,6 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	return r_bin_file_object_get_cur (r_bin_cur (bin));
-}
-
-static void r_bin_mem_free(void *data) {
-	RBinMem *mem = (RBinMem *)data;
-	if (mem && mem->mirrors) {
-		mem->mirrors->free = r_bin_mem_free;
-		r_list_free (mem->mirrors);
-		mem->mirrors = NULL;
-	}
-	free (mem);
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {
