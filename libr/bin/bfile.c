@@ -706,21 +706,6 @@ R_API int r_bin_file_deref(RBin *bin, RBinFile *a) {
 	return res;
 }
 
-R_IPI int r_bin_file_ref_by_bind(RBinBind *binb) {
-	RBin *bin = binb? binb->bin: NULL;
-	RBinFile *a = r_bin_cur (bin);
-	return r_bin_file_ref (bin, a);
-}
-
-R_IPI int r_bin_file_ref(RBin *bin, RBinFile *a) {
-	RBinObject *o = r_bin_cur_object (bin);
-	if (a && o) {
-		o->referenced--;
-		return true;
-	}
-	return false;
-}
-
 R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	RBinFile *a = bf_;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);

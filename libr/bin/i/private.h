@@ -14,10 +14,8 @@ R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
 R_IPI int r_bin_file_object_add(RBinFile *binfile, RBinObject *o);
 R_IPI RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx);
 R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
-R_IPI int r_bin_file_ref(RBin *bin, RBinFile *a);
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
-R_IPI int r_bin_file_ref_by_bind(RBinBind *binb);
 
 R_IPI void r_bin_section_free(RBinSection *bs);
 
