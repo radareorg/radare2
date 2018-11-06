@@ -52,6 +52,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 			return NULL;
 		}
 	} else if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
+		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load_bytes.\n", plugin->name);
 		// XXX more checking will be needed here
 		// only use LoadBytes if buffer offset != 0
 		// if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz
@@ -71,6 +72,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 			return NULL;
 		}
 	} else if (binfile && plugin && plugin->load) {
+		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load.\n", plugin->name);
 		// XXX - haha, this is a hack.
 		// switching out the current object for the new
 		// one to be processed
@@ -85,6 +87,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		}
 		o->obj_size = sz;
 	} else {
+		R_LOG_WARN ("Plugin %s should implement load_buffer method.\n", plugin->name);
 		sdb_free (o->kv);
 		free (o);
 		return NULL;
