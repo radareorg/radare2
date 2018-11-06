@@ -83,7 +83,7 @@ R_API void r_vlog(const char *funcname, const char *filename,
 
 	// Build output string with src info, and formatted output
 	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
-	const char *default_tag = R_BETWEEN (0, level, sizeof (level_tags) - 1) ? level_tags[level] : "";
+	const char *default_tag = R_BETWEEN (0, level, sizeof (level_tags) / sizeof (level_tags[0]) ? level_tags[level] : "";
 	if (!tag) {
 		tag = default_tag;
 	}
