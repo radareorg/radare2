@@ -2714,10 +2714,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				*p++ = 0;
 				off = r_num_math (core->num, p);
 			}
-			if (*name && !setFunctionName (core, off, name, false)) {
-				eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, off);
-			} else {
+			if (*name == '?') {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
+			} else {
+				if (!*name || !setFunctionName (core, off, name, false)) {
+					eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, off);
+				}
 			}
 			free (name);
 			}
