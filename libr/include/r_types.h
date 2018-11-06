@@ -136,7 +136,7 @@
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
-#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
+#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
