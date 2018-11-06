@@ -947,7 +947,7 @@ repeat:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if ((len - addrbytes * idx) < 5 && len == MAXBBSIZE) { // Should use opt.bb_max_size here
+		if ((len - addrbytes * idx) < 5 && len == MAXBBSIZE) { // TODO: use opt.bb_max_size here
 			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
 			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
 			break;
