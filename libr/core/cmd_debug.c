@@ -1950,7 +1950,7 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 		break;
 	case ' ': // "drp "
 		ptr = str + 2;
-		while (isspace (*ptr)) {
+		while (isspace ((ut8)*ptr)) {
 			ptr++;
 		}
 		if (r_str_startswith (ptr, "gdb ")) {

@@ -673,7 +673,7 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
 }
 
 static bool isHexDigit (const char _ch) {
-	const char ch = tolower (_ch);
+	const char ch = tolower ((ut8)_ch);
 	if (IS_DIGIT (ch)) {
 		return true;
 	}

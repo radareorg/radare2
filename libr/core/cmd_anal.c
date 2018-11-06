@@ -5300,7 +5300,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	case 'c': // "asc"
 		if (input[1] == 'a') {
 			if (input[2] == ' ') {
-				if (!isalpha (input[3]) && (n = r_num_math (num, input + 3)) >= 0 ) {
+				if (!isalpha ((ut8)input[3]) && (n = r_num_math (num, input + 3)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (n));
@@ -5324,7 +5324,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == ' ') {
-				if (!isalpha (input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
+				if (!isalpha ((ut8)input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (n));
@@ -5353,7 +5353,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
-			if (!isalpha (input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
+			if (!isalpha ((ut8)input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
 				si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si)
 					r_cons_println (si->name);
@@ -6833,7 +6833,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	return r_core_anal_search_xrefs (core, from, to, rad);
 }
 
-static const char *oldstr = NULL; 
+static const char *oldstr = NULL;
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;

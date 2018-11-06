@@ -119,8 +119,8 @@ R_API char *r_hex_from_c_str(char *out, const char **code) {
 			case 'r': *out++='0';*out++='d';break;
 			case 'n': *out++='0';*out++='a';break;
 			case 'x': {
-				char c1 = iter[1];
-				char c2 = iter[2];
+				ut8 c1 = iter[1];
+				ut8 c2 = iter[2];
 				iter += 2;
 				if (c1 == '\0' || c2 == '\0') {
 					return NULL;

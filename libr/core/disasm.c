@@ -2280,7 +2280,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		r_str_case (r_asm_op_get_asm (&ds->asmop), 1);
 	} else if (ds->capitalize) {
 		char *ba = r_asm_op_get_asm (&ds->asmop);
-		*ba = toupper (*ba);
+		*ba = toupper ((ut8)*ba);
 	}
 	if (info && mt_sz != UT64_MAX) {
 		ds->oplen = mt_sz;

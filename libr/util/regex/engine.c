@@ -194,7 +194,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 		/* where? */
 		if (!m->coldp) {
 			break;
-		}	
+		}
 		for (;;) {
 			NOTE("finding start");
 			endp = slow(m, m->coldp, stop, gf, gl);
@@ -243,14 +243,14 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 		}
 		if (dp) {
 			break;
-		}			
+		}
 		/* uh-oh... we couldn't find a subexpression-level match */
 		if (!g->backrefs) {	/* must be back references doing it */
 			break;
-		}	
+		}
 		if (g->nplus || !m->lastpos) {
 			break;
-		}	
+		}
 		for (;;) {
 			if (dp != NULL || endp <= m->coldp)
 				break;		/* defeat */
@@ -263,7 +263,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			for (i = 1; i <= m->g->nsub; i++) {
 				if (m->pmatch[i].rm_so != -1) {
 					break;
-				}					
+				}
 				if (m->pmatch[i].rm_eo != -1) {
 					break;
 				}
@@ -419,7 +419,7 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 				ssp = oldssp;
 			}
 			if (sep == rest) {	/* must exhaust substring */
-				if (slow(m, ssp, sep, ssub, esub) == rest) { 
+				if (slow(m, ssp, sep, ssub, esub) == rest) {
 					dp = dissect(m, ssp, sep, ssub, esub);
 					if (dp == sep) {
 						sp = rest;
@@ -988,7 +988,7 @@ step(struct re_guts *g,
 		case OOR2:		/* propagate OCH_'s marking */
 			FWD(aft, aft, 1);
 			if (OP(g->strip[pc+OPND(s)]) != O_CH) {
-				if (OP(g->strip[pc+OPND(s)]) == OOR2) {	
+				if (OP(g->strip[pc+OPND(s)]) == OOR2) {
 					FWD(aft, aft, OPND(s));
 				}
 			}
@@ -1060,7 +1060,7 @@ pchar(int ch)
 {
 	static char pbuf[10];
 
-	if (isprint(ch) || ch == ' ')
+	if (isprint((ut8)ch) || ch == ' ')
 		(void)snprintf(pbuf, sizeof pbuf, "%c", ch);
 	else
 		(void)snprintf(pbuf, sizeof pbuf, "\\%o", ch);

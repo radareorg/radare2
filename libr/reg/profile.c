@@ -258,7 +258,7 @@ static int gdb_to_r2_profile(char *gdb) {
 	// Name Number Rel Offset Size Type Groups
 
 	// Skip whitespace at beginning of line and empty lines
-	while (isspace (*ptr)) {
+	while (isspace ((ut8)*ptr)) {
 		ptr++;
 	}
 	// It's possible someone includes the heading line too. Skip it
@@ -270,7 +270,7 @@ static int gdb_to_r2_profile(char *gdb) {
 	}
 	for (;;) {
 		// Skip whitespace at beginning of line and empty lines
-		while (isspace (*ptr)) {
+		while (isspace ((ut8)*ptr)) {
 			ptr++;
 		}
 		if (!*ptr) {

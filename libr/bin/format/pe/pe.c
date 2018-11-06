@@ -2839,7 +2839,7 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 	}
 
 	while (i < 33) {
-		res->guidstr[i] = toupper ((int) res->guidstr[i]);
+		res->guidstr[i] = toupper ((ut8) res->guidstr[i]);
 		i++;
 	}
 
