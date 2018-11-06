@@ -61,6 +61,10 @@ static bool load(RBinFile *bf) {
 	return true;
 }
 
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_buf_new ();
+}
+
 static int destroy(RBinFile *bf) {
 	return true;
 }
@@ -74,6 +78,7 @@ RBinPlugin r_bin_plugin_any = {
 	.desc = "Dummy format r_bin plugin",
 	.license = "LGPL3",
 	.load = &load,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.baddr = &baddr,
 	.info = info,
