@@ -865,7 +865,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
-	RAnalFunction *fcn_at_addr;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
 	int overlapped = 0;
 	RAnalOp op = {0};
@@ -908,7 +907,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
 	if (fcn_at_addr && fcn_at_addr != fcn) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
@@ -1799,7 +1798,6 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 /* rename RAnalFunctionBB.add() */
 R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
 	RAnalBlock *bb = NULL, *bbi;
-	ut8 *bbuf;
 	RListIter *iter;
 	bool mid = false;
 	st64 n;
@@ -1826,7 +1824,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		if (bb) {
 			r_list_delete_data (fcn->bbs, bb);
 		}
-		bbuf = malloc (size);
+		ut8 *bbuf = malloc (size);
 		if (bbuf) {
 			anal->iob.read_at (anal->iob.io, addr, bbuf, size);
 			fcn_recurse (anal, fcn, addr, bbuf, size, 1);
