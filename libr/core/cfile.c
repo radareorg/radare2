@@ -265,6 +265,7 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	return result;
 }
 
+#if __linux__ || __APPLE__
 static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	RBreakpointItem *bp;
 	RFlagItem *fi = r_flag_get (r->flags, sym);
@@ -284,6 +285,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	eprintf ("Cannot set breakpoint at %s\n", sym);
 	return false;
 }
+#endif
 
 // XXX - need to handle index selection during debugging
 static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *filenameuri) {
