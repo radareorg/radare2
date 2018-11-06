@@ -1604,7 +1604,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full);
 
 /* hints */
 
-R_API void r_anal_build_range_on_hints (RAnal *a);
+R_API void r_anal_build_range_on_hints (RAnal *a, bool update);
 //R_API void r_anal_hint_list (RAnal *anal, int mode);
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
