@@ -447,7 +447,9 @@ R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 // TODO: deprecate
 R_API RBinPlugin *r_bin_get_binplugin_any(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	return r_bin_get_binplugin_by_name (bin, "any");
+	RBinPlugin *res = r_bin_get_binplugin_by_name (bin, "any");
+	r_warn_if_fail (res);
+	return res;
 }
 
 static void r_bin_plugin_free(RBinPlugin *p) {

@@ -312,8 +312,8 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 		plugin = r_bin_get_binplugin_any (bin);
 	}
 	r_buf_free (bf->buf);
-	bf->buf = r_buf_new_with_bytes ((const ut8*)bytes, data->size);
-	//r_bin_object_new append the new object into binfile
+	bf->buf = r_buf_new_with_bytes ((const ut8 *)bytes, data->size);
+	// r_bin_object_new append the new object into binfile
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	// size is set here because the reported size of the object depends on
 	// if loaded from xtr plugin or partially read
@@ -457,15 +457,6 @@ R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id) {
 		binfile = NULL;
 	}
 	return binfile;
-}
-
-R_IPI int r_bin_file_object_add(RBinFile *binfile, RBinObject *o) {
-	if (!o) {
-		return false;
-	}
-	r_list_append (binfile->objs, o);
-	r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, o);
-	return true;
 }
 
 R_API int r_bin_file_delete_all(RBin *bin) {

@@ -137,10 +137,19 @@ static RList *classes_from_symbols(RBinFile *bf, RBinObject *o) {
 	return classes;
 }
 
+static bool file_object_add(RBinFile *binfile, RBinObject *o) {
+	r_return_val_if_fail (binfile && o, false);
+	r_list_append (binfile->objs, o);
+	r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, o);
+	return true;
+}
+
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
-	const ut8 *bytes = binfile? r_buf_buffer (binfile->buf): NULL;
-	ut64 bytes_sz = binfile? r_buf_size (binfile->buf): 0;
-	Sdb *sdb = binfile? binfile->sdb: NULL;
+	r_return_val_if_fail (binfile && plugin, NULL);
+
+	const ut8 *bytes = r_buf_buffer (binfile->buf);
+	ut64 bytes_sz = r_buf_size (binfile->buf);
+	Sdb *sdb = binfile->sdb;
 	RBinObject *o = R_NEW0 (RBinObject);
 	if (!o) {
 		return NULL;
@@ -189,7 +198,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 			free (o);
 			return NULL;
 		}
-	} else if (binfile && plugin && plugin->load) {
+	} else if (plugin->load) {
 		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load.\n", plugin->name);
 		// XXX - haha, this is a hack.
 		// switching out the current object for the new
@@ -211,17 +220,13 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		return NULL;
 	}
 
-	// XXX - binfile could be null here meaning an improper load
-	// XXX - object size cant be set here and needs to be set where
-	// where the object is created from.  The reason for this is to prevent
+	// XXX - object size cant be set here and needs to be set where where
+	// the object is created from. The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is
-	// extracted
-	// from a set of bytes in the file
+	// extracted from a set of bytes in the file
 	r_bin_object_set_items (binfile, o);
-	r_bin_file_object_add (binfile, o);
+	file_object_add (binfile, o);
 
-	// XXX this is a very hacky alternative to rewriting the
-	// RIO stuff, as discussed here:
 	return o;
 }
 
