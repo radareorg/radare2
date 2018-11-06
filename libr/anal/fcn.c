@@ -1831,13 +1831,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			r_anal_fcn_update_tinyrange_bbs (fcn);
 			free (bbuf);
 		}
-		bb = NULL;
-		r_list_foreach (fcn->bbs, iter, bbi) {
-			if (addr == bbi->addr) {
-				bb = bbi;
-				break;
-			}
-		}
+		bb = r_anal_fcn_bbget_at (fcn, addr);
 		if (!bb) {
 			eprintf ("fcn_recurse failed\n");
 			return false;
