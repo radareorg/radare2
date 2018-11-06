@@ -246,7 +246,6 @@ static char *getNameDelta(RCore *core, ut64 addr) {
 }
 
 static void archbits(RCore *core, ut64 addr) {
-	r_anal_build_range_on_hints (core->anal, false);
 	r_core_seek_archbits (core, addr);
 }
 

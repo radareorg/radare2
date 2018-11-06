@@ -64,6 +64,8 @@ typedef struct r_anal_range_t {
 	ut64 from;
 	ut64 to;
 	int bits;
+	ut64 rb_max_addr;
+	RBNode rb;
 } RAnalRange;
 
 #define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
@@ -616,6 +618,11 @@ typedef enum {
 	R_ANAL_CPP_ABI_MSVC
 } RAnalCPPABI;
 
+typedef struct r_anal_hint_cb_t {
+	//add more cbs as needed
+	void (*on_bits) (struct r_anal_t *a, ut64 addr, int bits, bool set);
+} RHintCb;
+
 typedef struct r_anal_t {
 	char *cpu;
 	char *os;
@@ -674,7 +681,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_vars; // globals?
 #endif
 	Sdb *sdb_hints; // OK
-	bool bits_hints_changed;
+	RHintCb hint_cbs;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	//RList *hints; // XXX use better data structure here (slist?)
@@ -683,7 +690,8 @@ typedef struct r_anal_t {
 	RList *reflines;
 	RList *reflines2;
 	//RList *noreturn;
-	RList /*RAnalRange*/ *bits_ranges;
+	RBNode *rb_hints_ranges; // <RAnalRange>
+	bool merge_hints;
 	RListComparator columnSort;
 	int stackptr;
 	bool fillval;
@@ -1604,7 +1612,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full);
 
 /* hints */
 
-R_API void r_anal_build_range_on_hints (RAnal *a, bool update);
+R_API void r_anal_build_range_on_hints (RAnal *a, ut64 addr, int bits);
+R_API void r_anal_merge_hint_ranges(RAnal *a);
 //R_API void r_anal_hint_list (RAnal *anal, int mode);
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
@@ -1639,6 +1648,10 @@ R_API void r_anal_hint_unset_ret(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr);
+
+R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str);
+R_API int r_anal_range_tree_find_bits_at(RBNode *root, ut64 addr);
+
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 
 /* switch.c APIs */

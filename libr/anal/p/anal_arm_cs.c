@@ -1478,11 +1478,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		{
-		const char *op1 = ARG(0);
+		const char *op1 = ARG (0);
 		if (!strcmp (op1, "pc")) {
 			r_strbuf_setf (&op->esil, "%d,$$,+,pc,=", pcdelta);
 		} else {
-			r_strbuf_setf (&op->esil, "%s,pc,=", ARG(0));
+			r_strbuf_setf (&op->esil, "%s,pc,=", ARG (0));
 		}
 		break;
 		}

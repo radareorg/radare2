@@ -262,14 +262,12 @@ beach:
 	return ret;
 }
 
-
-static void choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
-	RAnalRange *range;
-	RListIter *iter;
-	r_list_foreach (core->anal->bits_ranges, iter, range) {
-		if (addr >= range->from && addr < range->to) {
-			*bits = range->bits;
-			return;
+static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
+	if (core->anal) {
+		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges,
+							  addr);
+		if (ret) {
+			*bits = ret;
 		}
 	}
 }
@@ -279,7 +277,7 @@ R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
 	if (!bits && !core->fixedbits) {
 		//if we found bits related with anal hints pick it up
-		choose_bits_anal_hints (core, addr, &bits);
+		__choose_bits_anal_hints (core, addr, &bits);
 	}
 	if (bits && !core->fixedbits) {
 		r_config_set_i (core->config, "asm.bits", bits);
