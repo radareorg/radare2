@@ -583,7 +583,7 @@ R_API char *r_cons_password(const char *msg) {
 	tcsetattr (0, TCSADRAIN, &a->term_raw);
 	signal (SIGTSTP, SIG_IGN);
 #endif
-	while (i < sizeof (buf)) {
+	while (i < sizeof (buf) - 1) {
 		int ch = r_cons_readchar ();
 		if (ch == 127) { // backspace
 			if (i < 1) {
