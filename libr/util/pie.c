@@ -12,12 +12,12 @@
 
 static void drawSectorLine(char *out, int size, int percent) {
 	int i, x, y;
-	double A = (percent) * PI / 50;
-	double foo  = 0.1;
-	for (i = (size-1) / 2; i < (size-3) ; i++) {
-		x = y = (size - 1)/ 2;
+	double A = (percent)*PI / 50;
+	double foo = 0.1;
+	for (i = (size - 1) / 2; i < (size - 3); i++) {
+		x = y = (size - 1) / 2;
 		x += cos (A) * foo + 1;
-		y += sin (A)  *foo + 1 ;
+		y += sin (A) * foo + 1;
 		foo += 1.1;
 		O = ':';
 	}
@@ -29,14 +29,14 @@ R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
 	int i, x, y;
 	if (nv && out) {
 		ut64 total = 0;
-		for (i = 0; i<nvalues; i++) {
+		for (i = 0; i < nvalues; i++) {
 			total += values[i];
 		}
 		total /= 100;
 		if (total < 1) {
 			total = 1;
 		}
-		for (i = 0; i<nvalues; i++) {
+		for (i = 0; i < nvalues; i++) {
 			nv[i] = values[i] / total;
 		}
 		for (x = 0; x < size; x++) {
@@ -48,8 +48,8 @@ R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
 		float a = 0.0;
 		int s = size / 2;
 		while (a < 2 * PI) {
-			x = s * cos (a) + (size/2);
-			y = s * sin (a) + (size/2);
+			x = s * cos (a) + (size / 2);
+			y = s * sin (a) + (size / 2);
 			O = '.';
 			a += 0.1;
 		}
@@ -57,15 +57,15 @@ R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
 		int radius = (size - 1) / 2;
 
 		// draw portions
-		for (x=0; x<=2*radius; x++) {
-			for (y=0; y<=2*radius; y++) {
-				double distance = sqrt((double)(x-radius)*(x-radius) + (y-radius)*(y-radius));
-				O = (distance>radius-0.5 && distance<radius+0.5)? '.': ' ';
+		for (x = 0; x <= 2 * radius; x++) {
+			for (y = 0; y <= 2 * radius; y++) {
+				double distance = sqrt ((double)(x - radius) * (x - radius) + (y - radius) * (y - radius));
+				O = (distance > radius - 0.5 && distance < radius + 0.5) ? '.' : ' ';
 			}
 		}
 #endif
 		int amount = 0;
-		for (i = 0; i< nvalues; i++) {
+		for (i = 0; i < nvalues; i++) {
 			drawSectorLine (out, size, nv[i] + amount);
 			amount += nv[i];
 		}
@@ -76,7 +76,7 @@ R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
 				for (y = 0; y < size; y++) {
 					p->cb_printf ("%c%c", O, O);
 				}
-				p->cb_printf("\n");
+				p->cb_printf ("\n");
 			}
 		}
 	}

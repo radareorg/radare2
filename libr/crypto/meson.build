@@ -1,4 +1,5 @@
 files = [
+  'des.c',
   'crypto.c',
   'p/crypto_aes.c',
   'p/crypto_aes_algo.c',

@@ -43,7 +43,7 @@ static void trv_segs (const void *seg, const void *segs) {
 	const ut8 * const mseg = (const ut8 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg && msegs && *msegs) {
-		r_write_le16(*msegs, r_read_le16(mseg));
+		r_write_le16 (*msegs, r_read_le16 (mseg));
 		*msegs = *msegs + 1;
 	}
 }
