@@ -57,6 +57,10 @@ ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
 endif
 endif
 
+ifeq (${BUILD_OS},dragonfly)
+  LDFLAGS+=-lexecinfo
+endif
+
 EXTRA_PRE+=sdb_version
 EXTRA_PRE+=spp_config
 
