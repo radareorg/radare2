@@ -3,7 +3,7 @@
 #include "stream_file.h"
 #include "tpi.h"
 
-#define _ALIGN 4
+#define PDB_ALIGN 4
 
 ///////////////////////////////////////////////////////////////////////////////
 static void free_dbi_stream(void *stream) {
@@ -145,8 +145,8 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 		}
 		// TODO: rewrite for signature where can to do chech CAN_READ true?
 		sz = parse_dbi_ex_header (p_tmp, size, dbi_ex_header);
-		if ((sz % _ALIGN)) {
-			sz = sz + (_ALIGN - (sz % _ALIGN));
+		if ((sz % PDB_ALIGN)) {
+			sz = sz + (PDB_ALIGN - (sz % PDB_ALIGN));
 		}
 		i += sz;
 		p_tmp += sz;
