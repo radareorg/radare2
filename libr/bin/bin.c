@@ -428,8 +428,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		return false;
 	}
 
-	int bd = bin->cur->id;
-	r_id_storage_set (bin->ids, bin->cur, bd);
+	r_id_storage_set (bin->ids, bin->cur, binfile->id);
 	return true;
 }
 
