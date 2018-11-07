@@ -191,7 +191,7 @@ R_API void r_bin_string_free(void *_str) {
 // kinda a clunky functions
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
-R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
+R_API bool r_bin_open(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
 	r_return_val_if_fail (bin && bin->iob.io, false);
 
 	RIOBind *iob = &(bin->iob);
@@ -199,10 +199,31 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
 	if (fd < 0) {
+		eprintf ("Couldn't open bin for file '%s'\n", file);
 		return false;
 	}
-	bin->rawstr = rawstr;
-	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0);
+	RBinOptions opt = {
+		.pluginname = NULL,
+		.offset = 0,
+		.baseaddr = baseaddr,
+		.loadaddr = loadaddr,
+		.sz = 0,
+		.xtr_idx = xtr_idx,
+		.rawstr = rawstr,
+		.fd = fd,
+	};
+	return r_bin_open_io (bin, &opt);
+}
+
+static void bin_options_from_bo(RBinOptions *opt, RBin *bin, RBinObject *bo, int fd, ut64 baseaddr) {
+	opt->pluginname = NULL;
+	opt->offset = bo->boffset;
+	opt->baseaddr = baseaddr;
+	opt->loadaddr = bo->loadaddr;
+	opt->sz = 0;
+	opt->xtr_idx = 0;
+	opt->rawstr = bin->rawstr;
+	opt->fd = fd;
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
@@ -255,8 +276,9 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		}
 		if (r_list_length (the_obj_list) == 1) {
 			RBinObject *bo = (RBinObject *)r_list_get_n (the_obj_list, 0);
-			res = r_bin_load_io (bin, fd, baseaddr,
-				bo->loadaddr, 0, bo->boffset, NULL, 0);
+			RBinOptions opt;
+			bin_options_from_bo (&opt, bin, bo, fd, baseaddr);
+			res = r_bin_open_io (bin, &opt);
 		}
 		iob->fd_close (iob->io, tfd);
 		goto error;
@@ -280,7 +302,9 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	r_list_foreach (the_obj_list, iter, bo) {
 		// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
 		// TODO: use of bo->plugin->name seems to  be bad
-		res = r_bin_load_io (bin, fd, baseaddr, bo->loadaddr, 0, bo->boffset, NULL, 0);
+		RBinOptions opt;
+		bin_options_from_bo (&opt, bin, bo, fd, baseaddr);
+		res = r_bin_open_io (bin, &opt);
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
 	free (buf_bytes);
@@ -290,7 +314,10 @@ error:
 	return res;
 }
 
-R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
+R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
+	r_return_val_if_fail (bin && opt && bin->iob.io, false);
+	r_return_val_if_fail (opt->fd >= 0 && (st64)opt->sz >= 0, false);
+
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
@@ -300,14 +327,14 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 	RBinFile *binfile = NULL;
 	int tfd = -1;
 
-	r_return_val_if_fail (bin && io && fd >= 0 && (st64)sz >= 0, false);
+	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
+	const char *fname = iob->fd_get_name (io, opt->fd);
 
-	bool is_debugger = iob->fd_is_dbg (io, fd);
-	const char *fname = iob->fd_get_name (io, fd);
-	if (loadaddr == UT64_MAX) {
-		loadaddr = 0;
+	bin->rawstr = opt->rawstr;
+	if (opt->loadaddr == UT64_MAX) {
+		opt->loadaddr = 0;
 	}
-	file_sz = iob->fd_size (io, fd);
+	file_sz = iob->fd_size (io, opt->fd);
 	// file_sz = UT64_MAX happens when attaching to frida:// and other non-debugger io plugins which results in double opening
 	if (is_debugger && file_sz == UT64_MAX) {
 		tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
@@ -315,24 +342,24 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 			file_sz = iob->fd_size (io, tfd);
 		}
 	}
-	if (!sz) {
-		sz = file_sz;
+	if (!opt->sz) {
+		opt->sz = file_sz;
 	}
 	// check if blockdevice?
-	if (sz >= UT32_MAX) {
-		sz = 1024 * 32;
+	if (opt->sz >= UT32_MAX) {
+		opt->sz = 1024 * 32;
 	}
 
 	bin->file = fname;
-	sz = R_MIN (file_sz, sz);
+	opt->sz = R_MIN (file_sz, opt->sz);
 	if (!r_list_length (bin->binfiles)) {
 		if (is_debugger) {
 			//use the temporal RIODesc to read the content of the file instead
 			//from the memory
 			if (tfd >= 0) {
-				buf_bytes = calloc (1, sz + 1);
+				buf_bytes = calloc (1, opt->sz + 1);
 				if (buf_bytes) {
-					iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
+					iob->fd_read_at (io, tfd, 0, buf_bytes, opt->sz);
 				}
 				// iob->fd_close (io, tfd);
 			}
@@ -340,49 +367,49 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 	}
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
-		if ((int)sz < 0) {
-			eprintf ("Cannot allocate %d bytes\n", (int)(sz));
+		if ((st64)opt->sz < 0) {
+			eprintf ("Cannot allocate %" PFMT64d " bytes\n", (st64) (opt->sz));
 			return false;
 		}
-		const int asz = sz? sz: 1;
+		const ut64 asz = opt->sz? opt->sz: 1;
 		buf_bytes = calloc (1, asz);
 		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", asz);
+			eprintf ("Cannot allocate %" PFMT64d " bytes.\n", asz);
 			return false;
 		}
-		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, asz)) {
-			sz = 0LL;
+		ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
+		if (!iob->fd_read_at (io, opt->fd, seekaddr, buf_bytes, asz)) {
+			opt->sz = 0LL;
 		}
 	}
-	if (bin->use_xtr && !name && (st64)sz > 0) {
+	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr && xtr->check_bytes (buf_bytes, sz)) {
-				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
-					if (is_debugger && sz != file_sz) {
+			if (xtr && xtr->check_bytes (buf_bytes, opt->sz)) {
+				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
+					if (is_debugger && opt->sz != file_sz) {
 						R_FREE (buf_bytes);
 						if (tfd < 0) {
 							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
 						}
-						sz = iob->fd_size (io, tfd);
-						if (sz != UT64_MAX) {
-							buf_bytes = calloc (1, sz + 1);
+						opt->sz = iob->fd_size (io, tfd);
+						if (opt->sz != UT64_MAX) {
+							buf_bytes = calloc (1, opt->sz + 1);
 							if (buf_bytes) {
-								(void) iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
+								(void)iob->fd_read_at (io, tfd, 0, buf_bytes, opt->sz);
 							}
 						}
 						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
-						tfd = -1;	// marking it closed
-					} else if (sz != file_sz) {
-						(void) iob->read_at (io, 0LL, buf_bytes, sz);
+						tfd = -1; // marking it closed
+					} else if (opt->sz != file_sz) {
+						(void)iob->read_at (io, 0LL, buf_bytes, opt->sz);
 					}
 					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
-						fname, buf_bytes, sz, file_sz,
-						baseaddr, loadaddr, xtr_idx,
-						fd, bin->rawstr);
+						fname, buf_bytes, opt->sz, file_sz,
+						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
+						opt->fd, bin->rawstr);
 				}
 				xtr = NULL;
 			}
@@ -390,8 +417,8 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 	}
 	if (!binfile) {
 		binfile = r_bin_file_new_from_bytes (
-			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
-			baseaddr, loadaddr, fd, name, offset);
+			bin, fname, buf_bytes, opt->sz, file_sz, bin->rawstr,
+			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
 	} else {
 		free (buf_bytes);
 	}

@@ -35,7 +35,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	if (!core) {
 		return GHT_MAX;
 	}
-	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
+	r_bin_open (core->bin, path, 0, 0, 0, -1, false);
 	syms = r_bin_get_symbols (core->bin);
 	if (!syms) {
 		return GHT_MAX;
