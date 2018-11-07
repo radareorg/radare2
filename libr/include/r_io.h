@@ -31,9 +31,11 @@
 #if defined(__GLIBC__) && defined(__linux__)
 typedef enum __ptrace_request r_ptrace_request_t;
 typedef void * r_ptrace_data_t;
+#define R_PTRACE_NODATA NULL
 #else
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
+#define R_PTRACE_NODATA 0
 #endif
 #endif
 
