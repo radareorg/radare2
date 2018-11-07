@@ -1252,9 +1252,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		++l;
 		m->flag |= NOSPACE;
 	}
-	for (i = 0; (m->desc[i++] = *l++) != '\0' && i < sizeof (m->desc);) {
-		continue;
-	}
+	for (i = 0; (m->desc[i++] = *l++) != '\0' && i < sizeof (m->desc);) {}
 	if (i == sizeof (m->desc)) {
 		m->desc[sizeof (m->desc) - 1] = '\0';
 		if (ms->flags & R_MAGIC_CHECK) {
@@ -1308,9 +1306,7 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 	EATAB;
 	for (i = 0;
 		*l && ((isascii ((ut8)*l) && isalnum ((ut8)*l)) || strchr ("-+/.", *l)) && i < sizeof (m->mimetype);
-		m->mimetype[i++] = *l++) {
-		continue;
-	}
+		m->mimetype[i++] = *l++) {}
 	if (i == sizeof (m->mimetype)) {
 		m->desc[sizeof (m->mimetype) - 1] = '\0';
 		if (ms->flags & R_MAGIC_CHECK) {
