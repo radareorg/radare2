@@ -794,7 +794,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		r->files = r_list_newf ((RListFree)r_core_file_free);
 	}
 
-	r_core_file_set_by_file (r, fh);
+	r->file = fh;
+	r_io_use_fd (r->io, fd->fd);
+
 	r_list_append (r->files, fh);
 	if (r_config_get_i (r->config, "cfg.debug")) {
 		bool swstep = true;
