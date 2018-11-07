@@ -351,9 +351,7 @@ static RBinFile *file_create_append(RBin *bin, const char *file, const ut8 *byte
 }
 
 static RBinPlugin *get_plugin(RBin *bin, const char *pluginname, const ut8 *bytes, ut64 sz) {
-	RBinPlugin *plugin;
-
-	plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
+	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
 	if (plugin) {
 		return plugin;
 	}

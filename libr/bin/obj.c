@@ -37,22 +37,8 @@ static void object_delete_items(RBinObject *o) {
 		o->mem->free = mem_free;
 	}
 	r_list_free (o->mem);
-	o->mem = NULL;
-	o->entries = NULL;
-	o->fields = NULL;
-	o->imports = NULL;
-	o->libs = NULL;
-	o->relocs = NULL;
-	o->sections = NULL;
-	o->strings = NULL;
-	o->symbols = NULL;
-	o->classes = NULL;
-	o->lines = NULL;
-	o->info = NULL;
-	o->kv = NULL;
 	for (i = 0; i < R_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
-		o->binsym[i] = NULL;
 	}
 }
 
@@ -68,6 +54,10 @@ R_IPI void r_bin_object_free(void /*RBinObject*/ *o_) {
 }
 
 static char *swiftField(const char *dn, const char *cn) {
+	if (!dn || !cn) {
+		return NULL;
+	}
+
 	char *p = strstr (dn, ".getter_");
 	if (!p) {
 		p = strstr (dn, ".setter_");
