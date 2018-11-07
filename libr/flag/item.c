@@ -2,8 +2,6 @@
 
 #include <r_flag.h>
 
-#define ISNULLSTR(x) (!(x) || !*(x))
-
 R_API RFlagItem *r_flag_item_new (void) {
 	return R_NEW0 (RFlagItem);
 }
@@ -45,14 +43,14 @@ R_API void r_flag_item_free(RFlagItem *item) {
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias) {
 	r_return_if_fail (item);
 	free (item->alias);
-	item->alias = ISNULLSTR (alias)? NULL: strdup (alias);
+	item->alias = R_STR_ISEMPTY (alias)? NULL: strdup (alias);
 }
 
 /* add/replace/remove the comment of a flag item */
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 	r_return_if_fail (item);
 	free (item->comment);
-	item->comment = ISNULLSTR (comment) ? NULL : strdup (comment);
+	item->comment = R_STR_ISEMPTY (comment) ? NULL : strdup (comment);
 }
 
 /* add/replace/remove the realname of a flag item */
@@ -61,5 +59,5 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 	if (item->name != item->realname) {
 		free (item->realname);
 	}
-	item->realname = ISNULLSTR (realname) ? NULL : strdup (realname);
+	item->realname = R_STR_ISEMPTY (realname) ? NULL : strdup (realname);
 }
