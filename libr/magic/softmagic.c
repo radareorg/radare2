@@ -300,9 +300,7 @@ char * strdupn(const char *str, size_t n) {
 	size_t len;
 	char *copy;
 
-	for (len = 0; len < n && str[len]; len++) {
-		continue;
-	}
+	for (len = 0; len < n && str[len]; len++) {}
 	if (!(copy = malloc (len + 1))) {
 		return NULL;
 	}
