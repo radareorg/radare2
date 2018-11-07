@@ -144,6 +144,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case SPARC_INS_RETT:
+		case SPARC_INS_RET:
+		case SPARC_INS_RETL:
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->delay = 1;
 			break;
