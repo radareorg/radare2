@@ -76,6 +76,7 @@ R_API void r_vlog(const char *funcname, const char *filename,
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
+		va_end (args_copy);
 		return;
 	}
 
