@@ -190,8 +190,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
 		paddr = string->paddr;
-		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
-		addr = va ? vaddr : paddr;
+		vaddr = string->vaddr; // r_bin_get_vaddr (bin, paddr, string->vaddr);
+		addr = va? string->vaddr: string->paddr;
 		if (!r_bin_string_filter (bin, string->string, addr)) {
 			continue;
 		}
