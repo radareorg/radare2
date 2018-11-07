@@ -24,7 +24,11 @@ static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
 		}
 		if (next[0] == 0x80 && (next[-1] & ASN1_FORM) == FORM_CONSTRUCTED) {
 			next --;
-			next += asn1_ber_indefinite (next, end - next);
+			int sz = asn1_ber_indefinite (next, end - next);
+			if (sz < 1) {
+				break;
+			}
+			next += sz;
 		}
 		next ++;
 	}
