@@ -1230,6 +1230,17 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 				p->cb_printf (".");
 			}
 		}
+	} else if (MUSTSEEJSON) {
+		int j = i;
+		p->cb_printf ("%d,\"string\":\"", seeki);
+		for (; j < len && ((size == -1 || size-- > 0) && buf[j]); j += 2) {
+			if (IS_PRINTABLE (buf[j])) {
+				p->cb_printf ("%c", buf[j]);
+			} else {
+				p->cb_printf (".");
+			}
+		}
+		p->cb_printf ("\"}");
 	}
 }
 
