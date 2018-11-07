@@ -232,7 +232,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
-	dict *strings_db;
+	SdbHt *strings_db;
 	RList/*<??>*/ *mem;	//RBinMem maybe?
 	RList/*<BinMap*/ *maps;
 	char *regstate;

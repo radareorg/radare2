@@ -7,10 +7,12 @@
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 #define R_STRING_MAX_UNI_BLOCKS 4
 
+#define K(x) sdb_fmt("%"PFMT64x, x)
+
 static RBinString *find_string_at (RBinFile *bf, RList *ret, ut64 addr) {
 #if 0
 	if (addr != 0 && addr != UT64_MAX) {
-		return (RBinString*)(size_t)dict_get (bf->o->strings_db, addr);
+		return (RBinString*)ht_find (bf->o->strings_db, K(addr), NULL);
 	}
 #else
        RListIter *iter;
@@ -244,7 +246,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			bs->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
 				r_list_append (list, bs);
-				dict_set (bf->o->strings_db, bs->vaddr, (ut64)(size_t)bs, NULL);
+				ht_insert (bf->o->strings_db, K(bs->vaddr), bs);
 			} else {
 				print_string (bf, bs);
 				r_bin_string_free (bs);
@@ -821,7 +823,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 							bs->paddr = bs->vaddr = cfstr_vaddr;
 							bs->string = r_str_newf ("cstr.%s", s->string);
 							r_list_append (ret, bs);
-							dict_set (o->strings_db, bs->vaddr, (ut64)(size_t)bs, NULL);
+							ht_insert (o->strings_db, K (bs->vaddr), bs);
 						}
 					}
 				}

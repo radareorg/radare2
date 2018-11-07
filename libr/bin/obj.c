@@ -29,7 +29,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->relocs);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
-	dict_free (o->strings_db);
+	ht_free (o->strings_db);
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
 	r_list_free (o->lines);
@@ -149,7 +149,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
-	o->strings_db = dict_new (1024, NULL);
+	o->strings_db = ht_new (NULL, NULL, NULL);
 	o->regstate = NULL;
 	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
 		free (o);
