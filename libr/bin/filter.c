@@ -194,11 +194,11 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 			char *range_sep;
 			ut64 addr, from, to;
 			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
-				bool bang = false;
 				if (!strcmp (ptr, "true") && false_positive (str)) {
 					purge = true;
 					continue;
 				}
+				bool bang = false;
 				if (*ptr == '!') {
 					bang = true;
 					ptr++;
