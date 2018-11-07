@@ -8,6 +8,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_crypto.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
