@@ -138,9 +138,11 @@ static RList *flag_cbi(RCore *core, ut64 addr) {
 R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 	RBinObject *binobj = binfile ? binfile->o: NULL;
 	RBinInfo *info = binobj ? binobj->info: NULL;
-	if (!r_config_get_i (r->config, "bin.flags")) {
+	bool bin_flags = r_config_get_i (r->config, "bin.flags");
+	ut64 mask = R_CORE_BIN_ACC_ALL;
+	if (!bin_flags) {
 		r_flag_set_callbacks (r->flags, flag_cb, flag_cbi, r);
-		return 0;
+		mask = R_CORE_BIN_ACC_INFO | R_CORE_BIN_ACC_MAIN | R_CORE_BIN_ACC_SECTIONS | R_CORE_BIN_ACC_SEGMENTS | R_CORE_BIN_ACC_LIBS | R_CORE_BIN_ACC_ENTRIES;
 	}
 	if (info) {
 		int va = info->has_va;
@@ -158,7 +160,7 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
 		r_asm_use (r->assembler, arch);
-		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_MODE_SET, va, NULL, NULL);
+		r_core_bin_info (r, mask, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
 	}

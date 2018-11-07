@@ -300,7 +300,6 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 			cur? "[ %s ]": "  %s  ", n->title);
 		W (title);
 	}
-	return;
 }
 
 static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
