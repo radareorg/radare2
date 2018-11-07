@@ -837,3 +837,13 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 R_API ut64 r_bin_file_get_baddr(RBinFile *binfile) {
 	return binfile? r_bin_object_get_baddr (binfile->o): UT64_MAX;
 }
+
+R_API bool r_bin_file_close(RBin *bin, int bd) {
+	RBinFile *bf = r_id_storage_take (bin->ids, bd);
+	if (bf) {
+		// file_free removes the fd already.. maybe its unnecessary
+		r_id_storage_delete (bin->ids, bd);
+		r_bin_file_free (bf);
+	}
+	return false;
+}
