@@ -998,7 +998,7 @@ int main(int argc, char **argv) {
 	r_bin_load_filter (bin, action);
 
 	RBinOptions opt;
-	r_bin_options_init (&opt, baddr, laddr, fd, rawstr);
+	r_bin_options_init (&opt, fd, baddr, laddr, rawstr);
 	opt.xtr_idx = xtr_idx;
 
 	if (!r_bin_open (bin, file, &opt)) {

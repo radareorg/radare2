@@ -609,7 +609,7 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
-R_API void r_bin_options_init(RBinOptions *opt, ut64 baseaddr, ut64 loadaddr, int fd, int rawstr);
+R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr);
 
 R_API RBin *r_bin_new(void);
 R_API void *r_bin_free(RBin *bin);

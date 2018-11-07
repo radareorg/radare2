@@ -316,12 +316,12 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 #endif
 	int fd = cf? cf->fd: -1;
 	RBinOptions opt;
-	r_bin_options_init (&opt, baseaddr, UT64_MAX, fd, false);
+	r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, false);
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open (r->bin, filenameuri, &opt)) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
-			r_bin_options_init (&opt, baseaddr, UT64_MAX, fd, true);
+			r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, true);
 			opt.xtr_idx = xtr_idx;
 			if (!r_bin_open (r->bin, filenameuri, &opt)) {
 				return false;
@@ -377,7 +377,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	}
 	r_io_use_fd (r->io, fd);
 	RBinOptions opt;
-	r_bin_options_init (&opt, baseaddr, loadaddr, fd, r->bin->rawstr);
+	r_bin_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");

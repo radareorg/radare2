@@ -116,7 +116,7 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	return r_bin_file_get_strings (bf, min, 1, raw);
 }
 
-R_API void r_bin_options_init(RBinOptions *opt, ut64 baseaddr, ut64 loadaddr, int fd, int rawstr) {
+R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
 	memset (opt, 0, sizeof (*opt));
 	opt->baseaddr = baseaddr;
 	opt->loadaddr = loadaddr;
@@ -217,7 +217,7 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 }
 
 static void bin_options_from_bo(RBinOptions *opt, RBin *bin, RBinObject *bo, int fd, ut64 baseaddr) {
-	r_bin_options_init (opt, baseaddr, bo->loadaddr, fd, bin->rawstr);
+	r_bin_options_init (opt, fd, baseaddr, bo->loadaddr, bin->rawstr);
 	opt->offset = bo->boffset;
 }
 

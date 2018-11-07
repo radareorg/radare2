@@ -292,7 +292,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
 					RBinOptions opt;
-					r_bin_options_init (&opt, addr, 0, desc->fd, core->bin->rawstr);
+					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
@@ -305,7 +305,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					RBinOptions opt;
-					r_bin_options_init (&opt, addr, 0, desc->fd, core->bin->rawstr);
+					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -320,7 +320,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RListIter *iter;
 			r_list_foreach (files, iter, desc) {
 				RBinOptions opt;
-				r_bin_options_init (&opt, core->offset, 0, desc->fd, core->bin->rawstr);
+				r_bin_options_init (&opt, desc->fd, core->offset, 0, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".is*");
 				break;
