@@ -907,7 +907,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	if (r_anal_get_fcn_at (anal, addr, 0)) {
+	RAnalFunction *fcn_at_addr = r_anal_get_fcn_at (anal, addr, 0);
+	if (fcn_at_addr && fcn_at_addr != fcn) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
 	bb = bbget (fcn, addr, anal->opt.jmpmid && x86);
@@ -946,7 +947,7 @@ repeat:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if ((len - addrbytes * idx) < 5) {
+		if ((len - addrbytes * idx) < 5 && len == MAXBBSIZE) { // TODO: use opt.bb_max_size here
 			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
 			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
 			break;
@@ -1800,6 +1801,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 	RListIter *iter;
 	bool mid = false;
 	st64 n;
+	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (addr == bbi->addr) {
@@ -1818,14 +1820,34 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			r_anal_fcn_update_tinyrange_bbs (fcn);
 		}
 	}
-	if (!bb) {
-		bb = appendBasicBlock (anal, fcn, addr);
-		if (!bb) {
-			eprintf ("appendBasicBlock failed\n");
+	if (x86) {
+		if (bb) {
+			r_list_delete_data (fcn->bbs, bb);
+		}
+		ut8 *bbuf = malloc (size);
+		if (!bbuf) {
+			eprintf ("malloc failed\n");
 			return false;
 		}
+		anal->iob.read_at (anal->iob.io, addr, bbuf, size);
+		fcn_recurse (anal, fcn, addr, bbuf, size, 1);
+		r_anal_fcn_update_tinyrange_bbs (fcn);
+		free (bbuf);
+		bb = r_anal_fcn_bbget_at (fcn, addr);
+		if (!bb) {
+			eprintf ("fcn_recurse failed\n");
+			return false;
+		}
+	} else {
+		if (!bb) {
+			bb = appendBasicBlock (anal, fcn, addr);
+			if (!bb) {
+				eprintf ("appendBasicBlock failed\n");
+				return false;
+			}
+		}
+		bb->addr = addr;
 	}
-	bb->addr = addr;
 	bb->size = size;
 	bb->jump = jump;
 	bb->fail = fail;
