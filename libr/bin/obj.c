@@ -29,6 +29,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->relocs);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
+	dict_free (o->strings_db);
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
 	r_list_free (o->lines);
@@ -50,7 +51,7 @@ R_IPI void r_bin_object_free(void /*RBinObject*/ *o_) {
 	free (o->regstate);
 	r_bin_info_free (o->info);
 	object_delete_items (o);
-	R_FREE (o);
+	free (o);
 }
 
 static char *swiftField(const char *dn, const char *cn) {
@@ -148,6 +149,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
+	o->strings_db = dict_new (1024, NULL);
 	o->regstate = NULL;
 	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
 		free (o);
@@ -415,8 +417,8 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 }
 
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	return r_bin_file_object_get_cur (r_bin_cur (bin));
+	r_return_val_if_fail (bin && bin->cur, NULL);
+	return bin->cur->o;
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {

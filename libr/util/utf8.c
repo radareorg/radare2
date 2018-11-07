@@ -586,13 +586,12 @@ R_API int r_utf8_strlen (const ut8 *str) {
 
 R_API int r_isprint (const RRune c) {
 	const int last = nonprintable_ranges_count;
-	int low, hi, mid;
 
-	low = 0;
-	hi = last - 1;
+	int low = 0;
+	int hi = last - 1;
 
 	do {
-		mid = (low + hi) >> 1;
+		int mid = (low + hi) >> 1;
 		if (c >= nonprintable_ranges[mid].from && c <= nonprintable_ranges[mid].to) {
 			return false;
 		}

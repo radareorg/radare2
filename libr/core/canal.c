@@ -37,9 +37,8 @@ static void loganal(ut64 from, ut64 to, int depth) {
 
 static char *getFunctionName(RCore *core, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
-	RBinObject *bo = r_bin_file_object_get_cur (bf);
-	if (bo) {
-		Sdb *kv = bo->addr2klassmethod;
+	if (bf && bf->o) {
+		Sdb *kv = bf->o->addr2klassmethod;
 		char *at = sdb_fmt ("0x%08"PFMT64x, addr);
 		char *res = sdb_get (kv, at, 0);
 		if (res) {
