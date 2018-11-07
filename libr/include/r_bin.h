@@ -609,9 +609,11 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
+R_API void r_bin_options_init(RBinOptions *opt, ut64 baseaddr, ut64 loadaddr, int fd, int rawstr);
+
 R_API RBin *r_bin_new(void);
 R_API void *r_bin_free(RBin *bin);
-R_API bool r_bin_open(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
+R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt);
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);

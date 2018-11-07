@@ -116,6 +116,14 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	return r_bin_file_get_strings (bf, min, 1, raw);
 }
 
+R_API void r_bin_options_init(RBinOptions *opt, ut64 baseaddr, ut64 loadaddr, int fd, int rawstr) {
+	memset (opt, 0, sizeof (*opt));
+	opt->baseaddr = baseaddr;
+	opt->loadaddr = loadaddr;
+	opt->fd = fd;
+	opt->rawstr = rawstr;
+}
+
 R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
@@ -191,28 +199,21 @@ R_API void r_bin_string_free(void *_str) {
 // kinda a clunky functions
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
-R_API bool r_bin_open(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
-	r_return_val_if_fail (bin && bin->iob.io, false);
+R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
+	r_return_val_if_fail (bin && bin->iob.io && opt, false);
 
 	RIOBind *iob = &(bin->iob);
-	if (!iob->desc_get (iob->io, fd)) {
-		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
+	if (!iob->desc_get (iob->io, opt->fd)) {
+		opt->fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
-	if (fd < 0) {
+	if (opt->fd < 0) {
 		eprintf ("Couldn't open bin for file '%s'\n", file);
 		return false;
 	}
-	RBinOptions opt = {
-		.pluginname = NULL,
-		.offset = 0,
-		.baseaddr = baseaddr,
-		.loadaddr = loadaddr,
-		.sz = 0,
-		.xtr_idx = xtr_idx,
-		.rawstr = rawstr,
-		.fd = fd,
-	};
-	return r_bin_open_io (bin, &opt);
+	opt->offset = 0;
+	opt->sz = 0;
+	opt->pluginname = NULL;
+	return r_bin_open_io (bin, opt);
 }
 
 static void bin_options_from_bo(RBinOptions *opt, RBin *bin, RBinObject *bo, int fd, ut64 baseaddr) {
