@@ -137,6 +137,10 @@ static bool file_object_add(RBinFile *binfile, RBinObject *o) {
 	return true;
 }
 
+static void free_kv(HtKv *kv) {
+	free (kv->key);
+}
+
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	r_return_val_if_fail (binfile && plugin, NULL);
 
@@ -149,7 +153,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
-	o->strings_db = ht_new (NULL, NULL, NULL);
+	o->strings_db = ht_new (NULL, free_kv, NULL);
 	o->regstate = NULL;
 	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
 		free (o);
