@@ -506,17 +506,16 @@ R_API RBinFile *r_bin_file_find_by_fd(RBin *bin, ut32 bin_fd) {
 
 R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name) {
 	RListIter *iter;
-	RBinFile *bf = NULL;
-	if (!bin || !name) {
-		return NULL;
-	}
+	RBinFile *bf;
+
+	r_return_val_if_fail (bin && name, NULL);
+
 	r_list_foreach (bin->binfiles, iter, bf) {
 		if (bf && bf->file && !strcmp (bf->file, name)) {
-			break;
+			return bf;
 		}
-		bf = NULL;
 	}
-	return bf;
+	return NULL;
 }
 
 R_IPI RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) {
@@ -639,9 +638,8 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 // This function populate RBinFile->xtr_data, that information is enough to
 // create RBinObject when needed using r_bin_file_object_new_from_xtr_data
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
-	if (!bin || !bytes) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && xtr && bytes, NULL);
+
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
 		bf = file_create_append (bin, filename, bytes, sz,
@@ -836,4 +834,15 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 
 R_API ut64 r_bin_file_get_baddr(RBinFile *binfile) {
 	return binfile? r_bin_object_get_baddr (binfile->o): UT64_MAX;
+}
+
+R_API bool r_bin_file_close(RBin *bin, int bd) {
+	RBinFile *bf = r_id_storage_take (bin->ids, bd);
+	if (bf) {
+		// file_free removes the fd already.. maybe its unnecessary
+		r_id_storage_delete (bin->ids, bd);
+		r_bin_file_free (bf);
+		return true;
+	}
+	return false;
 }

@@ -291,7 +291,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				if (desc) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL, 0);
+					RBinOptions opt;
+					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					r_bin_open_io (core->bin, &opt);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -302,7 +304,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL, 0);
+					RBinOptions opt;
+					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("No file to load bin from?\n");
@@ -315,7 +319,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RIODesc *desc;
 			RListIter *iter;
 			r_list_foreach (files, iter, desc) {
-				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0, 0, NULL, 0);
+				RBinOptions opt;
+				r_bin_options_init (&opt, desc->fd, core->offset, 0, core->bin->rawstr);
+				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".is*");
 				break;
 			}

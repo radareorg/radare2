@@ -997,17 +997,12 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	RBinOptions bo = {
-		.offset = 0LL,
-		.baseaddr = baddr,
-		.rawstr = rawstr,
-		.loadaddr = laddr,
-		.xtr_idx = xtr_idx,
-		.iofd = fd,
-	};
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baddr, laddr, rawstr);
+	opt.xtr_idx = xtr_idx;
 
-	if (!r_bin_open (bin, file, &bo)) {
-		//if this return null means that we did not return a valid bin object
+	if (!r_bin_open (bin, file, &opt)) {
+		//if this return false means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");

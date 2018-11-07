@@ -314,21 +314,16 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
-	int fd = cf ? cf->fd : -1;
-	RBinOptions bo = {
-		.offset = 0LL,
-		.baseaddr = baseaddr,
-		.rawstr = false,
-		.xtr_idx = xtr_idx,
-		.iofd = fd,
-		.loadaddr = UT64_MAX,
-	};
-
-	if (r_bin_open (r->bin, filenameuri, &bo) == -1) {
+	int fd = cf? cf->fd: -1;
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, false);
+	opt.xtr_idx = xtr_idx;
+	if (!r_bin_open (r->bin, filenameuri, &opt)) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
-			bo.rawstr = true;
-			if (r_bin_open (r->bin, filenameuri, &bo) == -1) {
+			r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, true);
+			opt.xtr_idx = xtr_idx;
+			if (!r_bin_open (r->bin, filenameuri, &opt)) {
 				return false;
 			}
 		}
@@ -381,7 +376,10 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		return false;
 	}
 	r_io_use_fd (r->io, fd);
-	if (!r_bin_load_io (r->bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0)) {
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
+	opt.xtr_idx = xtr_idx;
+	if (!r_bin_open_io (r->bin, &opt)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
