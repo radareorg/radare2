@@ -376,16 +376,9 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		return false;
 	}
 	r_io_use_fd (r->io, fd);
-	RBinOptions opt = {
-		.pluginname = NULL,
-		.offset = 0,
-		.baseaddr = baseaddr,
-		.loadaddr = loadaddr,
-		.sz = 0,
-		.xtr_idx = xtr_idx,
-		.rawstr = r->bin->rawstr,
-		.fd = fd,
-	};
+	RBinOptions opt;
+	r_bin_options_init (&opt, baseaddr, loadaddr, fd, r->bin->rawstr);
+	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
