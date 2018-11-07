@@ -314,21 +314,11 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
-	int fd = cf ? cf->fd : -1;
-	RBinOptions bo = {
-		.offset = 0LL,
-		.baseaddr = baseaddr,
-		.rawstr = false,
-		.xtr_idx = xtr_idx,
-		.iofd = fd,
-		.loadaddr = UT64_MAX,
-	};
-
-	if (r_bin_open (r->bin, filenameuri, &bo) == -1) {
+	int fd = cf? cf->fd: -1;
+	if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, false)) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
-			bo.rawstr = true;
-			if (r_bin_open (r->bin, filenameuri, &bo) == -1) {
+			if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, true)) {
 				return false;
 			}
 		}

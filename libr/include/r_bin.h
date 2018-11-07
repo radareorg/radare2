@@ -594,17 +594,6 @@ typedef struct r_bin_bind_t {
 
 #ifdef R_API
 
-/* fd api */
-
-typedef struct r_bin_options_t {
-	ut64 offset; // starting physical address to read from the target file
-	ut64 baseaddr; // where the linker maps the binary in memory
-	ut64 loadaddr; // the desired offset where the binary should be loaded
-	int xtr_idx; // load Nth binary
-	int rawstr;
-	int iofd;
-} RBinOptions;
-
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
@@ -614,7 +603,6 @@ R_API void *r_bin_free(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
 R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
-R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);

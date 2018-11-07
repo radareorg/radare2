@@ -202,7 +202,12 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		return false;
 	}
 	bin->rawstr = rawstr;
-	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0);
+	if (!r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0)) {
+		return false;
+	}
+	int bd = bin->cur->id;
+	r_id_storage_set (bin->ids, bin->cur, bd);
+	return true;
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
