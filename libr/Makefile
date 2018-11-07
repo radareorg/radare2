@@ -172,8 +172,10 @@ install-includes:
 	done)
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
 	(cd include/r_util && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; \
-	done)
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; done)
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_crypto"
+	(cd include/r_crypto && for FILE in * ; do \
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_crypto/$$FILE" ; done)
 
 symstall install-symlink:
 	@cd .. && \
