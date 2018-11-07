@@ -567,7 +567,9 @@ R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 }
 
 R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
-	r_return_val_if_fail (bin && bf && obj, false);
+	// this assert happens only on fat bins
+	r_return_val_if_fail (bin && bf, false);
+	// r_return_val_if_fail (bin && bf && obj, false);
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
