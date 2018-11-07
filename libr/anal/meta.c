@@ -542,7 +542,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			} else {
 				a->cb_printf ("\"%s\"", str);
 			}
-			if (d->type == 's') {
+			if (d->type == 'd') {
+				a->cb_printf (", \"size\":%d",(int)d->size);
+			} else if (d->type == 's') {
 				const char *enc;
 				switch (d->subtype) {
 				case R_STRING_ENC_UTF8:
