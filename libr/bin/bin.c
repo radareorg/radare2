@@ -217,14 +217,8 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 }
 
 static void bin_options_from_bo(RBinOptions *opt, RBin *bin, RBinObject *bo, int fd, ut64 baseaddr) {
-	opt->pluginname = NULL;
+	r_bin_options_init (opt, baseaddr, bo->loadaddr, fd, bin->rawstr);
 	opt->offset = bo->boffset;
-	opt->baseaddr = baseaddr;
-	opt->loadaddr = bo->loadaddr;
-	opt->sz = 0;
-	opt->xtr_idx = 0;
-	opt->rawstr = bin->rawstr;
-	opt->fd = fd;
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {

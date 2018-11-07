@@ -267,17 +267,6 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 	}
 }
 
-static void bin_options_from_desc(RBinOptions *opt, RIODesc *desc, RCore *core, ut64 baseaddr) {
-	opt->pluginname = NULL;
-	opt->offset = 0;
-	opt->baseaddr = baseaddr;
-	opt->loadaddr = 0;
-	opt->sz = 0;
-	opt->xtr_idx = 0;
-	opt->rawstr = core->bin->rawstr;
-	opt->fd = desc->fd;
-}
-
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -303,7 +292,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
 					RBinOptions opt;
-					bin_options_from_desc (&opt, desc, core, addr);
+					r_bin_options_init (opt, addr, 0, desc->fd, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
@@ -316,7 +305,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					RBinOptions opt;
-					bin_options_from_desc (&opt, desc, core, addr);
+					r_bin_options_init (opt, addr, 0, desc->fd, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -331,7 +320,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RListIter *iter;
 			r_list_foreach (files, iter, desc) {
 				RBinOptions opt;
-				bin_options_from_desc (&opt, desc, core, core->offset);
+				r_bin_options_init (opt, core->offset, 0, desc->fd, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".is*");
 				break;
