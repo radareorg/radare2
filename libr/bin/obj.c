@@ -89,7 +89,8 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
-static RList *classes_from_symbols(RBinFile *bf, RBinObject *o) {
+static RList *classes_from_symbols(RBinFile *bf) {
+	RBinObject *o = bf->o;
 	RBinSymbol *sym;
 	RListIter *iter;
 	RList *symbols = o->symbols;
@@ -128,6 +129,7 @@ static RList *classes_from_symbols(RBinFile *bf, RBinObject *o) {
 					}
 				}
 			}
+			r_list_append (classes, c);
 		}
 	}
 	if (r_list_empty (classes)) {
@@ -325,16 +327,13 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			o->imports->free = r_bin_import_free;
 		}
 	}
-	//if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS))
-	if (true) {
-		if (cp->symbols) {
-			o->symbols = cp->symbols (binfile); // 5s
-			if (o->symbols) {
-				o->symbols->free = r_bin_symbol_free;
-				REBASE_PADDR (o, o->symbols, RBinSymbol);
-				if (bin->filter) {
-					r_bin_filter_symbols (binfile, o->symbols); // 5s
-				}
+	if (cp->symbols) {
+		o->symbols = cp->symbols (binfile); // 5s
+		if (o->symbols) {
+			o->symbols->free = r_bin_symbol_free;
+			REBASE_PADDR (o, o->symbols, RBinSymbol);
+			if (bin->filter) {
+				r_bin_filter_symbols (binfile, o->symbols); // 5s
 			}
 		}
 	}
@@ -374,10 +373,10 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			o->classes = cp->classes (binfile);
 			isSwift = r_bin_lang_swift (binfile);
 			if (isSwift) {
-				o->classes = classes_from_symbols (binfile, o);
+				o->classes = classes_from_symbols (binfile);
 			}
 		} else {
-			o->classes = classes_from_symbols (binfile, o);
+			o->classes = classes_from_symbols (binfile);
 		}
 		if (bin->filter) {
 			filter_classes (binfile, o->classes);
