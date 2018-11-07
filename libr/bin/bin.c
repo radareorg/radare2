@@ -202,12 +202,7 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		return false;
 	}
 	bin->rawstr = rawstr;
-	if (!r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0)) {
-		return false;
-	}
-	int bd = bin->cur->id;
-	r_id_storage_set (bin->ids, bin->cur, bd);
-	return true;
+	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0);
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
@@ -400,7 +395,14 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 	} else {
 		free (buf_bytes);
 	}
-	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
+
+	if (!binfile || !r_bin_file_set_cur_binfile (bin, binfile)) {
+		return false;
+	}
+
+	int bd = bin->cur->id;
+	r_id_storage_set (bin->ids, bin->cur, bd);
+	return true;
 }
 
 R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
