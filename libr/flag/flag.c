@@ -347,9 +347,6 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 	r_return_val_if_fail (f && flag_prefix, NULL);
 	RListIter *iter = NULL;
 	RFlagItem *item = NULL;
-	if (!f) {
-		return false;
-	}
 	const RList *list = r_flag_get_list (f, off);
 	if (!list) {
 		return false;
