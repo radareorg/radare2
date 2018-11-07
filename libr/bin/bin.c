@@ -391,7 +391,7 @@ R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xt
 	if (!binfile) {
 		binfile = r_bin_file_new_from_bytes (
 			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
-			baseaddr, loadaddr, fd, name, NULL, offset, true);
+			baseaddr, loadaddr, fd, name, offset);
 	} else {
 		free (buf_bytes);
 	}
@@ -447,7 +447,9 @@ R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 // TODO: deprecate
 R_API RBinPlugin *r_bin_get_binplugin_any(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	return r_bin_get_binplugin_by_name (bin, "any");
+	RBinPlugin *res = r_bin_get_binplugin_by_name (bin, "any");
+	r_warn_if_fail (res);
+	return res;
 }
 
 static void r_bin_plugin_free(RBinPlugin *p) {
@@ -1285,6 +1287,20 @@ R_IPI void r_bin_class_free(RBinClass *c) {
 	free (c);
 }
 
+static RBinClass *class_get(RBinFile *binfile, const char *name) {
+	r_return_val_if_fail (binfile && binfile->o && name, NULL);
+
+	RBinClass *c;
+	RListIter *iter;
+	// TODO: switch to an hashtable to easily get this in O(1)
+	r_list_foreach (binfile->o->classes, iter, c) {
+		if (!strcmp (c->name, name)) {
+			return c;
+		}
+	}
+	return NULL;
+}
+
 R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	const char *super, int view) {
 	if (!binfile || !binfile->o) {
@@ -1295,7 +1311,7 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	if (!name) {
 		return NULL;
 	}
-	RBinClass *c = r_bin_class_get (binfile, name);
+	RBinClass *c = class_get (binfile, name);
 	if (c) {
 		if (super) {
 			free (c->super);
@@ -1320,24 +1336,10 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	return c;
 }
 
-R_IPI RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
-	r_return_val_if_fail (binfile && binfile->o && name, NULL);
-
-	RBinClass *c;
-	RListIter *iter;
-	RList *list = binfile->o->classes;
-	r_list_foreach (list, iter, c) {
-		if (!strcmp (c->name, name)) {
-			return c;
-		}
-	}
-	return NULL;
-}
-
 R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	r_return_val_if_fail (binfile, NULL);
 
-	RBinClass *c = r_bin_class_get (binfile, classname);
+	RBinClass *c = class_get (binfile, classname);
 	if (!c) {
 		c = r_bin_class_new (binfile, classname, NULL, 0);
 		if (!c) {
