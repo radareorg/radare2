@@ -78,6 +78,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	int count = 0, i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
 
+	// if list is null it means its gonna dump
+	r_return_val_if_fail (bf, -1);
+
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
 	}
@@ -91,10 +94,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		free (buf);
 		return -1;
 	}
-	RBinSection *s = r_bin_get_section_at (bf->o, from, false);
 	st64 vdelta = 0;
-	if (s) {
-		vdelta = s->vaddr - from;
+	if (bf->o) {
+		RBinSection *s = r_bin_get_section_at (bf->o, from, false);
+		if (s) {
+			vdelta = s->vaddr - from;
+		}
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
@@ -243,7 +248,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			bs->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
 				r_list_append (list, bs);
-				ht_insert (bf->o->strings_db, K(bs->vaddr), bs);
+				if (bf->o) {
+					ht_insert (bf->o->strings_db, K(bs->vaddr), bs);
+				}
 			} else {
 				print_string (bf, bs);
 				r_bin_string_free (bs);
@@ -756,19 +763,20 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	if (string_scan_range (list, bf, min, from, to, -1) < 0) {
 		return;
 	}
-	r_list_foreach (list, it, ptr) {
-		RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
-		if (s) {
-			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
+	if (bf->o) {
+		r_list_foreach (list, it, ptr) {
+			RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
+			if (s) {
+				ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
+			}
 		}
 	}
 }
 
 R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
-	r_return_val_if_fail (a && a->o, NULL);
+	r_return_val_if_fail (a, NULL);
 	RListIter *iter;
 	RBinSection *section;
-	RBinObject *o = a->o;
 	RList *ret;
 
 	if (dump) {
@@ -780,7 +788,8 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 			return NULL;
 		}
 	}
-	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
+	if (!raw && a->o && a->o && a->o->sections && !r_list_empty (a->o->sections)) {
+		RBinObject *o = a->o;
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				get_strings_range (a, ret, min, raw, section->paddr,
@@ -829,9 +838,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 			}
 		}
 	} else {
-		if (a) {
-			get_strings_range (a, ret, min, raw, 0, a->size);
-		}
+		get_strings_range (a, ret, min, raw, 0, a->size);
 	}
 	return ret;
 }

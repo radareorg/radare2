@@ -202,7 +202,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			continue;
 		}
 
-		section = r_bin_get_section_at (obj, paddr, 0);
+		section = obj? r_bin_get_section_at (obj, paddr, 0): NULL;
 		section_name = section ? section->name : "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
