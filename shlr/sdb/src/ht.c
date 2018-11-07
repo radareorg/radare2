@@ -75,10 +75,6 @@ static inline HtKv *next_kv(SdbHt *ht, HtKv *kv) {
 	return (HtKv *)((char *)kv + ht->elem_size);
 }
 
-static inline HtKv *prev_kv(SdbHt *ht, HtKv *kv) {
-	return (HtKv *)((char *)kv - ht->elem_size);
-}
-
 #define BUCKET_FOREACH(ht, bt, j, kv)					\
 	if ((bt)->arr)							\
 		for ((j) = 0, (kv) = (bt)->arr; (j) < (bt)->count; (j)++, (kv) = next_kv (ht, kv))
