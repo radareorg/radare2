@@ -10,19 +10,10 @@
 #define K(x) sdb_fmt("%"PFMT64x, x)
 
 static RBinString *find_string_at (RBinFile *bf, RList *ret, ut64 addr) {
-#if 0
 	if (addr != 0 && addr != UT64_MAX) {
-		return (RBinString*)ht_find (bf->o->strings_db, K(addr), NULL);
+		RBinString* res = ht_find (bf->o->strings_db, K(addr), NULL);
+		return res;
 	}
-#else
-       RListIter *iter;
-       RBinString *s;
-               r_list_foreach (ret, iter, s) {
-                       if (s->vaddr == addr) {
-                               return s;
-                       }
-               }
-#endif
 	return NULL;
 }
 
@@ -30,7 +21,7 @@ static void print_string(RBinFile *bf, RBinString *string) {
 	r_return_if_fail (bf && string);
 
 	int mode = bf->strmode;
-	ut64 addr , vaddr;
+	ut64 addr, vaddr;
 	RBin *bin = bf->rbin;
 	const char *section_name, *type_string;
 	RIO *io = bin->iob.io;
@@ -99,6 +90,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	if (!buf || !min) {
 		free (buf);
 		return -1;
+	}
+	RBinSection *s = r_bin_get_section_at (bf->o, from, false);
+	st64 vdelta = 0;
+	if (s) {
+		vdelta = s->vaddr - from;
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
@@ -242,7 +238,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				break;
 			}
-			bs->paddr = bs->vaddr = str_start;
+			bs->paddr = str_start;
+			bs->vaddr = str_start + vdelta;
 			bs->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
 				r_list_append (list, bs);
@@ -820,7 +817,8 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 							bs->length = s->length;
 							bs->size = s->size;
 							bs->ordinal = s->ordinal;
-							bs->paddr = bs->vaddr = cfstr_vaddr;
+							bs->vaddr = cfstr_vaddr;
+							bs->paddr = cfstr_vaddr; // XXX should be paddr instead
 							bs->string = r_str_newf ("cstr.%s", s->string);
 							r_list_append (ret, bs);
 							ht_insert (o->strings_db, K (bs->vaddr), bs);
