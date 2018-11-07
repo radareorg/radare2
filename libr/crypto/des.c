@@ -1,5 +1,6 @@
 #include <r_types.h>
 #include <r_util.h>
+
 #define ROTL28(rs, sh) ((((rs) << (sh)) | ((rs) >> (28 - (sh)))) & 0x0FFFFFFF) // left 28
 #define ROTL(rs, sh) (((rs) << (sh)) | ((rs) >> (32 - (sh)))) // left 32
 #define ROTR(rs, sh) (((rs) >> (sh)) | ((rs) << (32 - (sh)))) // right 32

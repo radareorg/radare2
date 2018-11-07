@@ -2,6 +2,7 @@
 #define SDB_H
 
 #if !defined(O_BINARY) && !defined(_MSC_VER)
+#undef O_BINARY
 #define O_BINARY 0
 #endif
 
@@ -16,9 +17,6 @@ extern "C" {
 #include "cdb.h"
 #include "cdb_make.h"
 #include "sdb_version.h"
-
-#undef r_offsetof
-#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
@@ -46,8 +44,7 @@ extern char *strdup (const char *);
 #include <malloc.h> // for _aligned_malloc
 #define ftruncate _chsize
 #endif
-#undef r_offsetof
-#define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
+
 //#define SDB_MODE 0
 #define SDB_MODE _S_IWRITE | _S_IREAD
 #else

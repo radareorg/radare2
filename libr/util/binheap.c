@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017-2018 - maskray */
+
 #include "r_binheap.h"
 
 static inline void _heap_down(RBinHeap *h, size_t i, void *x) {
@@ -23,7 +25,7 @@ static inline void _heap_up(RBinHeap *h, size_t i, void *x) {
 }
 
 R_API void r_binheap_clear(RBinHeap *h) {
-  r_pvector_clear (&h->a);
+	r_pvector_clear (&h->a);
 }
 
 R_API void r_binheap_init(RBinHeap *h, RPVectorComparator cmp) {

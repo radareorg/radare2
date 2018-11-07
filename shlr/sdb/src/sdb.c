@@ -8,16 +8,18 @@
 #include <sys/stat.h>
 #include "sdb.h"
 
+#if 0
 static inline SdbKv *kv_at(SdbHt *ht, HtBucket *bt, ut32 i) {
 	return (SdbKv *)((char *)bt->arr + i * ht->elem_size);
 }
 
-static inline SdbKv *next_kv(SdbHt *ht, SdbKv *kv) {
-	return (SdbKv *)((char *)kv + ht->elem_size);
-}
-
 static inline SdbKv *prev_kv(SdbHt *ht, SdbKv *kv) {
 	return (SdbKv *)((char *)kv - ht->elem_size);
+}
+#endif
+
+static inline SdbKv *next_kv(SdbHt *ht, SdbKv *kv) {
+	return (SdbKv *)((char *)kv + ht->elem_size);
 }
 
 #define BUCKET_FOREACH(ht, bt, j, kv)					\

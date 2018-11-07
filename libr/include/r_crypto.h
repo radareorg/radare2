@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_crypto/r_des.h>
 
 #ifdef __cplusplus
 extern "C" {

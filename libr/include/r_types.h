@@ -361,8 +361,15 @@ static inline void *r_new_copy(int size, void *data) {
 #define typeof(arg) __typeof__(arg)
 #endif
 
-#undef r_offsetof
+#if 1
 #define r_offsetof(type, member) offsetof(type, member)
+#else
+#if __SDB_WINDOWS__ && !__CYGWIN__
+#define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
+#else
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+#endif
+#endif
 
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
 #define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)

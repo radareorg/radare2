@@ -3,6 +3,7 @@ executable('rafind2', 'rafind2.c',
   dependencies: [
     r_util_dep,
     r_search_dep,
+    r_crypto_dep,
     r_io_dep,
     r_cons_dep
   ],

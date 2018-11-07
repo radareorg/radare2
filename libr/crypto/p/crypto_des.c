@@ -114,9 +114,9 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	// Pad to the block size, do not append dummy block
-	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
+	const int diff = (DES_BLOCK_SIZE - (len % DES_BLOCK_SIZE)) % DES_BLOCK_SIZE;
 	const int size = len + diff;
-	const int blocks = size / BLOCK_SIZE;
+	const int blocks = size / DES_BLOCK_SIZE;
 
 	ut8 *const obuf = calloc (1, size);
 	if (!obuf) {
@@ -140,12 +140,12 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	int i;
 	if (cry->dir) {
 		for (i = 0; i < blocks; i++) {
-			ut32 next = (BLOCK_SIZE * i);
+			ut32 next = (DES_BLOCK_SIZE * i);
 			des_decrypt (&st, ibuf + next, obuf + next);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
-			ut32 next = (BLOCK_SIZE * i);
+			ut32 next = (DES_BLOCK_SIZE * i);
 			des_encrypt (&st, ibuf + next, obuf + next);
 		}
 	}

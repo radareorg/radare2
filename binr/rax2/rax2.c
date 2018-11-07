@@ -568,7 +568,7 @@ static int use_stdin() {
 	return 0;
 }
 
-int main(int argc, char **argv) {
+R_API int r_core_main_rax2(int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {
@@ -579,5 +579,11 @@ int main(int argc, char **argv) {
 		}
 	}
 	r_num_free (num);
+	num = NULL;
 	return 0;
+}
+
+
+int main(int argc, char **argv) {
+	return r_core_main_rax2 (argc, argv);
 }

@@ -315,6 +315,9 @@ install_headers(include_files, subdir: 'libr')
 r_util_files = run_command(glob_cmd + ['include/r_util/*.h']).stdout().strip().split(';')
 install_headers(r_util_files, subdir: 'libr/r_util')
 
+r_crypto_files = run_command(glob_cmd + ['include/r_crypto/*.h']).stdout().strip().split(';')
+install_headers(r_crypto_files, subdir: 'libr/r_crypto')
+
 sdb_files = run_command(glob_cmd + ['include/sdb/*.h']).stdout().strip().split(';')
 install_headers(sdb_files, subdir: 'libr/sdb')
 
