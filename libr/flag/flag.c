@@ -562,6 +562,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 				r_skiplist_insert (f->by_off, flagsAtOffset);
 			}
 		}
+		R_FREE (flagsAtOffset);
 	}
 	if (list) {
 		r_list_append (list, item);
