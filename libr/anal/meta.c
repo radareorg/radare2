@@ -716,14 +716,22 @@ beach:
 }
 
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
-	RAnalFunction *fcn = (addr != UT64_MAX) ? r_anal_get_fcn_at (a, addr, 0) : NULL;
-	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, fcn};
-	SdbList *ls = sdb_foreach_list (DB, true);
-	SdbListIter *lsi;
-	SdbKv *kv;
 	if (rad == 'j') {
 		a->cb_printf ("[");
 	}
+
+	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, NULL };
+
+	if (addr != UT64_MAX) {
+		ui.fcn = r_anal_get_fcn_in (a, addr, 0);
+		if (!ui.fcn) {
+			goto beach;
+		}
+	}
+
+	SdbList *ls = sdb_foreach_list (DB, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
 	isFirst = true; // TODO: kill global
 	ls_foreach (ls, lsi, kv) {
 		if (type == R_META_TYPE_ANY || (strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
@@ -735,6 +743,8 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 		}
 	}
 	ls_free (ls);
+
+beach:
 	if (rad == 'j') {
 		a->cb_printf ("]\n");
 	}
