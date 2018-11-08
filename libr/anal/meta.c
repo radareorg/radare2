@@ -700,12 +700,8 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	if (!meta_deserialize (&it, k, v)) {
 		return 1;
 	}
-	int uirad = ui->rad;
-	if (ui->rad == 'f') {
-		if (!r_anal_fcn_in (ui->fcn, it.from)) {
-			goto beach;
-		}
-		ui->rad = 0;
+	if (ui->fcn && !r_anal_fcn_in (ui->fcn, it.from)) {
+		goto beach;
 	}
 	if (!it.str) {
 		it.str = strdup (""); // don't break in free
@@ -716,7 +712,6 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	r_meta_print (ui->anal, &it, ui->rad, true);
 beach:
 	free (it.str);
-	ui->rad = uirad;
 	return 1;
 }
 
