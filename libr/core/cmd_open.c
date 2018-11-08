@@ -60,19 +60,19 @@ static const char *help_msg_oa[] = {
 
 static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
-	"ob", "", "List opened binary files and objid",
-	"ob*", "", "List opened binary files and objid (r2 commands)",
+	"ob", "", "List opened binary files and binfd",
+	"ob*", "", "List opened binary files and binfd (r2 commands)",
 // those 3 commands are VERY SIMILAR, need love
-	"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
-	"obo", " [objid]", "Switch to open binary file by objid",
+	"ob", " [fd binfd]", "Switch to open binary file by fd number and binfd",
+	"obo", " [binfd]", "Switch to open binary file by binfd",
 	"obb", " [fd]", "Switch to open binfile by fd number",
 
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
-	"obj", "", "List opened binary files and objid (JSON format)",
+	"obj", "", "List opened binary files and binfd (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
-	"ob-", "[objid]", "Delete binfile by binobjid",
+	"ob-", "[binfd]", "Delete binfile by binfd",
 	"ob-", "*", "Delete all binfiles",
 	NULL
 };

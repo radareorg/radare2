@@ -3636,7 +3636,7 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *arch = info ? info->arch : "unknown";
-			r_cons_printf ("{\"objid\":%d,\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
+			r_cons_printf ("{\"binfd\":%d,\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
 					PFMT64d",\"objsize\":%"PFMT64d"}",
 					obj->id, arch, bits, obj->boffset, obj->obj_size);
 			if (iter->n) {
