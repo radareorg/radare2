@@ -950,7 +950,6 @@ repeat:
 		if ((len - addrbytes * idx) < 5 && len == MAXBBSIZE) { // TODO: use opt.bb_max_size here
 			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
 			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
-			break;
 		}
 		r_anal_op_fini (&op);
 		if (isInvalidMemory (buf + addrbytes * idx, len - addrbytes * idx)) {
@@ -958,15 +957,9 @@ repeat:
 			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
 			return R_ANAL_RET_ERROR;
 		}
-		// check if opcode is in another basic block
-		// in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
-			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
-			if (!idx) {
-				gotoBeach (R_ANAL_RET_END);
-			} else {
-				break; // unspecified behaviour
-			}
+			eprintf ("Invalid instruction (possibly truncated) at 0x%"PFMT64x"\n", addr + idx);
+			gotoBeach (R_ANAL_RET_END);
 		}
 		if (op.hint.new_bits) {
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
