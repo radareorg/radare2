@@ -25,6 +25,11 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #include <libutil.h>
 #elif __OpenBSD__ || __NetBSD__
 #include <sys/sysctl.h>
+#elif __DragonFly__
+#include <sys/types.h>
+#include <sys/user.h>
+#include <sys/sysctl.h>
+#include <kvm.h>
 #endif
 #include <errno.h>
 bool bsd_proc_vmmaps(RIO *io, int pid);
@@ -726,6 +731,57 @@ exit:
 exit:
 	free (p);
 	return ret;
+#elif __DragonFly__
+	struct kinfo_proc *proc;
+	struct vmspace vs;
+	struct vm_map *map;
+	struct vm_map_entry entry, *ep;
+	struct proc p;
+	int nm;
+	char e[_POSIX2_LINE_MAX];
+
+	kvm_t *k = kvm_openfiles (NULL, NULL, NULL, O_RDONLY, e);
+	if (!k) {
+		eprintf ("kvm_openfiles: `%s`\n", e);
+		return false;
+	}
+
+	proc = kvm_getprocs (k, KERN_PROC_PID, pid, &nm);
+
+	kvm_read (k, (uintptr_t)proc->kp_paddr, (ut8 *)&p, sizeof (p));
+	kvm_read (k, (uintptr_t)p.p_vmspace, (ut8 *)&vs, sizeof (vs));
+
+	map = &vs.vm_map;
+	ep = map->header.next;
+
+	while (ep != &p.p_vmspace->vm_map.header) {
+		int perm = 0;
+		kvm_read (k, (uintptr_t)ep, (ut8 *)&entry, sizeof (entry));
+		if (entry.protection & VM_PROT_READ) {
+			perm |= R_PERM_R;
+		}
+		if (entry.protection & VM_PROT_WRITE) {
+			perm |= R_PERM_W;
+		}
+
+		if (entry.protection & VM_PROT_EXECUTE) {
+			perm |= R_PERM_X;
+		}
+
+		io->cb_printf (" %p - %p [off. %zu]\n",
+				(void *)entry.start,
+				(void *)entry.end,
+				entry.offset);
+
+		self_sections[self_sections_count].from = entry.start;
+		self_sections[self_sections_count].to = entry.end;
+		self_sections[self_sections_count].perm = perm;
+		self_sections_count++;
+		ep = entry.next;
+	}
+
+	kvm_close (k);
+	return true;
 #endif
 }
 #endif
