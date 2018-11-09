@@ -414,12 +414,12 @@ static RList* relocs(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		if (pe32_bin->bin) {
+		if (pe32_bin->bin && pe32_bin->bin->relocs) {
 			r_list_join (ret, pe32_bin->bin->relocs);
 		}
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		if (pe64_bin->bin) {
+		if (pe64_bin->bin && pe64_bin->bin->relocs) {
 			r_list_join (ret, pe64_bin->bin->relocs);
 		}
 	}
@@ -442,13 +442,17 @@ static RList* imports(RBinFile *bf) {
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_imports (pe32_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		if (list) {
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		list = Pe64_r_bin_mdmp_pe_get_imports (pe64_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		if (list) {
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 	return ret;
 }
