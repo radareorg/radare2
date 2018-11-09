@@ -2201,6 +2201,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case '-': // "af-"
 		if (!input[2] || !strcmp (input + 2, "*")) {
+			RAnalFunction *f;
+			RListIter *iter;
+			r_list_foreach (core->anal->fcns, iter, f) {
+				r_anal_trim_jmprefs (core->anal, f);
+			}
 			r_list_purge (core->anal->fcns);
 			core->anal->fcn_tree = NULL;
 		} else {
