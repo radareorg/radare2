@@ -206,9 +206,19 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	}
 }
 
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (buf, NULL);
+
+	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
+	return res;
+}
+
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
 
 	if (!bf || !bf->o) {
 		return false;
@@ -323,7 +333,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *mem (RBinFile *bf) {
+static RList *mem(RBinFile *bf) {
 	struct minidump_location_descriptor *location = NULL;
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
@@ -404,12 +414,12 @@ static RList* relocs(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		if (pe32_bin->bin) {
+		if (pe32_bin->bin && pe32_bin->bin->relocs) {
 			r_list_join (ret, pe32_bin->bin->relocs);
 		}
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		if (pe64_bin->bin) {
+		if (pe64_bin->bin && pe64_bin->bin->relocs) {
 			r_list_join (ret, pe64_bin->bin->relocs);
 		}
 	}
@@ -432,13 +442,17 @@ static RList* imports(RBinFile *bf) {
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_imports (pe32_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		if (list) {
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		list = Pe64_r_bin_mdmp_pe_get_imports (pe64_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		if (list) {
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 	return ret;
 }
@@ -488,6 +502,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.libs = &libs,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
