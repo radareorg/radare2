@@ -167,6 +167,8 @@ static RList* sections(RBinFile *bf) {
 		}
 		if (sections[i].name[0]) {
 			ptr->name = strdup ((char*)sections[i].name);
+		} else {
+			ptr->name = strdup ("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > bin->size) {
