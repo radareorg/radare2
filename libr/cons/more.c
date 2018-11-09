@@ -1,18 +1,15 @@
-/* radare2 - LGPL - Copyright 2014-2018 - pancake, Judge_Dredd */
-
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
 
-R_API int r_cons_less_str(const char *str, const char *exitkeys) {
+R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	static int in_help = false;
-	static const char *r_cons_less_help = \
-		" u/space  - page up/down\n"
-		" jk       - line down/up\n"
-		" gG       - begin/end buffer\n"
+	static const char *r_cons_more_help = \
+		" space    - page up\n"
+		" j        - line down\n"
 		" /        - search in buffer\n"
 		" _        - enter the hud mode\n"
-		" n/p      - next/prev search result\n"
+		" n        - next search result\n"
 		" q        - quit\n"
 		" ?        - show this help\n"
 		"\n";
@@ -83,19 +80,11 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		case '?':
 			if (!in_help) {
 				in_help = true;
-				r_cons_less_str (r_cons_less_help, NULL);
+				r_cons_more_str (r_cons_more_help, NULL);
 				in_help = false;
 			}
 			break;
-		case 'u':
-			from -= h;
-			if (from < 0) {
-				from = 0;
-			}
-			break;
 		case ' ': from += h; break;
-		case 'g': from = 0; break;
-		case 'G': from = lines_count-h; break;
 		case -1: // EOF
 		case '\x03': // ^C
 		case 'q': ui = 0; break;
@@ -103,13 +92,6 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		case '\n':
 		case 'j': from++; break;
 		case 'J': from+=h; break;
-		case 'k':
-			if (from > 0) {
-				from--;
-			}
-			break;
-		case 'K': from = (from>=h)? from-h: 0;
-			break;
 		case '/': 	/* search */
 			r_cons_reset_colors ();
 			r_line_set_prompt ("/");
@@ -139,12 +121,6 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 				from = r_cons_next_match (from, mla, lines_count);
 			}
 			break;
-		case 'N':
-		case 'p': 	/* previous match */
-			if (rx) {
-				from = r_cons_prev_match(from, mla);
-			}
-			break;
 		}
 	}
 	for (i = 0; i < lines_count; i++) {
@@ -161,14 +137,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-R_API void r_cons_less() {
-	r_cons_less_str (r_cons_singleton ()->context->buffer, NULL);
+R_API void r_cons_more() {
+	r_cons_more_str (r_cons_singleton ()->context->buffer, NULL);
 }
 
-#if 0
-main (int argc, char **argv) {
-	char *s = r_file_slurp (argv[1], NULL);
-	r_cons_new ();
-	r_cons_less (s);
-}
-#endif
