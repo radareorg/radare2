@@ -907,6 +907,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(struct r_buf_t *buf) {
 	fail |= (!(obj->streams.modules = r_list_new ()));
 	fail |= (!(obj->streams.operations = r_list_new ()));
 	fail |= (!(obj->streams.thread_infos = r_list_new ()));
+	fail |= (!(obj->streams.token_infos = r_list_new ()));
 	fail |= (!(obj->streams.threads = r_list_new ()));
 	fail |= (!(obj->streams.unloaded_modules = r_list_new ()));
 
