@@ -153,6 +153,7 @@ static RList * extractall(RBin *bin) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	if (!res) {
+		r_bin_xtrdata_free (data);
 		return NULL;
 	}
 	r_list_append (res, data);
