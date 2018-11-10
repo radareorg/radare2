@@ -1567,7 +1567,8 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 
 	r_list_foreach (refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)
+		    && !r_anal_fcn_is_in_offset (fcn, ref->at)) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
@@ -1630,7 +1631,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
-		// TODO: unnecessary? add an option?
 		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
