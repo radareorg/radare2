@@ -1245,6 +1245,10 @@ static int cmd_write(void *data, const char *input) {
 					return 0;
 				}
 				if (*str == '!') {
+					if (str[1] == '?') {
+						r_core_cmd_help (core, help_msg_wt);
+						return 0;
+					}
 					RIOSection *s = r_io_section_vget (core->io, poff);
 					toend = true;
 					//use physical address
@@ -1259,7 +1263,7 @@ static int cmd_write(void *data, const char *input) {
 					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
 					if (*str) {
-						filename = str + ((*str == ' ')? 1: 0);
+						filename = r_str_trim_ro (str);
 					} else {
 						filename = "";
 					}

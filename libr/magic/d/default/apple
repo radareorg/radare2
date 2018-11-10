@@ -371,3 +371,5 @@
 0		lelong		0xff01ff02
 >4		lelong		1
 >8		lelong		-1		XCode Symbols file
+
+0		string		BCSymbolMap	BitCode symbol map file
