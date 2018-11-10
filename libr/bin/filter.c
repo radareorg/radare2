@@ -3,54 +3,54 @@
 #include <r_bin.h>
 #include "i/private.h"
 
-static void hashify(char *s, ut64 vaddr) {
-	if (!s) {
-		return;
-	}
+static char *hashify(char *s, ut64 vaddr) {
+	r_return_val_if_fail (s, NULL);
+
+	char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
+			free (os);
 			if (vaddr && vaddr != UT64_MAX) {
-				sprintf (s, "_%" PFMT64d, vaddr);
+				return r_str_newf ("_%" PFMT64d, vaddr);
 			} else {
 				ut32 hash = sdb_hash (s);
-				sprintf (s, "%x", hash);
+				return r_str_newf ("%x", hash);
 			}
-			return;
 		}
 		s++;
 	}
+	return os;
 }
 
 // TODO: optimize this api:
 // - bin plugins should call r_bin_filter_name() before appending
-R_API void r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name, int maxlen) {
+R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
+	r_return_val_if_fail (db && name, NULL);
+
 	const char *uname;
+	char *resname = strdup (name);
 	ut32 vhash, hash;
 	int count;
-	if (!db || !name) {
-		return;
-	}
-	uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
+
+	uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, resname);
 	vhash = sdb_hash (uname); // vaddr hash - unique
-	hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
+	hash = sdb_hash (resname); // name hash - if dupped and not in unique hash must insert
 	count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
 	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
-		return;
+		return resname;
 	}
 	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
 	if (vaddr) {
-		hashify (name, vaddr);
+		resname = hashify (resname, vaddr);
 	}
 	if (count > 1) {
-		int namelen = strlen (name);
-		if (namelen > maxlen) {
-			name[maxlen] = 0;
-		}
-		strcat (name, sdb_fmt ("_%d", count - 1));
+		resname = r_str_appendf (resname, "_%d", count - 1);
+
 		// two symbols at different addresses and same name wtf
 		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
 	}
+	return resname;
 }
 
 R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) {
@@ -95,9 +95,6 @@ R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) 
 		return;
 	}
 	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
-	if (vaddr) {
-		//hashify (name, vaddr);
-	}
 	sym->dup_count = count - 1;
 }
 
@@ -120,14 +117,7 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	Sdb *db = sdb_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
-		int maxlen = strlen (sec->name) + 8;
-		char *newbuf = realloc (sec->name, maxlen);
-		if (!newbuf) {
-			eprintf ("%s: Failed to reallocate buffer\n", __func__);
-			continue;
-		}
-		sec->name = newbuf;
-		r_bin_filter_name (bf, db, sec->vaddr, sec->name, maxlen);
+		sec->name = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
 	}
 	sdb_free (db);
 }
