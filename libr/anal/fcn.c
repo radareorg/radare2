@@ -1574,6 +1574,19 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
+R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
+	RAnalRef *ref;
+	RList *refs = r_anal_fcn_get_refs (anal, fcn);
+	RListIter *iter;
+
+	r_list_foreach (refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE) {
+			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
+		}
+	}
+	r_list_free (refs);
+}
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	int ret;
 	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
