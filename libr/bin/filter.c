@@ -28,7 +28,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
 	const char *uname;
-	char *resname = strdup (name);
+	char *resname = name;
 	ut32 vhash, hash;
 	int count;
 
