@@ -1777,7 +1777,10 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	int j, s, stridx, symbols_size, symbols_count;
 	ut32 to, from, i;
 
-	r_return_val_if_fail (bin && bin->symtab && bin->symstr, NULL);
+	r_return_val_if_fail (bin, NULL);
+	if (!bin->symtab || !bin->symstr) {
+		return NULL;
+	}
 
 	/* parse dynamic symbol table */
 	symbols_count = (bin->dysymtab.nextdefsym + \
@@ -1954,7 +1957,10 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	int i, j, idx, stridx;
 
-	r_return_val_if_fail (bin && bin->symtab && bin->symstr && bin->sects && bin->indirectsyms, NULL);
+	r_return_val_if_fail (bin && bin->sects, NULL);
+	if (!bin->symtab || !bin->symstr || !bin->indirectsyms) {
+		return NULL;
+	}
 
 	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
