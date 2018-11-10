@@ -175,6 +175,10 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
+	if (!res) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
 		data = oneshot (bin, buf, size, i);
