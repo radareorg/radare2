@@ -44,6 +44,8 @@ typedef struct r_print_zoom_t {
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
+	RCoreBind coreb;
+	const char *cfmt;
 	char datefmt[32];
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
@@ -138,6 +140,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
+R_API bool r_print_have_cursor(RPrint *p, int cur);
 R_API void r_print_cursor(RPrint *p, int cur, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API int r_print_get_cursor(RPrint *p);
