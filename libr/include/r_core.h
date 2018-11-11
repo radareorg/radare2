@@ -313,10 +313,9 @@ R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
-// FIXME: change (void *user) to (RCore *core)
-R_API int r_core_cmdf(void *user, const char *fmt, ...);
-R_API int r_core_flush(void *user, const char *cmd);
-R_API int r_core_cmd0(void *user, const char *cmd);
+R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
+R_API int r_core_flush(RCore *core, const char *cmd);
+R_API int r_core_cmd0(RCore *core, const char *cmd);
 R_API void r_core_cmd_init(RCore *core);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
@@ -451,10 +450,9 @@ R_API int r_core_yank_file_all (RCore *core, const char *input);
 
 R_API void r_core_loadlibs_init(RCore *core);
 R_API int r_core_loadlibs(RCore *core, int where, const char *path);
-// FIXME: change (void *user) -> (RCore *core)
-R_API int r_core_cmd_buffer(void *user, const char *buf);
-R_API int r_core_cmdf(void *user, const char *fmt, ...);
-R_API int r_core_cmd0(void *user, const char *cmd);
+R_API int r_core_cmd_buffer(RCore *core, const char *buf);
+R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
+R_API int r_core_cmd0(RCore *core, const char *cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each);
