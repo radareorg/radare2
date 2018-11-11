@@ -75,8 +75,8 @@ static void pair_str(const char *key, const char *val, int mode, int last) {
 	}
 }
 
-#define STR(x) (x)?(x):""
-R_API int r_core_bin_set_cur (RCore *core, RBinFile *binfile);
+#define STR(x) (x)? (x): ""
+R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile);
 
 static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
@@ -105,11 +105,13 @@ R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
 }
 
 R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
-	RBinObject *binobj = binfile ? binfile->o: NULL;
-	RBinInfo *info = binobj ? binobj->info: NULL;
+	r_return_val_if_fail (r, false);
+
+	RBinObject *binobj = binfile? binfile->o: NULL;
+	RBinInfo *info = binobj? binobj->info: NULL;
 	if (info) {
 		int va = info->has_va;
-		const char * arch = info->arch;
+		const char *arch = info->arch;
 		ut16 bits = info->bits;
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
@@ -2591,9 +2593,9 @@ static int bin_fields(RCore *r, int mode, int va) {
 	return true;
 }
 
-static char* get_rp (const char* rtype) {
+static char *get_rp(const char *rtype) {
 	char *rp = NULL;
-	switch(rtype[0]) {
+	switch (rtype[0]) {
 	case 'v':
 		rp = strdup ("void");
 		break;
@@ -3534,7 +3536,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
-	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits, name);
+	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
 	if (!binfile) {
 		return false;
 	}

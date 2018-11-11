@@ -7,11 +7,11 @@
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 #define R_STRING_MAX_UNI_BLOCKS 4
 
-#define K(x) sdb_fmt("%"PFMT64x, x)
+#define K(x) sdb_fmt ("%" PFMT64x, x)
 
-static RBinString *find_string_at (RBinFile *bf, RList *ret, ut64 addr) {
+static RBinString *find_string_at(RBinFile *bf, RList *ret, ut64 addr) {
 	if (addr != 0 && addr != UT64_MAX) {
-		RBinString* res = ht_find (bf->o->strings_db, K(addr), NULL);
+		RBinString *res = ht_find (bf->o->strings_db, K (addr), NULL);
 		return res;
 	}
 	return NULL;
@@ -409,14 +409,23 @@ R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 	return bf;
 }
 
-R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name) {
+static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits) {
+	if (!xtr_data->metadata || !xtr_data->metadata->arch) {
+		return false;
+	}
+
+	char *iter_arch = xtr_data->metadata->arch;
+	int iter_bits = xtr_data->metadata->bits;
+	return bits == iter_bits && !strcmp (iter_arch, arch) && !xtr_data->loaded;
+}
+
+R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits) {
 	RListIter *iter;
 	RBinFile *binfile = NULL;
 	RBinXtrData *xtr_data;
 
-	if (!name || !arch) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && arch, NULL);
+
 	r_list_foreach (bin->binfiles, iter, binfile) {
 		RListIter *iter_xtr;
 		if (!binfile->xtr_data) {
@@ -424,19 +433,12 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bi
 		}
 		// look for sub-bins in Xtr Data and Load if we need to
 		r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
-			if (xtr_data->metadata && xtr_data->metadata->arch) {
-				char *iter_arch = xtr_data->metadata->arch;
-				int iter_bits = xtr_data->metadata->bits;
-				if (bits == iter_bits && !strcmp (iter_arch, arch)) {
-					if (!xtr_data->loaded) {
-						if (!r_bin_file_object_new_from_xtr_data (
-							    bin, binfile, xtr_data->baddr,
-							    xtr_data->laddr, xtr_data)) {
-							return NULL;
-						}
-						return binfile;
-					}
+			if (xtr_metadata_match (xtr_data, arch, bits)) {
+				if (!r_bin_file_object_new_from_xtr_data (bin, binfile, xtr_data->baddr,
+					    xtr_data->laddr, xtr_data)) {
+					return NULL;
 				}
+				return binfile;
 			}
 		}
 	}
@@ -511,11 +513,12 @@ R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd) {
 R_API RBinFile *r_bin_file_find_by_fd(RBin *bin, ut32 bin_fd) {
 	RListIter *iter;
 	RBinFile *bf;
-	if (bin) {
-		r_list_foreach (bin->binfiles, iter, bf) {
-			if (bf && bf->fd == bin_fd) {
-				return bf;
-			}
+
+	r_return_val_if_fail (bin, NULL);
+
+	r_list_foreach (bin->binfiles, iter, bf) {
+		if (bf->fd == bin_fd) {
+			return bf;
 		}
 	}
 	return NULL;
@@ -528,7 +531,7 @@ R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name) {
 	r_return_val_if_fail (bin && name, NULL);
 
 	r_list_foreach (bin->binfiles, iter, bf) {
-		if (bf && bf->file && !strcmp (bf->file, name)) {
+		if (bf->file && !strcmp (bf->file, name)) {
 			return bf;
 		}
 	}
@@ -561,9 +564,10 @@ R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 }
 
 R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
-	// this assert happens only on fat bins
 	r_return_val_if_fail (bin && bf, false);
-	// r_return_val_if_fail (bin && bf && obj, false);
+	if (!obj) {
+		return false;
+	}
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;

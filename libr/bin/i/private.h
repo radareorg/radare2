@@ -16,6 +16,10 @@ R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *o
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 
+R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
+R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name);
+R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name);
+
 R_IPI void r_bin_section_free(RBinSection *bs);
 
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
