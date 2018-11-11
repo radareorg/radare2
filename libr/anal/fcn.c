@@ -1565,9 +1565,24 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RList *refs = r_anal_fcn_get_refs (anal, fcn);
 	RListIter *iter;
+	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86"); // HACK
 
 	r_list_foreach (refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)
+		    && (!x86 || !r_anal_fcn_is_in_offset (fcn, ref->at))) {
+			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
+		}
+	}
+	r_list_free (refs);
+}
+
+R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
+	RAnalRef *ref;
+	RList *refs = r_anal_fcn_get_refs (anal, fcn);
+	RListIter *iter;
+
+	r_list_foreach (refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CODE) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
@@ -1599,13 +1614,16 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		RListIter *iter;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
+		const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 
 		// set function size as length of continuous sequence of bbs
 		r_list_sort (fcn->bbs, &cmpaddr);
 		r_list_foreach (fcn->bbs, iter, bb) {
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
-			} else if (endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN) {
+			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN)
+			           || (anal->opt.jmpmid && x86 && endaddr > bb->addr
+			               && bb->addr + bb->size > endaddr)) {
 				endaddr = bb->addr + bb->size;
 			} else {
 				break;
@@ -1615,7 +1633,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
-		// TODO: unnecessary? add an option?
 		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
