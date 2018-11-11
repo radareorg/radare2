@@ -152,17 +152,6 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static inline ut32 find_binfile_id_by_fd(RBin *bin, ut32 fd) {
-	RListIter *it;
-	RBinFile *bf;
-	r_list_foreach (bin->binfiles, it, bf) {
-		if (bf->fd == fd) {
-			return bf->id;
-		}
-	}
-	return UT32_MAX;
-}
-
 static RBinObject *find_binfile_by_id(RBin *bin, ut32 id) {
 	RListIter *it, *it2;
 	RBinFile *bf;
@@ -340,17 +329,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				eprintf ("Invalid fd number.");
 				break;
 			}
-			binfile_num = UT32_MAX;
-			fd = *value && r_is_valid_input_num_value (core->num, value) ?
-				r_get_input_num_value (core->num, value) : UT32_MAX;
-			binfile_num = find_binfile_id_by_fd (core->bin, fd);
-			if (binfile_num == UT32_MAX) {
+			fd = *value && r_is_valid_input_num_value (core->num, value)? r_get_input_num_value (core->num, value): UT32_MAX;
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
+			if (!bf) {
 				eprintf ("Invalid fd number.");
 				break;
 			}
-			r_core_bin_raise (core, binfile_num, -1);
-		}
-		break;
+			r_core_bin_raise (core, bf->id, -1);
+	} break;
 	case ' ': // "ob "
 	{
 		ut32 fd;
@@ -370,14 +356,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		fd  = *v && r_is_valid_input_num_value (core->num, tmp) ?
-			r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		fd = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
-			binobj_num  = *v && r_is_valid_input_num_value (core->num, tmp) ?
-				r_get_input_num_value (core->num, tmp) : UT32_MAX;
+			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			binfile_num = find_binfile_id_by_fd (core->bin, fd);
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
+			binfile_num = bf? bf->id: UT32_MAX;
 		}
 		r_core_bin_raise (core, binfile_num, binobj_num);
 		free (v);
@@ -1332,25 +1317,25 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'u':
-		{
-			RListIter *iter = NULL;
-			RCoreFile *f;
-			int binfile_num;
-			core->switch_file_view = 0;
-			int num = atoi (input + 2);
+	case 'u': {
+		RListIter *iter = NULL;
+		RCoreFile *f;
+		int binfile_num;
+		core->switch_file_view = 0;
+		int num = atoi (input + 2);
 
-			r_list_foreach (core->files, iter, f) {
-				if (f->fd == num) {
-					core->file = f;
-				}
+		r_list_foreach (core->files, iter, f) {
+			if (f->fd == num) {
+				core->file = f;
 			}
-			r_io_use_fd (core->io, num);
-			binfile_num = find_binfile_id_by_fd (core->bin, num);
-			r_core_bin_raise (core, binfile_num, -1);
 		}
+		r_io_use_fd (core->io, num);
+		RBinFile *bf = r_bin_file_find_by_fd (core->bin, num);
+		binfile_num = bf? bf->id: UT32_MAX;
+		r_core_bin_raise (core, binfile_num, -1);
 		r_core_block_read (core);
 		break;
+	}
 	case 'b': // "ob"
 		cmd_open_bin (core, input);
 		break;
