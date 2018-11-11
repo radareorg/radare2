@@ -311,29 +311,42 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut
 	return binfile;
 }
 
+static RBinPlugin *get_plugin(RBin *bin, const char *pluginname, const ut8 *bytes, ut64 sz) {
+	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
+	if (plugin) {
+		return plugin;
+	}
+
+	plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
+	if (plugin) {
+		return plugin;
+	}
+
+	plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
+	if (plugin) {
+		return plugin;
+	}
+
+	return r_bin_get_binplugin_any (bin);
+}
+
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
+	r_return_val_if_fail (bin && bf && data, false);
+
 	RBinObject *o = NULL;
 	RBinPlugin *plugin = NULL;
 	ut8* bytes;
-	ut64 offset = data? data->offset: 0;
-	ut64 sz = data ? data->size : 0;
-	if (!data || !bf) {
-		return false;
-	}
+	ut64 offset = data->offset;
+	ut64 sz = data->size;
 
 	// for right now the bytes used will just be the offest into the binfile
-	// buffer
-	// if the extraction requires some sort of transformation then this will
-	// need to be fixed
-	// here.
+	// buffer if the extraction requires some sort of transformation then
+	// this will need to be fixed here.
 	bytes = data->buffer;
-	if (!bytes) {
-		return false;
-	}
-	plugin = r_bin_get_binplugin_by_bytes (bin, (const ut8*)bytes, sz);
-	if (!plugin) {
-		plugin = r_bin_get_binplugin_any (bin);
-	}
+	r_return_val_if_fail (bytes, false);
+
+	plugin = get_plugin (bin, NULL, (const ut8 *)bytes, sz);
+
 	r_buf_free (bf->buf);
 	bf->buf = r_buf_new_with_bytes ((const ut8 *)bytes, data->size);
 	// r_bin_object_new append the new object into binfile
@@ -343,7 +356,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	if (!o) {
 		return false;
 	}
-	if (o && !o->size) {
+	if (!o->size) {
 		o->size = sz;
 	}
 	bf->narch = data->file_count;
@@ -371,25 +384,6 @@ static RBinFile *file_create_append(RBin *bin, const char *file, const ut8 *byte
 		r_list_append (bin->binfiles, bf);
 	}
 	return bf;
-}
-
-static RBinPlugin *get_plugin(RBin *bin, const char *pluginname, const ut8 *bytes, ut64 sz) {
-	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
-	if (plugin) {
-		return plugin;
-	}
-
-	plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
-	if (plugin) {
-		return plugin;
-	}
-
-	plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
-	if (plugin) {
-		return plugin;
-	}
-
-	return r_bin_get_binplugin_any (bin);
 }
 
 R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
@@ -673,19 +667,18 @@ R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 	if (bf->xtr_data) {
 		r_list_free (bf->xtr_data);
 	}
-	if (xtr && bytes) {
-		RList *xtr_data_list = xtr->extractall_from_bytes (bin, bytes, sz);
+	bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
+	if (bf->xtr_data) {
 		RListIter *iter;
 		RBinXtrData *xtr;
 		//populate xtr_data with baddr and laddr that will be used later on
 		//r_bin_file_object_new_from_xtr_data
-		r_list_foreach (xtr_data_list, iter, xtr) {
+		r_list_foreach (bf->xtr_data, iter, xtr) {
 			xtr->baddr = baseaddr? baseaddr : UT64_MAX;
 			xtr->laddr = loadaddr? loadaddr : UT64_MAX;
 		}
-		bf->loadaddr = loadaddr;
-		bf->xtr_data = xtr_data_list ? xtr_data_list : NULL;
 	}
+	bf->loadaddr = loadaddr;
 	return bf;
 }
 

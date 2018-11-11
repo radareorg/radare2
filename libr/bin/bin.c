@@ -382,7 +382,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr && xtr->check_bytes (buf_bytes, opt->sz)) {
+			if (xtr->check_bytes (buf_bytes, opt->sz)) {
 				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					if (is_debugger && opt->sz != file_sz) {
 						R_FREE (buf_bytes);
@@ -406,7 +406,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
 						opt->fd, bin->rawstr);
 				}
-				xtr = NULL;
 			}
 		}
 	}
@@ -955,7 +954,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 		if (!obj) {
 			if (binfile->xtr_data) {
 				RBinXtrData *xtr_data = r_list_get_n (binfile->xtr_data, 0);
-				if (!r_bin_file_object_new_from_xtr_data (bin, binfile,
+				if (xtr_data && !r_bin_file_object_new_from_xtr_data (bin, binfile,
 						UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
 					return false;
 				}

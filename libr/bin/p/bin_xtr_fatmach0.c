@@ -106,9 +106,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 	int narch;
 	struct MACH0_(mach_header) *hdr;
 
-	if (!bin || !bin->cur) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
