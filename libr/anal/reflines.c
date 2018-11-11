@@ -299,7 +299,7 @@ R_API RList* r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines
 				RListIter *iter;
 				r_list_foreach (bb->switch_op->cases, iter, caseop) {
 					if (caseop) {
-						if (!linesout) {// && (op.jump > opc+len || op.jump < pc)) 
+						if (!linesout) {// && (op.jump > opc+len || op.jump < pc))
 							continue;
 						}
 						item = R_NEW0 (RAnalRefline);
