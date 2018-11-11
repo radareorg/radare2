@@ -22,8 +22,7 @@ static char *hashify(char *s, ut64 vaddr) {
 	return os;
 }
 
-// TODO: optimize this api:
-// - bin plugins should call r_bin_filter_name() before appending
+// - name should be allocated on the heap
 R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
@@ -42,10 +41,16 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	}
 	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
 	if (vaddr) {
-		resname = hashify (resname, vaddr);
+		char *p = hashify (resname, vaddr);
+		if (p) {
+			resname = p;
+		}
 	}
 	if (count > 1) {
-		resname = r_str_appendf (resname, "_%d", count - 1);
+		char *p = r_str_appendf (resname, "_%d", count - 1);
+		if (p) {
+			resname = p;
+		}
 
 		// two symbols at different addresses and same name wtf
 		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
@@ -117,7 +122,10 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	Sdb *db = sdb_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
-		sec->name = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
+		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
+		if (p) {
+			sec->name = p;
+		}
 	}
 	sdb_free (db);
 }
