@@ -368,11 +368,10 @@ R_API int r_reg_parse_gdb_profile(const char *profile_file) {
 	char *base, *file, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {
-			if ((file = r_str_append (base, profile_file))) {
+			char *file = r_str_append (base, profile_file);
+			if (file) {
 				str = r_file_slurp (file, NULL);
 				free (file);
-			} else {
-				free (base);
 			}
 		}
 	}
