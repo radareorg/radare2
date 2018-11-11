@@ -675,9 +675,6 @@ int main(int argc, char **argv, char **envp) {
 				return 0;
 			}
 			r_config_set (r.config, "prj.name", optarg);
-			// FIXME: Doing this here will overwrite -e flags coming before -p on the cmdline.
-			r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
-			r_config_set (r.config, "bin.strings", "false");
 			break;
 		case 'P':
 			patchfile = optarg;
@@ -854,6 +851,11 @@ int main(int argc, char **argv, char **envp) {
 	prefiles = NULL;
 
 	r_bin_force_plugin (r.bin, forcebin);
+
+	if (r_config_get (r.config, "prj.name")) {
+		r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
+		r_config_set (r.config, "bin.strings", "false");
+	}
 
 	//cverify_version (0);
 	if (do_connect) {
