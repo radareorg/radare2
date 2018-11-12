@@ -132,6 +132,22 @@
   #define __WINDOWS__ 1
 #endif
 
+#if defined(_WIN32)
+#ifndef gmtime_r
+#include <time.h>
+struct tm *gmtime_r(const time_t *t, struct tm *r) {
+	// gmtime is threadsafe in windows because it uses TLS
+	struct tm *tmstruct = gmtime(t);
+	if (tmstruct) {
+		*r = *tmstruct;
+		return r;
+	} else {
+		return 0;
+	}
+}
+#endif  // gmtime_r
+#endif  // _WIN32
+
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
   #define __BSD__ 0
   #define __UNIX__ 1
