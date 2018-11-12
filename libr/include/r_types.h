@@ -129,8 +129,10 @@
   #define restrict
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
-  #define gmtime_r(a, b) gmtime_s(b, a)
   #define __WINDOWS__ 1
+
+  #include <time.h>
+  static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
