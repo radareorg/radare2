@@ -1738,7 +1738,7 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	return false;
 }
 
-static int inSymtab(SdbHt *hash, const char *name, ut64 addr) {
+static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 	bool found;
 	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
 	(void)sdb_ht_find (hash, key, &found);
@@ -1795,7 +1795,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
-	SdbHt *hash = sdb_ht_new ();
+	HtPP *hash = sdb_ht_new ();
 	if (!hash) {
 		free (symbols);
 		return NULL;

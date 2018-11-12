@@ -11,7 +11,7 @@
 
 static RBinString *find_string_at (RBinFile *bf, RList *ret, ut64 addr) {
 	if (addr != 0 && addr != UT64_MAX) {
-		RBinString* res = ht_find (bf->o->strings_db, K(addr), NULL);
+		RBinString *res = ht_pp_find (bf->o->strings_db, K (addr), NULL);
 		return res;
 	}
 	return NULL;
@@ -249,7 +249,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			if (list) {
 				r_list_append (list, bs);
 				if (bf->o) {
-					ht_insert (bf->o->strings_db, K(bs->vaddr), bs);
+					ht_pp_insert (bf->o->strings_db, K (bs->vaddr), bs);
 				}
 			} else {
 				print_string (bf, bs);
@@ -832,7 +832,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 							bs->paddr = cfstr_vaddr; // XXX should be paddr instead
 							bs->string = r_str_newf ("cstr.%s", s->string);
 							r_list_append (ret, bs);
-							ht_insert (o->strings_db, K (bs->vaddr), bs);
+							ht_pp_insert (o->strings_db, K (bs->vaddr), bs);
 						}
 					}
 				}

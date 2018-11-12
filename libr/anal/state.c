@@ -13,7 +13,7 @@
 #define IFDBG if(DO_THE_DBG)
 #define IFINT if(0)
 
-static void kv_anal_bb_free(HtKv *kv) {
+static void kv_anal_bb_free(HtPPKv *kv) {
 	if (kv) {
 		free (kv->key);
 		r_anal_bb_free (kv->value);
@@ -32,7 +32,7 @@ R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
 	state->current_op = NULL;
 	state->current_bb = NULL;
 	state->current_fcn = NULL;
-	state->ht = ht_new (NULL, (HtKvFreeFunc)kv_anal_bb_free, NULL);
+	state->ht = ht_pp_new (NULL, (HtPPKvFreeFunc)kv_anal_bb_free, NULL);
 	state->ht_sz = 512;
 	state->bbs = r_list_newf ((RListFree)r_anal_bb_free);
 	state->max_depth = 50;
@@ -52,7 +52,7 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 		r_list_append (state->current_fcn->bbs, bb);
 		state->bytes_consumed += state->current_bb->op_sz;
 		const char *key = sdb_fmt ("0x%08"PFMT64x, bb->addr);
-		if (!ht_insert (state->ht, key, bb)) {
+		if (!ht_pp_insert (state->ht, key, bb)) {
 			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
 		}
 	}
@@ -63,13 +63,13 @@ R_API RAnalBlock * r_anal_state_search_bb(RAnalState* state, ut64 addr) {
 	 *   Return 0 if no rehash is needed, otherwise return 1
 	 */
 	const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
-	RAnalBlock *tmp_bb = ht_find (state->ht, key, NULL);
+	RAnalBlock *tmp_bb = ht_pp_find (state->ht, key, NULL);
 	return tmp_bb;
 }
 
 R_API void r_anal_state_free(RAnalState * state) {
 	r_list_free (state->bbs);
-	ht_free (state->ht);
+	ht_pp_free (state->ht);
 	free (state);
 }
 

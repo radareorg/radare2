@@ -252,7 +252,7 @@ struct r_anal_attr_t {
 };
 
 typedef struct r_anal_fcn_store_t {
-	SdbHt *h;
+	HtPP *h;
 	RList *l;
 } RAnalFcnStore;
 
@@ -660,8 +660,8 @@ typedef struct r_anal_t {
 	Sdb *sdb_zigns;
 
 #if USE_DICT
-	SdbHt *dict_refs;
-	SdbHt *dict_xrefs;
+	HtPP *dict_refs;
+	HtPP *dict_xrefs;
 #endif
 	bool recursive_noreturn;
 	RSpaces meta_spaces;
@@ -897,7 +897,7 @@ typedef struct r_anal_state_type_t {
 	ut64 current_addr;
 	ut64 next_addr;
 	RList *bbs;
-	SdbHt *ht;
+	HtPP *ht;
 	ut64 ht_sz;
 	RAnalFunction *current_fcn;
 	RAnalOp *current_op;

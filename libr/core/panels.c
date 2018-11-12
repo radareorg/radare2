@@ -1866,12 +1866,12 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 		return;
 	}
 	if (parent) {
-		void *addr = ht_find (panels->mht, parent, NULL);
+		void *addr = ht_pp_find (panels->mht, parent, NULL);
 		p_item = (RPanelsMenuItem *)addr;
-		ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
+		ht_pp_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panelsMenu->root;
-		ht_insert (panels->mht, sdb_fmt ("%s", name), item);
+		ht_pp_insert (panels->mht, sdb_fmt ("%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -2332,7 +2332,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "New", "o", 0);
 }
 
-static void mht_free_kv(HtKv *kv) {
+static void mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
 }
@@ -2350,7 +2350,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->isResizing = false;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
-	panels->mht = ht_new (NULL, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
+	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	panels->mode = PANEL_MODE_DEFAULT;
 	panels->prevMode = PANEL_MODE_NONE;
 	initSdb (panels);
@@ -2687,7 +2687,7 @@ R_API void r_core_panels_free(RPanels *panels) {
 		freeAllPanels (panels);
 		r_cons_canvas_free (panels->can);
 		sdb_free (panels->db);
-		ht_free (panels->mht);
+		ht_pp_free (panels->mht);
 		free (panels);
 	}
 }

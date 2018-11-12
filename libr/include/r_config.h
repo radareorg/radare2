@@ -43,7 +43,7 @@ typedef struct r_config_t {
 	RNum *num;
 	PrintfCallback cb_printf;
 	RList *nodes;
-	SdbHt *ht;
+	HtPP *ht;
 } RConfig;
 
 typedef struct r_config_hold_num_t {

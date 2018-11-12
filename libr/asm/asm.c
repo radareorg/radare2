@@ -247,7 +247,7 @@ R_API RAsm *r_asm_free(RAsm *a) {
 		r_syscall_free (a->syscall);
 		free (a->cpu);
 		sdb_free (a->pair);
-		ht_free (a->flags);
+		ht_pp_free (a->flags);
 		a->pair = NULL;
 		free (a);
 	}
@@ -686,7 +686,7 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 	return ac;
 }
 
-static void flag_free_kv(HtKv *kv) {
+static void flag_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
 }
@@ -706,8 +706,8 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
-	ht_free (a->flags);
-	if (!(a->flags = ht_new (dup_val, flag_free_kv, NULL))) {
+	ht_pp_free (a->flags);
+	if (!(a->flags = ht_pp_new (dup_val, flag_free_kv, NULL))) {
 		return NULL;
 	}
 	if (!(acode = r_asm_code_new ())) {
@@ -852,7 +852,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 						}
 						char food[64];
 						snprintf (food, sizeof (food), "0x%"PFMT64x, off);
-						ht_insert (a->flags, ptr_start, food);
+						ht_pp_insert (a->flags, ptr_start, food);
 						// TODO: warning when redefined
 						r_asm_code_set_equ (acode, ptr_start, food);
 					}

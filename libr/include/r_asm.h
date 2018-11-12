@@ -120,7 +120,7 @@ typedef struct r_asm_t {
 	int dataalign;
 	int bitshift;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
-	SdbHt *flags;
+	HtPP *flags;
 	int seggrn;
 } RAsm;
 
