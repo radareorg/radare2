@@ -761,9 +761,9 @@ R_API void r_cons_flush(void) {
 				return;
 			}
 #else
-			char buf[64];
-			char *buflen = r_num_units (buf, I.context->buffer_len);
-			if (buflen && !r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
+			char buf[8];
+			r_num_units (buf, sizeof (buf), I.context->buffer_len);
+			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
 				r_cons_reset ();
 				return;
 			}

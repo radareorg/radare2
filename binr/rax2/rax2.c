@@ -354,8 +354,8 @@ dotherax:
 		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 10)) { // -u
-		char buf[80];
-		r_num_units (buf, r_num_math (NULL, str));
+		char buf[8];
+		r_num_units (buf, sizeof (buf), r_num_math (NULL, str));
 		printf ("%s\n", buf);
 		return true;
 	} else if (flags & (1 << 11)) { // -t
@@ -400,7 +400,7 @@ dotherax:
 		}
 		return false;
 	} else if (flags & (1 << 18)) { // -r
-		char *asnum, unit[32];
+		char *asnum, unit[8];
 		char out[128];
 		ut32 n32, s, a;
 		double d;
@@ -419,7 +419,7 @@ dotherax:
 		/* decimal, hexa, octal */
 		s = n >> 16 << 12;
 		a = n & 0x0fff;
-		r_num_units (unit, n);
+		r_num_units (unit, sizeof (unit), n);
 #if 0
 		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
 			" %s %04x:%04x ",

@@ -75,32 +75,43 @@ R_API void r_num_free(RNum *num) {
 	R_FREE (num);
 }
 
-#define KB (1024)
-#define MB (1024*KB)
-#define GB (1024*MB)
-#define TB (1024*GB)
+#define KB (1ULL << 10)
+#define MB (1ULL << 20)
+#define GB (1ULL << 30)
+#define TB (1ULL << 40)
+#define PB (1ULL << 50)
+#define EB (1ULL << 60)
 
-R_API char *r_num_units(char *buf, ut64 num) {
+/**
+ * Convert size in bytes to human-readable string
+ *
+ * Result is stored in buf (buf should be at least 8 bytes in size).
+ * If buf is NULL, memory for the new string is obtained with malloc(3),
+ * and can be freed with free(3).
+ *
+ * On success, returns a pointer to buf. It returns NULL if
+ * insufficient memory was available.
+ */
+R_API char *r_num_units(char *buf, size_t len, ut64 num) {
+	long double fnum;
 	char unit;
-	int tnum;
-	double fnum = num;
 	if (!buf) {
-		buf = malloc (32);
+		buf = malloc (len + 1);
 		if (!buf) {
 			return NULL;
 		}
 	}
-	//if (num>=TB) { unit = 'T'; fnum = num/TB; } else
-	if (num>=GB) { unit = 'G'; fnum = fnum/GB; } else
-	if (num>=MB) { unit = 'M'; fnum = fnum/MB; } else
-	if (num>=KB) { unit = 'K'; fnum = fnum/KB; } else
-		{ unit = 0; fnum = (double)num; }
-	tnum = (int)((double)(fnum - (int)fnum)*10);
-	if (tnum) {
-		snprintf (buf, 31, "%.1f%c", fnum, unit);
-	} else {
-		snprintf (buf, 31, "%.0f%c", fnum, unit);
+	fnum = num;
+	if (num >= EB) { unit = 'E'; fnum /= EB; } else
+	if (num >= PB) { unit = 'P'; fnum /= PB; } else
+	if (num >= TB) { unit = 'T'; fnum /= TB; } else
+	if (num >= GB) { unit = 'G'; fnum /= GB; } else
+	if (num >= MB) { unit = 'M'; fnum /= MB; } else
+	if (num >= KB) { unit = 'K'; fnum /= KB; } else {
+		snprintf (buf, len, "%" PFMT64u, num);
+		return buf;
 	}
+	snprintf (buf, len, "%.1" LDBLFMT "%c", fnum, unit);
 	return buf;
 }
 
@@ -202,10 +213,10 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		ret = str[1] & 0xff;
 	// ugly as hell
 	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
-        	ret = r_num_tailff (num, str + 5);
+		ret = r_num_tailff (num, str + 5);
 	// ugly as hell
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
-        	ret = r_num_tailff (num, str + 5);
+		ret = r_num_tailff (num, str + 5);
 	} else if (str[0] == '0' && str[1] == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
@@ -381,7 +392,7 @@ R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	}
 	return r_num_op (op, ret, r_num_get (num, p));
 }
-#endif
+#endif /* !R_NUM_USE_CALC */
 
 R_API ut64 r_num_math(RNum *num, const char *str) {
 #if R_NUM_USE_CALC
@@ -501,7 +512,6 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 			out[realsize++] = '0';
 		}
 		out[realsize] = '\0'; //Maybe not nesesary?
-
 	}
 	return size;
 }
@@ -672,18 +682,10 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
 	return value;
 }
 
-static bool isHexDigit (const char _ch) {
-	const char ch = tolower ((ut8)_ch);
-	if (IS_DIGIT (ch)) {
-		return true;
-	}
-	return (ch >= 'a' && ch <= 'f');
-}
-
-static int nth (ut64 n, int i) {
-        int sz = (sizeof (n) << 1) - 1;
-        int s = (sz - i) * 4;
-        return (n >> s) & 0xf;
+static inline int get_nth_nibble (ut64 n, int i) {
+	int sz = (sizeof (n) << 1) - 1;
+	int s = (sz - i) * 4;
+	return (n >> s) & 0xf;
 }
 
 R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off) {
@@ -691,9 +693,9 @@ R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off) {
 	bool ready = false;
 	ut64 res = 0;
 	for (i = 0; i < 16; i++) {
-		ut64 o = nth (off, i);
+		ut64 o = get_nth_nibble (off, i);
 		if (!ready) {
-			bool iseq = nth (addr, i) == o;
+			bool iseq = get_nth_nibble (addr, i) == o;
 			if (i == 0 && !iseq) {
 				return UT64_MAX;
 			}
@@ -722,7 +724,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p + 2, hex);
-		if (isHexDigit (hex[0])) {
+		if (isxdigit ((ut8)hex[0])) {
 			n = r_num_math (num, p);
 		} else {
 			eprintf ("Invalid argument\n");
@@ -735,29 +737,29 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 }
 
 static ut64 r_num_tailff(RNum *num, const char *hex) {
-        ut64 n = 0;
-        char *p;
-        int i;
+	ut64 n = 0;
+	char *p;
+	int i;
 
-        while (*hex && (*hex == ' ' || *hex=='.')) {
-                hex++;
-        }
-        i = strlen (hex) * 4;
-        p = malloc (strlen (hex) + 10);
-        if (p) {
-                strcpy (p, "0x");
-                strcpy (p + 2, hex);
-                if (isHexDigit (hex[0])) {
-                        n = r_num_math (num, p);
-                } else {
-                        eprintf ("Invalid argument\n");
+	while (*hex && (*hex == ' ' || *hex=='.')) {
+		hex++;
+	}
+	i = strlen (hex) * 4;
+	p = malloc (strlen (hex) + 10);
+	if (p) {
+		strcpy (p, "0x");
+		strcpy (p + 2, hex);
+		if (isxdigit ((ut8)hex[0])) {
+			n = r_num_math (num, p);
+		} else {
+			eprintf ("Invalid argument\n");
 			free (p);
-                        return UT64_MAX;
-                }
-                free (p);
-        }
+			return UT64_MAX;
+		}
+		free (p);
+	}
 	ut64 left = ((UT64_MAX >>i) << i);
-        return left | n;
+	return left | n;
 }
 
 R_API int r_num_between(RNum *num, const char *input_value) {
