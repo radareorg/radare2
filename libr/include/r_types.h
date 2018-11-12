@@ -129,6 +129,7 @@
   #define restrict
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
+  #define gmtime_r(a, b) gmtime_s(b, a)
   #define __WINDOWS__ 1
 #endif
 
