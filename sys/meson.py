@@ -187,6 +187,7 @@ def win_dist_libr2(**path_fmt):
     copy(r'{BUILDDIR}\libr\asm\d\*.sdb', r'{DIST}\{R2_SDB}\opcodes')
     makedirs(r'{DIST}\{R2_INCDIR}\sdb')
     makedirs(r'{DIST}\{R2_INCDIR}\r_util')
+    makedirs(r'{DIST}\{R2_INCDIR}\r_crypto')
     copy(r'{ROOT}\libr\include\*.h', r'{DIST}\{R2_INCDIR}')
     copy(r'{BUILDDIR}\r_version.h', r'{DIST}\{R2_INCDIR}')
     copy(r'{BUILDDIR}\r_userconf.h', r'{DIST}\{R2_INCDIR}')
