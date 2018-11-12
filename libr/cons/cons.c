@@ -448,8 +448,7 @@ R_API RCons *r_cons_free() {
 		I.line = NULL;
 	}
 	if (I.context->buffer) {
-		free (I.context->buffer);
-		I.context->buffer = NULL;
+		R_FREE (I.context->buffer);
 	}
 	R_FREE (I.break_word);
 	cons_context_deinit (I.context);
@@ -1370,8 +1369,7 @@ R_API void r_cons_highlight(const char *word) {
 		/* don't free orig - it's assigned
 		 * to I.context->buffer and possibly realloc'd */
 	} else {
-		free (I.highlight);
-		I.highlight = NULL;
+		R_FREE (I.highlight);
 	}
 }
 

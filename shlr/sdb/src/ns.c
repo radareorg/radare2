@@ -43,14 +43,12 @@ static void ns_free(Sdb *s, SdbList *list) {
 		next.n = it->n;
 		if (!in_list (list, ns)) {
 			ls_delete (s->ns, it); // free (it)
-			free (ns->name);
-			ns->name = NULL;
+			R_FREE (ns->name);
 			deleted = 1;
 			if (ns->sdb) {
 				if (sdb_free (ns->sdb)) {
 					ns->sdb = NULL;
-					free (ns->name);
-					ns->name = NULL;
+					R_FREE (ns->name);
 				}
 			}
 			ls_append (list, ns);
@@ -120,8 +118,7 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 		}
 	} else {
 		free (ns->name);
-		free (ns);
-		ns = NULL;
+		R_FREE (ns);
 	}
 	return ns;
 }

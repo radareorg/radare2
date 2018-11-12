@@ -967,8 +967,7 @@ R_API int extract_type_value(const char *arg_str, char **output) {
 		return 0;
 	}
 	if (output && *output && *output != NULL) {
-		free (*output);
-		*output = NULL;
+		R_FREE (*output);
 	}
 	while (arg_str && *arg_str && !found_one) {
 		len = 0;
@@ -2523,8 +2522,7 @@ R_API RBinField *r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_ty
 R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type, ut64 baddr) {
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (fm_type == NULL || fm_type->field_ref_cp_obj == NULL || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
-		free (sym);
-		sym = NULL;
+		R_FREE (sym);
 	}
 	if (sym) {
 		sym->name = strdup (fm_type->name);
@@ -2609,8 +2607,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, 
 	if (obj == NULL || (obj->tag != R_BIN_JAVA_CP_METHODREF &&
 	obj->tag != R_BIN_JAVA_CP_INTERFACEMETHOD_REF &&
 	obj->tag != R_BIN_JAVA_CP_FIELDREF)) {
-		free (sym);
-		sym = NULL;
+		R_FREE (sym);
 		return sym;
 	}
 	if (sym) {
@@ -5029,11 +5026,9 @@ R_API int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj *cp_obj, ut8 tag) {
 	if (tag < R_BIN_JAVA_CP_METAS_SZ) {
 		if (tag != cp_obj->tag) {
 			if (cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
-				free (cp_obj->info.cp_utf8.bytes);
-				cp_obj->info.cp_utf8.bytes = NULL;
+				R_FREE (cp_obj->info.cp_utf8.bytes);
 				cp_obj->info.cp_utf8.length = 0;
-				free (cp_obj->name);
-				cp_obj->name = NULL;
+				R_FREE (cp_obj->name);
 				res = true;
 			}
 			cp_obj->tag = tag;
@@ -6371,8 +6366,7 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 	RBinJavaCPTypeObj *obj = NULL;
 	RBinJavaElementValue *ev_element = NULL;
 	if (element_value) {
-		free (element_value->metas);
-		element_value->metas = NULL;
+		R_FREE (element_value->metas);
 		switch (element_value->tag) {
 		case R_BIN_JAVA_EV_TAG_BYTE:
 		case R_BIN_JAVA_EV_TAG_CHAR:

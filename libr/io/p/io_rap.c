@@ -94,8 +94,7 @@ static int rap__close(RIODesc *fd) {
 			ret = r_socket_close (r->fd);
 			ret = r_socket_close (r->client);
 			//ret = r_socket_close (r->client);
-			free (fd->data);
-			fd->data = NULL;
+			R_FREE (fd->data);
 		}
 	} else {
 		eprintf ("rap__close: fdesc is not a r_io_rap plugin\n");

@@ -2846,8 +2846,7 @@ reaccept:
 				r_write_be32 (buf + 1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
-				free (ptr);
-				ptr = NULL;
+				R_FREE (ptr);
 				break;
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
@@ -2869,8 +2868,7 @@ reaccept:
 					memcpy (ptr + 5, core->block, i); //core->blocksize);
 					r_socket_write (c, ptr, i + 5);
 					r_socket_flush (c);
-					free (ptr);
-					ptr = NULL;
+					R_FREE (ptr);
 				} else {
 					eprintf ("Cannot read %d byte(s)\n", i);
 					r_socket_free (c);
@@ -2959,8 +2957,7 @@ reaccept:
 				r_write_be32 (buf + 1, ret);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
-				free (ptr);
-				ptr = NULL;
+				R_FREE (ptr);
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);
@@ -2998,8 +2995,7 @@ reaccept:
 			default:
 				eprintf ("unknown command 0x%02x\n", cmd);
 				r_socket_close (c);
-				free (ptr);
-				ptr = NULL;
+				R_FREE (ptr);
 				goto out_of_function;
 			}
 		}
