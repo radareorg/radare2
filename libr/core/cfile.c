@@ -833,8 +833,8 @@ R_API void r_core_file_free(RCoreFile *cf) {
 	if (res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		RIO *io = cf->core->io;
-		if (io && cf->binb) {
-			RBin *bin = cf->binb->bin;
+		if (io) {
+			RBin *bin = cf->binb.bin;
 			RBinFile *bf = r_bin_cur (bin);
 			if (bf) {
 				r_bin_file_deref (bin, bf);

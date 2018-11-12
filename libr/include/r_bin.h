@@ -239,7 +239,6 @@ typedef struct r_bin_object_t {
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
-	int referenced;
 	int lang;
 	Sdb *kv;
 	Sdb *addr2klassmethod;
