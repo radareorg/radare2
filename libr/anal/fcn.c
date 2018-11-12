@@ -958,7 +958,9 @@ repeat:
 			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
-			eprintf ("Invalid instruction (possibly truncated) at 0x%"PFMT64x"\n", addr + idx);
+			if (!anal->coreb.core || !anal->coreb.cfggeti || !anal->coreb.cfggeti (anal->coreb.core, "cfg.debug")) { // HACK
+				eprintf ("Invalid instruction (possibly truncated) at 0x%"PFMT64x"\n", addr + idx);
+			}
 			gotoBeach (R_ANAL_RET_END);
 		}
 		if (op.hint.new_bits) {
