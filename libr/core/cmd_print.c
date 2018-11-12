@@ -4104,7 +4104,7 @@ static int cmd_print(void *data, const char *input) {
 					int printed = 0;
 					int bufsz;
 					RAnalOp aop = { 0 };
-					char *hex_arg = calloc (1, strlen (arg));
+					char *hex_arg = calloc (1, strlen (arg) + 1);
 					if (hex_arg) {
 						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);
 						while (printed < bufsz) {
