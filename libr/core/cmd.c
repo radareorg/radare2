@@ -349,7 +349,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 }
 
 static int cmd_uname(void *data, const char *input) {
-	RCore *core = data;
+	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '?': // "u?"
 		r_core_cmd_help (data, help_msg_u);
@@ -3782,7 +3782,7 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b) {
 	return ret;
 }
 
-R_API int r_core_cmd_buffer(void *user, const char *buf) {
+R_API int r_core_cmd_buffer(RCore *core, const char *buf) {
 	char *ptr, *optr, *str = strdup (buf);
 	if (!str) {
 		return false;
@@ -3791,32 +3791,32 @@ R_API int r_core_cmd_buffer(void *user, const char *buf) {
 	ptr = strchr (str, '\n');
 	while (ptr) {
 		*ptr = '\0';
-		r_core_cmd (user, optr, 0);
+		r_core_cmd (core, optr, 0);
 		optr = ptr + 1;
 		ptr = strchr (str, '\n');
 	}
-	r_core_cmd (user, optr, 0);
+	r_core_cmd (core, optr, 0);
 	free (str);
 	return true;
 }
 
-R_API int r_core_cmdf(void *user, const char *fmt, ...) {
+R_API int r_core_cmdf(RCore *core, const char *fmt, ...) {
 	char string[4096];
 	int ret;
 	va_list ap;
 	va_start (ap, fmt);
 	vsnprintf (string, sizeof (string), fmt, ap);
-	ret = r_core_cmd ((RCore *)user, string, 0);
+	ret = r_core_cmd (core, string, 0);
 	va_end (ap);
 	return ret;
 }
 
-R_API int r_core_cmd0(void *user, const char *cmd) {
-	return r_core_cmd ((RCore *)user, cmd, 0);
+R_API int r_core_cmd0(RCore *core, const char *cmd) {
+	return r_core_cmd (core, cmd, 0);
 }
 
-R_API int r_core_flush(void *user, const char *cmd) {
-	int ret = r_core_cmd ((RCore *)user, cmd, 0);
+R_API int r_core_flush(RCore *core, const char *cmd) {
+	int ret = r_core_cmd (core, cmd, 0);
 	r_cons_flush ();
 	return ret;
 }

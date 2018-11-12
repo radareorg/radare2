@@ -2204,7 +2204,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *f;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, f) {
-				r_anal_trim_jmprefs (core->anal, f);
+				r_anal_del_jmprefs (core->anal, f);
 			}
 			r_list_purge (core->anal->fcns);
 			core->anal->fcn_tree = NULL;
@@ -6952,7 +6952,7 @@ static bool archIsArmOrThumb(RCore *core) {
 	return false;
 }
 
-const bool archIsMips (RCore *core) {
+bool archIsMips (RCore *core) {
 	return strstr (core->assembler->cur->name, "mips");
 }
 

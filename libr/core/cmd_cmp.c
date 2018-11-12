@@ -457,7 +457,7 @@ static int cmd_cp(void *data, const char *input) {
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
-	RCore *core = data;
+	RCore *core = (RCore *)data;
 	ut64 val = UT64_MAX;
 	char *filled;
 	ut8 *buf;

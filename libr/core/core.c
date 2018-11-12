@@ -2221,6 +2221,7 @@ R_API bool r_core_init(RCore *core) {
 	core->http_up = false;
 	ZERO_FILL (core->root_cmd_descriptor);
 	core->print = r_print_new ();
+	r_core_bind (core, &(core->print->coreb));
 	core->print->user = core;
 	core->print->num = core->num;
 	core->print->offname = r_core_print_offname;

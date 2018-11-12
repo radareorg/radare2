@@ -240,8 +240,12 @@ static void filter_classes(RBinFile *bf, RList *list) {
 		int namepad_len = strlen (cls->name) + 32;
 		char *namepad = malloc (namepad_len + 1);
 		if (namepad) {
+			char *p;
 			strcpy (namepad, cls->name);
-			r_bin_filter_name (bf, db, cls->index, namepad, namepad_len);
+			p = r_bin_filter_name (bf, db, cls->index, namepad);
+			if (p) {
+				namepad = p;
+			}
 			free (cls->name);
 			cls->name = namepad;
 			r_list_foreach (cls->methods, iter2, sym) {

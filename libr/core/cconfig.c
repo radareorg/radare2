@@ -1309,6 +1309,13 @@ static int cb_rows(void *user, void *data) {
 	return true;
 }
 
+static int cb_cmd_hexcursor(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->print->cfmt = node->value;
+	return true;
+}
+
 static int cb_hexcompact(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2861,6 +2868,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("hex.header", "true", "Show header in hexdumps");
 	SETCB ("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
+	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
 	SETICB ("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
 	SETI ("hex.pcols", 40, "Number of pixel columns for prc");

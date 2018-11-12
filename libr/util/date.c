@@ -33,6 +33,7 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	char s[256];
 	int ret = 0;
 	const struct tm* time;
+	struct tm timestruct;
 
 	if (p && len >= sizeof (ut32)) {
 		t = r_read_ble32 (buf, p->big_endian);
@@ -40,7 +41,7 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
 			t += hfs_unix_delta;
-			time = (const struct tm*)gmtime((const time_t*)&t);
+			time = (const struct tm*)gmtime_r((const time_t*)&t, &timestruct);
 			if (time) {
 				ret = strftime (s, sizeof (s), p->datefmt, time);
 				if (ret) {
@@ -60,13 +61,14 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	char s[256];
 	int ret = 0;
 	const struct tm* time;
+	struct tm timestruct;
 
 	if (p && len >= sizeof (ut32)) {
 		t = r_read_ble32 (buf, p->big_endian);
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
-			time = (const struct tm*)gmtime((const time_t*)&t);
+			time = (const struct tm*)gmtime_r((const time_t*)&t, &timestruct);
 			if (time) {
 				ret = strftime (s, sizeof (s), p->datefmt, time);
 				if (ret) {
@@ -131,8 +133,9 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 		t = (time_t) l; // TODO limit above!
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt[0]) {
+			struct tm time;
 			ret = strftime(datestr, 256, p->datefmt,
-				(const struct tm*) gmtime((const time_t*)&t));
+				(const struct tm*) gmtime_r ((const time_t*)&t, &time));
 			if (ret) {
 				p->cb_printf("%s\n", datestr);
 				ret = true;

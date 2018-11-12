@@ -2393,10 +2393,38 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		// r_num_get is gonna use a dangling pointer since the internal
 		// token that RNum holds ([$$]) has been already freed by r_core_cmd_str
 		// r_num_math reload a new token so the dangling pointer is gone
-		r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
-			r_num_math (core->num, "[$$]"),
+		switch(input[1]) {
+		case '1':
+			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
+			r_read_ble8 (block),
 			str
 			);
+			break;
+		case '2':
+			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
+			r_read_ble16 (block, core->print->big_endian),
+			str
+			);
+			break;
+		case '4':
+			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
+			r_read_ble32 (block, core->print->big_endian),
+			str
+			);
+			break;
+		case '8':
+			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
+			r_read_ble64 (block, core->print->big_endian),
+			str
+			);
+			break;
+		default:
+			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
+			r_read_ble64 (block, core->print->big_endian),
+			str
+			);
+			break;
+		}
 		free (str);
 		break;
 	}
@@ -3691,7 +3719,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	}
 }
 
-static inline const char cmd_pxb_p(char input) {
+static inline char cmd_pxb_p(char input) {
 	return IS_PRINTABLE (input)? input: '.';
 }
 
@@ -4076,7 +4104,7 @@ static int cmd_print(void *data, const char *input) {
 					int printed = 0;
 					int bufsz;
 					RAnalOp aop = { 0 };
-					char *hex_arg = calloc (1, strlen (arg));
+					char *hex_arg = calloc (1, strlen (arg) + 1);
 					if (hex_arg) {
 						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);
 						while (printed < bufsz) {
@@ -5208,7 +5236,7 @@ static int cmd_print(void *data, const char *input) {
 					if (c == 3) {
 						const ut8 *b = core->block + i - 3;
 						int (*k) (const ut8 *, int) = cmd_pxb_k;
-						const char (*p) (char) = cmd_pxb_p;
+						char (*p) (char) = cmd_pxb_p;
 
 						n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
 						r_cons_printf ("0x%08x  %c%c%c%c\n",

@@ -1630,6 +1630,7 @@ static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
 	RGraphNode *gv = NULL;
 	RListIter *it;
 	int i;
+	r_return_if_fail (g && from && to);
 	const RList *neighbours = r_graph_get_neighbours (g->graph, to->gnode);
 	graph_foreach_anode (neighbours, it, gv, v) {
 		tmp = v;

@@ -231,17 +231,23 @@ R_API void r_core_task_incref (RCoreTask *task) {
 	if (!task) {
 		return;
 	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (task->core, &old_sigset);
 	task->refcount++;
+	tasks_lock_leave (task->core, &old_sigset);
 }
 
 R_API void r_core_task_decref (RCoreTask *task) {
 	if (!task) {
 		return;
 	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (task->core, &old_sigset);
 	task->refcount--;
 	if (task->refcount <= 0) {
 		task_free (task);
 	}
+	tasks_lock_leave (task->core, &old_sigset);
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {

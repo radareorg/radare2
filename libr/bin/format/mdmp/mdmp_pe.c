@@ -161,7 +161,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 		if (sections[i].name[0]) {
 			ptr->name = strdup ((char*)sections[i].name);
 		} else {
-			ptr->name = strdup ("NULL");
+			ptr->name = strdup ("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > pe_bin->bin->size) {

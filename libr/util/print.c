@@ -359,18 +359,25 @@ R_API void r_print_set_cursor(RPrint *p, int enable, int ocursor, int cursor) {
 	p->cur = cursor;
 }
 
-R_API void r_print_cursor(RPrint *p, int cur, int set) {
+R_API bool r_print_have_cursor(RPrint *p, int cur) {
 	if (!p || !p->cur_enabled) {
-		return;
+		return false;
 	}
 	if (p->ocur != -1) {
 		int from = p->ocur;
 		int to = p->cur;
 		r_num_minmax_swap_i (&from, &to);
 		if (cur >= from && cur <= to) {
-			p->cb_printf ("%s", R_CONS_INVERT (set, 1));
+			return true;
 		}
 	} else if (cur == p->cur) {
+		return true;
+	}
+	return false;
+}
+
+R_API void r_print_cursor(RPrint *p, int cur, int set) {
+	if (r_print_have_cursor (p, cur)) {
 		p->cb_printf ("%s", R_CONS_INVERT (set, 1));
 	}
 }
@@ -915,11 +922,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (use_offset) {
 			r_print_addr (p, addr + j * zoomsz);
 		}
+		int row_have_cursor = -1;
+		ut64 row_have_addr = UT64_MAX;
 		if (use_hexa) {
 			if (!compact) {
 				printfmt ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
+				if (row_have_cursor == -1) {
+					if (r_print_have_cursor (p, j)) {
+						row_have_cursor = j - i;
+						row_have_addr = addr + j;
+					}
+				}
 				if (!compact && j >= len) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
@@ -1078,6 +1093,27 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		printfmt ("\n");
+
+		if (p->cfmt && *p->cfmt) {
+			if (row_have_cursor != -1) {
+				int i=0;
+				printfmt (" _________");
+				if (!compact) {
+					printfmt ("_");
+				}
+				for (i = 0; i < row_have_cursor; i++) {
+					if (!pairs || (!compact && i % 2)) {
+						printfmt ("___");
+					} else {
+						printfmt ("__");
+					}
+				}
+				printfmt ("__|\n");
+				printfmt ("| cmd.hexcursor = %s\n", p->cfmt);
+				p->coreb.cmdf (p->coreb.core,
+						"%s @ 0x%08"PFMT64x, p->cfmt, row_have_addr);
+			}
+		}
 	}
 }
 
@@ -1095,7 +1131,6 @@ static const char* getbytediff(char *fmt, ut8 a, ut8 b) {
 	} else {
 		sprintf (fmt, "%02x", a);
 	}
-	// else sprintf (fmt, "%02x", a);
 	return fmt;
 }
 
