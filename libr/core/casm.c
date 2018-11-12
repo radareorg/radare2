@@ -168,8 +168,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
-						free (hits);
-						hits = NULL;
+						R_FREE (hits);
 						goto beach;
 					}
 					hit->addr = addr;
@@ -336,8 +335,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 				r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
 				IFDBG eprintf("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
-				free (hit);
-				hit = NULL;
+				R_FREE (hit);
 			}
 		}
 

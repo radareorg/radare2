@@ -1130,8 +1130,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	//int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
 
-	free (bin->import_directory);
-	bin->import_directory = NULL;
+	R_FREE (bin->import_directory);
 	if (import_dir_paddr != 0) {
 		if (import_dir_size < 1 || import_dir_size > maxidsz) {
 			bprintf ("Warning: Invalid import directory size: 0x%x is now 0x%x\n", import_dir_size, maxidsz);
@@ -1147,8 +1146,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 			new_import_dir = (PE_(image_import_directory)*)realloc (import_dir, ((1 + indx) * dir_size));
 			if (!new_import_dir) {
 				r_sys_perror ("malloc (import directory)");
-				free (import_dir);
-				import_dir = NULL;
+				R_FREE (import_dir);
 				break; //
 				//			goto fail;
 			}
@@ -1157,8 +1155,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 			curr_import_dir = import_dir + (indx - 1);
 			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size, (ut8*) (curr_import_dir), dir_size) < 1) {
 				bprintf ("Warning: read (import directory)\n");
-				free (import_dir);
-				import_dir = NULL;
+				R_FREE (import_dir);
 				break; //return false;
 			}
 			count++;
@@ -1204,8 +1201,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 
 	return true;
 fail:
-	free (import_dir);
-	import_dir = NULL;
+	R_FREE (import_dir);
 	bin->import_directory = import_dir;
 	free (delay_import_dir);
 	return false;
@@ -1227,8 +1223,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*) bin->export_directory, sizeof (PE_(image_export_directory))) == -1) {
 		bprintf ("Warning: read (export directory)\n");
-		free (bin->export_directory);
-		bin->export_directory = NULL;
+		R_FREE (bin->export_directory);
 		return false;
 	}
 	return true;
@@ -1263,8 +1258,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (r_buf_read_at (bin->b, resource_dir_paddr, (ut8*) bin->resource_directory,
 		sizeof (*bin->resource_directory)) != sizeof (*bin->resource_directory)) {
 		bprintf ("Warning: read (resource directory)\n");
-		free (bin->resource_directory);
-		bin->resource_directory = NULL;
+		R_FREE (bin->resource_directory);
 		return false;
 	}
 	bin->resource_directory_offset = resource_dir_paddr;

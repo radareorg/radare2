@@ -161,8 +161,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {
-			free (reg->name[i]);
-			reg->name[i] = NULL;
+			R_FREE (reg->name[i]);
 		}
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
