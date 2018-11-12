@@ -141,6 +141,8 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->rpath);
 	free (rb->guid);
 	free (rb->debug_file_name);
+	free (rb->actual_checksum);
+	free (rb->claimed_checksum);
 	free (rb);
 }
 
