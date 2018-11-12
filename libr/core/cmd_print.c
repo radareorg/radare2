@@ -5236,7 +5236,7 @@ static int cmd_print(void *data, const char *input) {
 					if (c == 3) {
 						const ut8 *b = core->block + i - 3;
 						int (*k) (const ut8 *, int) = cmd_pxb_k;
-						const char (*p) (char) = cmd_pxb_p;
+						char (*p) (char) = cmd_pxb_p;
 
 						n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
 						r_cons_printf ("0x%08x  %c%c%c%c\n",
