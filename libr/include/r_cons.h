@@ -678,7 +678,6 @@ R_API RCons *r_cons_singleton(void);
 R_API RCons *r_cons_free(void);
 R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);
-R_API int *r_cons_splitlines(char *s, int *lines_count);
 
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
@@ -739,7 +738,6 @@ R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
 #define r_cons_print(x) r_cons_strcat (x)
 R_API void r_cons_println(const char* str);
-R_API void r_cons_printpage(const char *line, int *index, RList **mla, int from, int to, int w);
 
 R_API void r_cons_strcat_justify(const char *str, int j, char c);
 R_API int r_cons_memcat(const char *str, int len);
@@ -749,9 +747,6 @@ R_API void r_cons_flush(void);
 R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
 R_API void r_cons_less(void);
-R_API int r_cons_next_match(int from, RList **mla, int lcount);
-R_API int r_cons_prev_match(int from, RList **mla);
-R_API int r_cons_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount);
 R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush(void);
@@ -814,7 +809,6 @@ R_API void r_cons_rgb_init(void);
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
-R_API void r_cons_color_line(const char *line, RStrpool *p, RList *ml);
 
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);

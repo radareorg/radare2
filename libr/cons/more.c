@@ -1,6 +1,7 @@
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
+#include "pager_private.h"
 
 R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	static int in_help = false;
@@ -32,7 +33,7 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 		free (ostr);
 		return 0;
 	}
-	int *lines = r_cons_splitlines (p, &lines_count);
+	int *lines = pager_splitlines (p, &lines_count);
 	if (lines_count < 1) {
 		mla = NULL;
 	} else {
@@ -60,7 +61,7 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 		if (from < 0) {
 			from = 0;
 		}
-		r_cons_printpage (p, lines, mla, from, to, w);
+		pager_printpage (p, lines, mla, from, to, w);
 		ch = r_cons_readchar ();
 		if (exitkeys && strchr (exitkeys, ch)) {
 			for (i = 0; i < lines_count; i++) {
@@ -96,29 +97,29 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 			r_cons_reset_colors ();
 			r_line_set_prompt ("/");
 			sreg = r_line_readline ();
-			from = R_MIN(lines_count - 1, from);
+			from = R_MIN (lines_count - 1, from);
 			/* repeat last search if empty string is provided */
 			if (sreg[0]) { /* prepare for a new search */
 				if (rx) {
 					r_regex_free (rx);
 				}
-				rx = r_regex_new(sreg, "");
+				rx = r_regex_new (sreg, "");
 			} else { /* we got an empty string */
-				from = r_cons_next_match(from, mla, lines_count);
+				from = pager_next_match (from, mla, lines_count);
 				break;
 			}
 			if (!rx) {
 				break;
 			}
 			/* find all occurences */
-			if (r_cons_all_matches (p, rx, mla, lines, lines_count)) {
-				from = r_cons_next_match (from, mla, lines_count);
+			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
+				from = pager_next_match (from, mla, lines_count);
 			}
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
 			if (rx) {
-				from = r_cons_next_match (from, mla, lines_count);
+				from = pager_next_match (from, mla, lines_count);
 			}
 			break;
 		}
