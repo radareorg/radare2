@@ -1191,18 +1191,18 @@ int main(int argc, char **argv, char **envp) {
 			/* load symbols when doing r2 -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
 			baddr = r_debug_get_baddr (r.dbg, pfile);
-			char *env_debug = r_sys_getenv ("R_DEBUG");
-			if (baddr != UT64_MAX && baddr != 0 && env_debug) {
+
+			if (baddr != UT64_MAX && baddr != 0 && r.dbg->verbose) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
 			}
 			if (run_anal > 0) {
-				if (baddr && baddr != UT64_MAX && env_debug) {
+				if (baddr && baddr != UT64_MAX && r.dbg->verbose) {
 					eprintf ("Using 0x%" PFMT64x "\n", baddr);
 				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
-						if (env_debug) {
+						if (r.dbg->verbose) {
 							eprintf ("asm.bits %d\n", obj->info->bits);
 						}
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__

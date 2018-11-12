@@ -575,8 +575,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		tid = pid;
 	}
 	if (pid != -1 && tid != -1) {
-		char *env_debug = r_sys_getenv ("R_DEBUG");
-		if ((pid != dbg->pid || tid != dbg->tid) && env_debug) {
+		if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
 			eprintf ("= attach %d %d\n", pid, tid);
 		}
 	} else {

@@ -2351,6 +2351,21 @@ static int cb_log_config_colors(void *coreptr, void *nodeptr) {
 	return true;
 }
 
+static int cb_dbg_verbose(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	const char *value = node->value;
+	switch (value[0]) {
+	case 't':
+	case 'T':
+		core->dbg->verbose = true;
+		break;
+	default:
+		core->dbg->verbose = false;
+	}
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -2769,6 +2784,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
+	SETCB ("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
 	SETPREF ("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 	SETPREF ("dbg.funcarg", "false", "Display arguments to function call in visual mode");
 
