@@ -1451,7 +1451,7 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 #ifndef PTRACE_GETHBPREGS
 #define PTRACE_GETHBPREGS 29
 #define PTRACE_SETHBPREGS 30
-#endif
+
 static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
 	const unsigned byte_mask = (1 << size) - 1;
 	//const unsigned type = 2; // Write.
