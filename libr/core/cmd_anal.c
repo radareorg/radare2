@@ -6952,7 +6952,7 @@ static bool archIsArmOrThumb(RCore *core) {
 	return false;
 }
 
-const bool archIsMips (RCore *core) {
+bool archIsMips (RCore *core) {
 	return strstr (core->assembler->cur->name, "mips");
 }
 
