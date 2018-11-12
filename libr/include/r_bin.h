@@ -682,7 +682,6 @@ R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name);
 R_API bool r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf);
 R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
-R_API bool r_bin_file_deref_by_bind(RBinBind *binb);
 R_API bool r_bin_file_deref(RBin *bin, RBinFile *a);
 R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd);
 R_API bool r_bin_file_close(RBin *bin, int bd);

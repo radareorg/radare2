@@ -822,25 +822,27 @@ R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (!cf) {
-		return;
-	}
+
+	r_return_if_fail (cf);
+
 	if (!cf->core) {
 		free (cf);
 		return;
 	}
 	res = r_core_files_free (cf->core, cf);
-	//if (!res && cf && cf->alive) {
 	if (res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		RIO *io = cf->core->io;
-		if (io) {
-			r_bin_file_deref_by_bind (&cf->binb);
+		if (io && cf->binb) {
+			RBin *bin = cf->binb->bin;
+			RBinFile *bf = r_bin_cur (bin);
+			if (bf) {
+				r_bin_file_deref (bin, bf);
+			}
 			r_io_fd_close (io, cf->fd);
 			free (cf);
 		}
 	}
-	cf = NULL;
 }
 
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {

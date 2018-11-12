@@ -590,31 +590,16 @@ R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name) {
 	return r_bin_file_set_cur_binfile (bin, bf);
 }
 
-R_API bool r_bin_file_deref_by_bind(RBinBind *binb) {
-	RBin *bin = binb? binb->bin: NULL;
-	RBinFile *a = r_bin_cur (bin);
-	return r_bin_file_deref (bin, a);
-}
-
 R_API bool r_bin_file_deref(RBin *bin, RBinFile *a) {
+	r_return_val_if_fail (bin && a, false);
+
 	RBinObject *o = r_bin_cur_object (bin);
 	int res = false;
-	if (a && !o) {
-		//r_list_delete_data (bin->binfiles, a);
-		res = true;
-	} else if (a && o->referenced - 1 < 1) {
-		//r_list_delete_data (bin->binfiles, a);
-		res = true;
-		// not thread safe
-	} else if (o) {
-		o->referenced--;
+	if (!o) {
+		return false;
 	}
-	// it is possible for a file not
-	// to be bound to RBin and RBinFiles
-	// XXX - is this an ok assumption?
-	if (bin) {
-		bin->cur = NULL;
-	}
+
+	bin->cur = NULL;
 	return res;
 }
 
