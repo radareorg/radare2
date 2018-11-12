@@ -72,7 +72,8 @@ def main():
   # Extract changed lines for each file.
   filename = None
   lines_by_file = {}
-  for line in sys.stdin:
+  input = sys.stdin.read().split('\n')
+  for lineidx, line in enumerate(input):
     match = re.search('^\+\+\+\ (.*?/){%s}(\S*)' % args.p, line)
     if match:
       filename = match.group(2)
@@ -95,8 +96,21 @@ def main():
       if line_count == 0:
         continue
       end_line = start_line + line_count - 1
-      lines_by_file.setdefault(filename, []).append(
-          [start_line, end_line])
+      ranges = []
+      range_start, range_end = None, None
+      range_line = -1
+      for i in range(1, line_count):
+        # do not count lines that are removed
+        if not input[lineidx + i].startswith('-'):
+          range_line += 1
+
+        if input[lineidx + i].startswith('+'):
+          if range_start is None:
+            range_start = start_line + range_line
+        elif range_start is not None and range_end is None:
+            range_end = start_line + range_line
+            lines_by_file.setdefault(filename, []).append([range_start, range_end - 1])
+            range_start, range_end = None, None
 
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.items():
@@ -128,12 +142,16 @@ def main():
                 modified_lines[i] = True
 
     # handle functions definitions/declarations: do not use space before (
+    old_nlines = len(open(filename).read().split('\n'))
+    new_nlines = len(formatted_code)
+    delta = abs(new_nlines - old_nlines)
+
     for i, l in enumerate(formatted_code):
+        if modified_lines and not any(map(lambda x: x in modified_lines, range(i + 1 - delta, i + 1 + delta))):
+            continue
+
         if formatted_code[i].startswith('R_API ') or formatted_code[i].startswith('static ') or formatted_code[i].startswith('R_IPI '):
             formatted_code[i] = formatted_code[i].replace(' (', '(')
-
-        if modified_lines and i not in modified_lines:
-            continue
 
         while ' ? ' in formatted_code[i] and ' : ' in formatted_code[i]:
             pos_q = formatted_code[i].index(' ? ')
