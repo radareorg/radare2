@@ -1,9 +1,9 @@
 include ../config.mk
 
 CFLAGS+=-g
-OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht.o sdb.o num.o base64.o match.o
+OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht_uu.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o
-OBJ+=dict.o
+OBJ+=dict.o ht_pp.o ht_up.o
 SOBJ=$(subst .o,.o.o,${OBJ})
 WITHPIC?=1
 BIN=sdb${EXT_EXE}
