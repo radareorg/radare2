@@ -659,7 +659,6 @@ R_API ut64 r_bin_a2b(RBin *bin, ut64 addr);
 
 R_API int r_bin_load_languages(RBinFile *binfile);
 R_API RBinFile *r_bin_cur(RBin *bin);
-R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API RBinObject *r_bin_cur_object(RBin *bin);
 
 // select/list binfiles functions

@@ -351,7 +351,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
@@ -387,7 +387,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
@@ -400,7 +400,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
@@ -572,7 +572,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 		} else if (binfile) {
-			obj = r_bin_get_object (r->bin);
+			obj = r_bin_cur_object (r->bin);
 			if (obj) {
 				va = obj->info ? obj->info->has_va : va;
 				if (!va) {

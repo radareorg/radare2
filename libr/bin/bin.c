@@ -1294,12 +1294,6 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 	return NULL;
 }
 
-// REMOVE
-R_API RBinObject *r_bin_get_object(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	return r_bin_cur_object (bin);
-}
-
 R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);

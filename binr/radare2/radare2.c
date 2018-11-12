@@ -1199,7 +1199,7 @@ int main(int argc, char **argv, char **envp) {
 					eprintf ("Using 0x%" PFMT64x "\n", baddr);
 				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
-					RBinObject *obj = r_bin_get_object (r.bin);
+					RBinObject *obj = r_bin_cur_object (r.bin);
 					if (obj && obj->info) {
 						eprintf ("asm.bits %d\n", obj->info->bits);
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
