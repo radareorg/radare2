@@ -28,10 +28,6 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
-static void flag_free_kv(HtPPKv *kv) {
-	free (kv->key);
-}
-
 static void flag_skiplist_free(void *data) {
 	RFlagsAtOffset *item = (RFlagsAtOffset *)data;
 	r_list_free (item->flags);
@@ -136,7 +132,7 @@ R_API RFlag * r_flag_new() {
 		r_flag_free (f);
 		return NULL;
 	}
-	f->ht_name = ht_pp_new (NULL, flag_free_kv, NULL);
+	f->ht_name = ht_pp_new0 ();
 	f->by_off = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 #if R_FLAG_ZONE_USE_SDB
 	sdb_free (f->zones);
@@ -666,7 +662,7 @@ R_API void r_flag_unset_all(RFlag *f) {
 	f->flags = r_list_newf ((RListFree)r_flag_item_free);
 	ht_pp_free (f->ht_name);
 	//don't set free since f->flags will free up items when needed avoiding uaf
-	f->ht_name = ht_pp_new (NULL, flag_free_kv, NULL);
+	f->ht_name = ht_pp_new0 ();
 	r_skiplist_purge (f->by_off);
 	r_flag_space_unset (f, NULL);
 }
