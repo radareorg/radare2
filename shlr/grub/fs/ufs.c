@@ -585,6 +585,7 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
     } while (pos < INODE_SIZE (data));
 
   free (fpath);
+  free (filename);
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
   return grub_errno;
 }
