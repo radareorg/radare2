@@ -9,6 +9,7 @@
 #include <r_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
+#include <sdb/ht_uu.h>
 
 static RBinInfo* info(RBinFile *bf);
 
@@ -925,25 +926,6 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 	}
 }
 
-static bool ht_pp_insert_intu64(HtPP *ht, int key, ut64 value) {
-	ut64 *mvalue = malloc (sizeof (ut64));
-	if (!mvalue) {
-		return false;
-	}
-	*mvalue = value;
-	return ht_pp_insert (ht, sdb_fmt ("%d", key), (void *)mvalue);
-}
-
-static ut64 ht_pp_find_intu64(HtPP *ht, int key, bool *found) {
-	ut64 *mvalue = (ut64 *)ht_pp_find (ht, sdb_fmt ("%d", key), found);
-	return *found? *mvalue: 0;
-}
-
-static void relocs_by_sym_free(HtPPKv *kv) {
-	free (kv->key);
-	free (kv->value);
-}
-
 static RList* patch_relocs(RBin *b) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
@@ -951,7 +933,7 @@ static RList* patch_relocs(RBin *b) {
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOSection *g = NULL, *s = NULL;
-	HtPP *relocs_by_sym;
+	HtUU *relocs_by_sym;
 	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
@@ -1003,7 +985,8 @@ static RList* patch_relocs(RBin *b) {
 		free (relcs);
 		return NULL;
 	}
-	if (!(relocs_by_sym = ht_pp_new (NULL, relocs_by_sym_free, NULL))) {
+	HtUUOptions opt = { 0 };
+	if (!(relocs_by_sym = ht_uu_new_opt (&opt))) {
 		r_list_free (ret);
 		free (relcs);
 		return NULL;
@@ -1014,8 +997,7 @@ static RList* patch_relocs(RBin *b) {
 
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
-				bool found;
-				sym_addr = ht_pp_find_intu64 (relocs_by_sym, relcs[i].sym, &found);
+				sym_addr = ht_uu_find (relocs_by_sym, relcs[i].sym, NULL);
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
 			}
@@ -1030,12 +1012,12 @@ static RList* patch_relocs(RBin *b) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;
-			ht_pp_insert_intu64 (relocs_by_sym, relcs[i].sym, vaddr);
+			ht_uu_insert (relocs_by_sym, relcs[i].sym, vaddr);
 			vaddr += cdsz;
 		}
 		r_list_append (ret, ptr);
 	}
-	ht_pp_free (relocs_by_sym);
+	ht_uu_free (relocs_by_sym);
 	free (relcs);
 	return ret;
 }
