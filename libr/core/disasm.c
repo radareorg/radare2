@@ -5431,6 +5431,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 	for (;;) {
 		bool end_nbopcodes, end_nbbytes;
+		int skip_bytes = 0, skip_bytes_bb = 0;
 
 		at = addr + k;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -5492,10 +5493,16 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		ds->oplen = oplen;
 		ds->at = at;
 		if (ds->midflags) {
-			int skip_bytes = handleMidFlags (core, ds, false);
-			if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
-				oplen = ds->oplen = ret = skip_bytes;
-			}
+			skip_bytes = handleMidFlags (core, ds, false);
+		}
+		if (ds->midbb) {
+			skip_bytes_bb = handleMidBB (core, ds);
+		}
+		if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
+			oplen = ds->oplen = ret = skip_bytes;
+		}
+		if (skip_bytes_bb && skip_bytes_bb < ret) {
+			oplen = ds->oplen = ret = skip_bytes_bb;
 		}
 		{
 			ut64 killme = UT64_MAX;
