@@ -3,8 +3,6 @@
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
 
-#define USE_DICT 1
-
 /* use sdb function storage */
 #define FCN_SDB 1
 /* use old refs and function storage */
@@ -658,11 +656,8 @@ typedef struct r_anal_t {
 	Sdb *sdb_fmts;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	Sdb *sdb_zigns;
-
-#if USE_DICT
-	HtPP *dict_refs;
-	HtPP *dict_xrefs;
-#endif
+	HtUP *dict_refs;
+	HtUP *dict_xrefs;
 	bool recursive_noreturn;
 	RSpaces meta_spaces;
 	RSpaces zign_spaces;
