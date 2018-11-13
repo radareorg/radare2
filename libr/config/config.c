@@ -664,16 +664,12 @@ R_API int r_config_readonly(RConfig *cfg, const char *key) {
 	return true;
 }
 
-static void _ht_node_free_kv(HtPPKv *kv) {
-	free (kv->key);
-}
-
 R_API RConfig* r_config_new(void *user) {
 	RConfig *cfg = R_NEW0 (RConfig);
 	if (!cfg) {
 		return NULL;
 	}
-	cfg->ht = ht_pp_new (NULL, _ht_node_free_kv, NULL);
+	cfg->ht = ht_pp_new0 ();
 	cfg->nodes = r_list_newf ((RListFree)r_config_node_free);
 	if (!cfg->nodes) {
 		R_FREE (cfg);
