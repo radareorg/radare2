@@ -48,8 +48,7 @@ static void free_bin(RDyldBinImage *bin) {
 	}
 
 	if (bin->file) {
-		free (bin->file);
-		bin->file = NULL;
+		R_FREE (bin->file);
 	}
 
 	R_FREE (bin);
@@ -61,18 +60,15 @@ static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 	}
 
 	if (rebase_info->page_starts) {
-		free (rebase_info->page_starts);
-		rebase_info->page_starts = NULL;
+		R_FREE (rebase_info->page_starts);
 	}
 
 	if (rebase_info->page_extras) {
-		free (rebase_info->page_extras);
-		rebase_info->page_extras = NULL;
+		R_FREE (rebase_info->page_extras);
 	}
 
 	if (rebase_info->one_page_buf) {
-		free (rebase_info->one_page_buf);
-		rebase_info->one_page_buf = NULL;
+		R_FREE (rebase_info->one_page_buf);
 	}
 
 	R_FREE (rebase_info);
@@ -99,18 +95,15 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	}
 
 	if (cache->hdr) {
-		free (cache->hdr);
-		cache->hdr = NULL;
+		R_FREE (cache->hdr);
 	}
 
 	if (cache->maps) {
-		free (cache->maps);
-		cache->maps = NULL;
+		R_FREE (cache->maps);
 	}
 
 	if (cache->accel) {
-		free (cache->accel);
-		cache->accel = NULL;
+		R_FREE (cache->accel);
 	}
 
 	R_FREE (cache);

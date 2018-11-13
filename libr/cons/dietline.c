@@ -372,8 +372,7 @@ R_API void r_line_hist_free() {
 	int i;
 	if (I.history.data) {
 		for (i = 0; i < I.history.size; i++) {
-			free (I.history.data[i]);
-			I.history.data[i] = NULL;
+			R_FREE (I.history.data[i]);
 		}
 	}
 	R_FREE (I.history.data);

@@ -89,8 +89,7 @@ R_API char *r2p_read(R2Pipe *r2p) {
 			bufsz += 4096;
 			newbuf = realloc (buf, bufsz);
 			if (!newbuf) {
-				free (buf);
-				buf = NULL;
+				R_FREE (buf);
 				break;
 			}
 			buf = newbuf;

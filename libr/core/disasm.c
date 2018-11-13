@@ -2826,8 +2826,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				}
 			}
 			if (MI.str) {
-				free (MI.str);
-				MI.str = NULL;
+				R_FREE (MI.str);
 			}
 		}
 	}

@@ -256,8 +256,7 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 		p--;
 		/*FALLTHROUGH*/
 	case 0:
-		free (p);
-		p = NULL;
+		R_FREE (p);
 		break;
 	default:
 		abort ();
@@ -307,8 +306,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 	}
 	if (errs == -1) {
 		free (mfn);
-		free (mlist);
-		mlist = NULL;
+		R_FREE (mlist);
 		file_error (ms, 0, "could not find any magic files!");
 		return NULL;
 	}

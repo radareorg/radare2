@@ -786,8 +786,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
 		MAP_SHARED, fd, (off_t)m->base);
 	if (m->buf == MAP_FAILED) {
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	return m;
 }
@@ -820,8 +819,7 @@ err_r_file_mmap_windows:
 		if (m->fh != INVALID_HANDLE_VALUE) {
 			CloseHandle (m->fh);
 		}
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	free (file_);
 	return m;
@@ -834,8 +832,7 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 		lseek (m->fd, (off_t)0, SEEK_SET);
 		read (m->fd, m->buf, m->len);
 	} else {
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	return m;
 }
@@ -1023,8 +1020,7 @@ R_API char *r_file_tmpdir() {
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {
-		free (path);
-		path = NULL;
+		R_FREE (path);
 	}
 	if (!path) {
 #if __ANDROID__

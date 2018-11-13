@@ -986,8 +986,7 @@ static void free_tpi_stream(void *stream) {
 			type->type_data.free_ = 0;
 			type->type_data.type_info = 0;
 		}
-		free (type);
-		type = NULL;
+		R_FREE (type);
 	}
 	r_list_free (tpi_stream->types);
 }

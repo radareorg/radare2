@@ -693,8 +693,7 @@ static int cb_asmfeatures(void *user, void *data) {
 		print_node_options (node);
 		return 0;
 	}
-	free (core->assembler->features);
-	core->assembler->features = NULL;
+	R_FREE (core->assembler->features);
 	if (node->value[0]) {
 		core->assembler->features = strdup (node->value);
 	}

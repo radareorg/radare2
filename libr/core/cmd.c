@@ -2300,8 +2300,7 @@ escape_pipe:
 	}
 
 	/* Out Of Band Input */
-	free (core->oobi);
-	core->oobi = NULL;
+	R_FREE (core->oobi);
 
 	ptr = strstr (cmd, "?*");
 	if (ptr && (ptr == cmd || ptr[-1] != '~')) {
@@ -3546,8 +3545,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_free (match_flag_items);
 				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
-				free (word);
-				word = NULL;
+				R_FREE (word);
 			}
 		}
 	}
@@ -3635,8 +3633,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
 		free (ocmd);
-		free (core->oobi);
-		core->oobi = NULL;
+		R_FREE (core->oobi);
 		core->oobi_len = 0;
 		goto beach;
 	}
@@ -3660,8 +3657,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	run_pending_anal (core);
 	core->cmd_depth++;
 	free (ocmd);
-	free (core->oobi);
-	core->oobi = NULL;
+	R_FREE (core->oobi);
 	core->oobi_len = 0;
 	return ret;
 beach:
