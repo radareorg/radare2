@@ -579,13 +579,13 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 
 	    continue;
 	  }
+	free (filename);  
       }
 
       pos += grub_num_to_cpu16 (dirent.direntlen, data->be);
     } while (pos < INODE_SIZE (data));
 
   free (fpath);
-  free (filename);
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
   return grub_errno;
 }
