@@ -968,9 +968,8 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		newstr = realloc (str, slen + klen + 1);
 		if (!newstr) {
 			eprintf ("realloc fail\n");
-			free (str);
+			R_FREE (str);
 			free (scnd);
-			str = NULL;
 			break;
 		}
 		str = newstr;
@@ -1036,9 +1035,8 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 		newstr = realloc (str, slen + klen);
 		if (!newstr) {
 			eprintf ("realloc fail\n");
-			free (str);
+			R_FREE (str);
 			free (scnd);
-			str = NULL;
 			break;
 		}
 		str = newstr;
@@ -3027,8 +3025,7 @@ R_API wchar_t* r_str_mb_to_wc_l(const char *buf, int len) {
 	fail = false;
 err_r_str_mb_to_wc:
 	if (fail) {
-		free (res_buf);
-		res_buf = NULL;
+		R_FREE (res_buf);
 	}
 	return res_buf;
 }
@@ -3056,8 +3053,7 @@ R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	fail = false;
 err_r_str_wc_to_mb:
 	if (fail) {
-		free (res_buf);
-		res_buf = NULL;
+		R_FREE (res_buf);
 	}
 	return res_buf;
 }

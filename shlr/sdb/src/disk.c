@@ -163,8 +163,7 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 		IFRET (rename (s->ndump, s->dir));
 	}
 #endif
-	free (s->ndump);
-	s->ndump = NULL;
+	R_FREE (s->ndump);
 	// reopen if was open before
 	reopen = true; // always reopen if possible
 	if (reopen) {

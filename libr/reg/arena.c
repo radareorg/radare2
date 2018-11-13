@@ -142,8 +142,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 			newsize = R_MAX (size, newsize);
 		}
 		if (newsize < 1) {
-			free (arena->bytes);
-			arena->bytes = NULL;
+			R_FREE (arena->bytes);
 			arena->size = 0;
 		} else {
 			ut8 *buf = realloc (arena->bytes, newsize);
@@ -167,8 +166,7 @@ R_API RRegArena *r_reg_arena_new(int size) {
 			size = 1;
 		}
 		if (!(arena->bytes = calloc (1, size + 8))) {
-			free (arena);
-			arena = NULL;
+			R_FREE (arena);
 		} else {
 			arena->size = size;
 		}

@@ -634,8 +634,7 @@ static ptrace_wrap_instance *io_ptrace_wrap_instance(RIO *io) {
 			return NULL;
 		}
 		if (ptrace_wrap_instance_start (io->ptrace_wrap) < 0) {
-			free (io->ptrace_wrap);
-			io->ptrace_wrap = NULL;
+			R_FREE (io->ptrace_wrap);
 			return NULL;
 		}
 	}

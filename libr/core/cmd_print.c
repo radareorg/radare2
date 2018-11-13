@@ -1347,8 +1347,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 		for (j = 0; j < nb_cols; j++) {
 			setcolor = true;
-			free (note[j]);
-			note[j] = NULL;
+			R_FREE (note[j]);
 
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
