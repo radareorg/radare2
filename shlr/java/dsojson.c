@@ -206,8 +206,7 @@ DsoJsonObj * dso_json_str_new () {
 void dso_json_str_free (void *y) {
 	DsoJsonStr *x = (DsoJsonStr *)y;
 	if (x) {
-		free (x->data);
-		x->data = NULL;
+		R_FREE (x->data);
 		free (x);
 	}
 }

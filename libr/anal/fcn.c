@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
+#include <r_core.h>
 
 #define VARPREFIX "local"
 #define ARGPREFIX "arg"
@@ -958,7 +959,10 @@ repeat:
 			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
-			eprintf ("Invalid instruction (possibly truncated) at 0x%"PFMT64x"\n", addr + idx);
+			RCore *core = anal->coreb.core;
+			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
+				eprintf ("Invalid instruction (possibly truncated) at 0x%"PFMT64x"\n", addr + idx);
+			}
 			gotoBeach (R_ANAL_RET_END);
 		}
 		if (op.hint.new_bits) {

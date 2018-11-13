@@ -5068,7 +5068,7 @@ toro:
 		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes) {
 			inc = skip_bytes;
 		}
-		if (ds->midbb && skip_bytes_bb && skip_bytes_bb < inc) {
+		if (skip_bytes_bb && skip_bytes_bb < inc) {
 			inc = skip_bytes_bb;
 		}
 		if (inc < 1) {

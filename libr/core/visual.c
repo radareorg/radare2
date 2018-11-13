@@ -3093,6 +3093,54 @@ static int visual_responsive(RCore *core) {
 	return w;
 }
 
+static void scrollbar(RCore *core) {
+	int i, h, w = r_cons_get_size (&h);
+
+	if (w < 10 || h < 3) {
+		return;
+	}
+	ut64 from = 0;
+	ut64 to = UT64_MAX;
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		from = r_num_math (core->num, "$D");
+		to = r_num_math (core->num, "$D+$DD");
+	} else if (r_config_get_i (core->config, "io.va")) {
+		from = r_num_math (core->num, "$S");
+		to = r_num_math (core->num, "$S+$SS");
+	} else {
+		to = r_num_math (core->num, "$s");
+	}
+	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
+	r_cons_gotoxy (w - strlen (s) + 1, 1);
+	r_cons_strcat (s);
+	free (s);
+
+	ut64 block = (to - from) / h;
+	bool hadMatch = false;
+	for (i = 0; i < h ; i++) {
+		// TODO: show short comment introduced by user in there
+		// TODO: use colors
+		r_cons_gotoxy (w, i + 2);
+		if (hadMatch) {
+			r_cons_printf ("|");
+		} else {
+			ut64 cur = from + (block * i);
+			ut64 nex = from + (block * (i + 1));
+			if (R_BETWEEN (cur, core->offset, nex)) {
+				r_cons_printf (Color_INVERT"|"Color_RESET);
+				hadMatch = true;
+			} else {
+				r_cons_printf ("|");
+			}
+		}
+	}
+	s = r_str_newf ("[0x%08"PFMT64x"]", to);
+	r_cons_gotoxy (w - strlen (s) + 1, h + 1);
+	r_cons_strcat (s);
+	free (s);
+	r_cons_flush ();
+}
+
 static void visual_refresh(RCore *core) {
 	static ut64 oseek = UT64_MAX;
 	const char *vi, *vcmd;
@@ -3199,12 +3247,16 @@ static void visual_refresh(RCore *core) {
 	} else {
 		r_cons_reset ();
 	}
+	core->cons->blankline = false;
 	core->cons->blankline = true;
 	core->curtab = 0; // which command are we focusing
 	//core->seltab = 0; // user selected tab
 
 	if (snowMode) {
 		printSnow (core);
+	}
+	if (r_config_get_i (core->config, "scr.scrollbar")) {
+		scrollbar (core);
 	}
 }
 

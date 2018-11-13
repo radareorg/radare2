@@ -575,7 +575,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		tid = pid;
 	}
 	if (pid != -1 && tid != -1) {
-		if (pid != dbg->pid || tid != dbg->tid) {
+		if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
 			eprintf ("= attach %d %d\n", pid, tid);
 		}
 	} else {

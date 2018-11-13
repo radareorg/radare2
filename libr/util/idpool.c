@@ -110,9 +110,8 @@ static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
 		return false;
 	}
 	if (!size) {
-		free (st->permutation);
+		R_FREE (st->permutation);
 		st->psize = 0;
-		st->permutation = NULL;
 	}
 	permutation = realloc (st->permutation, size * sizeof (ut32));
 	if (!permutation) {

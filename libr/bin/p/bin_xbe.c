@@ -50,10 +50,9 @@ static bool load(RBinFile *bf) {
 }
 
 static int destroy(RBinFile *bf) {
-	free (bf->o->bin_obj);
+	R_FREE (bf->o->bin_obj);
 	r_buf_free (bf->buf);
 	bf->buf = NULL;
-	bf->o->bin_obj = NULL;
 	return true;
 }
 

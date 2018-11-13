@@ -264,3 +264,4 @@ Any commercial use or duplication of this copylefted material without prior lice
 Violators will be prosecuted.
 This shell has been seized by the Internet's Police.
 OpenBSD might pledge r2 but r2 unveils OpenBSD.
+Error: There's a missing space before the opening parenthesis '('

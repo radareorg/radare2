@@ -141,6 +141,8 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->rpath);
 	free (rb->guid);
 	free (rb->debug_file_name);
+	free (rb->actual_checksum);
+	free (rb->claimed_checksum);
 	free (rb);
 }
 
@@ -382,7 +384,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr && xtr->check_bytes (buf_bytes, opt->sz)) {
+			if (xtr->check_bytes (buf_bytes, opt->sz)) {
 				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					if (is_debugger && opt->sz != file_sz) {
 						R_FREE (buf_bytes);
@@ -406,7 +408,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
 						opt->fd, bin->rawstr);
 				}
-				xtr = NULL;
 			}
 		}
 	}
@@ -426,7 +427,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	return true;
 }
 
-R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
+R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	RBinPlugin *plugin;
 	RListIter *it;
 
@@ -455,7 +456,7 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 	return NULL;
 }
 
-R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
+R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	RBinXtrPlugin *xtr;
 	RListIter *it;
 
@@ -473,7 +474,7 @@ R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 }
 
 // TODO: deprecate
-R_API RBinPlugin *r_bin_get_binplugin_any(RBin *bin) {
+R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinPlugin *res = r_bin_get_binplugin_by_name (bin, "any");
 	r_warn_if_fail (res);
@@ -948,19 +949,19 @@ R_API RBin *r_bin_new() {
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bin && arch, false);
 
-	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits, name);
+	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits);
 	RBinObject *obj = NULL;
 	if (binfile) {
 		obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
-		if (!obj) {
-			if (binfile->xtr_data) {
-				RBinXtrData *xtr_data = r_list_get_n (binfile->xtr_data, 0);
+		if (!obj && binfile->xtr_data) {
+			RBinXtrData *xtr_data = r_list_get_n (binfile->xtr_data, 0);
+			if (xtr_data && !xtr_data->loaded) {
 				if (!r_bin_file_object_new_from_xtr_data (bin, binfile,
-						UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
+					    UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
 					return false;
 				}
-				obj = r_list_get_n (binfile->objs, 0);
 			}
+			obj = r_list_get_n (binfile->objs, 0);
 		}
 	} else {
 		void *plugin = r_bin_get_binplugin_by_name (bin, name);
@@ -991,8 +992,8 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 
 	RBinFile *cur = r_bin_cur (bin);
 	RBinObject *obj = NULL;
-	name = !name && cur ? cur->file : name;
-	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits, name);
+	name = !name && cur? cur->file: name;
+	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits);
 	if (binfile && name) {
 		obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
 	}
@@ -1293,15 +1294,6 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		eprintf ("Usage: rabin2 -X [fat|zip] [filename] [files ...]\n");
 	}
 	return NULL;
-}
-
-R_API RBinObject *r_bin_get_object(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	if (o) {
-		o->referenced++;
-	}
-	return o;
 }
 
 R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {

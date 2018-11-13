@@ -83,8 +83,7 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
 		name->oids = (RASN1String**) calloc (name->length, sizeof (RASN1String*));
 		if (!name->oids) {
 			name->length = 0;
-			free (name->names);
-			name->names = NULL;
+			R_FREE (name->names);
 			return false;
 		}
 		for (i = 0; i < object->list.length; ++i) {
@@ -406,8 +405,7 @@ void r_x509_free_crl (RX509CertificateRevocationList *crl) {
 				r_x509_free_crlentry (crl->revokedCertificates[i]);
 				crl->revokedCertificates[i] = NULL;
 			}
-			free (crl->revokedCertificates);
-			crl->revokedCertificates = NULL;
+			R_FREE (crl->revokedCertificates);
 		}
 		free (crl);
 	}
