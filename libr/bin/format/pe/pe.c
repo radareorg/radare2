@@ -7,6 +7,7 @@
 #include <r_util.h>
 #include "pe.h"
 #include <time.h>
+#include <sdb/ht_uu.h>
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
@@ -2252,7 +2253,7 @@ static char* _resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtPP *dirs) {
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs) {
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
@@ -2263,11 +2264,10 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry entry;
 		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
-		char *key = sdb_fmt ("0x%08"PFMT64x, off);
-		if (sdb_ht_find (dirs, key, NULL)) {
+		if (ht_uu_find (dirs, off, NULL)) {
 			break;
 		}
-		sdb_ht_insert (dirs, key, "1");
+		ht_uu_insert (dirs, off, 1);
 		if (off > bin->size || off + sizeof (entry) > bin->size) {
 			break;
 		}
@@ -2393,25 +2393,26 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	Pe_image_resource_directory *rs_directory = bin->resource_directory;
 	ut32 curRes = 0;
 	int totalRes = 0;
-	HtPP *dirs = sdb_ht_new (); //to avoid infinite loops
+	HtUUOptions opt = { 0 };
+	HtUU *dirs = ht_uu_new_opt (&opt); //to avoid infinite loops
 	if (!dirs) {
 		return;
 	}
 	if (!rs_directory) {
-		sdb_ht_free (dirs);
+		ht_uu_free (dirs);
 		return;
 	}
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
 		eprintf ("Error parsing resource directory\n");
-		sdb_ht_free (dirs);
+		ht_uu_free (dirs);
 		return;
 	}
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
-		sdb_ht_insert (dirs, sdb_fmt ("0x%08"PFMT64x, off), "1");
+		ht_uu_insert (dirs, off, 1);
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}
@@ -2429,7 +2430,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs);
 		}
 	}
-	sdb_ht_free (dirs);
+	ht_uu_free (dirs);
 	_store_resource_sdb (bin);
 }
 
