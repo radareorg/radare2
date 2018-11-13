@@ -318,6 +318,7 @@ typedef struct r_debug_t {
 	int _mode;
 	RNum *num;
 	REgg *egg;
+	bool verbose;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
