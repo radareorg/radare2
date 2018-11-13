@@ -897,7 +897,7 @@ typedef struct r_anal_state_type_t {
 	ut64 current_addr;
 	ut64 next_addr;
 	RList *bbs;
-	HtPP *ht;
+	HtUP *ht;
 	ut64 ht_sz;
 	RAnalFunction *current_fcn;
 	RAnalOp *current_op;
