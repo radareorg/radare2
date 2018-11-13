@@ -216,10 +216,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		RList *filtered_list = NULL;
 
 		bool found = false;
-		HtPPKv *kv = ht_pp_find_kv (ht, user_input, &found);
-		if (found) {
-			filtered_list = kv->value;
-		} else {
+		filtered_list = ht_pp_find (ht, user_input, &found);
+		if (!found) {
 			filtered_list = hud_filter (list, user_input,
 				top_entry_n, &current_entry_n, &selected_entry);
 #if HUD_CACHE
