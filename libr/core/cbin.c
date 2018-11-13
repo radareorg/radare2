@@ -2144,10 +2144,6 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
-static void dup_chk_free_kv(HtPPKv *kv) {
-	free (kv->key);
-}
-
 #define PRINT_CURRENT_SEEK \
         if (i > 0 && len != 0) { \
                 if (seek == UT64_MAX) seek = 0; \
@@ -2245,7 +2241,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 #if LOAD_BSS_MALLOC
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 #endif
-	HtPP *dup_chk_ht = ht_pp_new (NULL, dup_chk_free_kv, NULL);
+	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 
