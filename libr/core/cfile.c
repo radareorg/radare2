@@ -351,7 +351,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
@@ -387,7 +387,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
@@ -400,7 +400,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
@@ -572,7 +572,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 		} else if (binfile) {
-			obj = r_bin_get_object (r->bin);
+			obj = r_bin_cur_object (r->bin);
 			if (obj) {
 				va = obj->info ? obj->info->has_va : va;
 				if (!va) {
@@ -822,25 +822,27 @@ R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (!cf) {
-		return;
-	}
+
+	r_return_if_fail (cf);
+
 	if (!cf->core) {
 		free (cf);
 		return;
 	}
 	res = r_core_files_free (cf->core, cf);
-	//if (!res && cf && cf->alive) {
 	if (res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		RIO *io = cf->core->io;
 		if (io) {
-			r_bin_file_deref_by_bind (&cf->binb);
+			RBin *bin = cf->binb.bin;
+			RBinFile *bf = r_bin_cur (bin);
+			if (bf) {
+				r_bin_file_deref (bin, bf);
+			}
 			r_io_fd_close (io, cf->fd);
 			free (cf);
 		}
 	}
-	cf = NULL;
 }
 
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {

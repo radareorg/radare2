@@ -1781,7 +1781,7 @@ static void update_sdb(RCore *core) {
 		sdb_ns_set (DB, "bin", core->bin->sdb);
 	}
 	//SDB// bin/info
-	o = r_bin_get_object (core->bin);
+	o = r_bin_cur_object (core->bin);
 	if (o) {
 		sdb_ns_set (sdb_ns (DB, "bin", 1), "info", o->kv);
 	}
