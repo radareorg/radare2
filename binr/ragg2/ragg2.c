@@ -4,10 +4,8 @@
 #include <r_bin.h>
 #include <getopt.c>
 #include "../blob/version.c"
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
+#include <r_util/r_print.h>
+#include <r_util.h>
 
 
 static int usage(int v) {

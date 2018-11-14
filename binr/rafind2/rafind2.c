@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +7,7 @@
 #include <r_types.h>
 #include <r_search.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <r_cons.h>
 #include <r_lib.h>
 #include <r_io.h>
@@ -26,7 +27,7 @@ static char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
 static int widestr = 0;
-static struct r_print_t *pr = NULL;
+static RPrint *pr = NULL;
 static RList *keywords;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
