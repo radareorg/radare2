@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #endif
 
+#include <math.h>  /* for ceill */
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
