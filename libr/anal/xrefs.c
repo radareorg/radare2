@@ -24,13 +24,6 @@ xrefs
 // XXX: is it possible to have multiple type for the same (from, to) pair?
 //      if it is, things need to be adjusted
 
-#define u64_to_key(x) (sdb_fmt ("%"PFMT64x, (x)))
-
-#define ht_find_u64(_ht,_key,_found) (ht_find ((_ht), u64_to_key (_key), (_found)))
-#define ht_insert_u64(_ht,_key,_value) (ht_insert ((_ht), u64_to_key (_key), _value))
-#define ht_update_u64(_ht,_key,_value) (ht_update ((_ht), u64_to_key (_key), _value))
-#define ht_delete_u64(_ht,_key) (ht_delete ((_ht), u64_to_key (_key)))
-
 static RAnalRef *r_anal_ref_new(ut64 addr, ut64 at, ut64 type) {
 	RAnalRef *ref = R_NEW (RAnalRef);
 	if (ref) {
@@ -49,17 +42,17 @@ R_API RList *r_anal_ref_list_new() {
 	return r_list_newf (r_anal_ref_free);
 }
 
-void xrefs_ht_free(HtKv *kv) {
-	free (kv->key);
-	ht_free (kv->value);
+static void xrefs_ht_free(HtUPKv *kv) {
+	ht_up_free (kv->value);
 }
 
-void xrefs_ref_free(HtKv *kv) {
-	free (kv->key);
+static void xrefs_ref_free(HtUPKv *kv) {
 	r_anal_ref_free (kv->value);
 }
 
-static bool appendRef(RList *list, const char *k, RAnalRef *ref) {
+static bool appendRef(void *u, const ut64 k, const void *v) {
+	RList *list = (RList *)u;
+	RAnalRef *ref = (RAnalRef *)v;
 	RAnalRef *cloned = r_anal_ref_new (ref->addr, ref->at, ref->type);
 	if (cloned) {
 		r_list_append (list, cloned);
@@ -68,8 +61,9 @@ static bool appendRef(RList *list, const char *k, RAnalRef *ref) {
 	return false;
 }
 
-static bool mylistrefs_cb(RList *list, const char *k, SdbHt *ht) {
-	ht_foreach (ht, (HtForeachCallback)appendRef, list);
+static bool mylistrefs_cb(void *list, const ut64 k, const void *v) {
+	HtUP *ht = (HtUP *)v;
+	ht_up_foreach (ht, appendRef, list);
 	return true;
 }
 
@@ -89,34 +83,34 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	return 0;
 }
 
-static void listxrefs(SdbHt *m, ut64 addr, RList *list) {
+static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 	if (addr == UT64_MAX) {
-		ht_foreach (m, (HtForeachCallback)mylistrefs_cb, list);
+		ht_up_foreach (m, mylistrefs_cb, list);
 	} else {
 		bool found;
-		SdbHt *d = ht_find_u64 (m, addr, &found);
+		HtUP *d = ht_up_find (m, addr, &found);
 		if (!found) {
 			return;
 		}
 
-		ht_foreach (d, (HtForeachCallback)appendRef, list);
+		ht_up_foreach (d, appendRef, list);
 	}
 	r_list_sort (list, (RListComparator)ref_cmp);
 }
 
-static void setxref(SdbHt *m, ut64 from, ut64 to, int type) {
+static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
 	bool found;
-	SdbHt *ht = ht_find_u64 (m, from, &found);
+	HtUP *ht = ht_up_find (m, from, &found);
 	if (!found) {
-		ht = ht_new (NULL, xrefs_ref_free, NULL);
+		ht = ht_up_new (NULL, xrefs_ref_free, NULL);
 		if (!ht) {
 			return;
 		}
-		ht_insert_u64 (m, from, ht);
+		ht_up_insert (m, from, ht);
 	}
 	RAnalRef *ref = r_anal_ref_new (to, from, type);
 	if (ref) {
-		ht_update_u64 (ht, to, ref);
+		ht_up_update (ht, to, ref);
 	}
 }
 
@@ -140,8 +134,8 @@ R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 	if (!anal) {
 		return false;
 	}
-	ht_delete_u64 (anal->dict_refs, from);
-	ht_delete_u64 (anal->dict_xrefs, to);
+	ht_up_delete (anal->dict_refs, from);
+	ht_up_delete (anal->dict_xrefs, to);
 	return true;
 }
 
@@ -303,20 +297,20 @@ R_API RAnalRefType r_anal_xrefs_type(char ch) {
 }
 
 R_API bool r_anal_xrefs_init(RAnal *anal) {
-	ht_free (anal->dict_refs);
+	ht_up_free (anal->dict_refs);
 	anal->dict_refs = NULL;
-	ht_free (anal->dict_xrefs);
+	ht_up_free (anal->dict_xrefs);
 	anal->dict_xrefs = NULL;
 
-	SdbHt *tmp = ht_new (NULL, xrefs_ht_free, NULL);
+	HtUP *tmp = ht_up_new (NULL, xrefs_ht_free, NULL);
 	if (!tmp) {
 		return false;
 	}
 	anal->dict_refs = tmp;
 
-	tmp = ht_new (NULL, xrefs_ht_free, NULL);
+	tmp = ht_up_new (NULL, xrefs_ht_free, NULL);
 	if (!tmp) {
-		ht_free (anal->dict_refs);
+		ht_up_free (anal->dict_refs);
 		anal->dict_refs = NULL;
 		return false;
 	}
@@ -328,7 +322,7 @@ R_API int r_anal_xrefs_count(RAnal *anal) {
 	return anal->dict_xrefs->count;
 }
 
-static RList *fcn_get_refs(RAnalFunction *fcn, SdbHt *ht) {
+static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	RList *list = r_anal_ref_list_new ();

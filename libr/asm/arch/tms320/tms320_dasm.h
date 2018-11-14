@@ -201,7 +201,7 @@ typedef struct {
 		def_field	(q_lr, 1);
 		def_field	(q_cr, 1);
 	} f;
-	SdbHt *map;
+	HtUP *map;
 
 #define TMS320_F_CPU_C54X	0x0000001
 #define TMS320_F_CPU_C55X	0x0000002

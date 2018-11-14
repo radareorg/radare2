@@ -358,8 +358,8 @@ static void print_buf(char *str) {
 	}
 }
 
-static bool print_label(void *user, const char *k, void *v) {
-	printf ("f label.%s = %s\n", k, (const char *)v);
+static bool print_label(void *user, const void *k, const void *v) {
+	printf ("f label.%s = %s\n", (const char *)k, (const char *)v);
 	return true;
 }
 
@@ -430,7 +430,7 @@ static int print_assembly_output(const char *buf, ut64 offset, ut64 len, int bit
 	if (rad) {
 		printf ("f entry = $$\n");
 		printf ("f label.main = $$ + 1\n");
-		ht_foreach (a->flags, print_label, NULL);
+		ht_pp_foreach (a->flags, print_label, NULL);
 	}
 	return ret;
 }

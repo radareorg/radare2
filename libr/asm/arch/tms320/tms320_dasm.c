@@ -1065,18 +1065,15 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm) {
 	}
 	while (e_list && (e_list[0] && e_list[1])) {
 		if ((dasm->opcode & e_list[0]) == e_list[1]) {
-			const char *key = sdb_fmt ("%c", e_list[1]);
-			dasm->head = ht_find (dasm->map, key, NULL);
+			dasm->head = ht_up_find (dasm->map, e_list[1], NULL);
 			break;
 		}
 		e_list += 2;
 	}
 	if (!dasm->head) {
-		const char *key = sdb_fmt ("%c", dasm->opcode);
-		dasm->head = ht_find (dasm->map, key, NULL);
+		dasm->head = ht_up_find (dasm->map, dasm->opcode, NULL);
 		if (!dasm->head) {
-			const char *key = sdb_fmt ("%c", (dasm->opcode & 0xfe));
-			dasm->head = ht_find (dasm->map, key, NULL);
+			dasm->head = ht_up_find (dasm->map, (dasm->opcode & 0xfe), NULL);
 		}
 	}
 	dasm->insn = dasm->head ? &dasm->head->insn : NULL;
@@ -1144,10 +1141,6 @@ static insn_head_t c55x_list[] = {
 #  include "c55x/table.h"
 };
 
-static void tsm320_free_kv(HtKv *kv) {
-	free (kv->key);
-}
-
 int tms320_dasm_init(tms320_dasm_t * dasm) {
 	int i = 0;
 
@@ -1156,13 +1149,12 @@ int tms320_dasm_init(tms320_dasm_t * dasm) {
 		return 0;
 	}
 
-	dasm->map = ht_new (NULL, tsm320_free_kv, NULL);
+	dasm->map = ht_up_new0 ();
 	if (!dasm->map) {
 		return 0;
 	}
 	for (i = 0; i < ARRAY_SIZE(c55x_list); i++) {
-		const char *key = sdb_fmt ("%c", c55x_list[i].byte);
-		ht_insert (dasm->map, key, &c55x_list[i]);
+		ht_up_insert (dasm->map, c55x_list[i].byte, &c55x_list[i]);
 	}
 
 	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);
@@ -1173,7 +1165,7 @@ int tms320_dasm_init(tms320_dasm_t * dasm) {
 int tms320_dasm_fini(tms320_dasm_t * dasm) {
 	if (dasm) {
 		if (dasm->map) {
-			ht_free (dasm->map);
+			ht_up_free (dasm->map);
 		}
 		/* avoid double free */
 		memset (dasm, 0, sizeof (tms320_dasm_t));

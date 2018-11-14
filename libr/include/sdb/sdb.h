@@ -84,7 +84,7 @@ typedef struct sdb_t {
 	int journal;
 	struct cdb db;
 	struct cdb_make m;
-	SdbHt *ht;
+	HtPP *ht;
 	ut32 eod;
 	ut32 pos;
 	int fdump;

@@ -29,7 +29,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->relocs);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
-	ht_free (o->strings_db);
+	ht_up_free (o->strings_db);
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
 	r_list_free (o->lines);
@@ -137,10 +137,6 @@ static bool file_object_add(RBinFile *binfile, RBinObject *o) {
 	return true;
 }
 
-static void free_kv(HtKv *kv) {
-	free (kv->key);
-}
-
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	r_return_val_if_fail (binfile && plugin, NULL);
 
@@ -153,7 +149,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
-	o->strings_db = ht_new (NULL, free_kv, NULL);
+	o->strings_db = ht_up_new0 ();
 	o->regstate = NULL;
 	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
 		free (o);

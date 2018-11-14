@@ -9,16 +9,13 @@ R_API REvent *r_event_new(void *user) {
 		return NULL;
 	}
 
-	ev->callbacks = ht_new_size (R_EVENT_MAX, NULL, NULL, NULL);
-	ev->callbacks->cmp = NULL;
-	ev->callbacks->hashfn = NULL;
-	ev->callbacks->dupkey = NULL;
-	ev->callbacks->calcsizeK = NULL;
+	ev->callbacks = ht_up_new0 ();
+
 	// skip R_EVENT_ALL and R_EVENT_MAX, so that they don't have a mapping
 	// and if used in hook/unhook/send APIs will raise a warning
-	ut32 i;
+	ut64 i;
 	for (i = 1; i < R_EVENT_MAX; ++i) {
-		ht_insert (ev->callbacks, (char *)(size_t)i, r_pvector_new (NULL));
+		ht_up_insert (ev->callbacks, (ut64)i, r_pvector_new (NULL));
 	}
 	ev->user = user;
 	return ev;
@@ -28,16 +25,16 @@ R_API void r_event_free(REvent *ev) {
 	if (!ev) {
 		return;
 	}
-	ut32 i;
+	ut64 i;
 	for (i = 1; i < R_EVENT_MAX; ++i) {
-		RVector *entry = ht_find (ev->callbacks, (char *)(size_t)i, NULL);
+		RVector *entry = ht_up_find (ev->callbacks, i, NULL);
 		r_vector_free (entry);
 	}
-	ht_free (ev->callbacks);
+	ht_up_free (ev->callbacks);
 	free (ev);
 }
 
-static bool add_hook(void *cb, const char *k, void *v) {
+static bool add_hook(void *cb, const ut64 k, const void *v) {
 	RPVector *cbs = (RPVector *)v;
 	r_return_val_if_fail (cbs, false);
 	r_pvector_push (cbs, cb);
@@ -47,14 +44,14 @@ static bool add_hook(void *cb, const char *k, void *v) {
 R_API void r_event_hook(REvent *ev, REventType type, REventCallback cb) {
 	r_return_if_fail (ev);
 	if (type == R_EVENT_ALL) {
-		ht_foreach (ev->callbacks, add_hook, cb);
+		ht_up_foreach (ev->callbacks, add_hook, cb);
 	} else {
-		RPVector *cbs = ht_find (ev->callbacks, (char *)(size_t)type, NULL);
-		add_hook (cb, NULL, cbs);
+		RPVector *cbs = ht_up_find (ev->callbacks, type, NULL);
+		add_hook (cb, 0, cbs);
 	}
 }
 
-static bool del_hook(void *cb, const char *k, void *v) {
+static bool del_hook(void *cb, const ut64 k, const void *v) {
 	RPVector *cbs = (RPVector *)v;
 	r_return_val_if_fail (cbs, false);
 	r_pvector_remove_data (cbs, cb);
@@ -64,10 +61,10 @@ static bool del_hook(void *cb, const char *k, void *v) {
 R_API void r_event_unhook(REvent *ev, REventType type, REventCallback cb) {
 	r_return_if_fail (ev);
 	if (type == R_EVENT_ALL) {
-		ht_foreach (ev->callbacks, del_hook, cb);
+		ht_up_foreach (ev->callbacks, del_hook, cb);
 	} else {
-		RPVector *cbs = ht_find (ev->callbacks, (char *)(size_t)type, NULL);
-		del_hook (cb, NULL, cbs);
+		RPVector *cbs = ht_up_find (ev->callbacks, type, NULL);
+		del_hook (cb, 0, cbs);
 	}
 }
 
@@ -75,7 +72,7 @@ R_API void r_event_send(REvent *ev, REventType type, void *data) {
 	r_return_if_fail (ev && !ev->incall);
 
 	void **it;
-	RPVector *cbs = ht_find (ev->callbacks, (char *)(size_t)type, NULL);
+	RPVector *cbs = ht_up_find (ev->callbacks, type, NULL);
 	r_return_if_fail (cbs);
 	ev->incall = true;
 	r_pvector_foreach (cbs, it) {

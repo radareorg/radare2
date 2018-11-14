@@ -28,10 +28,6 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
-static void flag_free_kv(HtKv *kv) {
-	free (kv->key);
-}
-
 static void flag_skiplist_free(void *data) {
 	RFlagsAtOffset *item = (RFlagsAtOffset *)data;
 	r_list_free (item->flags);
@@ -52,7 +48,7 @@ static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	if (ok) {
 		*ok = 0;
 	}
-	item = ht_find (f->ht_name, name, NULL);
+	item = ht_pp_find (f->ht_name, name, NULL);
 	if (item) {
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
 		if (item->alias) {
@@ -136,7 +132,7 @@ R_API RFlag * r_flag_new() {
 		r_flag_free (f);
 		return NULL;
 	}
-	f->ht_name = ht_new (NULL, flag_free_kv, NULL);
+	f->ht_name = ht_pp_new0 ();
 	f->by_off = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 #if R_FLAG_ZONE_USE_SDB
 	sdb_free (f->zones);
@@ -189,7 +185,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 		free (f->spaces[i]);
 	}
 	r_skiplist_free (f->by_off);
-	ht_free (f->ht_name);
+	ht_pp_free (f->ht_name);
 
 	r_list_free (f->flags);
 	sdb_free (f->tags);
@@ -363,8 +359,8 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
  * Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	r_return_val_if_fail (f, NULL);
-	RFlagItem *r = ht_find (f->ht_name, name, NULL);
-	return r ? evalFlag (f, r) : NULL;
+	RFlagItem *r = ht_pp_find (f->ht_name, name, NULL);
+	return r? evalFlag (f, r): NULL;
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
@@ -541,7 +537,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		}
 		//item share ownership prone to uaf, that is why only
 		//f->flags has set up free pointer
-		ht_insert (f->ht_name, item->name, item);
+		ht_pp_insert (f->ht_name, item->name, item);
 		r_list_append (f->flags, item);
 	}
 
@@ -597,11 +593,11 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
 
-	ht_delete (f->ht_name, item->name);
+	ht_pp_delete (f->ht_name, item->name);
 	if (!set_name (item, name)) {
 		return false;
 	}
-	ht_insert (f->ht_name, item->name, item);
+	ht_pp_insert (f->ht_name, item->name, item);
 	return true;
 }
 
@@ -612,7 +608,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
 	r_return_val_if_fail (f && item, false);
 	remove_offsetmap (f, item);
-	ht_delete (f->ht_name, item->name);
+	ht_pp_delete (f->ht_name, item->name);
 	r_list_delete_data (f->flags, item);
 	return true;
 }
@@ -654,7 +650,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
  * returns true if the item is found and unset, false otherwise. */
 R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 	r_return_val_if_fail (f, false);
-	RFlagItem *item = ht_find (f->ht_name, name, NULL);
+	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
 	return item && r_flag_unset (f, item);
 }
 
@@ -664,9 +660,9 @@ R_API void r_flag_unset_all(RFlag *f) {
 	f->space_idx = -1;
 	r_list_free (f->flags);
 	f->flags = r_list_newf ((RListFree)r_flag_item_free);
-	ht_free (f->ht_name);
+	ht_pp_free (f->ht_name);
 	//don't set free since f->flags will free up items when needed avoiding uaf
-	f->ht_name = ht_new (NULL, flag_free_kv, NULL);
+	f->ht_name = ht_pp_new0 ();
 	r_skiplist_purge (f->by_off);
 	r_flag_space_unset (f, NULL);
 }

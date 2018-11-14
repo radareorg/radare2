@@ -134,8 +134,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
 	r_list_free (a->bits_ranges);
-	ht_free (a->dict_refs);
-	ht_free (a->dict_xrefs);
+	ht_up_free (a->dict_refs);
+	ht_up_free (a->dict_xrefs);
 	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {

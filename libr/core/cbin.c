@@ -2144,10 +2144,6 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
-static void dup_chk_free_kv(HtKv *kv) {
-	free (kv->key);
-}
-
 #define PRINT_CURRENT_SEEK \
         if (i > 0 && len != 0) { \
                 if (seek == UT64_MAX) seek = 0; \
@@ -2245,7 +2241,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 #if LOAD_BSS_MALLOC
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 #endif
-	SdbHt *dup_chk_ht = ht_new (NULL, dup_chk_free_kv, NULL);
+	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 
@@ -2376,12 +2372,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				bool found;
 				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
 					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
-				ht_find (dup_chk_ht, str, &found);
+				ht_pp_find (dup_chk_ht, str, &found);
 				if (!found && r_io_section_add (r->io, section->paddr, addr,
 						section->size, section->vsize,
 						section->perm, section->name,
 						r->bin->cur->id, fd)) {
-					ht_insert (dup_chk_ht, str, NULL);
+					ht_pp_insert (dup_chk_ht, str, NULL);
 				}
 				R_FREE (str);
 			}
@@ -2510,7 +2506,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 	ret = true;
 out:
-	ht_free (dup_chk_ht);
+	ht_pp_free (dup_chk_ht);
 	return ret;
 }
 
