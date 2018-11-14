@@ -476,15 +476,15 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'u': // "?u"
 		{
-			char unit[32];
+			char unit[8];
 			n = r_num_math (core->num, input+1);
-			r_num_units (unit, n);
+			r_num_units (unit, sizeof (unit), n);
 			r_cons_println (unit);
 		}
 		break;
 	case ' ': // "? "
 		{
-			char *asnum, unit[32];
+			char *asnum, unit[8];
 			ut32 s, a;
 			double d;
 			float f;
@@ -504,7 +504,7 @@ static int cmd_help(void *data, const char *input) {
 				/* decimal, hexa, octal */
 				s = n >> 16 << 12;
 				a = n & 0x0fff;
-				r_num_units (unit, n);
+				r_num_units (unit, sizeof (unit), n);
 				r_cons_printf ("hex     0x%"PFMT64x"\n", n);
 				r_cons_printf ("octal   0%"PFMT64o"\n", n);
 				r_cons_printf ("unit    %s\n", unit);

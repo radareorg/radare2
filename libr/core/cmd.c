@@ -1245,9 +1245,9 @@ static int cmd_resize(void *data, const char *input) {
 	case 'h':
 		if (core->file) {
 			if (oldsize != -1) {
-				char *s = r_num_units (NULL, oldsize);
-				r_cons_printf ("%s\n", s);
-				free (s);
+				char humansz[8];
+				r_num_units (humansz, sizeof (humansz), oldsize);
+				r_cons_printf ("%s\n", humansz);
 			}
 		}
 		return true;

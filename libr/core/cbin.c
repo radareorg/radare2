@@ -2177,10 +2177,10 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
 		const char * color = "", *color_end = "";
-		char buf[128];
+		char humansz[8];
 		i = 0;
 		ls_foreach (sections, iter, s) {
-			r_num_units (buf, s->size);
+			r_num_units (humansz, sizeof (humansz), s->size);
 			if (use_color) {
 				color_end = Color_RESET;
 				if (s->perm & R_PERM_X) { // exec bit
@@ -2213,11 +2213,11 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 			}
 			if (io->va) {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
-						color, s->vaddr + s->vsize, color_end, buf,
+						color, s->vaddr + s->vsize, color_end, humansz,
 						r_str_rwx_i (s->perm), s->name);
 			} else {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
-						color, s->paddr+s->size, color_end, buf,
+						color, s->paddr+s->size, color_end, humansz,
 						r_str_rwx_i (s->perm), s->name);
 			}
 
@@ -3251,17 +3251,15 @@ static void bin_pe_resources(RCore *r, int mode) {
 					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\"}",
 					index? ",": "", name, index, type, vaddr, size, lang);
 		} else {
-			char *humanSize = r_num_units (NULL, size);
+			char humansz[8];
+			r_num_units (humansz, sizeof (humansz), size);
 			r_cons_printf ("Resource %d\n", index);
 			r_cons_printf ("  name: %d\n", name);
 			r_cons_printf ("  timestamp: %s\n", timestr);
 			r_cons_printf ("  vaddr: 0x%08"PFMT64x"\n", vaddr);
-			if (humanSize) {
-				r_cons_printf ("  size: %s\n", humanSize);
-			}
+			r_cons_printf ("  size: %s\n", humansz);
 			r_cons_printf ("  type: %s\n", type);
 			r_cons_printf ("  language: %s\n", lang);
-			free (humanSize);
 		}
 
 		R_FREE (timestr);

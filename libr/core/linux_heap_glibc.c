@@ -133,18 +133,18 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 			r_cons_printf ("f binmap.%d = 0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
 		}
 		{	/* maybe use SDB instead of flags for this? */
-			char *units = r_num_units (NULL, main_arena->GH(max_system_mem));
+			char units[8];
+			r_num_units (units, sizeof (units), main_arena->GH(max_system_mem));
 			r_cons_printf ("f heap.maxmem = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, main_arena->GH(system_mem));
+
+			r_num_units (units, sizeof (units), main_arena->GH(system_mem));
 			r_cons_printf ("f heap.sysmem = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, main_arena->GH(next_free));
+
+			r_num_units (units, sizeof (units), main_arena->GH(next_free));
 			r_cons_printf ("f heap.nextfree = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, main_arena->GH(next));
+
+			r_num_units (units, sizeof (units), main_arena->GH(next));
 			r_cons_printf ("f heap.next= %s\n", units);
-			free (units);
 		}
 		return;
 	}

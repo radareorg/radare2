@@ -180,12 +180,10 @@ static void r_core_file_info(RCore *core, int mode) {
 			ut64 fsz = r_io_desc_size (desc);
 			r_cons_printf (",\"fd\":%d", desc->fd);
 			if (fsz != UT64_MAX) {
+				char humansz[8];
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
-				char *humansz = r_num_units (NULL, fsz);
-				if (humansz) {
-					r_cons_printf (",\"humansz\":\"%s\"", humansz);
-					free (humansz);
-				}
+				r_num_units (humansz, sizeof (humansz), fsz);
+				r_cons_printf (",\"humansz\":\"%s\"", humansz);
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache || desc->perm & R_PERM_W));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (desc->perm & R_PERM_RWX));
@@ -237,12 +235,10 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
 			if (fsz != UT64_MAX) {
+				char humansz[8];
 				pair ("size", sdb_itoca (fsz));
-				char *humansz = r_num_units (NULL, fsz);
-				if (humansz) {
-					pair ("humansz", humansz);
-					free (humansz);
-				}
+				r_num_units (humansz, sizeof (humansz), fsz);
+				pair ("humansz", humansz);
 			}
 		}
 		if (info) {
