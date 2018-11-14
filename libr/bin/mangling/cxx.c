@@ -84,9 +84,11 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 			}
 			if (nerd && *nerd) {
 				*nerd = 0;
-				RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
-				if (sym) {
-					sym->vaddr = vaddr;
+				if (binfile) {
+					RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
+					if (sym) {
+						sym->vaddr = vaddr;
+					}
 				}
 				*nerd = ':';
 			}
