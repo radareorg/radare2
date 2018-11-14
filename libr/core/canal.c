@@ -3305,8 +3305,8 @@ R_API int r_core_anal_all(RCore *core) {
 				continue;
 			}
 			if (isValidSymbol (symbol)) {
-				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr,
-					symbol->vaddr);
+				ut64 addr = r_bin_get_vaddr (core->bin,
+					symbol->paddr, symbol->vaddr);
 				r_core_anal_fcn (core, addr, -1,
 					R_ANAL_REF_TYPE_NULL, depth);
 			}

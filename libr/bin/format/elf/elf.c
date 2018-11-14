@@ -2920,6 +2920,15 @@ static RBinElfSymbol *Elf_(get_phdr_symbols)(ELFOBJ *bin, int type) {
 		: Elf_(r_bin_elf_get_phdr_imports) (bin);
 }
 
+static bool match_symbols(RBinElfSymbol *a, RBinElfSymbol *b) {
+	return a->is_value == b->is_value &&
+		a->offset == b->offset &&
+		a->size == b->size &&
+		a->bind == b->bind &&
+		a->ordinal == b->ordinal &&
+		a->type == b->type;
+}
+
 static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sym) {
 	int count = 0;
 	RBinElfSymbol *ret = *sym;
@@ -2931,7 +2940,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 			/* find match in phdr */
 			p = phdr_symbols;
 			while (!p->last) {
-				if (p->offset && d->offset == p->offset) {
+				if (match_symbols (p, d)) {
 					p->in_shdr = true;
 					if (*p->name && strcmp (d->name, p->name)) {
 						strcpy (d->name, p->name);
