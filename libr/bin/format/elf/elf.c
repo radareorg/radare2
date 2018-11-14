@@ -2925,7 +2925,6 @@ static bool match_symbols(RBinElfSymbol *a, RBinElfSymbol *b) {
 		a->offset == b->offset &&
 		a->size == b->size &&
 		a->bind == b->bind &&
-		a->ordinal == b->ordinal &&
 		a->type == b->type;
 }
 
