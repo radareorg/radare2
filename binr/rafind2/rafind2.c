@@ -5,7 +5,6 @@
 #include <getopt.c>
 
 #include <r_types.h>
-#include <r_print.h>
 #include <r_search.h>
 #include <r_util.h>
 #include <r_cons.h>

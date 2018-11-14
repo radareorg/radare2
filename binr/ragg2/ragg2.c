@@ -2,7 +2,6 @@
 
 #include <r_egg.h>
 #include <r_bin.h>
-#include <r_print.h>
 #include <getopt.c>
 #include "../blob/version.c"
 

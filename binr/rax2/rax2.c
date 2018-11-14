@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "../blob/version.c"
-#include <r_print.h>
 #include <r_util.h>
 
 #define STDIN_BUFFER_SIZE 354096

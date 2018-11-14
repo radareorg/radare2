@@ -2,7 +2,6 @@
 
 #include "r_anal.h"
 #include "r_cons.h"
-#include "r_print.h"
 #include "r_util.h"
 
 #define DFLT_ROWS 16

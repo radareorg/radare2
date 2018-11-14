@@ -4,11 +4,16 @@
 #define R2_IO_H
 
 #include "r_list.h"
-#include <r_util/r_idpool.h>
-#include <r_util/r_cache.h>
-#include <r_util/r_buf.h>
+#include "r_util/r_assert.h"
+#include "r_util/r_idpool.h"
+#include "r_util/r_cache.h"
+#include "r_util/r_buf.h"
+#include "r_util/r_itv.h"
+#include "r_util/r_rbtree.h"
+#include "r_util/r_num.h"
+#include "r_util/r_file.h"
+#include "r_util/r_sys.h"
 #include "r_socket.h"
-#include "r_util.h"
 #include "r_vector.h"
 
 #define R_IO_SEEK_SET	0

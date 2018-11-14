@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2018 - pancake */
 
-// TODO: move into RCons ?
-#include <r_print.h>
+#include <r_util.h>
 #include <math.h>
 #define PI 3.1415
 #define O out[x + (y * size)]
