@@ -1212,13 +1212,13 @@ static void resizePanelDown(RPanels *panels) {
 		}
 		if (ty0 == cy1) {
 			if (ty0 + PANEL_CONFIG_RESIZE_H >= ty1) {
-				return;
+				goto beach;
 			}
 			targets1[cur1++] = p;
 		}
 		if (ty1 == cy1) {
 			if (ty1 + PANEL_CONFIG_RESIZE_H >= panels->can->h) {
-				return;
+				goto beach;
 			}
 			targets2[cur2++] = p;
 		}
