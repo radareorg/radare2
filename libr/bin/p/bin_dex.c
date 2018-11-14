@@ -1285,7 +1285,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				sym->paddr = MC;// + 0x10;
 				sym->vaddr = MC;// + 0x10;
 			} else {
-				sym->type = r_str_const ("METH");
+				sym->type = r_str_const (R_BIN_TYPE_METH_STR);
 				sym->paddr = encoded_method_addr - binfile->buf->buf;
 				sym->vaddr = encoded_method_addr - binfile->buf->buf;
 			}
