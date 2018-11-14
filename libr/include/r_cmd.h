@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_bind.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,8 @@ typedef struct r_cmd_macro_t {
 	ut64 *brk_value;
 	ut64 _brk_value;
 	int brk;
-	int (*cmd)(void *user, const char *cmd);
+// 	int (*cmd)(void *user, const char *cmd);
+	RCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
 	RNum *num;

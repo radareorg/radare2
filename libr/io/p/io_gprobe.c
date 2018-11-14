@@ -3,6 +3,7 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -23,10 +24,14 @@
 #include <tchar.h>
 #include <windows.h>
 #else
-#if !__linux__ && !__APPLE__ && !__OpenBSD__ && !__FreeBSD__ && !__NetBSD__ && !__DragonFly__
+
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__
+#include <sys/ioctl.h>
+#include <termios.h>
+#else
 #include <stropts.h>
 #endif
-#include <termios.h>
+
 #endif
 
 #define GPROBE_SIZE (1LL << 32)
