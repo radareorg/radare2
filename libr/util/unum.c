@@ -95,6 +95,7 @@ R_API void r_num_free(RNum *num) {
 R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	long double fnum;
 	char unit;
+	const char *fmt_str;
 	if (!buf) {
 		buf = malloc (len + 1);
 		if (!buf) {
@@ -108,10 +109,12 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	if (num >= GB) { unit = 'G'; fnum /= GB; } else
 	if (num >= MB) { unit = 'M'; fnum /= MB; } else
 	if (num >= KB) { unit = 'K'; fnum /= KB; } else {
-		snprintf (buf, len, "%" PFMT64u, num);
-		return buf;
+		unit = '\0';
 	}
-	snprintf (buf, len, "%.1" LDBLFMT "%c", fnum, unit);
+	fmt_str = (ceill (fnum) == fnum)
+		? "%.0" LDBLFMT "%c"
+		: "%.1" LDBLFMT "%c";
+	snprintf (buf, len, fmt_str, fnum, unit);
 	return buf;
 }
 
