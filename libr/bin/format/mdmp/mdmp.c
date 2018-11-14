@@ -401,7 +401,8 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MODULE_LIST_STREAM:
-		module_list = (struct minidump_module_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		module_list = (struct minidump_module_list *)
+			r_buf_get_at (obj->b, entry->location.rva, &left);
 		if (!module_list || left < sizeof (struct minidump_module_list)) {
 			break;
 		}
@@ -422,9 +423,19 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 				0),
 			0);
 
+		const int sizeOfModule = sizeof (struct minidump_module);
+		int endOffset = sizeOfModule * module_list->number_of_modules;
+		ut64 nextOffset = 0;
+		if (endOffset >= left) {
+			endOffset = left;
+		}
 		for (i = 0; i < module_list->number_of_modules; i++) {
+			nextOffset += sizeOfModule;
+			if (nextOffset >= endOffset) {
+				break;
+			}
 			modules = (struct minidump_module *)(&(module_list->modules));
-			r_list_append(obj->streams.modules, &(modules[i]));
+			r_list_append (obj->streams.modules, &(modules[i]));
 		}
 		break;
 	case MEMORY_LIST_STREAM:
