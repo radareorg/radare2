@@ -852,8 +852,9 @@ int main(int argc, char **argv, char **envp) {
 
 	r_bin_force_plugin (r.bin, forcebin);
 
-	if (r_config_get (r.config, "prj.name")) {
-		r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
+	prj = r_config_get (r.config, "prj.name");
+	if (prj && *prj) {
+		r_core_project_open (&r, prj, threaded);
 		r_config_set (r.config, "bin.strings", "false");
 	}
 
