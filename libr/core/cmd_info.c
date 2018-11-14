@@ -349,6 +349,12 @@ static int cmd_info(void *data, const char *input) {
 	if (!strcmp (input, "*")) {
 		input = "I*";
 	}
+	char *question = strchr (input, '?');
+	if (question > input) {
+		question--;
+		r_core_cmdf (core, "i?~ i%c", *question);
+		goto done;
+	}
 	while (*input) {
 		switch (*input) {
 		case 'b': // "ib"
