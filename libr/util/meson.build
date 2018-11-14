@@ -8,7 +8,6 @@ files = [
   #'big.c',
   'binheap.c',
   'bitmap.c',
-  'btree.c',
   'buf.c',
   'cache.c',
   'calc.c',
