@@ -3999,6 +3999,10 @@ static void cmd_descriptor_init(RCore *core) {
 	}
 }
 
+static int core_cmd0_wrapper(void *core, const char *cmd) {
+	return r_core_cmd0 ((RCore *)core, cmd);
+}
+
 R_API void r_core_cmd_init(RCore *core) {
 	struct {
 		const char *cmd;
@@ -4056,7 +4060,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd = r_cmd_new ();
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
-	core->rcmd->macro.cmd = r_core_cmd0;
+	core->rcmd->macro.cmd = core_cmd0_wrapper;
 	core->rcmd->nullcallback = r_core_cmd_nullcallback;
 	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
