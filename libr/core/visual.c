@@ -3302,6 +3302,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	};
 
 	splitPtr = UT64_MAX;
+	// printfmt = printfmtSingle; // restore columns mode on each run?
 
 	if (r_cons_get_size (&ch) < 1 || ch < 1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");

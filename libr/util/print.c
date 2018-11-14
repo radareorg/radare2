@@ -966,6 +966,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						sz_n = step == 2? sizeof (ut16): sizeof (ut32);
 					}
 					sz_n = R_MIN (left, sz_n);
+					if (j + sz_n > len) {
+						// oob
+						j += sz_n;
+						continue;
+					}
 					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, p && p->big_endian);
 					r_print_cursor (p, j, 1);
 					// stub for colors
