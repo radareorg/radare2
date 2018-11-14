@@ -1587,8 +1587,7 @@ old_proto:
 		s->next = first;
 		type->t = VT_FUNC;
 		type->ref = s;
-		free (symname);
-		symname = NULL;
+		R_FREE (symname);
 	} else if (tok == '[') {
 		/* array definition */
 		next ();

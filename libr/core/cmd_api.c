@@ -69,19 +69,16 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 		free (cmd->aliases.values[i]);
 	}
 	cmd->aliases.count = 0;
-	free (cmd->aliases.keys);
-	free (cmd->aliases.values);
+	R_FREE (cmd->aliases.keys);
+	R_FREE (cmd->aliases.values);
 	free (cmd->aliases.remote);
-	cmd->aliases.keys = NULL;
-	cmd->aliases.values = NULL;
 }
 
 R_API bool r_cmd_alias_del (RCmd *cmd, const char *k) {
 	int i; // find
 	for (i = 0; i < cmd->aliases.count; i++) {
 		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
-			free (cmd->aliases.values[i]);
-			cmd->aliases.values[i] = NULL;
+			R_FREE (cmd->aliases.values[i]);
 			cmd->aliases.count--;
 			if (cmd->aliases.count > 0) {
 				if (i > 0) {
@@ -199,8 +196,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 
 R_API int r_cmd_del(RCmd *cmd, const char *command) {
 	int idx = (ut8)command[0];
-	free (cmd->cmds[idx]);
-	cmd->cmds[idx] = NULL;
+	R_FREE (cmd->cmds[idx]);
 	return 0;
 }
 

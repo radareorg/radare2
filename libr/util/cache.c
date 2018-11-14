@@ -92,7 +92,6 @@ R_API void r_cache_flush(RCache *c) {
 	if (c) {
 		c->base = 0;
 		c->len = 0;
-		free (c->buf);
-		c->buf = NULL;
+		R_FREE (c->buf);
 	}
 }

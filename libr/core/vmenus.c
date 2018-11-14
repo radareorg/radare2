@@ -34,8 +34,7 @@ static char *prompt(const char *str, const char *txt) {
 		free (r_cons_singleton ()->line->contents);
 		r_cons_singleton ()->line->contents = strdup (txt);
 	} else {
-		free (r_cons_singleton ()->line->contents);
-		r_cons_singleton ()->line->contents = NULL;
+		R_FREE (r_cons_singleton ()->line->contents);
 	}
 	*cmd = '\0';
 	r_line_set_prompt (str);
@@ -48,8 +47,7 @@ static char *prompt(const char *str, const char *txt) {
 	}
 	r_line_set_prompt (oprompt);
 	free (oprompt);
-	free (r_cons_singleton ()->line->contents);
-	r_cons_singleton ()->line->contents = NULL;
+	R_FREE (r_cons_singleton ()->line->contents);
 	return res;
 }
 

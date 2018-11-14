@@ -27,8 +27,7 @@ static int w32__close(RIODesc *fd) {
 	if (fd->data) {
 		// TODO: handle return value
 		CloseHandle (RIOW32_HANDLE (fd));
-		free (fd->data);
-		fd->data = NULL;
+		R_FREE (fd->data);
 		return 0;
 	}
 	return -1;

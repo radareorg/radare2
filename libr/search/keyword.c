@@ -66,8 +66,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			free (bmbuf);
-			bmbuf = NULL;
+			R_FREE (bmbuf);
 		}
 	}
 	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
@@ -94,8 +93,7 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			free(bmbuf);
-			bmbuf = NULL;
+			R_FREE (bmbuf);
 		}
 	}
 

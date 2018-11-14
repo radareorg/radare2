@@ -587,8 +587,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 		return res;
 	}
 
-	free (bytes);
-	bytes = NULL;
+	R_FREE (bytes);
 
 	if (res == true) {
 		ut64 n_file_sz = 0;
@@ -1891,10 +1890,9 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 				operation = strdup ("read constant");
 				type = r_bin_java_resolve_cp_idx_type (bin, bb->op_bytes[1]);
 				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
-				free (full_bird);
-				free (type);
-				free (operation);
-				full_bird = type = operation = NULL;
+				R_FREE (full_bird);
+				R_FREE (type);
+				R_FREE (operation);
 			} else if ( (bb->type2 &  R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
 				ut8 op_byte = bb->op_bytes[0];
 				// look at the bytes determine if it belongs to this class

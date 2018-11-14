@@ -107,8 +107,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static int __close(RIODesc *fd) {
 	int ret = ptrace (PTRACE_DETACH, RIOPROCPID_PID (fd), 0, 0);
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (fd->data);
 	return ret;
 }
 

@@ -1376,7 +1376,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 			goto exit;
 		}
 
-		free (buf); buf = NULL;
+		R_FREE (buf);
 		buf = decompressed_buf;
 		size = decompressed_size;
 	}
