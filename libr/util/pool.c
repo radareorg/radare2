@@ -23,8 +23,7 @@ R_API RMemoryPool *r_mem_pool_deinit(RMemoryPool *pool) {
 	for (i = 0; i < pool->npool; i++) {
 		free (pool->nodes[i]);
 	}
-	free (pool->nodes);
-	pool->nodes = NULL;
+	R_FREE (pool->nodes);
 	return pool;
 }
 

@@ -1215,10 +1215,8 @@ static cset * allocset(struct parse *p) {
 
 	return(cs);
 nomem:
-	free(p->g->sets);
-	p->g->sets = NULL;
-	free(p->g->setbits);
-	p->g->setbits = NULL;
+	R_FREE(p->g->sets);
+	R_FREE(p->g->setbits);
 
 	SETERROR(R_REGEX_ESPACE);
 	/* caller's responsibility not to do set ops */

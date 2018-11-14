@@ -150,8 +150,7 @@ static size_t consume_locals_r (RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
 	}
 	return j;
 beach:
-	free (out->locals);
-	out->locals = NULL;
+	R_FREE (out->locals);
 	return 0;
 }
 

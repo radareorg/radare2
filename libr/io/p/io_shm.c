@@ -61,8 +61,7 @@ static int shm__close(RIODesc *fd) {
 		return -1;
 	}
 	ret = shmdt (((RIOShm*)(fd->data))->buf);
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (fd->data);
 	return ret;
 }
 

@@ -130,8 +130,7 @@ R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			r_socket_write (rap_s->fd, ptr, i);
 		}
 		r_socket_flush (rap_s->fd);
-		free (ptr);
-		ptr = NULL;
+		R_FREE (ptr);
 		break;
 	case RAP_RMT_CLOSE:
 		r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);

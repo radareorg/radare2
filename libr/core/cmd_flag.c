@@ -447,8 +447,7 @@ rep:
 			} else {
 				core->flags->base = r_num_math (core->num, input+1);
 			}
-			free (str);
-			str = NULL;
+			R_FREE (str);
 			break;
 		case '\0':
 			r_cons_printf ("%"PFMT64d" 0x%"PFMT64x"\n",
