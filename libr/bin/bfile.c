@@ -798,7 +798,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 				for (i = 0; i < section->size; i += cfstr_size) {
 					ut8 *buf = sbuf;
 					p = buf + i;
-					if ((i + ((bits==64)? 8:4)) < section->size) {
+					if ((i + ((bits==64)? 8:4)) >= section->size) {
 						break;
 					}
 					ut64 cfstr_vaddr = section->vaddr + i;
