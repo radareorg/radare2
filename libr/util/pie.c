@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2018 - pancake */
 
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <math.h>
 #define PI 3.1415
 #define O out[x + (y * size)]

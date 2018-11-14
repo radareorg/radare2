@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_util.h"
-#include <unistd.h>
-#include <sys/time.h>
-#include <time.h>
-#include <sys/stat.h>
+#include "r_util/r_print.h"
 
 R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	ut8 _time[2] = { buf[0], buf[1] };

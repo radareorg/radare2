@@ -2,6 +2,7 @@
 
 #include "r_cons.h"
 #include "r_util.h"
+#include "r_util/r_print.h"
 #include "r_reg.h"
 #ifdef _MSC_VER
 #include <time.h>

@@ -3,6 +3,7 @@
 
 #include "r_types.h"
 #include "r_cons.h"
+#include "r_bind.h"
 #include "r_io.h"
 #include "r_reg.h"
 
