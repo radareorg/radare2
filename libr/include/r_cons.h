@@ -738,6 +738,7 @@ R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
 #define r_cons_print(x) r_cons_strcat (x)
 R_API void r_cons_println(const char* str);
+
 R_API void r_cons_strcat_justify(const char *str, int j, char c);
 R_API int r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
@@ -757,7 +758,6 @@ R_API void r_cons_log_stub(const char *output, const char *funcname, const char 
 
 
 /* input */
-//R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API int r_cons_controlz(int ch);
 R_API int r_cons_readchar(void);
 R_API bool r_cons_readpush(const char *str, int len);
@@ -809,6 +809,7 @@ R_API void r_cons_rgb_init(void);
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
+
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
