@@ -2,6 +2,7 @@
 
 #include <r_cons.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
