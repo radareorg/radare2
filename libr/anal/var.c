@@ -674,7 +674,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 	r_return_if_fail (anal && op && fcn);
 
 	if (!fcn->cc) {
-		R_LOG_INFO ("No cc information for function at %" PFMT64x " to extract register arguments\n", fcn->addr);
+		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
 	}
 
