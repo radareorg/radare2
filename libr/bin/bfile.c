@@ -798,6 +798,9 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 				for (i = 0; i < section->size; i += cfstr_size) {
 					ut8 *buf = sbuf;
 					p = buf + i;
+					if ((i + ((bits==64)? 8:4)) < section->size) {
+						break;
+					}
 					ut64 cfstr_vaddr = section->vaddr + i;
 					ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
 					RBinString *s = find_string_at (a, ret, cstr_vaddr);
