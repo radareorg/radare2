@@ -12,11 +12,10 @@ static char *hashify(char *s, ut64 vaddr) {
 			if (vaddr && vaddr != UT64_MAX) {
 				free (os);
 				return r_str_newf ("_%" PFMT64d, vaddr);
-			} else {
-				ut32 hash = sdb_hash (s);
-				free (os);
-				return r_str_newf ("%x", hash);
 			}
+			ut32 hash = sdb_hash (s);
+			free (os);
+			return r_str_newf ("%x", hash);
 		}
 		s++;
 	}
