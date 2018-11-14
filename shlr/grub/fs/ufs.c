@@ -579,6 +579,7 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 
 	    continue;
 	  }
+	free (filename);  
       }
 
       pos += grub_num_to_cpu16 (dirent.direntlen, data->be);

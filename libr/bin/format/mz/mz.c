@@ -152,7 +152,7 @@ RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin) {
 
 err_out:
 	eprintf ("Error: alloc (RBinSection)\n");
-	r_list_purge (seg_list);
+	r_list_free (seg_list);
 
 	return NULL;
 }
@@ -330,6 +330,7 @@ RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin) {
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
 		eprintf ("Warning: Cannot read entry at 0x%16" PFMT64x "\n", (ut64)entry->paddr);
+		free (entry);
 		return NULL;
 	}
 	// MSVC
