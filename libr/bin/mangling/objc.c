@@ -11,7 +11,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	int i, nargs = 0;
 	const char *type = NULL;
 
-	if (!binfile || !sym) {
+	if (!sym) {
 		return NULL;
 	}
 	if (binfile && binfile->o && binfile->o->classes) {
@@ -131,7 +131,6 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 				ret = r_str_newf ("%s int %s::%s(%s)", type, clas, name, args);
 				if (binfile) {
 					r_bin_class_add_method (binfile, clas, name, nargs);
-
 				}
 			}
 		}
