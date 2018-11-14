@@ -1168,8 +1168,8 @@ static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 
 static int anal_pic_set_reg_profile(RAnal *anal) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
-		// TODO: implement
-		return r_reg_set_profile_string (anal->reg, "");
+		// TODO: We are using the midrange profile as the baseline
+		return anal_pic_midrange_set_reg_profile (anal);
 	}
 	if (anal->cpu && strcasecmp (anal->cpu, "midrange") == 0) {
 		return anal_pic_midrange_set_reg_profile (anal);
