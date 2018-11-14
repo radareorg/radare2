@@ -4510,6 +4510,8 @@ static int cmd_print(void *data, const char *input) {
 					ut8 *loc_buf = NULL;
 					RAnalBlock *b;
 					ut32 fcn_size = r_anal_fcn_realsize (f);
+					const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
+					r_config_set_i (core->config, "asm.bb.middle", false);
 					cont_size = tmp_get_contsize (f);
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);
@@ -4568,6 +4570,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					r_cons_printf ("]}\n");
 					pd_result = 0;
+					r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
 				} else if (f) {
 #if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
