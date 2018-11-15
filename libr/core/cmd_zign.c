@@ -665,7 +665,6 @@ static bool search(RCore *core, bool rad) {
 	if (useBytes) {
 		list = r_core_get_boundaries_prot (core, -1, mode, "search");
 		if (!list) {
-			R_LOG_WARN ("Cannot get boundaries\n");
 			return false;
 		}
 		r_list_foreach (list, iter, map) {

@@ -2495,7 +2495,6 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	{
 		RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 		if (!list) {
-			R_LOG_WARN ("Couldn't get boundaries\n");
 			return 1;
 		}
 		RIOMap *map = r_list_first (list);
@@ -5875,7 +5874,7 @@ static int cmd_print(void *data, const char *input) {
 			RIOMap* map;
 			RListIter *iter;
 			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
-			if (list) {
+			if (list && r_list_length (list) > 0) {
 				RListIter *iter1 = list->head;
 				RIOMap* map1 = iter1->data;
 				from = map1->itv.addr;

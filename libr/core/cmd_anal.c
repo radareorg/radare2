@@ -5093,7 +5093,6 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 		RListIter *iter;
 		RIOMap* map;
 		if (!list) {
-			R_LOG_WARN ("Cannot get analysis boundaries\n");
 			goto ctrl_c;
 		}
 		r_list_foreach (list, iter, map) {
@@ -5243,9 +5242,11 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 		RIOMap *map;
 		r_list_free (ranges);
 		ranges = r_core_get_boundaries_prot (core, 0, NULL, "anal");
-		r_list_foreach (ranges, iter, map) {
-			ut64 addr = map->itv.addr;
-			_anal_calls (core, addr, r_itv_end (map->itv), printCommands, importsOnly);
+		if (ranges) {
+			r_list_foreach (ranges, iter, map) {
+				ut64 addr = map->itv.addr;
+				_anal_calls (core, addr, r_itv_end (map->itv), printCommands, importsOnly);
+			}
 		}
 	} else {
 		RListIter *iter;
@@ -6786,7 +6787,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			RListIter *iter;
 			RIOMap* map;
 			if (!list) {
-				R_LOG_WARN ("Cannot get anal boundaries\n");
 				return 0;
 			}
 			r_list_foreach (list, iter, map) {
@@ -7010,7 +7010,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		RListIter *iter;
 		RIOMap *map;
 		if (!list) {
-			R_LOG_WARN ("Cannot get anal boundaries\n");
 			goto beach;
 		}
 		r_list_foreach (list, iter, map) {
@@ -7026,7 +7025,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	} else {
 		RList *list = r_core_get_boundaries_prot (core, 0, NULL, "anal");
 		if (!list) {
-			R_LOG_WARN ("Cannot get anal boundaries\n");
 			goto beach;
 		}
 		RListIter *iter, *iter2;
@@ -7281,7 +7279,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		RIOMap *map;
 		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		if (!list) {
-			R_LOG_WARN ("Cannot get anal boundaries\n");
 			break;
 		}
 		r_list_foreach (list, iter, map) {
@@ -7314,7 +7311,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			RListIter *iter;
 			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
 			if (!list) {
-				R_LOG_WARN ("Cannot get anal boundaries\n");
 				break;
 			}
 			r_list_foreach (list, iter, map) {

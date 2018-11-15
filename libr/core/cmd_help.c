@@ -427,7 +427,6 @@ static int cmd_help(void *data, const char *input) {
 		k = r_str_trim_ro (input + 1);
 		tmp = r_core_get_boundaries_prot (core, -1, k, "search");
 		if (!tmp) {
-			R_LOG_WARN ("Cannot get boundaries\n");
 			return false;
 		}
 		r_list_foreach (tmp, iter, map) {

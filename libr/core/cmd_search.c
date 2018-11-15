@@ -341,7 +341,6 @@ R_API int r_core_search_preludes(RCore *core) {
 	RIOMap *p;
 
 	if (!list) {
-		R_LOG_WARN ("Cannot get search boundaries\n");
 		return -1;
 	}
 
@@ -623,7 +622,13 @@ static bool maskMatches(int perm, int mask, bool only) {
 
 // TODO(maskray) returns RList<RInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode, const char *prefix) {
+	r_return_val_if_fail (core, NULL);
+
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
+	if (!list) {
+		return NULL;
+	}
+
 	char bound_in[32];
 	char bound_from[32];
 	char bound_to[32];
@@ -638,10 +643,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 	}
 	if (perm == -1) {
 		perm = R_PERM_RWX;
-	}
-	if (!core) {
-		r_list_free (list);
-		return NULL;
 	}
 	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
