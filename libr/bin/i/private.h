@@ -18,7 +18,6 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bo
 
 R_IPI RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
 R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name);
-R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name);
 
 R_IPI void r_bin_section_free(RBinSection *bs);
 

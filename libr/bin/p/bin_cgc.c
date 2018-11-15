@@ -10,7 +10,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return buf && length > 4 && !memcmp (buf, CGCMAG, SCGCMAG) && buf[4] != 2;
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const char *arch, int bits, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_ehdrsz, p_phdrsz;

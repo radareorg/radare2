@@ -898,12 +898,8 @@ int main(int argc, char **argv) {
 		if (!bits) {
 			bits = 32;
 		}
-		if (!r_bin_use_arch (bin, arch, bits, create)) {
-			eprintf ("Cannot set arch\n");
-			r_core_fini (&core);
-			return 1;
-		}
-		b = r_bin_create (bin, code, codelen, data, datalen);
+
+		b = r_bin_create (bin, code, codelen, data, datalen, arch, bits, create);
 		if (b) {
 			if (r_file_dump (file, b->buf, b->length, 0)) {
 				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
@@ -913,7 +909,7 @@ int main(int argc, char **argv) {
 			}
 			r_buf_free (b);
 		} else {
-			eprintf ("Cannot create binary for this format '%s'.\n", create);
+			eprintf ("Cannot create binary for this format '%s/%d/%s'.\n", arch, bits, create);
 		}
 		r_core_fini (&core);
 		return 0;

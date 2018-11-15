@@ -416,7 +416,7 @@ typedef struct r_bin_plugin_t {
 	int (*get_offset)(RBinFile *arch, int type, int idx);
 	char* (*get_name)(RBinFile *arch, int type, int idx);
 	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
-	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+	RBuffer* (*create)(RBin *bin, const char *arch, int bits, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RBinFile *arch);
 	int (*file_type)(RBinFile *arch);
@@ -629,6 +629,7 @@ R_API int r_bin_list(RBin *bin, int json);
 R_API int r_bin_list_plugin(RBin *bin, const char *name, int json);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz);
+R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 
 // get/set various bin information
@@ -667,7 +668,7 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API void r_bin_list_archs(RBin *bin, int mode);
-R_API RBuffer *r_bin_create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+R_API RBuffer *r_bin_create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, const char *arch, int bits, const char *pluginname);
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files);
 
 R_API const char *r_bin_string_type(int type);

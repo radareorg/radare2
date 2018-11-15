@@ -68,21 +68,17 @@ static void list(REgg *egg) {
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
-	RBuffer *b;
-	if (!r_bin_use_arch (bin, arch, bits, format)) {
-		eprintf ("Cannot set arch\n");
-		r_bin_free (bin);
-		return 1;
-	}
-	b = r_bin_create (bin, code, codelen, NULL, 0); //data, datalen);
+	int ret = 0;
+	RBuffer *b = r_bin_create (bin, code, codelen, NULL, 0, arch, bits, format);
 	if (b) {
 		write (1, b->buf, b->length);
 		r_buf_free (b);
 	} else {
-		eprintf ("Cannot create binary for this format '%s'.\n", format);
+		eprintf ("Cannot create binary for this format '%s/%d/%s'.\n", arch, bits, format);
+		ret = 1;
 	}
 	r_bin_free (bin);
-	return 0;
+	return ret;
 }
 
 static int openfile(const char *f, int x) {
