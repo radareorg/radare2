@@ -1208,8 +1208,13 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 't': {
-		if (!input[1]) {
+	case 't': { 
+		if (!input[1] || input[1]=='j') {
+			int flag = 0;
+			char *namejson = NULL;
+			if(input[1]=='j') {
+				r_cons_print ("{");
+			}
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
@@ -1219,12 +1224,30 @@ static int cmd_type(void *data, const char *input) {
 					if (!name || strcmp (sdbkv_value (kv), name)) {
 						free (name);
 						name = strdup (sdbkv_key (kv));
-						r_cons_println (name);
+						if(!input[1])
+							r_cons_println (name);
+						else {
+							if(flag==1) {
+								r_cons_print(",");
+							}
+							r_cons_print("\"");
+							r_cons_printf("%s", name);
+							r_cons_print("\":\"");
+							const char *q = sdb_fmt ("typedef.%s", name);
+							const char *res = sdb_const_get (TDB, q, 0);
+							r_cons_print (res);
+							r_cons_print("\"");
+							flag = 1;
+						}
 					}
 				}
 			}
-			free (name);
-			ls_free (l);
+			if(input[1]=='j') {
+				r_cons_println ("}");
+			}
+				free (name);
+				free(namejson);
+				ls_free (l);
 			break;
 		}
 		if (input[1] == '?') {
@@ -1237,8 +1260,9 @@ static int cmd_type(void *data, const char *input) {
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
 			const char *q = sdb_fmt ("typedef.%s", s);
 			const char *res = sdb_const_get (TDB, q, 0);
-			if (res)
+			if (res) {
 				r_cons_println (res);
+			}
 		} else {
 			eprintf ("This is not an typedef\n");
 		}
