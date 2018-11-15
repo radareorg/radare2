@@ -86,7 +86,7 @@ static const char *help_msg_visual[] = {
 	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
 	",file", "add a link to the text file",
 	"/*+-[]", "change block size, [] = resize hex.cols",
-	"</>", "seek aligned to block size (seek cursor in cursor mode)",
+	"<,>", "seek aligned to block size (in cursor slurp or dump files)",
 	"a/A", "(a)ssemble code, visual (A)ssembler",
 	"b", "browse evals, symbols, flags, configurations, classes, ...",
 	"B", "toggle breakpoint",
@@ -2732,9 +2732,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '>':
 			if (core->print->cur_enabled) {
+				if (core->print->ocur == -1) {
+					eprintf ("No range selected. Use HJKL.\n");
+					r_cons_any_key (NULL);
+					break;
+				}
 				char buf[128];
-				prompt_read ("inc cursor:", buf, sizeof (buf));
-				core->print->cur += (st64) r_num_math (core->num, buf);
+				// TODO autocomplete filenames
+				prompt_read ("dump to file: ", buf, sizeof (buf));
+				if (buf[0]) {
+					ut64 from = core->offset + core->print->ocur;
+					ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
+					r_core_dump (core, buf, from, size, false);
+				}
 			} else {
 				r_core_seek_align (core, core->blocksize, 1);
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
@@ -2743,8 +2753,24 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '<': // "V<"
 			if (core->print->cur_enabled) {
 				char buf[128];
-				prompt_read ("dec cursor:", buf, sizeof (buf));
-				core->print->cur -= (st64) r_num_math (core->num, buf);
+				// TODO autocomplete filenames
+				prompt_read ("load from file: ", buf, sizeof (buf));
+				if (buf[0]) {
+					int sz;
+					char *data = r_file_slurp (buf, &sz);
+					if (data) {
+						int cur;
+						if (core->print->ocur != -1) {
+							cur = R_MIN (core->print->cur, core->print->ocur);
+						} else {
+							cur = core->print->cur;
+						}
+						ut64 from = core->offset + cur;
+						ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
+						ut64 s = R_MIN (size, sz);
+						r_io_write_at (core->io, from, (const ut8*)data, s);
+					}
+				}
 			} else {
 				r_core_seek_align (core, core->blocksize, -1);
 				r_core_seek_align (core, core->blocksize, -1);
