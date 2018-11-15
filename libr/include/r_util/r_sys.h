@@ -97,6 +97,9 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #define r_sys_breakpoint() __asm__ volatile ("brk 0");
 #elif __arm__ || __thumb__
 #define r_sys_breakpoint() __asm__ volatile ("bkpt $0");
+#elif __EMSCRIPTEN__
+// TODO: cannot find a better way to breakpoint in wasm/asm.js
+#define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #else
 #warning r_sys_breakpoint not implemented for this platform
 #define r_sys_breakpoint() { char *a = NULL; *a = 0; }
