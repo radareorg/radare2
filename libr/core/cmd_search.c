@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2010-2018 - pancake */
 
+#include <sdb/ht_uu.h>
 #include "r_core.h"
 #include "r_io.h"
 #include "r_list.h"
@@ -936,8 +937,14 @@ static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
 	return false;
 }
 
+static bool insert_into(void *user, const ut64 k, const ut64 v) {
+	HtUU *ht = (HtUU *)user;
+	ht_uu_insert (ht, k, v);
+	return true;
+}
+
 // TODO: follow unconditional jumps
-static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, RList *badstart) {
+static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAsmOp asmop;
@@ -951,9 +958,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	int grep_find;
 	int search_hit;
 	char *rx = NULL;
-	RList /*<intptr_t>*/ *localbadstart = r_list_new ();
-	RListIter *iter;
-	void *p;
+	HtUUOptions opt = { 0 };
+	HtUU *localbadstart = ht_uu_new_opt (&opt);
 	int count = 0;
 
 	if (grep) {
@@ -972,7 +978,9 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		}
 	}
 
-	if (r_list_contains (badstart, (void *) (intptr_t) idx)) {
+	bool found;
+	ht_uu_find (badstart, idx, &found);
+	if (found) {
 		valid = false;
 		goto ret;
 	}
@@ -980,7 +988,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 	char *opst = NULL;
 
 	while (nb_instr < max_instr) {
-		r_list_append (localbadstart, (void *) (intptr_t) idx);
+		ht_uu_insert (localbadstart, idx, 1);
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, 15)) {
 			opsz = 1;
@@ -1038,18 +1046,16 @@ ret:
 	free (grep_str);
 	if (regex && rx) {
 		r_list_free (hitlist);
-		r_list_free (localbadstart);
+		ht_uu_free (localbadstart);
 		return NULL;
 	}
 	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
-		r_list_free (localbadstart);
+		ht_uu_free (localbadstart);
 		return NULL;
 	}
-	r_list_foreach (localbadstart, iter, p) {
-		r_list_append (badstart, p);
-	}
-	r_list_free (localbadstart);
+	ht_uu_foreach (localbadstart, insert_into, badstart);
+	ht_uu_free (localbadstart);
 	// If our arch has bds then we better be including them
 	if (branch_delay && r_list_length (hitlist) < (1 + branch_delay)) {
 		r_list_free (hitlist);
@@ -1223,7 +1229,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	int max_count = r_config_get_i (core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
-	RList /*<intptr_t>*/ *badstart = r_list_new ();
 	RList /*<RRegex>*/ *rx_list = NULL;
 	int align = core->search->align;
 	RListIter *itermap = NULL;
@@ -1246,7 +1251,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		max_count = -1;
 	}
 	if (max_instr <= 1) {
-		r_list_free (badstart);
 		r_list_free (end_list);
 		eprintf ("ROP length (rop.len) must be greater than 1.\n");
 		if (max_instr == 1) {
@@ -1307,6 +1311,8 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	r_cons_break_push (NULL, NULL);
 
 	r_list_foreach (param->boundaries, itermap, map) {
+		HtUUOptions opt = { 0 };
+		HtUU *badstart = ht_uu_new_opt (&opt);
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
 		}
@@ -1478,7 +1484,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				}
 			}
 		}
-		r_list_purge (badstart);
 		free (buf);
 	}
 	if (r_cons_is_breaked ()) {
@@ -1492,7 +1497,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 bad:
 	r_list_free (rx_list);
 	r_list_free (end_list);
-	r_list_free (badstart);
 	free (grep_arg);
 	free (gregexp);
 	return result;
