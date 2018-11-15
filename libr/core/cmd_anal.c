@@ -7499,13 +7499,10 @@ static int cmd_anal(void *data, const char *input) {
 		} else if (input[1] == 't') {
 			RList* list = r_core_anal_graph_to (core, r_num_math (core->num, input + 2), 0);
 			if (list) {
-				RListIter *iter, *iter2;
-				RList *list2;
 				RAnalBlock *bb;
-				r_list_foreach (list, iter, list2) {
-					r_list_foreach (list2, iter2, bb) {
-						r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
-					}
+				RListIter *iter;
+				r_list_foreach (list, iter, bb) {
+					r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
 				}
 				r_list_purge (list);
 				free (list);

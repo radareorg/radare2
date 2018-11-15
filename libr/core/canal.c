@@ -2753,39 +2753,28 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	return;
 }
 
-R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
-	RAnalBlock *bb, *root = NULL, *dest = NULL;
-	RListIter *iter, *iter2;
-	RList *list2 = NULL, *list = NULL;
-	RAnalFunction *fcn;
+bool r_core_anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth) {
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (!r_anal_fcn_is_in_offset (fcn, core->offset)) {
-			continue;
-		}
-		r_list_foreach (fcn->bbs, iter2, bb) {
-			if (r_anal_bb_is_in_offset (bb, addr)) {
-				dest = bb;
-			}
-			if (r_anal_bb_is_in_offset (bb, core->offset)) {
-				root = bb;
-				r_list_append (list, list2);
-			}
-		}
+	if (depth < 1) {
+		return false;
 	}
-	if (root && dest) {
-		if (dest == root) {
-			eprintf ("Source and destination are the same\n");
-			return NULL;
-		}
-		eprintf ("ROOT BB 0x%08"PFMT64x"\n", root->addr);
-		eprintf ("DEST BB 0x%08"PFMT64x"\n", dest->addr);
-		list = r_list_new ();
-		printf ("=>  0x%08"PFMT64x"\n", root->jump);
-	} else {
-		eprintf ("Unable to find source or destination basic block\n");
+
+	if (r_anal_bb_is_in_offset (bb, to) ||
+			r_core_anal_path_exists (core, bb->jump, to, bbs, depth - 1) ||
+			r_core_anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1)) {
+		r_list_prepend (bbs, bb);
+		return true;
 	}
-	return list;
+
+	return false;
+}
+
+R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
+	RList *list = r_list_new ();
+	if (r_core_anal_path_exists (core, core->offset, addr, list, 1024))
+		return list;
+	else return NULL;
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
