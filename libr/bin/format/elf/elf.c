@@ -394,7 +394,7 @@ static int init_strtab(ELFOBJ *bin) {
 		return false;
 	}
 	int res = r_buf_read_at (bin->b, bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab,
-		bin->shstrtab_section->sh_size + 1);
+		bin->shstrtab_section->sh_size);
 	if (res < 1) {
 		bprintf ("read (shstrtab) at 0x%" PFMT64x "\n", (ut64) bin->shstrtab_section->sh_offset);
 		R_FREE (bin->shstrtab);
@@ -408,7 +408,7 @@ static int init_strtab(ELFOBJ *bin) {
 	return true;
 }
 
-static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
+static int init_dynamic_section(ELFOBJ *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	Elf_(Dyn) d = { 0 };
 	Elf_(Addr) strtabaddr = 0;
@@ -417,10 +417,11 @@ static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	size_t relentry = 0, strsize = 0;
 	int entries;
 	int i, j, len, r;
-	ut8 sdyn[sizeof (Elf_(Dyn))] = {0};
+	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	ut32 dyn_size = 0;
 
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
+	r_return_val_if_fail (bin, false);
+	if (!bin->phdr || !bin->ehdr.e_phnum) {
 		return false;
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
