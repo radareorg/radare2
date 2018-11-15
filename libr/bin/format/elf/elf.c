@@ -1180,7 +1180,7 @@ static int elf_init(ELFOBJ *bin) {
 			bprintf ("Cannot initialize dynamic strings\n");
 		}
 		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-		if (!init_dynamic_section (bin) && !Elf_ (r_bin_elf_get_static) (bin)) {
+		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_is_static) (bin)) {
 			bprintf ("Cannot initialize dynamic section\n");
 		}
 	}
@@ -1901,7 +1901,7 @@ char *Elf_(r_bin_elf_intrp)(ELFOBJ *bin) {
 	return NULL;
 }
 
-bool Elf_(r_bin_elf_get_static)(ELFOBJ *bin) {
+bool Elf_(r_bin_elf_is_static)(ELFOBJ *bin) {
 	int i;
 	if (!bin->phdr) {
 		return false;
