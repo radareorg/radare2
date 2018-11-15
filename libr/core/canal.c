@@ -2753,6 +2753,15 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	return;
 }
 
+static int cmp_addr(const void *a, const void *b) {
+	const ut64 *_a, *_b;
+
+	_a = a;
+	_b = b;
+
+	return *_a - *_b;
+}
+
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, RList *state) {
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 	RListIter *iter = NULL;
@@ -2760,6 +2769,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	RAnalRef *refi;
 	RAnalFunction *fcn = NULL;
 	RAnalFunction *cur_fcn = NULL;
+	ut64 *frp = R_NEW0(ut64);
 
 	if (depth < 1) {
 		eprintf ("going too deep\n");
@@ -2769,12 +2779,17 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	if (!bb || !bbs) {
 		return false;
 	}
-	r_list_append (state, (void *)from);
+
+	*frp = from;
+	r_list_append (state, (void *)frp);
+
+	ut64 tj = bb->jump;
+	ut64 fj = bb->addr + bb->size;
 
 	// try to find the target in the current function
 	if (r_anal_bb_is_in_offset (bb, to) ||
-			((!r_list_contains (state, (void *)bb->jump) && anal_path_exists (core, bb->jump, to, bbs, depth - 1, state))) ||
-			((!r_list_contains (state, (void *)(bb->addr + bb->size)) && anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1, state)))) {
+			((!r_list_find (state, (void *)&(tj), cmp_addr) && anal_path_exists (core, bb->jump, to, bbs, depth - 1, state))) ||
+			((!r_list_find (state, (void *)&(fj), cmp_addr) && anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1, state)))) {
 		r_list_prepend (bbs, bb);
 		return true;
 	}
@@ -2794,7 +2809,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 			r_list_foreach (refs, iter, refi) {
 				if (refi->type == R_ANAL_REF_TYPE_CALL) {
 					if (r_anal_bb_is_in_offset (bb, refi->at)) {
-						if (refi->at != refi->addr && !r_list_contains (state, (void *)refi->addr) && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state)) {
+						if (refi->at != refi->addr && !r_list_find (state, (void *)&(refi->addr), cmp_addr) && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state)) {
 							r_list_prepend (bbs, bb);
 							return true;
 						}
@@ -2810,11 +2825,10 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *list = r_list_new ();
 	RList *state = r_list_new ();
-	if (!list || !state) {
-		return NULL;
-	}
 
-	if (anal_path_exists (core, core->offset, addr, list, 1024, state)) {
+	r_return_val_if_fail (list && state, NULL);
+
+	if (anal_path_exists (core, core->offset, addr, list, 10240, state)) {
 		r_list_purge (state);
 		free (state);
 		return list;
