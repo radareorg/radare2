@@ -3571,8 +3571,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		locs_it = f->fcn_locs->head;
 	}
 	// XXX: hack must be reviewed/fixed in code analysis
-	if (b) {
-		if (r_list_length (f->bbs) == 1) {
+	if (!b) {
+		if (r_list_length (f->bbs) >= 1) {
 			ut32 fcn_size = r_anal_fcn_realsize (f);
 			b = r_list_get_top (f->bbs);
 			if (b->size > fcn_size) {
