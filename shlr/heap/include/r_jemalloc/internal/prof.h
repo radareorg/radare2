@@ -1,3 +1,4 @@
+#pragma once
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
@@ -206,7 +207,8 @@ struct prof_tdata_s {
 	 * associated with thread-specific prof_tctx_t objects.  Other threads
 	 * may write to prof_tctx_t contents when freeing associated objects.
 	 */
-	ckh_t			bt2tctx;
+	// ckh_t		bt2tctx;
+	uint32_t bt2tctx;
 
 	/* Sampling state. */
 	uint64_t		prng_state;

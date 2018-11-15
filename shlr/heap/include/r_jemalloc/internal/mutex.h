@@ -1,3 +1,4 @@
+#pragma once
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
@@ -29,6 +30,8 @@ typedef struct malloc_mutex_s malloc_mutex_t;
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
+
+#define JEMALLOC_H_STRUCTS 1
 #ifdef JEMALLOC_H_STRUCTS
 
 struct malloc_mutex_s {

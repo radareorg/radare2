@@ -5,6 +5,9 @@
 #undef HEAP32
 #endif
 
+// #include "r_jemalloc/internal/arena.h"
+typedef struct arena_s arena_t;
+
 #undef GH
 #undef GHT
 #undef GHT_MAX

@@ -1,5 +1,7 @@
+#pragma once
 /******************************************************************************/
-#ifdef JEMALLOC_H_TYPES
+#ifndef R_JEMALLOC_NSTIME_H
+#define R_JEMALLOC_NSTIME_H
 
 typedef struct nstime_s nstime_t;
 
@@ -8,14 +10,12 @@ typedef struct nstime_s nstime_t;
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
-#ifdef JEMALLOC_H_STRUCTS
-
 struct nstime_s {
 	uint64_t	ns;
 };
 
-#endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
+#if 0
 #ifdef JEMALLOC_H_EXTERNS
 
 void	nstime_init(nstime_t *time, uint64_t ns);
@@ -39,10 +39,10 @@ extern nstime_update_t *nstime_update;
 bool	nstime_monotonic(void);
 bool	nstime_update(nstime_t *time);
 #endif
+#endif
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_INLINES
 
-#endif /* JEMALLOC_H_INLINES */
-/******************************************************************************/
+#endif

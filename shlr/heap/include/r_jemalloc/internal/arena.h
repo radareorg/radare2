@@ -1,5 +1,21 @@
+#pragma once
 /******************************************************************************/
-#ifdef JEMALLOC_H_TYPES
+#include "nstime.h"
+#define JEMALLOC_H_STRUCTS 1
+#define JEMALLOC_H_TYPES 1
+
+#include "size_classes.h"
+#include "bitmap.h"
+#include "nstime.h"
+#include "ckh.h"
+#include "extent.h"
+#include "mutex.h"
+#include "prof.h"
+
+
+#define JEMALLOC_ARENA_STRUCTS_A 1
+#define JEMALLOC_ARENA_STRUCTS_B 1
+// #define JEMALLOC_ARENA_STRUCTS_B 1
 
 #define	LARGE_MINCLASS		(ZU(1) << LG_LARGE_MINCLASS)
 
@@ -47,9 +63,9 @@ typedef struct arena_bin_s arena_bin_t;
 typedef struct arena_s arena_t;
 typedef struct arena_tdata_s arena_tdata_t;
 
-#endif /* JEMALLOC_H_TYPES */
+// #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
-#ifdef JEMALLOC_H_STRUCTS
+#if 1
 
 #ifdef JEMALLOC_ARENA_STRUCTS_A
 struct arena_run_s {
@@ -1523,6 +1539,4 @@ arena_sdalloc(tsdn_t *tsdn, void *ptr, size_t size, tcache_t *tcache,
 }
 #  endif /* JEMALLOC_ARENA_INLINE_B */
 #endif
-
 #endif /* JEMALLOC_H_INLINES */
-/******************************************************************************/

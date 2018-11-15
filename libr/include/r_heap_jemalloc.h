@@ -2,6 +2,7 @@
 #define R2_HEAP_JEMALLOC_H
 
 #include "r_jemalloc/internal/jemalloc_internal.h"
+#include "r_jemalloc/internal/arena.h"
 
 #define INC_HEAP32 1
 #include "r_heap_jemalloc.h"

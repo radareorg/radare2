@@ -1,16 +1,18 @@
+#pragma once
 /******************************************************************************/
-#ifdef JEMALLOC_H_TYPES
+#if 1
 
 typedef struct extent_node_s extent_node_t;
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
-#ifdef JEMALLOC_H_STRUCTS
+#if 1
 
 /* Tree of extents.  Use accessor functions for en_* fields. */
 struct extent_node_s {
 	/* Arena from which this extent came, if any. */
-	arena_t			*en_arena;
+	// arena_t			*en_arena;
+	struct arena_s			*en_arena;
 
 	/* Pointer to the extent that this tree node is responsible for. */
 	void			*en_addr;
@@ -52,10 +54,11 @@ struct extent_node_s {
 	bool			en_achunk;
 
 	/* Profile counters, used for huge objects. */
-	prof_tctx_t		*en_prof_tctx;
+	// prof_tctx_t		*en_prof_tctx;
+	struct prof_tctx_s		*en_prof_tctx;
 
 	/* Linkage for arena's runs_dirty and chunks_cache rings. */
-	arena_runs_dirty_link_t	rd;
+	// XXX arena_runs_dirty_link_t	rd;
 	qr(extent_node_t)	cc_link;
 
 	union {
