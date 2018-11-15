@@ -500,7 +500,9 @@ int main(int argc, char **argv) {
 
 	if (show_raw || show_hex || show_execute) {
 		if (show_execute) {
-			return r_egg_run (egg);
+			int r = r_egg_run (egg);
+			r_egg_free (egg);
+			return r;
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
@@ -545,6 +547,7 @@ int main(int argc, char **argv) {
 				eprintf ("unknown executable format (%s)\n", format);
 				goto fail;
 			}
+			r_print_free (p);
 		}
 	}
 	r_egg_free (egg);
