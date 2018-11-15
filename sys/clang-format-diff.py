@@ -169,6 +169,8 @@ def main():
         if formatted_code[i].startswith('R_API ') or formatted_code[i].startswith('static ') or formatted_code[i].startswith('R_IPI '):
             formatted_code[i] = formatted_code[i].replace(' (', '(')
 
+        formatted_code[i] = formatted_code[i].replace('Elf_ (', 'Elf_(')
+
         while ' ? ' in formatted_code[i] and ' : ' in formatted_code[i]:
             pos_q = formatted_code[i].index(' ? ')
             pos_c = formatted_code[i].index(' : ')
