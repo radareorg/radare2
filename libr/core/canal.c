@@ -2755,16 +2755,47 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 
 bool r_core_anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth) {
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
+	RListIter *iter = NULL;
+	RList *refs = NULL;
+	RAnalRef *refi;
+	RAnalFunction *fcn = NULL;
+	RAnalFunction *cur_fcn = NULL;
 
 	if (depth < 1) {
+		eprintf("going too deep\n");
 		return false;
 	}
 
+	if (!bb){
+		return false;
+	}
+
+	// try to find the target in the current function
 	if (r_anal_bb_is_in_offset (bb, to) ||
-			r_core_anal_path_exists (core, bb->jump, to, bbs, depth - 1) ||
-			r_core_anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1)) {
+			(r_core_anal_path_exists (core, bb->jump, to, bbs, depth - 1)) ||
+			(r_core_anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1))) {
 		r_list_prepend (bbs, bb);
 		return true;
+	}
+
+	// find our current function
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (r_anal_fcn_in (fcn, from)) {
+			cur_fcn = fcn;
+			break;
+		}
+	}
+
+	// get call refs from current basic block and find a path from them
+	refs = r_anal_fcn_get_refs (core->anal, cur_fcn);
+	r_list_foreach (refs, iter, refi) {
+		if (refi->type == R_ANAL_REF_TYPE_CALL) {
+			if (r_anal_bb_is_in_offset (bb, refi->at))
+				if (refi->at != refi->addr && r_core_anal_path_exists (core, refi->addr, to, bbs, depth - 1)) {
+					r_list_prepend (bbs, bb);
+					return true;
+				}
+		}
 	}
 
 	return false;
@@ -2772,9 +2803,15 @@ bool r_core_anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *list = r_list_new ();
-	if (r_core_anal_path_exists (core, core->offset, addr, list, 1024))
+	if (!list) {
+		return NULL;
+	}
+
+	if (r_core_anal_path_exists (core, core->offset, addr, list, 1024)) {
 		return list;
-	else return NULL;
+    }
+
+	return NULL;
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
