@@ -558,6 +558,9 @@ R_IPI RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) 
 
 R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 	RBinFile *bf = r_bin_file_find_by_fd (bin, bin_fd);
+	if (!bf) {
+		return false;
+	}
 	return r_bin_file_set_cur_binfile (bin, bf);
 }
 
