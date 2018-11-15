@@ -479,7 +479,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				}
 			}
 			struct r_bin_pe_import_t *new_importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t));
-			if(!new_importp) {
+			if (!new_importp) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
