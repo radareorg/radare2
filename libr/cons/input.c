@@ -230,13 +230,6 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	return ch;
 }
 
-static inline void flush_istream(FILE *in_stream) {
-	int ch;
-	while ((ch = fgetc (in_stream)) != '\n' && ch != EOF) {
-		/* discard */ ;
-	}
-}
-
 // XXX no control for max length here?!?!
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
@@ -258,7 +251,6 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	printf ("%s", cons->line->prompt);
 	fflush (stdout);
 	*buf = '\0';
-	flush_istream (cons->fdin);
 	if (color) {
 		const char *p = cons->pal.input;
 		int len = p? strlen (p): 0;
