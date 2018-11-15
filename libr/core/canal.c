@@ -2766,7 +2766,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 		return false;
 	}
 
-	if (!bb){
+	if (!bb || !bbs){
 		return false;
 	}
 
@@ -2787,14 +2787,20 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	}
 
 	// get call refs from current basic block and find a path from them
-	refs = r_anal_fcn_get_refs (core->anal, cur_fcn);
-	r_list_foreach (refs, iter, refi) {
-		if (refi->type == R_ANAL_REF_TYPE_CALL) {
-			if (r_anal_bb_is_in_offset (bb, refi->at))
-				if (refi->at != refi->addr && anal_path_exists (core, refi->addr, to, bbs, depth - 1)) {
-					r_list_prepend (bbs, bb);
-					return true;
+	if (cur_fcn) {
+		refs = r_anal_fcn_get_refs (core->anal, cur_fcn);
+		if (refs) {
+			r_list_foreach (refs, iter, refi) {
+				if (refi->type == R_ANAL_REF_TYPE_CALL) {
+					if (r_anal_bb_is_in_offset (bb, refi->at)) {
+						if (refi->at != refi->addr && anal_path_exists (core, refi->addr, to, bbs, depth - 1)) {
+							r_list_prepend (bbs, bb);
+							return true;
+						}
+
+					}
 				}
+			}
 		}
 	}
 
