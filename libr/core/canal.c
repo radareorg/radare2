@@ -2815,9 +2815,13 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	}
 
 	if (anal_path_exists (core, core->offset, addr, list, 1024, state)) {
+		r_list_purge (state);
+		free (state);
 		return list;
 	}
 
+	r_list_purge (state);
+	free (state);
 	return NULL;
 }
 
