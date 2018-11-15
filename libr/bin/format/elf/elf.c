@@ -30,10 +30,29 @@
 #define READ32(x, i) r_read_ble32((x) + (i), bin->endian); (i) += 4
 #define READ64(x, i) r_read_ble64((x) + (i), bin->endian); (i) += 8
 
+#if R_BIN_ELF64
+#define READWORD(x, i) READ64 (x, i)
+#else
+#define READWORD(x, i) READ32 (x, i)
+#endif
+
 #define BREAD8(x, i) r_read_ble8(r_buf_get_at (x, (i), NULL)); (i) += 1
 #define BREAD16(x, i) r_read_ble16(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 2
 #define BREAD32(x, i) r_read_ble32(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 4
 #define BREAD64(x, i) r_read_ble64(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 8
+
+#if R_BIN_ELF64
+static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
+	return UT64_MUL (r, a, b);
+}
+#else
+static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {
+	ut32 r2 = *r;
+	int res = UT32_MUL (&r2, a, b);
+	*r = r2;
+	return res;
+}
+#endif
 
 #define GROWTH_FACTOR (1.5)
 
@@ -54,11 +73,11 @@ typedef struct reginfo {
 } reginfo_t;
 
 static reginfo_t reginf[ARCH_LEN] = {
-	{160, 0x5c},
-	{216, 0x84},
-	{72, 0x5c},
-	{272, 0x84},
-	{272, 0x84}
+	{ 160, 0x5c },
+	{ 216, 0x84 },
+	{ 72, 0x5c },
+	{ 272, 0x84 },
+	{ 272, 0x84 }
 };
 
 static inline int __strnlen(const char *str, int len) {
@@ -408,125 +427,27 @@ static int init_strtab(ELFOBJ *bin) {
 	return true;
 }
 
-static int init_dynamic_section(ELFOBJ *bin) {
-	Elf_(Dyn) *dyn = NULL;
-	Elf_(Dyn) d = { 0 };
-	Elf_(Addr) strtabaddr = 0;
-	ut64 offset = 0;
-	char *strtab = NULL;
-	size_t relentry = 0, strsize = 0;
-	int entries;
-	int i, j, len, r;
-	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
-	ut32 dyn_size = 0;
-
-	r_return_val_if_fail (bin, false);
-	if (!bin->phdr || !bin->ehdr.e_phnum) {
-		return false;
-	}
+static Elf_(Phdr) *get_dynamic_segment(ELFOBJ *bin) {
+	int i;
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			dyn_size = bin->phdr[i].p_filesz;
-			break;
-		}
-	}
-	if (i == bin->ehdr.e_phnum) {
-		return false;
-	}
-	if (bin->phdr[i].p_filesz > bin->size) {
-		return false;
-	}
-	if (bin->phdr[i].p_offset > bin->size) {
-		return false;
-	}
-	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size) {
-		return false;
-	}
-	for (entries = 0; entries < (dyn_size / sizeof (Elf_(Dyn))); entries++) {
-		j = 0;
-		len = r_buf_read_at (bin->b, bin->phdr[i].p_offset + entries * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
-		if (len < 1) {
-			goto beach;
-		}
-#if R_BIN_ELF64
-		d.d_tag = READ64 (sdyn, j);
-#else
-		d.d_tag = READ32 (sdyn, j);
-#endif
-		if (d.d_tag == DT_NULL) {
-			break;
-		}
-	}
-	if (entries < 1) {
-		return false;
-	}
-	dyn = (Elf_(Dyn) *)calloc (entries, sizeof (Elf_(Dyn)));
-	if (!dyn) {
-		return false;
-	}
-	if (!UT32_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
-		goto beach;
-	}
-	if (!dyn_size) {
-		goto beach;
-	}
-	offset = Elf_(r_bin_elf_v2p) (bin, bin->phdr[i].p_vaddr);
-	if (offset > bin->size || offset + dyn_size > bin->size) {
-		goto beach;
-	}
-	for (i = 0; i < entries; i++) {
-		j = 0;
-		r_buf_read_at (bin->b, offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
-		if (len < 1) {
-			bprintf ("read (dyn)\n");
-		}
-#if R_BIN_ELF64
-		dyn[i].d_tag = READ64 (sdyn, j);
-		dyn[i].d_un.d_ptr = READ64 (sdyn, j);
-#else
-		dyn[i].d_tag = READ32 (sdyn, j);
-		dyn[i].d_un.d_ptr = READ32 (sdyn, j);
-#endif
-
-		switch (dyn[i].d_tag) {
-		case DT_STRTAB: strtabaddr = Elf_(r_bin_elf_v2p) (bin, dyn[i].d_un.d_ptr); break;
-		case DT_STRSZ: strsize = dyn[i].d_un.d_val; break;
-		case DT_PLTREL: bin->is_rela = dyn[i].d_un.d_val; break;
-		case DT_RELAENT: relentry = dyn[i].d_un.d_val; break;
-		default:
-			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
-				bin->version_info[DT_VERSIONTAGIDX (dyn[i].d_tag)] = dyn[i].d_un.d_val;
+			if (bin->phdr[i].p_filesz > bin->size) {
+				return NULL;
 			}
-			break;
+			if (bin->phdr[i].p_offset > bin->size) {
+				return NULL;
+			}
+			if (bin->phdr[i].p_offset + sizeof (Elf_(Dyn)) > bin->size) {
+				return NULL;
+			}
+			return &bin->phdr[i];
 		}
 	}
-	if (!bin->is_rela) {
-		bin->is_rela = sizeof (Elf_(Rela)) == relentry? DT_RELA : DT_REL;
-	}
-	if (!strtabaddr || strtabaddr > bin->size || strsize > ST32_MAX || !strsize || strsize > bin->size) {
-		if (!strtabaddr) {
-			bprintf ("section.shstrtab not found or invalid\n");
-		}
-		goto beach;
-	}
-	strtab = (char *)calloc (1, strsize + 1);
-	if (!strtab) {
-		goto beach;
-	}
-	if (strtabaddr + strsize > bin->size) {
-		free (strtab);
-		goto beach;
-	}
-	r = r_buf_read_at (bin->b, strtabaddr, (ut8 *)strtab, strsize);
-	if (r < 1) {
-		free (strtab);
-		goto beach;
-	}
-	bin->dyn_buf = dyn;
-	bin->dyn_entries = entries;
-	bin->strtab = strtab;
-	bin->strtab_size = strsize;
-	r = Elf_(r_bin_elf_has_relro) (bin);
+	return NULL;
+}
+
+static void init_dynamic_section_sdb(ELFOBJ *bin, Elf_(Addr) strtabaddr, size_t strsize) {
+	int r = Elf_(r_bin_elf_has_relro) (bin);
 	switch (r) {
 	case R_ELF_FULL_RELRO:
 		sdb_set (bin->kv, "elf.relro", "full", 0);
@@ -540,6 +461,116 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	}
 	sdb_num_set (bin->kv, "elf_strtab.offset", strtabaddr, 0);
 	sdb_num_set (bin->kv, "elf_strtab.size", strsize, 0);
+}
+
+static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size) {
+	Elf_(Dyn) d = { 0 };
+	int res;
+
+	for (res = 0; res < (dyn_size / sizeof (Elf_(Dyn))); res++) {
+		ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
+		int j = 0;
+		int len = r_buf_read_at (bin->b, dyn_phdr->p_offset + res * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
+		if (len < 1) {
+			return -1;
+		}
+		d.d_tag = READWORD (sdyn, j);
+		if (d.d_tag == DT_NULL) {
+			return res;
+		}
+	}
+	return -1;
+}
+
+static int init_dynamic_section(ELFOBJ *bin) {
+	Elf_(Dyn) *dyn = NULL;
+	Elf_(Addr) strtabaddr = 0;
+	char *strtab = NULL;
+	size_t relentry = 0, strsize = 0;
+	int entries;
+	int i, len, r;
+	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
+	ut64 dyn_size = 0;
+
+	r_return_val_if_fail (bin, false);
+	if (!bin->phdr || !bin->ehdr.e_phnum) {
+		return false;
+	}
+
+	Elf_(Phdr) *dyn_phdr = get_dynamic_segment (bin);
+	if (!dyn_phdr) {
+		return false;
+	}
+	dyn_size = dyn_phdr->p_filesz;
+
+	entries = compute_dyn_entries (bin, dyn_phdr, dyn_size);
+	if (entries < 0) {
+		return false;
+	}
+
+	dyn = R_NEWS0 (Elf_(Dyn), entries);
+	if (!dyn) {
+		return false;
+	}
+	if (!UTX_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
+		goto beach;
+	}
+	if (!dyn_size || dyn_phdr->p_offset + dyn_size > bin->size) {
+		goto beach;
+	}
+	for (i = 0; i < entries; i++) {
+		int j = 0;
+		len = r_buf_read_at (bin->b, dyn_phdr->p_offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
+		if (len < 1) {
+			bprintf ("read (dyn)\n");
+			goto beach;
+		}
+		dyn[i].d_tag = READWORD (sdyn, j);
+		dyn[i].d_un.d_ptr = READWORD (sdyn, j);
+
+		switch (dyn[i].d_tag) {
+		case DT_STRTAB:
+			strtabaddr = Elf_(r_bin_elf_v2p_new) (bin, dyn[i].d_un.d_ptr);
+			break;
+		case DT_STRSZ:
+			strsize = dyn[i].d_un.d_val;
+			break;
+		case DT_PLTREL:
+			bin->is_rela = dyn[i].d_un.d_val;
+			break;
+		case DT_RELAENT:
+			relentry = dyn[i].d_un.d_val;
+			break;
+		default:
+			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
+				bin->version_info[DT_VERSIONTAGIDX (dyn[i].d_tag)] = dyn[i].d_un.d_val;
+			}
+			break;
+		}
+	}
+	if (!bin->is_rela) {
+		bin->is_rela = sizeof (Elf_(Rela)) == relentry? DT_RELA: DT_REL;
+	}
+	if (strtabaddr == UT64_MAX || strtabaddr > bin->size || strsize > ST32_MAX || !strsize || strsize > bin->size || strtabaddr + strsize > bin->size) {
+		if (!strtabaddr) {
+			bprintf ("DT_STRTAB not found or invalid\n");
+		}
+		goto beach;
+	}
+	strtab = (char *)calloc (1, strsize + 1);
+	if (!strtab) {
+		goto beach;
+	}
+	r = r_buf_read_at (bin->b, strtabaddr, (ut8 *)strtab, strsize);
+	if (r < 1) {
+		free (strtab);
+		goto beach;
+	}
+	bin->dyn_buf = dyn;
+	bin->dyn_entries = entries;
+	bin->strtab = strtab;
+	bin->strtab_size = strsize;
+	init_dynamic_section_sdb (bin, strtabaddr, strsize);
 	return true;
 beach:
 	free (dyn);
