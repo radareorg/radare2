@@ -3120,11 +3120,17 @@ R_API void r_core_visual_title(RCore *core, int color) {
 				core->offset, core->print->cur);
 		} else {
 			if (core->print->cur_enabled) {
-				title = r_str_newf ("[0x%08"PFMT64x " %s%d (0x%x:%d=%d)]> %s %s\n",
-					core->offset, pcs, core->blocksize,
-					core->print->cur, core->print->ocur, core->print->ocur == -1 ?
-					1: R_ABS (core->print->cur - core->print->ocur) + 1,
-					bar, pos);
+				if (core->print->ocur == -1) {
+					title = r_str_newf ("[0x%08"PFMT64x " *0x%08"PFMT64x" ($$+0x%x)]> %s %s\n",
+						core->offset, core->offset + core->print->cur,
+						core->print->cur,
+						bar, pos);
+				} else {
+					title = r_str_newf ("[0x%08"PFMT64x " 0x%08"PFMT64x" [0x%x..0x%x] %d]> %s %s\n",
+						core->offset, core->offset + core->print->cur,
+						core->print->ocur, core->print->cur, R_ABS (core->print->cur - core->print->ocur) + 1,
+						bar, pos);
+				}
 			} else {
 				title = r_str_newf ("[0x%08"PFMT64x " %s%d %s]> %s %s\n",
 					core->offset, pcs, core->blocksize, filename, bar, pos);
