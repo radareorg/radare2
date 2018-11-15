@@ -5088,32 +5088,14 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	ut64 from , to;
 	char *arg = strchr (input, ' ');
 	r_cons_break_push (NULL, NULL);
-#if 0
-	ls_foreach (core->io->sections, iter, s) {
-		/* is executable */
-		if (!(s->flags & R_PERM_X)) {
-			continue;
-		}
-		min = s->vaddr;
-		max = s->vaddr + s->vsize;
-		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
-		if (r_cons_is_breaked ()) {
-			goto ctrl_c;
-		}
-	}
-	if (ls_empty (core->io->sections)) {
-		min = core->offset;
-		max = 0xffff + min;
-		r_core_cmdf (core, "abb%s 0x%08"PFMT64x" @ 0x%08"PFMT64x, input, (max - min), min);
-		if (r_cons_is_breaked ()) {
-			goto ctrl_c;
-		}
-	}
-#endif
 	if (!arg) {
 		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		RListIter *iter;
 		RIOMap* map;
+		if (!list) {
+			R_LOG_WARN ("Cannot get analysis boundaries\n");
+			goto ctrl_c;
+		}
 		r_list_foreach (list, iter, map) {
 			from = map->itv.addr;
 			to = r_itv_end (map->itv);
@@ -5249,6 +5231,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 			RIOMap *m = R_NEW0 (RIOMap);
 			m->itv.addr = addr;
 			m->itv.size = len;
+			ranges = r_list_newf ((RListFree)free);
 			r_list_append (ranges, m);
 		} else {
 			ranges = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
@@ -6802,6 +6785,10 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 			RListIter *iter;
 			RIOMap* map;
+			if (!list) {
+				R_LOG_WARN ("Cannot get anal boundaries\n");
+				return 0;
+			}
 			r_list_foreach (list, iter, map) {
 				from = map->itv.addr;
 				to = r_itv_end (map->itv);
@@ -7022,6 +7009,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
 		RListIter *iter;
 		RIOMap *map;
+		if (!list) {
+			R_LOG_WARN ("Cannot get anal boundaries\n");
+			goto beach;
+		}
 		r_list_foreach (list, iter, map) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -7034,6 +7025,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		r_list_free (list);
 	} else {
 		RList *list = r_core_get_boundaries_prot (core, 0, NULL, "anal");
+		if (!list) {
+			R_LOG_WARN ("Cannot get anal boundaries\n");
+			goto beach;
+		}
 		RListIter *iter, *iter2;
 		RIOMap *map, *map2;
 		ut64 from = UT64_MAX;
@@ -7066,6 +7061,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	}
+beach:
 	r_cons_break_pop ();
 	// end
 	seti ("search.align", o_align);
@@ -7284,6 +7280,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		RListIter *iter;
 		RIOMap *map;
 		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
+		if (!list) {
+			R_LOG_WARN ("Cannot get anal boundaries\n");
+			break;
+		}
 		r_list_foreach (list, iter, map) {
 			r_core_seek (core, map->itv.addr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
@@ -7313,6 +7313,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			RIOMap *map;
 			RListIter *iter;
 			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
+			if (!list) {
+				R_LOG_WARN ("Cannot get anal boundaries\n");
+				break;
+			}
 			r_list_foreach (list, iter, map) {
 				r_core_seek (core, map->itv.addr, 1);
 				r_core_anal_esil (core, "$SS", NULL);

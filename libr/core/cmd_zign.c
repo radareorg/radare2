@@ -664,6 +664,10 @@ static bool search(RCore *core, bool rad) {
 	// Bytes search
 	if (useBytes) {
 		list = r_core_get_boundaries_prot (core, -1, mode, "search");
+		if (!list) {
+			R_LOG_WARN ("Cannot get boundaries\n");
+			return false;
+		}
 		r_list_foreach (list, iter, map) {
 			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 			retval &= searchRange (core, map->itv.addr, r_itv_end (map->itv), rad, &bytes_search_ctx);

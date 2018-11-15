@@ -340,6 +340,11 @@ R_API int r_core_search_preludes(RCore *core) {
 	RListIter *iter;
 	RIOMap *p;
 
+	if (!list) {
+		R_LOG_WARN ("Cannot get search boundaries\n");
+		return -1;
+	}
+
 	int fc0 = count_functions (core);
 	r_list_foreach (list, iter, p) {
 		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
