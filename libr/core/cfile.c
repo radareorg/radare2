@@ -96,7 +96,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		}
 		// close old file
 	} else if (ofile) {
-		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
+		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
 			" attempting to open read-only.\n", path, perm);
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_PERM_R, addr);
