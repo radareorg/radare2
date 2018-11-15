@@ -355,7 +355,9 @@ R_API bool r_meta_deserialize_val(RAnalMetaItem *it, int type, ut64 from, const 
 				it->str = v3;
 			}
 		}
-		it->str = (char *)sdb_decode ((const char*)it->str + 1, 0);
+		char *temp = (char *)sdb_decode ((const char*)it->str + 1, 0);
+		free (it->str);
+		it->str = temp;
 	}
 	return true;
 }
