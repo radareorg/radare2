@@ -1859,6 +1859,40 @@ static void applyDisMode(RCore *core) {
 	}
 }
 
+static bool isNumber (RCore *core, int ch) {
+	if (ch > '0' && ch <= '9') {
+		return true;
+	}
+	if (core->print->cur_enabled) {
+		return ch == '0';
+	}
+	return false;
+}
+
+static char numbuf[32] = {0};
+static int numbuf_i = 0;
+
+static void numbuf_append(int ch) {
+	if (numbuf_i >= sizeof (numbuf) - 1) {
+		numbuf_i = 0;
+	}
+	numbuf[numbuf_i++] = ch;
+	numbuf[numbuf_i] = 0;
+}
+
+static int numbuf_pull() {
+	int distance = 1;
+	if (numbuf_i) {
+		numbuf[numbuf_i] = 0;
+		distance = atoi (numbuf);
+		if (!distance) {
+			distance = 1;
+		}
+		numbuf_i = 0;
+	}
+	return distance;
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -1884,16 +1918,22 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 
 	// do we need hotkeys for data references? not only calls?
 	// '0' is handled to seek at the beginning of the function
-	if (ch > '0' && ch <= '9') {
-		r_core_visual_jump (core, ch);
+	// unless the cursor is set, then, the 0 is captured here
+	if (isNumber (core, ch)) {
+		// only in disasm and debug prints..
+		if (isDisasmPrint (core->printidx)) {
+			r_core_visual_jump (core, ch);
+		} else {
+			numbuf_append (ch);
+		}
 	} else {
 		switch (ch) {
 #if __WINDOWS__ && !__CYGWIN__
 		case 0xf5:
-			SetWindow (81,25);
+			SetWindow (81, 25);
 			break;
 		case 0xcf5:
-			SetWindow (81,40);
+			SetWindow (81, 40);
 			break;
 #endif
 		case 0x0d: // "enter" "\\n" "newline"
@@ -2340,36 +2380,55 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'h':
-			if (core->print->cur_enabled) {
-				cursor_left (core, false);
-			} else {
-				r_core_seek_delta (core, -1);
-			}
-			break;
-		case 'H':
-			if (core->print->cur_enabled) {
-				cursor_left (core, true);
-			} else {
-				r_core_seek_delta (core, -2);
-			}
-			break;
 		case 'l':
-			if (core->print->cur_enabled) {
-				cursor_right (core, false);
-			} else {
-				r_core_seek_delta (core, 1);
+			{
+				int distance = numbuf_pull ();
+				if (core->print->cur_enabled) {
+					if (ch == 'h') {
+						for (i = 0; i < distance; i++) {
+							cursor_left (core, false);
+						}
+					} else {
+						for (i = 0; i < distance; i++) {
+							cursor_right (core, false);
+						}
+					}
+				} else {
+					if (ch == 'h') {
+						distance = -distance;
+					}
+					r_core_seek_delta (core, distance);
+				}
 			}
 			break;
 		case 'L':
-			if (core->print->cur_enabled) {
-				cursor_right (core, true);
-			} else {
-				r_core_seek_delta (core, 2);
+		case 'H':
+			{
+				int distance = numbuf_pull ();
+				if (core->print->cur_enabled) {
+					if (ch == 'H') {
+						for (i = 0; i < distance; i++) {
+							cursor_left (core, true);
+						}
+					} else {
+						for (i = 0; i < distance; i++) {
+							cursor_right (core, true);
+						}
+					}
+				} else {
+					if (ch == 'H') {
+						distance = -distance;
+					}
+					r_core_seek_delta (core, distance * 2);
+				}
 			}
 			break;
 		case 'j':
 			if (core->print->cur_enabled) {
-				cursor_nextrow (core, false);
+				int distance = numbuf_pull ();
+				for (i = 0; i < distance; i++) {
+					cursor_nextrow (core, false);
+				}
 			} else {
 				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
 					r_core_cmd0 (core, "sn");
@@ -2399,7 +2458,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'J':
 			if (core->print->cur_enabled) {
-				cursor_nextrow (core, true);
+				int distance = numbuf_pull ();
+				for (i = 0; i < distance; i++) {
+					cursor_nextrow (core, true);
+				}
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
 					ut64 addr = core->print->screen_bounds;
@@ -2414,7 +2476,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'k':
 			if (core->print->cur_enabled) {
-				cursor_prevrow (core, false);
+				int distance = numbuf_pull ();
+				for (i = 0; i < distance; i++) {
+					cursor_prevrow (core, false);
+				}
 			} else {
 				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
 					r_core_cmd0 (core, "sp");
@@ -2434,7 +2499,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'K':
 			if (core->print->cur_enabled) {
-				cursor_prevrow (core, true);
+				int distance = numbuf_pull ();
+				for (i = 0; i < distance; i++) {
+					cursor_prevrow (core, true);
+				}
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
 					int delta = (core->print->screen_bounds - core->offset);
@@ -2862,6 +2930,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			setcursor (core, false);
 			return false;
 		}
+		numbuf_i = 0;
 	}
 	r_core_block_read (core);
 	return true;
