@@ -39,7 +39,7 @@ typedef struct r_bin_elf_symbol_t {
 	int last;
 	bool in_shdr;
 	bool is_sht_null;
-	bool is_value;  /* when true, sym has no paddr, only vaddr */
+	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {

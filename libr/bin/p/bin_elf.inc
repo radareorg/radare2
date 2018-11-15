@@ -501,7 +501,7 @@ static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 				  const char *namefmt) {
 	ut64 paddr, vaddr;
 	RBinSymbol *ptr = NULL;
-	if (symbol->is_value) {
+	if (symbol->is_vaddr) {
 		paddr = UT64_MAX;
 		vaddr = symbol->offset;
 	} else {
