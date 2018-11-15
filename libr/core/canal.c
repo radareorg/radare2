@@ -2762,18 +2762,18 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	RAnalFunction *cur_fcn = NULL;
 
 	if (depth < 1) {
-		eprintf("going too deep\n");
+		eprintf ("going too deep\n");
 		return false;
 	}
 
-	if (!bb || !bbs){
+	if (!bb || !bbs) {
 		return false;
 	}
 
 	// try to find the target in the current function
 	if (r_anal_bb_is_in_offset (bb, to) ||
-			(anal_path_exists (core, bb->jump, to, bbs, depth - 1)) ||
-			(anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1))) {
+		(anal_path_exists (core, bb->jump, to, bbs, depth - 1)) ||
+		(anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1))) {
 		r_list_prepend (bbs, bb);
 		return true;
 	}
@@ -2797,7 +2797,6 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 							r_list_prepend (bbs, bb);
 							return true;
 						}
-
 					}
 				}
 			}
