@@ -413,8 +413,8 @@ static int rabin_do_operation(const char *op) {
 			if (cur->xtr_data) {
 				// load the first one
 				RBinXtrData *xtr_data = r_list_get_n (cur->xtr_data, 0);
-				if (xtr_data && !r_bin_file_object_new_from_xtr_data (bin, cur,
-						  UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
+				if (xtr_data && !xtr_data->loaded && !r_bin_file_object_new_from_xtr_data (bin, cur,
+					UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
 					break;
 				}
 			}
