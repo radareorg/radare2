@@ -478,10 +478,12 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					eprintf ("Import name '%s' has been truncated.\n", import_name);
 				}
 			}
-			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t)))) {
+			struct r_bin_pe_import_t *new_importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t));
+			if(!new_importp) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
+			*importp = new_importp;
 			memcpy ((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
 			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (bin, FirstThunk + i * sizeof (PE_DWord));
@@ -640,6 +642,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
+	struct r_bin_pe_export_t* new_exports = NULL;
 	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
 	int bufsz, i, shsz;
 	SymbolRecord* sr;
@@ -668,11 +671,13 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	if (exports) {
 		int osz = sz;
 		sz += exports_sz;
-		exports = realloc (exports, sz + export_t_sz);
-		if (!exports) {
+		new_exports = realloc (exports, sz + export_t_sz);
+		if (!new_exports) {
 			free (buf);
 			return NULL;
 		}
+		exports = new_exports;
+		new_exports = NULL;
 		exp = (struct r_bin_pe_export_t*) (((const ut8*) exports) + osz);
 	} else {
 		sz = exports_sz;
@@ -3001,6 +3006,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 		return NULL;
 	}
 	struct r_bin_pe_lib_t* libs = NULL;
+	struct r_bin_pe_lib_t* new_libs = NULL;
 	PE_(image_import_directory) * curr_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
@@ -3048,11 +3054,13 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 				sdb_ht_insert (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
-					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
-					if (!libs) {
+					new_libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
+					if (!new_libs) {
 						r_sys_perror ("realloc (libs)");
 						goto out_error;
 					}
+					libs = new_libs;
+					new_libs = NULL;
 					max_libs *= 2;
 				}
 			}
@@ -3082,12 +3090,13 @@ next:
 				sdb_ht_insert (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
-					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
-					if (!libs) {
-						sdb_ht_free (lib_map);
+					new_libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
+					if (!new_libs) {
 						r_sys_perror ("realloc (libs)");
-						return NULL;
+						goto out_error;
 					}
+					libs = new_libs;
+					new_libs = NULL;
 					max_libs *= 2;
 				}
 			}
