@@ -10,7 +10,6 @@ static const char *help_msg_a[] = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[b] [addr]", "analyze block at given address",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
-	"abt", " [addr]", "find paths in the bb function graph from current offset to given address",
 	"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
@@ -71,6 +70,7 @@ static const char *help_msg_ab[] = {
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
+	"abt", " [addr]", "find paths in the bb function graph from current offset to given address",
 	NULL
 };
 
