@@ -2753,7 +2753,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	return;
 }
 
-static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth) {
+static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, RList *state) {
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 	RListIter *iter = NULL;
 	RList *refs = NULL;
@@ -2769,11 +2769,12 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	if (!bb || !bbs) {
 		return false;
 	}
+	r_list_append(state, from);
 
 	// try to find the target in the current function
 	if (r_anal_bb_is_in_offset (bb, to) ||
-		(anal_path_exists (core, bb->jump, to, bbs, depth - 1)) ||
-		(anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1))) {
+			((!r_list_contains(state, bb->jump) && anal_path_exists (core, bb->jump, to, bbs, depth - 1, state))) ||
+			((!r_list_contains(state, bb->addr + bb->size) && anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1, state)))) {
 		r_list_prepend (bbs, bb);
 		return true;
 	}
@@ -2793,7 +2794,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 			r_list_foreach (refs, iter, refi) {
 				if (refi->type == R_ANAL_REF_TYPE_CALL) {
 					if (r_anal_bb_is_in_offset (bb, refi->at)) {
-						if (refi->at != refi->addr && anal_path_exists (core, refi->addr, to, bbs, depth - 1)) {
+						if (refi->at != refi->addr && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state)) {
 							r_list_prepend (bbs, bb);
 							return true;
 						}
@@ -2808,13 +2809,14 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *list = r_list_new ();
+	RList *state = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
 
-	if (anal_path_exists (core, core->offset, addr, list, 1024)) {
+	if (anal_path_exists (core, core->offset, addr, list, 1024, state)) {
 		return list;
-    }
+	}
 
 	return NULL;
 }
