@@ -1348,7 +1348,9 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-			r_list_purge (core->files);
+			if (core->files) {
+				r_list_purge (core->files);
+			}
 			break;
 		case '-': // "o--"
 			eprintf ("All core files, io, anal and flags info purged.\n");
