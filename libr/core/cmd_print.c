@@ -2494,6 +2494,10 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	ut64 to = 0;
 	{
 		RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
+		if (!list) {
+			R_LOG_WARN ("Couldn't get boundaries\n");
+			return 1;
+		}
 		RIOMap *map = r_list_first (list);
 		if (map) {
 			from = map->itv.addr;
