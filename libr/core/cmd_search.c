@@ -341,6 +341,10 @@ R_API int r_core_search_preludes(RCore *core) {
 	RListIter *iter;
 	RIOMap *p;
 
+	if (!list) {
+		return -1;
+	}
+
 	int fc0 = count_functions (core);
 	r_list_foreach (list, iter, p) {
 		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
@@ -619,7 +623,13 @@ static bool maskMatches(int perm, int mask, bool only) {
 
 // TODO(maskray) returns RList<RInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode, const char *prefix) {
+	r_return_val_if_fail (core, NULL);
+
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
+	if (!list) {
+		return NULL;
+	}
+
 	char bound_in[32];
 	char bound_from[32];
 	char bound_to[32];
@@ -629,21 +639,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 	const ut64 search_from = r_config_get_i (core->config, bound_from),
 	      search_to = r_config_get_i (core->config, bound_to);
 	const RInterval search_itv = {search_from, search_to - search_from};
-#if 0
-	int fd = -1;
-	if (core && core->io && core->io->cur) {
-		fd = core->io->cur->fd;
-	}
-#endif
 	if (!mode) {
 		mode = r_config_get (core->config, bound_in);
 	}
 	if (perm == -1) {
 		perm = R_PERM_RWX;
-	}
-	if (!core) {
-		r_list_free (list);
-		return NULL;
 	}
 	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
@@ -900,10 +900,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			}
 			append_bound (list, core->io, search_itv, from, to - from, 5);
 		}
-	}
-	if (r_list_empty (list)) {
-		r_list_free (list);
-		list = NULL;
 	}
 	return list;
 }
