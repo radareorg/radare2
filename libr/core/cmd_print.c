@@ -3572,6 +3572,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	RAnalBlock *b = NULL;
 	RAnalFunction *tmp_func;
 	RListIter *locs_it = NULL;
+	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
+	r_config_set_i (core->config, "asm.bb.middle", false);
 
 	if (f->fcn_locs) {
 		locs_it = f->fcn_locs->head;
@@ -3722,6 +3724,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		core->anal->stackptr = saved_stackptr;
 		r_config_set_i (core->config, "asm.lines.bb", asm_lines);
 	}
+	r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
 }
 
 static inline char cmd_pxb_p(char input) {
