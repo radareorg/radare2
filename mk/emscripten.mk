@@ -1,7 +1,7 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 EXT_EXE=.js
-EXT_SO=.js
+EXT_SO=.bc
 EXT_AR=a
 CC=emcc
 AR=emar
@@ -9,7 +9,8 @@ LINK=
 RANLIB=emranlib
 ONELIB=0
 CC_AR=emar q ${LIBAR}
-PARTIALLD=emld -r
+#PARTIALLD=emld -r
+PARTIALLD=emcc
 PIC_CFLAGS=-fPIC
 CFLAGS+=-MD
 CFLAGS_INCLUDE=-I

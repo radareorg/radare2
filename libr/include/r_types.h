@@ -452,6 +452,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS R_SYS_BITS_32
 #define R_SYS_ENDIAN 0
+#elif __EMSCRIPTEN__
+#define R_SYS_ARCH "wasm"
+#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+#define R_SYS_ENDIAN 0
 #elif __x86_64__
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)

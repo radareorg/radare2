@@ -13,27 +13,35 @@ S=$
 B=`
 PWD=$(shell pwd)
 
-LIBS0=util hash
-LIBS1=socket reg cons magic bp search config
-LIBS2=syscall lang io crypto flag
-LIBS3=fs anal bin parse
-LIBS4=asm
-LIBS5=egg
-LIBS6=debug
-LIBS7=core
+include libs.mk
 
-LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
 .PHONY: $(LIBS)
 
 all:
+ifneq ($(LIBS0),)
 	$(MAKE) $(LIBS0)
+endif
+ifneq ($(LIBS1),)
 	$(MAKE) $(LIBS1)
+endif
+ifneq ($(LIBS2),)
 	$(MAKE) $(LIBS2)
+endif
+ifneq ($(LIBS3),)
 	$(MAKE) $(LIBS3)
+endif
+ifneq ($(LIBS4),)
 	$(MAKE) $(LIBS4)
+endif
+ifneq ($(LIBS5),)
 	$(MAKE) $(LIBS5)
+endif
+ifneq ($(LIBS6),)
 	$(MAKE) $(LIBS6)
+endif
+ifneq ($(LIBS7),)
 	$(MAKE) $(LIBS7)
+endif
 ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
 	$(MAKE) libr.${EXT_SO}
