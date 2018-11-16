@@ -109,7 +109,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		break;
 	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar ();
-#if defined(__HAIKU__)	
+#if defined(__HAIKU__)
 		/* Haiku don use the '[' char for funcion keys */
 		if (ch > 'O') {/* only in f1..f12 funcion keys */
 			ch = 0xf1 + (ch&0xf);
@@ -189,23 +189,23 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			case '3': ch = R_CONS_KEY_F3; break;
 			case '4': ch = R_CONS_KEY_F4; break;
 */
-			case '5': 
+			case '5':
 				r_cons_readchar ();
 				ch = 0xf5;
 				break;
-			case '6': 
+			case '6':
 				r_cons_readchar ();
 				ch = 0xf7;
 				break;
-			case '7': 
+			case '7':
 				r_cons_readchar ();
 				ch = 0xf6;
 				break;
-			case '8': 
+			case '8':
 				r_cons_readchar ();
 				ch = 0xf7;
 				break;
-			case '9': 
+			case '9':
 				r_cons_readchar ();
 				ch = 0xf8;
 				break;
@@ -251,7 +251,6 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	printf ("%s", cons->line->prompt);
 	fflush (stdout);
 	*buf = '\0';
-	fflush (cons->fdin);
 	if (color) {
 		const char *p = cons->pal.input;
 		int len = p? strlen (p): 0;

@@ -1256,6 +1256,10 @@ static int cmd_write(void *data, const char *input) {
 					str++;
 				}
 				if (*str == 'f') {
+					if (str[1] == '?') {
+						r_core_cmd_help (core, help_msg_wt);
+						return 0;
+					}
 					const char *prefix = r_str_trim_ro (str + 1);
 					if (!*prefix) {
 						prefix = "dump";
@@ -1263,6 +1267,10 @@ static int cmd_write(void *data, const char *input) {
 					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
 					if (*str) {
+						if (str[1] == '?') {
+							r_core_cmd_help (core, help_msg_wt);
+							return 0;
+						}
 						filename = r_str_trim_ro (str);
 					} else {
 						filename = "";

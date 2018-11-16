@@ -2494,6 +2494,9 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	ut64 to = 0;
 	{
 		RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
+		if (!list) {
+			return 1;
+		}
 		RIOMap *map = r_list_first (list);
 		if (map) {
 			from = map->itv.addr;
@@ -2737,6 +2740,10 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	RListIter *iter;
 	ut64 from = 0, to = 0;
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
+	if (!list) {
+		goto beach;
+	}
+
 	ut64 blocksize = 0;
 	int mode = 'b'; // e, p, b, ...
 	int submode = 0; // q, j, ...
@@ -2783,9 +2790,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	if (list) {
-		RListIter *iter1 = list->head;
-		RIOMap* map1 = iter1->data;
+	RIOMap* map1 = r_list_first (list);
+	if (map1) {
 		from = map1->itv.addr;
 		r_list_foreach (list, iter, map) {
 			to = r_itv_end (map->itv);
@@ -3566,6 +3572,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	RAnalBlock *b = NULL;
 	RAnalFunction *tmp_func;
 	RListIter *locs_it = NULL;
+	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
+	r_config_set_i (core->config, "asm.bb.middle", false);
 
 	if (f->fcn_locs) {
 		locs_it = f->fcn_locs->head;
@@ -3716,6 +3724,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		core->anal->stackptr = saved_stackptr;
 		r_config_set_i (core->config, "asm.lines.bb", asm_lines);
 	}
+	r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
 }
 
 static inline char cmd_pxb_p(char input) {
@@ -5868,7 +5877,7 @@ static int cmd_print(void *data, const char *input) {
 			RIOMap* map;
 			RListIter *iter;
 			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
-			if (list) {
+			if (list && r_list_length (list) > 0) {
 				RListIter *iter1 = list->head;
 				RIOMap* map1 = iter1->data;
 				from = map1->itv.addr;
