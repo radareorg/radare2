@@ -2566,7 +2566,20 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	return ret;
 }
 
-static RBinElfSection* get_sections_from_phdr(ELFOBJ *bin) {
+static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, int *i, const char *name, ut64 addr, ut64 sz) {
+	if (addr == UT64_MAX) {
+		return;
+	}
+
+	ret[*i].offset = Elf_(r_bin_elf_v2p) (bin, addr);
+	ret[*i].rva = addr;
+	ret[*i].size = sz;
+	strcpy (ret[*i].name, name);
+	ret[*i].last = 0;
+	*i = *i + 1;
+}
+
+static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	RBinElfSection *ret;
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
@@ -2610,40 +2623,11 @@ static RBinElfSection* get_sections_from_phdr(ELFOBJ *bin) {
 		return NULL;
 	}
 	i = 0;
-	if (reldyn) {
-		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, reldyn);
-		ret[i].rva = reldyn;
-		ret[i].size = reldynsz;
-		strcpy (ret[i].name, ".rel.dyn");
-		ret[i].last = 0;
-		i++;
-	}
-	if (relava) {
-		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, relava);
-		ret[i].rva = relava;
-		ret[i].size = pltgotsz;
-		strcpy (ret[i].name, ".rela.plt");
-		ret[i].last = 0;
-		i++;
-	}
-	if (relva) {
-		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, relva);
-		ret[i].rva = relva;
-		ret[i].size = relasz;
-		strcpy (ret[i].name, ".rel.plt");
-		ret[i].last = 0;
-		i++;
-	}
-	if (pltgotva) {
-		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, pltgotva);
-		ret[i].rva = pltgotva;
-		ret[i].size = pltgotsz;
-		strcpy (ret[i].name, ".got.plt");
-		ret[i].last = 0;
-		i++;
-	}
+	create_section_from_phdr (bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
+	create_section_from_phdr (bin, ret, &i, ".rela.plt", relava, pltgotsz);
+	create_section_from_phdr (bin, ret, &i, ".rel.plt", relva, relasz);
+	create_section_from_phdr (bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
 	ret[i].last = 1;
-
 	return ret;
 }
 
