@@ -2651,9 +2651,8 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	RBinElfSection *ret = NULL;
 	char unknown_s[20], invalid_s[20];
 	int i, nidx, unknown_c=0, invalid_c=0;
-	if (!bin) {
-		return NULL;
-	}
+
+	r_return_val_if_fail (bin, NULL);
 	if (bin->g_sections) {
 		return bin->g_sections;
 	}
@@ -2672,34 +2671,30 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 		ret[i].link = bin->shdr[i].sh_link;
 		ret[i].info = bin->shdr[i].sh_info;
 		ret[i].type = bin->shdr[i].sh_type;
-		if (bin->ehdr.e_type == ET_REL)	{
+		if (bin->ehdr.e_type == ET_REL) {
 			ret[i].rva = bin->baddr + bin->shdr[i].sh_offset;
 		} else {
 			ret[i].rva = bin->shdr[i].sh_addr;
 		}
-		nidx = bin->shdr[i].sh_name;
-#define SHNAME (int)bin->shdr[i].sh_name
-#define SHNLEN (ELF_STRING_LENGTH - 4)
-#define SHSIZE (int)bin->shstrtab_size
+
+		const int SHNAME = (int)bin->shdr[i].sh_name;
+		const int SHSIZE = (int)bin->shstrtab_size;
+		nidx = SHNAME;
 		if (nidx < 0 || !bin->shstrtab_section || !bin->shstrtab_size || nidx > bin->shstrtab_size) {
-			snprintf (invalid_s, sizeof (invalid_s) - 4, "invalid%d", invalid_c);
-			strncpy (ret[i].name, invalid_s, SHNLEN);
+			snprintf (invalid_s, sizeof (invalid_s), "invalid%d", invalid_c);
+			strncpy (ret[i].name, invalid_s, sizeof (ret[i].name) - 1);
 			invalid_c++;
+		} else if (bin->shstrtab && (SHNAME > 0) && (SHNAME < SHSIZE)) {
+			strncpy (ret[i].name, &bin->shstrtab[SHNAME], sizeof (ret[i].name) - 1);
+		} else if (bin->shdr[i].sh_type == SHT_NULL) {
+			//to follow the same behaviour as readelf
+			ret[i].name[0] = '\0';
 		} else {
-			if (bin->shstrtab && (SHNAME > 0) && (SHNAME < SHSIZE)) {
-				strncpy (ret[i].name, &bin->shstrtab[SHNAME], SHNLEN);
-			} else {
-				if (bin->shdr[i].sh_type == SHT_NULL) {
-					//to follow the same behaviour as readelf
-					strncpy (ret[i].name, "", sizeof (ret[i].name) - 4);
-				} else {
-					snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
-					strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
-					unknown_c++;
-				}
-			}
+			snprintf (unknown_s, sizeof (unknown_s), "unknown%d", unknown_c);
+			strncpy (ret[i].name, unknown_s, sizeof (ret[i].name) - 1);
+			unknown_c++;
 		}
-		ret[i].name[ELF_STRING_LENGTH-2] = '\0';
+		ret[i].name[ELF_STRING_LENGTH - 1] = '\0';
 		ret[i].last = 0;
 	}
 	ret[i].last = 1;
