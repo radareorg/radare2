@@ -1210,46 +1210,41 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 't': {
 		if (!input[1] || input[1]=='j') {
-                        int flag = 0;
-                        char *namejson = NULL;
-                        if(input[1]=='j') {
-                                r_cons_print ("{");
-                        }
-                        char *name = NULL;
-                        SdbKv *kv;
-                        SdbListIter *iter;
-                        SdbList *l = sdb_foreach_list (TDB, true);
-                        ls_foreach (l, iter, kv) {
-                                if (!strcmp (sdbkv_value (kv), "typedef")) {
-                                        if (!name || strcmp (sdbkv_value (kv), name)) {
-                                                free (name);
-                                                name = strdup (sdbkv_key (kv));
-                                                if(!input[1])
-                                                        r_cons_println (name);
-                                                else {
-                                                        if(flag==1) {
-                                                                r_cons_print(",");
-                                                        }
-                                                        r_cons_print("\"");
-                                                        r_cons_printf("%s", name);
-                                                        r_cons_print("\":\"");
-                                                        const char *q = sdb_fmt ("typedef.%s", name);
-                                                        const char *res = sdb_const_get (TDB, q, 0);
-                                                        r_cons_print (res);
-                                                        r_cons_print("\"");
-                                                        flag = 1;
-                                                }
-                                        }
-                                }
-                        }
-                        if(input[1]=='j') {
-                                r_cons_println ("}");
-                        }
-                                free (name);
-                                free(namejson);
-                                ls_free (l);
-                        break;
+        	bool json = false;
+            if (input[1]=='j') {
+				r_cons_print ("{");
+            }
+            char *name = NULL;
+            SdbKv *kv;
+            SdbListIter *iter;
+            SdbList *l = sdb_foreach_list (TDB, true);
+            ls_foreach (l, iter, kv) {
+            if (!strcmp (sdbkv_value (kv), "typedef")) {
+                if (!name || strcmp (sdbkv_value (kv), name)) {
+                    free (name);
+                    name = strdup (sdbkv_key (kv));
+                    if (!input[1]) {
+						r_cons_println (name);
+					}
+                    else {
+                        if (json) {
+                            r_cons_print(",");
+                        }                                                        
+                    	const char *q = sdb_fmt ("typedef.%s", name);
+                        const char *res = sdb_const_get (TDB, q, 0);
+                        r_cons_printf("\"%s\":\"%s\"", name, res);                                                        
+                        json = true;
+                    }
                 }
+            }
+        }
+        if (input[1]=='j') {
+            r_cons_println ("}");
+		}
+        free (name);                                
+        ls_free (l);
+        break;
+        }
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_tt);
 			break;
