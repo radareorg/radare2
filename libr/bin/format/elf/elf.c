@@ -2561,57 +2561,12 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	return ret;
 }
 
-static int get_nsections(ELFOBJ *bin) {
-	int res = 0;
-	int i;
-
-	for (i = 0; i < bin->dyn_entries; i++) {
-		switch (bin->dyn_buf[i].d_tag) {
-		case DT_REL:
-		case DT_RELA:
-		case DT_PLTGOT:
-		case DT_JMPREL:
-			res++;
-			break;
-		default:
-			break;
-		}
-	}
-	return res;
-}
-
-static void try_create_section(ELFOBJ *bin, RBinElfSection *sections, int *j, const char *name, ut64 *addr, ut64 *sz) {
-	if (*addr == UT64_MAX || *sz == UT64_MAX) {
-		return;
-	}
-
-	RBinElfSection *section = &sections[*j];
-	section->offset = Elf_(r_bin_elf_v2p) (bin, *addr);
-	section->rva = *addr;
-	section->size = *sz;
-	strcpy (section->name, name);
-	section->last = 0;
-	*j = *j + 1;
-	*addr = UT64_MAX;
-	*sz = UT64_MAX;
-}
-
-static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
+static RBinElfSection* get_sections_from_phdr(ELFOBJ *bin) {
 	RBinElfSection *ret;
-	int i, j, num_sections = 0;
-	ut64 reldyn, reldynsz;
-	ut64 reladyn, reladynsz;
-	ut64 pltgotva, pltgotsz;
-	ut64 relpltva, relpltsz;
-
-	r_return_val_if_fail (bin, NULL);
-	if (!bin->phdr || !bin->ehdr.e_phnum) {
-		return NULL;
-	}
-
-	num_sections = get_nsections (bin);
-	ret = R_NEWS0 (RBinElfSection, num_sections + 1);
-	if (!ret) {
+	int i, num_sections = 0;
+	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
+	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
+	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
 		return NULL;
 	}
 
@@ -2619,39 +2574,71 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 		switch (bin->dyn_buf[i].d_tag) {
 		case DT_REL:
 			reldyn = bin->dyn_buf[i].d_un.d_ptr;
-			try_create_section (bin, ret, &j, ".rel.dyn", &reldyn, &reldynsz);
+			num_sections++;
 			break;
 		case DT_RELA:
-			reladyn = bin->dyn_buf[i].d_un.d_ptr;
-			try_create_section (bin, ret, &j, ".rela.dyn", &reladyn, &reladynsz);
+			relva = bin->dyn_buf[i].d_un.d_ptr;
+			num_sections++;
 			break;
 		case DT_RELSZ:
 			reldynsz = bin->dyn_buf[i].d_un.d_val;
-			try_create_section (bin, ret, &j, ".rel.dyn", &reldyn, &reldynsz);
 			break;
 		case DT_RELASZ:
-			reladynsz = bin->dyn_buf[i].d_un.d_val;
-			try_create_section (bin, ret, &j, ".rela.dyn", &reladyn, &reladynsz);
+			relasz = bin->dyn_buf[i].d_un.d_val;
 			break;
 		case DT_PLTGOT:
 			pltgotva = bin->dyn_buf[i].d_un.d_ptr;
-			try_create_section (bin, ret, &j, ".got.plt", &pltgotva, &pltgotsz);
+			num_sections++;
 			break;
 		case DT_PLTRELSZ:
 			pltgotsz = bin->dyn_buf[i].d_un.d_val;
-			relpltsz = bin->dyn_buf[i].d_un.d_val;
-			try_create_section (bin, ret, &j, ".got.plt", &pltgotva, &pltgotsz);
-			try_create_section (bin, ret, &j, ".rela.plt", &relpltva, &relpltsz);
 			break;
 		case DT_JMPREL:
-			relpltva = bin->dyn_buf[i].d_un.d_ptr;
-			try_create_section (bin, ret, &j, ".rela.plt", &relpltva, &relpltsz);
+			relava = bin->dyn_buf[i].d_un.d_ptr;
+			num_sections++;
 			break;
-		default:
-			break;
+		default: break;
 		}
 	}
-	ret[j].last = 1;
+	ret = calloc (num_sections + 1, sizeof(RBinElfSection));
+	if (!ret) {
+		return NULL;
+	}
+	i = 0;
+	if (reldyn) {
+		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, reldyn);
+		ret[i].rva = reldyn;
+		ret[i].size = reldynsz;
+		strcpy (ret[i].name, ".rel.dyn");
+		ret[i].last = 0;
+		i++;
+	}
+	if (relava) {
+		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, relava);
+		ret[i].rva = relava;
+		ret[i].size = pltgotsz;
+		strcpy (ret[i].name, ".rela.plt");
+		ret[i].last = 0;
+		i++;
+	}
+	if (relva) {
+		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, relva);
+		ret[i].rva = relva;
+		ret[i].size = relasz;
+		strcpy (ret[i].name, ".rel.plt");
+		ret[i].last = 0;
+		i++;
+	}
+	if (pltgotva) {
+		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, pltgotva);
+		ret[i].rva = pltgotva;
+		ret[i].size = pltgotsz;
+		strcpy (ret[i].name, ".got.plt");
+		ret[i].last = 0;
+		i++;
+	}
+	ret[i].last = 1;
+
 	return ret;
 }
 
@@ -2659,9 +2646,9 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	RBinElfSection *ret = NULL;
 	char unknown_s[20], invalid_s[20];
 	int i, nidx, unknown_c=0, invalid_c=0;
-
-	r_return_val_if_fail (bin, NULL);
-
+	if (!bin) {
+		return NULL;
+	}
 	if (bin->g_sections) {
 		return bin->g_sections;
 	}
@@ -2685,12 +2672,12 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 		} else {
 			ret[i].rva = bin->shdr[i].sh_addr;
 		}
+		nidx = bin->shdr[i].sh_name;
 #define SHNAME (int)bin->shdr[i].sh_name
 #define SHNLEN (ELF_STRING_LENGTH - 4)
 #define SHSIZE (int)bin->shstrtab_size
-		nidx = SHNAME;
 		if (nidx < 0 || !bin->shstrtab_section || !bin->shstrtab_size || nidx > bin->shstrtab_size) {
-			snprintf (invalid_s, sizeof (invalid_s), "invalid%d", invalid_c);
+			snprintf (invalid_s, sizeof (invalid_s) - 4, "invalid%d", invalid_c);
 			strncpy (ret[i].name, invalid_s, SHNLEN);
 			invalid_c++;
 		} else {
@@ -2699,15 +2686,15 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 			} else {
 				if (bin->shdr[i].sh_type == SHT_NULL) {
 					//to follow the same behaviour as readelf
-					strncpy (ret[i].name, "", sizeof (ret[i].name) - 1);
+					strncpy (ret[i].name, "", sizeof (ret[i].name) - 4);
 				} else {
-					snprintf (unknown_s, sizeof (unknown_s), "unknown%d", unknown_c);
-					strncpy (ret[i].name, unknown_s, sizeof (ret[i].name) - 4);
+					snprintf (unknown_s, sizeof (unknown_s)-4, "unknown%d", unknown_c);
+					strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
 					unknown_c++;
 				}
 			}
 		}
-		ret[i].name[ELF_STRING_LENGTH - 1] = '\0';
+		ret[i].name[ELF_STRING_LENGTH-2] = '\0';
 		ret[i].last = 0;
 	}
 	ret[i].last = 1;
