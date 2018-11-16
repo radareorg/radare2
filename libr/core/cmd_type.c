@@ -1237,8 +1237,8 @@ static int cmd_type(void *data, const char *input) {
           					}
                 			}
             			}
-        		}
-       		if (input[1] == 'j') {
+			}
+			if (input[1] == 'j') {
            	 		r_cons_println ("}");
 			}
         		free (name);                                
