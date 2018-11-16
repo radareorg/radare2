@@ -1210,33 +1210,33 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 't': {
 		if (!input[1] || input[1]=='j') {
-        	bool json = false;
-            if (input[1]=='j') {
+        		bool json = false;
+    			if (input[1]=='j') {
 				r_cons_print ("{");
-            }
-            char *name = NULL;
-            SdbKv *kv;
-            SdbListIter *iter;
-            SdbList *l = sdb_foreach_list (TDB, true);
-            ls_foreach (l, iter, kv) {
-            if (!strcmp (sdbkv_value (kv), "typedef")) {
-                if (!name || strcmp (sdbkv_value (kv), name)) {
-                    free (name);
-                    name = strdup (sdbkv_key (kv));
-                    if (!input[1]) {
+            		}
+            		char *name = NULL;
+            		SdbKv *kv;
+            		SdbListIter *iter;
+            		SdbList *l = sdb_foreach_list (TDB, true);
+            		ls_foreach (l, iter, kv) {
+            		if (!strcmp (sdbkv_value (kv), "typedef")) {
+                		if (!name || strcmp (sdbkv_value (kv), name)) {
+                    			free (name);
+                    			name = strdup (sdbkv_key (kv));
+                    			if (!input[1]) {
 						r_cons_println (name);
 					}
-                    else {
-                        if (json) {
-                            r_cons_print(",");
-                        }                                                        
-                    	const char *q = sdb_fmt ("typedef.%s", name);
-                        const char *res = sdb_const_get (TDB, q, 0);
-                        r_cons_printf("\"%s\":\"%s\"", name, res);                                                        
-                        json = true;
-                    }
-                }
-            }
+                    		else {
+                        		if (json) {
+                            			r_cons_print(",");
+                        		}                                                        
+                    			const char *q = sdb_fmt ("typedef.%s", name);
+                        		const char *res = sdb_const_get (TDB, q, 0);
+                        		r_cons_printf("\"%s\":\"%s\"", name, res);                                                        
+                        		json = true;
+          			}
+                	}
+            	}
         }
         if (input[1]=='j') {
             r_cons_println ("}");
