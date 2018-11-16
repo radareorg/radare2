@@ -179,6 +179,11 @@ static int init_ehdr(ELFOBJ *bin) {
 static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 	bool phdr_found = false;
 	int i;
+#if R_BIN_ELF64
+	const bool is_elf64 = true;
+#else
+	const bool is_elf64 = false;
+#endif
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = { 0 };
@@ -193,12 +198,18 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		if (bin->phdr[i].p_type == PT_PHDR) {
 			phdr_found = true;
 		}
-		bin->phdr[i].p_flags = READ32 (phdr, j);
+
+		if (is_elf64) {
+			bin->phdr[i].p_flags = READ32 (phdr, j);
+		}
 		bin->phdr[i].p_offset = READWORD (phdr, j);
 		bin->phdr[i].p_vaddr = READWORD (phdr, j);
 		bin->phdr[i].p_paddr = READWORD (phdr, j);
 		bin->phdr[i].p_filesz = READWORD (phdr, j);
 		bin->phdr[i].p_memsz = READWORD (phdr, j);
+		if (!is_elf64) {
+			bin->phdr[i].p_flags = READ32 (phdr, j);
+		}
 		bin->phdr[i].p_align = READWORD (phdr, j);
 	}
 	/* Here is the where all the fun starts.
