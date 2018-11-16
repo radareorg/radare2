@@ -45,8 +45,11 @@ for a in ${BINS} ; do
 (
 	cd binr/$a
 	${MAKE} clean
-	#LDFLAGS=-static ${MAKE} -j2
-	${MAKE} -j4 || exit 1
+	if [ "`uname`" = Darwin ]; then
+		${MAKE} -j4 || exit 1
+	else
+		LDFLAGS=-static ${MAKE} -j4 || exit 1
+	fi
 )
 done
 
