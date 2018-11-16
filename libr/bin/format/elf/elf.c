@@ -193,23 +193,13 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		if (bin->phdr[i].p_type == PT_PHDR) {
 			phdr_found = true;
 		}
-#if R_BIN_ELF64
 		bin->phdr[i].p_flags = READ32 (phdr, j);
-		bin->phdr[i].p_offset = READ64 (phdr, j);
-		bin->phdr[i].p_vaddr = READ64 (phdr, j);
-		bin->phdr[i].p_paddr = READ64 (phdr, j);
-		bin->phdr[i].p_filesz = READ64 (phdr, j);
-		bin->phdr[i].p_memsz = READ64 (phdr, j);
-		bin->phdr[i].p_align = READ64 (phdr, j);
-#else
-		bin->phdr[i].p_offset = READ32 (phdr, j);
-		bin->phdr[i].p_vaddr = READ32 (phdr, j);
-		bin->phdr[i].p_paddr = READ32 (phdr, j);
-		bin->phdr[i].p_filesz = READ32 (phdr, j);
-		bin->phdr[i].p_memsz = READ32 (phdr, j);
-		bin->phdr[i].p_flags = READ32 (phdr, j);
-		bin->phdr[i].p_align = READ32 (phdr, j);
-#endif
+		bin->phdr[i].p_offset = READWORD (phdr, j);
+		bin->phdr[i].p_vaddr = READWORD (phdr, j);
+		bin->phdr[i].p_paddr = READWORD (phdr, j);
+		bin->phdr[i].p_filesz = READWORD (phdr, j);
+		bin->phdr[i].p_memsz = READWORD (phdr, j);
+		bin->phdr[i].p_align = READWORD (phdr, j);
 	}
 	/* Here is the where all the fun starts.
 	 * Linux kernel since 2005 calculates phdr offset wrongly
@@ -332,25 +322,14 @@ static int init_shdr(ELFOBJ *bin) {
 		}
 		bin->shdr[i].sh_name = READ32 (shdr, j);
 		bin->shdr[i].sh_type = READ32 (shdr, j);
-#if R_BIN_ELF64
-		bin->shdr[i].sh_flags = READ64 (shdr, j);
-		bin->shdr[i].sh_addr = READ64 (shdr, j);
-		bin->shdr[i].sh_offset = READ64 (shdr, j);
-		bin->shdr[i].sh_size = READ64 (shdr, j);
+		bin->shdr[i].sh_flags = READWORD (shdr, j);
+		bin->shdr[i].sh_addr = READWORD (shdr, j);
+		bin->shdr[i].sh_offset = READWORD (shdr, j);
+		bin->shdr[i].sh_size = READWORD (shdr, j);
 		bin->shdr[i].sh_link = READ32 (shdr, j);
 		bin->shdr[i].sh_info = READ32 (shdr, j);
-		bin->shdr[i].sh_addralign = READ64 (shdr, j);
-		bin->shdr[i].sh_entsize = READ64 (shdr, j);
-#else
-		bin->shdr[i].sh_flags = READ32 (shdr, j);
-		bin->shdr[i].sh_addr = READ32 (shdr, j);
-		bin->shdr[i].sh_offset = READ32 (shdr, j);
-		bin->shdr[i].sh_size = READ32 (shdr, j);
-		bin->shdr[i].sh_link = READ32 (shdr, j);
-		bin->shdr[i].sh_info = READ32 (shdr, j);
-		bin->shdr[i].sh_addralign = READ32 (shdr, j);
-		bin->shdr[i].sh_entsize = READ32 (shdr, j);
-#endif
+		bin->shdr[i].sh_addralign = READWORD (shdr, j);
+		bin->shdr[i].sh_entsize = READWORD (shdr, j);
 	}
 
 #if R_BIN_ELF64
