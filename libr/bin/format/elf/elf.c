@@ -476,10 +476,10 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 		}
 		d.d_tag = READWORD (sdyn, j);
 		if (d.d_tag == DT_NULL) {
-			return res;
+			break;
 		}
 	}
-	return -1;
+	return res;
 }
 
 static int init_dynamic_section(ELFOBJ *bin) {
@@ -490,7 +490,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	int entries;
 	int i, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
-	ut64 dyn_size = 0;
+	ut64 dyn_size = 0, loaded_offset;
 
 	r_return_val_if_fail (bin, false);
 	if (!bin->phdr || !bin->ehdr.e_phnum) {
@@ -515,12 +515,17 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	if (!UTX_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
 		goto beach;
 	}
-	if (!dyn_size || dyn_phdr->p_offset + dyn_size > bin->size) {
+	loaded_offset = Elf_(r_bin_elf_v2p_new) (bin, dyn_phdr->p_vaddr);
+	if (loaded_offset == UT64_MAX) {
+		goto beach;
+	}
+
+	if (!dyn_size || loaded_offset + dyn_size > bin->size) {
 		goto beach;
 	}
 	for (i = 0; i < entries; i++) {
 		int j = 0;
-		len = r_buf_read_at (bin->b, dyn_phdr->p_offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
+		len = r_buf_read_at (bin->b, loaded_offset + i * sizeof (Elf_(Dyn)), sdyn, sizeof (Elf_(Dyn)));
 		if (len < 1) {
 			bprintf ("read (dyn)\n");
 			goto beach;
