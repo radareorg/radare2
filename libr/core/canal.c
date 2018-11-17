@@ -2807,12 +2807,13 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
+	int depth = r_config_get_i (core->config, "anal.depth");
 
 	if (!list || !state) {
 		return NULL;
 	}
 
-	if (anal_path_exists (core, core->offset, addr, list, 10240, state)) {
+	if (anal_path_exists (core, core->offset, addr, list, depth * 4, state)) {
 		ht_up_free (state);
 		return list;
 	}
