@@ -2751,6 +2751,7 @@ RList* MACH0_(mach_fields)(RBinFile *bf) {
 	}
 	RList *ret = r_list_new ();
 	if (!ret) {
+		free (mh);
 		return NULL;
 	}
 	ret->free = free;
