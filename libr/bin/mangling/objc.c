@@ -58,6 +58,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			type = "public";
 		}
 		if (type) {
+			free (clas);
 			clas = strdup (sym + 2);
 			name = strchr (clas, ' ');
 			if (name) {

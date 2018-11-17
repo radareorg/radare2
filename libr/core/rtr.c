@@ -727,6 +727,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 								goto the_end;
 							} else if (!strcmp (cmd, "=h--")) {
 								r_socket_http_close (rs);
+								free (dir);
+								free (refstr);
 								ret = 0;
 								goto the_end;
 							}

@@ -45,6 +45,7 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 		// Split to two maps
 		part1 = R_NEW (RIOMapSkyline);
 		if (!part1) {
+			free (part);
 			return false;
 		}
 		part1->map = map;

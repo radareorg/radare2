@@ -444,7 +444,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		//clear rs&0x7th bit of rd. expr.- rd&= !(1<<(rs&0x07))
 		r_strbuf_appendf(&op->esil, "0x7,r%u%c,&,1,<<,!,r%u%c,&=", rsB(), rdB(1));
 		return 0;
-		return 0;
 	case H8300_BTST_R2R8: /*TODO*/
 		//¬ (<Bit No.> of <EAd>) → Z, extract bit value and shift it back
 		r_strbuf_appendf(&op->esil, "0x7,r%u%c,&,0x7,r%u%c,&,1,<<,r%u%c,&,>>,!,Z,=",
