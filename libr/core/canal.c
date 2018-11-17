@@ -2805,17 +2805,33 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 }
 
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
+	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RList *xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
+	RListIter *iter = NULL;
+	RAnalRef *xref = NULL;
 	int depth = r_config_get_i (core->config, "anal.depth");
 
-	if (!list || !state) {
+	if (!list || !state || !xrefs || !cur_fcn) {
 		return NULL;
 	}
 
 	if (anal_path_exists (core, core->offset, addr, list, depth * 4, state)) {
 		ht_up_free (state);
 		return list;
+	}
+
+	r_list_foreach (xrefs, iter, xref) {
+		// FIXME: better way to clear a hashtable ?
+		ht_up_free (state);
+		state = ht_up_new0 ();
+		if (xref->type == R_ANAL_REF_TYPE_CALL) {
+			if (anal_path_exists (core, core->offset, xref->at, list, depth * 4, state)) {
+				ht_up_free (state);
+				return list;
+			}
+		}
 	}
 
 	ht_up_free (state);
