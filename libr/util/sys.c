@@ -648,7 +648,6 @@ R_API int r_sys_cmdbg (const char *str) {
 	ret = r_sandbox_system (str, 0);
 	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit (0);
-	return -1;
 #else
 #ifdef _MSC_VER
 #pragma message ("r_sys_cmdbg is not implemented for this platform")
@@ -861,7 +860,6 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	if (!pid) {
 		ret = cb ();
 		exit (ret);
-		return ret;
 	}
 	st = 0;
 	waitpid (pid, &st, 0);

@@ -28,7 +28,6 @@ R_API ut64 r_debug_arg_get (RDebug *dbg, int cctype, int num) {
 			// TODO: honor endianness of platform
 			return (ut64)n32;
 		}
-		break;
 	}
 	snprintf (reg, sizeof (reg)-1, "A%d", num);
 	return r_debug_reg_get (dbg, reg);
