@@ -2829,7 +2829,7 @@ static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 			if (xref->type == R_ANAL_REF_TYPE_CALL) {
 				ut64 offset = core->offset;
 				core->offset = xref->addr;
-				r_list_free(list);
+				r_list_free (list);
 				list = anal_graph_to (core, addr, depth - 1);
 				core->offset = offset;
 				if (list && r_list_length (list)) {
