@@ -801,8 +801,17 @@ int main (int argc, char *argv[]) {
 		} else if (analinfo) {
 			ret = show_analinfo ((const char *)argv[optind], offset);
 		} else {
-			ret = print_assembly_output (argv[optind], offset, len, a->bits,
-							bin, use_spp, rad, arch);
+			if (!a->cur->assemble) {
+				eprintf (
+					"Cannot assemble using this plugin\n"
+					"Use rasm2 -L to list Asm plugins and choose "
+					"plugin contains `a`(a=asm) in first column\n"
+				);
+				ret = 0;
+			} else {
+				ret = print_assembly_output (argv[optind], offset, len, a->bits,
+								bin, use_spp, rad, arch);
+			}
 		}
 		if (!ret) {
 			eprintf ("invalid\n");
