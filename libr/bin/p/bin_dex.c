@@ -708,7 +708,7 @@ static Sdb *get_sdb (RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
-	return bin? bin->kv: NULL;
+	return bin->kv;
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){

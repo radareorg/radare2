@@ -1094,16 +1094,13 @@ static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 			return gprobe->offset = GPROBE_SIZE - 1;
 		}
 		return gprobe->offset = offset;
-		break;
 	case SEEK_CUR:
 		if ((gprobe->offset + offset) >= GPROBE_SIZE) {
 			return gprobe->offset = GPROBE_SIZE - 1;
 		}
 		return gprobe->offset += offset;
-		break;
 	case SEEK_END:
 		return gprobe->offset = GPROBE_SIZE - 1;
-		break;
 	}
 	return offset;
 }
