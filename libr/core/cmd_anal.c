@@ -7497,15 +7497,29 @@ static int cmd_anal(void *data, const char *input) {
 		} else if (input[1] == 'r') { // "abr"
 			core_anal_bbs_range (core, input + 2);
 		} else if (input[1] == 't') {
-			RList* list = r_core_anal_graph_to (core, r_num_math (core->num, input + 2), 0);
-			if (list) {
+			ut64 addr;
+			char *p;
+			int n;
+			p = strchr (input + 3, ' ');
+			*p = '\0';
+			addr = r_num_math (core->num, input + 3);
+			n = ++p? r_num_math (core->num, p): 1;
+			RList *paths = r_core_anal_graph_to (core, addr, n);
+			if (paths) {
 				RAnalBlock *bb;
-				RListIter *iter;
-				r_list_foreach (list, iter, bb) {
-					r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
+				RList *path;
+				RListIter *pathi;
+				RListIter *bbi;
+				r_list_foreach (paths, pathi, path) {
+					r_list_foreach (path, bbi, bb) {
+						r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
+					}
+					r_cons_printf ("\n");
+					r_list_purge(path);
+					free(path);
 				}
-				r_list_purge (list);
-				free (list);
+				r_list_purge(paths);
+				free(paths);
 			}
 		} else if (input[1] == 'j') { // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
