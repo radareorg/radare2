@@ -7515,11 +7515,11 @@ static int cmd_anal(void *data, const char *input) {
 						r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
 					}
 					r_cons_printf ("\n");
-					r_list_purge(path);
-					free(path);
+					r_list_purge (path);
+					free (path);
 				}
-				r_list_purge(paths);
-				free(paths);
+				r_list_purge (paths);
+				free (paths);
 			}
 		} else if (input[1] == 'j') { // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
