@@ -3362,7 +3362,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 
 static ut64 initializeEsil(RCore *core) {
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	RAnalEsil *esil = core->anal->esil;
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats = r_config_get_i (core->config, "esil.stats");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -3374,7 +3373,7 @@ static ut64 initializeEsil(RCore *core) {
 		return UT64_MAX;
 	}
 	ut64 addr;
-	esil = core->anal->esil;
+	RAnalEsil *esil = core->anal->esil;
 	r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
 	esil->exectrap = exectrap;
 	RList *entries = r_bin_get_entries (core->bin);

@@ -476,7 +476,6 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int perm, ut64 delta,
 	SdbListIter* iter;
 	ut64 next_addr = addr,
 	end_addr = next_addr + size;
-	end_addr = next_addr + size;
 	ls_foreach (io->maps, iter, map) {
 		ut64 to = r_itv_end (map->itv);
 		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);

@@ -537,9 +537,8 @@ static bool cmd_wff(RCore *core, const char *input) {
 		}
 	}
 	if ((buf = (ut8*) r_file_slurp (a, &size))) {
-		int u_size = size;
 		int u_offset = 0;
-		u_size = r_num_math (core->num, p);
+		int u_size = r_num_math (core->num, p);
 		if (u_size < 1) u_size = size;
 		if (p) {
 			*p++ = 0;
