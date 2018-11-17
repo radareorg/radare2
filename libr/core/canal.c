@@ -2784,12 +2784,12 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	r_list_append (state, (void *)frp);
 
 	ut64 tj = bb->jump;
-	ut64 fj = bb->addr + bb->size;
+	ut64 fj = bb->fail;
 
 	// try to find the target in the current function
 	if (r_anal_bb_is_in_offset (bb, to) ||
 		((!r_list_find (state, (void *)&(tj), cmp_addr) && anal_path_exists (core, bb->jump, to, bbs, depth - 1, state))) ||
-		((!r_list_find (state, (void *)&(fj), cmp_addr) && anal_path_exists (core, bb->addr + bb->size, to, bbs, depth - 1, state)))) {
+		((!r_list_find (state, (void *)&(fj), cmp_addr) && anal_path_exists (core, bb->fail, to, bbs, depth - 1, state)))) {
 		r_list_prepend (bbs, bb);
 		return true;
 	}
