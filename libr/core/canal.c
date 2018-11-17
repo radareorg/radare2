@@ -2813,7 +2813,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 
 static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	RList *xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
+	RList *xrefs;
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
 	RListIter *iter = NULL;
@@ -2822,6 +2822,7 @@ static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 	if (!list || !state || !cur_fcn) {
 		return NULL;
 	}
+	xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
 
 	// forward search
 	if (anal_path_exists (core, core->offset, addr, list, depth - 1, state)) {
