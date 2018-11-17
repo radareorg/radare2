@@ -712,6 +712,15 @@ static int cmd_type(void *data, const char *input) {
 		case '*':
 			if (input[2] == ' ') {
 				showFormat (core, r_str_trim_ro (input + 2), 1);
+			} else {
+				SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
+				SdbListIter *it;
+				SdbKv *kv;
+
+				ls_foreach (l, it, kv) {
+					showFormat (core, sdbkv_key (kv), 1);
+				}
+				ls_free (l);
 			}
 			break;
 		case ' ':
