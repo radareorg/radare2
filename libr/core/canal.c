@@ -2754,18 +2754,16 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state) {
+	r_return_val_if_fail (bbs, false);
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
 	RListIter *iter = NULL;
-	RList *refs = NULL;
 	RAnalRef *refi;
-	RAnalFunction *cur_fcn = NULL;
 
 	if (depth < 1) {
 		eprintf ("going too deep\n");
 		return false;
 	}
 
-	r_return_val_if_fail (bbs, false);
 
 	if (!bb) {
 		return false;
@@ -2782,11 +2780,11 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	}
 
 	// find our current function
-	cur_fcn = r_anal_get_fcn_in (core->anal, from, 0);
+	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, from, 0);
 
 	// get call refs from current basic block and find a path from them
 	if (cur_fcn) {
-		refs = r_anal_fcn_get_refs (core->anal, cur_fcn);
+		RList *refs = r_anal_fcn_get_refs (core->anal, cur_fcn);
 		if (refs) {
 			r_list_foreach (refs, iter, refi) {
 				if (refi->type == R_ANAL_REF_TYPE_CALL) {
@@ -2806,16 +2804,12 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 
 static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-	RList *xrefs;
 	RList *list = r_list_new ();
 	HtUP *state = ht_up_new0 ();
-	RListIter *iter = NULL;
-	RAnalRef *xref = NULL;
 
 	if (!list || !state || !cur_fcn) {
 		return NULL;
 	}
-	xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
 
 	// forward search
 	if (anal_path_exists (core, core->offset, addr, list, depth - 1, state)) {
@@ -2824,7 +2818,10 @@ static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 	}
 
 	// backward search
+	RList *xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
 	if (xrefs) {
+        RListIter *iter;
+        RAnalRef *xref = NULL;
 		r_list_foreach (xrefs, iter, xref) {
 			if (xref->type == R_ANAL_REF_TYPE_CALL) {
 				ut64 offset = core->offset;
