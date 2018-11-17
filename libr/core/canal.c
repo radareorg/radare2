@@ -2771,13 +2771,6 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 		return false;
 	}
 
-	if (bb->addr != from) {
-		RAnalBlock *_bb = R_NEW0 (RAnalBlock);
-		memcpy (_bb, bb, sizeof (RAnalBlock));
-		_bb->addr = from;
-		bb = _bb;
-	}
-
 	ht_up_update (state, from, bb);
 
 	// try to find the target in the current function
