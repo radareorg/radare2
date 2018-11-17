@@ -2781,7 +2781,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	}
 
 	*frp = from;
-	r_list_append (state, (void *)frp);
+	r_list_prepend (state, (void *)frp);
 
 	ut64 tj = bb->jump;
 	ut64 fj = bb->fail;
