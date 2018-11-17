@@ -2765,7 +2765,9 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 		return false;
 	}
 
-	if (!bb || !bbs) {
+	r_return_val_if_fail (bbs, false);
+
+	if (!bb) {
 		return false;
 	}
 
