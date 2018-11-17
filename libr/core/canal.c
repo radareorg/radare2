@@ -2826,7 +2826,9 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RList *list = r_list_new ();
 	RList *state = r_list_new ();
 
-	r_return_val_if_fail (list && state, NULL);
+	if (!list || !state) {
+		return NULL;
+	}
 
 	if (anal_path_exists (core, core->offset, addr, list, 10240, state)) {
 		r_list_purge (state);
