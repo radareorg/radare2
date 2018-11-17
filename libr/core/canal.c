@@ -2767,7 +2767,6 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	RListIter *iter = NULL;
 	RList *refs = NULL;
 	RAnalRef *refi;
-	RAnalFunction *fcn = NULL;
 	RAnalFunction *cur_fcn = NULL;
 	ut64 *frp = R_NEW0 (ut64);
 
@@ -2795,12 +2794,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	}
 
 	// find our current function
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (r_anal_fcn_in (fcn, from)) {
-			cur_fcn = fcn;
-			break;
-		}
-	}
+	cur_fcn = r_anal_get_fcn_in (core->anal, from, 0);
 
 	// get call refs from current basic block and find a path from them
 	if (cur_fcn) {
