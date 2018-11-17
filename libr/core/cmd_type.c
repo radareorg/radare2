@@ -100,6 +100,7 @@ static const char *help_msg_tt[] = {
 	"Usage: tt[...]", "", "",
 	"tt", "", "List all loaded typedefs",
 	"tt", " <typename>", "Show name for given type alias",
+	"ttj", "", "Show typename and type alias in json",
 	"tt?", "", "show this help",
 	NULL
 };
