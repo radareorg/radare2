@@ -76,7 +76,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return true;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static void *load(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct r_bin_mz_obj_t *mz_obj;
 
 	mz_obj = r_bin_mz_new_buf (buf);
@@ -84,30 +84,6 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 		sdb_ns_set (sdb, "info", mz_obj->kv);
 	}
 	return mz_obj;
-}
-
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz,
-	ut64 loadaddr, Sdb *sdb) {
-	struct r_bin_mz_obj_t *res = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	res = load_buffer (bf, tbuf, loadaddr, sdb);
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-	const ut8 *bytes = r_buf_buffer (bf->buf);
-	ut64 sz = r_buf_size (bf->buf);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -237,9 +213,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.desc = "MZ bin plugin",
 	.license = "MIT",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
-	.load_buffer = &load_buffer,
+	.load_buffer = &load,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.binsym = &binsym,
