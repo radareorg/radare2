@@ -588,6 +588,7 @@ typedef struct r_anal_callbacks_t {
 
 typedef struct r_anal_options_t {
 	int depth;
+	int graph_depth;
 	bool vars; //analyze local var and arguments
 	int cjmpref;
 	int jmpref;

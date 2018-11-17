@@ -2845,8 +2845,8 @@ static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 }
 
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
-	int depth = r_config_get_i (core->config, "anal.depth");
-	return anal_graph_to (core, addr, depth * 4);
+	int depth = r_config_get_i (core->config, "anal.graph_depth");
+	return anal_graph_to (core, addr, depth);
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
