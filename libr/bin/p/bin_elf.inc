@@ -1156,7 +1156,7 @@ static RBinInfo* info(RBinFile *bf) {
 	} else {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
-	if (Elf_(r_bin_elf_get_static) (obj)) {
+	if (Elf_(r_bin_elf_is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
 	lookup_sections (bf, ret);
