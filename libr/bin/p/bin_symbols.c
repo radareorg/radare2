@@ -8,14 +8,20 @@
 
 static int bits = 32;
 
-#define is32 0
+#define is32 1
 #if is32
 //arm32
+// E35AB42C<tab>
+#define DWORDS_BEGIN 0x1648
 #define STRINGS_BEGIN 0x1c80
 #else
 //arm64
-#define STRINGS_BEGIN 0x0001eb58
+// 18AD2FBB<tab>
+#define STRINGS_BEGIN 0x00008e20
 #endif
+
+static ut64 stringsBeginAt = UT64_MAX;
+static ut64 symbolsCount = UT64_MAX;
 
 typedef struct symbols_header_t {
 	ut32 magic;
@@ -29,6 +35,7 @@ typedef struct symbols_header_t {
 	int size;
 } SymbolsHeader;
 
+// header starts at offset 0 and ends at offset 0x40
 static SymbolsHeader parseHeader(RBuffer *buf) {
 	ut8 b[64];
 	SymbolsHeader sh = { 0 };
@@ -116,6 +123,7 @@ static const char *subtypeString(int n) {
 	return "?";
 }
 
+// metadata section starts at offset 0x40 and ends around 0xb0 depending on filenamelength
 static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	SymbolsMetadata sm = { 0 };
 	ut8 b[0x100] = { 0 };
@@ -272,6 +280,9 @@ static SymbolsDragons parseDragons(RBuffer *buf, int off) {
 		address -= 8;
 	}
 	parseSegments (buf, address, sd.n_sections);
+	
+	symbolsCount = r_read_le32 (b + 0x20); // depends on nsections
+	eprintf ("Symbols Count %d\n", symbolsCount);
 #if 0
 	const int rray_section = 0x1ab0; // 0x00000224; //  XXX hardcoded offset
 	const int rray_section_end = rray_section + (count * 12); //  XXX hardcoded offset
@@ -329,23 +340,23 @@ static void parseSections(RBuffer *b, int x) {
 	free (buf);
 }
 
-static void parseSymbols (RBuffer *buf, int x) {
+static ut64 parseSymbols (RBuffer *buf, int x) {
 	char countbuf[4];
+	int end_offset = 0;
 	r_buf_read_at (buf, x + 0x20 - 8, (ut8*)&countbuf, 4);
-eprintf ("x = 0x3a0 0x%x\n", x);
 // 0x1648 - 0x3a0
-	ut32 count = r_read_le32 (&countbuf);
-	count = (0x1648 - x) / 24;
+	ut32 count = symbolsCount; // should be 199 for the 32bit sample
 	eprintf ("symbols table2 count %d\n", count);
 	ut8 *b = calloc (24, count);
 	if (!b) {
-		return;
+		return UT64_MAX;
 	}
 	r_buf_read_at (buf, x, b, count * 24);
 	int array_section = x; // 0x000003a0;
 	int i;
 	if (1) {
 		const int array_section_end = array_section + (count * 24);  //  XXX hardcoded offset
+	end_offset = array_section_end;
 		for (i = 0; i < count; i++) {
 			int n = (i * 24);
 			const ut32 A = r_read_le32 (b + n); // offset in memory
@@ -375,14 +386,16 @@ array_section -= 8;
 			x = n;
 		}
 	}
+	eprintf ("0x%x\n", end_offset);
 	free (b);
+	return end_offset;
 }
 
 // unknown data in this range
 static void parseTable3(RBuffer *buf, int x) {
 	// 0x1648 - 0x1c80
-	const int dword_section = 0x00001648;
-	int dword_section_end = 0x00001c80;
+	const int dword_section = DWORDS_BEGIN;
+	int dword_section_end = stringsBeginAt;
 	int i, size = dword_section_end - dword_section;
 	int min = -1;
 	int max = -1;
@@ -479,20 +492,25 @@ Sections:
 	// 0x138 - 0x220        // unknown information + duplicated list of segments
 	SymbolsDragons sd = parseDragons (buf, x);
 	// 0x220 - 0x3a0        // table of sections
-	parseSections (buf, 0x220);
 
 	// 0x3a0 - 0x1648       // table of dwords with -1
 	if (bits == 32) {
-		parseSymbols (buf, 0x3a0);
+		stringsBeginAt = parseSymbols (buf, 0x3a0);
 	} else {
-		parseSymbols (buf, 0x458);
+		stringsBeginAt = parseSymbols (buf, 0x458);
 	}
+	// skip the table3 dword pairs table
+	stringsBeginAt += (symbolsCount * 8);
+	eprintf ("STRINGS AT 0x%llx\n", stringsBeginAt);
+
+	// we need stringsBeginAt in here.. but this data is before the place we can compute this
+	parseSections (buf, 0x220);
 
 	// 0x1648 - 0x1c80      // table of dwords (unknown data)
-	// parseTable3 (buf, 0x1648);
+	parseTable3 (buf, 0x1648);
 
 	// 0x1c80 - EOF         // strings
-	RList *strings = parseStrings (buf, STRINGS_BEGIN, r_buf_size (buf)); // XXX hardcoded offset + size
+	RList *strings = parseStrings (buf, stringsBeginAt, r_buf_size (buf));
 	if (strings) {
 		eprintf ("Count strings: %d\n", r_list_length (strings));
 		r_list_free (strings);
@@ -537,7 +555,7 @@ static RList *strings(RBinFile *bf) {
 	RListIter *iter;
 	RList *list = r_list_newf (NULL);
 	// XXX hardcoded offset + size
-	RList *strings = parseStrings (bf->buf, STRINGS_BEGIN, r_buf_size (bf->buf));
+	RList *strings = parseStrings (bf->buf, stringsBeginAt, r_buf_size (bf->buf));
 	RBinString *s;
 	r_list_foreach (strings, iter, s) {
 		if (*s->string != '_') {
@@ -552,7 +570,7 @@ static RList *symbols(RBinFile *bf) {
 	RBinString *s;
 	RList *list = r_list_newf (NULL);
 	// XXX hardcoded offset + size
-	RList *strings = parseStrings (bf->buf, STRINGS_BEGIN, r_buf_size (bf->buf));
+	RList *strings = parseStrings (bf->buf, stringsBeginAt, r_buf_size (bf->buf));
 	r_list_foreach (strings, iter, s) {
 		if (*s->string == '_') {
 			if (s->string[1] == '_' && s->string[2] == toupper(s->string[2])) {
