@@ -2827,7 +2827,7 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 		ht_up_free (state);
 		state = ht_up_new0 ();
 		if (xref->type == R_ANAL_REF_TYPE_CALL) {
-			if (anal_path_exists (core, core->offset, xref->at, list, depth * 4, state)) {
+			if (anal_path_exists (core, xref->addr, addr, list, depth * 4, state)) {
 				ht_up_free (state);
 				return list;
 			}
