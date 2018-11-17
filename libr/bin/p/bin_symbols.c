@@ -8,6 +8,15 @@
 
 static int bits = 32;
 
+#define is32 0
+#if is32
+//arm32
+#define STRINGS_BEGIN 0x1c80
+#else
+//arm64
+#define STRINGS_BEGIN 0x0001eb58
+#endif
+
 typedef struct symbols_header_t {
 	ut32 magic;
 	ut32 version;
@@ -73,7 +82,7 @@ static RList *parseSegments(RBuffer *buf, int off, int count) {
 	int x = off;
 	int X = 0;
 	int i;
-	RList *sections = r_list_newf (r_bin_section_free);
+	RList *sections = r_list_newf ((RListFree)r_bin_section_free);
 	if (!sections) {
 		return NULL;
 	}
@@ -120,6 +129,7 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	sm.n_sections = r_read_le32 (b + 8);
 	int count = r_read_le32 (b + 0x48);
 	sm.namelen = r_read_le32 (b + 0xc);
+	eprintf ("0x%08x  count    %d\n", 0x48, count);
 	eprintf ("0x%08x  strlen   %d\n", 0x4c, sm.namelen);
 	eprintf ("0x%08x  filename %s\n", 0x50, b + 16);
 	int delta = 16;
@@ -144,7 +154,6 @@ static void printLine(const char *name, ut32 addr, ut32 value) {
 static void printSymbolsHeader(SymbolsHeader sh) {
 	printLine ("magic", 0, sh.magic);
 	eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
-	int x = 0;
 	eprintf ("0x%08x  uuid     ", 24);
 	int i;
 	for (i = 0; i < 16; i++) {
@@ -157,9 +166,9 @@ static void printSymbolsHeader(SymbolsHeader sh) {
 	eprintf ("0x%08x  slotsize %d\n", 0x2e, sh.slotsize); // r_read_le16 (b+ 0x2e));
 }
 
-static RList *parseStrings(RBuffer *buf, int string_section, int string_section_size) {
-	const int string_section_end = string_section + string_section_size;
-	char *b = malloc (string_section_size);
+static RList *parseStrings(RBuffer *buf, int string_section, int string_section_end) {
+	ut64 string_section_size = string_section_end + string_section;
+	char *b = calloc (1, string_section_size);
 	if (!b) {
 		return NULL;
 	}
@@ -168,8 +177,16 @@ static RList *parseStrings(RBuffer *buf, int string_section, int string_section_
 	char *os = s;
 	int nstrings = 0;
 
-	(void)r_buf_read_at (buf, string_section, b, string_section_size);
-	RList *res = r_list_newf (r_bin_string_free);
+	int available = r_buf_read_at (buf, string_section, (ut8*)b, string_section_size);
+	if (available != string_section_size) {
+		string_section_size = available;
+	}
+	if (string_section_size < 1) {
+		eprintf ("Cannot read strings at 0x%08"PFMT64x"\n", (ut64)string_section);
+		free (b);
+		return  NULL;
+	}
+	RList *res = r_list_newf ((RListFree)r_bin_string_free);
 	int i;
 	for (i = 0; true; i++) {
 		o = s - os;
@@ -190,7 +207,7 @@ static RList *parseStrings(RBuffer *buf, int string_section, int string_section_
 		bs->length = strlen (s);
 		r_list_append (res, bs);
 		//
-		s += strlen (s) + 1;
+		s += bs->length + 1;
 	}
 	free (b);
 	return res;
@@ -283,23 +300,10 @@ static RBinSymbol *newSymbol (RBinString *s) {
 	return sym;
 }
 
-#define is32 0
-#if is32
-//arm32
-#define STRINGS_BEGIN 0x1c80
-#define STRINGS_SIZE 15000
-#define STRINGS_END STRINGS_BEGIN+15000
-#else
-//arm64
-#define STRINGS_BEGIN 0x0001eb58
-#define STRINGS_END 0x000610d8
-#define STRINGS_SIZE STRINGS_END-STRINGS_BEGIN
-#endif
-
 static void parseSections(RBuffer *b, int x) {
 	int i, x_end = 0x3a0;
-	ut32 buf[STRINGS_SIZE];
-	RList *strings = parseStrings (b, STRINGS_BEGIN, STRINGS_SIZE); // XXX hardcoded offset + size
+	char *buf = malloc  (r_buf_size (b));
+	RList *strings = parseStrings (b, STRINGS_BEGIN, r_buf_size (b)); // XXX hardcoded offset + size
 	RListIter *iter;
 	RBinString *s;
 	RList *list = r_list_newf (NULL);
@@ -321,12 +325,13 @@ static void parseSections(RBuffer *b, int x) {
 			buf[i], buf[i + 1], buf[i+2], buf[i+3], namestr);
 		// get the first nth string. those seems to be sections
 	}
-	r_list_free (list);	
+	r_list_free (list);
+	free (buf);
 }
 
 static void parseSymbols (RBuffer *buf, int x) {
 	char countbuf[4];
-	r_buf_read_at (buf, x + 0x20 - 8, &countbuf, 4);
+	r_buf_read_at (buf, x + 0x20 - 8, (ut8*)&countbuf, 4);
 eprintf ("x = 0x3a0 0x%x\n", x);
 // 0x1648 - 0x3a0
 	ut32 count = r_read_le32 (&countbuf);
@@ -365,7 +370,8 @@ array_section -= 8;
 			const ut32 E = r_read_le32 (b + n + 24);
 			int d = D - E;
 			eprintf ("0x%08"PFMT64x" %3d addr=0x%08"PFMT64x" size=%4d magic=0x%x %d %d d=%d\n",
-					n + x, i, A, (int)B, C, D, E, d);
+				(ut64)n + x,
+				i, A, (int)B, C, D, E, d);
 			x = n;
 		}
 	}
@@ -373,7 +379,7 @@ array_section -= 8;
 }
 
 // unknown data in this range
-static parseTable3(RBuffer *buf, int x) {
+static void parseTable3(RBuffer *buf, int x) {
 	// 0x1648 - 0x1c80
 	const int dword_section = 0x00001648;
 	int dword_section_end = 0x00001c80;
@@ -486,9 +492,11 @@ Sections:
 	// parseTable3 (buf, 0x1648);
 
 	// 0x1c80 - EOF         // strings
-	RList *strings = parseStrings (buf, STRINGS_BEGIN, STRINGS_SIZE); // XXX hardcoded offset + size
-	eprintf ("Count strings: %d\n", r_list_length (strings));
-	r_list_free (strings);
+	RList *strings = parseStrings (buf, STRINGS_BEGIN, r_buf_size (buf)); // XXX hardcoded offset + size
+	if (strings) {
+		eprintf ("Count strings: %d\n", r_list_length (strings));
+		r_list_free (strings);
+	}
 
 	return malloc (32);
 }
@@ -529,7 +537,7 @@ static RList *strings(RBinFile *bf) {
 	RListIter *iter;
 	RList *list = r_list_newf (NULL);
 	// XXX hardcoded offset + size
-	RList *strings = parseStrings (bf->buf, STRINGS_BEGIN, STRINGS_SIZE);
+	RList *strings = parseStrings (bf->buf, STRINGS_BEGIN, r_buf_size (bf->buf));
 	RBinString *s;
 	r_list_foreach (strings, iter, s) {
 		if (*s->string != '_') {
@@ -544,7 +552,7 @@ static RList *symbols(RBinFile *bf) {
 	RBinString *s;
 	RList *list = r_list_newf (NULL);
 	// XXX hardcoded offset + size
-	RList *strings = parseStrings (bf->buf, STRINGS_BEGIN, STRINGS_SIZE);
+	RList *strings = parseStrings (bf->buf, STRINGS_BEGIN, r_buf_size (bf->buf));
 	r_list_foreach (strings, iter, s) {
 		if (*s->string == '_') {
 			if (s->string[1] == '_' && s->string[2] == toupper(s->string[2])) {
