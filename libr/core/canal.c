@@ -2830,9 +2830,10 @@ static RList* anal_graph_to(RCore *core, ut64 addr, int depth) {
 				ut64 offset = core->offset;
 				core->offset = xref->addr;
 				r_list_free(list);
-				list = r_core_anal_graph_to (core, addr, depth - 1);
+				list = anal_graph_to (core, addr, depth - 1);
 				core->offset = offset;
 				if (list && r_list_length (list)) {
+					ht_up_free (state);
 					return list;
 				}
 			}
