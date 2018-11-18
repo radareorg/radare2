@@ -5540,6 +5540,43 @@ static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
 	}
 }
 
+static char *get_buf_asm(RCore *core, ut64 addr, RAnalFunction *fcn, bool color) {
+	int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	char str[512];
+	const int size = 12;
+	ut8 buf[12];
+	RAsmOp asmop = {0};
+	char *buf_asm = NULL;
+	bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
+	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
+	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
+	r_io_read_at (core->io, addr, buf, size);
+	r_asm_set_pc (core->assembler, addr);
+	r_asm_disassemble (core->assembler, &asmop, buf, size);
+	int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
+	char *ba = malloc (ba_len);
+	strcpy (ba, r_strbuf_get (&asmop.buf_asm));
+	if (asm_varsub) {
+		r_parse_varsub (core->parser, fcn, addr, asmop.size,
+				ba, ba, sizeof (asmop.buf_asm));
+	}
+	r_parse_filter (core->parser, addr, core->flags,
+			ba, str, sizeof (str), core->print->big_endian);
+	r_asm_op_set_asm (&asmop, ba);
+	free (ba);
+	if (color && has_color) {
+		buf_asm = r_print_colorize_opcode (core->print, str,
+				core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+	} else {
+		buf_asm = r_str_new (str);
+	}
+	return buf_asm;
+}
+
+#define var_ref_list(a,d,t) sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",\
+		a, 1, d, (t == 'R')?"reads":"writes");
+
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[0]) {
@@ -5600,16 +5637,52 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		r_anal_xrefs_list (core->anal, input[0]);
 		break;
 	case 't': { // "axt"
-		const int size = 12;
 		RList *list;
 		RAnalFunction *fcn;
 		RAnalRef *ref;
 		RListIter *iter;
-		ut8 buf[12];
-		RAsmOp asmop;
-		char *buf_asm = NULL;
 		char *space = strchr (input, ' ');
+		char *tmp = NULL;
+		char *name = space ? strdup (space + 1): NULL;
 
+		if (name && (tmp = strchr (name, '.'))) {
+			char *varname = tmp + 1;
+			*tmp = '\0';
+			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, name);
+			if (fcn) {
+				RAnalVar *var = r_anal_var_get_byname (core->anal, fcn->addr, varname);
+				if (var) {
+					const char *rvar = var_ref_list (fcn->addr, var->delta, 'R');
+					const char *wvar = var_ref_list (fcn->addr, var->delta, 'W');
+					char *res = sdb_get (core->anal->sdb_fcns, rvar, 0);
+					char *res1 = sdb_get (core->anal->sdb_fcns, wvar, 0);
+					const char *ref;
+					RList *list, *list1;
+					RListIter *iter;
+					if (res && *res) {
+						list = r_str_split_list (res, ",");
+					}
+					if (res1 && *res1) {
+						list1 = r_str_split_list (res1, ",");
+					}
+					r_list_join (list , list1);
+					r_list_foreach (list, iter, ref) {
+						ut64 addr = r_num_math (NULL, ref);
+						char *op = get_buf_asm (core, addr, fcn, true);
+						r_cons_printf ("%s 0x%"PFMT64x" [DATA] %s\n", fcn?  fcn->name : "(nofunc)", addr, op);
+						free (op);
+
+					}
+					free (res);
+					free (res1);
+					free (name);
+					r_anal_var_free (var);
+					r_list_free (list);
+					r_list_free (list1);
+					break;
+				}
+			}
+		}
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
 		} else {
@@ -5622,24 +5695,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
 				}
 			} else if (input[1] == 'j') { // "axtj"
-				bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
-				core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
-				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-				core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 				r_cons_printf ("[");
 				r_list_foreach (list, iter, ref) {
-					r_io_read_at (core->io, ref->addr, buf, size);
-					r_asm_set_pc (core->assembler, ref->addr);
-					r_asm_disassemble (core->assembler, &asmop, buf, size);
-					char str[512];
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-					r_str_ncpy (str, r_asm_op_get_asm (&asmop), sizeof (str) - 1);
-					if (asm_varsub) {
-						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
-							str, str, sizeof (str));
-					}
-					r_parse_filter (core->parser, ref->addr, core->flags,
-						r_asm_op_get_asm (&asmop), str, sizeof (str), core->print->big_endian);
+					char *str = get_buf_asm (core, ref->addr, fcn, false);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
 						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {
@@ -5659,6 +5718,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						}
 					}
 					r_cons_printf ("}%s", iter->n? ",": "");
+					free (str);
 				}
 				r_cons_printf ("]");
 				r_cons_newline ();
@@ -5685,40 +5745,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF type %d at 0x%" PFMT64x"%s\n",
 						ref->addr, ref->type, addr, iter->n? ",": "");
 			} else { // axt
-				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-				char str[512];
 				RAnalFunction *fcn;
 				char *comment;
-				bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
-				core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
-				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-				core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
-				if (core->parser->relsub) {
-					core->parser->relsub_addr = addr;
-				}
 				r_list_foreach (list, iter, ref) {
-					r_io_read_at (core->io, ref->addr, buf, size);
-					r_asm_set_pc (core->assembler, ref->addr);
-					r_asm_disassemble (core->assembler, &asmop, buf, size);
-
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-					int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
-					char *ba = malloc (ba_len);
-					strcpy (ba, r_strbuf_get (&asmop.buf_asm));
-					if (asm_varsub) {
-						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
-								ba, ba, sizeof (asmop.buf_asm));
-					}
-					r_parse_filter (core->parser, ref->addr, core->flags,
-							ba, str, sizeof (str), core->print->big_endian);
-					r_asm_op_set_asm (&asmop, ba);
-					free (ba);
-					if (has_color) {
-						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
-					} else {
-						buf_asm = r_str_new (str);
-					}
+					char *buf_asm = get_buf_asm (core, ref->addr, fcn, false);
 					comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 					char *buf_fcn = comment
 						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
