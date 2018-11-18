@@ -1299,4 +1299,3 @@ static int cmd_type(void *data, const char *input) {
 	}
 	return true;
 }
-
