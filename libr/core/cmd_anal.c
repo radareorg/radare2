@@ -7503,7 +7503,7 @@ static int cmd_anal(void *data, const char *input) {
 			p = strchr (input + 3, ' ');
 			if (p) {
 				*p = '\0';
-				n = ++p? r_num_math (core->num, p): 1;
+				n = *(++p)? r_num_math (core->num, p): 1;
 			}
 			addr = r_num_math (core->num, input + 3);
 			RList *paths = r_core_anal_graph_to (core, addr, n);
