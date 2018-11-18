@@ -2851,12 +2851,15 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	n = 5;
 	while (n) {
 		path = anal_graph_to (core, addr, depth, avoid);
-		if (path && (r_list_length (path) >= 2)) {
-			RAnalBlock *last = r_list_get_n (path, r_list_length (path) - 2);
+		if (path) {
 			r_list_append (paths, path);
-			ht_up_update (avoid, last->addr, last);
-			n--;
-			continue;
+			if (r_list_length (path) >= 2) {
+				RAnalBlock *last = r_list_get_n (path, r_list_length (path) - 2);
+				ht_up_update (avoid, last->addr, last);
+				n--;
+				continue;
+			}
+			break;
 		}
 		// no more path found
 		break;
