@@ -1272,6 +1272,8 @@ static int cmd_type(void *data, const char *input) {
           				}
                 		}
            		}
+			free (name);
+			ls_free (1);
 			break;
 		}
 		if (input[1] == '?') {
