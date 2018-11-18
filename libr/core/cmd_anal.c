@@ -70,7 +70,7 @@ static const char *help_msg_ab[] = {
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
-	"abt", " [addr]", "find paths in the bb function graph from current offset to given address",
+	"abt", " [addr] [num]", "find paths in the bb function graph from current offset to given address",
 	NULL
 };
 
@@ -7499,11 +7499,13 @@ static int cmd_anal(void *data, const char *input) {
 		} else if (input[1] == 't') {
 			ut64 addr;
 			char *p;
-			int n;
+			int n = 1;
 			p = strchr (input + 3, ' ');
-			*p = '\0';
+			if (p) {
+				*p = '\0';
+				n = ++p? r_num_math (core->num, p): 1;
+			}
 			addr = r_num_math (core->num, input + 3);
-			n = ++p? r_num_math (core->num, p): 1;
 			RList *paths = r_core_anal_graph_to (core, addr, n);
 			if (paths) {
 				RAnalBlock *bb;
