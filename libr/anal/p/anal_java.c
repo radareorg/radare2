@@ -666,24 +666,22 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 		// loop over all methods in the binary object and analyse
 		// the functions
 		r_list_foreach (methods_list, methods_iter, method) {
-			if (method) {
-				if ((analyze_all) ||
-				    (check_addr_less_start (method, end) ||
-				     check_addr_in_code (method, end))) {
-					RAnalFunction *fcn = r_anal_fcn_new ();
-					fcn->cc = r_str_const (r_anal_cc_default (anal));
-					java_set_function_prototype (anal, fcn, method);
-					result = analyze_from_code_attr (anal, fcn, method, loadaddr);
-					if (result == R_ANAL_RET_ERROR) {
-						//eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
-						return result;
-						// XXX - TO Stop or not to Stop ??
-					}
-					//r_listrange_add (anal->fcnstore, fcn);
-					r_anal_fcn_update_tinyrange_bbs (fcn);
-					r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
-					r_list_append (anal->fcns, fcn);
+			if ((method && analyze_all) ||
+			    (check_addr_less_start (method, end) ||
+			     check_addr_in_code (method, end))) {
+				RAnalFunction *fcn = r_anal_fcn_new ();
+				fcn->cc = r_str_const (r_anal_cc_default (anal));
+				java_set_function_prototype (anal, fcn, method);
+				result = analyze_from_code_attr (anal, fcn, method, loadaddr);
+				if (result == R_ANAL_RET_ERROR) {
+					//eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
+					return result;
+					// XXX - TO Stop or not to Stop ??
 				}
+				//r_listrange_add (anal->fcnstore, fcn);
+				r_anal_fcn_update_tinyrange_bbs (fcn);
+				r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
+				r_list_append (anal->fcns, fcn);
 			}
 		} // End of methods loop
 	}// end of bin_objs list loop
@@ -831,7 +829,7 @@ static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) 
 */
 
 static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method) {
-	RList *the_list = r_bin_java_extract_type_values (method->descriptor);
+	RList *the_list = method ? r_bin_java_extract_type_values (method->descriptor) : NULL;
 	Sdb *D = anal->sdb_types;
 	Sdb *A = anal->sdb_args;
 	const char *type_fmt = "%08"PFMT64x".arg.%d.type",
