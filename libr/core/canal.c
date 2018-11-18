@@ -2848,7 +2848,6 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	int depth = r_config_get_i (core->config, "anal.graph_depth");
 	RList *path, *paths = r_list_new ();
 	HtUP *avoid = ht_up_new0 ();
-	n = 5;
 	while (n) {
 		path = anal_graph_to (core, addr, depth, avoid);
 		if (path) {
