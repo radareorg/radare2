@@ -732,6 +732,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 			n = r_num_math (num, p);
 		} else {
 			eprintf ("Invalid argument\n");
+			free (p);
 			return addr;
 		}
 		free (p);

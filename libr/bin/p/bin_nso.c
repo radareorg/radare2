@@ -218,7 +218,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	RBinNXOObj *bin = (RBinNXOObj*) bf->o->bin_obj;
-	return bin? bin->methods_list: NULL;
+	return bin->methods_list;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -227,9 +227,6 @@ static RList *imports(RBinFile *bf) {
 		return NULL;
 	}
 	bin = (RBinNXOObj*) bf->o->bin_obj;
-	if (!bin) {
-		return NULL;
-	}
 	return bin->imports_list;
 }
 

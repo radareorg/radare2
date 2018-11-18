@@ -5886,8 +5886,7 @@ toro:
 			};
 			int skip_bytes = handleMidFlags (core, &ds, true);
 			if (skip_bytes && midflags > R_MIDFLAGS_SHOW) {
-				ret = skip_bytes;
-				asmop.size = ret;
+				asmop.size = ret = skip_bytes;
 			}
 		}
 		if (fmt == 'C') {

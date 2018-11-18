@@ -108,10 +108,6 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 	}
 	wctx = (WindCtx *)desc->data;
 
-	if (!wctx) {
-		return false;
-	}
-
 	// Handshake
 	if (!windbg_sync (wctx)) {
 		eprintf ("Could not connect to windbg\n");

@@ -29,7 +29,7 @@ static Sdb* get_sdb (RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
-	return bin? bin->kv: NULL;
+	return bin->kv;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
