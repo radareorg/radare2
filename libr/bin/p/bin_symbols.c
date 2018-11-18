@@ -6,14 +6,18 @@
 #include <r_bin.h>
 #include "../i/private.h"
 
+// enable debugging messages
+#define D if (0)
+
 static bool is64 = false;
 static ut64 dwordsBeginAt = UT64_MAX;
 static ut64 stringsBeginAt = UT64_MAX;
 static ut64 symbolsBeginAt = UT64_MAX;
-static ut64 symbolsCount = UT64_MAX;
+// static ut64 symbolsCount = UT64_MAX;
 static RList *globalSymbols = NULL;
 
 #define SECTIONS_BEGIN 0x220
+#define SEGMENTS_BEGIN 0x1b0
 
 typedef struct symbols_header_t {
 	ut32 magic;
@@ -110,7 +114,6 @@ static const char *typeString(ut32 n, int *bits) {
 	}
 	if (n == 0x0100000c) { // arm64
 		*bits = 64;
-		eprintf ("arm64\n");
 		return "arm";
 	}
 	if (n == 0x0200000c) { // arm64-32
@@ -151,12 +154,14 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	sm.segments = parseSegments (buf, off + sm.namelen + delta, sm.n_segments);
 	sm.size = (sm.n_segments * 32) + 120;
 
-	ut32 nm, nm2;
+	// hack to detect format
+	ut32 nm, nm2, nm3;
 	r_buf_read_at (buf, off + sm.size,  &nm, sizeof (nm));
-	r_buf_read_at (buf, off + sm.size,  &nm2, sizeof (nm2));
-	eprintf ("0x%x next %x\n", off + sm.size, nm);
-	if (r_read_le32 (&nm) != 0xa1b22b1a) {
-		// sm.size -= 8;
+	r_buf_read_at (buf, off + sm.size + 4,  &nm2, sizeof (nm2));
+	r_buf_read_at (buf, off + sm.size + 8,  &nm3, sizeof (nm3));
+	// eprintf ("0x%x next %x %x %x\n", off + sm.size, nm, nm2, nm3);
+	if (r_read_le32 (&nm3) != 0xa1b22b1a) {
+		sm.size -= 8;
 		is64 = true;
 	}
 	return sm;
@@ -169,8 +174,8 @@ static void printLine(const char *name, ut32 addr, ut32 value) {
 }
 
 static void printSymbolsHeader(SymbolsHeader sh) {
-	printLine ("magic", 0, sh.magic);
-	eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
+	// printLine ("magic", 0, sh.magic);
+	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
 	eprintf ("0x%08x  uuid     ", 24);
 	int i;
 	for (i = 0; i < 16; i++) {
@@ -242,10 +247,14 @@ typedef struct symbols_dragons_t {
 	ut32 size;
 	ut32 n_sections;
 	ut32 n_segments;
+	ut32 n_symbols;
 } SymbolsDragons;
 
 static SymbolsDragons parseDragons(RBuffer *buf, int off, int bits) {
 	SymbolsDragons sd = { 0 };
+	sd.addr = off;
+	sd.size = 1;
+	D eprintf ("Dragons at 0x%x\n", off);
 	const int size = r_buf_size (buf) - off;
 	if (size < 1) {
 		return sd;
@@ -299,16 +308,17 @@ static SymbolsDragons parseDragons(RBuffer *buf, int off, int bits) {
 
 	sd.n_segments = r_read_le32 (b + 24);
 	sd.n_sections = r_read_le32 (b + 28);
-	int address = 0x1b0; // XXX hardcoded
-	if (is64) {
-	 //	address -= 8;
-	}
-	parseSegments (buf, address, sd.n_segments);
+	parseSegments (buf, SEGMENTS_BEGIN, sd.n_segments);
 	
-	symbolsCount = r_read_le32 (b + 0x20); // depends on nsections
-	if (symbolsCount > 4096) {
-		symbolsCount = 4096;
+	sd.n_symbols = r_read_le32 (b + 0x20); // depends on nsections
+	if (sd.n_symbols > 4096) {
+		eprintf ("Warning: too many symbols, truncated to 4096\n");
+		sd.n_symbols = 4096;
 	}
+	sd.addr = off;
+	sd.size = SEGMENTS_BEGIN - off;
+	sd.size += sd.n_segments * 32;
+	sd.size += sd.n_sections * 16;
 	free (b);
 	return sd;
 }
@@ -365,13 +375,9 @@ static RList *parseSections(RBuffer *b, int x, int n_sections, RList *strings) {
 	return res;
 }
 
-static RList *parseSymbols(RBuffer *buf, int x, ut64 *eof) {
+static RList *parseSymbols(RBuffer *buf, int x, ut64 *eof, int count) {
 	// eprintf ("Symbols\n");
-	ut32 count = symbolsCount; // should be 199 for the 32bit sample
-	if (symbolsCount < 1) {
-		return  NULL;
-	}
-	int structSize = is64? 32: 24;
+	const int structSize = 24;  // is64? 24: 24;
 	if (eof) {
 		*eof = x + (count * structSize);
 	}
@@ -427,6 +433,9 @@ static void parseTable3(RBuffer *buf, int x) {
 	int max = -1;
 	// eprintf ("table3 is buggy\n");
 	ut8 *b = calloc (size, 1);
+	if (!b) {
+		return;
+	}
 	r_buf_read_at (buf, x, b, size);
 	for (i = 0; i < size; i += 8) {
 		// int o = i + dword_section;
@@ -483,10 +492,14 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	// 0x220 - 0x3a0        // table of sections
 
 	// 0x3a0 - 0x1648       // table of dwords with -1
-	// XXX this is wrong
-	symbolsBeginAt = is64? 0x458: 0x3a0;
-	RList *symbols = parseSymbols (buf, symbolsBeginAt, &dwordsBeginAt);
-	stringsBeginAt = dwordsBeginAt + (symbolsCount * 8);
+	// XXX this is hacky, do not hardcode
+	symbolsBeginAt = sd.addr + sd.size; // is64? 0x458: 0x3a0;
+	D eprintf ("SYMBOLS BEGIN AT 0x%08x\n", symbolsBeginAt);
+	// symbolsBeginAt = 0x410;
+	D eprintf ("SYMBOLS 0x%x\n", symbolsBeginAt);
+	RList *symbols = parseSymbols (buf, symbolsBeginAt, &dwordsBeginAt, sd.n_symbols);
+	stringsBeginAt = dwordsBeginAt + (sd.n_symbols * 8);
+	D eprintf  ("Strings BEGIN AT 0x%08x\n", stringsBeginAt);
 
 	// 0x1648 - 0x1c80      // table of dword pairs (unknown data)
 	parseTable3 (buf, dwordsBeginAt);
