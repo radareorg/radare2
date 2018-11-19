@@ -575,6 +575,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"seg	gs	.32	60	0\n"
 			);
 		}
+		break;
 	case R_SYS_ARCH_ARM:
 		if (bits == 64) {
 			return strdup (
@@ -725,6 +726,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 #endif
 			);
 		}
+		break;
 	case R_SYS_ARCH_SH:
 		return strdup (
 			"=PC    pc\n"
@@ -753,6 +755,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	mach	.32	80	0\n"
 			"gpr	macl	.32	84	0\n"
 		);
+		break;
 	case R_SYS_ARCH_LM32:
 		return strdup (
 			"=PC    PC\n"
@@ -798,6 +801,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	IM	.32	148	0\n"
 			"gpr	IP	.32	152	0\n"
 		);
+		break;
 	case R_SYS_ARCH_MIPS:
 		return strdup (
 			"=PC    pc\n"
