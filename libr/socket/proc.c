@@ -57,6 +57,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		dup2 (sp->fd1[1], 1);
 		execv (argv[0], argv);
 		exit (1);
+		break;
 	case -1:
 		perror ("fork");
 		r_socket_proc_close (sp);
