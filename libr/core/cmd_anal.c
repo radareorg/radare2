@@ -7107,16 +7107,19 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			}
 			r_list_foreach (paths, pathi, path) {
 				if (json) {
-					if (!first_path)
+					if (!first_path) {
 						r_cons_printf (", ");
+					}
 				}
 				r_cons_printf ("[");
 				r_list_foreach (path, bbi, bb) {
-					if (json && !first_bb)
+					if (json && !first_bb) {
 						r_cons_printf (", ");
+					}
 					r_cons_printf ("0x%08" PFMT64x, bb->addr);
-					if (!json)
+					if (!json) {
 						r_cons_printf ("\n");
+					}
 					first_bb = false;
 				}
 				r_cons_printf ("%s", json? "]": "\n");
@@ -7132,13 +7135,16 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			free (paths);
 		}
 	}
-	case '\0': break;
+	case '\0':
+		break;
 	}
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
-	case '?': r_core_cmd_help (core, help_msg_aa); break;
+	case '?':
+		r_core_cmd_help (core, help_msg_aa);
+		break;
 	case 'b': // "aab"
 		cmd_anal_blocks (core, input + 1);
 		break;
@@ -7562,7 +7568,7 @@ static int cmd_anal(void *data, const char *input) {
 		} else if (input[1] == 'r') { // "abr"
 			core_anal_bbs_range (core, input + 2);
 		} else if (input[1] == 't') {
-			cmd_anal_abt(core, input+2);
+			cmd_anal_abt (core, input+2);
 		} else if (input[1] == 'j') { // "abj"
 			anal_fcn_list_bb (core, input + 1, false);
 		} else if (input[1] == ' ' || !input[1]) {
@@ -7636,8 +7642,9 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "aa"
-		if (!cmd_anal_all (core, input + 1))
+		if (!cmd_anal_all (core, input + 1)) {
 			return false;
+		}
 		break;
 	case 'c': // "ac"
 		{
