@@ -2,6 +2,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
@@ -290,7 +291,7 @@ static RList *sections(RBinFile *bf) {
 
 	// XXX: Never add here as they are covered above
 	r_list_foreach (obj->streams.modules, it, module) {
-		struct minidump_string mds = {0};
+		ut8 b[512];
 
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
@@ -299,26 +300,22 @@ static RList *sections(RBinFile *bf) {
 			free (ptr);
 			continue;
 		}
-		r_buf_read_at (obj->b, module->module_name_rva,
-			(ut8*)&mds, sizeof (struct minidump_string));
-		str = &mds;
-		// str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
-		int ptr_name_len = (mds.length + 2) * 4;
-		if (ptr_name_len < 1 || ptr_name_len > 1024) {
+		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
+		str = b;
+		int ptr_name_len = (str->length + 2) * 4;
+		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
 			continue;
+		}
+		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
+			break;
 		}
 		ptr->name = calloc (1, ptr_name_len);
 		if (!ptr->name) {
 			free (ptr);
 			continue;
 		}
-#if 1
-		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
-			break;
-		}
-#endif
 		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4,
-			(const ut8 *)&(str->buffer), str->length, obj->endian);
+				(const ut8 *)(&str->buffer), str->length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);

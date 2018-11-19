@@ -2186,7 +2186,7 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 		} else {
 			tmp = (ut8*) in;
 			c = *tmp++;
-			if (!*tmp) {
+			if (!c && !*tmp) {
 				break;
 			}
 			c = c | (((ut32)*tmp) << 8);

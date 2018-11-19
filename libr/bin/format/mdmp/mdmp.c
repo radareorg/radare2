@@ -724,7 +724,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			token_infos = (struct minidump_token_info *)((ut8 *)token_info_list + sizeof (struct minidump_token_info_list));
 			r_list_append (obj->streams.token_infos, &(token_infos[i]));
 		}
-
+		break;
 
 	case LAST_RESERVED_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
