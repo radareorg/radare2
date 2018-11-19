@@ -210,20 +210,20 @@ typedef struct r_bin_wasm_obj_t {
 
 } RBinWasmObj;
 
-RBinWasmObj *r_bin_wasm_init (RBinFile *bf);
-void r_bin_wasm_destroy (RBinFile *bf);
-RList *r_bin_wasm_get_sections (RBinWasmObj *bin);
-RList *r_bin_wasm_get_types (RBinWasmObj *bin);
-RList *r_bin_wasm_get_imports (RBinWasmObj *bin);
-RList *r_bin_wasm_get_exports (RBinWasmObj *bin);
-RList *r_bin_wasm_get_tables (RBinWasmObj *bin);
-RList *r_bin_wasm_get_memories (RBinWasmObj *bin);
-RList *r_bin_wasm_get_globals (RBinWasmObj *bin);
-RList *r_bin_wasm_get_elements (RBinWasmObj *bin);
-RList *r_bin_wasm_get_codes (RBinWasmObj *bin);
-RList *r_bin_wasm_get_datas (RBinWasmObj *bin);
-RList *r_bin_wasm_get_symtab (RBinWasmObj *bin);
-ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin);
-const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type);
+RBinWasmObj *r_bin_wasm_init(RBinFile *bf);
+void r_bin_wasm_destroy(RBinFile *bf);
+RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
+RList *r_bin_wasm_get_types(RBinWasmObj *bin);
+RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
+RList *r_bin_wasm_get_tables(RBinWasmObj *bin);
+RList *r_bin_wasm_get_memories(RBinWasmObj *bin);
+RList *r_bin_wasm_get_globals(RBinWasmObj *bin);
+RList *r_bin_wasm_get_elements(RBinWasmObj *bin);
+RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
+RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
+RList *r_bin_wasm_get_symtab(RBinWasmObj *bin);
+ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
+const char *r_bin_wasm_valuetype_to_string(r_bin_wasm_value_type_t type);
 
 #endif

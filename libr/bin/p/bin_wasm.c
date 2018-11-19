@@ -15,7 +15,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 
 static bool check_bytes_buf(RBuffer* rbuf) {
 	ut8 buf[4] = {0};
-	return rbuf && r_buf_read_at(rbuf, R_BUF_CUR, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
+	return rbuf && r_buf_read_at (rbuf, R_BUF_CUR, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 
 static int find_symbol(const ut8 *p, const RBinWasmSymbol* q) {
@@ -23,7 +23,7 @@ static int find_symbol(const ut8 *p, const RBinWasmSymbol* q) {
 }
 
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf || buf || r_buf_size (buf) == UT64_MAX, NULL);
+	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, NULL);
 
 	if (!check_bytes_buf (buf)) {
 		return NULL;
@@ -32,7 +32,7 @@ static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 }
 
 static bool load(RBinFile *bf) {
-	r_return_val_if_fail (!bf || !bf->o, false);
+	r_return_val_if_fail (bf && bf->o, false);
 
 	bf->o->bin_obj = load_buffer (bf, bf->buf, bf->o->loadaddr, bf->sdb);
 	return bf->o->bin_obj != NULL;
