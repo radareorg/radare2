@@ -1890,61 +1890,53 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 }
 
 // TODO: rename fcn_bb_split()
-// bb seems to be ignored
-R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
-	RAnalBlock *bbi;
-	RListIter *iter;
-	bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
+R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr) {
+	RAnalBlock *bb;
+	int new_bbi_instr, i;
+	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size, 0);
 	if (addr == UT64_MAX) {
 		return 0;
 	}
-	r_list_foreach (fcn->bbs, iter, bbi) { // TODO: bbi should already been given as a parameter
-		if (addr == bbi->addr) {
-			return R_ANAL_RET_DUP;
-		}
-		if (addr > bbi->addr && addr < bbi->addr + bbi->size
-		    && (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, addr))) {
-			int new_bbi_instr, i;
-			bb = appendBasicBlock (anal, fcn, addr);
-			bb->size = bbi->addr + bbi->size - addr;
-			bb->jump = bbi->jump;
-			bb->fail = bbi->fail;
-			bb->conditional = bbi->conditional;
-			FITFCNSZ ();
-			bbi->size = addr - bbi->addr;
-			bbi->jump = addr;
-			bbi->fail = -1;
-			bbi->conditional = false;
-			if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
-				bb->type = bbi->type ^ R_ANAL_BB_TYPE_HEAD;
-				bbi->type = R_ANAL_BB_TYPE_HEAD;
-			} else {
-				bb->type = bbi->type;
-				bbi->type = R_ANAL_BB_TYPE_BODY;
+	if (addr == bbi->addr) {
+		return R_ANAL_RET_DUP;
+	}
+	bb = appendBasicBlock (anal, fcn, addr);
+	bb->size = bbi->addr + bbi->size - addr;
+	bb->jump = bbi->jump;
+	bb->fail = bbi->fail;
+	bb->conditional = bbi->conditional;
+	FITFCNSZ ();
+	bbi->size = addr - bbi->addr;
+	bbi->jump = addr;
+	bbi->fail = -1;
+	bbi->conditional = false;
+	if (bbi->type & R_ANAL_BB_TYPE_HEAD) {
+		bb->type = bbi->type ^ R_ANAL_BB_TYPE_HEAD;
+		bbi->type = R_ANAL_BB_TYPE_HEAD;
+	} else {
+		bb->type = bbi->type;
+		bbi->type = R_ANAL_BB_TYPE_BODY;
+	}
+	// recalculate offset of instructions in both bb and bbi
+	i = 0;
+	while (i < bbi->ninstr && r_anal_bb_offset_inst (bbi, i) < bbi->size) {
+		i++;
+	}
+	new_bbi_instr = i;
+	if (bb->addr - bbi->addr == r_anal_bb_offset_inst (bbi, i)) {
+		bb->ninstr = 0;
+		while (i < bbi->ninstr) {
+			ut16 off_op = r_anal_bb_offset_inst (bbi, i);
+			if (off_op >= bbi->size + bb->size) {
+				break;
 			}
-			// recalculate offset of instructions in both bb and bbi
-			i = 0;
-			while (i < bbi->ninstr && r_anal_bb_offset_inst (bbi, i) < bbi->size) {
-				i++;
-			}
-			new_bbi_instr = i;
-			if (bb->addr - bbi->addr == r_anal_bb_offset_inst (bbi, i)) {
-				bb->ninstr = 0;
-				while (i < bbi->ninstr) {
-					ut16 off_op = r_anal_bb_offset_inst (bbi, i);
-					if (off_op >= bbi->size + bb->size) {
-						break;
-					}
-					r_anal_bb_set_offset (bb, bb->ninstr, off_op - bbi->size);
-					bb->ninstr++;
-					i++;
-				}
-			}
-			bbi->ninstr = new_bbi_instr;
-			return R_ANAL_RET_END;
+			r_anal_bb_set_offset (bb, bb->ninstr, off_op - bbi->size);
+			bb->ninstr++;
+			i++;
 		}
 	}
-	return R_ANAL_RET_NEW;
+	bbi->ninstr = new_bbi_instr;
+	return R_ANAL_RET_END;
 }
 
 // TODO: rename fcn_bb_overlap()

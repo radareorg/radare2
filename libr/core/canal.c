@@ -1430,11 +1430,13 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
-	RAnalBlock *bb;
+	RAnalBlock *bb, *bbi;
+	RListIter *iter;
 	ut64 jump, fail;
 	ut8 *buf = NULL;
 	int buflen, bblen = 0, rc = true;
 	int ret = R_ANAL_RET_NEW;
+	bool x86 = core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86");
 
 	if (--fcn->depth <= 0) {
 		return false;
@@ -1445,7 +1447,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		return false;
 	}
 
-	ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		if (at >= bbi->addr && at < bbi->addr + bbi->size
+		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, at))) {
+			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, at);
+			break;
+		}
+	}
 	if (ret == R_ANAL_RET_DUP) {
 		/* Dupped basic block */
 		goto error;
