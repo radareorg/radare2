@@ -2811,6 +2811,8 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 	HtUP *state = ht_up_new0 ();
 
 	if (!list || !state || !cur_fcn) {
+		r_list_free (list);
+		ht_up_free (state);
 		return NULL;
 	}
 
