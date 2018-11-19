@@ -429,12 +429,13 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		if (endOffset >= left) {
 			endOffset = left;
 		}
+		modules = (struct minidump_module *)(&(module_list->modules));
 		for (i = 0; i < module_list->number_of_modules; i++) {
 			nextOffset += sizeOfModule;
-			if (nextOffset >= endOffset) {
+			if (nextOffset > endOffset) {
+				eprintf ("ovf\n");
 				break;
 			}
-			modules = (struct minidump_module *)(&(module_list->modules));
 			r_list_append (obj->streams.modules, &(modules[i]));
 		}
 		break;

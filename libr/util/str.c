@@ -2182,10 +2182,13 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 	inend = in + inlen;
 	while ((in < inend) && (dst - outstart + 5 < len_dst)) {
 		if (little_endian) {
-			c= *in++;
+			c = *in++;
 		} else {
 			tmp = (ut8*) in;
 			c = *tmp++;
+			if (!*tmp) {
+				break;
+			}
 			c = c | (((ut32)*tmp) << 8);
 			in++;
 		}

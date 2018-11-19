@@ -299,17 +299,21 @@ static RList *sections(RBinFile *bf) {
 			free (ptr);
 			continue;
 		}
-		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&mds, sizeof (struct minidump_string));
+		r_buf_read_at (obj->b, module->module_name_rva,
+			(ut8*)&mds, sizeof (struct minidump_string));
 		str = &mds;
 		// str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
-		ptr->name = calloc (1, str->length * 4);
+		int ptr_name_len = (mds.length + 2) * 4;
+		ptr->name = calloc (1, ptr_name_len);
 		if (!ptr->name) {
 			free (ptr);
 			continue;
 		}
+#if 0
 		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
 			break;
 		}
+#endif
 		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4,
 			(const ut8 *)&(str->buffer), str->length, obj->endian);
 		ptr->vaddr = module->base_of_image;
@@ -339,7 +343,7 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 	}
-	eprintf("[INFO] Parsing data sections for large dumps can take time, "
+	eprintf ("[INFO] Parsing data sections for large dumps can take time, "
 		"please be patient (but if strings ain't your thing try with "
 		"-z)!\n");
 	return ret;
