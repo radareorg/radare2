@@ -8,6 +8,7 @@
 #define IRAPI static inline
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
+#include <r_core.h>
 
 typedef struct {
 	libgdbr_t desc;
@@ -170,6 +171,20 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!desc || !desc->data) {
 		return -1;
 	}
+
+	RCore * core = io->user;
+	RList *sections = r_bin_get_sections (core->bin);
+	if (sections && r_list_length(sections)) {
+		RListIter *iter;
+		RBinSection *section;
+		r_list_foreach (sections, iter, section) {
+			if (section->vaddr <= addr  && addr < section->vaddr + section->size) {
+				return debug_gdb_read_at (buf, count, addr);
+			}
+		}
+		return -1;
+	}
+
 	return debug_gdb_read_at (buf, count, addr);
 }
 
