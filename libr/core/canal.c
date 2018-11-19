@@ -2701,7 +2701,7 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 		return NULL;
 	}
 	ret = recurse (core, bb, dest);
-	return ret? ret : NULL;
+	return ret;
 }
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
