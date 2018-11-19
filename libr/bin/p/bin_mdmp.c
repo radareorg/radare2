@@ -2,6 +2,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
@@ -290,16 +291,31 @@ static RList *sections(RBinFile *bf) {
 
 	// XXX: Never add here as they are covered above
 	r_list_foreach (obj->streams.modules, it, module) {
+		ut8 b[512];
+
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		if (module->module_name_rva > obj->b->length) {
+		if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (obj->b)) {
+			free (ptr);
 			continue;
 		}
-
-		str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
-		ptr->name = calloc (1, str->length * 4);
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4, (const ut8 *)&(str->buffer), str->length, obj->endian);
+		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
+		str = b;
+		int ptr_name_len = (str->length + 2) * 4;
+		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
+			continue;
+		}
+		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
+			break;
+		}
+		ptr->name = calloc (1, ptr_name_len);
+		if (!ptr->name) {
+			free (ptr);
+			continue;
+		}
+		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4,
+				(const ut8 *)(&str->buffer), str->length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
@@ -327,7 +343,7 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 	}
-	eprintf("[INFO] Parsing data sections for large dumps can take time, "
+	eprintf ("[INFO] Parsing data sections for large dumps can take time, "
 		"please be patient (but if strings ain't your thing try with "
 		"-z)!\n");
 	return ret;
