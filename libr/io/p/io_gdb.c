@@ -172,13 +172,13 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 
-	RCore * core = io->user;
+	RCore *core = io->user;
 	RList *sections = r_bin_get_sections (core->bin);
-	if (sections && r_list_length(sections)) {
+	if (sections && r_list_length (sections)) {
 		RListIter *iter;
 		RBinSection *section;
 		r_list_foreach (sections, iter, section) {
-			if (section->vaddr <= addr  && addr < section->vaddr + section->size) {
+			if (section->vaddr <= addr && addr < section->vaddr + section->size) {
 				return debug_gdb_read_at (buf, count, addr);
 			}
 		}
