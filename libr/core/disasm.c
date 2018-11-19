@@ -5136,6 +5136,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	bool hasanal = false;
 	int nbytes = 0;
 	const int addrbytes = core->io->addrbytes;
+	int skip_bytes = 0, skip_bytes_bb = 0;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
@@ -5228,10 +5229,16 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			core->block + addrbytes * i, core->blocksize - addrbytes * i);
 		ds->oplen = ret;
 		if (ds->midflags) {
-			int skip_bytes = handleMidFlags (core, ds, true);
-			if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
-				ret = skip_bytes;
-			}
+			skip_bytes = handleMidFlags (core, ds, true);
+		}
+		if (ds->midbb) {
+			skip_bytes_bb = handleMidBB (core, ds);
+		}
+		if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
+			ret = skip_bytes;
+		}
+		if (skip_bytes_bb && skip_bytes_bb < ret) {
+			ret = skip_bytes_bb;
 		}
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
