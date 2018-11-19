@@ -829,7 +829,7 @@ static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) 
 */
 
 static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method) {
-	RList *the_list = r_bin_java_extract_type_values (method->descriptor);
+	RList *the_list = method ? r_bin_java_extract_type_values (method->descriptor) : NULL;
 	Sdb *D = anal->sdb_types;
 	Sdb *A = anal->sdb_args;
 	const char *type_fmt = "%08"PFMT64x".arg.%d.type",
