@@ -5841,6 +5841,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	r_cons_break_push (NULL, NULL);
 
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
+	int midbb = r_config_get_i (core->config, "asm.bb.middle");
 	i = 0;
 	j = 0;
 toro:
@@ -5878,15 +5879,25 @@ toro:
 		r_asm_set_pc (core->assembler, core->offset + i);
 		ret = r_asm_disassemble (core->assembler, &asmop, core->block + addrbytes * i,
 			core->blocksize - addrbytes * i);
-		if (midflags) {
+		if (midflags || midbb) {
 			RDisasmState ds = {
 				.oplen = ret,
 				.at = core->offset + i,
-				.midflags = midflags
+				.midflags = midflags,
+				.midbb = midbb
 			};
-			int skip_bytes = handleMidFlags (core, &ds, true);
+			int skip_bytes = 0, skip_bytes_bb = 0;
+			if (midflags) {
+				skip_bytes = handleMidFlags (core, &ds, true);
+			}
+			if (midbb) {
+				skip_bytes_bb = handleMidBB (core, &ds);
+			}
 			if (skip_bytes && midflags > R_MIDFLAGS_SHOW) {
 				asmop.size = ret = skip_bytes;
+			}
+			if (skip_bytes_bb && skip_bytes_bb < ret) {
+				asmop.size = ret = skip_bytes_bb;
 			}
 		}
 		if (fmt == 'C') {
