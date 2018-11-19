@@ -2753,39 +2753,117 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	return;
 }
 
-R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
-	RAnalBlock *bb, *root = NULL, *dest = NULL;
-	RListIter *iter, *iter2;
-	RList *list2 = NULL, *list = NULL;
-	RAnalFunction *fcn;
+static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
+	r_return_val_if_fail (bbs, false);
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);
+	RListIter *iter = NULL;
+	RAnalRef *refi;
 
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (!r_anal_fcn_is_in_offset (fcn, core->offset)) {
-			continue;
-		}
-		r_list_foreach (fcn->bbs, iter2, bb) {
-			if (r_anal_bb_is_in_offset (bb, addr)) {
-				dest = bb;
-			}
-			if (r_anal_bb_is_in_offset (bb, core->offset)) {
-				root = bb;
-				r_list_append (list, list2);
+	if (depth < 1) {
+		eprintf ("going too deep\n");
+		return false;
+	}
+
+	if (!bb) {
+		return false;
+	}
+
+	ht_up_update (state, from, bb);
+
+	// try to find the target in the current function
+	if (r_anal_bb_is_in_offset (bb, to) ||
+		((!ht_up_find (avoid, bb->jump, NULL) &&
+			!ht_up_find (state, bb->jump, NULL) &&
+			anal_path_exists (core, bb->jump, to, bbs, depth - 1, state, avoid))) ||
+		((!ht_up_find (avoid, bb->fail, NULL) &&
+			!ht_up_find (state, bb->fail, NULL) &&
+			anal_path_exists (core, bb->fail, to, bbs, depth - 1, state, avoid)))) {
+		r_list_prepend (bbs, bb);
+		return true;
+	}
+
+	// find our current function
+	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, from, 0);
+
+	// get call refs from current basic block and find a path from them
+	if (cur_fcn) {
+		RList *refs = r_anal_fcn_get_refs (core->anal, cur_fcn);
+		if (refs) {
+			r_list_foreach (refs, iter, refi) {
+				if (refi->type == R_ANAL_REF_TYPE_CALL) {
+					if (r_anal_bb_is_in_offset (bb, refi->at)) {
+						if ((refi->at != refi->addr) && !ht_up_find (state, refi->addr, NULL) && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state, avoid)) {
+							r_list_prepend (bbs, bb);
+							return true;
+						}
+					}
+				}
 			}
 		}
 	}
-	if (root && dest) {
-		if (dest == root) {
-			eprintf ("Source and destination are the same\n");
-			return NULL;
-		}
-		eprintf ("ROOT BB 0x%08"PFMT64x"\n", root->addr);
-		eprintf ("DEST BB 0x%08"PFMT64x"\n", dest->addr);
-		list = r_list_new ();
-		printf ("=>  0x%08"PFMT64x"\n", root->jump);
-	} else {
-		eprintf ("Unable to find source or destination basic block\n");
+
+	return false;
+}
+
+static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
+	RAnalFunction *cur_fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	RList *list = r_list_new ();
+	HtUP *state = ht_up_new0 ();
+
+	if (!list || !state || !cur_fcn) {
+		return NULL;
 	}
-	return list;
+
+	// forward search
+	if (anal_path_exists (core, core->offset, addr, list, depth - 1, state, avoid)) {
+		ht_up_free (state);
+		return list;
+	}
+
+	// backward search
+	RList *xrefs = r_anal_xrefs_get (core->anal, cur_fcn->addr);
+	if (xrefs) {
+		RListIter *iter;
+		RAnalRef *xref = NULL;
+		r_list_foreach (xrefs, iter, xref) {
+			if (xref->type == R_ANAL_REF_TYPE_CALL) {
+				ut64 offset = core->offset;
+				core->offset = xref->addr;
+				r_list_free (list);
+				list = anal_graph_to (core, addr, depth - 1, avoid);
+				core->offset = offset;
+				if (list && r_list_length (list)) {
+					ht_up_free (state);
+					return list;
+				}
+			}
+		}
+	}
+
+	ht_up_free (state);
+	return NULL;
+}
+
+R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
+	int depth = r_config_get_i (core->config, "anal.graph_depth");
+	RList *path, *paths = r_list_new ();
+	HtUP *avoid = ht_up_new0 ();
+	while (n) {
+		path = anal_graph_to (core, addr, depth, avoid);
+		if (path) {
+			r_list_append (paths, path);
+			if (r_list_length (path) >= 2) {
+				RAnalBlock *last = r_list_get_n (path, r_list_length (path) - 2);
+				ht_up_update (avoid, last->addr, last);
+				n--;
+				continue;
+			}
+			break;
+		}
+		// no more path found
+		break;
+	}
+	return paths;
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
