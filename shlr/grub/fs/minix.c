@@ -426,7 +426,7 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
               grub_free (filename);
               return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
             }
-
+          grub_free (filename);
 	  continue;
 	}
 

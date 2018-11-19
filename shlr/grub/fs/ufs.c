@@ -577,6 +577,7 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
                 return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
               }
 
+            free (filename);
 	    continue;
 	  }
 	free (filename);  
