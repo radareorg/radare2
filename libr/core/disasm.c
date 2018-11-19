@@ -5343,7 +5343,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	RAsmOp asmop;
 	RDisasmState *ds;
 	RAnalFunction *f;
-	int i, j, k, oplen, ret, line;
+	int i, j, k, ret, line;
 	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
@@ -5488,8 +5488,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				free (ba);
 			}
 		}
-		oplen = r_asm_op_get_size (&asmop);
-		ds->oplen = oplen;
+		ds->oplen = r_asm_op_get_size (&asmop);
 		ds->at = at;
 		if (ds->midflags) {
 			skip_bytes = handleMidFlags (core, ds, false);
@@ -5498,10 +5497,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
 		if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
-			oplen = ds->oplen = ret = skip_bytes;
+			ds->oplen = ret = skip_bytes;
 		}
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
-			oplen = ds->oplen = ret = skip_bytes_bb;
+			ds->oplen = ret = skip_bytes_bb;
 		}
 		{
 			ut64 killme = UT64_MAX;
@@ -5534,7 +5533,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		r_cons_printf (",\"refptr\":%s", r_str_bool (ds->analop.refptr));
 		if (f) {
 			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);
-			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + r_anal_fcn_size (f) - oplen);
+			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + r_anal_fcn_size (f) - ds->oplen);
 		} else {
 			r_cons_printf (",\"fcn_addr\":0");
 			r_cons_printf (",\"fcn_last\":0");
@@ -5630,8 +5629,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		r_cons_printf ("}");
-		i += oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
-		k += oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
+		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
+		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
 		j++; // instructions
 		line++;
 
