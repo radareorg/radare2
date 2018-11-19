@@ -824,6 +824,39 @@ static int cmd_type(void *data, const char *input) {
 		case 'b': // "teb"
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
+		case 'c' : { // "tec"
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list (TDB, true);
+			const char *comma = "";
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (sdbkv_value (kv), "enum")) {
+					if (!name || strcmp (sdbkv_value (kv), name)) {
+						free (name);
+						name = strdup (sdbkv_key (kv));
+						r_cons_printf ("%s %s {", sdbkv_value (kv), name);
+						//r_cons_printf ("%s\"%s\"", comma, name);
+						{
+							RList *list = r_type_get_enum (TDB, name);
+							if (list && !r_list_empty (list)) {
+								RListIter *iter;
+								RTypeEnum *member;
+								comma = "";
+								r_list_foreach (list, iter, member) {
+									r_cons_printf ("%s%s = %d", comma, member->name, r_num_math (NULL, member->val));
+									comma = ", ";
+								}
+							}
+							r_list_free (list);
+						}
+						r_cons_println ("};");		
+					}
+				}
+			}
+			ls_free (l);
+			break;
+		}
 		case ' ' :
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
