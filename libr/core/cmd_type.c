@@ -1255,6 +1255,28 @@ static int cmd_type(void *data, const char *input) {
         		ls_free (l);
         		break;
         	}
+		if (input[1] == 'c') {
+			char *name = NULL;
+           		SdbKv *kv;
+           		SdbListIter *iter;
+        		SdbList *l = sdb_foreach_list (TDB, true);
+        		ls_foreach (l, iter, kv) {
+        			if (!strcmp (sdbkv_value (kv), "typedef")) {
+                			if (!name || strcmp (sdbkv_value (kv), name)) {
+                				free (name);
+                    				name = strdup (sdbkv_key (kv));
+                    				const char *q = sdb_fmt ("typedef.%s", name);
+                        			const char *res = sdb_const_get (TDB, q, 0);
+						if (res) {
+							r_cons_printf ("%s %s %s;\n", sdbkv_value (kv), res, name);
+						}
+          				}
+                		}
+           		}
+			free (name);
+			ls_free (1);
+			break;
+		}
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_tt);
 			break;
