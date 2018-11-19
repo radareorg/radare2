@@ -4163,6 +4163,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		}
 		r_anal_esil_parse (esil, esilstr);
 		r_anal_esil_stack_free (esil);
+		r_anal_op_fini (&aop);
 	}
 	esil->nowrite = false;
 	esil->cb.hook_reg_write = NULL;
@@ -4813,6 +4814,18 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					break;
 				}
 				break;
+			}
+		} else if (input[1] == 'b') { // "aeab"
+			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+			if (bb) {
+				switch (input[2]) {
+				case 'j': // "aeabj"
+					cmd_aea (core, 1<<4, bb->addr, bb->size);
+					break;
+				default:
+					cmd_aea (core, 1, bb->addr, bb->size);
+					break;
+				}
 			}
 		} else {
 			const char *arg = input[1]? input + 2: "";
