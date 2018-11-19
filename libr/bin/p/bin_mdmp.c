@@ -304,12 +304,15 @@ static RList *sections(RBinFile *bf) {
 		str = &mds;
 		// str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
 		int ptr_name_len = (mds.length + 2) * 4;
+		if (ptr_name_len < 1 || ptr_name_len > 1024) {
+			continue;
+		}
 		ptr->name = calloc (1, ptr_name_len);
 		if (!ptr->name) {
 			free (ptr);
 			continue;
 		}
-#if 0
+#if 1
 		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
 			break;
 		}
