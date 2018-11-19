@@ -1246,6 +1246,9 @@ static void place_single(const RAGraph *g, int l, const RGraphNode *bm, const RG
 	const RGraphNode *gk, *v = g->layers[l].nodes[va];
 	const RANode *ak;
 	RANode *av = get_anode (v);
+	if (!av) {
+		return;
+	}
 	const RList *neigh;
 	const RListIter *itk;
 	int len;
