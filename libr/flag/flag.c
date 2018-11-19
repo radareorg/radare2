@@ -469,7 +469,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 			flags_at = NULL;
 		}
 	}
-	return evalFlag (f, nice);
+	return nice? evalFlag (f, nice): NULL;
 }
 
 /* return the list of flag items that are associated with a given offset */

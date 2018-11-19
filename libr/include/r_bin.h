@@ -748,6 +748,7 @@ extern RBinPlugin r_bin_plugin_pebble;
 extern RBinPlugin r_bin_plugin_bios;
 extern RBinPlugin r_bin_plugin_bf;
 extern RBinPlugin r_bin_plugin_te;
+extern RBinPlugin r_bin_plugin_symbols;
 extern RBinPlugin r_bin_plugin_mach0;
 extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_mdmp;

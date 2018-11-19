@@ -885,15 +885,14 @@ R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
  * return: the pointer ptr resized to string size.
  */
 R_API char *r_str_append(char *ptr, const char *string) {
-	int slen, plen;
 	if (string && !ptr) {
 		return strdup (string);
 	}
 	if (!string) {
 		return ptr;
 	}
-	plen = strlen (ptr);
-	slen = strlen (string);
+	int plen = strlen (ptr);
+	int slen = strlen (string);
 	char *newptr = realloc (ptr, slen + plen + 1);
 	if (!newptr) {
 		free (ptr);
