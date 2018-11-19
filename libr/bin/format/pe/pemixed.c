@@ -27,7 +27,6 @@ static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, struct PE_(r_bin_
 //carves out dos from original pe
 //TODO: return mz file instead pe
 struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(struct PE_(r_bin_pe_obj_t)* pe_bin) {
-	struct PE_(r_bin_pe_obj_t)* sub_bin_dos = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	ut8 * tmp_buf;
 
 	ut64 pe_hdr_off = pe_bin->dos_header->e_lfanew;
@@ -43,6 +42,7 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(struct PE_(r_bin_pe_obj_t)* p
 		return NULL;
 	}
 
+	struct PE_(r_bin_pe_obj_t)* sub_bin_dos = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	if (!(sub_bin_dos->b = r_buf_new_with_bytes(tmp_buf, pe_hdr_off))) {
 		PE_(r_bin_pe_free) (sub_bin_dos);
 		return NULL;

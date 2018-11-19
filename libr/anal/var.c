@@ -572,7 +572,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
-	char v_kind;
+	char v_kind = 0;
 	int v_delta = 0;
 	while (1) {
 		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, varname);
