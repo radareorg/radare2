@@ -540,6 +540,7 @@ typedef struct r_bin_import_t {
 } RBinImport;
 
 typedef struct r_bin_reloc_t {
+	char *name;
 	ut8 type;
 	ut8 additive;
 	RBinSymbol *symbol;

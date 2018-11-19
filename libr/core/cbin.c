@@ -1530,7 +1530,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
-			char *name = reloc->import
+			char *name = reloc->name? reloc->name : reloc->import
 				? strdup (reloc->import->name)
 				: (reloc->symbol ? strdup (reloc->symbol->name) : NULL);
 			if (name && bin_demangle) {
@@ -1584,7 +1584,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				}
 			}
 		} else if (IS_MODE_NORMAL (mode)) {
-			char *name = reloc->import
+			char *name = reloc->name
+				? strdup (reloc->name)
+				: reloc->import
 				? strdup (reloc->import->name)
 				: reloc->symbol
 				? strdup (reloc->symbol->name)
@@ -1597,9 +1599,10 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				}
 			}
 			RStrBuf *buf = r_strbuf_new ("");
-			if ((reloc->import && reloc->import->name[0]) || (reloc->symbol && name && name[0])) {
-				r_strbuf_appendf (buf, " %s", name);
-			}
+			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" type=%s",
+				addr, reloc->paddr, bin_reloc_type_name (reloc));
+			const char *n = (reloc->name)? reloc->name: name;
+			r_strbuf_appendf (buf, " %s", n);
 			R_FREE (name);
 			if (reloc->addend) {
 				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
