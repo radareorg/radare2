@@ -13,24 +13,22 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	if (!buf || !buf->buf || !buf->length || buf->length == UT64_MAX) {
+		return NULL;
 	}
-	if (!check_bytes (buf, sz)) {
-		return false;
+	if (!check_bytes (buf->buf, buf->length)) {
+		return NULL;
 	}
-	*bin_obj = r_bin_wasm_init (bf);
-	return true;
+	return r_bin_wasm_init (bf);
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 	if (!bf || !bf->o) {
 		return false;
 	}
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	bf->o->bin_obj = load_buffer (bf, &bf->buf, bf->o->loadaddr, bf->sdb);
+	return bf->o->bin_obj != NULL;
 }
 
 static int destroy(RBinFile *bf) {
@@ -169,7 +167,7 @@ static RList *symbols(RBinFile *bf) {
 			goto bad_alloc;
 		}
 		char tmp[R_BIN_SIZEOF_STRINGS];
-		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fnc.%d", i);
+		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fcn.%d", i);
 		ptr->name = strdup(tmp);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ("NONE");
@@ -216,6 +214,8 @@ static RList *imports(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			goto bad_alloc;
 		}
+		eprintf("%s\n", import->field_str);
+		eprintf("%s\n", import->module_str);
 		ptr->name = strdup (import->field_str);
 		ptr->classname = strdup (import->module_str);
 		ptr->ordinal = i;
@@ -256,7 +256,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("module");
 	ret->rclass = strdup ("wasm");
-	ret->os = strdup ("Wasm");
+	ret->os = strdup ("WebAssembly");
 	ret->arch = strdup ("wasm");
 	ret->machine = strdup (ret->arch);
 	ret->subsystem = strdup ("wasm");
@@ -290,7 +290,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.desc = "WebAssembly bin plugin",
 	.license = "MIT",
 	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
