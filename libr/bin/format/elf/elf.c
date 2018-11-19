@@ -1357,7 +1357,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 					ut64 base = r_read_be32 (buf);
 					base -= (nrel * 16);
 					base += (k * 16);
-					base += 48; // maybe not for 32bit elfs?
+					// TODO base += 48; // elf64 bins only?
 					plt_addr = base;
 					free (REL);
 					return plt_addr;
