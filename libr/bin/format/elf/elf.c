@@ -1347,21 +1347,33 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			case EM_PPC:
 			case EM_PPC64:
 				{
-					RBinElfSection *s = plt_section;
-					if (s) {
-						ut8 buf[4];
-						ut64 base;
-						len = r_buf_read_at (bin->b, s->offset, buf, sizeof (buf));
-						if (len < 4) {
-							goto out;
-						}
-						base = r_read_be32 (buf);
+				RBinElfSection *s = plt_section;
+				if (s) {
+					ut8 buf[4] = {0};
+					len = r_buf_read_at (bin->b, s->offset, buf, sizeof (buf));
+					if (len < 4) {
+						goto out;
+					}
+					if (bin->endian) {
+						ut64 base = r_read_be32 (buf);
 						base -= (nrel * 16);
 						base += (k * 16);
 						plt_addr = base;
-						free (REL);
-						return plt_addr;
+					} else {
+						if (is_rela && rel_sec) {
+							len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
+							if (len < 4) {
+								goto out;
+							}
+						}
+						ut64 base = r_read_le32 (buf);
+						base -= (nrel * 12) + 20;
+						base += (k * 8);
+						plt_addr = base;
 					}
+					free (REL);
+					return plt_addr;
+				}
 				}
 				break;
 			case EM_SPARC:
