@@ -2474,11 +2474,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							addr = UT64_MAX;
 						}
 					} else {
-						int h, w = r_cons_get_size (&h);
+						int h;
 						int hexCols = r_config_get_i (core->config, "hex.cols");
 						if (hexCols < 1) {
 							hexCols = 16;
 						}
+						(void)r_cons_get_size (&h);
 						int delta = hexCols * (h / 4);
 						addr = core->offset + delta;
 					}

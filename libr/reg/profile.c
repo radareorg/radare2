@@ -365,7 +365,7 @@ static int gdb_to_r2_profile(char *gdb) {
 }
 
 R_API int r_reg_parse_gdb_profile(const char *profile_file) {
-	char *base, *file, *str = NULL;
+	char *base, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {
 			char *file = r_str_append (base, profile_file);
