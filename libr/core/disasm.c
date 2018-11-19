@@ -5629,8 +5629,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		r_cons_printf ("}");
-		i += oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
-		k += oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
+		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
+		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
 		j++; // instructions
 		line++;
 
