@@ -1266,11 +1266,9 @@ static int cmd_type(void *data, const char *input) {
                 				free (name);
                     				name = strdup (sdbkv_key (kv));
                     				const char *q = sdb_fmt ("typedef.%s", name);
-						if (q) {
-                        				const char *res = sdb_const_get (TDB, q, 0);
-							if (res) {
-								r_cons_printf ("%s %s %s;\n", sdbkv_value (kv), res, name);
-							}
+                        			const char *res = sdb_const_get (TDB, q, 0);
+						if (res) {
+							r_cons_printf ("%s %s %s;\n", sdbkv_value (kv), res, name);
 						}
           				}
                 		}
