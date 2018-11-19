@@ -266,6 +266,7 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 		}
 		r2p_close (r2p);
 		exit (rc);
+		return NULL;
 	}
 #endif
 	return r2p;
