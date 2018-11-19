@@ -9,6 +9,7 @@
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
 #include <r_core.h>
+#include <r_bin.h>
 
 typedef struct {
 	libgdbr_t desc;
