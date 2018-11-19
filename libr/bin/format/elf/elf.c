@@ -1354,11 +1354,17 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 					if (len < 4) {
 						goto out;
 					}
-					ut64 base = r_read_be32 (buf);
-					base -= (nrel * 16);
-					base += (k * 16);
-					// TODO base += 48; // elf64 bins only?
-					plt_addr = base;
+					if (bin->endian) {
+						ut64 base = r_read_be32 (buf);
+						base -= (nrel * 16);
+						base += (k * 16);
+						plt_addr = base;
+					} else {
+						ut64 base = r_read_le32 (buf);
+						base -= (nrel * 12) + 20;
+						base += (k * 8);
+						plt_addr = base;
+					}
 					free (REL);
 					return plt_addr;
 				}
