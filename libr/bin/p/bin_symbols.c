@@ -99,7 +99,7 @@ static RList *parseSegments(RBuffer *buf, int off, int count) {
 		int B = r_read_le32 (b + X + 16 + 8);
 	//	eprintf ("0x%08x  segment  0x%08x 0x%08x  %s\n",
 	//		x, A, A + B, b + X);
-		const char *name = b + X;
+		const char *name = (const char *)(b + X);
 		r_list_append (segments, newSection ((const char *)b + X, A, A + B, true));
 		x += 32;
 		X += 32;
@@ -114,10 +114,12 @@ static const char *typeString(ut32 n, int *bits) {
 	}
 	if (n == 0x0100000c) { // arm64
 		*bits = 64;
+		is64 = true;
 		return "arm";
 	}
 	if (n == 0x0200000c) { // arm64-32
 		//  TODO: must change bits
+		is64 = false;
 		*bits = 64;
 		return "arm";
 	}
@@ -162,7 +164,7 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	// eprintf ("0x%x next %x %x %x\n", off + sm.size, nm, nm2, nm3);
 	if (r_read_le32 (&nm3) != 0xa1b22b1a) {
 		sm.size -= 8;
-		is64 = true;
+//		is64 = true;
 	}
 	return sm;
 }
@@ -291,18 +293,27 @@ static SymbolsDragons parseDragons(RBuffer *buf, int off, int bits) {
 	0x00000218 |4954 0000 0000 0000 0000 0000 d069 0000| IT...........i..
 #endif
 	// eprintf ("Dragon's magic:\n");
+	int magicCombo = 0;
 	if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) {  // 0x130  ?
-	//	eprintf ("0x%08x  magic  OK\n", off);
-	} else {
-		eprintf ("0x%08x  parsing error: invalid magic\n", off);
+		magicCombo++;
 	}
-	// const int number = r_read_le32 (b + 4); // [4] = 3
-	// eprintf ("0x%08x  number 0x%x\n", off + 4, number); // [8] = number
 	if (!memcmp ("\x1a\x2b\xb2\xa1", b + 8, 4)) {
-	//	eprintf ("0x%08x  magic  OK\n", off + 8);
-	} else {
-		eprintf ("0x%08x  parsing error: invalid magic\n", off + 8);
+		magicCombo++;
 	}
+	if (magicCombo != 2) {
+		// hack for C22F7494
+		available = r_buf_read_at (buf, off - 8, b, size);
+		if (available != size) {
+			eprintf ("Warning: r_buf_read_at failed\n");
+			return sd;
+		}
+		if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) {  // 0x130  ?
+			off -= 8;
+		} else {
+			eprintf ("0x%08x  parsing error: invalid magic retry\n", off);
+		}
+	}
+	//	eprintf ("0x%08x  magic  OK\n", off);
 	// const int e0ss = r_read_le32 (b + 12);
 	// eprintf ("0x%08x  eoss   0x%x\n", off + 12, e0ss);
 
@@ -311,14 +322,18 @@ static SymbolsDragons parseDragons(RBuffer *buf, int off, int bits) {
 	parseSegments (buf, SEGMENTS_BEGIN, sd.n_segments);
 	
 	sd.n_symbols = r_read_le32 (b + 0x20); // depends on nsections
-	if (sd.n_symbols > 4096) {
-		eprintf ("Warning: too many symbols, truncated to 4096\n");
-		sd.n_symbols = 4096;
+	if (sd.n_symbols > 1024 * 1024) {
+		eprintf ("Warning: too many symbols %d, truncated to 2048\n", sd.n_symbols);
+		sd.n_symbols = 2048;
 	}
 	sd.addr = off;
-	sd.size = SEGMENTS_BEGIN - off;
+	sd.size = 0x70 - 8;  // SEGMENTS_BEGIN - off;
 	sd.size += sd.n_segments * 32;
-	sd.size += sd.n_sections * 16;
+	if (is64) {
+		sd.size += sd.n_sections * 24;
+	} else {
+		sd.size += sd.n_sections * 16;
+	}
 	free (b);
 	return sd;
 }
@@ -346,7 +361,14 @@ static RList *parseSections(RBuffer *b, int x, int n_sections, RList *strings) {
 	bool must_free = false;
 	if (!strings) {
 		strings = parseStrings (b, stringsBeginAt, buf_sz);
-		must_free = true;
+		if (strings) {
+			must_free = true;
+		}
+	}
+	// hack
+	r_buf_read_at (b, x, (ut8*)buf, 4);
+	if (buf[0] == '_') {
+		x+=16;
 	}
 	RList *res = r_list_newf ((RListFree)r_bin_section_free);
 	int i;
@@ -357,7 +379,7 @@ static RList *parseSections(RBuffer *b, int x, int n_sections, RList *strings) {
 		if  (off +8 >= buf_sz) {
 			break;
 		}
-		RBinString *name = r_list_get_n (strings, i);
+		RBinString *name = strings? r_list_get_n (strings, i): NULL;
 		const char *namestr = name? name->string: "";
 		ut32 A = r_read_le32 (buf + off);
 		ut32 B = r_read_le32 (buf + off + 4);
@@ -494,12 +516,11 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	// 0x3a0 - 0x1648       // table of dwords with -1
 	// XXX this is hacky, do not hardcode
 	symbolsBeginAt = sd.addr + sd.size; // is64? 0x458: 0x3a0;
-	D eprintf ("SYMBOLS BEGIN AT 0x%08x\n", symbolsBeginAt);
-	// symbolsBeginAt = 0x410;
-	D eprintf ("SYMBOLS 0x%x\n", symbolsBeginAt);
+	D eprintf ("Symbols at 0x%08x\n", (ut32)symbolsBeginAt);
 	RList *symbols = parseSymbols (buf, symbolsBeginAt, &dwordsBeginAt, sd.n_symbols);
+	D eprintf  ("Dwords at 0x%08x\n", (ut32)dwordsBeginAt);
 	stringsBeginAt = dwordsBeginAt + (sd.n_symbols * 8);
-	D eprintf  ("Strings BEGIN AT 0x%08x\n", stringsBeginAt);
+	D eprintf  ("Strings at 0x%08x\n", (ut32)stringsBeginAt);
 
 	// 0x1648 - 0x1c80      // table of dword pairs (unknown data)
 	parseTable3 (buf, dwordsBeginAt);
