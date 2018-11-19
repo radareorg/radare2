@@ -1360,7 +1360,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 						base += (k * 16);
 						plt_addr = base;
 					} else {
-						if (is_rela) {
+						if (is_rela && rel_sec) {
 							len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
 							if (len < 4) {
 								goto out;
@@ -1368,7 +1368,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 						}
 						ut64 base = r_read_le32 (buf);
 						base -= (nrel * 12) + 20;
-						base += (k * 4);
+						base += (k * 8);
 						plt_addr = base;
 					}
 					free (REL);
