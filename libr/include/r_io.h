@@ -257,6 +257,7 @@ typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
+typedef void *(*RIOPtraceFuncFn) (RIO *io, void *(*func)(void *), void *user);
 #endif
 
 typedef struct r_io_bind_t {
@@ -290,6 +291,7 @@ typedef struct r_io_bind_t {
 	RIOSectionAdd section_add;
 #if HAVE_PTRACE
 	RIOPtraceFn ptrace;
+	RIOPtraceFuncFn ptrace_func;
 #endif
 } RIOBind;
 
@@ -496,6 +498,7 @@ R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 #if HAVE_PTRACE
 R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
 R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user);
+R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user);
 #endif
 
 extern RIOPlugin r_io_plugin_procpid;

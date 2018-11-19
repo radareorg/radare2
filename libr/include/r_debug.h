@@ -609,6 +609,10 @@ R_API bool r_debug_continue_back(RDebug *dbg);
 static inline long r_debug_ptrace(RDebug *dbg, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data) {
 	return dbg->iob.ptrace (dbg->iob.io, request, pid, addr, data);
 }
+
+static inline void *r_debug_ptrace_func(RDebug *dbg, void *(*func)(void *), void *user) {
+	return dbg->iob.ptrace_func (dbg->iob.io, func, user);
+}
 #endif
 
 /* plugin pointers */
