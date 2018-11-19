@@ -474,7 +474,7 @@ static int compute_dyn_entries(ELFOBJ *bin, Elf_(Phdr) *dyn_phdr, ut64 dyn_size)
 
 static int init_dynamic_section(ELFOBJ *bin) {
 	Elf_(Dyn) *dyn = NULL;
-	Elf_(Addr) strtabaddr = 0;
+	ut64 strtabaddr = 0;
 	char *strtab = NULL;
 	size_t relentry = 0, strsize = 0;
 	int entries;
