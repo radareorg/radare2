@@ -301,7 +301,7 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
-		str = b;
+		str = (struct minidump_string *)b;
 		int ptr_name_len = (str->length + 2) * 4;
 		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
 			continue;
