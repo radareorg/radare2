@@ -62,6 +62,12 @@ struct r_bin_wasm_resizable_limits_t {
 	ut32 maximum;
 };
 
+typedef struct r_bin_wasm_symbol_t {
+	ut8 id;
+	ut32 name_len;
+	char name[R_BIN_WASM_STRING_LENGTH];
+} RBinWasmSymbol;
+
 typedef struct r_bin_wasm_section_t {
 	ut8 id;
 	ut32 size;
@@ -198,6 +204,7 @@ typedef struct r_bin_wasm_obj_t {
 	RList *g_elements;
 	RList *g_codes;
 	RList *g_datas;
+	RList *g_symtab;
 	RBinWasmStartEntry *g_start;
 	// etc...
 
@@ -215,6 +222,7 @@ RList *r_bin_wasm_get_globals (RBinWasmObj *bin);
 RList *r_bin_wasm_get_elements (RBinWasmObj *bin);
 RList *r_bin_wasm_get_codes (RBinWasmObj *bin);
 RList *r_bin_wasm_get_datas (RBinWasmObj *bin);
+RList *r_bin_wasm_get_symtab (RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin);
 const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type);
 

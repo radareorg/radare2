@@ -13,6 +13,10 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
 }
 
+static int find_symbol(const ut8 *p, const RBinWasmSymbol* q) {
+	return q->id != (*p);
+}
+
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (!buf || !buf->buf || !buf->length || buf->length == UT64_MAX) {
 		return NULL;
@@ -27,7 +31,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_buffer (bf, &bf->buf, bf->o->loadaddr, bf->sdb);
+	bf->o->bin_obj = load_buffer (bf, bf->buf, bf->o->loadaddr, bf->sdb);
 	return bf->o->bin_obj != NULL;
 }
 
@@ -120,7 +124,7 @@ static RList *sections(RBinFile *bf) {
 
 static RList *symbols(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
-	RList *ret = NULL, *codes = NULL, *imports = NULL;
+	RList *ret = NULL, *codes = NULL, *imports = NULL, *symtab = NULL;
 	RBinSymbol *ptr = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -134,6 +138,9 @@ static RList *symbols(RBinFile *bf) {
 		goto bad_alloc;
 	}
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
+		goto bad_alloc;
+	}
+	if (!(symtab = r_bin_wasm_get_symtab (bin))) {
 		goto bad_alloc;
 	}
 
@@ -161,14 +168,26 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
+	ut8 fcn_id = 0;
+	RListIter *sym_it = NULL;
 	RBinWasmCodeEntry *func;
+	RBinWasmSymbol *wasm_sym = NULL;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
 		}
-		char tmp[R_BIN_SIZEOF_STRINGS];
-		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fcn.%d", i);
-		ptr->name = strdup(tmp);
+
+		sym_it = r_list_find (symtab, &fcn_id, (RListComparator) find_symbol);
+		if (sym_it) {
+			wasm_sym = (RBinWasmSymbol *) r_list_iter_get_data (sym_it);
+			ptr->name = strdup (wasm_sym->name);
+		} else {
+			// fallback if symbol is not found.
+			char tmp[R_BIN_SIZEOF_STRINGS];
+			snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fcn.%d", fcn_id);
+			ptr->name = strdup (tmp);
+		}
+
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ("NONE");
 		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
@@ -177,10 +196,10 @@ static RList *symbols(RBinFile *bf) {
 		ptr->paddr = (ut64)func->code;
 		ptr->ordinal = i;
 		i++;
+		fcn_id++;
 		r_list_append (ret, ptr);
 	}
 
-	// TODO: use custom section "name" if present
 	// TODO: exports, globals, tables and memories
 	return ret;
 bad_alloc:
@@ -214,8 +233,6 @@ static RList *imports(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			goto bad_alloc;
 		}
-		eprintf("%s\n", import->field_str);
-		eprintf("%s\n", import->module_str);
 		ptr->name = strdup (import->field_str);
 		ptr->classname = strdup (import->module_str);
 		ptr->ordinal = i;
