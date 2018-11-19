@@ -2464,9 +2464,23 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
-					ut64 addr = core->print->screen_bounds;
-					if (core->print->screen_bounds == core->offset) {
-						addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
+					ut64 addr = UT64_MAX;
+					if (isDisasmPrint (core->printidx)) {
+						if (core->print->screen_bounds == core->offset) {
+							ut64 addr = core->print->screen_bounds;
+							addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
+						}
+						if (addr == core->offset) {
+							addr = UT64_MAX;
+						}
+					} else {
+						int h, w = r_cons_get_size (&h);
+						int hexCols = r_config_get_i (core->config, "hex.cols");
+						if (hexCols < 1) {
+							hexCols = 16;
+						}
+						int delta = hexCols * (h / 4);
+						addr = core->offset + delta;
 					}
 					r_core_seek (core, addr, 1);
 				} else {
