@@ -186,9 +186,7 @@ static RList *symbols(RBinFile *bf) {
 			ptr->name = strdup (wasm_sym->name);
 		} else {
 			// fallback if symbol is not found.
-			char tmp[R_BIN_SIZEOF_STRINGS];
-			snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fcn.%d", fcn_id);
-			ptr->name = strdup (tmp);
+			ptr->name = r_str_newf ("fcn.%d", fcn_id);
 		}
 
 		ptr->forwarder = r_str_const ("NONE");

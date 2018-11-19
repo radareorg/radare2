@@ -1248,9 +1248,8 @@ RList *r_bin_wasm_get_symtab (RBinWasmObj *bin) {
 	RBinWasmSection *cust = NULL;
 	RList *symtab = NULL;
 
-	if (!bin || !bin->g_sections) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->g_sections, NULL);
+
 	if (bin->g_symtab) {
 		return bin->g_symtab;
 	}
