@@ -2580,7 +2580,8 @@ static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, int *i, c
 	ret[*i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
 	ret[*i].rva = addr;
 	ret[*i].size = sz;
-	strcpy (ret[*i].name, name);
+	strncpy (ret[*i].name, name, R_ARRAY_SIZE (ret[*i].name) - 1);
+	ret[*i].name[R_ARRAY_SIZE (ret[*i].name) - 1] = '\0';
 	ret[*i].last = 0;
 	*i = *i + 1;
 }
