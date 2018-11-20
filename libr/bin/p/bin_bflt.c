@@ -18,7 +18,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *
 	r_buf_set_bytes (tbuf, buf, sz);
 	struct r_bin_bflt_obj *res = r_bin_bflt_new_buf (tbuf);
 	r_buf_free (tbuf);
-	*bin_obj = res;
+	bf->o->bin_obj = res;
 	return true;
 }
 

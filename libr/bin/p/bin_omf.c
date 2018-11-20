@@ -10,7 +10,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddrn, 
 	if (!buf || !size || size == UT64_MAX) {
 		return false;
 	}
-	*bin_obj = r_bin_internal_omf_load (buf, size);
+	bf->o->bin_obj = r_bin_internal_omf_load (buf, size);
 	return true;
 }
 

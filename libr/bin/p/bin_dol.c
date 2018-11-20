@@ -71,7 +71,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 		r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
 		// r_buf_fread_at (bf->buf, 0, (void*)dol, "67i", 1);
 		if (bf && bf->o && bf->o->bin_obj) {
-			*bin_obj = bf->o->bin_obj = dol;
+			bf->o->bin_obj = dol;
 		}
 		free (dol);
 		return true;

@@ -21,7 +21,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
+	bf->o->bin_obj = memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
 	return (*bin_obj != NULL);
 }
 

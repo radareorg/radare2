@@ -83,7 +83,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	tmp_bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
-	*bin_obj = tmp_bin_obj;
+	bf->o->bin_obj = tmp_bin_obj;
 	add_bin_obj_to_sdb (tmp_bin_obj);
 	if (bf && bf->file) {
 		tmp_bin_obj->file = strdup (bf->file);

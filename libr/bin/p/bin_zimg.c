@@ -24,7 +24,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddr, S
 	r_buf_set_bytes (tbuf, buf, size);
 	res = r_bin_zimg_new_buf (tbuf);
 	r_buf_free (tbuf);
-	*bin_obj = res;
+	bf->o->bin_obj = res;
 	return true;
 }
 

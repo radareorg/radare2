@@ -200,7 +200,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 	r_buf_free (tbuf);
 
 	if (res) {
-		*bin_obj = res;
+		bf->o->bin_obj = res;
 		return true;
 	} else {
 		return false;

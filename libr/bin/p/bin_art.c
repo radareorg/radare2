@@ -75,7 +75,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb)
 	}
 	art_header_load (&ao->art, bf->buf, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
-	*bin_obj = ao;
+	bf->o->bin_obj = ao;
 	return true;
 }
 

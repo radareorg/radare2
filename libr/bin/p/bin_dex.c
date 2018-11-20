@@ -721,7 +721,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 		return false;
 	}
 	r_buf_set_bytes (tbuf, buf, sz);
-	*bin_obj = r_bin_dex_new_buf (tbuf);
+	bf->o->bin_obj = r_bin_dex_new_buf (tbuf);
 	r_buf_free (tbuf);
 	return true;
 }

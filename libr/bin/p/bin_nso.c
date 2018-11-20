@@ -90,7 +90,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	r_buf_free (newbuf);
-	*bin_obj = bin;
+	bf->o->bin_obj = bin;
 	return true;
 fail:
 	r_buf_free (newbuf);

@@ -97,7 +97,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb)
 		return false;
 	}
 	sdb_ns_set (sdb, "info", bio->kv);
-	*bin_obj = bio;
+	bf->o->bin_obj = bio;
 	return true;
 }
 

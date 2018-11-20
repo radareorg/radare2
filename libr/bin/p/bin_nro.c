@@ -48,7 +48,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
 	parseMod (bf->buf, bin, mod0, ba);
-	*bin_obj = bin;
+	bf->o->bin_obj = bin;
 	return true;
 }
 

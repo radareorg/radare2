@@ -103,7 +103,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb
 		res->kv = sdb_new0 ();
 		sdb_ns_set (sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	bf->o->bin_obj = res;
 	return true;
 }
 
