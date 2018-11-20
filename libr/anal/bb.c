@@ -270,18 +270,33 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 /* return true if an instruction starts at a given address of the given
  * basic block. */
 R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
-	ut16 off, inst_off;
-	int i;
+	ut16 off;
+	int low, hi, mid;
 
-	if (!r_anal_bb_is_in_offset (bb, addr)) {
+	if (!r_anal_bb_is_in_offset (bb, addr) || bb->ninstr < 1) {
 		return false;
 	}
 	off = addr - bb->addr;
-	for (i = 0; i < bb->ninstr; i++) {
-		inst_off = r_anal_bb_offset_inst (bb, i);
-		if (off == inst_off) {
-			return true;
-		}
+
+	// offset 0 of instruction 0 not stored
+	if (!off) {
+		return true;
 	}
+	if (bb->ninstr == 1) {
+		return !off;
+	}
+
+	low = 0;
+	hi = bb->ninstr - 2;
+	do {
+		mid = (low + hi) >> 1;
+		if (off == bb->op_pos[mid]) {
+			return true;
+		} else if (off > bb->op_pos[mid]) {
+			low = mid + 1;
+		} else {
+			hi = mid - 1;
+		}
+	} while (low <= hi);
 	return false;
 }
