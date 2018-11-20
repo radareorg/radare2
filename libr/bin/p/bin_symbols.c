@@ -99,7 +99,8 @@ static RList *parseSegments(RBuffer *buf, int off, int count) {
 		//	eprintf ("0x%08x  segment  0x%08x 0x%08x  %s\n",
 		//		x, A, A + B, b + X);
 		const char *name = (const char *)(b + X);
-		r_list_append (segments, newSection ((const char *)b + X, A, A + B, true));
+		RBinSection *section = newSection (name, A, A + B, true);
+		r_list_append (segments, section);
 		x += 32;
 		X += 32;
 	}
