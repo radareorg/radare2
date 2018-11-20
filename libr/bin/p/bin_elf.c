@@ -20,7 +20,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_ehdrsz, p_phdrsz;
@@ -29,9 +29,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 baddr;
 	int is_arm = 0;
 	RBuffer *buf = r_buf_new ();
-	if (bin && bin->cur && bin->cur->o && bin->cur->o->info) {
-		is_arm = !strcmp (bin->cur->o->info->arch, "arm");
-	}
+
+	r_return_val_if_fail (bin && opt && opt->arch, NULL);
+	is_arm = !strcmp (opt->arch, "arm");
 	// XXX: hardcoded
 	if (is_arm) {
 		baddr = 0x40000;

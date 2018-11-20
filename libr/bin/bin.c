@@ -124,6 +124,12 @@ R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 load
 	opt->rawstr = rawstr;
 }
 
+R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits) {
+	memset (opt, 0, sizeof (*opt));
+	opt->arch = arch? arch: R_SYS_ARCH;
+	opt->bits = bits? bits: 32;
+}
+
 R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
@@ -1219,20 +1225,28 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 	}
 }
 
-R_API RBuffer *r_bin_create(RBin *bin, const ut8 *code, int codelen,
-			     const ut8 *data, int datalen) {
-	RBinFile *a = r_bin_cur (bin);
-	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+R_API RBuffer *r_bin_create(RBin *bin, const char *plugin_name,
+	const ut8 *code, int codelen, const ut8 *data, int datalen,
+	RBinArchOptions *opt) {
+
+	r_return_val_if_fail (bin && plugin_name && opt, NULL);
+
+	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, plugin_name);
+	if (!plugin) {
+		R_LOG_WARN ("Cannot find RBin plugin named '%s'.\n", plugin_name);
+		return NULL;
+	} else if (!plugin->create) {
+		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.\n", plugin_name);
+		return NULL;
+	}
+
 	if (codelen < 0) {
 		codelen = 0;
 	}
 	if (datalen < 0) {
 		datalen = 0;
 	}
-	if (plugin && plugin->create) {
-		return plugin->create (bin, code, codelen, data, datalen);
-	}
-	return NULL;
+	return plugin->create (bin, code, codelen, data, datalen, opt);
 }
 
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files) {

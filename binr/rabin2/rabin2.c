@@ -899,18 +899,9 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		codelen = r_hex_str2bin (p, code);
-		if (!arch) {
-			arch = R_SYS_ARCH;
-		}
-		if (!bits) {
-			bits = 32;
-		}
-		if (!r_bin_use_arch (bin, arch, bits, create)) {
-			eprintf ("Cannot set arch\n");
-			r_core_fini (&core);
-			return 1;
-		}
-		b = r_bin_create (bin, code, codelen, data, datalen);
+		RBinArchOptions opts;
+		r_bin_arch_options_init (&opts, arch, bits);
+		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
 			if (r_file_dump (file, b->buf, b->length, 0)) {
 				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);

@@ -15,7 +15,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
