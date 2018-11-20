@@ -55,7 +55,7 @@ static bool load(RBinFile *bf) {
 	}
 	bytes = r_buf_buffer (bf->buf);
 	sz = r_buf_size (bf->buf);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {

@@ -27,7 +27,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 

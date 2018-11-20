@@ -225,7 +225,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static RList *sections(RBinFile *bf) {

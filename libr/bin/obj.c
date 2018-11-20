@@ -182,7 +182,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		if (sz < bsz) {
 			bsz = sz;
 		}
-		if (!plugin->load_bytes (binfile, &o->bin_obj, bytes + offset, sz,
+		if (!plugin->load_bytes (binfile, bytes + offset, sz,
 					 loadaddr, sdb)) {
 			bprintf (
 				"Error in r_bin_object_new: load_bytes failed "
@@ -192,6 +192,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 			free (o);
 			return NULL;
 		}
+		o->bin_obj = binfile->o->bin_obj;
 	} else if (plugin->load) {
 		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load.\n", plugin->name);
 		// XXX - haha, this is a hack.

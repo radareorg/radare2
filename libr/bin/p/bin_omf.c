@@ -20,7 +20,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	return load_bytes (bf, &bf->o->bin_obj, byte, size, bf->o->loadaddr, bf->sdb);
+	return load_bytes (bf, byte, size, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {

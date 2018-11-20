@@ -737,7 +737,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static ut64 baddr(RBinFile *bf) {

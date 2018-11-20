@@ -79,7 +79,7 @@ static bool load(RBinFile *bf) {
 	if (bf && bf->buf) {
 		const ut8 *bytes = r_buf_buffer (bf->buf);
 		ut64 sz = r_buf_size (bf->buf);
-		return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+		return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 	}
 	return false;
 }

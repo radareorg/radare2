@@ -61,7 +61,7 @@ static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
-	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
+	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static int destroy(RBinFile *bf) {

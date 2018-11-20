@@ -102,7 +102,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 
-	load_bytes (bf, (void **) &bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
 
 	if (bin_obj) {
 		if (!bf->o->kv) {
