@@ -562,6 +562,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->sect_vget = r_io_section_vget;
 #if HAVE_PTRACE
 	bnd->ptrace = r_io_ptrace;
+	bnd->ptrace_func = r_io_ptrace_func;
 #endif
 }
 
@@ -672,6 +673,17 @@ R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *chil
 #endif
 }
 #endif
+
+
+R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
+#if USE_PTRACE_WRAP
+	ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
+	if (wrap) {
+		return ptrace_wrap_func (wrap, func, user);
+	}
+#endif
+	return func (user);
+}
 
 
 //remove all descs and maps
