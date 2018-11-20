@@ -2470,8 +2470,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							ut64 addr = core->print->screen_bounds;
 							addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
 						}
-						if (addr == core->offset) {
-							addr = UT64_MAX;
+						if (addr == core->offset || addr == UT64_MAX) {
+							addr = core->offset + 48;
 						}
 					} else {
 						int h;
