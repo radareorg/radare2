@@ -92,6 +92,7 @@ static const char *help_msg_te[] = {
 	"tej", " <enum>", "Show enum in json",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
+	"tec", "", "List all loaded enums in C output format",
 	"te?", "", "show this help",
 	NULL
 };
@@ -101,6 +102,7 @@ static const char *help_msg_tt[] = {
 	"tt", "", "List all loaded typedefs",
 	"tt", " <typename>", "Show name for given type alias",
 	"ttj", "", "Show typename and type alias in json",
+	"ttc", "", "Show typename and type alias in C output format",
 	"tt?", "", "show this help",
 	NULL
 };
