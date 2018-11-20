@@ -5540,7 +5540,7 @@ static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
 	}
 }
 
-static char *get_buf_asm(RCore *core, ut64 addr, RAnalFunction *fcn, bool color) {
+static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, bool color) {
 	int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char str[512];
 	const int size = 12;
@@ -5551,6 +5551,10 @@ static char *get_buf_asm(RCore *core, ut64 addr, RAnalFunction *fcn, bool color)
 	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
+
+	if (core->parser->relsub) {
+		core->parser->relsub_addr = from;
+	}
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->assembler, addr);
 	r_asm_disassemble (core->assembler, &asmop, buf, size);
@@ -5645,7 +5649,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		char *tmp = NULL;
 		char *name = space ? strdup (space + 1): NULL;
 
-		if (name && (tmp = strchr (name, '.'))) {
+		if (name && (tmp = strchr (name, ' '))) {
 			char *varname = tmp + 1;
 			*tmp = '\0';
 			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, name);
@@ -5668,7 +5672,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_list_join (list , list1);
 					r_list_foreach (list, iter, ref) {
 						ut64 addr = r_num_math (NULL, ref);
-						char *op = get_buf_asm (core, addr, fcn, true);
+						char *op = get_buf_asm (core, core->offset, addr, fcn, true);
 						r_cons_printf ("%s 0x%"PFMT64x" [DATA] %s\n", fcn?  fcn->name : "(nofunc)", addr, op);
 						free (op);
 
@@ -5698,7 +5702,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_cons_printf ("[");
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-					char *str = get_buf_asm (core, ref->addr, fcn, false);
+					char *str = get_buf_asm (core, addr, ref->addr, fcn, false);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
 						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {
@@ -5749,7 +5753,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				char *comment;
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-					char *buf_asm = get_buf_asm (core, ref->addr, fcn, false);
+					char *buf_asm = get_buf_asm (core, addr, ref->addr, fcn, true);
 					comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 					char *buf_fcn = comment
 						? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
