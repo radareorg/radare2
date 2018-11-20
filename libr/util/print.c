@@ -716,7 +716,9 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	int r, rc;
 
-	if (!p || !p->screen_bounds) {
+	r_return_if_fail (p);
+
+	if (!p->screen_bounds) {
 		return;
 	}
 	if (!p->consbind.get_size) {
@@ -726,11 +728,13 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 		return;
 	}
 
-	(void) p->consbind.get_size (&r);
-	(void) p->consbind.get_cursor (&rc);
+	if (p->screen_bounds == 1) {
+		(void)p->consbind.get_size (&r);
+		(void)p->consbind.get_cursor (&rc);
 
-	if (rc > r - 1 && p->screen_bounds == 1) {
-		p->screen_bounds = addr;
+		if (rc > r - 1) {
+			p->screen_bounds = addr;
+		}
 	}
 }
 
