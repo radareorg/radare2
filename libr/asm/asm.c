@@ -446,20 +446,14 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (ret < 0) {
 		ret = 0;
 	}
-	int oplen = r_asm_op_get_size (op);
 	if (op->bitsize > 0) {
-		oplen = op->size = op->bitsize / 8;
+		op->size = op->bitsize / 8;
 		a->bitshift += op->bitsize % 8;
 		int count = a->bitshift / 8;
 		if (count > 0) {
-			oplen = op->size = op->size + count;
+			op->size = op->size + count;
 			a->bitshift %= 8;
 		}
-	} else {
-		oplen = op->size;
-	}
-	if (oplen < 1) {
-		oplen = 1;
 	}
 
 	if (op->size < 1 || isInvalid (op)) {
