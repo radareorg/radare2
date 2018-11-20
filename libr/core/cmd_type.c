@@ -826,7 +826,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'b': // "teb"
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
-		case 'c' : {
+		case 'c' : { // "tec"
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
