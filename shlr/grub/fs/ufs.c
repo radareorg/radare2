@@ -487,7 +487,7 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
       name++;
       if (!*name)
         {
-          free (fpath);
+          grub_free (fpath);
           return 0;
         }
     }
@@ -507,14 +507,14 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 
       if (grub_strlen (name) == 0)
         {
-          free (fpath);
+          grub_free (fpath);
           return GRUB_ERR_NONE;
         }
 
       if (grub_ufs_read_file (data, 0, 0, pos, sizeof (dirent),
 			      (char *) &dirent) < 0)
         {
-          free (fpath);
+          grub_free (fpath);
           return grub_errno;
         }
 
@@ -528,8 +528,8 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 	if (grub_ufs_read_file (data, 0, 0, pos + sizeof (dirent),
 				namelen, filename) < 0)
           {
-            free (fpath);
-            free (filename);
+            grub_free (fpath);
+            grub_free (filename);
             return grub_errno;
           }
 
@@ -547,16 +547,16 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 		grub_ufs_lookup_symlink (data, dirino);
 		if (grub_errno)
                   {
-                    free (fpath);
-                    free (filename);
+                    grub_free (fpath);
+                    grub_free (filename);
                     return grub_errno;
                   }
 	      }
 
 	    if (!next)
               {
-                free (fpath);
-                free (filename);
+                grub_free (fpath);
+                grub_free (filename);
                 return 0;
               }
 
@@ -572,21 +572,21 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 
 	    if ((INODE_MODE(data) & GRUB_UFS_ATTR_TYPE) != GRUB_UFS_ATTR_DIR)
               {
-                free (fpath);
-                free (filename);
+                grub_free (fpath);
+                grub_free (filename);
                 return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
               }
 
-            free (filename);
+            grub_free (filename);
 	    continue;
 	  }
-	free (filename);  
+	grub_free (filename);
       }
 
       pos += grub_num_to_cpu16 (dirent.direntlen, data->be);
     } while (pos < INODE_SIZE (data));
 
-  free (fpath);
+  grub_free (fpath);
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
   return grub_errno;
 }
