@@ -48,7 +48,7 @@ for a in ${BINS} ; do
 	if [ "`uname`" = Darwin ]; then
 		${MAKE} -j4 || exit 1
 	else
-		LDFLAGS=-static ${MAKE} -j4 || exit 1
+		CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
 	fi
 )
 done
