@@ -3308,7 +3308,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 	if (!autocmpl) {
 		return NULL;
 	}
-	RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds + 1) * sizeof(RCoreAutocomplete*));
+	RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds + 1) * sizeof (RCoreAutocomplete*));
 	if (!updated) {
 		free (autocmpl);
 		return NULL;
