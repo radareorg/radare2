@@ -2802,12 +2802,14 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 					if (r_anal_bb_is_in_offset (bb, refi->at)) {
 						if ((refi->at != refi->addr) && !ht_up_find (state, refi->addr, NULL) && anal_path_exists (core, refi->addr, to, bbs, depth - 1, state, avoid)) {
 							r_list_prepend (bbs, bb);
+							r_list_free (refs);
 							return true;
 						}
 					}
 				}
 			}
 		}
+		r_list_free (refs);
 	}
 
 	return false;
@@ -2843,6 +2845,7 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 				list = anal_graph_to (core, addr, depth - 1, avoid);
 				core->offset = offset;
 				if (list && r_list_length (list)) {
+					r_list_free (xrefs);
 					ht_up_free (state);
 					return list;
 				}
@@ -2850,7 +2853,9 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 		}
 	}
 
+	r_list_free (xrefs);
 	ht_up_free (state);
+	r_list_free (list);
 	return NULL;
 }
 
@@ -2868,11 +2873,11 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 				n--;
 				continue;
 			}
-			break;
 		}
 		// no more path found
 		break;
 	}
+	ht_up_free (avoid);
 	return paths;
 }
 
