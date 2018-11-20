@@ -431,7 +431,8 @@ SDB_API void sdb_close(Sdb *s) {
 			s->fd = -1;
 		}
 		if (s->dir) {
-			R_FREE (s->dir);
+			free (s->dir);
+			s->dir = NULL;
 		}
 	}
 }
@@ -947,7 +948,8 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 				return false;
 			}
 			if (getbytes (s, *value, vlen) == -1) {
-				R_FREE (*value);
+				free (*value);
+				*value = NULL;
 				return false;
 			}
 			(*value)[vlen] = 0;
