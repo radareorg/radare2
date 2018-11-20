@@ -12,7 +12,7 @@ typedef struct sdb_kv {
 } SdbKv;
 
 static inline char *sdbkv_key(const SdbKv *kv) {
-	return kv->base.key;
+	return (char *)kv->base.key;
 }
 
 static inline char *sdbkv_value(const SdbKv *kv) {
