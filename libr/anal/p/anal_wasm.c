@@ -1,4 +1,5 @@
 /* radare2 - LGPL - Copyright 2017-2018 - xvilka */
+
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
@@ -20,15 +21,16 @@ static int wasm_stack_ptr = 0;
 static WasmOpCodes op_old = 0;
 
 static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
-       char flgname[64] = {0};
-       snprintf(flgname, sizeof (flgname), "sym.fnc.%d", data[1]);
-       RFlagItem *fi = anal->flb.get (anal->flb.f, flgname);
-       if (fi) {
-               return fi->offset;
-       }
-       return UT64_MAX;
+	r_cons_push ();
+	char *s = anal->coreb.cmdstrf (anal->coreb.core, "isq~[0:%d]", data[1]);
+	r_cons_pop ();
+	if (s) {
+		ut64 n = r_num_get (NULL, s);
+		free (s);
+		return n;
+	}
+	return UT64_MAX;
 }
-
 
 static ut64 find_if_else(ut64 addr, const ut8 *data, int len, bool is_loop) {
 	WasmOp wop = {0};
@@ -144,6 +146,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->type = R_ANAL_OP_TYPE_MOD;
 		break;
 	case WASM_OP_END:
+		r_strbuf_set (&op->esil, "sp,[4],4,sp,+=,sp,[4],pc,=,sp,=[4]");
 		op->type = R_ANAL_OP_TYPE_RET;
 		if (addr != UT64_MAX) {
 			for (i = 0; i < wasm_stack_ptr; ++i) {
@@ -157,7 +160,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		}
 		if (op_old == WASM_OP_CALL || op_old == WASM_OP_CALLINDIRECT || op_old == WASM_OP_RETURN) {
 			op->eob = true;
-			for (i = wasm_stack_ptr - 1; i > 0; --i) {
+			for (i = wasm_stack_ptr - 1; i > 0; i--) {
 				if (addr > wasm_stack[i].loop && addr < wasm_stack[i].end) {
 					op->eob = false;
 					break;
@@ -235,6 +238,10 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	case WASM_OP_F32CONST:
 	case WASM_OP_F64CONST:
 		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut8 arg = data[1];
+			r_strbuf_setf (&op->esil, "4,sp,-=,%d,sp,=[4]", arg);
+		}
 		break;
 	case WASM_OP_I64ADD:
 	case WASM_OP_I32ADD:
@@ -250,6 +257,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		break;
 	case WASM_OP_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
+		r_strbuf_setf (&op->esil, "");
 		break;
 	case WASM_OP_CALL:
 	case WASM_OP_CALLINDIRECT:
@@ -259,6 +267,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		if (op->jump != UT64_MAX) {
 			op->ptr = op->jump;
 		}
+		r_strbuf_setf (&op->esil, "4,sp,-=,0x%"PFMT64x",sp,=[4],0x%"PFMT64x",pc,=", op->fail, op->jump);
 		break;
 	case WASM_OP_BR:
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -295,6 +304,17 @@ static int wasm_pre_anal(RAnal *a, struct r_anal_state_type_t *state, ut64 addr)
 	return 1;
 }
 
+static char *get_reg_profile(RAnal *anal) {
+	return strdup (
+		"=PC	pc\n"
+		"=BP	bp\n"
+		"=SP	sp\n"
+		"gpr	sp	.32	0	0\n" // stack pointer
+		"gpr	pc	.32	4	0\n" // program counter
+		"gpr	bp	.32	8	0\n" // base pointer // unused
+	);
+}
+
 RAnalPlugin r_anal_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly analysis plugin",
@@ -303,8 +323,9 @@ RAnalPlugin r_anal_plugin_wasm = {
 	.bits = 64,
 	.archinfo = archinfo,
 	.pre_anal_fn_cb = wasm_pre_anal,
+	.get_reg_profile = get_reg_profile,
 	.op = &wasm_op,
-	.esil = false,
+	.esil = true,
 };
 
 #ifndef CORELIB
