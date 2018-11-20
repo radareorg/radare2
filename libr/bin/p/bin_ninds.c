@@ -20,7 +20,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true: false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
 	return (*bin_obj != NULL);
 }

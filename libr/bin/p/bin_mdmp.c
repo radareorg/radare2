@@ -184,7 +184,7 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *tbuf;
 	struct r_bin_mdmp_obj *res;
 

@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
 	if (!buf || !size || size == UT64_MAX) {
 		return false;
 	}

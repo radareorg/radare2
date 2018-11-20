@@ -33,7 +33,7 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return strdup ((char*) bin->signature);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
 		return false;

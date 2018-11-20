@@ -39,7 +39,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
 	if (check_bytes (buf, sz)) {

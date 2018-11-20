@@ -711,7 +711,7 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
 		return false;

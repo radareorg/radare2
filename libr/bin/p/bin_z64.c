@@ -77,7 +77,7 @@ static bool check_bytes (const ut8 *buf, ut64 length) {
 	return magic == r_read_be32 (buf);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	if (check_bytes (r_buf_buffer (bf->buf), sz)) {
 		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;

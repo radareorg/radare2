@@ -45,7 +45,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	bool has_dol_extension = false;
 	DolHeader *dol;
 	char *lowername, *ext;

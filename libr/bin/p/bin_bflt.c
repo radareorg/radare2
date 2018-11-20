@@ -7,7 +7,7 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
 	if (!buf || !sz || sz == UT64_MAX) {
 		return false;
 	}
