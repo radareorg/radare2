@@ -124,7 +124,8 @@ void bochs_send_cmd(libbochs_t* b, const char *cmd, bool bWait) {
 		WriteFile (b->hWritePipeOut, cmdbuff, strlen (cmdbuff), &dwWritten, NULL);
 	}
 #else
-	if (write (b->hWritePipeOut, cmdbuff, strlen (cmdbuff)) != strlen (cmdbuff)) {
+	size_t cmdlen = strlen (cmdbuff);
+	if (write (b->hWritePipeOut, cmdbuff, cmdlen) != cmdlen) {
 		eprintf ("boch_send_cmd failed\n");
 		goto beach;
 	}
