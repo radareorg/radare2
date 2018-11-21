@@ -1348,7 +1348,9 @@ static int cmd_write(void *data, const char *input) {
 				else tmp[i] = str[i>>1];
 			}
 			str = tmp;
-			r_io_use_fd (core->io, core->file->fd);
+			if (core->file) {
+				r_io_use_fd (core->io, core->file->fd);
+			}
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core);
