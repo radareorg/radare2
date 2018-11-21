@@ -3298,10 +3298,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			at += bsz;
 			continue;
 		}
-		while (at < (at + bsz) && !r_cons_is_breaked ()) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
+		while (i < bsz && !r_cons_is_breaked ()) {
 			ret = r_anal_op (core->anal, &op, at, buf + i, bsz - i, 0);
 			ret = ret > 0 ? ret : 1;
 			i += ret;
