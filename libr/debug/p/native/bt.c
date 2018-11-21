@@ -58,13 +58,13 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 
 	RList *list;
 	if(dbg->btalgo && !strcmp (dbg->btalgo, "trace")) {
-		r_list_clone (dbg->call_frames);
+		list = r_list_clone (dbg->call_frames);
 	} else {
 #if HAVE_PTRACE
 		struct frames_proxy_args args = { cb, dbg, at };
 		list = r_debug_ptrace_func (dbg, backtrace_proxy, &args);
 #else
-		cb (dbg, at);
+		list = cb (dbg, at);
 #endif
 	}
 
