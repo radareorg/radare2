@@ -205,6 +205,7 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 bad_alloc:
 	// not so sure if imports should be freed.
+	r_list_free (symtab);
 	r_list_free (codes);
 	r_list_free (ret);
 	return NULL;

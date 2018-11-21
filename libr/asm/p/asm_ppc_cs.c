@@ -102,14 +102,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		r_asm_op_set_asm (op, opstr);
 		cs_free (insn, n);
 		return op->size;
-	} else {
-		r_asm_op_set_asm (op, "invalid");
-		op->size = 4;
-		cs_free (insn, n);
-		return op->size;
 	}
+	r_asm_op_set_asm (op, "invalid");
+	op->size = 4;
 	cs_free (insn, n);
-	return 4;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_ppc_cs = {
