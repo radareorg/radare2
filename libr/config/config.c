@@ -404,9 +404,10 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
-	if (!cfg || IS_NULLSTR (name)) {
-		return NULL;
-	}
+
+	r_return_val_if_fail (cfg && cfg->ht, NULL);
+	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
+
 	node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->flags & CN_RO) {
@@ -425,7 +426,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		}
 		if (node->flags & CN_BOOL) {
 			bool b = is_true (value);
-			node->i_value = (ut64) b? 1: 0;
+			node->i_value = b? 1: 0;
 			char *value = strdup (r_str_bool (b));
 			if (value) {
 				free (node->value);
@@ -464,11 +465,9 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 					node->flags |= CN_BOOL;
 					node->i_value = is_true (value)? 1: 0;
 				}
-				if (cfg->ht) {
-					ht_pp_insert (cfg->ht, node->name, node);
-					r_list_append (cfg->nodes, node);
-					cfg->n_nodes++;
-				}
+				ht_pp_insert (cfg->ht, node->name, node);
+				r_list_append (cfg->nodes, node);
+				cfg->n_nodes++;
 			} else {
 				eprintf ("r_config_set: unable to create a new RConfigNode\n");
 			}
@@ -569,9 +568,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			}
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
-			if (cfg->ht) {
-				ht_pp_insert (cfg->ht, node->name, node);
-			}
+			ht_pp_insert (cfg->ht, node->name, node);
 			if (cfg->nodes) {
 				r_list_append (cfg->nodes, node);
 				cfg->n_nodes++;
