@@ -63,7 +63,7 @@ static void pair_str(const char *key, const char *val, int mode, int last) {
 		if (!val) {
 			val = "";
 		}
-		char *encval = r_str_utf16_encode (val, -1);
+		char *encval = r_str_escape_utf8_to_json (val, -1);
 		if (encval) {
 			char *qs = r_str_newf ("\"%s\"", encval);
 			pair (key, qs, mode, last);
@@ -1677,7 +1677,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
-			str = r_str_utf16_encode (symname, -1);
+			str = r_str_escape_utf8_to_json (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"ordinal\":%d,"
 				"\"bind\":\"%s\","
@@ -1969,7 +1969,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					addr, symbol->size, sn.demname);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			char *str = r_str_utf16_encode (symbol->name, -1);
+			char *str = r_str_escape_utf8_to_json (symbol->name, -1);
 			// str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","

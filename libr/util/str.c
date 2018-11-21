@@ -2275,6 +2275,7 @@ R_API char *r_str_utf16_decode(const ut8 *s, int len) {
 	return result;
 }
 
+// TODO: kill this completely, it makes no sense:
 R_API char *r_str_utf16_encode(const char *s, int len) {
 	int i;
 	char ch[4], *d, *od, *tmp;
@@ -2302,7 +2303,7 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
-		//	*d++ = '\\';
+			//	*d++ = '\\';
 			*d++ = 'u';
 			*d++ = '0';
 			*d++ = '0';
@@ -2318,6 +2319,10 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 		return NULL;
 	}
 	return tmp;
+}
+
+R_API char *r_str_escape_utf8_to_json(const char *s, int len) {
+	return r_str_escape_utf (s, len, R_STRING_ENC_UTF8, false, true);
 }
 
 // TODO: merge print inside rutil
