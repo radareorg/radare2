@@ -1,5 +1,4 @@
 files = [
-  'callback.c',
   'config.c',
 ]
 
