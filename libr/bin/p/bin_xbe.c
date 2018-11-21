@@ -23,11 +23,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
-	if (!bf->o->bin_obj) {
-		return false;
-	}
 	obj = bf->o->bin_obj;
-
 	if (obj) {
 		obj->header = (xbe_header *) bytes;
 		if ((obj->header->ep & 0xf0000000) == 0x40000000) {
@@ -45,7 +41,6 @@ static bool load(RBinFile *bf) {
 		}
 		return true;
 	}
-
 	return false;
 }
 

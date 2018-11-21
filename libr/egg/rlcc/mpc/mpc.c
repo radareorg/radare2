@@ -1359,8 +1359,10 @@ static mpc_parser_t *mpc_undefined(void) {
 mpc_parser_t *mpc_new(const char *name) {
   mpc_parser_t *p = mpc_undefined();
   p->retained = 1;
-  p->name = realloc(p->name, strlen(name) + 1);
-  strcpy(p->name, name);
+  if (name) {
+    p->name = malloc(strlen(name) + 1);
+    strcpy(p->name, name);
+  }
   return p;
 }
 

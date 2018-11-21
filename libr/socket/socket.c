@@ -886,11 +886,10 @@ R_API ut8* r_socket_slurp(RSocket *s, int *len) {
 			copied += rc;
 		}
 		ptr = realloc (buf, copied + blockSize);
-		if (ptr) {
-			buf = ptr;
-		} else {
+		if (!ptr) {
 			break;
 		}
+		buf = ptr;
 		if (rc < 1) {
 			break;
 		}
