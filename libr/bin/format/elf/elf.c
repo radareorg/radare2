@@ -2881,24 +2881,24 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret_ctr++;
 	}
 done:
-	ret[ret_ctr].last = 1;
 	// Size everything down to only what is used
 	{
-		nsym = i > 0 ? i : 1;
-		Elf_ (Sym) * temp_sym = (Elf_ (Sym)*) realloc (sym, (nsym * GROWTH_FACTOR) * sym_size);
+		nsym = i > 0? i: 1;
+		Elf_(Sym) *temp_sym = (Elf_(Sym) *)realloc (sym, (nsym * GROWTH_FACTOR) * sym_size);
 		if (!temp_sym) {
 			goto beach;
 		}
 		sym = temp_sym;
 	}
 	{
-		ret_ctr = ret_ctr > 0 ? ret_ctr : 1;
-		RBinElfSymbol *p = (RBinElfSymbol *) realloc (ret, (ret_ctr + 1) * sizeof (RBinElfSymbol));
+		ret_ctr = ret_ctr > 0? ret_ctr: 1;
+		RBinElfSymbol *p = (RBinElfSymbol *)realloc (ret, (ret_ctr + 1) * sizeof (RBinElfSymbol));
 		if (!p) {
 			goto beach;
 		}
 		ret = p;
 	}
+	ret[ret_ctr].last = 1;
 	if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 		bin->imports_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
