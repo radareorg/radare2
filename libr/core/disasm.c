@@ -4668,7 +4668,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
-	int ret, i, inc, skip_bytes = 0, skip_bytes_bb = 0, idx = 0;
+	int ret, i, inc, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
@@ -4884,14 +4884,14 @@ toro:
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
 		if (ds->midflags) {
-			skip_bytes = handleMidFlags (core, ds, true);
-			if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
-				ds->at += skip_bytes;
+			skip_bytes_flag = handleMidFlags (core, ds, true);
+			if (skip_bytes_flag && ds->midflags == R_MIDFLAGS_SHOW) {
+				ds->at += skip_bytes_flag;
 			}
 		}
 		ds_show_flags (ds);
-		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
-			ds->at -= skip_bytes;
+		if (skip_bytes_flag && ds->midflags == R_MIDFLAGS_SHOW) {
+			ds->at -= skip_bytes_flag;
 		}
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);
@@ -5064,8 +5064,8 @@ toro:
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
 
-		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes) {
-			inc = skip_bytes;
+		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes_flag) {
+			inc = skip_bytes_flag;
 		}
 		if (skip_bytes_bb && skip_bytes_bb < inc) {
 			inc = skip_bytes_bb;
@@ -5136,7 +5136,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	bool hasanal = false;
 	int nbytes = 0;
 	const int addrbytes = core->io->addrbytes;
-	int skip_bytes = 0, skip_bytes_bb = 0;
+	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
@@ -5229,13 +5229,13 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			core->block + addrbytes * i, core->blocksize - addrbytes * i);
 		ds->oplen = ret;
 		if (ds->midflags) {
-			skip_bytes = handleMidFlags (core, ds, true);
+			skip_bytes_flag = handleMidFlags (core, ds, true);
 		}
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
-		if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
-			ret = skip_bytes;
+		if (skip_bytes_flag && ds->midflags > R_MIDFLAGS_SHOW) {
+			ret = skip_bytes_flag;
 		}
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
 			ret = skip_bytes_bb;
@@ -5437,7 +5437,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 	for (;;) {
 		bool end_nbopcodes, end_nbbytes;
-		int skip_bytes = 0, skip_bytes_bb = 0;
+		int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
 		at = addr + k;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -5498,13 +5498,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		ds->oplen = r_asm_op_get_size (&asmop);
 		ds->at = at;
 		if (ds->midflags) {
-			skip_bytes = handleMidFlags (core, ds, false);
+			skip_bytes_flag = handleMidFlags (core, ds, false);
 		}
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
-		if (skip_bytes && ds->midflags > R_MIDFLAGS_SHOW) {
-			ds->oplen = ret = skip_bytes;
+		if (skip_bytes_flag && ds->midflags > R_MIDFLAGS_SHOW) {
+			ds->oplen = ret = skip_bytes_flag;
 		}
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
 			ds->oplen = ret = skip_bytes_bb;
@@ -5892,15 +5892,15 @@ toro:
 				.midflags = midflags,
 				.midbb = midbb
 			};
-			int skip_bytes = 0, skip_bytes_bb = 0;
+			int skip_bytes_flag = 0, skip_bytes_bb = 0;
 			if (midflags) {
-				skip_bytes = handleMidFlags (core, &ds, true);
+				skip_bytes_flag = handleMidFlags (core, &ds, true);
 			}
 			if (midbb) {
 				skip_bytes_bb = handleMidBB (core, &ds);
 			}
-			if (skip_bytes && midflags > R_MIDFLAGS_SHOW) {
-				asmop.size = ret = skip_bytes;
+			if (skip_bytes_flag && midflags > R_MIDFLAGS_SHOW) {
+				asmop.size = ret = skip_bytes_flag;
 			}
 			if (skip_bytes_bb && skip_bytes_bb < ret) {
 				asmop.size = ret = skip_bytes_bb;
