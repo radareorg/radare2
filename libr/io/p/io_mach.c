@@ -110,11 +110,11 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 	static int old_pid = -1;
 	kern_return_t kr;
 
-	RIODescData *iodd = fd?  (RIODescData *)fd->data: NULL;
+	RIODescData *iodd = fd? (RIODescData *)fd->data: NULL;
 	RIOMach *riom = NULL;
 	if (iodd) {
 		riom = iodd->data;
-		if (riom) {
+		if (riom && riom->task) {
 			old_task = riom->task;
 			riom->task = 0;
 			old_pid = iodd->pid;
