@@ -1899,7 +1899,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr) {
 	RAnalBlock *bb;
 	int new_bbi_instr, i;
-	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size, 0);
+	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size + 1, 0);
 	if (addr == UT64_MAX) {
 		return 0;
 	}
