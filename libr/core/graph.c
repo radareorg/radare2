@@ -1989,6 +1989,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
+	const bool o_bytes = r_config_get_i (core->config, "graph.bytes");
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
 
@@ -2000,6 +2001,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.marks", false);
 	r_config_set_i (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
 	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
+	r_config_set_i (core->config, "asm.bytes", (opts & (BODY_SUMMARY | BODY_OFFSETS)) || o_bytes);
 	r_config_set_i (core->config, "asm.bb.middle", false);
 	core->print->cur_enabled = false;
 
@@ -2007,12 +2009,6 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_set_i (core->config, "asm.offset", true);
 	} else {
 		r_config_set_i (core->config, "asm.offset", false);
-	}
-
-	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
-		r_config_set_i (core->config, "asm.bytes", true);
-	} else {
-		r_config_set_i (core->config, "asm.bytes", false);
 	}
 
 	bool html = r_config_get_i (core->config, "scr.html");

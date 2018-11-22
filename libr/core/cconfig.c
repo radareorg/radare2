@@ -2958,6 +2958,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.linemode", 1, "Graph edges (0=diagonal, 1=square)");
 	SETPREF ("graph.font", "Courier", "Font for dot graphs");
 	SETPREF ("graph.offset", "false", "Show offsets in graphs");
+	SETPREF ("graph.bytes", "false", "Show opcode bytes in graphs");
 	SETPREF ("graph.web", "false", "Display graph in web browser (VV)");
 	SETI ("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
 	SETI ("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");
