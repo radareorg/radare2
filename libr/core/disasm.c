@@ -5547,13 +5547,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
-			char *escaped_str = r_str_utf16_encode (opstr, -1);
+			char *escaped_str = r_str_escape_utf8_to_json (opstr, -1);
 			if (escaped_str) {
 				r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 			}
 			free (escaped_str);
 
-			escaped_str = r_str_utf16_encode (str, -1);
+			escaped_str = r_str_escape_utf8_to_json (str, -1);
 			if (escaped_str) {
 				r_cons_printf (",\"disasm\":\"%s\"", escaped_str);
 			}
