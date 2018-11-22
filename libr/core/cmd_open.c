@@ -52,7 +52,7 @@ static const char *help_msg_o_star[] = {
 };
 
 static const char *help_msg_oa[] = {
-	"Usage:", "oa [addr] ([filename])", " # load bininfo and update flags",
+	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	NULL
