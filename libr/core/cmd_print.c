@@ -4963,7 +4963,7 @@ static int cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				ut64 bitness = r_config_get_i (core->config, "asm.bits");
 				if (bitness != 32 && bitness != 64) {
-					eprintf ("Error: bitness of %" PFMT64u " not supported", bitness);
+					eprintf ("Error: bitness of %" PFMT64u " not supported\n", bitness);
 					break;
 				}
 				if (*core->block & 0x1) { // "long" string
