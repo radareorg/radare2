@@ -1394,6 +1394,15 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 	return 0;
 }
 
+R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
+	r_return_val_if_fail (core->anal, 0);
+	RDisasmState ds = {
+		.at = at,
+		.oplen = oplen
+	};
+	return handleMidBB (core, &ds);
+}
+
 static void ds_print_show_cursor(RDisasmState *ds) {
 	RCore *core = ds->core;
 	char res[] = "     ";
