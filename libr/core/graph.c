@@ -3275,16 +3275,15 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		r_cons_newline ();
 	}
 
+	r_cons_visual_flush ();
 	if (is_interactive) {
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
-		r_cons_strcat (Color_RESET);
 		if (cmdv && *cmdv) {
-			r_cons_gotoxy (0, 0);
-			r_cons_fill_line ();
-			r_cons_gotoxy (0, 0);
+			r_cons_gotoxy (0, 2);
+			r_cons_strcat (Color_RESET);
 			r_core_cmd0 (core, cmdv);
+			r_cons_flush ();
 		}
-		r_cons_visual_flush ();
 	}
 	return true;
 }
