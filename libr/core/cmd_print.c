@@ -347,6 +347,8 @@ static const char *help_detail_pf[] = {
 	" ", "+", "toggle show flags for each offset",
 	" ", ":", "skip 4 bytes",
 	" ", ".", "skip 1 byte",
+	" ", ";", "rewind 4 bytes",
+	" ", ",", "rewind 1 byte",
 	NULL
 };
 

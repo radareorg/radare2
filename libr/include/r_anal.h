@@ -268,7 +268,7 @@ typedef struct r_anal_fcn_meta_t {
 /* Store various function information,
  * variables, arguments, refs and even
  * description */
-typedef struct r_anal_type_function_t {
+typedef struct r_anal_function_t {
 	char* name;
 	char* dsc; // For producing nice listings
 	ut32 _size;
