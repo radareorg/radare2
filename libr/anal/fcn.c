@@ -964,11 +964,8 @@ repeat:
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
 				const char *reason = (len - (addrbytes*idx) < 4)? "Truncated": "Invalid";
 				ut8 *b = buf  + (addrbytes  * idx);
-				// eprintf ("BUTES bits %d %02x %02x %02x %02x\n",
-				//		anal->bits, b[0], b[1], b[2], b[3]);
 				eprintf ("%s instruction of %d bytes at 0x%"PFMT64x"\n",
 					reason, len - (addrbytes * idx), addr + idx);
-			//	return R_ANAL_RET_ERROR;
 			}
 			gotoBeach (R_ANAL_RET_END);
 		}

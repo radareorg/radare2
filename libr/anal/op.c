@@ -137,7 +137,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
 		eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n",  anal->bits, addr);
-		//  R_ANAL_TRAP_UNALIGNED = 8,
 		op->size = 1;
 		return -1;
 	}
