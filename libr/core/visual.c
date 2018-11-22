@@ -1046,7 +1046,6 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
-
 repeat:
 	if (xrefsMode) {
 		RAnalFunction *fun = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
@@ -1195,6 +1194,7 @@ repeat:
 		" ?   - show this help message\n"
 		" TAB - toggle between address and function references\n"
 		" xX  - switch to refs or xrefs\n"
+		" q   - quit this view\n"
 		" \\n  - seek to this xref");
 		r_cons_flush ();
 		r_cons_any_key (NULL);
