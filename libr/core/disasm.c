@@ -1400,7 +1400,7 @@ R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
 		.at = at,
 		.oplen = oplen
 	};
-	return handleMidBB(core, &ds);
+	return handleMidBB (core, &ds);
 }
 
 static void ds_print_show_cursor(RDisasmState *ds) {
