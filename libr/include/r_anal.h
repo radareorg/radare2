@@ -57,7 +57,7 @@ typedef struct {
 	SdbForeachCallback cb;
 	void *user;
 	int count;
-	struct r_anal_type_function_t *fcn;
+	struct r_anal_function_t *fcn;
 } RAnalMetaUserItem;
 
 typedef struct r_anal_range_t {

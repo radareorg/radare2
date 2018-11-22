@@ -959,7 +959,7 @@ repeat:
 			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
 			return R_ANAL_RET_ERROR;
 		}
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + (addrbytes * idx), len - (addrbytes * idx), R_ANAL_OP_MASK_ALL)) < 1) {
 			RCore *core = anal->coreb.core;
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
 				eprintf ("Invalid instruction (possibly truncated) at 0x%"PFMT64x"\n", addr + idx);
@@ -977,7 +977,7 @@ repeat:
 					r_anal_fcn_split_bb (anal, fcn, bbg, addr + idx);
 				}
 				overlapped = 1;
-				VERBOSE_ANAL eprintf("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+				VERBOSE_ANAL eprintf ("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
 				// return R_ANAL_RET_END;
 			}
 		}
