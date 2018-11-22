@@ -581,17 +581,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-#if 0
-typedef struct r_bin_create_t {
-	int arch;
-	ut8 *code;
-	int clen;
-	ut8 *data;
-	int dlen;
-} RBinCreate;
-#endif
-
-static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -604,10 +594,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
 
-	bool is_arm = strstr (bin->cur->o->info->arch, "arm");
+	r_return_val_if_fail (bin && opt, NULL);
+
+	bool is_arm = strstr (opt->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
-	if (bin->cur->o->info->bits == 64) {
+	if (opt->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
 		free (buf);
 		return NULL;

@@ -33,7 +33,7 @@ static void headers64(RBinFile *bf) {
 	p ("0x00000028  ShOff       0x%08"PFMT64x"\n", r_read_le64 (buf + 0x28));
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 p_ehdrsz, p_phdrsz;
