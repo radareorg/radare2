@@ -1048,10 +1048,19 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	}
 
 repeat:
-	if (xref) {
-		xrefs = r_anal_xrefs_get (core->anal, addr);
+	fun = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (fun) {
+		if (xref) {
+			xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+		} else {
+			xrefs = r_anal_fcn_get_refs (core->anal, fun);
+		}
 	} else {
-		xrefs = r_anal_refs_get (core->anal, addr);
+		if (xref) {
+			xrefs = r_anal_xrefs_get (core->anal, addr);
+		} else {
+			xrefs = r_anal_refs_get (core->anal, addr);
+		}
 	}
 
 	if (xrefs) {

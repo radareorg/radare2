@@ -5641,7 +5641,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		r_anal_xrefs_list (core->anal, input[0]);
 		break;
 	case 't': { // "axt"
-		RList *list;
+		RList *list = NULL;
 		RAnalFunction *fcn;
 		RAnalRef *ref;
 		RListIter *iter;
@@ -5661,14 +5661,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *res = sdb_get (core->anal->sdb_fcns, rvar, 0);
 					char *res1 = sdb_get (core->anal->sdb_fcns, wvar, 0);
 					const char *ref;
-					RList *list, *list1;
 					RListIter *iter;
-					if (res && *res) {
-						list = r_str_split_list (res, ",");
-					}
-					if (res1 && *res1) {
-						list1 = r_str_split_list (res1, ",");
-					}
+					RList *list = (res && *res)? r_str_split_list (res, ","): NULL;
+					RList *list1 = (res1 && *res1)? r_str_split_list (res1, ","): NULL;
 					r_list_join (list , list1);
 					r_list_foreach (list, iter, ref) {
 						ut64 addr = r_num_math (NULL, ref);
