@@ -2771,6 +2771,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
+			op->hint.new_bits = a->bits;
 		}
 		break;
 	case ARM_INS_CBZ:
