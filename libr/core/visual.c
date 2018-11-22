@@ -3393,6 +3393,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
+	const bool midbb = r_config_get_i (core->config, "asm.bb.middle");
 	RAnalFunction *f = NULL;
 	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	op->size = 1;
@@ -3402,6 +3403,15 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 		r_asm_set_pc (core->assembler, core->offset);
 		*cols = r_asm_disassemble (core->assembler,
 				op, core->block, 32);
+		if (midbb) {
+			int skip_bytes_bb = 0;
+			if (midbb) {
+				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->offset, *cols);
+			}
+			if (skip_bytes_bb && skip_bytes_bb < *cols) {
+				*cols = skip_bytes_bb;
+			}
+		}
 	}
 	if (*cols < 1) {
 		*cols = op->size > 1 ? op->size : 1;
