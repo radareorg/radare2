@@ -1222,7 +1222,10 @@ repeat:
 	} else if (IS_DIGIT (ch)) {
 		refi = r_list_get_n (xrefs, ch - 0x30);
 		if (refi) {
-			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
+			if (core->print->cur_enabled) {
+				core->print->cur = 0;
+			}
+			r_core_cmdf (core, "s 0x%" PFMT64x, refi->addr);
 			ret = 1;
 		}
 	} else if (ch != 'q' && ch != 'Q') {
