@@ -1724,7 +1724,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	static int slide = 0, oldslide = 0;
-	char namefmt[8], *field = NULL;
+	char namefmt[32], *field = NULL;
 	const char *arg = NULL;
 	const char *fmt = NULL;
 	const char *argend;
@@ -1813,7 +1813,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		l++;
 		const char *ends = " "; // XXX trailing space warning
 		snprintf (namefmt, sizeof (namefmt), "%%%ds :%s",
-			((maxl + 1) * (1+slide)) % STRUCTPTR, ends);
+			((maxl + 1) * (1 + slide)) % STRUCTPTR, ends);
 	}
 #define ISPOINTED ((slide%STRUCTFLAG)/STRUCTPTR<=(oldslide%STRUCTFLAG)/STRUCTPTR)
 #define ISNESTED ((slide%STRUCTPTR)<=(oldslide%STRUCTPTR))

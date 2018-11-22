@@ -1887,7 +1887,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			}
 			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
-				strncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
 				free (sym_name);
 			} else {
 				symbols[j].name[0] = 0;

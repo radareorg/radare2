@@ -59,8 +59,8 @@ RAnalReilArg *reil_pop_arg(RAnalEsil *esil) {
 	for (i = 0; i < len; i++) {
 		if (buf[i] == ':') {
 			tmp_buf[j] = '\0';
-			strncpy(op->name, tmp_buf, sizeof(op->name) - 1);
-			memset(tmp_buf, 0, sizeof(tmp_buf));
+			strncpy (op->name, tmp_buf, sizeof (op->name) - 1);
+			memset (tmp_buf, 0, sizeof (tmp_buf));
 			j = 0;
 			flag = 1;
 			continue;
@@ -104,12 +104,10 @@ void reil_make_arg(RAnalEsil *esil, RAnalReilArg *arg, char *name) {
 	if (!arg) {
 		return;
 	}
-	RAnalReilArgType type;
-	type = reil_get_arg_type(esil, name);
+	RAnalReilArgType type = reil_get_arg_type (esil, name);
 	arg->size = 0;
 	arg->type = type;
-	memset(arg->name, 0, sizeof(arg->name));
-	strncpy(arg->name, name, sizeof(arg->name) - 1);
+	r_str_ncpy  (arg->name, name, sizeof (arg->name) - 1);
 }
 
 // Free ins and all its arguments
@@ -117,18 +115,17 @@ void reil_free_inst(RAnalReilInst *ins) {
 	if (!ins) {
 		return;
 	}
-	if (ins->arg[0]) R_FREE(ins->arg[0]);
-	if (ins->arg[1]) R_FREE(ins->arg[1]);
-	if (ins->arg[2]) R_FREE(ins->arg[2]);
+	if (ins->arg[0]) { R_FREE (ins->arg[0]); }
+	if (ins->arg[1]) { R_FREE (ins->arg[1]); }
+	if (ins->arg[2]) { R_FREE (ins->arg[2]); }
 	R_FREE(ins);
 }
 
 // Automatically increments the seq_num of the instruction.
 void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
-	char tmp_buf[REGBUFSZ];
 	int i;
 
-	if ((!ins) || (!esil)) {
+	if (!ins || !esil) {
 		return;
 	}
 	esil->anal->cb_printf("%04"PFMT64x".%02"PFMT64x": %8s",
@@ -145,9 +142,9 @@ void reil_print_inst(RAnalEsil *esil, RAnalReilInst *ins) {
 			continue;
 		}
 		if (ins->arg[i]->type == ARG_REG) {
-			strncpy (tmp_buf, REIL_REG_PREFIX, sizeof (tmp_buf) - 1);
-			strncat (tmp_buf, ins->arg[i]->name, sizeof (tmp_buf) - strlen (tmp_buf) - 1);
+			char *tmp_buf = r_str_newf ("%s%s", REIL_REG_PREFIX, ins->arg[i]->name);
 			esil->anal->cb_printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
+			free (tmp_buf);
 			continue;
 		}
 		esil->anal->cb_printf ("%10s:%02d", ins->arg[i]->name, ins->arg[i]->size);

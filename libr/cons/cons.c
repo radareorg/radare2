@@ -882,7 +882,7 @@ R_API void r_cons_visual_write(char *buffer) {
 	memset (&white, ' ', sizeof (white));
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
-		int lines_needed;
+		int lines_needed = 0;
 
 		*nl = 0;
 		alen = real_strlen (ptr, len);

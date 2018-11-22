@@ -1422,7 +1422,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 }
 static int show_syscall(RDebug *dbg, const char *sysreg) {
 	const char *sysname;
-	char regname[8];
+	char regname[32];
 	int reg, i, args;
 	RSyscallItem *si;
 	reg = (int)r_debug_reg_get (dbg, sysreg);

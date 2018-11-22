@@ -449,7 +449,7 @@ static void restore_current_addr(RCore *core, ut64 addr, ut64 bsze, ut64 newaddr
 }
 
 R_API void r_core_visual_prompt_input(RCore *core) {
-	ut64 addr, bsze, newaddr;
+	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (&h);
 	r_cons_enable_mouse (false);

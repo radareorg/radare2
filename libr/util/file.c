@@ -957,7 +957,6 @@ err_r_file_mkstemp:
 	free (path_);
 	free (prefix_);
 #else
-	char name[1024];
 	char pfxx[1024];
 	const char *suffix = strchr (prefix, '*');
 
@@ -969,7 +968,7 @@ err_r_file_mkstemp:
 		suffix = "";
 	}
 
-	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX%s", path, prefix, suffix);
+	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
 		h = mkstemps (name, strlen (suffix));
@@ -980,6 +979,7 @@ err_r_file_mkstemp:
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
 	}
+	free (name);
 #endif
 	free (path);
 	return h;

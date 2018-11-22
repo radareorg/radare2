@@ -397,8 +397,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	r_list_free (bpargs);
 	r_list_free (spargs);
 	if (len > strlen (tstr)) {
-		strncpy (str, tstr, strlen (tstr));
-		str[strlen (tstr)] = 0;
+		strcpy  (str, tstr);
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		free (tstr);
