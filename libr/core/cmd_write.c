@@ -905,15 +905,16 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case 's': // "wes"
 			input +=  3;
-			while (*input && *input == ' ') input++;
+			while (*input && *input == ' ') {
+				input++;
+			}
 			len = strlen (input);
-			input_shadow = len > 0? malloc (len+1): 0;
 
 			// since the distance can be negative,
 			// the r_num_math will perform an unwanted operation
 			// the solution is to tokenize the string :/
-			if (input_shadow) {
-				strncpy (input_shadow, input, len+1);
+			if (len > 0) {
+				input_shadow = strdup (input);
 				p = strtok (input_shadow, " ");
 				addr = p && *p ? r_num_math (core->num, p) : 0;
 

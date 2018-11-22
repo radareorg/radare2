@@ -7,9 +7,8 @@
 #include "r_lang.h"
 
 static int lang_cpipe_file(RLang *lang, const char *file) {
-	char *a, *cc, *p, name[512], buf[512];
+	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
-	char* binfile;
 
 	if (strlen (file) > (sizeof (name)-10))
 		return false;
@@ -38,17 +37,17 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 		free (cc);
 		cc = strdup ("gcc");
 	}
-	snprintf (buf, sizeof (buf), "%s %s -o %s/bin%s"
+	char *buf = r_str_newf ("%s %s -o %s/bin%s"
 		" $(pkg-config --cflags --libs r_socket)",
 		cc, file, libpath, libname);
 	free (cc);
-	if (r_sandbox_system (buf, 1) != 0) {
-		return false;
+	if (r_sandbox_system (buf, 1) == 0) {
+		char *binfile = r_str_newf ("%s/bin%s", libpath, libname);
+		lang_pipe_run (lang, binfile, -1);
+		r_file_rm (binfile);
+		free (binfile);
 	}
-	binfile = r_str_newf ("%s/bin%s", libpath, libname);
-	lang_pipe_run (lang, binfile, -1);
-	r_file_rm (binfile);
-	free (binfile);
+	free (buf);
 	return 0;
 }
 

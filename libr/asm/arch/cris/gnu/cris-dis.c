@@ -1631,9 +1631,11 @@ print_insn_crisv10_v32_without_register_prefix (bfd_vma vma,
    FIXME: We should improve the solution to avoid the multitude of
    functions seen above.  */
 
+#define CR16_SUPPORTS_CPU 0
 disassembler_ftype
 cris_get_disassembler (bfd *abfd)
 {
+#if CR16_SUPPORTS_CPU
 const int mode = 0; // V32 by default
   /* If there's no bfd in sight, we return what is valid as input in all
      contexts if fed back to the assembler: disassembly *with* register
@@ -1666,6 +1668,9 @@ case 1: // V10_V32
 default:
   return print_insn_cris_without_register_prefix;
 }
+#else
+	return print_insn_crisv32_without_register_prefix;
+#endif
 }
 
 /* Local variables:

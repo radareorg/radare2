@@ -24,7 +24,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_list_free (list);
 			return false;
 		}
-		strncpy (path, buf, sizeof (path) - 1);
+		r_str_ncpy (path, buf, sizeof (path) - 1);
 	} else {
 		strcpy (path, "/");
 	}

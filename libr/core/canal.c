@@ -1575,7 +1575,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
-	r_anal_build_range_on_hints (core->anal);
 	r_core_seek_archbits (core, at);
 
 	if (core->io->va) {
@@ -3298,10 +3297,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			at += bsz;
 			continue;
 		}
-		while (at < (at + bsz) && !r_cons_is_breaked ()) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
+		while (i < bsz && !r_cons_is_breaked ()) {
 			ret = r_anal_op (core->anal, &op, at, buf + i, bsz - i, 0);
 			ret = ret > 0 ? ret : 1;
 			i += ret;

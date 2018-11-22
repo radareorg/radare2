@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_anal.h>
 
@@ -16,7 +16,6 @@ R_API void r_anal_hint_del(RAnal *a, ut64 addr, int size) {
 	} else {
 		setf (key, "hint.0x%08"PFMT64x, addr);
 		sdb_unset (a->sdb_hints, key, 0);
-		a->bits_hints_changed = true;
 	}
 }
 
@@ -64,7 +63,6 @@ R_API void r_anal_hint_set_jump(RAnal *a, ut64 addr, ut64 ptr) {
 }
 
 R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits) {
-	a->bits_hints_changed = true;
 	setHint (a, "Bits:", addr, NULL, bits);
 }
 
@@ -111,8 +109,11 @@ R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
 }
 
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
-	a->bits_hints_changed = true;
 	setHint (a, "bits:", addr, NULL, bits);
+	if (a && a->hint_cbs.on_bits) {
+		a->hint_cbs.on_bits (a, addr, bits, true);
+	}
+	a->merge_hints = true;
 }
 
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, int size) {
@@ -124,8 +125,11 @@ R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr) {
 }
 
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
-	a->bits_hints_changed = true;
 	unsetHint(a, "bits:", addr);
+	if (a && a->hint_cbs.on_bits) {
+		a->hint_cbs.on_bits (a, addr, 0, false);
+	}
+	a->merge_hints = true;
 }
 
 R_API void r_anal_hint_unset_esil(RAnal *a, ut64 addr) {
@@ -177,6 +181,36 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 		free (h->offset);
 		free (h);
 	}
+}
+
+R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str) {
+	char *r, *nxt, *nxt2;
+	char *s = strdup (str);
+	int token = 0, bits = 0;
+	if (!s) {
+		return 0;
+	}
+	token = *s;
+	for (r = s; ; r = nxt2) {
+		r = sdb_anext (r, &nxt);
+		if (!nxt) {
+			break;
+		}
+		sdb_anext (nxt, &nxt2); // tokenize value
+		if (token) {
+			switch (token) {
+			case 'b':
+				bits = sdb_atoi (nxt);
+				break;
+			}
+		}
+		if (!nxt || !nxt2) {
+			break;
+		}
+		token = *nxt2;
+	}
+	free (s);
+	return bits;
 }
 
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {

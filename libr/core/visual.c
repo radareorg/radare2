@@ -449,7 +449,7 @@ static void restore_current_addr(RCore *core, ut64 addr, ut64 bsze, ut64 newaddr
 }
 
 R_API void r_core_visual_prompt_input(RCore *core) {
-	ut64 addr, bsze, newaddr;
+	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (&h);
 	r_cons_enable_mouse (false);
@@ -1036,24 +1036,27 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	RList *xrefs = NULL;
 	RAnalRef *refi;
 	RListIter *iter;
-	RAnalFunction *fun;
 	int skip = 0;
 	int idx = 0;
 	char cstr[32];
 	ut64 addr = core->offset;
 	int printMode = 0;
+	bool xrefsMode = false;
 	int lastPrintMode = 3;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
-
 repeat:
-	fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	if (fun) {
-		if (xref) {
-			xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+	if (xrefsMode) {
+		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+		if (fun) {
+			if (xref) {
+				xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+			} else {
+				xrefs = r_anal_fcn_get_refs (core->anal, fun);
+			}
 		} else {
-			xrefs = r_anal_fcn_get_refs (core->anal, fun);
+			xrefs = NULL;
 		}
 	} else {
 		if (xref) {
@@ -1063,12 +1066,12 @@ repeat:
 		}
 	}
 
+	r_cons_clear00 ();
+	r_cons_gotoxy (1, 1);
+	r_cons_printf ("[GOTO %sREFs]> 0x%08"PFMT64x " %s ", xref ? "X": "", addr, xrefsMode? "function": "address");
 	if (xrefs) {
 		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
-		r_cons_clear00 ();
-		r_cons_gotoxy (1, 1);
-		r_cons_printf ("[GOTO %cREF]> 0x%08"PFMT64x "  ", xref ? 'X':' ', addr);
 		r_core_cmd0 (core, "fd");
 		if (r_list_empty (xrefs)) {
 			r_cons_printf ("No %cREF found at 0x%"PFMT64x "\n", xref ? 'X':' ', addr);
@@ -1097,7 +1100,7 @@ repeat:
 					} else {
 						snprintf (cstr, sizeof (cstr), "%d", count);
 					}
-					fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
 					char *name;
 					if (fun) {
 						name = strdup (fun->name);
@@ -1174,7 +1177,8 @@ repeat:
 	}
 	if (!xrefs || !r_list_length (xrefs)) {
 		r_list_free (xrefs);
-		return 0;
+		r_cons_printf ("(no refs)\n");
+		// return 0;
 	}
 	r_cons_flush ();
 	ch = r_cons_readchar ();
@@ -1188,9 +1192,15 @@ repeat:
 		" pP  - rotate between various print modes\n"
 		" :   - run r2 command\n"
 		" ?   - show this help message\n"
+		" TAB - toggle between address and function references\n"
+		" xX  - switch to refs or xrefs\n"
+		" q   - quit this view\n"
 		" \\n  - seek to this xref");
 		r_cons_flush ();
 		r_cons_any_key (NULL);
+		goto repeat;
+	} else if (ch == 9) { // TAB
+		xrefsMode = !xrefsMode;
 		goto repeat;
 	} else if (ch == 'p') {
 		printMode++;
@@ -1203,6 +1213,12 @@ repeat:
 		if (printMode<0) {
 			printMode = lastPrintMode;
 		}
+		goto repeat;
+	} else if (ch == 'x') {
+		xref = true;
+		goto repeat;
+	} else if (ch == 'X') {
+		xref = false;
 		goto repeat;
 	} else if (ch == 'j') {
 		skip++;

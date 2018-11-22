@@ -98,8 +98,10 @@ static RList *parseSegments(RBuffer *buf, int off, int count) {
 		int B = r_read_le32 (b + X + 16 + 8);
 		//	eprintf ("0x%08x  segment  0x%08x 0x%08x  %s\n",
 		//		x, A, A + B, b + X);
-		const char *name = (const char *)(b + X);
+		const char *cname = (const char *)(b + X);
+		char *name = r_str_ndup (cname, r_str_nlen (cname, 16));
 		RBinSection *section = newSection (name, A, A + B, true);
+		free (name);
 		r_list_append (segments, section);
 		x += 32;
 		X += 32;
@@ -571,7 +573,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return 0;
+	return 0LL;
 }
 
 static RBinInfo *info(RBinFile *bf) {

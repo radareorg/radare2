@@ -274,6 +274,7 @@ typedef struct {
 	bool use_json;
 	bool first_line;
 	const char *strip;
+	int maxflags;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -606,6 +607,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.xrefs.max");
+	ds->maxflags = r_config_get_i (core->config, "asm.maxflags");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->show_lines_bb = ds->show_lines ? r_config_get_i (core->config, "asm.lines.bb") : false;
@@ -2011,11 +2013,19 @@ static void ds_show_flags(RDisasmState *ds) {
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
+	int count = 0;
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
 			continue;
 		}
+		bool no_fcn_lines = (f && f->addr == flag->offset);
+		if (ds->maxflags && count >= ds->maxflags) {
+			ds_pre_xrefs (ds, no_fcn_lines);
+			r_cons_printf ("...\n");
+			break;
+		}
+		count++;
 		if (!strncmp (flag->name, "case.", 5)) {
 			sscanf (flag->name + 5, "%63[^.].%d", addr, &case_current);
 			ut64 saddr = r_num_math (core->num, addr);
@@ -2034,7 +2044,6 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		ds_begin_json_line (ds);
 
-
 		bool fake_flag_marks = (!ds->show_offset && ds->show_marks);
 		if (ds->show_flgoff) {
 			ds_beginline (ds);
@@ -2043,7 +2052,6 @@ static void ds_show_flags(RDisasmState *ds) {
 				r_cons_printf (" ");
 			}
 		} else {
-			bool no_fcn_lines = (f && f->addr == flag->offset);
 			ds_pre_xrefs (ds, no_fcn_lines);
 		}
 
@@ -3605,7 +3613,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 refaddr = p;
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
-	RFlagItem *f, *f2 = NULL;
+	RFlagItem *f = NULL, *f2 = NULL;
 	bool f2_in_opstr = false;  /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
@@ -3750,7 +3758,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							}
 						}
 						ds_comment_start (ds, "; [");
-						if (f2_in_opstr) {
+						if (f && f2_in_opstr) {
 							ds_comment_middle (ds, "%s", f->name);
 							flag_printed = true;
 						} else {
@@ -4757,9 +4765,8 @@ toro:
 	if (!ds->l) {
 		ds->l = core->blocksize;
 	}
-
+	r_anal_merge_hint_ranges (core->anal);
 	r_cons_break_push (NULL, NULL);
-	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
@@ -5216,10 +5223,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	if (!ds->l) {
 		ds->l = ds->len;
 	}
-
+	r_anal_merge_hint_ranges (core->anal);
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
-	r_anal_build_range_on_hints (core->anal);
 #define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)
 	for (i = j = 0; isNotTheEnd; i += ret, j++) {
 		ds->at = core->offset + i;
