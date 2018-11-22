@@ -633,7 +633,7 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 
   if (grub_jfs_read_inode (data, GRUB_JFS_AGGR_INODE, &data->currinode))
     {
-      free (fpath);
+      grub_free (fpath);
       return grub_errno;
     }
 
@@ -643,7 +643,7 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
       name++;
       if (!*name)
         {
-          free (fpath);
+          grub_free (fpath);
           return 0;
         }
     }
@@ -661,7 +661,7 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
   diro = grub_jfs_opendir (data, &data->currinode);
   if (!diro)
     {
-      free (fpath);
+      grub_free (fpath);
       return grub_errno;
     }
 
@@ -669,7 +669,7 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
     {
       if (grub_strlen (name) == 0)
         {
-          free (fpath);
+          grub_free (fpath);
           return GRUB_ERR_NONE;
         }
 
@@ -696,14 +696,14 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 	      grub_jfs_lookup_symlink (data, dirino);
 	      if (grub_errno)
                 {
-                  free (fpath);
+                  grub_free (fpath);
                   return grub_errno;
                 }
 	    }
 
 	  if (!next)
             {
-              free (fpath);
+              grub_free (fpath);
 	      return 0;
             }
 
@@ -719,7 +719,7 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 	  diro = grub_jfs_opendir (data, &data->currinode);
 	  if (!diro)
             {
-              free (fpath);
+              grub_free (fpath);
               return grub_errno;
             }
 
@@ -729,7 +729,7 @@ grub_jfs_find_file (struct grub_jfs_data *data, const char *path)
 
   grub_jfs_closedir (diro);
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
-  free (fpath);
+  grub_free (fpath);
   return grub_errno;
 }
 
