@@ -963,9 +963,8 @@ repeat:
 			RCore *core = anal->coreb.core;
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
 				const char *reason = (len - (addrbytes*idx) < 4)? "Truncated": "Invalid";
-				ut8 *b = buf  + (addrbytes  * idx);
 				eprintf ("%s instruction of %d bytes at 0x%"PFMT64x"\n",
-					reason, len - (addrbytes * idx), addr + idx);
+					reason, (int)(len - (addrbytes * idx)), addr + idx);
 			}
 			gotoBeach (R_ANAL_RET_END);
 		}

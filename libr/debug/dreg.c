@@ -91,7 +91,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RRegItem *item;
 	RList *head;
 	ut64 diff;
-	char strvalue[128];
+	char strvalue[256];
 	if (!dbg || !dbg->reg) {
 		return false;
 	}

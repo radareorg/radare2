@@ -3003,18 +3003,18 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	bin->lang = "java";
 	if (bin->cf.major[1] >= 46) {
 		switch (bin->cf.major[1]) {
-			static char lang[10];
+			static char lang[32];
 			int langid;
 			case 46:
 			case 47:
 			case 48:
 				langid = 2 + (bin->cf.major[1] - 46);
-				snprintf (lang, sizeof(lang) - 1, "java 1.%d", langid);
+				snprintf (lang, sizeof (lang) - 1, "java 1.%d", langid);
 				bin->lang = lang;
 				break;
 			default:
 				langid = 5 + (bin->cf.major[1] - 49);
-				snprintf (lang, sizeof(lang) - 1, "java %d", langid);
+				snprintf (lang, sizeof (lang) - 1, "java %d", langid);
 				bin->lang = lang;
 		}
 	}

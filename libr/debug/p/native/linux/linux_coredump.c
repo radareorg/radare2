@@ -480,7 +480,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 	linux_map_entry_t *me_head = NULL, *me_tail = NULL;
 	RListIter *iter;
 	RDebugMap *map;
-	bool is_anonymous, is_deleted, ret;
+	bool is_anonymous = false, is_deleted = false, ret = 0;
 	char *file = NULL, *buff_maps= NULL, *buff_smaps = NULL;
 	int size_file = 0;
 

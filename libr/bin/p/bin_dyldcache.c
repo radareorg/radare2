@@ -231,7 +231,7 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 
 		int i;
 		int incomplete = 2;
-		int classlist_idx, data_idx;
+		int classlist_idx = 0, data_idx = 0;
 		for (i = 0; !sections[i].last && incomplete; i++) {
 			if (sections[i].size == 0) {
 				continue;

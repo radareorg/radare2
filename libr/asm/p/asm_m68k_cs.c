@@ -22,6 +22,7 @@ static csh cd = 0;
 #include "cs_mnemonics.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	const char *buf_asm = NULL;
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn = NULL;
@@ -86,7 +87,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		ret = -1;
 		goto beach;
 	}
-	const char *buf_asm = NULL;
 	if (a->features && *a->features) {
 		if (!check_features (a, insn)) {
 			if (op) {
@@ -110,7 +110,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_free (insn, n);
 beach:
 	//cs_close (&cd);
-	if (op) {
+	if (op && buf_asm) {
 		if (!strncmp (buf_asm, "dc.w", 4)) {
 			r_asm_op_set_asm (op, "invalid");
 		}

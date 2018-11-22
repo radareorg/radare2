@@ -514,8 +514,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 
 	bool ret = true;
 	if (len > strlen (tstr)) {
-		strncpy (str, tstr, strlen (tstr));
-		str[strlen (tstr)] = 0;
+		strcpy (str, tstr);
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		ret = false;

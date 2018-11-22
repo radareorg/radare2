@@ -3613,7 +3613,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 refaddr = p;
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
-	RFlagItem *f, *f2 = NULL;
+	RFlagItem *f = NULL, *f2 = NULL;
 	bool f2_in_opstr = false;  /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
@@ -3758,7 +3758,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							}
 						}
 						ds_comment_start (ds, "; [");
-						if (f2_in_opstr) {
+						if (f && f2_in_opstr) {
 							ds_comment_middle (ds, "%s", f->name);
 							flag_printed = true;
 						} else {

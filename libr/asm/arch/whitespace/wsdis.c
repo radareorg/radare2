@@ -104,6 +104,7 @@ WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
 }
 
 WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
+	const char *buf_asm = NULL;
 	const ut8 *ptr = buf;
 	switch (get_ws_optype (buf, len)) {
 	case WS_OP_UNK:
@@ -233,7 +234,6 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 		if (!ptr) {
 			return op->size = 0;
 		}
-		const char *buf_asm = NULL;
 		switch (*ptr) {
 		case ' ':
 			ptr++;

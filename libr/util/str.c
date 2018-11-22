@@ -788,21 +788,10 @@ R_API int r_str_ccpy(char *dst, char *src, int ch) {
 }
 
 R_API char *r_str_word_get_first(const char *text) {
-	char *ret;
-	int len = 0;
 	for (; *text && IS_SEPARATOR (*text); text++) {
 		;
 	}
-	/* strdup */
-	len = strlen (text);
-	ret = (char *)malloc (len + 1);
-	if (!ret) {
-		eprintf ("Cannot allocate %d byte(s).\n", len+1);
-		return NULL;
-	}
-	strncpy (ret, text, len);
-	ret[len] = '\0';
-	return ret;
+	return strdup (text);
 }
 
 R_API const char *r_str_get(const char *str) {

@@ -1360,7 +1360,7 @@ static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 	int reg = 0;
 	int rm;
 	bool use_sib = false;
-	int sib;
+	int sib = 0;
 	//mod
 	if (offset == 0) {
 		mod = 0;
