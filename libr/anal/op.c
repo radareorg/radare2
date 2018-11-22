@@ -128,23 +128,18 @@ static int defaultCycles(RAnalOp *op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
-	//len will end up in memcmp so check for negative
-	if (!anal || len < 0) {
+	r_return_val_if_fail (anal && op && len > 0, -1);
+
+	memset (op, 0, sizeof (RAnalOp));
+	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
+	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
+	if (anal->pcalign && addr % anal->pcalign) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->addr = addr;
+		eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n",  anal->bits, addr);
+		op->size = 1;
 		return -1;
 	}
-
-	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
-	anal->fillval = mask & R_ANAL_OP_MASK_VAL ? true : false;
-	if (anal->pcalign) {
-		if (addr % anal->pcalign) {
-			memset (op, 0, sizeof (RAnalOp));
-			op->type = R_ANAL_OP_TYPE_ILL;
-			op->addr = addr;
-			op->size = 1;
-			return -1;
-		}
-	}
-	memset (op, 0, sizeof (RAnalOp));
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
