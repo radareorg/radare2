@@ -566,6 +566,7 @@ static RList *sections(RBinFile *bf) {
 	r_list_foreach (sections, iter, s) {
 		r_list_append (res, s);
 	}
+	r_list_free (sections);
 	return res;
 }
 

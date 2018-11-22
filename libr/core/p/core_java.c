@@ -1090,7 +1090,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 	ut64 sz = UT64_MAX;
 	ut64 addr = UT64_MAX;
 	ut64 res_size = UT64_MAX,
-		 cur_fsz = r_io_fd_size (core->io, r_core_file_cur (core)->fd);
+	cur_fsz = r_io_fd_size (core->io, r_core_file_cur (core)->fd);
 	ut8 *buf = NULL;
 	ut32 init_size = (1 << 16);
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;

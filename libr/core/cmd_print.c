@@ -5,7 +5,6 @@
 #include "r_config.h"
 #include "r_util.h"
 #include "r_types.h"
-#include "r_util.h"
 #include <limits.h>
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
