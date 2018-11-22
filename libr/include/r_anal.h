@@ -289,6 +289,7 @@ typedef struct r_anal_function_t {
 	int nargs; // Function arguments counter
 	int depth;
 	bool folded;
+	bool is_pure;
 	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;

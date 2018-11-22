@@ -865,6 +865,35 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 }
 #endif
 
+/*
+ * Checks whether a given function is pure and sets its 'is_pure' field.
+ * This function marks fcn 'not pure' if fcn, or any function called by fcn, accesses data
+ * from outside, even if it only READS it. 
+ * Probably worth changing it in the future, so that it marks fcn 'impure' only when it 
+ * (or any function called by fcn) MODIFIES external data.
+ */
+static void check_purity(RAnal *anal, RAnalFunction *fcn) {
+	RListIter *iter;
+	RList *refs;
+	RAnalRef *ref;
+	fcn->is_pure = true;
+	refs = r_anal_fcn_get_refs (anal, fcn);
+	r_list_foreach (refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CALL || ref->type == R_ANAL_REF_TYPE_CODE) {
+			RAnalFunction *called_fcn = r_anal_get_fcn_in (anal, ref->addr, 0);
+			if (called_fcn && !called_fcn->is_pure) {
+				fcn->is_pure = false;
+				break;
+			}
+		}
+		if (ref->type == R_ANAL_REF_TYPE_DATA) {
+			fcn->is_pure = false;
+			break;
+		}
+	}
+	r_list_free (refs);
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int noncode = anal->opt.noncode;
@@ -1367,7 +1396,6 @@ repeat:
 			// if the next instruction is a symbol
 			if (anal->opt.ijmp && isSymbolNextInstruction (anal, &op)) {
 				gotoBeach (R_ANAL_RET_END);
-
 			}
 			// switch statement
 			if (anal->opt.jmptbl) {
@@ -1457,7 +1485,7 @@ analopfinish:
 					VERBOSE_ANAL eprintf("RET 0x%08"PFMT64x ". %d %d %d\n",
 					addr + delay.un_idx - oplen, overlapped,
 					bb->size, r_anal_fcn_size (fcn));
-					gotoBeach (R_ANAL_RET_END);	
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			break;
@@ -1467,6 +1495,7 @@ analopfinish:
 		}
 	}
 beach:
+	check_purity (anal, fcn);
 	r_anal_op_fini (&op);
 	FITFCNSZ ();
 	return ret;

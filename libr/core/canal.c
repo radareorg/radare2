@@ -2511,6 +2511,9 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
+	if (fcn->is_pure) {
+		r_cons_printf ("\nis pure");
+	}
 	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	r_cons_printf ("\ncall-convention: %s", fcn->cc);
