@@ -158,9 +158,9 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 
 	// hack to detect format
 	ut32 nm, nm2, nm3;
-	r_buf_read_at (buf, off + sm.size, &nm, sizeof (nm));
-	r_buf_read_at (buf, off + sm.size + 4, &nm2, sizeof (nm2));
-	r_buf_read_at (buf, off + sm.size + 8, &nm3, sizeof (nm3));
+	r_buf_read_at (buf, off + sm.size, (ut8*)&nm, sizeof (nm));
+	r_buf_read_at (buf, off + sm.size + 4, (ut8*)&nm2, sizeof (nm2));
+	r_buf_read_at (buf, off + sm.size + 8, (ut8*)&nm3, sizeof (nm3));
 	// eprintf ("0x%x next %x %x %x\n", off + sm.size, nm, nm2, nm3);
 	if (r_read_le32 (&nm3) != 0xa1b22b1a) {
 		sm.size -= 8;
@@ -171,12 +171,7 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 
 #define O(x, y) x.addr + r_offsetof (x, y)
 
-static void printLine(const char *name, ut32 addr, ut32 value) {
-	eprintf ("0x%08x  %s    0x%x\n", addr, name, value);
-}
-
 static void printSymbolsHeader(SymbolsHeader sh) {
-	// printLine ("magic", 0, sh.magic);
 	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
 	eprintf ("0x%08x  uuid     ", 24);
 	int i;

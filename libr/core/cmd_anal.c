@@ -2350,8 +2350,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
-		case 'j':   // "afij"
-		case '*':   // "afi*"
+		case 'j': // "afij"
+		case '*': // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
 			break;
 		default:
