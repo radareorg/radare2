@@ -4765,9 +4765,8 @@ toro:
 	if (!ds->l) {
 		ds->l = core->blocksize;
 	}
-
+	r_anal_merge_hint_ranges (core->anal);
 	r_cons_break_push (NULL, NULL);
-	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
@@ -5224,10 +5223,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	if (!ds->l) {
 		ds->l = ds->len;
 	}
-
+	r_anal_merge_hint_ranges (core->anal);
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
-	r_anal_build_range_on_hints (core->anal);
 #define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)
 	for (i = j = 0; isNotTheEnd; i += ret, j++) {
 		ds->at = core->offset + i;
