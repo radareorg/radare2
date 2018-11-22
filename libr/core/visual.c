@@ -1048,7 +1048,7 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	}
 
 repeat:
-	fun = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (fun) {
 		if (xref) {
 			xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
@@ -1216,7 +1216,7 @@ repeat:
 	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
 		refi = r_list_get_n (xrefs, skip);
 		if (refi) {
-			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
+			r_core_seek (core, refi->addr, 1);
 			ret = 1;
 		}
 	} else if (IS_DIGIT (ch)) {
@@ -1225,7 +1225,7 @@ repeat:
 			if (core->print->cur_enabled) {
 				core->print->cur = 0;
 			}
-			r_core_cmdf (core, "s 0x%" PFMT64x, refi->addr);
+			r_core_seek (core, refi->addr, 1);
 			ret = 1;
 		}
 	} else if (ch != 'q' && ch != 'Q') {
