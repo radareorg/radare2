@@ -2023,9 +2023,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			if (op->operands[1].scale[0] == 0) {
 				return -1;
 			}
-			data[l++] = SEG_REG_PREFIXES[op->operands[1].regs[0]];
+			data[l++] = SEG_REG_PREFIXES[op->operands[1].regs[0] % 6];
 			data[l++] = 0x8b;
-			data[l++] = op->operands[0].reg << 3 | 0x5;
+			data[l++] = (((ut32)op->operands[0].reg) << 3) | 0x5;
 			data[l++] = offset;
 			data[l++] = offset >> 8;
 			data[l++] = offset >> 16;
