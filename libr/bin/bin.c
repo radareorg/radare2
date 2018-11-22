@@ -125,9 +125,8 @@ R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 load
 }
 
 R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits) {
-	memset (opt, 0, sizeof (*opt));
 	opt->arch = arch? arch: R_SYS_ARCH;
-	opt->bits = bits? bits: 32;
+	opt->bits = bits? bits: R_SYS_BITS;
 }
 
 R_API void r_bin_info_free(RBinInfo *rb) {
@@ -1217,7 +1216,8 @@ R_API RBuffer *r_bin_create(RBin *bin, const char *plugin_name,
 	if (!plugin) {
 		R_LOG_WARN ("Cannot find RBin plugin named '%s'.\n", plugin_name);
 		return NULL;
-	} else if (!plugin->create) {
+	}
+	if (!plugin->create) {
 		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.\n", plugin_name);
 		return NULL;
 	}
