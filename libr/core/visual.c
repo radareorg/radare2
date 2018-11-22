@@ -1041,19 +1041,23 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	char cstr[32];
 	ut64 addr = core->offset;
 	int printMode = 0;
-	int xrefsMode = 0;
+	bool xrefsMode = false;
 	int lastPrintMode = 3;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
 
 repeat:
-	if (xrefsMode % 2) {
+	if (xrefsMode) {
 		RAnalFunction *fun = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-		if (xref) {
-			xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+		if (fun) {
+			if (xref) {
+				xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+			} else {
+				xrefs = r_anal_fcn_get_refs (core->anal, fun);
+			}
 		} else {
-			xrefs = r_anal_fcn_get_refs (core->anal, fun);
+			xrefs = NULL;
 		}
 	} else {
 		if (xref) {
@@ -1065,7 +1069,7 @@ repeat:
 
 	r_cons_clear00 ();
 	r_cons_gotoxy (1, 1);
-	r_cons_printf ("[GOTO %sREFs]> 0x%08"PFMT64x " %s ", xref ? "X": "", addr, (xrefsMode%2)? "function": "address");
+	r_cons_printf ("[GOTO %sREFs]> 0x%08"PFMT64x " %s ", xref ? "X": "", addr, xrefsMode? "function": "address");
 	if (xrefs) {
 		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
@@ -1196,7 +1200,7 @@ repeat:
 		r_cons_any_key (NULL);
 		goto repeat;
 	} else if (ch == 9) { // TAB
-		xrefsMode++;
+		xrefsMode = !xrefsMode;
 		goto repeat;
 	} else if (ch == 'p') {
 		printMode++;
