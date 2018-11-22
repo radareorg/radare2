@@ -640,10 +640,10 @@ static bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 	int i;
 
 	RAnalOp tmp_aop = {0};
-	int search_sz = jmp_addr - lea_addr;
-	if (search_sz < 0) {
+	if (lea_addr > jmp_addr) {
 		return false;
 	}
+	int search_sz = jmp_addr - lea_addr;
 	ut8 *buf = malloc (search_sz);
 	if (!buf) {
 		return false;
@@ -652,7 +652,7 @@ static bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 	anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz);
 
 	for (i = 0; i + 8 < search_sz; i++) {
-		int len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, JMPTBL_LEA_SEARCH_SZ - i, R_ANAL_OP_MASK_BASIC);
+		int len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ANAL_OP_MASK_BASIC);
 		if (len < 1) {
 			len = 1;
 		}
