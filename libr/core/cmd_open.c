@@ -276,6 +276,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			char *arg = strdup (input + 3);
 			char *filename = strchr (arg, ' ');
 			if (filename) {
+				int saved_fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_R, 0);
 				if (desc) {
 					*filename = 0;
@@ -285,6 +286,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_bin_open_io (core->bin, &opt);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
+					r_io_use_fd (core->io, saved_fd);
 				} else {
 					eprintf ("Cannot open %s\n", filename + 1);
 				}
