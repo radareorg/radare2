@@ -1004,7 +1004,7 @@ R_API int offset_history_down(RLine *line) {
 }
 
 R_API void r_core_visual_offset(RCore *core) {
-	ut64 addr, bsze, newaddr;
+	ut64 addr, bsze, newaddr = 0LL;
 	char buf[256];
 
 	backup_current_addr (core, &addr, &bsze, &newaddr);
