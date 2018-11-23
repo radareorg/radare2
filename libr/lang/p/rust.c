@@ -44,6 +44,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 		cc, file, libpath, libname);
 	free (cc);
 	if (r_sandbox_system (cmd, 1) != 0) {
+		free (cmd);
 		return false;
 	}
 	free (cmd);

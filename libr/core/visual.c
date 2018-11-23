@@ -1189,6 +1189,7 @@ repeat:
 	}
 	if (!xrefs || !r_list_length (xrefs)) {
 		r_list_free (xrefs);
+		xrefs = NULL;
 		r_cons_printf ("(no refs)\n");
 		// return 0;
 	}
