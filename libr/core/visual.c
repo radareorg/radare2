@@ -1028,6 +1028,18 @@ static int prevopsz(RCore *core, ut64 addr) {
 	return addr - prev_addr;
 }
 
+static int follow_ref(RCore *core, RList *xrefs, int choice) {
+	RAnalRef *refi = r_list_get_n (xrefs, choice);
+	if (refi) {
+		if (core->print->cur_enabled) {
+			core->print->cur = 0;
+		}
+		r_core_seek (core, refi->addr, 1);
+		return 1;
+	}
+	return 0;
+}
+
 R_API int r_core_visual_refs(RCore *core, bool xref) {
 	int ret = 0;
 #if FCN_OLD
@@ -1255,20 +1267,9 @@ repeat:
 		}
 		goto repeat;
 	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
-		refi = r_list_get_n (xrefs, skip);
-		if (refi) {
-			r_core_seek (core, refi->addr, 1);
-			ret = 1;
-		}
+		ret = follow_ref (core, xrefs, skip);
 	} else if (IS_DIGIT (ch)) {
-		refi = r_list_get_n (xrefs, ch - 0x30);
-		if (refi) {
-			if (core->print->cur_enabled) {
-				core->print->cur = 0;
-			}
-			r_core_seek (core, refi->addr, 1);
-			ret = 1;
-		}
+		ret = follow_ref (core, xrefs, ch - 0x30);
 	} else if (ch != 'q' && ch != 'Q') {
 		goto repeat;
 	}
