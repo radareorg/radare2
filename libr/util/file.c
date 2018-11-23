@@ -61,10 +61,15 @@ R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 		return false;
 	}
 #ifdef _MSC_VER
-        _chsize (fd, newsize);
+	int r = _chsize (fd, newsize);
 #else
-	ftruncate (fd, newsize);
+	int r = ftruncate (fd, newsize);
 #endif
+	if (r != 0) {
+		eprintf ("Coult not resize %s file\n", filename);
+		close (fd);
+		return false;
+	}
 	close (fd);
 	return true;
 }
