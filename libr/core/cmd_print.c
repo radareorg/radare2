@@ -903,9 +903,6 @@ static void print_format_help_help_help_help(RCore *core) {
 
 static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, int size) {
 	switch (*input) {
-	case '?': // "pF?"
-		r_core_cmd_help (core, help_msg_pF);
-		break;
 	case 'a':
 		{
 			asn1_setformat (input[1] != 'q');
@@ -955,7 +952,8 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		}
 		break;
 	default:
-		eprintf ("Not yet implemented\n");
+	case '?': // "pF?"
+		r_core_cmd_help (core, help_msg_pF);
 		break;
 	}
 }
