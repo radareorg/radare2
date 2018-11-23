@@ -951,8 +951,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 				file_oomem (ms, sizeof (*mp) * maxmagic);
 				return -1;
 			}
-			ut8 *p = (ut8*)&mp + *nmentryp;
-			(void)memset(p, 0, sizeof (*mp) * ALLOC_INCR);
+			(void)memset(&mp[*nmentryp], 0, sizeof (*mp) * ALLOC_INCR);
 			*mentryp = mp;
 		}
 		me = &(*mentryp)[*nmentryp];
