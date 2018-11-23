@@ -645,17 +645,19 @@ static int getreg(const char *str) {
 static st32 getlistmask(char *input) {
 	st32 tempres, res = 0;
 	int i, j, start, end;
+	char *temp = NULL;
+	char *otemp = NULL;
 	char *temp2 = malloc (strlen (input) + 1);
 	if (!temp2) {
 		res = -1;
 		goto end;
 	}
-	char *temp = (char *)malloc (strlen (input) + 1);
+	temp = (char *)malloc (strlen (input) + 1);
 	if (!temp) {
 		res = -1;
 		goto end;
 	}
-	char *otemp = temp;
+	otemp = temp;
 	while (*input != '\0') {
 		for (; *input == ' '; input++) {
 			;

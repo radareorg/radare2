@@ -755,7 +755,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		ut64 prev_pos = prev_bb->op_pos[i];
 		ut64 op_addr = prev_bb->addr + prev_pos;
 		if (prev_pos > prev_bb->size) {
-			break;
+			continue;
 		}
 		int buflen = prev_bb->size - prev_pos;
 		int len = r_anal_op (anal, &tmp_aop, op_addr,
@@ -1900,7 +1900,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr) {
 	RAnalBlock *bb;
 	int new_bbi_instr, i;
-	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size, 0);
+	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size + 1, 0);
 	if (addr == UT64_MAX) {
 		return 0;
 	}
