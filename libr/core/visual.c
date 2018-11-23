@@ -1047,6 +1047,7 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 		addr += core->print->cur;
 	}
 repeat:
+	r_list_free (xrefs);
 	if (xrefsMode) {
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 		if (fun) {
@@ -1068,7 +1069,8 @@ repeat:
 
 	r_cons_clear00 ();
 	r_cons_gotoxy (1, 1);
-	r_cons_printf ("[GOTO %sREFs]> 0x%08"PFMT64x " %s ", xref ? "X": "", addr, xrefsMode? "function": "address");
+	r_cons_printf ("[%s%srefs]> 0x%08"PFMT64x" # ", 
+			xrefsMode? "fcn.": "addr.", xref ? "x": "", addr);
 	if (xrefs) {
 		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
@@ -1112,16 +1114,19 @@ repeat:
 							name = strdup ("unk");
 						}
 					}
-					r_cons_printf (" %d [%s] 0x%08"PFMT64x " %s %cREF (%s)\n",
-						idx, cstr, refi->addr,
+					r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s)\n",
+						idx, cstr, refi->at, refi->addr,
 						r_anal_xrefs_type_tostring (refi->type),
-						xref ? 'X':' ', name);
+						xref ? "x":"", name);
 					free (name);
 					if (idx == skip) {
 						free (dis);
 						curat = refi->addr;
+						char *res = r_core_cmd_strf (core, "pd 4 @ 0x%08"PFMT64x"@e:asm.maxflags=1", refi->at);
 						// TODO: show disasm with context. not seek addr
 						// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+						dis = NULL;
+						res = r_str_appendf (res, "; ---------------------------\n");
 						switch (printMode) {
 						case 0:
 							dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
@@ -1136,6 +1141,11 @@ repeat:
 							dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
 							break;
 						}
+						if (dis) {
+							res = r_str_append (res, dis);
+							free (dis);
+						}
+						dis = res;
 					}
 					if (++count >= rows) {
 						r_cons_printf ("...");
@@ -1160,8 +1170,10 @@ repeat:
 				}
 				/* print disasm */
 				char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 9);
-				r_cons_printf ("%s", d);
-				free (d);
+				if (d) {
+					r_cons_printf ("%s", d);
+					free (d);
+				}
 				/* flush and restore highlight */
 				r_cons_flush ();
 				r_config_set (core->config, "scr.highlight", cmd);
@@ -1189,6 +1201,7 @@ repeat:
 		r_cons_clear00 ();
 		r_cons_printf ("Usage: Visual Xrefs\n"
 		" jk  - select next or previous item (use arrows)\n"
+		" JK  - step 10 rows\n"
 		" pP  - rotate between various print modes\n"
 		" :   - run r2 command\n"
 		" ?   - show this help message\n"
@@ -1220,8 +1233,20 @@ repeat:
 	} else if (ch == 'X') {
 		xref = false;
 		goto repeat;
+	} else if (ch == 'J') {
+		skip += 10;
+		goto repeat;
+	} else if (ch == 'g') {
+		skip = 0;
+		goto repeat;
+	} else if (ch == 'G') {
+		skip = 9999;
+		goto repeat;
 	} else if (ch == 'j') {
 		skip++;
+		goto repeat;
+	} else if (ch == 'K') {
+		skip = (skip < 10) ? 0: skip - 10;
 		goto repeat;
 	} else if (ch == 'k') {
 		skip--;
