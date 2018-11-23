@@ -39,7 +39,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (shell->readline) {
 				ptr = shell->readline ();
 			} else {
-				fgets (buf, sizeof (buf) - 1, stdin);
+				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+					break;
+				}
 				if (feof (stdin)) {
 					break;
 				}
@@ -58,7 +60,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 		} else {
 			printf ("%s", prompt);
-			fgets (buf, sizeof (buf) - 1, stdin);
+			if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+				break;
+			}
 			if (feof (stdin)) {
 				break;
 			}

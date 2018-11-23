@@ -250,7 +250,9 @@ static TAG_CALLBACK(spp_grepline) {
 		line = atoi (ptr+1);
 		if (fd) {
 			while (!feof (fd) && line--) {
-				fgets(b, 1023, fd);
+				if (!fgets (b, 1023, fd)) {
+					break;
+				}
 			}
 			fclose (fd);
 			do_printf (out, "%s", b);
