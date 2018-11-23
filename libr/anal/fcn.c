@@ -1123,8 +1123,6 @@ repeat:
 				if (((op.size + 4) <= len) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
 					bb->size -= oplen;
 					op.type = R_ANAL_OP_TYPE_RET;
-					FITFCNSZ ();
-					r_anal_op_fini (&op);
 					gotoBeach (R_ANAL_RET_END);
 				}
       }
@@ -1143,10 +1141,7 @@ repeat:
 					op.type = R_ANAL_OP_TYPE_RET;
 				}
 			}
-			FITFCNSZ ();
-			r_anal_op_fini (&op);
 			gotoBeach (R_ANAL_RET_END);
-			break;
 		case R_ANAL_OP_TYPE_TRAP:
 			if (anal->opt.nopskip && buf[0] == 0xcc) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
@@ -1157,9 +1152,7 @@ repeat:
 					goto repeat;
 				}
 			}
-			FITFCNSZ ();
-			r_anal_op_fini (&op);
-			return R_ANAL_RET_END;
+			gotoBeach (R_ANAL_RET_END);
 		case R_ANAL_OP_TYPE_NOP:
 			if (anal->opt.nopskip) {
 				if (!strcmp (anal->cur->arch, "mips")) {
@@ -1192,16 +1185,12 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 			if (op.jump == UT64_MAX) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			{
 				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op.jump, false);
 				if (fi && strstr (fi->name, "imp.")) {
-					FITFCNSZ ();
-					r_anal_op_fini (&op);
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			if (r_cons_is_breaked ()) {
@@ -1211,14 +1200,10 @@ repeat:
 				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
 			if (!anal->opt.jmpabove && (op.jump < fcn->addr)) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			if (r_anal_noreturn_at (anal, op.jump)) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			{
 				bool must_eob = anal->opt.eobjmp;
@@ -1357,9 +1342,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
 		case R_ANAL_OP_TYPE_CCALL:
@@ -1368,9 +1351,7 @@ repeat:
 			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 #if CALL_IS_EOB
 			recurseAt (op.jump);
@@ -1385,9 +1366,8 @@ repeat:
 		case R_ANAL_OP_TYPE_IRJMP:
 			// if the next instruction is a symbol
 			if (anal->opt.ijmp && isSymbolNextInstruction (anal, &op)) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
+
 			}
 			// switch statement
 			if (anal->opt.jmptbl) {
@@ -1451,9 +1431,7 @@ repeat:
 				}
 			} else {
 analopfinish:
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
+				gotoBeach (R_ANAL_RET_END);
 			}
 			break;
 		/* fallthru */
@@ -1479,9 +1457,7 @@ analopfinish:
 					VERBOSE_ANAL eprintf("RET 0x%08"PFMT64x ". %d %d %d\n",
 					addr + delay.un_idx - oplen, overlapped,
 					bb->size, r_anal_fcn_size (fcn));
-					FITFCNSZ ();
-					r_anal_op_fini (&op);
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);	
 				}
 			}
 			break;
