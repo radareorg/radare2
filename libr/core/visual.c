@@ -3287,7 +3287,7 @@ static void scrollbar(RCore *core) {
 
 static void visual_refresh(RCore *core) {
 	static ut64 oseek = UT64_MAX;
-	const char *vi, *vcmd;
+	const char *vi, *vcmd, *cmd_str;
 	if (!core) {
 		return;
 	}
@@ -3304,16 +3304,21 @@ static void visual_refresh(RCore *core) {
 	r_cons_flush ();
 	r_cons_print_clear ();
 
-	vi = r_config_get (core->config, "cmd.cprompt");
+	int hex_cols = r_config_get_i (core->config, "hex.cols");
+	int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
 	bool ce = core->print->cur_enabled;
-	if (vi && *vi) {
+
+	vi = r_config_get (core->config, "cmd.cprompt");
+	bool vsplit = (vi && *vi);
+
+	if (vsplit) {
 		// XXX: slow
 		core->cons->blankline = false;
 		r_cons_clear00 ();
 		{
-			int hc = r_config_get_i (core->config, "hex.cols");
-			int nw = 12 + 4 + hc + (hc * 3);
-			if (nw > w) {
+			int hex_cols = r_config_get_i (core->config, "hex.cols");
+			int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
+			if (split_w > w) {
 				// do not show column contents
 			} else {
 				r_cons_printf ("[cmd.cprompt=%s]\n", vi);
@@ -3321,7 +3326,7 @@ static void visual_refresh(RCore *core) {
 					r_core_seek (core, oseek, 1);
 				}
 				r_core_cmd0 (core, vi);
-				r_cons_column (nw);
+				r_cons_column (split_w);
 				if (!strncmp (vi, "p=", 2) && core->print->cur_enabled) {
 					oseek = core->offset;
 					core->print->cur_enabled = false;
@@ -3349,7 +3354,7 @@ static void visual_refresh(RCore *core) {
 		// disable screen bounds when it's a user-defined command
 		// because it can cause some issues
 		core->print->screen_bounds = 0;
-		r_core_cmd (core, vcmd, 0);
+		cmd_str = vcmd;
 	} else {
 		if (splitView) {
 			static char debugstr[512];
@@ -3370,10 +3375,20 @@ static void visual_refresh(RCore *core) {
 					pxw, size, splitPtr,
 					pxw, size, core->offset);
 			core->print->screen_bounds = 1LL;
-			r_core_cmd0 (core, debugstr);
+			cmd_str = debugstr;
 		} else {
 			core->print->screen_bounds = 1LL;
-			r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
+			cmd_str = (zoom ? "pz" : printfmt[PIDX]);
+		}
+	}
+	if (cmd_str && *cmd_str) {
+		if (vsplit) {
+			char *cmd_result;
+			cmd_result = r_core_cmd_str (core, cmd_str);
+			cmd_result = r_str_ansi_crop (cmd_result, 0, 0, split_w, -1);
+			r_cons_strcat (cmd_result);
+		} else {
+			r_core_cmd0 (core, cmd_str);
 		}
 	}
 	core->print->cur_enabled = ce;
