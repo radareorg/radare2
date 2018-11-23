@@ -55,6 +55,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		" $(pkg-config --cflags --libs r_core)", cc, file, libpath, libname);
 	free (cc);
 	if (r_sandbox_system (buf, 1) != 0) {
+		free (buf);
 		return false;
 	}
 	free (buf);
