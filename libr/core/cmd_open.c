@@ -1468,7 +1468,9 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '\0': // "oo"
-			if (core && core->io && core->io->desc) {
+			if (core->dbg) {
+				r_core_file_reopen_debug (core, input + 2);
+			} else if (core && core->io && core->io->desc) {
 				//does not work for debugging
 				int fd;
 				if ((ptr = strrchr (input, ' ')) && ptr[1]) {
