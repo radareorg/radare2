@@ -720,7 +720,9 @@ R_API ut64 r_bin_get_laddr(RBin *bin) {
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	r_return_if_fail (bin);
 	RBinObject *o = r_bin_cur_object (bin);
-	r_bin_object_set_baddr (o, baddr);
+	if (o) {
+		r_bin_object_set_baddr (o, baddr);
+	}
 	// XXX - update all the infos?
 }
 
