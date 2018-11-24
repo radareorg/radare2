@@ -175,7 +175,6 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				write (1, file->data, file->size);
-				free (file->data);
 				r_fs_close (fs, file);
 			} else {
 				eprintf ("Cannot open file\n");
@@ -218,7 +217,6 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				r_file_dump (input, file->data, file->size, 0);
-				free (file->data);
 				r_fs_close (fs, file);
 			} else {
 				input -= 2; //OMFG!!!! O_O
