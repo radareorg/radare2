@@ -565,7 +565,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		return false;
 	}
 	if (append) {
-		fd = r_sandbox_fopen (file, "awb");
+		fd = r_sandbox_fopen (file, "ab");
 	} else {
 		r_sys_truncate (file, 0);
 		fd = r_sandbox_fopen (file, "wb");
@@ -607,7 +607,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		return false;
 	}
 	if (append) {
-		fd = r_sandbox_fopen (file, "awb");
+		fd = r_sandbox_fopen (file, "ab");
 	} else {
 		r_sys_truncate (file, 0);
 		fd = r_sandbox_fopen (file, "wb");
