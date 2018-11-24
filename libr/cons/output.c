@@ -195,7 +195,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			if (state == -2) {
 				w32_gotoxy (x, y);
 				ptr += i;
-				str = ptr + 1;// + i-2;
+				str = ptr; // + i-2;
 				continue;
 			}
 			if (ptr[0]=='0' && ptr[1] == ';' && ptr[2]=='0') {
