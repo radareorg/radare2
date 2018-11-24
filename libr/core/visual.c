@@ -1081,9 +1081,10 @@ repeat:
 
 	r_cons_clear00 ();
 	r_cons_gotoxy (1, 1);
-	r_cons_printf ("[%s%srefs]> 0x%08"PFMT64x" # ", 
+	r_cons_printf ("[%s%srefs]> 0x%08"PFMT64x" # (TAB/jk/q/?) ",
 			xrefsMode? "fcn.": "addr.", xref ? "x": "", addr);
 	if (xrefs) {
+		int h, w = r_cons_get_size (&h);
 		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_core_cmd0 (core, "fd");
@@ -1125,6 +1126,13 @@ repeat:
 						} else {
 							name = strdup ("unk");
 						}
+					}
+					if (w > 45) {
+						if (strlen (name) > w -45) {
+							name[w - 45] = 0;
+						}
+					} else {
+						name[0] = 0;
 					}
 					r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s)\n",
 						idx, cstr, refi->at, refi->addr,
