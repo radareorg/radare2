@@ -1876,6 +1876,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (!symbol->name) {
 			continue;
 		}
+		char *r_symbol_name = r_str_escape (symbol->name);
 		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};
@@ -1883,7 +1884,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (exponly && !isAnExport (symbol)) {
 			continue;
 		}
-		if (name && symbol->name && strcmp (symbol->name, name)) {
+		if (name && strcmp (r_symbol_name, name)) {
 			continue;
 		}
 		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
@@ -1914,7 +1915,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					r_anal_hint_set_bits (r->anal, addr, force_bits);
 				}
 			}
-			if (symbol->name && !strncmp (symbol->name, "imp.", 4)) {
+			if (!strncmp (r_symbol_name, "imp.", 4)) {
 				if (lastfs != 'i') {
 					r_flag_space_set (r->flags, "imports");
 				}
@@ -1969,7 +1970,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					addr, symbol->size, sn.demname);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			char *str = r_str_escape_utf8_to_json (symbol->name, -1);
+			char *str = r_str_escape_utf8_to_json (r_symbol_name, -1);
 			// str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","
@@ -1991,16 +1992,16 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				(ut64)addr, (ut64)symbol->paddr);
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			const char *name = sn.demname? sn.demname: symbol->name;
+			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("0x%08"PFMT64x" %d %s\n",
 				addr, (int)symbol->size, name);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			const char *name = sn.demname? sn.demname: symbol->name;
+			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("%s\n", name);
 		} else if (IS_MODE_RAD (mode)) {
 			RBinFile *binfile;
 			RBinPlugin *plugin;
-			char *name = strdup (sn.demname? sn.demname: symbol->name);
+			char *name = strdup (sn.demname? sn.demname: r_symbol_name);
 			r_name_filter (name, -1);
 			if (!strncmp (name, "imp.", 4)) {
 				if (lastfs != 'i') {
@@ -2039,7 +2040,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			plugin = r_bin_file_cur_plugin (binfile);
 			if (plugin && plugin->name) {
 				if (!strncmp (plugin->name, "pe", 2)) {
-					char *p, *module = strdup (symbol->name);
+					char *p, *module = strdup (r_symbol_name);
 					p = strstr (module, ".dll_");
 					if (p) {
 						const char *symname = p + 5;
@@ -2058,7 +2059,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		} else {
 			const char *bind = symbol->bind? symbol->bind: "NONE";
 			const char *type = symbol->type? symbol->type: "NONE";
-			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
+			const char *name = r_str_get (sn.demname? sn.demname: r_symbol_name);
 			// const char *fwd = r_str_get (symbol->forwarder);
 			r_cons_printf ("%03u", symbol->ordinal);
 			if (symbol->paddr == UT64_MAX) {
@@ -2180,6 +2181,7 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 		char humansz[8];
 		i = 0;
 		ls_foreach (sections, iter, s) {
+			char *r_sname = r_str_escape (s->name);
 			r_num_units (humansz, sizeof (humansz), s->size);
 			if (use_color) {
 				color_end = Color_RESET;
@@ -2214,11 +2216,11 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 			if (io->va) {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
 						color, s->vaddr + s->vsize, color_end, humansz,
-						r_str_rwx_i (s->perm), s->name);
+						r_str_rwx_i (s->perm), r_sname);
 			} else {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
 						color, s->paddr+s->size, color_end, humansz,
-						r_str_rwx_i (s->perm), s->name);
+						r_str_rwx_i (s->perm), r_sname);
 			}
 
 			i++;
