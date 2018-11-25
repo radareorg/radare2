@@ -2523,7 +2523,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
 	r_cons_printf ("\nedges: %d", r_anal_fcn_count_edges (fcn, &ebbs));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
-	r_cons_printf ("\ncall-refs: ");
+	r_cons_printf ("\ncall-refs:");
 	int outdegree = 0;
 	refs = r_anal_fcn_get_refs (core->anal, fcn);
 	r_list_foreach (refs, iter, refi) {
@@ -2531,34 +2531,34 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			outdegree++;
 		}
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
-			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
+			r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
 		}
 	}
-	r_cons_printf ("\ndata-refs: ");
+	r_cons_printf ("\ndata-refs:");
 	r_list_foreach (refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_DATA) {
-			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+			r_cons_printf (" 0x%08"PFMT64x, refi->addr);
 		}
 	}
 	r_list_free (refs);
 
 	int indegree = 0;
-	r_cons_printf ("\ncode-xrefs: ");
+	r_cons_printf ("\ncode-xrefs:");
 	xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			indegree++;
-			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
+			r_cons_printf (" 0x%08"PFMT64x" %c", refi->addr,
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
 		}
 	}
 	r_cons_printf ("\nin-degree: %d", indegree);
 	r_cons_printf ("\nout-degree: %d", outdegree);
-	r_cons_printf ("\ndata-xrefs: ");
+	r_cons_printf ("\ndata-xrefs:");
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_DATA) {
-			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+			r_cons_printf (" 0x%08"PFMT64x, refi->addr);
 		}
 	}
 	r_list_free (xrefs);
