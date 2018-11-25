@@ -112,12 +112,14 @@ static char *stdin_gets() {
 		}
 	}
 	memset (stdin_buf, 0, STDIN_BUF_SIZE);
-        fgets (stdin_buf, STDIN_BUF_SIZE - 1, stdin);
-		if (feof (stdin)) {
-			return NULL;
-		}
-        stdin_buf[strlen (stdin_buf) - 1] = 0;
-        return strdup (stdin_buf);
+	if (!fgets (stdin_buf, STDIN_BUF_SIZE - 1, stdin)) {
+		return NULL;
+	}
+	if (feof (stdin)) {
+		return NULL;
+	}
+	stdin_buf[strlen (stdin_buf) - 1] = 0;
+	return strdup (stdin_buf);
 }
 
 static void __sdb_prompt(Sdb *sdb) {

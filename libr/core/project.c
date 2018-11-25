@@ -469,7 +469,9 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	fd = r_sandbox_fopen (prj, "r");
 	if (fd) {
 		for (;;) {
-			fgets (buf, sizeof (buf), fd);
+			if (!fgets (buf, sizeof (buf), fd)) {
+				break;
+			}
 			if (feof (fd)) {
 				break;
 			}

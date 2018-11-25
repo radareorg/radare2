@@ -90,7 +90,9 @@ static int update_self_regions(RIO *io, int pid) {
 
 	while (!feof (fd)) {
 		line[0]='\0';
-		fgets (line, sizeof (line)-1, fd);
+		if (!fgets (line, sizeof (line)-1, fd)) {
+			break;
+		}
 		if (line[0] == '\0') {
 			break;
 		}
