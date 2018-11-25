@@ -754,7 +754,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	for (i = 0; i < prev_bb->op_pos_size; i++) {
 		ut64 prev_pos = prev_bb->op_pos[i];
 		ut64 op_addr = prev_bb->addr + prev_pos;
-		if (prev_pos > prev_bb->size) {
+		if (prev_pos >= prev_bb->size) {
 			continue;
 		}
 		int buflen = prev_bb->size - prev_pos;

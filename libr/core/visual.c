@@ -1083,135 +1083,126 @@ repeat:
 	r_cons_gotoxy (1, 1);
 	r_cons_printf ("[%s%srefs]> 0x%08"PFMT64x" # (TAB/jk/q/?) ",
 			xrefsMode? "fcn.": "addr.", xref ? "x": "", addr);
-	if (xrefs) {
+	if (!xrefs || r_list_empty (xrefs)) {
+		r_list_free (xrefs);
+		xrefs = NULL;
+		r_cons_printf ("\n\n(no %srefs)\n", xref ? "x": "");
+	} else {
 		int h, w = r_cons_get_size (&h);
 		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_core_cmd0 (core, "fd");
-		if (r_list_empty (xrefs)) {
-			r_cons_printf ("No %cREF found at 0x%"PFMT64x "\n", xref ? 'X':' ', addr);
-			r_cons_any_key (NULL);
-			r_cons_clear00 ();
-		} else {
-			int maxcount = 9;
-			int rows, cols = r_cons_get_size (&rows);
-			idx = 0;
-			count = 0;
-			char *dis = NULL;
-			rows -= 4;
-			idx = 0;
-			ut64 curat = UT64_MAX;
-			r_list_foreach (xrefs, iter, refi) {
-				if (idx - skip > maxcount) {
+
+		int maxcount = 9;
+		int rows, cols = r_cons_get_size (&rows);
+		idx = 0;
+		count = 0;
+		char *dis = NULL;
+		rows -= 4;
+		idx = 0;
+		ut64 curat = UT64_MAX;
+		r_list_foreach (xrefs, iter, refi) {
+			if (idx - skip > maxcount) {
+				r_cons_printf ("...");
+				break;
+			}
+			if (!iter->n && idx < skip) {
+				skip = idx;
+			}
+			if (idx >= skip) {
+				if (count > maxcount) {
+					strcpy (cstr, "?");
+				} else {
+					snprintf (cstr, sizeof (cstr), "%d", count);
+				}
+				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+				char *name;
+				if (fun) {
+					name = strdup (fun->name);
+				} else {
+					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+					if (f) {
+						name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+					} else {
+						name = strdup ("unk");
+					}
+				}
+				if (w > 45) {
+					if (strlen (name) > w -45) {
+						name[w - 45] = 0;
+					}
+				} else {
+					name[0] = 0;
+				}
+				r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s)\n",
+					idx, cstr, refi->at, refi->addr,
+					r_anal_xrefs_type_tostring (refi->type),
+					xref ? "x":"", name);
+				free (name);
+				if (idx == skip) {
+					free (dis);
+					curat = refi->addr;
+					char *res = r_core_cmd_strf (core, "pd 4 @ 0x%08"PFMT64x"@e:asm.maxflags=1", refi->at);
+					// TODO: show disasm with context. not seek addr
+					// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+					dis = NULL;
+					res = r_str_appendf (res, "; ---------------------------\n");
+					switch (printMode) {
+					case 0:
+						dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+						break;
+					case 1:
+						dis = r_core_cmd_strf (core, "pd @ 0x%08"PFMT64x"-32", refi->addr);
+						break;
+					case 2:
+						dis = r_core_cmd_strf (core, "px @ 0x%08"PFMT64x, refi->addr);
+						break;
+					case 3:
+						dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
+						break;
+					}
+					if (dis) {
+						res = r_str_append (res, dis);
+						free (dis);
+					}
+					dis = res;
+				}
+				if (++count >= rows) {
 					r_cons_printf ("...");
 					break;
 				}
-				if (!iter->n && idx < skip) {
-					skip = idx;
-				}
-				if (idx >= skip) {
-					if (count > maxcount) {
-						strcpy (cstr, "?");
-					} else {
-						snprintf (cstr, sizeof (cstr), "%d", count);
-					}
-					RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-					char *name;
-					if (fun) {
-						name = strdup (fun->name);
-					} else {
-						RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
-						if (f) {
-							name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
-						} else {
-							name = strdup ("unk");
-						}
-					}
-					if (w > 45) {
-						if (strlen (name) > w -45) {
-							name[w - 45] = 0;
-						}
-					} else {
-						name[0] = 0;
-					}
-					r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s)\n",
-						idx, cstr, refi->at, refi->addr,
-						r_anal_xrefs_type_tostring (refi->type),
-						xref ? "x":"", name);
-					free (name);
-					if (idx == skip) {
-						free (dis);
-						curat = refi->addr;
-						char *res = r_core_cmd_strf (core, "pd 4 @ 0x%08"PFMT64x"@e:asm.maxflags=1", refi->at);
-						// TODO: show disasm with context. not seek addr
-						// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
-						dis = NULL;
-						res = r_str_appendf (res, "; ---------------------------\n");
-						switch (printMode) {
-						case 0:
-							dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
-							break;
-						case 1:
-							dis = r_core_cmd_strf (core, "pd @ 0x%08"PFMT64x"-32", refi->addr);
-							break;
-						case 2:
-							dis = r_core_cmd_strf (core, "px @ 0x%08"PFMT64x, refi->addr);
-							break;
-						case 3:
-							dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
-							break;
-						}
-						if (dis) {
-							res = r_str_append (res, dis);
-							free (dis);
-						}
-						dis = res;
-					}
-					if (++count >= rows) {
-						r_cons_printf ("...");
-						break;
-					}
-				}
-				idx++;
 			}
-			if (dis) {
-				if (count < rows) {
-					r_cons_newline ();
-				}
-				int i = count;
-				for (; i < 9; i++)  {
-					r_cons_newline ();
-				}
-				/* prepare highlight */
-				char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
-				char *ats = r_str_newf ("%"PFMT64x, curat);
-				if (ats) {
-					(void) r_config_set (core->config, "scr.highlight", ats);
-				}
-				/* print disasm */
-				char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 9);
-				if (d) {
-					r_cons_printf ("%s", d);
-					free (d);
-				}
-				/* flush and restore highlight */
-				r_cons_flush ();
-				r_config_set (core->config, "scr.highlight", cmd);
-				free (ats);
-				free (cmd);
-				free (dis);
-				dis = NULL;
+			idx++;
+		}
+		if (dis) {
+			if (count < rows) {
+				r_cons_newline ();
 			}
+			int i = count;
+			for (; i < 9; i++)  {
+				r_cons_newline ();
+			}
+			/* prepare highlight */
+			char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
+			char *ats = r_str_newf ("%"PFMT64x, curat);
+			if (ats) {
+				(void) r_config_set (core->config, "scr.highlight", ats);
+			}
+			/* print disasm */
+			char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 9);
+			if (d) {
+				r_cons_printf ("%s", d);
+				free (d);
+			}
+			/* flush and restore highlight */
+			r_cons_flush ();
+			r_config_set (core->config, "scr.highlight", cmd);
+			free (ats);
+			free (cmd);
+			free (dis);
+			dis = NULL;
 		}
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
-	} else {
-		xrefs = NULL;
-	}
-	if (!xrefs || !r_list_length (xrefs)) {
-		r_list_free (xrefs);
-		xrefs = NULL;
-		r_cons_printf ("(no refs)\n");
-		// return 0;
 	}
 	r_cons_flush ();
 	ch = r_cons_readchar ();
