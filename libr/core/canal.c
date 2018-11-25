@@ -2571,7 +2571,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		var_count += r_anal_var_count (core->anal, fcn, 's', 0);
 		var_count += r_anal_var_count (core->anal, fcn, 'r', 0);
 
-		r_cons_printf ("\nlocals:%d\nargs: %d\n", var_count, args_count);
+		r_cons_printf ("\nlocals: %d\nargs: %d\n", var_count, args_count);
 		r_anal_var_list_show (core->anal, fcn, 'b', 0);
 		r_anal_var_list_show (core->anal, fcn, 's', 0);
 		r_anal_var_list_show (core->anal, fcn, 'r', 0);
