@@ -1964,6 +1964,9 @@ repeat:
 		first2 = 0;
 		// TODO: maybe fcni->calls instead ?
 		r_list_foreach (refs, iter2, fcnr) {
+			if (fcnr->type != 'C') {
+				continue;
+			}
 			RAnalFunction *fr = r_anal_get_fcn_in (core->anal, fcnr->addr, 0);
 			if (!fr) {
 				fr = &fakefr;
