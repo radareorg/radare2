@@ -43,6 +43,7 @@ static int arraysize = 0;
 
 static const char *global_symname = NULL;
 static const char *global_type = NULL;
+bool anon_flag = false;
 
 ST_DATA Sym *global_stack;
 ST_DATA Sym *local_stack;
@@ -920,9 +921,30 @@ static void struct_decl(CType *type, int u) {
 	a = tok;/* save decl type */
 	next ();
 	name = get_tok_str (tok, NULL);
+	if (tok == '{') {
+		ParseState sps = {0};
+		save_parse_state (&sps);
+		while (tcc_nerr () == 0) {
+			next ();
+			if (tok == '}') {
+				break;
+			}
+		}
+		next ();
+		if (tok != ';') {
+			name = get_tok_str (tok, NULL);
+			v = tok;
+			anon_flag = true;
+		}
+		restore_parse_state (&sps);
+		if (anon_flag) {
+			goto find;
+		}
+	}
 	if (tok != '{') {
 		v = tok;
 		next ();
+find:
 		/* struct already defined ? return it */
 		if (v < TOK_IDENT) {
 			expect ("struct/union/enum name");
@@ -2994,6 +3016,9 @@ static int decl0(int l, int is_for_loop_init) {
 				break;
 			}
 			btype.t = VT_INT32;
+		}
+		if (anon_flag) {
+			next ();
 		}
 		if (((btype.t & VT_BTYPE) == VT_ENUM || (btype.t & VT_BTYPE) == VT_STRUCT) && tok == ';') {
 			/* we accept no variable after */

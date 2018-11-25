@@ -354,6 +354,7 @@ typedef struct ParseState {
     int line_num;
     int tok;
     CValue tokc;
+    uint8_t *p;
 } ParseState;
 
 /* used to record tokens */

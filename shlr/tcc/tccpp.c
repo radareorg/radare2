@@ -820,6 +820,7 @@ the_end:
 ST_FUNC void save_parse_state(ParseState *s)
 {
 	s->line_num = file->line_num;
+	s->p = file->buf_ptr;
 	s->macro_ptr = macro_ptr;
 	s->tok = tok;
 	s->tokc = tokc;
@@ -829,6 +830,7 @@ ST_FUNC void save_parse_state(ParseState *s)
 ST_FUNC void restore_parse_state(ParseState *s)
 {
 	file->line_num = s->line_num;
+	file->buf_ptr = s->p;
 	macro_ptr = s->macro_ptr;
 	tok = s->tok;
 	tokc = s->tokc;
