@@ -101,17 +101,17 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 			continue;
 		}
 		q = sdb_fmt ("enum.%s.0x%x", name, (1<<i));
-                res = sdb_const_get (TDB, q, 0);
-                if (isFirst) {
+				res = sdb_const_get (TDB, q, 0);
+				if (isFirst) {
 			isFirst = false;
-                } else {
+				} else {
 			ret = r_str_append (ret, " | ");
-                }
-                if (res) {
+				}
+				if (res) {
 			ret = r_str_append (ret, res);
-                } else {
+				} else {
 			ret = r_str_appendf (ret, "0x%x", (1<<i));
-                }
+				}
 	}
 	return ret;
 }
@@ -181,7 +181,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 }
 
 R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
-	int i, typesize = 0;
+	int i, prev_typesize, typesize = 0;
 	char *res = NULL;
 
 	if (offset < 0) {
@@ -216,7 +216,28 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 			free (subtype);
 			break;
 		}
+		prev_typesize = typesize;
 		typesize += r_type_get_bitsize (TDB, subtype) * arrsz;
+		// Handle nested structs
+		if (offset < (typesize / 8)) {
+			char *nested_type = r_str_word_get0 (subtype, 0);
+			if (r_str_startswith(nested_type, "struct ") && !r_str_endswith(nested_type, " *")) {
+				len = r_str_split(nested_type, ' ');
+				if (len < 2) {
+					free (subtype);
+					break;
+				}
+				nested_type = r_str_word_get0 (nested_type, 1);
+				char *nested_res = r_type_get_struct_memb (TDB, nested_type, offset - (prev_typesize / 8));
+				if (nested_res) {
+					len = r_str_split(nested_res, '.');
+					res = r_str_newf ("%s.%s.%s", type, name, r_str_word_get0 (nested_res, len - 1));
+					free (nested_res);
+					free (subtype);
+					break;
+				}
+			}
+		}
 		free (subtype);
 	}
 	free (members);
@@ -299,12 +320,12 @@ R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
 }
 
 static void filter_type(char *t) {
-        for (;*t; t++) {
-                if (*t == ' ') {
-                        *t = '_';
-                }
-                // memmove (t, t+1, strlen (t));
-        }
+		for (;*t; t++) {
+				if (*t == ' ') {
+						*t = '_';
+				}
+				// memmove (t, t+1, strlen (t));
+		}
 }
 
 R_API char *r_type_format(Sdb *TDB, const char *t) {
@@ -508,7 +529,7 @@ static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
 
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
-//   to additional information added around name
+//	 to additional information added around name
 R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	int offset = 0;
 	char *str = func_name;

@@ -41,7 +41,7 @@ static const char *help_msg_t_minus[] = {
 static const char *help_msg_ta[] = {
 	"Usage: ta[...]", "", "",
 	"tas", " <offset>", "List all matching structure offsets",
-	"ta", " <struct member>", "Change immediate to structure offset",
+	"ta", " <struct.member> [offset]", "Change immediate to structure offset",
 	"taa", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"ta?", "", "show this help",
 	NULL
@@ -246,12 +246,11 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	if (type) {
 		char *name = NULL;
 		if ((name = strstr (type, "=type")) || (name = strstr (type, "=struct")) || (name = strstr (type, "=union")) ||
-			(name = strstr (type, "=enum")) || (name = strstr (type, "=typedef")) ||(name = strstr (type, "=func"))) {
+			(name = strstr (type, "=enum")) || (name = strstr (type, "=typedef")) || (name = strstr (type, "=func"))) {
 			*name = 0;
 			while (name - 1 >= type && *(name - 1) != '\n') {
 				name--;
 			}
-
 		}
 		if (name) {
 			r_core_cmdf (core, "\"t- %s\"", name);
@@ -750,7 +749,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 	} break;
 	case 'e': { // "te"
-		char *res = NULL, *temp = strchr(input, ' ');
+		char *res = NULL, *temp = strchr (input, ' ');
 		Sdb *TDB = core->anal->sdb_types;
 		char *name = temp ? strdup (temp + 1): NULL;
 		char *member_name = name ? strchr (name, ' '): NULL;
@@ -826,7 +825,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'b': // "teb"
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
-		case 'c' : { // "tec"
+		case 'c': { // "tec"
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
@@ -852,14 +851,14 @@ static int cmd_type(void *data, const char *input) {
 							}
 							r_list_free (list);
 						}
-						r_cons_println ("};");		
+						r_cons_println ("};");
 					}
 				}
 			}
 			ls_free (l);
 			break;
 		}
-		case ' ' :
+		case ' ':
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 			} else {
@@ -871,7 +870,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}
 			break;
-		case '\0' : {
+		case '\0': {
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
@@ -1017,7 +1016,13 @@ static int cmd_type(void *data, const char *input) {
 			free (off);
 		} break;
 		case ' ': {
-			char *type = strdup (input + 2);
+			const char *off = NULL;
+			char *type = strdup (r_str_trim_ro (input + 2));
+			char *idx = strchr (type, ' ');
+			if (idx) {
+				*idx++ = 0;
+				off = idx;
+			}
 			char *ptr = strchr (type, '=');
 			ut64 offimm = 0;
 			int i = 0;
@@ -1038,8 +1043,8 @@ static int cmd_type(void *data, const char *input) {
 			}
 			r_str_trim (type);
 			RAsmOp asmop;
-			RAnalOp op = {0};
-			ut8 code[128] = {0};
+			RAnalOp op = { 0 };
+			ut8 code[128] = { 0 };
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
 			r_asm_set_pc (core->assembler, addr);
 			int ret = r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
@@ -1063,12 +1068,16 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				if (offimm != 0) {
+					if (off) {
+						offimm += r_num_math (NULL, off);
+					}
 					// TODO: Allow to select from multiple choices
-					RList* otypes = r_type_get_by_offset (TDB, offimm);
+					RList *otypes = r_type_get_by_offset (TDB, offimm);
 					RListIter *iter;
 					char *otype = NULL;
 					r_list_foreach (otypes, iter, otype) {
-						if (!strcmp(type, otype)) {
+						// TODO: I don't think we should silently error, it is confusing
+						if (!strcmp (type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
 							r_type_link_offset (TDB, type, addr);
 							r_anal_hint_set_offset (core->anal, addr, otype);
@@ -1163,7 +1172,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p': { // "tp"
 		char *tmp = strdup (input);
-		char *ptr = r_str_trim (strchr (tmp , ' '));
+		char *ptr = r_str_trim (strchr (tmp, ' '));
 		if (!ptr) {
 			break;
 		}
@@ -1254,60 +1263,59 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 't': {
-		if (!input[1] || input[1]=='j') {
-        		bool json = false;
-    			if (input[1]=='j') {
+		if (!input[1] || input[1] == 'j') {
+			bool json = false;
+			if (input[1] == 'j') {
 				r_cons_print ("{");
-            		}
-            		char *name = NULL;
-            		SdbKv *kv;
-            		SdbListIter *iter;
-            		SdbList *l = sdb_foreach_list (TDB, true);
-            		ls_foreach (l, iter, kv) {
-            			if (!strcmp (sdbkv_value (kv), "typedef")) {
-                			if (!name || strcmp (sdbkv_value (kv), name)) {
-                				free (name);
-                    				name = strdup (sdbkv_key (kv));
-                    				if (!input[1]) {
+			}
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list (TDB, true);
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (sdbkv_value (kv), "typedef")) {
+					if (!name || strcmp (sdbkv_value (kv), name)) {
+						free (name);
+						name = strdup (sdbkv_key (kv));
+						if (!input[1]) {
 							r_cons_println (name);
+						} else {
+							if (json) {
+								r_cons_print (",");
+							}
+							const char *q = sdb_fmt ("typedef.%s", name);
+							const char *res = sdb_const_get (TDB, q, 0);
+							r_cons_printf ("\"%s\":\"%s\"", name, res);
+							json = true;
 						}
-                    				else {
-                        				if (json) {
-                            					r_cons_print(",");
-                        				}                                                        
-                    					const char *q = sdb_fmt ("typedef.%s", name);
-                        				const char *res = sdb_const_get (TDB, q, 0);
-                        				r_cons_printf ("\"%s\":\"%s\"", name, res);                                                        
-                        				json = true;
-          					}
-                			}
-            			}
+					}
+				}
 			}
 			if (input[1] == 'j') {
-           	 		r_cons_println ("}");
+				r_cons_println ("}");
 			}
-        		free (name);                                
-        		ls_free (l);
-        		break;
-        	}
+			free (name);
+			ls_free (l);
+			break;
+		}
 		if (input[1] == 'c') {
 			char *name = NULL;
-           		SdbKv *kv;
-           		SdbListIter *iter;
-        		SdbList *l = sdb_foreach_list (TDB, true);
-        		ls_foreach (l, iter, kv) {
-        			if (!strcmp (sdbkv_value (kv), "typedef")) {
-                			if (!name || strcmp (sdbkv_value (kv), name)) {
-                				free (name);
-                    				name = strdup (sdbkv_key (kv));
-                    				const char *q = sdb_fmt ("typedef.%s", name);
-                        			const char *res = sdb_const_get (TDB, q, 0);
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list (TDB, true);
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (sdbkv_value (kv), "typedef")) {
+					if (!name || strcmp (sdbkv_value (kv), name)) {
+						free (name);
+						name = strdup (sdbkv_key (kv));
+						const char *q = sdb_fmt ("typedef.%s", name);
+						const char *res = sdb_const_get (TDB, q, 0);
 						if (res) {
 							r_cons_printf ("%s %s %s;\n", sdbkv_value (kv), res, name);
 						}
-          				}
-                		}
-           		}
+					}
+				}
+			}
 			free (name);
 			ls_free (l);
 			break;
