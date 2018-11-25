@@ -2072,6 +2072,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		snFini (&sn);
 		i++;
+		free (r_symbol_name);
 		if (exponly && firstexp) {
 			firstexp = false;
 		}
@@ -2224,6 +2225,7 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 			}
 
 			i++;
+			free (r_sname);
 		}
 		PRINT_CURRENT_SEEK;
 	}
