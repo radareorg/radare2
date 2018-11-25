@@ -1040,7 +1040,7 @@ static int follow_ref(RCore *core, RList *xrefs, int choice) {
 	return 0;
 }
 
-R_API int r_core_visual_refs(RCore *core, bool xref) {
+R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 	int ret = 0;
 #if FCN_OLD
 	char ch;
@@ -1053,7 +1053,7 @@ R_API int r_core_visual_refs(RCore *core, bool xref) {
 	char cstr[32];
 	ut64 addr = core->offset;
 	int printMode = 0;
-	bool xrefsMode = false;
+	bool xrefsMode = fcnInsteadOfAddr;
 	int lastPrintMode = 3;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
@@ -1798,10 +1798,10 @@ R_API void r_core_visual_browse(RCore *core) {
 			r_core_cmd0 (core, "s $(dm~...)");
 			break;
 		case 'x':
-			r_core_visual_refs (core, true);
+			r_core_visual_refs (core, true, true);
 			break;
 		case 'X':
-			r_core_visual_refs (core, false);
+			r_core_visual_refs (core, false, true);
 			break;
 		case 'h': // seek history
 			r_core_cmdf (core, "s!~...");
@@ -2368,10 +2368,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'x':
-			r_core_visual_refs (core, true);
+			r_core_visual_refs (core, true, false);
 			break;
 		case 'X':
-			r_core_visual_refs (core, false);
+			r_core_visual_refs (core, false, false);
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys

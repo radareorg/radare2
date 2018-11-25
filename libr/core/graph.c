@@ -4053,8 +4053,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			ut64 old_off = core->offset;
 			ut64 off = r_core_anal_get_bbaddr (core, core->offset);
 			r_core_seek (core, off, 0);
-			if ((key == 'x' && !r_core_visual_refs (core, true)) ||
-			    (key == 'X' && !r_core_visual_refs (core, false))) {
+			if ((key == 'x' && !r_core_visual_refs (core, true, true)) ||
+			    (key == 'X' && !r_core_visual_refs (core, false, true))) {
 				r_core_seek (core, old_off, 0);
 			}
 			break;

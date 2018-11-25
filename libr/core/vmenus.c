@@ -2448,12 +2448,8 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		sprintf (old, "afi @ 0x%08"PFMT64x, addr);
 		r_core_cmd0 (core, old);
 		break;
-	case 3:
-		r_cons_printf ("Press 'q' to view call refs\n");
-		r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
-		//sprintf (old, "axl~0x%08"PFMT64x, addr);
-		r_core_cmd0 (core, "pd 1");
-		//r_core_cmd0 (core, old);
+	default:
+		// assert
 		break;
 	}
 	r_cons_flush ();
@@ -2512,7 +2508,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				" h,q     go back, quit\n"
 				" p,P     switch next/prev print mode\n"
 				" v       view selected function arguments and variables\n"
-				" x       see xrefs to the selected function\n"
+				" x,X     see xrefs to the selected function\n"
 				" tab     toggle disasm column selection (to scroll in code)\n"
 				" !       run 'afls' to sort all functions by address\n"
 				" .       seek to current function address\n"
@@ -2616,9 +2612,19 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				break;
 			}
 			break;
-		case 'x': level = 3; break;
-		case 'c': level = 2; break;
-		case 'v': level = 1; variable_option = 0; break;
+		case 'x':
+			r_core_visual_refs (core, false, true);
+			break;
+		case 'X':
+			r_core_visual_refs (core, true, true);
+			break;
+		case 'c':
+			level = 2;
+			break;
+		case 'v':
+			level = 1;
+			variable_option = 0;
+			break;
 		case '_':
 			r_core_cmd0 (core, "s $(afl~...)");
 			break;

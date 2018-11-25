@@ -2999,7 +2999,7 @@ repeat:
 		}
 		break;
 	case 'x':
-		r_core_visual_refs (core, true);
+		r_core_visual_refs (core, true, true);
 		core->panels->panel[core->panels->curnode].addr = core->offset;
 		setRefreshAll (panels);
 		break;

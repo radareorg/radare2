@@ -337,7 +337,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
-R_API int r_core_visual_refs(RCore *core, bool xref);
+R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
 R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs);
