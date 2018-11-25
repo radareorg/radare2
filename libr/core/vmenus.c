@@ -2465,7 +2465,7 @@ static void r_core_visual_anal_refresh_oneshot (RCore *core) {
 }
 
 /* Like emenu but for real */
-R_API void r_core_visual_anal(RCore *core) {
+R_API void r_core_visual_anal(RCore *core, const char *input) {
 	char old[218];
 	int nfcns, ch, _option = 0;
 
@@ -2484,7 +2484,12 @@ R_API void r_core_visual_anal(RCore *core) {
 	for (;;) {
 		nfcns = r_list_length (core->anal->fcns);
 		addr = r_core_visual_anal_refresh (core);
-		ch = r_cons_readchar ();
+		if (input && *input) {
+			ch = *input;
+			input++;
+		} else {
+			ch = r_cons_readchar ();
+		}
 		if (ch == 4 || ch == -1) {
 			if (level == 0) {
 				goto beach;

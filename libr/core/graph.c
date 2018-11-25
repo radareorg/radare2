@@ -4279,7 +4279,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_toggle_mini (g);
 			break;
 		case 'v':
-			r_core_visual_anal (core);
+			r_core_visual_anal (core, NULL);
 			break;
 		case 'J':
 			// copypaste from 'j'

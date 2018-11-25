@@ -1750,8 +1750,11 @@ R_API void r_core_visual_browse(RCore *core) {
 			r_core_visual_trackflags (core);
 			break;
 		case 'F':
-			r_core_visual_anal (core);
+			r_core_visual_anal (core, NULL);
 			// r_core_cmd0 (core, "s $(afl~...)");
+			break;
+		case 'v':
+			r_core_visual_anal (core, "v");
 			break;
 		case 'e':
 			r_core_visual_config (core);
@@ -1802,9 +1805,6 @@ R_API void r_core_visual_browse(RCore *core) {
 			break;
 		case 'h': // seek history
 			r_core_cmdf (core, "s!~...");
-			break;
-		case 'v':
-			r_core_visual_anal (core);
 			break;
 		case '_':
 			r_core_visual_hudstuff (core);
@@ -2400,7 +2400,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'v':
-			r_core_visual_anal (core);
+			r_core_visual_anal (core, NULL);
 			break;
 		case 'g':
 			if (core->io->va) {

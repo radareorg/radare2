@@ -646,7 +646,7 @@ R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 
 R_API void r_core_visual_config (RCore *core);
 R_API void r_core_visual_mounts (RCore *core);
-R_API void r_core_visual_anal (RCore *core);
+R_API void r_core_visual_anal (RCore *core, const char *input);
 R_API void r_core_seek_next (RCore *core, const char *type);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_visual_define (RCore *core, const char *arg);
