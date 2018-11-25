@@ -1205,6 +1205,10 @@ repeat:
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	}
 	r_cons_flush ();
+	int wheel = r_config_get_i (core->config, "scr.wheel");
+	if (wheel > 0) {
+		r_cons_enable_mouse (true);
+	}
 	ch = r_cons_readchar ();
 	ch = r_cons_arrow_to_hjkl (ch);
 	if (ch == ':') {
