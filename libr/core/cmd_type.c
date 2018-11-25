@@ -41,7 +41,7 @@ static const char *help_msg_t_minus[] = {
 static const char *help_msg_ta[] = {
 	"Usage: ta[...]", "", "",
 	"tas", " <offset>", "List all matching structure offsets",
-	"ta", " <struct member> [offset]", "Change immediate to structure offset",
+	"ta", " <struct.member> [offset]", "Change immediate to structure offset",
 	"taa", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"ta?", "", "show this help",
 	NULL
@@ -1017,11 +1017,11 @@ static int cmd_type(void *data, const char *input) {
 		} break;
 		case ' ': {
 			const char *off = NULL;
-			char *space, *type = strdup (r_str_trim_ro (input + 2));
-			space = strchr (type, ' ');
-			if (space) {
-				*space++ = 0;
-				off = space;
+			char *type = strdup (r_str_trim_ro (input + 2));
+			char *idx = strchr (type, ' ');
+			if (idx) {
+				*idx++ = 0;
+				off = idx;
 			}
 			char *ptr = strchr (type, '=');
 			ut64 offimm = 0;
