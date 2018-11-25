@@ -1196,20 +1196,16 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
 static char *r_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
-	char *new_buf, *q;
-	const char *p;
+	r_return_val_if_fail (buf, NULL);
 
-	if (!buf) {
-		return NULL;
-	}
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
-	new_buf = malloc (1 + strlen (buf) * (show_asciidot ? 2 : 4));
+	char *new_buf = malloc (1 + strlen (buf) * (show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
-	p = buf;
-	q = new_buf;
+	const char *p = buf;
+	char *q = new_buf;
 	while (*p) {
 		switch (*p) {
 		case 0x1b: // ESC
