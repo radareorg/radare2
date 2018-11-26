@@ -104,6 +104,8 @@ static const char *menus_Help[] = {
 };
 
 static const char *help_msg_panels[] = {
+	"|",        "split the current panel vertically",
+	"-",        "split the current panel horizontally",
 	":",        "run r2 command in prompt",
 	"_",        "start the hud input mode",
 	"?",        "show this help",
@@ -113,38 +115,57 @@ static const char *help_msg_panels[] = {
 	"*",        "show pseudo code/r2dec in the current panel",
 	"/",        "highlight the keyword",
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
+	"' '",      "(space) toggle graph / panels",
+	"tab",      "go to the next panel",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"c",        "toggle cursor",
 	"C",        "toggle color",
 	"d",        "define in the current address. Same as Vd",
 	"D",        "show disassembly in the current panel",
+	"e",        "change title and command of current panel",
+	"g",        "show graph in the current panel",
 	"i",        "insert hex",
+	"hjkl",     "move around (left-down-up-right)",
+	"J",        "scroll panels down by page",
+	"K",        "scroll panels up by page",
 	"m",        "select the menu panel",
+	"M",        "open new custom frame",
+	"nN",       "create new panel with given command",
 	"o",        "go/seek to given offset",
 	"pP",       "seek to next or previous scr.nkey",
 	"q",        "quit, back to visual mode",
 	"r",        "toggle jmphints/leahints",
 	"sS",       "step in / step over",
 	"uU",       "undo / redo seek",
+	"w",        "start Window mode",
+	"V",        "go to the graph mode",
+	"X",        "close current panel",
+	"z",        "swap current panel with the first one",
 	NULL
 };
 
 static const char *help_msg_panels_window[] = {
-	"|",        "split the current panel vertically",
-	"-",        "split the current panel horizontally",
-	"<>",       "scroll panels vertically by page",
-	"' '",      "(space) toggle graph / panels",
-	"e",        "change title and command of current panel",
-	"g",        "show graph in the current panel",
+	"?",        "show this help",
+	"??",       "show the user-friendly hud",
+	"Enter",    "start Zoom mode",
+	"c",        "toggle cursor",
 	"hjkl",     "move around (left-down-up-right)",
 	"JK",       "resize panels vertically",
 	"HL",       "resize panels horizontally",
-	"M",        "open new custom frame",
-	"nN",       "create new panel with given command",
-	"V",        "go to the graph mode",
-	"w",        "start the window mode",
+	"q",        "quit Window mode",
+	NULL
+};
+
+static const char *help_msg_panels_zoom[] = {
+	"?",        "show this help",
+	"??",       "show the user-friendly hud",
+	":",        "run r2 command in prompt",
+	"Enter",    "quit Zoom mode",
+	"tab",      "go to the next panel",
+	"hjkl",     "move around (left-down-up-right)",
+	"sS",       "step in / step over",
 	"X",        "close current panel",
-	"z",        "swap current panel with the first one",
+	"q",        "quit Zoom mode",
 	NULL
 };
 
@@ -256,7 +277,7 @@ static void toggleWindowMode(RPanels *panels);
 static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
-static void showHelp(RCore *core);
+static void showHelp(RCore *core, RPanelsMode mode);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -885,6 +906,13 @@ static void handleZoomMode(RCore *core, const int key) {
 			}
 			setRefreshAll (panels);
 			break;
+		case 'S':
+			panelSingleStepOver (core);
+			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+				panels->panel[panels->curnode].addr = core->offset;
+			}
+			setRefreshAll (panels);
+			break;
 		case 9:
 			restorePanelPos (&panel[panels->curnode]);
 			handleTabKey (core, false);
@@ -907,7 +935,7 @@ static void handleZoomMode(RCore *core, const int key) {
 			setRefreshAll (panels);
 			break;
 		case '?':
-			showHelp(core);
+			showHelp (core, panels->mode);
 			break;
 	}
 }
@@ -942,11 +970,24 @@ static void handleWindowMode(RCore *core, const int key) {
 			setRefreshAll (panels);
 		}
 		break;
-	case 9:
-		handleTabKey (core, false);
+	case 'H':
+		r_cons_switchbuf (false);
+		resizePanelLeft (panels);
 		break;
-	case 'Z':
-		handleTabKey (core, true);
+	case 'L':
+		r_cons_switchbuf (false);
+		resizePanelRight (panels);
+		break;
+	case 'J':
+		r_cons_switchbuf (false);
+		resizePanelDown (panels);
+		break;
+	case 'K':
+		r_cons_switchbuf (false);
+		resizePanelUp (panels);
+		break;
+	case '?':
+		showHelp (core, panels->mode);
 		break;
 	}
 }
@@ -2352,7 +2393,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	panels->mode = PANEL_MODE_DEFAULT;
-	panels->prevMode = PANEL_MODE_NONE;
+	panels->prevMode = PANEL_MODE_DEFAULT;
 	initSdb (panels);
 
 	if (w < 140) {
@@ -2454,7 +2495,7 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 		}
 		break;
 	case '?':
-		showHelp(core);
+		showHelp (core, panels->mode);
 		break;
 	}
 }
@@ -2612,7 +2653,7 @@ static void toggleZoomMode(RPanels *panels) {
 		maximizePanelSize (panels);
 	} else {
 		panels->mode = panels->prevMode;
-		panels->prevMode = PANEL_MODE_NONE;
+		panels->prevMode = PANEL_MODE_DEFAULT;
 		restorePanelPos (curPanel);
 		setRefreshAll (panels);
 	}
@@ -2624,18 +2665,33 @@ static void toggleWindowMode(RPanels *panels) {
 		panels->mode = PANEL_MODE_WINDOW;
 	} else {
 		panels->mode = panels->prevMode;
-		panels->prevMode = PANEL_MODE_NONE;
+		panels->prevMode = PANEL_MODE_DEFAULT;
 	}
 }
 
-static void showHelp(RCore *core) {
+static void showHelp(RCore *core, RPanelsMode mode) {
 	RStrBuf *p = r_strbuf_new (NULL);
 	if (!p) {
 		return;
 	}
 	r_cons_clear00 ();
-	r_core_visual_append_help (p, "Visual Ascii Art Panels", help_msg_panels);
-	r_core_visual_append_help (p, "Window management", help_msg_panels_window);
+	const char *title;
+	const char **msg;
+	switch (mode) {
+		case PANEL_MODE_WINDOW:
+			title = "Panels Window mode help";
+			msg = help_msg_panels_window;
+			break;
+		case PANEL_MODE_ZOOM:
+			title = "Panels Zoom mode help";
+			msg = help_msg_panels_zoom;
+			break;
+		default:
+			title = "Visual Ascii Art Panels";
+			msg = help_msg_panels;
+			break;
+	}
+	r_core_visual_append_help (p, title, msg);
 	int ret = r_cons_less_str (r_strbuf_get (p), "?");
 	r_strbuf_free (p);
 	if (ret == '?') {
@@ -2893,7 +2949,7 @@ repeat:
 		}
 		break;
 	case '?':
-		showHelp(core);
+		showHelp (core, panels->mode);
 		break;
 	case 'b':
 		r_core_visual_browse (core);
@@ -2981,12 +3037,12 @@ repeat:
 	case 'k':
 		handleUpKey (core);
 		break;
-	case '<':
+	case 'K':
 		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
 			handleUpKey (core);
 		}
 		break;
-	case '>':
+	case 'J':
 		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
 			handleDownKey (core);
 		}
@@ -3041,22 +3097,6 @@ repeat:
 	break;
 	case 'm':
 		panels->curnode = panels->menu_pos;
-		break;
-	case 'H':
-		r_cons_switchbuf (false);
-		resizePanelLeft (panels);
-		break;
-	case 'L':
-		r_cons_switchbuf (false);
-		resizePanelRight (panels);
-		break;
-	case 'J':
-		r_cons_switchbuf (false);
-		resizePanelDown(panels);
-		break;
-	case 'K':
-		r_cons_switchbuf (false);
-		resizePanelUp (panels);
 		break;
 	case 'g':
 		if (checkFunc (core)) {
