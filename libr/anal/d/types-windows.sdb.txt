@@ -235,6 +235,12 @@ func.ExitProcess.arg.0=UINT,uExitCode
 func.ExitProcess.noreturn=true
 func.ExitProcess.ret=void
 
+ThunRTMain=func
+func.ThunRTMain.args=1
+func.ThunRTMain.arg.0=RT_MainStruct,RT_MainStruct
+func.ThunRTMain.noreturn=true
+func.ThunRTMain.ret=void
+
 GetAtomName=func
 func.GetAtomName.args=3
 func.GetAtomName.arg.0=ATOM,nAtom
