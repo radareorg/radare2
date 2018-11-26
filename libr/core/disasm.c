@@ -2102,8 +2102,8 @@ static void ds_show_flags(RDisasmState *ds) {
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
 					r_cons_printf ("%s:", name);
+					R_FREE (name);
 				}
-				R_FREE (name);
 			}
 		} else {
 			r_cons_printf ("%s:", flag->name);
