@@ -942,12 +942,12 @@ int main(int argc, char **argv, char **envp) {
 		if (buf && sz > 0) {
 			char *path = r_str_newf ("malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
-			free (path);
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
 				eprintf ("[=] Cannot open '%s'\n", path);
 				LISTS_FREE ();
+				free (path);
 				return 1;
 			}
 			r_io_map_new (r.io, fh->fd, 7, 0LL, mapaddr,
@@ -955,6 +955,7 @@ int main(int argc, char **argv, char **envp) {
 			r_io_write_at (r.io, mapaddr, buf, sz);
 			r_core_block_read (&r);
 			free (buf);
+			free (path);
 			// TODO: load rbin thing
 		} else {
 			eprintf ("Cannot slurp from stdin\n");
