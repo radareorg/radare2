@@ -1221,8 +1221,8 @@ R_API void r_cons_show_cursor(int cursor) {
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
-static int oldraw = -1;
 R_API void r_cons_set_raw(bool is_raw) {
+	static int oldraw = -1;
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;

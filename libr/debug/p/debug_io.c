@@ -69,8 +69,8 @@ static int __io_wait(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int curPid = -1;
 static int __io_attach(RDebug *dbg, int pid) {
+	static int curPid = -1;
 	curPid = pid;
 	return true;
 }
