@@ -2096,15 +2096,13 @@ static void ds_show_flags(RDisasmState *ds) {
 				if (!name) {
 					const char *n = flag->realname? flag->realname: flag->name;
 					if (n) {
-						name = r_str_escape_utf8_to_json (n, strlen (n));
+						name = strdup (n);
 					}
 				}
 				if (name) {
-					char *escaped = r_str_escape_utf8_to_json (name, strlen (name));
-					r_cons_print (escaped);
-					free (escaped);
+					r_str_ansi_filter (name, NULL, NULL, -1);
+					r_cons_printf ("%s:", name);
 				}
-				r_cons_print (":");
 				R_FREE (name);
 			}
 		} else {

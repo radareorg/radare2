@@ -1525,9 +1525,14 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	}
 
 	for (i = j = 0; i < len; i++) {
-		if ((i + 1) < len && tmp[i] == 0x1b && tmp[i + 1] == '[') {
-			for (i += 2; i < len && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+		if (tmp[i] == 0x1b) {
+			if ((i + 1) < len && tmp[i + 1] == '[') {
+				for (i += 2; i < len && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
 				;
+				}
+			}
+			if (tmp[i+1] == '#' && isdigit (tmp[i+2])  && tmp[i + 3]) {
+				i+=3;
 			}
 		} else {
 			str[j] = tmp[i];
