@@ -1876,7 +1876,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (!symbol->name) {
 			continue;
 		}
-		char *r_symbol_name = r_str_escape (symbol->name);
+		char *r_symbol_name = r_str_escape_utf8_to_json (symbol->name, -1);
 		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};

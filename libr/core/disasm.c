@@ -2093,17 +2093,17 @@ static void ds_show_flags(RDisasmState *ds) {
 			} else {
 				const char *lang = r_config_get (core->config, "bin.lang");
 				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
-				if (name || !ds->use_json) {
-					r_cons_print (name ? name : flag->realname);
-				} else {
-					char *name_out = r_str_escape (flag->realname);
-					if (name_out) {
-						r_cons_print (name_out);
-						free (name_out);
+				if (!name) {
+					const char *n = flag->realname? flag->realname: flag->name;
+					if (n) {
+						name = strdup (n);
 					}
 				}
-				r_cons_print (":");
-				R_FREE (name);
+				if (name) {
+					r_str_ansi_filter (name, NULL, NULL, -1);
+					r_cons_printf ("%s:", name);
+					R_FREE (name);
+				}
 			}
 		} else {
 			r_cons_printf ("%s:", flag->name);
