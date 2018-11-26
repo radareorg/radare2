@@ -254,6 +254,15 @@ typedef struct {
 	uint64_t value_add;
 } cache_slide2_t;
 
+typedef struct {
+	uint32_t version;
+	uint32_t toc_offset;
+	uint32_t toc_count;
+	uint32_t entries_offset;
+	uint32_t entries_count;
+	uint32_t entries_size;
+} cache_slide1_t;
+
 typedef struct
 {
 	uint32_t version;
