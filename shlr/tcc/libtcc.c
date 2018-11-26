@@ -542,6 +542,7 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
 	sscanf (TCC_VERSION, "%d.%d.%d", &a, &b, &c);
 	sprintf (buffer, "%d", a * 10000 + b * 100 + c);
 	tcc_define_symbol (s, "__TINYC__", buffer);
+	tcc_define_symbol (s, "__R2TINYC__", buffer);
 
 	/* standard defines */
 	tcc_define_symbol (s, "__STDC__", NULL);
