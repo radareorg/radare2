@@ -32,11 +32,11 @@ R_API void r_num_irand() {
 	r_srand (r_sys_now ());
 }
 
-static int rand_initialized = 0;
 R_API int r_num_rand(int max) {
+	static bool rand_initialized = false;
 	if (!rand_initialized) {
 		r_num_irand ();
-		rand_initialized = 1;
+		rand_initialized = true;
 	}
 	if (!max) {
 		max = 1;
