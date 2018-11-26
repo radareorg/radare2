@@ -284,12 +284,13 @@ static const char *help_msg_afC[] = {
 };
 
 static const char *help_msg_afi[] = {
-	"Usage:", "afi[jl*]", " <addr>",
+	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi.", "", "show function name in current offset",
 	"afi*", "", "function, variables and arguments",
 	"afij", "", "function info in json format",
 	"afil", "", "verbose function info",
+	"afip", "", "show whether the function is pure or not",
 	NULL
 };
 
@@ -2353,6 +2354,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'j': // "afij"
 		case '*': // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
+			break;
+		case 'p': // "afip"
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_cons_printf ("is_pure: %s\n", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
+				}
+			}
 			break;
 		default:
 			i = 1;
