@@ -980,7 +980,7 @@ static void handleWindowMode(RCore *core, const int key) {
 		break;
 	case 'J':
 		r_cons_switchbuf (false);
-		resizePanelDown(panels);
+		resizePanelDown (panels);
 		break;
 	case 'K':
 		r_cons_switchbuf (false);
