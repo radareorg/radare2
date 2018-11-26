@@ -220,14 +220,14 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 		typesize += r_type_get_bitsize (TDB, subtype) * arrsz;
 		// Handle nested structs
 		if (offset < (typesize / 8)) {
-			char *nested_type = r_str_word_get0 (subtype, 0);
-			if (r_str_startswith(nested_type, "struct ") && !r_str_endswith(nested_type, " *")) {
-				len = r_str_split(nested_type, ' ');
+			char *nested_type = (char *)r_str_word_get0 (subtype, 0);
+			if (r_str_startswith (nested_type, "struct ") && !r_str_endswith (nested_type, " *")) {
+				len = r_str_split (nested_type, ' ');
 				if (len < 2) {
 					free (subtype);
 					break;
 				}
-				nested_type = r_str_word_get0 (nested_type, 1);
+				nested_type = (char *)r_str_word_get0 (nested_type, 1);
 				char *nested_res = r_type_get_struct_memb (TDB, nested_type, offset - (prev_typesize / 8));
 				if (nested_res) {
 					len = r_str_split(nested_res, '.');

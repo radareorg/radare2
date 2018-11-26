@@ -9,11 +9,6 @@
 #define R_SYS_DEVNULL "/dev/null"
 #endif
 
-#if __linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000)
-#define HAS_CLOCK_NANOSLEEP 1
-#else
-#define HAS_CLOCK_NANOSLEEP 0
-#endif
 
 #ifdef __cplusplus
 extern "C" {
