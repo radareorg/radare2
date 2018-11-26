@@ -290,6 +290,7 @@ typedef struct r_anal_function_t {
 	int depth;
 	bool folded;
 	bool is_pure;
+	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
@@ -1459,6 +1460,7 @@ R_API RAnalBlock *r_anal_fcn_bbget_at(RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_contains(RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_fcn_resize (const RAnal *anal, RAnalFunction *fcn, int newsize);
+R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn);
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);
