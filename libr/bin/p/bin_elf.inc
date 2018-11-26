@@ -182,6 +182,7 @@ static RList* sections(RBinFile *bf) {
 	if (!obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
+	bf->o->num_pure_sections = 0;
 	//there is not leak in section since they are cached by elf.c
 	//and freed within Elf_(r_bin_elf_free)
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
@@ -209,6 +210,7 @@ static RList* sections(RBinFile *bf) {
 				ptr->perm |= R_PERM_R;
 			}
 			r_list_append (ret, ptr);
+			bf->o->num_pure_sections++;
 		}
 	}
 

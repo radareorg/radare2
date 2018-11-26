@@ -2364,7 +2364,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					}
 				}
 			}
-			if (!section->is_segment) {
+			RBinObject *o = r_bin_cur_object (r->bin);
+			if (!section->is_segment || (o && !o->num_pure_sections)) {
 				char *pfx = r->bin->prefix;
 				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
 				                  i, perms, type, section->size,
