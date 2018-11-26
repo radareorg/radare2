@@ -1436,9 +1436,10 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	return false;
 }
 
-#if __arm__
 
 #if __linux__
+
+#if __arm__ || __arm64__ || __aarch64__
 #include <sys/prctl.h>
 #include <sys/uio.h>
 
@@ -1451,6 +1452,9 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 #ifndef PTRACE_GETHBPREGS
 #define PTRACE_GETHBPREGS 29
 #define PTRACE_SETHBPREGS 30
+#endif
+
+#if __arm__
 
 static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
 	const unsigned byte_mask = (1 << size) - 1;
@@ -1480,9 +1484,10 @@ static bool arm32_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
 static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return false;
 }
-#endif
+#endif // PTRACE_GETHWBPREGS
+#endif // __arm
 
-#elif __arm64__ || __aarch64__
+#if __arm64__ || __aarch64__
 // type = 2 = write
 static volatile uint8_t var[96] __attribute__((__aligned__(32)));
 
@@ -1550,7 +1555,7 @@ static bool arm64_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return ll_arm64_hwbp_del (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
-#endif
+#endif //  __arm64__
 #endif // __linux__
 
 /*
