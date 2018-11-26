@@ -1045,7 +1045,6 @@ typedef struct r_panels_menu_t {
 } RPanelsMenu;
 
 typedef enum {
-	PANEL_MODE_NONE,
 	PANEL_MODE_DEFAULT,
 	PANEL_MODE_ZOOM,
 	PANEL_MODE_WINDOW,
