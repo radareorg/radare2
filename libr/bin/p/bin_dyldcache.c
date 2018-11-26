@@ -68,10 +68,7 @@ static void free_bin(RDyldBinImage *bin) {
 		return;
 	}
 
-	if (bin->file) {
-		R_FREE (bin->file);
-	}
-
+	R_FREE (bin->file);
 	R_FREE (bin);
 }
 
@@ -80,14 +77,8 @@ static void rebase_info2_free(RDyldRebaseInfo2 *rebase_info) {
 		return;
 	}
 
-	if (rebase_info->page_starts) {
-		R_FREE (rebase_info->page_starts);
-	}
-
-	if (rebase_info->page_extras) {
-		R_FREE (rebase_info->page_extras);
-	}
-
+	R_FREE (rebase_info->page_starts);
+	R_FREE (rebase_info->page_extras);
 	R_FREE (rebase_info);
 }
 
@@ -96,14 +87,8 @@ static void rebase_info1_free(RDyldRebaseInfo1 *rebase_info) {
 		return;
 	}
 
-	if (rebase_info->toc) {
-		R_FREE (rebase_info->toc);
-	}
-
-	if (rebase_info->entries) {
-		R_FREE (rebase_info->entries);
-	}
-
+	R_FREE (rebase_info->toc);
+	R_FREE (rebase_info->entries);
 	R_FREE (rebase_info);
 }
 
@@ -112,9 +97,7 @@ static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 		return;
 	}
 
-	if (rebase_info->one_page_buf) {
-		R_FREE (rebase_info->one_page_buf);
-	}
+	R_FREE (rebase_info->one_page_buf);
 
 	ut8 version = rebase_info->version;
 
@@ -147,18 +130,9 @@ static void r_dyldcache_free(RDyldCache *cache) {
 		cache->rebase_info = NULL;
 	}
 
-	if (cache->hdr) {
-		R_FREE (cache->hdr);
-	}
-
-	if (cache->maps) {
-		R_FREE (cache->maps);
-	}
-
-	if (cache->accel) {
-		R_FREE (cache->accel);
-	}
-
+	R_FREE (cache->hdr);
+	R_FREE (cache->maps);
+	R_FREE (cache->accel);
 	R_FREE (cache);
 }
 
