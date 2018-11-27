@@ -259,8 +259,12 @@ else
   message('Not using libuv, thus using fallback server implementations')
 endif
 
+has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())
+
+have_ptrace = have_ptrace and has_debugger
+use_ptrace_wrap = use_ptrace_wrap and has_debugger
 
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
@@ -282,7 +286,7 @@ userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
 userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
 userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
 userconf.set('USE_LIB_XXHASH', use_sys_xxhash.to_int())
-userconf.set('DEBUGGER', 1)
+userconf.set('DEBUGGER', has_debugger.to_int())
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
 userconf.set('INCLUDEDIR', r2_incdir)
