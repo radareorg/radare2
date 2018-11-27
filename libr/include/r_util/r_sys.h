@@ -86,17 +86,23 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #include <intrin.h>
 #define r_sys_breakpoint() { __debugbreak(); }
 #else
-#if __i386__ || __x86_64__
+#if __GNUC__
+#define r_sys_breakpoint() __builtin_trap()
+#elif __i386__ || __x86_64__
 #define r_sys_breakpoint() __asm__ volatile ("int3");
 #elif __arm64__ || __aarch64__
 #define r_sys_breakpoint() __asm__ volatile ("brk 0");
+// #define r_sys_trap() __asm__ __volatile__ ("brk #1")
 #elif __arm__ || __thumb__
 #define r_sys_breakpoint() __asm__ volatile ("bkpt $0");
+#elif __mips__
+#define r_sys_breakpoint() __asm__ volatile ("break");
 #elif __EMSCRIPTEN__
 // TODO: cannot find a better way to breakpoint in wasm/asm.js
 #define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #else
 #warning r_sys_breakpoint not implemented for this platform
+#define r_sys_trap() __asm__ __volatile__ (".word 0");
 #define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #endif
 #endif
