@@ -19,9 +19,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->syntax != R_ASM_SYNTAX_ATT) {
-		const char *ba = r_strbuf_get (&op->buf_asm);
+		char *ba = (char *)r_strbuf_get (&op->buf_asm);
 		r_str_replace_ch (ba, '#', 0, 1);
-		r_str_replace_ch (ba, '$', 0, 1);
+		// r_str_replace_ch (ba, "$", "$$", 1);
 		r_str_replace_ch (ba, '&', 0, 1);
 		r_str_replace_ch (ba, '%', 0, 1);
 	}
