@@ -135,6 +135,7 @@ static const char *help_msg_ts[] = {
 	"ts", " [type]", "Show pf format string for given struct",
 	"tsj", "", "List all loaded structs in json",
 	"tsj", " [type]", "Show pf format string for given struct in json",
+	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
@@ -147,6 +148,7 @@ static const char *help_msg_tu[] = {
 	"tu", " [type]", "Show pf format string for given union",
 	"tuj", "", "List all loaded unions in json",
 	"tuj", " [type]", "Show pf format string for given union in json",
+	"tu*", "", "Show pf.<name> format string for all loaded unions",
 	"tu*", " [type]", "Show pf.<name> format string for given union",
 	"tu?", "", "show this help",
 	NULL
@@ -635,6 +637,14 @@ static int cmd_type(void *data, const char *input) {
 		case '*':
 			if (input[2] == ' ') {
 				showFormat (core, r_str_trim_ro (input + 2), 1);
+			} else {
+				SdbList *l = sdb_foreach_list_filter (TDB, stdifunion, true);
+				SdbListIter *it;
+				SdbKv *kv;
+				ls_foreach (l, it, kv) {
+					showFormat (core, sdbkv_key (kv), 1);
+				}
+				ls_free (l);
 			}
 			break;
 		case 'j':
