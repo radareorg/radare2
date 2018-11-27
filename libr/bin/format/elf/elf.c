@@ -2019,6 +2019,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_VIDEOCORE3:
 	case EM_VIDEOCORE4:
 		return strdup ("vc4");
+	case EM_MSP430:
+		return strdup ("msp430");
 	case EM_SH:
 		return strdup ("sh");
 	case EM_V850:

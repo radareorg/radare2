@@ -77,6 +77,7 @@
 #define EM_VIDEOCORE           95 // XXX dupe for EM_NUM
 #define EM_VIDEOCORE3          137
 #define EM_VIDEOCORE4          200
+#define EM_MSP430              0x69
 
 
 #endif // _INCLUDE_ELF_SPECS_H
