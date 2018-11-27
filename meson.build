@@ -107,7 +107,7 @@ endif
 
 if get_option('default_library') == 'shared'
   if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
-    add_global_arguments('-fvisibility=hidden', language: 'c')
+    add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
