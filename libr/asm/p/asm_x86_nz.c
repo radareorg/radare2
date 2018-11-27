@@ -4792,6 +4792,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (lt_ptr->only_x32 && a->bits == 64) {
+					free (instr.mnemonic);
 					return -1;
 				}
 				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
