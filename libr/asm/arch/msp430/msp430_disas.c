@@ -474,7 +474,7 @@ int msp430_decode_command(const ut8 *in, int len, struct msp430_cmd *cmd) {
 	if (ret < 0) {
 		cmd->type = MSP430_INV;
 		snprintf(cmd->instr, sizeof (cmd->instr), "invalid");
-		snprintf(cmd->operands, sizeof (cmd->operands), "opcode");
+		snprintf(cmd->operands, sizeof (cmd->operands), "");
 		ret = 2;
 	}
 

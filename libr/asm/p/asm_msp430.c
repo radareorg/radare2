@@ -18,6 +18,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s", cmd.instr));
 		}
 	}
+	if (a->syntax != R_ASM_SYNTAX_ATT) {
+		const char *ba = r_strbuf_get (&op->buf_asm);
+		r_str_replace_ch (ba, '#', 0, 1);
+		r_str_replace_ch (ba, '$', 0, 1);
+		r_str_replace_ch (ba, '&', 0, 1);
+		r_str_replace_ch (ba, '%', 0, 1);
+	}
 
 	return op->size = ret;
 }

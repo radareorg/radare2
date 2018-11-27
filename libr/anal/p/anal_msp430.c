@@ -33,7 +33,10 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		case MSP430_PUSH:
 			op->type = R_ANAL_OP_TYPE_PUSH; break;
 		case MSP430_CALL:
-			op->type = R_ANAL_OP_TYPE_CALL; break;
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->fail = addr + 4;
+			op->jump = r_read_at_le16 (buf, 2);
+			break;
 		case MSP430_RETI:
 			op->type = R_ANAL_OP_TYPE_RET; break;
 		}
