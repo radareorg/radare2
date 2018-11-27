@@ -138,7 +138,7 @@ loop:
 		err -= dy;
 		x+=sx;
 	}
-	if (e2<dy) {
+	if (e2 < dy) {
 		*chizzle='|';
 		err += dx;
 		y += sy;
@@ -158,7 +158,7 @@ loop:
 		goto loop;
 	}
 	if (dx) {
-		if ((dx / dy) < 1) {
+		if (dy && (dx / dy) < 1) {
 			if (G(x, y)) {
 				W("|");
 			}

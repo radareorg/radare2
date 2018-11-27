@@ -6262,6 +6262,7 @@ R_API RBinJavaElementValuePair *r_bin_java_element_pair_new(ut8 *buffer, ut64 sz
 	offset += evp->value->size;
 	if (offset >= sz) {
 		free (evp->value);
+		free (evp);
 		return NULL;
 	}
 	evp->size = offset;
