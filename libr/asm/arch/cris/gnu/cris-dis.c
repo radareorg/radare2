@@ -1552,30 +1552,6 @@ print_insn_cris_generic (bfd_vma memaddr,
   return advance;
 }
 
-/* Disassemble, prefixing register names with `$'.  CRIS v0..v10.  */
-
-static int
-print_insn_cris_with_register_prefix (bfd_vma vma,
-				      disassemble_info *info)
-{
-	if (!info->private_data && !cris_parse_disassembler_options (info, cris_dis_v0_v10)) {
-		return -1;
-	}
-	return print_insn_cris_generic (vma, info, TRUE);
-}
-
-/* Disassemble, prefixing register names with `$'.  CRIS v32.  */
-
-static int
-print_insn_crisv32_with_register_prefix (bfd_vma vma,
-					 disassemble_info *info)
-{
-	if (!info->private_data && !cris_parse_disassembler_options (info, cris_dis_v32)) {
-		return -1;
-	}
-	return print_insn_cris_generic (vma, info, TRUE);
-}
-
 /* Disassemble, prefixing register names with `$'.
    Common v10 and v32 subset.  */
 
@@ -1587,18 +1563,6 @@ print_insn_crisv10_v32_with_register_prefix (bfd_vma vma,
 		return -1;
 	}
 	return print_insn_cris_generic (vma, info, TRUE);
-}
-
-/* Disassemble, no prefixes on register names.  CRIS v0..v10.  */
-
-static int
-print_insn_cris_without_register_prefix (bfd_vma vma,
-					 disassemble_info *info)
-{
-	if (!info->private_data && !cris_parse_disassembler_options (info, cris_dis_v0_v10)) {
-		return -1;
-	}
-	return print_insn_cris_generic (vma, info, FALSE);
 }
 
 /* Disassemble, no prefixes on register names.  CRIS v32.  */
