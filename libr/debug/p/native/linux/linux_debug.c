@@ -22,7 +22,7 @@ char *linux_reg_profile (RDebug *dbg) {
 #include "reg/linux-arm.h"
 #elif __arm64__ || __aarch64__
 #include "reg/linux-arm64.h"
-#elif __MIPS__ || __mips__
+#elif __mips__
 	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
 #include "reg/linux-mips.h"
 	} else {

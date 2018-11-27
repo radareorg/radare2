@@ -593,6 +593,8 @@ enum {
 #    define r_sys_trap() __asm__ __volatile__ ("bkpt")
 #  elif __arm64__
 #    define r_sys_trap() __asm__ __volatile__ ("brk #1")
+#  elif __mips__
+#    define r_sys_trap() __asm__ __volatile__ ("break")
 #  else
 #    define r_sys_trap() __asm__ __volatile__ (".word 0");
 #  endif

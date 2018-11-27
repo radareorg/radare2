@@ -3344,7 +3344,6 @@ static void visual_refresh(RCore *core) {
 	if (vsplit) {
 		// XXX: slow
 		core->cons->blankline = false;
-		r_cons_clear00 ();
 		{
 			int hex_cols = r_config_get_i (core->config, "hex.cols");
 			int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
