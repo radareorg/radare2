@@ -271,6 +271,7 @@ static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RCore* core, bool temp);
 static int loadSavedPanelsLayout(RCore *core, bool temp);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
+static void swapPanels(RPanels *panels, int p0, int p1);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void toggleZoomMode(RPanels *panels);
 static void toggleWindowMode(RPanels *panels);
@@ -1438,6 +1439,29 @@ static void replaceCmd(RPanels* panels, char *title, char *cmd) {
 	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
 	panels->panel[panels->curnode].cmdStrCache = NULL;
 	setRefreshAll (panels);
+}
+
+static void swapPanels(RPanels *panels, int p0, int p1) {
+	char *t = panels->panel[p0].title;
+	char *c = panels->panel[p0].cmd;
+	char *cc = panels->panel[p0].cmdStrCache;
+	char *cur = panels->panel[p0].curpos;
+	ut64 ba = panels->panel[p0].baseAddr;
+	ut64 a = panels->panel[p0].addr;
+
+	panels->panel[p0].title = panels->panel[p1].title;
+	panels->panel[p0].cmd = panels->panel[p1].cmd;
+	panels->panel[p0].cmdStrCache = panels->panel[p1].cmdStrCache;
+	panels->panel[p0].curpos = panels->panel[p1].curpos;
+	panels->panel[p0].baseAddr = panels->panel[p1].baseAddr;
+	panels->panel[p0].addr = panels->panel[p1].addr;
+
+	panels->panel[p1].title = t;
+	panels->panel[p1].cmd = c;
+	panels->panel[p1].cmdStrCache = cc;
+	panels->panel[p1].curpos = cur;
+	panels->panel[p1].baseAddr = ba;
+	panels->panel[p1].addr = a;
 }
 
 static bool checkFunc(RCore *core) {
@@ -3139,10 +3163,8 @@ repeat:
 		break;
 	case 'z':
 		if (panels->curnode > 0) {
-			RPanel p0 = panels->panel[0];
-			panels->panel[0] = panels->panel[panels->curnode];
-			panels->panel[panels->curnode] = p0;
-			r_core_panels_layout_refresh (core);
+			swapPanels (panels, 0, panels->curnode);
+			panels->curnode = 0;
 			setRefreshAll (panels);
 		}
 		break;
