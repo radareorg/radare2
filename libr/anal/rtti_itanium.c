@@ -47,6 +47,12 @@ typedef struct vmi_class_type_info_t {
 	} vmi_flags_masks;
 } vmi_class_type_info;
 
+static void rtti_itanium_class_type_info_fini (class_type_info *cti) {
+	if (cti) {
+		free (cti->name);
+	}
+}
+
 static bool rtti_itanium_read_class_type_info (RVTableContext *context, ut64 addr, class_type_info *cti) {
 	ut64 at;
 	if (addr == UT64_MAX) {
@@ -71,6 +77,13 @@ static bool rtti_itanium_read_class_type_info (RVTableContext *context, ut64 add
 	}
 	memcpy (cti->name, buf, name_len);
 	return true;
+}
+
+static void rtti_itanium_vmi_class_type_info_fini (vmi_class_type_info *vmi_cti) {
+	if (vmi_cti) {
+		free (vmi_cti->vmi_bases);
+		free (vmi_cti->name);
+	}
 }
 
 static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64 addr, vmi_class_type_info *vmi_cti) {
@@ -131,6 +144,12 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
 		tmp_addr += context->word_size;
 	}
 	return true;
+}
+
+static void rtti_itanium_si_class_type_info_fini (si_class_type_info *si_cti) {
+	if (si_cti) {
+		free (si_cti->name);
+	}
 }
 
 static bool rtti_itanium_read_si_class_type_info (RVTableContext *context, ut64 addr, si_class_type_info *si_cti) {
@@ -252,6 +271,8 @@ R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut
 	} else {
 		rtti_itanium_print_class_type_info (&cti, addr, "");
 	}
+
+	rtti_itanium_class_type_info_fini (&cti);
 }
 
 R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode) {
@@ -265,6 +286,8 @@ R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context,
 	} else {
 		rtti_itanium_print_si_class_type_info (&si_cti, addr, "");
 	}
+
+	rtti_itanium_si_class_type_info_fini (&si_cti);
 }
 
 R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode) {
@@ -278,6 +301,8 @@ R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context
 	} else {
 		rtti_itanium_print_vmi_class_type_info (&vmi_cti, addr, "");
 	}
+
+	rtti_itanium_vmi_class_type_info_fini (&vmi_cti);
 }
 
 static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, ut64 atAddress, int mode) {
@@ -319,6 +344,8 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		} else {
 			rtti_itanium_print_vmi_class_type_info (&vmi_cti, colAddr, "");
 		}
+
+		rtti_itanium_vmi_class_type_info_fini (&vmi_cti);
 	}
 
 	if (!r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
@@ -332,6 +359,8 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		} else {
 			rtti_itanium_print_si_class_type_info (&si_cti, colAddr, "");
 		}
+
+		rtti_itanium_si_class_type_info_fini (&si_cti);
 	}
 
 	if (!r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
@@ -345,6 +374,8 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		} else {
 			rtti_itanium_print_class_type_info (&cti, colAddr, "");
 		}
+
+		rtti_itanium_class_type_info_fini (&cti);
 	}
 	return true;
 }
