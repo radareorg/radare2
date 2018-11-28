@@ -25,6 +25,7 @@ typedef struct r_panel_t {
 	int curpos;
 	char *cmd;
 	char *title;
+	bool refresh;
 	RPanelType type;
 	ut64 baseAddr;
 	ut64 addr;
