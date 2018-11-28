@@ -1923,6 +1923,7 @@ static int openMenuCb (void *user) {
 	child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
 	child->p->pos.h += 4;
 	child->p->type = PANEL_TYPE_MENU;
+	child->p->refresh = true;
 	menu->refreshPanels[menu->n_refresh++] = child->p;
 	menu->history[menu->depth++] = child;
 	return 0;
@@ -1967,9 +1968,11 @@ static void removeMenu(RPanels *panels) {
 	int i;
 	menu->depth--;
 	for (i = 1; i < menu->depth; i++) {
+		menu->history[i]->p->refresh = true;
 		menu->refreshPanels[i - 1] = menu->history[i]->p;
 	}
 	menu->n_refresh = menu->depth - 1;
+	setRefreshAll (panels);
 }
 
 static RStrBuf *drawMenu(RPanelsMenuItem *item) {
@@ -1999,6 +2002,7 @@ static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	parent->p->pos.w = r_str_bounds (parent->p->title, &parent->p->pos.h);
 	parent->p->pos.h += 4;
 	parent->p->type = PANEL_TYPE_MENU;
+	parent->p->refresh = true;
 	menu->refreshPanels[menu->n_refresh++] = parent->p;
 }
 
