@@ -2993,6 +2993,7 @@ beach:
 		imps = realloc (imports, (nimp + 1) * sizeof(struct r_bin_pe_import_t));
 		if (!imps) {
 			r_sys_perror ("realloc (import)");
+			free (imports);
 			return NULL;
 		}
 		imports = imps;

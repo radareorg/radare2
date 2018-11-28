@@ -63,14 +63,17 @@ R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 R_API const ut8 *r_uleb128_encode(const ut64 s, int *len) {
 	ut8 c = 0;
 	int l = 0;
-	ut8 *otarget = NULL, *target = NULL;
+	ut8 *otarget = NULL, *target = NULL, *tmptarget = NULL;
 	ut64 source = s;
 	do {
 		l++;
-		if (!(otarget = realloc (otarget, l))) {
+		if (!(tmptarget = realloc (otarget, l))) {
 			l = 0;
+			free (otarget);
+			otarget = NULL;
 			break;
 		}
+		otarget = tmptarget;
 		target = otarget+l-1;
 		c = 0; //May not be necessary
 		c = source & 0x7f;
