@@ -1065,13 +1065,13 @@ static void resizePanelLeft(RPanels *panels) {
 		}
 		if (tx1 == cx0) {
 			if (tx1 - PANEL_CONFIG_RESIZE_W <= tx0) {
-				return;
+				goto beach;
 			}
 			targets1[cur1++] = p;
 		}
 		if (tx0 == cx0) {
 			if (tx0 - PANEL_CONFIG_RESIZE_W <= 0) {
-				return;
+				goto beach;
 			}
 			targets2[cur2++] = p;
 		}
@@ -1128,14 +1128,14 @@ static void resizePanelRight(RPanels *panels) {
 		}
 		if (tx0 == cx1) {
 			if (tx0 + PANEL_CONFIG_RESIZE_W >= tx1) {
-				return;
+				goto beach;
 			}
 			targets1[cur1++] = p;
 			continue;
 		}
 		if (tx1 == cx1) {
 			if (tx1 + PANEL_CONFIG_RESIZE_W >= panels->can->w) {
-				return;
+				goto beach;
 			}
 			targets2[cur2++] = p;
 		}
@@ -1191,13 +1191,13 @@ static void resizePanelUp(RPanels *panels) {
 		}
 		if (ty1 == cy0) {
 			if (ty1 - PANEL_CONFIG_RESIZE_H <= ty0) {
-				return;
+				goto beach;
 			}
 			targets1[cur1++] = p;
 		}
 		if (ty0 == cy0) {
 			if (ty0 - PANEL_CONFIG_RESIZE_H <= 0) {
-				return;
+				goto beach;
 			}
 			targets2[cur2++] = p;
 		}
