@@ -546,25 +546,6 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 		}
 		ut8 *p_start = p;
 		ut8 *p_end = p + size;
-		int n = 0;
-
-		while (p_start < p_end) {
-			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
-			size_t sz = entry->kve_structsize;
-			if (sz == 0) {
-				break;
-			}
-			p_start += sz;
-			n ++;
-		}
-
-		struct kinfo_vmentry *entries = calloc(n, sizeof(*entries));
-		if (!entries) {
-			eprintf ("entries allocation failed\n");
-			goto exit;
-		}
-
-		p_start = p;
 
 		while (p_start < p_end) {
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
@@ -585,9 +566,10 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf (" %p - %p (%s)\n",
+				io->cb_printf (" %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
+					r_str_rwx_i (perm),
 					entry->kve_path);
 			}
 
@@ -599,7 +581,6 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 			p_start += sz;
 		}
 
-		free (entries);
 		ret = true;
 	} else {
 		eprintf ("buffer allocation failed\n");
@@ -636,9 +617,10 @@ exit:
 			perm |= R_PERM_X;
 		}
 
-		io->cb_printf (" %p - %p [off. %zu]\n",
+		io->cb_printf (" %p - %p %s [off. %zu]\n",
 				(void *)entry.kve_start,
 				(void *)entry.kve_end,
+				r_str_rwx_i (perm),
 				entry.kve_offset);
 
 		self_sections[self_sections_count].from = entry.kve_start;
@@ -671,25 +653,6 @@ exit:
 		}
 		ut8 *p_start = p;
 		ut8 *p_end = p + size;
-		int n = 0;
-
-		while (p_start < p_end) {
-			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
-			size_t sz = sizeof(*entry);
-			if (sz == 0) {
-				break;
-			}
-			p_start += sz;
-			n ++;
-		}
-
-		struct kinfo_vmentry *entries = calloc(n, sizeof(*entries));
-		if (!entries) {
-			eprintf ("entries allocation failed\n");
-			goto exit;
-		}
-
-		p_start = p;
 
 		while (p_start < p_end) {
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
@@ -710,9 +673,10 @@ exit:
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf (" %p - %p (%s)\n",
+				io->cb_printf (" %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
+				 	r_str_rwx_i (perm),
 					entry->kve_path);
 			}
 
@@ -770,9 +734,10 @@ exit:
 			perm |= R_PERM_X;
 		}
 
-		io->cb_printf (" %p - %p [off. %zu]\n",
+		io->cb_printf (" %p - %p %s [off. %zu]\n",
 				(void *)entry.start,
 				(void *)entry.end,
+				r_tr_rwx_i (perm),
 				entry.offset);
 
 		self_sections[self_sections_count].from = entry.start;
