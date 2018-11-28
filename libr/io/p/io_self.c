@@ -551,29 +551,25 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
 			size_t sz = entry->kve_structsize;
 			int perm = 0;
-			char pstr[4] = {0};
 			if (sz == 0) {
 				break;
 			}
 
 			if (entry->kve_protection & KVME_PROT_READ) {
 				perm |= R_PERM_R;
-				pstr[0] = 'r';
 			}
 			if (entry->kve_protection & KVME_PROT_WRITE) {
 				perm |= R_PERM_W;
-				pstr[1] = 'w';
 			}
 			if (entry->kve_protection & KVME_PROT_EXEC) {
 				perm |= R_PERM_X;
-				pstr[2] = 'x';
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf (" %p - %p %3s (%s)\n",
+				io->cb_printf (" %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
-					pstr,
+					r_str_rwx_i (perm),
 					entry->kve_path);
 			}
 
@@ -607,28 +603,24 @@ exit:
 	}
 	while (sysctl (mib, 3, &entry, &size, NULL, 0) != -1) {
 		int perm = 0;
-		char pstr[4] = {0};
 		if (entry.kve_end == endq) {
 			break;
 		}
 
 		if (entry.kve_protection & KVE_PROT_READ) {
 			perm |= R_PERM_R;
-			pstr[0] = 'r';
 		}
 		if (entry.kve_protection & KVE_PROT_WRITE) {
 			perm |= R_PERM_W;
-			pstr[1] = 'w';
 		}
 		if (entry.kve_protection & KVE_PROT_EXEC) {
 			perm |= R_PERM_X;
-			pstr[2] = 'w';
 		}
 
-		io->cb_printf (" %p - %p %3s [off. %zu]\n",
+		io->cb_printf (" %p - %p %s [off. %zu]\n",
 				(void *)entry.kve_start,
 				(void *)entry.kve_end,
-				pstr,
+				r_str_rwx_i (perm),
 				entry.kve_offset);
 
 		self_sections[self_sections_count].from = entry.kve_start;
@@ -666,30 +658,25 @@ exit:
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
 			size_t sz = sizeof(*entry);
 			int perm = 0;
-			char pstr[4] = {0};
 			if (sz == 0) {
-				break;
 				break;
 			}
 
 			if (entry->kve_protection & KVME_PROT_READ) {
 				perm |= R_PERM_R;
-				pstr[0] = 'r';
 			}
 			if (entry->kve_protection & KVME_PROT_WRITE) {
 				perm |= R_PERM_W;
-				pstr[1] = 'w';
 			}
 			if (entry->kve_protection & KVME_PROT_EXEC) {
 				perm |= R_PERM_X;
-				pstr[2] = 'x';
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf (" %p - %p %3s (%s)\n",
+				io->cb_printf (" %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
-					pstr,
+				 	r_str_rwx_i (perm),
 					entry->kve_path);
 			}
 
@@ -735,26 +722,22 @@ exit:
 
 	while (ep != &p.p_vmspace->vm_map.header) {
 		int perm = 0;
-		char pstr[4] = {0};
 		kvm_read (k, (uintptr_t)ep, (ut8 *)&entry, sizeof (entry));
 		if (entry.protection & VM_PROT_READ) {
 			perm |= R_PERM_R;
-			pstr[0] = 'r';
 		}
 		if (entry.protection & VM_PROT_WRITE) {
 			perm |= R_PERM_W;
-			pstr[1] = 'w';
 		}
 
 		if (entry.protection & VM_PROT_EXECUTE) {
 			perm |= R_PERM_X;
-			pstr[2] = 'w';
 		}
 
-		io->cb_printf (" %p - %p %3s [off. %zu]\n",
+		io->cb_printf (" %p - %p %s [off. %zu]\n",
 				(void *)entry.start,
 				(void *)entry.end,
-				pstr,
+				r_tr_rwx_i (perm),
 				entry.offset);
 
 		self_sections[self_sections_count].from = entry.start;
