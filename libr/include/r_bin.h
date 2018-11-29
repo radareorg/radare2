@@ -224,7 +224,6 @@ typedef struct r_bin_object_t {
 	ut64 size;
 	ut64 obj_size;
 	RList/*<RBinSection>*/ *sections;
-	bool segments_only;
 	RList/*<RBinImport>*/ *imports;
 	RList/*<RBinSymbol>*/ *symbols;
 	RList/*<??>*/ *entries;
