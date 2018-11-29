@@ -1445,7 +1445,7 @@ static void swapPanels(RPanels *panels, int p0, int p1) {
 	char *t = panels->panel[p0].title;
 	char *c = panels->panel[p0].cmd;
 	char *cc = panels->panel[p0].cmdStrCache;
-	char *cur = panels->panel[p0].curpos;
+	int cur = panels->panel[p0].curpos;
 	ut64 ba = panels->panel[p0].baseAddr;
 	ut64 a = panels->panel[p0].addr;
 
