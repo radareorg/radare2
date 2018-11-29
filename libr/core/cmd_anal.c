@@ -2359,7 +2359,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
-					r_cons_printf ("is_pure: %s\n", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
+					r_cons_printf ("is-pure: %s\n", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 				}
 			}
 			break;
