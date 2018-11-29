@@ -2996,7 +2996,10 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		str = flagstr;
 		if (ds->nb > 0) {
 			k = ds->nb - strlen (flagstr) - 1;
-			if (k < 0 || k > sizeof (pad)) {
+			if (k < 0) {
+				str[ds->nb - 1] = '\0';
+			}
+			if (k > sizeof (pad)) {
 				k = 0;
 			}
 			for (j = 0; j < k; j++) {
