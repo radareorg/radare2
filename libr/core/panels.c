@@ -192,6 +192,7 @@ static void delInvalidPanels(RPanels *panels);
 static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
+static void refreshCoreOffset (RCore *core);
 static void handleZoomMode(RCore *core, const int key);
 static void handleWindowMode(RCore *core, const int key);
 static bool handleCursorMode(RCore *core, const int key);
@@ -264,7 +265,7 @@ static void panelContinue(RCore *core);
 static void panelPrompt(const char *prompt, char *buf, int len);
 static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
-static void setRefreshAll(RPanels *panels);
+static void setRefreshAll(RPanels *panels, bool clearCache);
 static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
@@ -332,10 +333,12 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
 	if (panel->cmd) {
 		if (!strcmp (panel->cmd, PANEL_CMD_DISASSEMBLY)) {
+			ut64 o_offset = core->offset;
 			core->offset = panel->addr;
 			r_core_seek (core, panel->addr, 1);
 			r_core_block_read (core);
 			cmdStr = r_core_cmd_str (core, panel->cmd);
+			core->offset = o_offset;
 		} else if (!strcmp (panel->cmd, PANEL_CMD_STACK)) {
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const char sign = (delta < 0)? '+': '-';
@@ -475,7 +478,7 @@ static int layoutSidePanel(void *user) {
 	panel[0].pos.w = PANEL_CONFIG_SIDEPANEL_W;
 	panel[0].pos.h = h - 1;
 	panels->curnode = 0;
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 	return 0;
 }
 
@@ -494,7 +497,7 @@ static void splitPanelVertical(RCore *core) {
 	panel[curnode + 1].pos.y = panel[curnode].pos.y;
 	panel[curnode + 1].pos.w = owidth - panel[curnode].pos.w + 1;
 	panel[curnode + 1].pos.h = panel[curnode].pos.h;
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 }
 
 static void splitPanelHorizontal(RCore *core) {
@@ -513,7 +516,7 @@ static void splitPanelHorizontal(RCore *core) {
 	panel[curnode + 1].pos.y = panel[curnode].pos.y + panel[curnode].pos.h - 1;
 	panel[curnode + 1].pos.w = panel[curnode].pos.w;
 	panel[curnode + 1].pos.h = oheight - panel[curnode].pos.h + 1;
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 }
 
 R_API void r_core_panels_layout_refresh(RCore *core) {
@@ -703,7 +706,7 @@ static void handleUpKey(RCore *core) {
 			moveMenuCursor (menu, parent);
 		} else if (menu->depth == 2) {
 			menu->depth--;
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 	} else {
 		panels->panel[panels->curnode].refresh = true;
@@ -718,6 +721,7 @@ static void handleUpKey(RCore *core) {
 				r_core_seek_delta (core, -cols);
 				panels->panel[panels->curnode].addr = core->offset;
 			}
+			setRefreshAll (panels, false);
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -777,6 +781,7 @@ static void handleDownKey(RCore *core) {
 				r_core_block_read (core);
 				panels->panel[panels->curnode].addr = core->offset;
 			}
+			setRefreshAll (panels, false);
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -811,7 +816,7 @@ static void handleLeftKey(RCore *core) {
 			}
 			if (menu->depth == 2) {
 				menu->depth = 1;
-				setRefreshAll (panels);
+				setRefreshAll (panels, false);
 				menu->root->sub[menu->root->selectedIndex]->cb (core);
 			}
 		} else {
@@ -853,7 +858,7 @@ static void handleRightKey(RCore *core) {
 			menu->root->selectedIndex++;
 			menu->root->selectedIndex %= menu->root->n_sub;
 			menu->depth = 1;
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 			menu->root->sub[menu->root->selectedIndex]->cb (core);
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
@@ -905,14 +910,14 @@ static void handleZoomMode(RCore *core, const int key) {
 			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 				panels->panel[panels->curnode].addr = core->offset;
 			}
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 			break;
 		case 'S':
 			panelSingleStepOver (core);
 			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 				panels->panel[panels->curnode].addr = core->offset;
 			}
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 			break;
 		case 9:
 			restorePanelPos (&panel[panels->curnode]);
@@ -933,7 +938,7 @@ static void handleZoomMode(RCore *core, const int key) {
 		case ':':
 			r_core_visual_prompt_input (core);
 			panels->panel[panels->curnode].addr = core->offset;
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 			break;
 		case '?':
 			showHelp (core, panels->mode);
@@ -953,22 +958,22 @@ static void handleWindowMode(RCore *core, const int key) {
 		break;
 	case 'h':
 		if (moveToDirection (panels, LEFT)) {
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case 'j':
 		if (moveToDirection (panels, DOWN)) {
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case 'k':
 		if (moveToDirection (panels, UP)) {
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case 'l':
 		if (moveToDirection (panels, RIGHT)) {
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case 'H':
@@ -1438,7 +1443,7 @@ static void replaceCmd(RPanels* panels, char *title, char *cmd) {
 	panels->panel[panels->curnode].title = strdup (title);
 	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
 	panels->panel[panels->curnode].cmdStrCache = NULL;
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 }
 
 static void swapPanels(RPanels *panels, int p0, int p1) {
@@ -1477,10 +1482,15 @@ static bool checkFunc(RCore *core) {
 	return true;
 }
 
-static void setRefreshAll(RPanels *panels) {
+static void setRefreshAll(RPanels *panels, bool clearCache) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
-		panels->panel[i].refresh = true;
+		RPanel *panel = &panels->panel[i];
+		panel->refresh = true;
+		if (clearCache) {
+			free (panel->cmdStrCache);
+			panel->cmdStrCache = NULL;
+		}
 	}
 }
 
@@ -1566,7 +1576,7 @@ static int loadLayoutDefaultCb(void *user) {
 	RCore *core = (RCore *)user;
 	initPanels (core, core->panels);
 	r_core_panels_layout (core->panels);
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	core->panels->panelsMenu->depth = 1;
 	return 0;
 }
@@ -1762,49 +1772,49 @@ static void updateDisassemblyAddr (RCore *core) {
 			panels->panel[i].addr = core->offset;
 		}
 	}
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 }
 
 static int reloadCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_file_reopen_debug (core, "");
 	updateDisassemblyAddr (core);
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
 static int functionCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "af");
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
 static int symbolsCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aa");
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
 static int programCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aaa");
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
 static int basicblocksCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aab");
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
 static int callsCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aac");
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
@@ -1816,7 +1826,7 @@ static int breakpointsCb(void *user) {
 	panelPrompt (prompt, buf, sizeof (buf));
 	ut64 addr = r_num_math (core->num, buf);
 	r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 	return 0;
 }
 
@@ -1829,14 +1839,14 @@ static int watchpointsCb(void *user) {
 	panelPrompt (rwPrompt, rw, sizeof (rw));
 	ut64 addr = r_num_math (core->num, addrBuf);
 	r_core_cmdf (core, "dbw 0x%08"PFMT64x" %s", addr, rw);
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 	return 0;
 }
 
 static int referencesCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aar");
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 0;
 }
 
@@ -1967,7 +1977,7 @@ static void removeMenu(RPanels *panels) {
 		menu->refreshPanels[i - 1] = menu->history[i]->p;
 	}
 	menu->n_refresh = menu->depth - 1;
-	setRefreshAll (panels);
+	setRefreshAll (panels, false);
 }
 
 static RStrBuf *drawMenu(RPanelsMenuItem *item) {
@@ -2213,6 +2223,17 @@ static void freeAllPanels(RPanels *panels) {
 	free (panels->panel);
 }
 
+static void refreshCoreOffset (RCore *core) {
+	RPanels *panels = core->panels;
+	if (panels->curnode == panels->menu_pos) {
+		return;
+	}
+	RPanel *cur = &panels->panel[panels->curnode];
+	if (!strcmp (cur->cmd, PANEL_CMD_DISASSEMBLY)) {
+		core->offset = cur->addr;
+	}
+}
+
 R_API void r_core_panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
 	if (!panels) {
@@ -2229,13 +2250,14 @@ R_API void r_core_panels_refresh(RCore *core) {
 	char title[1024];
 	char str[1024];
 	int i, h, w = r_cons_get_size (&h);
+	refreshCoreOffset (core);
 	r_cons_gotoxy (0, 0);
 	if (panels->isResizing) {
 		panels->isResizing = false;
 		if (!r_cons_canvas_resize (can, w, h)) {
 			return;
 		}
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 	}
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
@@ -2289,8 +2311,15 @@ R_API void r_core_panels_refresh(RCore *core) {
 
 	snprintf (title, sizeof (title) - 1,
 		"[0x%08"PFMT64x "]", core->offset);
-	(void) r_cons_canvas_gotoxy (can, -can->sx + w - strlen (title), -can->sy);
+	i = -can->sx + w - strlen (title);
+	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, title);
+
+	sprintf (str, "Press L to refresh Graph and Pseudo   ");
+	i -= strlen (str);
+	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
+	r_cons_canvas_write (can, str);
+
 	r_cons_canvas_print (can);
 	r_cons_flush ();
 }
@@ -2515,7 +2544,7 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 					break;
 				}
 			}
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case '?':
@@ -2543,6 +2572,10 @@ static void handleTabKey(RCore *core, bool shift) {
 		}
 	}
 	if (panels->curnode != panels->menu_pos) {
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			setRefreshAll (panels, false);
+			return;
+		}
 		panels->panel[panels->curnode].refresh = true;
 	}
 }
@@ -2655,7 +2688,7 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 		p += strlen (p) + 1;
 	}
 	free (panelsConfig);
-	setRefreshAll (core->panels);
+	setRefreshAll (core->panels, false);
 	return 1;
 }
 
@@ -2679,7 +2712,7 @@ static void toggleZoomMode(RPanels *panels) {
 		panels->mode = panels->prevMode;
 		panels->prevMode = PANEL_MODE_DEFAULT;
 		restorePanelPos (curPanel);
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 	}
 }
 
@@ -2924,10 +2957,9 @@ repeat:
 			if (res) {
 				if (*res) {
 					addPanelFrame (core, panels, res, res);
-					// refresh stuff 
 					changePanelNum (panels, panels->n_panels - 1, 0);
 					r_core_panels_layout (core->panels);
-					setRefreshAll (core->panels);
+					setRefreshAll (core->panels, false);
 				}
 				free (res);
 			}
@@ -2941,9 +2973,8 @@ repeat:
 			if (res) {
 				if (*res) {
 					addPanelFrame (core, panels, NULL, res);
-					// refresh stuff 
 					r_core_panels_layout (core->panels);
-					setRefreshAll (core->panels);
+					setRefreshAll (core->panels, false);
 					core->panels->panelsMenu->depth = 1;
 				}
 				free (res);
@@ -2990,14 +3021,14 @@ repeat:
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			panels->panel[panels->curnode].addr = core->offset;
 		}
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 'S':
 		panelSingleStepOver (core);
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			panels->panel[panels->curnode].addr = core->offset;
 		}
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case ' ':
 			if (r_config_get_i (core->config, "graph.web")) {
@@ -3021,7 +3052,7 @@ repeat:
 	case ':':
 		r_core_visual_prompt_input (core);
 		panels->panel[panels->curnode].addr = core->offset;
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 'c':
 		activateCursor (core);
@@ -3030,12 +3061,12 @@ repeat:
 		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 'r':
 		r_core_cmd0 (core, "e!asm.jmphints");
 		r_core_cmd0 (core, "e!asm.leahints");
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 'R':
 		if (r_config_get_i (core->config, "scr.randpal")) {
@@ -3050,7 +3081,7 @@ repeat:
 		break;
 	case 'd':
 		r_core_visual_define (core, "");
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 'D':
 		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
@@ -3075,17 +3106,17 @@ repeat:
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			r_core_visual_hudstuff (core);
 			panels->panel[panels->curnode].addr = core->offset;
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case 'x':
 		r_core_visual_refs (core, true, true);
 		core->panels->panel[core->panels->curnode].addr = core->offset;
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 'X':
 		delCurPanel (panels);
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 9: // TAB
 		handleTabKey (core, false);
@@ -3133,6 +3164,9 @@ repeat:
 	case 'l':
 		handleRightKey (core);
 		break;
+	case 'L':
+		setRefreshAll (panels, true);
+		break;
 	case 'V':
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
@@ -3148,7 +3182,7 @@ repeat:
 				int h, w = r_cons_get_size (&h);
 				panels->can = createNewCanvas (core, w, h);
 
-				setRefreshAll (panels);
+				setRefreshAll (panels, false);
 			}
 		}
 		break;
@@ -3165,12 +3199,12 @@ repeat:
 		if (panels->curnode > 0) {
 			swapPanels (panels, 0, panels->curnode);
 			panels->curnode = 0;
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case 'w':
 		toggleWindowMode (panels);
-		setRefreshAll (panels);
+		setRefreshAll (panels, false);
 		break;
 	case 0x0d: // "\\n"
 		toggleZoomMode (panels);
@@ -3236,7 +3270,7 @@ repeat:
 			key = r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepIn (core);
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case R_CONS_KEY_F8:
@@ -3245,7 +3279,7 @@ repeat:
 			key = r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepOver (core);
-			setRefreshAll (panels);
+			setRefreshAll (panels, false);
 		}
 		break;
 	case R_CONS_KEY_F9:
