@@ -145,7 +145,7 @@ R_API char *r_str_uri_encode(const char *buf);
 R_API char *r_str_utf16_decode(const ut8 *s, int len);
 R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian);
 R_API char *r_str_utf16_encode(const char *s, int len);
-R_API char *r_str_escape_utf8_to_json(const char *s, int len);
+R_API char *r_str_escape_utf8_for_json(const char *s, int len);
 R_API char *r_str_home(const char *str);
 R_API char *r_str_r2_prefix(const char *str);
 R_API int r_str_nlen(const char *s, int n);
