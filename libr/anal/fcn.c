@@ -300,6 +300,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
+	fcn->has_changed = true;
 	r_tinyrange_init (&fcn->bbr);
 	return fcn;
 }
@@ -865,6 +866,48 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 }
 #endif
 
+static bool purity_checked(HtUP *ht, RAnalFunction *fcn)
+{
+	bool checked;
+	ht_up_find (ht, fcn->addr, &checked);
+	return checked;
+}
+
+/*
+ * Checks whether a given function is pure and sets its 'is_pure' field.
+ * This function marks fcn 'not pure' if fcn, or any function called by fcn, accesses data
+ * from outside, even if it only READS it. 
+ * Probably worth changing it in the future, so that it marks fcn 'impure' only when it 
+ * (or any function called by fcn) MODIFIES external data.
+ */
+static void check_purity(HtUP *ht, RAnal *anal, RAnalFunction *fcn) {
+	RListIter *iter;
+	RList *refs = r_anal_fcn_get_refs (anal, fcn);
+	RAnalRef *ref;
+	ht_up_insert (ht, fcn->addr, NULL);
+	fcn->is_pure = true;
+	r_list_foreach (refs, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_CALL || ref->type == R_ANAL_REF_TYPE_CODE) {
+			RAnalFunction *called_fcn = r_anal_get_fcn_in (anal, ref->addr, 0);
+			if (!called_fcn) {
+				continue;
+			}
+			if (!purity_checked (ht, called_fcn)) {
+				check_purity (ht, anal, called_fcn);
+			}
+			if (!called_fcn->is_pure) {
+				fcn->is_pure = false;
+				break;
+			}
+		}
+		if (ref->type == R_ANAL_REF_TYPE_DATA) {
+			fcn->is_pure = false;
+			break;
+		}
+	}
+	r_list_free (refs);
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int noncode = anal->opt.noncode;
@@ -1367,7 +1410,6 @@ repeat:
 			// if the next instruction is a symbol
 			if (anal->opt.ijmp && isSymbolNextInstruction (anal, &op)) {
 				gotoBeach (R_ANAL_RET_END);
-
 			}
 			// switch statement
 			if (anal->opt.jmptbl) {
@@ -1457,7 +1499,7 @@ analopfinish:
 					VERBOSE_ANAL eprintf("RET 0x%08"PFMT64x ". %d %d %d\n",
 					addr + delay.un_idx - oplen, overlapped,
 					bb->size, r_anal_fcn_size (fcn));
-					gotoBeach (R_ANAL_RET_END);	
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 			break;
@@ -2257,4 +2299,14 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 		}
 	}
 	return edges;
+}
+
+R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
+	if (!fcn->has_changed) {
+		return fcn->is_pure;
+	}
+	HtUP* ht = ht_up_new (NULL, NULL, NULL);
+	check_purity (ht, anal, fcn);
+	ht_up_free (ht);
+	return fcn->is_pure;
 }

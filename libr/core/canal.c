@@ -2316,6 +2316,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
+	r_cons_printf (",\"is_pure\":%s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"stackframe\":%d", fcn->maxstack);
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
@@ -2511,6 +2512,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
+	r_cons_printf ("\nis_pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	r_cons_printf ("\ncall-convention: %s", fcn->cc);
