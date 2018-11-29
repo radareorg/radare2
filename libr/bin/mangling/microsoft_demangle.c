@@ -1416,6 +1416,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 
 parse_microsoft_mangled_name_err:
 	R_FREE (ret_type);
+	R_FREE (tmp);
 	free_type_code_str_struct (&type_code_str);
 	free_type_code_str_struct (&func_str);
 	r_list_free (func_args);
