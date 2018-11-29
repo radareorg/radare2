@@ -332,6 +332,12 @@ else
   userconf.set('HAVE_EXPLICIT_BZERO', 0)
 endif
 
+if cc.has_function('clock_nanosleep')
+  userconf.set('HAVE_CLOCK_NANOSLEEP', 1)
+else
+  userconf.set('HAVE_CLOCK_NANOSLEEP', 0)
+endif
+
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.acr',
   output: 'r_userconf.h',
