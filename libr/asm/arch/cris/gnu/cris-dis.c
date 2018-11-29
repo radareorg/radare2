@@ -106,13 +106,12 @@ bfd_boolean
 cris_parse_disassembler_options (disassemble_info *info,
 				 enum cris_disass_family distype)
 {
-  struct cris_disasm_data *disdata;
-
-  info->private_data = calloc (1, sizeof (struct cris_disasm_data));
-  disdata = (struct cris_disasm_data *) info->private_data;
+  struct cris_disasm_data *disdata = (struct cris_disasm_data *) info->private_data;
   if (!disdata) {
 	  return FALSE;
   }
+
+  info->private_data = calloc (1, sizeof (struct cris_disasm_data));
 
   /* Default true.  */
   disdata->trace_case
@@ -1554,7 +1553,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 
 /* Disassemble, prefixing register names with `$'.  CRIS v0..v10.  */
 
-static int
+int
 print_insn_cris_with_register_prefix (bfd_vma vma,
 				      disassemble_info *info)
 {
@@ -1566,7 +1565,7 @@ print_insn_cris_with_register_prefix (bfd_vma vma,
 
 /* Disassemble, prefixing register names with `$'.  CRIS v32.  */
 
-static int
+int
 print_insn_crisv32_with_register_prefix (bfd_vma vma,
 					 disassemble_info *info)
 {
@@ -1591,7 +1590,7 @@ print_insn_crisv10_v32_with_register_prefix (bfd_vma vma,
 
 /* Disassemble, no prefixes on register names.  CRIS v0..v10.  */
 
-static int
+int
 print_insn_cris_without_register_prefix (bfd_vma vma,
 					 disassemble_info *info)
 {
