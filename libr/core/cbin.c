@@ -2248,7 +2248,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
-	static bool segments_only = true;
+	bool segments_only = true;
 
 	if (!dup_chk_ht) {
 		return false;
