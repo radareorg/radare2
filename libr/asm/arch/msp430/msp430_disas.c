@@ -180,7 +180,7 @@ static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 /* return #byte of instruction */
 static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd *cmd)
 {
-	int ret, srcOperInCodeWord = 0;
+	int ret = 0, srcOperInCodeWord = 0;
 	ut8 as, ad, src, dst;
 	ut16 op;
 	char dstbuf[16];

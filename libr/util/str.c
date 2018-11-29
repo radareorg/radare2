@@ -1921,6 +1921,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 	if (tmp) {
 		argv = tmp;
 	} else {
+		free (argv);
 		argv = NULL;
 	}
 	if (_argc) {
