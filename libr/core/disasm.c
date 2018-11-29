@@ -2101,7 +2101,16 @@ static void ds_show_flags(RDisasmState *ds) {
 				}
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
-					r_cons_printf ("%s:", name);
+					char *name_escaped = name;
+					if (ds->use_json) {
+						name_escaped = r_str_escape_utf8_to_json (name, -1);
+					}
+					if (name_escaped) {
+						r_cons_printf ("%s:", name_escaped);
+					}
+					if (ds->use_json) {
+						R_FREE (name_escaped);
+					}
 					R_FREE (name);
 				}
 			}
