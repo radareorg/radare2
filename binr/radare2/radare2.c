@@ -918,11 +918,13 @@ int main(int argc, char **argv, char **envp) {
 		if (debug) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE ();
+			free (pfile);
 			return 1;
 		}
 		if (chdir (argv[optind])) {
 			eprintf ("[d] Cannot open directory\n");
 			LISTS_FREE ();
+			free (pfile);
 			return 1;
 		}
 	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
