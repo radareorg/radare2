@@ -2248,7 +2248,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
-	bool segments_only = true;
+	static bool segments_only = true;
 
 	if (!dup_chk_ht) {
 		return false;
@@ -2278,10 +2278,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %sName\n",
                    chksum ? "Checksum          " : "");
 	}
-	r_list_foreach (sections, iter, section) {
-		if (!section->is_segment) {
-			segments_only = false;
-			break;
+	if (IS_MODE_SET (mode)) {
+		r_list_foreach (sections, iter, section) {
+			if (!section->is_segment) {
+				segments_only = false;
+				break;
+			}
 		}
 	}
 	r_list_foreach (sections, iter, section) {
