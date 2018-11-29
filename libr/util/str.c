@@ -2312,7 +2312,7 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 	return tmp;
 }
 
-R_API char *r_str_escape_utf8_to_json(const char *s, int len) {
+R_API char *r_str_escape_utf8_for_json(const char *s, int len) {
 	return r_str_escape_utf (s, len, R_STRING_ENC_UTF8, false, true);
 }
 

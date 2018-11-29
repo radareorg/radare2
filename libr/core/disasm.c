@@ -2103,7 +2103,7 @@ static void ds_show_flags(RDisasmState *ds) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
 					char *name_escaped = name;
 					if (ds->use_json) {
-						name_escaped = r_str_escape_utf8_to_json (name, -1);
+						name_escaped = r_str_escape_utf8_for_json (name, -1);
 					}
 					if (name_escaped) {
 						r_cons_printf ("%s:", name_escaped);
@@ -5571,13 +5571,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
-			char *escaped_str = r_str_escape_utf8_to_json (opstr, -1);
+			char *escaped_str = r_str_escape_utf8_for_json (opstr, -1);
 			if (escaped_str) {
 				r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 			}
 			free (escaped_str);
 
-			escaped_str = r_str_escape_utf8_to_json (str, -1);
+			escaped_str = r_str_escape_utf8_for_json (str, -1);
 			if (escaped_str) {
 				r_cons_printf (",\"disasm\":\"%s\"", escaped_str);
 			}

@@ -170,7 +170,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			}
 		}
 		{
-			char *escapedFile = r_str_escape_utf8_to_json (uri, -1);
+			char *escapedFile = r_str_escape_utf8_for_json (uri, -1);
 			r_cons_printf ("\"file\":\"%s\"", escapedFile);
 			free (escapedFile);
 		}
