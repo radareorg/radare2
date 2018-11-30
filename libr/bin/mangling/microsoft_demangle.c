@@ -1128,12 +1128,14 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 		i = strlen (curr_pos);
 		if (!i || i > 2) {
 			err = eDemanglerErrUncorrectMangledSymbol;
+			R_FREE (tmp);
 			goto parse_microsoft_mangled_name_err;
 		}
 
 		if (i == 2) {
 			if (*curr_pos != 'E') {
 				err = eDemanglerErrUncorrectMangledSymbol;
+				R_FREE (tmp);
 				goto parse_microsoft_mangled_name_err;
 			}
 			ptr64 = "__ptr64";
@@ -1153,6 +1155,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 		SET_STORAGE_CLASS ('D', "const volatile");
 		default:
 			err = eDemanglerErrUncorrectMangledSymbol;
+			R_FREE (tmp);
 			goto parse_microsoft_mangled_name_err;
 		}
 	#undef SET_STORAGE_CLASS
