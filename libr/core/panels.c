@@ -721,7 +721,6 @@ static void handleUpKey(RCore *core) {
 				r_core_seek_delta (core, -cols);
 				panels->panel[panels->curnode].addr = core->offset;
 			}
-			setRefreshAll (panels, false);
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -781,7 +780,6 @@ static void handleDownKey(RCore *core) {
 				r_core_block_read (core);
 				panels->panel[panels->curnode].addr = core->offset;
 			}
-			setRefreshAll (panels, false);
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -2315,7 +2313,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, title);
 
-	sprintf (str, "Press L to refresh Graph and Pseudo   ");
+	sprintf (str, "Press L to refresh all the panels   ");
 	i -= strlen (str);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, str);
