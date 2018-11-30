@@ -2313,7 +2313,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, title);
 
-	sprintf (str, "Press L to refresh Graph and Pseudo   ");
+	sprintf (str, "Press L to refresh all the panels   ");
 	i -= strlen (str);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, str);
