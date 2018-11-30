@@ -117,8 +117,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			nlines--;
 		}
 		{
+			// TODO: get list of metas at addr
 			const RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_ANY, 0);
-			if (mi) {
+			if (mi && mi->type != R_META_TYPE_COMMENT) {
 				ptr += mi->size;
 				addr += mi->size;
 				free (mi->str);
