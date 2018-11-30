@@ -721,7 +721,6 @@ static void handleUpKey(RCore *core) {
 				r_core_seek_delta (core, -cols);
 				panels->panel[panels->curnode].addr = core->offset;
 			}
-			setRefreshAll (panels, false);
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -781,7 +780,6 @@ static void handleDownKey(RCore *core) {
 				r_core_block_read (core);
 				panels->panel[panels->curnode].addr = core->offset;
 			}
-			setRefreshAll (panels, false);
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
