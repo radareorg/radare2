@@ -117,15 +117,32 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			nlines--;
 		}
 		{
-			// TODO: get list of metas at addr
-			const RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_ANY, 0);
-			if (mi && (mi->type != R_META_TYPE_COMMENT
-			           || r_meta_find (anal, addr, R_META_TYPE_DATA, 0))) { // HACK
-				ptr += mi->size;
-				addr += mi->size;
-				free (mi->str);
-				continue;
+			RList *metas = r_meta_enumerate_at (anal, addr, R_META_TYPE_ANY);
+			if (metas && r_list_length (metas)) {
+				RListIter *iter;
+				RAnalMetaItem *mi;
+				bool cmts_only = false;
+				ut64 largest_size = 0;
+				r_list_foreach (metas, iter, mi) {
+					if (mi->type == R_META_TYPE_COMMENT) {
+						cmts_only = true;
+					} else {
+						cmts_only = false;
+						break;
+					}
+					if (mi->size > largest_size) {
+						largest_size = mi->size;
+					}
+					R_FREE (mi->str); // TODO: r_list_free's responsibility?
+				}
+				if (!cmts_only) {
+					ptr += largest_size;
+					addr += largest_size;
+					r_list_free (metas);
+					continue;
+				}
 			}
+			r_list_free (metas);
 		}
 		if (anal->maxreflines && count > anal->maxreflines) {
 			break;

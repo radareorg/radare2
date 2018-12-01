@@ -411,7 +411,7 @@ R_API int r_meta_add_with_subtype(RAnal *a, int type, int subtype, ut64 from, ut
 	return meta_add (a, type, subtype, from, to, str);
 }
 
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
+static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, RList *list) {
 	const char *infos, *metas;
 	char key[100];
 	Sdb *s = a->sdb_meta;
@@ -440,10 +440,24 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 			if (!r_meta_deserialize_val (&mi, *infos, at, metas)) {
 				continue;
 			}
-			return &mi;
+			if (list) {
+				RAnalMetaItem *mi_heap = R_NEW (RAnalMetaItem);
+				if (!mi_heap) {
+					r_warn_if_fail (mi_heap);
+					return NULL;
+				}
+				memcpy (mi_heap, &mi, sizeof (RAnalMetaItem));
+				r_list_append (list, mi_heap);
+			} else {
+				return &mi;
+			}
 		}
 	}
 	return NULL;
+}
+
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
+	return r_meta_find_ (a, at, type, where, NULL);
 }
 
 R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {
@@ -782,6 +796,16 @@ beach:
 R_API RList *r_meta_enumerate(RAnal *a, int type) {
 	RList *list = r_list_new ();
 	r_meta_list_cb (a, type, 0, meta_enumerate_cb, list, UT64_MAX);
+	return list;
+}
+
+R_API RList *r_meta_enumerate_at(RAnal *a, ut64 addr, int type) {
+	RList *list = r_list_new ();
+	if (!list) {
+		r_warn_if_fail (list);
+		return NULL;
+	}
+	r_meta_find_ (a, addr, type, 0, list);
 	return list;
 }
 
