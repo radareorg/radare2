@@ -327,6 +327,7 @@ enum {
 };
 
 enum {
+	R_META_TYPE_NONE = 0,
 	R_META_TYPE_ANY = -1,
 	R_META_TYPE_DATA = 'd',
 	R_META_TYPE_CODE = 'c',
@@ -1591,7 +1592,6 @@ R_API void r_meta_free(RAnal *m);
 R_API void r_meta_space_unset_for(RAnal *a, int type);
 R_API int r_meta_space_count_for(RAnal *a, int space_idx);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
-R_API RList *r_meta_enumerate_at(RAnal *a, ut64 addr, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
 R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr);
@@ -1602,6 +1602,7 @@ R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 size, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
+R_API RAnalMetaItem *r_meta_find_any_except(RAnal *m, ut64 at, int type, int where);
 R_API RAnalMetaItem *r_meta_find_in(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
