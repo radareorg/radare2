@@ -252,6 +252,7 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 static void removeMenu(RPanels *panels);
 static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
+static void hudstuff(RCore *core);
 static char *getPanelsConfigPath();
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
@@ -1907,6 +1908,25 @@ static int quitCb(void *user) {
 	return 1;
 }
 
+static void hudstuff(RCore *core) {
+	RPanels *panels = core->panels;
+	r_core_visual_hudstuff (core);
+
+	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+		panels->panel[panels->curnode].addr = core->offset;
+	} else {
+		int i;
+		for (i = 0; i < panels->n_panels; i++) {
+			RPanel *panel = &panels->panel[i];
+			if (!strcmp (panel->cmd, PANEL_CMD_DISASSEMBLY)) {
+				panel->addr = core->offset;
+				break;
+			}
+		}
+	}
+	setRefreshAll (panels, true);
+}
+
 static int openMenuCb (void *user) {
 	RCore* core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panelsMenu;
@@ -2273,7 +2293,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	}
 	panels->panelsMenu->n_refresh = 0;
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
-	r_cons_canvas_fill (can, -can->sx, -can->sy, panel->pos.w, 1, ' ');
+	r_cons_canvas_fill (can, -can->sx, -can->sy, w, 1, ' ');
 	title[0] = 0;
 	if (panels->curnode == panels->menu_pos) {
 		strcpy (title, "> ");
@@ -3104,11 +3124,7 @@ repeat:
 		}
 		break;
 	case '_':
-		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-			r_core_visual_hudstuff (core);
-			panels->panel[panels->curnode].addr = core->offset;
-			setRefreshAll (panels, false);
-		}
+		hudstuff (core);
 		break;
 	case 'x':
 		r_core_visual_refs (core, true, true);
