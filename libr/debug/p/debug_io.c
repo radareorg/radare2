@@ -64,12 +64,12 @@ static RList *__io_maps(RDebug *dbg) {
 	return list;
 }
 
-static int __io_wait(RDebug *dbg, int pid) {
+static inline int __io_wait(RDebug *dbg, int pid) {
 	/* do nothing */
 	return true;
 }
 
-static int __io_attach(RDebug *dbg, int pid) {
+static inline int __io_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
