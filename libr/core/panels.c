@@ -180,6 +180,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 static void panelAllClear(RPanels *panels);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
+static char *handleCacheCmdStr(RCore *core, RPanel* panel);
 static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
@@ -345,23 +346,15 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 			const int absdelta = R_ABS (delta);
 			cmdStr = r_core_cmd_strf (core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
 		} else if (!strcmp (panel->cmd, PANEL_CMD_GRAPH)) {
-			if (panel->cmdStrCache) {
-				cmdStr = panel->cmdStrCache;
-			} else {
-				cmdStr = r_core_cmd_str (core, panel->cmd);
-				panel->cmdStrCache = cmdStr;
-			}
+			cmdStr = handleCacheCmdStr (core, panel);
 			graph_pad = 1;
 			core->cons->event_resize = NULL; // avoid running old event with new data
 			core->cons->event_data = core;
 			core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
 		} else if (!strcmp (panel->cmd, PANEL_CMD_PSEUDO)) {
-			if (panel->cmdStrCache) {
-				cmdStr = panel->cmdStrCache;
-			} else {
-				cmdStr = r_core_cmd_str (core, panel->cmd);
-				panel->cmdStrCache = cmdStr;
-			}
+			cmdStr = handleCacheCmdStr (core, panel);
+		} else if (!strcmp (panel->cmd, PANEL_CMD_FCNINFO)) {
+			cmdStr = handleCacheCmdStr (core, panel);
 		} else {
 			cmdStr = r_core_cmd_str (core, panel->cmd);
 		}
@@ -390,6 +383,16 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	}
 	if (!panel->cmdStrCache) {
 		free (cmdStr);
+	}
+}
+
+char *handleCacheCmdStr(RCore *core, RPanel* panel) {
+	if (panel->cmdStrCache) {
+		return panel->cmdStrCache;
+	} else {
+		char *ret = r_core_cmd_str (core, panel->cmd);
+		panel->cmdStrCache = ret;
+		return ret;
 	}
 }
 
