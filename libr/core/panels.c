@@ -273,7 +273,7 @@ static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RCore* core, bool temp);
 static int loadSavedPanelsLayout(RCore *core, bool temp);
-static void replaceCmd(RPanels* panels, char *title, char *cmd, int caching);
+static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const int caching);
 static void swapPanels(RPanels *panels, int p0, int p1);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void toggleZoomMode(RPanels *panels);
@@ -1439,7 +1439,7 @@ static void dismantlePanel(RPanels *panels) {
 	}
 }
 
-static void replaceCmd(RPanels* panels, char *title, char *cmd, int caching) {
+static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const int caching) {
 	freeSinglePanel (&panels->panel[panels->curnode]);
 	panels->panel[panels->curnode].title = strdup (title);
 	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
