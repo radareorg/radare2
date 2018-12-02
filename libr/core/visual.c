@@ -1222,12 +1222,19 @@ repeat:
 		" pP  - rotate between various print modes\n"
 		" :   - run r2 command\n"
 		" ?   - show this help message\n"
+		" <>  - '<' for xrefs and '>' for refs\n"
 		" TAB - toggle between address and function references\n"
 		" xX  - switch to refs or xrefs\n"
 		" q   - quit this view\n"
 		" \\n  - seek to this xref");
 		r_cons_flush ();
 		r_cons_any_key (NULL);
+		goto repeat;
+	} else if (ch == '<') {
+		xrefsMode = false;
+		goto repeat;
+	} else if (ch == '>') {
+		xrefsMode = true;
 		goto repeat;
 	} else if (ch == 9) { // TAB
 		xrefsMode = !xrefsMode;
@@ -1271,11 +1278,11 @@ repeat:
 			skip = 0;
 		}
 		goto repeat;
-	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
+	} else if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
 		ret = follow_ref (core, xrefs, skip);
 	} else if (IS_DIGIT (ch)) {
 		ret = follow_ref (core, xrefs, ch - 0x30);
-	} else if (ch != 'q' && ch != 'Q') {
+	} else if (ch != 'q' && ch != 'Q' && ch != 'h') {
 		goto repeat;
 	}
 	r_list_free (xrefs);
