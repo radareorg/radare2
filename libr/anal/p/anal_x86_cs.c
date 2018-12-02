@@ -2359,9 +2359,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		case X86_OP_IMM:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			// TODO: what if UCALL?
-			// TODO: use imm_size
-			op->jump = INSOP(0).imm;
-			op->fail = addr+op->size;
+			if (INSOP(1).type == X86_OP_IMM) {
+				ut64 seg = INSOP(0).imm;
+				ut64 off = INSOP(1).imm;
+				op->ptr = INSOP (0).mem.disp;
+				op->jump = (seg << a->seggrn) + off;
+			} else {
+				op->jump = INSOP(0).imm;
+			}
+			op->fail = addr + op->size;
 			break;
 		case X86_OP_MEM:
 			op->type = R_ANAL_OP_TYPE_UCALL;
