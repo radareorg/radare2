@@ -99,7 +99,7 @@ static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 
 	if (opcode == MSP430_ADDC && as == 0 && src == MSP430_R3) {
 		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "adc.b" : "adc");
-		snprintf(cmd->operands, sizeof (cmd->operands), "r%d", dst);
+		snprintf(cmd->operands, sizeof (cmd->operands), "%s", msp430_register_names[dst]);
 	} else if (opcode == MSP430_MOV && as == 0 && src == MSP430_R3) {
 		if (ad == 0 && dst == MSP430_R3) {
 			snprintf(cmd->instr, sizeof (cmd->instr), "nop");
@@ -200,7 +200,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 			snprintf(cmd->operands, sizeof (cmd->operands), "#0");
 			break;
 		default: /* register mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "r%d", src);
+			snprintf(cmd->operands, sizeof (cmd->operands), "%s", msp430_register_names[src]);
 		}
 		ret = 2;
 		break;
@@ -220,7 +220,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 			srcOperInCodeWord = 1;
 			break;
 		default: /* indexed mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "0x%x(r%d)", op1, src);
+			snprintf(cmd->operands, sizeof (cmd->operands), "0x%x(%s)", op1, msp430_register_names[src]);
 			srcOperInCodeWord = 1;
 		}
 		break;
@@ -233,7 +233,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 			snprintf(cmd->operands, sizeof (cmd->operands), "#2");
 			break;
 		default: /* indirect register mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "@r%d", src);
+			snprintf(cmd->operands, sizeof (cmd->operands), "@%s", msp430_register_names[src]);
 		}
 		ret = 2;
 		break;
@@ -252,7 +252,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 			ret = 4;
 			break;
 		default: /* indirect autoincrement mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "@r%d+", src);
+			snprintf(cmd->operands, sizeof (cmd->operands), "@%s+", msp430_register_names[src]);
 		}
 		break;
 	}
@@ -260,7 +260,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 	/* addressing mode of destination operand */
 	switch (ad) {
 	case 0: /* register mode */
-		snprintf(dstbuf, sizeof (dstbuf), ", r%d", dst); 
+		snprintf(dstbuf, sizeof (dstbuf), ", %s", msp430_register_names[dst]); 
 		break;
 	case 1:
 		/* check addr. mode of source operand */
@@ -279,7 +279,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 		    	snprintf(dstbuf, sizeof (dstbuf), ", &0x%04x", op);
 			break;
 		default: /* indexed mode */
-			snprintf(dstbuf, sizeof (dstbuf), ", 0x%x(r%d)", op, dst);
+			snprintf(dstbuf, sizeof (dstbuf), ", 0x%x(%s)", op, msp430_register_names[dst]);
 		}
 		break;
 	}
@@ -362,7 +362,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 				break;
 			default:
 				snprintf(cmd->operands, sizeof (cmd->operands),
-						"r%d", get_dst(instr));
+						"%s", msp430_register_names[get_dst(instr)]);
 			}
 			ret = 2;
 			break;
@@ -383,7 +383,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 				break;
 			default:
 				snprintf(cmd->operands, sizeof (cmd->operands),
-						"0x%x(r%d)", op, get_dst(instr));
+						"0x%x(%s)", op, msp430_register_names[get_dst(instr)]);
 			}
 
 			break;
@@ -397,7 +397,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 				break;
 			default:
 				snprintf(cmd->operands, sizeof (cmd->operands),
-						"@r%d", get_dst(instr));
+						"@%s", msp430_register_names[get_dst(instr)]);
 			}
 
 			ret = 2;
