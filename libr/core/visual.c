@@ -1034,6 +1034,7 @@ static int follow_ref(RCore *core, RList *xrefs, int choice) {
 		if (core->print->cur_enabled) {
 			core->print->cur = 0;
 		}
+		r_io_sundo_push (core->io, refi->addr, r_print_get_cursor (core->print));
 		r_core_seek (core, refi->addr, 1);
 		return 1;
 	}
@@ -1239,7 +1240,7 @@ repeat:
 		goto repeat;
 	} else if (ch == 'P') {
 		printMode--;
-		if (printMode<0) {
+		if (printMode < 0) {
 			printMode = lastPrintMode;
 		}
 		goto repeat;
