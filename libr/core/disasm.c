@@ -931,7 +931,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	/* initialize */
 	core->parser->hint = ds->hint;
-	ds->hint = NULL;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
