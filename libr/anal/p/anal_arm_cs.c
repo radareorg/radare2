@@ -1322,7 +1322,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_MOVK: // movk w8, 0x1290
 	{
-		unsigned int shift = LSHIFT2_64(1);
+		st64 shift = LSHIFT2_64 (1);
+		if (shift < 0) {
+			shift = 0;
+		} else if (shift >= 48) {
+			shift = 47;
+		}
 		ut64 shifted_imm = IMM64(1) << shift;
 		ut64 mask = ~(0xffffLL << shift);
 

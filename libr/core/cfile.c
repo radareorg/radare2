@@ -684,16 +684,13 @@ beach:
 	return true;
 }
 
-R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 loadaddr) {
 	bool openmany = r_config_get_i (r->config, "file.openmany");
 	int opened_count = 0;
-	// ut64 current_loadaddr = loadaddr;
-	RCoreFile *fh; //, *top_file = NULL;
 	RListIter *fd_iter, *iter2;
-	RList *list_fds = NULL;
 	RIODesc *fd;
 
-	list_fds = r_io_open_many (r->io, file, flags, 0644);
+	RList *list_fds = r_io_open_many (r->io, file, perm, 0644);
 
 	if (!list_fds || r_list_length (list_fds) == 0) {
 		r_list_free (list_fds);
@@ -710,17 +707,14 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 			r_list_delete (list_fds, fd_iter);
 			continue;
 		}
-		fh = R_NEW0 (RCoreFile);
+		RCoreFile *fh = R_NEW0 (RCoreFile);
 		if (!fh) {
-			eprintf ("file.c:r_core_many failed to allocate new RCoreFile.\n");
 			break;
 		}
 		fh->alive = 1;
 		fh->core = r;
 		fh->fd = fd->fd;
 		r->file = fh;
-		// XXX - load addr should be at a set offset
-		//r_core_file_get_next_map (r, fh, flags, current_loadaddr);
 		r_bin_bind (r->bin, &(fh->binb));
 		r_list_append (r->files, fh);
 		r_core_bin_load (r, fd->name, 0LL);
