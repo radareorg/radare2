@@ -1568,16 +1568,22 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 #endif
 			printline ("bytes", NULL, 0);
-			for (j = 0; j < size; j++) {
-				r_cons_printf ("%02x", buf[j + idx]);
+			int minsz = R_MIN (len, size);
+			minsz = R_MAX (minsz, 0);
+			for (j = 0; j < minsz; j++) {
+				ut8 ch = (j + idx > minsz)? 0xff: buf[j+idx];
+				r_cons_printf ("%02x", ch);
 			}
 			r_cons_newline ();
-			if (op.val != UT64_MAX)
+			if (op.val != UT64_MAX) {
 				printline ("val", "0x%08" PFMT64x "\n", op.val);
-			if (op.ptr != UT64_MAX)
+			}
+			if (op.ptr != UT64_MAX) {
 				printline ("ptr", "0x%08" PFMT64x "\n", op.ptr);
-			if (op.refptr != -1)
+			}
+			if (op.refptr != -1) {
 				printline ("refptr", "%d\n", op.refptr);
+			}
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));
 			printline ("type", "%s\n", r_anal_optype_to_string (op.type));
