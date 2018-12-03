@@ -2050,7 +2050,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (amount < 0) {
 			amount = 0;
 		}
-		if (!(relocs = calloc (amount + 1, 1))) { //  sizeof (struct reloc_t)))) {
+		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
 			return NULL;
 		}
 		opcodes = calloc (1, amount + 1);
