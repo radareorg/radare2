@@ -282,6 +282,7 @@ static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
 static void showHelp(RCore *core, RPanelsMode mode);
+static void createNewPanel(RCore *core, char *name, char *cmd, int caching);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -1494,6 +1495,14 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 			panel->cmdStrCache = NULL;
 		}
 	}
+}
+
+static void createNewPanel(RCore *core, char *name, char *cmd, int caching) {
+	RPanels *panels = core->panels;
+	addPanelFrame (core, panels, name, cmd, caching);
+	changePanelNum (panels, panels->n_panels - 1, 0);
+	r_core_panels_layout (panels);
+	setRefreshAll (panels, false);
 }
 
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
@@ -2978,36 +2987,15 @@ repeat:
 		r_core_cmd0 (core, "s+");
 		break;
 	case 'n':
-		{
-			r_cons_enable_mouse (false);
-			char *res = r_cons_input ("New panel with command: ");
-			int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
-			if (res) {
-				if (*res) {
-					addPanelFrame (core, panels, res, res, caching);
-					changePanelNum (panels, panels->n_panels - 1, 0);
-					r_core_panels_layout (core->panels);
-					setRefreshAll (core->panels, false);
-				}
-				free (res);
-			}
-			r_cons_enable_mouse (true);
-		}
-		break;
 	case 'N':
 		{
 			r_cons_enable_mouse (false);
 			char *res = r_cons_input ("New panel with command: ");
 			int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
-			if (res) {
-				if (*res) {
-					addPanelFrame (core, panels, res, res, caching);
-					r_core_panels_layout (core->panels);
-					setRefreshAll (core->panels, false);
-					core->panels->panelsMenu->depth = 1;
-				}
-				free (res);
+			if (res && *res) {
+				createNewPanel (core, res, res, caching);
 			}
+			free (res);
 			r_cons_enable_mouse (true);
 		}
 		break;
@@ -3156,7 +3144,7 @@ repeat:
 		char *cmd = r_cons_input ("Command: ");
 		int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (name && *name && cmd && *cmd) {
-			addPanelFrame (core, panels, name, cmd, caching);
+			createNewPanel (core, name, cmd, caching);
 		}
 		free (name);
 		free (cmd);
