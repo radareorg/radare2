@@ -12,8 +12,11 @@
 
 ut32 readLE32(RBuffer *buf, int off) {
 	int left = 0;
-	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 3? r_read_le32 (data): 0;
+	ut32 num = 0;
+	(void)r_buf_read_at (buf, off, &num, 4);
+	return num;
+	//const ut8 *data = r_buf_get_at (buf, off, &left);
+	//return left > 3? r_read_le32 (data): 0;
 }
 
 ut64 readLE64(RBuffer *buf, int off) {
@@ -116,7 +119,7 @@ out_walk_symbol:
 	return;
 }
 
-void parseMod (RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
+void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 	ut32 ptr = readLE32 (buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
