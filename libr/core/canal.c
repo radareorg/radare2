@@ -2709,7 +2709,6 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 }
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
-	ut8 *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	RAnalOp *op = NULL;
@@ -2721,7 +2720,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		return;
 	}
 	int bb_size = core->anal->opt.bb_max_size;
-	buf = calloc (1, bb_size);
+	ut8 *buf = calloc (1, bb_size);
 	if (!buf) {
 		return;
 	}
