@@ -1898,7 +1898,8 @@ static void visual_closetab (RCore *core) {
 			core->visual.tab = 1;
 		}
 		visual_nexttab (core);
-		RCoreVisualTab *tab = r_list_head (core->visual.tabs)->data;
+		RListIter *head = r_list_head (core->visual.tabs);
+		RCoreVisualTab *tab = head ? head->data : NULL;
 		if (tab) {
 			r_core_seek (core, tab->offset, 1);
 			core->printidx = tab->printidx;

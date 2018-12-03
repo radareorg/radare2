@@ -650,6 +650,7 @@ static int cmd_type(void *data, const char *input) {
 		case 'j':
 			if (input[2]) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
+				r_cons_newline ();
 			} else {
 				print_keys (TDB, core, stdifunion, printkey_json_cb, true);
 			}
