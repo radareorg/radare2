@@ -181,7 +181,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		}
 		ut8 *bytes = malloc (sz);
 		if (!bytes) {
-			eprintf ("Cannot allocate %d bytes\n", sz);
+			eprintf ("Cannot allocate %" PFMT64u " bytes\n", sz);
 			return NULL;
 		}
 		r_buf_read_at (binfile->buf, offset, bytes, sz);
