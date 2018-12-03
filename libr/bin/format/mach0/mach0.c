@@ -2050,7 +2050,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (amount < 0) {
 			amount = 0;
 		}
-		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
+		if (!(relocs = calloc (amount + 1, 1))) { //  sizeof (struct reloc_t)))) {
 			return NULL;
 		}
 		opcodes = calloc (1, amount + 1);
@@ -2175,7 +2175,7 @@ relocs[i++].last = 0;\
 					goto beach;
 				}
 				DO_BIND();
-				addr += (ut64)imm * (ut64)(wordsize + wordsize);
+				addr += (ut64)imm * (ut64)wordsize + wordsize;
 				break;
 			case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
 				count = ULEB();
@@ -2209,20 +2209,19 @@ relocs[i++].last = 0;\
 		if (amount < 0) {
 			amount = 0;
 		}
-		free (relocs);
 		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
 			return NULL;
 		}
 		for (j = 0; j < amount; j++) {
 			if (parse_import_ptr (bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
 				relocs[i].ord = j;
-				relocs[i++].last = 0;
+				relocs[i++].last = false;
 			}
 		}
 	}
 beach:
 	if (relocs) {
-		relocs[i].last = 1;
+		relocs[i].last = true;
 	}
 	return relocs;
 }
