@@ -264,7 +264,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 		}
 		last_delta = delta;
 	}
-	return UT64_MAX;
+	return bb->addr + last_delta;
 }
 
 /* return true if an instruction starts at a given address of the given
