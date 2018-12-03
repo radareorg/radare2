@@ -1066,7 +1066,9 @@ repeat:
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 		if (fun) {
 			if (xref) { //  function xrefs
-				xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+				xrefs = r_anal_xrefs_get (core->anal, addr);
+				//XXX xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+				// this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
 				xrefs = r_anal_fcn_get_refs (core->anal, fun);
 			}
@@ -1248,8 +1250,8 @@ repeat:
 		}
 		goto repeat;
 	} else if (ch == 'x' || ch == '<') {
-		xrefsMode = !xrefsMode;
 		xref = true;
+		xrefsMode = !xrefsMode;
 		goto repeat;
 	} else if (ch == 'X' || ch == '>') {
 		xref = false;
