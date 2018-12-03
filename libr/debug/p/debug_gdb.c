@@ -28,6 +28,9 @@ static void check_connection (RDebug *dbg) {
 
 static int r_debug_gdb_step(RDebug *dbg) {
 	check_connection (dbg);
+	if (!desc) {
+		return R_DEBUG_REASON_UNKNOWN;
+	}
 	gdbr_step (desc, -1); // TODO handle thread specific step?
 	return true;
 }
@@ -44,6 +47,9 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
 	check_connection (dbg);
+	if (!desc) {
+		return R_DEBUG_REASON_UNKNOWN;
+	}
 	gdbr_read_registers (desc);
 	if (!desc || !desc->data) {
 		return -1;
@@ -92,7 +98,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	check_connection (dbg);
-	if (desc->pid <= 0) {
+	if (!desc || desc->pid <= 0) {
 		return NULL;
 	}
 	RList *retlist = NULL;
@@ -264,6 +270,9 @@ static RList* r_debug_gdb_modules_get(RDebug *dbg) {
 
 static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	check_connection (dbg);
+	if (!desc) {
+		return R_DEBUG_REASON_UNKNOWN;
+	}
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
 		return -1;
@@ -308,6 +317,9 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
+	if (!desc) {
+		return R_DEBUG_REASON_UNKNOWN;
+	}
 	gdbr_continue (desc, pid, -1, sig); // Continue all threads
 	if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
 		//if (desc->tid != desc->stop_reason.thread.tid) {
@@ -320,6 +332,9 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	check_connection (dbg);
+	if (!desc) {
+		return R_DEBUG_REASON_UNKNOWN;
+	}
 	if (!desc->stop_reason.is_valid) {
 		if (gdbr_stop_reason (desc) < 0) {
 			dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
