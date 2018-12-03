@@ -2710,12 +2710,12 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 }
 
 R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
-	int diff, inc = (times >= 0)? 1: -1;
+	int inc = (times >= 0)? 1: -1;
 	ut64 seek = core->offset;
 	if (!align) {
 		return false;
 	}
-	diff = core->offset%align;
+	int diff = core->offset % align;
 	if (!times) {
 		diff = -diff;
 	} else if (diff) {
@@ -2730,12 +2730,12 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 	}
 	while ((times*inc) > 0) {
 		times -= inc;
-		diff += align*inc;
+		diff += (align * inc);
 	}
 	if (diff < 0 && -diff > seek) {
 		seek = diff = 0;
 	}
-	return r_core_seek (core, seek+diff, 1);
+	return r_core_seek (core, seek + diff, 1);
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
