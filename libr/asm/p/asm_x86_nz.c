@@ -4575,14 +4575,17 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			if (last_type == TT_SPECIAL) {
 				if (str[pos] == '+' || str[pos] == '-' || str[pos] == ']') {
 					if (reg != X86R_UNDEFINED) {
-						op->regs[reg_index] = reg;
-						op->scale[reg_index] = temp;
+						if (reg_index < 2) {
+							op->regs[reg_index] = reg;
+							op->scale[reg_index] = temp;
+						}
 						++reg_index;
 					} else {
 						op->offset += temp;
-						op->regs[reg_index] = X86R_UNDEFINED;
+						if (reg_index < 2) {
+							op->regs[reg_index] = X86R_UNDEFINED;
+						}
 					}
-
 					temp = 1;
 					reg = X86R_UNDEFINED;
 				} else if (str[pos] == '*') {
