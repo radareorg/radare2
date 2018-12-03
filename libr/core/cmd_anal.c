@@ -1571,7 +1571,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			int minsz = R_MIN (len, size);
 			minsz = R_MAX (minsz, 0);
 			for (j = 0; j < minsz; j++) {
-				ut8 ch = (j + idx > minsz)? 0xff: buf[j+idx];
+				ut8 ch = ((j + idx - 1) > minsz)? 0xff: buf[j + idx];
 				r_cons_printf ("%02x", ch);
 			}
 			r_cons_newline ();
