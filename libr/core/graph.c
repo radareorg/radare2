@@ -3114,7 +3114,7 @@ static void agraph_follow_false(RAGraph *g) {
 /* seek the next node in visual order */
 static void agraph_next_node(RAGraph *g) {
 	RANode *a = get_anode (find_near_of (g, g->curnode, true));
-	while (a->is_dummy) {
+	while (a && a->is_dummy) {
 		a = get_anode (find_near_of (g, a->gnode, true));
 	}
 	r_agraph_set_curnode (g, a);
@@ -3124,7 +3124,7 @@ static void agraph_next_node(RAGraph *g) {
 /* seek the previous node in visual order */
 static void agraph_prev_node(RAGraph *g) {
 	RANode *a = get_anode (find_near_of (g, g->curnode, false));
-	while (a->is_dummy) {
+	while (a && a->is_dummy) {
 		a = get_anode (find_near_of (g, a->gnode, false));
 	}
 	r_agraph_set_curnode (g, a);

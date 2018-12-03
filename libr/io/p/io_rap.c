@@ -188,6 +188,8 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 			}
 		} else {
 			if (!r_socket_listen (rior->fd, port, NULL)) {
+				r_socket_free (rior->fd);
+				free (rior);
 				return NULL;
 			}
 		}
