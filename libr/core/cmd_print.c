@@ -306,6 +306,7 @@ static const char *help_msg_pf[] = {
 	"pf?", "fmt_name", "Show the definition of a named format",
 	"pfo", "", "List all format definition files (fdf)",
 	"pfo", " fdf_name", "Load a Format Definition File (fdf)",
+	"pfq", " fmt ...", "Quiet print format (do now show address)",
 	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
 	"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
 	"pfs", "[.fmt_name| fmt]", "Print the size of (named) format in bytes",
@@ -959,12 +960,16 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 }
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
-	char *input;
+	char *input = NULL;
 	int mode = R_PRINT_MUSTSEE;
 	switch (_input[1]) {
 	case '*': // "pf*"
 		_input++;
 		mode = R_PRINT_SEEFLAGS;
+		break;
+	case 'q': // "pfq"
+		_input++;
+		mode = R_PRINT_QUIET | R_PRINT_MUSTSEE;
 		break;
 	case 'd': // "pfd"
 		_input++;
@@ -1001,8 +1006,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		} else {
 			eprintf ("Usage: pfs.struct_name | pfs format\n");
 		}
-	}
 		return;
+	}
 	case '?': // "pf?"
 		_input += 2;
 		if (*_input) {
@@ -1031,25 +1036,21 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			r_core_cmd_help (core, help_msg_pf);
 		}
 		return;
-	}
-
-	input = strdup (_input);
-	// "pfo" // open formatted thing
-	if (input[1] == 'o') { // "pfo"
-		if (input[2] == '?') {
+	case 'o': // "pfo"
+		if (_input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
 				" " R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, "") "\n"
 				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
 				r_sys_prefix (NULL));
-		} else if (input[2] == ' ') {
+		} else if (_input[2] == ' ') {
 			char *home, *path, tmp[512];
 			snprintf (tmp, sizeof (tmp),
-				R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), input + 3);
+				R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), _input + 3);
 			home = r_str_home (tmp);
-			snprintf (tmp, sizeof (tmp), R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), input + 3);
+			snprintf (tmp, sizeof (tmp), R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), _input + 3);
 			path = r_str_r2_prefix (tmp);
 			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
-				if (!r_core_cmd_file (core, input + 3)) {
+				if (!r_core_cmd_file (core, _input + 3)) {
 					eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
 				}
 			}
@@ -1084,7 +1085,9 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 		free (input);
 		return;
-	}
+	} // switch
+
+	input = strdup (_input);
 	/* syntax aliasing bridge for 'pf foo=xxd' -> 'pf.foo xxd' */
 	if (input[1] == ' ') {
 		char *eq = strchr (input + 2, '=');
