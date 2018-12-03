@@ -120,7 +120,6 @@ static RList *classes_from_symbols(RBinFile *bf) {
 					}
 				}
 			}
-			r_list_append (classes, c);
 		}
 	}
 	if (r_list_empty (classes)) {
