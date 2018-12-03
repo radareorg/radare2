@@ -3415,6 +3415,9 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL) {
 		r_list_foreach (list, iter, entry) {
+			if (entry->paddr == UT64_MAX) {
+				continue;
+			}
 			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
 			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 		}
