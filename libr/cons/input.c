@@ -545,7 +545,7 @@ R_API int r_cons_readchar() {
 	return r_cons_controlz (buf[0]);
 }
 
-R_API int r_cons_yesno(int def, const char *fmt, ...) {
+R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);

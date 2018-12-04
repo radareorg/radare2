@@ -475,7 +475,7 @@ static int layoutSidePanel(void *user) {
 			}
 		}
 	}
-	int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+	bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 	addPanelFrame (core, panels, child->name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
 	panel[0].pos.x = 0;
@@ -2992,7 +2992,7 @@ repeat:
 		{
 			r_cons_enable_mouse (false);
 			char *res = r_cons_input ("New panel with command: ");
-			int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 			if (res && *res) {
 				createNewPanel (core, res, res, caching);
 			}
@@ -3143,7 +3143,7 @@ repeat:
 		r_cons_enable_mouse (false);
 		char *name = r_cons_input ("Name: ");
 		char *cmd = r_cons_input ("Command: ");
-		int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (name && *name && cmd && *cmd) {
 			createNewPanel (core, name, cmd, caching);
 		}
@@ -3157,7 +3157,7 @@ repeat:
 		r_cons_enable_mouse (false);
 		char *new_name = r_cons_input ("New name: ");
 		char *new_cmd = r_cons_input ("New command: ");
-		int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (new_name && *new_name && new_cmd && *new_cmd) {
 			replaceCmd (panels, new_name, new_cmd, caching);
 		}

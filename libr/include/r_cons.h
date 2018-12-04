@@ -812,7 +812,7 @@ R_API void r_cons_color(int fg, int r, int g, int b);
 
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
-R_API int r_cons_yesno(int def, const char *fmt, ...);
+R_API bool r_cons_yesno(int def, const char *fmt, ...);
 R_API char *r_cons_input(const char *msg);
 R_API char *r_cons_password(const char *msg);
 R_API void r_cons_set_cup(int enable);
