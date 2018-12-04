@@ -138,6 +138,7 @@ static const char *help_msg_ts[] = {
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tss", " [type]", "Display size of struct",
+	"tsc", "", "List loaded structs in C output format",
 	"ts?", "", "show this help",
 	NULL
 };
