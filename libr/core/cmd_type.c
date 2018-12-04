@@ -814,7 +814,7 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			} else { // "tej ENUM"
 				RListIter *iter;
-				RTypeEnum *member = R_NEW0 (RTypeEnum);
+				RTypeEnum *member;
 				if (member_name) {
 					res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 					// NEVER REACHED

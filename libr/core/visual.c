@@ -1099,7 +1099,6 @@ repeat:
 
 		int maxcount = 9;
 		int rows, cols = r_cons_get_size (&rows);
-		idx = 0;
 		count = 0;
 		char *dis = NULL;
 		rows -= 4;
@@ -2312,7 +2311,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					cur = core->print->cur - 1;
 				}
 				snprintf (buf, sizeof (buf), "%s @ $$0!%i", p,
-					core->blocksize - core->print->cur);
+					core->blocksize - cur);
 				r_core_cmd (core, buf, 0);
 				free (p);
 				break;
@@ -2422,7 +2421,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			break;
 		case 'G':
-			ret = 0;
+			ret = -1;
 			int scols = r_config_get_i (core->config, "hex.cols");
 			if (core->file) {
 				if (core->io->va) {
@@ -2442,8 +2441,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						r_io_fd_size (core->io, core->file->fd)
 						- core->blocksize + 2 * scols, 1);
 				}
-			} else {
-				ret = -1;
 			}
 			if (ret != -1) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
@@ -2943,7 +2940,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					// have to escape any quotes.
 					int j, len = strlen (buf);
 					char *duped = strdup (buf);
-					i = 4, j = 4;
 					for (i = 4, j = 4; i < len; ++i,++j) {
 						char c = duped[i];
 						if (c == '"' && i != (len - 1)) {
