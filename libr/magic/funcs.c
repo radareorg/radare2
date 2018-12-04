@@ -89,6 +89,7 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 		free (buf);
 		free (ms->o.buf);
 		if (len < 0) {
+			free (newstr);
 			goto out;
 		}
 		buf = newstr;

@@ -1001,7 +1001,6 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 	slen = strlen (str) + 1;
 
 	for (i = 0; i < clen; ) {
-		bias = 0;
 		p = (char *)r_mem_mem (
 			(const ut8*)clean + i, clen - i,
 			(const ut8*)key, klen);
@@ -2439,7 +2438,6 @@ R_API int r_print_format_length(const char *fmt) {
 			last = tmp;
 		}
 		arg = orig;
-		idx = 0;
 	}
 	if (args) {
 		free (args);

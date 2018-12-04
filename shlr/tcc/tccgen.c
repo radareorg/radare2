@@ -2764,7 +2764,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r, int has
 		field = type->ref;
 		while (field && field->next)
 			field = field->next;
-		if (field->type.t & VT_ARRAY && field->type.ref->c < 0) {
+		if (field && (field->type.t & VT_ARRAY) && (field->type.ref->c < 0)) {
 			flexible_array = field;
 		}
 	}

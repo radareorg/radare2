@@ -1215,7 +1215,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 			newstring++;
 			vallen -= 2;
 		}
-		if ((size = strlen (setval)) > r_wstr_clen((char*)(buf+seeki))) {
+		if ((size = vallen) > r_wstr_clen((char*)(buf+seeki))) {
 			eprintf ("Warning: new string is longer than previous one\n");
 		}
 		p->cb_printf ("ww %s @ 0x%08"PFMT64x"\n", newstring, seeki);
@@ -1589,6 +1589,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			int newsize = r_print_format_struct_size (format, p, mode, n + 1);
 			if (newsize < 1) {
 				eprintf ("Cannot find size for `%s'\n", format);
+				free (structname);
 				return 0;
 			}
 			if (format && newsize > 0) {

@@ -75,7 +75,6 @@ R_API const ut8 *r_uleb128_encode(const ut64 s, int *len) {
 		}
 		otarget = tmptarget;
 		target = otarget+l-1;
-		c = 0; //May not be necessary
 		c = source & 0x7f;
 		source >>= 7;
 		if (source) {
