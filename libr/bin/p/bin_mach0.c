@@ -77,7 +77,9 @@ static bool load(RBinFile *bf) {
 	}
 	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	if (!bf->o || !bf->o->bin_obj) {
-		MACH0_(mach0_free) (bf->o->bin_obj);
+		if (bf->o) {
+			MACH0_(mach0_free) (bf->o->bin_obj);
+		}
 		return false;
 	}
 	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
