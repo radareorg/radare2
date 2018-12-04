@@ -745,6 +745,65 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmd_help (core, help_msg_ts);
 			}
 			break;
+		case 'c': { //tsc
+			char *name = NULL;
+			size_t varname_len = 0;
+			int prev_size = 0;
+			char *varname = NULL;
+           		SdbKv *kv;
+           		SdbListIter *iter;
+        		SdbList *l = sdb_foreach_list (TDB, true);
+        		ls_foreach (l, iter, kv) {
+        			if (!strcmp (sdbkv_value (kv), "struct")) {
+                			if (!name || strcmp (sdbkv_value (kv), name)) {
+                				free (name);
+                    				name = strdup (sdbkv_key (kv));
+                    				const char *q = sdb_fmt ("struct.%s", name);
+                        			const char *res = sdb_get (TDB, q, 0);
+						if (res) {
+							r_cons_printf ("%s %s{", sdbkv_value (kv), name);
+							for (int i = 0; i < strlen(res); i++) {
+								if (res[i] != ',') {
+									varname_len++; 
+								}
+								else {
+									char var[10];
+									memset (var, '\0', sizeof (var));
+									strncpy (var, res, varname_len);
+									char *var_print = var;
+									var_print += prev_size;
+									varname = sdb_fmt ("%s.%s", q, var_print);							
+                        						const char *fulltypename = sdb_const_get (TDB, varname, 0);
+									for (int j = 0; (isalpha (fulltypename[j]) && (fulltypename[j] != ',')); j++) {
+										r_cons_printf ("%c", fulltypename[j]);
+									}
+									r_cons_printf (" %s;", var_print);									
+									prev_size = varname_len;
+									prev_size++;
+									varname_len++;
+								}
+							}
+							char var[10];
+							memset (var, '\0', sizeof (var));
+							strncpy (var, res, varname_len);
+							char *var_print = var;
+							var_print += prev_size;
+							varname = sdb_fmt ("%s.%s", q, var_print);									
+                        				const char *fulltypename = sdb_const_get (TDB, varname, 0);
+							for (int j = 0; (isalpha (fulltypename[j]) && (fulltypename[j] != ',')); j++) {
+								r_cons_printf ("%c", fulltypename[j]);
+							}
+							r_cons_printf (" %s;", var_print);
+							r_cons_println ("}");
+						}
+          				}
+                		}
+				
+           		}
+			free (name);
+			ls_free (l);
+			break;
+		}
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
