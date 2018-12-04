@@ -458,16 +458,15 @@ install_data(fortunes_files,
 )
 
 man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
-install_data(man1_files,
-  install_dir: join_paths(get_option('mandir'), 'man1')
-)
-
 man7_files = run_command(glob_cmd + ['man/*.7']).stdout().strip().split(';')
-install_data(man7_files,
-  install_dir: join_paths(get_option('mandir'), 'man7')
-)
+install_man(man1_files, man7_files)
 
 install_data('doc/hud',
   install_dir: r2_hud,
   rename: 'main'
+)
+
+zshcomp_files = run_command(glob_cmd + ['doc/zsh/_r*']).stdout().strip().split(';')
+install_data(zshcomp_files,
+  install_dir: r2_zsh_compdir
 )
