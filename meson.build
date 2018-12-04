@@ -175,20 +175,22 @@ if host_machine.system() == 'windows'
   endforeach
 else
   r2_prefix = get_option('prefix')
-  r2_libdir = join_paths(r2_prefix, get_option('libdir'))
-  r2_incdir = join_paths(r2_prefix, get_option('includedir'), 'libr')
-  r2_datdir = join_paths(r2_prefix, get_option('datadir'))
+  r2_libdir = get_option('libdir')
+  r2_incdir = join_paths(get_option('includedir'), 'libr')
+  r2_datdir = get_option('datadir')
   r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
-  r2_sdb = join_paths(get_option('datadir'), 'radare2', r2_version)
-  r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
-  r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
-  r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
-  r2_flags = join_paths(get_option('datadir'), 'radare2', r2_version, 'flag')
-  r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
-  r2_plugins = join_paths(get_option('libdir'), 'radare2', r2_version)
-  r2_extras = join_paths(get_option('libdir'), 'radare2-extras', r2_version)
-  r2_bindings = join_paths(get_option('libdir'), 'radare2-bindings', r2_version)
+  r2_sdb = join_paths(r2_datdir, 'radare2', r2_version)
+  r2_zigns = join_paths(r2_datdir, 'radare2', r2_version, 'zigns')
+  r2_themes = join_paths(r2_datdir, 'radare2', r2_version, 'cons')
+  r2_fortunes = join_paths(r2_datdir, 'doc/radare2')
+  r2_flags = join_paths(r2_datdir, 'radare2', r2_version, 'flag')
+  r2_hud = join_paths(r2_datdir, 'radare2', r2_version, 'hud')
+  r2_plugins = join_paths(r2_libdir, 'radare2', r2_version)
+  r2_extras = join_paths(r2_libdir, 'radare2-extras', r2_version)
+  r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
 endif
+
+r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'vendor-completions')
 
 # load plugin configuration
 subdir('libr')
