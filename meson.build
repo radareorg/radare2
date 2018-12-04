@@ -452,10 +452,12 @@ else
   )
 endif
 
-install_subdir('shlr/www',
-  install_dir: r2_wwwroot,
-  strip_directory: true
-)
+if get_option('use_webui')
+  install_subdir('shlr/www',
+    install_dir: r2_wwwroot,
+    strip_directory: true
+  )
+endif
 
 fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
 install_data(fortunes_files,

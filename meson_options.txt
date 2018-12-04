@@ -1,4 +1,6 @@
 option('static_runtime', type: 'boolean', value: false)
+
+# For Windows
 option('r2_libdir', type: 'string', value: '')
 option('r2_incdir', type: 'string', value: '')
 option('r2_datdir', type: 'string', value: '')
@@ -9,6 +11,7 @@ option('r2_themes', type: 'string', value: '')
 option('r2_fortunes', type: 'string', value: '')
 option('r2_flags', type: 'string', value: '')
 option('r2_hud', type: 'string', value: '')
+
 option('r2_version_commit', type: 'string', value: '')
 option('r2_gittap', type: 'string', value: '')
 option('r2_gittip', type: 'string', value: '')
@@ -23,3 +26,5 @@ option('use_sys_xxhash', type: 'boolean', value: false)
 option('use_sys_openssl', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
 option('debugger', type: 'boolean', value: true)
+
+option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')
