@@ -26,15 +26,12 @@ static char *hashify(char *s, ut64 vaddr) {
 R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
-	const char *uname;
 	char *resname = name;
-	ut32 vhash, hash;
-	int count;
+	const char *uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, resname);
+	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
+	ut32 hash = sdb_hash (resname); // name hash - if dupped and not in unique hash must insert
+	int count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
 
-	uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, resname);
-	vhash = sdb_hash (uname); // vaddr hash - unique
-	hash = sdb_hash (resname); // name hash - if dupped and not in unique hash must insert
-	count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
 	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
 		return resname;

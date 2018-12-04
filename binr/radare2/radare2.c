@@ -1123,7 +1123,7 @@ int main(int argc, char **argv, char **envp) {
 					}
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-						if (perms & R_PERM_X) {
+						if (iod && perms & R_PERM_X) {
 							iod->perm |= R_PERM_X;
 						}
 						if (run_anal > 0) {
@@ -1253,11 +1253,11 @@ int main(int argc, char **argv, char **envp) {
 		}
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
-		if (run_anal > 0 && threaded) {
+		if (iod && run_anal > 0 && threaded) {
 			// XXX: if no rabin2 in path that may fail
 			// TODO: pass -B 0 ? for pie bins?
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
-					(debug || r.io->va) ? "" : "p", iod->name);
+					(debug || (r.io && r.io->va)) ? "" : "p", iod->name);
 			/* TODO: only load data if no project is used */
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
