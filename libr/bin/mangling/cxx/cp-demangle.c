@@ -4487,10 +4487,10 @@ d_print_subexpr (struct d_print_info *dpi, int options,
 		 struct demangle_component *dc)
 {
   int simple = 0;
-  if (dc->type == DEMANGLE_COMPONENT_NAME
+  if (dc && (dc->type == DEMANGLE_COMPONENT_NAME
       || dc->type == DEMANGLE_COMPONENT_QUAL_NAME
       || dc->type == DEMANGLE_COMPONENT_INITIALIZER_LIST
-      || dc->type == DEMANGLE_COMPONENT_FUNCTION_PARAM)
+      || dc->type == DEMANGLE_COMPONENT_FUNCTION_PARAM))
     simple = 1;
   if (!simple)
     d_append_char (dpi, '(');

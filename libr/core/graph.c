@@ -1933,7 +1933,9 @@ static void set_layout(RAGraph *g) {
 			}
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->y = tmp_y;
+				if (n) {
+					n->y = tmp_y;
+				}
 			}
 		}
 		break;

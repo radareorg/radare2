@@ -35,7 +35,7 @@ ut64 extract_bin_op(ut64 ranal2_op_type);
 
 
 static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->pre_anal) {
+	if (anal && anal->cur && anal->cur->pre_anal) {
 		anal->cur->pre_anal (anal, state, addr);
 	}
 }
