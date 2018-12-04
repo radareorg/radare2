@@ -475,7 +475,8 @@ static int layoutSidePanel(void *user) {
 			}
 		}
 	}
-	addPanelFrame (core, panels, child->name, cmd, 0);
+	int caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+	addPanelFrame (core, panels, child->name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
 	panel[0].pos.x = 0;
 	panel[0].pos.y = 1;
