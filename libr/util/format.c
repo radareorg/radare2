@@ -1590,6 +1590,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			if (newsize < 1) {
 				eprintf ("Cannot find size for `%s'\n", format);
 				free (structname);
+				free (o);
 				return 0;
 			}
 			if (format && newsize > 0) {

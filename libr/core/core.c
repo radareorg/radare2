@@ -594,6 +594,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 						return r_reg_get_value (core->dbg->reg, r);
 					}
 				}
+				free (bptr);
 				return 0; // UT64_MAX;
 			} else {
 				int rows;

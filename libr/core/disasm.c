@@ -4472,6 +4472,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	ds_begin_comment (ds);
 	const char *fcn_type = r_type_func_ret (TDB, name);
 	if (!fcn_type || !*fcn_type) {
+		free (name);
 		return;
 	}
 	char *cmt = r_str_newf ("; %s%s%s(", fcn_type,
