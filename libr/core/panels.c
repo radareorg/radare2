@@ -36,8 +36,6 @@
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
 
-#define MENU_NUM(x) ((int)sizeof (x) / (int)sizeof (const char *)) - 1
-
 typedef enum {
 	LEFT,
 	RIGHT,
@@ -2053,14 +2051,14 @@ static bool initPanelsMenu(RCore *core) {
 	root->selectedIndex = 0;
 	root->name = NULL;
 	root->sub = NULL;
-	int i;
-	for (i = 0; i < MENU_NUM (menus); i++) {
+	int i = 0;
+	while (menus[i]) {
 		addMenu (core, NULL, menus[i], openMenuCb);
+		i++;
 	}
-	char *parent;
-
-	parent = "File";
-	for (i = 0; i < MENU_NUM (menus_File); i++) {
+	char *parent = "File";
+	i = 0;
+	while (menus_File[i]) {
 		if (!strcmp (menus_File[i], "Open")) {
 			addMenu (core, parent, menus_File[i], openFileCb);
 		} else if (!strcmp (menus_File[i], "ReOpen")) {
@@ -2076,10 +2074,12 @@ static bool initPanelsMenu(RCore *core) {
 		} else {
 			addMenu (core, parent, menus_File[i], layoutSidePanel);
 		}
+		i++;
 	}
 
 	parent = "Edit";
-	for (i = 0; i < MENU_NUM (menus_Edit); i++) {
+	i = 0;
+	while (menus_Edit[i]) {
 		if (!strcmp (menus_Edit[i], "Copy")) {
 			addMenu (core, parent, menus_Edit[i], copyCb);
 		} else if (!strcmp (menus_Edit[i], "Paste")) {
@@ -2099,19 +2099,23 @@ static bool initPanelsMenu(RCore *core) {
 		} else {
 			addMenu (core, parent, menus_Edit[i], layoutSidePanel);
 		}
+		i++;
 	}
 
 	parent = "View";
-	for (i = 0; i < MENU_NUM (menus_View); i++) {
+	i = 0;
+	while (menus_View[i]) {
 		if (!strcmp (menus_View[i], "Colors")) {
 			addMenu (core, parent, menus_View[i], colorsCb);
 		} else {
 			addMenu (core, parent, menus_View[i], layoutSidePanel);
 		}
+		i++;
 	}
 
 	parent = "Tools";
-	for (i = 0; i < MENU_NUM (menus_Tools); i++) {
+	i = 0;
+	while (menus_Tools[i]) {
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			addMenu (core, parent, menus_Tools[i], calculatorCb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
@@ -2119,10 +2123,12 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Tools[i], "System Shell")) {
 			addMenu (core, parent, menus_Tools[i], systemShellCb);
 		}
+		i++;
 	}
 
 	parent = "Search";
-	for (i = 0; i < MENU_NUM (menus_Search); i++) {
+	i = 0;
+	while (menus_Search[i]) {
 		if (!strcmp (menus_Search[i], "String")) {
 			addMenu (core, parent, menus_Search[i], stringCb);
 		} else if (!strcmp (menus_Search[i], "ROP")) {
@@ -2132,10 +2138,12 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Search[i], "Hexpairs")) {
 			addMenu (core, parent, menus_Search[i], hexpairsCb);
 		}
+		i++;
 	}
 
 	parent = "Debug";
-	for (i = 0; i < MENU_NUM (menus_Debug); i++) {
+	i = 0;
+	while (menus_Debug[i]) {
 		if (!strcmp (menus_Debug[i], "Breakpoints")) {
 			addMenu (core, parent, menus_Debug[i], breakpointsCb);
 		} else if (!strcmp (menus_Debug[i], "Watchpoints")) {
@@ -2151,10 +2159,12 @@ static bool initPanelsMenu(RCore *core) {
 		} else {
 			addMenu (core, parent, menus_Debug[i], layoutSidePanel);
 		}
+		i++;
 	}
 
 	parent = "Analyze";
-	for (i = 0; i < MENU_NUM (menus_Analyze); i++) {
+	i = 0;
+	while (menus_Analyze[i]) {
 		if (!strcmp (menus_Analyze[i], "Function")) {
 			addMenu (core, parent, menus_Analyze[i], functionCb);
 		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
@@ -2168,10 +2178,12 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Analyze[i], "References")) {
 			addMenu (core, parent, menus_Analyze[i], referencesCb);
 		}
+		i++;
 	}
 
 	parent = "Help";
-	for (i = 0; i < MENU_NUM (menus_Help); i++) {
+	i = 0;
+	while (menus_Help[i]) {
 		if (!strcmp (menus_Help[i], "Fortune")) {
 			addMenu (core, parent, menus_Help[i], fortuneCb);
 		} else if (!strcmp (menus_Help[i], "Commands")) {
@@ -2185,24 +2197,29 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Help[i], "About")) {
 			addMenu (core, parent, menus_Help[i], aboutCb);
 		}
+		i++;
 	}
 
 	parent = "File.ReOpen";
-	for (i = 0; i < MENU_NUM (menus_ReOpen); i++) {
+	i = 0;
+	while (menus_ReOpen[i]) {
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
 			addMenu (core, parent, menus_ReOpen[i], rwCb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			addMenu (core, parent, menus_ReOpen[i], debuggerCb);
 		}
+		i++;
 	}
 
 	parent = "File.Load Layout";
-	for (i = 0; i < MENU_NUM (menus_loadLayout); i++) {
+	i = 0;
+	while (menus_loadLayout[i]) {
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
 			addMenu (core, parent, menus_loadLayout[i], loadLayoutSavedCb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
 			addMenu (core, parent, menus_loadLayout[i], loadLayoutDefaultCb);
 		}
+		i++;
 	}
 
 	root->selectedIndex = 0;
