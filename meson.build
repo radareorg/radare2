@@ -1,16 +1,20 @@
-project('radare2', 'c', meson_version: '>=0.46.0')
+project('radare2', 'c', license: 'LGPL3', version: '3.1.2', meson_version: '>=0.47.0')
 
-py3_exe = import('python3').find_python()
+py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
-r2_version = run_command(py3_exe, 'sys/version.py')
-if r2_version.returncode() != 0
-  r2_version = 'unknown-error'
+r2_version = meson.project_version()
+r = run_command(py3_exe, 'sys/version.py')
+if r.returncode() == 0
+  output = r.stdout().strip()
+  if output.version_compare('>@0@'.format(r2_version))
+    r2_version = output
+  endif
 else
-  r2_version = r2_version.stdout().strip()
+  message('Cannot find project version with sys/version.py')
 endif
 
 repo = '.'
@@ -82,7 +86,7 @@ r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
 cc = meson.get_compiler('c')
 # required for linux
 ldl = cc.find_library('dl', required: false)
-pth = cc.find_library('pthread', required: false)
+pth = dependency('threads', required: false)
 utl = cc.find_library('util', required: false)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
