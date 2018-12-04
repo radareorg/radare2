@@ -753,6 +753,7 @@ static int cmd_type(void *data, const char *input) {
 			char *varname = NULL;
            		SdbKv *kv;
            		SdbListIter *iter;
+			int i;
         		SdbList *l = sdb_foreach_list (TDB, true);
         		ls_foreach (l, iter, kv) {
         			if (!strcmp (sdbkv_value (kv), "struct")) {
@@ -763,11 +764,10 @@ static int cmd_type(void *data, const char *input) {
                         			const char *res = sdb_get (TDB, q, 0);
 						if (res) {
 							r_cons_printf ("%s %s{", sdbkv_value (kv), name);
-							for (int i = 0; i < strlen(res); i++) {
+							for (i = 0; i < strlen (res); i++) {
 								if (res[i] != ',') {
 									varname_len++; 
-								}
-								else {
+								} else {
 									char var[10];
 									memset (var, '\0', sizeof (var));
 									strncpy (var, res, varname_len);
@@ -797,7 +797,8 @@ static int cmd_type(void *data, const char *input) {
 							r_cons_printf (" %s;", var_print);
 							r_cons_println ("}");
 						}
-          				}
+						free (res);
+					}
                 		}
 				
            		}
