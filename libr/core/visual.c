@@ -1034,8 +1034,8 @@ static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 		if (core->print->cur_enabled) {
 			core->print->cur = 0;
 		}
+		ut64 addr = refi->addr;
 		r_io_sundo_push (core->io, core->offset, -1);
-		ut64 addr = xref? refi->at: refi->addr;
 		r_core_seek (core, addr, true);
 		return 1;
 	}
