@@ -1163,8 +1163,14 @@ repeat:
 
 	r_cons_clear00 ();
 	r_cons_gotoxy (1, 1);
-	r_cons_printf ("[%s%srefs]> 0x%08"PFMT64x" # (TAB/jk/q/?) ",
-			xrefsMode? "fcn.": "addr.", xref ? "x": "", addr);
+	{
+		char *address = (core->dbg->bits & R_SYS_BITS_64)
+			? r_str_newf ("0x%016"PFMT64x, addr)
+			: r_str_newf ("0x%08"PFMT64x, addr);
+		r_cons_printf ("[%s%srefs]> %s # (TAB/jk/q/?) ",
+				xrefsMode? "fcn.": "addr.", xref ? "x": "", address);
+		free (address);
+	}
 	if (!xrefs || r_list_empty (xrefs)) {
 		r_list_free (xrefs);
 		xrefs = NULL;
@@ -3484,9 +3490,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	{
 		char *title;
+		char *address = (core->dbg->bits & R_SYS_BITS_64)
+			? r_str_newf ("0x%016"PFMT64x, core->offset)
+			: r_str_newf ("0x%08"PFMT64x, core->offset);
 		if (__ime) {
-			title = r_str_newf ("[0x%08"PFMT64x " + %d> * INSERT MODE *\n",
-				core->offset, core->print->cur);
+			title = r_str_newf ("[%s + %d> * INSERT MODE *\n",
+				address, core->print->cur);
 		} else {
 			char pm[32] = "[XADVC]";
 			int i;
@@ -3499,20 +3508,20 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			}
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
-					title = r_str_newf ("[0x%08"PFMT64x " *0x%08"PFMT64x" %s ($$+0x%x)]> %s %s\n",
-						core->offset, core->offset + core->print->cur,
+					title = r_str_newf ("[%s *0x%08"PFMT64x" %s ($$+0x%x)]> %s %s\n",
+						address, core->offset + core->print->cur,
 						pm, core->print->cur,
 						bar, pos);
 				} else {
-					title = r_str_newf ("[0x%08"PFMT64x " 0x%08"PFMT64x" %s [0x%x..0x%x] %d]> %s %s\n",
-						core->offset, core->offset + core->print->cur,
+					title = r_str_newf ("[%s 0x%08"PFMT64x" %s [0x%x..0x%x] %d]> %s %s\n",
+						address, core->offset + core->print->cur,
 						core->print->ocur, core->print->cur,
 						pm, R_ABS (core->print->cur - core->print->ocur) + 1,
 						bar, pos);
 				}
 			} else {
-				title = r_str_newf ("[0x%08"PFMT64x " %s %s%d %s]> %s %s\n",
-					core->offset, pm, pcs, core->blocksize, filename, bar, pos);
+				title = r_str_newf ("[%s %s %s%d %s]> %s %s\n",
+					address, pm, pcs, core->blocksize, filename, bar, pos);
 			}
 		}
 		const int tabsCount = core->visual.tabs? r_list_length (core->visual.tabs): 0;

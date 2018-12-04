@@ -97,6 +97,7 @@ typedef struct r_print_t {
 	int lines_cache_sz;
 	int lines_abs;
 	bool esc_bslash;
+	bool wide_offsets;
 	const char *strconv_mode;
 	RList *vars;
 

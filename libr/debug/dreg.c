@@ -178,7 +178,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				if (tolower ((ut8)rad) == 'j') {
 					snprintf (strvalue, sizeof (strvalue),"%"PFMT64u, value);
 				} else {
-					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
+					if (dbg->bits & R_SYS_BITS_64) {
+						snprintf (strvalue, sizeof (strvalue),"0x%016"PFMT64x, value);
+					} else {
+						snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
+					}
 				}
 			} else {
 				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
