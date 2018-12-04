@@ -43,7 +43,9 @@ R_API RASN1String *r_asn1_concatenate_strings (RASN1String *s0, RASN1String *s1,
 		r_asn1_free_string (s0);
 		r_asn1_free_string (s1);
 	}
-	return r_asn1_create_string (str, true, len);
+	RASN1String *res = r_asn1_create_string (str, true, len);
+	free (str);
+	return res;
 }
 
 R_API RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {

@@ -1910,9 +1910,11 @@ static void set_layout(RAGraph *g) {
 		for (i = 0; i < g->n_layers; ++i) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->x -= n->w / 2;
-				if (g->is_tiny) {
-					n->x /= 8;
+				if (n) {
+					n->x -= n->w / 2;
+					if (g->is_tiny) {
+						n->x /= 8;
+					}
 				}
 			}
 		}
