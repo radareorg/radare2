@@ -72,7 +72,7 @@ static const char *menus_Edit[] = {
 
 static const char *menus_View[] = {
 	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
-	"Stack", "StackRefs", "Pseudo",
+	"Stack", "StackRefs", "Pseudo", "Var READ address", "Var WRITE address",
 	NULL
 };
 
@@ -178,7 +178,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
 static void panelAllClear(RPanels *panels);
-static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd, const int caching);
+static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd, const bool caching);
 static bool checkFunc(RCore *core);
 static char *handleCacheCmdStr(RCore *core, RPanel* panel);
 static void activateCursor(RCore *core);
@@ -273,7 +273,7 @@ static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RCore* core, bool temp);
 static int loadSavedPanelsLayout(RCore *core, bool temp);
-static void replaceCmd(RPanels *panels, const char *title, const char *cmd, const int caching);
+static void replaceCmd(RPanels *panels, const char *title, const char *cmd, const bool caching);
 static void swapPanels(RPanels *panels, int p0, int p1);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void toggleZoomMode(RPanels *panels);
@@ -282,7 +282,7 @@ static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
 static void showHelp(RCore *core, RPanelsMode mode);
-static void createNewPanel(RCore *core, char *name, char *cmd, int caching);
+static void createNewPanel(RCore *core, char *name, char *cmd, bool caching);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -1441,7 +1441,7 @@ static void dismantlePanel(RPanels *panels) {
 	}
 }
 
-static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const int caching) {
+static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const bool caching) {
 	freeSinglePanel (&panels->panel[panels->curnode]);
 	panels->panel[panels->curnode].title = strdup (title);
 	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
@@ -1498,7 +1498,7 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 	}
 }
 
-static void createNewPanel(RCore *core, char *name, char *cmd, int caching) {
+static void createNewPanel(RCore *core, char *name, char *cmd, bool caching) {
 	RPanels *panels = core->panels;
 	addPanelFrame (core, panels, name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
@@ -1518,7 +1518,7 @@ static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
 	return can;
 }
 
-static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd, const int caching) {
+static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd, const bool caching) {
 	RPanel* panel = panels->panel;
 	const int n_panels = panels->n_panels;
 	if (title) {
@@ -2456,6 +2456,8 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Clipboard", "yx", 0);
 	sdb_set (panels->db, "FcnInfo", "afi", 0);
 	sdb_set (panels->db, "New", "o", 0);
+	sdb_set (panels->db, "Var READ address", "afvR", 0);
+	sdb_set (panels->db, "Var WRITE address", "afvW", 0);
 }
 
 static void mht_free_kv(HtPPKv *kv) {
@@ -2725,7 +2727,7 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 		p += strlen (p) + 1;
 	}
 	free (panelsConfig);
-	setRefreshAll (core->panels, false);
+	setRefreshAll (core->panels, true);
 	return 1;
 }
 
