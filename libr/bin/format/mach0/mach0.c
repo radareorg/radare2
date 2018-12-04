@@ -2003,7 +2003,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 }
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
-	struct reloc_t *relocs;
+	struct reloc_t *relocs = NULL;
 	int i = 0, len;
 	ulebr ur = {NULL};
 	int wordsize = MACH0_(get_bits)(bin) / 8;
@@ -2046,24 +2046,26 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 			return NULL;
 		}
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = calloc (1, (1 + bind_size + lazy_size) * sizeof (struct reloc_t)))) {
+		int amount = bind_size + lazy_size;
+		if (amount < 0) {
+			amount = 0;
+		}
+		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
 			return NULL;
 		}
-		opcodes = calloc (1, bind_size + lazy_size + 1);
+		opcodes = calloc (1, amount + 1);
 		if (!opcodes) {
 			free (relocs);
 			return NULL;
 		}
 		len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
-		i = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
-		if (len < 1 || i < 1) {
-			bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n",
-			(ut64)(size_t)bin->dyld_info->bind_off);
+		int ls = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
+		if (len < 1 || ls < 1) {
+			bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", (ut64)(size_t)bin->dyld_info->bind_off);
 			free (opcodes);
-			relocs[i].last = 1;
+			relocs[i].last = true;
 			return relocs;
 		}
-		i = 0;
 		// that +2 is a minimum required for uleb128, this may be wrong,
 		// the correct fix would be to make ULEB() must use rutil's
 		// implementation that already checks for buffer boundaries
@@ -2126,6 +2128,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
 						" has unexistent segment %d\n", seg_idx);
 					addr = 0LL;
+					R_FREE (relocs);
 					return 0; // early exit to avoid future mayhem
 				} else {
 					addr = bin->segs[seg_idx].vmaddr + ULEB();
@@ -2155,7 +2158,7 @@ relocs[i++].last = 0;\
 					bprintf ("Error: Malformed DO bind opcode\n");
 					goto beach;
 				}
-				DO_BIND();
+				DO_BIND ();
 				addr += wordsize;
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
@@ -2163,8 +2166,8 @@ relocs[i++].last = 0;\
 					bprintf ("Error: Malformed ADDR ULEB bind opcode\n");
 					goto beach;
 				}
-				DO_BIND();
-				addr += ULEB() + wordsize;
+				DO_BIND ();
+				addr += ULEB () + wordsize;
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 				if (addr >= segmentAddress) {
@@ -2182,7 +2185,7 @@ relocs[i++].last = 0;\
 						bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
 						goto beach;
 					}
-					DO_BIND();
+					DO_BIND ();
 					addr += skip + wordsize;
 				}
 				break;
@@ -2202,18 +2205,24 @@ relocs[i++].last = 0;\
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
 			return NULL;
 		}
-		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof (struct reloc_t)))) {
+		int amount = bin->dysymtab.nundefsym;
+		if (amount < 0) {
+			amount = 0;
+		}
+		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
 			return NULL;
 		}
-		for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+		for (j = 0; j < amount; j++) {
 			if (parse_import_ptr (bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
 				relocs[i].ord = j;
-				relocs[i++].last = 0;
+				relocs[i++].last = false;
 			}
 		}
 	}
 beach:
-	relocs[i].last = 1;
+	if (relocs) {
+		relocs[i].last = true;
+	}
 	return relocs;
 }
 

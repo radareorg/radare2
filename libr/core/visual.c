@@ -1028,13 +1028,15 @@ static int prevopsz(RCore *core, ut64 addr) {
 	return addr - prev_addr;
 }
 
-static int follow_ref(RCore *core, RList *xrefs, int choice) {
+static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 	RAnalRef *refi = r_list_get_n (xrefs, choice);
 	if (refi) {
 		if (core->print->cur_enabled) {
 			core->print->cur = 0;
 		}
-		r_core_seek (core, refi->addr, 1);
+		ut64 addr = refi->addr;
+		r_io_sundo_push (core->io, core->offset, -1);
+		r_core_seek (core, addr, true);
 		return 1;
 	}
 	return 0;
@@ -1063,18 +1065,20 @@ repeat:
 	if (xrefsMode) {
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 		if (fun) {
-			if (xref) {
-				xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
-			} else {
+			if (xref) { //  function xrefs
+				xrefs = r_anal_xrefs_get (core->anal, addr);
+				//XXX xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+				// this function is buggy so we must get the xrefs of the addr
+			} else { // functon refs
 				xrefs = r_anal_fcn_get_refs (core->anal, fun);
 			}
 		} else {
 			xrefs = NULL;
 		}
 	} else {
-		if (xref) {
+		if (xref) { // address xrefs
 			xrefs = r_anal_xrefs_get (core->anal, addr);
-		} else {
+		} else { // address refs
 			xrefs = r_anal_refs_get (core->anal, addr);
 		}
 	}
@@ -1213,6 +1217,7 @@ repeat:
 	ch = r_cons_arrow_to_hjkl (ch);
 	if (ch == ':') {
 		r_core_visual_prompt_input (core);
+		goto repeat;
 	} else if (ch == '?') {
 		r_cons_clear00 ();
 		r_cons_printf ("Usage: Visual Xrefs\n"
@@ -1221,6 +1226,7 @@ repeat:
 		" pP  - rotate between various print modes\n"
 		" :   - run r2 command\n"
 		" ?   - show this help message\n"
+		" <>  - '<' for xrefs and '>' for refs\n"
 		" TAB - toggle between address and function references\n"
 		" xX  - switch to refs or xrefs\n"
 		" q   - quit this view\n"
@@ -1239,15 +1245,17 @@ repeat:
 		goto repeat;
 	} else if (ch == 'P') {
 		printMode--;
-		if (printMode<0) {
+		if (printMode < 0) {
 			printMode = lastPrintMode;
 		}
 		goto repeat;
-	} else if (ch == 'x') {
+	} else if (ch == 'x' || ch == '<') {
 		xref = true;
+		xrefsMode = !xrefsMode;
 		goto repeat;
-	} else if (ch == 'X') {
+	} else if (ch == 'X' || ch == '>') {
 		xref = false;
+		xrefsMode = !xrefsMode;
 		goto repeat;
 	} else if (ch == 'J') {
 		skip += 10;
@@ -1257,6 +1265,9 @@ repeat:
 		goto repeat;
 	} else if (ch == 'G') {
 		skip = 9999;
+		goto repeat;
+	} else if (ch == '.') {
+		skip = 0;
 		goto repeat;
 	} else if (ch == 'j') {
 		skip++;
@@ -1270,11 +1281,11 @@ repeat:
 			skip = 0;
 		}
 		goto repeat;
-	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
-		ret = follow_ref (core, xrefs, skip);
+	} else if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
+		ret = follow_ref (core, xrefs, skip, xref);
 	} else if (IS_DIGIT (ch)) {
-		ret = follow_ref (core, xrefs, ch - 0x30);
-	} else if (ch != 'q' && ch != 'Q') {
+		ret = follow_ref (core, xrefs, ch - 0x30, xref);
+	} else if (ch != 'q' && ch != 'Q' && ch != 'h') {
 		goto repeat;
 	}
 	r_list_free (xrefs);
@@ -1889,7 +1900,8 @@ static void visual_closetab (RCore *core) {
 			core->visual.tab = 1;
 		}
 		visual_nexttab (core);
-		RCoreVisualTab *tab = r_list_head (core->visual.tabs)->data;
+		RListIter *head = r_list_head (core->visual.tabs);
+		RCoreVisualTab *tab = head ? head->data : NULL;
 		if (tab) {
 			r_core_seek (core, tab->offset, 1);
 			core->printidx = tab->printidx;

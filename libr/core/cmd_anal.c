@@ -284,12 +284,13 @@ static const char *help_msg_afC[] = {
 };
 
 static const char *help_msg_afi[] = {
-	"Usage:", "afi[jl*]", " <addr>",
+	"Usage:", "afi[jlp*]", " <addr>",
 	"afi", "", "show information of the function",
 	"afi.", "", "show function name in current offset",
 	"afi*", "", "function, variables and arguments",
 	"afij", "", "function info in json format",
 	"afil", "", "verbose function info",
+	"afip", "", "show whether the function is pure or not",
 	NULL
 };
 
@@ -1567,16 +1568,22 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 #endif
 			printline ("bytes", NULL, 0);
-			for (j = 0; j < size; j++) {
-				r_cons_printf ("%02x", buf[j + idx]);
+			int minsz = R_MIN (len, size);
+			minsz = R_MAX (minsz, 0);
+			for (j = 0; j < minsz; j++) {
+				ut8 ch = ((j + idx - 1) > minsz)? 0xff: buf[j + idx];
+				r_cons_printf ("%02x", ch);
 			}
 			r_cons_newline ();
-			if (op.val != UT64_MAX)
+			if (op.val != UT64_MAX) {
 				printline ("val", "0x%08" PFMT64x "\n", op.val);
-			if (op.ptr != UT64_MAX)
+			}
+			if (op.ptr != UT64_MAX) {
 				printline ("ptr", "0x%08" PFMT64x "\n", op.ptr);
-			if (op.refptr != -1)
+			}
+			if (op.refptr != -1) {
 				printline ("refptr", "%d\n", op.refptr);
+			}
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));
 			printline ("type", "%s\n", r_anal_optype_to_string (op.type));
@@ -2353,6 +2360,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'j': // "afij"
 		case '*': // "afi*"
 			r_core_anal_fcn_list (core, input + 3, input + 2);
+			break;
+		case 'p': // "afip"
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_cons_printf ("is-pure: %s\n", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
+				}
+			}
 			break;
 		default:
 			i = 1;

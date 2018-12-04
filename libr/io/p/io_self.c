@@ -688,7 +688,6 @@ exit:
 			p_start += sz;
 		}
 
-		free (entries);
 		ret = true;
 	} else {
 		eprintf ("buffer allocation failed\n");

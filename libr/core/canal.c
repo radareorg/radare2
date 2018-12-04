@@ -2316,6 +2316,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
+	r_cons_printf (",\"is-pure\":%s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"stackframe\":%d", fcn->maxstack);
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
@@ -2511,6 +2512,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
+	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	r_cons_printf ("\ncall-convention: %s", fcn->cc);
@@ -2707,7 +2709,6 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 }
 
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
-	ut8 *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	RAnalOp *op = NULL;
@@ -2719,7 +2720,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		return;
 	}
 	int bb_size = core->anal->opt.bb_max_size;
-	buf = calloc (1, bb_size);
+	ut8 *buf = calloc (1, bb_size);
 	if (!buf) {
 		return;
 	}
@@ -3413,6 +3414,9 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL) {
 		r_list_foreach (list, iter, entry) {
+			if (entry->paddr == UT64_MAX) {
+				continue;
+			}
 			ut64 addr = r_bin_get_vaddr (core->bin, entry->paddr, entry->vaddr);
 			r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 		}

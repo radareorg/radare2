@@ -1910,9 +1910,11 @@ static void set_layout(RAGraph *g) {
 		for (i = 0; i < g->n_layers; ++i) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
-				n->x -= n->w / 2;
-				if (g->is_tiny) {
-					n->x /= 8;
+				if (n) {
+					n->x -= n->w / 2;
+					if (g->is_tiny) {
+						n->x /= 8;
+					}
 				}
 			}
 		}
@@ -3114,7 +3116,7 @@ static void agraph_follow_false(RAGraph *g) {
 /* seek the next node in visual order */
 static void agraph_next_node(RAGraph *g) {
 	RANode *a = get_anode (find_near_of (g, g->curnode, true));
-	while (a->is_dummy) {
+	while (a && a->is_dummy) {
 		a = get_anode (find_near_of (g, a->gnode, true));
 	}
 	r_agraph_set_curnode (g, a);
@@ -3124,7 +3126,7 @@ static void agraph_next_node(RAGraph *g) {
 /* seek the previous node in visual order */
 static void agraph_prev_node(RAGraph *g) {
 	RANode *a = get_anode (find_near_of (g, g->curnode, false));
-	while (a->is_dummy) {
+	while (a && a->is_dummy) {
 		a = get_anode (find_near_of (g, a->gnode, false));
 	}
 	r_agraph_set_curnode (g, a);

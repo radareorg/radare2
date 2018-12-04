@@ -333,6 +333,8 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 #else
 #if HAVE_EXPLICIT_BZERO
 	explicit_bzero (dst, l);
+#elif HAVE_EXPLICIT_MEMSET
+	(void)explicit_memset (dst, 0, l);
 #else
 	memset (dst, 0, l);
 	__asm__ volatile ("" :: "r"(dst) : "memory");

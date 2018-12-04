@@ -411,7 +411,7 @@ R_API int r_meta_add_with_subtype(RAnal *a, int type, int subtype, ut64 from, ut
 	return meta_add (a, type, subtype, from, to, str);
 }
 
-R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
+static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int excl_type) {
 	const char *infos, *metas;
 	char key[100];
 	Sdb *s = a->sdb_meta;
@@ -434,6 +434,9 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 		if (type != R_META_TYPE_ANY && type != *infos) {
 			continue;
 		}
+		if (excl_type && excl_type == *infos) {
+			continue;
+		}
 		snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, at);
 		metas = sdb_const_get (s, key, 0);
 		if (metas) {
@@ -444,6 +447,14 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 		}
 	}
 	return NULL;
+}
+
+R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
+	return r_meta_find_ (a, at, type, where, R_META_TYPE_NONE);
+}
+
+R_API RAnalMetaItem *r_meta_find_any_except(RAnal *a, ut64 at, int type, int where) {
+	return r_meta_find_ (a, at, R_META_TYPE_ANY, where, type);
 }
 
 R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {

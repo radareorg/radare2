@@ -1322,8 +1322,7 @@ static RBinClass *class_get(RBinFile *binfile, const char *name) {
 	return NULL;
 }
 
-R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
-	const char *super, int view) {
+R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view) {
 	if (!binfile || !binfile->o) {
 		return NULL;
 	}

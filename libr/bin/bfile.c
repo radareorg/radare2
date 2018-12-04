@@ -695,7 +695,7 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile) {
-	return binfile && binfile->o? binfile->o->plugin: NULL;
+	return (binfile && binfile->o)? binfile->o->plugin: NULL;
 }
 
 static int is_data_section(RBinFile *a, RBinSection *s) {

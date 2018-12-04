@@ -737,6 +737,10 @@ static bool parseOperands(char* str, ArmOp *op) {
 		while (token[0] == ' ') {
 			token++;
 		}
+		if (operand >= MAX_OPERANDS) {
+			eprintf ("Too many operands\n");
+			return false;
+		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
 		op->operands[operand].shift = ARM_NO_SHIFT;

@@ -63,7 +63,7 @@ static void pair_str(const char *key, const char *val, int mode, int last) {
 		if (!val) {
 			val = "";
 		}
-		char *encval = r_str_escape_utf8_to_json (val, -1);
+		char *encval = r_str_escape_utf8_for_json (val, -1);
 		if (encval) {
 			char *qs = r_str_newf ("\"%s\"", encval);
 			pair (key, qs, mode, last);
@@ -80,7 +80,9 @@ R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile);
 
 static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
-		return r_bin_get_vaddr (bin, paddr, vaddr);
+		if (paddr != UT64_MAX) {
+			return r_bin_get_vaddr (bin, paddr, vaddr);
+		}
 	}
 	if (va == VA_NOREBASE) {
 		return vaddr;
@@ -1677,7 +1679,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
-			str = r_str_escape_utf8_to_json (symname, -1);
+			str = r_str_escape_utf8_for_json (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"ordinal\":%d,"
 				"\"bind\":\"%s\","
@@ -1876,7 +1878,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (!symbol->name) {
 			continue;
 		}
-		char *r_symbol_name = r_str_escape_utf8_to_json (symbol->name, -1);
+		char *r_symbol_name = r_str_escape_utf8_for_json (symbol->name, -1);
 		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};
@@ -1970,7 +1972,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					addr, symbol->size, sn.demname);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			char *str = r_str_escape_utf8_to_json (r_symbol_name, -1);
+			char *str = r_str_escape_utf8_for_json (r_symbol_name, -1);
 			// str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","
@@ -2248,6 +2250,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
+	bool segments_only = true;
 
 	if (!dup_chk_ht) {
 		return false;
@@ -2276,6 +2279,14 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %sName\n",
                    chksum ? "Checksum          " : "");
+	}
+	if (IS_MODE_SET (mode)) {
+		r_list_foreach (sections, iter, section) {
+			if (!section->is_segment) {
+				segments_only = false;
+				break;
+			}
+		}
 	}
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
@@ -2364,7 +2375,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					}
 				}
 			}
-			if (!section->is_segment) {
+			if (!section->is_segment || segments_only) {
 				char *pfx = r->bin->prefix;
 				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
 				                  i, perms, type, section->size,

@@ -931,7 +931,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	/* initialize */
 	core->parser->hint = ds->hint;
-	ds->hint = NULL;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
@@ -2101,7 +2100,16 @@ static void ds_show_flags(RDisasmState *ds) {
 				}
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
-					r_cons_printf ("%s:", name);
+					char *name_escaped = name;
+					if (ds->use_json) {
+						name_escaped = r_str_escape_utf8_for_json (name, -1);
+					}
+					if (name_escaped) {
+						r_cons_printf ("%s:", name_escaped);
+					}
+					if (ds->use_json) {
+						R_FREE (name_escaped);
+					}
 					R_FREE (name);
 				}
 			}
@@ -2996,7 +3004,10 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		str = flagstr;
 		if (ds->nb > 0) {
 			k = ds->nb - strlen (flagstr) - 1;
-			if (k < 0 || k > sizeof (pad)) {
+			if (k < 0) {
+				str[ds->nb - 1] = '\0';
+			}
+			if (k > sizeof (pad)) {
 				k = 0;
 			}
 			for (j = 0; j < k; j++) {
@@ -5562,13 +5573,13 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		r_cons_printf (",\"size\":%d", ds->analop.size);
 		{
-			char *escaped_str = r_str_escape_utf8_to_json (opstr, -1);
+			char *escaped_str = r_str_escape_utf8_for_json (opstr, -1);
 			if (escaped_str) {
 				r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
 			}
 			free (escaped_str);
 
-			escaped_str = r_str_escape_utf8_to_json (str, -1);
+			escaped_str = r_str_escape_utf8_for_json (str, -1);
 			if (escaped_str) {
 				r_cons_printf (",\"disasm\":\"%s\"", escaped_str);
 			}
