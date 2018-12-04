@@ -320,29 +320,20 @@ else
   userconf.set('DATADIR_R2', join_paths(get_option('datadir'), 'radare2'))
   userconf.set('HAVE_JEMALLOC', 1)
 endif
-if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
-  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 1)
-else
-  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 0)
-endif
+ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
+userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
-if cc.has_function('arc4random_uniform')
-  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 1)
-else
-  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
-endif
-
-if cc.has_function('explicit_bzero')
-  userconf.set('HAVE_EXPLICIT_BZERO', 1)
-else
-  userconf.set('HAVE_EXPLICIT_BZERO', 0)
-endif
-
-if cc.has_function('clock_nanosleep')
-  userconf.set('HAVE_CLOCK_NANOSLEEP', 1)
-else
-  userconf.set('HAVE_CLOCK_NANOSLEEP', 0)
-endif
+func_pfx_lists = [
+  ['arc4random_uniform', '#include <stdlib.h>'],
+  ['explicit_bzero', '#include <string.h>'],
+  ['explicit_memset', '#include <string.h>'],
+  ['clock_nanosleep', '#include <time.h>'],
+]
+foreach item : func_pfx_lists
+  func = item[0]
+  ok = cc.has_function(func, prefix: item[1])
+  userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
+endforeach
 
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.acr',
