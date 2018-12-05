@@ -1,6 +1,6 @@
 #!/bin/sh
-# r2pm
 
+# r2pm
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
 [ -z "${WGET}" ] && WGET=wget
@@ -241,23 +241,21 @@ R2PM_List() {
 }
 
 R2PM_Search() {
-
 	#helper for pretty printing tabbed lists
 	if ! type "column" > /dev/null; then
 		cols() { cat ; }
 	else
-		cols() { column -s $'\t' -t; }
+		cols() { column -s `printf "\t"` -t; }
 	fi
-
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
 		[ -d "$a" ] || continue
 (
 		cd "${a}"
 		if [ -n "$1" ]; then
-			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | \
+			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf " \t"`," -e 's,",,g' | \
 				grep -i "$1" | cols
 		else
-			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | cols
+			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf " \t"`," -e 's,",,g' | cols
 		fi
 )
 	done
