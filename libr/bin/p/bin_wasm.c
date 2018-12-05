@@ -18,7 +18,7 @@ static bool check_bytes_buf(RBuffer* rbuf) {
 	return rbuf && r_buf_read_at (rbuf, R_BUF_CUR, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static int find_symbol(const ut8 *p, const RBinWasmSymbol* q) {
+static int find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
 	return q->id != (*p);
 }
 
@@ -171,7 +171,7 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
-	ut8 fcn_id = 0;
+	ut32 fcn_id = 0;
 	RListIter *sym_it = NULL;
 	RBinWasmCodeEntry *func;
 	RBinWasmSymbol *wasm_sym = NULL;

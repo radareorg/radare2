@@ -354,12 +354,12 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 			goto beach;
 		}
 		switch (ptr->kind) {
-		case 0: // Function
+		case R_BIN_WASM_EXTERNALKIND_Function: // Function
 			if (!(consume_u32_r (b, max, &ptr->type_f))) {
 				goto beach;
 			}
 			break;
-		case 1: // Table
+		case R_BIN_WASM_EXTERNALKIND_Table: // Table
 			if (!(consume_s7_r (b, max, (st8*)&ptr->type_t.elem_type))) {
 				goto beach;
 			}
@@ -367,12 +367,12 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 				goto beach;
 			}
 			break;
-		case 2: // Memory
+		case R_BIN_WASM_EXTERNALKIND_Memory: // Memory
 			if (!(consume_limits_r (b, max, &ptr->type_m.limits))) {
 				goto beach;
 			}
 			break;
-		case 3: // Global
+		case R_BIN_WASM_EXTERNALKIND_Global: // Global
 			if (!(consume_s7_r (b, max, (st8*)&ptr->type_g.content_type))) {
 				goto beach;
 			}
@@ -545,7 +545,7 @@ beach:
 static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
 	RList *ret = NULL;
 	RBinWasmSymbol *ptr = NULL;
-
+	size_t read = 0;
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
@@ -563,8 +563,8 @@ static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *
 		if (!(ptr = R_NEW0 (RBinWasmSymbol))) {
 			return ret;
 		}
-		ptr->id = b->buf[b->cur];
-		ut32 tmp = b->buf[b->cur + 1];
+		read = read_u32_leb128 (&b->buf[b->cur], &b->buf[b->cur + 5], &ptr->id);
+		ut32 tmp = b->buf[b->cur + read];
 		if (tmp == R_BIN_WASM_STRING_LENGTH) {
 			tmp = R_BIN_WASM_STRING_LENGTH - 1;
 		}

@@ -63,7 +63,7 @@ struct r_bin_wasm_resizable_limits_t {
 };
 
 typedef struct r_bin_wasm_symbol_t {
-	ut8 id;
+	ut32 id;
 	ut32 name_len;
 	char name[R_BIN_WASM_STRING_LENGTH];
 } RBinWasmSymbol;
