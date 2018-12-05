@@ -748,8 +748,6 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 'c': { //tsc
 			char *name = NULL;
-			size_t varname_len = 0;
-			int prev_size = 0;
 			char *varname = NULL;
            		SdbKv *kv;
            		SdbListIter *iter;
@@ -764,43 +762,20 @@ static int cmd_type(void *data, const char *input) {
                         			const char *res = sdb_get (TDB, q, 0);
 						if (res) {
 							r_cons_printf ("%s %s{", sdbkv_value (kv), name);
-							for (i = 0; i < strlen (res); i++) {
-								if (res[i] != ',') {
-									varname_len++; 
-								} else {
-									char var[10];
-									memset (var, '\0', sizeof (var));
-									strncpy (var, res, varname_len);
-									char *var_print = var;
-									var_print += prev_size;
-									varname = sdb_fmt ("%s.%s", q, var_print);							
-                        						const char *fulltypename = sdb_const_get (TDB, varname, 0);
-									for (j = 0; (isalpha (fulltypename[j]) && (fulltypename[j] != ',')); j++) {
-										r_cons_printf ("%c", fulltypename[j]);
-									}
-									r_cons_printf (" %s;", var_print);									
-									prev_size = varname_len;
-									prev_size++;
-									varname_len++;
-								}
+							for (i = 0; i < sdb_array_length (TDB, q); i++) {
+								varname = sdb_array_get (TDB, q, i, 0);
+								const char *fulltypename = sdb_const_get (TDB, sdb_fmt ("%s.%s", q, varname), 0);
+								for (j = 0; (isalpha (fulltypename[j]) && (fulltypename[j] != ',')); j++) {
+									r_cons_printf ("%c", fulltypename[j]);
+								}	
+								r_cons_printf (" %s;", varname);	
+								free (varname);							
 							}
-							char var[10];
-							memset (var, '\0', sizeof (var));
-							strncpy (var, res, varname_len);
-							char *var_print = var;
-							var_print += prev_size;
-							varname = sdb_fmt ("%s.%s", q, var_print);									
-                        				const char *fulltypename = sdb_const_get (TDB, varname, 0);
-							for (int j = 0; (isalpha (fulltypename[j]) && (fulltypename[j] != ',')); j++) {
-								r_cons_printf ("%c", fulltypename[j]);
-							}
-							r_cons_printf (" %s;", var_print);
-							r_cons_println ("}");
 						}
+						r_cons_println ("}");
 						free (res);
 					}
                 		}
-				
            		}
 			free (name);
 			ls_free (l);
