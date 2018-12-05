@@ -1717,8 +1717,8 @@ void backedge_info (RAGraph *g) {
 		}
 
 		for (j = 0; j < g->layers[i].n_nodes; j++) {
-			RANode *a = (RANode *)g->layers[i].nodes[j]->data;
-			if (a->is_dummy) {
+			RANode *a = get_anode (g->layers[i].nodes[j]);
+			if (!a || a->is_dummy) {
 				continue;
 			}
 

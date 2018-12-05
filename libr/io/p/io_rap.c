@@ -294,6 +294,9 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 		buf[0] |= RMT_REPLY;
 		memset (buf + 1, 0, 4);
 		ret = r_socket_read_block (s, buf + 1, 4);
+		if (ret != 4) {
+			return NULL;
+		}
 		cmdlen = r_read_at_be32 (buf, 1);
 		if (cmdlen + 1 == 0) { // check overflow
 			cmdlen = 0;

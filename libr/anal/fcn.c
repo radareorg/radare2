@@ -229,7 +229,7 @@ static FcnTreeIter _fcn_tree_iter_first(RBNode *x_, ut64 from, ut64 to) {
 
 static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 	RBNode *x_ = it->cur, *y_;
-	RAnalFunction *x = FCN_CONTAINER (x_), *y;
+	RAnalFunction *x, *y;
 	for (;;) {
 		if ((y_ = x_->child[1]) && (y = FCN_CONTAINER (y_), from <= y->rb_max_addr)) {
 			it->cur = _fcn_tree_probe (it, y_, from, to);
