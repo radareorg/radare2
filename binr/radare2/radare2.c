@@ -1310,7 +1310,7 @@ int main(int argc, char **argv, char **envp) {
 		r_core_seek (&r, r.offset, 1); // read current block
 
 		/* check if file.sha1 has changed */
-		if (!strstr (iod->uri, "://")) {
+		if (iod && !strstr (iod->uri, "://")) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
@@ -1319,7 +1319,7 @@ int main(int argc, char **argv, char **envp) {
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (r_core_hash_load (&r, iod->name) == false) {
+			if (iod && r_core_hash_load (&r, iod->name) == false) {
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");

@@ -41,7 +41,7 @@ static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalState *state, ut64 addr
 }
 
 static void r_anal_ex_perform_pre_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->pre_anal_op_cb) {
+	if (anal && anal->cur && anal->cur->pre_anal_op_cb) {
 		anal->cur->pre_anal_op_cb (anal, state, addr);
 	}
 }
@@ -77,13 +77,13 @@ static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalState *state, ut
 }*/
 
 static void r_anal_ex_perform_post_anal(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->post_anal) {
+	if (anal && anal->cur && anal->cur->post_anal) {
 		anal->cur->post_anal (anal, state, addr);
 	}
 }
 
 static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->revisit_bb_anal) {
+	if (anal && anal->cur && anal->cur->revisit_bb_anal) {
 		anal->cur->revisit_bb_anal (anal, state, addr);
 	}
 }
