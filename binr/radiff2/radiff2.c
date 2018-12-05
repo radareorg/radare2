@@ -449,7 +449,11 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		eprintf ("Invalid column width\n");
 		return;
 	}
+	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < sz; i += w) {
+		if (r_cons_is_breaked()) {
+			break;
+		}
 		if (i + w >= sz) {
 			pad = w - sz + i;
 			w = sz - i;
@@ -524,11 +528,14 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			}
 		}
 		r_cons_printf ("\n");
+		r_cons_flush ();
 	}
+	r_cons_break_end ();
+	r_cons_printf ("\n"Color_RESET);
+	r_cons_flush ();
 	if (as != bs) {
 		r_cons_printf ("...\n");
 	}
-	r_cons_flush ();
 }
 
 static void handle_sha256(const ut8 *block, int len) {
