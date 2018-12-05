@@ -1501,6 +1501,7 @@ static void createNewPanel(RCore *core, char *name, char *cmd, bool caching) {
 	addPanelFrame (core, panels, name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
 	r_core_panels_layout (panels);
+	panels->curnode = 0;
 	setRefreshAll (panels, false);
 }
 
