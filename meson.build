@@ -1,18 +1,15 @@
-project('radare2', 'c', license: 'LGPL3', version: '3.1.2', meson_version: '>=0.47.0')
+project('radare2', 'c', license: 'LGPL3', meson_version: '>=0.47.0')
 
-py3_exe = import('python').find_installation()
+py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
-r2_version = meson.project_version()
+r2_version = 'unknown-error'
 r = run_command(py3_exe, 'sys/version.py')
 if r.returncode() == 0
-  output = r.stdout().strip()
-  if output.version_compare('>@0@'.format(r2_version))
-    r2_version = output
-  endif
+  r2_version = r.stdout().strip()
 else
   message('Cannot find project version with sys/version.py')
 endif
