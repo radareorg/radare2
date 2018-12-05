@@ -1594,10 +1594,13 @@ static void set_layer_gap (RAGraph *g) {
 		}
 		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			ga = g->layers[i].nodes[j];
+			if (!ga) {
+				continue;
+			}
 			a = (RANode *) ga->data;
 			outnodes = ga->out_nodes;
 
-			if (!outnodes) {
+			if (!outnodes || !a) {
 				continue;
 			}
 			graph_foreach_anode (outnodes, itn, gb, b) {
@@ -1689,7 +1692,14 @@ void backedge_info (RAGraph *g) {
 
 	for (i = 0; i < g->n_layers; i++) {
 		for (j = 0; j < g->layers[i].n_nodes; j++) {
-			RANode *t = (RANode *)g->layers[i].nodes[j]->data;
+			RGraphNode *gt = g->layers[i].nodes[j];
+			if (!gt) {
+				continue;
+			}
+			RANode *t = (RANode *) gt->data;
+			if (!t) {
+				continue;
+			}
 			int tc = g->layout == 0 ? t->x : t->y;
 			int tl = g->layout == 0 ? t->w : t->h;
 			if (!j) {

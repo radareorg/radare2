@@ -2049,6 +2049,7 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 		}
 		attr->size = sz;
 	} else {
+		free (buffer);
 		eprintf ("IS OOB\n");
 	}
 	return attr;
@@ -3801,6 +3802,7 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 		}
 		// wtf it works
 		if (offset - 2 > sz) {
+			R_FREE (lnattr);
 			break;
 		}
 		lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
