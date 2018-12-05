@@ -22,6 +22,13 @@ static int find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
 	return q->id != (*p);
 }
 
+static int find_export(const ut32 *p, const RBinWasmExportEntry* q) {
+	if (q->kind != R_BIN_WASM_EXTERNALKIND_Function) {
+		return false;
+	}
+	return q->index != (*p);
+}
+
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, NULL);
 
@@ -127,7 +134,7 @@ static RList *sections(RBinFile *bf) {
 
 static RList *symbols(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
-	RList *ret = NULL, *codes = NULL, *imports = NULL, *symtab = NULL;
+	RList *ret = NULL, *codes = NULL, *imports = NULL, *symtab = NULL, *exports = NULL;
 	RBinSymbol *ptr = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -144,6 +151,9 @@ static RList *symbols(RBinFile *bf) {
 		goto bad_alloc;
 	}
 	if (!(symtab = r_bin_wasm_get_symtab (bin))) {
+		goto bad_alloc;
+	}
+	if (!(exports = r_bin_wasm_get_exports (bin))) {
 		goto bad_alloc;
 	}
 
@@ -174,7 +184,9 @@ static RList *symbols(RBinFile *bf) {
 	ut32 fcn_id = 0;
 	RListIter *sym_it = NULL;
 	RBinWasmCodeEntry *func;
+	RBinWasmExportEntry *export = NULL;
 	RBinWasmSymbol *wasm_sym = NULL;
+	fcn_id = 0;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
@@ -185,8 +197,14 @@ static RList *symbols(RBinFile *bf) {
 			wasm_sym = (RBinWasmSymbol *) r_list_iter_get_data (sym_it);
 			ptr->name = strdup (wasm_sym->name);
 		} else {
-			// fallback if symbol is not found.
-			ptr->name = r_str_newf ("fcn.%d", fcn_id);
+			sym_it = r_list_find (exports, &fcn_id, (RListComparator) find_export);
+			if (sym_it) {
+				export = (RBinWasmExportEntry *) r_list_iter_get_data (sym_it);
+				ptr->name = strdup (export->field_str);
+			} else {
+				// fallback if symbol is not found.
+				ptr->name = r_str_newf ("fcn.%d", fcn_id);
+			}
 		}
 
 		ptr->forwarder = r_str_const ("NONE");
@@ -201,7 +219,7 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
-	// TODO: exports, globals, tables and memories
+	// TODO: globals, tables and memories
 	return ret;
 bad_alloc:
 	// not so sure if imports should be freed.

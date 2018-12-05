@@ -354,12 +354,12 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 			goto beach;
 		}
 		switch (ptr->kind) {
-		case R_BIN_WASM_EXTERNALKIND_Function: // Function
+		case 0: // Function
 			if (!(consume_u32_r (b, max, &ptr->type_f))) {
 				goto beach;
 			}
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Table: // Table
+		case 1: // Table
 			if (!(consume_s7_r (b, max, (st8*)&ptr->type_t.elem_type))) {
 				goto beach;
 			}
@@ -367,12 +367,12 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 				goto beach;
 			}
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Memory: // Memory
+		case 2: // Memory
 			if (!(consume_limits_r (b, max, &ptr->type_m.limits))) {
 				goto beach;
 			}
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Global: // Global
+		case 3: // Global
 			if (!(consume_s7_r (b, max, (st8*)&ptr->type_g.content_type))) {
 				goto beach;
 			}
