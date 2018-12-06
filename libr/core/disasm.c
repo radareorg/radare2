@@ -2373,7 +2373,6 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 		out[outsz-1] = 0;
 	} else {
 		strcpy (out + 1, sect);
-		pre = 1;
 		post = 0;
 	}
 	out[strlen (out)] = ' ';

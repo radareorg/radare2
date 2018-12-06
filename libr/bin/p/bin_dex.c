@@ -179,6 +179,7 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 				*cp++ = ' ';
 			}
 			if (((cp - str) + len) >= maxSize) {
+				free (str);
 				return NULL;
 			}
 			memcpy (cp, accessStr, len);

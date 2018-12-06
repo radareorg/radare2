@@ -195,7 +195,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 			return b->length;
 		}
 	}
-	r = ar_read (b, buffer, 1);
+	(void)ar_read (b, buffer, 1);
 
 	b->cur += filesize - 1;
 	free (curfile);
