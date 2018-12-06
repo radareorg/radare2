@@ -1548,7 +1548,6 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 
 static int openFileCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	core->cons->line->file_prompt = true;
 	r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
 	char *res = r_cons_input ("open file: ");
@@ -1560,7 +1559,6 @@ static int openFileCb(void *user) {
 	}
 	core->cons->line->file_prompt = false;
 	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1607,13 +1605,11 @@ static int saveLayoutCb(void *user) {
 
 static int copyCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("How many bytes? ");
 	if (res) {
 		r_core_cmdf (core, "\"y %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1625,25 +1621,21 @@ static int pasteCb(void *user) {
 
 static int writeStrCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("insert string: ");
 	if (res) {
 		r_core_cmdf (core, "\"w %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
 static int writeHexCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("insert hexpairs: ");
 	if (res) {
 		r_core_cmdf (core, "\"wx %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1655,11 +1647,9 @@ static int assembleCb(void *user) {
 
 static int fillCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *s = r_cons_input ("Fill with: ");
 	r_core_cmdf (core, "wow %s", s);
 	free (s);
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1677,7 +1667,6 @@ static int colorsCb(void *user) {
 
 static int calculatorCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	for (;;) {
 		char *s = r_cons_input ("> ");
 		if (!s || !*s) {
@@ -1688,7 +1677,6 @@ static int calculatorCb(void *user) {
 		r_cons_flush ();
 		free (s);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1709,49 +1697,41 @@ static int systemShellCb(void *user) {
 
 static int stringCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("search string: ");
 	if (res) {
 		r_core_cmdf (core, "\"/ %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
 static int ropCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("rop grep: ");
 	if (res) {
 		r_core_cmdf (core, "\"/R %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
 static int codeCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("search code: ");
 	if (res) {
 		r_core_cmdf (core, "\"/c %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
 static int hexpairsCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("search hexpairs: ");
 	if (res) {
 		r_core_cmdf (core, "\"/x %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1904,13 +1884,11 @@ static int aboutCb(void *user) {
 
 static int writeValueCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_enable_mouse (false);
 	char *res = r_cons_input ("insert number: ");
 	if (res) {
 		r_core_cmdf (core, "\"wv %s\"", res);
 		free (res);
 	}
-	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -2918,7 +2896,7 @@ static bool moveToDirection(RPanels *panels, Direction direction) {
 }
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
-	int i, okey, key, wheel;
+	int i, okey, key;
 
 	if (!panels) {
 		panels = r_core_panels_new (core);
@@ -2947,6 +2925,8 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	bool originVmode = core->vmode;
 	core->vmode = true;
 
+	r_cons_enable_mouse (false);
+
 	if (core->panels_tmpcfg) {
 		loadSavedPanelsLayout (core, true);
 	} else {
@@ -2958,10 +2938,6 @@ repeat:
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
 	r_core_panels_layout_refresh (core);
-	wheel = r_config_get_i (core->config, "scr.wheel");
-	if (wheel) {
-		r_cons_enable_mouse (true);
-	}
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
 	r_cons_switchbuf (true);
@@ -3010,14 +2986,12 @@ repeat:
 	case 'n':
 	case 'N':
 		{
-			r_cons_enable_mouse (false);
 			char *res = r_cons_input ("New panel with command: ");
 			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 			if (res && *res) {
 				createNewPanel (core, res, res, caching);
 			}
 			free (res);
-			r_cons_enable_mouse (true);
 		}
 		break;
 	case 'p':
@@ -3160,7 +3134,6 @@ repeat:
 		break;
 	case 'M':
 	{
-		r_cons_enable_mouse (false);
 		char *name = r_cons_input ("Name: ");
 		char *cmd = r_cons_input ("Command: ");
 		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
@@ -3169,12 +3142,10 @@ repeat:
 		}
 		free (name);
 		free (cmd);
-		r_cons_enable_mouse (true);
 	}
 	break;
 	case 'e':
 	{
-		r_cons_enable_mouse (false);
 		char *new_name = r_cons_input ("New name: ");
 		char *new_cmd = r_cons_input ("New command: ");
 		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
@@ -3183,7 +3154,6 @@ repeat:
 		}
 		free (new_name);
 		free (new_cmd);
-		r_cons_enable_mouse (true);
 	}
 	break;
 	case 'm':
