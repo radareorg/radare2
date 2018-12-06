@@ -6987,46 +6987,20 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	r_list_free (list);
 }
 
-
-static bool archIsArmOrThumb(RCore *core) {
+bool archIsMips(RCore *core) {
 	RAsm *as = core ? core->assembler : NULL;
-	if (as && as->cur && as->cur->arch) {
-		if (r_str_startswith (as->cur->arch, "mips")) {
-			return true;
-		}
-		if (r_str_startswith (as->cur->arch, "arm")) {
-			if (as->bits < 64) {
-				return true;
-			}
-		}
+	if (as && as->cur && as->cur->name) {
+		return strstr (as->cur->name, "mips");
 	}
 	return false;
 }
 
-bool archIsMips (RCore *core) {
-	return strstr (core->assembler->cur->name, "mips");
-}
-
 void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
-	bool isarm = archIsArmOrThumb (core);
-	if (isarm) {
-		if (to & 1) {
-			// .dword 0x000080b9 in reality is 0x000080b8
-			to--;
-			r_anal_hint_set_bits (core->anal, to, 16);
-			// can we assume is gonna be always a function?
-		} else {
-			r_core_seek_archbits (core, from);
-			ut64 bits = r_config_get_i (core->config, "asm.bits");
-			r_anal_hint_set_bits (core->anal, from, bits);
-		}
-	} else {
-		bool ismips = archIsMips (core);
-		if (ismips) {
-			if (from % 4 || to % 4) {
-				eprintf ("False positive\n");
-				return;
-			}
+	bool ismips = archIsMips (core);
+	if (ismips) {
+		if (from % 4 || to % 4) {
+			eprintf ("False positive\n");
+			return;
 		}
 	}
 	if (asterisk) {
