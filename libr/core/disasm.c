@@ -5712,7 +5712,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, l - i);
 		if (ret < 1) {
-			ret = err = 1;
+			err = 1;
 			switch (mode) {
 			case 'j':
 			case '=':
@@ -5864,11 +5864,10 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int len = (nb_opcodes + nb_bytes) * 5;
 	if (core->fixedblock) {
 		len = core->blocksize;
-	} else {
-		if (len > core->blocksize) {
-			r_core_block_size (core, len);
-			r_core_block_read (core);
-		}
+	}
+	if (len > core->blocksize) {
+		r_core_block_size (core, len);
+		r_core_block_read (core);
 	}
 	r_cons_break_push (NULL, NULL);
 

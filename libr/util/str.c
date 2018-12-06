@@ -2324,7 +2324,7 @@ R_API int r_print_format_length(const char *fmt) {
 	const char *argend = arg+strlen (fmt);
 	char namefmt[8];
 	int viewflags = 0;
-	nargs = endian = i = j = 0;
+	endian = i = j = 0;
 
 	while (*arg && IS_WHITECHAR (*arg)) {
 		arg++;

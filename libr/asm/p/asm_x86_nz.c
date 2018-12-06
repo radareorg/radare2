@@ -2253,7 +2253,6 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	} else if (op->operands[0].type & OT_MEMORY) {
 		data[l++] = 0xff;
 		offset = op->operands[0].offset * op->operands[0].offset_sign;
-		mod = 0;
 		if (offset != 0 || op->operands[0].regs[0] == X86R_EBP) {
 			mod = 1;
 			if (offset >= 128 || offset < -128) {
