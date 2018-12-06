@@ -1,16 +1,17 @@
-project('radare2', 'c', meson_version: '>=0.46.0')
+project('radare2', 'c', license: 'LGPL3', meson_version: '>=0.47.0')
 
-py3_exe = import('python3').find_python()
+py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
-r2_version = run_command(py3_exe, 'sys/version.py')
-if r2_version.returncode() != 0
-  r2_version = 'unknown-error'
+r2_version = 'unknown-error'
+r = run_command(py3_exe, 'sys/version.py')
+if r.returncode() == 0
+  r2_version = r.stdout().strip()
 else
-  r2_version = r2_version.stdout().strip()
+  message('Cannot find project version with sys/version.py')
 endif
 
 repo = '.'
@@ -82,7 +83,7 @@ r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
 cc = meson.get_compiler('c')
 # required for linux
 ldl = cc.find_library('dl', required: false)
-pth = cc.find_library('pthread', required: false)
+pth = dependency('threads', required: false)
 utl = cc.find_library('util', required: false)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
@@ -171,20 +172,23 @@ if host_machine.system() == 'windows'
   endforeach
 else
   r2_prefix = get_option('prefix')
-  r2_libdir = join_paths(r2_prefix, get_option('libdir'))
-  r2_incdir = join_paths(r2_prefix, get_option('includedir'), 'libr')
-  r2_datdir = join_paths(r2_prefix, get_option('datadir'))
-  r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
-  r2_sdb = join_paths(get_option('datadir'), 'radare2', r2_version)
-  r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
-  r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
-  r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
-  r2_flags = join_paths(get_option('datadir'), 'radare2', r2_version, 'flag')
-  r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
-  r2_plugins = join_paths(get_option('libdir'), 'radare2', r2_version)
-  r2_extras = join_paths(get_option('libdir'), 'radare2-extras', r2_version)
-  r2_bindings = join_paths(get_option('libdir'), 'radare2-bindings', r2_version)
+  r2_libdir = get_option('libdir')
+  r2_incdir = join_paths(get_option('includedir'), 'libr')
+  r2_datdir = get_option('datadir')
+  r2_datdir_r2 = join_paths(r2_datdir, 'radare2')
+  r2_wwwroot = join_paths(r2_datdir_r2, r2_version, 'www')
+  r2_sdb = join_paths(r2_datdir_r2, r2_version)
+  r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
+  r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
+  r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
+  r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
+  r2_hud = join_paths(r2_datdir_r2, r2_version, 'hud')
+  r2_plugins = join_paths(r2_libdir, 'radare2', r2_version)
+  r2_extras = join_paths(r2_libdir, 'radare2-extras', r2_version)
+  r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
 endif
+
+r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'vendor-completions')
 
 # load plugin configuration
 subdir('libr')
@@ -282,16 +286,16 @@ message('R2_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
 userconf.set('R_CHECKS_LEVEL', checks_level)
-userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
-userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
-userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
-userconf.set('USE_LIB_XXHASH', use_sys_xxhash.to_int())
-userconf.set('DEBUGGER', has_debugger.to_int())
+userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
+userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
+userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
+userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', r2_prefix)
-userconf.set('LIBDIR', r2_libdir)
-userconf.set('INCLUDEDIR', r2_incdir)
-userconf.set('DATADIR', r2_datdir)
-userconf.set('WWWROOT', r2_wwwroot)
+userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
+userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
+userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
+userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
 userconf.set('SDB', r2_sdb)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
@@ -301,48 +305,39 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
-userconf.set('HAVE_LIBUV', use_libuv.to_int())
-userconf.set('HAVE_FORK', 1)
-userconf.set('HAVE_PTRACE', have_ptrace.to_int())
-userconf.set('USE_PTRACE_WRAP', use_ptrace_wrap.to_int())
-userconf.set('WITH_GPL', 1)
+userconf.set10('HAVE_OPENSSL', use_sys_openssl)
+userconf.set10('HAVE_LIBUV', use_libuv)
+userconf.set10('HAVE_FORK', true)
+userconf.set10('HAVE_PTRACE', have_ptrace)
+userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
+userconf.set10('WITH_GPL', true)
 if host_machine.system() == 'windows'
   userconf.set('DATADIR_R2', r2_datdir)
-  userconf.set('HAVE_JEMALLOC', 0)
+  userconf.set10('HAVE_JEMALLOC', false)
 else
-  userconf.set('DATADIR_R2', join_paths(get_option('datadir'), 'radare2'))
-  userconf.set('HAVE_JEMALLOC', 1)
+  userconf.set('DATADIR_R2', r2_datdir_r2)
+  userconf.set10('HAVE_JEMALLOC', true)
 endif
-if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
-  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 1)
-else
-  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 0)
-endif
+ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
+userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
-if cc.has_function('arc4random_uniform')
-  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 1)
-else
-  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
-endif
-
-if cc.has_function('explicit_bzero')
-  userconf.set('HAVE_EXPLICIT_BZERO', 1)
-else
-  userconf.set('HAVE_EXPLICIT_BZERO', 0)
-endif
-
-if cc.has_function('clock_nanosleep')
-  userconf.set('HAVE_CLOCK_NANOSLEEP', 1)
-else
-  userconf.set('HAVE_CLOCK_NANOSLEEP', 0)
-endif
+func_pfx_lists = [
+  ['arc4random_uniform', '#include <stdlib.h>'],
+  ['explicit_bzero', '#include <string.h>'],
+  ['explicit_memset', '#include <string.h>'],
+  ['clock_nanosleep', '#include <time.h>'],
+]
+foreach item : func_pfx_lists
+  func = item[0]
+  ok = cc.has_function(func, prefix: item[1])
+  userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
+endforeach
 
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.acr',
   output: 'r_userconf.h',
   configuration: userconf,
-  install_dir: join_paths(get_option('includedir'), 'libr')
+  install_dir: join_paths(r2_incdir)
 )
 
 versionconf = configuration_data()
@@ -356,7 +351,7 @@ r_version_h = configure_file(
   input: 'libr/include/r_version.h.in',
   output: 'r_version.h',
   configuration: versionconf,
-  install_dir: join_paths(get_option('includedir'), 'libr')
+  install_dir: join_paths(r2_incdir)
 )
 
 # Copy missing header
@@ -448,10 +443,12 @@ else
   )
 endif
 
-install_subdir('shlr/www',
-  install_dir: r2_wwwroot,
-  strip_directory: true
-)
+if get_option('use_webui')
+  install_subdir('shlr/www',
+    install_dir: r2_wwwroot,
+    strip_directory: true
+  )
+endif
 
 fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
 install_data(fortunes_files,
@@ -459,16 +456,15 @@ install_data(fortunes_files,
 )
 
 man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
-install_data(man1_files,
-  install_dir: join_paths(get_option('mandir'), 'man1')
-)
-
 man7_files = run_command(glob_cmd + ['man/*.7']).stdout().strip().split(';')
-install_data(man7_files,
-  install_dir: join_paths(get_option('mandir'), 'man7')
-)
+install_man(man1_files, man7_files)
 
 install_data('doc/hud',
   install_dir: r2_hud,
   rename: 'main'
+)
+
+zshcomp_files = run_command(glob_cmd + ['doc/zsh/_r*']).stdout().strip().split(';')
+install_data(zshcomp_files,
+  install_dir: r2_zsh_compdir
 )
