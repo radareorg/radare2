@@ -2378,7 +2378,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (!section->is_segment || segments_only) {
 				char *pfx = r->bin->prefix;
 				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
-				                  i, perms, type, section->size,
+				                  i, perms, type, size,
 				                  pfx? pfx: "", pfx? ".": "", section->name);
 				r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 				R_FREE (str);
