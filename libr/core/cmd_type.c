@@ -759,7 +759,7 @@ static int cmd_type(void *data, const char *input) {
                 				free (name);
                     				name = strdup (sdbkv_key (kv));
                     				const char *q = sdb_fmt ("struct.%s", name);
-                        			const char *res = sdb_get (TDB, q, 0);
+                        			const char *res = sdb_const_get (TDB, q, 0);
 						if (res) {
 							r_cons_printf ("%s %s{", sdbkv_value (kv), name);
 							for (i = 0; i < sdb_array_length (TDB, q); i++) {
@@ -773,7 +773,6 @@ static int cmd_type(void *data, const char *input) {
 							}
 						}
 						r_cons_println ("}");
-						free (res);
 					}
                 		}
            		}
