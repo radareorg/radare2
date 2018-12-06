@@ -1101,7 +1101,7 @@ R_API RList *r_bin_java_get_args(RBinJavaField *fm_type) {
 		if (str && *str == ')') {
 			break;
 		}
-		if (in_args) {
+		if (in_args && str) {
 			r_list_append (arg_list, strdup (str));
 		}
 	}
@@ -3451,7 +3451,6 @@ R_API RBinJavaAttrInfo *r_bin_java_code_attr_new(ut8 *buffer, ut64 sz, ut64 buf_
 		int len = attr->info.code_attr.code_length;
 		memset (attr->info.code_attr.code, 0, len);
 		if (offset + len >= sz) {
-			len = sz;
 			return attr;
 		}
 		memcpy (attr->info.code_attr.code, buffer + offset, len);
@@ -5818,7 +5817,7 @@ R_API char *r_bin_java_print_invokedynamic_cp_stringify(RBinJavaCPTypeObj *obj) 
 			value = malloc (size);
 			if (value) {
 				memset (value, 0, size);
-				consumed = snprintf (value, size, "%d.0x%04"PFMT64x ".%s.%d.%d",
+				(void)snprintf (value, size, "%d.0x%04"PFMT64x ".%s.%d.%d",
 					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_invoke_dynamic.bootstrap_method_attr_index,
 					obj->info.cp_invoke_dynamic.name_and_type_index);
@@ -5854,7 +5853,7 @@ R_API char *r_bin_java_print_methodref_cp_stringify(RBinJavaCPTypeObj *obj) {
 			value = malloc (size);
 			if (value) {
 				memset (value, 0, size);
-				consumed = snprintf (value, size, "%d.0x%04"PFMT64x ".%s.%d.%d",
+				(void)snprintf (value, size, "%d.0x%04"PFMT64x ".%s.%d.%d",
 					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_method.class_idx,
 					obj->info.cp_method.name_and_type_idx);
