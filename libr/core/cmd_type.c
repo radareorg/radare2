@@ -665,23 +665,23 @@ static int cmd_type(void *data, const char *input) {
 			const char *space = "";
 			ls_foreach (l, iter, kv) {
 				if(!name || strcmp (sdbkv_value (kv), name)){
-					free(name);
+					free (name);
 					name = strdup (sdbkv_key (kv));
 					r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-					char *p,*var = r_str_newf ("%s.%s",sdbkv_value(kv), name);
-					for(int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++){
-						char *var2 = r_str_newf ("%s.%s",var,p);
-						if(var2){
+					char *p,*var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
+					for (int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++){
+						char *var2 = r_str_newf ("%s.%s", var, p);
+						if (var2){
 							char *val = sdb_array_get (TDB, var2, 0, NULL);
-							if(val){
-								r_cons_printf("%s%s %s;",space,val,p);
+							if (val){
+								r_cons_printf("%s%s %s;", space, val, p);
 								space = " ";
 							}
-							free(val);
+							free (val);
 						}
-						free(var2);
+						free (var2);
 					}
-					free(var);
+					free (var);
 					r_cons_println ("};");
 					space = "";
 				}
@@ -791,23 +791,23 @@ static int cmd_type(void *data, const char *input) {
 			const char *space = "";
 			ls_foreach (l, iter, kv) {
 				if(!name || strcmp (sdbkv_value (kv), name)){
-					free(name);
+					free (name);
 					name = strdup (sdbkv_key (kv));
 					r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-					char *p,*var = r_str_newf ("%s.%s",sdbkv_value(kv), name);
-					for(int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++){
-						char *var2 = r_str_newf ("%s.%s",var,p);
-						if(var2){
+					char *p,*var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
+					for (int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++){
+						char *var2 = r_str_newf ("%s.%s", var, p);
+						if (var2){
 							char *val = sdb_array_get (TDB, var2, 0, NULL);
-							if(val){
-								r_cons_printf("%s%s %s;",space,val,p);
+							if (val){
+								r_cons_printf("%s%s %s;", space, val, p);
 								space = " ";
 							}
-							free(val);
+							free (val);
 						}
-						free(var2);
+						free (var2);
 					}
-					free(var);
+					free (var);
 					r_cons_println ("};");
 					space = "";
 				}
