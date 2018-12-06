@@ -59,7 +59,7 @@ static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalState *state, ut6
 }*/
 
 static void r_anal_ex_perform_post_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->post_anal_op_cb) {
+	if (anal && anal->cur && anal->cur->post_anal_op_cb) {
 		anal->cur->post_anal_op_cb (anal, state, addr);
 	}
 }

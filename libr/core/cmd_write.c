@@ -878,7 +878,7 @@ static int cmd_write(void *data, const char *input) {
 				if (len > 0){
 					ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, addr, len);
-					cmd_suc = r_core_seek (core, cur_off, 1);
+					r_core_seek (core, cur_off, 1);
 					core->offset = addr;
 					r_core_block_read (core);
 				}

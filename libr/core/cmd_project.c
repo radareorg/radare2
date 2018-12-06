@@ -42,7 +42,7 @@ static void cmd_project_init(RCore *core) {
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	const char *file, *arg = (input && *input)? input + 1: NULL;
+	const char *file, *arg;
 	const char *fileproject = r_config_get (core->config, "prj.name");
 	char *str = NULL;
 
