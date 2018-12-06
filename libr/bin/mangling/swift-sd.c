@@ -456,7 +456,6 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 				}
 
 				if (p) {
-					q = p;
 					q = getnum (p, &len);
 					if (attr && !strcmp (attr, "generic")) {
 						is_generic = 1;

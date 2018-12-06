@@ -927,7 +927,7 @@ R_API int r_bin_java_extract_reference_name(const char *input_str, char **ref_st
 	str_len += len;
 	*ref_str = malloc (str_len + 1);
 	new_str = *ref_str;
-	memcpy (new_str, input_str + 1, str_len);
+	memcpy (new_str, str_pos, str_len);
 	new_str[str_len] = 0;
 	while (*new_str) {
 		if (*new_str == '/') {
@@ -1524,6 +1524,8 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			attr = r_bin_java_read_next_attr (bin, offset + adv, buffer, len);
 			if (!attr) {
 				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
+				free (field->metas);
+				free (field);
 				return NULL;
 			}
 			if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
@@ -5030,7 +5032,6 @@ R_API int r_bin_java_check_reset_cp_obj(RBinJavaCPTypeObj *cp_obj, ut8 tag) {
 				R_FREE (cp_obj->info.cp_utf8.bytes);
 				cp_obj->info.cp_utf8.length = 0;
 				R_FREE (cp_obj->name);
-				res = true;
 			}
 			cp_obj->tag = tag;
 			cp_obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
@@ -7451,11 +7452,9 @@ R_API char *r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name_
 		}
 		return str;
 	}
-	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
 	if (strcmp (cp_name, "Class") == 0) {
 		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 		// str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, idx-1);
-		class_str = empty;
 		class_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
 		if (!class_str) {
 			class_str = empty;
@@ -8278,11 +8277,9 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 	} else {
 		return NULL;
 	}
-	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
 	if (!strcmp (cp_name, "Class")) {
 		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 		// str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, idx-1);
-		class_str = empty;
 		class_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
 		if (!class_str) {
 			class_str = empty;
