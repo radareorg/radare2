@@ -18,11 +18,11 @@ static bool check_bytes_buf(RBuffer* rbuf) {
 	return rbuf && r_buf_read_at (rbuf, R_BUF_CUR, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static int find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
+static bool find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
 	return q->id != (*p);
 }
 
-static int find_export(const ut32 *p, const RBinWasmExportEntry* q) {
+static bool find_export(const ut32 *p, const RBinWasmExportEntry* q) {
 	if (q->kind != R_BIN_WASM_EXTERNALKIND_Function) {
 		return false;
 	}
