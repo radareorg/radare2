@@ -545,7 +545,7 @@ beach:
 static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
 	RList *ret = NULL;
 	RBinWasmSymbol *ptr = NULL;
-	size_t read = 0;
+	ut64 read = 0;
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
