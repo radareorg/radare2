@@ -1145,7 +1145,7 @@ repeat:
 				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op.ptr;
 				if (is_delta_pointer_table (anal, fcn, op.addr, op.ptr, &jmptbl_addr, &jmp_aop)) {
-					ut64 table_size, default_case;
+					ut64 table_size, default_case = 0;
 					// we require both checks here since try_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
 					// is_delta_pointer_table just scanning ahead

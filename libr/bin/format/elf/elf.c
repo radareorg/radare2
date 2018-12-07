@@ -1402,6 +1402,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 				plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
 				if (plt_addr == -1) {
 					free (rela);
+					free (REL);
 					return UT32_MAX;
 				}
 				switch (reloc_type) {
