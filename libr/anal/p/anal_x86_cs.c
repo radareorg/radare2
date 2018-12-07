@@ -2064,10 +2064,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->type |= R_ANAL_OP_TYPE_REG;
 				op->stackop = R_ANAL_STACK_SET;
 				op->stackptr = regsz;
-			} else {
-				if (op->ptr < 0x1000) {
-					op->ptr = UT64_MAX;
-				}
 			}
 			if (INSOP(1).type == X86_OP_IMM) {
 				op->val = INSOP(1).imm;
@@ -2091,11 +2087,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
 					op->stackop = R_ANAL_STACK_GET;
 					op->stackptr = regsz;
-				}
-				break;
-			case X86_OP_IMM:
-				if (INSOP (1).imm > 10) {
-					op->ptr = INSOP (1).imm;
 				}
 				break;
 			default:
