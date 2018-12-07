@@ -366,7 +366,7 @@ R_API int r_core_search_preludes(RCore *core) {
 		} else if (strstr (arch, "arm")) {
 			switch (bits) {
 			case 16:
-				ret = r_core_search_prelude (core, from, to,
+				r_core_search_prelude (core, from, to,
 					(const ut8 *) "\xf0\xb5", 2, NULL, 0);
 				// push {r4, r6, r7, lr}
 				ret = r_core_search_prelude (core, from, to,
@@ -1711,7 +1711,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	if (!buf) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		r_anal_esil_free (esil);
-		free (buf);
+		free (previnstr);
 		return;
 	}
 	ut64 oldoff = core->offset;

@@ -4469,7 +4469,6 @@ static void analPaths(RCoreAnalPaths *p) {
 				ut64 addr = cur->addr + cur->op_pos[i];
 				RAnalOp *op = r_core_anal_op (p->core, addr, R_ANAL_OP_MASK_BASIC);
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-					cur = c;
 					analPathFollow (p, op->jump);
 				}
 				cur = c;

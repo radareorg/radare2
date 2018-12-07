@@ -2931,7 +2931,7 @@ redo:
 				}
 				str.len -= spc;
 				tok_str_add (&str, 0);
-				sa1 = sym_push2 (&args, sa->v & ~SYM_FIELD, sa->type.t, 0);
+				sa1 = sa ? sym_push2 (&args, sa->v & ~SYM_FIELD, sa->type.t, 0) : NULL;
 				if (!sa1) {
 					return -1;
 				}
