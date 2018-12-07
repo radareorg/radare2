@@ -759,7 +759,11 @@ static void handleUpKey(RCore *core) {
 				if (cols < 1) {
 					cols = 16;
 				}
-				panels->panel[panels->curnode].addr -= cols;
+				if (panels->panel[panels->curnode].addr <= cols) {
+					panels->panel[panels->curnode].addr = 0;
+				} else {
+					panels->panel[panels->curnode].addr -= cols;
+				}
 			} else if (panels->panel[panels->curnode].sy > 0) {
 				panels->panel[panels->curnode].sy--;
 			}
