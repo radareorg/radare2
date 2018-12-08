@@ -147,7 +147,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		break;
 	case WASM_OP_END:
 		r_strbuf_set (&op->esil, "sp,[4],4,sp,+=,sp,[4],pc,=,sp,=[4]");
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ANAL_OP_TYPE_POP;
 		if (addr != UT64_MAX) {
 			for (i = 0; i < wasm_stack_ptr; ++i) {
 				if (wasm_stack[i].end == addr && wasm_stack[i].loop != UT64_MAX) {
