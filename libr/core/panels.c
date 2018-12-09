@@ -29,6 +29,7 @@
 #define PANEL_CMD_GRAPH          "agf"
 #define PANEL_CMD_FUNCTIONS      "afl"
 #define PANEL_CMD_FCNINFO        "afi"
+#define PANEL_CMD_HEXDUMP        "xc"
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -188,6 +189,7 @@ static int cursorThreshold(RPanel* panel);
 static void delPanel(RPanels *panels, int delPanelNum);
 static void delCurPanel(RPanels *panels);
 static void delInvalidPanels(RPanels *panels);
+static void fixBlockSize(RCore *core);
 static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
@@ -345,6 +347,14 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 			const char sign = (delta < 0)? '+': '-';
 			const int absdelta = R_ABS (delta);
 			cmdStr = r_core_cmd_strf (core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
+		} else if (!strcmp (panel->cmd, PANEL_CMD_HEXDUMP)) {
+			ut64 o_offset = core->offset;
+			if (!panel->caching) {
+				core->offset = panel->addr;
+				r_core_seek (core, core->offset, 1);
+			}
+			cmdStr = handleCacheCmdStr (core, panel);
+			core->offset = o_offset;
 		} else {
 			cmdStr = handleCacheCmdStr (core, panel);
 			if (!strcmp (panel->cmd, PANEL_CMD_GRAPH)) {
@@ -523,6 +533,7 @@ static void splitPanelHorizontal(RCore *core) {
 }
 
 R_API void r_core_panels_layout_refresh(RCore *core) {
+	fixBlockSize (core);
 	delInvalidPanels (core->panels);
 	r_core_panels_check_stackbase (core);
 	r_core_panels_refresh (core);
@@ -725,13 +736,13 @@ static void handleUpKey(RCore *core) {
 				panels->panel[panels->curnode].addr = core->offset;
 			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
-			int width = r_config_get_i (core->config, "hex.cols");
-			if (width < 1) {
-				width = 16;
+			int cols = r_config_get_i (core->config, "hex.cols");
+			if (cols < 1) {
+				cols = 16;
 			}
 			r_config_set_i (core->config, "stack.delta",
-					r_config_get_i (core->config, "stack.delta") + width);
-			panels->panel[panels->curnode].addr -= width;
+					r_config_get_i (core->config, "stack.delta") + cols);
+			panels->panel[panels->curnode].addr -= cols;
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)) {
 			if (core->print->cur_enabled) {
 				int cur = core->print->cur;
@@ -741,6 +752,20 @@ static void handleUpKey(RCore *core) {
 				if (cur >= 0) {
 					core->print->cur = cur;
 				}
+			}
+		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
+			if (!panels->panel[panels->curnode].caching) {
+				int cols = r_config_get_i (core->config, "hex.cols");
+				if (cols < 1) {
+					cols = 16;
+				}
+				if (panels->panel[panels->curnode].addr <= cols) {
+					panels->panel[panels->curnode].addr = 0;
+				} else {
+					panels->panel[panels->curnode].addr -= cols;
+				}
+			} else if (panels->panel[panels->curnode].sy > 0) {
+				panels->panel[panels->curnode].sy--;
 			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 			if (panels->panel[panels->curnode].sy > 0) {
@@ -784,17 +809,27 @@ static void handleDownKey(RCore *core) {
 				panels->panel[panels->curnode].addr = core->offset;
 			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
-			int width = r_config_get_i (core->config, "hex.cols");
-			if (width < 1) {
-				width = 16;
+			int cols = r_config_get_i (core->config, "hex.cols");
+			if (cols < 1) {
+				cols = 16;
 			}
 			r_config_set_i (core->config, "stack.delta",
-					r_config_get_i (core->config, "stack.delta") - width);
-			panels->panel[panels->curnode].addr += width;
+					r_config_get_i (core->config, "stack.delta") - cols);
+			panels->panel[panels->curnode].addr += cols;
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)) {
 			if (core->print->cur_enabled) {
 				const int cols = core->dbg->regcols;
 				core->print->cur += cols > 0 ? cols : 3;
+			}
+		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
+			if (!panels->panel[panels->curnode].caching) {
+				int cols = r_config_get_i (core->config, "hex.cols");
+				if (cols < 1) {
+					cols = 16;
+				}
+				panels->panel[panels->curnode].addr += cols;
+			} else {
+				panels->panel[panels->curnode].sy++;
 			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 			panels->panel[panels->curnode].sy += r_config_get_i (core->config, "graph.scroll");
@@ -1309,6 +1344,11 @@ static void delCurPanel(RPanels *panels) {
 	delPanel (panels, panels->curnode);
 }
 
+static void fixBlockSize(RCore *core) {
+	int cols = r_config_get_i (core->config, "hex.cols");
+	r_core_block_size (core, (int)(core->cons->rows * cols * 3.5));
+}
+
 static void delInvalidPanels(RPanels *panels) {
 	int i;
 	for (i = 1; i < panels->n_panels; i++) {
@@ -1532,10 +1572,8 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 	panel[n_panels].curpos = 0;
 	panel[n_panels].caching = caching;
 	panel[n_panels].cmdStrCache = NULL;
+	panel[n_panels].addr = core->offset;
 	if (panel[n_panels].cmd) {
-		if (!strcmp (panel[n_panels].cmd, PANEL_CMD_DISASSEMBLY)) {
-			panel[n_panels].addr = core->offset;
-		}
 		if (!strcmp (panel[n_panels].cmd, PANEL_CMD_STACK)) {
 			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 			const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
@@ -2437,7 +2475,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Graph", "agf", 0);
 	sdb_set (panels->db, "Info", "i", 0);
 	sdb_set (panels->db, "Database", "k ***", 0);
-	sdb_set (panels->db, "Hexdump", "px 512", 0);
+	sdb_set (panels->db, "Hexdump", "xc", 0);
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
 	sdb_set (panels->db, "Entropy", "p=e", 0);
