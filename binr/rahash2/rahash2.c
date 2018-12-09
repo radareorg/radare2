@@ -715,6 +715,7 @@ int main(int argc, char **argv) {
 	}
 	free (hashstr);
 	r_io_free (io);
+	free (iv);
 
 	return ret;
 }
