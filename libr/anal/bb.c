@@ -170,6 +170,21 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
+	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
+	if (anal->opt.jmpmid && x86) {
+		RAnalBlock *nearest_bb = NULL;
+		r_list_foreach (anal->fcns, iter, fcn) {
+			r_list_foreach (fcn->bbs, iter2, bb) {
+				if (r_anal_bb_op_starts_at (bb, off)) {
+					return bb;
+				} else if (r_anal_bb_is_in_offset (bb, off)
+				           && (!nearest_bb || nearest_bb->addr < bb->addr)) {
+					nearest_bb = bb;
+				}
+			}
+		}
+		return nearest_bb;
+	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		r_list_foreach (fcn->bbs, iter2, bb) {
 			if (r_anal_bb_is_in_offset (bb, off)) {
