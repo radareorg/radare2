@@ -9,15 +9,17 @@
 
 #define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
 
+static const char hex[16] = "0123456789ABCDEF";
+
 static int nullprinter(const char *a, ...) {
 	return 0;
 }
+
 static int libc_printf(const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
 	vprintf (format, ap);
 	va_end (ap);
-
 	return 0;
 }
 
@@ -624,11 +626,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 			}
 		}
 		r_print_cursor (p, i, 0);
-		if (wrap) {
-			if (col + 1 >= p->width) {
-				p->cb_printf ("\n");
-				col = 0;
-			}
+		if (wrap && col + 1 >= p->width) {
+			p->cb_printf ("\n");
+			col = 0;
 		}
 		if (wide) {
 			i++;
@@ -638,7 +638,6 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	return i;
 }
 
-static const char hex[16] = "0123456789ABCDEF";
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
 	for (i = 0; i < len; i++) {
@@ -746,6 +745,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
 	int use_sparse = 0;
 	int use_header = 1;
+	int use_hdroff = 1;
+	int use_pair = 1;
 	int use_offset = 1;
 	bool compact = false;
 	int use_segoff = 0;
@@ -755,13 +756,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int last_sparse = 0;
 	bool use_hexa = true;
 	const char *a, *b;
-
+	int K = 0;
 
 	len = len - (len % step);
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
+		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
@@ -853,7 +855,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			/* column after number, before hex data */
 			printfmt ((col == 1)? "|": " ");
 			opad >>= 4;
-			k = 0; // TODO: ??? SURE??? config.seek & 0xF;
+			if (use_hdroff)  {
+				k = addr & 0xf;
+				K = (addr>>4) & 0xf;
+			} else {
+				k = 0; // TODO: ??? SURE??? config.seek & 0xF;
+			}
 			if (use_hexa) {
 				/* extra padding for offsets > 8 digits */
 				for (i = 0; i < inc; i++) {
@@ -863,7 +870,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							printfmt (" ");
 						}
 					}
-					printfmt (" %c", hex[(i + k) % 16]);
+					if  (use_hdroff) {
+						if (use_pair) {
+							printfmt ("%c%c",
+									hex[(((i+k) >> 4) + K) % 16],
+									hex[(i + k) % 16]);
+						} else {
+							printfmt (" %c", hex[(i + k) % 16]);
+						}
+					} else {
+						printfmt (" %c", hex[(i + k) % 16]);
+					}
 					if (i & 1 || !pairs) {
 						if (!compact) {
 							printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
