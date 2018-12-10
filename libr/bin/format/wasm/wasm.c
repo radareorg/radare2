@@ -545,7 +545,7 @@ beach:
 static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
 	RList *ret = NULL;
 	RBinWasmSymbol *ptr = NULL;
-
+	ut64 read = 0;
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
@@ -563,8 +563,8 @@ static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *
 		if (!(ptr = R_NEW0 (RBinWasmSymbol))) {
 			return ret;
 		}
-		ptr->id = b->buf[b->cur];
-		ut32 tmp = b->buf[b->cur + 1];
+		read = read_u32_leb128 (&b->buf[b->cur], &b->buf[b->cur + 5], &ptr->id);
+		ut32 tmp = b->buf[b->cur + read];
 		if (tmp == R_BIN_WASM_STRING_LENGTH) {
 			tmp = R_BIN_WASM_STRING_LENGTH - 1;
 		}

@@ -1112,6 +1112,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_import_directory) * curr_import_dir = NULL;
 
 	PE_(image_delay_import_directory) * delay_import_dir = NULL;
+	PE_(image_delay_import_directory) * new_delay_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 
 	int dir_size = sizeof(PE_(image_import_directory));
@@ -1185,14 +1186,14 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 					bprintf ("Warning: Cannot find end of import symbols\n");
 					break;
 				}
-				delay_import_dir = (PE_(image_delay_import_directory)*)realloc (
+				new_delay_import_dir = (PE_(image_delay_import_directory)*)realloc (
 					delay_import_dir, (indx * delay_import_size) + 1);
-				if (delay_import_dir == 0) {
+				if (!new_delay_import_dir) {
 					r_sys_perror ("malloc (delay import directory)");
 					free (delay_import_dir);
 					return false;
 				}
-
+				delay_import_dir = new_delay_import_dir;
 				curr_delay_import_dir = delay_import_dir + (indx - 1);
 				rr = r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
 					(ut8*) (curr_delay_import_dir), dir_size);
@@ -1593,6 +1594,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 
 	for (i = 0; *curAddr < begAddr + string->wLength; ++i, *curAddr += sizeof (ut16)) {
 		ut16 utf16_char;
+		ut16 *tmpKey;
 		if (*curAddr > bin->size || *curAddr + sizeof (ut16) > bin->size) {
 			goto out_error;
 		}
@@ -1600,7 +1602,12 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 			bprintf ("Warning: check (String szKey)\n");
 			goto out_error;
 		}
-		string->szKey = (ut16*) realloc (string->szKey, (i + 1) * sizeof (ut16));
+		tmpKey = (ut16*) realloc (string->szKey, (i + 1) * sizeof (ut16));
+		if (!tmpKey) {
+			bprintf ("Warning: realloc (String szKey)\n");
+			goto out_error;
+		}
+		string->szKey = tmpKey;
 		string->szKey[i] = utf16_char;
 		string->wKeyLen += sizeof (ut16);
 		if (!utf16_char) {

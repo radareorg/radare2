@@ -137,6 +137,7 @@ static const char *help_msg_ts[] = {
 	"tsj", " [type]", "Show pf format string for given struct in json",
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
+	"tsc", "", "List all loaded structs in C output format", 
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
@@ -150,6 +151,7 @@ static const char *help_msg_tu[] = {
 	"tuj", " [type]", "Show pf format string for given union in json",
 	"tu*", "", "Show pf.<name> format string for all loaded unions",
 	"tu*", " [type]", "Show pf.<name> format string for given union",
+	"tuc", "", "List all loaded unions in C output format",
 	"tu?", "", "show this help",
 	NULL
 };
@@ -655,6 +657,40 @@ static int cmd_type(void *data, const char *input) {
 				print_keys (TDB, core, stdifunion, printkey_json_cb, true);
 			}
 			break;
+		case 'c':{
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list_filter (TDB, stdifunion, true);
+			const char *space = "";
+			ls_foreach (l, iter, kv) {
+				if (name && !strcmp (sdbkv_value (kv), name)) {
+					continue;
+				}
+				free (name);
+				name = strdup (sdbkv_key (kv));
+				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
+				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
+				for (int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+					char *var2 = r_str_newf ("%s.%s", var, p);
+					if (var2) {
+						char *val = sdb_array_get (TDB, var2, 0, NULL);
+						if (val) {
+							r_cons_printf ("%s%s %s;", space, val, p);
+							space = " ";
+						}
+						free (val);
+					}
+					free (var2);
+				}
+				free (var);
+				r_cons_println ("};");
+				space = "";
+			}
+			free (name);
+			ls_free (l);
+			break;
+		}
 		case ' ':
 			showFormat (core, r_str_trim_ro (input + 1), 0);
 			break;
@@ -748,6 +784,41 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
+
+		case 'c':{
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
+			const char *space = "";
+			ls_foreach (l, iter, kv) {
+				if (name && !strcmp (sdbkv_value (kv), name)) {
+					continue;
+				}
+				free (name);
+				name = strdup (sdbkv_key (kv));
+				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
+				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
+				for (int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+					char *var2 = r_str_newf ("%s.%s", var, p);
+					if (var2) {
+						char *val = sdb_array_get (TDB, var2, 0, NULL);
+						if (val) {
+							r_cons_printf  ("%s%s %s;", space, val, p);
+							space = " ";
+						}
+						free (val);
+					}
+					free (var2);
+				}
+				free (var);
+				r_cons_println ("};");
+				space = "";
+			}
+			free (name);
+			ls_free (l);
+			break;
+		}
 		case 'j': // "tsj"
 			// TODO: current output is a bit poor, will be good to improve
 			if (input[2]) {
@@ -1058,8 +1129,8 @@ static int cmd_type(void *data, const char *input) {
 			ut8 code[128] = { 0 };
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
 			r_asm_set_pc (core->assembler, addr);
-			int ret = r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
-			ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
+			(void)r_asm_disassemble (core->assembler, &asmop, code, core->blocksize);
+			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
 				for (i = 0; i < 3; i++) {

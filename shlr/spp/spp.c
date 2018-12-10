@@ -67,8 +67,14 @@ static char *spp_run_str(char *buf, int *rv) {
 
 void lbuf_strcat(SppBuf *dst, char *src) {
 	int len = strlen (src);
+	char *nbuf;
 	if (!dst->lbuf || (len + dst->lbuf_n) > dst->lbuf_s) {
-		dst->lbuf = realloc (dst->lbuf, dst->lbuf_s << 1);
+		nbuf = realloc (dst->lbuf, dst->lbuf_s << 1);
+		if (!nbuf) {
+			fprintf (stderr, "Out of memory.\n");
+			return;
+		}
+		dst->lbuf = nbuf;
 	}
 	memcpy (dst->lbuf + dst->lbuf_n, src, len + 1);
 	dst->lbuf_n += len;

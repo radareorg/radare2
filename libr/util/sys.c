@@ -690,10 +690,11 @@ R_API int r_sys_cmd(const char *str) {
 }
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
-	char *output;
+	char *output = NULL;
 	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
 		return output;
 	}
+	free (output);
 	return NULL;
 }
 

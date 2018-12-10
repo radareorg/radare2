@@ -412,6 +412,10 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	if (!o) {
 		return NULL;
 	}
+	if (!olen) {
+		free (o);
+		return NULL;
+	}
 
 	olen = 0;
 	for (y = 0; y < c->h; y++) {

@@ -13,6 +13,7 @@ static int spp_var_set(const char *var, const char *val) {
 /* Should be dynamic buffer */
 static char *cmd_to_str(const char *cmd) {
 	char *out = (char *)calloc (4096, 1);
+	char *tout;
 	int ret = 0, len = 0, outlen = 4096;
 	FILE *fd = popen (cmd, "r");
 	while (fd) {
@@ -24,7 +25,16 @@ static char *cmd_to_str(const char *cmd) {
 		}
 		if (ret + 1024 > outlen) {
 			outlen += 4096;
-			out = realloc (out, outlen);
+			tout = realloc (out, outlen);
+			if (!tout) {
+				if (fd) {
+					pclose (fd);
+					fd = NULL;
+				}
+				fprintf (stderr, "Out of memory.\n");
+				break;
+			}
+			out = tout;
 		}
 	}
 	out[len] = '\0';
@@ -340,12 +350,18 @@ static TAG_CALLBACK(spp_endpipe) {
 	int ret = 0, len = 0;
 	int outlen = 4096;
 	char *str = (char *)malloc (4096);
+	char *tstr;
 	do {
 		len += ret;
 		ret = fread (str + len, 1, 1023, spp_pipe_fd);
 		if (ret + 1024 > outlen) {
 			outlen += 4096;
-			str = realloc (str, outlen);
+			tstr = realloc (str, outlen);
+			if (!tstr) {
+				fprintf (stderr, "Out of memory.\n");
+				break;
+			}
+			str = tstr;
 		}
 	} while (ret > 0);
 	str[len] = '\0';

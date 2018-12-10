@@ -284,7 +284,6 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 		r_cons_break_pop ();
 	}
 	//eprintf ("bochs_wait: loop done\n");
-	i = 0;
 	// Next at t=394241428
 	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6
 	ripStop = 0;

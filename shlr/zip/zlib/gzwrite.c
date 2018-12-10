@@ -281,8 +281,9 @@ z_size_t ZEXPORT gzfwrite(buf, size, nitems, file)
     gz_statep state;
 
     /* get internal structure */
-    if (file == NULL)
+    if (file == NULL || size < 1) {
         return 0;
+    }
     state = (gz_statep)file;
 
     /* check that we're writing and that there's no error */

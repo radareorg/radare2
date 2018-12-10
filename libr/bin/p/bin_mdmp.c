@@ -307,6 +307,7 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
+			free (ptr);
 			break;
 		}
 		ptr->name = calloc (1, ptr_name_len);

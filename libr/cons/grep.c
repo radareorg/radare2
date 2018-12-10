@@ -941,7 +941,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	}
 	if (tag_font) {
 		r_strbuf_append (res, "</font>");
-		tag_font = false;
 	}
 	r_strbuf_append_n (res, str, ptr - str);
 	if (newlen) {
