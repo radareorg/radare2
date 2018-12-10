@@ -753,7 +753,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool compact = false;
 	int use_segoff = 0;
 	int pairs = 0;
-	const char *fmt = "%02x";
+	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
 	bool use_hexa = true;
@@ -791,36 +791,36 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	switch (base) {
 	case -10:
-		fmt = "0x%08x ";
+		bytefmt = "0x%08x ";
 		pre = " ";
 		if (inc < 4) {
 			inc = 4;
 		}
 		break;
 	case -1:
-		fmt = "0x%08x ";
+		bytefmt = "0x%08x ";
 		pre = "  ";
 		if (inc < 4) {
 			inc = 4;
 		}
 		break;
 	case 8:
-		fmt = "%03o";
+		bytefmt = "%03o";
 		pre = " ";
 		break;
 	case 10:
-		fmt = "%3d";
+		bytefmt = "%3d";
 		pre = " ";
 		break;
 	case 32:
-		fmt = "0x%08x ";
+		bytefmt = "0x%08x ";
 		pre = " ";
 		if (inc < 4) {
 			inc = 4;
 		}
 		break;
 	case 64:
-		fmt = "0x%016x ";
+		bytefmt = "0x%016x ";
 		pre = " ";
 		if (inc < 8) {
 			inc = 8;
@@ -991,6 +991,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					continue;
 				}
+				const char *hl = (hex_style && p->offname (p->user, addr + j))? Color_INVERT: NULL;
+				if (hl) {
+					printfmt (hl);
+				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
 					/* TODO: check step. it should be 2/4 for base(32) and 8 for
@@ -1054,7 +1058,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (j >= len) {
 						break;
 					}
-					r_print_byte (p, fmt, j, buf[j]);
+					r_print_byte (p, bytefmt, j, buf[j]);
 					if (j % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
@@ -1070,6 +1074,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							}
 						}
 					}
+				}
+				if (hl) {
+					printfmt (Color_RESET);
 				}
 			}
 		}
@@ -1122,7 +1129,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					a = p->offname (p->user, addr + j);
 					if (a && *a) {
 						const char *color = p->colorfor (p->user, addr + j, true);
-						printfmt ("%s  ; %s"Color_RESET, color, a);
+						printfmt ("%s  ; %s"Color_RESET, color?color: "", a);
 					}
 				}
 				char *comment = p->get_comments (p->user, addr + j);
