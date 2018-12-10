@@ -827,6 +827,7 @@ static void recovery_apply_vtable(RAnalClass *cls, RVTableInfo *vtable) {
 }
 
 static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
+static RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td);
 
 static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls, RVector *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
@@ -837,14 +838,16 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls,
 			continue;
 		}
 
+		RAnalClass *base_cls;
 		if (!base_td->col) {
-			eprintf ("Warning: Base td %s has no col.\n", base_td->td.name);
-			continue;
+			eprintf ("Warning: Base td %s has no col. Falling back to recovery from td only.\n", base_td->td.name);
+			base_cls = recovery_apply_type_descriptor (context, base_td);
+		} else {
+			base_cls = recovery_apply_complete_object_locator (context, base_td->col);
 		}
 
-		RAnalClass *base_cls = recovery_apply_complete_object_locator (context, base_td->col);
 		if (!base_cls) {
-			eprintf ("Failed to convert base td->col to a class\n");
+			eprintf ("Failed to convert !base td->col or td to a class\n");
 			continue;
 		}
 
@@ -903,7 +906,7 @@ static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 
 
 
-RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td) {
+static RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td) {
 	if (!td->valid) {
 		return NULL;
 	}
