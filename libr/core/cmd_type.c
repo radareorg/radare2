@@ -745,10 +745,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd0 (core, "k anal/cc/*");
 			break;
 		case 0:
-			r_core_cmd0 (core, "tuc");
-			r_core_cmd0 (core, "tsc");
-			r_core_cmd0 (core, "ttc");
-			r_core_cmd0 (core, "tec");
+			r_core_cmd0 (core, "tuc;tsc;ttc;tec");
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_tc);
