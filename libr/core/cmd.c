@@ -2831,8 +2831,8 @@ ignore:
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
-					!memcmp (ptr + 1, "0x", 2) &&
-					!memcmp (ptr2 + 1, "0x", 2)) {
+				!memcmp (ptr + 1, "0x", 2) &&
+				!memcmp (ptr2 + 1, "0x", 2)) {
 				/* 0xXXXX:0xYYYY */
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
@@ -3554,9 +3554,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 
 				/* duplicate flags that match word, to be sure
-					 the command is going to be executed on flags
-					 values at the moment the command is called
-					 (without side effects) */
+					the command is going to be executed on flags
+					values at the moment the command is called
+					(without side effects) */
 				r_list_foreach (core->flags->flags, iter, flag) {
 					/* filter per flag spaces */
 					if ((flagspace != -1) && (flag->space != flagspace)) {
