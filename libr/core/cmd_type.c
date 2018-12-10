@@ -676,7 +676,7 @@ static int cmd_type(void *data, const char *input) {
 					if (var2) {
 						char *val = sdb_array_get (TDB, var2, 0, NULL);
 						if (val) {
-							r_cons_printf("%s%s %s;", space, val, p);
+							r_cons_printf ("%s%s %s;", space, val, p);
 							space = " ";
 						}
 						free (val);
@@ -804,7 +804,7 @@ static int cmd_type(void *data, const char *input) {
 					if (var2) {
 						char *val = sdb_array_get (TDB, var2, 0, NULL);
 						if (val) {
-							r_cons_printf("%s%s %s;", space, val, p);
+							r_cons_printf  ("%s%s %s;", space, val, p);
 							space = " ";
 						}
 						free (val);
