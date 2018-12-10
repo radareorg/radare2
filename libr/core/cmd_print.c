@@ -4708,7 +4708,13 @@ static int cmd_print(void *data, const char *input) {
 						ut64 prevaddr = core->offset;
 						int bs = core->blocksize, bs1 = addrbytes * instr_len;
 						if (bs1 > bs) {
-							block1 = realloc (block1, bs1);
+							ut8 *tmpblock = realloc (block1, bs1);
+							if (!tmpblock) {
+								eprintf ("Memory reallocation failed.\n");
+								free (block1);
+								break;
+							}
+							block1 = tmpblock;
 						}
 						r_core_seek (core, prevaddr - instr_len, true);
 						memcpy (block1, block, bs);

@@ -16,10 +16,15 @@ char *ReadFromPipe(HANDLE fh);
 
 // HACKY
 static char *getexe(const char *str) {
-	char *ptr, *argv0 = strdup (str);
+	char *ptr, *targv, *argv0 = strdup (str);
 	ptr = strchr (argv0, ' ');
 	if (ptr) *ptr = '\0';
-	argv0 = realloc (argv0, strlen (argv0)+8);
+	targv = realloc (argv0, strlen (argv0)+8);
+	if (!targv) {
+		free (argv0);
+		return NULL;
+	}
+	argv0 = targv;
 	strcat (argv0, ".exe");
 	return argv0;
 }

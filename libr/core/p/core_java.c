@@ -1091,7 +1091,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 	ut64 addr = UT64_MAX;
 	ut64 res_size = UT64_MAX,
 	cur_fsz = r_io_fd_size (core->io, r_core_file_cur (core)->fd);
-	ut8 *buf = NULL;
+	ut8 *tbuf, *buf = NULL;
 	ut32 init_size = (1 << 16);
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 	addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : UT64_MAX;
@@ -1103,7 +1103,13 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
 		sz = cur_fsz < init_size ? cur_fsz : init_size;
 		while (sz <= cur_fsz) {
-			buf = realloc (buf, sz);
+			tbuf = realloc (buf, sz);
+			if (!tbuf) {
+				eprintf ("Memory allocation failed.\n");
+				free (buf);
+				break;
+			}
+			buf = tbuf;
 			ut64 r_sz = r_io_read_at (core->io, addr, buf, sz) ? sz : 0LL;
 			// check the return read on the read
 			if (r_sz == 0) {
@@ -1141,7 +1147,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 	int res = false;
 	ut64 res_size = UT64_MAX;
-	ut8 *buf = NULL;
+	ut8 *tbuf, *buf = NULL;
 	ut32 cur_fsz =  r_io_fd_size (core->io, r_core_file_cur (core)->fd);
 	ut64 sz = UT64_MAX;
 	const char *p = cmd ? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
@@ -1155,7 +1161,13 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 		IFDBG r_cons_printf ("Attempting to calculate class file size @ : 0x%"PFMT64x".\n", addr);
 
 		while (sz <= cur_fsz) {
-			buf = realloc (buf, sz);
+			tbuf = realloc (buf, sz);
+			if (!tbuf) {
+				eprintf ("Memory allocation failed.\n");
+				free (buf);
+				break;
+			}
+			buf = tbuf;
 			ut64 r_sz = r_io_read_at (core->io, addr, buf, sz) ? sz : 0LL;
 			// check the return read on the read
 			if (r_sz == 0) {
