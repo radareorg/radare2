@@ -15,7 +15,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	"ta", " <type>", "Mark immediate as a type offset",
-	"tc", " ([cctype])", "calling conventions listing and manipulations",
+	"tc", "", "List loaded types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
 	"tf", "", "List all loaded functions signatures",
