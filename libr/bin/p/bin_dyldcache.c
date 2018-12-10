@@ -677,6 +677,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			RDyldBinImage *bin = R_NEW0 (RDyldBinImage);
 			if (!bin) {
 				r_list_free (bins);
+				R_FREE (deps);
 				R_FREE (img);
 				return NULL;
 			}
