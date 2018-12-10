@@ -127,7 +127,7 @@ R_API bool r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	}
 	len = object->object.l + 1;
 	if (len <= 0) {
-		value->ref--;;
+		value->ref--;
 		return false;
 	}
 	v = (RJSVar**) malloc (len * sizeof (RJSVar*));

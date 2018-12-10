@@ -3,14 +3,14 @@
 * Use RList
 * Support callback for null command (why?)
 * Show help of commands
-  - long commands not yet tested at all
-  - added interface to export command list into an autocompletable
-    argc, argv for dietline
+	- long commands not yet tested at all
+	- added interface to export command list into an autocompletable
+		argc, argv for dietline
 * r_cmd must provide a nesting char table indexing for commands
-  - this is already partially done
-  - this is pretty similar to r_db
-  - every module can register their own commands
-  - commands can be listed like in a tree
+	- this is already partially done
+	- this is pretty similar to r_db
+	- every module can register their own commands
+	- commands can be listed like in a tree
 #endif
 
 #define INTERACTIVE_MAX_REP 1024
@@ -212,6 +212,7 @@ static const char *help_msg_k[] = {
 	"k", " anal/meta/*", "list kv from anal > meta namespaces",
 	"k", " anal/**", "list namespaces under anal",
 	"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
+	"kj", "", "List all namespaces and sdb databases in JSON format",
 	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
 	//"ks", " ha.sdb", "save keyvalue to ha.sdb",
 	NULL,
@@ -996,8 +997,55 @@ static int cmd_kuery(void *data, const char *input) {
 	const char *sp, *p = "[sdb]> ";
 	const int buflen = sizeof (buf) - 1;
 	Sdb *s = core->sdb;
+	
+	char *cur_pos, *cur_cmd, *next_cmd;
+	char *temp_pos, *temp_cmd, *temp_storage;
 
 	switch (input[0]) {
+
+	case 'j':
+		out = sdb_querys (s, NULL, 0, "anal/**");
+
+		r_cons_printf ("{\"anal\":{");
+
+		while (strlen (out) != 0) {
+			cur_pos = strchr (out, '\n');
+			cur_cmd = strndup (out, cur_pos - out);
+
+			r_cons_printf ("\n\n\"%s\" : [", cur_cmd);
+
+			next_cmd = malloc (strlen (cur_cmd) + 8);
+			// malloc for this: "anal/" + (input + 1) + cur_cmd + "/*"
+
+			strcpy (next_cmd, "anal/");
+			strcat (next_cmd, cur_cmd);
+			strcat (next_cmd, "/*");
+
+			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
+
+			if (!temp_storage) {
+				r_cons_println ("\nEMPTY\n");
+				r_cons_printf ("],\n\n");
+				out += cur_pos - out + 1;
+				continue;
+			}
+
+			while (strlen (temp_storage) != 0) {
+				temp_pos = strchr (temp_storage, '\n');
+				temp_cmd = strndup (temp_storage, temp_pos - temp_storage);
+				r_cons_printf ("\"%s\",", temp_cmd);
+				temp_storage += temp_pos - temp_storage + 1;
+			}
+
+			r_cons_printf ("],\n\n");
+			out += cur_pos - out + 1;
+		}
+
+		r_cons_printf ("}}");
+		free (next_cmd);
+		free (temp_storage);
+		break;
+
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input + 1);
 		if (out) {
@@ -1673,7 +1721,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = NULL;
-   	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
+		if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
 		goto err_r_w32_cmd_pipe;
 	}
@@ -2783,8 +2831,8 @@ ignore:
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
-			    !memcmp (ptr + 1, "0x", 2) &&
-			    !memcmp (ptr2 + 1, "0x", 2)) {
+					!memcmp (ptr + 1, "0x", 2) &&
+					!memcmp (ptr2 + 1, "0x", 2)) {
 				/* 0xXXXX:0xYYYY */
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
@@ -3506,9 +3554,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 
 				/* duplicate flags that match word, to be sure
-				   the command is going to be executed on flags
-				   values at the moment the command is called
-				   (without side effects) */
+					 the command is going to be executed on flags
+					 values at the moment the command is called
+					 (without side effects) */
 				r_list_foreach (core->flags->flags, iter, flag) {
 					/* filter per flag spaces */
 					if ((flagspace != -1) && (flag->space != flagspace)) {
