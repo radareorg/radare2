@@ -756,7 +756,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 		} else if (!strncmp (token, "asr", 3)) {
 			op->operands[operand].shift = ARM_ASR;
 		}
-		if (strlen(token) > 4 && op->operands[operand].shift != ARM_NO_SHIFT) {
+		if (strlen (token) > 4 && op->operands[operand].shift != ARM_NO_SHIFT) {
 			op->operands_count ++;
 			op->operands[operand].shift_amount = r_num_math (NULL, token + 4);
 			if (op->operands[operand].shift_amount > 63) {
