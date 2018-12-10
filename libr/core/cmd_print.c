@@ -5175,11 +5175,6 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
 		}
-		if (r_config_get_i (core->config, "hex.header")) {
-			core->print->flags |= R_PRINT_FLAGS_HEADER;
-		} else {
-			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-		}
 		/* Don't show comments in default case */
 		core->print->use_comments = false;
 	}
@@ -5230,7 +5225,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'A': // "pxA"
 			if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_pxA);
+				r_core_cmd_help (core, help_msg_pxA);
 			} else if (l) {
 				cmd_print_pxA (core, len, input + 1);
 			}

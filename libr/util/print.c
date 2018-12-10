@@ -746,6 +746,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
 	int use_sparse = 0;
 	int use_header = 1;
+	int use_hdroff = 1;
+	int use_pair = 1;
 	int use_offset = 1;
 	bool compact = false;
 	int use_segoff = 0;
@@ -755,14 +757,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int last_sparse = 0;
 	bool use_hexa = true;
 	const char *a, *b;
-
+	int K = 0;
 
 	len = len - (len % step);
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
+		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
+		use_pair = use_hdroff;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
@@ -853,7 +857,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			/* column after number, before hex data */
 			printfmt ((col == 1)? "|": " ");
 			opad >>= 4;
-			k = 0; // TODO: ??? SURE??? config.seek & 0xF;
+			if (use_hdroff)  {
+				k = addr & 0xf;
+				K = (addr>>4) & 0xf;
+			} else {
+				k = 0; // TODO: ??? SURE??? config.seek & 0xF;
+			}
 			if (use_hexa) {
 				/* extra padding for offsets > 8 digits */
 				for (i = 0; i < inc; i++) {
@@ -863,7 +872,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							printfmt (" ");
 						}
 					}
-					printfmt (" %c", hex[(i + k) % 16]);
+					if (use_pair) {
+						printfmt ("%c%c",
+							 hex[(((i+k) >> 4) + K) % 16],
+							 hex[(i + k) % 16]);
+					} else {
+						printfmt (" %c", hex[(i + k) % 16]);
+					}
 					if (i & 1 || !pairs) {
 						if (!compact) {
 							printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
