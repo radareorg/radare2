@@ -594,7 +594,8 @@ static void activateCursor(RCore *core) {
 	RPanels *panels = core->panels;
 	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
 			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
-			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
 		setCursor (core, !core->print->cur_enabled);
 		panels->panel[panels->curnode].refresh = true;
 	}
@@ -607,7 +608,7 @@ static void cursorLeft(RCore *core) {
 			core->print->cur--;
 			core->panels->panel[core->panels->curnode].addr--;
 		}
-	} else {
+	} else if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 		core->print->cur--;
 		int row = r_print_row_at_off (core->print, core->print->cur);
 		if (row < 0) {
@@ -618,6 +619,10 @@ static void cursorLeft(RCore *core) {
 			r_core_seek_delta (core, -cols);
 			core->panels->panel[core->panels->curnode].addr = core->offset;
 			core->print->cur = prevoff - core->offset - 1;
+		}
+	} else {
+		core->print->cur--;
+		if (core->print->cur < 0) {
 		}
 	}
 }
@@ -866,7 +871,8 @@ static void handleLeftKey(RCore *core) {
 	} else if (core->print->cur_enabled
 			&& (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
 				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
-				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))) {
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP))) {
 		cursorLeft (core);
 		panels->panel[panels->curnode].refresh = true;
 	} else {
@@ -903,7 +909,8 @@ static void handleRightKey(RCore *core) {
 	} else if (core->print->cur_enabled
 			&& (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
 				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
-				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))) {
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP))) {
 		cursorRight (core);
 		panels->panel[panels->curnode].refresh = true;
 	} else {
