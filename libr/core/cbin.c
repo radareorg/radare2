@@ -1129,11 +1129,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, "symbols");
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", init_i);
+				snprintf (str, R_FLAG_NAME_SIZE, "entry.init%i", init_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.fini", fini_i);
+				snprintf (str, R_FLAG_NAME_SIZE, "entry.fini%i", fini_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.preinit", preinit_i);
+				snprintf (str, R_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i);
 			} else {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
 			}
@@ -1159,11 +1159,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		} else if (IS_MODE_RAD (mode)) {
 			char *name = NULL;
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
-				name = r_str_newf ("entry%i.init", init_i);
+				name = r_str_newf ("entry.init%i", init_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
-				name = r_str_newf ("entry%i.fini", fini_i);
+				name = r_str_newf ("entry.fini%i", fini_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
-				name = r_str_newf ("entry%i.preinit", preinit_i);
+				name = r_str_newf ("entry.preinit%i", preinit_i);
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
