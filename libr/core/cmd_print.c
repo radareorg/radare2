@@ -5175,6 +5175,12 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
 		}
+		int show_header = r_config_get_i (core->config, "hex.header");
+		if (show_header) {
+			core->print->flags |= R_PRINT_FLAGS_HEADER;
+		} else {
+			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+		}
 		/* Don't show comments in default case */
 		core->print->use_comments = false;
 	}

@@ -9,15 +9,17 @@
 
 #define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
 
+static const char hex[16] = "0123456789ABCDEF";
+
 static int nullprinter(const char *a, ...) {
 	return 0;
 }
+
 static int libc_printf(const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
 	vprintf (format, ap);
 	va_end (ap);
-
 	return 0;
 }
 
@@ -624,11 +626,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 			}
 		}
 		r_print_cursor (p, i, 0);
-		if (wrap) {
-			if (col + 1 >= p->width) {
-				p->cb_printf ("\n");
-				col = 0;
-			}
+		if (wrap && col + 1 >= p->width) {
+			p->cb_printf ("\n");
+			col = 0;
 		}
 		if (wide) {
 			i++;
@@ -638,7 +638,6 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	return i;
 }
 
-static const char hex[16] = "0123456789ABCDEF";
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
 	for (i = 0; i < len; i++) {
@@ -766,7 +765,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
-		use_pair = use_hdroff;
+		use_pair = p->pairs;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
@@ -872,10 +871,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							printfmt (" ");
 						}
 					}
-					if (use_pair) {
-						printfmt ("%c%c",
-							 hex[(((i+k) >> 4) + K) % 16],
-							 hex[(i + k) % 16]);
+					if  (use_hdroff) {
+						if (use_pair) {
+							printfmt ("%c%c",
+									hex[(((i+k) >> 4) + K) % 16],
+									hex[(i + k) % 16]);
+						} else {
+							printfmt (" %c", hex[(i + k) % 16]);
+						}
 					} else {
 						printfmt (" %c", hex[(i + k) % 16]);
 					}

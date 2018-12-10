@@ -1345,9 +1345,9 @@ static int cb_hex_header(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pairs = node->i_value;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_HDROFF;
+		core->print->flags |= R_PRINT_FLAGS_HEADER;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_HDROFF;
+		core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 	}
 	return true;
 }
