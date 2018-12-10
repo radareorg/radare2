@@ -27,6 +27,7 @@ extern "C" {
 #define R_PRINT_FLAGS_SECSUB  0x00002000
 #define R_PRINT_FLAGS_RAINBOW 0x00004000
 #define R_PRINT_FLAGS_HDROFF  0x00008000
+#define R_PRINT_FLAGS_STYLE   0x00010000
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);

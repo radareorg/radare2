@@ -1351,6 +1351,17 @@ static int cb_hex_header(void *user, void *data) {
 	return true;
 }
 
+static int cb_hex_style(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_STYLE;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_STYLE;
+	}
+	return true;
+}
+
 static int cb_hex_hdroff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2910,6 +2921,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* hexdump */
 	SETCB ("hex.header", "true", &cb_hex_header, "Show header in hexdumps");
 	SETCB  ("hex.hdroff", "false", &cb_hex_hdroff, "Show aligned 1 byte in header instead of delta nibble");
+	SETCB ("hex.style", "false", &cb_hex_style, "Improve the hexdump header style");
 	SETCB ("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");

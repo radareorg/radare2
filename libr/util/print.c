@@ -669,13 +669,13 @@ static bool isAllZeros(const ut8 *buf, int len) {
 	return true;
 }
 
+#define Pal(x,y) (x->cons && x->cons->pal.y)? x->cons->pal.y
 R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
-#define Pal(x) (rp->cons && rp->cons->pal.x)? rp->cons->pal.x
 	PrintfCallback p = (PrintfCallback) rp->cb_printf;
 	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
-	const char *color_0xff = c? (Pal (b0xff): Color_RED): "";
-	const char *color_text = c? (Pal (btext): Color_MAGENTA): "";
-	const char *color_other = c? (Pal (other): Color_WHITE): "";
+	const char *color_0xff = c? (Pal (rp, b0xff): Color_RED): "";
+	const char *color_text = c? (Pal (rp, btext): Color_MAGENTA): "";
+	const char *color_other = c? (Pal (rp, other): Color_WHITE): "";
 	const char *color_reset = c? Color_RESET: "";
 	int i, j;
 
@@ -739,6 +739,8 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback) printf;
+	bool c = p->flags & R_PRINT_FLAGS_COLOR;
+	const char *color_title = c? (Pal (p, graph_box2): Color_MAGENTA): "";
 	int i, j, k, inc = 16;
 	int sparse_char = 0;
 	int stride = 0;
@@ -757,6 +759,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_hexa = true;
 	const char *a, *b;
 	int K = 0;
+	bool hex_style = false;
 
 	len = len - (len % step);
 	if (p) {
@@ -766,6 +769,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
+		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
 		inc = p->cols;
@@ -824,40 +828,47 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		break;
 	}
 
+	const char *space = hex_style? ".": " ";
 	// TODO: Use base to change %03o and so on
 	if (step == 1 && base < 0) {
 		use_header = false;
 	}
 	if (use_header) {
+		if (c) {
+			printfmt (color_title);
+		}
 		if (base < 32) {
 			ut32 opad = (ut32) (addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;
 				char soff[32];
+				if (hex_style) {
+					printfmt ("..offset..");
+				} else {
+					printfmt ("- offset -");
+				}
 				if (use_segoff) {
 					ut32 s, a;
 					a = addr & 0xffff;
 					s = ((addr - a) >> p->seggrn) & 0xffff;
 					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
-					printfmt ("- offset -");
 				} else {
-					printfmt ("- offset - ");
 					snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
 				}
-				delta = strlen (soff) - 10;
+				delta = strlen (soff) - 9;
 				if (compact) {
 					delta--;
 				}
 				for (i = 0; i < delta; i++) {
-					printfmt (" ");
+					printfmt (space);
 				}
 			}
 			/* column after number, before hex data */
-			printfmt ((col == 1)? "|": " ");
+			printfmt ((col == 1)? "|": space);
 			opad >>= 4;
 			if (use_hdroff)  {
 				k = addr & 0xf;
-				K = (addr>>4) & 0xf;
+				K = (addr >> 4) & 0xf;
 			} else {
 				k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 			}
@@ -867,7 +878,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt (pre);
 					if (base < 0) {
 						if (i & 1) {
-							printfmt (" ");
+							printfmt (space);
 						}
 					}
 					if  (use_hdroff) {
@@ -883,16 +894,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if (i & 1 || !pairs) {
 						if (!compact) {
-							printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
+							printfmt (col != 1? space: ((i + 1) < inc)? space: "|");
 						}
 					}
 				}
 			}
 			/* ascii column */
 			if (compact) {
-				printfmt (col > 0? "|": " ");
+				printfmt (col > 0? "|": space);
 			} else {
-				printfmt (col == 2? "|": " ");
+				printfmt (col == 2? "|": space);
 			}
 			for (i = 0; i < inc; i++) {
 				printfmt ("%c", hex[(i + k) % 16]);
@@ -905,9 +916,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (col != 2) {
 					printfmt (" ");
 				}
-				printfmt (" comment ");
+				if (!hex_style) {
+					printfmt (" comment ");
+				}
 			}
 			printfmt ("\n");
+		}
+
+		if (c) {
+			printfmt (Color_RESET);
 		}
 	}
 
@@ -1101,6 +1118,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt (" ");
 			}
 			for (j = i; j < i + inc; j++) {
+				if (p && p->offname) {
+					a = p->offname (p->user, addr + j);
+					if (a && *a) {
+						const char *color = p->colorfor (p->user, addr + j, true);
+						printfmt ("%s  ; %s"Color_RESET, color, a);
+					}
+				}
 				char *comment = p->get_comments (p->user, addr + j);
 				if (comment) {
 					if (p && p->colorfor) {
