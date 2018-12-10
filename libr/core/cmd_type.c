@@ -15,7 +15,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	"ta", " <type>", "Mark immediate as a type offset",
-	"tc", " ([cctype])", "calling conventions listing and manipulations",
+	"tc", "", "List loaded types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
 	"tf", "", "List all loaded functions signatures",
@@ -745,7 +745,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd0 (core, "k anal/cc/*");
 			break;
 		case 0:
-			r_core_cmd0 (core, "k anal/cc/*~=cc[0]");
+			r_core_cmd0 (core, "tuc;tsc;ttc;tec");
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_tc);
