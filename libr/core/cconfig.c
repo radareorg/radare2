@@ -1343,7 +1343,6 @@ static int cb_hexpairs(void *user, void *data) {
 static int cb_hex_header(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->print->pairs = node->i_value;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_HEADER;
 	} else {
@@ -1355,7 +1354,6 @@ static int cb_hex_header(void *user, void *data) {
 static int cb_hex_hdroff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->print->pairs = node->i_value;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_HDROFF;
 	} else {

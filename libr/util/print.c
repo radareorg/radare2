@@ -765,7 +765,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
-		use_pair = p->pairs;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
