@@ -1290,11 +1290,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	nb_cons_cols += 17;
 	rows = len / nb_cols;
 
-	chars = calloc (nb_cols * 20, sizeof (char));
+	chars = calloc (nb_cols * 40, sizeof (char));
 	if (!chars) goto err_chars;
 	note = calloc (nb_cols, sizeof (char *));
 	if (!note) goto err_note;
-	bytes = calloc (nb_cons_cols * 20, sizeof (char));
+	bytes = calloc (nb_cons_cols * 40, sizeof (char));
 	if (!bytes) goto err_bytes;
 #if 1
 	int addrpadlen = strlen (sdb_fmt ("%08"PFMT64x, addr)) - 8;
@@ -1302,7 +1302,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	if (addrpadlen > 0) {
 		memset (addrpad, ' ', addrpadlen);
 		addrpad[addrpadlen] = 0;
-
 		// Compute, then show the legend
 		strcpy (bytes, addrpad);
 	} else {
@@ -1316,17 +1315,18 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		sprintf (bytes + j, format, (i & 0xf), (i + 1) & 0xf);
 		j += step;
 	}
-	sprintf (bytes + j + i, " ");
-	j++;
+	j--;
+	strcpy (bytes + j, "     ");
+	j += 2;
 	for (i = 0; i < nb_cols; i++) {
 		sprintf (bytes + j + i, "%0X", i % 17);
 	}
 	if (usecolor) {
 		r_cons_strcat (Color_GREEN);
-	}
-	r_cons_strcat (bytes);
-	if (usecolor) {
+		r_cons_strcat (bytes);
 		r_cons_strcat (Color_RESET);
+	} else {
+		r_cons_strcat (bytes);
 	}
 	r_cons_newline ();
 
@@ -1338,6 +1338,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		echars = chars;
 		hascolor = false;
 
+		// r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
 		if (usecolor) {
 			append (ebytes, core->cons->pal.offset);
 		}
@@ -1346,11 +1347,21 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			append (ebytes, Color_RESET);
 		}
 		append (ebytes, (col == 1)? " |": "  ");
-
+		bool hadflag = false;
 		for (j = 0; j < nb_cols; j++) {
 			setcolor = true;
 			R_FREE (note[j]);
 
+			RAnalMetaItem *meta = r_meta_find_in (core->anal, addr + j,
+					R_META_TYPE_FORMAT, R_META_WHERE_HERE);
+			if (meta && meta->type == R_META_TYPE_FORMAT && meta->from == addr + j) {
+				r_cons_printf (".format %s ; size=", meta->str);
+				r_core_cmdf (core, "pfs %s", meta->str);
+				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, meta->str, meta->from);
+				append (ebytes, Color_INVERT);
+				append (echars, Color_INVERT);
+				hadflag = true;
+			}
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
@@ -1372,6 +1383,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				color_idx++;
 				color_idx %= 10;
 				current_flag = flag;
+				if (flag->offset == addr + j) {
+					append (ebytes, Color_INVERT);
+					append (echars, Color_INVERT);
+					hadflag = true;
+				}
 			} else {
 				// Are we past the current flag?
 				if (current_flag && addr + j > (current_flag->offset + current_flag->size)) {
@@ -1383,14 +1399,24 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					setcolor = false;
 				}
 			}
+			if (usecolor && !setcolor) {
+				const char *bytecolor = r_print_byte_color (core->print, ch);
+				if (bytecolor) {
+					append (ebytes, bytecolor);
+					append (echars, bytecolor);
+					hascolor = true;
+				}
+			}
 			if (setcolor && !hascolor) {
 				hascolor = true;
 				if (usecolor) {
 					if (current_flag && current_flag->color) {
 						char *ansicolor = r_cons_pal_parse (current_flag->color, NULL);
-						append (ebytes, ansicolor);
-						append (echars, ansicolor);
-						free (ansicolor);
+						if (ansicolor) {
+							append (ebytes, ansicolor);
+							append (echars, ansicolor);
+							free (ansicolor);
+						}
 					} else { // Use "random" colours
 						append (ebytes, colors[color_idx]);
 						append (echars, colors[color_idx]);
@@ -1435,7 +1461,13 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				}
 			}
 			sprintf (ebytes, "%02x", ch);
+			// r_print_byte (core->print, "%02x ", j, ch);
 			ebytes += strlen (ebytes);
+			if (hadflag) {
+				append (ebytes, Color_INVERT_RESET);
+				append (echars, Color_INVERT_RESET);
+				hadflag = false;
+			}
 			sprintf (echars, "%c", IS_PRINTABLE (ch)? ch: '.');
 			echars++;
 			if (core->print->cur_enabled && max == here) {
@@ -1458,7 +1490,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				fend = UT64_MAX;
 				hascolor = false;
 			}
-
 		}
 		if (!html) {
 			append (ebytes, Color_RESET);
@@ -1472,7 +1503,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		if (marks) { // show comments and flags
 			int hasline = 0;
 			int out_sz = nb_cons_cols + 20;
-			char *out = calloc (out_sz, sizeof(char));
+			char *out = calloc (out_sz, sizeof (char));
 			memset (out, ' ', nb_cons_cols - 1);
 			for (j = 0; j < nb_cols; j++) {
 				if (note[j]) {

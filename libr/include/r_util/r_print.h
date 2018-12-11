@@ -140,6 +140,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 
 R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt);
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
+R_API const char *r_print_byte_color(RPrint *p, int ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
 R_API bool r_print_have_cursor(RPrint *p, int cur);

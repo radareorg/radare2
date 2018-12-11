@@ -4192,7 +4192,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 						ds->refline2, COLOR_RESET (ds));
 			}
-			r_cons_printf("|");
+			r_cons_printf ("|");
 			ds_newline (ds);
 		}
 	}
@@ -4795,10 +4795,10 @@ toro:
 		ds->printed_flag_addr = UT64_MAX;
 		// XXX. this must be done in ds_update_pc()
 		// ds_update_pc (ds, ds->at);
-			r_asm_set_pc (core->assembler, ds->at);
-			ds_update_ref_lines (ds);
-			r_anal_op_fini (&ds->analop);
-			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), R_ANAL_OP_MASK_ALL);
+		r_asm_set_pc (core->assembler, ds->at);
+		ds_update_ref_lines (ds);
+		r_anal_op_fini (&ds->analop);
+		r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), R_ANAL_OP_MASK_ALL);
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign);

@@ -543,6 +543,21 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	return dst;
 }
 
+R_API const char *r_print_byte_color(RPrint *p, int ch) {
+#define P(x) (p->cons && p->cons->pal.x)? p->cons->pal.x
+	const bool use_color = p->flags & R_PRINT_FLAGS_COLOR;
+	if (!use_color) {
+		return NULL;
+	}
+	switch (ch) {
+	case 0x00: return P (b0x00): Color_GREEN;
+	case 0x7F: return P (b0x7f): Color_YELLOW;
+	case 0xFF: return P (b0xff): Color_RED;
+	default: return IS_PRINTABLE (ch)? P (btext): Color_MAGENTA: P (other): Color_WHITE;
+	}
+	return NULL;
+}
+
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	ut8 rch = ch;
@@ -551,32 +566,12 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	}
 	r_print_cursor (p, idx, 1);
 	if (p && p->flags & R_PRINT_FLAGS_COLOR) {
-#define P(x) (p->cons && p->cons->pal.x)? p->cons->pal.x
-		char *color_0x00 = P (b0x00): Color_GREEN;
-		char *color_0x7f = P (b0x7f): Color_YELLOW;
-		char *color_0xff = P (b0xff): Color_RED;
-		char *color_text = P (btext): Color_MAGENTA;
-		char *color_other = P (other): Color_WHITE;
-		char *pre = NULL;
-		switch (ch) {
-		case 0x00:
-			pre = color_0x00;
-			break;
-		case 0x7F:
-			pre = color_0x7f;
-			break;
-		case 0xFF:
-			pre = color_0xff;
-			break;
-		default:
-			pre = IS_PRINTABLE (ch)? color_text: color_other;
-			break;
-		}
-		if (pre) {
-			printfmt (pre);
+		const char *bytecolor = r_print_byte_color (p, ch);
+		if (bytecolor) {
+			printfmt (bytecolor);
 		}
 		printfmt (fmt, rch);
-		if (pre) {
+		if (bytecolor) {
 			printfmt (Color_RESET);
 		}
 	} else {
@@ -740,7 +735,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, int zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback) printf;
 	bool c = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *color_title = c? (Pal (p, graph_box2): Color_MAGENTA): "";
+	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
 	int i, j, k, inc = 16;
 	int sparse_char = 0;
 	int stride = 0;
@@ -855,7 +850,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else {
 					snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
 				}
-				delta = strlen (soff) - 9;
+				delta = strlen (soff) - 10;
 				if (compact) {
 					delta--;
 				}
@@ -2068,7 +2063,7 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 
 R_API const char* r_print_rowlog(RPrint *print, const char *str) {
 	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose =  print->scr_prompt;
+	bool verbose = print->scr_prompt;
 	if (!verbose) {
 		return NULL;
 	}
