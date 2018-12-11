@@ -31,7 +31,7 @@ static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	r_write_be32 (tmp + 1, count);
 	memcpy (tmp + 5, buf, count);
 
-	r_socket_write (s, tmp, count + 5);
+	(void)r_socket_write (s, tmp, count + 5);
 	r_socket_flush (s);
 	if (r_socket_read (s, tmp, 5) != 5) { // TODO read_block?
 		eprintf ("rap__write: error\n");
@@ -67,7 +67,7 @@ static int rap__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	// send
 	tmp[0] = RMT_READ;
 	r_write_be32 (tmp + 1, count);
-	r_socket_write (s, tmp, 5);
+	(void)r_socket_write (s, tmp, 5);
 	r_socket_flush (s);
 	// recv
 	ret = r_socket_read_block (s, tmp, 5);
@@ -110,7 +110,7 @@ static ut64 rap__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	tmp[0] = RMT_SEEK;
 	tmp[1] = (ut8)whence;
 	r_write_be64 (tmp + 2, offset);
-	r_socket_write (s, &tmp, 10);
+	(void)r_socket_write (s, &tmp, 10);
 	r_socket_flush (s);
 	// get reply
 	memset (tmp, 0, 9);
@@ -215,7 +215,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		buf[1] = rw;
 		buf[2] = (ut8)strlen (file);
 		memcpy (buf + 3, file, buf[2]);
-		r_socket_write (rap_fd, buf, buf[2] + 3);
+		(void)r_socket_write (rap_fd, buf, buf[2] + 3);
 		r_socket_flush (rap_fd);
 		// read
 		eprintf ("waiting... ");
@@ -275,7 +275,7 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 	}
 	r_write_be32 (buf + 1, i);
 	memcpy (buf + 5, command, i);
-	r_socket_write (s, buf, i+5);
+	(void)r_socket_write (s, buf, i+5);
 	r_socket_flush (s);
 
 	/* read reverse cmds */
@@ -315,7 +315,7 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 		r_write_be32 (buf + 1, reslen);
 		memcpy (buf + 5, res, reslen);
 		free (res);
-		r_socket_write (s, buf, reslen + 5);
+		(void)r_socket_write (s, buf, reslen + 5);
 		r_socket_flush (s);
 	}
 
