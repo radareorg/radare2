@@ -654,17 +654,30 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
-		const RPVector *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
+#define USE_SKYLINE 0
+#if USE_SKYLINE
+		const RPVector *skyline = &core->io->map_skyline;
 		size_t i;
 		for (i = 0; i < r_pvector_len (skyline); i++) {
 			const RIOMapSkyline *part = r_pvector_at (skyline, i);
-			int perm = part->map->perm;
+		//  	int perm = part->map->perm;
 			ut64 from = r_itv_begin (part->itv);
 			ut64 to = r_itv_end (part->itv);
+			// XXX skyline's fake map perms are wrong
+			RIOMap *m = r_io_map_get (core->io, begin);
+			int rwx = m? m->perm: part->map->perm;
+#else
+		RIOMap *map;
+		SdbListIter *iter;
+		ls_foreach  (core->io->maps, iter, map) {
+			ut64 from = r_itv_begin (map->itv);
+			ut64 to = r_itv_end (map->itv);
+			int rwx = map->perm;
+#endif
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
-			if (begin== UT64_MAX) {
+			if (begin == UT64_MAX) {
 				begin = from;
 			}
 			if (end == UT64_MAX) {
@@ -673,8 +686,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				if (end == from) {
 					end = to;
 				} else {
-			//		eprintf ("[%llx - %llx]\n", begin, end);
-					append_bound (list, NULL, search_itv, begin, end - begin, perm);
+					append_bound (list, NULL, search_itv,
+						begin, end - begin, rwx);
 					begin = from;
 					end = to;
 				}
