@@ -6934,9 +6934,9 @@ static int compute_calls(RCore *core) {
 		xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
 		if (xrefs) {
 			cov += r_list_length (xrefs);
+			r_list_free (xrefs);
 			xrefs = NULL;
 		}
-		r_list_free (xrefs);
 	}
 	return cov;
 }
