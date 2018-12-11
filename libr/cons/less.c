@@ -54,7 +54,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	r_cons_set_raw (true);
 	r_cons_show_cursor (false);
 	r_cons_reset ();
-	w = h = 0;
+	h = 0;
 	while (ui) {
 		w = r_cons_get_size (&h);
 		to = R_MIN (lines_count, from + h);

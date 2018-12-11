@@ -152,8 +152,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (op=='e') {
 		int wordsize = 1;
 		char *os, *p, *s = strdup (arg);
-		int n, from = 0, to = 0, dif = 0, step = 1;
-		n = from = to;
+		int n = 0, from = 0, to = 0, dif = 0, step = 1;
 		os = s;
 		to = UT8_MAX;
 		//

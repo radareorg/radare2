@@ -594,6 +594,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 					RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
 					if (r) {
+						free (bptr);
 						return r_reg_get_value (core->dbg->reg, r);
 					}
 				}
