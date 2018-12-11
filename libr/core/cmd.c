@@ -3,14 +3,14 @@
 * Use RList
 * Support callback for null command (why?)
 * Show help of commands
-	- long commands not yet tested at all
-	- added interface to export command list into an autocompletable
-		argc, argv for dietline
+  - long commands not yet tested at all
+  - added interface to export command list into an autocompletable
+    argc, argv for dietline
 * r_cmd must provide a nesting char table indexing for commands
-	- this is already partially done
-	- this is pretty similar to r_db
-	- every module can register their own commands
-	- commands can be listed like in a tree
+  - this is already partially done
+  - this is pretty similar to r_db
+  - every module can register their own commands
+  - commands can be listed like in a tree
 #endif
 
 #define INTERACTIVE_MAX_REP 1024
@@ -1005,22 +1005,20 @@ static int cmd_kuery(void *data, const char *input) {
 
 	case 'j':
 		out = sdb_querys (s, NULL, 0, "anal/**");
+		if (!out) {
+			r_cons_println ("No Output from sdb");
+			break;
+		}
 
 		r_cons_printf ("{\"anal\":{");
 
-		while (strlen (out) != 0) {
+		while (*out) {
 			cur_pos = strchr (out, '\n');
-			cur_cmd = strndup (out, cur_pos - out);
+			cur_cmd = r_str_ndup (out, cur_pos - out);
 
 			r_cons_printf ("\n\n\"%s\" : [", cur_cmd);
 
-			next_cmd = malloc (strlen (cur_cmd) + 8);
-			// malloc for this: "anal/" + (input + 1) + cur_cmd + "/*"
-
-			strcpy (next_cmd, "anal/");
-			strcat (next_cmd, cur_cmd);
-			strcat (next_cmd, "/*");
-
+			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
 			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
 
 			if (!temp_storage) {
@@ -1030,9 +1028,13 @@ static int cmd_kuery(void *data, const char *input) {
 				continue;
 			}
 
-			while (strlen (temp_storage) != 0) {
+			while (*temp_storage) {
 				temp_pos = strchr (temp_storage, '\n');
-				temp_cmd = strndup (temp_storage, temp_pos - temp_storage);
+				if (!temp_pos) {
+					break;
+				}
+				
+				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
 				r_cons_printf ("\"%s\",", temp_cmd);
 				temp_storage += temp_pos - temp_storage + 1;
 			}
