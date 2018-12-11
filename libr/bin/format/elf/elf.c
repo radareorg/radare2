@@ -804,6 +804,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (!defs) {
+		bprintf ("Cannot allocate memory (Check Elf_(Verdef))\n");
 		return false;
 	}
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
@@ -811,10 +812,6 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	if (link_shdr && bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
-	}
-	if (!defs) {
-		bprintf ("Cannot allocate memory (Check Elf_(Verdef))\n");
-		return NULL;
 	}
 	sdb = sdb_new0 ();
 	end = (char *)defs + shdr->sh_size;

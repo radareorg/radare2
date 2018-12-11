@@ -2786,7 +2786,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		if (spc) {
 			nblocks = r_num_math (core->num, spc + 1);
 			if (nblocks < 1) {
-				nblocks = core->blocksize;
 				goto beach;
 			}
 			spc = strchr (spc + 1, ' ');

@@ -3828,7 +3828,6 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_dcu);
 		return false;
 	}
-	from = UT64_MAX;
 	to = UT64_MAX;
 	if (input[2] == '.') {
 		ptr = strchr (input + 3, ' ');

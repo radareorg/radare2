@@ -986,7 +986,6 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		ht_uu_insert (localbadstart, idx, 1);
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, 15)) {
-			opsz = 1;
 			goto ret;
 		} else {
 			opsz = asmop.size;
@@ -2709,7 +2708,6 @@ reread:
 		if (core->offset) {
 			RInterval itv = {0, core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
-				empty_search_itv = true;
 				ret = false;
 				goto beach;
 			} else {
@@ -3366,7 +3364,6 @@ reread:
 		if (core->offset) {
 			RInterval itv = {core->offset, -core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
-				empty_search_itv = true;
 				ret = false;
 				goto beach;
 			} else {

@@ -7473,7 +7473,6 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 		}
 		if (gap) {
 			r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", fcn->addr + fcn_size - gap_addr, gap_addr);
-			gap = false;
 		}
 		free (bitmap);
 		return true;

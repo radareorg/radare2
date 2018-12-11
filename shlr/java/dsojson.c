@@ -40,6 +40,8 @@ static RList * build_str_list_from_iterable (RList *the_list) {
 		char *str = dso_json_obj_to_str (json_obj);
 		if (str && *str) {
 			r_list_append (res, str);
+		} else {
+			free (str);
 		}
 	}
 	return res;
