@@ -222,7 +222,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					char *bufasm = r_str_prefix_all (acbufasm, "- ");
 					printf ("%s\n", bufasm);
 					free (bufasm);
-					free (acbufasm)
+					free (acbufasm);
 				} else {
 					char *bufasm = r_str_prefix_all (acbufasm, Color_RED"- ");
 					printf ("%s"Color_RESET, bufasm);
