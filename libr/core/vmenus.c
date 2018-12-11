@@ -2931,8 +2931,8 @@ repeat:
 			r_cons_flush ();
 			r_line_set_prompt ("format: ");
 			strcpy (cmd, "Cf 0 ");
-			if (r_cons_fgets (cmd+5, sizeof (cmd)-6, 0, NULL) > 0) {
-				r_core_cmd (core, cmd, 0);
+			if (r_cons_fgets (cmd + 5, sizeof (cmd) - 6, 0, NULL) > 0) {
+				r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, off);
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
 			}
@@ -3341,7 +3341,7 @@ repeat:
 	case 'Q':
 	case 'q':
 	default:
-		if (IS_DIGIT(ch)) {
+		if (IS_DIGIT (ch)) {
 			if (rep < 0) {
 				rep = 0;
 			}

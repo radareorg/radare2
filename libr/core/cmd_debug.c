@@ -716,7 +716,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (!off) {
-		eprintf ("Cannot 'drn pc'\n");
+		eprintf ("Cannot 'drn PC'\n");
 		return false;
 	}
 	if (!addr) {
@@ -951,7 +951,7 @@ static int step_line(RCore *core, int times) {
 	char *tmp_ptr = NULL;
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
-		eprintf ("Cannot 'drn pc'\n");
+		eprintf ("Cannot 'drn PC'\n");
 		return false;
 	}
 	file[0] = 0;
