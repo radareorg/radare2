@@ -26,7 +26,7 @@ Keys:
 #include <r_core.h>
 #include <r_util.h>
 
-#define META_RANGE_BASE(x) ((x)>>12)
+#define META_RANGE_BASE(x) ((x)>>5)
 #undef DB
 #define DB a->sdb_meta
 
