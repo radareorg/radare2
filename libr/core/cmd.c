@@ -5,7 +5,7 @@
 * Show help of commands
   - long commands not yet tested at all
   - added interface to export command list into an autocompletable
-	argc, argv for dietline
+    argc, argv for dietline
 * r_cmd must provide a nesting char table indexing for commands
   - this is already partially done
   - this is pretty similar to r_db
@@ -1726,7 +1726,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = NULL;
-		if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
+	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
 		goto err_r_w32_cmd_pipe;
 	}
@@ -3559,9 +3559,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 
 				/* duplicate flags that match word, to be sure
-					the command is going to be executed on flags
-					values at the moment the command is called
-					(without side effects) */
+				   the command is going to be executed on flags
+				   values at the moment the command is called
+				   (without side effects) */
 				r_list_foreach (core->flags->flags, iter, flag) {
 					/* filter per flag spaces */
 					if ((flagspace != -1) && (flag->space != flagspace)) {
