@@ -847,10 +847,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					a = addr & 0xffff;
 					s = ((addr - a) >> p->seggrn) & 0xffff;
 					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
+					delta = strlen (soff) - 10;
 				} else {
 					snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
+					delta = strlen (soff) - 9;
 				}
-				delta = strlen (soff) - 10;
 				if (compact) {
 					delta--;
 				}
