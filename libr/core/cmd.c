@@ -5,7 +5,7 @@
 * Show help of commands
   - long commands not yet tested at all
   - added interface to export command list into an autocompletable
-    argc, argv for dietline
+	argc, argv for dietline
 * r_cmd must provide a nesting char table indexing for commands
   - this is already partially done
   - this is pretty similar to r_db
@@ -1014,6 +1014,9 @@ static int cmd_kuery(void *data, const char *input) {
 
 		while (*out) {
 			cur_pos = strchr (out, '\n');
+			if (!cur_pos) {
+					break;
+			}
 			cur_cmd = r_str_ndup (out, cur_pos - out);
 
 			r_cons_printf ("\n\n\"%s\" : [", cur_cmd);
