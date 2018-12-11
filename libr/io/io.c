@@ -672,8 +672,6 @@ R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *chil
 	return r;
 #endif
 }
-#endif
-
 
 R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 #if USE_PTRACE_WRAP
@@ -684,6 +682,7 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 #endif
 	return func (user);
 }
+#endif
 
 
 //remove all descs and maps
