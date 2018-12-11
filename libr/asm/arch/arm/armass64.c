@@ -760,6 +760,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].shift_amount = r_num_math (NULL, token + 4);
 			if (op->operands[operand].shift_amount > 63) {
+				free (t);
 				return false;
 			}
 			operand ++;
