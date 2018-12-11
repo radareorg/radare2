@@ -367,10 +367,9 @@ R_API int r_core_search_preludes(RCore *core) {
 			switch (bits) {
 			case 16:
 				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xf0\xb5", 2, NULL, 0);
-				// push {r4, r6, r7, lr}
+					(const ut8 *) "\x00\xb5", 2, (const ut8*)"\x0f\xff", 2);
 				ret = r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xd0\xb5", 2, NULL, 0);
+					(const ut8 *) "\x08\xb5", 2, (const ut8*)"\x0f\xff", 2);
 				break;
 			case 32:
 				ret = r_core_search_prelude (core, from, to,
