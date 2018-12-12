@@ -666,12 +666,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			ut64 from = r_itv_begin (part->itv);
 			ut64 to = r_itv_end (part->itv);
 			// XXX skyline's fake map perms are wrong
-			RIOMap *m = r_io_map_get (core->io, begin);
+			RIOMap *m = r_io_map_get (core->io, from);
 			int rwx = m? m->perm: part->map->perm;
 #else
 		RIOMap *map;
 		SdbListIter *iter;
 		ls_foreach  (core->io->maps, iter, map) {
+		const RPVector *skyline = &core->io->map_skyline;
 			ut64 from = r_itv_begin (map->itv);
 			ut64 to = r_itv_end (map->itv);
 			int rwx = map->perm;

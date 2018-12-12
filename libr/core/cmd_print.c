@@ -2503,7 +2503,6 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 	}
 }
 
-
 static int cmd_print_blocks(RCore *core, const char *input) {
 	char mode = input[0];
 	if (mode == '?') {
@@ -2515,27 +2514,28 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		input++;
 	}
 
-	int w;
-	if (input[0] == ' ') {
-		w = (int)r_num_math (core->num, input + 1);
-	} else {
-		w = (int)(core->print->cols * 2.7);
-	}
+	int w = (input[0] == ' ')
+		? (int)r_num_math (core->num, input + 1)
+		: (int)(core->print->cols * 2.7);
 
 	ut64 off = core->offset;
-	ut64 from = 0;
+	ut64 from = UT64_MAX;
 	ut64 to = 0;
-	{
-		RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
-		if (!list) {
-			return 1;
+	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
+	if (!list) {
+		return 1;
+	}
+	RListIter *iter;
+	RIOMap *map;
+	r_list_foreach (list, iter, map) {
+		ut64 f = r_itv_begin (map->itv);
+		ut64 t = r_itv_end (map->itv);
+		if (f < from) {
+			from = f;
 		}
-		RIOMap *map = r_list_first (list);
-		if (map) {
-			from = map->itv.addr;
-			to = r_itv_end (map->itv);
+		if (t > to) {
+			to = t;
 		}
-		r_list_free (list);
 	}
 	ut64 piece = R_MAX ((to - from) / w, 1);
 	RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, piece);
@@ -2544,113 +2544,113 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	}
 
 	switch (mode) {
-		case 'j': // "p-j"
-			r_cons_printf (
-					"{\"from\":%"PFMT64u ","
-					"\"to\":%"PFMT64u ","
-					"\"blocksize\":%d,"
-					"\"blocks\":[", from, to, piece);
-			break;
-		case 'h': // "p-h"
-			r_cons_printf (".-------------.----------------------------.\n");
-			r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
-			r_cons_printf ("|-------------)----------------------------|\n");
-			break;
-		default:
-			r_cons_printf ("0x%"PFMT64x " [", from);
+	case 'j': // "p-j"
+		r_cons_printf (
+			"{\"from\":%"PFMT64u ","
+			"\"to\":%"PFMT64u ","
+			"\"blocksize\":%d,"
+			"\"blocks\":[", from, to, piece);
+		break;
+	case 'h': // "p-h"
+		r_cons_printf (".-------------.----------------------------.\n");
+		r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
+		r_cons_printf ("|-------------)----------------------------|\n");
+		break;
+	default:
+		r_cons_printf ("0x%"PFMT64x " [", from);
 	}
 
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int len = 0;
 	int i;
 	RCoreAnalStatsItem total = {0};
-	for (i = 0; i < ((to-from)/piece); i++) {
+	for (i = 0; i < ((to - from) / piece); i++) {
 		bool insert_separator = false;
 		ut64 at = from + (piece * i);
 		ut64 ate = at + piece;
 		ut64 p = (at - from) / piece;
 		switch (mode) {
-			case 'j':
-				r_cons_printf ("%s{", len? ",": "");
-				if ((as->block[p].flags)
-					|| (as->block[p].functions)
-					|| (as->block[p].comments)
-					|| (as->block[p].symbols)
-					|| (as->block[p].perm)
-					|| (as->block[p].strings)) {
-					r_cons_printf ("\"offset\":%"PFMT64u ",", at);
-					r_cons_printf ("\"size\":%"PFMT64u ",", piece);
-				}
+		case 'j':
+			r_cons_printf ("%s{", len? ",": "");
+			if ((as->block[p].flags)
+				|| (as->block[p].functions)
+				|| (as->block[p].comments)
+				|| (as->block[p].symbols)
+				|| (as->block[p].perm)
+				|| (as->block[p].strings)) {
+				r_cons_printf ("\"offset\":%"PFMT64u ",", at);
+				r_cons_printf ("\"size\":%"PFMT64u ",", piece);
+			}
 #define PRINT_VALUE(name, cond, v) { \
-				if (cond) { \
-					r_cons_printf ("%s\"" name "\":%d", insert_separator? ",": "", (v)); \
-					insert_separator = true; \
-				}}
+			if (cond) { \
+				r_cons_printf ("%s\"" name "\":%d", insert_separator? ",": "", (v)); \
+				insert_separator = true; \
+			}}
 #define PRINT_VALUE2(name, v) PRINT_VALUE(name, v, v)
-				PRINT_VALUE2 ("flags", as->block[p].flags);
-				PRINT_VALUE2 ("functions", as->block[p].functions);
-				PRINT_VALUE2 ("in_functions", as->block[p].in_functions);
-				PRINT_VALUE2 ("comments", as->block[p].comments);
-				PRINT_VALUE2 ("symbols", as->block[p].symbols);
-				PRINT_VALUE2 ("strings", as->block[p].strings);
-				PRINT_VALUE ("perm", as->block[p].perm, r_str_rwx_i (as->block[p].perm));
+			PRINT_VALUE2 ("flags", as->block[p].flags);
+			PRINT_VALUE2 ("functions", as->block[p].functions);
+			PRINT_VALUE2 ("in_functions", as->block[p].in_functions);
+			PRINT_VALUE2 ("comments", as->block[p].comments);
+			PRINT_VALUE2 ("symbols", as->block[p].symbols);
+			PRINT_VALUE2 ("strings", as->block[p].strings);
+			PRINT_VALUE ("perm", as->block[p].perm, r_str_rwx_i (as->block[p].perm));
 #undef PRINT_VALUE
 #undef PRINT_VALUE2
-				r_cons_strcat ("}");
-				len++;
-				break;
-			case 'h':
-				total.flags += as->block[p].flags;
-				total.functions += as->block[p].functions;
-				total.comments += as->block[p].comments;
-				total.symbols += as->block[p].symbols;
-				total.strings += as->block[p].strings;
-				if ((as->block[p].flags)
-					|| (as->block[p].functions)
-					|| (as->block[p].comments)
-					|| (as->block[p].symbols)
-					|| (as->block[p].strings)) {
-					r_cons_printf ("| 0x%09"PFMT64x " | %4d %4d %4d %4d %4d   |\n", at,
-								   as->block[p].flags,
-								   as->block[p].functions,
-								   as->block[p].comments,
-								   as->block[p].symbols,
-								   as->block[p].strings);
-				}
-				break;
-			default:
-				if (off >= at && off < ate) {
-					r_cons_memcat ("^", 1);
-				} else {
-					RIOSection *s = r_io_section_vget (core->io, at);
-					if (use_color) {
-						if (s) {
-							if (s->perm & R_PERM_X) {
-								r_cons_print (Color_BGBLUE);
-							} else {
-								r_cons_print (Color_BGGREEN);
-							}
+			r_cons_strcat ("}");
+			len++;
+			break;
+		case 'h':
+			total.flags += as->block[p].flags;
+			total.functions += as->block[p].functions;
+			total.comments += as->block[p].comments;
+			total.symbols += as->block[p].symbols;
+			total.strings += as->block[p].strings;
+			if ((as->block[p].flags)
+				|| (as->block[p].functions)
+				|| (as->block[p].comments)
+				|| (as->block[p].symbols)
+				|| (as->block[p].strings)) {
+				r_cons_printf ("| 0x%09"PFMT64x " | %4d %4d %4d %4d %4d   |\n", at,
+						as->block[p].flags,
+						as->block[p].functions,
+						as->block[p].comments,
+						as->block[p].symbols,
+						as->block[p].strings);
+			}
+			break;
+		default:
+			if (off >= at && off < ate) {
+				r_cons_memcat ("^", 1);
+			} else {
+				RIOSection *s = r_io_section_vget (core->io, at);
+				if (use_color) {
+					if (s) {
+						if (s->perm & R_PERM_X) {
+							r_cons_print (Color_BGBLUE);
 						} else {
-							r_cons_print (Color_BGRED);
+							r_cons_print (Color_BGGREEN);
 						}
-					}
-					if (as->block[p].strings > 0) {
-						r_cons_memcat ("z", 1);
-					} else if (as->block[p].symbols > 0) {
-						r_cons_memcat ("s", 1);
-					} else if (as->block[p].functions > 0) {
-						r_cons_memcat ("F", 1);
-					} else if (as->block[p].comments > 0) {
-						r_cons_memcat ("c", 1);
-					} else if (as->block[p].flags > 0) {
-						r_cons_memcat (".", 1);
-					} else if (as->block[p].in_functions > 0) {
-						r_cons_memcat ("f", 1);
 					} else {
-						r_cons_memcat ("_", 1);
+						r_cons_print (Color_BGRED);
 					}
 				}
-				break;
+				if (as->block[p].strings > 0) {
+					r_cons_memcat ("z", 1);
+				} else if (as->block[p].symbols > 0) {
+					r_cons_memcat ("s", 1);
+				} else if (as->block[p].functions > 0) {
+					r_cons_memcat ("F", 1);
+				} else if (as->block[p].comments > 0) {
+					r_cons_memcat ("c", 1);
+				} else if (as->block[p].flags > 0) {
+					r_cons_memcat (".", 1);
+				} else if (as->block[p].in_functions > 0) {
+					r_cons_memcat ("f", 1);
+				} else {
+					r_cons_memcat ("_", 1);
+				}
+			}
+			break;
 		}
 	}
 	switch (mode) {
