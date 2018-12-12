@@ -2942,7 +2942,7 @@ reread:
 		dosearch = true;
 		param.crypto_search = true;
 		switch (input[1]) {
-		case 'c': // "Cc"
+		case 'c': // "/Cc"
 			{
 				ret = false;
 				const char *arg = r_str_trim_ro (input + 2);
@@ -2978,7 +2978,7 @@ reread:
 				goto beach;
 			}
 			break;
-		case 'd': // "Cd"
+		case 'd': // "/Cd"
 			{
 				param.crypto_search = false;
 				RSearchKeyword *kw;
@@ -2993,10 +2993,10 @@ reread:
 				}
 			}
 			break;
-		case 'a':
+		case 'a': // "/Ca"
 			param.aes_search = true;
 			break;
-		case 'r':
+		case 'r': // "/Cr"
 			param.rsa_search = true;
 			break;
 		default: {
