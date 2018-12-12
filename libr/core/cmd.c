@@ -998,8 +998,8 @@ static int cmd_kuery(void *data, const char *input) {
 	const int buflen = sizeof (buf) - 1;
 	Sdb *s = core->sdb;
 	
-	char *cur_pos, *cur_cmd, *next_cmd;
-	char *temp_pos, *temp_cmd, *temp_storage;
+	char *cur_pos, *cur_cmd, *next_cmd = NULL;
+	char *temp_pos, *temp_cmd, *temp_storage = NULL;
 
 	switch (input[0]) {
 
@@ -1824,27 +1824,30 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
 	if (stdout_fd != -1) {
-		pipe (fds);
-		child = r_sys_fork ();
-		if (child == -1) {
-			eprintf ("Cannot fork\n");
-			close (stdout_fd);
-		} else if (child) {
-			dup2 (fds[1], 1);
-			close (fds[1]);
-			close (fds[0]);
-			r_core_cmd (core, radare_cmd, 0);
-			r_cons_flush ();
-			close (1);
-			wait (&ret);
-			dup2 (stdout_fd, 1);
-			close (stdout_fd);
+		if (pipe (fds) == 0) {
+			child = r_sys_fork ();
+			if (child == -1) {
+				eprintf ("Cannot fork\n");
+				close (stdout_fd);
+			} else if (child) {
+				dup2 (fds[1], 1);
+				close (fds[1]);
+				close (fds[0]);
+				r_core_cmd (core, radare_cmd, 0);
+				r_cons_flush ();
+				close (1);
+				wait (&ret);
+				dup2 (stdout_fd, 1);
+				close (stdout_fd);
+			} else {
+				close (fds[1]);
+				dup2 (fds[0], 0);
+				//dup2 (1, 2); // stderr goes to stdout
+				r_sandbox_system (shell_cmd, 0);
+				close (stdout_fd);
+			}
 		} else {
-			close (fds[1]);
-			dup2 (fds[0], 0);
-			//dup2 (1, 2); // stderr goes to stdout
-			r_sandbox_system (shell_cmd, 0);
-			close (stdout_fd);
+			eprintf ("r_core_cmd_pipe: Could not pipe\n");
 		}
 	}
 #elif __WINDOWS__
