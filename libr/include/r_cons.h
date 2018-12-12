@@ -1052,9 +1052,19 @@ typedef enum {
 } RPanelsMode;
 
 typedef enum {
+	PANEL_FUN_SNOW,
+	PANEL_FUN_NOFUN
+} RPanelsFun;
+
+typedef enum {
 	PANEL_LAYOUT_DEFAULT_STATIC = 0,
 	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
 } RPanelsLayout;
+
+typedef struct {
+	int x;
+	int y;
+} RPanelsSnow;
 
 typedef struct r_panels_t {
 	RConsCanvas *can;
@@ -1068,8 +1078,10 @@ typedef struct r_panels_t {
 	Sdb *db;
 	HtPP *mht;
 	RPanelsMode mode;
+	RPanelsFun fun;
 	RPanelsMode prevMode;
 	RPanelsLayout layout;
+	RList *snows;
 } RPanels;
 
 #ifdef __cplusplus
