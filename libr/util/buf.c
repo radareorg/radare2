@@ -809,10 +809,14 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		if (newlen > effective_size && !b->ro) {
 			b->length = newlen;
 #ifdef _MSC_VER
-			_chsize (b->fd, newlen);
+			int r = _chsize (b->fd, newlen);
 #else
-			ftruncate (b->fd, newlen);
+			int r = ftruncate (b->fd, newlen);
 #endif
+			if (r != 0) {
+				eprintf ("Could not resize\n");
+				return 0;
+			}
 		} else {
 			len = real_len;
 		}
