@@ -212,6 +212,7 @@ static const char *help_msg_k[] = {
 	"k", " anal/meta/*", "list kv from anal > meta namespaces",
 	"k", " anal/**", "list namespaces under anal",
 	"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
+	"kj", "", "List all namespaces and sdb databases in JSON format",
 	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
 	//"ks", " ha.sdb", "save keyvalue to ha.sdb",
 	NULL,
@@ -996,8 +997,60 @@ static int cmd_kuery(void *data, const char *input) {
 	const char *sp, *p = "[sdb]> ";
 	const int buflen = sizeof (buf) - 1;
 	Sdb *s = core->sdb;
+	
+	char *cur_pos, *cur_cmd, *next_cmd;
+	char *temp_pos, *temp_cmd, *temp_storage;
 
 	switch (input[0]) {
+
+	case 'j':
+		out = sdb_querys (s, NULL, 0, "anal/**");
+		if (!out) {
+			r_cons_println ("No Output from sdb");
+			break;
+		}
+
+		r_cons_printf ("{\"anal\":{");
+
+		while (*out) {
+			cur_pos = strchr (out, '\n');
+			if (!cur_pos) {
+					break;
+			}
+			cur_cmd = r_str_ndup (out, cur_pos - out);
+
+			r_cons_printf ("\n\n\"%s\" : [", cur_cmd);
+
+			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
+			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
+
+			if (!temp_storage) {
+				r_cons_println ("\nEMPTY\n");
+				r_cons_printf ("],\n\n");
+				out += cur_pos - out + 1;
+				continue;
+			}
+
+			while (*temp_storage) {
+				temp_pos = strchr (temp_storage, '\n');
+				if (!temp_pos) {
+					break;
+				}
+				
+				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
+				r_cons_printf ("\"%s\",", temp_cmd);
+				temp_storage += temp_pos - temp_storage + 1;
+			}
+
+			r_cons_printf ("],\n\n");
+			out += cur_pos - out + 1;
+		}
+
+		r_cons_printf ("}}");
+		free (next_cmd);
+		free (temp_storage);
+		break;
+
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input + 1);
 		if (out) {
@@ -1673,7 +1726,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = NULL;
-   	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
+	if (!CreatePipe (&pipe[0], &pipe[1], &sa, 0)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreatePipe");
 		goto err_r_w32_cmd_pipe;
 	}
@@ -2782,8 +2835,8 @@ ignore:
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
-			    !memcmp (ptr + 1, "0x", 2) &&
-			    !memcmp (ptr2 + 1, "0x", 2)) {
+				!memcmp (ptr + 1, "0x", 2) &&
+				!memcmp (ptr2 + 1, "0x", 2)) {
 				/* 0xXXXX:0xYYYY */
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
