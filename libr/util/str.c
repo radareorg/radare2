@@ -691,7 +691,10 @@ R_API char *r_str_newlen(const char *str, int len) {
 
 R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 	char *buf;
-	if (str && strlen (str) < len) {
+	if (!str) {
+		return NULL;
+	}
+	if (strlen (str) < len) {
 		buf = strdup (str);
 	} else {
 		buf = r_str_newlen (str, len);
