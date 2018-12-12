@@ -113,6 +113,7 @@ static const char *help_msg_panels[] = {
 	".",        "seek to PC or entrypoint",
 	"*",        "show pseudo code/r2dec in the current panel",
 	"/",        "highlight the keyword",
+	"(",        "toggle snow",
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
