@@ -691,11 +691,13 @@ R_API char *r_str_newlen(const char *str, int len) {
 
 R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 	char *buf;
-	if (strlen (str) < len) {
+	if (str && strlen (str) < len) {
 		buf = strdup (str);
 	} else {
 		buf = r_str_newlen (str, len);
-		strcpy (buf + len - 4, "...");
+		if (buf) {
+			strcpy (buf + len - 4, "...");
+		}
 	}
 	return buf;
 }

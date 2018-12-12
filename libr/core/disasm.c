@@ -2587,9 +2587,8 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {
 		if (ds->_tabsoff != ds->atabsoff) {
-			char *b = ds->_tabsbuf;
 			// TODO optimize to avoid down resizing
-			b = malloc (ds->atabsoff + 1);
+			char *b = malloc (ds->atabsoff + 1);
 			if (b) {
 				memset (b, ' ', ds->atabsoff);
 				b[ds->atabsoff] = 0;
@@ -5687,7 +5686,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
 	const bool scr_color = r_config_get_i (core->config, "scr.color");
-	int i, ret, err = 0, count = 0;
+	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
 	RAsmOp asmop;
@@ -5712,7 +5711,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, l - i);
 		if (ret < 1) {
-			err = 1;
 			switch (mode) {
 			case 'j':
 			case '=':

@@ -845,7 +845,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 	res = r_cmd_java_get_class_names_from_input (cmd, &class_name,
 		&class_name_len, &new_class_name, &new_class_name_len);
 
-	if (!class_name || !new_class_name) {
+	if (!res || !class_name || !new_class_name) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS+REPLACE_CLASS_NAME_IDX);
 		free (class_name);
 		free (new_class_name);
@@ -1458,10 +1458,6 @@ static int r_cmd_java_handle_set_flags (RCore * core, const char * input) {
 			case 'm': flag_value = r_bin_java_calculate_method_access_value (p); break;
 			case 'c': flag_value = r_bin_java_calculate_class_access_value (p); break;
 			default: flag_value = -1;
-		}
-		if (flag_value == -1) {
-			eprintf ("[-] r_cmd_java: in valid flag type provided .\n");
-			res = true;
 		}
 	}
 	IFDBG r_cons_printf ("Current args: (flag_value: 0x%04x addr: 0x%"PFMT64x")\n.", flag_value, addr, res);

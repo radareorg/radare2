@@ -2143,7 +2143,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			free (line);
 			if (oseek != UT64_MAX) {
 				r_core_seek (core, oseek, 1);
-				oseek = UT64_MAX;
 			}
 			if (pipefd != -1) {
 				r_cons_flush ();
@@ -2901,14 +2900,12 @@ next_arroba:
 			core->fixedarch = oldfixedarch;
 			r_config_set (core->config, "asm.arch", tmpasm);
 			R_FREE (tmpasm);
-			is_arch_set = false;
 		}
 		if (tmpfd != -1) {
 			r_io_use_fd (core->io, tmpfd);
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
-			is_bits_set = false;
 			core->fixedbits = oldfixedbits;
 		}
 		if (tmpeval) {
@@ -2917,7 +2914,6 @@ next_arroba:
 		}
 		if (flgspc != -123) {
 			r_flag_space_set_i (core->flags, flgspc);
-			flgspc = -123;
 		}
 		*ptr = '@';
 		rc = ret;

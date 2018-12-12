@@ -1395,7 +1395,6 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 	if (r_list_length (func_args)) {
 		copy_string (&func_str, "(", 0);
 		i = r_list_length (func_args);
-		it = r_list_iterator (func_args);
 		r_list_foreach (func_args, it, str_arg) {
 			copy_string (&func_str, str_arg->str_ptr, 0);
 			if (--i) {

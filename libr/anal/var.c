@@ -441,7 +441,8 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 		}
 		if (!old_name) {
 			old_name = stored_name;
-		} else if (strcmp (stored_name, old_name)) {
+		}
+		if (strcmp (stored_name, old_name)) {
 			return 0;
 		}
 		sdb_unset (DB, key, 0);

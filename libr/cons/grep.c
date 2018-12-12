@@ -207,7 +207,6 @@ while_end:
 			if (fail) {
 				ZERO_FILL (grep->tokens);
 				grep->tokens_used = 0;
-				fail = 0;
 				break;
 			}
 			switch (*ptr2) {

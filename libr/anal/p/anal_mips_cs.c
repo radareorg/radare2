@@ -175,7 +175,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 #define ARG(x) (*str[x]!=0)?str[x]:arg(handle, insn, str[x], x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	char str[8][32];
+	char str[8][32] = {0};
 	int i;
 
 	r_strbuf_init (&op->esil);
