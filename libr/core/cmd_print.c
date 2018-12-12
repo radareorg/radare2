@@ -2132,8 +2132,34 @@ r_cons_pop();
 				r_cons_printf ("%s\n", str);
 			}
 		}
+#if USE_PREFIXES
 		// XXX leak
-		str = strstr (line, " str.");
+		str = strstr (line, " obj.");
+		if (!str) {
+			str = strstr (line, " str.");
+			if (!str) {
+				str = strstr (line, " imp.");
+				if (!str) {
+					str = strstr (line, " fcn.");
+					if (!str) {
+						str = strstr (line, " sub.");
+					}
+				}
+			}
+		}
+#else
+		if (strchr (line, ';')) {
+			const char *dot = r_str_rchr (line, NULL, '.');
+			if (dot) {
+				const char *o = r_str_rchr (line, dot, ' ');
+				if (o) {
+					str = (char*)o;
+				} else {
+					eprintf ("Warning: missing summary reference: %s\n", dot);
+				}
+			}
+		}
+#endif
 		if (str) {
 			str = strdup (str);
 			char *qoe = NULL;
