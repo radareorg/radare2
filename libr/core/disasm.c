@@ -4649,6 +4649,11 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		flag = r_flag_get_i2 (f, addr);
 		if (flag) {
 			name = flag->name;
+		} else {
+			RBinReloc *rel = getreloc(ds->core, addr, ds->analop.size);
+			if (rel && rel->import && rel->import->name) {
+				name = rel->import->name;
+			}
 		}
 	}
 	if (name) {
