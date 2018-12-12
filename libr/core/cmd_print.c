@@ -283,7 +283,6 @@ static const char *help_msg_pd[] = {
 	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
-	// "pds", "", "disassemble with back sweep (greedy disassembly backwards)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
 	NULL
@@ -2132,6 +2131,7 @@ r_cons_pop();
 				r_cons_printf ("%s\n", str);
 			}
 		}
+#define USE_PREFIXES 1
 #if USE_PREFIXES
 		// XXX leak
 		str = strstr (line, " obj.");
