@@ -901,7 +901,6 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		}
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
-	const bool midbb = r_config_get_i (core->config, "asm.bb.middle");
 	target = addr;
 	base = target - OPDELTA;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
@@ -916,18 +915,8 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		if (len < 1) {
 			continue;
 		}
-		if (target == base + i + len) {
+		if (target <= base + i + len) {
 			return base + i;
-		}
-		if (midbb) {
-			int skip_bytes_bb = r_core_bb_starts_in_middle (core, base + i, len);
-			if (skip_bytes_bb && skip_bytes_bb < len) {
-				if (target == base + i + skip_bytes_bb) {
-					return base + i;
-				} else {
-					len = skip_bytes_bb;
-				}
-			}
 		}
 		i += len - 1;
 	}
