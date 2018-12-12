@@ -283,7 +283,6 @@ static const char *help_msg_pd[] = {
 	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
-	// "pds", "", "disassemble with back sweep (greedy disassembly backwards)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
 	NULL
@@ -2132,8 +2131,35 @@ r_cons_pop();
 				r_cons_printf ("%s\n", str);
 			}
 		}
+#define USE_PREFIXES 1
+#if USE_PREFIXES
 		// XXX leak
-		str = strstr (line, " str.");
+		str = strstr (line, " obj.");
+		if (!str) {
+			str = strstr (line, " str.");
+			if (!str) {
+				str = strstr (line, " imp.");
+				if (!str) {
+					str = strstr (line, " fcn.");
+					if (!str) {
+						str = strstr (line, " sub.");
+					}
+				}
+			}
+		}
+#else
+		if (strchr (line, ';')) {
+			const char *dot = r_str_rchr (line, NULL, '.');
+			if (dot) {
+				const char *o = r_str_rchr (line, dot, ' ');
+				if (o) {
+					str = (char*)o;
+				} else {
+					eprintf ("Warning: missing summary reference: %s\n", dot);
+				}
+			}
+		}
+#endif
 		if (str) {
 			str = strdup (str);
 			char *qoe = NULL;
