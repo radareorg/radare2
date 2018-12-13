@@ -384,7 +384,7 @@ On x86 acording to Wikipedia
 		R_ANAL_OP_PREFIX_LOCK     = 1<<3,
 		R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
 		R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
-			/* TODO: add segment override typemods? */
+		/* TODO: add segment override typemods? */
 	} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits

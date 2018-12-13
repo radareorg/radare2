@@ -3306,7 +3306,7 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 }
 
 static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
-	ut8 buf[sizeof(ut64)] = {0};
+	ut8 buf[sizeof (ut64)] = {0};
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
 	if (ds->core->assembler->bits == 64) {
 		ut64 n64 = r_read_ble64 (buf, 0);
@@ -3324,6 +3324,14 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 
 	if (!core->vmode) {
 		return;
+	}
+	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	if (mi && mi->from) {
+		int obits = ds->core->assembler->bits;
+		ds->core->assembler->bits = mi->size / 8;
+		getPtr (ds, mi->from, pos);
+		ds->core->assembler->bits = obits;
+		gotShortcut = true;
 	}
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_UJMP:
