@@ -3355,13 +3355,13 @@ repeat:
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F2:
 		cmd = r_config_get (core->config, "key.f2");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelBreakpoint (core);
 		}
@@ -3369,31 +3369,31 @@ repeat:
 	case R_CONS_KEY_F3:
 		cmd = r_config_get (core->config, "key.f3");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F4:
 		cmd = r_config_get (core->config, "key.f4");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F5:
 		cmd = r_config_get (core->config, "key.f5");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F6:
 		cmd = r_config_get (core->config, "key.f6");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F7:
 		cmd = r_config_get (core->config, "key.f7");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepIn (core);
 			setRefreshAll (panels, false);
@@ -3402,7 +3402,7 @@ repeat:
 	case R_CONS_KEY_F8:
 		cmd = r_config_get (core->config, "key.f8");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepOver (core);
 			setRefreshAll (panels, false);
@@ -3411,7 +3411,7 @@ repeat:
 	case R_CONS_KEY_F9:
 		cmd = r_config_get (core->config, "key.f9");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelContinue (core);
 		}
@@ -3419,19 +3419,19 @@ repeat:
 	case R_CONS_KEY_F10:
 		cmd = r_config_get (core->config, "key.f10");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F11:
 		cmd = r_config_get (core->config, "key.f11");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F12:
 		cmd = r_config_get (core->config, "key.f12");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case '!':

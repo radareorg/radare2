@@ -285,6 +285,7 @@ int main(int argc, char **argv) {
 			r_egg_free (egg);
 			return usage (1);
 		case 'v':
+			free (sequence);
 			r_egg_free (egg);
 			return blob_version("ragg2");
 		case 'z':

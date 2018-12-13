@@ -171,7 +171,10 @@ R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 }
 
 R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size) {
-	if (b && b->sparse) {
+	if (!b) {
+		return NULL;
+	}
+	if (b->sparse) {
 		eprintf ("r_buf_new_slice not supported yet for sparse buffers\n");
 		return NULL;
 	}

@@ -478,7 +478,7 @@ DsoJsonObj * dso_json_dict_new () {
 	DsoJsonObj *x = dso_json_null_new ();
 	if (x) {
 		x->info = get_type_info (DSO_JSON_DICT);
-		x->val._dict = calloc (sizeof (DsoJsonObj), 1);
+		x->val._dict = calloc (sizeof (DsoJsonDict), 1);
 		if (!x->val._dict) {
 			dso_json_null_free (x);
 			return NULL;

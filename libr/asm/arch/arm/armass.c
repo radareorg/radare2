@@ -4805,7 +4805,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if ((num > 4095) || (num < -255)) {
 				return -1;
 			}
-			if ((num >= 0) && (num < 4096)) {
+			if (num >= 0) {
 				if (strsel == 0) {
 					ao->o = 0xc0f80000;
 				} else

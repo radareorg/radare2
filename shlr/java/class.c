@@ -547,7 +547,6 @@ R_API char *r_bin_java_unmangle_method(const char *flags, const char *name, cons
 		r_val_str = strdup ("UNKNOWN");
 	}
 	f_val_str = strdup (flags ? flags : "");
-	params_idx = 0;
 	r_list_foreach (the_list, iter, str) {
 		params_len += strlen (str);
 		if (params_idx > 0) {
@@ -970,60 +969,57 @@ R_API int extract_type_value(const char *arg_str, char **output) {
 		R_FREE (*output);
 	}
 	while (arg_str && *arg_str && !found_one) {
-		len = 0;
+		len = 1;
 		// handle the end of an object
 		switch (*arg_str) {
 		case 'V':
-			len = 1;
 			str = get_type_value_str ("void", array_cnt);
 			break;
 		case 'J':
-			len = 1;
 			str = get_type_value_str ("long", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'I':
-			len = 1;
 			str = get_type_value_str ("int", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'D':
-			len = 1;
 			str = get_type_value_str ("double", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'F':
-			len = 1;
 			str = get_type_value_str ("float", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'B':
-			len = 1;
 			str = get_type_value_str ("byte", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'C':
-			len = 1;
 			str = get_type_value_str ("char", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'Z':
-			len = 1;
 			str = get_type_value_str ("boolean", array_cnt);
 			array_cnt = 0;
 			break;
 		case 'S':
-			len = 1;
 			str = get_type_value_str ("short", array_cnt);
 			array_cnt = 0;
 			break;
-		case '[': len = 1; array_cnt++; break;
+		case '[':
+			array_cnt++;
+			break;
 		case 'L':
 			len = r_bin_java_extract_reference_name (arg_str, &str, array_cnt);
 			array_cnt = 0;
 			break;
-		case '(': len = 1; str = strdup ("("); break;
-		case ')': len = 1; str = strdup (")"); break;
+		case '(':
+			str = strdup ("(");
+			break;
+		case ')':
+			str = strdup (")");
+			break;
 		default:
 			return 0;
 		}

@@ -3355,9 +3355,6 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		return;
 	}
 	db = sdb_ns (bf->sdb, "info", 0);;
-	if (!db) {
-		return;
-	}
 	if (db) {
 		SdbListIter *iter;
 		SdbKv *kv;
