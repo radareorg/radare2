@@ -12,6 +12,8 @@ static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
+	"C.", "", "list meta info of current offset in human friendly form",
+	"C*.", "", "list meta info of current offset in r2 commands",
 	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
 	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
@@ -1010,9 +1012,24 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case '\0': // "C"
 	case 'j': // "Cj"
-	case '*': // "C*"
-		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+	case '*': { // "C*"
+		if (input[1] && input[1] == '.') {
+			RAnalMetaItem *mi = r_meta_find (core->anal, core->offset, R_META_TYPE_ANY, 0);
+			if (mi) {
+				r_meta_print (core->anal, mi, *input, true);
+			}
+		} else {
+			r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+		}
 		break;
+	}
+	case '.': { // "C."
+		RAnalMetaItem *mi = r_meta_find (core->anal, core->offset, R_META_TYPE_ANY, 0);
+		if (mi) {
+			r_meta_print (core->anal, mi, 0, true);
+		}
+		break;
+	}
 	case 'L': // "CL"
 		cmd_meta_lineinfo (core, input + 1);
 		break;
