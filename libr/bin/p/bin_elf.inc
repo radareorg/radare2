@@ -1145,6 +1145,9 @@ static RBinInfo* info(RBinFile *bf) {
 	if (!strcmp (ret->arch, "avr")) {
 		ret->bits = 16;
 	}
+	if (!strcmp (ret->arch, "arm") && ret->bits == 16) {
+		ret->cpu = strdup ("cortex");
+	}
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (obj);
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (obj);

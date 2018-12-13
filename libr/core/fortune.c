@@ -6,9 +6,8 @@ static const char *fortunes[] = {
 	"tips", "fun", "nsfw", "creepy"
 };
 
-static char *getFortuneFile(RCore *core, const char *type) {
-	return r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
-		r_sys_prefix (NULL), type);
+static char *__core_fortune_file(RCore *core, const char *type) {
+	return r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"), r_sys_prefix (NULL), type);
 }
 
 R_API void r_core_fortune_list_types(void) {
@@ -24,7 +23,7 @@ R_API void r_core_fortune_list(RCore *core) {
 	int i, j;
 	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
 		if (strstr (types, fortunes[i])) {
-			char *file = getFortuneFile(core, fortunes[i]);
+			char *file = __core_fortune_file (core, fortunes[i]);
 			char *str = r_file_slurp (file, NULL);
 			for (j = 0; str[j]; j++) {
 				if (str[j] == '\n') {
@@ -47,7 +46,7 @@ static char *getrandomline(RCore *core) {
 	char *line = NULL, *templine;
 	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
 		if (strstr (types, fortunes[i])) {
-			char *file = getFortuneFile(core, fortunes[i]);
+			char *file = __core_fortune_file (core, fortunes[i]);
 			templine = r_file_slurp_random_line_count (file, &lines);
 			if (templine && *templine) {
 				free (line);

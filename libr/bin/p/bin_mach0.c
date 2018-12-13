@@ -560,6 +560,9 @@ static RBinInfo* info(RBinFile *bf) {
 			bf->o->bin_obj)->has_crypto;
 		ret->bits = MACH0_(get_bits) (bf->o->bin_obj);
 	}
+	if (!strcmp (ret->arch, "arm") && ret->bits == 16) {
+		ret->cpu = strdup ("cortex");
+	}
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx) (bf->o->bin_obj);
