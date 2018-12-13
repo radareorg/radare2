@@ -449,6 +449,7 @@ static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int e
 	return NULL;
 }
 
+// TODO should be named get imho
 R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 	return r_meta_find_ (a, at, type, where, R_META_TYPE_NONE);
 }
