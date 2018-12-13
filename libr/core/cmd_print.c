@@ -4810,7 +4810,8 @@ static int cmd_print(void *data, const char *input) {
 					}
 				} else {
 					int bs1 = l * 16;
-					block1 = malloc (R_MAX (bs, bs1));
+					int bsmax = R_MAX (bs, bs1);
+					block1 = malloc (bsmax + 1);
 					if (block1) {
 						memcpy (block1, block, bs);
 						if (bs1 > bs) {
@@ -4818,7 +4819,7 @@ static int cmd_print(void *data, const char *input) {
 									bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block1, bs1, l, 0, 0, formatted_json, NULL);
+								core, addr, block1, bs, l, 0, 0, formatted_json, NULL);
 					}
 				}
 			}

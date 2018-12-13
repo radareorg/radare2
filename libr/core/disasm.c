@@ -3328,7 +3328,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	if (mi && mi->from) {
 		int obits = ds->core->assembler->bits;
-		ds->core->assembler->bits = mi->size / 8;
+		ds->core->assembler->bits = mi->size * 8;
 		getPtr (ds, mi->from, pos);
 		ds->core->assembler->bits = obits;
 		gotShortcut = true;
