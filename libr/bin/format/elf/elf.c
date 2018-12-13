@@ -625,7 +625,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
-	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), sizeof (ut16));
+	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), 2 * sizeof (ut8));
 	if (!edata) {
 		sdb_free (sdb);
 		return NULL;

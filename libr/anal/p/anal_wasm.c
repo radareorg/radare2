@@ -117,7 +117,6 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			wasm_stack[wasm_stack_ptr].end = addr2;
 			wasm_stack[wasm_stack_ptr].size = wop.len;
 			wasm_stack_ptr++;
-			addr2 = UT64_MAX;
 		}
 		//op->fail = addr + op->size;
 		break;
@@ -129,7 +128,6 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			wasm_stack[wasm_stack_ptr].end = addr2;
 			wasm_stack[wasm_stack_ptr].size = wop.len;
 			wasm_stack_ptr++;
-			addr2 = UT64_MAX;
 		}
 		break;
 	case WASM_OP_IF:

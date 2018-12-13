@@ -4473,7 +4473,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F7:
 			cmd = r_config_get (core->config, "key.f7");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			} else {
 				graph_single_step_in (core, g);
 			}
@@ -4481,7 +4481,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F8:
 			cmd = r_config_get (core->config, "key.f8");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			} else {
 				graph_single_step_over (core, g);
 			}
@@ -4489,7 +4489,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F9:
 			cmd = r_config_get (core->config, "key.f9");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			} else {
 				graph_continue (core);
 			}

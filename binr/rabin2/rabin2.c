@@ -1023,7 +1023,6 @@ int main(int argc, char **argv) {
 		r_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
-		rawstr = false;
 		RBinFile *bf = r_core_bin_cur (&core);
 		if (bf) {
 			bf->strmode = rad;

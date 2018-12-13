@@ -184,6 +184,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet (g, false);
 	ret = send_ack (g);
+	if (ret < 0) {
+		return ret;
+	}
 	if (strcmp (g->data, "OK")) {
 		// return -1;
 	}
