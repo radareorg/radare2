@@ -727,6 +727,34 @@ beach:
 	return 1;
 }
 
+R_API void r_meta_list_offset(RAnal *a, ut64 addr, char input) {
+	RAnalMetaUserItem ui = { a, 0, 0, NULL, NULL, 0, NULL };
+	SdbList *ls = sdb_foreach_list (DB, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
+
+	ls_foreach (ls, lsi, kv) {
+		const char *key = sdbkv_key (kv);
+		const char *val = sdbkv_value (kv);
+		RAnalMetaItem it;
+
+		if (strlen (key) < 6) {
+			continue;
+		}
+
+		if (!meta_deserialize (&it, key, val)) {
+			continue;
+		}
+
+		if (it.from > addr || it.to < addr) {
+			continue;
+		}
+
+		r_meta_print (a, &it, input, true);
+	}
+	ls_free (ls);
+}
+
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
 	if (rad == 'j') {
 		a->cb_printf ("[");

@@ -1014,20 +1014,14 @@ static int cmd_meta(void *data, const char *input) {
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (input[1] && input[1] == '.') {
-			RAnalMetaItem *mi = r_meta_find (core->anal, core->offset, R_META_TYPE_ANY, 0);
-			if (mi) {
-				r_meta_print (core->anal, mi, *input, true);
-			}
+			r_meta_list_offset (core->anal, core->offset, *input);
 		} else {
 			r_meta_list (core->anal, R_META_TYPE_ANY, *input);
 		}
 		break;
 	}
 	case '.': { // "C."
-		RAnalMetaItem *mi = r_meta_find (core->anal, core->offset, R_META_TYPE_ANY, 0);
-		if (mi) {
-			r_meta_print (core->anal, mi, 0, true);
-		}
+		r_meta_list_offset (core->anal, core->offset, 0);
 		break;
 	}
 	case 'L': // "CL"
