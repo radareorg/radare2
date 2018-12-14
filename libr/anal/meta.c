@@ -727,6 +727,35 @@ beach:
 	return 1;
 }
 
+R_API void r_meta_list_offset(RAnal *a, ut64 addr, char input) {
+	const int types[] = {
+		R_META_TYPE_VARTYPE,
+		R_META_TYPE_HIGHLIGHT,
+		R_META_TYPE_RUN,
+		R_META_TYPE_COMMENT,
+		R_META_TYPE_HIDE,
+		R_META_TYPE_MAGIC,
+		R_META_TYPE_FORMAT,
+		R_META_TYPE_STRING,
+		R_META_TYPE_CODE,
+		R_META_TYPE_DATA,
+	};
+
+	char key[100];
+
+	for (int i = 0; i < sizeof (types) / sizeof (types[0]); i ++) {
+		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, types[i], addr);
+		const char *k = sdb_const_get (DB, key, 0);
+		if (!k) {
+			continue;
+		}
+
+		RAnalMetaUserItem ui = { a };
+
+		meta_print_item ((void *)&ui, key, k);
+	}
+}
+
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
 	if (rad == 'j') {
 		a->cb_printf ("[");
