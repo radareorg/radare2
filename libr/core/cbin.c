@@ -1092,10 +1092,13 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		r_cons_printf ("[");
 	} else if (IS_MODE_NORMAL (mode)) {
 		if (inifin) {
-			r_cons_printf ("[Constructors]\n");
+			r_cons_printf ("[Constructors] ");
 		} else {
-			r_cons_printf ("[Entrypoints]\n");
+			r_cons_printf ("[Entrypoints] ");
 		}
+	}
+	if (!IS_MODE_SET (mode) && !IS_MODE_SIMPLE (mode) && !IS_MODE_JSON (mode) && !IS_MODE_RAD (mode)) {
+		r_cons_printf ("baddr=0x%08"PFMT64x"\n", baddr);
 	}
 
 	r_list_foreach (entries, iter, entry) {
@@ -1175,9 +1178,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			r_cons_printf (
 				 "vaddr=0x%08"PFMT64x
 				" paddr=0x%08"PFMT64x
-				" baddr=0x%08"PFMT64x
 				" laddr=0x%08"PFMT64x,
-				at, paddr, baddr, laddr);
+				at, paddr, laddr);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
 				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
 			}
