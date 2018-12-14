@@ -728,31 +728,32 @@ beach:
 }
 
 R_API void r_meta_list_offset(RAnal *a, ut64 addr, char input) {
-	RAnalMetaUserItem ui = { a, 0, 0, NULL, NULL, 0, NULL };
-	SdbList *ls = sdb_foreach_list (DB, true);
-	SdbListIter *lsi;
-	SdbKv *kv;
+	const int types[] = {
+		R_META_TYPE_VARTYPE,
+		R_META_TYPE_HIGHLIGHT,
+		R_META_TYPE_RUN,
+		R_META_TYPE_COMMENT,
+		R_META_TYPE_HIDE,
+		R_META_TYPE_MAGIC,
+		R_META_TYPE_FORMAT,
+		R_META_TYPE_STRING,
+		R_META_TYPE_CODE,
+		R_META_TYPE_DATA,
+	};
 
-	ls_foreach (ls, lsi, kv) {
-		const char *key = sdbkv_key (kv);
-		const char *val = sdbkv_value (kv);
-		RAnalMetaItem it;
+	char key[100];
 
-		if (strlen (key) < 6) {
+	for (int i = 0; i < sizeof (types) / sizeof (types[0]); i ++) {
+		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, types[i], addr);
+		const char *k = sdb_const_get (DB, key, 0);
+		if (!k) {
 			continue;
 		}
 
-		if (!meta_deserialize (&it, key, val)) {
-			continue;
-		}
+		RAnalMetaUserItem ui = { a };
 
-		if (it.from > addr || it.to < addr) {
-			continue;
-		}
-
-		r_meta_print (a, &it, input, true);
+		meta_print_item ((void *)&ui, key, k);
 	}
-	ls_free (ls);
 }
 
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
