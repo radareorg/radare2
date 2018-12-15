@@ -141,8 +141,8 @@ typedef struct {
 	bool show_reloff_flags;
 	bool show_comments;
 	bool show_usercomments;
-	bool show_jmphints;
-	bool show_leahints;
+	bool asm_hint_jmp;
+	bool asm_hint_lea;
 	bool show_slow;
 	int cmtcol;
 	bool show_calls;
@@ -266,7 +266,7 @@ typedef struct {
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
-	int shortcut_pos;
+	int asm_hint_pos;
 	bool asm_anal;
 	ut64 printed_str_addr;
 	ut64 printed_flag_addr;
@@ -526,7 +526,7 @@ static RDisasmState * ds_init(RCore *core) {
 	if (!ds) {
 		return NULL;
 	}
-	ds->shortcut_pos = r_config_get_i (core->config, "asm.shortcut");
+	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
 	ds->core = core;
 	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->pal_comment = core->cons->pal.comment;
@@ -672,8 +672,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
-	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
-	ds->show_leahints = r_config_get_i (core->config, "asm.leahints");
+	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
+	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
@@ -2909,7 +2909,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				r_io_read_at (core->io, ptr, b, sizeof (b)); //memref);
 				off = r_mem_get_num (b, memref);
 				item = r_flag_get_i (core->flags, off);
-				if (ds->show_leahints) {
+				if (ds->asm_hint_lea) {
 					char s[64];
 					r_str_ncpy (s, (const char *)b, sizeof (s));
 					r_str_filter (s, -1);
@@ -3327,7 +3327,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	if (!core->vmode) {
 		return;
 	}
-	if (ds->show_leahints) {
+	if (ds->asm_hint_lea) {
 		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi && mi->from) {
 			int obits = ds->core->assembler->bits;
@@ -3342,7 +3342,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND:
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_COND:
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG:
-		if (ds->show_leahints) {
+		if (ds->asm_hint_lea) {
 			if (ds->analop.ptr != UT64_MAX  && ds->analop.ptr != UT32_MAX) {
 				getPtr (ds, ds->analop.ptr, pos);
 				gotShortcut = true;
@@ -3352,7 +3352,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_LOAD:
-		if (ds->show_leahints) {
+		if (ds->asm_hint_lea) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr != UT32_MAX && ds->analop.ptr > 256) {
 				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
 				gotShortcut = true;
@@ -3375,7 +3375,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 			ds_print_shortcut (ds, ds->analop.ptr, pos);
 		}
 #endif
-		if (ds->show_jmphints) {
+		if (ds->asm_hint_jmp) {
 			if (ds->analop.jump != UT64_MAX) {
 				slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			} else {
@@ -3390,7 +3390,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-		if (ds->show_jmphints) {
+		if (ds->asm_hint_jmp) {
 			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
@@ -5025,8 +5025,8 @@ toro:
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
-		if (ds->shortcut_pos == 0) {
-			ds_print_core_vmode (ds, ds->shortcut_pos);
+		if (ds->asm_hint_pos== 0) {
+			ds_print_core_vmode (ds, ds->asm_hint_pos);
 		}
 		ds_print_op_size (ds);
 		ds_print_trace (ds);
@@ -5047,8 +5047,8 @@ toro:
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			if (ds->shortcut_pos > 0) {
-				ds_print_core_vmode (ds, ds->shortcut_pos);
+			if (ds->asm_hint_pos > 0) {
+				ds_print_core_vmode (ds, ds->asm_hint_pos);
 			}
 			ds_end_line_highlight (ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
@@ -5076,8 +5076,8 @@ toro:
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			if (ds->shortcut_pos > 0) {
-				ds_print_core_vmode (ds, ds->shortcut_pos);
+			if (ds->asm_hint_pos > 0) {
+				ds_print_core_vmode (ds, ds->asm_hint_pos);
 			}
 			// ds_print_cc_update (ds);
 

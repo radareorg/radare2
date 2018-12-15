@@ -3188,8 +3188,8 @@ repeat:
 		setRefreshAll (panels, false);
 		break;
 	case 'r':
-		r_core_cmd0 (core, "e!asm.jmphints");
-		r_core_cmd0 (core, "e!asm.leahints");
+		r_core_cmd0 (core, "e!asm.hint.jmp");
+		r_core_cmd0 (core, "e!asm.hint.lea");
 		setRefreshAll (panels, false);
 		break;
 	case 'R':
