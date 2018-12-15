@@ -7,6 +7,9 @@
 #define MACRO_LOG_FUNC __FUNCTION__
 #define MACRO_WEAK_SYM
 // TODO: Windows weak symbols?
+#elif defined(__EMSCRIPTEN__) // TODO: test upon Emscripten's version once it supports weak symbols
+#define MACRO_LOG_FUNC __func__
+#define MACRO_WEAK_SYM
 #else
 #define MACRO_LOG_FUNC __func__
 #define MACRO_WEAK_SYM __attribute__ ((weak))
