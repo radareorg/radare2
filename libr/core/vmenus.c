@@ -2913,6 +2913,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		r_cons_printf ("\r%s\n", lines[i]);
 	}
 	r_cons_flush ();
+	int wordsize = 0;
 	// get ESC+char, return 'hjkl' char
 repeat:
 	if (*args) {
@@ -2923,6 +2924,7 @@ repeat:
 	}
 
 onemoretime:
+	wordsize = 4;
 	switch (ch) {
 	case 'F':
 		{
@@ -2960,24 +2962,28 @@ onemoretime:
 			rep = plen / 2;
 		}
 		define_data_ntimes (core, off, rep, R_BYTE_DATA);
+		wordsize = 1;
 		break;
 	case 'B':
 		if (plen != core->blocksize) {
 			rep = plen;
 		}
 		define_data_ntimes (core, off, rep, R_WORD_DATA);
+		wordsize = 2;
 		break;
 	case 'w':
 		if (plen != core->blocksize) {
 			rep = plen / 4;
 		}
 		define_data_ntimes (core, off, rep, R_DWORD_DATA);
+		wordsize = 4;
 		break;
 	case 'W':
 		if (plen != core->blocksize) {
 			rep = plen / 8;
 		}
 		define_data_ntimes (core, off, rep, R_QWORD_DATA);
+		wordsize = 8;
 		break;
 	case 'm':
 		{
@@ -3189,6 +3195,7 @@ onemoretime:
 				ntotal += n;
 			}
 		} while (ntotal < plen);
+		wordsize = ntotal;
 		}
 		break;
 	case 's':
@@ -3232,6 +3239,7 @@ onemoretime:
 		}
 		r_name_filter (name, n + 10);
 		r_flag_set (core->flags, name, off, n);
+		wordsize = n;
 		free (name);
 		}
 		break;
@@ -3240,8 +3248,8 @@ onemoretime:
 		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+plen, "");
 		break;
 	case 'c': // TODO: check
-		r_meta_cleanup (core->anal, off, off+plen);
-		r_meta_add (core->anal, R_META_TYPE_CODE, off, off+plen, "");
+		r_meta_cleanup (core->anal, off, off + plen);
+		r_meta_add (core->anal, R_META_TYPE_CODE, off, off + plen, "");
 		break;
 	case 'u':
 		r_core_anal_undefine (core, off);
@@ -3353,7 +3361,7 @@ onemoretime:
 	}
 	if (distance > 0) {
 		distance--;
-		off += 4; //
+		off += wordsize;
 		goto onemoretime;
 	}
 }

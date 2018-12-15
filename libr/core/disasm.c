@@ -526,7 +526,6 @@ static RDisasmState * ds_init(RCore *core) {
 	if (!ds) {
 		return NULL;
 	}
-	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
 	ds->core = core;
 	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->pal_comment = core->cons->pal.comment;
@@ -674,7 +673,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
-	ds->asm_hints = r_config_get_i (core->config, "asm.hints");
+	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
+	ds->asm_hints = r_config_get_i (core->config, "asm.hints"); // only for cdiv wtf
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
@@ -3325,9 +3325,6 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	int i, slen = 0;
 
 	if (!core->vmode) {
-		return;
-	}
-	if (!ds->asm_hints) {
 		return;
 	}
 	if (ds->asm_hint_lea) {
