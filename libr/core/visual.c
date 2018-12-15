@@ -2381,8 +2381,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys
-			r_core_cmd0 (core, "e!asm.jmphints");
-			r_core_cmd0 (core, "e!asm.leahints");
+			r_core_cmd0 (core, "e!asm.hint.jmp");
+			r_core_cmd0 (core, "e!asm.hint.lea");
 			visual_refresh (core);
 			break;
 		case ' ':
