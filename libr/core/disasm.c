@@ -143,8 +143,9 @@ typedef struct {
 	bool show_usercomments;
 	bool asm_hints;
 	bool asm_hint_jmp;
+	bool asm_hint_cdiv;
 	bool asm_hint_lea;
-	int asm_hint_pos;
+	int  asm_hint_pos;
 	bool show_slow;
 	int cmtcol;
 	bool show_calls;
@@ -673,6 +674,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
+	ds->asm_hint_cdiv = r_config_get_i (core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
 	ds->asm_hints = r_config_get_i (core->config, "asm.hints"); // only for cdiv wtf
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
@@ -2956,7 +2958,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 	char *end, *comma;
 	st64 imm;
 	st64 divisor;
-	if (!ds->asm_hints) {
+	if (!ds->asm_hints || !ds->asm_hint_cdiv) {
 		return;
 	}
 	switch (ds->analop.type) {
@@ -3325,6 +3327,9 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	int i, slen = 0;
 
 	if (!core->vmode) {
+		return;
+	}
+	if (!ds->asm_hints) {
 		return;
 	}
 	if (ds->asm_hint_lea) {
