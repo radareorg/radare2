@@ -3336,7 +3336,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 			ds->core->assembler->bits = obits;
 			gotShortcut = true;
 		}
-	} else
+	}
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND:
