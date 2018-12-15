@@ -10,6 +10,7 @@ static int spp_var_set(const char *var, const char *val) {
 	return r_sys_setenv(var, val);
 }
 
+#if HAVE_SYSTEM
 /* Should be dynamic buffer */
 static char *cmd_to_str(const char *cmd) {
 	char *out = (char *)calloc (4096, 1);
@@ -40,6 +41,7 @@ static char *cmd_to_str(const char *cmd) {
 	out[len] = '\0';
 	return out;
 }
+#endif
 
 static TAG_CALLBACK(spp_set) {
 	char *eq, *val = "";
@@ -133,15 +135,10 @@ static TAG_CALLBACK(spp_sub) {
 	return ret;
 }
 
-// XXX This method needs some love
 static TAG_CALLBACK(spp_trace) {
-#if HAVE_SYSTEM
-	char b[1024];
 	if (state->echo[state->ifl]) {
-		snprintf (b, 1023, "echo '%s' >&2 ", buf);
-		system (b);
+		fprintf (stderr, "%.1000s\n", buf);
 	}
-#endif
 	return 0;
 }
 
@@ -174,9 +171,11 @@ static TAG_CALLBACK(spp_system) {
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
+#if HAVE_SYSTEM
 	char *str = cmd_to_str (buf);
 	do_printf (out, "%s", str);
 	free(str);
+#endif
 	return 0;
 }
 
@@ -315,10 +314,14 @@ static TAG_CALLBACK(spp_default) {
 	return 0;
 }
 
+#if HAVE_SYSTEM
 static FILE *spp_pipe_fd = NULL;
+#endif
 
 static TAG_CALLBACK(spp_pipe) {
+#if HAVE_SYSTEM
 	spp_pipe_fd = popen (buf, "w");
+#endif
 	return 0;
 }
 
@@ -346,6 +349,7 @@ static TAG_CALLBACK(spp_endswitch) {
 }
 
 static TAG_CALLBACK(spp_endpipe) {
+#if HAVE_SYSTEM
 	/* TODO: Get output here */
 	int ret = 0, len = 0;
 	int outlen = 4096;
@@ -371,13 +375,17 @@ static TAG_CALLBACK(spp_endpipe) {
 	}
 	spp_pipe_fd = NULL;
 	free (str);
+#endif
 	return 0;
 }
 
 static PUT_CALLBACK(spp_fputs) {
+#if HAVE_SYSTEM
 	if (spp_pipe_fd) {
 		fprintf (spp_pipe_fd, "%s", buf);
-	} else {
+	} else
+#endif
+	{
 		do_printf (out, "%s", buf);
 	}
 	return 0;
