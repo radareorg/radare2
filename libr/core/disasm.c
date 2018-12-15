@@ -141,8 +141,10 @@ typedef struct {
 	bool show_reloff_flags;
 	bool show_comments;
 	bool show_usercomments;
+	bool asm_hints;
 	bool asm_hint_jmp;
 	bool asm_hint_lea;
+	int asm_hint_pos;
 	bool show_slow;
 	int cmtcol;
 	bool show_calls;
@@ -154,7 +156,6 @@ typedef struct {
 	bool show_cmtrefs;
 	const char *show_cmtoff;
 	bool show_functions;
-	bool show_hints;
 	bool show_marks;
 	bool show_asciidot;
 	RStrEnc strenc;
@@ -266,7 +267,6 @@ typedef struct {
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
-	int asm_hint_pos;
 	bool asm_anal;
 	ut64 printed_str_addr;
 	ut64 printed_flag_addr;
@@ -674,6 +674,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
+	ds->asm_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
@@ -708,7 +709,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
-	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
 	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");
 	ds->pre = DS_PRE_NONE;
@@ -2956,7 +2956,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 	char *end, *comma;
 	st64 imm;
 	st64 divisor;
-	if (!ds->show_hints) {
+	if (!ds->asm_hints) {
 		return;
 	}
 	switch (ds->analop.type) {
@@ -3327,6 +3327,9 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	if (!core->vmode) {
 		return;
 	}
+	if (!ds->asm_hints) {
+		return;
+	}
 	if (ds->asm_hint_lea) {
 		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi && mi->from) {
@@ -3343,7 +3346,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_COND:
 	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG:
 		if (ds->asm_hint_lea) {
-			if (ds->analop.ptr != UT64_MAX  && ds->analop.ptr != UT32_MAX) {
+			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr != UT32_MAX) {
 				getPtr (ds, ds->analop.ptr, pos);
 				gotShortcut = true;
 			}

@@ -4271,7 +4271,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				showcursor (core, true);
 				// WTF?
 				r_config_set_i (core->config, "scr.interactive", true);
-				r_core_visual_define (core, "");
+				r_core_visual_define (core, "", 0);
 				get_bbupdate (g, core, fcn);
 				showcursor (core, false);
 			}

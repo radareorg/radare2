@@ -2851,7 +2851,7 @@ static void handleHints(RCore *core) {
 	}
 }
 
-R_API void r_core_visual_define (RCore *core, const char *args) {
+R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -2922,6 +2922,7 @@ repeat:
 		ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 	}
 
+onemoretime:
 	switch (ch) {
 	case 'F':
 		{
@@ -3349,6 +3350,11 @@ repeat:
 			goto repeat;
 		}
 		break;
+	}
+	if (distance > 0) {
+		distance--;
+		off += 4; //
+		goto onemoretime;
 	}
 }
 

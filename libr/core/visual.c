@@ -1928,7 +1928,7 @@ static void applyDisMode(RCore *core) {
 	}
 }
 
-static bool isNumber (RCore *core, int ch) {
+static bool isNumber(RCore *core, int ch) {
 	if (ch > '0' && ch <= '9') {
 		return true;
 	}
@@ -1991,7 +1991,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	if (isNumber (core, ch)) {
 		// only in disasm and debug prints..
 		if (isDisasmPrint (core->printidx)) {
-			r_core_visual_jump (core, ch);
+			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp") || r_config_get_i (core->config, "asm.hint.lea"))) {
+				r_core_visual_jump (core, ch);
+			} else {
+				numbuf_append (ch);
+			}
 		} else {
 			numbuf_append (ch);
 		}
@@ -2209,7 +2213,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_core_visual_esil (core);
 			} else {
 				r_core_visual_showcursor (core, true);
-				r_core_visual_define (core, arg + 1);
+				int distance = numbuf_pull ();
+				r_core_visual_define (core, arg + 1, distance - 1);
 				r_core_visual_showcursor (core, false);
 			}
 			break;
@@ -2498,7 +2503,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
-					r_core_cmd0 (core, "sn");
+					int i, distance = numbuf_pull ();
+					if (distance < 1)  {
+						distance =  1;
+					}
+					for (i = 0; i < distance; i++) {
+						r_core_cmd0 (core, "sn");
+					}
 				} else {
 					int times = R_MAX (1, wheelspeed);
 					// Check if we have a data annotation.
@@ -2513,6 +2524,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (ami) {
 						r_core_seek_delta (core, ami->size);
 					} else {
+						int distance = numbuf_pull ();
+						if (distance > 1) {
+							times = distance;
+						}
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
@@ -2564,11 +2579,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
-					r_core_cmd0 (core, "sp");
+					int i, distance = numbuf_pull ();
+					if (distance < 1)  {
+						distance =  1;
+					}
+					for (i = 0; i < distance; i++) {
+						r_core_cmd0 (core, "sp");
+					}
 				} else {
 					int times = wheelspeed;
 					if (times < 1) {
 						times = 1;
+					}
+					int distance = numbuf_pull ();
+					if (distance > 1) {
+						times = distance;
 					}
 					while (times--) {
 						if (isDisasmPrint (core->printidx)) {

@@ -3204,7 +3204,7 @@ repeat:
 		r_core_visual_asm (core, core->offset);
 		break;
 	case 'd':
-		r_core_visual_define (core, "");
+		r_core_visual_define (core, "", 0);
 		setRefreshAll (panels, false);
 		break;
 	case 'D':
