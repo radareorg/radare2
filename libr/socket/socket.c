@@ -61,6 +61,9 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 R_API RSocket *r_socket_accept(RSocket *s) {
 	return NULL;
 }
+R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
+	return NULL;
+}
 R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 	return -1;
 }
