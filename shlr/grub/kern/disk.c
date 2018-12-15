@@ -411,7 +411,7 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
   char *tmp_buf;
   unsigned real_offset;
   if ((int)size < 1) {
-    printf ("disk read fail\n");
+    grub_dprintf ("disk read fail\n");
     return grub_errno;
   }
 

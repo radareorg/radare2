@@ -2919,13 +2919,12 @@ static void insertValue(RCore *core) {
 	}
 }
 
-R_API RPanels *r_core_panels_new(RCore *core) { int w, h;
+R_API RPanels *r_core_panels_new(RCore *core) {
 	RPanels *panels = R_NEW0 (RPanels);
-
 	if (!panels) {
 		return NULL;
 	}
-	w = r_cons_get_size (&h);
+	int h, w = r_cons_get_size (&h);
 	if (!init (core, panels, w, h)) {
 		free (panels);
 		return NULL;
@@ -3299,7 +3298,6 @@ repeat:
 
 				int h, w = r_cons_get_size (&h);
 				panels->can = createNewCanvas (core, w, h);
-
 				setRefreshAll (panels, false);
 			}
 		}
@@ -3340,7 +3338,7 @@ repeat:
 
 			replaceCmd (panels, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
 
-			int h, w = r_cons_get_size(&h);
+			int h, w = r_cons_get_size (&h);
 			panels->can = createNewCanvas (core, w, h);
 		}
 		break;
