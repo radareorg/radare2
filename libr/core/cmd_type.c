@@ -66,14 +66,7 @@ static const char *help_msg_to[] = {
 
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
-	"tc", "", "List all loaded calling convention",
-	"tc", " [cctype]", "Show convention rules for this type",
-	"tc=", "([cctype])", "Select (or show) default calling convention",
-	"tc-", "[cctype]", "TODO: remove given calling convention",
-	"tc+", "[cctype] ...", "TODO: define new calling convention",
-	"tcl", "", "List all the calling conventions",
-	"tcr", "", "Register telescoping using the calling conventions order",
-	"tcj", "", "json output (TODO)",
+	"tc", "", "List all loaded types in C output format",
 	"tc?", "", "show this help",
 	NULL
 };
@@ -710,40 +703,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'c': // "tc"
 		switch (input[1]) {
+		case '?': //"tc?"
+			r_core_cmd_help (core, help_msg_tc);
+			break;
 		case ' ':
-			r_core_cmdf (core, "k anal/cc/*~cc.%s.", input + 2);
-			break;
-		case '=':
-			if (input[2]) {
-				r_core_cmdf (core, "k anal/cc/default.cc=%s", input + 2);
-			} else {
-				r_core_cmd0 (core, "k anal/cc/default.cc");
-			}
-			break;
-		case 'r':
-			{ /* very slow, but im tired of waiting for having this, so this is the quickest implementation */
-				int i;
-				char *cc = r_str_trim (r_core_cmd_str (core, "k anal/cc/default.cc"));
-				for (i = 0; i < 8; i++) {
-					char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
-					r_str_trim_nc (res);
-					if (*res) {
-						char *row = r_str_trim (r_core_cmd_strf (core, "drr~%s 0x", res));
-						r_cons_printf ("arg[%d] %s\n", i, row);
-						free (row);
-					}
-					free (res);
-				}
-				free (cc);
-			}
-			break;
-		case 'j':
-			// TODO: json output here
-			break;
-		case 'l':
-		case 'k':
-			r_core_cmd0 (core, "k anal/cc/*");
-			break;
 		case 0:
 			r_core_cmd0 (core, "tuc;tsc;ttc;tec");
 			break;

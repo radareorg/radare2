@@ -267,11 +267,14 @@ static const char *help_msg_afc[] = {
 	"Usage:", "afc[agl?]", "",
 	"afc", " convention", "Manually set calling convention for current function",
 	"afc", "", "Show Calling convention for the Current function",
+	"afc=", "([cctype])", "Select or show default calling convention",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
 	"afcf", " [name]", "Prints return type function(arg1, arg2...)",
+	"afck", "", "List SDB details of call loaded calling conventions",
 	"afcl", "", "List all available calling conventions",
 	"afco", " path", "Open Calling Convention sdb profile from given path",
+	"afcR", "", "Register telescoping using the calling conventions order",
 	NULL
 };
 
@@ -2465,25 +2468,40 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'c':{ // "afc"
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (!fcn && !(input[2] == '?'|| input[2] == 'l' || input[2] == 'o' || input[2] == 'f')) {
-			eprintf ("Cannot find function here\n");
-			break;
+		RAnalFunction *fcn = NULL;
+		if (!input[2] || input[2] == ' ' || input[2] == 'r' || input[2] == 'a') {
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (!fcn) {
+				eprintf ("Cannot find function here\n");
+				break;
+			}
 		}
 		switch (input[2]) {
 		case '\0': // "afc"
 			r_cons_println (fcn->cc);
 			break;
 		case ' ': { // "afc "
-			char *cc = r_str_trim (strdup (input + 3));
+			char *argument = strdup (input + 3);
+			char *cc = r_str_trim (argument);
 			if (!r_anal_cc_exist (core->anal, cc)) {
 				eprintf ("Unknown calling convention '%s'\n"
 						"See afcl for available types\n", cc);
 			} else {
 				fcn->cc = r_str_const (r_anal_cc_to_constant (core->anal, cc));
 			}
+			free (argument);
 			break;
 		}
+		case '=': // "afc="
+			if (input[3]) {
+				char *argument = strdup (input + 3);
+				char *cc = r_str_trim (argument);
+				r_core_cmdf (core, "k anal/cc/default.cc=%s", cc);
+				free (argument);
+			} else {
+				r_core_cmd0 (core, "k anal/cc/default.cc");
+			}
+			break;
 		case 'a': // "afca"
 			eprintf ("Todo\n");
 			break;
@@ -2494,7 +2512,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_cons_printf ("[");
 			}
 			char *p = strchr (input, ' ');
-			const char *fcn_name = p? r_str_trim (strdup (p)): NULL;
+			const char *fcn_name = p ? r_str_trim (strdup (p)): NULL;
 			char *key = NULL;
 			RListIter *iter;
 			RAnalFuncArg *arg;
@@ -2558,6 +2576,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			break;
 		}
+		case 'k': // "afck"
+			r_core_cmd0 (core, "k anal/cc/*");
+			break;
 		case 'l': // "afcl" list all function Calling conventions.
 			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
 			break;
@@ -2636,11 +2657,29 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			free (subvec_str);
 			free (json_str);
 		} break;
+		case 'R': { // "afcR"
+			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
+			int i;
+			char *cc = r_str_trim (r_core_cmd_str (core, "k anal/cc/default.cc"));
+			for (i = 0; i < 8; i++) {
+				char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
+				r_str_trim_nc (res);
+				if (*res) {
+					char *row = r_str_trim (r_core_cmd_strf (core, "drr~%s 0x", res));
+					r_cons_printf ("arg[%d] %s\n", i, row);
+					free (row);
+				}
+				free (res);
+			}
+			free (cc);
+			}
+			break;
 		case '?': // "afc?"
 		default:
 			r_core_cmd_help (core, help_msg_afc);
 		}
-		}break;
+		}
+		break;
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
