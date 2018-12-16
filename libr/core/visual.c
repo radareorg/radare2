@@ -2642,8 +2642,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
 				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
-				if (scrcols > 2) {
-					r_config_set_i (core->config, "hex.cols", scrcols - 2);
+				if (scrcols > 1) {
+					r_config_set_i (core->config, "hex.cols", scrcols - 1);
 				}
 			}
 			break;
@@ -2659,7 +2659,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
 				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
-				r_config_set_i (core->config, "hex.cols", scrcols + 2);
+				r_config_set_i (core->config, "hex.cols", scrcols + 1);
 			}
 			break;
 #if 0
