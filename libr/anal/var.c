@@ -387,10 +387,8 @@ R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
 #define R_ANAL_VAR_SDB_SIZE 2 /* number */
 #define R_ANAL_VAR_SDB_NAME 3 /* string */
 
-#define IS_NUMBER(x) ((x) >= '0' && (x) <= '9')
-
 R_API bool r_anal_var_check_name(const char *name) {
-	return !IS_NUMBER (*name) && strcspn (name, "., =/");
+	return !isdigit (*name) && strcspn (name, "., =/");
 }
 
 // afvn local_48 counter
