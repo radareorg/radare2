@@ -1261,7 +1261,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	char *comment;
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
-	ut8 ch;
+	ut8 ch = 0;
 	char *colors[10] = {NULL};
 	for (i = 0; i < 10; i++) {
 		colors[i] = r_cons_rainbow_get (i, 10, false);

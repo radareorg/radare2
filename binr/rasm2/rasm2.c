@@ -373,7 +373,11 @@ static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin, b
 	if (acode->len) {
 		ret = acode->len;
 		if (bin) {
-			write (1, acode->buf, acode->len);
+			if ((ret = write (1, acode->buf, acode->len)) != acode->len) {
+				eprintf ("Failed to write buffer\n");
+				r_asm_code_free (acode);
+				return 0;
+			}
 		} else {
 			int b = acode->len;
 			if (bits == 1) {

@@ -388,7 +388,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char space[32] = {
 		0
 	};
-	const char *white;
+	const char *white = "";
 #define PREOFF(x) (p && p->cons && p->cons->pal.x)? p->cons->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
