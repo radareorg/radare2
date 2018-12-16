@@ -389,7 +389,7 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 		}
 		if (p->hint) {
 			const int nw = p->hint->nword;
-			if (nw != -1 && count != nw) {
+			if (count != nw) {
 				ptr = ptr2;
 				continue;
 			}

@@ -150,6 +150,10 @@ R_API void r_anal_hint_unset_arch(RAnal *a, ut64 addr) {
 	unsetHint(a, "arch:", addr);
 }
 
+R_API void r_anal_hint_unset_nword(RAnal *a, ut64 addr) {
+	unsetHint(a, "nword:", addr);
+}
+
 R_API void r_anal_hint_unset_syntax(RAnal *a, ut64 addr) {
 	unsetHint(a, "Syntax:", addr);
 }
