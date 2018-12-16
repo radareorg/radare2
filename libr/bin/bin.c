@@ -56,9 +56,7 @@ static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
 }
 
 // TODO: move these two function do a different file
-R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
-				      ut32 file_count,
-				      RBinXtrMetadata *metadata) {
+R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
 	if (!data) {
 		return NULL;
@@ -69,15 +67,20 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->metadata = metadata;
 	data->loaded = 0;
 	// TODO: USE RBuffer *buf inside RBinXtrData*
+	data->buf = r_buf_new_slice (buf, offset, size);
+	// TODO. subbuffer?
+#if USE_BYTES
 	data->buffer = malloc (size + 1);
 	// data->laddr = 0; /// XXX
 	if (!data->buffer) {
 		free (data);
 		return NULL;
 	}
+eprintf ("SLOOWW\n");
 	// XXX unnecessary memcpy, this is slow
 	memcpy (data->buffer, r_buf_buffer (buf), size);
 	data->buffer[size] = 0;
+#endif
 	return data;
 }
 
@@ -102,7 +105,10 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 		free (data->metadata);
 	}
 	free (data->file);
+#if USE_BYTES
 	free (data->buffer);
+#endif
+	r_buf_free (data->buf);
 	free (data);
 }
 
