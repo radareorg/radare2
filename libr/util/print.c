@@ -434,7 +434,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
 				if (p && p->cons && p->cons->rgbstr) {
-					char rgbstr[32];
+					static char rgbstr[32];
 					pre = p->cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
 				}
 			}
@@ -774,7 +774,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
-		inc = p->cols;
+		inc = p->cols; // row width
 		col = p->col;
 		printfmt = (PrintfCallback) p->cb_printf;
 		stride = p->stride;
@@ -829,7 +829,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		break;
 	}
-
 	const char *space = hex_style? ".": " ";
 	// TODO: Use base to change %03o and so on
 	if (step == 1 && base < 0) {
@@ -936,6 +935,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
+	int rows = 0;
 	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
@@ -1062,7 +1062,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						break;
 					}
 					r_print_byte (p, bytefmt, j, buf[j]);
-					if (j % 2 || !pairs) {
+					if (pairs && !compact && (inc & 1)) {
+						bool mustspace = (rows % 2) ? !(j&1) : (j&1);
+						if (mustspace) {
+							printfmt (" ");
+						}
+					} else if (j % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
 								if (!compact) {
@@ -1153,6 +1158,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		printfmt ("\n");
+		rows++;
 
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
