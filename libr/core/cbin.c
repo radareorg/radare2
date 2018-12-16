@@ -1092,13 +1092,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		r_cons_printf ("[");
 	} else if (IS_MODE_NORMAL (mode)) {
 		if (inifin) {
-			r_cons_printf ("[Constructors]");
+			r_cons_printf ("[Constructors]\n");
 		} else {
-			r_cons_printf ("[Entrypoints]");
+			r_cons_printf ("[Entrypoints]\n");
 		}
-	}
-	if (!IS_MODE_SET (mode) && !IS_MODE_SIMPLE (mode) && !IS_MODE_JSON (mode) && !IS_MODE_RAD (mode)) {
-		r_cons_printf ("%sbaddr=0x%08"PFMT64x"\n", IS_MODE_NORMAL (mode) ? " " : "", baddr);
 	}
 
 	r_list_foreach (entries, iter, entry) {
