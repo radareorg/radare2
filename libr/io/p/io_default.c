@@ -274,7 +274,10 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 				memcpy (a_buf+a_delta, buf, count);
 				for (i = 0; i < a_count; i += aligned) {
 					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
-					(void)write (mmo->fd, a_buf + i, aligned);
+					len = write (mmo->fd, a_buf + i, aligned);
+					if (len != aligned) {
+						return len;
+					}
 				}
 			}
 			free (a_buf);
