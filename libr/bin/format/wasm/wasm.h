@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2018 - cgvwzq */
 
 #include <r_types.h>
 #include <r_util.h>

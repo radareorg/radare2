@@ -3,6 +3,8 @@ CFLAGS+=-I$(WASM_ROOT)
 
 STATIC_OBJ+=${OBJ_WASM}
 TARGET_WASM=anal_wasm.${EXT_SO}
+# results in dupped symbol when building statically
+#OBJ_WASM+=../../asm/arch/wasm/wasm.o
 
 ALL_TARGETS+=${TARGET_WASM}
 

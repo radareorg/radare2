@@ -184,7 +184,7 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_F64REINTERPRETI64] = { "f64/reinterpret/i64", 1, 1 }
 };
 
-int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
+R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	// TODO: add immediates assembly
 	int i = 0, len = -1;
 	char tmp[R_ASM_BUFSIZE];
@@ -205,7 +205,7 @@ int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	return len;
 }
 
-int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
+R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	op->len = 1;
 	op->op = buf[0];
 	if (op->op > 0xbf) {

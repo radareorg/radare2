@@ -5,8 +5,10 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/wasm/wasm.h"
+#undef R_IPI
+#define R_IPI static
 #include "../../bin/format/wasm/wasm.h"
+#include "../../asm/arch/wasm/wasm.c"
 
 #define WASM_STACK_SIZE 256
 #define WASM_END_SIZE (1)
