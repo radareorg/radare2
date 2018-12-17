@@ -661,10 +661,11 @@ static int cmd_type(void *data, const char *input) {
 					continue;
 				}
 				free (name);
+				int n;
 				name = strdup (sdbkv_key (kv));
 				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
 				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
-				for (int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+				for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 					char *var2 = r_str_newf ("%s.%s", var, p);
 					if (var2) {
 						char *val = sdb_array_get (TDB, var2, 0, NULL);
@@ -759,10 +760,11 @@ static int cmd_type(void *data, const char *input) {
 					continue;
 				}
 				free (name);
+				int n;
 				name = strdup (sdbkv_key (kv));
 				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
 				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
-				for (int n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+				for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 					char *var2 = r_str_newf ("%s.%s", var, p);
 					if (var2) {
 						char *val = sdb_array_get (TDB, var2, 0, NULL);
