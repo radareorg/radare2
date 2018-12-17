@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
 #if HAVE_R_UTIL
 #include <r_util.h>
 #else
