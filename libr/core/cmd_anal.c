@@ -6001,8 +6001,14 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'i': // "ahi"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_ahi);
-		} else if (input[1] == ' ') {
-		// You can either specify immbase with letters, or numbers
+		} else if (isdigit (input[1])) {
+			r_anal_hint_set_nword (core->anal, core->offset, input[1] - '0');
+			input++;
+		} else if (input[1] == '-') { // "ahi-"
+			r_anal_hint_set_immbase (core->anal, core->offset, 0);
+		}
+		if (input[1] == ' ') {
+			// You can either specify immbase with letters, or numbers
 			const int base =
 				(input[2] == 's') ? 1 :
 				(input[2] == 'b') ? 2 :
@@ -6014,9 +6020,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(input[2] == 'S') ? 80 : // syscall
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
-		} else if (input[1] == '-') { // "ahi-"
-			r_anal_hint_set_immbase (core->anal, core->offset, 0);
-		} else {
+		} else if (input[1] != '?' && input[1] != '-') {
 			eprintf ("|ERROR| Usage: ahi [base]\n");
 		}
 		break;
