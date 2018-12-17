@@ -330,7 +330,7 @@ typedef struct r_bin_xtr_metadata_t {
 typedef int (*FREE_XTR)(void *xtr_obj);
 typedef struct r_bin_xtr_extract_t {
 	char *file;
-	ut8 *buffer;
+	RBuffer *buf;
 	ut64 size;
 	ut64 offset;
 	ut64 baddr;
