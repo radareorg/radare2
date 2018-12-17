@@ -769,25 +769,28 @@ static void findPrevWord(RCore *core) {
 
 // TODO: integrate in '/' command with search.inblock ?
 static void visual_search(RCore *core) {
+#define BUF_SZ 256
 	const ut8 *p;
 	int len, d = core->print->cur;
-	char str[128], buf[258];
+	char str[128], buf[BUF_SZ];
 
 	r_line_set_prompt ("search byte/string in block: ");
 	r_cons_fgets (str, sizeof (str), 0, NULL);
 	len = r_hex_str2bin (str, (ut8 *) buf);
 	if (*str == '"') {
-		char *e = strncpy (buf + 1, str + 1, sizeof (buf) - 1);
-		if (e) {
-			e--;
-			if (*e == '"') {
-				*e = 0;
-			}
-		}
+		strncpy (buf, str + 1, sizeof (buf) - 1);
+		buf[BUF_SZ - 1] = '\0';
+
 		len = strlen (buf);
+		char *e = buf + len - 1;
+		if (e > buf && *e == '"') {
+			*e = 0;
+			len--;
+		}
 	} else if (len < 1) {
 		strncpy (buf, str, sizeof (buf) - 1);
-		len = strlen (str);
+		buf[BUF_SZ - 1] = '\0';
+		len = strlen (buf);
 	}
 	p = r_mem_mem (core->block + d, core->blocksize - d,
 		(const ut8 *) buf, len);
@@ -806,6 +809,7 @@ static void visual_search(RCore *core) {
 		r_cons_any_key (NULL);
 		r_cons_clear00 ();
 	}
+#undef BUF_SZ
 }
 
 R_API void r_core_visual_show_char(RCore *core, char ch) {
