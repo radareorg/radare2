@@ -396,19 +396,12 @@ static RBinPlugin * get_plugin_with_buffer (RBin *bin, RBuffer *buf) {
 
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
 	r_return_val_if_fail (bin && bf && data, false);
+
 	ut64 offset = data->offset;
 	ut64 sz = data->size;
-#if USE_BYTES
-	ut8 *bytes = data->buffer;
-	r_return_val_if_fail (bytes, false);
-	RBinPlugin *plugin = get_plugin(bin, NULL, (const ut8*)bytes, sz);
-	bf->buf = r_buf_new_with_bytes ((const ut8 *)bytes, data->size);
-#else
+
 	RBinPlugin *plugin = get_plugin_with_buffer (bin, data->buf);
-	r_buf_free (bf->buf);
 	bf->buf = r_buf_new_with_bufref (data->buf);
-#endif
-	// r_bin_object_new append the new object into binfile
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	if (!o) {

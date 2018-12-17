@@ -327,15 +327,10 @@ typedef struct r_bin_xtr_metadata_t {
 	const char *xtr_type;
 } RBinXtrMetadata;
 
-#define USE_BYTES 1
-
 typedef int (*FREE_XTR)(void *xtr_obj);
 typedef struct r_bin_xtr_extract_t {
 	char *file;
 	RBuffer *buf;
-#if USE_BYTES
-	ut8 *buffer;
-#endif
 	ut64 size;
 	ut64 offset;
 	ut64 baddr;
