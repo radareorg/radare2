@@ -4752,13 +4752,11 @@ static int cmd_print(void *data, const char *input) {
 						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL);
 					} else { // pd
 						int instr_len;
-						if (r_core_prevop_addr (core, core->offset, l, &start)) {
-							// We have some anal_info.
-							instr_len = core->offset - start;
-						} else {
+						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
 							// anal ignorance.
-							r_core_asm_bwdis_len (core, &instr_len, &addr, l);
+							start = r_core_prevop_addr_force (core, core->offset, l);
 						}
+						instr_len = core->offset - start;
 						ut64 prevaddr = core->offset;
 						int bs = core->blocksize, bs1 = addrbytes * instr_len;
 						if (bs1 > bs) {
