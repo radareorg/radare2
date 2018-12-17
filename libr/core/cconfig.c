@@ -371,8 +371,10 @@ static int cb_scrrainbow(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_RAINBOW;
+		r_core_cmd0 (core, "ecr");
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_RAINBOW);
+		r_core_cmd0 (core, "ecoo");
 	}
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -2457,6 +2459,7 @@ R_API int r_core_config_init(RCore *core) {
 		SETCB ("dir.prefix", pfx, (RConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
 		free (pfx);
 	}
+	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
@@ -2913,7 +2916,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
 	SETPREF ("cmd.onsyscall", "", "Run when a syscall is hit");
 	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "Show info when a tracepoint/breakpoint is hit");
-	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
 	SETPREF ("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF ("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF ("cmd.gprompt", "", "Graph visual prompt commands");
