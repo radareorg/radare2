@@ -3297,14 +3297,12 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	RAnal *a = core->anal;
 	RAnalHint *hint = r_anal_hint_get (a, ds->at);
-
 	if (hint) {
 		if (hint->jump != UT64_MAX) {
 			ds_print_shortcut (ds, hint->jump, pos);
-			r_anal_hint_free (hint);
-			return true;
 		}
 		r_anal_hint_free (hint);
+		return true;
 	}
 	return false;
 }
@@ -3406,16 +3404,10 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		}
 		break;
 	}
-	if (gotShortcut) {
-		for (i = 3 - slen; i > 0; i--) {
-			r_cons_strcat (" ");
-		}
-	} else {
-		for (i = 4 - slen; i > 0; i--) {
-			r_cons_strcat (" ");
-		}
+	int begin = (gotShortcut) ? (ds->asm_hint_pos == 0)? 1: 2: 3;
+	for (i = begin - slen; i > 0; i--) {
+		r_cons_strcat (" ");
 	}
-	r_cons_strcat ("  ");
 	ds->hinted_line = gotShortcut;
 }
 
