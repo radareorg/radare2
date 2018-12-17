@@ -389,7 +389,7 @@ static RBinPlugin *get_plugin(RBin *bin, const char *pluginname, const ut8 *byte
 
 static RBinPlugin * get_plugin_with_buffer (RBin *bin, RBuffer *buf) {
 	ut8 bytes[4096];
-// XXX this is unnecessary and slow
+	// XXX this must be removed to make get_plugin work with RBuffer instead of char*+sz
 	r_buf_read_at (buf, 0, bytes, sizeof (bytes));
 	return get_plugin (bin, NULL, (const ut8 *)bytes, sizeof (bytes));
 }
