@@ -2890,7 +2890,8 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
-		," i    immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
+		," i    (ahi) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
+		," I    (ahi1) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
 		," h    define anal hint"
@@ -2954,6 +2955,16 @@ onemoretime:
 			r_line_set_prompt ("immbase: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
 				r_core_cmdf (core, "ahi %s @ 0x%"PFMT64x, str, off);
+			}
+		}
+		break;
+	case 'I':
+		{
+			char str[128];
+			r_cons_show_cursor (true);
+			r_line_set_prompt ("immbase: ");
+			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
+				r_core_cmdf (core, "ahi1 %s @ 0x%"PFMT64x, str, off);
 			}
 		}
 		break;
