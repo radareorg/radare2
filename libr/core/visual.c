@@ -321,7 +321,7 @@ R_API int r_core_visual_hud(RCore *core) {
 
 	r_cons_clear ();
 	if (res) {
-		p = strchr (res, '\t');
+		p = strchr (res, ';');
 		r_cons_println (res);
 		r_cons_flush ();
 		if (p) {
