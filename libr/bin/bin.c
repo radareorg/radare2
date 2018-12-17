@@ -76,7 +76,6 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 		free (data);
 		return NULL;
 	}
-eprintf ("SLOOWW\n");
 	// XXX unnecessary memcpy, this is slow
 	memcpy (data->buffer, r_buf_buffer (buf), size);
 	data->buffer[size] = 0;

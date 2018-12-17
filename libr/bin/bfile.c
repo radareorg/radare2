@@ -274,10 +274,8 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	RBinString *ptr;
 	RListIter *it;
 
-	if (!raw) {
-		if (!plugin || !plugin->info) {
-			return;
-		}
+	if (!raw && (!plugin || !plugin->info)) {
+		return;
 	}
 	if (!min) {
 		min = plugin? plugin->minstrlen: 4;
