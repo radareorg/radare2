@@ -24,6 +24,7 @@ static const char *printfmtSingle[] = {
 	"pxw", "pxx", "pxA", "pss", "prc", "pxa", "pxr"
 };
 
+// to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 6
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"px", "pxa", "pxw", "pxq", "pxr", "dbt;"
@@ -1911,6 +1912,23 @@ static void visual_closetab (RCore *core) {
 	}
 }
 
+static void applyHexMode(RCore *core) {
+	switch (hexMode % 3) {
+	case 0:
+		r_config_set (core->config, "hex.compact", "false");
+		r_config_set (core->config, "hex.esil", "false");
+		break;
+	case 1:
+		r_config_set (core->config, "asm.pseudo", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		break;
+	case 2:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.esil", "true");
+		break;
+	}
+}
+
 static void applyDisMode(RCore *core) {
 	switch (disMode) {
 	case 0:
@@ -2043,7 +2061,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} while (--wheelspeed > 0);
 		}
 		break;
-		case 9: // tab
+		case 9: // tab TAB
 			if (core->visual.tabs) {
 				visual_nexttab (core);
 			} else if (splitView) {
@@ -2054,27 +2072,45 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					core->seltab = 0;
 				}
 			} else {
-				core->curtab = 0;
-				if (core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
-					core->print->cur = 0;
-					core->seltab++;
-					if (core->seltab > 2) {
+				if (core->print->cur_enabled) {
+					core->curtab = 0;
+					if (core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
+						core->print->cur = 0;
+						core->seltab++;
+						if (core->seltab > 2) {
+							core->seltab = 0;
+						}
+					} else {
 						core->seltab = 0;
+						ut64 f = r_config_get_i (core->config, "diff.from");
+						ut64 t = r_config_get_i (core->config, "diff.to");
+						if (f == t && f == 0) {
+							core->print->col = core->print->col == 1? 2: 1;
+						} else {
+#if 0
+							// XXX WTF
+							ut64 delta = offset - f;
+							r_core_seek (core, t + delta, 1);
+							r_config_set_i (core->config, "diff.from", t);
+							r_config_set_i (core->config, "diff.to", f);
+#endif
+						}
 					}
 				} else {
-					core->seltab = 0;
-					ut64 f = r_config_get_i (core->config, "diff.from");
-					ut64 t = r_config_get_i (core->config, "diff.to");
-					if (f == t && f == 0) {
-						core->print->col = core->print->col == 1? 2: 1;
-					} else {
-#if 0
-// XXX WTF
-						ut64 delta = offset - f;
-						r_core_seek (core, t + delta, 1);
-						r_config_set_i (core->config, "diff.from", t);
-						r_config_set_i (core->config, "diff.to", f);
-#endif
+					switch (printMode) {
+					case 0: // xc
+						hexMode++;
+						applyHexMode (core);
+						break;
+					case 1: // pd
+						rotateAsmemu (core);
+						disMode++;
+			// r_core_cmd0 (core, "e!asm.pseudo");
+						if (disMode > 2) {
+							disMode = 0;
+						}
+						applyDisMode (core);
+						break;
 					}
 				}
 			}
@@ -2818,14 +2854,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '(':
+		case ')':
 			snowMode = !snowMode;
 			if (!snowMode) {
 				r_list_free (snows);
 				snows = NULL;
 			}
-			break;
-		case ')':
-			rotateAsmemu (core);
 			break;
 		case '#':
 			r_config_toggle (core->config, "asm.bytes");
@@ -2993,14 +3027,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
 			r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
 			}
-			break;
-		case 'O':
-			disMode++;
-			if (disMode > 2) {
-				disMode = 0;
-			}
-			applyDisMode (core);
-			// r_core_cmd0 (core, "e!asm.pseudo");
 			break;
 		case 'u':
 		{
