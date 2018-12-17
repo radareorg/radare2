@@ -72,25 +72,6 @@ enum msp430_registers {
 	MSP430_R15,
 };
 
-static const char *msp430_register_names[] = {
-	"pc",
-	"sp",
-	"sr",
-	"cg",
-	"r4",
-	"r5",
-	"r6",
-	"r7",
-	"r8",
-	"r9",
-	"r10",
-	"r11",
-	"r12",
-	"r13",
-	"r14",
-	"r15",
-};
-
 struct msp430_cmd {
 	ut8 type;
 	ut8	opcode;
