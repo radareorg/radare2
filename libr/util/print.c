@@ -748,8 +748,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int stride = 0;
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
 	int use_sparse = 0;
-	int use_header = 1;
-	int use_hdroff = 1;
+	bool use_header = true;
+	bool use_hdroff = true;
 	int use_pair = 1;
 	int use_offset = 1;
 	bool compact = false;
@@ -907,8 +907,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			} else {
 				printfmt (col == 2? "|": space);
 			}
-			for (i = 0; i < inc; i++) {
-				printfmt ("%c", hex[(i + k) % 16]);
+			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+				for (i = 0; i < inc; i++) {
+					printfmt ("%c", hex[(i + k) % 16]);
+				}
 			}
 			if (col == 2) {
 				printfmt ("|");
@@ -1099,11 +1101,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		} else {
 			printfmt ((col == 2)? "|": " ");
 		}
-		for (j = i; j < i + inc; j++) {
-			if (j >= len) {
-				break;
+		if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+			for (j = i; j < i + inc; j++) {
+				if (j >= len) {
+					break;
+				}
+				r_print_byte (p, "%c", j, buf[j]);
 			}
-			r_print_byte (p, "%c", j, buf[j]);
 		}
 		/* ascii column */
 		if (col == 2) {
