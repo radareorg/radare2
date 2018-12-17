@@ -742,8 +742,9 @@ R_API void r_meta_list_offset(RAnal *a, ut64 addr, char input) {
 	};
 
 	char key[100];
+	int i;
 
-	for (int i = 0; i < sizeof (types) / sizeof (types[0]); i ++) {
+	for (i = 0; i < sizeof (types) / sizeof (types[0]); i ++) {
 		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, types[i], addr);
 		const char *k = sdb_const_get (DB, key, 0);
 		if (!k) {
