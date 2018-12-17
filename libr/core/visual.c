@@ -1025,7 +1025,8 @@ R_API void r_core_visual_offset(RCore *core) {
 
 static int prevopsz(RCore *core, ut64 addr) {
 	ut64 prev_addr = prevop_addr (core, addr);
-	return addr - prev_addr;
+	int diff = addr - prev_addr;
+	return R_MAX (1, diff);
 }
 
 static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
