@@ -119,6 +119,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		} else if (!memcmp (buf, "cd ", 3)) {
 			char opath[PROMPT_PATH_BUFSIZE];
 			strncpy (opath, path, sizeof (opath) - 1);
+			opath[sizeof (opath) - 1] = '\0';
 			input = buf + 3;
 			while (*input == ' ') {
 				input++;
