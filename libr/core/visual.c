@@ -902,7 +902,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
 	target = addr;
-	base = target - OPDELTA;
+	base = target > OPDELTA ? target - OPDELTA : 0;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
@@ -920,7 +920,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		}
 		i += len - 1;
 	}
-	return target - 4;
+	return target > 4 ? target - 4 : 0;
 }
 
 //  Returns true if we can use analysis to find the previous operation address,
