@@ -209,6 +209,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <fcntl.h> /* for O_RDONLY */
+#if USE_LIB_BSD
+#include <bsd/stdlib.h>
+#undef HAVE_ARC4RANDOM_UNIFORM
+#define HAVE_ARC4RANDOM_UNIFORM 1
+#endif
 #include <r_endian.h> /* needs size_t */
 
 #ifdef __cplusplus

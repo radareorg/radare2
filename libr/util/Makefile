@@ -41,6 +41,7 @@ include deps.mk
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
+LDFLAGS+=${LIBBSD}
 LDFLAGS+=-lm
 
 # NetBSD 7.0 ships with backtrace(3) in -lexecinfo

@@ -246,6 +246,15 @@ else
   message('Using bundled openssl code')
 endif
 
+# libbsd for Linux
+sys_bsd = dependency('bsd', required: false)
+use_sys_bsd = false
+if sys_bsd.found()
+  message('Using libbsd library')
+  use_sys_bsd = true
+else
+endif
+
 # handle libuv library
 if get_option('use_libuv')
   libuv_dep = dependency('libuv', required: false)
@@ -290,6 +299,7 @@ userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('USE_LIB_BSD', use_sys_bsd)
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
