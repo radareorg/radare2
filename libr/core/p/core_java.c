@@ -726,7 +726,7 @@ static int r_cmd_is_object_descriptor (const char *name, ut32 name_len) {
 		}
 	}
 
-	for (idx = 0, L_pos = 0; idx < name_len; idx++,p_name++) {
+	for (idx = 0, Semi_pos = 0; idx < name_len; idx++,p_name++) {
 		if (*p_name == ';') {
 			found_Semi = true;
 			Semi_pos = idx;

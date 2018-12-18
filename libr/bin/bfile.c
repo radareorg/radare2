@@ -451,12 +451,12 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
 	r_return_val_if_fail (sz != UT64_MAX, NULL);
 
+	RBinPlugin *plugin = get_plugin (bin, pluginname, bytes, sz);
 	RBinFile *bf = file_create_append (bin, file, bytes, sz, file_sz, rawstr, fd, NULL, true);
 	if (!bf) {
 		return NULL;
 	}
 
-	RBinPlugin *plugin = get_plugin (bin, pluginname, bytes, sz);
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 	if (!o) {
 		r_list_delete_data (bin->binfiles, bf);
