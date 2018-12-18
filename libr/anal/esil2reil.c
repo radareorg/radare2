@@ -59,8 +59,7 @@ RAnalReilArg *reil_pop_arg(RAnalEsil *esil) {
 	for (i = 0; i < len; i++) {
 		if (buf[i] == ':') {
 			tmp_buf[j] = '\0';
-			strncpy (op->name, tmp_buf, sizeof (op->name));
-			op->name[sizeof (op->name) - 1] = '\0';
+			r_str_ncpy (op->name, tmp_buf, sizeof (op->name));
 			memset (tmp_buf, 0, sizeof (tmp_buf));
 			j = 0;
 			flag = 1;
@@ -77,8 +76,7 @@ RAnalReilArg *reil_pop_arg(RAnalEsil *esil) {
 
 	// If we have not encountered a ':' we don't know the size yet.
 	if (!flag) {
-		strncpy(op->name, tmp_buf, sizeof(op->name));
-		op->name[sizeof (op->name) - 1] = '\0';
+		r_str_ncpy (op->name, tmp_buf, sizeof (op->name));
 		op->type = reil_get_arg_type (esil, op->name);
 		if (op->type == ARG_REG) {
 			op->size = esil_internal_sizeof_reg(esil, op->name);
