@@ -744,8 +744,14 @@ R_API char *r_str_newf(const char *fmt, ...) {
 }
 
 // Secure string copy with null terminator (like strlcpy or strscpy but ours
-R_API void r_str_ncpy(char *dst, const char *src, int n) {
+R_API void r_str_ncpy(char *dst, const char *src, size_t n) {
 	int i;
+
+	// do not do anything if n is 0
+	if (n == 0) {
+		return;
+	}
+
 	n--;
 	for (i = 0; src[i] && n > 0; i++, n--) {
 		dst[i] = src[i];
