@@ -5011,12 +5011,8 @@ toro:
 		}
 
 		ds_begin_json_line (ds);
-		// f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		f = fcnIn (ds, ds->addr, 0);
-		if (ds_print_labels (ds, f)) {
-			ds_show_functions (ds);
-			ds_show_xrefs (ds);
-		}
+		ds_print_labels (ds, f);
 		ds_setup_print_pre (ds, false, false);
 		ds_print_lines_left (ds);
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
