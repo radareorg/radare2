@@ -321,7 +321,7 @@ R_API int r_core_visual_hud(RCore *core) {
 
 	r_cons_clear ();
 	if (res) {
-		p = strchr (res, '\t');
+		p = strchr (res, ';');
 		r_cons_println (res);
 		r_cons_flush ();
 		if (p) {
@@ -906,7 +906,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
 	target = addr;
-	base = target - OPDELTA;
+	base = target > OPDELTA ? target - OPDELTA : 0;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
@@ -924,7 +924,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		}
 		i += len - 1;
 	}
-	return target - 4;
+	return target > 4 ? target - 4 : 0;
 }
 
 //  Returns true if we can use analysis to find the previous operation address,
@@ -1029,7 +1029,8 @@ R_API void r_core_visual_offset(RCore *core) {
 
 static int prevopsz(RCore *core, ut64 addr) {
 	ut64 prev_addr = prevop_addr (core, addr);
-	return addr - prev_addr;
+	int diff = addr - prev_addr;
+	return R_MAX (1, diff);
 }
 
 static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
