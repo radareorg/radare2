@@ -907,13 +907,14 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
 			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
-		if (!ret) {
-			continue;
-		}
-		len = op.size;
-		r_anal_op_fini (&op); // XXX
-		if (len < 1) {
-			continue;
+		if (ret) {
+			len = op.size;
+			if (len < 1) {
+				len = 1;
+			}
+			r_anal_op_fini (&op); // XXX
+		} else {
+			len = 1;
 		}
 		if (target <= base + i + len) {
 			return base + i;
@@ -1025,8 +1026,7 @@ R_API void r_core_visual_offset(RCore *core) {
 
 static int prevopsz(RCore *core, ut64 addr) {
 	ut64 prev_addr = prevop_addr (core, addr);
-	int diff = addr - prev_addr;
-	return R_MAX (1, diff);
+	return addr - prev_addr;
 }
 
 static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
