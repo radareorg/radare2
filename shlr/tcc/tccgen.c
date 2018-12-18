@@ -2376,7 +2376,7 @@ static void decl_designator(CType *type, unsigned long c,
 				index_last = index;
 			}
 			skip (']');
-			if (!notfirst) {
+			if (!notfirst && cur_index) {
 				*cur_index = index_last;
 			}
 			type = pointed_type (type);
@@ -2408,7 +2408,7 @@ struct_field:
 			if (!f) {
 				expect ("field");
 			}
-			if (!notfirst) {
+			if (!notfirst && cur_field) {
 				*cur_field = f;
 			}
 			/* XXX: fix this mess by using explicit storage field */
@@ -2435,7 +2435,7 @@ struct_field:
 			type = pointed_type (type);
 			c += index * type_size (type, &align);
 		} else {
-			f = *cur_field;
+			f = cur_field ? *cur_field : NULL;
 			if (!f) {
 				TCC_ERR ("too many field init");
 			}

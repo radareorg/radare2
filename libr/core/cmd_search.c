@@ -1232,7 +1232,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const char *arch = r_config_get (core->config, "asm.arch");
-	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	int max_count = r_config_get_i (core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
@@ -1324,8 +1323,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			continue;
 		}
 		RInterval itv = r_itv_intersect (search_itv, map->itv);
-		from = itv.addr;
-		to = r_itv_end (itv);
+		ut64 from = itv.addr, to = r_itv_end (itv);
 		if (r_cons_is_breaked ()) {
 			break;
 		}

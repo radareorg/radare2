@@ -2050,6 +2050,9 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	int i, j, index;
 	RPrint myp = {.cb_printf = libc_printf};
 	const int len = strlen (bin_str);
+	if (!len) {
+		return;
+	}
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
 	if (buf == NULL) {
 		eprintf ("allocation failed\n");
