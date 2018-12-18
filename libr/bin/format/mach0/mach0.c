@@ -2726,8 +2726,15 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
 			break;
 		case LC_UUID:
-			printf ("0x%08"PFMT64x"  uuid         %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 28, NULL));
+			{
+				ut8 i, uuid[16];
+				r_buf_read_at (buf, addr, uuid, sizeof (uuid));
+				printf ("0x%08"PFMT64x"  uuid        ", addr);
+				for (i = 0; i < sizeof (uuid); i++) {
+					printf ("%02x", uuid[i]);
+				}
+				printf ("\n");
+			}
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
