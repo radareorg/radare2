@@ -324,22 +324,15 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 
 // gets first map where addr fits in
 R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
+	RIOMap* map;
+	SdbListIter* iter;
 	if (!io) {
 		return NULL;
 	}
-#define CMP(addr, itv) \
-	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) >= r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
-
-	const RPVector *skyline = &io->map_skyline;
-	size_t i, len = r_pvector_len (skyline);
-	r_pvector_lower_bound (skyline, addr, i, CMP);
-#undef CMP
-	if (i == len) {
-		return NULL;
-	}
-	const RIOMapSkyline *part = r_pvector_at (skyline, i);
-	if (part->itv.addr <= addr) {
-		return part->map;
+	ls_foreach_prev (io->maps, iter, map) {
+		if (r_itv_contain (map->itv, addr)) {
+			return map;
+		}
 	}
 	return NULL;
 }
