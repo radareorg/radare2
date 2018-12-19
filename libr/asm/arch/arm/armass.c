@@ -665,8 +665,7 @@ static st32 getlistmask(char *input) {
 		for (i = 0; input[i] != ',' && input[i] != '\0'; i++) {
 			;
 		}
-		strncpy (temp, input, i);
-		temp[i] = 0;
+		r_str_ncpy (temp, input, i + 1);
 
 		input += i;
 		if (*input != '\0') {
