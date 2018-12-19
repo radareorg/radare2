@@ -165,7 +165,9 @@ void io_map_calculate_skyline(RIO *io) {
 				R_FREE (cur_itv);
 				break;
 			}
-			cur_itv = NULL;
+			cur_itv = R_NEW (RInterval);
+			cur_itv->addr = part_from;
+			cur_itv->size = part_size;
 		}
 	}
 	if (cur_itv) {
@@ -342,7 +344,7 @@ R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 		return false;
 	}
 #define CMP(addr, itv) \
-	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) >= r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
+	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) > r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
 	const RPVector *shadow = &io->map_skyline_shadow;
 	size_t i, len = r_pvector_len (shadow);
 	r_pvector_lower_bound (shadow, addr, i, CMP);
