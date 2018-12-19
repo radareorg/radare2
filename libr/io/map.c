@@ -70,6 +70,7 @@ void io_map_calculate_skyline(RIO *io) {
 	struct map_event_t *ev;
 	bool *deleted = NULL;
 	r_pvector_clear (&io->map_skyline);
+	r_pvector_clear (&io->map_skyline_shadow);
 	r_pvector_init (&events, free);
 	if (!r_pvector_reserve (&events, ls_length (io->maps) * 2) ||
 			!(deleted = calloc (ls_length (io->maps), 1))) {
@@ -139,8 +140,39 @@ void io_map_calculate_skyline(RIO *io) {
 			last_map = map;
 		}
 	}
-
 	r_binheap_clear (&heap);
+
+	const RPVector *skyline = &io->map_skyline;
+	RPVector *shadow = &io->map_skyline_shadow;
+	RInterval *cur_itv = NULL;
+
+	for (i = 0; i < r_pvector_len (skyline); i++) {
+		const RIOMapSkyline *part = r_pvector_at (skyline, i);
+		ut64 part_from = part->itv.addr;
+		ut64 part_size = part->itv.size;
+
+		if (!cur_itv) {
+			cur_itv = R_NEW (RInterval);
+			cur_itv->addr = part_from;
+			cur_itv->size = part_size;
+			continue;
+		}
+
+		if (part_from == r_itv_end (*cur_itv)) {
+			cur_itv->size += part_size;
+		} else {
+			if (!r_pvector_push (shadow, cur_itv)) {
+				R_FREE (cur_itv);
+				break;
+			}
+			cur_itv = NULL;
+		}
+	}
+	if (cur_itv) {
+		if (!r_pvector_push (shadow, cur_itv)) {
+			R_FREE (cur_itv);
+		}
+	}
 out:
 	r_pvector_clear (&events);
 	free (deleted);
@@ -292,17 +324,44 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 
 // gets first map where addr fits in
 R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
-	RIOMap* map;
-	SdbListIter* iter;
 	if (!io) {
 		return NULL;
 	}
-	ls_foreach_prev (io->maps, iter, map) {
-		if (r_itv_contain (map->itv, addr)) {
-			return map;
-		}
+#define CMP(addr, itv) \
+	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) >= r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
+
+	const RPVector *skyline = &io->map_skyline;
+	size_t i, len = r_pvector_len (skyline);
+	r_pvector_lower_bound (skyline, addr, i, CMP);
+#undef CMP
+	if (i == len) {
+		return NULL;
+	}
+	const RIOMapSkyline *part = r_pvector_at (skyline, i);
+	if (part->itv.addr <= addr) {
+		return part->map;
 	}
 	return NULL;
+}
+
+R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
+	if (!io) {
+		return false;
+	}
+#define CMP(addr, itv) \
+	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) >= r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
+	const RPVector *shadow = &io->map_skyline_shadow;
+	size_t i, len = r_pvector_len (shadow);
+	r_pvector_lower_bound (shadow, addr, i, CMP);
+#undef CMP
+	if (i == len) {
+		return false;
+	}
+	const RInterval *itv = r_pvector_at (shadow, i);
+	if (itv->addr <= addr) {
+		return true;
+	}
+	return false;
 }
 
 R_API void r_io_map_reset(RIO* io) {
@@ -454,6 +513,7 @@ R_API void r_io_map_fini(RIO* io) {
 	r_id_pool_free (io->map_ids);
 	io->map_ids = NULL;
 	r_pvector_clear (&io->map_skyline);
+	r_pvector_clear (&io->map_skyline_shadow);
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
