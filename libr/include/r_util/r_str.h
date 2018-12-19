@@ -112,7 +112,6 @@ R_API const char *r_str_get(const char *str);
 R_API const char *r_str_get2(const char *str);
 R_API char *r_str_ndup(const char *ptr, int len);
 R_API char *r_str_dup(char *ptr, const char *string);
-R_API void *r_str_free(void *ptr);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
