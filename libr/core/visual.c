@@ -3104,6 +3104,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 				// estimate new blocksize with the size of the last
 				// printed instructions
 				int new_sz = core->print->screen_bounds - core->offset + 32;
+				new_sz = R_MIN (new_sz, 16 * 1024);
 				if (new_sz > bsize) {
 					bsize = new_sz;
 				}
