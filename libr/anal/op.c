@@ -604,33 +604,27 @@ R_API const char *r_anal_op_family_to_string(int n) {
 }
 
 R_API int r_anal_op_family_from_string(const char *f) {
-	// TODO: use array of strings or so ..
-	if (!strcmp (f, "cpu")) {
-		return R_ANAL_OP_FAMILY_CPU;
-	}
-	if (!strcmp (f, "fpu")) {
-		return R_ANAL_OP_FAMILY_FPU;
-	}
-	if (!strcmp (f, "mmx")) {
-		return R_ANAL_OP_FAMILY_MMX;
-	}
-	if (!strcmp (f, "sse")) {
-		return R_ANAL_OP_FAMILY_SSE;
-	}
-	if (!strcmp (f, "priv")) {
-		return R_ANAL_OP_FAMILY_PRIV;
-	}
-	if (!strcmp (f, "virt")) {
-		return R_ANAL_OP_FAMILY_VIRT;
-	}
-	if (!strcmp (f, "crpt")) {
-		return R_ANAL_OP_FAMILY_CRYPTO;
-	}
-	if (!strcmp (f, "io")) {
-		return R_ANAL_OP_FAMILY_IO;
-	}
-	if (!strcmp (f, "thrd")) {
-		return R_ANAL_OP_FAMILY_THREAD;
+	struct op_family {
+		const char *name;
+		int id;
+	};
+	static const struct op_family of[] = {
+		{"cpu", R_ANAL_OP_FAMILY_CPU},
+		{"fpu", R_ANAL_OP_FAMILY_FPU},
+		{"mmx", R_ANAL_OP_FAMILY_MMX},
+		{"sse", R_ANAL_OP_FAMILY_SSE},
+		{"priv", R_ANAL_OP_FAMILY_PRIV},
+		{"virt", R_ANAL_OP_FAMILY_VIRT},
+		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
+		{"io", R_ANAL_OP_FAMILY_IO},
+		{"thread", R_ANAL_OP_FAMILY_THREAD},
+	};
+
+	int i;
+	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
+		if (!strcmp (f, of[i].name)) {
+			return of[i].id;
+		}
 	}
 	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
