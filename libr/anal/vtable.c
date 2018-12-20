@@ -97,7 +97,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
 	}
-	if (!vtable_is_value_in_text_section (context, curAddress, NULL)) {
+	if (curAddress && !vtable_is_value_in_text_section (context, curAddress, NULL)) {
 		return false;
 	}
 	// total xref's to curAddress
