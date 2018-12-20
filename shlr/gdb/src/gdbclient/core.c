@@ -295,6 +295,10 @@ int gdbr_check_extended_mode(libgdbr_t *g) {
 	}
 	read_packet (g, false);
 	ret = send_ack (g);
+	if (ret < 0) {
+		g->stub_features.extended_mode = 0;
+		return ret;
+	}
 	if (strncmp (g->data, "OK", 2)) {
 		g->stub_features.extended_mode = 0;
 		return -1;

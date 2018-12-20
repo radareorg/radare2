@@ -1139,7 +1139,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			for (j = i; j < i + inc; j++) {
 				if (p && p->offname) {
 					a = p->offname (p->user, addr + j);
-					if (a && *a) {
+					if (p->colorfor && a && *a) {
 						const char *color = p->colorfor (p->user, addr + j, true);
 						printfmt ("%s  ; %s"Color_RESET, color?color: "", a);
 					}

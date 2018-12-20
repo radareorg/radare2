@@ -91,9 +91,8 @@ static int rap__close(RIODesc *fd) {
 	if (RIORAP_IS_VALID (fd)) {
 		if (RIORAP_FD (fd) != NULL) {
 			RIORap *r = fd->data;
-			ret = r_socket_close (r->fd);
+			(void)r_socket_close (r->fd);
 			ret = r_socket_close (r->client);
-			//ret = r_socket_close (r->client);
 			R_FREE (fd->data);
 		}
 	} else {

@@ -3153,7 +3153,7 @@ static void agraph_update_title(RAGraph *g, RAnalFunction *fcn) {
 		fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 		g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
 	r_agraph_set_title (g, new_title);
-	r_str_free (new_title);
+	free (new_title);
 }
 
 /* look for any change in the state of the graph

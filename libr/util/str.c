@@ -930,12 +930,6 @@ R_API char *r_str_appendch(char *x, char y) {
 	return r_str_append (x,b);
 }
 
-// XXX: wtf must deprecate
-R_API void *r_str_free(void *ptr) {
-	free (ptr);
-	return NULL;
-}
-
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	int off, i, klen, vlen, slen;
 	char *newstr, *scnd, *p = str;

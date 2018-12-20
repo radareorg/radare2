@@ -288,7 +288,7 @@ static RThreadFunctionRet rabin_delegate(RThread *th) {
 			} while (nptr);
 		}
 		//r_core_cmd (&r, cmd, 0);
-		r_str_free (rabin_cmd);
+		free (rabin_cmd);
 		rabin_cmd = NULL;
 	}
 	if (th) {
@@ -906,7 +906,7 @@ int main(int argc, char **argv, char **envp) {
 				} else {
 					r_sign_load (r.anal, complete_path);
 				}
-				r_str_free (complete_path);
+				free (complete_path);
 			}
 		}
 		r_list_free (list);
