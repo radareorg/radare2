@@ -15,6 +15,7 @@
 #endif
 #if defined(__FreeBSD__)
 # include <sys/param.h>
+# include <sys/sysctl.h>
 # if __FreeBSD_version >= 1000000 
 #  define FREEBSD_WITH_BACKTRACE
 # endif
@@ -972,17 +973,23 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 #else
 	int ret;
-	char buf[128], pathbuf[1024];
 #if __FreeBSD__
-	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+	char pathbuf[PATH_MAX];
+	size_t pathbufl = sizeof (pathbuf);
+	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
+	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	if (ret != 0) {
+		return NULL;
+	}
 #else
+	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-#endif
 	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
 	if (ret < 1) {
 		return NULL;
 	}
 	pathbuf[ret] = 0;
+#endif
 	return strdup (pathbuf);
 #endif
 }
