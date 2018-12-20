@@ -999,7 +999,11 @@ R_API int r_cons_memcat(const char *str, int len) {
 		return -1;
 	}
 	if (I.echo) {
-		write (2, str, len);
+		// Here to silent pedantic meson flags ...
+		int rlen;
+		if ((rlen = write (2, str, len)) != len) {
+			return rlen;
+		}
 	}
 	if (str && len > 0 && !I.null) {
 		if (palloc (len + 1)) {

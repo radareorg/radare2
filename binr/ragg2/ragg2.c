@@ -73,7 +73,10 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	r_bin_arch_options_init (&opts, arch, bits);
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
-		write (1, b->buf, b->length);
+		size_t blen = b->length;
+		if (write (1, b->buf, blen) != blen) {
+			eprintf ("Failed to write buffer\n");
+		}
 		r_buf_free (b);
 	} else {
 		eprintf ("Cannot create binary for this format '%s'.\n", format);
@@ -96,10 +99,13 @@ static int openfile(const char *f, int x) {
 	}
 #endif
 #if _MSC_VER
-	_chsize (fd, 0);
+	int r = _chsize (fd, 0);
 #else
-	ftruncate (fd, 0);
+	int r = ftruncate (fd, 0);
 #endif
+	if (r != 0) {
+		eprintf ("Could not resize\n");
+	}
 	close (1);
 	dup2 (fd, 1);
 	return fd;
@@ -285,6 +291,7 @@ int main(int argc, char **argv) {
 			r_egg_free (egg);
 			return usage (1);
 		case 'v':
+			free (sequence);
 			r_egg_free (egg);
 			return blob_version("ragg2");
 		case 'z':
@@ -505,7 +512,11 @@ int main(int argc, char **argv) {
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
-			write (1, b->buf, b->length);
+			size_t blen = b->length;
+			if (write (1, b->buf, blen) != blen) {
+				eprintf ("Failed to write buffer\n");
+				goto fail;
+			}
 		} else {
 			if (!format) {
 				eprintf ("No format specified wtf\n");

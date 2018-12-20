@@ -92,7 +92,7 @@ func.calloc.ret=void *
 
 fgetc=func
 func.fgetc.args=1
-func.fgetc.arg.0=FILE *,steam
+func.fgetc.arg.0=FILE *,stream
 func.fgetc.ret=int
 
 fgets=func
@@ -109,7 +109,7 @@ func.free.ret=void
 
 getc=func
 func.getc.args=1
-func.getc.arg.0=FILE *,steam
+func.getc.arg.0=FILE *,stream
 func.getc.ret=int
 
 getchar=func

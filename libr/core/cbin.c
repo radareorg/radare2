@@ -1083,7 +1083,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	RListIter *iter;
 	RListIter *last_processed = NULL;
 	RBinAddr *entry = NULL;
-	int i = 0;
+	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
 	ut64 baddr = r_bin_get_baddr (r->bin);
 
 	if (IS_MODE_RAD (mode)) {
@@ -1129,11 +1129,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, "symbols");
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", i);
+				snprintf (str, R_FLAG_NAME_SIZE, "entry.init%i", init_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.fini", i);
+				snprintf (str, R_FLAG_NAME_SIZE, "entry.fini%i", fini_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.preinit", i);
+				snprintf (str, R_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i);
 			} else {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
 			}
@@ -1159,11 +1159,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		} else if (IS_MODE_RAD (mode)) {
 			char *name = NULL;
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
-				name = r_str_newf ("entry%i.init", i);
+				name = r_str_newf ("entry.init%i", init_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
-				name = r_str_newf ("entry%i.fini", i);
+				name = r_str_newf ("entry.fini%i", fini_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
-				name = r_str_newf ("entry%i.preinit", i);
+				name = r_str_newf ("entry.preinit%i", preinit_i);
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
@@ -1175,9 +1175,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			r_cons_printf (
 				 "vaddr=0x%08"PFMT64x
 				" paddr=0x%08"PFMT64x
-				" baddr=0x%08"PFMT64x
 				" laddr=0x%08"PFMT64x,
-				at, paddr, baddr, laddr);
+				at, paddr, laddr);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
 				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
 			}
@@ -1192,7 +1191,15 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			}
 			r_cons_printf (" type=%s\n", type);
 		}
-		i++;
+		if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
+			init_i++;
+		} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
+			fini_i++;
+		} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+			preinit_i++;
+		} else {
+			i++;
+		}
 		last_processed = iter;
 	}
 	if (IS_MODE_SET (mode)) {
@@ -1204,7 +1211,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		r_cons_printf ("]");
 		r_cons_newline ();
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("\n%i entrypoints\n", i);
+		r_cons_printf ("\n%i entrypoints\n", init_i + fini_i + preinit_i + i);
 	}
 	return true;
 }
@@ -3347,9 +3354,6 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		return;
 	}
 	db = sdb_ns (bf->sdb, "info", 0);;
-	if (!db) {
-		return;
-	}
 	if (db) {
 		SdbListIter *iter;
 		SdbKv *kv;

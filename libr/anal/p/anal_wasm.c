@@ -5,8 +5,10 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/wasm/wasm.h"
+#undef R_IPI
+#define R_IPI static
 #include "../../bin/format/wasm/wasm.h"
+#include "../../asm/arch/wasm/wasm.c"
 
 #define WASM_STACK_SIZE 256
 #define WASM_END_SIZE (1)
@@ -117,7 +119,6 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			wasm_stack[wasm_stack_ptr].end = addr2;
 			wasm_stack[wasm_stack_ptr].size = wop.len;
 			wasm_stack_ptr++;
-			addr2 = UT64_MAX;
 		}
 		//op->fail = addr + op->size;
 		break;
@@ -129,7 +130,6 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			wasm_stack[wasm_stack_ptr].end = addr2;
 			wasm_stack[wasm_stack_ptr].size = wop.len;
 			wasm_stack_ptr++;
-			addr2 = UT64_MAX;
 		}
 		break;
 	case WASM_OP_IF:

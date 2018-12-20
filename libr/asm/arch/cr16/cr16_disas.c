@@ -504,8 +504,6 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd) {
 		return ret;
 	}
 
-	ret = 2;
-
 	switch ((c >> 11) & (~0x4)) {
 	case 0x12:
 		ret = 4;
@@ -561,7 +559,6 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd) {
 		return ret;
 	}
 
-	ret = 2;
 	switch (c >> 14) {
 	case 0x3:
 		ret = 2;

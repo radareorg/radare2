@@ -26,7 +26,7 @@ Keys:
 #include <r_core.h>
 #include <r_util.h>
 
-#define META_RANGE_BASE(x) ((x)>>12)
+#define META_RANGE_BASE(x) ((x)>>5)
 #undef DB
 #define DB a->sdb_meta
 
@@ -449,6 +449,7 @@ static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int e
 	return NULL;
 }
 
+// TODO should be named get imho
 R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 	return r_meta_find_ (a, at, type, where, R_META_TYPE_NONE);
 }
@@ -724,6 +725,36 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 beach:
 	free (it.str);
 	return 1;
+}
+
+R_API void r_meta_list_offset(RAnal *a, ut64 addr, char input) {
+	const int types[] = {
+		R_META_TYPE_VARTYPE,
+		R_META_TYPE_HIGHLIGHT,
+		R_META_TYPE_RUN,
+		R_META_TYPE_COMMENT,
+		R_META_TYPE_HIDE,
+		R_META_TYPE_MAGIC,
+		R_META_TYPE_FORMAT,
+		R_META_TYPE_STRING,
+		R_META_TYPE_CODE,
+		R_META_TYPE_DATA,
+	};
+
+	char key[100];
+	int i;
+
+	for (i = 0; i < sizeof (types) / sizeof (types[0]); i ++) {
+		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, types[i], addr);
+		const char *k = sdb_const_get (DB, key, 0);
+		if (!k) {
+			continue;
+		}
+
+		RAnalMetaUserItem ui = { a };
+
+		meta_print_item ((void *)&ui, key, k);
+	}
 }
 
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {

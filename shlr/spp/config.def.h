@@ -1,4 +1,4 @@
-#ifdef HAVE_FORK
+#ifndef HAVE_FORK
 #define HAVE_FORK 1
 #endif
 

@@ -125,7 +125,6 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 			.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb)
 		};
 		d->callback (d, d->user, &o);
-		hit = 0;
 	}
 	return 0;
 }

@@ -410,6 +410,9 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
 {
   char *tmp_buf;
   unsigned real_offset;
+  if ((int)size < 1) {
+    return grub_errno;
+  }
 
   /* First of all, check if the region is within the disk.  */
   if (grub_disk_adjust_range (disk, &sector, &offset, size) != GRUB_ERR_NONE)

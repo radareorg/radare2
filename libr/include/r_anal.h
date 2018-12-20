@@ -384,7 +384,7 @@ On x86 acording to Wikipedia
 		R_ANAL_OP_PREFIX_LOCK     = 1<<3,
 		R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
 		R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
-			/* TODO: add segment override typemods? */
+		/* TODO: add segment override typemods? */
 	} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
@@ -732,6 +732,7 @@ typedef struct r_anal_hint_t {
 #endif
 	int immbase;
 	bool high; // highlight hint
+	int nword;
 } RAnalHint;
 
 typedef struct r_anal_var_access_t {
@@ -1610,6 +1611,7 @@ R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
 R_API int r_meta_list_at(RAnal *m, int type, int rad, ut64 addr);
 R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr);
+R_API void r_meta_list_offset(RAnal *m, ut64 addr, char input);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
 R_API bool r_meta_deserialize_val(RAnalMetaItem *it, int type, ut64 from, const char *v);
@@ -1629,6 +1631,7 @@ R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
+R_API void r_anal_hint_set_nword(RAnal *a, ut64 addr, int nword);
 R_API void r_anal_hint_set_offset (RAnal *a, ut64 addr, const char *typeoff);
 R_API void r_anal_hint_set_immbase (RAnal *a, ut64 addr, int base);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);

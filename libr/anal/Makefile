@@ -2,6 +2,7 @@ include ../config.mk
 
 EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean
+CFLAGS+=-I..
 
 NAME=r_anal
 DEPS=r_util r_reg r_syscall r_search r_cons r_flag r_hash r_crypto

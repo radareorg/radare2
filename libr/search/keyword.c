@@ -146,7 +146,6 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			bmlen = -bmlen;
 			free (bmbuf);
 			free (kwbuf);
 			return NULL;

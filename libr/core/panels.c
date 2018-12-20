@@ -113,6 +113,7 @@ static const char *help_msg_panels[] = {
 	".",        "seek to PC or entrypoint",
 	"*",        "show pseudo code/r2dec in the current panel",
 	"/",        "highlight the keyword",
+	"(",        "toggle snow",
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
@@ -205,6 +206,7 @@ static void resizePanelLeft(RPanels *panels);
 static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
+static void fitToCanvas(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static int openMenuCb(void *user);
 static int openFileCb(void *user);
@@ -283,6 +285,9 @@ static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
 static void showHelp(RCore *core, RPanelsMode mode);
 static void createNewPanel(RCore *core, char *name, char *cmd, bool caching);
+static void printSnow(RPanels *panels);
+static void resetSnow(RPanels *panels);
+static void checkEdge(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -535,6 +540,7 @@ static void splitPanelHorizontal(RCore *core) {
 R_API void r_core_panels_layout_refresh(RCore *core) {
 	fixBlockSize (core);
 	delInvalidPanels (core->panels);
+	checkEdge (core->panels);
 	r_core_panels_check_stackbase (core);
 	r_core_panels_refresh (core);
 }
@@ -1003,20 +1009,32 @@ static void handleWindowMode(RCore *core, const int key) {
 		if (moveToDirection (panels, LEFT)) {
 			setRefreshAll (panels, false);
 		}
+		if (panels->fun == PANEL_FUN_SNOW) {
+			resetSnow (panels);
+		}
 		break;
 	case 'j':
 		if (moveToDirection (panels, DOWN)) {
 			setRefreshAll (panels, false);
+		}
+		if (panels->fun == PANEL_FUN_SNOW) {
+			resetSnow (panels);
 		}
 		break;
 	case 'k':
 		if (moveToDirection (panels, UP)) {
 			setRefreshAll (panels, false);
 		}
+		if (panels->fun == PANEL_FUN_SNOW) {
+			resetSnow (panels);
+		}
 		break;
 	case 'l':
 		if (moveToDirection (panels, RIGHT)) {
 			setRefreshAll (panels, false);
+		}
+		if (panels->fun == PANEL_FUN_SNOW) {
+			resetSnow (panels);
 		}
 		break;
 	case 'H':
@@ -1329,6 +1347,55 @@ static void resizePanelDown(RPanels *panels) {
 beach:
 	free (targets1);
 	free (targets2);
+}
+
+static void checkEdge(RPanels *panels) {
+	int i, tmpright, tmpbottom, maxright = 0, maxbottom = 0;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		tmpright = panel->pos.x + panel->pos.w;
+		tmpbottom = panel->pos.y + panel->pos.h;
+		if (tmpright > maxright) {
+			maxright = tmpright;
+		}
+		if (tmpbottom > maxbottom) {
+			maxbottom = tmpbottom;
+		}
+	}
+	int f1, f2;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		f1 = f2 = 0;
+		if (panel->pos.x + panel->pos.w == maxright) {
+			f1 = (1 << PANEL_EDGE_RIGHT);
+		}
+		if (panel->pos.y + panel->pos.h == maxbottom) {
+			f2 = (1 << PANEL_EDGE_BOTTOM);
+		}
+		panel->edgeflag = f1 | f2;
+	}
+}
+
+static void fitToCanvas(RPanels *panels) {
+	RConsCanvas *can = panels->can;
+	int i, w, h;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		if (panel->edgeflag & 1 << PANEL_EDGE_RIGHT && panel->pos.x < can->w) {
+			w = can->w - panel->pos.x;
+			if (w != panel->pos.w) {
+				panel->pos.w = w;
+				panel->refresh = true;
+			}
+		}
+		if (panel->edgeflag & 1 << PANEL_EDGE_BOTTOM && panel->pos.y < can->h) {
+			h = can->h - panel->pos.y;
+			if (h != panel->pos.h) {
+				panel->pos.h = h;
+				panel->refresh = true;
+			}
+		}
+	}
 }
 
 static void delPanel(RPanels *panels, int delPanelNum) {
@@ -1960,6 +2027,46 @@ static void hudstuff(RCore *core) {
 	setRefreshAll (panels, true);
 }
 
+static void printSnow(RPanels *panels) {
+	if (!panels->snows) {
+		panels->snows = r_list_newf (free);
+	}
+	RPanel *cur = &panels->panel[panels->curnode];
+	int i, amount = r_num_rand (4);
+	if (amount > 0) {
+		for (i = 0; i < amount; i++) {
+			RPanelsSnow *snow = R_NEW (RPanelsSnow);
+			snow->x = r_num_rand (cur->pos.w) + cur->pos.x;
+			snow->y = cur->pos.y;
+			r_list_append (panels->snows, snow);
+		}
+	}
+	RListIter *iter, *iter2;
+	RPanelsSnow *snow;
+	r_list_foreach_safe (panels->snows, iter, iter2, snow) {
+		int pos = r_num_rand (3) - 1;
+		snow->x += pos;
+		snow->y++;
+		if (snow->x >= cur->pos.w + cur->pos.x || snow->x <= cur->pos.x + 1) {
+			r_list_delete (panels->snows, iter);
+			continue;
+		}
+		if (snow->y >= cur->pos.h + cur->pos.y - 1) {
+			r_list_delete (panels->snows, iter);
+			continue;
+		}
+		if (r_cons_canvas_gotoxy (panels->can, snow->x, snow->y)) {
+			r_cons_canvas_write (panels->can, "*");
+		}
+	}
+}
+
+static void resetSnow(RPanels *panels) {
+	r_list_free (panels->snows);
+	panels->snows = NULL;
+	panels->panel[panels->curnode].refresh = true;
+}
+
 static int openMenuCb (void *user) {
 	RCore* core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panelsMenu;
@@ -2325,13 +2432,14 @@ R_API void r_core_panels_refresh(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
 	refreshCoreOffset (core);
 	r_cons_gotoxy (0, 0);
-	if (panels->isResizing) {
+	if (panels->isResizing || (can->w != w || can->h != h)) {
 		panels->isResizing = false;
 		if (!r_cons_canvas_resize (can, w, h)) {
 			return;
 		}
 		setRefreshAll (panels, false);
 	}
+	fitToCanvas (panels);
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
 			panelPrint (core, can, &panel[i], 0);
@@ -2392,6 +2500,10 @@ R_API void r_core_panels_refresh(RCore *core) {
 	i -= strlen (str);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, str);
+
+	if (panels->fun == PANEL_FUN_SNOW) {
+		printSnow (panels);
+	}
 
 	r_cons_canvas_print (can);
 	r_cons_flush ();
@@ -2521,6 +2633,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	panels->mode = PANEL_MODE_DEFAULT;
+	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	initSdb (panels);
 
@@ -2652,6 +2765,9 @@ static void handleTabKey(RCore *core, bool shift) {
 			return;
 		}
 		panels->panel[panels->curnode].refresh = true;
+	}
+	if (panels->fun == PANEL_FUN_SNOW) {
+		resetSnow (panels);
 	}
 }
 
@@ -2793,6 +2909,9 @@ static void toggleZoomMode(RPanels *panels) {
 		panels->prevMode = PANEL_MODE_DEFAULT;
 		restorePanelPos (curPanel);
 		setRefreshAll (panels, false);
+		if (panels->fun == PANEL_FUN_SNOW) {
+			resetSnow (panels);
+		}
 	}
 }
 
@@ -2860,13 +2979,12 @@ static void insertValue(RCore *core) {
 	}
 }
 
-R_API RPanels *r_core_panels_new(RCore *core) { int w, h;
+R_API RPanels *r_core_panels_new(RCore *core) {
 	RPanels *panels = R_NEW0 (RPanels);
-
 	if (!panels) {
 		return NULL;
 	}
-	w = r_cons_get_size (&h);
+	int h, w = r_cons_get_size (&h);
 	if (!init (core, panels, w, h)) {
 		free (panels);
 		return NULL;
@@ -2983,7 +3101,15 @@ repeat:
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
 	r_core_panels_layout_refresh (core);
-	okey = r_cons_readchar ();
+	if (panels->curnode != panels->menu_pos && panels->fun == PANEL_FUN_SNOW) {
+		okey = r_cons_readchar_timeout (300);
+		if (okey == -1) {
+			panels->panel[panels->curnode].refresh = true;
+			goto repeat;
+		}
+	} else {
+		okey = r_cons_readchar ();
+	}
 	key = r_cons_arrow_to_hjkl (okey);
 	r_cons_switchbuf (true);
 
@@ -3121,8 +3247,8 @@ repeat:
 		setRefreshAll (panels, false);
 		break;
 	case 'r':
-		r_core_cmd0 (core, "e!asm.jmphints");
-		r_core_cmd0 (core, "e!asm.leahints");
+		r_core_cmd0 (core, "e!asm.hint.jmp");
+		r_core_cmd0 (core, "e!asm.hint.lea");
 		setRefreshAll (panels, false);
 		break;
 	case 'R':
@@ -3137,7 +3263,7 @@ repeat:
 		r_core_visual_asm (core, core->offset);
 		break;
 	case 'd':
-		r_core_visual_define (core, "");
+		r_core_visual_define (core, "", 0);
 		setRefreshAll (panels, false);
 		break;
 	case 'D':
@@ -3232,7 +3358,6 @@ repeat:
 
 				int h, w = r_cons_get_size (&h);
 				panels->can = createNewCanvas (core, w, h);
-
 				setRefreshAll (panels, false);
 			}
 		}
@@ -3273,20 +3398,28 @@ repeat:
 
 			replaceCmd (panels, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
 
-			int h, w = r_cons_get_size(&h);
+			int h, w = r_cons_get_size (&h);
 			panels->can = createNewCanvas (core, w, h);
+		}
+		break;
+	case '(':
+		if (panels->fun != PANEL_FUN_SNOW) {
+			panels->fun = PANEL_FUN_SNOW;
+		} else {
+			panels->fun = PANEL_FUN_NOFUN;
+			resetSnow (panels);
 		}
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F2:
 		cmd = r_config_get (core->config, "key.f2");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelBreakpoint (core);
 		}
@@ -3294,31 +3427,31 @@ repeat:
 	case R_CONS_KEY_F3:
 		cmd = r_config_get (core->config, "key.f3");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F4:
 		cmd = r_config_get (core->config, "key.f4");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F5:
 		cmd = r_config_get (core->config, "key.f5");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F6:
 		cmd = r_config_get (core->config, "key.f6");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F7:
 		cmd = r_config_get (core->config, "key.f7");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepIn (core);
 			setRefreshAll (panels, false);
@@ -3327,7 +3460,7 @@ repeat:
 	case R_CONS_KEY_F8:
 		cmd = r_config_get (core->config, "key.f8");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepOver (core);
 			setRefreshAll (panels, false);
@@ -3336,7 +3469,7 @@ repeat:
 	case R_CONS_KEY_F9:
 		cmd = r_config_get (core->config, "key.f9");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panelContinue (core);
 		}
@@ -3344,19 +3477,19 @@ repeat:
 	case R_CONS_KEY_F10:
 		cmd = r_config_get (core->config, "key.f10");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F11:
 		cmd = r_config_get (core->config, "key.f11");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F12:
 		cmd = r_config_get (core->config, "key.f12");
 		if (cmd && *cmd) {
-			key = r_core_cmd0 (core, cmd);
+			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case '!':

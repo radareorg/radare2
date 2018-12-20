@@ -3153,7 +3153,7 @@ static void agraph_update_title(RAGraph *g, RAnalFunction *fcn) {
 		fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 		g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
 	r_agraph_set_title (g, new_title);
-	r_str_free (new_title);
+	free (new_title);
 }
 
 /* look for any change in the state of the graph
@@ -4200,8 +4200,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			r_core_cmd0 (core, "e!asm.jmphints");
-			r_core_cmd0 (core, "e!asm.leahints");
+			r_core_cmd0 (core, "e!asm.hint.jmp");
+			r_core_cmd0 (core, "e!asm.hint.lea");
 			break;
 		case '$':
 			r_core_cmd (core, "sr PC", 0);
@@ -4271,7 +4271,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				showcursor (core, true);
 				// WTF?
 				r_config_set_i (core->config, "scr.interactive", true);
-				r_core_visual_define (core, "");
+				r_core_visual_define (core, "", 0);
 				get_bbupdate (g, core, fcn);
 				showcursor (core, false);
 			}
@@ -4473,7 +4473,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F7:
 			cmd = r_config_get (core->config, "key.f7");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			} else {
 				graph_single_step_in (core, g);
 			}
@@ -4481,7 +4481,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F8:
 			cmd = r_config_get (core->config, "key.f8");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			} else {
 				graph_single_step_over (core, g);
 			}
@@ -4489,7 +4489,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case R_CONS_KEY_F9:
 			cmd = r_config_get (core->config, "key.f9");
 			if (cmd && *cmd) {
-				key = r_core_cmd0 (core, cmd);
+				(void)r_core_cmd0 (core, cmd);
 			} else {
 				graph_continue (core);
 			}

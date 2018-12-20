@@ -22,15 +22,9 @@ static Sdb* get_sdb (RBinFile *bf) {
 }
 
 static char *entitlements(RBinFile *bf, bool json) {
-	struct MACH0_(obj_t) *bin;
-	if (!bf || !bf->o || json) {
-		return NULL;
-	}
-	bin = bf->o->bin_obj;
-	if (!bin->signature) {
-		return NULL;
-	}
-	return strdup ((char*) bin->signature);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	return r_str_dup (NULL, bin->signature);
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){

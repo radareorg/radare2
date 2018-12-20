@@ -147,13 +147,13 @@ static bool isBinopHelp(const char *op) {
 }
 
 static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
-	ut64 bin_size = data ? data->size : 0;
+	ut64 bin_size = data? data->size: 0;
 	ut8 *bytes;
 	const char *xtr_type = "";
 	char *arch = "unknown";
-	int bits = 0;
+	int bits = 0, nb;
 	char *libname = NULL;
-	const char *filename = bf ? bf->file : NULL;
+	const char *filename = bf? bf->file: NULL;
 	char *path = NULL, *ptr = NULL;
 	bool res = false;
 
@@ -170,9 +170,14 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		eprintf ("This is not a fat bin\n");
 		return false;
 	}
-	bytes = data->buffer;
+	bytes = malloc (bin_size);
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
+		return false;
+	}
+	nb = r_buf_read_at (data->buf, 0, bytes, bin_size);
+	if (nb <= 0) {
+		eprintf ("Couldn't read xtrdata\n");
 		return false;
 	}
 	if (!arch) {
@@ -212,7 +217,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	free (outfile);
 	free (outpath);
 	free (path);
-	R_FREE (data->buffer);
+	free (bytes);
 	return res;
 }
 
@@ -1023,7 +1028,6 @@ int main(int argc, char **argv) {
 		r_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
-		rawstr = false;
 		RBinFile *bf = r_core_bin_cur (&core);
 		if (bf) {
 			bf->strmode = rad;

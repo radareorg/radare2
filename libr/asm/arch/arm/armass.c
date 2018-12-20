@@ -665,8 +665,7 @@ static st32 getlistmask(char *input) {
 		for (i = 0; input[i] != ',' && input[i] != '\0'; i++) {
 			;
 		}
-		strncpy (temp, input, i);
-		temp[i] = 0;
+		r_str_ncpy (temp, input, i + 1);
 
 		input += i;
 		if (*input != '\0') {
@@ -4805,7 +4804,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if ((num > 4095) || (num < -255)) {
 				return -1;
 			}
-			if ((num >= 0) && (num < 4096)) {
+			if (num >= 0) {
 				if (strsel == 0) {
 					ao->o = 0xc0f80000;
 				} else
@@ -6545,7 +6544,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	int i, j;
 	char buf[128];
 	ArmOpcode aop = {.off = off};
-	for (i = j = 0; i < sizeof (buf) - 1 && str[i]; i++, j++) {
+	for (i = j = 0; i < sizeof (buf) - 1 && str[j]; i++, j++) {
 		if (str[j] == '#') {
 			i--; continue;
 		}

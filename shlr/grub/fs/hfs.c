@@ -1094,7 +1094,7 @@ static grub_err_t
 grub_hfs_open (struct grub_file *file, const char *name)
 {
   struct grub_hfs_data *data;
-  struct grub_hfs_filerec frec;
+  struct grub_hfs_filerec frec = {0};
 
   grub_dl_ref (my_mod);
 

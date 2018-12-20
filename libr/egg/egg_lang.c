@@ -912,7 +912,9 @@ static int parsedatachar(REgg *egg, char c) {
 			}
 		}
 	}
-	egg->lang.dstval[egg->lang.ndstval++] = c;
+	if (egg->lang.dstval) {
+		egg->lang.dstval[egg->lang.ndstval++] = c;
+	}
 	return 0;
 }
 

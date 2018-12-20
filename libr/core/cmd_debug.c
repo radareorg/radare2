@@ -716,7 +716,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (!off) {
-		eprintf ("Cannot 'drn pc'\n");
+		eprintf ("Cannot 'drn PC'\n");
 		return false;
 	}
 	if (!addr) {
@@ -951,7 +951,7 @@ static int step_line(RCore *core, int times) {
 	char *tmp_ptr = NULL;
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
-		eprintf ("Cannot 'drn pc'\n");
+		eprintf ("Cannot 'drn PC'\n");
 		return false;
 	}
 	file[0] = 0;
@@ -3177,6 +3177,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			module = strtok (string, " ");
 			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
 			bpi = r_debug_bp_add (core->dbg, 0, hwbp, false, 0, module, delta);
+			if (!bpi) {
+				eprintf ("Cannot set breakpoint.\n");
+			}
 			free (string);
 		}
 		break;
@@ -3260,7 +3263,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			// XXX(jjd): does t his need an address validity check??
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
-			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
+			if (!bpi) {
+				eprintf ("Cannot set breakpoint (%s)\n", input + 2);
+			}
 		}
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
 		break;
@@ -3828,7 +3833,6 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_dcu);
 		return false;
 	}
-	from = UT64_MAX;
 	to = UT64_MAX;
 	if (input[2] == '.') {
 		ptr = strchr (input + 3, ' ');

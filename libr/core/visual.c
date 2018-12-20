@@ -321,7 +321,7 @@ R_API int r_core_visual_hud(RCore *core) {
 
 	r_cons_clear ();
 	if (res) {
-		p = strchr (res, '\t');
+		p = strchr (res, ';');
 		r_cons_println (res);
 		r_cons_flush ();
 		if (p) {
@@ -771,23 +771,22 @@ static void findPrevWord(RCore *core) {
 static void visual_search(RCore *core) {
 	const ut8 *p;
 	int len, d = core->print->cur;
-	char str[128], buf[258];
+	char str[128], buf[sizeof (str) * 2 + 1];
 
 	r_line_set_prompt ("search byte/string in block: ");
 	r_cons_fgets (str, sizeof (str), 0, NULL);
 	len = r_hex_str2bin (str, (ut8 *) buf);
 	if (*str == '"') {
-		char *e = strncpy (buf + 1, str + 1, sizeof (buf) - 1);
-		if (e) {
-			e--;
-			if (*e == '"') {
-				*e = 0;
-			}
-		}
+		r_str_ncpy (buf, str + 1, sizeof (buf));
 		len = strlen (buf);
+		char *e = buf + len - 1;
+		if (e > buf && *e == '"') {
+			*e = 0;
+			len--;
+		}
 	} else if (len < 1) {
-		strncpy (buf, str, sizeof (buf) - 1);
-		len = strlen (str);
+		r_str_ncpy (buf, str, sizeof (buf));
+		len = strlen (buf);
 	}
 	p = r_mem_mem (core->block + d, core->blocksize - d,
 		(const ut8 *) buf, len);
@@ -902,25 +901,26 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
 	target = addr;
-	base = target - OPDELTA;
+	base = target > OPDELTA ? target - OPDELTA : 0;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
 			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
-		if (!ret) {
-			continue;
+		if (ret) {
+			len = op.size;
+			if (len < 1) {
+				len = 1;
+			}
+			r_anal_op_fini (&op); // XXX
+		} else {
+			len = 1;
 		}
-		len = op.size;
-		r_anal_op_fini (&op); // XXX
-		if (len < 1) {
-			continue;
-		}
-		if (target == base + i + len) {
+		if (target <= base + i + len) {
 			return base + i;
 		}
 		i += len - 1;
 	}
-	return target - 4;
+	return target > 4 ? target - 4 : 0;
 }
 
 //  Returns true if we can use analysis to find the previous operation address,
@@ -1928,7 +1928,7 @@ static void applyDisMode(RCore *core) {
 	}
 }
 
-static bool isNumber (RCore *core, int ch) {
+static bool isNumber(RCore *core, int ch) {
 	if (ch > '0' && ch <= '9') {
 		return true;
 	}
@@ -1991,7 +1991,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	if (isNumber (core, ch)) {
 		// only in disasm and debug prints..
 		if (isDisasmPrint (core->printidx)) {
-			r_core_visual_jump (core, ch);
+			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp") || r_config_get_i (core->config, "asm.hint.lea"))) {
+				r_core_visual_jump (core, ch);
+			} else {
+				numbuf_append (ch);
+			}
 		} else {
 			numbuf_append (ch);
 		}
@@ -2209,7 +2213,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_core_visual_esil (core);
 			} else {
 				r_core_visual_showcursor (core, true);
-				r_core_visual_define (core, arg + 1);
+				int distance = numbuf_pull ();
+				r_core_visual_define (core, arg + 1, distance - 1);
 				r_core_visual_showcursor (core, false);
 			}
 			break;
@@ -2381,8 +2386,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys
-			r_core_cmd0 (core, "e!asm.jmphints");
-			r_core_cmd0 (core, "e!asm.leahints");
+			r_core_cmd0 (core, "e!asm.hint.jmp");
+			r_core_cmd0 (core, "e!asm.hint.lea");
 			visual_refresh (core);
 			break;
 		case ' ':
@@ -2498,7 +2503,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
-					r_core_cmd0 (core, "sn");
+					int i, distance = numbuf_pull ();
+					if (distance < 1)  {
+						distance =  1;
+					}
+					for (i = 0; i < distance; i++) {
+						r_core_cmd0 (core, "sn");
+					}
 				} else {
 					int times = R_MAX (1, wheelspeed);
 					// Check if we have a data annotation.
@@ -2513,6 +2524,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (ami) {
 						r_core_seek_delta (core, ami->size);
 					} else {
+						int distance = numbuf_pull ();
+						if (distance > 1) {
+							times = distance;
+						}
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
@@ -2564,11 +2579,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (r_config_get_i (core->config, "scr.wheel.nkey")) {
-					r_core_cmd0 (core, "sp");
+					int i, distance = numbuf_pull ();
+					if (distance < 1)  {
+						distance =  1;
+					}
+					for (i = 0; i < distance; i++) {
+						r_core_cmd0 (core, "sp");
+					}
 				} else {
 					int times = wheelspeed;
 					if (times < 1) {
 						times = 1;
+					}
+					int distance = numbuf_pull ();
+					if (distance > 1) {
+						times = distance;
 					}
 					while (times--) {
 						if (isDisasmPrint (core->printidx)) {
@@ -2617,8 +2642,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
 				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
-				if (scrcols > 2) {
-					r_config_set_i (core->config, "hex.cols", scrcols - 2);
+				if (scrcols > 1) {
+					r_config_set_i (core->config, "hex.cols", scrcols - 1);
 				}
 			}
 			break;
@@ -2634,7 +2659,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if ((core->printidx != R_CORE_VISUAL_MODE_PD && core->printidx != R_CORE_VISUAL_MODE_PDDBG) ||
 				(core->printidx == R_CORE_VISUAL_MODE_PDDBG && core->seltab != 2)) {
 				int scrcols = r_config_get_i (core->config, "hex.cols");
-				r_config_set_i (core->config, "hex.cols", scrcols + 2);
+				r_config_set_i (core->config, "hex.cols", scrcols + 1);
 			}
 			break;
 #if 0
@@ -3079,6 +3104,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 				// estimate new blocksize with the size of the last
 				// printed instructions
 				int new_sz = core->print->screen_bounds - core->offset + 32;
+				new_sz = R_MIN (new_sz, 16 * 1024);
 				if (new_sz > bsize) {
 					bsize = new_sz;
 				}

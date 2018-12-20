@@ -160,6 +160,21 @@ a = (b << 3) * 5;
  }
 ```
 
+* Structure in the C files
+
+The structure of the C files in r2 must be like this:
+
+```c
+/* Copyright ... */        ## copyright
+#include <r_core.h>        ## includes
+static int globals         ## const, define, global variables
+static void helper() {}    ## static functions
+R_IPI void internal() {}   ## internal apis (used only inside the library
+R_API void public() {}     ## public apis starting with constructor/destructor
+
+```
+
+
 * Why return int vs enum
 
 The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.

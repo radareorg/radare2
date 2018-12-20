@@ -873,6 +873,7 @@ static RList *strings(RBinFile *bf) {
 			ptr->string[len] = 0;
 			if ((ptr->string[0] == 'L' && strchr (ptr->string, '/')) || !strncmp (ptr->string, "[L", 2)) {
 				free (ptr->string);
+				free (ptr);
 				continue;
 			}
 			ptr->vaddr = ptr->paddr = bin->strings[i];

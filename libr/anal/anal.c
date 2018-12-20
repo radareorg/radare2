@@ -657,8 +657,9 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
 	}
-	// TODO: check return value
-	(void)r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC);
+	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC) < 1) {
+		return false;
+	}
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {

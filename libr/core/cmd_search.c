@@ -366,11 +366,10 @@ R_API int r_core_search_preludes(RCore *core) {
 		} else if (strstr (arch, "arm")) {
 			switch (bits) {
 			case 16:
+				r_core_search_prelude (core, from, to,
+					(const ut8 *) "\x00\xb5", 2, (const ut8*)"\x0f\xff", 2);
 				ret = r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xf0\xb5", 2, NULL, 0);
-				// push {r4, r6, r7, lr}
-				ret = r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xd0\xb5", 2, NULL, 0);
+					(const ut8 *) "\x08\xb5", 2, (const ut8*)"\x0f\xff", 2);
 				break;
 			case 32:
 				ret = r_core_search_prelude (core, from, to,
@@ -655,17 +654,30 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
-		const RPVector *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
+#define USE_SKYLINE 0
+#if USE_SKYLINE
+		const RPVector *skyline = &core->io->map_skyline;
 		size_t i;
 		for (i = 0; i < r_pvector_len (skyline); i++) {
 			const RIOMapSkyline *part = r_pvector_at (skyline, i);
-			int perm = part->map->perm;
+		//  	int perm = part->map->perm;
 			ut64 from = r_itv_begin (part->itv);
 			ut64 to = r_itv_end (part->itv);
+			// XXX skyline's fake map perms are wrong
+			RIOMap *m = r_io_map_get (core->io, from);
+			int rwx = m? m->perm: part->map->perm;
+#else
+		RIOMap *map;
+		SdbListIter *iter;
+		ls_foreach  (core->io->maps, iter, map) {
+			ut64 from = r_itv_begin (map->itv);
+			ut64 to = r_itv_end (map->itv);
+			int rwx = map->perm;
+#endif
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
-			if (begin== UT64_MAX) {
+			if (begin == UT64_MAX) {
 				begin = from;
 			}
 			if (end == UT64_MAX) {
@@ -674,8 +686,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				if (end == from) {
 					end = to;
 				} else {
-			//		eprintf ("[%llx - %llx]\n", begin, end);
-					append_bound (list, NULL, search_itv, begin, end - begin, perm);
+					append_bound (list, NULL, search_itv,
+						begin, end - begin, rwx);
 					begin = from;
 					end = to;
 				}
@@ -987,7 +999,6 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		ht_uu_insert (localbadstart, idx, 1);
 		r_asm_set_pc (core->assembler, addr);
 		if (!r_asm_disassemble (core->assembler, &asmop, buf + idx, 15)) {
-			opsz = 1;
 			goto ret;
 		} else {
 			opsz = asmop.size;
@@ -1221,7 +1232,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const char *arch = r_config_get (core->config, "asm.arch");
-	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	int max_count = r_config_get_i (core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
@@ -1313,8 +1323,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			continue;
 		}
 		RInterval itv = r_itv_intersect (search_itv, map->itv);
-		from = itv.addr;
-		to = r_itv_end (itv);
+		ut64 from = itv.addr, to = r_itv_end (itv);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -1711,7 +1720,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	if (!buf) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		r_anal_esil_free (esil);
-		free (buf);
+		free (previnstr);
 		return;
 	}
 	ut64 oldoff = core->offset;
@@ -2710,7 +2719,6 @@ reread:
 		if (core->offset) {
 			RInterval itv = {0, core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
-				empty_search_itv = true;
 				ret = false;
 				goto beach;
 			} else {
@@ -3367,7 +3375,6 @@ reread:
 		if (core->offset) {
 			RInterval itv = {core->offset, -core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
-				empty_search_itv = true;
 				ret = false;
 				goto beach;
 			} else {

@@ -625,7 +625,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
-	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), sizeof (ut16));
+	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), 2 * sizeof (ut8));
 	if (!edata) {
 		sdb_free (sdb);
 		return NULL;
@@ -804,6 +804,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (!defs) {
+		bprintf ("Cannot allocate memory (Check Elf_(Verdef))\n");
 		return false;
 	}
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
@@ -811,10 +812,6 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	if (link_shdr && bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
-	}
-	if (!defs) {
-		bprintf ("Cannot allocate memory (Check Elf_(Verdef))\n");
-		return NULL;
 	}
 	sdb = sdb_new0 ();
 	end = (char *)defs + shdr->sh_size;
@@ -1402,7 +1399,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 				plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
 				if (plt_addr == -1) {
 					free (rela);
-					free (REL);
 					return UT32_MAX;
 				}
 				switch (reloc_type) {

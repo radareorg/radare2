@@ -217,14 +217,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				int len = R_MAX (4, op->a_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, len);
+				char *acbufasm = strdup (ac->buf_asm);
 				if (quiet) {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "- ");
+					char *bufasm = r_str_prefix_all (acbufasm, "- ");
 					printf ("%s\n", bufasm);
 					free (bufasm);
+					free (acbufasm);
 				} else {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_RED"- ");
+					char *bufasm = r_str_prefix_all (acbufasm, Color_RED"- ");
 					printf ("%s"Color_RESET, bufasm);
 					free (bufasm);
+					free (acbufasm);
 				}
 				// r_asm_code_free (ac);
 			}
@@ -247,14 +250,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				int len = R_MAX (4, op->b_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, len);
+				char *acbufasm = strdup (ac->buf_asm);
 				if (quiet) {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "+ ");
+					char *bufasm = r_str_prefix_all (acbufasm, "+ ");
 					printf ("%s\n", bufasm);
 					free (bufasm);
+					free (acbufasm);
 				} else {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_GREEN"+ ");
+					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN"+ ");
 					printf ("%s\n" Color_RESET, bufasm);
 					free (bufasm);
+					free (acbufasm);
 				}
 				// r_asm_code_free (ac);
 			}

@@ -174,7 +174,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
 		}
 	}
 	if (core->asmqjmps_count < core->asmqjmps_size - 1) {
-		int i;
+		int i = 0;
 		char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1] = {0};
 		for (i = 0; i < core->asmqjmps_count + 1; i++) {
 			if (core->asmqjmps[i] == addr) {
@@ -185,6 +185,10 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
 		if (!found) {
 			i = ++core->asmqjmps_count;
 			core->asmqjmps[i] = addr;
+		}
+		// This check makes pos never be <1, thefor not fill 't' with trash
+		if (i < 1) {
+			return NULL;
 		}
 		r_core_set_asmqjmps (core, t, sizeof (t), i);
 		return strdup (t);
@@ -203,15 +207,14 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 			pos --;
 		////  }
 		for (i = 0; i < R_CORE_ASMQJMPS_LEN_LETTERS - 1; i++) {
-			ut64 div = pos / letter_divs[i];
+			int div = pos / letter_divs[i];
 			pos %= letter_divs[i];
 			if (div > 0 && j < len) {
-				str[j] = 'A' + div - 1;
-				j++;
+				str[j++] = 'A' + div - 1;
 			}
 		}
 		if (j < len) {
-			ut64 div = pos % R_CORE_ASMQJMPS_LETTERS;
+			int div = pos % R_CORE_ASMQJMPS_LETTERS;
 			str[j++] = 'a' + div;
 		}
 		str[j] = '\0';
@@ -591,6 +594,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 					RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
 					if (r) {
+						free (bptr);
 						return r_reg_get_value (core->dbg->reg, r);
 					}
 				}
@@ -684,8 +688,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'w': // $w word size
 			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S': // $S section offset
-			if ((s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true))) {
-				return (str[2] == 'S'? s->size: s->vaddr);
+			{
+				RBinObject *bo = r_bin_cur_object (core->bin);
+				if (bo && (s = r_bin_get_section_at (bo, core->offset, true))) {
+					return (str[2] == 'S'? s->size: s->vaddr);
+				}
 			}
 			return 0LL;
 		case 'D': // $D

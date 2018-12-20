@@ -2127,7 +2127,6 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 				if (seg_idx < 0 || seg_idx >= bin->nsegs) {
 					bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
 						" has unexistent segment %d\n", seg_idx);
-					addr = 0LL;
 					R_FREE (relocs);
 					return 0; // early exit to avoid future mayhem
 				} else {
@@ -2663,19 +2662,23 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 }
 
 void MACH0_(mach_headerfields)(RBinFile *file) {
+	PrintfCallback cb_printf = file->rbin->cb_printf;
+	if (!cb_printf) {
+		cb_printf = printf;
+	}
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
 	if (!mh) {
 		return;
 	}
-	printf ("0x00000000  Magic       0x%x\n", mh->magic);
-	printf ("0x00000004  CpuType     0x%x\n", mh->cputype);
-	printf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
-	printf ("0x0000000c  FileType    0x%x\n", mh->filetype);
-	printf ("0x00000010  nCmds       %d\n", mh->ncmds);
-	printf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
-	printf ("0x00000018  Flags       0x%x\n", mh->flags);
+	cb_printf ("0x00000000  Magic       0x%x\n", mh->magic);
+	cb_printf ("0x00000004  CpuType     0x%x\n", mh->cputype);
+	cb_printf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
+	cb_printf ("0x0000000c  FileType    0x%x\n", mh->filetype);
+	cb_printf ("0x00000010  nCmds       %d\n", mh->ncmds);
+	cb_printf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
+	cb_printf ("0x00000018  Flags       0x%x\n", mh->flags);
 	bool is64 = mh->cputype >> 16;
 
 	ut64 addr = 0x20 - 4;
@@ -2694,12 +2697,12 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
 		int lcType = word;
-		eprintf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
+		cb_printf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
 			addr, n, lcType, cmd_to_string (lcType));
 		READWORD ();
 		int lcSize = word;
 		word &= 0xFFFFFF;
-		printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
+		cb_printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
 		if (lcSize < 1) {
 			eprintf ("Invalid size for a load command\n");
 			break;
@@ -2711,40 +2714,47 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 				r_buf_read_at (buf, addr, data, sizeof (data));
 #if R_BIN_MACH064
 				ut64 ep = r_read_ble64 (&data, false); //  bin->big_endian);
-				printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", addr, ep);
+				cb_printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", addr, ep);
 				ut64 ss = r_read_ble64 (&data[8], false); //  bin->big_endian);
-				printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", addr +  8, ss);
+				cb_printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", addr +  8, ss);
 #else
 				ut32 ep = r_read_ble32 (&data, false); //  bin->big_endian);
-				printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)addr, ep);
+				cb_printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)addr, ep);
 				ut32 ss = r_read_ble32 (&data[4], false); //  bin->big_endian);
-				printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)addr +  4, ss);
+				cb_printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)addr +  4, ss);
 #endif
 			}
 			break;
 		case LC_ID_DYLIB: // install_name_tool
-			printf ("0x%08"PFMT64x"  id           %s\n",
+			cb_printf ("0x%08"PFMT64x"  id           %s\n",
 				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
 			break;
 		case LC_UUID:
-			printf ("0x%08"PFMT64x"  uuid         %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 28, NULL));
+			{
+				ut8 i, uuid[16];
+				r_buf_read_at (buf, addr, uuid, sizeof (uuid));
+				cb_printf ("0x%08"PFMT64x"  uuid        ", addr);
+				for (i = 0; i < sizeof (uuid); i++) {
+					cb_printf ("%02x", uuid[i]);
+				}
+				cb_printf ("\n");
+			}
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
-			printf ("0x%08"PFMT64x"  load_dylib  %s\n",
+			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
 				addr + 16, r_buf_get_at (buf, addr + 16, NULL));
 			break;
 		case LC_RPATH:
-			printf ("0x%08"PFMT64x"  rpath       %s\n",
+			cb_printf ("0x%08"PFMT64x"  rpath       %s\n",
 				addr + 4, r_buf_get_at (buf, addr + 4, NULL));
 			break;
 		case LC_CODE_SIGNATURE:
 			{
 			ut32 *words = (ut32*)r_buf_get_at (buf, addr, NULL);
-			printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
-			printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
-			printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
+			cb_printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
+			cb_printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
+			cb_printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
 			}
 			break;
 		}

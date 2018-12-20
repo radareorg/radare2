@@ -371,8 +371,10 @@ static int cb_scrrainbow(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_RAINBOW;
+		r_core_cmd0 (core, "ecr");
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_RAINBOW);
+		r_core_cmd0 (core, "ecoo");
 	}
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -1340,6 +1342,61 @@ static int cb_hexpairs(void *user, void *data) {
 	return true;
 }
 
+static int cb_hex_header(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_HEADER;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+	}
+	return true;
+}
+
+static int cb_hex_bytes(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags &= ~R_PRINT_FLAGS_NONHEX;
+	} else {
+		core->print->flags |= R_PRINT_FLAGS_NONHEX;
+	}
+	return true;
+}
+
+static int cb_hex_ascii(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags &= ~R_PRINT_FLAGS_NONASCII;
+	} else {
+		core->print->flags |= R_PRINT_FLAGS_NONASCII;
+	}
+	return true;
+}
+
+static int cb_hex_style(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_STYLE;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_STYLE;
+	}
+	return true;
+}
+
+static int cb_hex_hdroff(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_HDROFF;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_HDROFF;
+	}
+	return true;
+}
+
 static int cb_hexcomments(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1513,7 +1570,7 @@ static int cb_cmddepth(void *user, void *data) {
 static int cb_hexcols(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	int c = R_MIN (1024, R_MAX (((RConfigNode*)data)->i_value, 0));
-	core->print->cols = c & ~1;
+	core->print->cols = c; // & ~1;
 	core->dbg->regcols = c/4;
 	return true;
 }
@@ -2402,6 +2459,7 @@ R_API int r_core_config_init(RCore *core) {
 		SETCB ("dir.prefix", pfx, (RConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
 		free (pfx);
 	}
+	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
@@ -2533,9 +2591,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
-	SETPREF ("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
 	SETPREF ("asm.jmpsub", "false", "Always substitute jump, call and branch targets in disassembly");
-	SETPREF ("asm.leahints", "false", "Show LEA hints [numbers] in disasm");
+	SETPREF ("asm.hints", "true", "Disable all asm.hint* if false");
+	SETPREF ("asm.hint.jmp", "true", "Show jump hints [numbers] in disasm");
+	SETPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
+	SETPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
+	SETI ("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF ("asm.decode", "false", "Use code analysis as a disassembler");
 	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
@@ -2617,7 +2678,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.family", "false", "Show family name in disasm");
 	SETPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETPREF ("asm.anal", "false", "Analyze code and refs while disassembling (see anal.strings)");
-	SETI ("asm.shortcut", 1, "Shortcut position (-1, 0, 1)");
 	SETI ("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETPREF ("asm.minicols", "false", "Only show the instruction in the column disasm");
@@ -2649,7 +2709,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF ("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF ("asm.describe", "false", "Show opcode description");
-	SETPREF ("asm.hints", "false", "Show hints for magic numbers in disasm");
 	SETPREF ("asm.highlight", "", "Highlight current line");
 	SETPREF ("asm.marks", "true", "Show marks before the disassembly");
 	SETPREF ("asm.cmt.refs", "false", "Show flag and comments from refs in disasm");
@@ -2857,7 +2916,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
 	SETPREF ("cmd.onsyscall", "", "Run when a syscall is hit");
 	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "Show info when a tracepoint/breakpoint is hit");
-	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
 	SETPREF ("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF ("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF ("cmd.gprompt", "", "Graph visual prompt commands");
@@ -2886,7 +2944,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "all", "deleted", "special", NULL);
 
 	/* hexdump */
-	SETPREF ("hex.header", "true", "Show header in hexdumps");
+	SETCB ("hex.header", "true", &cb_hex_header, "Show header in hexdump");
+	SETCB ("hex.bytes", "true", &cb_hex_bytes, "Show bytes column in hexdump");
+	SETCB ("hex.ascii", "true", &cb_hex_ascii, "Show ascii column in hexdump");
+	SETCB ("hex.hdroff", "false", &cb_hex_hdroff, "Show aligned 1 byte in header instead of delta nibble");
+	SETCB ("hex.style", "false", &cb_hex_style, "Improve the hexdump header style");
 	SETCB ("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");

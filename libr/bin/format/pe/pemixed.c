@@ -86,7 +86,7 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)
 	dotnet_offset += sizeof (PE_(image_nt_headers));
 	dotnet_offset -= sizeof (PE_(image_data_directory)) * 2;
 
-	if (!(zero_out = calloc (2, sizeof (ut32)))) {
+	if (!(zero_out = (ut8*) calloc (2, 4 * sizeof (ut8)))) {
 		// can't call PE_(r_bin_pe_free) since this will free the underlying pe_bin
 		// object which we may need for later
 		// PE_(r_bin_pe_free) (sub_bin_native);

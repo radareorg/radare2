@@ -2938,10 +2938,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (is_json) {
 		r_cons_printf ("[");
 	}
+
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN |
 		                  R_ANAL_FCN_TYPE_LOC) &&
-		    (addr == UT64_MAX || r_anal_fcn_in (fcni, addr))) {
+		    (addr == UT64_MAX || r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_ROOT) == fcni)) {
 			if (addr == UT64_MAX && (from != UT64_MAX && to != UT64_MAX)) {
 				if (fcni->addr < from || fcni->addr > to) {
 					continue;
@@ -3292,13 +3293,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
 		//	eprintf ("Error: skipping uninitialized block \n");
-			at += bsz;
+			at += ret;
 			continue;
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
 		//	eprintf ("Error: skipping uninitialized block \n");
-			at += bsz;
+			at += ret;
 			continue;
 		}
 		while (i < bsz && !r_cons_is_breaked ()) {
@@ -4469,7 +4470,6 @@ static void analPaths(RCoreAnalPaths *p) {
 				ut64 addr = cur->addr + cur->op_pos[i];
 				RAnalOp *op = r_core_anal_op (p->core, addr, R_ANAL_OP_MASK_BASIC);
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-					cur = c;
 					analPathFollow (p, op->jump);
 				}
 				cur = c;
