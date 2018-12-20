@@ -139,7 +139,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 		return false;
 	}
 	if (io->va) {
-		if (hasperm == 0) {
+		if (!hasperm) {
 			return r_io_map_is_mapped (io, offset);
 		}
 		if ((map = r_io_map_get (io, offset))) {
