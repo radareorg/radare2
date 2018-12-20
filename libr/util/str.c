@@ -160,7 +160,7 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 // For example, the bitstring 1000000000000000 will not be modified, but the
 // bitstring 0000000001000000 will be changed to 01000000.
 static void trimbits(char *b) {
-	int len = strlen (b);
+	const int len = strlen (b);
 	char *one = strchr (b, '1');
 	int pos = one ? (int)(size_t)(one - b) : len - 1;
 	pos = (pos / 8) * 8;
@@ -180,7 +180,7 @@ R_API int r_str_bits64(char* strout, ut64 in) {
 		} else {
 			strout[count] = '0';
 		}
-		++count;
+		count++;
 	}
 	strout[count] = '\0';
 	/* trim by 8 bits */
@@ -666,41 +666,35 @@ R_API const char *r_str_nstr(const char *from, const char *to, int size) {
 }
 
 // Returns a new heap-allocated copy of str.
+// XXX whats the diff with r_str_dup ?
 R_API char *r_str_new(const char *str) {
-	if (!str) {
-		return NULL;
-	}
-	return strdup (str);
+	return str? strdup (str): NULL;
 }
 
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
 R_API char *r_str_newlen(const char *str, int len) {
-	char *buf;
 	if (len < 1) {
 		return NULL;
 	}
-	buf = malloc (len + 1);
-	if (!buf) {
-		return NULL;
+	char *buf = malloc (len + 1);
+	if (buf) {
+		memcpy (buf, str, len);
+		buf[len] = 0;
 	}
-	memcpy (buf, str, len);
-	buf[len] = 0;
 	return buf;
 }
 
 R_API char *r_str_trunc_ellipsis(const char *str, int len) {
-	char *buf;
 	if (!str) {
 		return NULL;
 	}
 	if (strlen (str) < len) {
-		buf = strdup (str);
-	} else {
-		buf = r_str_newlen (str, len);
-		if (buf) {
-			strcpy (buf + len - 4, "...");
-		}
+		return strdup (str);
+	}
+	char *buf = r_str_newlen (str, len);
+	if (buf && len > 4) {
+		strcpy (buf + len - 4, "...");
 	}
 	return buf;
 }
@@ -828,13 +822,12 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
-	int len;
 	free (ptr);
 	if (!string) {
 		return NULL;
 	}
-	len = strlen (string)+1;
-	ptr = malloc (len+1);
+	int len = strlen (string) + 1;
+	ptr = malloc (len + 1);
 	if (!ptr) {
 		return NULL;
 	}
