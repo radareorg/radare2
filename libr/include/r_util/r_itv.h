@@ -27,6 +27,11 @@ static inline RInterval *r_itv_new(ut64 addr, ut64 size) {
 	return itv;
 }
 
+static inline void r_itv_free(RInterval *itv) {
+	r_return_if_fail (itv);
+	free (itv);
+}
+
 static inline ut64 r_itv_begin(RInterval itv) {
 	return itv.addr;
 }
