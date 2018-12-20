@@ -63,6 +63,7 @@ files = [
   'thread_pipe.c',
   'tinyrange.c',
   'tree.c',
+  'json.c',
   'r_json.c',
   'ubase64.c',
   'uleb128.c',

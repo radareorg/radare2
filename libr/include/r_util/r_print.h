@@ -210,6 +210,30 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 R_API char* r_print_json_indent(const char* s, bool color, const char *tab, const char **colors);
 R_API char* r_print_json_path(const char* s, int pos);
 
+// R_PRINT_JSON
+#define R_PRINT_JSON_DEPTH_LIMIT 128
+typedef struct r_print_json_t {
+	RStrBuf *sb;
+	bool is_first;
+	bool is_key;
+	char braces[R_PRINT_JSON_DEPTH_LIMIT];
+	int level;
+	PrintfCallback cb;
+} RPrintJSON;
+
+R_API void r_print_json(RPrintJSON *j, const char *msg);
+R_API RPrintJSON *r_print_json_begin(char type, PrintfCallback cb);
+R_API RPrintJSON *r_print_json_open(RPrintJSON *j, char type);
+R_API RPrintJSON *r_print_json_end(RPrintJSON *j);
+R_API RPrintJSON *r_print_json_k(RPrintJSON *j, const char *k, char type);
+R_API void r_print_json_kn(RPrintJSON *j, const char *k, ut64 n);
+R_API void r_print_json_ks(RPrintJSON *j, const char *k, const char *v);
+R_API void r_print_json_kb(RPrintJSON *j, const char *k, bool v);
+R_API void r_print_json_b(RPrintJSON *j, bool v);
+R_API void r_print_json_s(RPrintJSON *j, const char *k);
+R_API void r_print_json_n(RPrintJSON *j, ut64 n);
+R_API void r_print_json_d(RPrintJSON *j, int d);
+
 #endif
 
 #ifdef __cplusplus
