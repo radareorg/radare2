@@ -4565,6 +4565,9 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				ut32 bsz = core->blocksize;
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
+				if (!f) {
+					f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				}
 				RAnalFunction *tmp_func;
 				ut32 cont_size = 0;
 				RListIter *locs_it = NULL;
