@@ -143,10 +143,15 @@ R_API int r_sys_truncate(const char *file, int sz) {
 		return false;
 	}
 #ifdef _MSC_VER
-	_chsize (fd, sz);
+	int r = _chsize (fd, sz);
 #else
-	ftruncate (fd, sz);
+	int r = ftruncate (fd, sz);
 #endif
+	if (r != 0) {
+		eprintf ("Could not resize '%s' file\n", file);
+		close (fd);
+		return false;
+	}
 	close (fd);
 	return true;
 #else

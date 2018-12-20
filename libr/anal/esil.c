@@ -1779,8 +1779,10 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
 					r_write_ble (b, num, esil->anal->big_endian, 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
-					r_write_ble (b, num2, esil->anal->big_endian, 64);
-					ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
+					if (ret == 0) {
+						r_write_ble (b, num2, esil->anal->big_endian, 64);
+						ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
+					}
 					goto out;
 				}
 				ret = -1;
