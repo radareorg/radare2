@@ -206,6 +206,7 @@ static void resizePanelLeft(RPanels *panels);
 static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
+static void fitToCanvas(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static int openMenuCb(void *user);
 static int openFileCb(void *user);
@@ -286,6 +287,7 @@ static void showHelp(RCore *core, RPanelsMode mode);
 static void createNewPanel(RCore *core, char *name, char *cmd, bool caching);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
+static void checkEdge(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -538,6 +540,7 @@ static void splitPanelHorizontal(RCore *core) {
 R_API void r_core_panels_layout_refresh(RCore *core) {
 	fixBlockSize (core);
 	delInvalidPanels (core->panels);
+	checkEdge (core->panels);
 	r_core_panels_check_stackbase (core);
 	r_core_panels_refresh (core);
 }
@@ -1337,6 +1340,55 @@ static void resizePanelDown(RPanels *panels) {
 beach:
 	free (targets1);
 	free (targets2);
+}
+
+static void checkEdge(RPanels *panels) {
+	int i, tmpright, tmpbottom, maxright = 0, maxbottom = 0;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		tmpright = panel->pos.x + panel->pos.w;
+		tmpbottom = panel->pos.y + panel->pos.h;
+		if (tmpright > maxright) {
+			maxright = tmpright;
+		}
+		if (tmpbottom > maxbottom) {
+			maxbottom = tmpbottom;
+		}
+	}
+	int f1, f2;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		f1 = f2 = 0;
+		if (panel->pos.x + panel->pos.w == maxright) {
+			f1 = (1 << PANEL_EDGE_RIGHT);
+		}
+		if (panel->pos.y + panel->pos.h == maxbottom) {
+			f2 = (1 << PANEL_EDGE_BOTTOM);
+		}
+		panel->edgeflag = f1 | f2;
+	}
+}
+
+static void fitToCanvas(RPanels *panels) {
+	RConsCanvas *can = panels->can;
+	int i, w, h;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		if (panel->edgeflag & 1 << PANEL_EDGE_RIGHT && panel->pos.x < can->w) {
+			w = can->w - panel->pos.x;
+			if (w != panel->pos.w) {
+				panel->pos.w = w;
+				panel->refresh = true;
+			}
+		}
+		if (panel->edgeflag & 1 << PANEL_EDGE_BOTTOM && panel->pos.y < can->h) {
+			h = can->h - panel->pos.y;
+			if (h != panel->pos.h) {
+				panel->pos.h = h;
+				panel->refresh = true;
+			}
+		}
+	}
 }
 
 static void delPanel(RPanels *panels, int delPanelNum) {
@@ -2373,13 +2425,14 @@ R_API void r_core_panels_refresh(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
 	refreshCoreOffset (core);
 	r_cons_gotoxy (0, 0);
-	if (panels->isResizing) {
+	if (panels->isResizing || (can->w != w || can->h != h)) {
 		panels->isResizing = false;
 		if (!r_cons_canvas_resize (can, w, h)) {
 			return;
 		}
 		setRefreshAll (panels, false);
 	}
+	fitToCanvas (panels);
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
 			panelPrint (core, can, &panel[i], 0);

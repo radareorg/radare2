@@ -17,6 +17,12 @@ typedef struct r_panel_pos_t {
 	int h;
 } RPanelPos;
 
+typedef enum {
+	PANEL_EDGE_NONE,
+	PANEL_EDGE_RIGHT,
+	PANEL_EDGE_BOTTOM
+} RPanelEdge;
+
 typedef struct r_panel_t {
 	RPanelPos pos;
 	RPanelPos prevPos;
@@ -31,6 +37,7 @@ typedef struct r_panel_t {
 	ut64 addr;
 	bool caching;
 	char *cmdStrCache;
+	int edgeflag;
 } RPanel;
 
 #ifdef __cplusplus
