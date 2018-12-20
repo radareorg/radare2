@@ -1234,6 +1234,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool
 				}
 				break;
 			}
+			/* fallthrough */
 		default:
 			r_str_byte_escape (p, &q, dot_nl, show_asciidot, esc_bslash);
 		}
