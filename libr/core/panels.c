@@ -1371,16 +1371,22 @@ static void checkEdge(RPanels *panels) {
 
 static void fitToCanvas(RPanels *panels) {
 	RConsCanvas *can = panels->can;
-	int i;
+	int i, w, h;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
 		if (panel->edgeflag & 1 << PANEL_EDGE_RIGHT && panel->pos.x < can->w) {
-			panel->pos.w = can->w - panel->pos.x;
-			panel->refresh = true;
+			w = can->w - panel->pos.x;
+			if (w != panel->pos.w) {
+				panel->pos.w = w;
+				panel->refresh = true;
+			}
 		}
 		if (panel->edgeflag & 1 << PANEL_EDGE_BOTTOM && panel->pos.y < can->h) {
-			panel->pos.h = can->h - panel->pos.y;
-			panel->refresh = true;
+			h = can->h - panel->pos.y;
+			if (h != panel->pos.h) {
+				panel->pos.h = h;
+				panel->refresh = true;
+			}
 		}
 	}
 }
