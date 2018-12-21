@@ -2451,36 +2451,26 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		// r_num_get is gonna use a dangling pointer since the internal
 		// token that RNum holds ([$$]) has been already freed by r_core_cmd_str
 		// r_num_math reload a new token so the dangling pointer is gone
-		switch(input[1]) {
+		switch (input[1]) {
 		case '1':
-			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
-			r_read_ble8 (block),
-			str
-			);
+			pj_printf (r_cons_printf, "{'value':%i,'string':%s}\n",
+				r_read_ble8 (block), str);
 			break;
 		case '2':
-			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
-			r_read_ble16 (block, core->print->big_endian),
-			str
-			);
+			pj_printf (r_cons_printf, "{'value':%i,'string':%s}\n",
+				r_read_ble16 (block, core->print->big_endian), str);
 			break;
 		case '4':
-			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
-			r_read_ble32 (block, core->print->big_endian),
-			str
-			);
+			pj_printf (r_cons_printf, "{'value':%n,'string':%s}\n",
+				(ut64)r_read_ble32 (block, core->print->big_endian), str);
 			break;
 		case '8':
-			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
-			r_read_ble64 (block, core->print->big_endian),
-			str
-			);
+			pj_printf (r_cons_printf, "{'value':%n,'string':%s}\n",
+				r_read_ble64 (block, core->print->big_endian), str);
 			break;
 		default:
-			r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
-			r_read_ble64 (block, core->print->big_endian),
-			str
-			);
+			pj_printf (r_cons_printf, "{'value':%n,'string':%s}\n",
+				r_read_ble64 (block, core->print->big_endian), str);
 			break;
 		}
 		free (str);

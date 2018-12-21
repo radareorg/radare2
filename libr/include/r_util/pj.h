@@ -20,6 +20,7 @@ R_API const char *pj_string(PJ *pj);
 /* nesting */
 //R_API PJ *pj_begin(char type, PrintfCallback cb);
 R_API PJ *pj_end(PJ *j);
+R_API void pj_printf(PrintfCallback p, const char *fmt, ...);
 /* object, array */
 R_API PJ *pj_o(PJ *j);
 R_API PJ *pj_a(PJ *j);

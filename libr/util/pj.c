@@ -76,7 +76,7 @@ R_API PJ *pj_end(PJ *j) {
 }
 
 R_API PJ *pj_k(PJ *j, const char *k) {
-	r_return_val_if_fail (j &&  k, NULL);
+	r_return_val_if_fail (j && k, NULL);
 	j->is_key = false;
 	pj_s (j, k);
 	pj_raw (j, ":");
@@ -147,4 +147,72 @@ R_API PJ *pj_i(PJ *j, int i) {
 	pj_comma (j);
 	pj_raw (j, sdb_fmt ("%d", i));
 	return j;
+}
+
+R_API void pj_printf(PrintfCallback p, const char *fmt, ...) {
+	va_list ap, ap2;
+	va_start (ap, fmt);
+	va_start (ap2, fmt);
+
+	char ch[2] = {0};
+	PJ *j = pj_new ();
+	while (*fmt) {
+		j->is_first = true;
+		ch[0] = *fmt;
+		switch(*fmt) {
+		case '\\':
+			fmt++;
+			switch (*fmt) {
+			// TODO: add \x, and \e
+			case 'e':
+				pj_raw(j, "\x1b");
+				break;
+			case 'r':
+				pj_raw(j, "\r");
+				break;
+			case 'n':
+				pj_raw(j, "\n");
+				break;
+			case 'b':
+				pj_raw(j, "\b");
+				break;
+			}
+			break;
+		case '\'':
+			pj_raw (j, "\"");
+			break;
+		case '%':
+			fmt++;
+			switch (*fmt) {
+			case 'b':
+				pj_b (j, va_arg (ap, int));
+				break;
+			case 's':
+				pj_s (j, va_arg (ap, const char*));
+				break;
+			case 'n':
+				pj_n (j, va_arg (ap, ut64));
+				break;
+			case 'd':
+				pj_d (j, va_arg (ap, double));
+				break;
+			case 'i':
+				pj_i (j, va_arg(ap, int));
+				break;
+			default:
+				eprintf ("Invalid format\n");
+				break;
+			}
+			break;
+		default:
+			ch[0] = *fmt;
+			pj_raw (j, ch);
+			break;
+		}
+		fmt++;
+	}
+	p ("%s", r_strbuf_get (j->sb));
+	pj_free (j);
+	va_end (ap2);
+	va_end (ap);
 }
