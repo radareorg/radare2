@@ -1175,7 +1175,7 @@ static int esil_asreq(RAnalEsil *esil) {
 						eprintf ("Invalid asreq shift of %d at 0x%"PFMT64x"\n", shift, esil->address);
 						shift = 0;
 					}
-					if (param_num < 0 || param_num > regsize - 1) {
+					if (param_num > regsize - 1) {
 						// capstone bug?
 						eprintf ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
 						param_num = 30;
@@ -1211,7 +1211,7 @@ static int esil_asr(RAnalEsil *esil) {
 	char *param = r_anal_esil_pop (esil);
 	if (op && r_anal_esil_get_parm_size (esil, op, &op_num, &regsize)) {
 		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
-			if (param_num < 0 || param_num > regsize - 1) {
+			if (param_num > regsize - 1) {
 				// capstone bug?
 				eprintf ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
 				param_num = 30;

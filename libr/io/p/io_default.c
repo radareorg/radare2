@@ -276,6 +276,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
 					len = write (mmo->fd, a_buf + i, aligned);
 					if (len != aligned) {
+						free (a_buf);
 						return len;
 					}
 				}
