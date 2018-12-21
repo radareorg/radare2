@@ -3,7 +3,6 @@
 #include <r_util.h>
 #include <r_util/r_print.h>
 
-
 static void pj_raw(PJ *j, const char *msg) {
 	r_strbuf_append (j->sb, msg);
 }
@@ -22,7 +21,7 @@ R_API PJ *pj_new() {
 	PJ *j = R_NEW0 (PJ);
 	if (j) {
 		j->sb = r_strbuf_new ("");
-	}	
+	}
 	return j;
 }
 
@@ -46,10 +45,10 @@ static PJ *pj_begin(PJ *j, char type) {
 	if (!j || j->level >= R_PRINT_JSON_DEPTH_LIMIT) {
 		return NULL;
 	}
-	char msg[2] = {type, 0};
+	char msg[2] = { type, 0 };
 	pj_raw (j, msg);
-	j->braces[j->level] = (type == '{')? '}': ']';
-	j->level ++;
+	j->braces[j->level] = (type == '{') ? '}' : ']';
+	j->level++;
 	j->is_first = true;
 	return j;
 }
@@ -65,12 +64,12 @@ R_API PJ *pj_a(PJ *j) {
 R_API PJ *pj_end(PJ *j) {
 	r_return_val_if_fail (j && j->level > 0, NULL);
 	if (--j->level < 1) {
-		char msg[2] = {j->braces[j->level], 0};
+		char msg[2] = { j->braces[j->level], 0 };
 		pj_raw (j, msg);
 		j->level = 0;
 		return j;
 	}
-	char msg[2] = {j->braces[j->level], 0};
+	char msg[2] = { j->braces[j->level], 0 };
 	pj_raw (j, msg);
 	return j;
 }
@@ -133,7 +132,7 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 
 R_API PJ *pj_n(PJ *j, ut64 n) {
 	pj_comma (j);
-	pj_raw (j, sdb_fmt ("%"PFMT64u, n));
+	pj_raw (j, sdb_fmt ("%" PFMT64u, n));
 	return j;
 }
 
@@ -149,32 +148,31 @@ R_API PJ *pj_i(PJ *j, int i) {
 	return j;
 }
 
-R_API void pj_printf(PrintfCallback p, const char *fmt, ...) {
-	va_list ap, ap2;
+R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
+	va_list ap;
 	va_start (ap, fmt);
-	va_start (ap2, fmt);
 
-	char ch[2] = {0};
+	char ch[2] = { 0 };
 	PJ *j = pj_new ();
 	while (*fmt) {
 		j->is_first = true;
 		ch[0] = *fmt;
-		switch(*fmt) {
+		switch (*fmt) {
 		case '\\':
 			fmt++;
 			switch (*fmt) {
 			// TODO: add \x, and \e
 			case 'e':
-				pj_raw(j, "\x1b");
+				pj_raw (j, "\x1b");
 				break;
 			case 'r':
-				pj_raw(j, "\r");
+				pj_raw (j, "\r");
 				break;
 			case 'n':
-				pj_raw(j, "\n");
+				pj_raw (j, "\n");
 				break;
 			case 'b':
-				pj_raw(j, "\b");
+				pj_raw (j, "\b");
 				break;
 			}
 			break;
@@ -188,7 +186,7 @@ R_API void pj_printf(PrintfCallback p, const char *fmt, ...) {
 				pj_b (j, va_arg (ap, int));
 				break;
 			case 's':
-				pj_s (j, va_arg (ap, const char*));
+				pj_s (j, va_arg (ap, const char *));
 				break;
 			case 'n':
 				pj_n (j, va_arg (ap, ut64));
@@ -197,7 +195,7 @@ R_API void pj_printf(PrintfCallback p, const char *fmt, ...) {
 				pj_d (j, va_arg (ap, double));
 				break;
 			case 'i':
-				pj_i (j, va_arg(ap, int));
+				pj_i (j, va_arg (ap, int));
 				break;
 			default:
 				eprintf ("Invalid format\n");
@@ -211,8 +209,13 @@ R_API void pj_printf(PrintfCallback p, const char *fmt, ...) {
 		}
 		fmt++;
 	}
-	p ("%s", r_strbuf_get (j->sb));
-	pj_free (j);
-	va_end (ap2);
+	char *ret = NULL;
+	if (p) {
+		p ("%s", r_strbuf_get (j->sb));
+		pj_free (j);
+	} else {
+		ret = pj_drain (j);
+	}
 	va_end (ap);
+	return ret;
 }
