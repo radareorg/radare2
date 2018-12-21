@@ -342,6 +342,7 @@ static RList *fcn_get_refs(RAnalFunction *fcn, HtUP *ht) {
 }
 
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
+	r_return_val_if_fail (anal && fcn, NULL);
 	return fcn_get_refs (fcn, anal->dict_refs);
 }
 

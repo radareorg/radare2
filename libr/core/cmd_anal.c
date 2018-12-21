@@ -5825,13 +5825,17 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			RListIter *iter;
 			RAnalRef *refi;
-			RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
-			r_list_foreach (refs, iter, refi) {
-				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
-				const char *name = f ? f->name: "";
-				r_cons_printf ("%c 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
-					refi->at, refi->addr, name);
+			if (fcn) {
+				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+				r_list_foreach (refs, iter, refi) {
+					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+					const char *name = f ? f->name: "";
+					r_cons_printf ("%c 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+						refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
+						refi->at, refi->addr, name);
+				}
+			} else {
+				eprintf ("Cannot find any function\n");
 			}
 		} else { // "axf"
 			ut8 buf[12];
