@@ -577,7 +577,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	sdb_free (sdbs[0]);
 }
 
-static int bin_info(RCore *r, int mode) {
+static int bin_info(RCore *r, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
@@ -724,6 +724,7 @@ static int bin_info(RCore *r, int mode) {
 		}
 		pair_str ("guid", info->guid, mode, false);
 		pair_str ("intrp", info->intrp, mode, false);
+		pair_ut64x ("laddr", laddr, mode, false);
 		pair_str ("lang", info->lang, mode, false);
 		pair_bool ("linenum", R_BIN_DBG_LINENUMS & info->dbg_info, mode, false);
 		pair_bool ("lsyms", R_BIN_DBG_SYMS & info->dbg_info, mode, false);
@@ -3456,7 +3457,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		ret &= bin_raw_strings (core, mode, va);
 	}
 	if ((action & R_CORE_BIN_ACC_INFO)) {
-		ret &= bin_info (core, mode);
+		ret &= bin_info (core, mode, loadaddr);
 	}
 	if ((action & R_CORE_BIN_ACC_MAIN)) {
 		ret &= bin_main (core, mode, va);
