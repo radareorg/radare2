@@ -805,9 +805,10 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
                    char *tmp_buf, int oplen, int un_idx, int *idx) {
 	// this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
-		if (!anal->flb.exist_at (anal->flb.f, "skip", 4, op->addr)) {
-			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%"PFMT64u, op->addr);
-			anal->flb.set (anal->flb.f, tmp_buf, op->addr, oplen);
+		// use addr instead of op->addr to mark repeat
+		if (!anal->flb.exist_at (anal->flb.f, "skip", 4, addr)) {
+			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%"PFMT64u, addr);
+			anal->flb.set (anal->flb.f, tmp_buf, addr, oplen);
 			fcn->addr += oplen;
 			bb->size -= oplen;
 			bb->addr += oplen;
