@@ -600,7 +600,8 @@ static void activateCursor(RCore *core) {
 	RPanels *panels = core->panels;
 	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
 			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
-			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
 		setCursor (core, !core->print->cur_enabled);
 		panels->panel[panels->curnode].refresh = true;
 	}
@@ -613,7 +614,7 @@ static void cursorLeft(RCore *core) {
 			core->print->cur--;
 			core->panels->panel[core->panels->curnode].addr--;
 		}
-	} else {
+	} else if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 		core->print->cur--;
 		int row = r_print_row_at_off (core->print, core->print->cur);
 		if (row < 0) {
@@ -625,6 +626,8 @@ static void cursorLeft(RCore *core) {
 			core->panels->panel[core->panels->curnode].addr = core->offset;
 			core->print->cur = prevoff - core->offset - 1;
 		}
+	} else {
+		core->print->cur--;
 	}
 }
 
@@ -760,15 +763,23 @@ static void handleUpKey(RCore *core) {
 				}
 			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
+			int cols = r_config_get_i (core->config, "hex.cols");
 			if (!panels->panel[panels->curnode].caching) {
-				int cols = r_config_get_i (core->config, "hex.cols");
-				if (cols < 1) {
-					cols = 16;
-				}
-				if (panels->panel[panels->curnode].addr <= cols) {
-					panels->panel[panels->curnode].addr = 0;
+				if (core->print->cur_enabled) {
+					if (core->print->cur / cols - 1 < 0) {
+						panels->panel[panels->curnode].addr -= cols;
+					} else {
+						cursorUp (core);
+					}
 				} else {
-					panels->panel[panels->curnode].addr -= cols;
+					if (cols < 1) {
+						cols = 16;
+					}
+					if (panels->panel[panels->curnode].addr <= cols) {
+						panels->panel[panels->curnode].addr = 0;
+					} else {
+						panels->panel[panels->curnode].addr -= cols;
+					}
 				}
 			} else if (panels->panel[panels->curnode].sy > 0) {
 				panels->panel[panels->curnode].sy--;
@@ -828,12 +839,21 @@ static void handleDownKey(RCore *core) {
 				core->print->cur += cols > 0 ? cols : 3;
 			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
+			int cols = r_config_get_i (core->config, "hex.cols");
 			if (!panels->panel[panels->curnode].caching) {
-				int cols = r_config_get_i (core->config, "hex.cols");
-				if (cols < 1) {
-					cols = 16;
+				if (core->print->cur_enabled) {
+					if (core->print->cur / cols + 1 > panels->panel[panels->curnode].pos.h - 5) {
+						panels->panel[panels->curnode].addr += cols;
+					} else {
+						cursorDown (core);
+					}
+				} else {
+					int cols = r_config_get_i (core->config, "hex.cols");
+					if (cols < 1) {
+						cols = 16;
+					}
+					panels->panel[panels->curnode].addr += cols;
 				}
-				panels->panel[panels->curnode].addr += cols;
 			} else {
 				panels->panel[panels->curnode].sy++;
 			}
@@ -872,8 +892,16 @@ static void handleLeftKey(RCore *core) {
 	} else if (core->print->cur_enabled
 			&& (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
 				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
-				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))) {
-		cursorLeft (core);
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP))) {
+		int cols = r_config_get_i (core->config, "hex.cols");
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)
+					&& !core->print->cur) {
+			panels->panel[panels->curnode].addr -= cols;
+			core->print->cur += cols - 1;
+		} else {
+			cursorLeft (core);
+		}
 		panels->panel[panels->curnode].refresh = true;
 	} else {
 		if (panels->panel[panels->curnode].sx > 0) {
@@ -909,8 +937,17 @@ static void handleRightKey(RCore *core) {
 	} else if (core->print->cur_enabled
 			&& (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
 				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
-				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))) {
-		cursorRight (core);
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP))) {
+		int cols = r_config_get_i (core->config, "hex.cols");
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)
+				&& core->print->cur / cols + 1 > panels->panel[panels->curnode].pos.h - 5
+				&& core->print->cur % cols == cols - 1) {
+			panels->panel[panels->curnode].addr += cols;
+			core->print->cur -= cols - 1;
+		} else {
+			cursorRight (core);
+		}
 		panels->panel[panels->curnode].refresh = true;
 	} else {
 		panels->panel[panels->curnode].sx++;
@@ -2968,6 +3005,11 @@ static void insertValue(RCore *core) {
 		const char *prompt = "insert hex: ";
 		panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
+		panels->panel[panels->curnode].refresh = true;
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
+		const char *prompt = "insert hex: ";
+		panelPrompt (prompt, buf, sizeof (buf));
+		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr + core->print->cur);
 		panels->panel[panels->curnode].refresh = true;
 	}
 }
