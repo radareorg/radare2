@@ -1792,11 +1792,17 @@ R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls);
 R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name);
 R_API void r_anal_class_list(RAnal *anal, int mode);
 
-R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name);
+//R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name);
 
 
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
+
+R_API bool r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);
+R_API void r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth);
+R_API void r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name);
+R_API void r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name);
+
 
 
 /* plugin pointers */
