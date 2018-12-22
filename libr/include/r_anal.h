@@ -688,11 +688,8 @@ typedef struct r_anal_t {
 	RHintCb hint_cbs;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
-#if R_ANAL_CLASSES_SDB
 	Sdb *sdb_classes;
-#else
 	RPVector classes;
-#endif
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1796,6 +1793,11 @@ R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name);
 R_API void r_anal_class_list(RAnal *anal, int mode);
 
 R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name);
+
+
+R_API void r_anal_class_create(RAnal *anal, const char *name);
+R_API void r_anal_class_delete(RAnal *anal, const char *name);
+
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
