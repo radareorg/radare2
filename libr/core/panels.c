@@ -3009,6 +3009,11 @@ static void insertValue(RCore *core) {
 		panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
 		panels->panel[panels->curnode].refresh = true;
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_HEXDUMP)) {
+		const char *prompt = "insert hex: ";
+		panelPrompt (prompt, buf, sizeof (buf));
+		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr + core->print->cur);
+		panels->panel[panels->curnode].refresh = true;
 	}
 }
 
