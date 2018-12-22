@@ -820,8 +820,8 @@ static void recovery_apply_vtable(RAnalClass *cls, RVTableInfo *vtable) {
 			continue;
 		}
 		meth->addr = vmeth->addr;
-		meth->vtable_index = (int) vmeth->vtable_offset;
-		meth->name = r_str_newf ("virtual_%d", meth->vtable_index);
+		meth->vtable_offset = (int) vmeth->vtable_offset;
+		meth->name = r_str_newf ("virtual_%d", meth->vtable_offset);
 		r_pvector_push (&cls->methods, meth);
 	}
 }

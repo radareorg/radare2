@@ -1148,25 +1148,6 @@ typedef struct r_anal_esil_t {
 
 #undef ESIL
 
-typedef struct r_anal_method_t {
-	char *name;
-	ut64 addr;
-	int vtable_index; // >= 0 if method is virtual, else -1
-} RAnalMethod;
-
-typedef struct r_anal_base_class_t {
-	ut64 offset; // offset of the base class inside the derived class
-	struct r_anal_class_t *cls;
-} RAnalBaseClass;
-
-typedef struct r_anal_class_t {
-	char *name;
-	ut64 addr;
-	ut64 vtable_addr;
-	RVector base_classes; // <RAnalBaseClass>
-	RPVector methods; // <RAnalMethod>
-} RAnalClass;
-
 typedef int (*RAnalEsilOp)(RAnalEsil *esil);
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
@@ -1782,6 +1763,25 @@ R_API void r_anal_rtti_recover_all(RAnal *anal);
 R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color);
 
 /* classes */
+typedef struct r_anal_method_t {
+	char *name;
+	ut64 addr;
+	st64 vtable_offset; // >= 0 if method is virtual, else -1
+} RAnalMethod;
+
+typedef struct r_anal_base_class_t {
+	ut64 offset; // offset of the base class inside the derived class
+	struct r_anal_class_t *cls;
+} RAnalBaseClass;
+
+typedef struct r_anal_class_t {
+	char *name;
+	ut64 addr;
+	ut64 vtable_addr;
+	RVector base_classes; // <RAnalBaseClass>
+	RPVector methods; // <RAnalMethod>
+} RAnalClass;
+
 R_API RAnalClass *r_anal_class_new(const char *name);
 R_API void r_anal_class_free(RAnalClass *cls);
 R_API RAnalMethod *r_anal_method_new();
@@ -1791,12 +1791,12 @@ R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls);
 R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls);
 R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name);
 
-//R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name);
 
 
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
 
+R_API void r_anal_class_method_fini(RAnalMethod *meth);
 R_API bool r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);
 R_API void r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth);
 R_API void r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name);
