@@ -109,135 +109,6 @@ static char *flagname(char *name) {
 	return ret;
 }
 
-R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
-	bool json = mode == 'j';
-	bool lng = mode == 'l';
-	bool cmd = mode == '*';
-
-	char *fname = NULL;
-
-	if (json) {
-		r_cons_printf ("{\"name\":\"%s\"", cls->name);
-		if (cls->addr != UT64_MAX) {
-			r_cons_printf (",\"addr\":%lld", cls->addr);
-		}
-		if (cls->vtable_addr != UT64_MAX) {
-			r_cons_printf (",\"vtable_addr\":%lld", cls->vtable_addr);
-		}
-		if (cls->base_classes.len > 0) {
-			r_cons_print (",\"bases\":[");
-		}
-	} else if (cmd) {
-		r_cons_print ("fs classes\n");
-		fname = flagname (cls->name);
-		if (fname) {
-			if (cls->vtable_addr != UT64_MAX) {
-				r_cons_printf("f class.vtable.%s @ 0x%"PFMT64x"\n", fname, cls->vtable_addr);
-			}
-			if (cls->addr != UT64_MAX) {
-				r_cons_printf("f class.%s @ 0x%"PFMT64x"\n", fname, cls->addr);
-			}
-		}
-	} else {
-		r_cons_print (cls->name);
-	}
-
-	if (!cmd) {
-		size_t i;
-		for (i = 0; i < cls->base_classes.len; i++) {
-			RAnalBaseClass *bcls = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, i);
-			if (i == 0) {
-				if (!json) {
-					r_cons_print (": ");
-				}
-			} else {
-				if (json) {
-					r_cons_print (",");
-				} else {
-					r_cons_print (", ");
-				}
-			}
-
-			if (json) {
-				r_cons_printf ("{\"name\":\"%s\",\"offset\":%llu}", bcls->cls->name, bcls->offset);
-			} else {
-				r_cons_print (bcls->cls->name);
-			}
-		}
-	}
-
-	if (json) {
-		if (cls->base_classes.len > 0) {
-			r_cons_print ("]");
-		}
-		if (r_pvector_len (&cls->methods) > 0) {
-			r_cons_print (",\"methods\":[");
-		}
-	} else if (!cmd) {
-		r_cons_print ("\n");
-	}
-
-	if (json || lng || cmd) {
-		size_t i;
-		for (i = 0; i < r_pvector_len (&cls->methods); i++) {
-			RAnalMethod *meth = (RAnalMethod *)r_pvector_at (&cls->methods, i);
-			if (json) {
-				if (i > 0) {
-					r_cons_print (",");
-				}
-				r_cons_printf ("{\"name\":\"%s\",\"addr\":%lld,\"vtable_index\":%d}",
-						meth->name, meth->addr, meth->vtable_index);
-			} else if (cmd) {
-				char *mfname = flagname (meth->name);
-				if (fname && mfname && meth->addr != UT64_MAX) {
-					r_cons_printf ("f method.%s.%s @ 0x%"PFMT64x"\n", fname, mfname, meth->addr);
-				}
-				if (meth->vtable_index >= 0 && cls->vtable_addr != UT64_MAX) {
-					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", anal->bits / 8, cls->vtable_addr + meth->vtable_index);
-				}
-				free (mfname);
-			} else { // lng
-				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
-				if (meth->vtable_index >= 0) {
-					r_cons_printf (" (vtable +%d)\n", meth->vtable_index);
-				} else {
-					r_cons_print ("\n");
-				}
-			}
-		}
-	}
-
-	if (json) {
-		if (r_pvector_len (&cls->methods) > 0) {
-			r_cons_print ("]");
-		}
-		r_cons_print ("}");
-	}
-	free (fname);
-}
-
-R_API void r_anal_class_list(RAnal *anal, int mode) {
-	void **it;
-	bool json = mode == 'j';
-	if (json) {
-		r_cons_print ("[");
-	}
-	bool first = true;
-	r_pvector_foreach (&anal->classes, it) {
-		if (json) {
-			if (first) {
-				first = false;
-			} else {
-				r_cons_print (",");
-			}
-		}
-		RAnalClass *cls = (RAnalClass *)*it;
-		r_anal_class_print (anal, cls, mode);
-	}
-	if (json) {
-		r_cons_print ("]\n");
-	}
-}
 
 R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name) {
 	void **it;
@@ -275,6 +146,8 @@ static char *sanitize_id(const char *id) {
 	*cur = '\0';
 	return ret;
 }
+
+static const char *key_classes = "classes";
 
 static char *key_class(const char *name) {
 	return sdb_fmt ("class.%s", name);
@@ -317,15 +190,12 @@ R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	if (!name_sanitized) {
 		return;
 	}
+	sdb_array_add (anal->sdb_classes, key_classes, name_sanitized, 0);
 	char *key = key_class (name_sanitized);
 	free (name_sanitized);
-	if (!key) {
-		return;
-	}
 	if (!sdb_exists (anal->sdb, key)) {
 		sdb_set (anal->sdb_classes, key, "", 0);
 	}
-	free (key);
 }
 
 
@@ -334,42 +204,31 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	if (!class_name_sanitized) {
 		return;
 	}
+
+	sdb_array_remove (anal->sdb_classes, key_classes, class_name_sanitized, 0);
+
 	char *key = key_class (class_name_sanitized);
-	if (!key) {
-		free (class_name_sanitized);
-		return;
-	}
 	char *attr_type_array = sdb_get (anal->sdb_classes, key, 0);
-	free (key);
 
 	if (!attr_type_array) {
 		free (class_name_sanitized);
 		return;
 	}
 
-	sdb_array_remove (anal->sdb_classes, "classes", class_name_sanitized, 0);
+	sdb_array_remove (anal->sdb_classes, key_classes, class_name_sanitized, 0);
 
 	char *attr_type;
 	sdb_aforeach (attr_type, attr_type_array) {
 		key = key_attr_type (class_name_sanitized, attr_type);
-		if (key) {
-			char *attr_id_array = sdb_get (anal->sdb_classes, key, 0);
-			free (key);
-			if (attr_id_array) {
-				char *attr_id;
-				sdb_aforeach (attr_id, attr_id_array) {
-					key = key_attr_content (class_name_sanitized, attr_type, attr_id);
-					if (key) {
-						sdb_remove (anal->sdb_classes, key, 0);
-						free (key);
-					}
-					key = key_attr_content_specific (class_name_sanitized, attr_type, attr_id);
-					if (key) {
-						sdb_remove (anal->sdb_classes, key, 0);
-						free (key);
-					}
-					sdb_aforeach_next (attr_id);
-				}
+		char *attr_id_array = sdb_get (anal->sdb_classes, key, 0);
+		if (attr_id_array) {
+			char *attr_id;
+			sdb_aforeach (attr_id, attr_id_array) {
+				key = key_attr_content (class_name_sanitized, attr_type, attr_id);
+				sdb_remove (anal->sdb_classes, key, 0);
+				key = key_attr_content_specific (class_name_sanitized, attr_type, attr_id);
+				sdb_remove (anal->sdb_classes, key, 0);
+				sdb_aforeach_next (attr_id);
 			}
 		}
 		sdb_aforeach_next (attr_type);
@@ -388,11 +247,7 @@ static char *r_anal_class_get_attr_raw(RAnal *anal, const char *class_name, RAna
 	} else {
 		key = key_attr_content (class_name, attr_type_str, attr_id);
 	}
-	if (!key) {
-		return NULL;
-	}
 	char *ret = sdb_get (anal->sdb_classes, key, 0);
-	free (key);
 	return ret;
 }
 
@@ -421,25 +276,13 @@ static void r_anal_class_set_attr_raw(RAnal *anal, const char *class_name, RAnal
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	char *key = key_class (class_name);
-	if (!key) {
-		return;
-	}
 	sdb_array_add (anal->sdb_classes, key, attr_type_str, 0);
-	free (key);
 
 	key = key_attr_type (class_name, attr_type_str);
-	if (!key) {
-		return;
-	}
 	sdb_array_add (anal->sdb_classes, key, attr_id, 0);
-	free (key);
 
 	key = key_attr_content (class_name, attr_type_str, attr_id);
-	if (!key) {
-		return;
-	}
 	sdb_set (anal->sdb_classes, key, content, 0);
-	free (key);
 }
 
 // ids will be sanitized automatically
@@ -465,28 +308,19 @@ static void r_anal_class_delete_attr_raw(RAnal *anal, const char *class_name, RA
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	char *key = key_attr_content (class_name, attr_type_str, attr_id);
-	if (key) {
-		sdb_remove (anal->sdb, key, 0);
-		free (key);
-	}
+	sdb_remove (anal->sdb, key, 0);
 	key = key_attr_content_specific (class_name, attr_type_str, attr_id);
-	if (key) {
-		sdb_remove (anal->sdb, key, 0);
-		free (key);
-	}
+	sdb_remove (anal->sdb, key, 0);
 
 	key = key_attr_type (class_name, attr_type_str);
-	if (key) {
-		sdb_array_remove (anal->sdb_classes, key, attr_id, 0);
-		if (sdb_array_length (anal->sdb_classes, key) == 0) {
-			sdb_remove (anal->sdb_classes, key, 0);
-			char *class_key = key_class (class_name);
-			if (class_key) {
-				sdb_array_remove (anal->sdb_classes, class_key, attr_type_str, 0);
-				free (class_key);
-			}
+	sdb_array_remove (anal->sdb_classes, key, attr_id, 0);
+	if (sdb_array_length (anal->sdb_classes, key) == 0) {
+		sdb_remove (anal->sdb_classes, key, 0);
+		char *class_key = key_class (class_name);
+		if (class_key) {
+			sdb_array_remove (anal->sdb_classes, class_key, attr_type_str, 0);
+			free (class_key);
 		}
-		free (key);
 	}
 }
 
@@ -561,6 +395,153 @@ R_API void r_anal_class_method_rename(RAnal *anal, const char *class_name, const
 
 R_API void r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name) {
 	r_anal_class_delete_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth_name);
+}
+
+
+
+// ---- PRINT ----
+
+
+R_API void r_anal_class_print(RAnal *anal, const char *class_name, int mode) {
+	bool json = mode == 'j';
+	bool lng = mode == 'l';
+	bool cmd = mode == '*';
+
+	if (json) {
+		r_cons_printf ("\"%s\"", class_name);
+	} else {
+		r_cons_printf ("%s\n", class_name);
+	}
+
+#if 0
+	char *fname = NULL;
+
+	if (json) {
+		r_cons_printf ("{\"name\":\"%s\"", cls->name);
+		if (cls->addr != UT64_MAX) {
+			r_cons_printf (",\"addr\":%lld", cls->addr);
+		}
+		if (cls->vtable_addr != UT64_MAX) {
+			r_cons_printf (",\"vtable_addr\":%lld", cls->vtable_addr);
+		}
+		if (cls->base_classes.len > 0) {
+			r_cons_print (",\"bases\":[");
+		}
+	} else if (cmd) {
+		r_cons_print ("fs classes\n");
+		fname = flagname (cls->name);
+		if (fname) {
+			if (cls->vtable_addr != UT64_MAX) {
+				r_cons_printf("f class.vtable.%s @ 0x%"PFMT64x"\n", fname, cls->vtable_addr);
+			}
+			if (cls->addr != UT64_MAX) {
+				r_cons_printf("f class.%s @ 0x%"PFMT64x"\n", fname, cls->addr);
+			}
+		}
+	} else {
+		r_cons_print (cls->name);
+	}
+
+	if (!cmd) {
+		size_t i;
+		for (i = 0; i < cls->base_classes.len; i++) {
+			RAnalBaseClass *bcls = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, i);
+			if (i == 0) {
+				if (!json) {
+					r_cons_print (": ");
+				}
+			} else {
+				if (json) {
+					r_cons_print (",");
+				} else {
+					r_cons_print (", ");
+				}
+			}
+
+			if (json) {
+				r_cons_printf ("{\"name\":\"%s\",\"offset\":%llu}", bcls->cls->name, bcls->offset);
+			} else {
+				r_cons_print (bcls->cls->name);
+			}
+		}
+	}
+
+	if (json) {
+		if (cls->base_classes.len > 0) {
+			r_cons_print ("]");
+		}
+		if (r_pvector_len (&cls->methods) > 0) {
+			r_cons_print (",\"methods\":[");
+		}
+	} else if (!cmd) {
+		r_cons_print ("\n");
+	}
+
+	if (json || lng || cmd) {
+		size_t i;
+		for (i = 0; i < r_pvector_len (&cls->methods); i++) {
+			RAnalMethod *meth = (RAnalMethod *)r_pvector_at (&cls->methods, i);
+			if (json) {
+				if (i > 0) {
+					r_cons_print (",");
+				}
+				r_cons_printf ("{\"name\":\"%s\",\"addr\":%lld,\"vtable_index\":%d}",
+							   meth->name, meth->addr, meth->vtable_index);
+			} else if (cmd) {
+				char *mfname = flagname (meth->name);
+				if (fname && mfname && meth->addr != UT64_MAX) {
+					r_cons_printf ("f method.%s.%s @ 0x%"PFMT64x"\n", fname, mfname, meth->addr);
+				}
+				if (meth->vtable_index >= 0 && cls->vtable_addr != UT64_MAX) {
+					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", anal->bits / 8, cls->vtable_addr + meth->vtable_index);
+				}
+				free (mfname);
+			} else { // lng
+				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
+				if (meth->vtable_index >= 0) {
+					r_cons_printf (" (vtable +%d)\n", meth->vtable_index);
+				} else {
+					r_cons_print ("\n");
+				}
+			}
+		}
+	}
+
+	if (json) {
+		if (r_pvector_len (&cls->methods) > 0) {
+			r_cons_print ("]");
+		}
+		r_cons_print ("}");
+	}
+	free (fname);
+#endif
+}
+
+R_API void r_anal_class_list(RAnal *anal, int mode) {
+	bool json = mode == 'j';
+	if (json) {
+		r_cons_print ("[");
+	}
+	bool first = true;
+
+	char *classes_array = sdb_get (anal->sdb_classes, key_classes, 0);
+	char *class_name;
+	sdb_aforeach (class_name, classes_array) {
+		if (json) {
+			if (first) {
+				first = false;
+			} else {
+				r_cons_print (",");
+			}
+		}
+		r_anal_class_print (anal, class_name, mode);
+		sdb_aforeach_next (class_name);
+	}
+	free (classes_array);
+
+	if (json) {
+		r_cons_print ("]\n");
+	}
 }
 
 

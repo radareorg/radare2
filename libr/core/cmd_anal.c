@@ -7759,9 +7759,8 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		if (end) {
 			*end = '\0';
 		}
-		RAnalClass *cls = r_anal_class_new (cstr);
+		r_anal_class_create (core->anal, cstr);
 		free (cstr);
-		r_anal_class_add (core->anal, cls);
 		break;
 	}
 	case 'v': {
