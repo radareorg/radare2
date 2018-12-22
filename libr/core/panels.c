@@ -628,8 +628,6 @@ static void cursorLeft(RCore *core) {
 		}
 	} else {
 		core->print->cur--;
-		if (core->print->cur < 0) {
-		}
 	}
 }
 
@@ -774,7 +772,6 @@ static void handleUpKey(RCore *core) {
 						cursorUp (core);
 					}
 				} else {
-					int cols = r_config_get_i (core->config, "hex.cols");
 					if (cols < 1) {
 						cols = 16;
 					}
