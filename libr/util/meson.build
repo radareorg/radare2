@@ -97,8 +97,7 @@ r_util = library('r_util', files,
 r_util_dep = declare_dependency(link_with: r_util,
                                 include_directories: platform_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_util],
+pkgconfig_mod.generate(r_util,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_util',

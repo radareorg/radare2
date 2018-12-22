@@ -24,8 +24,7 @@ r_bp = library('r_bp', files,
 r_bp_dep = declare_dependency(link_with: r_bp,
                               include_directories: [platform_inc])
 
-pkgconfig_mod.generate(
-  libraries: [r_bp],
+pkgconfig_mod.generate(r_bp,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_bp',

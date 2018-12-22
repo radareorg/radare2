@@ -33,8 +33,7 @@ r_crypto = library('r_crypto', files,
 r_crypto_dep = declare_dependency(link_with: r_crypto,
                                   include_directories: [platform_inc])
 
-pkgconfig_mod.generate(
-  libraries: [r_crypto],
+pkgconfig_mod.generate(r_crypto,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_crypto',

@@ -29,8 +29,7 @@ else
     include_directories: platform_inc
   )
 
-  pkgconfig_mod.generate(
-    libraries: [r_magic],
+  pkgconfig_mod.generate(r_magic,
     subdirs: 'libr',
     version: r2_version,
     name: 'r_magic',

@@ -64,7 +64,8 @@ r_io_deps = [
   windbg_dep,
   qnx_dep,
   zip_dep,
-  ar_dep
+  ar_dep,
+  pth
 ]
 
 if use_ptrace_wrap
@@ -83,8 +84,7 @@ r_io = library('r_io', files,
 r_io_dep = declare_dependency(link_with: r_io,
                               include_directories: platform_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_io],
+pkgconfig_mod.generate(r_io,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_io',
