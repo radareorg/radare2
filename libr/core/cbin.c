@@ -1173,11 +1173,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			r_cons_printf ("s %s\n", name);
 			free (name);
 		} else {
-			r_cons_printf (
-				 "vaddr=0x%08"PFMT64x
-				" paddr=0x%08"PFMT64x
-				" laddr=0x%08"PFMT64x,
-				at, paddr, laddr);
+			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x, at, paddr);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
 				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
 			}
