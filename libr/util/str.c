@@ -1529,7 +1529,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 				;
 				}
 			}
-			if (tmp[i + 1] == '#' && isdigit (tmp[i + 2])  && tmp[i + 3]) {
+			if (i < (len - 3) && tmp[i + 1] == '#' && isdigit (tmp[i + 2])  && tmp[i + 3]) {
 				i += 3;
 			}
 		} else {

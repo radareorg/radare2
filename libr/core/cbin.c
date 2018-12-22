@@ -1892,16 +1892,20 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		SymName sn = {0};
 
 		if (exponly && !isAnExport (symbol)) {
+			free (r_symbol_name);
 			continue;
 		}
 		if (name && strcmp (r_symbol_name, name)) {
+			free (r_symbol_name);
 			continue;
 		}
 		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
+			free (r_symbol_name);
 			continue;
 		}
 		if ((printHere && !is_in_range (r->offset, symbol->paddr, len))
 				&& (printHere && !is_in_range (r->offset, addr, len))) {
+			free (r_symbol_name);
 			continue;
 		}
 		snInit (r, &sn, symbol, lang);
