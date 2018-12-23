@@ -2413,12 +2413,10 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		input++;
 		break;
 	default:
-		if (input[1] != 'j') {
-			fixed_size = false;
-		} else {
-			n = 8;
+		if (input[1] == 'j') {
 			input++;
 		}
+		fixed_size = false;
 		break;
 	}
 	// variables can be
