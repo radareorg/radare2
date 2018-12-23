@@ -197,7 +197,7 @@ R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	sdb_array_add (anal->sdb_classes, key_classes, name_sanitized, 0);
 	char *key = key_class (name_sanitized);
 	free (name_sanitized);
-	if (!sdb_exists (anal->sdb, key)) {
+	if (!sdb_exists (anal->sdb_classes, key)) {
 		sdb_set (anal->sdb_classes, key, "c", 0);
 	}
 }
@@ -225,6 +225,7 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	sdb_aforeach (attr_type, attr_type_array) {
 		key = key_attr_type_attrs (class_name_sanitized, attr_type);
 		char *attr_id_array = sdb_get (anal->sdb_classes, key, 0);
+		sdb_remove (anal->sdb_classes, key, 0);
 		if (attr_id_array) {
 			char *attr_id;
 			sdb_aforeach (attr_id, attr_id_array) {
@@ -319,9 +320,9 @@ static RAnalClassErr r_anal_class_delete_attr_raw(RAnal *anal, const char *class
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	char *key = key_attr_content (class_name, attr_type_str, attr_id);
-	sdb_remove (anal->sdb, key, 0);
+	sdb_remove (anal->sdb_classes, key, 0);
 	key = key_attr_content_specific (class_name, attr_type_str, attr_id);
-	sdb_remove (anal->sdb, key, 0);
+	sdb_remove (anal->sdb_classes, key, 0);
 
 	key = key_attr_type_attrs (class_name, attr_type_str);
 	sdb_array_remove (anal->sdb_classes, key, attr_id, 0);
@@ -480,7 +481,7 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, int mode) {
 		char *cur;
 		sdb_aforeach (cur, array) {
 			RAnalMethod meth;
-			if (r_anal_class_method_get (anal, class_name, cur, &meth)) {
+			if (r_anal_class_method_get (anal, class_name, cur, &meth) == R_ANAL_CLASS_ERR_SUCCESS) {
 				r_cons_printf ("  %s @ 0x%"PFMT64x, meth.name, meth.addr);
 				if (meth.vtable_offset >= 0) {
 					r_cons_printf (" (vtable + %"PFMT64u")\n", (ut64)meth.vtable_offset);
@@ -611,7 +612,7 @@ static void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RAnalMethod meth;
-		if (r_anal_class_method_get (anal, class_name, cur, &meth)) {
+		if (r_anal_class_method_get (anal, class_name, cur, &meth) == R_ANAL_CLASS_ERR_SUCCESS) {
 			pj_o (j);
 			pj_ks (j, "name", cur);
 			pj_kn (j, "addr", meth.addr);
