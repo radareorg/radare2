@@ -802,7 +802,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	if (shdr->sh_size < sizeof (Elf_(Verdef)) || shdr->sh_size < sizeof (Elf_(Verdaux))) {
 		return false;
 	}
-	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
+	Elf_(Verdef) *defs = calloc (shdr->sh_size, 1);
 	if (!defs) {
 		bprintf ("Cannot allocate memory (Check Elf_(Verdef))\n");
 		return false;
@@ -2590,7 +2590,7 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
+	if (!bin || !bin->phdr || !bin->ehdr.e_phnum || !bin->dyn_buf) {
 		return NULL;
 	}
 

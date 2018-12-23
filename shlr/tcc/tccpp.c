@@ -2914,7 +2914,7 @@ redo:
 				/* NOTE: non zero sa->t indicates VA_ARGS */
 				while ((parlevel > 0 ||
 					(tok != ')' &&
-					 (tok != ',' || sa->type.t))) &&
+					 (tok != ',' || (sa && sa->type.t)))) &&
 				       tok != -1) {
 					if (tok == '(') {
 						parlevel++;

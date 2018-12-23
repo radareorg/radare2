@@ -509,7 +509,6 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		actual_size += bb->size;
 	}
 	r_anal_fcn_set_size (NULL, fcn, state->bytes_consumed);
-	result = state->anal_ret_val;
 	r_list_free (nodes->cfg_node_addrs);
 	free (nodes);
 	//leak to avoid UAF is the easy solution otherwise a whole rewrite is needed

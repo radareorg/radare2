@@ -378,7 +378,6 @@ static size_t apprentice_r_magic_strength(const struct r_magic *m) {
 		val += 8 * MULT;
 		break;
 	default:
-		val = 0;
 		eprintf ("Bad type %d\n", m->type);
 		abort();
 	}
