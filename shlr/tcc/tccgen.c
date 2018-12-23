@@ -2434,7 +2434,6 @@ struct_field:
 			index = cur_index ? *cur_index : 0;
 			type = pointed_type (type);
 			c += index * type_size (type, &align);
-			}
 		} else {
 			f = cur_field ? *cur_field : NULL;
 			if (!f) {
