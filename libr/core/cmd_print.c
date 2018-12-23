@@ -4769,7 +4769,7 @@ static int cmd_print(void *data, const char *input) {
 								bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block1, bs1, l, 0, 1, formatted_json, NULL);
+							core, core->offset, block1, bs1 > bs ? bs1 : bs, l, 0, 1, formatted_json, NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
