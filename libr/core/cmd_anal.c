@@ -7603,7 +7603,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 
 
 static const char *help_msg_aC[] = {
-		"Usage:", "aC", "[TODO] [...]",
+		"Usage:", "aC", "anal classes commands",
 		"aCl[lj]", "", "list all classes",
 		"aC", " [classname]", "add class",
 		"aCv", " [classname] [addr]", "set vtable address for class",
@@ -7615,32 +7615,40 @@ static const char *help_msg_aC[] = {
 };
 
 static void cmd_anal_class_method(RCore *core, const char *input) {
+	RAnalClassAttrErr err = R_ANAL_CLASS_ATTR_ERR_SUCCESS;
 	switch (input[0]) {
-		case ' ': { // "aCm"
-			const char *str = r_str_trim_ro (input + 1);
-			if (!*str) {
-				eprintf ("No class name given.\n");
-				break;
-			}
-			char *cstr = strdup (str);
-			if (!cstr) {
-				break;
-			}
-			char *end = strchr (cstr, ' ');
-			if (!end) {
-				eprintf ("No method name given.\n");
-				free (cstr);
-				break;
-			}
-			*end = '\0';
-			char *name_str = end + 1;
-			end = strchr (name_str, ' ');
-			if (!end) {
+	case ' ': // "aCm"
+	case 'n': { // "aCmn"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			eprintf ("No class name given.\n");
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (!end) {
+			eprintf ("No method name given.\n");
+			free (cstr);
+			break;
+		}
+		*end = '\0';
+		char *name_str = end + 1;
+		end = strchr (name_str, ' ');
+		if (!end) {
+			if (input[0] == ' ') {
 				eprintf ("No offset given.\n");
-				free (cstr);
-				break;
+			} else if (input[1] == 'n') {
+				eprintf ("No new method name given.\n");
 			}
-			*end = '\0';
+			free (cstr);
+			break;
+		}
+		*end = '\0';
+
+		if (input[0] == ' ') {
 			char *addr_str = end + 1;
 			end = strchr (addr_str, ' ');
 			if (end) {
@@ -7651,77 +7659,36 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			meth.name = name_str;
 			meth.addr = r_num_get (core->num, addr_str);
 			meth.vtable_offset = -1;
-
 			if (end) {
 				meth.vtable_offset = (int)r_num_get (core->num, end + 1);
 			}
-
-			RAnalClassAttrErr err = r_anal_class_method_set (core->anal, cstr, &meth);
-			if (err == R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_CLASS) {
-				eprintf ("Class does not exist.\n");
-			}
-
-			free (cstr);
-			break;
-		}
-		case 'n': { // "aCmn"
-			const char *str = r_str_trim_ro (input + 1);
-			if (!*str) {
-				break;
-			}
-			char *cstr = strdup (str);
-			if (!cstr) {
-				break;
-			}
-			char *end = strchr (cstr, ' ');
-			if (!end) {
-				eprintf ("No method name given.\n");
-				free (cstr);
-				break;
-			}
-			*end = '\0';
-			char *name_str = end + 1;
-			end = strchr (name_str, ' ');
-			if (!end) {
-				eprintf ("No offset given.\n");
-				free (cstr);
-			}
-			*end = '\0';
+			err = r_anal_class_method_set (core->anal, cstr, &meth);
+		} else if (input[0] == 'n') {
 			char *new_name_str = end + 1;
 			end = strchr (new_name_str, ' ');
 			if (end) {
 				*end = '\0';
 			}
 
-
-			RAnalClass *cls = r_anal_class_get (core->anal, cstr);
-			if (!cls) {
-				eprintf ("Class not found.\n");
-				free (cstr);
-				break;
-			}
-
-			RAnalMethod *meth = r_anal_class_get_method (cls, name_str);
-			if (!meth) {
-				eprintf ("Method not found.\n");
-				free (cstr);
-				break;
-			}
-
-			new_name_str = strdup (new_name_str);
-			if (!new_name_str) {
-				free (cstr);
-				break;
-			}
-
-			if (meth->name) {
-				free (meth->name);
-			}
-			meth->name = new_name_str;
-
-			free (cstr);
-			break;
+			err = r_anal_class_method_rename (core->anal, cstr, name_str, new_name_str);
 		}
+		free (cstr);
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_aC);
+		break;
+	}
+
+	switch (err) {
+		case R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_CLASS:
+			eprintf("Class does not exist.\n");
+			break;
+		case R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_ATTR:
+			eprintf("Method does not exist.\n");
+			break;
+		default:
+			break;
 	}
 }
 
