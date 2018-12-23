@@ -4713,7 +4713,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
 	int ret, i, inc, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
-	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
 
@@ -4798,7 +4797,6 @@ toro:
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
 		if (r_cons_is_breaked ()) {
-			dorepeat = 0;
 			R_FREE (nbuf);
 			r_cons_break_pop ();
 			ds_free (ds);
@@ -5135,7 +5133,7 @@ toro:
 	r_cons_break_pop ();
 
 #if HASRETRY
-	if (!ds->cbytes && ds->lines < ds->l && dorepeat) {
+	if (!ds->cbytes && ds->lines < ds->l) {
 		ds->addr = ds->at + inc;
 	retry:
 		if (len < 4) {
