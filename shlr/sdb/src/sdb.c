@@ -377,7 +377,8 @@ SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	}
 	kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
 	if (found && kv) {
-		return *sdbkv_value (kv);
+		char *v = sdbkv_value (kv);
+		return v && *v;
 	}
 	if (s->fd == -1) {
 		return false;
