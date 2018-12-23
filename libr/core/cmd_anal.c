@@ -7608,7 +7608,9 @@ static const char *help_msg_aC[] = {
 		"aC", " [class name]", "add class",
 		"aC-", " [class name]", "delete class",
 		"aCv", " [class name] [addr]", "set vtable address for class",
+		"aCb", " [class name]", "list bases of class",
 		"aCb", " [class name] [base class name] ([offset])", "add base class",
+		"aCb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
 		"aCm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
 		"aCm-", " [class name] [method name]", "delete method",
 		"aCmn", " [class name] [method name] [new name]", "rename method",
@@ -7692,13 +7694,79 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 
 	switch (err) {
 		case R_ANAL_CLASS_ERR_NONEXISTENT_CLASS:
-			eprintf("Class does not exist.\n");
+			eprintf ("Class does not exist.\n");
 			break;
 		case R_ANAL_CLASS_ERR_NONEXISTENT_ATTR:
-			eprintf("Method does not exist.\n");
+			eprintf ("Method does not exist.\n");
 			break;
 		default:
 			break;
+	}
+}
+
+static void cmd_anal_class_base(RCore *core, const char *input) {
+	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
+	char c = input[0];
+	switch (c) {
+	case ' ':
+	case '-': {
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			eprintf ("No class name given.\n");
+			return;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+			end++;
+		}
+
+		if (!end || *end == '\0') {
+			if (c == ' ') {
+				r_anal_class_list_bases (core->anal, cstr);
+			} else /*if (c == '-')*/ {
+				eprintf ("No base id given.\n");
+			}
+			free (cstr);
+			break;
+		}
+
+		char *base_str = end;
+		end = strchr (base_str, ' ');
+		if (end) {
+			*end = '\0';
+		}
+
+		if (c == '-') {
+			err = r_anal_class_base_delete (core->anal, cstr, base_str);
+			break;
+		}
+
+		RAnalBaseClass base;
+		base.id = NULL;
+		base.offset = 0;
+		base.class_name = base_str;
+
+		if (end) {
+			base.offset = r_num_get (core->num, end + 1);
+		}
+
+		err = r_anal_class_base_set (core->anal, cstr, &base);
+		free (base.id);
+		free (cstr);
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_aC);
+		break;
+	}
+
+	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
+		eprintf ("Class does not exist.\n");
 	}
 }
 
@@ -7754,51 +7822,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		free (cstr);
 		break;
 	}
-	case 'b': { // "aCb"
-		const char *str = r_str_trim_ro (input + 1);
-		if (!*str) {
-			break;
-		}
-		char *cstr = strdup (str);
-		if (!cstr) {
-			break;
-		}
-		char *end = strchr (cstr, ' ');
-		if (!end) {
-			eprintf ("No base class given.\n");
-			free (cstr);
-			break;
-		}
-		*end = '\0';
-		char *base_str = end + 1;
-		end = strchr (base_str, ' ');
-		ut64 offset = 0;
-		if (end) {
-			*end = '\0';
-			offset = r_num_get (core->num, end + 1);
-		}
-
-		RAnalClass *cls = r_anal_class_get (core->anal, cstr);
-		if (!cls) {
-			eprintf ("Class not found.\n");
-			free (cstr);
-			break;
-		}
-		RAnalClass *bcls = r_anal_class_get (core->anal, base_str);
-		if (!bcls) {
-			eprintf ("Base class not found.\n");
-			free (cstr);
-			break;
-		}
-
-		RAnalBaseClass base;
-		// TODO base.cls = bcls;
-		base.offset = offset;
-		r_vector_push (&cls->base_classes, &base);
-
-		free (cstr);
+	case 'b': // "aCb"
+		cmd_anal_class_base (core, input + 1);
 		break;
-	}
 	case 'm': // "aCm"
 		cmd_anal_class_method (core, input + 1);
 		break;

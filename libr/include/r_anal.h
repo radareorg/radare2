@@ -1811,12 +1811,13 @@ R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_na
 R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name);
 
 R_API void r_anal_class_base_fini(RAnalBaseClass *base);
-R_API RAnalClassErr r_anal_class_base_add(RAnal *anal, const char *class_name, RAnalBaseClass *base);
 R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, const char *base_id, RAnalBaseClass *base);
 R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name);
+R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, RAnalBaseClass *base);
 R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name, const char *base_id);
 
 R_API void r_anal_class_list(RAnal *anal, int mode);
+R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
 
 
 /* plugin pointers */

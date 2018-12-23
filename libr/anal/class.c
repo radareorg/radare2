@@ -126,6 +126,9 @@ R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name) {
 
 
 static char *sanitize_id(const char *id) {
+	if (!id || !*id) {
+		return NULL;
+	}
 	size_t len = strlen (id);
 	char *ret = malloc (len + 1);
 	if (!ret) {
@@ -415,6 +418,7 @@ static void r_anal_class_unique_attr_id_raw(RAnal *anal, const char *class_name,
 	char *key = key_attr_type_attrs (class_name, attr_type_id (attr_type));
 	do {
 		snprintf (out, out_size, "%"PFMT64u, id);
+		id++;
 	} while (sdb_array_contains (anal->sdb_classes, key, out, 0));
 }
 
@@ -554,18 +558,6 @@ R_API void r_anal_class_base_fini(RAnalBaseClass *base) {
 	free (base->class_name);
 }
 
-R_API RAnalClassErr r_anal_class_base_add(RAnal *anal, const char *class_name, RAnalBaseClass *base) {
-	char *base_class_name_sanitized = sanitize_id (base->class_name);
-	if (!base_class_name_sanitized) {
-		return R_ANAL_CLASS_ERR_OTHER;
-	}
-
-	char *content = sdb_fmt ("%"PFMT64u SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
-	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, content, NULL, 0);
-	free (base_class_name_sanitized);
-	return err;
-}
-
 R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, const char *base_id, RAnalBaseClass *base) {
 	char *content = r_anal_class_get_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, base_id, false);
 	if (!content) {
@@ -634,6 +626,33 @@ R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const 
 	free (array);
 
 	return vec;
+}
+
+R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, RAnalBaseClass *base) {
+	char *base_class_name_sanitized = sanitize_id (base->class_name);
+	if (!base_class_name_sanitized) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+
+	if (!sdb_exists (anal->sdb_classes, key_class (base_class_name_sanitized))) {
+		free (base_class_name_sanitized);
+		return R_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
+	}
+
+	char *content = sdb_fmt ("%s" SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
+	RAnalClassErr err;
+	if (base->id) {
+		err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, base->id, content);
+	} else {
+		base->id = malloc(16);
+		if (base->id) {
+			err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, content, base->id, 16);
+		} else {
+			err = R_ANAL_CLASS_ERR_OTHER;
+		}
+	}
+	free (base_class_name_sanitized);
+	return err;
 }
 
 R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name, const char *base_id) {
@@ -853,4 +872,23 @@ R_API void r_anal_class_list(RAnal *anal, int mode) {
 		sdb_aforeach_next (class_name);
 	}
 	free (classes_array);
+}
+
+R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name) {
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		return;
+	}
+	if (!sdb_exists (anal->sdb_classes, key_class (class_name_sanitized))) {
+		return;
+	}
+	r_cons_printf ("%s:\n", class_name_sanitized);
+	free (class_name_sanitized);
+
+	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	RAnalBaseClass *base;
+	r_vector_foreach (bases, base) {
+		r_cons_printf ("  %4s %s @ +0x%"PFMT64x"\n", base->id, base->class_name, base->offset);
+	}
+	r_vector_free (bases);
 }
