@@ -7619,6 +7619,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		case ' ': { // "aCm"
 			const char *str = r_str_trim_ro (input + 1);
 			if (!*str) {
+				eprintf ("No class name given.\n");
 				break;
 			}
 			char *cstr = strdup (str);
@@ -7637,6 +7638,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			if (!end) {
 				eprintf ("No offset given.\n");
 				free (cstr);
+				break;
 			}
 			*end = '\0';
 			char *addr_str = end + 1;
@@ -7644,38 +7646,20 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			if (end) {
 				*end = '\0';
 			}
-			ut64 addr = r_num_get (core->num, addr_str);
 
-			int vtable_index = 0;
+			RAnalMethod meth;
+			meth.name = name_str;
+			meth.addr = r_num_get (core->num, addr_str);
+			meth.vtable_offset = -1;
+
 			if (end) {
-				vtable_index = (int)r_num_get (core->num, end + 1);
+				meth.vtable_offset = (int)r_num_get (core->num, end + 1);
 			}
 
-			RAnalClass *cls = r_anal_class_get (core->anal, cstr);
-			if (!cls) {
-				eprintf ("Class not found.\n");
-				free (cstr);
-				break;
+			RAnalClassAttrErr err = r_anal_class_method_set (core->anal, cstr, &meth);
+			if (err == R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_CLASS) {
+				eprintf ("Class does not exist.\n");
 			}
-
-			RAnalMethod *meth = r_anal_class_get_method (cls, name_str);
-			if (!meth) {
-				meth = r_anal_method_new ();
-				if (!meth) {
-					free (cstr);
-					break;
-				}
-				r_pvector_push (&cls->methods, meth);
-				meth->name = strdup (name_str);
-				if (!meth->name) {
-					free (meth);
-					free (cstr);
-					break;
-				}
-			}
-
-			meth->addr = addr;
-			meth->vtable_offset = vtable_index;
 
 			free (cstr);
 			break;
