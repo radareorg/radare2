@@ -280,34 +280,34 @@ static char *r_anal_class_get_attr(RAnal *anal, const char *class_name, RAnalCla
 }
 
 // all ids must be sanitized
-static RAnalClassAttrErr r_anal_class_set_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, const char *content) {
+static RAnalClassErr r_anal_class_set_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, const char *content) {
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	if (!sdb_exists (anal->sdb_classes, key_class (class_name))) {
-		return R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_CLASS;
+		return R_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
 	}
 
 	sdb_array_add (anal->sdb_classes, key_attr_types (class_name), attr_type_str, 0);
 	sdb_array_add (anal->sdb_classes, key_attr_type_attrs (class_name, attr_type_str), attr_id, 0);
 	sdb_set (anal->sdb_classes, key_attr_content (class_name, attr_type_str, attr_id), content, 0);
 
-	return R_ANAL_CLASS_ATTR_ERR_SUCCESS;
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
 // ids will be sanitized automatically
-static RAnalClassAttrErr r_anal_class_set_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, const char *content) {
+static RAnalClassErr r_anal_class_set_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, const char *content) {
 	char *class_name_sanitized = sanitize_id (class_name);
 	if (!class_name_sanitized) {
-		return R_ANAL_CLASS_ATTR_ERR_OTHER;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 
 	char *attr_id_sanitized = sanitize_id (attr_id);
 	if (!attr_id_sanitized) {
 		free (class_name_sanitized);
-		return R_ANAL_CLASS_ATTR_ERR_OTHER;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 
-	RAnalClassAttrErr err = r_anal_class_set_attr_raw (anal, class_name_sanitized, attr_type, attr_id_sanitized, content);
+	RAnalClassErr err = r_anal_class_set_attr_raw (anal, class_name_sanitized, attr_type, attr_id_sanitized, content);
 
 	free (class_name_sanitized);
 	free (attr_id_sanitized);
@@ -315,7 +315,7 @@ static RAnalClassAttrErr r_anal_class_set_attr(RAnal *anal, const char *class_na
 	return err;
 }
 
-static void r_anal_class_delete_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id) {
+static RAnalClassErr r_anal_class_delete_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id) {
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	char *key = key_attr_content (class_name, attr_type_str, attr_id);
@@ -328,36 +328,39 @@ static void r_anal_class_delete_attr_raw(RAnal *anal, const char *class_name, RA
 	if (!sdb_exists (anal->sdb_classes, key)) {
 		sdb_array_remove (anal->sdb_classes, key_attr_types (class_name), attr_type_str, 0);
 	}
+
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
-static void r_anal_class_delete_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id) {
+static RAnalClassErr r_anal_class_delete_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id) {
 	char *class_name_sanitized = sanitize_id (class_name);
 	if (!class_name_sanitized) {
-		return;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 
 	char *attr_id_sanitized = sanitize_id (attr_id);
 	if (!attr_id_sanitized) {
 		free (class_name_sanitized);
-		return;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 
-	r_anal_class_delete_attr_raw (anal, class_name_sanitized, attr_type, attr_id_sanitized);
+	RAnalClassErr err = r_anal_class_delete_attr_raw (anal, class_name_sanitized, attr_type, attr_id_sanitized);
 
 	free (class_name_sanitized);
 	free (attr_id_sanitized);
+	return err;
 }
 
-static RAnalClassAttrErr r_anal_class_rename_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id_old, const char *attr_id_new) {
+static RAnalClassErr r_anal_class_rename_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id_old, const char *attr_id_new) {
 	const char *attr_type_str = attr_type_id (attr_type);
 	char *key = key_attr_type_attrs (class_name, attr_type_str);
 
 	if (sdb_array_contains (anal->sdb_classes, key, attr_id_new, 0)) {
-		return R_ANAL_CLASS_ATTR_ERR_CLASH;
+		return R_ANAL_CLASS_ERR_CLASH;
 	}
 
 	if (!sdb_array_remove (anal->sdb_classes, key, attr_id_old, 0)) {
-		return R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_ATTR;
+		return R_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	sdb_array_add (anal->sdb_classes, key, attr_id_new, 0);
@@ -380,26 +383,26 @@ static RAnalClassAttrErr r_anal_class_rename_attr_raw(RAnal *anal, const char *c
 		free (content);
 	}
 
-	return R_ANAL_CLASS_ATTR_ERR_SUCCESS;
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
-static RAnalClassAttrErr r_anal_class_rename_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id_old, const char *attr_id_new) {
+static RAnalClassErr r_anal_class_rename_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id_old, const char *attr_id_new) {
 	char *class_name_sanitized = sanitize_id (class_name);
 	if (!class_name_sanitized) {
-		return R_ANAL_CLASS_ATTR_ERR_OTHER;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	char *attr_id_old_sanitized = sanitize_id (attr_id_old);
 	if (!attr_id_old_sanitized) {
 		free (class_name_sanitized);
-		return R_ANAL_CLASS_ATTR_ERR_OTHER;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	char *attr_id_new_sanitized = sanitize_id (attr_id_new);
 	if (!attr_id_new_sanitized) {
 		free (class_name_sanitized);
 		free (attr_id_old_sanitized);
-		return R_ANAL_CLASS_ATTR_ERR_OTHER;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	RAnalClassAttrErr ret = r_anal_class_rename_attr_raw (anal, class_name_sanitized, attr_type, attr_id_old_sanitized, attr_id_new_sanitized);
+	RAnalClassErr ret = r_anal_class_rename_attr_raw (anal, class_name_sanitized, attr_type, attr_id_old_sanitized, attr_id_new_sanitized);
 	free (class_name_sanitized);
 	free (attr_id_old_sanitized);
 	free (attr_id_new_sanitized);
@@ -414,12 +417,12 @@ R_API void r_anal_class_method_fini(RAnalMethod *meth) {
 	free (meth->name);
 }
 
-// if the method exists: store it in *meth and return true
-// else return false, contents of *meth are undefined
-R_API bool r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth) {
+// if the method exists: store it in *meth and return R_ANAL_CLASS_ERR_SUCCESS
+// else return the error, contents of *meth are undefined
+R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth) {
 	char *content = r_anal_class_get_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth_name, false);
 	if (!content) {
-		return false;
+		return R_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	char *cur = content;
@@ -431,7 +434,7 @@ R_API bool r_anal_class_method_get(RAnal *anal, const char *class_name, const ch
 	cur = next;
 	if (!cur) {
 		free (content);
-		return false;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	sdb_anext (cur, NULL);
 
@@ -441,28 +444,23 @@ R_API bool r_anal_class_method_get(RAnal *anal, const char *class_name, const ch
 
 	meth->name = sanitize_id (meth_name);
 	if (!meth->name) {
-		return false;
+		return R_ANAL_CLASS_ERR_OTHER;
 	}
 
-	return true;
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
-R_API RAnalClassAttrErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
+R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
 	char *content = sdb_fmt ("%"PFMT64u"%c%d", meth->addr, SDB_RS, meth->vtable_offset);
 	return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
 }
 
-R_API RAnalClassAttrErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
+R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
 	return r_anal_class_rename_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
-	/*if(ret == R_ANAL_CLASS_ATTR_ERR_CLASH) {
-		eprintf("A method named %s already exists!\n", new_meth_name);
-	} else if (ret == R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_ATTR) {
-		eprintf("No method called %s exists.\n", old_meth_name);
-	}*/
 }
 
-R_API void r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name) {
-	r_anal_class_delete_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth_name);
+R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name) {
+	return r_anal_class_delete_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth_name);
 }
 
 
@@ -664,154 +662,3 @@ R_API void r_anal_class_list(RAnal *anal, int mode) {
 	}
 	free (classes_array);
 }
-
-
-#if R_ANAL_CLASSES_SDB
-
-// escape src and write into dst
-// dst must be at least of size strlen(src) * 2 + 1
-static size_t escape_id_sdb_into(char *dst, const char *src) {
-	if (!src || !dst) {
-		return 0;
-	}
-	char *p = dst;
-	char c;
-	for (; c = *src, c; src++) {
-		switch(*src) {
-			case '\\':
-				p[0] = '\\';
-				p[1] = '\\';
-				p += 2;
-			case '.':
-				p[0] = '\\';
-				p[1] = '.';
-				p += 2;
-			default:
-				*p = c;
-				p++;
-		}
-	}
-	*p = '\0';
-	return p - dst;
-}
-
-static char *escape_id_sdb (const char *src) {
-	if (!src) {
-		return NULL;
-	}
-	char *r = malloc (strlen(src) * 2 + 1);
-	if (!r) {
-		return NULL;
-	}
-	escape_id_sdb_into (r, src);
-	return r;
-}
-
-static char *id_key_sdb(const char *pre, const char *id, const char *post) {
-	size_t pre_len = pre ? strlen(pre) : 0;
-	size_t post_len = post ? strlen(post) : 0;
-	size_t id_len = id ? strlen(id) : 0;
-	char *r = malloc (pre_len + id_len * 2 + post_len + 1);
-	if (!r) {
-		return NULL;
-	}
-	char *p = r;
-	if (pre) {
-		memcpy (p, pre, pre_len);
-		p += pre_len;
-	}
-	if (id) {
-		p += escape_id_sdb_into (p, id);
-	}
-	if (post) {
-		memcpy (p, post, post_len);
-		p += post_len;
-	}
-	*p = '\0';
-	return r;
-}
-
-static const char *class_key(const char *name) {
-	char *id = escape_id_sdb (name);
-	if (!id) {
-		return NULL;
-	}
-	const char *r = sdb_fmt ("class.%s", name);
-	free (id);
-	return r;
-}
-
-R_API void r_anal_class_set(RAnal *anal, RAnalClass *class) {
-	char *name_escaped = r_str_escape (class->name);
-	if (!name_escaped) {
-		return;
-	}
-
-	r_cons_push ();
-	r_cons_printf ("{name:\"%s\"", name_escaped);
-	free (name_escaped);
-
-	if (class->addr != UT64_MAX) {
-		r_cons_printf (",addr:%llu", class->addr);
-	}
-
-	if (class->vtable_addr != UT64_MAX) {
-		r_cons_printf (",vtable_addr:%llu", class->addr);
-	}
-
-	r_cons_print ("}");
-
-	sdb_set (anal->sdb_classes, class_key (class->name), r_cons_get_buffer (), 0);
-	r_cons_pop ();
-}
-
-static ut64 json_get_ut64 (const char *json, const char *path, ut64 def) {
-	char *v = sdb_json_get_str (json, path); // TODO: v does not have to be strduped
-	if (!v) {
-		return def;
-	}
-	ut64 r = sdb_atoi (v);
-	free (v);
-	return r;
-}
-
-R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
-	const char *json = sdb_const_get (anal->sdb_classes, class_key (name), 0);
-	if (!json) {
-		return NULL;
-	}
-
-	RAnalClass *cls = r_anal_class_new (NULL);
-	if (!cls) {
-		return NULL;
-	}
-
-	cls->name = sdb_json_get_str (json, "name");
-	cls->addr = json_get_ut64 (json, "addr", UT64_MAX);
-	cls->vtable_addr = json_get_ut64 (json, "vtable_addr", UT64_MAX);
-
-	return cls;
-}
-
-R_API bool r_anal_class_exists(RAnal *anal, const char *name) {
-	return sdb_exists (anal->sdb_classes, class_key (name));
-}
-
-
-R_API bool r_anal_class_rename(RAnal *anal, const char *old, const char *new_name) {
-	if (!old || !new_name) {
-		return false;
-	}
-
-	RAnalClass *cls = r_anal_class_get (anal, old);
-	if (!cls) {
-		return NULL;
-	}
-
-	free (cls->name);
-	cls->name = strdup (new_name);
-	r_anal_class_set (anal, cls);
-	return true;
-}
-
-#endif

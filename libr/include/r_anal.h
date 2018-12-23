@@ -1797,18 +1797,18 @@ R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
 
 typedef enum {
-	R_ANAL_CLASS_ATTR_ERR_SUCCESS = 0,
-	R_ANAL_CLASS_ATTR_ERR_CLASH,
-	R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_ATTR,
-	R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_CLASS,
-	R_ANAL_CLASS_ATTR_ERR_OTHER
-} RAnalClassAttrErr;
+	R_ANAL_CLASS_ERR_SUCCESS = 0,
+	R_ANAL_CLASS_ERR_CLASH,
+	R_ANAL_CLASS_ERR_NONEXISTENT_ATTR,
+	R_ANAL_CLASS_ERR_NONEXISTENT_CLASS,
+	R_ANAL_CLASS_ERR_OTHER
+} RAnalClassErr;
 
 R_API void r_anal_class_method_fini(RAnalMethod *meth);
-R_API bool r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);
-R_API RAnalClassAttrErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth);
-R_API RAnalClassAttrErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name);
-R_API void r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name);
+R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);
+R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth);
+R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name);
+R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name);
 
 R_API void r_anal_class_list(RAnal *anal, int mode);
 

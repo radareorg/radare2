@@ -7605,19 +7605,23 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 static const char *help_msg_aC[] = {
 		"Usage:", "aC", "anal classes commands",
 		"aCl[lj]", "", "list all classes",
-		"aC", " [classname]", "add class",
-		"aCv", " [classname] [addr]", "set vtable address for class",
-		"aCb", " [classname] [base classname] ([offset])", "add base class",
-		"aCm", " [classname] [method name] [offset] ([vtable offset])", "add/edit method",
-		"aCmn", " [classname] [method name] [new name]", "rename method",
+		"aC", " [class name]", "add class",
+		"aC-", " [class name]", "delete class",
+		"aCv", " [class name] [addr]", "set vtable address for class",
+		"aCb", " [class name] [base class name] ([offset])", "add base class",
+		"aCm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
+		"aCm-", " [class name] [method name]", "delete method",
+		"aCmn", " [class name] [method name] [new name]", "rename method",
 		"aC?", "", "show this help",
 		NULL
 };
 
 static void cmd_anal_class_method(RCore *core, const char *input) {
-	RAnalClassAttrErr err = R_ANAL_CLASS_ATTR_ERR_SUCCESS;
-	switch (input[0]) {
+	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
+	char c = input[0];
+	switch (c) {
 	case ' ': // "aCm"
+	case '-': // "aCm-"
 	case 'n': { // "aCmn"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
@@ -7636,19 +7640,22 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		}
 		*end = '\0';
 		char *name_str = end + 1;
-		end = strchr (name_str, ' ');
-		if (!end) {
-			if (input[0] == ' ') {
-				eprintf ("No offset given.\n");
-			} else if (input[1] == 'n') {
-				eprintf ("No new method name given.\n");
-			}
-			free (cstr);
-			break;
-		}
-		*end = '\0';
 
-		if (input[0] == ' ') {
+		if (c == ' ' || c == 'n') {
+			end = strchr (name_str, ' ');
+			if (!end) {
+				if (c == ' ') {
+					eprintf ("No offset given.\n");
+				} else if (c == 'n') {
+					eprintf ("No new method name given.\n");
+				}
+				free (cstr);
+				break;
+			}
+			*end = '\0';
+		}
+
+		if (c == ' ') {
 			char *addr_str = end + 1;
 			end = strchr (addr_str, ' ');
 			if (end) {
@@ -7663,7 +7670,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 				meth.vtable_offset = (int)r_num_get (core->num, end + 1);
 			}
 			err = r_anal_class_method_set (core->anal, cstr, &meth);
-		} else if (input[0] == 'n') {
+		} else if (c == 'n') {
 			char *new_name_str = end + 1;
 			end = strchr (new_name_str, ' ');
 			if (end) {
@@ -7671,7 +7678,10 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			}
 
 			err = r_anal_class_method_rename (core->anal, cstr, name_str, new_name_str);
+		} else if (c == '-') {
+			err = r_anal_class_method_delete (core->anal, cstr, name_str);
 		}
+
 		free (cstr);
 		break;
 	}
@@ -7681,10 +7691,10 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	}
 
 	switch (err) {
-		case R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_CLASS:
+		case R_ANAL_CLASS_ERR_NONEXISTENT_CLASS:
 			eprintf("Class does not exist.\n");
 			break;
-		case R_ANAL_CLASS_ATTR_ERR_NONEXISTENT_ATTR:
+		case R_ANAL_CLASS_ERR_NONEXISTENT_ATTR:
 			eprintf("Method does not exist.\n");
 			break;
 		default:
@@ -7697,7 +7707,8 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'l': // "aCl"
 		r_anal_class_list (core->anal, input[1]);
 		break;
-	case ' ': { // "aC"
+	case ' ': // "aC"
+	case '-': { // "aC-"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			break;
@@ -7710,7 +7721,11 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		if (end) {
 			*end = '\0';
 		}
-		r_anal_class_create (core->anal, cstr);
+		if (input[0] == '-') {
+			r_anal_class_delete (core->anal, cstr);
+		} else {
+			r_anal_class_create (core->anal, cstr);
+		}
 		free (cstr);
 		break;
 	}
