@@ -66,10 +66,10 @@ R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls) {
 		size_t j;
 		for (j = 0; j < cls->base_classes.len; j++) {
 			RAnalBaseClass *base = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, j);
-			if (base->cls == cls) {
+			/* TODO if (base->cls == cls) {
 				r_vector_remove_at (&cls->base_classes, j, NULL);
 				j++;
-			}
+			}*/
 		}
 	}
 	if (index >= 0) {
@@ -410,6 +410,54 @@ static RAnalClassErr r_anal_class_rename_attr(RAnal *anal, const char *class_nam
 	return ret;
 }
 
+static void r_anal_class_unique_attr_id_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, char *out, size_t out_size) {
+	ut64 id = 0;
+	char *key = key_attr_type_attrs (class_name, attr_type_id (attr_type));
+	do {
+		snprintf (out, out_size, "%"PFMT64u, id);
+	} while (sdb_array_contains (anal->sdb_classes, key, out, 0));
+}
+
+#if 0
+static RAnalClassErr r_anal_class_unique_attr_id(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, char *out, size_t out_size) {
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+	r_anal_class_unique_attr_id_raw (anal, class_name_sanitized, attr_type, out, out_size);
+	free (class_name_sanitized);
+	return R_ANAL_CLASS_ERR_SUCCESS;
+}
+#endif
+
+static RAnalClassErr r_anal_class_add_attr_unique_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
+	char attr_id[16];
+	r_anal_class_unique_attr_id_raw (anal, class_name, attr_type, attr_id, sizeof(attr_id));
+
+	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, attr_type, attr_id, content);
+	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
+		return err;
+	}
+
+	if (attr_id_out) {
+		r_str_ncpy (attr_id_out, attr_id, attr_id_out_size);
+	}
+
+	return R_ANAL_CLASS_ERR_SUCCESS;
+}
+
+static RAnalClassErr r_anal_class_add_attr_unique(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+
+	RAnalClassErr err = r_anal_class_add_attr_unique_raw (anal, class_name_sanitized, attr_type, content, attr_id_out, attr_id_out_size);
+
+	free (class_name_sanitized);
+	return err;
+}
+
 
 // ---- METHODS ----
 // Format: addr,vtable_offset
@@ -451,6 +499,40 @@ R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name,
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
+static void r_anal_class_method_fini_proxy(void *e, void *user) {
+	(void)user;
+	RAnalMethod *meth = e;
+	r_anal_class_method_fini (meth);
+}
+
+R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const char *class_name) {
+	RVector *vec = r_vector_new (sizeof(RAnalMethod), r_anal_class_method_fini_proxy, NULL);
+	if (!vec) {
+		return NULL;
+	}
+
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		r_vector_free (vec);
+		return NULL;
+	}
+	char *array = sdb_get (anal->sdb_classes, key_attr_type_attrs (class_name_sanitized, attr_type_id (R_ANAL_CLASS_ATTR_TYPE_METHOD)), 0);
+	free (class_name_sanitized);
+
+	r_vector_reserve (vec, (size_t) sdb_alen (array));
+	char *cur;
+	sdb_aforeach (cur, array) {
+		RAnalMethod meth;
+		if (r_anal_class_method_get (anal, class_name, cur, &meth) == R_ANAL_CLASS_ERR_SUCCESS) {
+			r_vector_push (vec, &meth);
+		}
+		sdb_aforeach_next (cur);
+	}
+	free (array);
+
+	return vec;
+}
+
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
 	char *content = sdb_fmt ("%"PFMT64u"%c%d", meth->addr, SDB_RS, meth->vtable_offset);
 	return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
@@ -465,6 +547,100 @@ R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_na
 }
 
 
+// ---- BASE ----
+
+R_API void r_anal_class_base_fini(RAnalBaseClass *base) {
+	free (base->id);
+	free (base->class_name);
+}
+
+R_API RAnalClassErr r_anal_class_base_add(RAnal *anal, const char *class_name, RAnalBaseClass *base) {
+	char *base_class_name_sanitized = sanitize_id (base->class_name);
+	if (!base_class_name_sanitized) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+
+	char *content = sdb_fmt ("%"PFMT64u SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
+	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, content, NULL, 0);
+	free (base_class_name_sanitized);
+	return err;
+}
+
+R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, const char *base_id, RAnalBaseClass *base) {
+	char *content = r_anal_class_get_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, base_id, false);
+	if (!content) {
+		return R_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
+	}
+
+	char *cur = content;
+	char *next;
+	sdb_anext (cur, &next);
+
+	base->class_name = strdup (cur);
+	if (!base->class_name) {
+		free (content);
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+
+	cur = next;
+	if (!cur) {
+		free (content);
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+	sdb_anext (cur, NULL);
+
+	base->offset = r_num_math (NULL, cur);
+
+	free (content);
+
+	base->id = sanitize_id (base_id);
+	if (!base->id) {
+		free (base->class_name);
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+
+	return R_ANAL_CLASS_ERR_SUCCESS;
+}
+
+static void r_anal_class_base_fini_proxy(void *e, void *user) {
+	(void)user;
+	RAnalBaseClass *base = e;
+	r_anal_class_base_fini (base);
+}
+
+R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name) {
+	RVector *vec = r_vector_new (sizeof(RAnalBaseClass), r_anal_class_base_fini_proxy, NULL);
+	if (!vec) {
+		return NULL;
+	}
+
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		r_vector_free (vec);
+		return NULL;
+	}
+	char *array = sdb_get (anal->sdb_classes, key_attr_type_attrs (class_name_sanitized, attr_type_id (R_ANAL_CLASS_ATTR_TYPE_BASE)), 0);
+	free (class_name_sanitized);
+
+	r_vector_reserve (vec, (size_t) sdb_alen (array));
+	char *cur;
+	sdb_aforeach (cur, array) {
+		RAnalBaseClass base;
+		if (r_anal_class_base_get (anal, class_name, cur, &base) == R_ANAL_CLASS_ERR_SUCCESS) {
+			r_vector_push (vec, &base);
+		}
+		sdb_aforeach_next (cur);
+	}
+	free (array);
+
+	return vec;
+}
+
+R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name, const char *base_id) {
+	return r_anal_class_delete_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, base_id);
+}
+
+
 
 // ---- PRINT ----
 
@@ -473,26 +649,41 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, int mode) {
 	bool lng = mode == 'l';
 	bool cmd = mode == '*'; // TODO
 
-	r_cons_printf ("%s\n", class_name);
+	r_cons_print (class_name);
+
+	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	if (bases) {
+		RAnalBaseClass *base;
+		bool first = true;
+		r_vector_foreach (bases, base) {
+			if (first) {
+				r_cons_print (": ");
+				first = false;
+			} else {
+				r_cons_print (", ");
+			}
+			r_cons_print (base->class_name);
+		}
+		r_vector_free (bases);
+	}
+
+	r_cons_print ("\n");
+
 
 	if (lng) {
-		char *array = sdb_get (anal->sdb_classes,
-							   key_attr_type_attrs (class_name, attr_type_id (R_ANAL_CLASS_ATTR_TYPE_METHOD)), 0);
-		char *cur;
-		sdb_aforeach (cur, array) {
-			RAnalMethod meth;
-			if (r_anal_class_method_get (anal, class_name, cur, &meth) == R_ANAL_CLASS_ERR_SUCCESS) {
-				r_cons_printf ("  %s @ 0x%"PFMT64x, meth.name, meth.addr);
-				if (meth.vtable_offset >= 0) {
-					r_cons_printf (" (vtable + %"PFMT64u")\n", (ut64)meth.vtable_offset);
+		RVector *methods = r_anal_class_method_get_all (anal, class_name);
+		if (methods) {
+			RAnalMethod *meth;
+			r_vector_foreach (methods, meth) {
+				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
+				if (meth->vtable_offset >= 0) {
+					r_cons_printf (" (vtable + 0x%"PFMT64x")\n", (ut64)meth->vtable_offset);
 				} else {
 					r_cons_print ("\n");
 				}
 			}
-			r_anal_class_method_fini (&meth);
-			sdb_aforeach_next (cur);
+			r_vector_free (methods);
 		}
-		free (array);
 	}
 
 

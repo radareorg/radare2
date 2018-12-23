@@ -7792,7 +7792,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		}
 
 		RAnalBaseClass base;
-		base.cls = bcls;
+		// TODO base.cls = bcls;
 		base.offset = offset;
 		r_vector_push (&cls->base_classes, &base);
 

@@ -853,7 +853,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls,
 
 		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
 		base_cls_info->offset = (ut64)base_desc->bcd->where.mdisp;
-		base_cls_info->cls = base_cls;
+		// TODO base_cls_info->cls = base_cls;
 	}
 }
 
