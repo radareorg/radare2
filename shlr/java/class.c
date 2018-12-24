@@ -6711,7 +6711,6 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 		// (ut16) read and set const_value.const_value_idx
 		element_value->value.const_value.const_value_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		element_value->size += 2;
-		offset += 2;
 		// look-up, deep copy, and set const_value.const_value_cp_obj
 		element_value->value.const_value.const_value_cp_obj = r_bin_java_clone_cp_idx (R_BIN_JAVA_GLOBAL_BIN, element_value->value.const_value.const_value_idx);
 		break;

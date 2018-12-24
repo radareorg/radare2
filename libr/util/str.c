@@ -2198,8 +2198,6 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 				c |= d & 0x03FF;
 				c += 0x10000;
 			} else {
-				len_dst = dst - outstart;
-				len_src = processed - src;
 				return -2;
 			}
 		}
