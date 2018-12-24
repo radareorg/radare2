@@ -2431,7 +2431,7 @@ struct_field:
 		}
 	} else {
 		if (type->t & VT_ARRAY) {
-			index = *cur_index;
+			index = cur_index ? *cur_index : 0;
 			type = pointed_type (type);
 			c += index * type_size (type, &align);
 		} else {

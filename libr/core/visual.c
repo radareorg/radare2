@@ -3617,7 +3617,7 @@ dodo:
 		}
 		debug = r_config_get_i (core->config, "cfg.debug");
 		flags |= R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
-		r_print_set_flags (core->print, core->print->flags);
+		r_print_set_flags (core->print, flags);
 		scrseek = r_num_math (core->num,
 			r_config_get (core->config, "scr.seek"));
 		if (scrseek != 0LL) {

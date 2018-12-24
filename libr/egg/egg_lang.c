@@ -502,7 +502,6 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 					dotrim = 3;
 					break;
 				default:
-					dotrim = 0;
 					break;
 				}
 				if (dotrim) {
