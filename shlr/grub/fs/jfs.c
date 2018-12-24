@@ -523,7 +523,6 @@ grub_jfs_getent (struct grub_jfs_diropen *diro)
     }
 
   leaf = &diro->leaf[(int) diro->sorted[diro->index]];
-  next_leaf = &diro->next_leaf[diro->index];
 
   len = leaf->len;
   if (!len)
