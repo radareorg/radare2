@@ -1527,23 +1527,21 @@ R_API int r_core_visual_comments (RCore *core) {
 	char *str;
 	char cmd[512], *p = NULL;
 	int ch, option = 0;
-	int format = 0, found = 0;
+	int format = 0, i = 0;
 	ut64 addr, from = 0, size = 0;
 
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
-		found = 0;
 		RList *items = r_list_newf (free);
 		RAnalMetaItem *item;
 		RListIter *iter;
 		r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, meta_enumerate_cb, items, UT64_MAX);
-		int i = 0;
+		i = 0;
 		r_list_foreach (items, iter, item) {
 			str = item->str;
 			addr = item->from;
 			if (option==i) {
-				found = 1;
 				from = addr;
 				size = 1; // XXX: remove this thing size for comments is useless d->size;
 				free (p);
@@ -1554,9 +1552,8 @@ R_API int r_core_visual_comments (RCore *core) {
 				free (str);
 			}
 			i ++;
-			found = true;
 		}
-		if (!found) {
+		if (!i) {
 			if (--option < 0) {
 				r_cons_any_key ("No comments");
 				break;
