@@ -3426,29 +3426,29 @@ repeat:
 		handleTabKey (core, true);
 		break;
 	case 'M':
-		{
-			char *name = r_cons_input ("Name: ");
-			char *cmd = r_cons_input ("Command: ");
-			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
-			if (name && *name && cmd && *cmd) {
-				createNewPanel (core, name, cmd, caching);
-			}
-			free (name);
-			free (cmd);
+	{
+		char *name = r_cons_input ("Name: ");
+		char *cmd = r_cons_input ("Command: ");
+		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		if (name && *name && cmd && *cmd) {
+			createNewPanel (core, name, cmd, caching);
 		}
-		break;
+		free (name);
+		free (cmd);
+	}
+	break;
 	case 'e':
-		{
-			char *new_name = r_cons_input ("New name: ");
-			char *new_cmd = r_cons_input ("New command: ");
-			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
-			if (new_name && *new_name && new_cmd && *new_cmd) {
-				replaceCmd (panels, new_name, new_cmd, caching);
-			}
-			free (new_name);
-			free (new_cmd);
+	{
+		char *new_name = r_cons_input ("New name: ");
+		char *new_cmd = r_cons_input ("New command: ");
+		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		if (new_name && *new_name && new_cmd && *new_cmd) {
+			replaceCmd (panels, new_name, new_cmd, caching);
 		}
-		break;
+		free (new_name);
+		free (new_cmd);
+	}
+	break;
 	case 'm':
 		panels->curnode = panels->menu_pos;
 		break;
