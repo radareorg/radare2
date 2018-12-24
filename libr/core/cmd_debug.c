@@ -2597,13 +2597,12 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			return;
 		}
 
-		int size = atoi (str + 1);
+		size = atoi (str + 1);
 		if (size) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, str[0], use_color);
 		} else {
 			char *comma = strchr (str + 1, ',');
 			if (comma) {
-				size = 32; // non-zero
 				char *args = strdup (str + 1);
 				char argc = r_str_split (args, ',');
 				for (i = 0; i < argc; i++) {
@@ -2611,7 +2610,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 				free (args);
 			} else {
-				size = showreg (core, str + 1);
+				showreg (core, str + 1);
 			}
 		}
 	}
