@@ -387,6 +387,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	int dir = 0, wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
 	int pos = -1, max_level = -1;
 	int middle = opts & R_ANAL_REFLINE_TYPE_MIDDLE;
+	int middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
 	char *str = NULL;
 
 	if (!c || !anal || !anal->reflines) {
@@ -414,7 +415,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_buf_free (b);
 			return NULL;
 		}
-		if ((ref->from == addr && !middle) || ref->to == addr) {
+		if ((ref->from == addr && !middle_after) || ref->to == addr) {
 			const char *corner = get_corner_char (ref, addr, middle);
 			const char ch = ref->from == addr ? '=' : '-';
 
