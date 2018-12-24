@@ -2962,7 +2962,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 			while (!p->last) {
 				if (p->offset && d->offset == p->offset) {
 					p->in_shdr = true;
-					if (*p->name && strcmp (d->name, p->name)) {
+					if (*p->name && *d->name && (r_str_startswith (d->name, p->name) || r_str_startswith (d->name, "$"))) {
 						strcpy (d->name, p->name);
 					}
 				}
