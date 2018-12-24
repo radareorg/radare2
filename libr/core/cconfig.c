@@ -264,14 +264,14 @@ static int cb_analmaxrefs(void *user, void *data) {
 	return true;
 }
 
-static int cb_analnopskip (void *user, void *data) {
+static int cb_analnopskip(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.nopskip = node->i_value;
 	return true;
 }
 
-static int cb_analhpskip (void *user, void *data) {
+static int cb_analhpskip(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.hpskip = node->i_value;

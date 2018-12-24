@@ -153,6 +153,17 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	r_str_replace_char (s, ')', ' ');
 	*out = 0;
 	*w0=*w1=*w2=*w3=0;
+
+	if (!strncmp (s, "jalr", 4) && !strstr (s, ",")) {
+		char opstr[32];
+		const char *arg = strchr (s, ' ');
+		if (arg) {
+			snprintf (opstr, sizeof (opstr), "jalr ra ra %s", arg + 1);
+			free (s);
+			s = strdup (opstr);
+		}
+	}
+
 	sscanf (s, "%31s", w0);
 	if (*w0) {
 		for (i = 0; ops[i].name; i++) {
