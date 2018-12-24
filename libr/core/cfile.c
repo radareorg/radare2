@@ -594,7 +594,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+		if (desc) {
+			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+		}
 		if (binfile) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 					r_config_get (r->config, "asm.arch"),

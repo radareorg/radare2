@@ -786,7 +786,6 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 					r_buf_read_at (bin->b, data + idx.offset + 0, p, length);
 					ut32 *words = (ut32*)p;
 					eprintf ("Magic: %x\n", words[0]);
-					words += 2;
 					eprintf ("wtf DUMP @%d!%d\n",
 						(int)data + idx.offset + 8, (int)length);
 					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n");

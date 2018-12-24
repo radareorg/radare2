@@ -177,7 +177,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
 	ut64 len, check_len;
-	int i, j, k, tsize, m = 1;
+	int i, j, k, tsize = 2, m = 1;
 	bool bigendian = true;
 	r_return_val_if_fail (b && !b->empty, 0);
 
@@ -196,7 +196,6 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	if (addr == UT64_MAX || addr > effective_size) {
 		return -1;
 	}
-	tsize = 2;
 	for (i = len = 0; i < n; i++) {
 		for (j = 0; fmt[j]; j++) {
 			switch (fmt[j]) {

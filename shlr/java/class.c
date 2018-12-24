@@ -558,7 +558,6 @@ R_API char *r_bin_java_unmangle_method(const char *flags, const char *name, cons
 		ut32 offset = 0;
 		params_len += 1;
 		p_val_str = malloc (params_len);
-		params_idx = 0;
 		r_list_foreach (the_list, iter, str) {
 			if (offset != 0) {
 				offset += snprintf (p_val_str + offset, params_len - offset, ", %s", str);
@@ -1536,6 +1535,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			adv += attr->size;
 			if (adv + offset >= len) {
 				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
+				r_bin_java_fmtype_free (field);
 				return NULL;
 			}
 		}
@@ -4156,7 +4156,7 @@ R_API RBinJavaStackMapFrameMetas *r_bin_java_determine_stack_frame_type(ut8 tag)
 	ut8 type_value = 0;
 	if (tag < 64) {
 		type_value = R_BIN_JAVA_STACK_FRAME_SAME;
-	} else if (63 < tag && tag < 128) {
+	} else if (tag < 128) {
 		type_value = R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1;
 	} else if (247 < tag && tag < 251) {
 		type_value = R_BIN_JAVA_STACK_FRAME_CHOP;
@@ -8511,13 +8511,11 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		return result;
 	}
 	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
-	if (item) {
-		cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-		IFDBG eprintf("java_resolve Resolved: (%d) %s\n", idx, cp_name);
-	} else {
+	if (!item) {
 		return result;
 	}
 	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
+	IFDBG eprintf("java_resolve Resolved: (%d) %s\n", idx, cp_name);
 	if (strcmp (cp_name, "Class") == 0) {
 		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 		// str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, idx-1);
