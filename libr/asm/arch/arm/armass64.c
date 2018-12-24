@@ -423,7 +423,7 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 			} else {
 				n -= addr;
 				n = n & 0xfffffff;
-				k = 0x17;
+				k |= 3;
 			}
 			n = n >> 2;
 			int t = n >> 24;
