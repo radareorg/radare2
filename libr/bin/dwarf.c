@@ -362,7 +362,6 @@ static const ut8 *r_bin_dwarf_parse_lnp_header(
 					hdr->file_names[count].file_len = file_len;
 				}
 				free (comp_dir);
-				free (allocated_id);
 				free (pinclude_dir);
 			}
 			count++;
