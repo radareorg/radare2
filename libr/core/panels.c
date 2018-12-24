@@ -3109,44 +3109,44 @@ static bool moveToDirection(RPanels *panels, Direction direction) {
 		temp_y0 = panel[i].pos.y;
 		temp_y1 = panel[i].pos.y + panel[i].pos.h - 1;
 		switch (direction) {
-			case LEFT:
-				if (temp_x1 == cur_x0) {
-					if (temp_y1 <= cur_y0 || cur_y1 <= temp_y0) {
-						continue;
-					}
-					panels->curnode = i;
-					return true;
+		case LEFT:
+			if (temp_x1 == cur_x0) {
+				if (temp_y1 <= cur_y0 || cur_y1 <= temp_y0) {
+					continue;
 				}
-				break;
-			case RIGHT:
-				if (temp_x0 == cur_x1) {
-					if (temp_y1 <= cur_y0 || cur_y1 <= temp_y0) {
-						continue;
-					}
-					panels->curnode = i;
-					return true;
+				panels->curnode = i;
+				return true;
+			}
+			break;
+		case RIGHT:
+			if (temp_x0 == cur_x1) {
+				if (temp_y1 <= cur_y0 || cur_y1 <= temp_y0) {
+					continue;
 				}
-				break;
-			case UP:
-				if (temp_y1 == cur_y0) {
-					if (temp_x1 <= cur_x0 || cur_x1 <= temp_x0) {
-						continue;
-					}
-					panels->curnode = i;
-					return true;
+				panels->curnode = i;
+				return true;
+			}
+			break;
+		case UP:
+			if (temp_y1 == cur_y0) {
+				if (temp_x1 <= cur_x0 || cur_x1 <= temp_x0) {
+					continue;
 				}
-				break;
-			case DOWN:
-				if (temp_y0 == cur_y1) {
-					if (temp_x1 <= cur_x0 || cur_x1 <= temp_x0) {
-						continue;
-					}
-					panels->curnode = i;
-					return true;
+				panels->curnode = i;
+				return true;
+			}
+			break;
+		case DOWN:
+			if (temp_y0 == cur_y1) {
+				if (temp_x1 <= cur_x0 || cur_x1 <= temp_x0) {
+					continue;
 				}
-				break;
-			default:
-				break;
+				panels->curnode = i;
+				return true;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 	return false;
