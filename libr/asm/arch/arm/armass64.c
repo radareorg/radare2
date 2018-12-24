@@ -418,7 +418,13 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 	if (op->operands[0].type & ARM_CONSTANT) {
 		n = op->operands[0].immediate;
 		if (!(n & 0x3 || n > 0x7ffffff)) {
-			n -= addr;
+			if (n > addr) {
+				n -= addr;
+			} else {
+				n -= addr;
+				n = n & 0xfffffff;
+				k = 0x17;
+			}
 			n = n >> 2;
 			int t = n >> 24;
 			int h = n >> 16;
