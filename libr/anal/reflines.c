@@ -414,7 +414,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_buf_free (b);
 			return NULL;
 		}
-		if (ref->from == addr || ref->to == addr) {
+		if ((ref->from == addr && !middle) || ref->to == addr) {
 			const char *corner = get_corner_char (ref, addr, middle);
 			const char ch = ref->from == addr ? '=' : '-';
 
