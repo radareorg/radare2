@@ -481,6 +481,7 @@ typedef struct r_cons_t {
 	int break_word_len;
 	ut64 timeout;
 	bool grep_color;
+	bool grep_highlight;
 	bool use_tts;
 	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
