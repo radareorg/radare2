@@ -2516,8 +2516,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			char *key = NULL;
 			RListIter *iter;
 			RAnalFuncArg *arg;
-			if (fcn && !fcn_name) {
-				fcn_name = fcn->name;
+			if (!fcn_name) {
+				fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					fcn_name = fcn->name;
+				}
 			}
 			if (fcn_name) {
 				key = resolve_fcn_name (core->anal, fcn_name);
