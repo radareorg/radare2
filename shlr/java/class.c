@@ -8402,6 +8402,8 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			r_base64_encode (out, (const ut8 *) str, strlen (str));
 			free (str);
 			str = out;
+		} else {
+			free (out);
 		}
 	} else if (strcmp (cp_name, "Float") == 0) {
 		str = malloc (34);
