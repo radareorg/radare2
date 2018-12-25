@@ -4199,11 +4199,19 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 			ds_begin_json_line (ds);
 			ds_setup_print_pre (ds, false, false);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
-				char *refline3 = r_anal_reflines_str (ds->core, ds->at,
-					ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+				char *refline;
+				if (force) { // bbline is after disasm
+					refline = r_anal_reflines_str (ds->core, ds->at,
+						ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+				} else {
+					ds_update_ref_lines (ds);
+					refline = ds->refline2;
+				}
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
-						refline3, COLOR_RESET (ds));
-				free (refline3);
+						refline, COLOR_RESET (ds));
+				if (force) {
+					free (refline);
+				}
 			}
 			r_cons_printf ("|");
 			ds_newline (ds);
