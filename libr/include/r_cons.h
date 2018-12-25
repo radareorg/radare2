@@ -796,6 +796,7 @@ R_API char *r_cons_hud_string(const char *s);
 R_API char *r_cons_hud_file(const char *f);
 
 R_API const char *r_cons_get_buffer(void);
+R_API int r_cons_get_buffer_len();
 R_API void r_cons_grep_help(void);
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
 R_API char * r_cons_grep_strip(char *cmd, const char *quotestr);
