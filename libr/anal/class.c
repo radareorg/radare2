@@ -779,6 +779,19 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, int mode) {
 
 
 	if (lng) {
+		RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+		if (vtables) {
+			RAnalVTable *vtable;
+			r_vector_foreach (vtables, vtable) {
+				r_cons_printf ("  (vtable at 0x%"PFMT64x, vtable->addr);
+				if (vtable->offset > 0) {
+					r_cons_printf (" in class at +0x%"PFMT64x")\n", vtable->offset);
+				} else {
+					r_cons_print (")\n");
+				}
+			}
+		}
+
 		RVector *methods = r_anal_class_method_get_all (anal, class_name);
 		if (methods) {
 			RAnalMethod *meth;
@@ -904,26 +917,52 @@ static void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 	pj_o (j);
 	pj_ks (j, "name", class_name);
 
+	pj_k (j, "bases");
+	pj_a (j);
+	RVector *bases = r_anal_class_base_get_all (anal, class_name);
+	if (bases) {
+		RAnalBaseClass *base;
+		r_vector_foreach (bases, base) {
+			pj_o (j);
+			pj_ks (j, "id", base->id);
+			pj_ks (j, "name", base->class_name);
+			pj_kn (j, "offset", base->offset);
+			pj_end (j);
+		}
+		r_vector_free (bases);
+	}
+	pj_end (j);
+
+	pj_k (j, "vtables");
+	pj_a (j);
+	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	if (vtables) {
+		RAnalVTable *vtable;
+		r_vector_foreach (vtables, vtable) {
+			pj_o (j);
+			pj_ks (j, "id", vtable->id);
+			pj_kn (j, "addr", vtable->addr);
+			pj_kn (j, "offset", vtable->offset);
+		}
+	}
+	pj_end (j);
+
 	pj_k (j, "methods");
 	pj_a (j);
-	char *array = sdb_get (anal->sdb_classes,
-						   key_attr_type_attrs (class_name, attr_type_id (R_ANAL_CLASS_ATTR_TYPE_METHOD)), 0);
-	char *cur;
-	sdb_aforeach (cur, array) {
-		RAnalMethod meth;
-		if (r_anal_class_method_get (anal, class_name, cur, &meth) == R_ANAL_CLASS_ERR_SUCCESS) {
+	RVector *methods = r_anal_class_method_get_all (anal, class_name);
+	if (methods) {
+		RAnalMethod *meth;
+		r_vector_foreach (methods, meth) {
 			pj_o (j);
-			pj_ks (j, "name", cur);
-			pj_kn (j, "addr", meth.addr);
-			if (meth.vtable_offset >= 0) {
-				pj_kn (j, "vtable_offset", (ut64)meth.vtable_offset);
+			pj_ks (j, "name", meth->name);
+			pj_kn (j, "addr", meth->addr);
+			if (meth->vtable_offset >= 0) {
+				pj_kn (j, "vtable_offset", (ut64)meth->vtable_offset);
 			}
 			pj_end (j);
-			r_anal_class_method_fini (&meth);
 		}
-		sdb_aforeach_next (cur);
+		r_vector_free (methods);
 	}
-	free (array);
 	pj_end (j);
 
 	pj_end (j);
@@ -980,4 +1019,23 @@ R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name) {
 		r_cons_printf ("  %4s %s @ +0x%"PFMT64x"\n", base->id, base->class_name, base->offset);
 	}
 	r_vector_free (bases);
+}
+
+R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		return;
+	}
+	if (!sdb_exists (anal->sdb_classes, key_class (class_name_sanitized))) {
+		return;
+	}
+	r_cons_printf ("%s:\n", class_name_sanitized);
+	free (class_name_sanitized);
+
+	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	RAnalVTable *vtable;
+	r_vector_foreach (vtables, vtable) {
+		r_cons_printf ("  %4s vtable 0x%"PFMT64x" @ +0x%"PFMT64x"\n", vtable->id, vtable->addr, vtable->offset);
+	}
+	r_vector_free (vtables);
 }

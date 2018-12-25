@@ -7607,7 +7607,8 @@ static const char *help_msg_aC[] = {
 		"aCl[lj]", "", "list all classes",
 		"aC", " [class name]", "add class",
 		"aC-", " [class name]", "delete class",
-		"aCv", " [class name] [addr]", "set vtable address for class",
+		"aCv", " [class name] [addr] ([offset])", "add vtable address to class",
+		"aCv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
 		"aCb", " [class name]", "list bases of class",
 		"aCb", " [class name] [base class name] ([offset])", "add base class",
 		"aCb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
@@ -7708,8 +7709,8 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ':
-	case '-': {
+	case ' ': // "aCb"
+	case '-': { // "aCb-"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -7770,6 +7771,72 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_class_vtable(RCore *core, const char *input) {
+	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
+	char c = input[0];
+	switch (c) {
+	case ' ': // "aCv"
+	case '-': { // "aCv-"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			eprintf ("No class name given.\n");
+			return;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+			end++;
+		}
+
+		if (!end || *end == '\0') {
+			if (c == ' ') {
+				r_anal_class_list_vtables (core->anal, cstr);
+			} else /*if (c == '-')*/ {
+				eprintf ("No vtable id given. See aCv [class name].\n");
+			}
+			free (cstr);
+			break;
+		}
+
+		char *arg1_str = end;
+		end = strchr (arg1_str, ' ');
+		if (end) {
+			*end = '\0';
+		}
+
+		if (c == '-') {
+			err = r_anal_class_vtable_delete (core->anal, cstr, arg1_str);
+			break;
+		}
+
+		RAnalVTable vtable;
+		vtable.id = NULL;
+		vtable.addr = r_num_get (core->num, arg1_str);
+		vtable.offset = 0;
+
+		if (end) {
+			vtable.offset = r_num_get (core->num, end + 1);
+		}
+
+		err = r_anal_class_vtable_set (core->anal, cstr, &vtable);
+		free (vtable.id);
+		free (cstr);
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_aC);
+		break;
+	}
+
+	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
+		eprintf ("Class does not exist.\n");
+	}
+}
+
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "aCl"
@@ -7797,31 +7864,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		free (cstr);
 		break;
 	}
-	case 'v': {
-		const char *str = r_str_trim_ro (input + 1);
-		if (!*str) {
-			break;
-		}
-		char *cstr = strdup (str);
-		if (!cstr) {
-			break;
-		}
-		char *end = strchr (cstr, ' ');
-		ut64 addr = UT64_MAX;
-		if (end) {
-			*end = '\0';
-			addr = r_num_get (core->num, end + 1);
-		}
-		RAnalClass *cls = r_anal_class_get (core->anal, cstr);
-		if (!cls) {
-			eprintf ("Class not found.\n");
-			free (cstr);
-			break;
-		}
-		cls->vtable_addr = addr;
-		free (cstr);
+	case 'v':
+		cmd_anal_class_vtable (core, input + 1);
 		break;
-	}
 	case 'b': // "aCb"
 		cmd_anal_class_base (core, input + 1);
 		break;
