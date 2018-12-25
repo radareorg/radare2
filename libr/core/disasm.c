@@ -4216,23 +4216,23 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 }
 
 static void delete_last_comment(RDisasmState *ds) {
-	if (ds->show_comment_right_default) {
-		int len = 0;
-		char *ll = r_cons_lastline (&len);
-		if (ll) {
-			const char *begin = r_str_nstr (ll, "; ", len);
-			if (begin) {
-				// const int cstrlen = begin + len - ll;
-				// r_cons_drop (cstrlen - (int)(begin - ll));
-				ds_newline (ds);
-				if (ds->use_json) {
-					ds_begin_line (ds);
-				} else {
-					ds_setup_print_pre (ds, false, false);
-					ds_print_lines_left (ds);
-				}
-			}
-		}
+	if (!ds->show_comment_right_default) {
+		return;
+	}
+	int len = 0;
+	const char *ll = r_cons_get_buffer ();
+	if (!ll) {
+		return;
+	}
+	ll += ds->buf_line_begin;
+	const char *begin = r_str_nstr (ll, "; ", len);
+	if (begin) {
+		// const int cstrlen = begin + len - ll;
+		// r_cons_drop (cstrlen - (int)(begin - ll));
+		ds_newline (ds);
+		ds_begin_line (ds);
+		ds_setup_print_pre (ds, false, false);
+		ds_print_lines_left (ds);
 	}
 }
 
