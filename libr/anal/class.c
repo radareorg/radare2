@@ -661,6 +661,95 @@ R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name
 
 
 
+// ---- VTABLE ----
+
+
+R_API void r_anal_class_vtable_fini(RAnalVTable *vtable) {
+	free (vtable->id);
+}
+
+R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name, const char *vtable_id, RAnalVTable *vtable) {
+	char *content = r_anal_class_get_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable_id, false);
+	if (!content) {
+		return R_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
+	}
+
+	char *cur = content;
+	char *next;
+	sdb_anext (cur, &next);
+
+	vtable->addr = r_num_math (NULL, cur);
+
+	cur = next;
+	if (!cur) {
+		free (content);
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+	sdb_anext (cur, NULL);
+
+	vtable->offset = r_num_math (NULL, cur);
+
+	free (content);
+
+	vtable->id = sanitize_id (vtable_id);
+	if (!vtable->id) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+
+	return R_ANAL_CLASS_ERR_SUCCESS;
+}
+
+static void r_anal_class_vtable_fini_proxy(void *e, void *user) {
+	(void)user;
+	RAnalVTable *vtable = e;
+	r_anal_class_vtable_fini (vtable);
+}
+
+R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name) {
+	RVector *vec = r_vector_new (sizeof(RAnalVTable), r_anal_class_vtable_fini_proxy, NULL);
+	if (!vec) {
+		return NULL;
+	}
+
+	char *class_name_sanitized = sanitize_id (class_name);
+	if (!class_name_sanitized) {
+		r_vector_free (vec);
+		return NULL;
+	}
+	char *array = sdb_get (anal->sdb_classes, key_attr_type_attrs (class_name_sanitized, attr_type_id (R_ANAL_CLASS_ATTR_TYPE_VTABLE)), 0);
+	free (class_name_sanitized);
+
+	r_vector_reserve (vec, (size_t) sdb_alen (array));
+	char *cur;
+	sdb_aforeach (cur, array) {
+		RAnalVTable vtable;
+		if (r_anal_class_vtable_get (anal, class_name, cur, &vtable) == R_ANAL_CLASS_ERR_SUCCESS) {
+			r_vector_push (vec, &vtable);
+		}
+		sdb_aforeach_next (cur);
+	}
+	free (array);
+
+	return vec;
+}
+
+R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable) {
+	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u, vtable->addr, vtable->offset);
+	if (vtable->id) {
+		return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+	}
+	vtable->id = malloc(16);
+	if (!vtable->id) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
+	return r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
+}
+
+R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_name, const char *vtable_id) {
+	return r_anal_class_delete_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable_id);
+}
+
+
 // ---- PRINT ----
 
 

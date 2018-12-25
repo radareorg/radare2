@@ -1775,6 +1775,12 @@ typedef struct r_anal_base_class_t {
 	char *class_name;
 } RAnalBaseClass;
 
+typedef struct r_anal_vtable_t {
+	char *id; // id to identify the class attr
+	ut64 offset; // offset inside the class
+	ut64 addr; // where the content of the vtable is
+} RAnalVTable;
+
 typedef struct r_anal_class_t {
 	char *name;
 	ut64 addr;
@@ -1815,6 +1821,12 @@ R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, c
 R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name);
 R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, RAnalBaseClass *base);
 R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name, const char *base_id);
+
+R_API void r_anal_class_vtable_fini(RAnalVTable *vtable);
+R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name, const char *vtable_id, RAnalVTable *vtable);
+R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name);
+R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable);
+R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_name, const char *vtable_id);
 
 R_API void r_anal_class_list(RAnal *anal, int mode);
 R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
