@@ -588,6 +588,10 @@ R_API const char *r_cons_get_buffer() {
 	return I.context->buffer_len? I.context->buffer : NULL;
 }
 
+R_API int r_cons_get_buffer_len() {
+	return I.context->buffer_len;
+}
+
 R_API void r_cons_filter() {
 	/* grep */
 	if (I.filter || I.context->grep.nstrings > 0 || I.context->grep.tokens_used || I.context->grep.less || I.context->grep.json) {

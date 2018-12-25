@@ -275,6 +275,7 @@ typedef struct {
 
 	bool use_json;
 	bool first_line;
+	int buf_line_begin;
 	const char *strip;
 	int maxflags;
 } RDisasmState;
@@ -282,8 +283,8 @@ typedef struct {
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_print_pre(RDisasmState *ds);
-static void ds_beginline(RDisasmState *ds);
-static void ds_begin_json_line(RDisasmState *ds);
+static void ds_pre_line(RDisasmState *ds);
+static void ds_begin_line(RDisasmState *ds);
 static void ds_newline(RDisasmState *ds);
 static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
@@ -1082,7 +1083,7 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	return hint;
 }
 
-static void ds_beginline(RDisasmState *ds) {
+static void ds_pre_line(RDisasmState *ds) {
 	ds_setup_pre (ds, false, false);
 	ds_print_pre (ds);
 	char *tmp = ds->line;
@@ -1091,15 +1092,15 @@ static void ds_beginline(RDisasmState *ds) {
 	ds->line = tmp;
 }
 
-static void ds_begin_json_line(RDisasmState *ds) {
-	if (!ds->use_json) {
-		return;
+static void ds_begin_line(RDisasmState *ds) {
+	if (ds->use_json) {
+		if (!ds->first_line) {
+			r_cons_print (",");
+		}
+		ds->first_line = false;
+		r_cons_printf ("{\"offset\":%"PFMT64d",\"text\":\"", ds->vat);
 	}
-	if (!ds->first_line) {
-		r_cons_print (",");
-	}
-	ds->first_line = false;
-	r_cons_printf ("{\"offset\":%"PFMT64d",\"text\":\"", ds->vat);
+	ds->buf_line_begin = r_cons_get_buffer_len ();
 }
 
 static void ds_newline(RDisasmState *ds) {
@@ -1175,7 +1176,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	if (r_list_length (xrefs) > ds->maxrefs) {
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
 		ds_comment (ds, false, "%s; XREFS(%d)",
 			ds->show_color? ds->pal_comment: "",
@@ -1191,7 +1192,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols -= 15;
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
@@ -1201,7 +1202,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				if (iter->n) {
 					ds_print_color_reset (ds);
 					ds_newline (ds);
-					ds_begin_json_line (ds);
+					ds_begin_line (ds);
 					ds_pre_xrefs (ds, false);
 					ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 				}
@@ -1257,7 +1258,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					name = tmp;
 				}
 			}
-			ds_begin_json_line (ds);
+			ds_begin_line (ds);
 			ds_pre_xrefs (ds, false);
 			char* plural = r_list_length (addrs) > 1 ? "S" : "";
 			char* plus = fun ? "" : "+";
@@ -1360,7 +1361,7 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
-					ds_begin_json_line (ds);
+					ds_begin_line (ds);
 					// this reloc is displayed already as a flag comment
 					// this is unnecessary imho
 					r_cons_printf ("(%s)", fi->name);
@@ -1464,7 +1465,7 @@ static void ds_begin_comment(RDisasmState *ds) {
 		_ALIGN;
 	} else {
 		if (ds->use_json) {
-			ds_begin_json_line (ds);
+			ds_begin_line (ds);
 		}
 		ds_pre_xrefs (ds, false);
 	}
@@ -1558,14 +1559,14 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	if (sp_args) { sp_args_color = numColor; }
 	if (rg_args) { rg_args_color = numColor; }
 	if (ds->show_varsum == 2) {
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		ds_print_pre (ds);
 		r_cons_printf ("vars: %s%d%s %s%d%s %s%d%s",
 				bp_vars_color, bp_vars, COLOR_RESET (ds),
 				sp_vars_color, sp_vars, COLOR_RESET (ds),
 				rg_vars_color, rg_vars, COLOR_RESET (ds));
 		ds_newline (ds);
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		ds_print_pre (ds);
 		r_cons_printf ("args: %s%d%s %s%d%s %s%d%s",
 				bp_args_color, bp_args, COLOR_RESET (ds),
@@ -1574,21 +1575,21 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 		ds_newline (ds);
 		return;
 	}
-	ds_begin_json_line (ds);
+	ds_begin_line (ds);
 	ds_print_pre (ds);
 	r_cons_printf ("bp: %s%d%s (vars %s%d%s, args %s%d%s)",
 			bp_args || bp_vars ? numColor : COLOR_RESET (ds), bp_args + bp_vars, COLOR_RESET (ds),
 			bp_vars_color, bp_vars, COLOR_RESET (ds),
 			bp_args_color, bp_args, COLOR_RESET (ds));
 	ds_newline (ds);
-	ds_begin_json_line (ds);
+	ds_begin_line (ds);
 	ds_print_pre (ds);
 	r_cons_printf ("sp: %s%d%s (vars %s%d%s, args %s%d%s)",
 			sp_args || sp_vars ? numColor : COLOR_RESET (ds), sp_args+sp_vars, COLOR_RESET (ds),
 			sp_vars_color, sp_vars, COLOR_RESET (ds),
 			sp_args_color, sp_args, COLOR_RESET (ds));
 	ds_newline (ds);
-	ds_begin_json_line (ds);
+	ds_begin_line (ds);
 	ds_print_pre (ds);
 	r_cons_printf ("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
 			rg_args || rg_vars ? numColor : COLOR_RESET (ds), rg_args+rg_vars, COLOR_RESET (ds),
@@ -1621,7 +1622,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	} else {
 		fcn_name = f->name;
 	}
-	ds_begin_json_line (ds);
+	ds_begin_line (ds);
 	sign = r_anal_fcn_to_string (core->anal, f);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
 		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
@@ -1656,7 +1657,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	ds_newline (ds);
 	if (sign) {
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		r_cons_printf ("// %s", sign);
 		ds_newline (ds);
 	}
@@ -1691,7 +1692,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			fname = r_type_func_guess (TDB, fcn_name);
 		}
 		if (call) {
-			ds_begin_json_line (ds);
+			ds_begin_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
 			ds_print_pre (ds);
 			r_cons_printf ("%s %s %s%s (",
@@ -1758,7 +1759,7 @@ beach:
 		r_list_join (args, sp_vars);
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
-			ds_begin_json_line (ds);
+				ds_begin_line (ds);
 			int idx;
 			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
@@ -1941,7 +1942,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	}
 	if (!ds->show_comment_right) {
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		int mycols = ds->lcols;
 		if ((mycols + linelen + 10) > core->cons->columns) {
 			mycols = 0;
@@ -1974,12 +1975,12 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		ds_newline (ds);
 		/* flag one */
 		if (item && item->comment && ds->ocomment != item->comment) {
-			ds_begin_json_line (ds);
+			ds_begin_line (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->pal_comment);
 			}
 			ds_newline (ds);
-			ds_begin_json_line (ds);
+			ds_begin_line (ds);
 			r_cons_strcat ("  ;  ");
 			r_cons_strcat_justify (item->comment, mycols, ';');
 			ds_newline (ds);
@@ -2044,11 +2045,11 @@ static void ds_show_flags(RDisasmState *ds) {
 				continue;
 			}
 		}
-		ds_begin_json_line (ds);
+			ds_begin_line (ds);
 
 		bool fake_flag_marks = (!ds->show_offset && ds->show_marks);
 		if (ds->show_flgoff) {
-			ds_beginline (ds);
+			ds_pre_line (ds);
 			ds_print_offset (ds);
 			if (!fake_flag_marks) {
 				r_cons_printf (" ");
@@ -3134,7 +3135,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	if (!label) {
 		return false;
 	}
-	ds_beginline (ds);
+	ds_pre_line (ds);
 	if (ds->show_color) {
 		r_cons_strcat (ds->color_label);
 		r_cons_printf (" .%s:\n", label);
@@ -3231,7 +3232,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
 			if (!ds->show_comment_right) {
-				ds_begin_json_line (ds);
+				ds_begin_line (ds);
 			}
 			if (label) {
 				_ALIGN;
@@ -3413,33 +3414,27 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 
 // align for comment
 static void ds_align_comment(RDisasmState *ds) {
-	if (ds->show_comment_right_default) {
-		const int cmtcol = ds->cmtcol - 1;
-		int cells = 0;
-		const char *ll = r_cons_lastline_utf8_ansi_len (&cells);
-		if (ds->use_json) {
-			// for json thats wrong, so we adjust the offset here
-			const int delta = 3;
-			const char *llq = r_str_last (ll, "\":\"");
-			if (llq) {
-				ll = llq + delta;
-				cells = r_str_ansi_len (ll);
-			}
-		}
-		if (ll) {
-			if (cells < 20) {
-				ds_print_pre (ds);
-			}
-			int cols = ds->interactive ? ds->core->cons->columns : 1024;
-			if (cells < cmtcol) {
-				int len = cmtcol - cells;
-				if (len < cols && len > 0) {
-					r_cons_memset (' ', len);
-				}
-			}
-			r_cons_print (" ");
+	if (!ds->show_comment_right_default) { 
+		return;
+	}
+	const int cmtcol = ds->cmtcol - 1;
+	const char *ll = r_cons_get_buffer ();
+	if (!ll) {
+		return;
+	}
+	ll += ds->buf_line_begin;
+	int cells = r_str_len_utf8_ansi (ll);
+	if (cells < 20) {
+		ds_print_pre (ds);
+	}
+	int cols = ds->interactive ? ds->core->cons->columns : 1024;
+	if (cells < cmtcol) {
+		int len = cmtcol - cells;
+		if (len < cols && len > 0) {
+			r_cons_memset (' ', len);
 		}
 	}
+	r_cons_print (" ");
 }
 
 static void ds_print_dwarf(RDisasmState *ds) {
@@ -4196,7 +4191,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 	if (ds->show_bbline) {
 		RAnalBlock *bb = r_anal_fcn_bbget_at (ds->fcn, ds->at);
 		if (force || (ds->fcn && bb)) {
-			ds_begin_json_line (ds);
+			ds_begin_line (ds);
 			ds_setup_print_pre (ds, false, false);
 			ds_update_ref_lines (ds);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
@@ -4231,7 +4226,7 @@ static void delete_last_comment(RDisasmState *ds) {
 				// r_cons_drop (cstrlen - (int)(begin - ll));
 				ds_newline (ds);
 				if (ds->use_json) {
-					ds_begin_json_line (ds);
+					ds_begin_line (ds);
 				} else {
 					ds_setup_print_pre (ds, false, false);
 					ds_print_lines_left (ds);
@@ -4549,7 +4544,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					comment = strdup (comment);
 					if (comment) {
 						ds_newline (ds);
-						ds_begin_json_line (ds);
+						ds_begin_line (ds);
 						int lines_count;
 						int *line_indexes = r_str_split_lines (comment, &lines_count);
 						if (line_indexes) {
@@ -4567,7 +4562,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 								r_cons_printf (i == 0 ? "%s" : "; %s", c);
 								if (i < lines_count - 1) {
 									ds_newline (ds);
-									ds_begin_json_line (ds);
+									ds_begin_line (ds);
 								}
 								free (escstr);
 							}
@@ -4727,6 +4722,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->addr = addr;
 	ds->hint = NULL;
 	ds->use_json = json;
+	ds->buf_line_begin = 0;
 	ds->first_line = true;
 	ds->pdf = pdf;
 
@@ -5010,7 +5006,7 @@ toro:
 			}
 		}
 
-		ds_begin_json_line (ds);
+		ds_begin_line (ds);
 		f = fcnIn (ds, ds->addr, 0);
 		ds_print_labels (ds, f);
 		ds_setup_print_pre (ds, false, false);
