@@ -4193,10 +4193,20 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 		if (force || (ds->fcn && bb)) {
 			ds_begin_line (ds);
 			ds_setup_print_pre (ds, false, false);
-			ds_update_ref_lines (ds);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
+				char *refline;
+				if (force) { // bbline is after disasm
+					refline = r_anal_reflines_str (ds->core, ds->at,
+						ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+				} else {
+					ds_update_ref_lines (ds);
+					refline = ds->refline2;
+				}
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
-						ds->refline2, COLOR_RESET (ds));
+						refline, COLOR_RESET (ds));
+				if (force) {
+					free (refline);
+				}
 			}
 			r_cons_printf ("|");
 			ds_newline (ds);
