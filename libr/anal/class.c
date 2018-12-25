@@ -4,6 +4,8 @@
 #include <r_vector.h>
 #include "../include/r_anal.h"
 
+#define CLASSES_FLAGSPACE "classes"
+
 R_API RAnalClass *r_anal_class_new(const char *name) {
 	RAnalClass *cls = R_NEW (RAnalClass);
 	if (!cls) {
@@ -89,25 +91,6 @@ R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
 	return NULL;
 }
 
-// TODO: do we have something like this already somewhere?
-static char *flagname(char *name) {
-	if (!name) {
-		return NULL;
-	}
-	char *ret = strdup (name);
-	if (!ret) {
-		return NULL;
-	}
-	char *cur = ret;
-	while (*cur) {
-		char c = *cur;
-		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9') && c != '_') {
-			*cur = '_';
-		}
-		cur++;
-	}
-	return ret;
-}
 
 
 R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name) {
@@ -422,17 +405,21 @@ static void r_anal_class_unique_attr_id_raw(RAnal *anal, const char *class_name,
 	} while (sdb_array_contains (anal->sdb_classes, key, out, 0));
 }
 
-#if 0
-static RAnalClassErr r_anal_class_unique_attr_id(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, char *out, size_t out_size) {
+static char *flagname_attr(const char *attr_type, const char *class_name, const char *attr_id) {
 	char *class_name_sanitized = sanitize_id (class_name);
 	if (!class_name_sanitized) {
-		return R_ANAL_CLASS_ERR_OTHER;
+		return NULL;
 	}
-	r_anal_class_unique_attr_id_raw (anal, class_name_sanitized, attr_type, out, out_size);
+	char *attr_id_sanitized = sanitize_id (attr_id);
+	if (!attr_id_sanitized) {
+		free (class_name_sanitized);
+		return NULL;
+	}
+	char *r = sdb_fmt ("%s.%s.%s", attr_type, class_name, attr_id);
 	free (class_name_sanitized);
-	return R_ANAL_CLASS_ERR_SUCCESS;
+	free (attr_id_sanitized);
+	return r;
 }
-#endif
 
 static RAnalClassErr r_anal_class_add_attr_unique_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
 	char attr_id[16];
@@ -465,6 +452,10 @@ static RAnalClassErr r_anal_class_add_attr_unique(RAnal *anal, const char *class
 
 // ---- METHODS ----
 // Format: addr,vtable_offset
+
+static char *flagname_method(const char *class_name, const char *meth_name) {
+	return flagname_attr ("method", class_name, meth_name);
+}
 
 R_API void r_anal_class_method_fini(RAnalMethod *meth) {
 	free (meth->name);
@@ -539,7 +530,21 @@ R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const c
 
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
 	char *content = sdb_fmt ("%"PFMT64u"%c%d", meth->addr, SDB_RS, meth->vtable_offset);
-	return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
+	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
+	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
+		return err;
+	}
+
+	if (anal->flb.set && anal->flb.push_fs && anal->flb.pop_fs) {
+		anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
+		char *flagname = flagname_method (class_name, meth->name);
+		if (flagname) {
+			anal->flb.set (anal->flb.f, flagname, meth->addr, 0);
+		}
+		anal->flb.pop_fs (anal->flb.f);
+	}
+
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
 R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
@@ -663,6 +668,9 @@ R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name
 
 // ---- VTABLE ----
 
+static char *flagname_vtable(const char *class_name, const char *vtable_id) {
+	return flagname_attr ("method", class_name, vtable_id);
+}
 
 R_API void r_anal_class_vtable_fini(RAnalVTable *vtable) {
 	free (vtable->id);
@@ -742,7 +750,21 @@ R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name,
 	if (!vtable->id) {
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	return r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
+	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
+	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
+		return err;
+	}
+
+	if (anal->flb.set && anal->flb.push_fs && anal->flb.pop_fs) {
+		anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
+		char *flagname = flagname_vtable (class_name, vtable->id);
+		if (flagname) {
+			anal->flb.set (anal->flb.f, flagname, vtable->addr, 0);
+		}
+		anal->flb.pop_fs (anal->flb.f);
+	}
+
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
 R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_name, const char *vtable_id) {
