@@ -675,8 +675,10 @@ void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
 typedef struct rtti_msvc_anal_context_t {
 	RVTableContext *vt_context;
 	RPVector vtables; // <RVTableInfo>
-	RPVector complete_object_locators; // <RecoveryCompleteObjectLocator> TODO: use some more efficient map
-	RPVector type_descriptors; // <analyzed_typed_descriptor> TODO: use some more efficient map
+	RPVector complete_object_locators; // <RecoveryCompleteObjectLocator>
+	HtUP *addr_col; // <ut64, RecoveryCompleteObjectLocator *>
+	RPVector type_descriptors; // <RecoveryTypeDescriptor>
+	HtUP *addr_td; // <ut64, RecoveryTypeDescriptor *>
 	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
 } RRTTIMSVCAnalContext;
 
@@ -684,13 +686,9 @@ typedef struct rtti_msvc_anal_context_t {
 RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
 
 RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
-	RecoveryCompleteObjectLocator *col;
-	void **it;
-	r_pvector_foreach (&context->complete_object_locators, it) {
-		col = *it;
-		if (col->addr == addr) {
-			return col;
-		}
+	RecoveryCompleteObjectLocator *col = ht_up_find (context->addr_col, addr, NULL);
+	if (col) {
+		return col;
 	}
 
 	col = recovery_complete_object_locator_new ();
@@ -698,6 +696,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 		return NULL;
 	}
 	r_pvector_push (&context->complete_object_locators, col);
+	ht_up_insert (context->addr_col, addr, col);
 	col->addr = addr;
 	col->valid = rtti_msvc_read_complete_object_locator (context->vt_context, addr, &col->col);
 	if (!col->valid) {
@@ -758,16 +757,12 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 }
 
 RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
-	RecoveryTypeDescriptor *td;
-	void **it;
-	r_pvector_foreach (&context->type_descriptors, it) {
-		td = *it;
-		if (td->addr == addr) {
-			if (col != NULL) {
-				td->col = col;
-			}
-			return td;
+	RecoveryTypeDescriptor *td = ht_up_find (context->addr_td, addr, NULL);
+	if (td) {
+		if (col != NULL) {
+			td->col = col;
 		}
+		return td;
 	}
 
 	td = recovery_type_descriptor_new ();
@@ -775,6 +770,7 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 		return NULL;
 	}
 	r_pvector_push (&context->type_descriptors, td);
+	ht_up_insert (context->addr_td, addr, td);
 	td->addr = addr;
 	td->valid = rtti_msvc_read_type_descriptor (context->vt_context, addr, &td->td);
 	if (!td->valid) {
@@ -943,26 +939,25 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-
-
-void str_key_fini(HtPPKv *kv) {
+void str_value_free(HtPPKv *kv) {
 	free (kv->value);
 }
 
 R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {
 	RRTTIMSVCAnalContext context;
 	context.vt_context = vt_context;
-	r_pvector_init (&context.complete_object_locators, (RPVectorFree) recovery_complete_object_locator_free);
-	r_pvector_init (&context.type_descriptors, (RPVectorFree) recovery_type_descriptor_free);
 	r_pvector_init (&context.vtables, (RPVectorFree)r_anal_vtable_info_free);
-	context.col_td_classes = ht_up_new (NULL, (HtUPKvFreeFunc)str_key_fini, (HtUPCalcSizeV)strlen);
+
+	r_pvector_init (&context.complete_object_locators, (RPVectorFree) recovery_complete_object_locator_free);
+	context.addr_col = ht_up_new0 ();
+	r_pvector_init (&context.type_descriptors, (RPVectorFree) recovery_type_descriptor_free);
+	context.addr_td = ht_up_new0 ();
+
+	context.col_td_classes = ht_up_new (NULL, (HtUPKvFreeFunc)str_value_free, (HtUPCalcSizeV)strlen);
 
 	RListIter *vtableIter;
 	RVTableInfo *table;
 	r_list_foreach (vtables, vtableIter, table) {
-		/* TODO if (r_cons_is_breaked ()) {
-			break;
-		}*/
 		ut64 colRefAddr = table->saddr - vt_context->word_size;
 		ut64 colAddr;
 		if (!vt_context->read_addr (vt_context->anal, colRefAddr, &colAddr)) {
@@ -990,9 +985,11 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 	}
 #endif
 
-	r_pvector_clear (&context.complete_object_locators);
-	r_pvector_clear (&context.type_descriptors);
 	r_pvector_clear (&context.vtables);
+	r_pvector_clear (&context.complete_object_locators);
+	ht_up_free (context.addr_col);
+	r_pvector_clear (&context.type_descriptors);
+	ht_up_free (context.addr_td);
 	ht_up_free (context.col_td_classes);
 }
 

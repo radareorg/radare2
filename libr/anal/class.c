@@ -720,6 +720,7 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, int mode) {
 					r_cons_print (")\n");
 				}
 			}
+			r_vector_free (vtables);
 		}
 
 		RVector *methods = r_anal_class_method_get_all (anal, class_name);
