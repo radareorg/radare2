@@ -24,6 +24,10 @@
 // dup from cmd_info
 #define PAIR_WIDTH 9
 
+#define bprintf                     \
+	if (binfile->rbin->verbose) \
+	eprintf
+
 static void pair(const char *key, const char *val, int mode, bool last) {
 	if (!val || !*val) {
 		return;
@@ -1014,6 +1018,12 @@ static int srclineCmp(const void *a, const void *b) {
 static int bin_source(RCore *r, int mode) {
 	RList *final_list = r_list_new ();
 	RBinFile * binfile = r->bin->cur;
+
+	if (!binfile) {
+		bprintf ("[Error bin file]\n");
+		return false;
+	}
+
 	SdbListIter *iter;
 	RListIter *iter2;
 	char* srcline;
