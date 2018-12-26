@@ -597,7 +597,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		r_list_free (list);
 		return NULL;
 	}
-	while (de = readdir (dh)) {
+	while ((de = readdir (dh))) {
 		uid = 0;
 		st = ' ';
 		/* for each existing pid file... */
