@@ -552,7 +552,8 @@ enum {
 enum {
 	R_ANAL_REFLINE_TYPE_UTF8 = 1,
 	R_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
-	R_ANAL_REFLINE_TYPE_MIDDLE = 4 /* do not consider starts/ends of reflines (used for comments lines) */
+	R_ANAL_REFLINE_TYPE_MIDDLE = 4, /* do not consider starts/ends of reflines (used for comment lines) */
+	R_ANAL_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
 };
 
 enum {

@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+typedef void (*RPanelDirectionCallback)(void *user, int direction);
+
 typedef enum {
 	PANEL_TYPE_DEFAULT = 0,
 	PANEL_TYPE_MENU = 1
@@ -26,6 +28,7 @@ typedef enum {
 typedef struct r_panel_t {
 	RPanelPos pos;
 	RPanelPos prevPos;
+	RPanelDirectionCallback directionCb;
 	int sx; // scroll-x
 	int sy; // scroll-y
 	int curpos;

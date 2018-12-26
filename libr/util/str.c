@@ -2019,6 +2019,26 @@ R_API int r_str_len_utf8(const char *s) {
 	return j + fullwidths;
 }
 
+
+R_API int r_str_len_utf8_ansi(const char *str) {
+	int i = 0, len = 0, fullwidths = 0;
+	while (str[i]) {
+		char ch = str[i];
+		if (ch == 0x1b && str[i + 1] == '[') {
+			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+				;
+			}
+		} else if ((ch & 0xc0) != 0x80) {
+			len++;
+			if (r_str_char_fullwidth (str + i, 4)) {
+				fullwidths++;
+			}
+		}
+		i++;
+	}
+	return len + fullwidths;
+}
+
 R_API const char *r_str_casestr(const char *a, const char *b) {
 	// That's a GNUism that works in many places.. but we dont want it
 	// return strcasestr (a, b);
