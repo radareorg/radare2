@@ -2413,6 +2413,9 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		input++;
 		break;
 	default:
+		if (input[1] == 'j') {
+			input++;
+		}
 		fixed_size = false;
 		break;
 	}
@@ -2451,20 +2454,20 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		// r_num_get is gonna use a dangling pointer since the internal
 		// token that RNum holds ([$$]) has been already freed by r_core_cmd_str
 		// r_num_math reload a new token so the dangling pointer is gone
-		switch (input[1]) {
-		case '1':
+		switch (n) {
+		case 1:
 			pj_fmt (r_cons_printf, "{'value':%i,'string':%s}\n",
 				r_read_ble8 (block), str);
 			break;
-		case '2':
+		case 2:
 			pj_fmt (r_cons_printf, "{'value':%i,'string':%s}\n",
 				r_read_ble16 (block, core->print->big_endian), str);
 			break;
-		case '4':
+		case 4:
 			pj_fmt (r_cons_printf, "{'value':%n,'string':%s}\n",
 				(ut64)r_read_ble32 (block, core->print->big_endian), str);
 			break;
-		case '8':
+		case 8:
 			pj_fmt (r_cons_printf, "{'value':%n,'string':%s}\n",
 				r_read_ble64 (block, core->print->big_endian), str);
 			break;
