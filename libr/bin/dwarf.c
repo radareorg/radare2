@@ -760,7 +760,6 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 
 		r_bin_dwarf_header_fini (&hdr);
 		buf = buf_tmp + tmplen;
-		len = (int)(buf_end - buf);
 	}
 	return true;
 }

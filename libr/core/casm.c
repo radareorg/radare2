@@ -110,7 +110,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	// int opsz = 0;
 	char *opst = NULL;
 	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
-		matches = 0;
 		if (r_cons_is_breaked ()) {
 			break;
 		}

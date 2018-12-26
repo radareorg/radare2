@@ -590,7 +590,6 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				case 'i':
 					info = r_bin_get_info (core->bin);
-					file_found = false;
 					filename = strchr (input, ' ');
 					while (input[2]) input++;
 					if (filename) {

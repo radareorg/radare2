@@ -872,7 +872,6 @@ DEF_STATE_ACTION(P)
 
 					if (!is_abbr_type) {
 						R_FREE (arg);
-						is_abbr_type = 0;
 					}
 
 					state->amount_of_read_chars += i;
@@ -1342,13 +1341,11 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 				// arguments list is void
 				if (!is_abbr_type) {
 					R_FREE (tmp);
-					is_abbr_type = 0;
 				}
 				break;
 			}
 			if (!is_abbr_type) {
 				R_FREE (tmp);
-				is_abbr_type = 0;
 			}
 		} else {
 			curr_pos++;

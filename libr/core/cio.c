@@ -152,10 +152,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (op=='e') {
 		int wordsize = 1;
 		char *os, *p, *s = strdup (arg);
-		int n = 0, from = 0, to = 0, dif = 0, step = 1;
+		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
 		os = s;
-		to = UT8_MAX;
-		//
 		p = strchr (s, ' ');
 		if (p) {
 			*p = 0;
@@ -181,9 +179,6 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
 		dif = (to <= from)? UT8_MAX: to - from + 1;
 		if (wordsize == 1) {
-			if (to < 1 || to > UT8_MAX) {
-				to = UT8_MAX;
-			}
 			from %= (UT8_MAX + 1);
 		}
 		if (dif < 1) {

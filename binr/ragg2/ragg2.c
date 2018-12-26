@@ -289,6 +289,7 @@ int main(int argc, char **argv) {
 			return 0;
 		case 'h':
 			r_egg_free (egg);
+			free (sequence);
 			return usage (1);
 		case 'v':
 			free (sequence);

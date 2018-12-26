@@ -2918,7 +2918,6 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		curr_import_dir = (PE_(image_import_directory)*)(bin->b->buf + bin->import_directory_offset);
-		dll_name_offset = curr_import_dir->Name;
 
 		if (bin->import_directory_size < 1) {
 			return NULL;
