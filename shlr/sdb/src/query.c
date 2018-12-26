@@ -229,7 +229,6 @@ repeat:
 	if (next) *next = ';';
 	eq = strchr (p, '=');
 	if (eq) {
-		d = 1;
 		*eq++ = 0;
 		if (*eq == '$') {
 			next = strchr (eq + 1, ';');
@@ -246,7 +245,6 @@ repeat:
 		}
 	} else {
 		val = NULL;
-		d = 0;
 	}
 	if (!is_ref) {
 		next = strchr (val? val: cmd, ';');
@@ -378,7 +376,6 @@ next_quote:
 			fflush (stdout);
 			ls_free (l);
 		} else {
-			d = 1;
 			sdb_unset_like (s, cmd + 1);
 		}
 	} else if (*cmd == '+' || *cmd == '-') {
