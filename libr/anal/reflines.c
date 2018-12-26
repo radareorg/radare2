@@ -403,7 +403,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_list_free (lvls);
 			return NULL;
 		}
-		if (in_refline (addr, ref)) {
+		if (in_refline (addr, ref) && !(middle_after && ref->to == addr)) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
 	}
