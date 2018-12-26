@@ -677,6 +677,7 @@ typedef struct rtti_msvc_anal_context_t {
 	RPVector vtables; // <RVTableInfo>
 	RPVector complete_object_locators; // <RecoveryCompleteObjectLocator> TODO: use some more efficient map
 	RPVector type_descriptors; // <analyzed_typed_descriptor> TODO: use some more efficient map
+	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
 } RRTTIMSVCAnalContext;
 
 
@@ -787,7 +788,7 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 
 
 static char *unique_class_name(RAnal *anal, const char *original_name) {
-	if (!r_anal_class_get (anal, original_name)) {
+	if (!r_anal_class_exists (anal, original_name)) {
 		return strdup (original_name);
 	}
 
@@ -801,35 +802,38 @@ static char *unique_class_name(RAnal *anal, const char *original_name) {
 		if (!name) {
 			return NULL;
 		}
-	} while (r_anal_class_get (anal, name));
+	} while (r_anal_class_exists (anal, name));
 
 	return name;
 }
 
-static void recovery_apply_vtable(RAnalClass *cls, RVTableInfo *vtable) {
-	if (!vtable) {
-		cls->vtable_addr = UT64_MAX;
+static void recovery_apply_vtable(RAnal *anal, const char *class_name, RVTableInfo *vtable_info) {
+	if (!vtable_info) {
 		return;
 	}
 
-	cls->vtable_addr = vtable->saddr;
+	RAnalVTable vtable;
+	vtable.id = NULL;
+	vtable.offset = 0;
+	vtable.addr = vtable_info->saddr;
+	r_anal_class_vtable_set (anal, class_name, &vtable);
+	r_anal_class_vtable_fini (&vtable);
+
 	RVTableMethodInfo *vmeth;
-	r_vector_foreach (&vtable->methods, vmeth) {
-		RAnalMethod *meth = r_anal_method_new ();
-		if (!meth) {
-			continue;
-		}
-		meth->addr = vmeth->addr;
-		meth->vtable_offset = (int) vmeth->vtable_offset;
-		meth->name = r_str_newf ("virtual_%d", meth->vtable_offset);
-		r_pvector_push (&cls->methods, meth);
+	r_vector_foreach (&vtable_info->methods, vmeth) {
+		RAnalMethod meth;
+		meth.addr = vmeth->addr;
+		meth.vtable_offset = vmeth->vtable_offset;
+		meth.name = r_str_newf ("virtual_%d", meth.vtable_offset);
+		r_anal_class_method_set (anal, class_name, &meth);
+		r_anal_class_method_fini (&meth);
 	}
 }
 
-static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
-static RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td);
+static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
+static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td);
 
-static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls, RVector *base_descs) {
+static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RVector *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
 	r_vector_foreach (base_descs, base_desc) {
 		RecoveryTypeDescriptor *base_td = base_desc->td;
@@ -838,27 +842,30 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls,
 			continue;
 		}
 
-		RAnalClass *base_cls;
+		const char *base_class_name;
 		if (!base_td->col) {
 			eprintf ("Warning: Base td %s has no col. Falling back to recovery from td only.\n", base_td->td.name);
-			base_cls = recovery_apply_type_descriptor (context, base_td);
+			base_class_name = recovery_apply_type_descriptor (context, base_td);
 		} else {
-			base_cls = recovery_apply_complete_object_locator (context, base_td->col);
+			base_class_name = recovery_apply_complete_object_locator (context, base_td->col);
 		}
 
-		if (!base_cls) {
+		if (!base_class_name) {
 			eprintf ("Failed to convert !base td->col or td to a class\n");
 			continue;
 		}
 
-		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
-		base_cls_info->offset = (ut64)base_desc->bcd->where.mdisp;
-		// TODO base_cls_info->cls = base_cls;
+		RAnalBaseClass base;
+		base.id = NULL;
+		base.offset = (ut64)base_desc->bcd->where.mdisp;
+		base.class_name = strdup (base_class_name);
+		r_anal_class_base_set (context->vt_context->anal, class_name, &base);
+		r_anal_class_base_fini (&base);
 	}
 }
 
 
-static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
+static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
 	if (!col->valid) {
 		return NULL;
 	}
@@ -869,12 +876,10 @@ static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	RAnal *anal = context->vt_context->anal;
-	void **it;
-	r_pvector_foreach (&anal->classes, it) {
-		RAnalClass *existing = *((RAnalClass **)it);
-		if (existing->addr == col->addr) {
-			return existing;
-		}
+
+	const char *existing = ht_up_find (context->col_td_classes, col->addr, NULL);
+	if (existing != NULL) {
+		return existing;
 	}
 
 	char *name = r_anal_rtti_msvc_demangle_class_name (col->td->td.name);
@@ -893,31 +898,27 @@ static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 		return NULL;
 	}
 
-	RAnalClass *cls = r_anal_class_new (name);
-	free (name);
-	r_anal_class_add (anal, cls);
-	cls->addr = col->addr;
+	r_anal_class_create (anal, name);
+	ht_up_insert (context->col_td_classes, col->addr, name);
 
-	recovery_apply_vtable (cls, col->vtable);
-	recovery_apply_bases (context, cls, &col->base_td);
+	recovery_apply_vtable (anal, name, col->vtable);
+	recovery_apply_bases (context, name, &col->base_td);
 
-	return cls;
+	return name;
 }
 
 
 
-static RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td) {
+static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td) {
 	if (!td->valid) {
 		return NULL;
 	}
 
 	RAnal *anal = context->vt_context->anal;
-	void **it;
-	r_pvector_foreach (&anal->classes, it) {
-		RAnalClass *existing = *((RAnalClass **)it);
-		if (existing->addr == td->addr) {
-			return existing;
-		}
+
+	const char *existing = ht_up_find (context->col_td_classes, td->addr, NULL);
+	if (existing != NULL) {
+		return existing;
 	}
 
 	char *name = r_anal_rtti_msvc_demangle_class_name (td->td.name);
@@ -928,23 +929,25 @@ static RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 			return NULL;
 		}
 	}
-	RAnalClass *cls = r_anal_class_new (name);
-	free (name);
-	r_anal_class_add (anal, cls);
-	cls->addr = td->addr;
+
+	r_anal_class_create (anal, name);
+	ht_up_insert (context->col_td_classes, td->addr, name);
 
 	if (!td->col || !td->col->valid) {
-		return cls;
+		return name;
 	}
 
-	recovery_apply_vtable (cls, td->col->vtable);
-	recovery_apply_bases (context, cls, &td->col->base_td);
+	recovery_apply_vtable (anal, name, td->col->vtable);
+	recovery_apply_bases (context, name, &td->col->base_td);
 
-	return cls;
+	return name;
 }
 
 
 
+void str_key_fini(HtPPKv *kv) {
+	free (kv->value);
+}
 
 R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {
 	RRTTIMSVCAnalContext context;
@@ -952,6 +955,7 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 	r_pvector_init (&context.complete_object_locators, (RPVectorFree) recovery_complete_object_locator_free);
 	r_pvector_init (&context.type_descriptors, (RPVectorFree) recovery_type_descriptor_free);
 	r_pvector_init (&context.vtables, (RPVectorFree)r_anal_vtable_info_free);
+	context.col_td_classes = ht_up_new (NULL, (HtUPKvFreeFunc)str_key_fini, (HtUPCalcSizeV)strlen);
 
 	RListIter *vtableIter;
 	RVTableInfo *table;
@@ -989,5 +993,6 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 	r_pvector_clear (&context.complete_object_locators);
 	r_pvector_clear (&context.type_descriptors);
 	r_pvector_clear (&context.vtables);
+	ht_up_free (context.col_td_classes);
 }
 

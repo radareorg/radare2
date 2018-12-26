@@ -689,7 +689,6 @@ typedef struct r_anal_t {
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
-	RPVector classes;
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1781,23 +1780,6 @@ typedef struct r_anal_vtable_t {
 	ut64 addr; // where the content of the vtable is
 } RAnalVTable;
 
-typedef struct r_anal_class_t {
-	char *name;
-	ut64 addr;
-	ut64 vtable_addr;
-	RVector base_classes; // <RAnalBaseClass>
-	RPVector methods; // <RAnalMethod>
-} RAnalClass;
-
-R_API RAnalClass *r_anal_class_new(const char *name);
-R_API void r_anal_class_free(RAnalClass *cls);
-R_API RAnalMethod *r_anal_method_new();
-R_API void r_anal_method_free(RAnalMethod *meth);
-
-R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls);
-R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls);
-R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name);
-
 typedef enum {
 	R_ANAL_CLASS_ERR_SUCCESS = 0,
 	R_ANAL_CLASS_ERR_CLASH,
@@ -1808,6 +1790,7 @@ typedef enum {
 
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
+R_API bool r_anal_class_exists(RAnal *anal, const char *name);
 
 R_API void r_anal_class_method_fini(RAnalMethod *meth);
 R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);

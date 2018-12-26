@@ -6,108 +6,6 @@
 
 #define CLASSES_FLAGSPACE "classes"
 
-R_API RAnalClass *r_anal_class_new(const char *name) {
-	RAnalClass *cls = R_NEW (RAnalClass);
-	if (!cls) {
-		return NULL;
-	}
-	cls->name = name ? strdup (name) : NULL;
-	cls->addr = UT64_MAX;
-	cls->vtable_addr = UT64_MAX;
-	r_vector_init (&cls->base_classes, sizeof (RAnalBaseClass), NULL, NULL);
-	r_pvector_init (&cls->methods, (RPVectorFree)r_anal_method_free);
-	return cls;
-}
-
-R_API void r_anal_class_free(RAnalClass *cls) {
-	if (!cls) {
-		return;
-	}
-	free (cls->name);
-	r_vector_clear (&cls->base_classes);
-	r_pvector_clear (&cls->methods);
-	free (cls);
-}
-
-R_API RAnalMethod *r_anal_method_new() {
-	RAnalMethod *meth = R_NEW (RAnalMethod);
-	if (!meth) {
-		return NULL;
-	}
-	meth->addr = UT64_MAX;
-	meth->name = NULL;
-	meth->vtable_offset = -1;
-	return meth;
-}
-
-R_API void r_anal_method_free(RAnalMethod *meth) {
-	if (!meth) {
-		return;
-	}
-	free (meth->name);
-	free (meth);
-}
-
-
-R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls) {
-	if (r_pvector_contains (&anal->classes, cls)) {
-		return;
-	}
-	r_pvector_push (&anal->classes, cls);
-}
-
-R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls) {
-	ssize_t index = -1;
-	size_t i;
-	for (i = 0; i < r_pvector_len (&anal->classes); i++) {
-		RAnalClass *c = (RAnalClass *)r_pvector_at (&anal->classes, i);
-		if (c == cls) {
-			index = i;
-		}
-
-		size_t j;
-		for (j = 0; j < cls->base_classes.len; j++) {
-			RAnalBaseClass *base = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, j);
-			/* TODO if (base->cls == cls) {
-				r_vector_remove_at (&cls->base_classes, j, NULL);
-				j++;
-			}*/
-		}
-	}
-	if (index >= 0) {
-		RAnalClass *c = (RAnalClass *)r_pvector_remove_at (&anal->classes, (size_t)index);
-		r_anal_class_free (c);
-	}
-}
-
-R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
-	void **it;
-	r_pvector_foreach (&anal->classes, it) {
-		RAnalClass *cls = (RAnalClass *)*it;
-		if (strcmp (cls->name, name) == 0) {
-			return cls;
-		}
-	}
-	return NULL;
-}
-
-
-
-R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name) {
-	void **it;
-	r_pvector_foreach (&cls->methods, it) {
-		RAnalMethod *meth = *it;
-		if (strcmp (meth->name, name) == 0) {
-			return meth;
-		}
-	}
-	return NULL;
-}
-
-
-
-
-
 static char *sanitize_id(const char *id) {
 	if (!id || !*id) {
 		return NULL;
@@ -230,6 +128,16 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	sdb_remove (anal->sdb_classes, key_attr_types (class_name_sanitized), 0);
 
 	free (class_name_sanitized);
+}
+
+R_API bool r_anal_class_exists(RAnal *anal, const char *name) {
+	char *class_name_sanitized = sanitize_id (name);
+	if (!class_name_sanitized) {
+		return false;
+	}
+	bool r = sdb_array_contains (anal->sdb_classes, key_classes, class_name_sanitized, 0);
+	free (class_name_sanitized);
+	return r;
 }
 
 
