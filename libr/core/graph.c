@@ -2943,7 +2943,6 @@ static void agraph_print_edges(RAGraph *g) {
 		int minx = 0, maxx = 0;
 		struct tmplayer *tt = NULL;
 		tl = r_list_get_n (lyr, temp->fromlayer);
-		tm = r_list_get_n (lyr, temp->tolayer);
 
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer <= temp->tolayer) {
