@@ -7607,6 +7607,7 @@ static const char *help_msg_aC[] = {
 		"aCl[lj]", "", "list all classes",
 		"aC", " [class name]", "add class",
 		"aC-", " [class name]", "delete class",
+		"aCn", " [class name] [new class name]", "rename class",
 		"aCv", " [class name] [addr] ([offset])", "add vtable address to class",
 		"aCv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
 		"aCb", " [class name]", "list bases of class",
@@ -7843,7 +7844,8 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		r_anal_class_list (core->anal, input[1]);
 		break;
 	case ' ': // "aC"
-	case '-': { // "aC-"
+	case '-': // "aC-"
+	case 'n': { // "aCn"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			break;
@@ -7858,6 +7860,22 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		}
 		if (input[0] == '-') {
 			r_anal_class_delete (core->anal, cstr);
+		} else if(input[0] == 'n') {
+			if (!end) {
+				eprintf ("No new class name given.\n");
+			} else {
+				char *new_name = end + 1;
+				end = strchr (new_name, ' ');
+				if (end) {
+					*end = '\0';
+				}
+				RAnalClassErr err = r_anal_class_rename (core->anal, cstr, new_name);
+				if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
+					eprintf ("Class does not exist.\n");
+				} else if (err == R_ANAL_CLASS_ERR_CLASH) {
+					eprintf ("A class with this name already exists.\n");
+				}
+			}
 		} else {
 			r_anal_class_create (core->anal, cstr);
 		}
