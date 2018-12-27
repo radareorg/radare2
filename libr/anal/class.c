@@ -329,6 +329,31 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 	return r;
 }
 
+static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr) {
+	if (!name || !anal->flb.set || !anal->flb.push_fs || !anal->flb.pop_fs) {
+		return;
+	}
+	anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
+	anal->flb.set (anal->flb.f, name, addr, 0);
+	anal->flb.pop_fs (anal->flb.f);
+}
+
+static void r_anal_class_rename_flag(RAnal *anal, const char *old_name, const char *new_name) {
+	if (!old_name || !new_name || !anal->flb.set || !anal->flb.get || !anal->flb.push_fs || !anal->flb.pop_fs || !anal->flb.unset_name) {
+		return;
+	}
+	anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
+	RFlagItem *flag = anal->flb.get (anal->flb.f, old_name);
+	if (!flag) {
+		anal->flb.pop_fs (anal->flb.f);
+		return;
+	}
+	ut64 addr = flag->offset;
+	anal->flb.unset (anal->flb.f, flag);
+	anal->flb.set (anal->flb.f, new_name, addr, 0);
+	anal->flb.pop_fs (anal->flb.f);
+}
+
 static RAnalClassErr r_anal_class_add_attr_unique_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
 	char attr_id[16];
 	r_anal_class_unique_attr_id_raw (anal, class_name, attr_type, attr_id, sizeof(attr_id));
@@ -442,21 +467,19 @@ R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name,
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
 	}
-
-	if (anal->flb.set && anal->flb.push_fs && anal->flb.pop_fs) {
-		anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
-		char *flagname = flagname_method (class_name, meth->name);
-		if (flagname) {
-			anal->flb.set (anal->flb.f, flagname, meth->addr, 0);
-		}
-		anal->flb.pop_fs (anal->flb.f);
-	}
-
+	r_anal_class_set_flag (anal, flagname_method (class_name, meth->name), meth->addr);
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
 R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
-	return r_anal_class_rename_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
+	RAnalClassErr err = r_anal_class_rename_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
+	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
+		return err;
+	}
+	r_anal_class_rename_flag (anal,
+			flagname_method (class_name, old_meth_name),
+			flagname_method (class_name, new_meth_name));
+	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
 R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name) {

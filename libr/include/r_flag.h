@@ -74,6 +74,9 @@ typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
+typedef bool (*RFlagUnset)(RFlag *f, RFlagItem *item);
+typedef bool (*RFlagUnsetName)(RFlag *f, const char *name);
+typedef bool (*RFlagUnsetOff)(RFlag *f, ut64 addr);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 typedef bool (*RFlagPopSpace)(RFlag *f);
 typedef bool (*RFlagPushSpace)(RFlag *f, const char *name);
@@ -85,6 +88,9 @@ typedef struct r_flag_bind_t {
 	RFlagGet get;
 	RFlagGetAt get_at;
 	RFlagSet set;
+	RFlagUnset unset;
+	RFlagUnsetName unset_name;
+	RFlagUnsetOff unset_off;
 	RFlagSetSpace set_fs;
 	RFlagPushSpace push_fs;
 	RFlagPopSpace pop_fs;
