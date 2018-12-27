@@ -515,7 +515,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		cons->context->buffer = malloc (cons->context->buffer_len);
 		cons->context->buffer[0] = 0;
 	}
-	out = tbuf = calloc (1, len);
+	out = tbuf = calloc (1, len + 1);
 	if (!out) {
 		return 0;
 	}
