@@ -7604,7 +7604,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 
 static const char *help_msg_aC[] = {
 		"Usage:", "aC", "anal classes commands",
-		"aCl[lj]", "", "list all classes",
+		"aCl[lj*]", "", "list all classes",
 		"aC", " [class name]", "add class",
 		"aC-", " [class name]", "delete class",
 		"aCn", " [class name] [new class name]", "rename class",
