@@ -45,9 +45,8 @@ static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int si
 		ut64 sp = r_reg_getv (anal->reg, sp_name);
 		ut64 write_addr = sdb_num_get (trace, sdb_fmt ("%d.mem.write", idx), 0);
 		return (write_addr == sp + size);
-	} else {
-		return SDB_CONTAINS (idx, place);
 	}
+	return SDB_CONTAINS (idx, place);
 }
 
 static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
@@ -240,7 +239,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
 	char *ptr = strchr (fmt, '%');
-	fmt[strlen(fmt) - 1] = '\0';
+	fmt[strlen (fmt) - 1] = '\0';
 	while (ptr) {
 		ptr += 1;
 		// strip [width] specifier

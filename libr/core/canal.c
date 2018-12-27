@@ -134,7 +134,6 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 	if (lowptr >> 32) { // must be pa mode only
 		lowptr &= UT32_MAX;
 	}
-	// eprintf ("PTR %llx [ %llx %llx %llx ]\n", addr, cstr[0], cstr[1], cstr[2]);
 	// cstring
 	if (cstr[0] == 0 && cstr[1] < 0x1000) {
 		ut64 ptr = cstr[2];
@@ -384,12 +383,12 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump) {
 		return strdup ("parse_args"); // main?
 	}
 	if (use_isatty) {
-		char *ret = r_str_newf ("sub.setup_tty_%s_%llx", do_call, fcn->addr);
+		char *ret = r_str_newf ("sub.setup_tty_%s_%"PFMT64x, do_call, fcn->addr);
 		free (do_call);
 		return ret;
 	}
 	if (do_call) {
-		char *ret = r_str_newf ("sub.%s_%llx", do_call, fcn->addr);
+		char *ret = r_str_newf ("sub.%s_%"PFMT64x, do_call, fcn->addr);
 		free (do_call);
 		return ret;
 	}
@@ -2987,7 +2986,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 }
 
 static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
-	// SLOW Operation try to reduce as much as possible -- eprintf ("READ %d %llx\n", wordsize, ptr);
+	// SLOW Operation try to reduce as much as possible
 	if (!ptr) {
 		return false;
 	}
