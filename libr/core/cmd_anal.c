@@ -7745,6 +7745,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 
 		if (c == '-') {
 			err = r_anal_class_base_delete (core->anal, cstr, base_str);
+			free (cstr);
 			break;
 		}
 
@@ -7811,6 +7812,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 
 		if (c == '-') {
 			err = r_anal_class_vtable_delete (core->anal, cstr, arg1_str);
+			free (cstr);
 			break;
 		}
 
