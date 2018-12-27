@@ -1852,7 +1852,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 
 static bool anal_bb_edge (RCore *core, const char *input) {
 	// "afbe" switch-bb-addr case-bb-addr
-	char *arg = strdup (r_str_trim_ro(input));
+	char *arg = strdup (r_str_trim_ro (input));
 	char *sp = strchr (arg, ' ');
 	if (sp) {
 		*sp++ = 0;
@@ -2464,7 +2464,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		} else if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_afC);
 		} else {
-			afCc (core, input + 3);
+			afCc (core, r_str_trim_ro (input + 2));
 		}
 		break;
 	case 'c':{ // "afc"
