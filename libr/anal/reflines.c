@@ -403,7 +403,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_list_free (lvls);
 			return NULL;
 		}
-		if (in_refline (addr, ref) && !(middle_after && ref->to == addr)) {
+		if (in_refline (addr, ref) && !(middle_after && ref->to == addr && ref->direction >= 0)) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
 	}
@@ -415,7 +415,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_buf_free (b);
 			return NULL;
 		}
-		if ((ref->from == addr && !middle_after) || ref->to == addr) {
+		if ((ref->from == addr || ref->to == addr) && !middle_after) {
 			const char *corner = get_corner_char (ref, addr, middle);
 			const char ch = ref->from == addr ? '=' : '-';
 
