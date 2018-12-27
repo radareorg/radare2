@@ -384,12 +384,12 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump) {
 		return strdup ("parse_args"); // main?
 	}
 	if (use_isatty) {
-		char *ret = r_str_newf ("sub.setup_tty_%s_%x", do_call, fcn->addr & 0xfff);
+		char *ret = r_str_newf ("sub.setup_tty_%s_%llx", do_call, fcn->addr);
 		free (do_call);
 		return ret;
 	}
 	if (do_call) {
-		char *ret = r_str_newf ("sub.%s_%x", do_call, fcn->addr & 0xfff);
+		char *ret = r_str_newf ("sub.%s_%llx", do_call, fcn->addr);
 		free (do_call);
 		return ret;
 	}
