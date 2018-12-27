@@ -99,8 +99,7 @@ r_debug = library('r_debug', files,
 r_debug_dep = declare_dependency(link_with: r_debug,
                                  include_directories: r_debug_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_debug],
+pkgconfig_mod.generate(r_debug,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_debug',

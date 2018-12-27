@@ -36,8 +36,7 @@ r_parse = library('r_parse', files,
 r_parse_dep = declare_dependency(link_with: r_parse,
                                  include_directories: platform_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_parse],
+pkgconfig_mod.generate(r_parse,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_parse',

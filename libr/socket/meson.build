@@ -27,8 +27,7 @@ r_socket = library('r_socket', files,
 r_socket_dep = declare_dependency(link_with: r_socket,
                                   include_directories: [platform_inc])
 
-pkgconfig_mod.generate(
-  libraries: [r_socket],
+pkgconfig_mod.generate(r_socket,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_socket',

@@ -195,8 +195,7 @@ r_asm = library('r_asm', files,
 r_asm_dep = declare_dependency(link_with: r_asm,
                                include_directories: r_asm_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_asm],
+pkgconfig_mod.generate(r_asm,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_asm',

@@ -3,7 +3,6 @@ project('radare2', 'c', license: 'LGPL3', meson_version: '>=0.47.0')
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
-glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
 r2_version = 'unknown-error'
@@ -321,13 +320,12 @@ endif
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
-func_pfx_lists = [
-  ['arc4random_uniform', '#include <stdlib.h>'],
-  ['explicit_bzero', '#include <string.h>'],
-  ['explicit_memset', '#include <string.h>'],
-  ['clock_nanosleep', '#include <time.h>'],
-]
-foreach item : func_pfx_lists
+foreach item : [
+    ['arc4random_uniform', '#include <stdlib.h>'],
+    ['explicit_bzero', '#include <string.h>'],
+    ['explicit_memset', '#include <string.h>'],
+    ['clock_nanosleep', '#include <time.h>']
+  ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1])
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
@@ -450,21 +448,43 @@ if get_option('use_webui')
   )
 endif
 
-fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
-install_data(fortunes_files,
+install_data(
+  'doc/fortunes.creepy',
+  'doc/fortunes.fun',
+  'doc/fortunes.nsfw',
+  'doc/fortunes.tips',
   install_dir: r2_fortunes
 )
 
-man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
-man7_files = run_command(glob_cmd + ['man/*.7']).stdout().strip().split(';')
-install_man(man1_files, man7_files)
+install_man(
+  'man/r2agent.1',
+  'man/r2-docker.1',
+  'man/r2pm.1',
+  'man/rabin2.1',
+  'man/radare2.1',
+  'man/radiff2.1',
+  'man/rafind2.1',
+  'man/ragg2.1',
+  'man/rahash2.1',
+  'man/rarun2.1',
+  'man/rasm2.1',
+  'man/rax2.1',
+  'man/esil.7'
+)
 
 install_data('doc/hud',
   install_dir: r2_hud,
   rename: 'main'
 )
 
-zshcomp_files = run_command(glob_cmd + ['doc/zsh/_r*']).stdout().strip().split(';')
-install_data(zshcomp_files,
+install_data(
+  'doc/zsh/_r2',
+  'doc/zsh/_rabin2',
+  'doc/zsh/_radiff2',
+  'doc/zsh/_rafind2',
+  'doc/zsh/_ragg2',
+  'doc/zsh/_rahash2',
+  'doc/zsh/_rasm2',
+  'doc/zsh/_rax2',
   install_dir: r2_zsh_compdir
 )
