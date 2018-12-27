@@ -1041,6 +1041,7 @@ R_API int r_sys_getpid() {
 
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
+	r_return_val_if_fail (txt, false);
 	const char *says[] = {
 		"say", "termux-tts-speak", NULL
 	};

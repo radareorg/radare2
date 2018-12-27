@@ -24,9 +24,7 @@
 // dup from cmd_info
 #define PAIR_WIDTH 9
 
-#define bprintf                     \
-	if (binfile->rbin->verbose) \
-	eprintf
+#define bprintf if (binfile && binfile->rbin && binfile->rbin->verbose) eprintf
 
 static void pair(const char *key, const char *val, int mode, bool last) {
 	if (!val || !*val) {
