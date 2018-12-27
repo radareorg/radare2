@@ -1713,6 +1713,13 @@ static int cb_scr_color_grep(void *user, void *data) {
 	return true;
 }
 
+static int cb_scr_color_grep_highlight(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cons->grep_highlight = node->i_value;
+	return true;
+}
+
 static int cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3097,6 +3104,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.scrollbar", "false", "Show scrollbar in visual mode");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
+	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
 	SETPREF ("scr.pipecolor", "false", "Enable colors when using pipes");
 	SETPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");
 	SETPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");

@@ -377,14 +377,8 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 }
 
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
-	char *ptr;
-
-	if (!cmd) {
-		return;
-	}
-
-	ptr = preprocess_filter_expr (cmd, quotestr);
-
+	r_return_if_fail (cmd && quotestr);
+	char *ptr = preprocess_filter_expr (cmd, quotestr);
 	if (ptr) {
 		r_str_trim (cmd);
 		parse_grep_expression (ptr);
@@ -392,7 +386,7 @@ R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 	}
 }
 
-R_API char * r_cons_grep_strip(char *cmd, const char *quotestr) {
+R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 	char *ptr = NULL;
 
 	if (cmd) {
@@ -521,7 +515,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		cons->context->buffer = malloc (cons->context->buffer_len);
 		cons->context->buffer[0] = 0;
 	}
-	out = tbuf = calloc (1, len);
+	out = tbuf = calloc (1, len + 1);
 	if (!out) {
 		return 0;
 	}
@@ -593,8 +587,21 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			}
 			if (ret > 0) {
 				if (show) {
-					memcpy (out, tline, ret);
-					memcpy (out + ret, "\n", 1);
+					if (cons->grep_highlight && grep->str) {
+						char *str = r_str_ndup (tline, ret);
+						char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->str);
+						if (str && newstr) {
+							str = r_str_replace (str, grep->str, newstr, 1);
+							ret = strlen (str);
+							memcpy (out, str, ret);
+							memcpy (out + ret, "\n", 2);
+						}
+						free (str);
+						free (newstr);
+					} else {
+						memcpy (out, tline, ret);
+						memcpy (out + ret, "\n", 2);
+					}
 					out += ret + 1;
 					buffer_len += ret + 1;
 				}
@@ -662,17 +669,17 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	RConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
-	char *in, *out, *tok = NULL;
-	int hit = grep->neg;
+	char *tok = NULL;
+	bool hit = grep->neg;
 	int outlen = 0;
 	bool use_tok = false;
 	size_t i;
 
-	in = calloc (1, len + 1);
+	char *in = calloc (1, len + 1);
 	if (!in) {
 		return 0;
 	}
-	out = calloc (1, len + 2);
+	char *out = calloc (1, len + 2);
 	if (!out) {
 		free (in);
 		return 0;
@@ -695,7 +702,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				continue;
 			}
 			if (grep->begin) {
-				hit = (p == in)? 1: 0;
+				hit = (p == in);
 			} else {
 				hit = !grep->neg;
 			}
@@ -727,7 +734,6 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		if (use_tok && grep->tokens_used) {
 			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
 				tok = strtok (i? NULL: in, delims);
-
 				if (tok) {
 					if (grep->tokens[i]) {
 						int toklen = strlen (tok);
@@ -741,16 +747,14 @@ R_API int r_cons_grep_line(char *buf, int len) {
 						}
 					}
 				} else {
-					if (!(*out)) {
-						free (in);
-						free (out);
-						return 0;
-					} else {
+					if ((*out)) {
 						break;
 					}
+					free (in);
+					free (out);
+					return 0;
 				}
 			}
-
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
 				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
@@ -758,7 +762,6 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				free (out);
 				return -1;
 			}
-
 			memcpy (buf, out, len);
 			len = outlen;
 		}
@@ -947,4 +950,3 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	}
 	return r_strbuf_drain (res);
 }
-
