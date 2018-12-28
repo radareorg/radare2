@@ -165,6 +165,9 @@ typedef struct r_core_autocomplete_t {
 typedef struct r_core_visual_tab_t {
 	int printidx;
 	ut64 offset;
+	bool cur_enabled;
+	int cur;
+	int ocur;
 	// TODO: cursor and such
 } RCoreVisualTab;
 // #define RCoreVisualTab Tab

@@ -7,6 +7,8 @@ static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
 static int disMode = 0;
+static int hexMode = 0;
+static int printMode = 0;
 static void visual_refresh(RCore *core);
 
 static bool snowMode = false;
@@ -1055,7 +1057,6 @@ R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
 	int idx = 0;
 	char cstr[32];
 	ut64 addr = core->offset;
-	int printMode = 0;
 	bool xrefsMode = fcnInsteadOfAddr;
 	int lastPrintMode = 3;
 	if (core->print->cur_enabled) {
@@ -1831,22 +1832,52 @@ static void r_core_visual_tab_free (RCoreVisualTab *tab) {
 
 static RCoreVisualTab *r_core_visual_tab_new(RCore *core) {
 	RCoreVisualTab *tab = R_NEW0 (RCoreVisualTab);
-	tab->offset = core->offset;
-	tab->printidx = core->printidx;
-	return tab;
-}
-
-static void r_core_visual_tab_update(RCore *core) {
-	// shuold be unnecessary if we change core -> core->visual
-	RListIter *iter = r_list_head (core->visual.tabs);
-	if (!iter) {
-		return;
-	}
-	RCoreVisualTab *tab = (RCoreVisualTab*)(iter->data);
 	if (tab) {
 		tab->offset = core->offset;
 		tab->printidx = core->printidx;
 	}
+	return tab;
+}
+
+static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
+	r_return_if_fail (core && tab);
+
+	r_core_seek (core, tab->offset, 1);
+	core->printidx = tab->printidx;
+	core->printidx = tab->printidx;
+	core->print->cur_enabled = tab->cur_enabled;
+	core->print->cur = tab->cur;
+	core->print->ocur = tab->ocur;
+}
+
+static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
+	r_return_if_fail (core && tab);
+
+	tab->offset = core->offset;
+	tab->printidx = core->printidx;
+	tab->cur_enabled = core->print->cur_enabled;
+	tab->cur = core->print->cur;
+	tab->ocur = core->print->ocur;
+}
+
+static void r_core_visual_tab_update(RCore *core) {
+	if (!core->visual.tabs) {
+		return;
+	}
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+	if  (tab) {
+		visual_tabget (core, tab);
+	}
+#if 0
+	// shuold be unnecessary if we change core -> core->visual
+	RListIter *iter = r_list_head (core->visual.tabs);
+	if (iter) {
+		RCoreVisualTab *tab = (RCoreVisualTab*)(iter->data);
+		if (tab) {
+			visual_tabget (core, tab);
+		}
+	}
+#endif
 }
 
 static void visual_newtab (RCore *core) {
@@ -1859,35 +1890,39 @@ static void visual_newtab (RCore *core) {
 		visual_newtab (core);
 	}
 	RCoreVisualTab *tab = r_core_visual_tab_new (core);
-	r_list_prepend (core->visual.tabs, tab);
+	// r_list_prepend (core->visual.tabs, tab);
+	r_list_append (core->visual.tabs, tab);
 	core->visual.tab++;
 }
 
-static void visual_nexttab (RCore *core) {
-	RCoreVisualTab *tab = r_list_pop (core->visual.tabs);
+static void visual_nthtab (RCore *core, int n) {
+	core->visual.tab = n + 1;
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 	if (tab) {
-		r_core_seek (core, tab->offset, 1);
-		core->printidx = tab->printidx;
-		r_list_prepend (core->visual.tabs, tab);
-		core->visual.tab++;
-		if (core->visual.tab > r_list_length (core->visual.tabs)) {
-			core->visual.tab = 1;
-		}
+		visual_tabset (core, tab);
+	}
+}
+
+static void visual_nexttab (RCore *core) {
+	if (core->visual.tab >= r_list_length (core->visual.tabs)) {
+		core->visual.tab = 0;
+	}
+	core->visual.tab++;
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+	if (tab) {
+		visual_tabset (core, tab);
 	}
 }
 
 static void visual_prevtab (RCore *core) {
-	RCoreVisualTab *tab = r_list_pop_head (core->visual.tabs);
-	r_list_append (core->visual.tabs, tab);
-	tab = r_list_pop_head (core->visual.tabs);
-	if (tab) {
-		r_core_seek (core, tab->offset, 1);
-		core->printidx = tab->printidx;
-		r_list_prepend (core->visual.tabs, tab);
+	if (core->visual.tab < 2) {
+		core->visual.tab = r_list_length (core->visual.tabs);
+	} else {
 		core->visual.tab--;
-		if (core->visual.tab < 1) {
-			core->visual.tab = r_list_length (core->visual.tabs);
-		}
+	}
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab );
+	if (tab) {
+		visual_tabset (core, tab);
 	}
 }
 
@@ -1900,12 +1935,6 @@ static void visual_closetab (RCore *core) {
 			core->visual.tab = 1;
 		}
 		visual_nexttab (core);
-		RListIter *head = r_list_head (core->visual.tabs);
-		RCoreVisualTab *tab = head ? head->data : NULL;
-		if (tab) {
-			r_core_seek (core, tab->offset, 1);
-			core->printidx = tab->printidx;
-		}
 	} else {
 		r_list_free (core->visual.tabs);
 		core->visual.tabs = NULL;
@@ -1930,12 +1959,13 @@ static void applyHexMode(RCore *core) {
 }
 
 static void applyDisMode(RCore *core) {
-	switch (disMode) {
+	switch (disMode % 3) {
 	case 0:
 		r_config_set (core->config, "asm.pseudo", "false");
 		r_config_set (core->config, "asm.esil", "false");
 		break;
 	case 1:
+		r_config_set (core->config, "scr.color", "false");
 		r_config_set (core->config, "asm.pseudo", "true");
 		r_config_set (core->config, "asm.esil", "false");
 		break;
@@ -2105,10 +2135,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					case 1: // pd
 						rotateAsmemu (core);
 						disMode++;
-			// r_core_cmd0 (core, "e!asm.pseudo");
-						if (disMode > 2) {
-							disMode = 0;
-						}
 						applyDisMode (core);
 						break;
 					}
@@ -2766,7 +2792,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_mark (core, r_cons_readchar ());
 			break;
 		case '\'':
-			r_core_visual_mark_seek (core, r_cons_readchar ());
+			{
+				char ch = r_cons_readchar ();
+				if (ch == '\'') {
+					visual_nexttab (core);
+				} else if (ch == 9) { //  TAB
+					visual_prevtab (core);
+				} else if (isdigit (ch)) {
+					visual_nthtab (core, ch - '0' - 1);
+				} else {
+					r_core_visual_mark_seek (core, ch);
+				}
+			}
 			break;
 		case 'y':
 			if (core->print->ocur == -1) {
