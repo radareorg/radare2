@@ -71,18 +71,20 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_CMD_DEPTH 100
 
 /* visual mode */
-#define NPF 10
-#define PIDX (R_ABS (core->printidx % NPF))
-#define R_CORE_VISUAL_MODE_PX    0
-#define R_CORE_VISUAL_MODE_PD    1
-#define R_CORE_VISUAL_MODE_PDDBG 2
-#define R_CORE_VISUAL_MODE_PW    3
+#define R_CORE_VISUAL_MODE_PX  0
+#define R_CORE_VISUAL_MODE_PD  1
+#define R_CORE_VISUAL_MODE_DB  2
+#define R_CORE_VISUAL_MODE_OV  3
+#define R_CORE_VISUAL_MODE_CD  4
+
+/*
 #define R_CORE_VISUAL_MODE_PC    4
 #define R_CORE_VISUAL_MODE_PXA   5
 #define R_CORE_VISUAL_MODE_PSS   6
 #define R_CORE_VISUAL_MODE_PRC   7
 #define R_CORE_VISUAL_MODE_PXa   8
 #define R_CORE_VISUAL_MODE_PXR   9
+*/
 
 typedef struct r_core_rtr_host_t {
 	int proto;
