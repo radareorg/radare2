@@ -4015,8 +4015,8 @@ static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
-	ds->esil_likely = true;
 	RDisasmState *ds = esil->user;
+	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
 		ssa_set (esil, name);
 		char *r = ssa_get (esil, name);
