@@ -127,6 +127,7 @@ typedef struct {
 	bool show_emu_strflag;
 	bool show_emu_stack;
 	bool show_emu_write;
+	bool show_emu_ssa;
 	bool show_section;
 	int show_section_col;
 	bool show_section_perm;
@@ -147,6 +148,7 @@ typedef struct {
 	bool asm_hint_lea;
 	int  asm_hint_pos;
 	bool show_slow;
+	Sdb *ssa;
 	int cmtcol;
 	bool show_calls;
 	bool show_cmtflgrefs;
@@ -644,6 +646,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_emu_strinv = r_config_get_i (core->config, "emu.strinv");
 	ds->show_emu_strflag = r_config_get_i (core->config, "emu.strflag");
 	ds->show_emu_write = r_config_get_i (core->config, "emu.write");
+	ds->show_emu_ssa = r_config_get_i (core->config, "emu.ssa");
 	ds->show_emu_stack = r_config_get_i (core->config, "emu.stack");
 	ds->stackFd = -1;
 	if (ds->show_emu_stack) {
@@ -847,6 +850,7 @@ static void ds_free(RDisasmState *ds) {
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_print_esil_anal_fini (ds);
+	sdb_free (ds->ssa);
 	free (ds->comment);
 	free (ds->line);
 	free (ds->refline);
@@ -3978,19 +3982,48 @@ static int mymemwrite2(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return (addr >= emustack_min && addr < emustack_max);
 }
 
+static char *ssa_get(RAnalEsil *esil, const char *reg) {
+	RDisasmState *ds = esil->user;
+	if (isdigit (*reg)) {
+		return strdup (reg);
+	}
+	if (!ds->ssa) {
+		ds->ssa = sdb_new0 ();
+	}
+	int n = sdb_num_get (ds->ssa, reg, NULL);
+	return r_str_newf ("%s_%d", reg, n);
+}
+
+static void ssa_set(RAnalEsil *esil, const char *reg) {
+	RDisasmState *ds = esil->user;
+	(void)sdb_num_inc (ds->ssa, reg, 1, 0);
+}
+
 #define R_DISASM_MAX_STR 512
+static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+	RDisasmState *ds = esil->user;
+	if (ds->show_emu_ssa) {
+		if (!isdigit (*name)) {
+			char *r = ssa_get (esil, name);
+			ds_comment_esil (ds, true, false, "<%s", r);
+			free (r);
+		}
+	}
+	return 0;
+}
+
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
-	RDisasmState *ds = NULL;
-	if (!esil) {
-		return 0;
-	}
-	ds = esil->user;
-	if (!ds) {
-		return 0;
-	}
+	RDisasmState *ds = esil->user;
 	ds->esil_likely = true;
+	if (ds->show_emu_ssa) {
+		ssa_set (esil, name);
+		char *r = ssa_get (esil, name);
+		ds_comment_esil (ds, true, false, ">%s", r);
+		free (r);
+		return 0;
+	}
 	if (!ds->show_slow) {
 		return 0;
 	}
@@ -4059,14 +4092,16 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
 				const char *escquote = ds->use_json ? "\\\"" : "\"";
 				if (escstr) {
+					char *m;
 					if (ds->show_color) {
 						bool inv = ds->show_emu_strinv;
-						msg = r_str_newf ("%s%s%s%s%s%s%s",
+						m = r_str_newf ("%s%s%s%s%s%s%s",
 						                  prefix, type ? type : "", inv ? Color_INVERT : "",
 						                  escquote, escstr, escquote, inv ? Color_INVERT_RESET : "");
 					} else {
-						msg = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
+						m = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
 					}
+					msg = r_str_append_owned (msg, m);
 					emu_str_printed = true;
 					free (escstr);
 				}
@@ -4078,7 +4113,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				/* nothing */
 			} else {
 				if (!ds->show_emu_str) {
-					msg = r_str_newf ("-> 0x%x", *n32);
+					msg = r_str_appendf (msg, "-> 0x%x", *n32);
 				}
 			}
 		}
@@ -4314,6 +4349,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
 	esil->cb.user = ds;
 	esil->cb.hook_reg_write = myregwrite;
+	esil->cb.hook_reg_read = myregread;
 	hook_mem_write = esil->cb.hook_mem_write;
 	if (ds->show_emu_stack) {
 		esil->cb.hook_mem_write = mymemwrite2;

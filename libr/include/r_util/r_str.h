@@ -154,6 +154,7 @@ R_API int r_wstr_clen(const char *s);
 R_API char *r_str_prefix(char *ptr, const char *string);
 R_API char *r_str_prefix_all(const char *s, const char *pfx);
 R_API char *r_str_append(char *ptr, const char *string);
+R_API char *r_str_append_owned(char *ptr, char *string);
 R_API char *r_str_appendf(char *ptr, const char *fmt, ...);
 R_API char *r_str_appendch(char *x, char y);
 R_API void r_str_case(char *str, bool up);
