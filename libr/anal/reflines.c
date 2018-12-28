@@ -374,6 +374,21 @@ static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, int wide) 
 	}
 }
 
+static inline bool refline_kept(RAnalRefline *ref, bool after, ut64 addr) {
+	if (after) {
+		if (ref->direction < 0) {
+			if (ref->from == addr) {
+				return false;
+			}
+		} else {
+			if (ref->to == addr) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
@@ -403,8 +418,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_list_free (lvls);
 			return NULL;
 		}
-		if (in_refline (addr, ref) && !(middle_after && ((ref->to == addr && ref->direction >= 0)
-		                                                 || (ref->from == addr && ref->direction < 0)))) {
+		if (in_refline (addr, ref) && refline_kept (ref, middle_after, addr)) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
 	}
