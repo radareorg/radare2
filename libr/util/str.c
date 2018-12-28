@@ -873,6 +873,14 @@ R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
 	return ret;
 }
 
+R_API char *r_str_append_owned(char *ptr, char *string) {
+	if (!ptr) {
+		return string;
+	}
+	char *r = r_str_append(ptr, string);
+	free (string);
+	return r;
+}
 /*
  * first argument must be allocated
  * return: the pointer ptr resized to string size.

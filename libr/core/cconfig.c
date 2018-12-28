@@ -2624,6 +2624,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("emu.strinv", "true", "Color-invert asm.emu strings");
 	SETPREF ("emu.strflag", "true", "Also show flag (if any) for asm.emu string");
 	SETPREF ("emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
+	SETPREF ("emu.ssa", "false", "Perform SSA checks and show the ssa reg names as comments");
 	n = NODECB ("emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
 	SETOPTIONS (n, "d", "c", "s", "f", "m", "h", "C", "r", NULL);
