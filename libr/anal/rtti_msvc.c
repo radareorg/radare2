@@ -595,39 +595,29 @@ R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, 
 	return rtti_msvc_print_complete_object_locator_recurse (context, addr, mode, strict);
 }
 
-
-
-
-
+typedef struct recovery_type_descriptor_t RecoveryTypeDescriptor;
 
 typedef struct recovery_base_descriptor_t {
 	rtti_base_class_descriptor *bcd;
-	struct recovery_type_descriptor_t *td;
+	RecoveryTypeDescriptor *td;
 } RecoveryBaseDescriptor;
-
 
 typedef struct recovery_complete_object_locator_t {
 	ut64 addr;
 	bool valid;
 	RVTableInfo *vtable;
 	rtti_complete_object_locator col;
-	struct recovery_type_descriptor_t *td;
+	RecoveryTypeDescriptor *td;
 	rtti_class_hierarchy_descriptor chd;
 	RList *bcd; // <rtti_base_class_descriptor>
 	RVector base_td; // <RecoveryBaseDescriptor>
 } RecoveryCompleteObjectLocator;
 
 RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
-	RecoveryCompleteObjectLocator *col = R_NEW (RecoveryCompleteObjectLocator);
+	RecoveryCompleteObjectLocator *col = R_NEW0 (RecoveryCompleteObjectLocator);
 	if (!col) {
 		return NULL;
 	}
-	col->addr = 0;
-	col->valid = false;
-	col->vtable = NULL;
-	col->td = NULL;
-	memset (&col->chd, 0, sizeof (col->chd));
-	col->bcd = NULL;
 	r_vector_init (&col->base_td, sizeof(RecoveryBaseDescriptor), NULL, NULL);
 	return col;
 }
@@ -642,12 +632,12 @@ void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 }
 
 
-typedef struct recovery_type_descriptor_t {
+struct recovery_type_descriptor_t {
 	ut64 addr;
 	bool valid;
 	rtti_type_descriptor td;
 	RecoveryCompleteObjectLocator *col;
-} RecoveryTypeDescriptor;
+};
 
 RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	RecoveryTypeDescriptor *td = R_NEW (RecoveryTypeDescriptor);

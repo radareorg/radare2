@@ -61,14 +61,14 @@ typedef enum {
 
 static const char *attr_type_id(RAnalClassAttrType attr_type) {
 	switch (attr_type) {
-		case R_ANAL_CLASS_ATTR_TYPE_METHOD:
-			return "method";
-		case R_ANAL_CLASS_ATTR_TYPE_VTABLE:
-			return "vtable";
-		case R_ANAL_CLASS_ATTR_TYPE_BASE:
-			return "base";
-		default:
-			return NULL;
+	case R_ANAL_CLASS_ATTR_TYPE_METHOD:
+		return "method";
+	case R_ANAL_CLASS_ATTR_TYPE_VTABLE:
+		return "vtable";
+	case R_ANAL_CLASS_ATTR_TYPE_BASE:
+		return "base";
+	default:
+		return NULL;
 	}
 }
 
@@ -218,12 +218,9 @@ beach:
 // all ids must be sanitized
 static char *r_anal_class_get_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, bool specific) {
 	const char *attr_type_str = attr_type_id (attr_type);
-	char *key;
-	if (specific) {
-		key = key_attr_content_specific (class_name, attr_type_str, attr_id);
-	} else {
-		key = key_attr_content (class_name, attr_type_str, attr_id);
-	}
+	char *key = specific
+			? key_attr_content_specific (class_name, attr_type_str, attr_id)
+			: key_attr_content (class_name, attr_type_str, attr_id);
 	char *ret = sdb_get (anal->sdb_classes, key, 0);
 	return ret;
 }
