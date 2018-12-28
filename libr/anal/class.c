@@ -6,6 +6,15 @@
 
 #define CLASSES_FLAGSPACE "classes"
 
+
+static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name);
+static void r_anal_class_method_delete_class(RAnal *anal, const char *class_name);
+static void r_anal_class_vtable_delete_class(RAnal *anal, const char *class_name);
+static void r_anal_class_base_rename_class(RAnal *anal, const char *class_name_old, const char *class_name_new);
+static void r_anal_class_method_rename_class(RAnal *anal, const char *old_class_name, const char *new_class_name);
+static void r_anal_class_vtable_rename_class(RAnal *anal, const char *old_class_name, const char *new_class_name);
+
+
 static char *sanitize_id(const char *id) {
 	if (!id || !*id) {
 		return NULL;
@@ -86,9 +95,6 @@ R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	}
 }
 
-static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name);
-static void r_anal_class_method_delete_class(RAnal *anal, const char *class_name);
-static void r_anal_class_vtable_delete_class(RAnal *anal, const char *class_name);
 
 R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	char *class_name_sanitized = sanitize_id (name);
@@ -145,10 +151,6 @@ R_API bool r_anal_class_exists(RAnal *anal, const char *name) {
 	free (class_name_sanitized);
 	return r;
 }
-
-static void r_anal_class_base_rename_class(RAnal *anal, const char *class_name_old, const char *class_name_new);
-static void r_anal_class_method_rename_class(RAnal *anal, const char *old_class_name, const char *new_class_name);
-static void r_anal_class_vtable_rename_class(RAnal *anal, const char *old_class_name, const char *new_class_name);
 
 static void rename_key(RAnal *anal, const char *key_old, const char *key_new) {
 	char *content = sdb_get (anal->sdb_classes, key_old, 0);
