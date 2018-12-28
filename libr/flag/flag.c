@@ -717,6 +717,9 @@ R_API void r_flag_bind(RFlag *f, RFlagBind *fb) {
 	fb->get = r_flag_get;
 	fb->get_at = r_flag_get_at;
 	fb->set = r_flag_set;
+	fb->unset = r_flag_unset;
+	fb->unset_name = r_flag_unset_name;
+	fb->unset_off = r_flag_unset_off;
 	fb->set_fs = r_flag_space_set;
 	fb->push_fs = r_flag_space_push;
 	fb->pop_fs = r_flag_space_pop;
