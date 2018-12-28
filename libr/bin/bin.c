@@ -99,12 +99,12 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 
 R_API RList *r_bin_raw_strings(RBinFile *bf, int min) {
 	r_return_val_if_fail (bf, NULL);
-	return r_bin_file_get_strings (bf, min, 0, 2);
+	return r_bin_file_get_strings (bf, min, (bf->strmode & R_MODE_SIMPLEST), 2);
 }
 
 R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	r_return_val_if_fail (bf, NULL);
-	return r_bin_file_get_strings (bf, min, 1, raw);
+	return r_bin_file_get_strings (bf, min, (bf->strmode & R_MODE_SIMPLEST), raw);
 }
 
 R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {

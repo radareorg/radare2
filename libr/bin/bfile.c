@@ -59,6 +59,9 @@ static void print_string(RBinFile *bf, RBinString *string) {
 		free (f_name);
 		break;
 	}
+	case R_MODE_SIMPLEST:
+		r_cons_printf ("%s\n", string->string);
+		break;
 	case R_MODE_PRINT:
 		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
@@ -766,7 +769,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 			return NULL;
 		}
 	}
-	if (!raw && a->o && a->o && a->o->sections && !r_list_empty (a->o->sections)) {
+	if (!raw && a->o && a->o->sections && !r_list_empty (a->o->sections)) {
 		RBinObject *o = a->o;
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
