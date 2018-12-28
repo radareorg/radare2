@@ -374,8 +374,8 @@ static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, int wide) 
 	}
 }
 
-static inline bool refline_kept(RAnalRefline *ref, bool after, ut64 addr) {
-	if (after) {
+static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr) {
+	if (middle_after) {
 		if (ref->direction < 0) {
 			if (ref->from == addr) {
 				return false;
