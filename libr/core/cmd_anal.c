@@ -571,6 +571,7 @@ static const char *help_msg_av[] = {
 	"av*", "", "like av, but as r2 commands",
 	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
+	"avrr", "", "recover class info from all findable RTTI (see aC)",
 	"avrD", " [classname]", "demangle a class name from RTTI",
 	NULL
 };
@@ -7561,6 +7562,9 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 	case 'a': // "avra"
 		r_anal_rtti_print_all (core->anal, input[1]);
 		break;
+	case 'r': // "avrr"
+		r_anal_rtti_recover_all (core->anal);
+		break;
 	case 'D': { // "avrD"
 		char *dup = strdup (input + 1);
 		if (!dup) {
@@ -7593,6 +7597,304 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 		break;
 	default :
 		r_core_cmd_help (core, help_msg_av);
+		break;
+	}
+}
+
+
+static const char *help_msg_aC[] = {
+		"Usage:", "aC", "anal classes commands",
+		"aCl[lj*]", "", "list all classes",
+		"aC", " [class name]", "add class",
+		"aC-", " [class name]", "delete class",
+		"aCn", " [class name] [new class name]", "rename class",
+		"aCv", " [class name] [addr] ([offset])", "add vtable address to class",
+		"aCv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
+		"aCb", " [class name]", "list bases of class",
+		"aCb", " [class name] [base class name] ([offset])", "add base class",
+		"aCb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
+		"aCm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
+		"aCm-", " [class name] [method name]", "delete method",
+		"aCmn", " [class name] [method name] [new name]", "rename method",
+		"aC?", "", "show this help",
+		NULL
+};
+
+static void cmd_anal_class_method(RCore *core, const char *input) {
+	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
+	char c = input[0];
+	switch (c) {
+	case ' ': // "aCm"
+	case '-': // "aCm-"
+	case 'n': { // "aCmn"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			eprintf ("No class name given.\n");
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (!end) {
+			eprintf ("No method name given.\n");
+			free (cstr);
+			break;
+		}
+		*end = '\0';
+		char *name_str = end + 1;
+
+		if (c == ' ' || c == 'n') {
+			end = strchr (name_str, ' ');
+			if (!end) {
+				if (c == ' ') {
+					eprintf ("No offset given.\n");
+				} else if (c == 'n') {
+					eprintf ("No new method name given.\n");
+				}
+				free (cstr);
+				break;
+			}
+			*end = '\0';
+		}
+
+		if (c == ' ') {
+			char *addr_str = end + 1;
+			end = strchr (addr_str, ' ');
+			if (end) {
+				*end = '\0';
+			}
+
+			RAnalMethod meth;
+			meth.name = name_str;
+			meth.addr = r_num_get (core->num, addr_str);
+			meth.vtable_offset = -1;
+			if (end) {
+				meth.vtable_offset = (int)r_num_get (core->num, end + 1);
+			}
+			err = r_anal_class_method_set (core->anal, cstr, &meth);
+		} else if (c == 'n') {
+			char *new_name_str = end + 1;
+			end = strchr (new_name_str, ' ');
+			if (end) {
+				*end = '\0';
+			}
+
+			err = r_anal_class_method_rename (core->anal, cstr, name_str, new_name_str);
+		} else if (c == '-') {
+			err = r_anal_class_method_delete (core->anal, cstr, name_str);
+		}
+
+		free (cstr);
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_aC);
+		break;
+	}
+
+	switch (err) {
+		case R_ANAL_CLASS_ERR_NONEXISTENT_CLASS:
+			eprintf ("Class does not exist.\n");
+			break;
+		case R_ANAL_CLASS_ERR_NONEXISTENT_ATTR:
+			eprintf ("Method does not exist.\n");
+			break;
+		default:
+			break;
+	}
+}
+
+static void cmd_anal_class_base(RCore *core, const char *input) {
+	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
+	char c = input[0];
+	switch (c) {
+	case ' ': // "aCb"
+	case '-': { // "aCb-"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			eprintf ("No class name given.\n");
+			return;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+			end++;
+		}
+
+		if (!end || *end == '\0') {
+			if (c == ' ') {
+				r_anal_class_list_bases (core->anal, cstr);
+			} else /*if (c == '-')*/ {
+				eprintf ("No base id given.\n");
+			}
+			free (cstr);
+			break;
+		}
+
+		char *base_str = end;
+		end = strchr (base_str, ' ');
+		if (end) {
+			*end = '\0';
+		}
+
+		if (c == '-') {
+			err = r_anal_class_base_delete (core->anal, cstr, base_str);
+			free (cstr);
+			break;
+		}
+
+		RAnalBaseClass base;
+		base.id = NULL;
+		base.offset = 0;
+		base.class_name = base_str;
+
+		if (end) {
+			base.offset = r_num_get (core->num, end + 1);
+		}
+
+		err = r_anal_class_base_set (core->anal, cstr, &base);
+		free (base.id);
+		free (cstr);
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_aC);
+		break;
+	}
+
+	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
+		eprintf ("Class does not exist.\n");
+	}
+}
+
+static void cmd_anal_class_vtable(RCore *core, const char *input) {
+	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
+	char c = input[0];
+	switch (c) {
+	case ' ': // "aCv"
+	case '-': { // "aCv-"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			eprintf ("No class name given.\n");
+			return;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+			end++;
+		}
+
+		if (!end || *end == '\0') {
+			if (c == ' ') {
+				r_anal_class_list_vtables (core->anal, cstr);
+			} else /*if (c == '-')*/ {
+				eprintf ("No vtable id given. See aCv [class name].\n");
+			}
+			free (cstr);
+			break;
+		}
+
+		char *arg1_str = end;
+		end = strchr (arg1_str, ' ');
+		if (end) {
+			*end = '\0';
+		}
+
+		if (c == '-') {
+			err = r_anal_class_vtable_delete (core->anal, cstr, arg1_str);
+			free (cstr);
+			break;
+		}
+
+		RAnalVTable vtable;
+		vtable.id = NULL;
+		vtable.addr = r_num_get (core->num, arg1_str);
+		vtable.offset = 0;
+
+		if (end) {
+			vtable.offset = r_num_get (core->num, end + 1);
+		}
+
+		err = r_anal_class_vtable_set (core->anal, cstr, &vtable);
+		free (vtable.id);
+		free (cstr);
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_aC);
+		break;
+	}
+
+	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
+		eprintf ("Class does not exist.\n");
+	}
+}
+
+static void cmd_anal_classes(RCore *core, const char *input) {
+	switch (input[0]) {
+	case 'l': // "aCl"
+		r_anal_class_list (core->anal, input[1]);
+		break;
+	case ' ': // "aC"
+	case '-': // "aC-"
+	case 'n': { // "aCn"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+		}
+		if (input[0] == '-') {
+			r_anal_class_delete (core->anal, cstr);
+		} else if(input[0] == 'n') {
+			if (!end) {
+				eprintf ("No new class name given.\n");
+			} else {
+				char *new_name = end + 1;
+				end = strchr (new_name, ' ');
+				if (end) {
+					*end = '\0';
+				}
+				RAnalClassErr err = r_anal_class_rename (core->anal, cstr, new_name);
+				if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
+					eprintf ("Class does not exist.\n");
+				} else if (err == R_ANAL_CLASS_ERR_CLASH) {
+					eprintf ("A class with this name already exists.\n");
+				}
+			}
+		} else {
+			r_anal_class_create (core->anal, cstr);
+		}
+		free (cstr);
+		break;
+	}
+	case 'v':
+		cmd_anal_class_vtable (core, input + 1);
+		break;
+	case 'b': // "aCb"
+		cmd_anal_class_base (core, input + 1);
+		break;
+	case 'm': // "aCm"
+		cmd_anal_class_method (core, input + 1);
+		break;
+	default: // "aC?"
+		r_core_cmd_help (core, help_msg_aC);
 		break;
 	}
 }
@@ -7664,6 +7966,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
+	case 'C': cmd_anal_classes (core, input + 1); break; // "aC"
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"

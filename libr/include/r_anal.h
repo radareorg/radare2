@@ -688,6 +688,7 @@ typedef struct r_anal_t {
 	RHintCb hint_cbs;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
+	Sdb *sdb_classes;
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1746,6 +1747,7 @@ R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 
 R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode);
 R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
 R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict);
+R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables);
 
 R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut64 addr, int mode);
 R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode);
@@ -1755,8 +1757,65 @@ R_API void r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name);
 R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
+R_API void r_anal_rtti_recover_all(RAnal *anal);
 
 R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color);
+
+/* classes */
+typedef struct r_anal_method_t {
+	char *name;
+	ut64 addr;
+	st64 vtable_offset; // >= 0 if method is virtual, else -1
+} RAnalMethod;
+
+typedef struct r_anal_base_class_t {
+	char *id; // id to identify the class attr
+	ut64 offset; // offset of the base class inside the derived class
+	char *class_name;
+} RAnalBaseClass;
+
+typedef struct r_anal_vtable_t {
+	char *id; // id to identify the class attr
+	ut64 offset; // offset inside the class
+	ut64 addr; // where the content of the vtable is
+} RAnalVTable;
+
+typedef enum {
+	R_ANAL_CLASS_ERR_SUCCESS = 0,
+	R_ANAL_CLASS_ERR_CLASH,
+	R_ANAL_CLASS_ERR_NONEXISTENT_ATTR,
+	R_ANAL_CLASS_ERR_NONEXISTENT_CLASS,
+	R_ANAL_CLASS_ERR_OTHER
+} RAnalClassErr;
+
+R_API void r_anal_class_create(RAnal *anal, const char *name);
+R_API void r_anal_class_delete(RAnal *anal, const char *name);
+R_API bool r_anal_class_exists(RAnal *anal, const char *name);
+R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const char *new_name);
+
+R_API void r_anal_class_method_fini(RAnalMethod *meth);
+R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name, const char *meth_name, RAnalMethod *meth);
+R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const char *class_name);
+R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth);
+R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name);
+R_API RAnalClassErr r_anal_class_method_delete(RAnal *anal, const char *class_name, const char *meth_name);
+
+R_API void r_anal_class_base_fini(RAnalBaseClass *base);
+R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, const char *base_id, RAnalBaseClass *base);
+R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name);
+R_API RAnalClassErr r_anal_class_base_set(RAnal *anal, const char *class_name, RAnalBaseClass *base);
+R_API RAnalClassErr r_anal_class_base_delete(RAnal *anal, const char *class_name, const char *base_id);
+
+R_API void r_anal_class_vtable_fini(RAnalVTable *vtable);
+R_API RAnalClassErr r_anal_class_vtable_get(RAnal *anal, const char *class_name, const char *vtable_id, RAnalVTable *vtable);
+R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name);
+R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable);
+R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_name, const char *vtable_id);
+
+R_API void r_anal_class_list(RAnal *anal, int mode);
+R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name);
+R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
+
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
