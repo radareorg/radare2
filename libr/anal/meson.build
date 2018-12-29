@@ -34,6 +34,7 @@ files = [
   'vtable.c',
   'xrefs.c',
   'p/anal_6502.c',
+  'p/anal_6502_cs.c',
   'p/anal_8051.c',
   'p/anal_arc.c',
   'p/anal_arm_cs.c',

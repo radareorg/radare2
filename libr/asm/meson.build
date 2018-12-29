@@ -3,6 +3,7 @@ files = [
   'op.c',
   'code.c',
   'p/asm_6502.c',
+  'p/asm_6502_cs.c',
   'p/asm_8051.c',
   'p/asm_arc.c',
   'p/asm_arm_as.c',
