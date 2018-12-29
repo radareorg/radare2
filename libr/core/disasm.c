@@ -3428,9 +3428,6 @@ static void ds_align_comment(RDisasmState *ds) {
 	}
 	ll += ds->buf_line_begin;
 	int cells = r_str_len_utf8_ansi (ll);
-	if (cells < 20) {
-		ds_print_pre (ds);
-	}
 	int cols = ds->interactive ? ds->core->cons->columns : 1024;
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
