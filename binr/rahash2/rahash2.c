@@ -438,7 +438,9 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	int simhash_flag = 0;
+
+	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:H:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
@@ -469,9 +471,35 @@ int main(int argc, char **argv) {
 		case 's': setHashString (optarg, 0); break;
 		case 'x': setHashString (optarg, 1); break;
 		case 'c': compareStr = optarg; break;
+		case 'H': algo = optarg; simhash_flag = 1; break;
 		default: return do_help (0);
 		}
 	}
+	while (simhash_flag) {
+		FILE *fp;
+		if (argv[3]) {
+			fp = fopen(argv[3], "rb");
+			if (fp != NULL) {
+				char buffer[8]; // shingle = 8
+				simhash_label_backward:
+					fread(buffer, sizeof(buffer), 1, fp);
+          if (feof(fp)) {
+            fclose(fp);
+            return 0;
+          }
+          fseek(fp, -1, SEEK_CUR);
+					hashstr_hex = 0;
+					hashstr = buffer;
+					goto simhash_label_forward;
+			} else {
+				printf ("No Such file exist");
+			}
+		} else {
+			printf("No file path given\n");
+		}
+		return 0;
+	}
+
 	if (encrypt && decrypt) {
 		eprintf ("rahash2: Option -E and -D are incompatible with each other.\n");
 		return 1;
@@ -550,6 +578,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	do_hash_seed (seed);
+	simhash_label_forward:
 	if (hashstr) {
 #define INSIZE 32768
 		ret = 0;
@@ -649,6 +678,7 @@ int main(int argc, char **argv) {
 				}
 				free (s.buf);
 			}
+			goto simhash_label_backward;
 			return ret;
 		}
 	}
