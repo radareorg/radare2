@@ -1839,6 +1839,7 @@ extern RAnalPlugin r_anal_plugin_i4004;
 extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_m68k_cs;
+extern RAnalPlugin r_anal_plugin_m68xx_cs;
 extern RAnalPlugin r_anal_plugin_malbolge;
 extern RAnalPlugin r_anal_plugin_mcore;
 extern RAnalPlugin r_anal_plugin_mips_cs;
