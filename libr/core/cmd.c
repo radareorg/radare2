@@ -2664,6 +2664,8 @@ repeat_arroba:
 				*v++ = 0;
 				r_sys_setenv (k, v);
 				r_list_append (tmpenvs, k);
+			} else {
+				free (k);
 			}
 		} else if (ptr[1] == '.') { // "@."
 			if (ptr[2] == '.') { // "@.."
