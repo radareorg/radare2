@@ -1,0 +1,9 @@
+OBJ_6502_CS=anal_6502_cs.o
+
+STATIC_OBJ+=${OBJ_6502_CS}
+TARGET_6502_CS=anal_6502_cs.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_6502_CS}
+
+${TARGET_6502_CS}: ${OBJ_6502_CS}
+	${CC} $(call libname,anal_6502_cs) ${LDFLAGS} ${CFLAGS} -o anal_6502_cs.${EXT_SO} ${OBJ_6502_CS}
