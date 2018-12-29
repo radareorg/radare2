@@ -4002,7 +4002,7 @@ static void ssa_set(RAnalEsil *esil, const char *reg) {
 #define R_DISASM_MAX_STR 512
 static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
-	if (ds->show_emu_ssa) {
+	if (ds && ds->show_emu_ssa) {
 		if (!isdigit (*name)) {
 			char *r = ssa_get (esil, name);
 			ds_comment_esil (ds, true, false, "<%s", r);
