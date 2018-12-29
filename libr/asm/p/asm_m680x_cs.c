@@ -5,16 +5,16 @@
 #include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
-#define CAPSTONE_HAS_M68XX 1
+#define CAPSTONE_HAS_M680X 1
 #else
-#define CAPSTONE_HAS_M68XX 0
+#define CAPSTONE_HAS_M680X 0
 #endif
 
-#if CAPSTONE_HAS_M68XX
+#if CAPSTONE_HAS_M680X
 
 static csh cd = 0;
 
-static int m68xxmode(const char *str) {
+static int m680xmode(const char *str) {
 	if (!str) {
 		return CS_MODE_M680X_6800;
 	}
@@ -59,7 +59,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int mode, n, ret;
 	ut64 off = a->pc;
 	cs_insn* insn = NULL;
-	mode = m68xxmode (a->cpu);
+	mode = m680xmode (a->cpu);
 	if (cd && mode != omode) {
 		cs_close (&cd);
 		cd = 0;
@@ -91,12 +91,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-RAsmPlugin r_asm_plugin_m68xx_cs = {
-	.name = "m68xx",
+RAsmPlugin r_asm_plugin_m680x_cs = {
+	.name = "m680x",
 	.cpus = "6800,6801,6805,6808,6809,6811,cpu12,6301,6309,hcs08",
-	.desc = "Capstone M68XX Disassembler",
+	.desc = "Capstone M680X Disassembler",
 	.license = "BSD",
-	.arch = "m68xx",
+	.arch = "m680x",
 	.bits = 8|32,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
@@ -104,11 +104,11 @@ RAsmPlugin r_asm_plugin_m68xx_cs = {
 };
 
 #else
-RAsmPlugin r_asm_plugin_m68xx_cs = {
-	.name = "m68xx",
-	.desc = "Capstone M68XX Disassembler (Not supported)",
+RAsmPlugin r_asm_plugin_m680x_cs = {
+	.name = "m680x",
+	.desc = "Capstone M680X Disassembler (Not supported)",
 	.license = "BSD",
-	.arch = "m68xx",
+	.arch = "m680x",
 	.bits = 8|32,
 };
 #endif
@@ -116,7 +116,7 @@ RAsmPlugin r_asm_plugin_m68xx_cs = {
 #ifndef CORELIB
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_m68xx_cs,
+	.data = &r_asm_plugin_m680x_cs,
 	.version = R2_VERSION
 };
 #endif

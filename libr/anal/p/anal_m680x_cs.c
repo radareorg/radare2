@@ -5,23 +5,23 @@
 #include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
-#define CAPSTONE_HAS_M68XX 1
+#define CAPSTONE_HAS_M680X 1
 #else
-#define CAPSTONE_HAS_M68XX 0
+#define CAPSTONE_HAS_M680X 0
 #endif
 
-#if !CAPSTONE_HAS_M68XX
+#if !CAPSTONE_HAS_M680X
 #ifdef _MSC_VER
-#pragma message ("Cannot find support for m68xx in capstone")
+#pragma message ("Cannot find support for m680x in capstone")
 #else
-#warning Cannot find capstone-m68xx support
+#warning Cannot find capstone-m680x support
 #endif
 #endif
 
-#if CAPSTONE_HAS_M68XX
+#if CAPSTONE_HAS_M680X
 #include <capstone/m680x.h>
 
-static int m68xxmode(const char *str) {
+static int m680xmode(const char *str) {
 	if (!str) {
 		return CS_MODE_M680X_6800;
 	}
@@ -62,10 +62,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
-	cs_m680x *m68xx;
+	cs_m680x *m680x;
 	cs_detail *detail;
 
-	int mode = m68xxmode (a->cpu);
+	int mode = m680xmode (a->cpu);
 
 	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
@@ -96,7 +96,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		goto beach;
 	}
 	detail = insn->detail;
-	m68xx = &detail->m680x;
+	m680x = &detail->m680x;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
 	op->id = insn->id;
@@ -528,22 +528,22 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-RAnalPlugin r_anal_plugin_m68xx_cs = {
-	.name = "m68xx",
-	.desc = "Capstone M68XX analysis plugin",
+RAnalPlugin r_anal_plugin_m680x_cs = {
+	.name = "m680x",
+	.desc = "Capstone M680X analysis plugin",
 	.license = "BSD",
 	.esil = false,
-	.arch = "m68xx",
+	.arch = "m680x",
 	.set_reg_profile = &set_reg_profile,
 	.bits = 16 | 32,
 	.op = &analop,
 };
 #else
-RAnalPlugin r_anal_plugin_m68xx_cs = {
-	.name = "m68xx (unsupported)",
-	.desc = "Capstone M68XX analyzer (unsupported)",
+RAnalPlugin r_anal_plugin_m680x_cs = {
+	.name = "m680x (unsupported)",
+	.desc = "Capstone M680X analyzer (unsupported)",
 	.license = "BSD",
-	.arch = "m68xx",
+	.arch = "m680x",
 	.bits = 32,
 };
 #endif
@@ -551,7 +551,7 @@ RAnalPlugin r_anal_plugin_m68xx_cs = {
 #ifndef CORELIB
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_m68xx_cs,
+	.data = &r_anal_plugin_m680x_cs,
 	.version = R2_VERSION
 };
 #endif

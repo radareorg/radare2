@@ -31,7 +31,7 @@ files = [
   'p/asm_lh5801.c',
   'p/asm_lm32.c',
   'p/asm_m68k_cs.c',
-  'p/asm_m68xx_cs.c',
+  'p/asm_m680x_cs.c',
   'p/asm_malbolge.c',
   'p/asm_mcs96.c',
   'p/asm_mips_cs.c',

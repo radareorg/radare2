@@ -1,0 +1,15 @@
+OBJ_M680X_CS=asm_m680x_cs.o
+
+include p/capstone.mk
+
+STATIC_OBJ+=${OBJ_M680X_CS}
+SHARED_OBJ+=${SHARED_M680X_CS}
+TARGET_M680X_CS=asm_m680x_cs.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+ALL_TARGETS+=${TARGET_M680X_CS}
+
+${TARGET_M680X_CS}: ${OBJ_M680X_CS}
+	${CC} $(call libname,asm_m680x_cs) ${LDFLAGS} ${CFLAGS} $(CS_LDFLAGS) \
+		-o ${TARGET_M680X_CS} ${OBJ_M680X_CS} ${SHARED2_M680X_CS}
+endif
