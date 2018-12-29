@@ -177,7 +177,7 @@ static const char *help_msg_p[] = {
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
 	"pc", "[?][p] [len]", "output C (or python) format",
-	"pC", "[d] [rows]", "print disassembly in columns (see hex.cols and pdi)",
+	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdi)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
@@ -587,6 +587,9 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 static void cmd_pCd(RCore *core, const char *input) {
 	int h, w = r_cons_get_size (&h);
 	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
+	if (colwidth < 1) {
+		colwidth = 16;
+	}
 	int i, columns = w / colwidth;
 	int rows = h - 2;
 	int obsz = core->blocksize;
