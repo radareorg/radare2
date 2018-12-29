@@ -6,6 +6,14 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <capstone/capstone.h>
+
+#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 1
+#define CAPSTONE_HAS_MOS65XX 1
+#else
+#define CAPSTONE_HAS_MOS65XX 0
+#endif
+
+#if CAPSTONE_HAS_MOS65XX
 #include <capstone/mos65xx.h>
 
 static csh handle = 0;
@@ -49,8 +57,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	{
 		ut64 naddr = addr;
 		size_t size = len;
-		if (!insn)
+		if (!insn) {
 			insn = cs_malloc (handle);
+		}
 		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
 			&size, (uint64_t*)&naddr, insn);
 	}
@@ -68,6 +77,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->cond = 0;
 		switch (insn->id) {
 		case MOS65XX_INS_INVALID:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		case MOS65XX_INS_ADC:
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
@@ -205,6 +216,20 @@ RAnalPlugin r_anal_plugin_6502_cs = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_6502_cs,
+	.version = R2_VERSION
+};
+#endif
+#else
+//  empty plugin
+RAnalPlugin r_anal_plugin_6502_cs = {
+	.name = "6502.cs",
+	.desc = "Capstone mos65xx analysis plugin (not supported)",
+	.license = "LGPL3",
+	.arch = "6502",
+	.bits = 8,
+};
+R_API RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_ANAL,
 	.version = R2_VERSION
 };
 #endif

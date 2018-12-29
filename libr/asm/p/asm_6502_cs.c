@@ -4,6 +4,14 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
+#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 1
+#define CAPSTONE_HAS_MOS65XX 1
+#else
+#define CAPSTONE_HAS_MOS65XX 0
+#endif
+
+#if CAPSTONE_HAS_MOS65XX
+
 static csh cd = 0;
 
 static bool the_end(void *p) {
@@ -56,11 +64,21 @@ RAsmPlugin r_asm_plugin_6502_cs = {
 	.desc = "Capstone mos65xx CPU disassembler",
 	.license = "BSD",
 	.arch = "6502",
-	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.bits = 8|32,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };
+
+#else
+RAsmPlugin r_asm_plugin_6502_cs = {
+	.name = "6502.cs",
+	.desc = "Capstone mos65xx CPU disassembler (not supported)",
+	.license = "BSD",
+	.arch = "6502",
+	.bits = 8|32,
+};
+#endif
 
 #ifndef CORELIB
 R_API RLibStruct radare_plugin = {
