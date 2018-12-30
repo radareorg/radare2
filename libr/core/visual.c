@@ -57,13 +57,15 @@ static void applyHexMode(RCore *core, int hexMode) {
 	switch (hexMode % 3) {
 	case 0:
 		r_config_set (core->config, "hex.compact", "false");
+		r_config_set (core->config, "hex.comments", "true");
 		break;
 	case 1:
 		r_config_set (core->config, "hex.compact", "true");
+		r_config_set (core->config, "hex.comments", "true");
 		break;
 	case 2:
-		r_config_set (core->config, "hex.pairs", "false");
 		r_config_set (core->config, "hex.compact", "false");
+		r_config_set (core->config, "hex.comments", "false");
 		break;
 	}
 }
@@ -2247,16 +2249,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					switch (core->printidx) { // printMode) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						printfmtSingle[0] = printHexFormats[++hexMode % PRINT_HEX_FORMATS];
-						applyHexMode (core, --hexMode);
+						applyHexMode (core, ++hexMode);
+						printfmtSingle[0] = printHexFormats[hexMode % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
-						printfmtSingle[1] = rotateAsmemu (core);
 						applyDisMode (core, ++disMode);
+						printfmtSingle[1] = rotateAsmemu (core);
 						break;
 					case R_CORE_VISUAL_MODE_DB: // debugger
-						printfmtSingle[1] = rotateAsmemu (core);
 						applyDisMode (core, ++disMode);
+						printfmtSingle[1] = rotateAsmemu (core);
 						printfmtSingle[2] = print3Formats[++current3format % PRINT_3_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_OV: // overview
@@ -3283,8 +3285,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 #endif
 			switch (core->printidx) {
 			case R_CORE_VISUAL_MODE_PX: // 0 // xc
-				printfmtSingle[0] = printHexFormats[R_ABS(--hexMode % PRINT_HEX_FORMATS)];
 				applyHexMode (core, --hexMode);
+				printfmtSingle[0] = printHexFormats[R_ABS(hexMode % PRINT_HEX_FORMATS)];
 				break;
 			case R_CORE_VISUAL_MODE_PD: // pd
 				printfmtSingle[1] = rotateAsmemu (core);
