@@ -1191,7 +1191,7 @@ repeat:
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
-					bb->addr += oplen;
+					//bb->addr += oplen;
 					idx = delay.un_idx;
 					goto repeat;
 				}
