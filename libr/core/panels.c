@@ -2910,9 +2910,9 @@ static char *getPanelsConfigPath() {
 
 static void savePanelsLayout(RCore* core, bool temp) {
 	RPanels *panels = core->panels;
-	int i, sz = 128 * PANEL_NUM_LIMIT;
-	char buf[sz];
+	char buf[128 * PANEL_NUM_LIMIT];
 	char *tmp = buf;
+	int i, sz = sizeof (buf);
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
 		RJSVar* obj = r_json_object_new ();
