@@ -707,7 +707,7 @@ static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name) 
 		RVector *bases = r_anal_class_base_get_all (anal, class_cur);
 		RAnalBaseClass *base;
 		r_vector_foreach (bases, base) {
-			if (strcmp (base->class_name, class_name) == 0) {
+			if (base->class_name && strcmp (base->class_name, class_name) == 0) {
 				r_anal_class_base_delete (anal, class_cur, base->id);
 			}
 		}
@@ -724,10 +724,8 @@ static void r_anal_class_base_rename_class(RAnal *anal, const char *class_name_o
 		RVector *bases = r_anal_class_base_get_all (anal, class_cur);
 		RAnalBaseClass *base;
 		r_vector_foreach (bases, base) {
-			if (strcmp (base->class_name, class_name_old) == 0) {
-				if (base->class_name) {
-					r_anal_class_base_set_raw (anal, class_cur, base, class_name_new);
-				}
+			if (base->class_name && strcmp (base->class_name, class_name_old) == 0) {
+				r_anal_class_base_set_raw (anal, class_cur, base, class_name_new);
 			}
 		}
 		r_vector_free (bases);
@@ -1034,7 +1032,7 @@ static void r_anal_class_list_json(RAnal *anal) {
 	free (classes_array);
 
 	pj_end (j);
-	pj_drain (j);
+	pj_free (j);
 }
 
 R_API void r_anal_class_list(RAnal *anal, int mode) {
