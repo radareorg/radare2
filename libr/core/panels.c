@@ -4,7 +4,7 @@
 
 #include <r_core.h>
 
-#define PANEL_NUM_LIMIT 256
+#define PANEL_NUM_LIMIT 64
 
 #define PANEL_TITLE_SYMBOLS      "Symbols"
 #define PANEL_TITLE_STACK        "Stack"
@@ -177,6 +177,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
 static void panelAllClear(RPanels *panels);
+static bool checkPanelNum(RPanels *panels);
 static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd, const bool caching);
 static bool checkFunc(RCore *core);
 static char *handleCacheCmdStr(RCore *core, RPanel* panel);
@@ -471,6 +472,9 @@ static void layoutDefault(RPanels *panels) {
 static int layoutSidePanel(void *user) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
+	if (!checkPanelNum (panels)) {
+		return 0;
+	}
 	RPanel *panel = panels->panel;
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
@@ -504,6 +508,9 @@ static int layoutSidePanel(void *user) {
 
 static void splitPanelVertical(RCore *core) {
 	RPanels *panels = core->panels;
+	if (!checkPanelNum (panels)) {
+		return;
+	}
 	RPanel *cur = &panels->panel[panels->curnode];
 	RPanel *next = &panels->panel[panels->curnode + 1];
 	const int owidth = cur->pos.w;
@@ -522,6 +529,9 @@ static void splitPanelVertical(RCore *core) {
 
 static void splitPanelHorizontal(RCore *core) {
 	RPanels *panels = core->panels;
+	if (!checkPanelNum (panels)) {
+		return;
+	}
 	RPanel *cur = &panels->panel[panels->curnode];
 	RPanel *next = &panels->panel[panels->curnode + 1];
 	const int oheight = cur->pos.h;
@@ -1418,6 +1428,15 @@ static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 	return can;
+}
+
+static bool checkPanelNum(RPanels *panels) {
+	if (panels->n_panels + 1 > PANEL_NUM_LIMIT) {
+		const char *msg = "panel limit exceeded.";
+		r_cons_yesno ('y', msg);
+		return false;
+	}
+	return true;
 }
 
 static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd, const bool caching) {
@@ -2891,7 +2910,7 @@ static char *getPanelsConfigPath() {
 
 static void savePanelsLayout(RCore* core, bool temp) {
 	RPanels *panels = core->panels;
-	int i, sz = 128 * panels->n_panels;
+	int i, sz = 128 * PANEL_NUM_LIMIT;
 	char buf[sz];
 	char *tmp = buf;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -3278,6 +3297,9 @@ repeat:
 	case 'n':
 	case 'N':
 		{
+			if (!checkPanelNum (panels)) {
+				break;
+			}
 			char *res = r_cons_input ("New panel with command: ");
 			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 			if (res && *res) {
@@ -3430,6 +3452,9 @@ repeat:
 		break;
 	case 'M':
 	{
+		if (!checkPanelNum (panels)) {
+			break;
+		}
 		char *name = r_cons_input ("Name: ");
 		char *cmd = r_cons_input ("Command: ");
 		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
