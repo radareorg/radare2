@@ -94,7 +94,7 @@ static const char *help_msg_slash_a[] = {
 
 static const char *help_msg_slash_C[] = {
 	"Usage: /C", "", "Search for crypto materials",
-	"/Ca", "", "Search for AES keys",
+	"/Ca", "", "Search for AES keys expanded in memory",
 	"/Cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/Cd", "", "Search for ASN1/DER certificates",
 	"/Cr", "", "Search for private RSA keys",

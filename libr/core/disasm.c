@@ -3428,9 +3428,6 @@ static void ds_align_comment(RDisasmState *ds) {
 	}
 	ll += ds->buf_line_begin;
 	int cells = r_str_len_utf8_ansi (ll);
-	if (cells < 20) {
-		ds_print_pre (ds);
-	}
 	int cols = ds->interactive ? ds->core->cons->columns : 1024;
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
@@ -4002,7 +3999,7 @@ static void ssa_set(RAnalEsil *esil, const char *reg) {
 #define R_DISASM_MAX_STR 512
 static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
-	if (ds->show_emu_ssa) {
+	if (ds && ds->show_emu_ssa) {
 		if (!isdigit (*name)) {
 			char *r = ssa_get (esil, name);
 			ds_comment_esil (ds, true, false, "<%s", r);

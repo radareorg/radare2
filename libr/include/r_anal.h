@@ -1820,6 +1820,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;
+extern RAnalPlugin r_anal_plugin_6502_cs;
 extern RAnalPlugin r_anal_plugin_8051;
 extern RAnalPlugin r_anal_plugin_arc;
 extern RAnalPlugin r_anal_plugin_arm_cs;
@@ -1838,6 +1839,7 @@ extern RAnalPlugin r_anal_plugin_i4004;
 extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_m68k_cs;
+extern RAnalPlugin r_anal_plugin_m680x_cs;
 extern RAnalPlugin r_anal_plugin_malbolge;
 extern RAnalPlugin r_anal_plugin_mcore;
 extern RAnalPlugin r_anal_plugin_mips_cs;
