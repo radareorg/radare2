@@ -60,7 +60,7 @@ static void print_string(RBinFile *bf, RBinString *string) {
 		break;
 	}
 	case R_MODE_SIMPLEST:
-		io->cb_printf ("%s\n", string->string);
+		printf ("%s\n", string->string);
 		break;
 	case R_MODE_PRINT:
 		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
