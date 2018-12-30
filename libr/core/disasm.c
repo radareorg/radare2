@@ -4013,6 +4013,9 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
+	if (!ds) {
+		return 0;
+	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
 		ssa_set (esil, name);
