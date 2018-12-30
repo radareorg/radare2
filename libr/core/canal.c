@@ -775,8 +775,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						if (!f->fcn_locs) {
 							f->fcn_locs = r_list_new ();
 						}
-						r_list_append (f->fcn_locs, fcn);
-						r_list_sort (f->fcn_locs, &cmpfcn);
+						r_list_add_sorted (f->fcn_locs, fcn, &cmpfcn);
 					}
 				}
 				r_anal_xrefs_set (core->anal, from, fcn->addr, reftype);
