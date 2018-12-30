@@ -2620,7 +2620,7 @@ static void set_prompt (RCore *r) {
 		}
 
 		if (!promptset) {
-			if (r->dbg->bits & R_SYS_BITS_64) {
+			if (r->print->wide_offsets && r->dbg->bits & R_SYS_BITS_64) {
 				snprintf (p, sizeof (p), "0x%016" PFMT64x, r->offset);
 			} else {
 				snprintf (p, sizeof (p), "0x%08" PFMT64x, r->offset);

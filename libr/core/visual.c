@@ -3490,7 +3490,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	{
 		char *title;
-		char *address = (core->dbg->bits & R_SYS_BITS_64)
+		char *address = (core->print->wide_offsets && core->dbg->bits & R_SYS_BITS_64)
 			? r_str_newf ("0x%016"PFMT64x, core->offset)
 			: r_str_newf ("0x%08"PFMT64x, core->offset);
 		if (__ime) {
@@ -3515,8 +3515,8 @@ R_API void r_core_visual_title(RCore *core, int color) {
 				} else {
 					title = r_str_newf ("[%s 0x%08"PFMT64x" %s [0x%x..0x%x] %d]> %s %s\n",
 						address, core->offset + core->print->cur,
-						core->print->ocur, core->print->cur,
-						pm, R_ABS (core->print->cur - core->print->ocur) + 1,
+						pm, core->print->ocur, core->print->cur,
+						R_ABS (core->print->cur - core->print->ocur) + 1,
 						bar, pos);
 				}
 			} else {
