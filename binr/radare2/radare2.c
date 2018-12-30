@@ -934,9 +934,9 @@ int main(int argc, char **argv, char **envp) {
 		eprintf ("^D\n");
 #if __UNIX__
 		// TODO: keep flags :?
-		freopen ("/dev/tty", "rb", stdin);
-		freopen ("/dev/tty","w",stdout);
-		freopen ("/dev/tty","w",stderr);
+		(void)freopen ("/dev/tty", "rb", stdin);
+		(void)freopen ("/dev/tty","w",stdout);
+		(void)freopen ("/dev/tty","w",stderr);
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		return 1;
