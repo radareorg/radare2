@@ -478,19 +478,23 @@ int main(int argc, char **argv) {
 	while (simhash_flag) {
 		FILE *fp;
 		if (argv[3]) {
-			fp = fopen(argv[3], "rb");
+			int i, ch;
+			fp = fopen(argv[3], "r");
 			if (fp != NULL) {
-				char buffer[8]; // shingle = 8
+				char buf[8]; // shingle = 8
 				simhash_label_backward:
-					fread(buffer, sizeof(buffer), 1, fp);
-          if (feof(fp)) {
-            fclose(fp);
-            return 0;
-          }
-          fseek(fp, -1, SEEK_CUR);
+					to = 0;
+					for (i = 0; i < 8; i++) {
+						ch = fgetc(fp);
+						if (ch == EOF) {
+							fclose(fp);
+							return 0;
+						}
+						buf[i] = ch;
+					}
 					hashstr_hex = 0;
-					hashstr = buffer;
-					goto simhash_label_forward;
+					hashstr = buf;
+          goto simhash_label_forward;
 			} else {
 				printf ("No Such file exist");
 			}
