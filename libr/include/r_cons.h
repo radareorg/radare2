@@ -1048,6 +1048,7 @@ typedef struct r_panels_menu_t {
 
 typedef enum {
 	PANEL_MODE_DEFAULT,
+	PANEL_MODE_MENU,
 	PANEL_MODE_ZOOM,
 	PANEL_MODE_WINDOW,
 	PANEL_MODE_HELP
@@ -1073,7 +1074,6 @@ typedef struct r_panels_t {
 	RPanel *panel;
 	int n_panels;
 	int columnWidth;
-	int menu_pos;
 	int curnode;
 	bool isResizing;
 	RPanelsMenu *panelsMenu;
