@@ -1019,6 +1019,7 @@ static int bin_source(RCore *r, int mode) {
 
 	if (!binfile) {
 		bprintf ("[Error bin file]\n");
+		r_list_free (final_list);
 		return false;
 	}
 

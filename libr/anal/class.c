@@ -613,6 +613,7 @@ R_API RAnalClassErr r_anal_class_base_get(RAnal *anal, const char *class_name, c
 	cur = next;
 	if (!cur) {
 		free (content);
+		free (base->class_name);
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	sdb_anext (cur, NULL);
@@ -1070,6 +1071,7 @@ R_API void r_anal_class_list_bases(RAnal *anal, const char *class_name) {
 		return;
 	}
 	if (!sdb_exists (anal->sdb_classes, key_class (class_name_sanitized))) {
+		free (class_name_sanitized);
 		return;
 	}
 	r_cons_printf ("%s:\n", class_name_sanitized);
@@ -1089,6 +1091,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 		return;
 	}
 	if (!sdb_exists (anal->sdb_classes, key_class (class_name_sanitized))) {
+		free (class_name_sanitized);
 		return;
 	}
 	r_cons_printf ("%s:\n", class_name_sanitized);
