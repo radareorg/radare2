@@ -3528,7 +3528,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		if (tabsCount > 0) {
 			const char *kolor = core->cons->pal.prompt;
 			char *tabstring = visual_tabstring (core, kolor);
-			if (tabstrings) {
+			if (tabstring) {
 				title = r_str_append (title, tabstring);
 				free (tabstring);
 			}
