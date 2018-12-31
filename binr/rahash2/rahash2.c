@@ -438,7 +438,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	int simhash_flag = 0;
+	bool simhash_flag = 0;
 
 	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:H:")) != -1) {
 		switch (c) {
@@ -475,12 +475,12 @@ int main(int argc, char **argv) {
 		default: return do_help (0);
 		}
 	}
-	while (simhash_flag) {
+	if (simhash_flag) {
 		FILE *fp;
 		if (argv[3]) {
 			int i, ch;
-			fp = fopen(argv[3], "r");
-			if (fp != NULL) {
+			fp = fopen (argv[3], "r");
+			if (fp) {
 				char buf[8]; // shingle = 8
 				simhash_label_backward:
 					to = 0;
@@ -496,12 +496,12 @@ int main(int argc, char **argv) {
 					hashstr = buf;
           goto simhash_label_forward;
 			} else {
-				printf ("No Such file exist");
+				eprintf ("No Such file exist");
 			}
 		} else {
-			printf("No file path given\n");
+			eprintf("No file path given\n");
 		}
-		return 0;
+		return 1;
 	}
 
 	if (encrypt && decrypt) {
