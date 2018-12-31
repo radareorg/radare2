@@ -441,13 +441,23 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			if (dec) {
 				printfmt ("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {
-				printfmt ("%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+				if (p->wide_offsets) {
+					// TODO: make %016 depend on asm.bits
+					printfmt ("%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+				} else {
+					printfmt ("%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+				}
 			}
 		} else {
 			if (dec) {
 				printfmt ("%s%" PFMT64d "%c", white, addr, ch);
 			} else {
-				printfmt ("0x%08" PFMT64x "%c", addr, ch);
+				if (p->wide_offsets) {
+					// TODO: make %016 depend on asm.bits
+					printfmt ("0x%016" PFMT64x "%c", addr, ch);
+				} else {
+					printfmt ("0x%08" PFMT64x "%c", addr, ch);
+				}
 			}
 		}
 	}
@@ -847,6 +857,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("..offset..");
 				} else {
 					printfmt ("- offset -");
+					if (p->wide_offsets) {
+						printfmt ("       ");
+					}
 				}
 				if (use_segoff) {
 					ut32 s, a;
