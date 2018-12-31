@@ -3528,8 +3528,10 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		if (tabsCount > 0) {
 			const char *kolor = core->cons->pal.prompt;
 			char *tabstring = visual_tabstring (core, kolor);
-			title = r_str_append (title, tabstring);
-			free (tabstring);
+			if (tabstrings) {
+				title = r_str_append (title, tabstring);
+				free (tabstring);
+			}
 #if 0
 			// TODO: add an option to show this tab mode instead?
 			const int curTab = core->visual.tab;
@@ -3548,6 +3550,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 		r_cons_print (title);
 		free (title);
+		free (address);
 	}
 	if (color) {
 		r_cons_strcat (Color_RESET);

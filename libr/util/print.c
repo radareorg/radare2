@@ -402,7 +402,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	if (use_segoff) {
 		ut32 s, a;
 		a = addr & 0xffff;
-		s = (addr - a) >> p->seggrn;
+		s = (addr - a) >> (p? p->seggrn: 0);
 		if (dec) {
 			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 			white = r_str_pad (' ', 9 - strlen (space));
@@ -431,9 +431,9 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		if (use_color) {
 			const char *pre = PREOFF (offset): Color_GREEN;
 			const char *fin = Color_RESET;
-			if (p->flags & R_PRINT_FLAGS_RAINBOW) {
+			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
-				if (p && p->cons && p->cons->rgbstr) {
+				if (p->cons && p->cons->rgbstr) {
 					static char rgbstr[32];
 					pre = p->cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
 				}
@@ -441,7 +441,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			if (dec) {
 				printfmt ("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {
-				if (p->wide_offsets) {
+				if (p && p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
 					printfmt ("%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
 				} else {
@@ -452,7 +452,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			if (dec) {
 				printfmt ("%s%" PFMT64d "%c", white, addr, ch);
 			} else {
-				if (p->wide_offsets) {
+				if (p && p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
 					printfmt ("0x%016" PFMT64x "%c", addr, ch);
 				} else {
