@@ -454,7 +454,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			} else {
 				if (p->wide_offsets) {
 					// TODO: make %016 depend on asm.bits
-					printfmt ("%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+					printfmt ("0x%016" PFMT64x "%c", addr, ch);
 				} else {
 					printfmt ("0x%08" PFMT64x "%c", addr, ch);
 				}
