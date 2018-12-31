@@ -4583,7 +4583,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf (",\"addr\":%"PFMT64u, f->addr);
 					r_cons_printf (",\"ops\":[");
 					// instructions are all outputted as a json list
-					cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
+					//  DEAD CODE cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
 					bool first = true;
 					bool prev_result = true;
 					// TODO: can loc jump to another locs?

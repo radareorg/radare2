@@ -1673,6 +1673,7 @@ static void fix_back_edge_dummy_nodes (RAGraph *g, RANode *from, RANode *to) {
 }
 
 static int get_nth (const RAGraph *g, RANode *src, RANode *dst);
+
 void backedge_info (RAGraph *g) {
 	int i, j, k;
 	int min, max;
@@ -1826,8 +1827,8 @@ void backedge_info (RAGraph *g) {
 		e->is_reversed = true;
 		e->from = NULL;
 		e->to = NULL;
-		e->x = r_list_new();
-		e->y = r_list_new();
+		e->x = r_list_new ();
+		e->y = r_list_new ();
 		if (g->layout == 0) {
 			r_list_append (e->y, (void *) (size_t) (n->y + g->layers[g->n_layers - 1].height + 2 + outedge));
 		} else {
