@@ -57,15 +57,13 @@ static void applyHexMode(RCore *core, int hexMode) {
 	switch (hexMode % 3) {
 	case 0:
 		r_config_set (core->config, "hex.compact", "false");
-		r_config_set (core->config, "hex.esil", "false");
 		break;
 	case 1:
-		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "hex.compact", "true");
 		break;
 	case 2:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.esil", "true");
+		r_config_set (core->config, "hex.pairs", "false");
+		r_config_set (core->config, "hex.compact", "false");
 		break;
 	}
 }
@@ -186,7 +184,7 @@ static const char *help_msg_visual[] = {
 	"r", "toggle jmphints/leahints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
-	"tT", "create new tab / close current tab",
+	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
 	"uU", "undo/redo seek",
 	"v", "visual function/vars code analysis menu",
 	"V", "(V)iew interactive ascii art graph (agfv)",
@@ -1918,7 +1916,7 @@ static char *visual_tabstring(RCore *core, const char *kolor) {
 	if (scr_color > 0) {
 		// TODO: use theme
 		if (tabs > 0) {
-			str = r_str_appendf (str, "%s___", kolor);
+			str = r_str_appendf (str, "%s______", kolor);
 		}
 		for (i = 0; i < tabs;i++) {
 			const char *name = NULL;
@@ -1926,14 +1924,18 @@ static char *visual_tabstring(RCore *core, const char *kolor) {
 			if (tab && *tab->name) {
 				name = tab->name;
 			}
-			if (i==core->visual.tab) {
-				str = r_str_appendf (str, Color_WHITE"_/ %d %s \\_%s", i + 1, name? name: "'=", kolor);
+			if (i == core->visual.tab) {
+				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", name? name: "t=", kolor);
 			} else {
-				str = r_str_appendf (str, "_'%d_%s___", i + 1, name?name: "");
+				str = r_str_appendf (str, "_%s(%d)_", name?name: "", i+ 1);
 			}
 		}
 		if (str) {
-			str = r_str_append (str, "___________  ; [tT'']\n"Color_RESET);
+			int n = 79 - r_str_ansi_len (str);
+			if (n > 0) {
+				str = r_str_append (str, r_str_pad ('_', n));
+			}
+			str = r_str_append (str, "\n"Color_RESET);
 		}
 	} else {
 		if (tabs > 0) {
@@ -2463,7 +2465,32 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			visual_comma (core);
 			break;
 		case 't':
-			visual_newtab (core);
+			{
+				r_cons_gotoxy (0, 2);
+				r_cons_printf ("[tnp=]");
+				r_cons_flush();
+				int ch = r_cons_readchar ();
+				if (isdigit (ch)) {
+					visual_nthtab (core, ch - '0' - 1);
+				}
+				switch (ch) {
+				case 'p':
+					visual_prevtab (core);
+					break;
+				case 'n':
+					visual_nexttab (core);
+					break;
+				case '=':
+					visual_tabname (core);
+					break;
+				case '-':
+					visual_closetab (core);
+					break;
+				case 't':
+					visual_newtab (core);
+					break;
+				}
+			}
 			break;
 		case 'T':
 			visual_closetab (core);
