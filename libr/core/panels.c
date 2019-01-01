@@ -195,8 +195,8 @@ static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
 static void refreshCoreOffset (RCore *core);
-static void handleZoomMode(RCore *core, const int key);
-static void handleWindowMode(RCore *core, const int key);
+static bool handleZoomMode(RCore *core, const int key);
+static bool handleWindowMode(RCore *core, const int key);
 static bool handleCursorMode(RCore *core, const int key);
 static void resizePanelLeft(RPanels *panels);
 static void resizePanelRight(RPanels *panels);
@@ -731,9 +731,8 @@ static int cursorThreshold(RPanel* panel) {
 	return threshold;
 }
 
-static void handleZoomMode(RCore *core, const int key) {
+static bool handleZoomMode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
-	RPanel *cur = &panels->panel[panels->curnode];
 	r_cons_switchbuf (false);
 	switch (key) {
 	case 'Q':
@@ -742,64 +741,37 @@ static void handleZoomMode(RCore *core, const int key) {
 		toggleZoomMode (panels);
 		break;
 	case 'h':
-		cur->directionCb (core, (int)LEFT);
-		break;
 	case 'j':
-		cur->directionCb (core, (int)DOWN);
-		break;
 	case 'k':
-		cur->directionCb (core, (int)UP);
-		break;
 	case 'l':
-		cur->directionCb (core, (int)RIGHT);
-		break;
 	case 'c':
-		activateCursor (core);
-		break;
+	case 's':
+	case 'S':
+	case ':':
+	case '?':
+		return false;
 	case 'X':
 		toggleZoomMode (panels);
 		delCurPanel (panels);
 		toggleZoomMode (panels);
 		break;
-	case 's':
-		panelSingleStepIn (core);
-		if (!strcmp (cur->cmd, PANEL_CMD_DISASSEMBLY)) {
-			cur->addr = core->offset;
-		}
-		setRefreshAll (panels, false);
-		break;
-	case 'S':
-		panelSingleStepOver (core);
-		if (!strcmp (cur->cmd, PANEL_CMD_DISASSEMBLY)) {
-			cur->addr = core->offset;
-		}
-		setRefreshAll (panels, false);
-		break;
 	case 9:
-		restorePanelPos (cur);
+		restorePanelPos (&panels->panel[panels->curnode]);
 		handleTabKey (core, false);
-		panels->curnode = R_MAX (panels->curnode, 0);
-		savePanelPos (cur);
+		savePanelPos (&panels->panel[panels->curnode]);
 		maximizePanelSize (panels);
 		break;
 	case 'Z':
-		restorePanelPos (cur);
+		restorePanelPos (&panels->panel[panels->curnode]);
 		handleTabKey (core, true);
-		savePanelPos (cur);
+		savePanelPos (&panels->panel[panels->curnode]);
 		maximizePanelSize (panels);
 		break;
-	case ':':
-		r_core_visual_prompt_input (core);
-		cur->addr = core->offset;
-		setRefreshAll (panels, false);
-		break;
-	case '?':
-		showHelp (core, panels->mode);
-		break;
 	}
+	return true;
 }
 
-static void handleWindowMode(RCore *core, const int key) {
+static bool handleWindowMode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	switch (key) {
@@ -859,9 +831,9 @@ static void handleWindowMode(RCore *core, const int key) {
 		resizePanelUp (panels);
 		break;
 	case '?':
-		showHelp (core, panels->mode);
-		break;
+		return false;
 	}
+	return true;
 }
 
 static bool handleCursorMode(RCore *core, const int key) {
@@ -873,24 +845,24 @@ static bool handleCursorMode(RCore *core, const int key) {
 	case 'j':
 	case 'k':
 	case 'l':
-		return true;
+		return false;
 	case 'Q':
 	case 'q':
 		setCursor (core, !print->cur_enabled);
 		cur->refresh = true;
-		return true;
+		break;
 	case 'i':
 		insertValue (core);
-		return true;
+		break;
 	case '*':
 		if (!strcmp (cur->cmd, PANEL_CMD_DISASSEMBLY)) {
 			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + print->cur);
 			cur->addr = core->offset + print->cur;
 			cur->refresh = true;
 		}
-		return true;
+		break;
 	}
-	return false;
+	return true;
 }
 
 static void resizePanelLeft(RPanels *panels) {
@@ -2854,6 +2826,12 @@ static void handleTabKey(RCore *core, bool shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			panels->curnode = 0;
 			panels->mode = PANEL_MODE_DEFAULT;
+		} else if (panels->mode == PANEL_MODE_ZOOM) {
+			if (panels->curnode == panels->n_panels - 1) {
+				panels->curnode = 0;
+			} else {
+				panels->curnode++;
+			}
 		} else {
 			if (panels->curnode == panels->n_panels - 1) {
 				panels->mode = PANEL_MODE_MENU;
@@ -2865,6 +2843,12 @@ static void handleTabKey(RCore *core, bool shift) {
 		if (panels->mode == PANEL_MODE_MENU) {
 			panels->curnode = panels->n_panels - 1;
 			panels->mode = PANEL_MODE_DEFAULT;
+		} else if (panels->mode == PANEL_MODE_ZOOM) {
+			if (panels->curnode) {
+				panels->curnode--;
+			} else {
+				panels->curnode = panels->n_panels - 1;
+			}
 		} else {
 			if (panels->curnode) {
 				panels->curnode--;
@@ -3261,19 +3245,21 @@ repeat:
 	}
 
 	if (core->print->cur_enabled) {
-		if (!handleCursorMode (core, key)) {
+		if (handleCursorMode (core, key)) {
 			goto repeat;
 		}
 	}
 
 	if (panels->mode == PANEL_MODE_ZOOM) {
-		handleZoomMode (core, key);
-		goto repeat;
+		if (handleZoomMode (core, key)) {
+			goto repeat;
+		}
 	}
 
 	if (panels->mode == PANEL_MODE_WINDOW) {
-		handleWindowMode (core, key);
-		goto repeat;
+		if (handleWindowMode (core, key)) {
+			goto repeat;
+		}
 	}
 
 	if (!strcmp (cur->cmd, PANEL_CMD_DISASSEMBLY)
