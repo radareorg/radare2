@@ -25,10 +25,14 @@ ut64 readLE64(RBuffer *buf, int off) {
 	return left > 7? r_read_le64 (data): 0;
 }
 
-const char *readString(RBuffer *buf, int off) {
-	int left = 0;
-	const char *data = (const char *)r_buf_get_at (buf, off, &left);
-	return left > 0 ? data: NULL;
+static char *readString(RBuffer *buf, int off) {
+	char symbol[128]; // assume 128 as max symbol name length
+	int left = r_buf_read_at (buf, off, (ut8*)symbol, sizeof (symbol));
+	if (left < 1) {
+		return NULL;
+	}
+	symbol[sizeof (symbol) - 1] = 0;
+	return strdup (symbol);
 }
 
 const char *fileType(const ut8 *buf) {
@@ -57,7 +61,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		i += 16; // NULL, NULL
 		ut64 name = readLE32 (buf, symtab + i);
 		//ut64 type = readLE32 (buf, symtab + i + 4);
-		const char *symName = readString (buf, strtab + name);
+		char *symName = readString (buf, strtab + name);
 		if (!symName) {
 			break;
 		}
@@ -77,7 +81,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 				R_FREE (sym);
 				break;
 			}
-			imp->name  = strdup (symName);
+			imp->name  = symName;
 			if (!imp->name) {
 				goto out_walk_symbol;
 			}
@@ -99,7 +103,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			sym->vaddr = sym->paddr + baddr;
 			eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
 		} else {
-			sym->name = strdup (symName);
+			sym->name = symName;
 			if (!sym->name) {
 				R_FREE (sym);
 				break;
