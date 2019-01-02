@@ -1532,7 +1532,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		      decodingClass = 40;
 		      usesSimdRegB  = 3;
 		      usesSimdRegA  = usesSimdRegC = 0;
-		      fieldCisReg   = 1;
 		      break;
 
 		    case 11:
@@ -1540,7 +1539,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		      decodingClass = 40;
 		      usesSimdRegB  = 3;
 		      usesSimdRegA  = usesSimdRegC = 0;
-		      fieldCisReg   = 1;
 		      break;
 
 		    case 12:

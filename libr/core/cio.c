@@ -353,7 +353,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 
 	if (b_size == 0 || b_size == (ut64) -1) {
-		res = r_io_use_fd (core->io, core->file->fd);
+		r_io_use_fd (core->io, core->file->fd);
 		file_sz = r_io_size (core->io);
 		if (file_sz == UT64_MAX) {
 			file_sz = 0;

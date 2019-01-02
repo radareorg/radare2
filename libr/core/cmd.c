@@ -3200,7 +3200,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 
 static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 	char *cmd = strdup (_cmd);
-	char *str = cmd;
 	char *nextLine = NULL;
 	ut64 addr;
 	/* foreach list of items */
@@ -3232,7 +3231,7 @@ static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 			while (*each == ' ') {
 				each++;
 			}
-			str = strchr (each, ' ');
+			char *str = strchr (each, ' ');
 			if (str) {
 				*str = '\0';
 				addr = r_num_math (core->num, each);

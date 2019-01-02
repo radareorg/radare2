@@ -4783,10 +4783,6 @@ static int cmd_print(void *data, const char *input) {
 				const int bs = core->blocksize;
 				// XXX: issue with small blocks
 				if (*input == 'D' && l > 0) {
-					if (l < 1) {
-						// eprintf ("Block size too small\n");
-						return 1;
-					}
 					if (l > R_CORE_MAX_DISASM) { // pD
 						eprintf ("Block size too big\n");
 						return 1;

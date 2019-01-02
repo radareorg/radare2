@@ -1962,7 +1962,6 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		char *t_o = o;
 		/* o = malloc (opcode_sz+21); */
 		memmove (o, t_o, opcode_sz);
-		opcode_sz += 21;
 		/* free (t_o); */
 	}
 	strcpy (o + j, reset);

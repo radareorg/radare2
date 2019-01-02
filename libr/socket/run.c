@@ -232,7 +232,7 @@ static void setRVA(const char *v) {
 	int fd = open (RVAS, O_WRONLY);
 	if (fd != -1) {
 		if (write (fd, v, 2) != 2) {
-			eprintf ("Failed to set RVA");
+			eprintf ("Failed to set RVA\n");
 		}
 		close (fd);
 	}
