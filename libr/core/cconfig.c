@@ -3091,7 +3091,6 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETPREF ("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
 	SETPREF ("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
-	SETPREF ("scr.atport", "false", "V@ starts a background http server and spawns an r2 -C");
 	SETI ("scr.wheel.speed", 4, "Mouse wheel speed");
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");

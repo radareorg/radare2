@@ -3820,7 +3820,7 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 		if (!(i % w)) {
 			p->cb_printf ("\n  ");
 		}
-		r_print_cursor (p, i, 1);
+		r_print_cursor (p, i, 1, 1);
 		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
 		if ((i + 1) < len) {
 			p->cb_printf (",");
@@ -3829,7 +3829,7 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 				p->cb_printf (" ");
 			}
 		}
-		r_print_cursor (p, i, 0);
+		r_print_cursor (p, i, 1, 0);
 		buf += ws;
 	}
 	p->cb_printf ("\n};\n");
@@ -3909,9 +3909,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	case 'j': // "pcj"
 		p->cb_printf ("[");
 		for (i = 0; !p->interrupt && i < len; i++) {
-			r_print_cursor (p, i, 1);
+			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
-			r_print_cursor (p, i, 0);
+			r_print_cursor (p, i, 1, 0);
 		}
 		p->cb_printf ("]\n");
 		break;
@@ -3922,9 +3922,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 			if (!(i % w)) {
 				p->cb_printf ("\n");
 			}
-			r_print_cursor (p, i, 1);
+			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("0x%02x%s", buf[i], (i + 1 < len)? ",": "])");
-			r_print_cursor (p, i, 0);
+			r_print_cursor (p, i, 1, 0);
 		}
 		p->cb_printf ("\n");
 		break;
@@ -5304,7 +5304,9 @@ static int cmd_print(void *data, const char *input) {
 					memmove (buf + 5, buf + 4, 5);
 					buf[4] = 0;
 
+					r_print_cursor (core->print, i, 1, 1);
 					r_cons_printf ("%s.%s  ", buf, buf + 5);
+					r_print_cursor (core->print, i, 1, 0);
 					if (c == 3) {
 						const ut8 *b = core->block + i - 3;
 						int (*k) (const ut8 *, int) = cmd_pxb_k;

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>

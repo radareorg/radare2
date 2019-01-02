@@ -1,4 +1,6 @@
-#include "r_core.h"
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+
+#include <r_core.h>
 
 static const char *fortunes[] = {
 	"tips", "fun", "nsfw", "creepy"
