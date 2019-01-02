@@ -1448,6 +1448,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 			}
 		} else if (ch_bytes == 4) {
 			if (r_isprint (ch)) {
+				// Assumes string is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
 				}
@@ -1471,6 +1472,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 			}
 		} else if (ch_bytes > 1) {
 			if (r_isprint (ch)) {
+				// Assumes string is UTF8-encoded
 				for (i = 0; i < ch_bytes; i++) {
 					*q++ = *(p + i);
 				}
