@@ -52,6 +52,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #include "native/procfs.h"
 #if __KFBSD__ || __DragonFly__
 #include <sys/user.h>
+#include <libutil.h>
 #endif
 #include "native/procfs.h"
 
@@ -300,6 +301,47 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 	return xnu_info (dbg, arg);
 #elif __linux__
 	return linux_info (dbg, arg);
+#elif __KFBSD__
+	struct kinfo_proc *kp;
+	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	if (!rdi) {
+		return NULL;
+	}
+
+	if (!(kp = kinfo_getproc (dbg->pid))) {
+		free (rdi);
+		return NULL;
+	}
+
+	rdi->pid = dbg->pid;
+	rdi->tid = dbg->tid;
+	rdi->uid = kp->ki_uid;
+	rdi->gid = kp->ki_pgid;
+	rdi->exe = strdup (kp->ki_comm);
+
+	switch (kp->ki_stat) {
+		case SSLEEP:
+			rdi->status = R_DBG_PROC_SLEEP;
+			break;
+		case SSTOP:
+			rdi->status = R_DBG_PROC_STOP;
+			break;
+		case SZOMB:
+			rdi->status = R_DBG_PROC_ZOMBIE;
+			break;
+		case SRUN:
+		case SIDL:
+		case SLOCK:
+		case SWAIT:
+			rdi->status = R_DBG_PROC_RUN;
+			break;
+		default:
+			rdi->status = R_DBG_PROC_DEAD;
+	}
+
+	free (kp);
+
+	return rdi;
 #elif __WINDOWS__
 	return w32_info (dbg, arg);
 #else
@@ -513,7 +555,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			// Trying to figure out a bit by the signal
 			struct ptrace_lwpinfo linfo = {0};
 			siginfo_t siginfo;
-			int ret = ptrace (PT_LWPINFO, dbg->pid, &linfo, sizeof (linfo));
+			int ret = ptrace (PT_LWPINFO, dbg->pid, (char *)&linfo, sizeof (linfo));
 			if (ret == -1) {
 				if (errno == ESRCH) {
 					dbg->reason.type = R_DEBUG_REASON_DEAD;
