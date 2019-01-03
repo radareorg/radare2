@@ -41,7 +41,7 @@ static const char *help_msg_slash[] = {
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
-	"/s", " [threshold]", "find sections by grouping blocks with similar entropy",
+	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
@@ -2080,6 +2080,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	ut64 begin = UT64_MAX;
 	ut64 at, end = 0;
 	int index = 0;
+	bool lastBlock = true;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = map->itv.addr;
@@ -2104,10 +2105,21 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 				}
 				begin = UT64_MAX;
 				index++;
+				lastBlock = false;
+			} else {
+				lastBlock = true;
 			}
 			oe = e;
 		}
 		begin = UT64_MAX;
+	}
+	if (begin != UT64_MAX && lastBlock) {
+		if (r2mode) {
+			r_cons_printf ("f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf .. last\n", begin, end, 0);
+		}
+		index++;
 	}
 	r_cons_break_pop();
 	free (buf);
@@ -3549,7 +3561,7 @@ reread:
 			do_asm_search (core, &param, input, 0, search_itv);
 		}
 		break;
-	case 's':
+	case 's': // "/s"
 		do_section_search (core, &param, input + 1);
 		break;
 	case '+': // "/+"
