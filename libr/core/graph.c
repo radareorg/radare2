@@ -596,11 +596,12 @@ static void remove_cycles(RAGraph *g) {
 	r_graph_dfs (g->graph, &cyclic_vis);
 
 	r_list_foreach (g->back_edges, it, e) {
-		RANode *from, *to;
-		from = e->from? get_anode (e->from): NULL;
-		to = e->to? get_anode (e->to): NULL;
-		r_agraph_del_edge (g, from, to);
-		r_agraph_add_edge_at (g, to, from, e->nth);
+		RANode *from = e->from? get_anode (e->from): NULL;
+		RANode *to = e->to? get_anode (e->to): NULL;
+		if (from && to) {
+			r_agraph_del_edge (g, from, to);
+			r_agraph_add_edge_at (g, to, from, e->nth);
+		}
 	}
 }
 
@@ -742,7 +743,7 @@ static void minimize_crossings(const RAGraph *g) {
 
 	do {
 		cross_changed = false;
-		--max_changes;
+		max_changes--;
 
 		for (i = 0; i < g->n_layers; ++i) {
 			cross_changed |= layer_sweep (g->graph, g->layers, g->n_layers, i, true);
@@ -753,7 +754,7 @@ static void minimize_crossings(const RAGraph *g) {
 
 	do {
 		cross_changed = false;
-		--max_changes;
+		max_changes--;
 
 		for (i = g->n_layers - 1; i >= 0; --i) {
 			cross_changed |= layer_sweep (g->graph, g->layers, g->n_layers, i, false);
@@ -1856,6 +1857,7 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->edges);
 	g->edges = r_list_new ();
 
+	r_cons_break_push (NULL, NULL);
 	remove_cycles (g);
 	assign_layers (g);
 	create_dummy_nodes (g);
@@ -1991,6 +1993,7 @@ static void set_layout(RAGraph *g) {
 	free (g->layers);
 	r_list_free (g->long_edges);
 	r_list_free (g->back_edges);
+	r_cons_break_pop ();
 }
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
@@ -2463,9 +2466,6 @@ static void update_graph_sizes(RAGraph *g) {
 			break;
 		}
 		r_list_foreach (e->x, kt, vv) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
 			v = (int) (size_t) vv;
 			if (v < g->x) {
 				g->x = v;
@@ -2475,9 +2475,6 @@ static void update_graph_sizes(RAGraph *g) {
 			}
 		}
 		r_list_foreach (e->y, kt, vv) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
 			v = (int) (size_t) vv;
 			if (v < g->y) {
 				g->y = v;
@@ -2745,12 +2742,16 @@ static void agraph_print_edges(RAGraph *g) {
 	RList *bckedges = r_list_new ();
 	struct tmplayer *tl, *tm;
 
+	r_cons_break_push (NULL, NULL);
 	graph_foreach_anode (nodes, itm, ga, a) {
 		const RGraphNode *gb;
 		RANode *b;
 		RList *neighbours = (RList *)r_graph_get_neighbours (g->graph, ga);
 		int ax, ay, bx, by, a_x_inc, b_x_inc;
 		tl = tm = NULL;
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer == a->layer) {
@@ -2944,6 +2945,9 @@ static void agraph_print_edges(RAGraph *g) {
 		int minx = 0, maxx = 0;
 		struct tmplayer *tt = NULL;
 		tl = r_list_get_n (lyr, temp->fromlayer);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer <= temp->tolayer) {
@@ -3000,6 +3004,7 @@ static void agraph_print_edges(RAGraph *g) {
 
 	r_list_free (lyr);
 	r_list_free (bckedges);
+	r_cons_break_pop ();
 }
 
 static void agraph_toggle_callgraph(RAGraph *g) {
