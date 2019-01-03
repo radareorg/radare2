@@ -278,14 +278,6 @@ static int cb_analhpskip(void *user, void *data) {
 	return true;
 }
 
-/* obey section permissions */
-static int cb_analnoncode(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.noncode = !!node->i_value;
-	return true;
-}
-
 static void update_analarch_options(RCore *core, RConfigNode *node) {
 	RAnalPlugin *h;
 	RListIter *it;
@@ -2142,6 +2134,7 @@ static int cb_binminstr(void *user, void *data) {
 }
 
 static int cb_searchin(void *user, void *data) {
+	RCore *core = (RCore*)user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
@@ -2168,6 +2161,9 @@ static int cb_searchin(void *user, void *data) {
 			print_node_options (node);
 		}
 		return false;
+	}
+	if (!strncmp (node->name, "anal", sizeof("anal"))) {
+		core->anal->opt.noncode = strncmp(node->value, "io.maps.x", sizeof("io.maps.x"))? true: false;
 	}
 	return true;
 }
@@ -2495,7 +2491,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
-	n = NODECB ("anal.in", "io.maps", &cb_searchin);
+	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
 	SETOPTIONS (n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -2526,7 +2522,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB ("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB ("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	SETCB ("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
 	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "Select the architecture to use");
 	update_analarch_options (core, n);
