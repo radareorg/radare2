@@ -380,7 +380,6 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 
 	sdb_set (DB, key, val, 0);
 	free (e_str);
-
 	// XXX: This is totally inefficient, using array_add withuot
 	// checking return value is wrong practice, also it may lead
 	// to inconsistent DB, and pretty bad performance. We should

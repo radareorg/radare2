@@ -17,7 +17,6 @@ static const char *help_msg_i[] = {
 	"i|ij", "", "Show info of current file (in JSON)",
 	"iA", "", "List archs",
 	"ia", "", "Show all info (imports, exports, sections..)",
-	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
 	"icc", "", "List classes, methods and fields in Header Format",
 	"iC", "", "Show signature info (entitlements, ...)",
@@ -354,21 +353,6 @@ static int cmd_info(void *data, const char *input) {
 	}
 	while (*input) {
 		switch (*input) {
-		case 'b': // "ib"
-		{
-			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-			if (input[1] == ' ') {
-				baddr = r_num_math (core->num, input + 1);
-			}
-			// XXX: this will reload the bin using the buffer.
-			// An assumption is made that assumes there is an underlying
-			// plugin that will be used to load the bin (e.g. malloc://)
-			// TODO: Might be nice to reload a bin at a specified offset?
-			r_core_bin_reload (core, NULL, baddr);
-			r_core_block_read (core);
-			newline = false;
-		}
-		break;
 		case 'k': // "ik"
 		{
 			RBinObject *o = r_bin_cur_object (core->bin);

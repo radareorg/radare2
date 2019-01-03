@@ -1422,6 +1422,23 @@ static int cmd_open(void *data, const char *input) {
 			} else {
 				r_core_file_reopen (core, input + 2, 0, 2);
 			}
+#if 0
+		case 'b': // "ib" // shuold be oob?
+		{
+			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			if (input[1] == ' ') {
+				baddr = r_num_math (core->num, input + 1);
+			}
+			// XXX: this will reload the bin using the buffer.
+			// An assumption is made that assumes there is an underlying
+			// plugin that will be used to load the bin (e.g. malloc://)
+			// TODO: Might be nice to reload a bin at a specified offset?
+			r_core_bin_reload (core, NULL, baddr);
+			r_core_block_read (core);
+			newline = false;
+		}
+		break;
+#endif
 			break;
 		case 'n': // "oon"
 			if ('n' == input[2]) {
