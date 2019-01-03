@@ -7320,6 +7320,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
+			bool cfg_debug = r_config_get_i (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa"
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
@@ -7329,8 +7330,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "aF @@ sym.go.*");
 					r_print_rowlog_done (core->print, oldstr);
 				}
-				if (dh_orig && strcmp (dh_orig, "esil")) {
-					r_core_cmd0 (core, "dL esil");
+				if (!cfg_debug) {
+					if (dh_orig && strcmp (dh_orig, "esil")) {
+						r_core_cmd0 (core, "dL esil");
+					}
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
