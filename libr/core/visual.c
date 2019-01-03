@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -77,28 +77,34 @@ static void applyDisMode(RCore *core, int disMode) {
 		r_config_set (core->config, "asm.bytes", "true");
 		r_config_set (core->config, "asm.esil", "false");
 		r_config_set (core->config, "emu.str", "false");
+		r_config_set (core->config, "asm.emu", "false");
 		break;
 	case 1:
 		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "false");
+		r_config_set (core->config, "asm.bytes", "true");
 		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.emu", "false");
 		r_config_set (core->config, "emu.str", "true");
 		break;
 	case 2:
 		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.bytes", "false");
-		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.bytes", "true");
+		r_config_set (core->config, "asm.esil", "true");
+		r_config_set (core->config, "emu.str", "true");
+		r_config_set (core->config, "asm.emu", "true");
 		break;
 	case 3:
 		r_config_set (core->config, "asm.pseudo", "false");
 		r_config_set (core->config, "asm.bytes", "false");
-		r_config_set (core->config, "asm.esil", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.emu", "false");
 		r_config_set (core->config, "emu.str", "true");
 		break;
 	case 4:
-		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.pseudo", "true");
 		r_config_set (core->config, "asm.bytes", "false");
-		r_config_set (core->config, "asm.esil", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.emu", "false");
 		r_config_set (core->config, "emu.str", "true");
 		break;
 	}
@@ -2263,6 +2269,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} while (--wheelspeed > 0);
 		}
 		break;
+		case 'O': // tab TAB
 		case 9: // tab TAB
 			if (splitView) {
 				// this split view is kind of useless imho, we should kill it or merge it into tabs
@@ -2298,7 +2305,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 					}
 				} else {
-					switch (core->printidx) { // printMode) {
+					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
 						hexMode++;
 						applyHexMode (core, hexMode);
