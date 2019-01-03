@@ -200,7 +200,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		}
 		r_core_block_read (core);
 	} else {
-		eprintf ("Error: Invalid hexpair string\n");
+		eprintf ("Error: invalid hexpair string\n");
 	}
 	free (buf);
 	return len;
@@ -1109,14 +1109,13 @@ static int cmd_write(void *data, const char *input) {
 			}
 			break;
 		case '-': { // "wc-"
-			ut64 from = 0LL, to = UT64_MAX;
-			switch (input[2]) {
-			case '*': // "wc-*"
+			if (input[2]=='*') { // "wc-*"
 				r_io_cache_reset (core->io, true);
 				break;
-			case ' ': // "wc- "
-				{
-				char *p = strchr (input + 3, ' ');
+			}
+			ut64 from, to;
+			if (input[2]==' ') { // "wc- "
+				char *p = strchr (input+3, ' ');
 				if (p) {
 					*p = 0;
 					from = r_num_math (core->num, input+3);
@@ -1129,18 +1128,16 @@ static int cmd_write(void *data, const char *input) {
 					from = r_num_math (core->num, input+3);
 					to = from + core->blocksize;
 				}
-				}
-				break;
-			default:
+			} else {
 				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
 				from = core->offset;
 				to = core->offset + core->blocksize;
 			}
-			eprintf ("Invalidated %d cache(s)\n",
+			eprintf("invalidated %d cache(s)\n",
 				r_io_cache_invalidate (core->io, from, to));
 			r_core_block_read (core);
-			}
 			break;
+		}
 		case 'i': // "wci"
 			r_io_cache_commit (core->io, 0, UT64_MAX);
 			r_core_block_read (core);
