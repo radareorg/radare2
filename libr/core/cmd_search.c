@@ -1931,6 +1931,13 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	}
 	if (type == 's') {
 		eprintf ("Shouldnt reach\n");
+// ??
+#if 0
+	case 's': // "/s"
+		do_syscall_search (core, &param);
+		dosearch = false;
+		break;
+#endif
 		return true;
 	}
 	if (mode == 'j') {
@@ -2051,22 +2058,28 @@ done:
 }
 
 static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
-	double threshold = 0;
-	sscanf (input, "%lf", &threshold);
-	if (threshold < 1) {
-		threshold = 1;
+	double threshold = 1;
+	bool r2mode = false;
+	if (input && *input) {
+		if (*input == '*') {
+			r2mode = true;
+		}
+		sscanf (input, "%lf", &threshold);
+		if (threshold < 1) {
+			threshold = 1;
+		}
 	}
 	int buf_size = core->blocksize;
 	ut8 *buf = malloc (buf_size);
 	if (!buf) {
 		return;
 	}
-	eprintf ("Searching for entropy changes...\n");
 	double oe = 0;
 	RListIter *iter;
 	RIOMap *map;
 	ut64 begin = UT64_MAX;
 	ut64 at, end = 0;
+	int index = 0;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = map->itv.addr;
@@ -2084,11 +2097,17 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 			diff = R_ABS (diff);
 			end = at + buf_size;
 			if (diff > threshold) {
-				r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
+				if (r2mode) {
+					r_cons_printf ("f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
+				}
 				begin = UT64_MAX;
+				index++;
 			}
 			oe = e;
 		}
+		begin = UT64_MAX;
 	}
 	r_cons_break_pop();
 	free (buf);
@@ -3150,12 +3169,6 @@ reread:
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1), &param);
 		break;
-#if 0
-	case 's': // "/s"
-		do_syscall_search (core, &param);
-		dosearch = false;
-		break;
-#endif
 	case 'V': // "/V"
 		{
 			if (input[2] == 'j') {
