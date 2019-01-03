@@ -41,8 +41,7 @@ static const char *help_msg_aa[] = {
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-	"aaE", "", "run aef on all functions (same as aef @@f)",
-	"aaf", " ", "analyze all functions (e anal.hasnext=1;afr @@c:isq)",
+	"aaf", "[e] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
@@ -7224,14 +7223,16 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'b': // "aab"
 		cmd_anal_blocks (core, input + 1);
 		break;
-	case 'f': // "aaf"
-	{
-		const int analHasnext = r_config_get_i (core->config, "anal.hasnext");
-		r_config_set_i (core->config, "anal.hasnext", true);
-		r_core_cmd0 (core, "afr@@c:isq");
-		r_config_set_i (core->config, "anal.hasnext", analHasnext);
+	case 'f':
+		if (input[1] == 'e') {  // "aafe"
+			r_core_cmd0 (core, "aef@@f");
+		} else { // "aaf"
+			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
+			r_config_set_i (core->config, "anal.hasnext", true);
+			r_core_cmd0 (core, "afr@@c:isq");
+			r_config_set_i (core->config, "anal.hasnext", analHasnext);
+		}
 		break;
-	}
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
@@ -7449,9 +7450,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	}
 	case 'T': // "aaT"
 		cmd_anal_aftertraps (core, input + 1);
-		break;
-	case 'E': // "aaE"
-		r_core_cmd0 (core, "aef @@f");
 		break;
 	case 'e': // "aae"
 		if (input[1]) {
