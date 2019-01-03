@@ -1704,7 +1704,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RListIter *iter;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	RAnalEsil *esil = core->anal->esil;
+	RAnalEsil *esil;
 	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");

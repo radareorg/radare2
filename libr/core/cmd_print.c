@@ -688,8 +688,7 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 
 static void cmd_pCD(RCore *core, const char *input) {
 	int h, w = r_cons_get_size (&h);
-	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
-	int i, columns = w / colwidth / 2;
+	int i;
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
@@ -710,7 +709,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	c->color = r_config_get_i (core->config, "scr.color");
 	r_core_block_size (core, rows * 32);
 	char *cmd = NULL;
-	columns = 2;
+	int columns = 2;
 	for (i = 0; i < columns; i++) {
 		switch (i) {
 		case 0:

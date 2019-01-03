@@ -352,7 +352,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 	}
 
 	if (!r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
-		si_class_type_info si_cti;
+		si_class_type_info si_cti = {0};
 		if (!rtti_itanium_read_si_class_type_info (context, colAddr, &si_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
 			rtti_itanium_si_class_type_info_fini (&si_cti);
