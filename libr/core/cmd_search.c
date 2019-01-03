@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+/* radare - LGPL - Copyright 2010-2019 - pancake */
 
 #include <sdb/ht_uu.h>
 #include "r_core.h"
+#include <r_hash.h>
 #include "r_io.h"
 #include "r_list.h"
 #include "r_types_base.h"
@@ -40,6 +41,7 @@ static const char *help_msg_slash[] = {
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
+	"/s", " [threshold]", "find sections by grouping blocks with similar entropy",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
@@ -2048,6 +2050,50 @@ done:
 	return false;
 }
 
+static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
+	double threshold = 0;
+	sscanf (input, "%lf", &threshold);
+	if (threshold < 1) {
+		threshold = 1;
+	}
+	int buf_size = core->blocksize;
+	ut8 *buf = malloc (buf_size);
+	if (!buf) {
+		return;
+	}
+	eprintf ("Searching for entropy changes...\n");
+	double oe = 0;
+	RListIter *iter;
+	RIOMap *map;
+	ut64 begin = UT64_MAX;
+	ut64 at, end = 0;
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = map->itv.addr;
+		ut64 to = r_itv_end (map->itv);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		for (at = from; at < to; at += buf_size) {
+			if (begin == UT64_MAX) {
+				begin = at;
+			}
+			r_io_read_at (core->io, at, buf, buf_size);
+			double e = r_hash_entropy (buf, buf_size);
+			double diff = oe - e;
+			diff = R_ABS (diff);
+			end = at + buf_size;
+			if (diff > threshold) {
+				r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
+				begin = UT64_MAX;
+			}
+			oe = e;
+		}
+	}
+	r_cons_break_pop();
+	free (buf);
+}
+
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
@@ -3489,6 +3535,9 @@ reread:
 		} else { // "/c"
 			do_asm_search (core, &param, input, 0, search_itv);
 		}
+		break;
+	case 's':
+		do_section_search (core, &param, input + 1);
 		break;
 	case '+': // "/+"
 		if (input[1] == ' ') {
