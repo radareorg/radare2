@@ -67,6 +67,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		}
 		sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
+			free (symName);
 			break;
 		}
 		sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
