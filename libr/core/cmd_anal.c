@@ -10,7 +10,6 @@ static const char *help_msg_a[] = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[b] [addr]", "analyze block at given address",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
-	"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
@@ -27,6 +26,7 @@ static const char *help_msg_a[] = {
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
 	"av", "[?] [.]", "show vtables",
+	"ac", "[?]", "manage classes",
 	"ax", "[?]", "manage refs/xrefs (see also afx?)",
 	NULL
 };
@@ -77,6 +77,24 @@ static const char *help_msg_abt[] = {
 	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
 	"abtj", " [addr] [num]", "display paths in JSON",
+	NULL
+};
+
+static const char *help_msg_ac[] = {
+	"Usage:", "ac", "anal classes commands",
+	"acl[lj*]", "", "list all classes",
+	"ac", " [class name]", "add class",
+	"ac-", " [class name]", "delete class",
+	"acn", " [class name] [new class name]", "rename class",
+	"acv", " [class name] [addr] ([offset])", "add vtable address to class",
+	"acv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
+	"acb", " [class name]", "list bases of class",
+	"acb", " [class name] [base class name] ([offset])", "add base class",
+	"acb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
+	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
+	"acm-", " [class name] [method name]", "delete method",
+	"acmn", " [class name] [method name] [new name]", "rename method",
+	"ac?", "", "show this help",
 	NULL
 };
 
@@ -500,6 +518,7 @@ static const char *help_msg_ao[] = {
 	"aom", " [id]", "list current or all mnemonics for current arch",
 	"aod", " [mnemonic]", "describe opcode for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
+	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -603,6 +622,7 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, aa);
 	DEFINE_CMD_DESCRIPTOR (core, aar);
 	DEFINE_CMD_DESCRIPTOR (core, ab);
+	DEFINE_CMD_DESCRIPTOR (core, ac);
 	DEFINE_CMD_DESCRIPTOR (core, ad);
 	DEFINE_CMD_DESCRIPTOR (core, ae);
 	DEFINE_CMD_DESCRIPTOR (core, aea);
@@ -5010,6 +5030,39 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			r_core_cmd0 (core, "ao~mnemonic[1]");
 		}
 		break;
+	case 'c': // "aoc"
+	{
+		RList *hooks;
+		RListIter *iter;
+		RAnalCycleHook *hook;
+		char *instr_tmp = NULL;
+		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
+		int cr = r_config_get_i (core->config, "asm.cmt.right");
+		int fun = r_config_get_i (core->config, "asm.functions");
+		int li = r_config_get_i (core->config, "asm.lines");
+		int xr = r_config_get_i (core->config, "asm.xrefs");
+
+		r_config_set_i (core->config, "asm.cmt.right", true);
+		r_config_set_i (core->config, "asm.functions", false);
+		r_config_set_i (core->config, "asm.lines", false);
+		r_config_set_i (core->config, "asm.xrefs", false);
+
+		hooks = r_core_anal_cycles (core, ccl); //analyse
+		r_cons_clear_line (1);
+		r_list_foreach (hooks, iter, hook) {
+			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
+			r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
+			r_cons_flush ();
+			free (instr_tmp);
+		}
+		r_list_free (hooks);
+
+		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
+		r_config_set_i (core->config, "asm.functions", fun);
+		r_config_set_i (core->config, "asm.lines", li);
+		r_config_set_i (core->config, "asm.xrefs", xr);
+	}
+	break;
 	case 'd': // "aod"
 		if (input[1] == 'a') { // "aoda"
 			// list sdb database
@@ -7602,23 +7655,6 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 }
 
 
-static const char *help_msg_aC[] = {
-		"Usage:", "aC", "anal classes commands",
-		"aCl[lj*]", "", "list all classes",
-		"aC", " [class name]", "add class",
-		"aC-", " [class name]", "delete class",
-		"aCn", " [class name] [new class name]", "rename class",
-		"aCv", " [class name] [addr] ([offset])", "add vtable address to class",
-		"aCv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
-		"aCb", " [class name]", "list bases of class",
-		"aCb", " [class name] [base class name] ([offset])", "add base class",
-		"aCb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
-		"aCm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
-		"aCm-", " [class name] [method name]", "delete method",
-		"aCmn", " [class name] [method name] [new name]", "rename method",
-		"aC?", "", "show this help",
-		NULL
-};
 
 static void cmd_anal_class_method(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
@@ -7690,7 +7726,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 
@@ -7764,7 +7800,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 
@@ -7831,7 +7867,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 
@@ -7894,7 +7930,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		cmd_anal_class_method (core, input + 1);
 		break;
 	default: // "aC?"
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 }
@@ -7966,7 +8002,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
-	case 'C': cmd_anal_classes (core, input + 1); break; // "aC"
+	case 'c': cmd_anal_classes (core, input + 1); break; // "ac"
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
@@ -8028,39 +8064,6 @@ static int cmd_anal(void *data, const char *input) {
 	case 'a': // "aa"
 		if (!cmd_anal_all (core, input + 1)) {
 			return false;
-		}
-		break;
-	case 'c': // "ac"
-		{
-		RList *hooks;
-		RListIter *iter;
-		RAnalCycleHook *hook;
-		char *instr_tmp = NULL;
-		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
-		int cr = r_config_get_i (core->config, "asm.cmt.right");
-		int fun = r_config_get_i (core->config, "asm.functions");
-		int li = r_config_get_i (core->config, "asm.lines");
-		int xr = r_config_get_i (core->config, "asm.xrefs");
-
-		r_config_set_i (core->config, "asm.cmt.right", true);
-		r_config_set_i (core->config, "asm.functions", false);
-		r_config_set_i (core->config, "asm.lines", false);
-		r_config_set_i (core->config, "asm.xrefs", false);
-
-		hooks = r_core_anal_cycles (core, ccl); //analyse
-		r_cons_clear_line (1);
-		r_list_foreach (hooks, iter, hook) {
-			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
-			r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			r_cons_flush ();
-			free (instr_tmp);
-		}
-		r_list_free (hooks);
-
-		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
-		r_config_set_i (core->config, "asm.functions", fun);
-		r_config_set_i (core->config, "asm.lines", li);
-		r_config_set_i (core->config, "asm.xrefs", xr);
 		}
 		break;
 	case 'd': // "ad"
