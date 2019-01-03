@@ -1015,7 +1015,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'j': // "Cj"
 	case '*': { // "C*"
-		if (input[1] && input[1] == '.') {
+		if (!input[0] || input[1] == '.') {
 			r_meta_list_offset (core->anal, core->offset, *input);
 		} else {
 			r_meta_list (core->anal, R_META_TYPE_ANY, *input);

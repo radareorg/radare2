@@ -36,6 +36,7 @@ static const char *help_msg_T[] = {
 	"Tm", " [idx]", "display log messages without index",
 	"Ts", "", "list files in current directory (see pwd, cd)",
 	"TT", "", "enter into the text log chat console",
+	"T=", "", "Use http.sync to get logs from another r2",
 	NULL
 };
 
@@ -141,6 +142,67 @@ static int textlog_chat(RCore *core) {
 	return 1;
 }
 
+static int getIndexFromLogString(const char *s) {
+	int len = strlen (s);
+	const char *m = s + len;
+	int nlctr = 2;
+	const char *nl = NULL;
+	while (m > s) {
+		if (*m == '\n') {
+			nl = m;
+			if (--nlctr < 1) {
+				return atoi (m + 1);
+			}
+		}
+		m--;
+	}
+		return atoi (nl?nl + 1: s);
+	return -1;
+}
+
+static char *expr2cmd (RCoreLog *log, const char *line) {
+	if (!line || !*line) {
+		return NULL;
+	}
+	line++;
+	if (!strncmp (line, "add-comment", 11)) {
+		line += 11;
+		if (*line == ' ') {
+			char *sp = strchr (line + 1, ' ');
+			if (sp) {
+				char *msg = sp + 1;
+				ut64 addr = r_num_get (NULL, line);
+				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", msg, addr);
+			}
+		}
+		eprintf ("add-comment parsing error\n");
+	}
+	if (!strncmp (line, "del-comment", 11)) {
+		if (line[11] == ' ') {
+			return r_str_newf ("CC-%s\n", line + 12);
+		}
+		eprintf ("add-comment parsing error\n");
+	}
+	return NULL;
+}
+
+static int log_callback_r2 (RCore *core, int count, const char *line) {
+	if (*line == ':') {
+		char *cmd = expr2cmd (core->log, line);
+		if (cmd) {
+			r_cons_printf ("%s\n", cmd);
+			r_core_cmd (core, cmd, 0);
+			free (cmd);
+		}
+	}
+	return 0;
+}
+
+static int log_callback_all (RCore *log, int count, const char *line) {
+	r_cons_printf ("%d %s\n", count, line);
+	return 0;
+}
+
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *arg, *input2;
@@ -157,21 +219,21 @@ static int cmd_log(void *data, const char *input) {
 
 	switch (*input) {
 	case 'e': // shell: less
-	{
-		char *p = strchr (input, ' ');
-		if (p) {
-			char *b = r_file_slurp (p + 1, NULL);
-			if (b) {
-				r_cons_less_str (b, NULL);
-				free (b);
+		{
+			char *p = strchr (input, ' ');
+			if (p) {
+				char *b = r_file_slurp (p + 1, NULL);
+				if (b) {
+					r_cons_less_str (b, NULL);
+					free (b);
+				} else {
+					eprintf ("File not found\n");
+				}
 			} else {
-				eprintf ("File not found\n");
+				eprintf ("Usage: less [filename]\n");
 			}
-		} else {
-			eprintf ("Usage: less [filename]\n");
 		}
-	}
-	break;
+		break;
 	case 'l':
 		r_cons_printf ("%d\n", core->log->last - 1);
 		break;
@@ -181,15 +243,35 @@ static int cmd_log(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_T);
 		break;
-	case 'T':
+	case 'T':  // Ts ? as ms?
 		if (r_config_get_i (core->config, "scr.interactive")) {
 			textlog_chat (core);
 		} else {
 			eprintf ("Only available when the screen is interactive\n");
 		}
 		break;
+	case '=':
+		if (atoi (input + 1) > 0 || (input[1] == '0')) {
+			core->sync_index = 0;
+		} else {
+			RCoreLogCallback log_callback = (input[1] == '*')
+				? log_callback_all: log_callback_r2;
+			char *res = r_core_log_get (core, core->sync_index);
+			if (res) {
+				// r_cons_printf ("%s\n", res);
+				int idx = getIndexFromLogString (res);
+				if (idx != -1) {
+					core->sync_index = idx + 1;
+				}
+				r_core_log_run (core, res, log_callback);
+				free (res);
+			} else {
+				r_cons_printf ("Please check e http.sync\n");
+			}
+		}
+		break;
 	case ' ':
-		if (n > 0) {
+		if (n > 0 || *input == '0') {
 			r_core_log_list (core, n, n2, *input);
 		} else {
 			r_core_log_add (core, input + 1);

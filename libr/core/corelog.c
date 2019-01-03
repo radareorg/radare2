@@ -14,11 +14,19 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	for (i = idx = 0; str && *str; i++, id++) {
 		if ((n && n <= id) || !n) {
 			switch (fmt) {
-			case 'j': r_cons_printf ("%s[%d,\"%s\"]",
-					printed? ",": "", id, str); break;
-			case 't': r_cons_println (str); break;
-			case '*': r_cons_printf ("\"l %s\"\n", str); break;
-			default: r_cons_printf ("%d %s\n", id, str); break;
+			case 'j':
+				r_cons_printf ("%s[%d,\"%s\"]",
+					printed? ",": "", id, str);
+				break;
+			case 't':
+				r_cons_println (str);
+				break;
+			case '*':
+				r_cons_printf ("\"T %s\"\n", str);
+				break;
+			default:
+				r_cons_printf ("%d %s\n", id, str);
+				break;
 			}
 			printed++;
 			if (nth && printed >= nth) {
@@ -56,6 +64,41 @@ R_API void r_core_log_init(RCoreLog *log) {
 R_API void r_core_log_free(RCoreLog *log) {
 	r_strpool_free (log->sp);
 	free (log);
+}
+
+R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback runLine) {
+	char *obuf = strdup (_buf);
+	char *buf = obuf;
+	while (buf) {
+		char *nl = strchr (buf, '\n');
+		if (nl) {
+			*nl = 0;
+		}
+		char *sp = strchr (buf, ' ');
+		if (sp) {
+			runLine (core, atoi (buf), sp + 1);
+		}
+		if (nl) {
+			buf = nl + 1;
+		} else {
+			break;
+		}
+	}
+	free (obuf);
+	return true;
+}
+
+R_API char *r_core_log_get(RCore *core, int index) {
+	const char *host = r_config_get (core->config, "http.sync");
+	if (host && *host) {
+		char *url = index > 0
+			? r_str_newf ("%s/cmd/T%%20%d", host, index)
+			: r_str_newf ("%s/cmd/T", host);
+		char *res = r_socket_http_get (url, NULL, NULL);
+		free (url);
+		return res? res: strdup ("");
+	}
+	return NULL;
 }
 
 R_API void r_core_log_add(RCore *core, const char *msg) {

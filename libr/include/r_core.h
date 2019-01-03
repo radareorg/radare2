@@ -291,6 +291,7 @@ typedef struct r_core_t {
 	bool fixedbits;
 	bool fixedarch;
 	bool pava;
+	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 	REvent *ev;
@@ -715,9 +716,12 @@ R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
 
 /* logs */
+typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
 R_API void r_core_log_init (RCoreLog *log);
+R_API char *r_core_log_get(RCore *core, int index);
 R_API RCoreLog *r_core_log_new (void);
+R_API bool r_core_log_run(RCore *core, const char *buf, RCoreLogCallback cb);
 R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
