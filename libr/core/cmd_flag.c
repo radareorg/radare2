@@ -509,8 +509,7 @@ rep:
 			if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
-					eprintf ("TODO: local_del_name has been deprecated\n");
-					//;r_anal_fcn_local_del_name (core->anal, fcn, flagname+1);
+					r_anal_fcn_label_del (core->anal, fcn, flagname  +  1, off);
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
