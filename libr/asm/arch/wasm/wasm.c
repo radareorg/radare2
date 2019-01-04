@@ -189,7 +189,7 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	// TODO: add immediates assembly
 	int i = 0, len = -1;
 	char tmp[256];
-	while (str[i] && str[i] != ' ' && i < 256) {
+	while (str[i] && str[i] != ' ' && i < sizeof (tmp)) {
 		tmp[i] = str[i];
 		i++;
 	}
