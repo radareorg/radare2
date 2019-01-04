@@ -1368,6 +1368,9 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	// create rel/rela cache if not already there
 	if (!bin->rel_cache) {
 		bin->rel_cache = rel_cache_new (bin);
+		if (!bin->rel_cache) {
+			return -1;
+		}
 	}
 
 	// lookup the right rel/rela entry
