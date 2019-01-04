@@ -2211,6 +2211,46 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
 
+static void cb_event_handler(REvent *ev, REventType event_type, void *data) {
+	REventMeta *rems = data;
+	char *str = r_base64_encode_dyn (rems->string, -1);
+	switch (event_type) {
+	case R_EVENT_META_SET:
+		switch (rems->type) {
+		case 'C':
+			r_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, str? str: ""));
+			break;
+		default:
+			break;
+		}
+		break;
+	case R_EVENT_META_DEL:
+		switch (rems->type) {
+		case 'C':
+			r_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
+			break;
+		default:
+			r_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
+			break;
+		}
+		break;
+	case R_EVENT_META_CLEAR:
+		switch (rems->type) {
+		case 'C':
+			r_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
+			break;
+		default:
+			r_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
+			break;
+		}
+		break;
+	default:
+		// TODO
+		break;
+	}
+	free (str);
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2221,6 +2261,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
+	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler);
 	core->lock = r_th_lock_new (true);
 	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->cmd_depth = core->max_cmd_depth;
