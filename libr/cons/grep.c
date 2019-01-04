@@ -591,7 +591,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 						char *str = r_str_ndup (tline, ret);
 						char *grepstr = r_str_ndup (tline, ret);
 						char *old_grepstr = grepstr;
-						grepstr = r_str_casestr (grepstr, grep->str);
+						grepstr = (char *) r_str_casestr (grepstr, grep->str);
 						grepstr[strlen (grep->str)] = '\0';
 						char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grepstr);
 						if (str && newstr) {
