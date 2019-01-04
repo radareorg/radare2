@@ -96,8 +96,6 @@ R_API RVector *r_vector_clone(RVector *vec) {
 	return ret;
 }
 
-
-
 R_API void *r_vector_index_ptr(RVector *vec, size_t index) {
 	return (char *)vec->a + vec->elem_size * index;
 }
@@ -198,16 +196,11 @@ R_API void *r_vector_shrink(RVector *vec) {
 	return vec->a;
 }
 
-
-
-
-
 static void pvector_free_elem(void *e, void *user) {
 	void *p = *((void **)e);
 	RPVectorFree elem_free = (RPVectorFree)user;
 	elem_free (p);
 }
-
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free) {
 	r_vector_init (&vec->v, sizeof (void *), free ? pvector_free_elem : NULL, free);
@@ -296,4 +289,23 @@ static void quick_sort(void **a, size_t n, RPVectorComparator cmp) {
 
 R_API void r_pvector_sort(RPVector *vec, RPVectorComparator cmp) {
 	quick_sort (vec->v.a, vec->v.len, cmp);
+}
+
+R_API RBufVector *r_buf_vector_new(void *buf, RPVectorFree free) {
+	RBufVector *vec = R_NEW (RBufVector);
+	if (!vec) {
+		return NULL;
+	}
+	r_pvector_init (&vec->v, free);
+	vec->buf = buf;
+	return vec;
+}
+
+R_API void r_buf_vector_free(RBufVector *vec) {
+	if (!vec) {
+		return;
+	}
+	r_pvector_clear (&vec->v);
+	free (vec->buf);
+	free (vec);
 }

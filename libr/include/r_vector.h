@@ -52,6 +52,11 @@ typedef struct r_vector_t {
 // RPVector directly wraps RVector for type safety
 typedef struct r_pvector_t { RVector v; } RPVector;
 
+// RPVector with a single buffer that will be freed with the vector
+typedef struct r_buf_vector_t {
+	RPVector v;
+	void *buf;
+} RBufVector;
 
 // RVector
 
@@ -248,6 +253,15 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 			} \
 		} \
 	} while (0) \
+
+
+
+// RBufVector
+
+R_API RBufVector *r_buf_vector_new(void *buf, RPVectorFree free);
+R_API void r_buf_vector_free(RBufVector *vec);
+
+
 
 #ifdef __cplusplus
 }
