@@ -41,7 +41,7 @@ static const char *help_msg_aa[] = {
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-	"aaf", "[e] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
+	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
@@ -360,9 +360,8 @@ static const char *help_msg_afn[] = {
 };
 
 static const char *help_msg_aft[] = {
-	"Usage:", "aft[a|m]", "",
-	"afta", "", "setup memory and analyse do type matching analysis for all functions",
-	"aftm", "", "type matching analysis for current function",
+	"Usage:", "aft", "",
+	"aft", "", "type matching analysis for current function",
 	NULL
 };
 
@@ -700,13 +699,14 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 }
 #endif
 
-static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
+static bool cmd_anal_aaft (RCore *core) {
 	RListIter *it;
+	RAnalFunction *fcn;
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_i (core->config, io_cache_key);
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		eprintf ("TOFIX: afta can't run in debugger mode.\n");
+		eprintf ("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}
 	if (!io_cache) {
@@ -739,17 +739,14 @@ static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
 
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn && *input != '?' && *input != 'a') {
+	if (!fcn && *input != '?') {
 		eprintf ("cant find function here\n");
 		return;
 	}
 	ut64 seek;
 	r_cons_break_push (NULL, NULL);
 	switch (*input) {
-	case 'a': // "afta"
-		type_cmd_afta (core, fcn);
-		break;
-	case 'm': // "aftm"
+	case '\0': // "aft"
 		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_core_anal_type_match (core, fcn);
@@ -7279,6 +7276,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
 			r_core_cmd0 (core, "aef@@f");
+		} else if (input[1] == 't') { // "aaft"
+			cmd_anal_aaft (core);
 		} else { // "aaf"
 			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_config_set_i (core->config, "anal.hasnext", true);
@@ -7464,8 +7463,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);
 				} else {
-					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (afta)");
-					r_core_cmd0 (core, "afta");
+					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+					r_core_cmd0 (core, "aaft");
 					r_print_rowlog_done (core->print, oldstr);
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);

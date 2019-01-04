@@ -25,12 +25,7 @@ static int cmpaddr(const void *_a, const void *_b) {
 int main (int argc, char **argv) {
 	r_anal_esil_set_pc (core->anal->esil, fcn ? fcn->addr : core->offset);
 	switch (*input) {
-	case 'a': // "afta"
-	{
-		type_cmd_afta (core, fcn);
-		break;
-	}
-	case 'm': // "aftm"
+	case '\0': // "aft"
 	{
 		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn ? fcn->addr : core->offset);
