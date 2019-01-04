@@ -2664,6 +2664,8 @@ repeat_arroba:
 				*v++ = 0;
 				r_sys_setenv (k, v);
 				r_list_append (tmpenvs, k);
+			} else {
+				free (k);
 			}
 		} else if (ptr[1] == '.') { // "@."
 			if (ptr[2] == '.') { // "@.."
@@ -3005,13 +3007,11 @@ static int foreach_comment(void *user, const char *k, const char *v) {
 	const char *cmd = ui->user;
 	if (!strncmp (k, "meta.C.", 7)) {
 		char *cmt = (char *)sdb_decode (v, 0);
-		if (!cmt) {
-			cmt = strdup ("");
+		if (cmt) {
+			r_core_cmdf (core, "s %s", k + 7);
+			r_core_cmd0 (core, cmd);
+			free (cmt);
 		}
-		//eprintf ("--> %s = %s\n", k + 7, cmt);
-		r_core_cmdf (core, "s %s", k + 7);
-		r_core_cmd0 (core, cmd);
-		free (cmt);
 	}
 	return 1;
 }
@@ -3200,7 +3200,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 
 static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 	char *cmd = strdup (_cmd);
-	char *str = cmd;
 	char *nextLine = NULL;
 	ut64 addr;
 	/* foreach list of items */
@@ -3232,7 +3231,7 @@ static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 			while (*each == ' ') {
 				each++;
 			}
-			str = strchr (each, ' ');
+			char *str = strchr (each, ' ');
 			if (str) {
 				*str = '\0';
 				addr = r_num_math (core->num, each);

@@ -278,7 +278,11 @@ static bool edit_bits (RCore *core) {
 	if (core->blocksize < sizeof (ut64)) {
 		return false;
 	}
-	memcpy (buf, core->block, sizeof (ut64));
+	int cur = 0;
+	if (core->print->cur != -1) {
+		cur = core->print->cur;
+	}
+	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -287,6 +291,7 @@ static bool edit_bits (RCore *core) {
 		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor:\n\n");
+		r_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
 			char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
@@ -379,13 +384,29 @@ static bool edit_bits (RCore *core) {
 		if (ch == -1 || ch == 4) {
 			break;
 		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		if (ch != 10) {
+			ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		}
 		switch (ch) {
 		case 'Q':
 		case 'q':
 			return false;
+		case 'H':
+			{
+				int y = R_MAX (x - 8, 0);
+				x = y - y%8;
+			}
+			break;
+		case 'L':
+		case 9:
+			{
+				int y = R_MIN (x + 8, nbits - 8);
+				x = y - y%8;
+			}
+			break;
 		case 'j':
 		case 'k':
+		case 10:
 		case ' ':
 			//togglebit();
 			{
@@ -2252,7 +2273,7 @@ static void variable_rename (RCore *core, ut64 addr, int vindex, const char *nam
 	r_list_foreach (list, iter, var) {
 		if (i == vindex) {
 			r_core_seek (core, addr, false);
-			r_core_cmd_strf (core, "afvn %s %s", var->name, name);
+			r_core_cmd_strf (core, "afvn %s %s", name, var->name);
 			r_core_seek (core, a_tmp, false);
 			break;
 		}
@@ -2337,10 +2358,10 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 			if (show) {
 				r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
 						i == *vindex ? "* ":"  ",
-						var->kind=='v'?"var":"arg",
+						var->kind == 'v'?"var":"arg",
 						var->type, var->name,
 						core->anal->reg->name[R_REG_NAME_BP],
-						(var->kind=='v')?"-":"+",
+						(var->kind == 'v')?"-":"+",
 						var->delta);
 			}
 		}

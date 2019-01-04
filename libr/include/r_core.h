@@ -170,6 +170,14 @@ typedef struct r_core_visual_tab_t {
 	bool cur_enabled;
 	int cur;
 	int ocur;
+	int cols;
+	int disMode;
+	int hexMode;
+	int printMode;
+	int current3format;
+	int current4format;
+	int current5format;
+	char name[32]; // XXX leak because no  r_core_visual_tab_free
 	// TODO: cursor and such
 } RCoreVisualTab;
 // #define RCoreVisualTab Tab

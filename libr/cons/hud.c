@@ -99,7 +99,7 @@ static bool strmatch(char *entry, char *filter, char *mask, const int mask_size)
 
 static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RListIter *iter;
-	void *current_entry;
+	char *current_entry;
 	char mask[HUD_BUF_SIZE];
 	char *p, *x;
 	int j, rows;

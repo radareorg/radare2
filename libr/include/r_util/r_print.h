@@ -97,6 +97,7 @@ typedef struct r_print_t {
 	int lines_cache_sz;
 	int lines_abs;
 	bool esc_bslash;
+	bool wide_offsets;
 	const char *strconv_mode;
 	RList *vars;
 
@@ -144,8 +145,8 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
 R_API const char *r_print_byte_color(RPrint *p, int ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
-R_API bool r_print_have_cursor(RPrint *p, int cur);
-R_API void r_print_cursor(RPrint *p, int cur, int set);
+R_API bool r_print_have_cursor(RPrint *p, int cur, int len);
+R_API void r_print_cursor(RPrint *p, int cur, int len, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API int r_print_get_cursor(RPrint *p);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);

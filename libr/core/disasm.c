@@ -3428,9 +3428,6 @@ static void ds_align_comment(RDisasmState *ds) {
 	}
 	ll += ds->buf_line_begin;
 	int cells = r_str_len_utf8_ansi (ll);
-	if (cells < 20) {
-		ds_print_pre (ds);
-	}
 	int cols = ds->interactive ? ds->core->cons->columns : 1024;
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
@@ -4002,7 +3999,7 @@ static void ssa_set(RAnalEsil *esil, const char *reg) {
 #define R_DISASM_MAX_STR 512
 static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
-	if (ds->show_emu_ssa) {
+	if (ds && ds->show_emu_ssa) {
 		if (!isdigit (*name)) {
 			char *r = ssa_get (esil, name);
 			ds_comment_esil (ds, true, false, "<%s", r);
@@ -4016,6 +4013,9 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
+	if (!ds) {
+		return 0;
+	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
 		ssa_set (esil, name);
@@ -4277,7 +4277,14 @@ static void delete_last_comment(RDisasmState *ds) {
 		ds_newline (ds);
 		ds_begin_line (ds);
 		ds_setup_print_pre (ds, false, false);
-		ds_print_lines_left (ds);
+		if (!ds->linesright && ds->show_lines_bb && ds->line) {
+			char *refline = r_anal_reflines_str (ds->core, ds->at,
+			                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+			r_return_if_fail (refline);
+			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
+			               refline, COLOR_RESET (ds));
+			free (refline);
+		}
 	}
 }
 

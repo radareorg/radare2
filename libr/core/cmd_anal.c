@@ -10,7 +10,6 @@ static const char *help_msg_a[] = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[b] [addr]", "analyze block at given address",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
-	"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
@@ -27,6 +26,7 @@ static const char *help_msg_a[] = {
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
 	"av", "[?] [.]", "show vtables",
+	"ac", "[?]", "manage classes",
 	"ax", "[?]", "manage refs/xrefs (see also afx?)",
 	NULL
 };
@@ -41,8 +41,7 @@ static const char *help_msg_aa[] = {
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-	"aaE", "", "run aef on all functions (same as aef @@f)",
-	"aaf", " ", "analyze all functions (e anal.hasnext=1;afr @@c:isq)",
+	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
@@ -78,6 +77,24 @@ static const char *help_msg_abt[] = {
 	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
 	"abtj", " [addr] [num]", "display paths in JSON",
+	NULL
+};
+
+static const char *help_msg_ac[] = {
+	"Usage:", "ac", "anal classes commands",
+	"acl[lj*]", "", "list all classes",
+	"ac", " [class name]", "add class",
+	"ac-", " [class name]", "delete class",
+	"acn", " [class name] [new class name]", "rename class",
+	"acv", " [class name] [addr] ([offset])", "add vtable address to class",
+	"acv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
+	"acb", " [class name]", "list bases of class",
+	"acb", " [class name] [base class name] ([offset])", "add base class",
+	"acb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
+	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
+	"acm-", " [class name] [method name]", "delete method",
+	"acmn", " [class name] [method name] [new name]", "rename method",
+	"ac?", "", "show this help",
 	NULL
 };
 
@@ -343,9 +360,8 @@ static const char *help_msg_afn[] = {
 };
 
 static const char *help_msg_aft[] = {
-	"Usage:", "aft[a|m]", "",
-	"afta", "", "setup memory and analyse do type matching analysis for all functions",
-	"aftm", "", "type matching analysis for current function",
+	"Usage:", "aft", "",
+	"aft", "", "type matching analysis for current function",
 	NULL
 };
 
@@ -501,6 +517,7 @@ static const char *help_msg_ao[] = {
 	"aom", " [id]", "list current or all mnemonics for current arch",
 	"aod", " [mnemonic]", "describe opcode for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
+	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -604,6 +621,7 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, aa);
 	DEFINE_CMD_DESCRIPTOR (core, aar);
 	DEFINE_CMD_DESCRIPTOR (core, ab);
+	DEFINE_CMD_DESCRIPTOR (core, ac);
 	DEFINE_CMD_DESCRIPTOR (core, ad);
 	DEFINE_CMD_DESCRIPTOR (core, ae);
 	DEFINE_CMD_DESCRIPTOR (core, aea);
@@ -681,13 +699,14 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 }
 #endif
 
-static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
+static bool cmd_anal_aaft (RCore *core) {
 	RListIter *it;
+	RAnalFunction *fcn;
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_i (core->config, io_cache_key);
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		eprintf ("TOFIX: afta can't run in debugger mode.\n");
+		eprintf ("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}
 	if (!io_cache) {
@@ -720,17 +739,14 @@ static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
 
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn && *input != '?' && *input != 'a') {
+	if (!fcn && *input != '?') {
 		eprintf ("cant find function here\n");
 		return;
 	}
 	ut64 seek;
 	r_cons_break_push (NULL, NULL);
 	switch (*input) {
-	case 'a': // "afta"
-		type_cmd_afta (core, fcn);
-		break;
-	case 'm': // "aftm"
+	case '\0': // "aft"
 		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_core_anal_type_match (core, fcn);
@@ -5011,6 +5027,39 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			r_core_cmd0 (core, "ao~mnemonic[1]");
 		}
 		break;
+	case 'c': // "aoc"
+	{
+		RList *hooks;
+		RListIter *iter;
+		RAnalCycleHook *hook;
+		char *instr_tmp = NULL;
+		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
+		int cr = r_config_get_i (core->config, "asm.cmt.right");
+		int fun = r_config_get_i (core->config, "asm.functions");
+		int li = r_config_get_i (core->config, "asm.lines");
+		int xr = r_config_get_i (core->config, "asm.xrefs");
+
+		r_config_set_i (core->config, "asm.cmt.right", true);
+		r_config_set_i (core->config, "asm.functions", false);
+		r_config_set_i (core->config, "asm.lines", false);
+		r_config_set_i (core->config, "asm.xrefs", false);
+
+		hooks = r_core_anal_cycles (core, ccl); //analyse
+		r_cons_clear_line (1);
+		r_list_foreach (hooks, iter, hook) {
+			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
+			r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
+			r_cons_flush ();
+			free (instr_tmp);
+		}
+		r_list_free (hooks);
+
+		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
+		r_config_set_i (core->config, "asm.functions", fun);
+		r_config_set_i (core->config, "asm.lines", li);
+		r_config_set_i (core->config, "asm.xrefs", xr);
+	}
+	break;
 	case 'd': // "aod"
 		if (input[1] == 'a') { // "aoda"
 			// list sdb database
@@ -7224,14 +7273,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'b': // "aab"
 		cmd_anal_blocks (core, input + 1);
 		break;
-	case 'f': // "aaf"
-	{
-		const int analHasnext = r_config_get_i (core->config, "anal.hasnext");
-		r_config_set_i (core->config, "anal.hasnext", true);
-		r_core_cmd0 (core, "afr@@c:isq");
-		r_config_set_i (core->config, "anal.hasnext", analHasnext);
+	case 'f':
+		if (input[1] == 'e') {  // "aafe"
+			r_core_cmd0 (core, "aef@@f");
+		} else if (input[1] == 't') { // "aaft"
+			cmd_anal_aaft (core);
+		} else { // "aaf"
+			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
+			r_config_set_i (core->config, "anal.hasnext", true);
+			r_core_cmd0 (core, "afr@@c:isq");
+			r_config_set_i (core->config, "anal.hasnext", analHasnext);
+		}
 		break;
-	}
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
@@ -7320,6 +7373,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
+			bool cfg_debug = r_config_get_i (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa"
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
@@ -7329,26 +7383,27 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "aF @@ sym.go.*");
 					r_print_rowlog_done (core->print, oldstr);
 				}
-				if (dh_orig && strcmp (dh_orig, "esil")) {
-					r_core_cmd0 (core, "dL esil");
+				if (!cfg_debug) {
+					if (dh_orig && strcmp (dh_orig, "esil")) {
+						r_core_cmd0 (core, "dL esil");
+					}
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
-					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_core_cmd0 (core, "aav");
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
 					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");
 					r_print_rowlog_done (core->print, oldstr);
-					if (!ioCache && !r_config_get_i (core->config, "io.cache")) {
-						r_core_cmd0 (core, "wc-*"); //  this makes NSO fffff
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
 					}
 					r_config_set_i (core->config, "io.pcache", ioCache);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
 				}
-				R_FREE (dh_orig);
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
 				if (r_cons_is_breaked ()) {
@@ -7408,15 +7463,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);
 				} else {
-					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (afta)");
-					r_core_cmd0 (core, "afta");
+					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+					r_core_cmd0 (core, "aaft");
 					r_print_rowlog_done (core->print, oldstr);
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
-					r_core_cmdf (core, "dL %s;dpa", dh_orig);
+					r_core_cmdf (core, "dL %s", dh_orig);
 				}
 			}
 			r_core_seek (core, curseek, 1);
@@ -7447,9 +7502,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	}
 	case 'T': // "aaT"
 		cmd_anal_aftertraps (core, input + 1);
-		break;
-	case 'E': // "aaE"
-		r_core_cmd0 (core, "aef @@f");
 		break;
 	case 'e': // "aae"
 		if (input[1]) {
@@ -7602,24 +7654,6 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 }
 
 
-static const char *help_msg_aC[] = {
-		"Usage:", "aC", "anal classes commands",
-		"aCl[lj*]", "", "list all classes",
-		"aC", " [class name]", "add class",
-		"aC-", " [class name]", "delete class",
-		"aCn", " [class name] [new class name]", "rename class",
-		"aCv", " [class name] [addr] ([offset])", "add vtable address to class",
-		"aCv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
-		"aCb", " [class name]", "list bases of class",
-		"aCb", " [class name] [base class name] ([offset])", "add base class",
-		"aCb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
-		"aCm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
-		"aCm-", " [class name] [method name]", "delete method",
-		"aCmn", " [class name] [method name] [new name]", "rename method",
-		"aC?", "", "show this help",
-		NULL
-};
-
 static void cmd_anal_class_method(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
@@ -7690,7 +7724,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 
@@ -7764,7 +7798,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 
@@ -7831,7 +7865,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		break;
 	}
 	default:
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 
@@ -7894,7 +7928,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		cmd_anal_class_method (core, input + 1);
 		break;
 	default: // "aC?"
-		r_core_cmd_help (core, help_msg_aC);
+		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
 }
@@ -7966,7 +8000,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
-	case 'C': cmd_anal_classes (core, input + 1); break; // "aC"
+	case 'c': cmd_anal_classes (core, input + 1); break; // "ac"
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
@@ -8028,39 +8062,6 @@ static int cmd_anal(void *data, const char *input) {
 	case 'a': // "aa"
 		if (!cmd_anal_all (core, input + 1)) {
 			return false;
-		}
-		break;
-	case 'c': // "ac"
-		{
-		RList *hooks;
-		RListIter *iter;
-		RAnalCycleHook *hook;
-		char *instr_tmp = NULL;
-		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
-		int cr = r_config_get_i (core->config, "asm.cmt.right");
-		int fun = r_config_get_i (core->config, "asm.functions");
-		int li = r_config_get_i (core->config, "asm.lines");
-		int xr = r_config_get_i (core->config, "asm.xrefs");
-
-		r_config_set_i (core->config, "asm.cmt.right", true);
-		r_config_set_i (core->config, "asm.functions", false);
-		r_config_set_i (core->config, "asm.lines", false);
-		r_config_set_i (core->config, "asm.xrefs", false);
-
-		hooks = r_core_anal_cycles (core, ccl); //analyse
-		r_cons_clear_line (1);
-		r_list_foreach (hooks, iter, hook) {
-			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
-			r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-			r_cons_flush ();
-			free (instr_tmp);
-		}
-		r_list_free (hooks);
-
-		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
-		r_config_set_i (core->config, "asm.functions", fun);
-		r_config_set_i (core->config, "asm.lines", li);
-		r_config_set_i (core->config, "asm.xrefs", xr);
 		}
 		break;
 	case 'd': // "ad"

@@ -502,7 +502,7 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 
   do
     {
-      struct grub_ufs_dirent dirent;
+      struct grub_ufs_dirent dirent = {0};
       int namelen;
 
       if (grub_strlen (name) == 0)

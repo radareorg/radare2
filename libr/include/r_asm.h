@@ -205,6 +205,7 @@ R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_6502;
+extern RAsmPlugin r_asm_plugin_6502_cs;
 extern RAsmPlugin r_asm_plugin_8051;
 extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_arm_as;
@@ -231,6 +232,7 @@ extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_lh5801;
 extern RAsmPlugin r_asm_plugin_lm32;
 extern RAsmPlugin r_asm_plugin_m68k_cs;
+extern RAsmPlugin r_asm_plugin_m680x_cs;
 extern RAsmPlugin r_asm_plugin_malbolge;
 extern RAsmPlugin r_asm_plugin_mcore;
 extern RAsmPlugin r_asm_plugin_mcs96;

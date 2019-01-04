@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -32,27 +32,84 @@ static const char *printfmtSingle[NPF] = {
 };
 
 // to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 6
-#define PRINT_3_FORMATS 1
-#define PRINT_4_FORMATS 3
-#define PRINT_5_FORMATS 6
+#define PRINT_HEX_FORMATS 9
+#define PRINT_3_FORMATS 2
+#define PRINT_4_FORMATS 6
+#define PRINT_5_FORMATS 8
 
 static int currentHexFormat = 0;
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
-	"px", "pxa", "pxh", "pxw", "pxq", "pxr"
+	"px", "pxa", "pxr", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
 };
 static int current3format = 0;
-static const char *print3Formats[PRINT_3_FORMATS] = {
-	"pxw 64@r:SP;dr=;pd $r"  // DEBUGGER
+static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
+	"pxw 64@r:SP;dr=;pd $r", // DEBUGGER
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "pxx", "p=e $r-2"
+	"prc", "pCA", "pxx", "p=e $r-2", "pq 64", "pk 64"
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
-	"pss", "p8", "pcc", "pcp", "pcd", "pcj"
+	"pca", "pcA", "p8", "pcc", "pss", "pcp", "pcd", "pcj"
 };
+static void applyHexMode(RCore *core, int hexMode) {
+	switch (R_ABS(hexMode) % 3) {
+	case 0:
+		r_config_set (core->config, "hex.compact", "false");
+		r_config_set (core->config, "hex.comments", "true");
+		break;
+	case 1:
+		r_config_set (core->config, "hex.compact", "true");
+		r_config_set (core->config, "hex.comments", "true");
+		break;
+	case 2:
+		r_config_set (core->config, "hex.compact", "false");
+		r_config_set (core->config, "hex.comments", "false");
+		break;
+	}
+}
+
+static void applyDisMode(RCore *core, int disMode) {
+	switch (disMode % 5) {
+	case 0:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.bytes", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "emu.str", "false");
+		r_config_set (core->config, "asm.emu", "false");
+		break;
+	case 1:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.bytes", "true");
+		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.emu", "false");
+		r_config_set (core->config, "emu.str", "true");
+		break;
+	case 2:
+		r_config_set (core->config, "asm.pseudo", "true");
+		r_config_set (core->config, "asm.bytes", "true");
+		r_config_set (core->config, "asm.esil", "true");
+		r_config_set (core->config, "emu.str", "true");
+		r_config_set (core->config, "asm.emu", "true");
+		break;
+	case 3:
+		r_config_set (core->config, "asm.pseudo", "false");
+		r_config_set (core->config, "asm.bytes", "false");
+		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.emu", "false");
+		r_config_set (core->config, "emu.str", "true");
+		break;
+	case 4:
+		r_config_set (core->config, "asm.pseudo", "true");
+		r_config_set (core->config, "asm.bytes", "false");
+		r_config_set (core->config, "asm.esil", "false");
+		r_config_set (core->config, "asm.emu", "false");
+		r_config_set (core->config, "emu.str", "true");
+		break;
+	}
+}
+
 
 static void nextPrintCommand() {
 	currentHexFormat++;
@@ -87,12 +144,13 @@ static const char *printfmtColumns[] = {
 };
 
 static const char *help_msg_visual[] = {
-	"?", "show this help",
-	"??", "show the user-friendly hud",
+	"?", "show visual help menu",
+	"??", "show this help",
+	"???", "show the user-friendly hud",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
-	"@", "redraw screen every 1s (multi-user view), in cursor set position",
 	"^", "seek to the begining of the function",
 	"!", "enter into the visual panels mode",
+	"TAB", "switch to the next print mode (or element in cursor mode)",
 	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
 	"=", "set cmd.vprompt (top row)",
 	"|", "set cmd.cprompt (right column)",
@@ -131,7 +189,7 @@ static const char *help_msg_visual[] = {
 	"r", "toggle jmphints/leahints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
-	"T", "enter textlog chat console (TT)",
+	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
 	"uU", "undo/redo seek",
 	"v", "visual function/vars code analysis menu",
 	"V", "(V)iew interactive ascii art graph (agfv)",
@@ -162,68 +220,6 @@ static ut64 splitPtr = UT64_MAX;
 #define USE_THREADS 1
 
 #if USE_THREADS
-static RThreadFunctionRet visual_repeat_thread_anykey(RThread *th) {
-	RCore *core = th->user;
-	r_cons_any_key (NULL);
-	eprintf ("^C  \n");
-	core->cons->context->breaked = true;
-	return R_TH_STOP;
-}
-
-static int visual_repeat_thread(RThread *th) {
-	RCore *core = th->user;
-	int i = 0;
-	r_cons_break_push (NULL, NULL);
-	for (;;) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		visual_refresh (core);
-		r_cons_flush ();
-		r_cons_gotoxy (0, 0);
-		r_cons_printf ("[@%d] ", i++);
-		r_cons_flush ();
-		r_sys_sleep (1);
-	}
-	r_cons_break_pop ();
-	core->cons->context->breaked = true;
-	r_th_wait (th);
-	return 0;
-}
-
-static void rotateAsmBits(RCore *core) {
-	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// const char *arch = r_config_get_i (core->config, "asm.arch");
-	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
-	int retries = 4;
-	while (retries > 0) {
-		int nb = bits == 64 ? 8:
-			bits == 32 ? 64:
-			bits == 16 ? 32:
-			bits == 8 ? 16: bits;
-		if ((core->assembler->cur->bits & nb) == nb) {
-			r_core_cmdf (core, "ahb %d", nb);
-			break;
-		}
-		bits = nb;
-		retries--;
-	}
-}
-
-static const char *rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
-	const bool isEmu = r_config_get_i (core->config, "asm.emu");
-	if (isEmu) {
-		if (isEmuStr) {
-			r_config_set (core->config, "emu.str", "false");
-		} else {
-			r_config_set (core->config, "asm.emu", "false");
-		}
-	} else {
-		r_config_set (core->config, "emu.str", "true");
-	}
-	return "pd";
-}
 
 static void printSnow(RCore *core) {
 	if (!snows) {
@@ -259,41 +255,41 @@ static void printSnow(RCore *core) {
 	// r_cons_gotoxy (10 , 10);
 	r_cons_flush ();
 }
-
-static void visual_repeat(RCore *core) {
-	int atport = r_config_get_i (core->config, "scr.atport");
-	if (atport) {
-#if __UNIX__ && !__APPLE__
-// TODO: Add support for iterm2 and terminal for mac, see rarop source for more info
-		int port = r_config_get_i (core->config, "http.port");
-		if (!r_core_rtr_http (core, '&', 'H', NULL)) {
-			const char *xterm = r_config_get (core->config, "cmd.xterm");
-			// TODO: this must be configurable
-			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
-			//xterm -bg black -fg gray -e 'r2 -C http://localhost:%d/cmd/;sleep 1' &", port);
-		} else {
-			r_cons_any_key (NULL);
-		}
-#else
-		eprintf ("Unsupported on this platform\n");
-		r_cons_any_key (NULL);
 #endif
-	} else {
-		RThread *th = r_th_new (visual_repeat_thread_anykey, core, 0);
-		if (!th) {
-			return;
-		}
 
-		visual_repeat_thread (th);
-/*
-		r_th_start (th, 1);
-*/
-		//	r_cons_break_push (NULL, NULL);
-		r_th_wait (th);
-		//	r_cons_break_pop ();
+static void rotateAsmBits(RCore *core) {
+	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+	// const char *arch = r_config_get_i (core->config, "asm.arch");
+	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
+	int retries = 4;
+	while (retries > 0) {
+		int nb = bits == 64 ? 8:
+			bits == 32 ? 64:
+			bits == 16 ? 32:
+			bits == 8 ? 16: bits;
+		if ((core->assembler->cur->bits & nb) == nb) {
+			r_core_cmdf (core, "ahb %d", nb);
+			break;
+		}
+		bits = nb;
+		retries--;
 	}
 }
-#endif
+
+static const char *rotateAsmemu(RCore *core) {
+	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
+	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	if (isEmu) {
+		if (isEmuStr) {
+			r_config_set (core->config, "emu.str", "false");
+		} else {
+			r_config_set (core->config, "asm.emu", "false");
+		}
+	} else {
+		r_config_set (core->config, "emu.str", "true");
+	}
+	return "pd";
+}
 
 R_API void r_core_visual_showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
@@ -400,15 +396,113 @@ R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char *
 }
 
 static int visual_help() {
-	RStrBuf *p = r_strbuf_new (NULL);
+	int ret = 0;
+	RStrBuf *p;
+repeat:
+	p = r_strbuf_new (NULL);
 	if (!p) {
 		return 0;
 	}
 	r_cons_clear00 ();
-	r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
-	r_core_visual_append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
-	int ret = r_cons_less_str (r_strbuf_get (p), "?");
+	r_cons_printf ("Visual Help:\n\n"
+	" (?) full help\n"
+	" (a) code analysis\n"
+	" (d) debugger / emulator\n"
+	" (e) toggle configurations\n"
+	" (i) insert / write\n"
+	" (m) moving around (seeking)\n"
+	" (p) print commands and modes\n"
+	" (v) view management\n"
+	);
+	r_cons_flush ();
+	switch (r_cons_readchar ()) {
+	case 'q':
+		r_strbuf_free (p);
+		return ret;
+	case '?':
+		r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
+		r_core_visual_append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'v':
+		r_strbuf_appendf (p, "Visual Views:\n\n");
+		r_strbuf_appendf (p,
+			" \\     toggle horizonal split mode\n"
+			" tt     create a new tab (same as t+)\n"
+			" t=     give a name to the current tab\n"
+			" t-     close current tab\n"
+			" th     select previous tab (same as tj)\n"
+			" tl     select next tab (same as tk)\n"
+			" t[1-9] select nth tab\n"
+			" C   -> rotate scr.color=0,1,2,3\n"
+			" R   -> rotate color theme with ecr command which honors scr.randpal\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'p':
+		r_strbuf_appendf (p, "Visual Print Modes:\n\n");
+		r_strbuf_appendf (p,
+			" pP  -> change to the next/previous print mode (hex, dis, ..)\n"
+			" TAB -> rotate between all the configurations for the current print mode\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'e':
+		r_strbuf_appendf (p, "Visual Evals:\n\n");
+		r_strbuf_appendf (p,
+			" E      toggle asm.leahints\n"
+			" &      rotate asm.bits=16,32,64\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'i':
+		r_strbuf_appendf (p, "Visual Insertion Help:\n\n");
+		r_strbuf_appendf (p,
+			" i   -> insert bits, bytes or text depending on view\n"
+			" a   -> assemble instruction and write the bytes in the current offset\n"
+			" A   -> visual assembler\n"
+			" +   -> increment value of byte\n"
+			" -   -> decrement value of byte\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'd':
+		r_strbuf_appendf (p, "Visual Debugger Help:\n\n");
+		r_strbuf_appendf (p,
+			" s   -> step in\n"
+			" S   -> step over\n"
+			" B   -> toggle breakpoint\n"
+			" :dc -> continue\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'm':
+		r_strbuf_appendf (p, "Visual Moving Around:\n\n");
+		r_strbuf_appendf (p,
+			" o        type flag/offset/register name to seek\n"
+			" hl       seek to the next/previous byte\n"
+			" jk       seek to the next row (core.offset += hex.cols)\n"
+			" JK       seek one page down\n"
+			" ^        seek to the beginning of the current map\n"
+			" $        seek to the end of the current map\n"
+			" c        toggle cursor mode (use hjkl to move and HJKL to select a range)\n"
+			" mK/'K    mark/go to Key (any key)\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	case 'a':
+		r_strbuf_appendf (p, "Visual Analysis:\n\n");
+		r_strbuf_appendf (p,
+			" df -> define function\n"
+			" du -> undefine function\n"
+			" dc -> define as code\n"
+			" V  -> view graph (same as press the 'space' key)\n"
+		);
+		ret = r_cons_less_str (r_strbuf_get (p), "?");
+		break;
+	}
 	r_strbuf_free (p);
+	goto repeat;
 	return ret;
 }
 
@@ -1108,8 +1202,14 @@ repeat:
 
 	r_cons_clear00 ();
 	r_cons_gotoxy (1, 1);
-	r_cons_printf ("[%s%srefs]> 0x%08"PFMT64x" # (TAB/jk/q/?) ",
-			xrefsMode? "fcn.": "addr.", xref ? "x": "", addr);
+	{
+		char *address = (core->dbg->bits & R_SYS_BITS_64)
+			? r_str_newf ("0x%016"PFMT64x, addr)
+			: r_str_newf ("0x%08"PFMT64x, addr);
+		r_cons_printf ("[%s%srefs]> %s # (TAB/jk/q/?) ",
+				xrefsMode? "fcn.": "addr.", xref ? "x": "", address);
+		free (address);
+	}
 	if (!xrefs || r_list_empty (xrefs)) {
 		r_list_free (xrefs);
 		xrefs = NULL;
@@ -1851,13 +1951,57 @@ static void r_core_visual_tab_free (RCoreVisualTab *tab) {
 	free (tab);
 }
 
-static RCoreVisualTab *r_core_visual_tab_new(RCore *core) {
-	RCoreVisualTab *tab = R_NEW0 (RCoreVisualTab);
-	if (tab) {
-		tab->offset = core->offset;
-		tab->printidx = core->printidx;
+static char *visual_tabstring(RCore *core, const char *kolor) {
+	int hex_cols = r_config_get_i (core->config, "hex.cols");
+	int scr_color = r_config_get_i (core->config, "scr.color");
+	if (hex_cols < 4) {
+		return strdup ("");
 	}
-	return tab;
+	int i=0;
+	char *str = NULL;
+	int tabs = r_list_length (core->visual.tabs);
+	if (scr_color > 0) {
+		// TODO: use theme
+		if (tabs > 0) {
+			str = r_str_appendf (str, "%s___", kolor);
+		}
+		for (i = 0; i < tabs;i++) {
+			const char *name = NULL;
+			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
+			if (tab && *tab->name) {
+				name = tab->name;
+			}
+			if (i == core->visual.tab) {
+				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", name? name: "t=", kolor);
+			} else {
+				str = r_str_appendf (str, "_%s(%d)_", name?name: "", i+ 1);
+			}
+		}
+	} else {
+		if (tabs > 0) {
+			str = r_str_append (str, "___");
+		}
+		for (i = 0;i < tabs; i++) {
+			const char *name = NULL;
+			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
+			if (tab && *tab->name) {
+				name = tab->name;
+			}
+			if (i==core->visual.tab) {
+				str = r_str_appendf (str, "_/ %d:%s \\_", i + 1, name? name: "'=");
+			} else {
+				str = r_str_appendf (str, "_(t%d%s%s)__", i + 1, name?":":"", name?name: "");
+			}
+		}
+	}
+	if (str) {
+		int n = 79 - r_str_ansi_len (str);
+		if (n > 0) {
+			str = r_str_append (str, r_str_pad ('_', n));
+		}
+		str = r_str_append (str, "\n"Color_RESET);
+	}
+	return str;
 }
 
 static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
@@ -1865,10 +2009,22 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 
 	r_core_seek (core, tab->offset, 1);
 	core->printidx = tab->printidx;
-	core->printidx = tab->printidx;
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;
 	core->print->ocur = tab->ocur;
+	disMode = tab->disMode;
+	hexMode = tab->hexMode;
+	printMode = tab->printMode;
+	current3format = tab->current3format;
+	current4format = tab->current4format;
+	current5format = tab->current5format;
+	applyDisMode (core, disMode);
+	applyHexMode (core, hexMode);
+	r_config_set_i (core->config, "hex.cols", tab->cols);
+	printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
+	printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+	printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
+	printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
 }
 
 static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
@@ -1879,6 +2035,22 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 	tab->cur_enabled = core->print->cur_enabled;
 	tab->cur = core->print->cur;
 	tab->ocur = core->print->ocur;
+	tab->cols = r_config_get_i (core->config, "hex.cols");
+	tab->disMode = disMode;
+	tab->hexMode = hexMode;
+	tab->printMode = printMode;
+	tab->current3format = current3format;
+	tab->current4format = current4format;
+	tab->current5format = current5format;
+	// tab->cols = core->print->cols;
+}
+
+static RCoreVisualTab *r_core_visual_tab_new(RCore *core) {
+	RCoreVisualTab *tab = R_NEW0 (RCoreVisualTab);
+	if (tab) {
+		visual_tabget (core, tab);
+	}
+	return tab;
 }
 
 static void r_core_visual_tab_update(RCore *core) {
@@ -1886,47 +2058,56 @@ static void r_core_visual_tab_update(RCore *core) {
 		return;
 	}
 	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
-	if  (tab) {
+	if (tab) {
 		visual_tabget (core, tab);
 	}
-#if 0
-	// shuold be unnecessary if we change core -> core->visual
-	RListIter *iter = r_list_head (core->visual.tabs);
-	if (iter) {
-		RCoreVisualTab *tab = (RCoreVisualTab*)(iter->data);
-		if (tab) {
-			visual_tabget (core, tab);
-		}
-	}
-#endif
 }
 
 static void visual_newtab (RCore *core) {
 	if (!core->visual.tabs) {
-		core->visual.tabs = r_list_newf (free);
+		core->visual.tabs = r_list_newf ((RListFree)r_core_visual_tab_free);
 		if (!core->visual.tabs) {
 			return;
 		}
-		core->visual.tab = 0;
+		core->visual.tab = -1;
 		visual_newtab (core);
 	}
+	core->visual.tab++;
 	RCoreVisualTab *tab = r_core_visual_tab_new (core);
 	// r_list_prepend (core->visual.tabs, tab);
 	r_list_append (core->visual.tabs, tab);
-	core->visual.tab++;
+	visual_tabset (core, tab);
 }
 
 static void visual_nthtab (RCore *core, int n) {
-	core->visual.tab = n + 1;
+	if (!core->visual.tabs || n < 0 || n >= r_list_length (core->visual.tabs)) {
+		return;
+	}
+	core->visual.tab = n;
 	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 	if (tab) {
 		visual_tabset (core, tab);
 	}
 }
 
+static void visual_tabname (RCore *core) {
+	if (!core->visual.tabs) {
+		return;
+	}
+	char name[32]={0};
+	prompt_read ("tab name: ", name, sizeof (name));
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+	if (tab) {
+		strcpy (tab->name, name);
+	}
+}
+
 static void visual_nexttab (RCore *core) {
-	if (core->visual.tab >= r_list_length (core->visual.tabs)) {
-		core->visual.tab = 0;
+	if (!core->visual.tabs) {
+		return;
+	}
+	if (core->visual.tab >= r_list_length (core->visual.tabs) - 1) {
+		core->visual.tab = -1;
 	}
 	core->visual.tab++;
 	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
@@ -1936,71 +2117,40 @@ static void visual_nexttab (RCore *core) {
 }
 
 static void visual_prevtab (RCore *core) {
-	if (core->visual.tab < 2) {
-		core->visual.tab = r_list_length (core->visual.tabs);
+	if (!core->visual.tabs) {
+		return;
+	}
+	if (core->visual.tab < 1) {
+		core->visual.tab = r_list_length (core->visual.tabs) - 1;
 	} else {
 		core->visual.tab--;
 	}
-	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab );
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 	if (tab) {
 		visual_tabset (core, tab);
 	}
 }
 
 static void visual_closetab (RCore *core) {
-	r_core_visual_tab_free (r_list_pop_head (core->visual.tabs));
-	const int tabsCount = r_list_length (core->visual.tabs);
-	if (tabsCount > 0) {
-		core->visual.tab--;
-		if (core->visual.tab < 1) {
-			core->visual.tab = 1;
+	if (!core->visual.tabs) {
+		return;
+	}
+	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+	if (tab) {
+		r_list_delete_data (core->visual.tabs, tab);
+		const int tabsCount = r_list_length (core->visual.tabs);
+		if (tabsCount > 0) {
+			if (core->visual.tab > 0) {
+				core->visual.tab--;
+			}
+			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+			if (tab) {
+				visual_tabset(core, tab);
+			}
+		} else {
+			r_list_free (core->visual.tabs);
+			core->visual.tabs = NULL;
 		}
-		visual_nexttab (core);
-	} else {
-		r_list_free (core->visual.tabs);
-		core->visual.tabs = NULL;
-	}
-}
-
-static void applyHexMode(RCore *core) {
-	switch (hexMode % 3) {
-	case 0:
-		r_config_set (core->config, "hex.compact", "false");
-		r_config_set (core->config, "hex.esil", "false");
-		break;
-	case 1:
-		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.esil", "false");
-		break;
-	case 2:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.esil", "true");
-		break;
-	}
-}
-
-static void applyDisMode(RCore *core) {
-	switch (disMode % 3) {
-	case 0:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "true");
-		r_config_set (core->config, "asm.esil", "false");
-		break;
-	case 1:
-		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.bytes", "true");
-		r_config_set (core->config, "asm.esil", "false");
-		break;
-	case 2:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "true");
-		r_config_set (core->config, "asm.esil", "true");
-		break;
-	case 3:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "false");
-		r_config_set (core->config, "asm.esil", "true");
-		break;
 	}
 }
 
@@ -2044,7 +2194,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut64 offset = core->offset;
 	char buf[4096];
 	const char *key_s;
-	int i, ret, cols = core->print->cols, delta = 0;
+	int i, ret, cols = core->print->cols;
 	int wheelspeed;
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar ();
@@ -2119,6 +2269,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} while (--wheelspeed > 0);
 		}
 		break;
+		case 'O': // tab TAB
 		case 9: // tab TAB
 			if (splitView) {
 				// this split view is kind of useless imho, we should kill it or merge it into tabs
@@ -2154,24 +2305,29 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 					}
 				} else {
-					switch (core->printidx) { // printMode) {
+					switch (core->printidx) {
 					case R_CORE_VISUAL_MODE_PX: // 0 // xc
-						printfmtSingle[0] = printHexFormats[++hexMode % PRINT_HEX_FORMATS];
-						applyHexMode (core);
+						hexMode++;
+						applyHexMode (core, hexMode);
+						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
+						applyDisMode (core, ++disMode);
 						printfmtSingle[1] = rotateAsmemu (core);
-						disMode++;
-						applyDisMode (core);
 						break;
 					case R_CORE_VISUAL_MODE_DB: // debugger
-						printfmtSingle[2] = print3Formats[++current3format % PRINT_3_FORMATS];
+						applyDisMode (core, ++disMode);
+						printfmtSingle[1] = rotateAsmemu (core);
+						current3format = current3format + 1;
+						printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_OV: // overview
-						printfmtSingle[3] = print4Formats[++current4format % PRINT_4_FORMATS];
+						current4format = current4format + 1;
+						printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_CD: // code
-						printfmtSingle[4] = print5Formats[++current5format % PRINT_5_FORMATS];
+						current5format = current5format + 1;
+						printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
 						break;
 					}
 				}
@@ -2182,10 +2338,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'a':
 		{
-			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->perm & R_PERM_W)) {
-				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-				r_cons_any_key (NULL);
-				return true;
+			{
+				ut64 addr = core->offset;
+				if (PIDX == 2) {
+					if (core->seltab == 0) {
+						addr = r_debug_reg_get (core->dbg, "SP");
+					}
+				}
+				RIOMap *map = r_io_map_get (core->io, addr);
+				if (!map || !(map->perm & R_PERM_W)) {
+					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+					r_cons_any_key (NULL);
+					return true;
+				}
 			}
 			r_cons_printf ("Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
@@ -2296,8 +2461,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				char buf[128];
 				prompt_read ("cursor at:", buf, sizeof (buf));
 				core->print->cur = (st64) r_num_math (core->num, buf);
-			} else {
-				visual_repeat (core);
 			}
 			break;
 		case 'C':
@@ -2364,7 +2527,43 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			visual_comma (core);
 			break;
 		case 't':
-			visual_newtab (core);
+			{
+					r_cons_gotoxy (0, 0);
+				if (core->visual.tabs) {
+					r_cons_printf ("[tnp=+-] ");
+				} else {
+					r_cons_printf ("[t] ");
+				}
+				r_cons_flush();
+				int ch = r_cons_readchar ();
+				if (isdigit (ch)) {
+					visual_nthtab (core, ch - '0' - 1);
+				}
+				switch (ch) {
+				case 'h':
+				case 'k':
+				case 'p':
+					visual_prevtab (core);
+					break;
+				case 9: // t-TAB
+				case 'l':
+				case 'j':
+				case 'n':
+					visual_nexttab (core);
+					break;
+				case '=':
+					visual_tabname (core);
+					break;
+				case '-':
+					visual_closetab (core);
+					break;
+				case '+':
+				case 't':
+				case 'a':
+					visual_newtab (core);
+					break;
+				}
+			}
 			break;
 		case 'T':
 			visual_closetab (core);
@@ -2377,27 +2576,42 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'i':
 		case 'I':
+			{
+			ut64 oaddr = core->offset;
+			int delta = (core->print->ocur != -1)? R_MIN (core->print->cur, core->print->ocur): core->print->cur;
+			ut64 addr = core->offset + delta;
 			if (PIDX == 0) {
+				if (strstr (printfmtSingle[0], "pxb")) {
+					r_core_visual_define (core, "1", 1);
+					return true;
+				}
 				if (core->print->ocur == -1) {
 					__ime = true;
 					core->print->cur_enabled = true;
 					return true;
 				}
-			} else if (PIDX == 2 && core->seltab == 1) {
-				char buf[128];
-				prompt_read ("new-reg-value> ", buf, sizeof (buf));
-				if (*buf) {
-					const char *creg = core->dbg->creg;
-					if (creg) {
-						r_core_cmdf (core, "dr %s = %s\n", creg, buf);
+			} else if (PIDX == 2) {
+				if (core->seltab == 0) {
+					addr = r_debug_reg_get (core->dbg, "SP") + delta;
+				} else if (core->seltab == 1) {
+					char buf[128];
+					prompt_read ("new-reg-value> ", buf, sizeof (buf));
+					if (*buf) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							r_core_cmdf (core, "dr %s = %s\n", creg, buf);
+						}
 					}
+					return true;
 				}
-				return true;
 			}
-			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->perm & R_PERM_W)) {
-				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-				r_cons_any_key (NULL);
-				return true;
+			{
+				RIOMap *map = r_io_map_get (core->io, addr);
+				if (!map || !(map->perm & R_PERM_W)) {
+					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+					r_cons_any_key (NULL);
+					return true;
+				}
 			}
 			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
@@ -2419,7 +2633,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				free (p);
 				break;
 			}
-			delta = (core->print->ocur != -1)? R_MIN (core->print->cur, core->print->ocur): core->print->cur;
 			if (core->print->col == 2) {
 				strcpy (buf, "\"w ");
 				r_line_set_prompt ("insert string: ");
@@ -2441,14 +2654,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			if (core->print->cur_enabled) {
-				r_core_seek (core, core->offset + delta, 0);
+				r_core_seek (core, addr, 0);
 			}
 			r_core_cmd (core, buf, 1);
 			if (core->print->cur_enabled) {
-				r_core_seek (core, offset, 1);
+				r_core_seek (core, addr, 1);
 			}
 			r_cons_set_raw (1);
 			r_core_visual_showcursor (core, false);
+			r_core_seek (core, oaddr, 1);
+			}
 			break;
 		case 'R':
 			if (r_config_get_i (core->config, "scr.randpal")) {
@@ -2525,24 +2740,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'G':
 			ret = -1;
-			int scols = r_config_get_i (core->config, "hex.cols");
-			if (core->file) {
-				if (core->io->va) {
-					RIOSection *sec = r_io_section_get (core->io, 0LL);
-					ut64 offset;
-					if (!sec) {
-						offset = r_io_fd_size (core->io, core->file->fd)
-						- core->blocksize + 2 * scols;
-						ret = r_core_seek (core, offset, 1);
-					} else {
-						offset = r_io_fd_size (core->io, core->file->fd)
-						- core->blocksize + 2 * scols;
-						ret = r_core_seek (core, offset, 1);
-					}
-				} else {
-					ret = r_core_seek (core,
-						r_io_fd_size (core->io, core->file->fd)
-						- core->blocksize + 2 * scols, 1);
+			{
+				RIOMap *map = r_io_map_get (core->io, core->offset);
+				if (map) {
+					int scols = r_config_get_i (core->config, "hex.cols");
+					ret = r_core_seek (core, r_itv_end (map->itv) - (core->blocksize + 2 * scols), 1);
 				}
 			}
 			if (ret != -1) {
@@ -2828,18 +3030,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_mark (core, r_cons_readchar ());
 			break;
 		case '\'':
-			{
-				char ch = r_cons_readchar ();
-				if (ch == '\'') {
-					visual_nexttab (core);
-				} else if (ch == 9) { //  TAB
-					visual_prevtab (core);
-				} else if (isdigit (ch)) {
-					visual_nthtab (core, ch - '0' - 1);
-				} else {
-					r_core_visual_mark_seek (core, ch);
-				}
-			}
+			r_core_visual_mark_seek (core, r_cons_readchar ());
 			break;
 		case 'y':
 			if (core->print->ocur == -1) {
@@ -2897,7 +3088,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					int w = r_config_get_i (core->config, "hex.cols");
 					r_config_set_i (core->config, "stack.size",
 						r_config_get_i (core->config, "stack.size") + w);
-
 				} else {
 					if (core->print->ocur == -1) {
 						sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
@@ -3076,7 +3266,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						char c = duped[i];
 						if (c == '"' && i != (len - 1)) {
 							buf[j] = '\\';
-							++j;
+							j++;
 							buf[j] = '"';
 						} else {
 							buf[j] = c;
@@ -3138,36 +3328,48 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 		}
 		break;
-		case 'Z': // shift-tab
+		case 'Z': // shift-tab SHIFT-TAB
+		if (core->print->cur_enabled && core->printidx == R_CORE_VISUAL_MODE_DB) {
+			core->print->cur = 0;
+			core->seltab--;
+			if (core->seltab < 0) {
+				core->seltab = 2;
+			}
+		} else {
 #if 0
-//  we need to improve visual zoom, not deleted because we need more brainstorming here
-		if (zoom && core->print->cur) {
-			ut64 from = r_config_get_i (core->config, "zoom.from");
-			ut64 to = r_config_get_i (core->config, "zoom.to");
-			r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
-		}
-		zoom = !zoom;
+			//  we need to improve visual zoom, not deleted because we need more brainstorming here
+			if (zoom && core->print->cur) {
+				ut64 from = r_config_get_i (core->config, "zoom.from");
+				ut64 to = r_config_get_i (core->config, "zoom.to");
+				r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
+			}
+			zoom = !zoom;
 #endif
-			switch (core->printidx) { // printMode) {
+			switch (core->printidx) {
 			case R_CORE_VISUAL_MODE_PX: // 0 // xc
-				printfmtSingle[0] = printHexFormats[R_ABS(--hexMode % PRINT_HEX_FORMATS)];
-				applyHexMode (core);
+				applyHexMode (core, --hexMode);
+				printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 				break;
 			case R_CORE_VISUAL_MODE_PD: // pd
 				printfmtSingle[1] = rotateAsmemu (core);
-				disMode--;
-				applyDisMode (core);
+				applyDisMode (core, --disMode);
 				break;
 			case R_CORE_VISUAL_MODE_DB: // debugger
-				printfmtSingle[2] = print3Formats[R_ABS(--current3format % PRINT_3_FORMATS)];
+				//printfmtSingle[1] = rotateAsmemu (core);
+				current3format = current3format - 1;
+				printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+				applyDisMode (core, --disMode);
 				break;
 			case R_CORE_VISUAL_MODE_OV: // overview
-				printfmtSingle[3] = print4Formats[R_ABS(--current4format % PRINT_4_FORMATS)];
+				current4format = current4format-1;
+				printfmtSingle[3] = print4Formats[R_ABS(current4format)% PRINT_4_FORMATS];
 				break;
 			case R_CORE_VISUAL_MODE_CD: // code
-				printfmtSingle[4] = print5Formats[R_ABS(--current5format % PRINT_5_FORMATS)];
+				current5format = current5format-1;
+				printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
 				break;
 			}
+		}
 			break;
 		case '?':
 			if (visual_help () == '?') {
@@ -3347,44 +3549,67 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	{
 		char *title;
+		char *address = (core->print->wide_offsets && core->dbg->bits & R_SYS_BITS_64)
+			? r_str_newf ("0x%016"PFMT64x, core->offset)
+			: r_str_newf ("0x%08"PFMT64x, core->offset);
 		if (__ime) {
-			title = r_str_newf ("[0x%08"PFMT64x " + %d> * INSERT MODE *\n",
-				core->offset, core->print->cur);
+			title = r_str_newf ("[%s + %d> * INSERT MODE *\n",
+				address, core->print->cur);
 		} else {
+			char pm[32] = "[XADVC]";
+			int i;
+			for(i=0;i<6;i++) {
+				if (core->printidx == i) {
+					pm[i + 1] = toupper(pm[i + 1]);
+				} else {
+					pm[i + 1] = tolower(pm[i + 1]);
+				}
+			}
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
-					title = r_str_newf ("[0x%08"PFMT64x " *0x%08"PFMT64x" ($$+0x%x)]> %s %s\n",
-						core->offset, core->offset + core->print->cur,
-						core->print->cur,
+					title = r_str_newf ("[%s *0x%08"PFMT64x" %s ($$+0x%x)]> %s %s\n",
+						address, core->offset + core->print->cur,
+						pm, core->print->cur,
 						bar, pos);
 				} else {
-					title = r_str_newf ("[0x%08"PFMT64x " 0x%08"PFMT64x" [0x%x..0x%x] %d]> %s %s\n",
-						core->offset, core->offset + core->print->cur,
-						core->print->ocur, core->print->cur, R_ABS (core->print->cur - core->print->ocur) + 1,
+					title = r_str_newf ("[%s 0x%08"PFMT64x" %s [0x%x..0x%x] %d]> %s %s\n",
+						address, core->offset + core->print->cur,
+						pm, core->print->ocur, core->print->cur,
+						R_ABS (core->print->cur - core->print->ocur) + 1,
 						bar, pos);
 				}
 			} else {
-				title = r_str_newf ("[0x%08"PFMT64x " %s%d %s]> %s %s\n",
-					core->offset, pcs, core->blocksize, filename, bar, pos);
+				title = r_str_newf ("[%s %s %s%d %s]> %s %s\n",
+					address, pm, pcs, core->blocksize, filename, bar, pos);
 			}
 		}
 		const int tabsCount = core->visual.tabs? r_list_length (core->visual.tabs): 0;
 		if (tabsCount > 0) {
+			const char *kolor = core->cons->pal.prompt;
+			char *tabstring = visual_tabstring (core, kolor);
+			if (tabstring) {
+				title = r_str_append (title, tabstring);
+				free (tabstring);
+			}
+#if 0
+			// TODO: add an option to show this tab mode instead?
 			const int curTab = core->visual.tab;
 			r_cons_printf ("[");
 			int i;
 			for (i = 0; i < tabsCount; i++) {
-				if (i == curTab - 1) {
-					r_cons_printf ("%d", curTab);
+				if (i == curTab) {
+					r_cons_printf ("%d", curTab + 1);
 				} else {
 					r_cons_printf (".");
 				}
 			}
 			r_cons_printf ("]");
-			// r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
+			 r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
+#endif
 		}
 		r_cons_print (title);
 		free (title);
+		free (address);
 	}
 	if (color) {
 		r_cons_strcat (Color_RESET);

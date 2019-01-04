@@ -474,7 +474,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	RAnalEsil *esil = core->anal->esil;
+	RAnalEsil *esil;
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -676,6 +676,7 @@ static int cmd_type(void *data, const char *input) {
 						free (val);
 					}
 					free (var2);
+					free (p);
 				}
 				free (var);
 				r_cons_println ("};");
@@ -775,6 +776,7 @@ static int cmd_type(void *data, const char *input) {
 						free (val);
 					}
 					free (var2);
+					free (p);
 				}
 				free (var);
 				r_cons_println ("};");
@@ -847,6 +849,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				r_cons_printf ("}\n");
+				free (name);
 				ls_free (l);
 			} else { // "tej ENUM"
 				RListIter *iter;
@@ -902,6 +905,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 			}
+			free (name);
 			ls_free (l);
 			break;
 		}
@@ -915,6 +919,7 @@ static int cmd_type(void *data, const char *input) {
 				r_list_foreach (list, iter, member) {
 					r_cons_printf ("%s = %s\n", member->name, member->val);
 				}
+				r_list_free (list);
 			}
 			break;
 		case '\0': {
@@ -931,6 +936,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 			}
+			free (name);
 			ls_free (l);
 		} break;
 		}

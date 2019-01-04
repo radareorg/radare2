@@ -442,7 +442,7 @@ static int print_assembly_output(const char *buf, ut64 offset, ut64 len, int bit
 int main (int argc, char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
-	unsigned char buf[R_ASM_BUFSIZE];
+	ut8 buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	bool isbig = false;
 	bool rad = false;

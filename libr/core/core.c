@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -2620,7 +2620,11 @@ static void set_prompt (RCore *r) {
 		}
 
 		if (!promptset) {
-			snprintf (p, sizeof (p), "0x%08" PFMT64x, r->offset);
+			if (r->print->wide_offsets && r->dbg->bits & R_SYS_BITS_64) {
+				snprintf (p, sizeof (p), "0x%016" PFMT64x, r->offset);
+			} else {
+				snprintf (p, sizeof (p), "0x%08" PFMT64x, r->offset);
+			}
 		}
 		snprintf (tmp, sizeof (tmp), "%s%s", sec, p);
 	}
@@ -3203,7 +3207,7 @@ static bool isValidAddress (RCore *core, ut64 addr) {
 
 R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin,
 				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
-	int i, match, align = core->search->align, hitctr = 0;
+	int i, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
@@ -3259,7 +3263,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			if (align && (addr) % align) {
 				continue;
 			}
-			match = false;
+			int match = false;
 			int left = size - i;
 			if (vsize > left) {
 				break;
