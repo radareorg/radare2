@@ -287,8 +287,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			goto error;
 		}
 	}
-	bool yes_plz_steal_ptr = true;
-	r_bin_file_set_bytes (bf, buf_bytes, sz, yes_plz_steal_ptr);
+	r_bin_file_set_bytes (bf, buf_bytes, sz, false);
 
 	RListIter *iter = NULL;
 	RBinObject *bo;

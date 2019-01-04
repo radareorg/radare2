@@ -474,7 +474,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	RAnalEsil *esil = core->anal->esil;
+	RAnalEsil *esil;
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");

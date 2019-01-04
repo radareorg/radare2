@@ -8432,7 +8432,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			free (desc_str);
 		}
 	} else {
-		str = r_base64_encode_dyn ((const ut8 *) "(null)", 6);
+		str = r_base64_encode_dyn ((const char *) "(null)", 6);
 	}
 	return str;
 }
