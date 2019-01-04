@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -301,8 +301,10 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 R_API RBuffer *r_buf_new_with_io(void *iob, int fd) {
 	RBuffer *b = r_buf_new ();
-	b->iob = iob;
-	b->fd = fd;
+	if (b) {
+		b->iob = iob;
+		b->fd = fd;
+	}
 	return b;
 }
 
@@ -400,15 +402,14 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 }
 
 R_API ut64 r_buf_size (RBuffer *b) {
-	if (!b) {
-		return 0LL;
-	}
+	r_return_val_if_fail (b, 0);
 	if (b->iob) {
 		RIOBind *iob = b->iob;
 		return remainingBytes (b->limit, iob->fd_size (iob->io, b->fd), b->offset);
 	}
 	if (b->fd != -1) {
-		return remainingBytes (b->limit, b->length, b->offset);
+		ut64 length = r_sandbox_lseek (b->fd, 0, SEEK_END);
+		return remainingBytes (b->limit, length, b->offset);
 	}
 	if (b->sparse) {
 		ut64 max = 0LL;
@@ -736,6 +737,9 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	if (!b || !buf || len < 1) {
 		return 0;
 	}
+	// TODO: break some tests 
+	// r_return_val_if_fail (b && buf && len > 0, -1);
+
 #if R_BUF_CUR != UT64_MAX
 #error R_BUF_CUR must be UT64_MAX
 #endif
