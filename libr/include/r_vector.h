@@ -38,6 +38,7 @@ extern "C" {
 
 typedef int (*RPVectorComparator)(const void *a, const void *b);
 typedef void (*RVectorFree)(void *e, void *user);
+typedef void (*RVectorFreeAll)(void *user);
 typedef void (*RPVectorFree)(void *e);
 
 typedef struct r_vector_t {
@@ -47,6 +48,8 @@ typedef struct r_vector_t {
 	size_t elem_size;
 	RVectorFree free;
 	void *free_user;
+	RVectorFreeAll free_all;
+	void *free_all_user;
 } RVector;
 
 // RPVector directly wraps RVector for type safety
@@ -111,6 +114,12 @@ R_API void *r_vector_reserve(RVector *vec, size_t capacity);
 
 // shrink capacity to len.
 R_API void *r_vector_shrink(RVector *vec);
+
+// set free function that will be executed once for the whole vector
+static inline void r_vector_set_free_all(RVector *vec, RVectorFreeAll free_all, void *user) {
+	vec->free_all = free_all;
+	vec->free_all_user = user;
+}
 
 /*
  * example:
@@ -198,6 +207,10 @@ static inline void **r_pvector_reserve(RPVector *vec, size_t capacity) {
 
 static inline void **r_pvector_shrink(RPVector *vec) {
 	return (void **)r_vector_shrink (&vec->v);
+}
+
+static inline void r_pvector_set_free_all(RPVector *vec, RVectorFreeAll free_all, void *user) {
+	r_vector_set_free_all (&vec->v, free_all, user);
 }
 
 /*

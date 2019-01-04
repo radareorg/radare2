@@ -33,6 +33,8 @@ R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void 
 	vec->elem_size = elem_size;
 	vec->free = free;
 	vec->free_user = free_user;
+	vec->free_all = NULL;
+	vec->free_all_user = NULL;
 }
 
 R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user) {
@@ -45,6 +47,9 @@ R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user)
 }
 
 static void vector_free_elems(RVector *vec) {
+	if (vec->free_all) {
+		vec->free_all (vec->free_all_user);
+	}
 	if (vec->free) {
 		while (vec->len > 0) {
 			vec->free (r_vector_index_ptr (vec, --vec->len), vec->free_user);
@@ -72,6 +77,8 @@ static bool vector_clone(RVector *dst, RVector *src) {
 	dst->elem_size = src->elem_size;
 	dst->free = src->free;
 	dst->free_user = src->free_user;
+	dst->free_all = src->free_all;
+	dst->free_all_user = src->free_all_user;
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {
