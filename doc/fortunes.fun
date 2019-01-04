@@ -267,3 +267,7 @@ OpenBSD might pledge r2 but r2 unveils OpenBSD.
 Error: There's a missing space before the opening parenthesis '('
 WARNING: r_list_length: assertion 'list' failed (line 55)
 This accessory is not supported by this version of radare2.
+When can we have an official anime mascot for radare2?
+Iaito became Cutter the same way Iai-giri became Cut.
+Sorry, radare2 has experienced an internal error.
+Segmentation fault (core dumped)
