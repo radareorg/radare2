@@ -234,7 +234,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		a->esil = NULL;
 	}
 	free (a->last_disasm_reg);
-	memset (a, 0, sizeof (RAnal));
 	free (a);
 	return NULL;
 }
@@ -300,14 +299,11 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 	const char *dirPrefix = r_sys_prefix (NULL);
-	char *file = NULL;
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
-	if (name && *name) {
-		file = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name);
-	} else {
-		file = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
+	const char *file = (name && *name)
+		? sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name)
+		: sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
 			anal->os, arch, anal->bits);
-	}
 	if (r_file_exists (file)) {
 		sdb_close (anal->sdb_fcnsign);
 		sdb_free (anal->sdb_fcnsign);

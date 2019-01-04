@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <string.h>
 #include "r_config.h"
@@ -36,7 +36,8 @@ static const char *help_msg_T[] = {
 	"Tm", " [idx]", "display log messages without index",
 	"Ts", "", "list files in current directory (see pwd, cd)",
 	"TT", "", "enter into the text log chat console",
-	"T=", "", "Use http.sync to get logs from another r2",
+	"T=", "[.]", "Use http.sync to get logs from another r2",
+	"T=&", "", "Start background thread syncing with the remote server",
 	NULL
 };
 
@@ -203,6 +204,13 @@ static int log_callback_all (RCore *log, int count, const char *line) {
 	return 0;
 }
 
+static void http_sync_thread(void *user, char *out) {
+	RCore *core = (RCore *)user;
+	eprintf ("Sync\n");
+	//r_core_task_sleep_begin (user);
+	//r_core_break (user);
+}
+
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *arg, *input2;
@@ -251,22 +259,39 @@ static int cmd_log(void *data, const char *input) {
 		}
 		break;
 	case '=':
-		if (atoi (input + 1) > 0 || (input[1] == '0')) {
-			core->sync_index = 0;
-		} else {
-			RCoreLogCallback log_callback = (input[1] == '*')
-				? log_callback_all: log_callback_r2;
-			char *res = r_core_log_get (core, core->sync_index);
-			if (res) {
-				// r_cons_printf ("%s\n", res);
-				int idx = getIndexFromLogString (res);
-				if (idx != -1) {
-					core->sync_index = idx + 1;
+		if (input[1] == '&') {
+			if (input[2] == '&') {
+				r_cons_break_push (NULL, NULL);
+				while (!r_cons_is_breaked ()) {
+					r_core_cmd0 (core, "T=");
+					void *bed = r_cons_sleep_begin();
+					r_sys_usleep (100);
+					r_cons_sleep_end (bed);
 				}
-				r_core_log_run (core, res, log_callback);
-				free (res);
+				r_cons_break_pop ();
 			} else {
-				r_cons_printf ("Please check e http.sync\n");
+				// TODO: Sucks that we can't enqueue functions, only commands
+				eprintf ("Background thread syncing with http.sync started.\n");
+				RCoreTask *task = r_core_task_new (core, true, "T=&&", NULL, core);
+				r_core_task_enqueue (core, task);
+			}
+		} else {
+			if (atoi (input + 1) > 0 || (input[1] == '0')) {
+				core->sync_index = 0;
+			} else {
+				RCoreLogCallback log_callback = (input[1] == '*')
+					? log_callback_all: log_callback_r2;
+				char *res = r_core_log_get (core, core->sync_index);
+				if (res) {
+					int idx = getIndexFromLogString (res);
+					if (idx != -1) {
+						core->sync_index = idx + 1;
+					}
+					r_core_log_run (core, res, log_callback);
+					free (res);
+				} else {
+					r_cons_printf ("Please check e http.sync\n");
+				}
 			}
 		}
 		break;
