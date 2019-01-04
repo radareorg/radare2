@@ -23,13 +23,7 @@ static int wasm_stack_ptr = 0;
 static ut64 addr_old = 0;
 static WasmOpCodes op_old = 0;
 
-/**
- * Finds the address of the call function (essentially where to jump to).
- * @param  anal RAnalOp struct (pointer)
- * @param  data Buffer (pointer)
- * @return      Jump address
- */
-
+// finds the address of the call function (essentially where to jump to).
 static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
 	r_cons_push ();
 	char *s = anal->coreb.cmdstrf (anal->coreb.core, "isq~[0:%d]", data[1]);
@@ -42,7 +36,7 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
 	return UT64_MAX;
 }
 
-/**
+/*
  * Searches where the opcode ends.
  * A wasm scope is formed by:
  *   block/loop -> end
@@ -50,13 +44,7 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
  *   if -> else -> end
  * Also a function call has an end.
  *   call X -> end
- * @param  addr    Current virtual/physical address
- * @param  data    Buffer (pointer)
- * @param  len     Buffer length
- * @param  is_loop Boolean used to check if it is expected a loop or not.
- * @return         Address of the 'end' instruction (end of the scope).
  */
-
 static ut64 find_scope(ut64 addr, const ut8 *data, int len, bool is_loop) {
 	WasmOp wop = {0};
 	st32 count = 0;
@@ -96,12 +84,7 @@ static ut64 find_scope(ut64 addr, const ut8 *data, int len, bool is_loop) {
 	return UT64_MAX;
 }
 
-/**
- * set where the branch instruction should go
- * @param op   RAnalOp struct (pointer)
- * @param data Buffer (pointer)
- * @param len  Buffer length
- */
+// set where the branch instruction should go
 
 static void set_br_jump(RAnalOp *op, const ut8 *data, int len) {
 	ut32 val;
@@ -123,16 +106,7 @@ static void set_br_jump(RAnalOp *op, const ut8 *data, int len) {
 	}
 }
 
-/**
- * Analyzes the wasm opcode.
- * @param  anal RAnal struct (pointer)
- * @param  op   RAnalOp struct (pointer)
- * @param  addr Current virtual/physical address
- * @param  data Buffer (pointer)
- * @param  len  Buffer length
- * @return      Opcode size
- */
-
+// analyzes the wasm opcode.
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut64 addr2 = UT64_MAX;
 	int i;
