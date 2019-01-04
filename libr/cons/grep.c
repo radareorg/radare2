@@ -589,7 +589,10 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 				if (show) {
 					if (cons->grep_highlight && grep->str) {
 						char *str = r_str_ndup (tline, ret);
-						char *grepstr = r_str_casestr (str, grep->str);
+						char *grepstr = r_str_ndup (tline, ret);
+						char *old_grepstr = grepstr;
+						grepstr = r_str_casestr (grepstr, grep->str);
+						grepstr[strlen (grep->str)] = '\0';
 						char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grepstr);
 						if (str && newstr) {
 							str = r_str_replace (str, grepstr, newstr, 1);
@@ -597,6 +600,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 							memcpy (out, str, ret);
 							memcpy (out + ret, "\n", 2);
 						}
+						free (old_grepstr);
 						free (str);
 						free (newstr);
 					} else {
