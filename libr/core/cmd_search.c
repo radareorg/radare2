@@ -2390,8 +2390,8 @@ static void rop_kuery(void *data, const char *input) {
 				char *dup = strdup (sdbkv_value (kv));
 				bool flag = false; // to free tok when doing strdup
 				char *size = strtok (dup, " ");
+				char *outtok = strtok (NULL, "{}");
 				char *tok = strtok (NULL, "{}");
-				tok = strtok (NULL, "{}");
 				if (!tok) {
 					tok = strdup ("NOP");
 					flag = true;
