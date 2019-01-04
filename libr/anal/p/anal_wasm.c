@@ -64,11 +64,13 @@ static ut64 find_scope(ut64 addr, const ut8 *data, int len, bool is_loop) {
 			break;
 		case WASM_OP_ELSE:
 			if (!count && !is_loop) {
+				free (wop.txt);
 				return offset + ret;
 			}
 			break;
 		case WASM_OP_END:
 			if (!count) {
+				free (wop.txt);
 				return offset;
 			} else {
 				count--;
@@ -80,6 +82,7 @@ static ut64 find_scope(ut64 addr, const ut8 *data, int len, bool is_loop) {
 		offset += ret;
 		data += ret;
 		len -= ret;
+		free (wop.txt);
 	}
 	return UT64_MAX;
 }
@@ -122,14 +125,16 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->id = wop.op;
 
-	if (!strncmp (wop.txt, "invalid", 7)) {
+	if (!wop.txt || !strncmp (wop.txt, "invalid", 7)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		wasm_stack_ptr = 0;
+		free (wop.txt);
 		return -1;
 	}
 	if (wasm_stack_ptr >= WASM_STACK_SIZE) {
 		wasm_stack_ptr = 0;
 		op->type = R_ANAL_OP_TYPE_NULL;
+		free (wop.txt);
 		return -1;
 	}
 	switch (wop.op) {
@@ -316,6 +321,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	}
 	op_old = wop.op;
 	addr_old = addr;
+	free (wop.txt);
 	return op->size;
 }
 
