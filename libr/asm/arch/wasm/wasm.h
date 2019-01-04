@@ -1,3 +1,7 @@
+#ifndef WASM_ASM_H
+#define WASM_ASM_H
+#include <r_util.h>
+
 typedef enum {
 	// Control flow operators
 	WASM_OP_TRAP = 0x00,
@@ -198,7 +202,7 @@ typedef enum {
 typedef struct {
 	WasmOpCodes op;
 	int len;
-	char txt[R_ASM_BUFSIZE];
+	char *txt;
 } WasmOp;
 
 typedef struct {
@@ -209,3 +213,5 @@ typedef struct {
 
 R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len);
 R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len);
+
+#endif
