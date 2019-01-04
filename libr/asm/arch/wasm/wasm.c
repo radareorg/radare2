@@ -184,14 +184,7 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_F64REINTERPRETI64] = { "f64/reinterpret/i64", 1, 1 }
 };
 
-/**
- * Assembles the given line of wasm assembly.
- * @param  str     Wasm assembly line
- * @param  buf     Buffer where to write
- * @param  buf_len Buffer size
- * @return         Number of written bytes in the buffer
- */
-
+// assembles the given line of wasm assembly.
 R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	// TODO: add immediates assembly
 	int i = 0, len = -1;
@@ -213,13 +206,7 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	return len;
 }
 
-/**
- * Disassemble an instruction from the given buffer.
- * @param  op      WasmOp struct (pointer)
- * @param  buf     Buffer to read from (pointer)
- * @param  buf_len Buffer size
- * @return         Size of the decoded instruction
- */
+// disassemble an instruction from the given buffer.
 R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	op->len = 1;
