@@ -53,6 +53,7 @@ R_API int r_str_split(char *str, char ch);
 R_API RList *r_str_split_list(char *str, const char *c);
 R_API int *r_str_split_lines(char *str, int *count);
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
+R_API char *r_str_replace_icase (char *str, const char *key, const char *val, int g, int keep_case);
 R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define r_str_cpy(x,y) memmove(x,y,strlen(y)+1);
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz);

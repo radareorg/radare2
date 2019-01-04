@@ -979,6 +979,59 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
+R_API char *r_str_replace_icase (char *str, const char *key, const char *val, int g, int keep_case) {
+	int off, i, klen, vlen, slen;
+	char *newstr, *scnd, *p = str, *match, *tmp_val = NULL;
+	if (!str || !key || !val) {
+		return NULL;
+	}
+	klen = strlen (key);
+	vlen = strlen (val);
+
+	slen = strlen (str);
+	for (i = 0; i < slen;) {
+		p = (char *)r_str_casestr (str + i, key);
+		if (!p) {
+			break;
+		}
+		off = (int)(size_t) (p - str);
+		scnd = strdup (p + klen);
+		slen += vlen - klen;
+		// HACK: this 32 avoids overwrites wtf
+		newstr = realloc (str, slen + klen + 1);
+		if (!newstr) {
+			eprintf ("realloc fail\n");
+			R_FREE (str);
+			free (scnd);
+			break;
+		}
+		str = newstr;
+		p = str + off;
+
+		if (keep_case) {
+			char *str_case = r_str_ndup (p, klen);
+			tmp_val = strdup (val);
+			str_case[klen] = '\0';
+			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
+			free (str_case);
+		} else {
+			tmp_val = val;
+		}
+
+		memcpy (p, tmp_val, vlen);
+		memcpy (p + vlen, scnd, strlen (scnd) + 1);
+		i = off + vlen;
+		if (tmp_val != val) {
+			free (tmp_val);
+		}
+		free (scnd);
+		if (!g) {
+			break;
+		}
+	}
+	return str;
+}
+
 /* replace the key in str with val.
  *
  * str - input string
