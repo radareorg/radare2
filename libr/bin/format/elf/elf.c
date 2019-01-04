@@ -25,6 +25,8 @@
 
 #define bprintf if(bin->verbose) R_LOG_WARN
 
+#define MAX_REL_RELA_SZ (sizeof (Elf_(Rel)) > sizeof (Elf_(Rela))? sizeof (Elf_(Rel)): sizeof (Elf_(Rela)))
+
 #define READ8(x, i) r_read_ble8((x) + (i)); (i) += 1
 #define READ16(x, i) r_read_ble16((x) + (i), bin->endian); (i) += 2
 #define READ32(x, i) r_read_ble32((x) + (i), bin->endian); (i) += 4
@@ -1236,314 +1238,349 @@ ut64 Elf_(r_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name)
 	RBinElfSection *section = get_section_by_name (bin, section_name);
 	return section? section->rva + section->size: UT64_MAX;
 }
-#define REL (is_rela ? (void*)rela : (void*)rel)
-#define REL_BUF is_rela ? (ut8*)(&rela[k]) : (ut8*)(&rel[k])
-#define REL_OFFSET is_rela ? rela[k].r_offset : rel[k].r_offset
-#define REL_TYPE is_rela ? rela[k].r_info  : rel[k].r_info
 
-static ut64 get_import_addr(ELFOBJ *bin, int sym) {
-	Elf_(Rel) *rel = NULL;
-	Elf_(Rela) *rela = NULL;
-	ut8 rl[sizeof (Elf_(Rel))] = {0};
-	ut8 rla[sizeof (Elf_(Rela))] = {0};
+#define REL_OFFSET (rel->is_rela? rel->r.rela.r_offset: rel->r.rel.r_offset)
+#define REL_INFO (rel->is_rela? rel->r.rela.r_info: rel->r.rel.r_info)
+#define REL_SYM (ELF_R_SYM (REL_INFO))
+#define REL_TYPE (ELF_R_TYPE (REL_INFO))
+
+struct ht_rel_t {
+	union {
+		Elf_(Rel) rel;
+		Elf_(Rela) rela;
+	} r;
+	bool is_rela;
+	int k;
+};
+
+static RBinElfSection *get_rel_sec(ELFOBJ *bin, const char **sects) {
 	RBinElfSection *rel_sec = NULL;
-	ut64 plt_sym_addr = -1;
-	ut64 got_addr, got_offset;
-	ut64 plt_addr;
-	int j, k, tsize, len, nrel;
-	bool is_rela = false;
+	int j = 0;
+	while (!rel_sec && sects[j]) {
+		rel_sec = get_section_by_name (bin, sects[j++]);
+	}
+	return rel_sec;
+}
+
+static void read_rel(ELFOBJ *bin, Elf_(Rel) *rel, ut8 *rl) {
+	int l = 0;
+#if R_BIN_ELF64
+	rel->r_offset = READ64 (rl, l);
+	rel->r_info = READ64 (rl, l);
+#else
+	rel->r_offset = READ32 (rl, l);
+	rel->r_info = READ32 (rl, l);
+#endif
+}
+
+static void read_rela(ELFOBJ *bin, Elf_(Rela) *rela, ut8 *rl) {
+	int l = 0;
+#if R_BIN_ELF64
+	rela->r_offset = READ64 (rl, l);
+	rela->r_info = READ64 (rl, l);
+	rela->r_addend = READ64 (rl, l);
+#else
+	rela->r_offset = READ32 (rl, l);
+	rela->r_info = READ32 (rl, l);
+	rela->r_addend = READ32 (rl, l);
+#endif
+}
+
+static void read_ht_rel(ELFOBJ *bin, struct ht_rel_t *rel, ut8 *rl) {
+	if (rel->is_rela) {
+		read_rela (bin, &rel->r.rela, rl);
+	} else {
+		read_rel (bin, &rel->r.rel, rl);
+	}
+}
+
+static void rel_cache_free(HtUPKv *kv) {
+	free (kv->value);
+}
+
+static HtUP *rel_cache_new(ELFOBJ *bin) {
+	ut8 rl[MAX_REL_RELA_SZ] = { 0 };
+	RBinElfSection *rel_sec = NULL;
+	int j, k, tsize, nrel;
 	const char *rel_sect[] = { ".rel.plt", ".rela.plt", ".rel.dyn", ".rela.dyn", NULL };
 	const char *rela_sect[] = { ".rela.plt", ".rel.plt", ".rela.dyn", ".rel.dyn", NULL };
+	HtUP *rel_cache;
+
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
-		return -1;
+		return NULL;
 	}
-	if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
-		(got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1) {
-		return -1;
-	}
-	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
-		(got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1) {
-		return -1;
-	}
-	RBinElfSection *plt_section = get_section_by_name (bin, ".plt");
+
 	if (bin->is_rela == DT_REL) {
-		j = 0;
-		while (!rel_sec && rel_sect[j]) {
-			rel_sec = get_section_by_name (bin, rel_sect[j++]);
-		}
+		rel_sec = get_rel_sec (bin, rel_sect);
 		tsize = sizeof (Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
-		j = 0;
-		while (!rel_sec && rela_sect[j]) {
-			rel_sec = get_section_by_name (bin, rela_sect[j++]);
-		}
-		is_rela = true;
+		rel_sec = get_rel_sec (bin, rela_sect);
 		tsize = sizeof (Elf_(Rela));
 	}
-	if (!rel_sec) {
-		return -1;
+	if (!rel_sec || rel_sec->size < 1) {
+		return NULL;
 	}
-	if (rel_sec->size < 1) {
-		return -1;
-	}
-	nrel = (ut32)((int)rel_sec->size / (int)tsize);
+
+	nrel = (ut32) ((int)rel_sec->size / (int)tsize);
 	if (nrel < 1) {
-		return -1;
+		return NULL;
 	}
-	if (is_rela) {
-		rela = calloc (nrel, tsize);
-		if (!rela) {
-			return -1;
-		}
-	} else {
-		rel = calloc (nrel, tsize);
-		if (!rel) {
-			return -1;
-		}
-	}
+
+	rel_cache = ht_up_new_size (nrel, NULL, rel_cache_free, NULL);
+
 	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
-		int l = 0;
 		if (rel_sec->offset + j > bin->size) {
 			goto out;
 		}
 		if (rel_sec->offset + j + tsize > bin->size) {
 			goto out;
 		}
-		len = r_buf_read_at (
-			bin->b, rel_sec->offset + j, is_rela ? rla : rl,
-			is_rela ? sizeof (Elf_ (Rela)) : sizeof (Elf_ (Rel)));
+		int len = r_buf_read_at (bin->b, rel_sec->offset + j, rl, tsize);
 		if (len < 1) {
 			goto out;
 		}
-#if R_BIN_ELF64
-		if (is_rela) {
-			rela[k].r_offset = READ64 (rla, l);
-			rela[k].r_info = READ64 (rla, l);
-			rela[k].r_addend = READ64 (rla, l);
-		} else {
-			rel[k].r_offset = READ64 (rl, l);
-			rel[k].r_info = READ64 (rl, l);
-		}
-#else
-		if (is_rela) {
-			rela[k].r_offset = READ32 (rla, l);
-			rela[k].r_info = READ32 (rla, l);
-			rela[k].r_addend = READ32 (rla, l);
-		} else {
-			rel[k].r_offset = READ32 (rl, l);
-			rel[k].r_info = READ32 (rl, l);
-		}
-#endif
-		int reloc_type = ELF_R_TYPE (REL_TYPE);
-		int reloc_sym = ELF_R_SYM (REL_TYPE);
 
-		if (reloc_sym == sym) {
-			int of = REL_OFFSET;
-			of = of - got_addr + got_offset;
-			switch (bin->ehdr.e_machine) {
-			case EM_PPC:
-			case EM_PPC64:
-				{
-				RBinElfSection *s = plt_section;
-				if (s) {
-					ut8 buf[4] = {0};
-					len = r_buf_read_at (bin->b, s->offset, buf, sizeof (buf));
-					if (len < 4) {
-						goto out;
+		struct ht_rel_t *rel = R_NEW0 (struct ht_rel_t);
+		if (!rel) {
+			goto out;
+		}
+
+		rel->is_rela = bin->is_rela == DT_RELA;
+		rel->k = k;
+		read_ht_rel (bin, rel, rl);
+		ht_up_insert (rel_cache, REL_SYM, rel);
+	}
+	return rel_cache;
+out:
+	ht_up_free (rel_cache);
+	return NULL;
+}
+
+static ut64 get_import_addr(ELFOBJ *bin, int sym) {
+	ut64 plt_sym_addr = -1;
+	ut64 got_addr, got_offset, plt_addr;
+	int k, len, nrel;
+
+	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
+		return -1;
+	}
+
+	// create rel/rela cache if not already there
+	if (!bin->rel_cache) {
+		bin->rel_cache = rel_cache_new (bin);
+	}
+
+	// lookup the right rel/rela entry
+	struct ht_rel_t *rel = ht_up_find (bin->rel_cache, sym, NULL);
+	if (!rel) {
+		return -1;
+	}
+
+	nrel = bin->rel_cache->count;
+	if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
+	    (got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1) {
+		return -1;
+	}
+	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
+	    (got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1) {
+		return -1;
+	}
+	RBinElfSection *plt_section = get_section_by_name (bin, ".plt");
+
+	int of = REL_OFFSET - got_addr + got_offset;
+	switch (bin->ehdr.e_machine) {
+	case EM_PPC:
+	case EM_PPC64: {
+		RBinElfSection *s = plt_section;
+		if (s) {
+			ut8 buf[4] = { 0 };
+			len = r_buf_read_at (bin->b, s->offset, buf, sizeof (buf));
+			if (len < 4) {
+				goto out;
+			}
+			if (bin->endian) {
+				ut64 base = r_read_be32 (buf);
+				base -= (nrel * 16);
+				base += (rel->k * 16);
+				plt_addr = base;
+			} else {
+				// FIXME: this does not seem to work as
+				// expected. Commenting for now because it makes
+				// refactoring much easier and it seems weird
+				// anyway.
+				// if (bin->is_rela == DT_RELA) {
+				// 	len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
+				// 	if (len < 4) {
+				// 		goto out;
+				//	}
+				// }
+				ut64 base = r_read_le32 (buf);
+				base -= (nrel * 12) + 20;
+				base += (rel->k * 8);
+				plt_addr = base;
+			}
+			return plt_addr;
+		}
+		break;
+	}
+	case EM_SPARC:
+	case EM_SPARCV9:
+	case EM_SPARC32PLUS:
+		plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
+		if (plt_addr == -1) {
+			return -1;
+		}
+		if (REL_TYPE == R_386_PC16) {
+			plt_addr += rel->k * 12 + 20;
+			// thumb symbol
+			if (plt_addr & 1) {
+				plt_addr--;
+			}
+			return plt_addr;
+		} else {
+			bprintf ("Unknown sparc reloc type %d\n", REL_TYPE);
+		}
+		/* SPARC */
+		break;
+	case EM_ARM:
+	case EM_AARCH64:
+		plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
+		if (plt_addr == -1) {
+			return UT32_MAX;
+		}
+		switch (REL_TYPE) {
+		case R_ARM_JUMP_SLOT: {
+			plt_addr += rel->k * 12 + 20;
+			// thumb symbol
+			if (plt_addr & 1) {
+				plt_addr--;
+			}
+			return plt_addr;
+			break;
+		}
+		case 1026: // arm64 aarch64
+			plt_sym_addr = plt_addr + rel->k * 16 + 32;
+			goto done;
+		default:
+			bprintf ("Unsupported relocation type for imports %d\n", REL_TYPE);
+			break;
+		}
+		break;
+	case EM_386:
+	case EM_X86_64:
+		switch (REL_TYPE) {
+		case 1: // unknown relocs found in voidlinux for x86-64
+			// break;
+		case R_386_GLOB_DAT:
+		case R_386_JMP_SLOT: {
+			ut8 buf[8];
+			if (of + sizeof (Elf_(Addr)) < bin->size) {
+				// ONLY FOR X86
+				if (of > bin->size || of + sizeof (Elf_(Addr)) > bin->size) {
+					goto out;
+				}
+				len = r_buf_read_at (bin->b, of, buf, sizeof (Elf_(Addr)));
+				if (len < -1) {
+					goto out;
+				}
+				plt_sym_addr = sizeof (Elf_(Addr)) == 4
+					? r_read_le32 (buf)
+					: r_read_le64 (buf);
+
+				if (!plt_sym_addr) {
+					//XXX HACK ALERT!!!! full relro?? try to fix it
+					//will there always be .plt.got, what would happen if is .got.plt?
+					RBinElfSection *s = get_section_by_name (bin, ".plt.got");
+					if (Elf_(r_bin_elf_has_relro) (bin) < R_ELF_PART_RELRO || !s) {
+						goto done;
 					}
-					if (bin->endian) {
-						ut64 base = r_read_be32 (buf);
-						base -= (nrel * 16);
-						base += (k * 16);
-						plt_addr = base;
-					} else {
-						if (is_rela && rel_sec) {
-							len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
-							if (len < 4) {
-								goto out;
-							}
-						}
-						ut64 base = r_read_le32 (buf);
-						base -= (nrel * 12) + 20;
-						base += (k * 8);
-						plt_addr = base;
-					}
-					free (REL);
-					return plt_addr;
-				}
-				}
-				break;
-			case EM_SPARC:
-			case EM_SPARCV9:
-			case EM_SPARC32PLUS:
-				plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
-				if (plt_addr == -1) {
-					free (rela);
-					return -1;
-				}
-				if (reloc_type == R_386_PC16) {
-					plt_addr += k * 12 + 20;
-					// thumb symbol
-					if (plt_addr & 1) {
-						plt_addr--;
-					}
-					free (REL);
-					return plt_addr;
-				} else {
-					bprintf ("Unknown sparc reloc type %d\n", reloc_type);
-				}
-				/* SPARC */
-				break;
-			case EM_ARM:
-			case EM_AARCH64:
-				plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
-				if (plt_addr == -1) {
-					free (rela);
-					return UT32_MAX;
-				}
-				switch (reloc_type) {
-				case R_386_8:
-					{
-						plt_addr += k * 12 + 20;
-						// thumb symbol
-						if (plt_addr & 1) {
-							plt_addr--;
-						}
-						free (REL);
-						return plt_addr;
-					}
-					break;
-				case 1026: // arm64 aarch64
-					plt_sym_addr = plt_addr + k * 16 + 32;
-					goto done;
-				default:
-					bprintf ("Unsupported relocation type for imports %d\n", reloc_type);
-					break;
-				}
-				break;
-			case EM_386:
-			case EM_X86_64:
-				switch (reloc_type) {
-				case 1: // unknown relocs found in voidlinux for x86-64
-					// break;
-				case R_386_GLOB_DAT:
-				case R_386_JMP_SLOT:
-					{
-					ut8 buf[8];
-					if (of + sizeof(Elf_(Addr)) < bin->size) {
-						// ONLY FOR X86
-						if (of > bin->size || of + sizeof (Elf_(Addr)) > bin->size) {
-							goto out;
-						}
-						len = r_buf_read_at (bin->b, of, buf, sizeof (Elf_(Addr)));
+					plt_addr = s->offset;
+					of = of + got_addr - got_offset;
+					while (plt_addr + 2 + 4 < s->offset + s->size) {
+						/*we try to locate the plt entry that correspond with the relocation
+							since got does not point back to .plt. In this case it has the following
+							form
+
+							ff253a152000   JMP QWORD [RIP + 0x20153A]
+							6690		     NOP
+							----
+							ff25ec9f0408   JMP DWORD [reloc.puts_236]
+
+							plt_addr + 2 to remove jmp opcode and get the imm reading 4
+							and if RIP (plt_addr + 6) + imm == rel->offset
+							return plt_addr, that will be our sym addr
+
+							perhaps this hack doesn't work on 32 bits
+							*/
+						len = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
 						if (len < -1) {
 							goto out;
 						}
 						plt_sym_addr = sizeof (Elf_(Addr)) == 4
-									 ? r_read_le32 (buf)
-									 : r_read_le64 (buf);
+							? r_read_le32 (buf)
+							: r_read_le64 (buf);
 
-						if (!plt_sym_addr) {
-							//XXX HACK ALERT!!!! full relro?? try to fix it 
-							//will there always be .plt.got, what would happen if is .got.plt?
-							RBinElfSection *s = get_section_by_name (bin, ".plt.got");
- 							if (Elf_(r_bin_elf_has_relro)(bin) < R_ELF_PART_RELRO || !s) {
-								goto done;
-							}
-							plt_addr = s->offset;
-							of = of + got_addr - got_offset;
-							while (plt_addr + 2 + 4 < s->offset + s->size) {
-								/*we try to locate the plt entry that correspond with the relocation
-								  since got does not point back to .plt. In this case it has the following 
-								  form
-
-								  ff253a152000   JMP QWORD [RIP + 0x20153A]
-								  6690		     NOP
-								  ----
-								  ff25ec9f0408   JMP DWORD [reloc.puts_236]
-
-								  plt_addr + 2 to remove jmp opcode and get the imm reading 4
-								  and if RIP (plt_addr + 6) + imm == rel->offset 
-								  return plt_addr, that will be our sym addr
-
-								  perhaps this hack doesn't work on 32 bits
-								 */
-								len = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
-								if (len < -1) {
-									goto out;
-								}
-								plt_sym_addr = sizeof (Elf_(Addr)) == 4
-										? r_read_le32 (buf)
-										: r_read_le64 (buf);
-
-								//relative address
-								if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == of) {
-									plt_sym_addr = plt_addr;
-									goto done;
-								} else if (plt_sym_addr == of) {
-									plt_sym_addr = plt_addr;
-									goto done;
-								}
-								plt_addr += 8;
-							}
-						} else {
-							plt_sym_addr -= 6;
+						//relative address
+						if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == of) {
+							plt_sym_addr = plt_addr;
+							goto done;
+						} else if (plt_sym_addr == of) {
+							plt_sym_addr = plt_addr;
+							goto done;
 						}
-						goto done;
+						plt_addr += 8;
 					}
-					break;
-					}
-				default:
-					bprintf ("Unsupported relocation type for imports %d\n", reloc_type);
-					free (REL);
-					return of;
-					break;
+				} else {
+					plt_sym_addr -= 6;
 				}
-				break;
-			case 8:
-				// MIPS32 BIG ENDIAN relocs
-				{
-					RBinElfSection *s = get_section_by_name (bin, ".rela.plt");
-					if (s) {
-						ut8 buf[1024];
-						const ut8 *base;
-						plt_addr = s->rva + s->size;
-						len = r_buf_read_at (bin->b, s->offset + s->size, buf, sizeof (buf));
-						if (len != sizeof (buf)) {
-							// oops
-						}
-						base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8*)"\x3c\x0f\x00", 3, 4);
-						if (base) {
-							plt_addr += (int)(size_t)(base - buf);
-						} else {
-							plt_addr += 108 + 8; // HARDCODED HACK
-						}
-						plt_addr += k * 16;
-						free (REL);
-						return plt_addr;
-					} else if (plt_section) {
-						const int sizeOfProcedureLinkageTable = 32;
-						const int sizeOfPltEntry = 16;
-						free (REL);
-						return plt_section->rva + sizeOfProcedureLinkageTable + (k * sizeOfPltEntry);
-					} else {
-						eprintf ("Unsupported relocs type %d for arch %d\n",
-								reloc_type, bin->ehdr.e_machine);
-					}
+				goto done;
+			}
+			break;
+		}
+		default:
+			bprintf ("Unsupported relocation type for imports %d\n", REL_TYPE);
+			return of;
+			break;
+		}
+		break;
+	case 8:
+		// MIPS32 BIG ENDIAN relocs
+		{
+			RBinElfSection *s = get_section_by_name (bin, ".rela.plt");
+			if (s) {
+				ut8 buf[1024];
+				const ut8 *base;
+				plt_addr = s->rva + s->size;
+				len = r_buf_read_at (bin->b, s->offset + s->size, buf, sizeof (buf));
+				if (len != sizeof (buf)) {
+					// oops
 				}
-				break;
-			default:
+				base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8*)"\x3c\x0f\x00", 3, 4);
+				if (base) {
+					plt_addr += (int)(size_t) (base - buf);
+				} else {
+					plt_addr += 108 + 8; // HARDCODED HACK
+				}
+				plt_addr += rel->k * 16;
+				return plt_addr;
+			} else if (plt_section) {
+				const int sizeOfProcedureLinkageTable = 32;
+				const int sizeOfPltEntry = 16;
+				return plt_section->rva + sizeOfProcedureLinkageTable + (rel->k * sizeOfPltEntry);
+			} else {
 				eprintf ("Unsupported relocs type %d for arch %d\n",
-					reloc_type, bin->ehdr.e_machine);
-				break;
+					REL_TYPE, bin->ehdr.e_machine);
 			}
 		}
+		break;
+	default:
+		eprintf ("Unsupported relocs type %d for arch %d\n",
+			REL_TYPE, bin->ehdr.e_machine);
+		break;
 	}
 done:
-	free (REL);
 	return plt_sym_addr;
 out:
-	free (REL);
 	return -1;
 }
 
@@ -3287,6 +3324,8 @@ void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	R_FREE (bin->g_sections);
 	R_FREE (bin->g_symbols);
 	R_FREE (bin->g_imports);
+	ht_up_free (bin->rel_cache);
+	bin->rel_cache = NULL;
 	free (bin);
 	return NULL;
 }
