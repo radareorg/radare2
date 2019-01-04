@@ -92,24 +92,25 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 }
 
 bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
-	RIOMap *map = NULL;
-	int perm = 0;
-	RIODesc *desc;
 	if (!io || !sec) {
 		return false;
 	}
-	desc = r_io_desc_get (io, sec->fd);
+	RIODesc *desc = r_io_desc_get (io, sec->fd);
 	if (!desc) {
 		return false;
 	}
-	perm = sec->perm;
+	int perm = sec->perm;
 	//create file map for patching
+	// workaround to force exec bit in text section
+	if (sec->name &&  strstr (sec->name, "text")) {
+		perm |= R_PERM_X;
+	}
 	if (patch) {
 		//add -w to the map for patching if needed
 		//if the file was not opened with -w desc->perm won't have that bit active
 		perm = perm | desc->perm;
 	}
-	map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
+	RIOMap *map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
