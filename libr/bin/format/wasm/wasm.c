@@ -545,7 +545,7 @@ beach:
 static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
 	RList *ret = NULL;
 	RBinWasmSymbol *ptr = NULL;
-	ut64 read = 0;
+	size_t read = 0;
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
@@ -554,8 +554,8 @@ static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *
 		return NULL;
 	}
 	RBuffer *b = bin->buf;
-	r_buf_seek (b, sec->payload_data + 4, R_IO_SEEK_SET);
-	ut64 max = b->cur + sec->payload_len - 5;
+	r_buf_seek (b, sec->payload_data + 3, R_IO_SEEK_SET);
+	ut64 max = b->cur + sec->payload_len - 4;
 	if (!(max < b->length)) {
 		goto beach;
 	}
@@ -563,13 +563,13 @@ static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *
 		if (!(ptr = R_NEW0 (RBinWasmSymbol))) {
 			return ret;
 		}
-		read = read_u32_leb128 (&b->buf[b->cur], &b->buf[b->cur + 5], &ptr->id);
-		ut32 tmp = b->buf[b->cur + read];
+		ut32 tmp = 0;
+		read = consume_u32_r (b, max, &ptr->id);
+		consume_u32_r (b, max - read, &tmp);
 		if (tmp == R_BIN_WASM_STRING_LENGTH) {
 			tmp = R_BIN_WASM_STRING_LENGTH - 1;
 		}
-		ptr->name_len = (ut32) tmp;
-		r_buf_seek (b, 2, R_IO_SEEK_CUR);
+		ptr->name_len = tmp;
 		if (!(consume_str_r (b, max, tmp, ptr->name))) {
 			goto beach;
 		}
@@ -1033,8 +1033,7 @@ RList *r_bin_wasm_get_imports (RBinWasmObj *bin) {
 	if (bin->g_imports) {
 		return bin->g_imports;
 	}
-	if (!(imports = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_IMPORT))) {
+	if (!(imports = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_IMPORT))) {
 		return r_list_new();
 	}
 	// support for multiple import sections against spec
@@ -1057,8 +1056,7 @@ RList *r_bin_wasm_get_exports (RBinWasmObj *bin) {
 	if (bin->g_exports) {
 		return bin->g_exports;
 	}
-	if (!(exports= r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_EXPORT))) {
+	if (!(exports= r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_EXPORT))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1081,8 +1079,7 @@ RList *r_bin_wasm_get_types (RBinWasmObj *bin) {
 	if (bin->g_types) {
 		return bin->g_types;
 	}
-	if (!(types = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_TYPE))) {
+	if (!(types = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_TYPE))) {
 		return r_list_new ();
 	}
 	// support for multiple export sections against spec
@@ -1105,8 +1102,7 @@ RList *r_bin_wasm_get_tables (RBinWasmObj *bin) {
 	if (bin->g_tables) {
 		return bin->g_tables;
 	}
-	if (!(tables = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_TABLE))) {
+	if (!(tables = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_TABLE))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1131,8 +1127,7 @@ RList *r_bin_wasm_get_memories (RBinWasmObj *bin) {
 		return bin->g_memories;
 	}
 
-	if (!(memories = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_MEMORY))) {
+	if (!(memories = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_MEMORY))) {
 		return r_list_new();
 	}
 
@@ -1157,8 +1152,7 @@ RList *r_bin_wasm_get_globals (RBinWasmObj *bin) {
 	if (bin->g_globals) {
 		return bin->g_globals;
 	}
-	if (!(globals = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_GLOBAL))) {
+	if (!(globals = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_GLOBAL))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1181,8 +1175,7 @@ RList *r_bin_wasm_get_elements (RBinWasmObj *bin) {
 	if (bin->g_elements) {
 		return bin->g_elements;
 	}
-	if (!(elements = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_ELEMENT))) {
+	if (!(elements = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_ELEMENT))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1205,8 +1198,7 @@ RList *r_bin_wasm_get_codes (RBinWasmObj *bin) {
 	if (bin->g_codes) {
 		return bin->g_codes;
 	}
-	if (!(codes = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_CODE))) {
+	if (!(codes = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_CODE))) {
 		return r_list_new ();
 	}
 	// support for multiple export sections against spec
@@ -1229,8 +1221,7 @@ RList *r_bin_wasm_get_datas (RBinWasmObj *bin) {
 	if (bin->g_datas) {
 		return bin->g_datas;
 	}
-	if (!(datas = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_DATA))) {
+	if (!(datas = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_DATA))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1252,14 +1243,11 @@ RList *r_bin_wasm_get_symtab (RBinWasmObj *bin) {
 	if (bin->g_symtab) {
 		return bin->g_symtab;
 	}
-	if (!(symtab = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_CUSTOM))) {
+	if (!(symtab = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_CUSTOM))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
-	if (!(cust = (RBinWasmSection*) r_list_first (symtab)) || 
-		strncmp (cust->name, "name", 5)) {
-		//eprintf("[wasm] error: symtab not found.\n");
+	if (!(cust = (RBinWasmSection*) r_list_first (symtab)) || strncmp (cust->name, "name", 5)) {
 		r_list_free (symtab);
 		return r_list_new();
 	}
