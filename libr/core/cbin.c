@@ -3277,8 +3277,8 @@ static void bin_pe_resources(RCore *r, int mode) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
-					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\"}",
-					index? ",": "", name, index, type, vaddr, size, lang);
+					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\", \"timestamp\":\"%s\"}",
+					index? ",": "", name, index, type, vaddr, size, lang, timestr);
 		} else {
 			char humansz[8];
 			r_num_units (humansz, sizeof (humansz), size);
