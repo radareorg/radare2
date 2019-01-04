@@ -170,8 +170,8 @@ static int parse (RParse *p, const char *data, char *str) {
 	if (!(buf = strdup (data))) {
 		return false;
 	}
+	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
-		*w0 = *w1 = *w2 = *w3 = '\0';
 		end = strchr (buf, '\0');
 		ptr = strchr (buf, ' ');
 		if (!ptr) {

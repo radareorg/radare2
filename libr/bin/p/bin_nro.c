@@ -233,7 +233,9 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	const char *ft = fileType (r_buf_get_at (bf->buf, NRO_OFF (magic), NULL));
+	ut8 magic[4];
+	r_buf_read_at (bf->buf, NRO_OFF (magic), magic, sizeof (magic));
+	const char *ft = fileType (magic);
 	if (!ft) {
 		ft = "nro";
 	}

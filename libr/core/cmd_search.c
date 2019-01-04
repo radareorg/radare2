@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+/* radare - LGPL - Copyright 2010-2019 - pancake */
 
 #include <sdb/ht_uu.h>
 #include "r_core.h"
+#include <r_hash.h>
 #include "r_io.h"
 #include "r_list.h"
 #include "r_types_base.h"
@@ -40,6 +41,7 @@ static const char *help_msg_slash[] = {
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
+	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
@@ -94,7 +96,7 @@ static const char *help_msg_slash_a[] = {
 
 static const char *help_msg_slash_C[] = {
 	"Usage: /C", "", "Search for crypto materials",
-	"/Ca", "", "Search for AES keys",
+	"/Ca", "", "Search for AES keys expanded in memory",
 	"/Cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/Cd", "", "Search for ASN1/DER certificates",
 	"/Cr", "", "Search for private RSA keys",
@@ -1702,7 +1704,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RListIter *iter;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	RAnalEsil *esil = core->anal->esil;
+	RAnalEsil *esil;
 	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -1929,6 +1931,13 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	}
 	if (type == 's') {
 		eprintf ("Shouldnt reach\n");
+// ??
+#if 0
+	case 's': // "/s"
+		do_syscall_search (core, &param);
+		dosearch = false;
+		break;
+#endif
 		return true;
 	}
 	if (mode == 'j') {
@@ -2046,6 +2055,74 @@ done:
 	r_cons_break_pop ();
 	free (buf);
 	return false;
+}
+
+static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
+	double threshold = 1;
+	bool r2mode = false;
+	if (input && *input) {
+		if (*input == '*') {
+			r2mode = true;
+		}
+		sscanf (input, "%lf", &threshold);
+		if (threshold < 1) {
+			threshold = 1;
+		}
+	}
+	int buf_size = core->blocksize;
+	ut8 *buf = malloc (buf_size);
+	if (!buf) {
+		return;
+	}
+	double oe = 0;
+	RListIter *iter;
+	RIOMap *map;
+	ut64 begin = UT64_MAX;
+	ut64 at, end = 0;
+	int index = 0;
+	bool lastBlock = true;
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = map->itv.addr;
+		ut64 to = r_itv_end (map->itv);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		for (at = from; at < to; at += buf_size) {
+			if (begin == UT64_MAX) {
+				begin = at;
+			}
+			r_io_read_at (core->io, at, buf, buf_size);
+			double e = r_hash_entropy (buf, buf_size);
+			double diff = oe - e;
+			diff = R_ABS (diff);
+			end = at + buf_size;
+			if (diff > threshold) {
+				if (r2mode) {
+					r_cons_printf ("f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf\n", begin, end, e);
+				}
+				begin = UT64_MAX;
+				index++;
+				lastBlock = false;
+			} else {
+				lastBlock = true;
+			}
+			oe = e;
+		}
+		begin = UT64_MAX;
+	}
+	if (begin != UT64_MAX && lastBlock) {
+		if (r2mode) {
+			r_cons_printf ("f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf .. last\n", begin, end, 0);
+		}
+		index++;
+	}
+	r_cons_break_pop();
+	free (buf);
 }
 
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
@@ -2313,8 +2390,8 @@ static void rop_kuery(void *data, const char *input) {
 				char *dup = strdup (sdbkv_value (kv));
 				bool flag = false; // to free tok when doing strdup
 				char *size = strtok (dup, " ");
+				char *outtok = strtok (NULL, "{}");
 				char *tok = strtok (NULL, "{}");
-				tok = strtok (NULL, "{}");
 				if (!tok) {
 					tok = strdup ("NOP");
 					flag = true;
@@ -3104,12 +3181,6 @@ reread:
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1), &param);
 		break;
-#if 0
-	case 's': // "/s"
-		do_syscall_search (core, &param);
-		dosearch = false;
-		break;
-#endif
 	case 'V': // "/V"
 		{
 			if (input[2] == 'j') {
@@ -3489,6 +3560,9 @@ reread:
 		} else { // "/c"
 			do_asm_search (core, &param, input, 0, search_itv);
 		}
+		break;
+	case 's': // "/s"
+		do_section_search (core, &param, input + 1);
 		break;
 	case '+': // "/+"
 		if (input[1] == ' ') {

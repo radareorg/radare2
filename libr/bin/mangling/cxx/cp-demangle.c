@@ -6128,7 +6128,7 @@ static void
 d_print_conversion (struct d_print_info *dpi, int options,
 		    struct demangle_component *dc)
 {
-  struct d_print_template dpt;
+  struct d_print_template dpt = {0};
 
   /* For a conversion operator, we need the template parameters from
      the enclosing template in scope for processing the type.  */

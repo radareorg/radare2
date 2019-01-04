@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ -z "${STATIC_BINS}" ] && STATIC_BINS=0
+
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
@@ -48,7 +50,11 @@ for a in ${BINS} ; do
 	if [ "`uname`" = Darwin ]; then
 		${MAKE} -j4 || exit 1
 	else
-		CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
+		if [ "${STATIC_BINS}" = 1 ]; then
+			CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
+		else
+			${MAKE} -j4 || exit 1
+		fi
 	fi
 )
 done

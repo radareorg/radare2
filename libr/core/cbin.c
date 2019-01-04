@@ -1019,6 +1019,7 @@ static int bin_source(RCore *r, int mode) {
 
 	if (!binfile) {
 		bprintf ("[Error bin file]\n");
+		r_list_free (final_list);
 		return false;
 	}
 
@@ -1890,7 +1891,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		if (!symbol->name) {
 			continue;
 		}
-		char *r_symbol_name = r_str_escape_utf8_for_json (symbol->name, -1);
+		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
 		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};
@@ -2478,9 +2479,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 				ut32 datalen = section->size;
 				// VA READ IS BROKEN?
-				r_io_pread_at (r->io, section->paddr, data, datalen);
-				hashstr = build_hash_string (mode, chksum,
-							data, datalen);
+				if (datalen > 0) {
+					r_io_pread_at (r->io, section->paddr, data, datalen);
+				}
+				hashstr = build_hash_string (mode, chksum, data, datalen);
 				free (data);
 			}
 			if (section->arch || section->bits) {

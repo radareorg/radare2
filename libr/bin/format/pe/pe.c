@@ -2305,7 +2305,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		off = rsrc_base + entry.u2.OffsetToData;
-		if (off > bin->size || off + sizeof (data) > bin->size) {
+		if (off > bin->size || off + sizeof (*data) > bin->size) {
 			free (data);
 			break;
 		}

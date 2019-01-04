@@ -785,6 +785,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].reg_type = ARM_REG64;
 			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			if (op->operands[operand].reg > 31) {
+				free (t);
 				return false;
 			}
 			break;
@@ -794,6 +795,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].reg_type = ARM_REG32;
 			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			if (op->operands[operand].reg > 31) {
+				free (t);
 				return false;
 			}
 			break;

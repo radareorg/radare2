@@ -1,0 +1,15 @@
+OBJ_6502_CS=asm_6502_cs.o
+
+include p/capstone.mk
+
+STATIC_OBJ+=${OBJ_6502_CS}
+SHARED_OBJ+=${SHARED_6502_CS}
+TARGET_6502_CS=asm_6502_cs.${EXT_SO}
+
+ifeq ($(WITHPIC),1)
+ALL_TARGETS+=${TARGET_6502_CS}
+
+${TARGET_6502_CS}: ${OBJ_6502_CS}
+	${CC} $(call libname,asm_6502_cs) ${LDFLAGS} ${CFLAGS} $(CS_LDFLAGS) \
+		-o ${TARGET_6502_CS} ${OBJ_6502_CS} ${SHARED2_6502_CS}
+endif

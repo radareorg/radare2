@@ -96,8 +96,8 @@ DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static char *oldcpu = NULL;
-	// static int oldcpucode = 0;
-	int opsize, cpucode = 0;
+	static int oldcpucode = 0;
+	int opsize;
 	struct disassemble_info obj;
 	char *options = (a->bits == 16)? "force-thumb": "no-force-thumb";
 
@@ -130,19 +130,46 @@ cpucode = 66471;
 #endif
 // printf ("fpu- = 0x%x\n", FPU_ARCH_VFP_V4D16);
 
-	//cpucode = oldcpucode;
+	struct {
+		const char name[32];
+		int cpucode;
+	} arm_cpucodes[] = {
+		{ "v2", bfd_mach_arm_2 },
+		{ "v2a", bfd_mach_arm_2a },
+		{ "v3M", bfd_mach_arm_3M },
+		{ "v4", bfd_mach_arm_4 },
+		{ "v4t", bfd_mach_arm_4T },
+		{ "v5", bfd_mach_arm_5 },
+		{ "v5t", bfd_mach_arm_5T },
+		{ "v5te", bfd_mach_arm_5TE },
+		{ "v5j", bfd_mach_arm_5TE },
+		{ "XScale", bfd_mach_arm_XScale },
+		{ "ep9312", bfd_mach_arm_ep9312 },
+		{ "iWMMXt", bfd_mach_arm_iWMMXt },
+		{ "iWMMXt2", bfd_mach_arm_iWMMXt2 },
+	};
+
 	/* select cpu */
-	if (a->cpu) {
-		if (oldcpu != a->cpu) {
+	if (oldcpu != a->cpu) {
+		int cpucode = 0;
+		if (a->cpu) {
 			cpucode = atoi (a->cpu);
-			if (!strcmp ("v5j", a->cpu)) {
-				cpucode = 9;
+			for (int i = 0; i < (sizeof(arm_cpucodes) / sizeof(arm_cpucodes[0])); i++) {
+				if (!strcmp (arm_cpucodes[i].name, a->cpu)) {
+					cpucode = arm_cpucodes[i].cpucode;
+					break;
+				}
 			}
 		}
+		oldcpu = a->cpu;
+		oldcpucode = cpucode;
 	}
+
 	obj.arch = 0;
-	obj.mach = cpucode;
-	// oldcpucode = cpucode;
+	obj.mach = oldcpucode;
+
+	if (obj.mach)
+		obj.flags |= USER_SPECIFIED_MACHINE_TYPE;
 
 	obj.buffer = bytes;
 	obj.read_memory_func = &arm_buffer_read_memory;
@@ -181,6 +208,7 @@ cpucode = 66471;
 RAsmPlugin r_asm_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
+	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "Acorn RISC Machine CPU",

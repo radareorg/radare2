@@ -286,6 +286,7 @@ int main(int argc, char **argv) {
 		case 'L':
 			list (egg);
 			r_egg_free (egg);
+			free (sequence);
 			return 0;
 		case 'h':
 			r_egg_free (egg);

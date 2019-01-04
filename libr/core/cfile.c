@@ -256,12 +256,10 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	RCoreFile *cf = r_core_file_cur (r);
-	RBinFile *bf = NULL;
 	if (cf) {
 		result = r_bin_reload (r->bin, cf->fd, baseaddr);
 	}
-	bf = r_bin_cur (r->bin);
-	r_core_bin_set_env (r, bf);
+	r_core_bin_set_env (r, r_bin_cur (r->bin));
 	return result;
 }
 

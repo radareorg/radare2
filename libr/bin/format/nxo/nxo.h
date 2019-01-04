@@ -65,8 +65,7 @@ typedef struct {
 
 ut32 readLE32(RBuffer *buf, int off);
 ut64 readLE64(RBuffer *buf, int off);
-const char *readString(RBuffer *buf, int off);
-const char *fileType(const ut8 *buf);
 void parseMod (RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr);
+const char *fileType(const ut8 *buf);
 
 #endif
