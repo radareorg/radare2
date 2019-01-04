@@ -4277,7 +4277,14 @@ static void delete_last_comment(RDisasmState *ds) {
 		ds_newline (ds);
 		ds_begin_line (ds);
 		ds_setup_print_pre (ds, false, false);
-		ds_print_lines_left (ds);
+		if (!ds->linesright && ds->show_lines_bb && ds->line) {
+			char *refline = r_anal_reflines_str (ds->core, ds->at,
+			                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+			r_return_if_fail (refline);
+			r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
+			               refline, COLOR_RESET (ds));
+			free (refline);
+		}
 	}
 }
 
