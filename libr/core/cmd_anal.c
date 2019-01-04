@@ -7472,7 +7472,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
-					r_core_cmdf (core, "dL %s;dpa", dh_orig);
+					r_core_cmdf (core, "dL %s", dh_orig);
 				}
 			}
 			r_core_seek (core, curseek, 1);
