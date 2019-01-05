@@ -188,6 +188,14 @@ R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
 			case 's':
 				pj_s (j, va_arg (ap, const char *));
 				break;
+			case 'S':
+				{
+					const char *s = va_arg (ap, const char *);
+					char *es = r_base64_encode_dyn (s, -1);
+					pj_s (j, es);
+					free (es);
+				}
+				break;
 			case 'n':
 				pj_n (j, va_arg (ap, ut64));
 				break;
