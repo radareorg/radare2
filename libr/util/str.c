@@ -981,7 +981,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 
 R_API char *r_str_replace_icase (char *str, const char *key, const char *val, int g, int keep_case) {
 	int off, i, klen, vlen, slen;
-	char *newstr, *scnd, *p = str, *match, *tmp_val = NULL;
+	char *newstr, *scnd, *p = str, *tmp_val = NULL;
 	if (!str || !key || !val) {
 		return NULL;
 	}
@@ -1008,22 +1008,18 @@ R_API char *r_str_replace_icase (char *str, const char *key, const char *val, in
 		str = newstr;
 		p = str + off;
 
+		tmp_val = strdup (val);
 		if (keep_case) {
 			char *str_case = r_str_ndup (p, klen);
-			tmp_val = strdup (val);
 			str_case[klen] = '\0';
 			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
-		} else {
-			tmp_val = val;
 		}
 
 		memcpy (p, tmp_val, vlen);
 		memcpy (p + vlen, scnd, strlen (scnd) + 1);
 		i = off + vlen;
-		if (tmp_val != val) {
-			free (tmp_val);
-		}
+		free (tmp_val);
 		free (scnd);
 		if (!g) {
 			break;
