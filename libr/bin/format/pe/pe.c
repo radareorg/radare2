@@ -537,6 +537,46 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 #endif
 }
 
+static char*_time_stamp_to_dos_str(ut32 timeStamp) {
+        ut16 date = timeStamp >> 16; 
+        ut16 time = timeStamp & 0xFF;
+
+        /* Date */
+        ut32 year = ((date & 0xfe00) >> 9) + 1980;
+        ut32 month = (date & 0x01e0) >> 5;
+        ut32 day = date & 0x001f;
+
+        /* Time */
+        ut32 hour = (time & 0xf800) >> 11; 
+        ut32 minutes = (time & 0x07e0) >> 5;
+        ut32 seconds = (time & 0x001f) << 1;
+
+	char buf[20] = {0};
+        sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minutes, seconds);
+	return strdup(buf);
+        /*printf("Buffie: %s\n", buf);*/
+}
+
+static bool _time_stamp_is_dos_str(char* compileTimeStamp, char* resourceTimeStamp) {
+	if(compileTimeStamp == NULL)
+		return true;
+
+	/* Compile Time Stamp looks like Thu May 15 03:04:05 2018 */
+	/* Resource Time Stamp looks like 2012-05-19 00:07:04 */
+	ut32 lengthCompileTimeStamp = strlen(compileTimeStamp);
+	ut32 lengthResourceTimeStamp = strlen(resourceTimeStamp);
+	if(lengthResourceTimeStamp < 4 || lengthCompileTimeStamp < 4)
+		return false;
+	
+	/*printf("Comparing %s with %s\n", compileTimeStamp + lengthCompileTimeStamp - 4, resourceTimeStamp);*/
+
+	/* Compare whether YEAR is the same, this is our heuristic to differentiate between DOS date and POSIX date */
+	if(strncmp(compileTimeStamp + lengthCompileTimeStamp - 4, resourceTimeStamp, 4) == 0) {
+		return true;
+	}
+	return false;
+}
+
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
@@ -2360,7 +2400,13 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			free (data);
 			break;
 		}
-		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
+		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
+		const char* compileTimeStamp = sdb_const_get (bin->kv, "image_file_header.TimeDateStamp_string", 0);
+		if ( _time_stamp_is_dos_str (compileTimeStamp, _time_stamp_to_dos_str (dir->TimeDateStamp))) {
+			rs->timestr = _time_stamp_to_dos_str (dir->TimeDateStamp);
+		} else {
+			rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
+		}
 		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;
