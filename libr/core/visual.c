@@ -31,6 +31,15 @@ static const char *printfmtSingle[NPF] = {
 	"pss", // PC//  copypasteable views
 };
 
+static const char *printfmtColumns[NPF] = {
+	"pCx",  // HEXDUMP // + pCw
+	"pCd $r-1",  // ASSEMBLY
+	"pCD",  // DEBUGGER
+	"pCA", // OVERVIEW
+	"pCc", // PC//  copypasteable views
+};
+
+
 // to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 9
 #define PRINT_3_FORMATS 2
@@ -44,6 +53,7 @@ static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 static int current3format = 0;
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
 	"pxw 64@r:SP;dr=;pd $r", // DEBUGGER
+	"pCD"
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
@@ -110,7 +120,6 @@ static void applyDisMode(RCore *core, int disMode) {
 	}
 }
 
-
 static void nextPrintCommand() {
 	currentHexFormat++;
 	currentHexFormat %= PRINT_HEX_FORMATS;
@@ -139,9 +148,12 @@ static const char *stackPrintCommand(RCore *core) {
 	return printHexFormats[currentHexFormat % PRINT_HEX_FORMATS];
 }
 
-static const char *printfmtColumns[] = {
-	"pCx", "pCd $r-1", "pCD", "pCw", "pCc", "pCA", "pss", "prc" // , "pCa", "pxr"
-};
+static const char *__core_visual_print_command (RCore *core) {
+	if (r_config_get_i (core->config, "scr.dumpcols")) {
+		return printfmtColumns[PIDX];
+	}
+	return printfmtSingle[PIDX];
+}
 
 static const char *help_msg_visual[] = {
 	"?", "show visual help menu",
@@ -210,8 +222,6 @@ static const char *help_msg_visual_fn[] = {
 	"F9", "continue",
 	NULL
 };
-
-static const char **printfmt = printfmtSingle;
 
 static bool splitView = false;
 static ut64 splitPtr = UT64_MAX;
@@ -633,7 +643,7 @@ static void visual_single_step_in(RCore *core) {
 	}
 }
 
-static void visual_single_step_over(RCore *core) {
+static void __core_visual_step_over(RCore *core) {
 	bool io_cache = r_config_get_i (core->config, "io.cache");
 	r_config_set_i (core->config, "io.cache", false);
 	if (r_config_get_i (core->config, "cfg.debug")) {
@@ -727,7 +737,7 @@ static int visual_nkey(RCore *core, int ch) {
 		if (cmd && *cmd) {
 			ch = r_core_cmd0 (core, cmd);
 		} else {
-			visual_single_step_over (core);
+			__core_visual_step_over (core);
 		}
 		break;
 	case R_CONS_KEY_F9:
@@ -2021,6 +2031,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	applyDisMode (core, disMode);
 	applyHexMode (core, hexMode);
 	r_config_set_i (core->config, "hex.cols", tab->cols);
+	r_config_set_i (core->config, "scr.dumpcols", tab->dumpCols);
 	printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 	printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
 	printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
@@ -2036,6 +2047,7 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 	tab->cur = core->print->cur;
 	tab->ocur = core->print->ocur;
 	tab->cols = r_config_get_i (core->config, "hex.cols");
+	tab->dumpCols = r_config_get_i (core->config, "scr.dumpcols");
 	tab->disMode = disMode;
 	tab->hexMode = hexMode;
 	tab->printMode = printMode;
@@ -2987,15 +2999,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (key_s && *key_s) {
 				r_core_cmd0 (core, key_s);
 			} else {
-				visual_single_step_over (core);
+				__core_visual_step_over (core);
 			}
 			break;
 		case '"':
-			if (printfmt == printfmtSingle) {
-				printfmt = printfmtColumns;
-			} else {
-				printfmt = printfmtSingle;
-			}
+			r_config_toggle (core->config, "scr.dumpcols");
 			break;
 		case 'p':
 			if (core->printidx == R_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
@@ -3526,7 +3534,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		bar[11] = '.'; // chop cmdfmt
 		bar[12] = 0; // chop cmdfmt
 	} else {
-		const char *cmd = printfmt[PIDX];
+		const char *cmd = __core_visual_print_command (core);
 		if (cmd) {
 			strncpy (bar, cmd, sizeof (bar) - 1);
 			bar[sizeof (bar) - 1] = 0; // '\0'-terminate bar
@@ -3798,7 +3806,7 @@ static void visual_refresh(RCore *core) {
 			cmd_str = debugstr;
 		} else {
 			core->print->screen_bounds = 1LL;
-			cmd_str = (zoom ? "pz" : printfmt[PIDX]);
+			cmd_str = (zoom ? "pz" : __core_visual_print_command (core));
 		}
 	}
 	if (cmd_str && *cmd_str) {
@@ -3891,7 +3899,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	};
 
 	splitPtr = UT64_MAX;
-	// printfmt = printfmtSingle; // restore columns mode on each run?
 
 	if (r_cons_get_size (&ch) < 1 || ch < 1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
@@ -3933,7 +3940,9 @@ dodo:
 		r_cons_set_raw (1);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 
-		if (printfmt == printfmtSingle && core->printidx == R_CORE_VISUAL_MODE_DB) {
+#if 1
+		// This is why multiple debug views dont work
+		if (core->printidx == R_CORE_VISUAL_MODE_DB) {
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
 			const char *reg = r_config_get (core->config, "stack.reg");
 			const int size = r_config_get_i (core->config, "stack.size");
@@ -3957,8 +3966,9 @@ dodo:
 					reg, pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}
-			printfmt[2] = debugstr;
+			printfmtSingle[2] = debugstr;
 		}
+#endif
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		r_cons_show_cursor (false);
 		if (wheel) {
