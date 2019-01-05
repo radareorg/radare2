@@ -596,9 +596,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 							} else {
 								str = r_str_replace (str, grep->str, newstr, 1);
 							}
-							ret = strlen (str);
-							memcpy (out, str, ret);
-							memcpy (out + ret, "\n", 2);
+							if (str) {
+								ret = strlen (str);
+								memcpy (out, str, ret);
+								memcpy (out + ret, "\n", 2);
+							}
 						}
 						free (str);
 						free (newstr);

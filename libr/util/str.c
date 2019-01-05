@@ -932,12 +932,10 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
+	r_return_val_if_fail (str && key && val, NULL);
+
 	int off, i, klen, vlen, slen;
 	char *newstr, *scnd, *p = str;
-
-	if (!str || !key || !val) {
-		return NULL;
-	}
 	klen = strlen (key);
 	vlen = strlen (val);
 	if (klen == 1 && vlen < 2) {
@@ -958,10 +956,9 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		off = (int)(size_t)(p - str);
 		scnd = strdup (p + klen);
 		slen += vlen - klen;
-		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen + 1);
-		if (!newstr) {
-			eprintf ("realloc fail\n");
+		if (!newstr || !scnd) {
+			eprintf ("alloc fail\n");
 			R_FREE (str);
 			free (scnd);
 			break;
@@ -980,11 +977,10 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 }
 
 R_API char *r_str_replace_icase (char *str, const char *key, const char *val, int g, int keep_case) {
+	r_return_val_if_fail (str && key && val, NULL);
+
 	int off, i, klen, vlen, slen;
 	char *newstr, *scnd, *p = str, *tmp_val = NULL;
-	if (!str || !key || !val) {
-		return NULL;
-	}
 	klen = strlen (key);
 	vlen = strlen (val);
 
@@ -997,20 +993,30 @@ R_API char *r_str_replace_icase (char *str, const char *key, const char *val, in
 		off = (int)(size_t) (p - str);
 		scnd = strdup (p + klen);
 		slen += vlen - klen;
-		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen + 1);
-		if (!newstr) {
-			eprintf ("realloc fail\n");
+		tmp_val = strdup (val);
+
+		if (!newstr || !tmp_val || !scnd) {
+			eprintf ("alloc fail\n");
 			R_FREE (str);
+			free (newstr);
+			free (tmp_val);
 			free (scnd);
 			break;
 		}
+
 		str = newstr;
 		p = str + off;
 
-		tmp_val = strdup (val);
 		if (keep_case) {
 			char *str_case = r_str_ndup (p, klen);
+			if (!str_case) {
+				eprintf ("alloc fail\n");
+				R_FREE (str);
+				free (tmp_val);
+				free (scnd);
+				break;
+			}
 			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
 		}
