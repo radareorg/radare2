@@ -419,12 +419,14 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	RSocket *s;
 	char *dir;
 	int iport, timeout = r_config_get_i (core->config, "http.timeout");
+	bool httpauth = r_config_get_i (core->config, "http.auth");
 	const char *host = r_config_get (core->config, "http.bind");
 	const char *root = r_config_get (core->config, "http.root");
 	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
+	const char *authtoken = r_config_get (core->config, "http.authtok");
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
@@ -493,6 +495,14 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			browser, host, atoi (port), path? path:"");
 	}
 
+	if (httpauth && authtoken) {
+		if (strlen (authtoken) < 3 || !strchr (authtoken, ':')) {
+			r_socket_free (s);
+			eprintf ("Invalid authorization token: '%s'\n", authtoken);
+			return 1;
+		}
+	}
+
 	origcfg = core->config;
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
@@ -552,7 +562,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		activateDieTime (core);
 
 		void *bed = r_cons_sleep_begin ();
-		rs = r_socket_http_accept (s, 1, timeout);
+		rs = r_socket_http_accept (s, 1, timeout, httpauth, authtoken);
 		r_cons_sleep_end (bed);
 
 		origoff = core->offset;
@@ -608,6 +618,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 		dir = NULL;
 
+		if (!rs->auth) {
+			r_socket_http_response (rs, 401, "", 0, NULL);
+		}
+
 		if (r_config_get_i (core->config, "http.verbose")) {
 			char *peer = r_socket_to_string (rs->s);
 			http_logf (core, "[HTTP] %s %s\n", peer, rs->path);
@@ -658,7 +672,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						free (path);
 					}
 				} else {
-					r_socket_http_response (rs, 403, "Permission denied\n", 0, NULL);
+					r_socket_http_response (rs, 403, "", 0, NULL);
 				}
 			} else if (!strncmp (rs->path, "/cmd/", 5)) {
 				char *cmd = rs->path + 5;

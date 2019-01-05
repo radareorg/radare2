@@ -136,9 +136,10 @@ typedef struct r_socket_http_request {
 	char *referer;
 	ut8 *data;
 	int data_length;
+	bool auth;
 } RSocketHTTPRequest;
 
-R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, int accept_timeout, int timeout);
+R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, int accept_timeout, int timeout, bool httpauth, const char *authtok);
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close(RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);

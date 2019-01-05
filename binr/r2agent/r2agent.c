@@ -28,6 +28,8 @@ static int usage (int v) {
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
 	"  -s        run in sandbox mode\n"
+	"  -u        enable http Authorization access\n"
+	"  -t        user:password token\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
@@ -45,8 +47,10 @@ int main(int argc, char **argv) {
 	int dosandbox = 0;
 	bool listenlocal = true;
 	const char *port = "8080";
+	bool httpauth = false;
+	const char *authtoken = NULL;
 
-	while ((c = getopt (argc, argv, "adhp:sv")) != -1) {
+	while ((c = getopt (argc, argv, "adhup:t:sv")) != -1) {
 		switch (c) {
 		case 'a':
 			listenlocal = false;
@@ -61,6 +65,12 @@ int main(int argc, char **argv) {
 			return usage (1);
 		case 'v':
 			return showversion ();
+		case 'u':
+			httpauth = true;
+			break;
+		case 't':
+			authtoken = optarg;
+			break;
 		case 'p':
 			port = optarg;
 			break;
@@ -72,6 +82,12 @@ int main(int argc, char **argv) {
 		return usage (0);
 	}
 
+	if (httpauth && authtoken) {
+		if (strlen (authtoken) < 3 || !strchr (authtoken, ':')) {
+			eprintf ("Invalid authorization token '%s'\n", authtoken);
+			return usage (0);
+		}
+	}
 #if USE_IOS_JETSAM
 	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
 #endif
@@ -104,9 +120,12 @@ int main(int argc, char **argv) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
-		rs = r_socket_http_accept (s, 0, timeout);
+		rs = r_socket_http_accept (s, 0, timeout, httpauth, authtoken);
 		if (!rs) {
 			continue;
+		}
+		if (!rs->auth) {
+			r_socket_http_response (rs, 401, "", 0, NULL);
 		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {
