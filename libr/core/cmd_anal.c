@@ -2159,7 +2159,12 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 		nname = strdup (name);
 	}
 	char *oname = fcn->name;
-	r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), nname);
+	RFlagItem *fi = r_flag_get (core->flags, fcn->name);
+	if (fi) {
+		r_flag_rename (core->flags, fi, nname);
+	} else {
+		// if we cant find a flag for that function.. create it?
+	}
 	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal,
