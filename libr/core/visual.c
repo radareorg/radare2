@@ -2743,8 +2743,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				RIOMap *map = r_io_map_get (core->io, core->offset);
 				if (map) {
+					RPrint *p = core->print;
+					int scr_rows;
+					if (!p->consbind.get_size) {
+						break;
+					}
+					(void)p->consbind.get_size (&scr_rows);
 					int scols = r_config_get_i (core->config, "hex.cols");
-					ret = r_core_seek (core, r_itv_end (map->itv) - (core->blocksize + 2 * scols), 1);
+					ret = r_core_seek (core, r_itv_end (map->itv) - (scr_rows - 2) * scols, 1);
 				}
 			}
 			if (ret != -1) {
