@@ -2744,7 +2744,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (offset == -1) {
 					offset = 0;
 				}
-				r_core_seek (core, offset, 1);
+				RIOMap *map = r_io_map_get (core->io, core->offset);
+				if (map) {
+					r_core_seek (core, r_itv_begin (map->itv), 1);
+				}
 			} else {
 				r_core_seek (core, 0, 1);
 			}
