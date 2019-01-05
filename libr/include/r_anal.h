@@ -1791,6 +1791,7 @@ typedef enum {
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
 R_API bool r_anal_class_exists(RAnal *anal, const char *name);
+R_API RBufVector/*<const char *>*/ *r_anal_class_get_all(RAnal *anal);
 R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const char *new_name);
 
 R_API void r_anal_class_method_fini(RAnalMethod *meth);

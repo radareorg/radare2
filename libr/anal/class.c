@@ -127,6 +127,25 @@ R_API bool r_anal_class_exists(RAnal *anal, const char *name) {
 	return r;
 }
 
+R_API RBufVector/*<const char *>*/ *r_anal_class_get_all(RAnal *anal) {
+	char *buf = sdb_get (anal->sdb_classes, key_classes, 0);
+	RBufVector *r = r_buf_vector_new (buf, NULL);
+	if (!buf || !r) {
+		free (buf);
+		return r;
+	}
+	char *cur = buf;
+	while (cur) {
+		char *next;
+		sdb_anext (cur, &next);
+		if (*cur) {
+			r_pvector_push (&r->v, cur);
+		}
+		cur = next;
+	}
+	return r;
+}
+
 static void rename_key(RAnal *anal, const char *key_old, const char *key_new) {
 	char *content = sdb_get (anal->sdb_classes, key_old, 0);
 	if (!content) {
