@@ -1011,7 +1011,6 @@ R_API char *r_str_replace_icase (char *str, const char *key, const char *val, in
 		tmp_val = strdup (val);
 		if (keep_case) {
 			char *str_case = r_str_ndup (p, klen);
-			str_case[klen] = '\0';
 			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
 		}
