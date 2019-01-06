@@ -2120,6 +2120,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 			argv_len *= 2;
 			char **tmp = realloc (argv, argv_len * sizeof (char *));
 			if (!tmp) {
+				free (args);
 				free (argv);
 				return NULL;
 			}
@@ -2971,7 +2972,7 @@ R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffi
 	c0 = strstr (cmt, prefix);
 	if (c0) {
 		c1 = strstr (c0 + strlen (prefix), suffix);
-		if (!c1) {
+		if (c1) {
 			return r_str_ndup (c0 + strlen (prefix), (c1 - c0 - strlen (prefix)));
 		}
 	}

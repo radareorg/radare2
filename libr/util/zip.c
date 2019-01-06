@@ -27,6 +27,7 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
+	ut8 *tmp_ptr;
 	z_stream stream;
 
 	if (srcLen <= 0) {
@@ -48,9 +49,11 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 
 	do {
 		if (stream.avail_out == 0) {
-			if (!(dst = realloc (dst, stream.total_out + srcLen * 2))) {
+			tmp_ptr = realloc (dst, stream.total_out + srcLen * 2);
+			if (!tmp_ptr) {
 				goto err_exit;
 			}
+			dst = tmp_ptr;
 			out_size += srcLen*2;
 			if (out_size > MAXOUT) {
 				goto err_exit;

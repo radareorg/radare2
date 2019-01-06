@@ -5092,7 +5092,7 @@ static int cmd_print(void *data, const char *input) {
 						r_cons_printf ("%s0x%02x", j? ", ": "", buf[i]);
 						i++;
 					}
-					r_cons_printf ("  // %s\n", asmop.buf_asm);
+					r_cons_printf ("  // %s\n", r_strbuf_get (&asmop.buf_asm));
 					i--;
 				}
 				r_cons_printf (".equ shellcode_len, %d\n", len);
