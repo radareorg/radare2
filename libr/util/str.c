@@ -976,7 +976,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
-R_API char *r_str_replace_icase (char *str, const char *key, const char *val, int g, int keep_case) {
+R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
 	r_return_val_if_fail (str && key && val, NULL);
 
 	int off, i, klen, vlen, slen;
