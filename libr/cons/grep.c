@@ -591,10 +591,16 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 						char *str = r_str_ndup (tline, ret);
 						char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->str);
 						if (str && newstr) {
-							str = r_str_replace (str, grep->str, newstr, 1);
-							ret = strlen (str);
-							memcpy (out, str, ret);
-							memcpy (out + ret, "\n", 2);
+							if (grep->icase) {
+								str = r_str_replace_icase (str, grep->str, newstr, 1, 1);
+							} else {
+								str = r_str_replace (str, grep->str, newstr, 1);
+							}
+							if (str) {
+								ret = strlen (str);
+								memcpy (out, str, ret);
+								memcpy (out + ret, "\n", 2);
+							}
 						}
 						free (str);
 						free (newstr);

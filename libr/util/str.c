@@ -932,12 +932,10 @@ R_API char *r_str_appendch(char *x, char y) {
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
+	r_return_val_if_fail (str && key && val, NULL);
+
 	int off, i, klen, vlen, slen;
 	char *newstr, *scnd, *p = str;
-
-	if (!str || !key || !val) {
-		return NULL;
-	}
 	klen = strlen (key);
 	vlen = strlen (val);
 	if (klen == 1 && vlen < 2) {
@@ -958,10 +956,9 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		off = (int)(size_t)(p - str);
 		scnd = strdup (p + klen);
 		slen += vlen - klen;
-		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen + 1);
-		if (!newstr) {
-			eprintf ("realloc fail\n");
+		if (!newstr || !scnd) {
+			eprintf ("alloc fail\n");
 			R_FREE (str);
 			free (scnd);
 			break;
@@ -977,6 +974,67 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		}
 	}
 	return str;
+}
+
+R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
+	r_return_val_if_fail (str && key && val, NULL);
+
+	int off, i, klen, vlen, slen;
+	char *newstr, *scnd, *p = str, *tmp_val = NULL;
+	klen = strlen (key);
+	vlen = strlen (val);
+
+	slen = strlen (str);
+	for (i = 0; i < slen;) {
+		p = (char *)r_str_casestr (str + i, key);
+		if (!p) {
+			break;
+		}
+		off = (int)(size_t) (p - str);
+		scnd = strdup (p + klen);
+		slen += vlen - klen;
+		newstr = realloc (str, slen + klen + 1);
+		tmp_val = strdup (val);
+
+		if (!newstr || !tmp_val || !scnd) {
+			goto alloc_fail;
+		}
+
+		str = newstr;
+		p = str + off;
+
+		if (keep_case) {
+			char *str_case = r_str_ndup (p, klen);
+			if (!str_case) {
+				goto alloc_fail;
+			}
+			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
+			free (str_case);
+			if (!tmp_val) {
+				goto alloc_fail;
+			}
+		}
+
+		memcpy (p, tmp_val, vlen);
+		memcpy (p + vlen, scnd, strlen (scnd) + 1);
+		i = off + vlen;
+		free (tmp_val);
+		free (scnd);
+		if (!g) {
+			break;
+		}
+	}
+	return str;
+
+alloc_fail:
+	eprintf ("alloc fail\n");
+	free (str);
+	if (str != newstr) {
+		free (newstr);
+	}
+	free (scnd);
+	free (tmp_val);
+	return NULL;
 }
 
 /* replace the key in str with val.
