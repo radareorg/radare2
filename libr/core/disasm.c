@@ -5582,7 +5582,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		// f = r_anal_get_fcn_in (core->anal, at,
-		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list_dynamic;
 			int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
