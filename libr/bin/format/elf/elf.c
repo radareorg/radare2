@@ -1359,7 +1359,7 @@ out:
 static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	ut64 plt_sym_addr = -1;
 	ut64 got_addr, got_offset, plt_addr;
-	int k, len, nrel;
+	int len, nrel;
 
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
 		return -1;
@@ -1380,14 +1380,17 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	}
 
 	nrel = bin->rel_cache->count;
-	if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
-	    (got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got.plt")) == -1) {
+	RBinElfSection *got_section = get_section_by_name (bin, ".got");
+	if (!got_section) {
+		got_section = get_section_by_name (bin, ".got.plt");
+	}
+	if (!got_section) {
 		return -1;
 	}
-	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1 &&
-	    (got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1) {
-		return -1;
-	}
+
+	got_offset = got_section->offset;
+	got_addr = got_section->rva;
+
 	RBinElfSection *plt_section = get_section_by_name (bin, ".plt");
 
 	int of = REL_OFFSET - got_addr + got_offset;
@@ -1429,28 +1432,27 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	case EM_SPARC:
 	case EM_SPARCV9:
 	case EM_SPARC32PLUS:
-		plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
-		if (plt_addr == -1) {
+		if (!plt_section) {
 			return -1;
 		}
-		if (REL_TYPE == R_386_PC16) {
+		plt_addr = plt_section->rva;
+		if (REL_TYPE == R_SPARC_JMP_SLOT) {
 			plt_addr += rel->k * 12 + 20;
 			// thumb symbol
 			if (plt_addr & 1) {
 				plt_addr--;
 			}
 			return plt_addr;
-		} else {
-			bprintf ("Unknown sparc reloc type %d\n", REL_TYPE);
 		}
+		bprintf ("Unknown sparc reloc type %d\n", REL_TYPE);
 		/* SPARC */
 		break;
 	case EM_ARM:
 	case EM_AARCH64:
-		plt_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".plt");
-		if (plt_addr == -1) {
+		if (!plt_section) {
 			return UT32_MAX;
 		}
+		plt_addr = plt_section->rva;
 		switch (REL_TYPE) {
 		case R_ARM_JUMP_SLOT: {
 			plt_addr += rel->k * 12 + 20;
@@ -1461,7 +1463,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			return plt_addr;
 			break;
 		}
-		case 1026: // arm64 aarch64
+		case R_AARCH64_JUMP_SLOT:
 			plt_sym_addr = plt_addr + rel->k * 16 + 32;
 			goto done;
 		default:
@@ -1571,14 +1573,14 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 				const int sizeOfPltEntry = 16;
 				return plt_section->rva + sizeOfProcedureLinkageTable + (rel->k * sizeOfPltEntry);
 			} else {
-				eprintf ("Unsupported relocs type %d for arch %d\n",
-					REL_TYPE, bin->ehdr.e_machine);
+				eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
+					(ut64) REL_TYPE, bin->ehdr.e_machine);
 			}
 		}
 		break;
 	default:
-		eprintf ("Unsupported relocs type %d for arch %d\n",
-			REL_TYPE, bin->ehdr.e_machine);
+		eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
+			(ut64) REL_TYPE, bin->ehdr.e_machine);
 		break;
 	}
 done:
