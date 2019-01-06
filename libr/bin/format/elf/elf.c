@@ -1264,26 +1264,15 @@ static RBinElfSection *get_rel_sec(ELFOBJ *bin, const char **sects) {
 
 static void read_rel(ELFOBJ *bin, Elf_(Rel) *rel, ut8 *rl) {
 	int l = 0;
-#if R_BIN_ELF64
-	rel->r_offset = READ64 (rl, l);
-	rel->r_info = READ64 (rl, l);
-#else
-	rel->r_offset = READ32 (rl, l);
-	rel->r_info = READ32 (rl, l);
-#endif
+	rel->r_offset = READWORD (rl, l);
+	rel->r_info = READWORD (rl, l);
 }
 
 static void read_rela(ELFOBJ *bin, Elf_(Rela) *rela, ut8 *rl) {
 	int l = 0;
-#if R_BIN_ELF64
-	rela->r_offset = READ64 (rl, l);
-	rela->r_info = READ64 (rl, l);
-	rela->r_addend = READ64 (rl, l);
-#else
-	rela->r_offset = READ32 (rl, l);
-	rela->r_info = READ32 (rl, l);
-	rela->r_addend = READ32 (rl, l);
-#endif
+	rela->r_offset = READWORD (rl, l);
+	rela->r_info = READWORD (rl, l);
+	rela->r_addend = READWORD (rl, l);
 }
 
 static void read_ht_rel(ELFOBJ *bin, struct ht_rel_t *rel, ut8 *rl) {
