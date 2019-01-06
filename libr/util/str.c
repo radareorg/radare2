@@ -997,12 +997,7 @@ R_API char *r_str_replace_icase (char *str, const char *key, const char *val, in
 		tmp_val = strdup (val);
 
 		if (!newstr || !tmp_val || !scnd) {
-			eprintf ("alloc fail\n");
-			R_FREE (str);
-			free (newstr);
-			free (tmp_val);
-			free (scnd);
-			break;
+			goto alloc_fail;
 		}
 
 		str = newstr;
@@ -1011,14 +1006,13 @@ R_API char *r_str_replace_icase (char *str, const char *key, const char *val, in
 		if (keep_case) {
 			char *str_case = r_str_ndup (p, klen);
 			if (!str_case) {
-				eprintf ("alloc fail\n");
-				R_FREE (str);
-				free (tmp_val);
-				free (scnd);
-				break;
+				goto alloc_fail;
 			}
 			tmp_val = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
+			if (!tmp_val) {
+				goto alloc_fail;
+			}
 		}
 
 		memcpy (p, tmp_val, vlen);
@@ -1031,6 +1025,16 @@ R_API char *r_str_replace_icase (char *str, const char *key, const char *val, in
 		}
 	}
 	return str;
+
+alloc_fail:
+	eprintf ("alloc fail\n");
+	free (str);
+	if (str != newstr) {
+		free (newstr);
+	}
+	free (scnd);
+	free (tmp_val);
+	return NULL;
 }
 
 /* replace the key in str with val.
