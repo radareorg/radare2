@@ -5817,8 +5817,18 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, true);
 					if (fi) {
-						if (fcn && strcmp (fcn->name, fi->name)) {
-							r_cons_printf (",\"flag\":\"%s\"", fi->name);
+						if (fcn) {
+							if (strcmp (fcn->name, fi->name)) {
+								r_cons_printf (",\"flag\":\"%s\"", fi->name);
+							}
+						} else {
+							r_cons_printf (",\"name\":\"");
+							if (fi->offset != ref->addr) {
+								r_cons_printf ("%s+%d\"", fi->name,
+							                       (int)(ref->addr - fi->offset));
+							} else {
+								r_cons_printf ("%s\"", name);
+							}
 						}
 						if (fi->realname && strcmp (fi->name, fi->realname)) {
 							char *escaped = r_str_escape (fi->realname);
@@ -5827,6 +5837,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								free (escaped);
 							}
 						}
+					}
+					char *refname = core->anal->coreb.getNameDelta (core, ref->at);
+					if (refname) {
+						r_str_replace_ch (refname, ' ', 0, true);
+						r_cons_printf (",\"refname\":\"%s\"", refname);
+						free (refname);
 					}
 					r_cons_printf ("}%s", iter->n? ",": "");
 					free (str);
