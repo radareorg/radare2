@@ -621,7 +621,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 				"X-Requested-With, Content-Type, Accept\n");
 		}
 		bool found = false;
-		char *auth = ht_pp_find(rs->headers, "Authorization", &found);
+		char *auth = ht_pp_find (rs->headers, "Authorization", &found);
 		if (basic_auth && *basic_auth && (!auth || strcmp(auth, basic_auth))) {
 			r_socket_http_response (rs, 401, "Unauthorized", 0, "WWW-Authenticate: basic\n");
 		} else if (!strcmp (rs->method, "OPTIONS")) {

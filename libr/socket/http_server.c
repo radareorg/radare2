@@ -69,11 +69,11 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 			// First parse out the header.
 			const char *delim = ": ";
 			const char *split;
-			if (split = strstr(buf, delim)) {
+			if (split = strstr (buf, delim)) {
 				size_t len = (intptr_t)split - (intptr_t)&buf[0];
 				char *header_key = strndup (buf, len);
 				char *header_val = strdup (split + strlen (delim));
-				ht_pp_insert(hr->headers, header_key, header_val);
+				ht_pp_insert (hr->headers, header_key, header_val);
 			}
 			if (!hr->referer && !strncmp (buf, "Referer: ", 9)) {
 				hr->referer = strdup (buf + 9);
