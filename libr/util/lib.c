@@ -365,7 +365,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __MINGW32__
 	swprintf (directory, L"%ls\\*.*", wcpath);
 #else
-	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);
+	swprintf (directory, _countof (directory), L"%ls\\*.*", wcpath);
 #endif
 	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
@@ -377,7 +377,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __MINGW32__
 		swprintf (file, L"%ls/%ls", wcpath, dir.cFileName);
 #else
-		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
+		swprintf (file, _countof (file), L"%ls/%ls", wcpath, dir.cFileName);
 #endif
 		wctocbuff = r_utf16_to_utf8 (file);
 		if (wctocbuff) {

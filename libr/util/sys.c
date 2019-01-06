@@ -406,7 +406,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD dwRet;
-	LPTSTR envbuf = NULL, key_ = NULL;
+	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
 	char *val = NULL;
 
 	if (!key) {
@@ -423,10 +423,11 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	} else if (TMP_BUFSIZE < dwRet) {
-		envbuf = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
-		if (!envbuf) {
+		tmp_ptr = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
+		if (!tmp_ptr) {
 			goto err_r_sys_get_env;
 		}
+		envbuf = tmp_ptr;
 		dwRet = GetEnvironmentVariable (key_, envbuf, dwRet);
 		if (!dwRet) {
 			goto err_r_sys_get_env;

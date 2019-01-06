@@ -569,7 +569,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 		if ((wcpath = r_utf8_to_utf16 (fn))) {
-			swprintf (dir, sizeof (dir), L"%ls\\*.*", wcpath);
+			swprintf (dir, _countof (dir), L"%ls\\*.*", wcpath);
 			hdir = FindFirstFileW (dir, &entry);
 			if (!(hdir == INVALID_HANDLE_VALUE)) {
 				do {
