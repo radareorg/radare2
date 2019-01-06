@@ -1275,12 +1275,20 @@ static void read_rela(ELFOBJ *bin, Elf_(Rela) *rela, ut8 *rl) {
 	rela->r_addend = READWORD (rl, l);
 }
 
-static void read_ht_rel(ELFOBJ *bin, struct ht_rel_t *rel, ut8 *rl) {
+static struct ht_rel_t *read_ht_rel(ELFOBJ *bin, ut8 *rl, int k) {
+	struct ht_rel_t *rel = R_NEW0 (struct ht_rel_t);
+	if (!rel) {
+		return NULL;
+	}
+
+	rel->is_rela = bin->is_rela == DT_RELA;
+	rel->k = k;
 	if (rel->is_rela) {
 		read_rela (bin, &rel->r.rela, rl);
 	} else {
 		read_rel (bin, &rel->r.rel, rl);
 	}
+	return rel;
 }
 
 static void rel_cache_free(HtUPKv *kv) {
@@ -1329,14 +1337,11 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 			goto out;
 		}
 
-		struct ht_rel_t *rel = R_NEW0 (struct ht_rel_t);
+		struct ht_rel_t *rel = read_ht_rel (bin, rl, k);
 		if (!rel) {
 			goto out;
 		}
 
-		rel->is_rela = bin->is_rela == DT_RELA;
-		rel->k = k;
-		read_ht_rel (bin, rel, rl);
 		ht_up_insert (rel_cache, REL_SYM, rel);
 	}
 	return rel_cache;
