@@ -2273,7 +2273,7 @@ static void variable_rename (RCore *core, ut64 addr, int vindex, const char *nam
 	r_list_foreach (list, iter, var) {
 		if (i == vindex) {
 			r_core_seek (core, addr, false);
-			r_core_cmd_strf (core, "afvn %s %s", var->name, name);
+			r_core_cmd_strf (core, "afvn %s %s", name, var->name);
 			r_core_seek (core, a_tmp, false);
 			break;
 		}
@@ -2358,10 +2358,10 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 			if (show) {
 				r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
 						i == *vindex ? "* ":"  ",
-						var->kind=='v'?"var":"arg",
+						var->kind == 'v'?"var":"arg",
 						var->type, var->name,
 						core->anal->reg->name[R_REG_NAME_BP],
-						(var->kind=='v')?"-":"+",
+						(var->kind == 'v')?"-":"+",
 						var->delta);
 			}
 		}

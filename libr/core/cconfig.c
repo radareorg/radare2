@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 
@@ -3096,6 +3096,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
 	SETICB ("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
+	SETPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
 	SETICB ("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
 	SETCB ("scr.fps", "false", &cb_fps, "Show FPS in Visual");

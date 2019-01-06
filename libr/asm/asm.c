@@ -994,8 +994,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				acode->buf = (ut8*)newbuf;
 
+				const int buf_inc_size = op.buf_inc ? r_buf_size (op.buf_inc): 0;
 				int newlen = strlen (acode->buf_hex) + r_strbuf_length (&op.buf_hex)
-					+ r_buf_size (op.buf_inc) + 128;
+					+ buf_inc_size + 128;
 				newbuf = realloc (acode->buf_hex, newlen);
 				if (!newbuf) {
 					free (lbuf);
@@ -1006,7 +1007,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				memcpy (acode->buf + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf)); // ret);
 				// XXX slow. use strbuf pls
 				strcat (acode->buf_hex, r_strbuf_get (&op.buf_hex));
-				if (r_buf_size (op.buf_inc) > 1) {
+				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
 					if (*acode->buf_hex) {
 						strcat (acode->buf_hex, "\n");
 					}
