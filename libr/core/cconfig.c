@@ -3002,6 +3002,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.bind", "localhost", "Server address");
+	SETPREF ("http.basicauth", "", "Basic authentication for http");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");

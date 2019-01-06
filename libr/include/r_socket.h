@@ -7,6 +7,7 @@
 #endif
 
 #include "r_types.h"
+#include <r_util.h>
 #include "r_bind.h"
 
 #ifdef __cplusplus
@@ -136,6 +137,7 @@ typedef struct r_socket_http_request {
 	char *referer;
 	ut8 *data;
 	int data_length;
+	HtPP *headers;
 } RSocketHTTPRequest;
 
 R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, int accept_timeout, int timeout);

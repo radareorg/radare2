@@ -425,6 +425,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
+	const char *basic_auth = r_config_get (core->config, "http.basicauth");
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
@@ -619,7 +620,11 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 				"Access-Control-Allow-Headers: Origin, "
 				"X-Requested-With, Content-Type, Accept\n");
 		}
-		if (!strcmp (rs->method, "OPTIONS")) {
+		bool found = false;
+		char *auth = ht_pp_find(rs->headers, "Authorization", &found);
+		if (basic_auth && *basic_auth && (!auth || strcmp(auth, basic_auth))) {
+			r_socket_http_response (rs, 401, "Unauthorized", 0, "WWW-Authenticate: basic\n");
+		} else if (!strcmp (rs->method, "OPTIONS")) {
 			r_socket_http_response (rs, 200, "", 0, headers);
 		} else if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/up/", 4)) {

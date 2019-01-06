@@ -28,6 +28,11 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 	if (timeout > 0) {
 		r_socket_block_time (hr->s, 1, timeout);
 	}
+	hr->headers = ht_pp_new0 ();
+	if (!hr->headers) {
+		free (hr);
+		return NULL;
+	}
 	for (;;) {
 #if __WINDOWS__
 		if (breaked)
@@ -61,6 +66,15 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 				hr->path = strdup (p+1);
 			}
 		} else {
+			// First parse out the header.
+			const char *delim = ": ";
+			const char *split;
+			if (split = strstr(buf, delim)) {
+				size_t len = (intptr_t)split - (intptr_t)&buf[0];
+				char *header_key = strndup (buf, len);
+				char *header_val = strdup (split + strlen (delim));
+				ht_pp_insert(hr->headers, header_key, header_val);
+			}
 			if (!hr->referer && !strncmp (buf, "Referer: ", 9)) {
 				hr->referer = strdup (buf + 9);
 			} else
@@ -90,6 +104,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 		code==200?"ok":
 		code==301?"moved permanently":
 		code==302?"Found":
+		code==401?"Unauthorized":
 		code==404?"not found":
 		"UNKNOWN";
 	if (len < 1) {
@@ -160,6 +175,7 @@ R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
 	free (rs->agent);
 	free (rs->method);
 	free (rs->data);
+	ht_pp_free (rs->headers);
 	free (rs);
 }
 
