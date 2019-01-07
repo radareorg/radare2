@@ -1762,6 +1762,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	if (*input == '&') { // "=h&"
+		r_core_cmd0 (core, "& =h");
+#if 0
 		if (rapthread) {
 			eprintf ("RAP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
@@ -1776,6 +1778,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				eprintf ("Background rap server started.\n");
 			}
 		}
+#endif
 		return;
 	}
 
