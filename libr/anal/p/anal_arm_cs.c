@@ -675,7 +675,8 @@ static const char *decode_shift_64(arm64_shifter shift) {
 static int regsize64(cs_insn *insn, int n) {
 	unsigned int reg = insn->detail->arm64.operands[n].reg;
 	if ( (reg >= ARM64_REG_S0 && reg <= ARM64_REG_S31) ||
-		(reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30)) {
+		(reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) ||
+		reg == ARM64_REG_WZR) {
 		return 4;
 	}
 	if (reg >= ARM64_REG_B0 && reg <= ARM64_REG_B31) {
