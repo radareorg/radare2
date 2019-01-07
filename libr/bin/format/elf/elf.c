@@ -1350,6 +1350,30 @@ out:
 	return NULL;
 }
 
+static ut64 get_dyn_entry(ELFOBJ *bin, int dyn_entry) {
+	int i;
+	for (i = 0; i < bin->dyn_entries; i++) {
+		if (bin->dyn_buf[i].d_tag == dyn_entry) {
+			switch (bin->dyn_buf[i].d_tag) {
+			case DT_REL:
+			case DT_RELA:
+			case DT_PLTGOT:
+			case DT_JMPREL:
+				return bin->dyn_buf[i].d_un.d_ptr;
+			case DT_RELSZ:
+			case DT_RELASZ:
+			case DT_PLTRELSZ:
+				return bin->dyn_buf[i].d_un.d_val;
+			default:
+				r_warn_if_reached ();
+				break;
+			}
+		}
+	}
+
+	return -1;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section, int nrel) {
 	ut8 buf[4] = { 0 };
 	int len = r_buf_read_at (bin->b, plt_section->offset, buf, sizeof (buf));
@@ -1422,21 +1446,20 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 
 static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
 	ut64 got_addr, got_offset, plt_addr, plt_sym_addr = -1;
-	RBinElfSection *got_section, *pltsec_section;
+	RBinElfSection *pltsec_section;
 	int of, len;
 	ut8 buf[sizeof (Elf_(Addr))];
 
 	pltsec_section = get_section_by_name (bin, ".plt.sec");
-	got_section = get_section_by_name (bin, ".got");
-	if (!got_section) {
-		got_section = get_section_by_name (bin, ".got.plt");
-	}
-	if (!got_section) {
+	got_addr = get_dyn_entry (bin, DT_PLTGOT);
+	if (got_addr == -1) {
 		return -1;
 	}
 
-	got_offset = got_section->offset;
-	got_addr = got_section->rva;
+	got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
+	if (got_offset == UT64_MAX) {
+		return -1;
+	}
 
 	of = REL_OFFSET - got_addr + got_offset;
 
@@ -1503,32 +1526,34 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 			return plt_sym_addr;
 		} else {
 			ut64 plt_sym_offset = Elf_(r_bin_elf_v2p_new) (bin, plt_sym_addr);
-			len = r_buf_read_at (bin->b, plt_sym_offset - 6, buf, sizeof (buf));
-			if (len > 0 && buf[0] != 0xff) {
-				// the .plt section has been probably split in
-				// .plt and .plt.sec to support Intel MPX. See
-				// https://github.com/hjl-tools/x86-psABI
-				//
-				// This is the new layout of the .plt
-				//
-				//     endbr64
-				//     push 0
-				//     bnd jmp 0x4020
-				//
-				// The .plt.sec section has something like:
-				//
-				//     endbr64
-				//     bnd jmp qword reloc.__ctype_toupper_loc
-				//
-				if (pltsec_section) {
-					// if possible, returns the address in
-					// .plt.sec, which is the address called
-					// by call instructions
-					return pltsec_section->rva + rel->k * 16;
+			if (plt_sym_offset != UT64_MAX) {
+				len = r_buf_read_at (bin->b, plt_sym_offset - 6, buf, sizeof (buf));
+				if (len > 0 && buf[0] != 0xff) {
+					// the .plt section has been probably split in
+					// .plt and .plt.sec to support Intel MPX. See
+					// https://github.com/hjl-tools/x86-psABI
+					//
+					// This is the new layout of the .plt
+					//
+					//     endbr64
+					//     push 0
+					//     bnd jmp 0x4020
+					//
+					// The .plt.sec section has something like:
+					//
+					//     endbr64
+					//     bnd jmp qword reloc.__ctype_toupper_loc
+					//
+					if (pltsec_section) {
+						// if possible, returns the address in
+						// .plt.sec, which is the address called
+						// by call instructions
+						return pltsec_section->rva + rel->k * 16;
+					}
+					// plt_sym_addr in this case points to the start
+					// of .plt entry
+					return plt_sym_addr;
 				}
-				// plt_sym_addr in this case points to the start
-				// of .plt entry
-				return plt_sym_addr;
 			}
 			// this is a regular .plt section
 			//
