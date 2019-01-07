@@ -621,7 +621,14 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 				"X-Requested-With, Content-Type, Accept\n");
 		}
 		bool found = false;
+		// basic auth headers look like this
+		// Authorization: Basic [blob]
+		// the [blob] is base64(username:password)
+		// store base64(username:password) in http.basicauth
 		char *auth = ht_pp_find (rs->headers, "Authorization", &found);
+		if (r_str_startswith(auth, "Basic ")) {
+			auth = auth + strlen ("Basic ");
+		}
 		if (basic_auth && *basic_auth && (!auth || strcmp(auth, basic_auth))) {
 			r_socket_http_response (rs, 401, "Unauthorized", 0, "WWW-Authenticate: basic\n");
 		} else if (!strcmp (rs->method, "OPTIONS")) {
