@@ -2742,10 +2742,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (core->io->va) {
 				RIOMap *map = r_io_map_get (core->io, core->offset);
 				if (!map) {
-					map = ls_pop (core->io->maps);
-					if (map) {
-						ls_append (core->io->maps, map);
-					}
+					SdbListIter *i = ls_tail (core->io->maps);
+					map = ls_iter_get (i);
 				}
 				if (map) {
 					r_core_seek (core, r_itv_begin (map->itv), 1);
@@ -2760,10 +2758,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			{
 				RIOMap *map = r_io_map_get (core->io, core->offset);
 				if (!map) {
-					map = ls_pop_head (core->io->maps);
-					if (map) {
-						ls_prepend (core->io->maps, map);
-					}
+					SdbListIter *i = ls_head (core->io->maps);
+					map = ls_iter_get (i);
 				}
 				if (map) {
 					RPrint *p = core->print;
