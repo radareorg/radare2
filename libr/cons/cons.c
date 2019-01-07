@@ -595,7 +595,7 @@ R_API int r_cons_get_buffer_len() {
 R_API void r_cons_filter() {
 	/* grep */
 	if (I.filter || I.context->grep.nstrings > 0 || I.context->grep.tokens_used || I.context->grep.less || I.context->grep.json) {
-		r_cons_grepbuf (I.context->buffer, I.context->buffer_len);
+		(void)r_cons_grepbuf ();
 		I.filter = false;
 	}
 	/* html */
