@@ -35,19 +35,26 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
-		if (!ptr || l + 1 > sb->ptrlen) {
-			ptr = malloc (l + 1);
+		int newlen = R_ALIGN_NEXT (l + 1, 128UL);
+		bool allocated = true;
+		if (!sb->ptr) {
+			ptr = malloc (newlen);
+		} else if ((l + 1) > sb->ptrlen) {
+			ptr = realloc (sb->ptr, newlen);
+		} else {
+			allocated = false;
+		}
+		if (allocated) {
 			if (!ptr) {
 				return false;
 			}
-			R_FREE (sb->ptr);
-			sb->ptrlen = l + 1;
+			sb->ptrlen = newlen;
 			sb->ptr = ptr;
 		}
 		memcpy (ptr, s, l);
 		*(ptr + l) = 0;
 	} else {
-		sb->ptr = NULL;
+		R_FREE (sb->ptr);
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}
@@ -93,11 +100,11 @@ R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 			ret = false;
 			goto done;
 		}
-		vsnprintf (p, rc + 1, fmt, ap2);
-		ret = r_strbuf_set (sb, p);
+		rc = vsnprintf (p, rc + 1, fmt, ap2);
+		ret = r_strbuf_setbin (sb, p, rc);
 		free (p);
 	} else if (rc >= 0) {
-		ret = r_strbuf_set (sb, string);
+		ret = r_strbuf_setbin (sb, string, rc);
 	} else {
 		ret = false;
 	}
@@ -127,7 +134,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 		sb->buf[sb->len + l] = 0;
 		R_FREE (sb->ptr);
 	} else {
-		int newlen = sb->len + l + 128;
+		int newlen = R_ALIGN_NEXT (sb->len + l + 128, 128UL);
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
@@ -135,7 +142,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 			if (p && sb->len > 0) {
 				memcpy (p, sb->buf, sb->len);
 			}
-		} else if (sb->len + l + 1 > sb->ptrlen) {
+		} else if ((sb->len + l + 1) > sb->ptrlen) {
 			p = realloc (sb->ptr, newlen);
 		} else {
 			allocated = false;
@@ -147,10 +154,8 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 			sb->ptr = p;
 			sb->ptrlen = newlen;
 		}
-		if (p) {
-			memcpy (p + sb->len, s, l);
-			*(p + sb->len + l) = 0;
-		}
+		memcpy (p + sb->len, s, l);
+		*(p + sb->len + l) = 0;
 	}
 	sb->len += l;
 	return true;
@@ -183,11 +188,11 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 			return false;
 		}
 		*p = 0;
-		vsnprintf (p, ret + 1, fmt, ap2);
-		ret = r_strbuf_append (sb, p);
+		ret = vsnprintf (p, ret + 1, fmt, ap2);
+		ret = r_strbuf_append_n (sb, p, ret);
 		free (p);
 	} else if (ret >= 0) {
-		ret = r_strbuf_append (sb, string);
+		ret = r_strbuf_append_n (sb, string, ret);
 	} else {
 		ret = false;
 	}

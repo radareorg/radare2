@@ -318,6 +318,8 @@ static inline void *r_new_copy(int size, void *data) {
 	((char *)(((size_t)(v) + (t - 1)) \
 	& ~(t - 1)))
 
+#define R_ALIGN_NEXT(v, t) (((v) + ((t) - 1)) & ~((t) - 1))
+
 #define R_BIT_SET(x,y) (((ut8*)x)[y>>4] |= (1<<(y&0xf)))
 #define R_BIT_UNSET(x,y) (((ut8*)x)[y>>4] &= ~(1<<(y&0xf)))
 #define R_BIT_TOGGLE(x, y) ( R_BIT_CHK (x, y) ? \
