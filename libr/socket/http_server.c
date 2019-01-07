@@ -69,7 +69,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 			// First parse out the header.
 			const char *delim = ": ";
 			const char *split;
-			if (split = strstr (buf, delim)) {
+			if ((split = strstr (buf, delim))) {
 				size_t len = (intptr_t)split - (intptr_t)&buf[0];
 				char *header_key = r_str_ndup (buf, len);
 				char *header_val = strdup (split + strlen (delim));
