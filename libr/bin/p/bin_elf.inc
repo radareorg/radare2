@@ -54,7 +54,7 @@ static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 		return;
 	}
 	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = r_bin_symbol_clone (ptr);
+	eobj->symbols_by_ord[ord] = ptr;
 }
 
 static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
@@ -531,8 +531,6 @@ static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 			  RBinSymbol *ptr,
 			  bool is_sht_null,
 			  RList *ret) {
-	// put the symbol in symbols_ord table
-	setsymord (bin, ptr->ordinal, ptr);
 	// add it to the list of symbols only if it doesn't point to SHT_NULL
 	if (is_sht_null) {
 		r_bin_symbol_free (ptr);
@@ -745,6 +743,8 @@ static RList* relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	RBinElfReloc *relocs = NULL;
+	RBinSymbol *sym_ptr = NULL;
+	RBinElfSymbol *symbols = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	ut64 got_addr;
 	int i;
@@ -771,6 +771,14 @@ static RList* relocs(RBinFile *bf) {
 		}
 	}
 	if (bf->o) {
+		if ((symbols = Elf_(r_bin_elf_get_dynamic_symbols) (bin))) {
+			for (i = 0; !symbols[i].last; i++) {
+				if (!(sym_ptr = convert_symbol (bin, &symbols[i], "%s"))) {
+					continue;
+				}
+				setsymord(bin, sym_ptr->ordinal, sym_ptr);
+			}
+		}
 		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
 			return ret;
 		}

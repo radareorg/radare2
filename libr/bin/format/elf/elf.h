@@ -12,8 +12,11 @@
 #define R_BIN_ELF_SCN_IS_READABLE(x)   x & SHF_ALLOC
 #define R_BIN_ELF_SCN_IS_WRITABLE(x)   x & SHF_WRITE
 
-#define R_BIN_ELF_SYMBOLS 0x0
-#define R_BIN_ELF_IMPORTS 0x1
+#define R_BIN_ELF_SYMTAB_SYMBOLS 1 << 0
+#define R_BIN_ELF_DYNSYM_SYMBOLS 1 << 1
+#define R_BIN_ELF_IMPORT_SYMBOLS (1 << 2 | (bin->ehdr.e_type == ET_REL ? R_BIN_ELF_SYMTAB_SYMBOLS : R_BIN_ELF_DYNSYM_SYMBOLS))
+#define R_BIN_ELF_DYNAMIC_SYMBOLS (1 << 3 | (bin->ehdr.e_type == ET_REL ? R_BIN_ELF_SYMTAB_SYMBOLS : R_BIN_ELF_DYNSYM_SYMBOLS))
+#define R_BIN_ELF_ALL_SYMBOLS (R_BIN_ELF_SYMTAB_SYMBOLS | R_BIN_ELF_DYNSYM_SYMBOLS)
 #define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 
 typedef struct r_bin_elf_section_t {
@@ -113,6 +116,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	/*cache purpose*/
 	RBinElfSection *g_sections;
 	RBinElfSymbol *g_symbols;
+	RBinElfSymbol *g_dyn_symbols;
 	RBinElfSymbol *g_imports;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
@@ -148,6 +152,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSymbol* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin);
+RBinElfSymbol* Elf_(r_bin_elf_get_dynamic_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
