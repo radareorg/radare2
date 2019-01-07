@@ -1422,10 +1422,11 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 
 static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
 	ut64 got_addr, got_offset, plt_addr, plt_sym_addr = -1;
-	RBinElfSection *got_section;
+	RBinElfSection *got_section, *pltsec_section;
 	int of, len;
-	ut8 buf[8];
+	ut8 buf[sizeof (Elf_(Addr))];
 
+	pltsec_section = get_section_by_name (bin, ".plt.sec");
 	got_section = get_section_by_name (bin, ".got");
 	if (!got_section) {
 		got_section = get_section_by_name (bin, ".got.plt");
@@ -1501,6 +1502,44 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 			}
 			return plt_sym_addr;
 		} else {
+			ut64 plt_sym_offset = Elf_(r_bin_elf_v2p_new) (bin, plt_sym_addr);
+			len = r_buf_read_at (bin->b, plt_sym_offset - 6, buf, sizeof (buf));
+			if (len < -1) {
+				return -1;
+			}
+
+			if (buf[0] != 0xff) {
+				// the .plt section has been probably split in
+				// .plt and .plt.sec to support Intel MPX. See
+				// https://github.com/hjl-tools/x86-psABI
+				//
+				// This is the new layout of the .plt
+				//
+				//     endbr64
+				//     push 0
+				//     bnd jmp 0x4020
+				//
+				// The .plt.sec section has something like:
+				//
+				//     endbr64
+				//     bnd jmp qword reloc.__ctype_toupper_loc
+				//
+				if (pltsec_section) {
+					// if possible, returns the address in
+					// .plt.sec, which is the address called
+					// by call instructions
+					return pltsec_section->rva + rel->k * 16;
+				}
+				// plt_sym_addr in this case points to the start
+				// of .plt entry
+				return plt_sym_addr;
+			}
+			// this is a regular .plt section
+			//
+			//     jmp qword reloc.__ctype_toupper_loc
+			//     push 0
+			//     jmp 0x4020
+			//
 			return plt_sym_addr - 6;
 		}
 	default:
