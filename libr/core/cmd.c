@@ -1441,6 +1441,9 @@ static int cmd_thread(void *data, const char *input) {
 			return 0;
 		}
 		RCoreTask *task = r_core_task_new (core, true, input + 1, NULL, core);
+		if (!task) {
+			break;
+		}
 		task->transient = input[0] == 't';
 		r_core_task_enqueue (core, task);
 		break;
