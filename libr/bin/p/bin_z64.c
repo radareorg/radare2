@@ -150,7 +150,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("mips");
 	ret->machine = strdup ("Nintendo 64");
 	ret->type = strdup ("ROM");
-	ret->bits = 32;
+	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = true;
 	return ret;
