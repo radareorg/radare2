@@ -1504,11 +1504,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 		} else {
 			ut64 plt_sym_offset = Elf_(r_bin_elf_v2p_new) (bin, plt_sym_addr);
 			len = r_buf_read_at (bin->b, plt_sym_offset - 6, buf, sizeof (buf));
-			if (len < -1) {
-				return -1;
-			}
-
-			if (buf[0] != 0xff) {
+			if (len > 0 && buf[0] != 0xff) {
 				// the .plt section has been probably split in
 				// .plt and .plt.sec to support Intel MPX. See
 				// https://github.com/hjl-tools/x86-psABI
