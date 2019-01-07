@@ -1522,10 +1522,10 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
  * {"command", "args", "description",
  * "command2", "args2", "description"}; */
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
-	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color ? cons->pal.args : "",
-			*pal_help_color = use_color ? cons->pal.help : "",
-			*pal_reset = use_color ? cons->pal.reset : "";
+	RConsContext *ctx = r_cons_singleton ()->context;
+	const char *pal_args_color = use_color ? ctx->pal.args : "",
+			*pal_help_color = use_color ? ctx->pal.help : "",
+			*pal_reset = use_color ? ctx->pal.reset : "";
 	int i, max_length = 0;
 	const char *usage_str = "Usage:";
 

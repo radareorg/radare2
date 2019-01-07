@@ -1945,7 +1945,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	}
 	{
 		ut8 buf[128], widebuf[256];
-		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->pal.ai_ascii: "";
+		const char *c = r_config_get_i (core->config, "scr.color")? core->cons->context->pal.ai_ascii: "";
 		const char *cend = (c && *c) ? Color_RESET: "";
 		int len, r;
 		if (r_io_read_at (core->io, value, buf, sizeof (buf))) {
@@ -2016,19 +2016,19 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 	}
 	type = r_core_anal_address (core, addr);
 	if (type & R_ANAL_ADDR_TYPE_EXEC) {
-		return core->cons->pal.ai_exec; //Color_RED;
+		return core->cons->context->pal.ai_exec; //Color_RED;
 	}
 	if (type & R_ANAL_ADDR_TYPE_WRITE) {
-		return core->cons->pal.ai_write; //Color_BLUE;
+		return core->cons->context->pal.ai_write; //Color_BLUE;
 	}
 	if (type & R_ANAL_ADDR_TYPE_READ) {
-		return core->cons->pal.ai_read; //Color_GREEN;
+		return core->cons->context->pal.ai_read; //Color_GREEN;
 	}
 	if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
-		return core->cons->pal.ai_seq; //Color_MAGENTA;
+		return core->cons->context->pal.ai_seq; //Color_MAGENTA;
 	}
 	if (type & R_ANAL_ADDR_TYPE_ASCII) {
-		return core->cons->pal.ai_ascii; //Color_YELLOW;
+		return core->cons->context->pal.ai_ascii; //Color_YELLOW;
 	}
 	return NULL;
 }
@@ -2595,8 +2595,8 @@ static void set_prompt (RCore *r) {
 	}
 #if __UNIX__
 	if (r_config_get_i (r->config, "scr.color")) {
-		BEGIN = r->cons->pal.prompt;
-		END = r->cons->pal.reset;
+		BEGIN = r->cons->context->pal.prompt;
+		END = r->cons->context->pal.reset;
 	}
 #endif
 	// TODO: also in visual prompt and disasm/hexdump ?

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -11,14 +11,18 @@
 #define R_MIDFLAGS_REALIGN 2
 #define R_MIDFLAGS_SYMALIGN 3
 
+// XXX RCons is not thread safe, we must save all values inside RDisasmState
 #define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
 #define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
 #define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
+#define _ALIGN _ds_comment_align_ (ds, true, false)
+
 // ugly globals but meh
 static ut64 emustack_min = 0LL;
 static ut64 emustack_max = 0LL;
+static ut64 lastaddr = UT64_MAX;
 
 static const char* r_vline_a[] = {
 	"|",  // LINE_VERT
@@ -187,7 +191,7 @@ typedef struct {
 	bool midcursor;
 	bool show_noisy_comments;
 	ut64 asm_highlight;
-	const char *pal_comment;
+	char *pal_comment;
 	const char *color_comment;
 	const char *color_usrcmt;
 	const char *color_fname;
@@ -418,31 +422,7 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	r_cons_printf ("%s%s%s%s%s  %s %s", nl? "\n": "", sn,
 			COLOR (ds, color_flow),ds->refline, COLOR_RESET (ds),
 			up? "": ".-", COLOR (ds, color_comment));
-#if 0
-// r_cons_printf ("(%d)", ds->cmtcount);
-	if (ds->cmtcount == 1) {
-		ds_align_comment (ds);
-		r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
-			COLOR_RESET (ds), COLOR (ds, color_fline),
-			ds->pre, sn, ds->refline, COLOR_RESET (ds),
-			up? "": ".v", COLOR (ds, color_comment));
-	} else {
-		r_cons_printf ("%s%s", COLOR (ds, color_comment), " "); //nl? "\n": "");
-	}
-#if 0
-	if (!up || ds->cmtcount > 1) {
-		r_cons_printf ("%s%s", COLOR (ds, color_comment), nl? "\n": "");
-	} else {
-		ds_align_comment (ds);
-		r_cons_printf ("%s%s%s%s%s%s%s  %s %s", nl? "\n": "",
-			COLOR_RESET (ds), COLOR (ds, color_fline),
-			ds->pre, sn, ds->refline, COLOR_RESET (ds),
-			up? "": "`-", COLOR (ds, color_comment));
-	}
-#endif
-#endif
 }
-#define _ALIGN _ds_comment_align_ (ds, true, false)
 
 static void ds_comment_lineup(RDisasmState *ds) {
 	_ALIGN;
@@ -532,8 +512,8 @@ static RDisasmState * ds_init(RCore *core) {
 	}
 	ds->core = core;
 	ds->strip = r_config_get (core->config, "asm.strip");
-	ds->pal_comment = core->cons->pal.comment;
-	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+	ds->pal_comment = strdup (core->cons->context->pal.comment);
+	#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 	ds->color_comment = P(comment): Color_CYAN;
 	ds->color_usrcmt = P(usercomment): Color_CYAN;
 	ds->color_fname = P(fname): Color_RED;
@@ -783,8 +763,6 @@ static RDisasmState * ds_init(RCore *core) {
 	return ds;
 }
 
-static ut64 lastaddr = UT64_MAX;
-
 static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	r_list_free (anal->reflines);
@@ -852,6 +830,7 @@ static void ds_free(RDisasmState *ds) {
 	ds_print_esil_anal_fini (ds);
 	sdb_free (ds->ssa);
 	free (ds->comment);
+	free (ds->pal_comment);
 	free (ds->line);
 	free (ds->refline);
 	free (ds->refline2);
@@ -1514,7 +1493,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
-	const char *numColor = ds->core->cons->pal.num;
+	const char *numColor = ds->core->cons->context->pal.num;
 	RAnalVar *var;
 	RListIter *iter;
 	int bp_vars = 0;
@@ -2432,8 +2411,10 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		}
 		{
 			char * str = r_str_newf ("%s + %-4d", name, delta);
-			printCol (ds, str, ds->show_symbols_col, ds->color_num);
-			free (str);
+			if (str) {
+				printCol (ds, str, ds->show_symbols_col, ds->color_num);
+				free (str);
+			}
 		}
 	}
 	if (ds->line) {
@@ -5808,7 +5789,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ANAL_OP_MASK_ALL);
 					char *buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num, false, f ? f->addr : 0);
+							core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
 					if (buf_asm) {
 						r_cons_printf ("%s%s\n", r_print_color_op_type (core->print, aop.type), buf_asm);
 						free (buf_asm);
@@ -5883,8 +5864,8 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
-	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
-	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
+	char *color_reg = strdup (R_CONS_COLOR_DEF (reg, Color_YELLOW));
+	char *color_num = strdup (R_CONS_COLOR_DEF (num, Color_CYAN));
 	const int addrbytes = core->io->addrbytes;
 
 	if (fmt == 'e') {
@@ -5892,6 +5873,8 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 		decode = 1;
 	}
 	if (!nb_opcodes && !nb_bytes) {
+		free (color_reg);
+		free (color_num);
 		return 0;
 	}
 	if (!nb_opcodes) {
@@ -6114,5 +6097,7 @@ toro:
 	}
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, 1);
+		free (color_reg);
+		free (color_num);
 	return err;
 }

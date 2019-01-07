@@ -469,10 +469,10 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			R_FREE (grep->json_path);
 		} else {
 			const char *palette[] = {
-				cons->pal.graph_false, // f
-				cons->pal.graph_true, // t
-				cons->pal.num, // k
-				cons->pal.comment, // v
+				cons->context->pal.graph_false, // f
+				cons->context->pal.graph_true, // t
+				cons->context->pal.num, // k
+				cons->context->pal.comment, // v
 				Color_RESET,
 				NULL
 			};

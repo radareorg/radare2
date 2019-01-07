@@ -413,13 +413,15 @@ typedef struct r_cons_context_t {
 	bool lastMode;
 	bool lastEnabled;
 	bool pageable;
+	RConsPrintablePalette pal;
+	RConsPalette cpal;
 } RConsContext;
 
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
-	int is_html;
-	int is_interactive;
+	bool is_html;
+	bool is_interactive;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime
@@ -462,8 +464,6 @@ typedef struct r_cons_t {
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine;
-	RConsPalette cpal;
-	RConsPrintablePalette pal;
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;

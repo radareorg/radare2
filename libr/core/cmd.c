@@ -72,6 +72,8 @@
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
 
+#define ConsP(x) (core->cons && core->cons->context && core->cons->context->pal.x)? core->cons->context->pal.x
+
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"
