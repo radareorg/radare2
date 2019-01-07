@@ -185,10 +185,6 @@ static void task_free (RCoreTask *task) {
 }
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
-	if (cmd && *cmd == '=') {
-		eprintf ("=* commands disabled in tasks\n");
-		return NULL;
-	}
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	if (!task) {
 		goto hell;

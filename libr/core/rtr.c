@@ -551,7 +551,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		/* this is blocking */
 		activateDieTime (core);
 
+		void *bed = r_cons_sleep_begin ();
 		rs = r_socket_http_accept (s, 1, timeout);
+		r_cons_sleep_end (bed);
 
 		origoff = core->offset;
 		origblk = core->block;
@@ -568,7 +570,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
 
 		if (!rs) {
+			bed = r_cons_sleep_begin ();
 			r_sys_usleep (100);
+			r_cons_sleep_end (bed);
 			continue;
 		}
 		if (allow && *allow) {
@@ -682,7 +686,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					if (httpcmd && *httpcmd) {
 						int len; // do remote http query and proxy response
 						char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
+						bed = r_cons_sleep_begin ();
 						res = r_socket_http_get (bar, NULL, &len);
+						r_cons_sleep_end (bed);
 						if (res) {
 							res[len] = 0;
 							r_cons_println (res);
