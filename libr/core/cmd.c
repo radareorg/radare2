@@ -1801,7 +1801,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	}
 	si = r_config_get_i (core->config, "scr.interactive");
 	r_config_set_i (core->config, "scr.interactive", 0);
-	if (!r_config_get_i (core->config, "scr.pipecolor")) {
+	if (!r_config_get_i (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
@@ -2300,7 +2300,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
 					r_config_set_i (core->config, "scr.html", true);
-					//r_config_set_i (core->config, "scr.pipecolor", true);
 				} else if (!strcmp (ptr + 1, "T")) { // "|T"
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -2463,7 +2462,7 @@ next:
 			return true;
 		}
 		int fdn = 1;
-		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
+		int pipecolor = r_config_get_i (core->config, "scr.color.pipe");
 		int use_editor = false;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
