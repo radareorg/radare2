@@ -519,7 +519,7 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "hex", sdb_fmt ("0x%08"PFMT64x, n));
 					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
-					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x\n", s, a));
+					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
 					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
 					pj_ks (pj, "int64", sdb_fmt ("%"PFMT64d, (st64)n));
 				} else {
