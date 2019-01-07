@@ -499,8 +499,10 @@ R_API void r_cons_grepbuf() {
 		grep->less = 0;
 		if (less == 2) {
 			char *res = r_cons_hud_string (buf);
-			r_cons_println (res);
-			free (res);
+			if (res) {
+				r_cons_println (res);
+				free (res);
+			}
 		} else {
 			r_cons_less_str (buf, NULL);
 			cons->context->buffer_len = 0;
@@ -629,11 +631,12 @@ R_API void r_cons_grepbuf() {
 	}
 	
 	const int ob_len = r_strbuf_length (ob);
-	if (ob_len > cons->context->buffer_sz) {
-		cons->context->buffer_sz = ob_len;
+	if (ob_len >= cons->context->buffer_sz) {
+		cons->context->buffer_sz = ob_len + 1;
 		cons->context->buffer = r_strbuf_drain (ob);
 	} else {
 		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
+		cons->context->buffer[ob_len] = 0;
 		r_strbuf_free (ob);
 	}
 	cons->context->buffer_len = ob_len;
