@@ -655,14 +655,25 @@ R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
 	return (p < base) ? NULL : p;
 }
 
-R_API const char *r_str_nstr(const char *from, const char *to, int size) {
-	int i;
-	for (i = 0; i < size; i++) {
-		if (!from || !to || from[i] != to[i]) {
-			break;
-		}
+R_API const char * r_str_nstr(const char *s, const char *find, int slen) {
+	char c, sc;
+	size_t len;
+
+	if ((c = *find++) != '\0') {
+		len = strlen (find);
+		do {
+			do {
+				if (slen-- < 1 || !(sc = *s++)) {
+					return (NULL);
+				}
+			} while (sc != c);
+			if (len > slen) {
+				return (NULL);
+			}
+		} while (strncmp (s, find, len) != 0);
+		s--;
 	}
-	return from + i;
+	return ((char *)s);
 }
 
 // Returns a new heap-allocated copy of str.
@@ -823,16 +834,7 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 // TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
 	free (ptr);
-	if (!string) {
-		return NULL;
-	}
-	int len = strlen (string) + 1;
-	ptr = malloc (len + 1);
-	if (!ptr) {
-		return NULL;
-	}
-	memcpy (ptr, string, len);
-	return ptr;
+	return r_str_new (string);
 }
 
 R_API void r_str_writef(int fd, const char *fmt, ...) {
@@ -1560,29 +1562,37 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	return new_buf;
 }
 
+static int __str_ansi_length (char const *str) {
+	int i = 1;
+	if (str[0] == 0x1b) {
+		if (str[1] == '[') {
+			i++;
+			while (str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H' && str[i] != 'K') {
+				i++;
+			}
+		} else if (str[1] == '#') {
+			while (str[i] && str[i] != 'q') {
+				i++;
+			}
+		}
+		if (str[i]) {
+			i++;
+		}
+	}
+	return i;
+}
+
 /* ansi helpers */
 R_API int r_str_ansi_len(const char *str) {
-	int ch, i = 0, len = 0, sub = 0;
+	int i = 0, len = 0;
 	while (str[i]) {
-		ch = str[i];
-		if (ch == 0x1b && str[i + 1] == '[') {
-			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
-				;
-			}
-		} else {
-			len++;
-#if 0
-			int olen = strlen (str);
-			int ulen = r_str_len_utf8 (str);
-			if (olen != ulen) {
-				len += (olen-ulen);
-			} else len++;
-			//sub -= (r_str_len_utf8char (str+i, 4))-2;
-#endif
+		int chlen = __str_ansi_length (str + i);
+		if (chlen == 1) {
+			len ++;
 		}
-		i++;
+		i += chlen;
 	}
-	return len - sub;
+	return len;
 }
 
 R_API int r_str_nlen(const char *str, int n) {
@@ -1693,11 +1703,10 @@ R_API int r_wstr_clen(const char *s) {
 
 R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	int len, i, li;
-	for (li = i = len = 0; str[i] && (n!=len); i++) {
-		if (str[i] == 0x1b && str[i + 1] == '[') {
-			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
-				;
-			}
+	for (li = i = len = 0; str[i] && (n != len); i++) {
+		int chlen = __str_ansi_length (str + i);
+		if (chlen > 1) {
+			i += chlen;
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
@@ -1741,13 +1750,10 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 
 	for (i = j = 0; i < len; i++) {
 		if (tmp[i] == 0x1b) {
-			if ((i + 1) < len && tmp[i + 1] == '[') {
-				for (i += 2; i < len && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
-				;
-				}
-			}
-			if (i < (len - 3) && tmp[i + 1] == '#' && isdigit (tmp[i + 2])  && tmp[i + 3]) {
-				i += 3;
+			int chlen = __str_ansi_length (str + i);
+			if (chlen > 1) {
+				i += chlen;
+				i--;
 			}
 		} else {
 			str[j] = tmp[i];
@@ -2237,16 +2243,14 @@ R_API int r_str_len_utf8(const char *s) {
 	return j + fullwidths;
 }
 
-
 R_API int r_str_len_utf8_ansi(const char *str) {
 	int i = 0, len = 0, fullwidths = 0;
 	while (str[i]) {
 		char ch = str[i];
-		if (ch == 0x1b && str[i + 1] == '[') {
-			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
-				;
-			}
-		} else if ((ch & 0xc0) != 0x80) {
+		int chlen = __str_ansi_length (str + i);
+		if (chlen > 1) {
+			i += chlen - 1;
+		} else if ((ch & 0xc0) != 0x80) { // utf8
 			len++;
 			if (r_str_char_fullwidth (str + i, 4)) {
 				fullwidths++;
@@ -2255,6 +2259,22 @@ R_API int r_str_len_utf8_ansi(const char *str) {
 		i++;
 	}
 	return len + fullwidths;
+}
+
+// XXX must find across the ansi tags, as well as support utf8
+R_API const char *r_strstr_ansi (const char *a, const char *b) {
+	const char *ch, *p = a;
+	do {
+		ch = strchr (p, '\x1b');
+		if (ch) {
+			const char *v = r_str_nstr (p, b, ch - p);
+			if (v) {
+				return v;
+			}
+			p = ch + __str_ansi_length (ch);
+		}
+	} while (ch);
+	return strstr (p, b);
 }
 
 R_API const char *r_str_casestr(const char *a, const char *b) {
@@ -2289,7 +2309,7 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 		if (*r == '-') {
 			if (p != r) {
 				int from = atoi (p);
-				int to = atoi (r+1);
+				int to = atoi (r + 1);
 				for (; from <= to; from++) {
 					cb (u, from);
 				}
@@ -2801,7 +2821,6 @@ R_API int r_str_bounds(const char *_str, int *h) {
 			if (*str=='\n') {
 				H++;
 				*str = 0;
-				cw = (size_t)(str-ptr);
 				cw = r_str_ansi_len (ptr);
 				if (cw > W) {
 					W = cw;
