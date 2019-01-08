@@ -2510,6 +2510,10 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 	if (!bin || !bin->g_sections) {
 		return NULL;
 	}
+	else if (bin->g_relocs) {
+		return bin->g_relocs;
+	}
+
 	size_t reloc_num = get_relocs_num (bin);
 	if (!reloc_num)	{
 		return NULL;
@@ -2565,6 +2569,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 		}
 	}
 	ret[reloc_num].last = 1;
+	bin->g_relocs = ret;
 	return ret;
 }
 
@@ -2996,9 +3001,9 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 			/* find match in phdr */
 			p = phdr_symbols;
 			while (!p->last) {
-				if (p->offset && d->offset == p->offset) {
+				if (d->offset == p->offset || p->ordinal == d->ordinal) {
 					p->in_shdr = true;
-					if (*p->name && *d->name && (r_str_startswith (d->name, p->name) || r_str_startswith (d->name, "$"))) {
+					if (*p->name && *d->name && r_str_startswith (d->name, "$")) {
 						strcpy (d->name, p->name);
 					}
 				}
@@ -3159,10 +3164,29 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				bprintf ("Cannot allocate %d symbols\n", nsym);
 				goto beach;
 			}
+			RBinElfReloc* relocs;
+			if (type == R_BIN_ELF_IMPORTS) {
+				relocs = Elf_(r_bin_elf_get_relocs) (bin);
+			}
 			for (k = 1, ret_ctr = 0; k < nsym; k++) {
 				bool is_sht_null = false;
 				bool is_vaddr = false;
-				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
+				if (type == R_BIN_ELF_IMPORTS)  {
+					// Workaround to add reloc symbols to imported symbols. This should probably be revised at some point.
+					bool found_reloc = false;
+					if (sym[k].st_shndx != STN_UNDEF && relocs) {
+						j = 0;
+						while (!relocs[j].last) {
+							if (k == relocs[j].sym) {
+								found_reloc = true;
+								break;
+							}
+							j++;
+						}
+					}
+					if (!found_reloc && sym[k].st_shndx != STN_UNDEF) {
+						continue;
+					}
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
 					} else if ((toffset = get_import_addr (bin, k)) == -1){
@@ -3325,6 +3349,7 @@ void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	R_FREE (bin->g_imports);
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
+	R_FREE (bin->g_relocs);
 	free (bin);
 	return NULL;
 }
