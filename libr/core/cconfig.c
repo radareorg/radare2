@@ -2162,8 +2162,9 @@ static int cb_searchin(void *user, void *data) {
 		}
 		return false;
 	}
-	if (!strncmp (node->name, "anal", sizeof("anal"))) {
-		core->anal->opt.noncode = strncmp(node->value, "io.maps.x", sizeof("io.maps.x"))? true: false;
+	// Set anal.noncode if exec bit set in anal.in
+	if (r_str_startswith (node->name, "anal")) {
+		core->anal->opt.noncode = (strchr (node->value, 'x') == NULL);
 	}
 	return true;
 }
