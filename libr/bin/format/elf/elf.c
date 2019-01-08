@@ -1374,6 +1374,25 @@ static ut64 get_dyn_entry(ELFOBJ *bin, int dyn_entry) {
 	return -1;
 }
 
+static ut64 get_got_addr(ELFOBJ *bin) {
+	ut64 ret = get_dyn_entry (bin, DT_PLTGOT);
+	if (ret != -1) {
+		return ret;
+	}
+
+	ret = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
+	if (ret) {
+		return ret;
+	}
+
+	ret = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
+	if (ret) {
+		return ret;
+	}
+
+	return -1;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section, int nrel) {
 	ut8 buf[4] = { 0 };
 	int len = r_buf_read_at (bin->b, plt_section->offset, buf, sizeof (buf));
@@ -1451,7 +1470,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSectio
 	ut8 buf[sizeof (Elf_(Addr))];
 
 	pltsec_section = get_section_by_name (bin, ".plt.sec");
-	got_addr = get_dyn_entry (bin, DT_PLTGOT);
+	got_addr = get_got_addr (bin);
 	if (got_addr == -1) {
 		return -1;
 	}
