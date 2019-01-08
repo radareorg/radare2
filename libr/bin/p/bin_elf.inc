@@ -780,6 +780,7 @@ static RList* relocs(RBinFile *bf) {
 			}
 			r_list_append (ret, ptr);
 		}
+		free (relocs);
 	}
 	return ret;
 }
