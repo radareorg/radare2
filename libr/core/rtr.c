@@ -1381,7 +1381,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	}
 
 	switch (rtr_host[rtr_n].proto) {
-	case RTR_PROT_RAP:
+	case RTR_PROT_R2P:
 		eprintf ("Error: Cannot use '=<' to a rap connection.\n");
 		break;
 	case RTR_PROT_TCP:
@@ -1404,7 +1404,7 @@ R_API void r_core_rtr_list(RCore *core) {
 		case RTR_PROT_HTTP: r_cons_printf ( "http://"); break;
 		case RTR_PROT_TCP: r_cons_printf ("tcp://"); break;
 		case RTR_PROT_UDP: r_cons_printf ("udp://"); break;
-		default: r_cons_printf ("rap://"); break;
+		default: r_cons_printf ("r2p://"); break;
 		}
 		r_cons_printf ("%s:%i/%s\n", rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
@@ -1429,11 +1429,11 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	} else if ((ptr = strstr(input, "udp://"))) {
 		proto = RTR_PROT_UDP;
 		host = ptr + 6;
-	} else if ((ptr = strstr(input, "rap://"))) {
-		proto = RTR_PROT_RAP;
+	} else if ((ptr = strstr(input, "r2p://"))) {
+		proto = RTR_PROT_R2P;
 		host = ptr + 6;
 	} else {
-		proto = RTR_PROT_RAP;
+		proto = RTR_PROT_R2P;
 		host = input;
 	}
 	while (*host && IS_WHITECHAR (*host)) {
@@ -1577,7 +1577,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		}
 		break;
-	case RTR_PROT_RAP:
+	case RTR_PROT_R2P:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
@@ -1585,7 +1585,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		eprintf ("Connected to %s at port %s\n", host, port);
 		/* send */
-		buf[0] = RTR_RAP_OPEN;
+		buf[0] = RTR_R2P_OPEN;
 		buf[1] = 0;
 		buf[2] = (ut8)(strlen (file) + 1);
 		memcpy (buf + 3, file, buf[2]);
@@ -1595,7 +1595,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		fflush (stdout);
 		r_socket_read (fd, (ut8*)buf, 5);
 		i = r_read_at_be32 (buf, 1);
-		if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
+		if (buf[0] != (char)(RTR_R2P_OPEN | RTR_R2P_REPLY) || i <= 0) {
 			eprintf ("Error: Wrong reply\n");
 			r_socket_free (fd);
 			return;
@@ -1721,7 +1721,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 }
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
-	char *file = r_str_newf ("rap://%s", input);
+	char *file = r_str_newf ("r2p://%s", input);
 	int flags = R_PERM_RW;
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
 	if (fd) {
@@ -1735,7 +1735,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 		r_cons_singleton ()->context->breaked = true;
 	}
 	return !r_cons_singleton ()->context->breaked;
-	// r_core_cmdf (core, "o rap://%s", input);
+	// r_core_cmdf (core, "o r2p://%s", input);
 }
 
 static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
@@ -1801,8 +1801,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (rtr_host[rtr_n].proto != RTR_PROT_RAP) {
-		eprintf ("Error: Not a rap:// host\n");
+	if (rtr_host[rtr_n].proto != RTR_PROT_R2P) {
+		eprintf ("Error: Not a r2p:// host\n");
 		return;
 	}
 
@@ -1817,14 +1817,14 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 	/* send request */
-	bufw[0] = RAP_RMT_CMD;
+	bufw[0] = R2P_RMT_CMD;
 	i = strlen (cmd) + 1;
 	r_write_be32 (bufw + 1, i);
 	memcpy (bufw + 5, cmd, i);
 	r_socket_write (fh, bufw, 5 + i);
 	/* read response */
 	r_socket_read (fh, (ut8*)bufr, 5);
-	if (bufr[0] == (char)(RAP_RMT_CMD)) {
+	if (bufr[0] == (char)(R2P_RMT_CMD)) {
 		cmd_len = r_read_at_be32 (bufr, 1);
 		char *rcmd = calloc (1, cmd_len + 1);
 		if (rcmd) {
@@ -1832,7 +1832,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			char *res = r_core_cmd_str (core, rcmd);
 			if (res) {
 				int res_len = strlen (res) + 1;
-				ut8 *pkt = r_rap_packet ((RAP_RMT_CMD | RAP_RMT_REPLY), res_len);
+				ut8 *pkt = r_rap_packet ((R2P_RMT_CMD | R2P_RMT_REPLY), res_len);
 				r_rap_packet_fill (pkt, (const ut8*)res, res_len);
 				r_socket_write (fh, pkt, 5 + res_len);
 				free (res);
@@ -1844,7 +1844,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		r_socket_read (fh, (ut8*)bufr, 5);
 	}
 
-	if (bufr[0] != (char)(RAP_RMT_CMD | RTR_RAP_REPLY)) {
+	if (bufr[0] != (char)(R2P_RMT_CMD | RTR_R2P_REPLY)) {
 		eprintf ("Error: Wrong reply\n");
 		return;
 	}

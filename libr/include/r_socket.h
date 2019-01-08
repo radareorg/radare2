@@ -60,7 +60,7 @@ typedef struct r_socket_t {
 #else
 	int fd;
 #endif
-	int is_ssl;
+	bool is_ssl;
 	int local;	// TODO: merge ssl with local -> flags/options
 	int port;
 	struct sockaddr_in sa;
@@ -77,7 +77,7 @@ typedef struct r_socket_t {
 
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd(int fd);
-R_API RSocket *r_socket_new(int is_ssl);
+R_API RSocket *r_socket_new(bool is_ssl);
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
 R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout);
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
@@ -143,44 +143,44 @@ R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *
 R_API void r_socket_http_close(RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);
 
-typedef int (*rap_server_open)(void *user, const char *file, int flg, int mode);
-typedef int (*rap_server_seek)(void *user, ut64 offset, int whence);
-typedef int (*rap_server_read)(void *user, ut8 *buf, int len);
-typedef int (*rap_server_write)(void *user, ut8 *buf, int len);
-typedef char *(*rap_server_cmd)(void *user, const char *command);
-typedef int (*rap_server_close)(void *user, int fd);
+typedef int (*r2p_server_open)(void *user, const char *file, int flg, int mode);
+typedef int (*r2p_server_seek)(void *user, ut64 offset, int whence);
+typedef int (*r2p_server_read)(void *user, ut8 *buf, int len);
+typedef int (*r2p_server_write)(void *user, ut8 *buf, int len);
+typedef char *(*r2p_server_cmd)(void *user, const char *command);
+typedef int (*r2p_server_close)(void *user, int fd);
 
 enum {
-	RAP_RMT_OPEN = 0x01,
-	RAP_RMT_READ,
-	RAP_RMT_WRITE,
-	RAP_RMT_SEEK,
-	RAP_RMT_CLOSE,
-	RAP_RMT_CMD = 0x07,
-	RAP_RMT_REPLY = 0x80,
-	RAP_RMT_MAX = 4096
+	R2P_RMT_OPEN = 0x01,
+	R2P_RMT_READ,
+	R2P_RMT_WRITE,
+	R2P_RMT_SEEK,
+	R2P_RMT_CLOSE,
+	R2P_RMT_CMD = 0x07,
+	R2P_RMT_REPLY = 0x80,
+	R2P_RMT_MAX = 4096
 };
 
-typedef struct r_socket_rap_server_t {
+typedef struct r_socket_r2p_server_t {
 	RSocket *fd;
-	char port[5];
-	ut8 buf[RAP_RMT_MAX + 32];	// This should be used as a static buffer for everything done by the server
-	rap_server_open open;
-	rap_server_seek seek;
-	rap_server_read read;
-	rap_server_write write;
-	rap_server_cmd system;
-	rap_server_cmd cmd;
-	rap_server_close close;
+	char *port;
+	ut8 buf[R2P_RMT_MAX + 32];	// This should be used as a static buffer for everything done by the server
+	r2p_server_open open;
+	r2p_server_seek seek;
+	r2p_server_read read;
+	r2p_server_write write;
+	r2p_server_cmd system;
+	r2p_server_cmd cmd;
+	r2p_server_close close;
 	void *user;	// Always first arg for callbacks
-} RSocketRapServer;
+} RSocketR2pServer;
 
-R_API RSocketRapServer *r_socket_rap_server_new(int is_ssl, const char *port);
-R_API RSocketRapServer *r_socket_rap_server_create(const char *pathname);
-R_API void r_socket_rap_server_free(RSocketRapServer *rap_s);
-R_API int r_socket_rap_server_listen(RSocketRapServer *rap_s, const char *certfile);
-R_API RSocket *r_socket_rap_server_accept(RSocketRapServer *rap_s);
-R_API bool r_socket_rap_server_continue(RSocketRapServer *rap_s);
+R_API RSocketR2pServer *r_socket_r2p_server_new(int is_ssl, const char *port);
+R_API RSocketR2pServer *r_socket_r2p_server_create(const char *pathname);
+R_API void r_socket_r2p_server_free(RSocketR2pServer *r2p_s);
+R_API int r_socket_r2p_server_listen(RSocketR2pServer *r2p_s, const char *certfile);
+R_API RSocket *r_socket_r2p_server_accept(RSocketR2pServer *r2p_s);
+R_API bool r_socket_r2p_server_continue(RSocketR2pServer *r2p_s);
 
 /* run.c */
 #define R_RUN_PROFILE_NARGS 512

@@ -76,7 +76,7 @@ static const char *help_msg_root[] = {
 	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
 	"_", "[?]", "Print last output",
-	"=","[?] [cmd]", "send/listen for remote commands (rap://, http://, <fd>)",
+	"=","[?] [cmd]", "send/listen for remote commands (r2p://, http://, <fd>)",
 	"<","[...]", "push escaped string into the RCons.readChar buffer",
 	"/","[?]", "search for bytes, regexps, patterns, ..",
 	"!","[?] [cmd]", "run given command as in system(3)",

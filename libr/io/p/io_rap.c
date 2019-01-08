@@ -125,7 +125,7 @@ static ut64 rap__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool rap__plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "rap://", 6)) \
+	return (!strncmp (pathname, "r2p://", 6)) \
 		|| (!strncmp (pathname, "raps://", 7));
 }
 
@@ -143,7 +143,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 	bool is_ssl = (!strncmp (pathname, "raps://", 7));
 	ptr = pathname + (is_ssl? 7: 6);
 	if (!(port = strchr (ptr, ':'))) {
-		eprintf ("rap: wrong uri\n");
+		eprintf ("r2p: wrong uri\n");
 		return NULL;
 	}
 	listenmode = (*ptr == ':');
@@ -162,11 +162,11 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	if (listenmode) {
 		if (p <= 0) {
-			eprintf ("rap: cannot listen here. Try rap://:9999\n");
+			eprintf ("r2p: cannot listen here. Try r2p://:9999\n");
 			return NULL;
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
+		eprintf ("r2p: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
 		rior = R_NEW0 (RIORap);
 		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
@@ -221,7 +221,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		buf[0] = 0;
 		r_socket_read_block (rap_fd, (ut8*)buf, 5);
 		if (buf[0] != (char)(RMT_OPEN | RMT_REPLY)) {
-			eprintf ("rap: Expecting OPEN|REPLY packet. got %02x\n", buf[0]);
+			eprintf ("r2p: Expecting OPEN|REPLY packet. got %02x\n", buf[0]);
 			r_socket_free (rap_fd);
 			free (rior);
 			return NULL;
@@ -366,7 +366,7 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 
 RIOPlugin r_io_plugin_rap = {
 	.name = "rap",
-	.desc = "radare network protocol (rap://:port rap://host:port/file)",
+	.desc = "radare network protocol (r2p://:port r2p://host:port/file)",
 	.license = "LGPL3",
 	.listener = rap__listener,
 	.open = rap__open,
