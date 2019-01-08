@@ -1602,6 +1602,7 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	ds_newline (ds);
 }
 
+
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
@@ -1670,100 +1671,34 @@ static void ds_show_functions(RDisasmState *ds) {
 		ds->pre = DS_PRE_FCN_MIDDLE;
 	}
 	ds->stackptr = core->anal->stackptr;
+	RAnalFcnVarsCache vars_cache;
+	r_anal_fcn_vars_cache_init (core->anal, &vars_cache, f);
 	if (ds->show_vars && ds->show_varsum) {
-		RList *vars = r_anal_var_list (core->anal, f, 'b');
-		RList *rvars = r_anal_var_list (core->anal, f, 'r');
-		RList *svars = r_anal_var_list (core->anal, f, 's');
-		r_list_join (vars, rvars);
-		r_list_join (vars, svars);
-		printVarSummary (ds, vars);
-		r_list_free (vars);
-		r_list_free (rvars);
-		r_list_free (svars);
+		RList *all_vars = vars_cache.bvars;
+		r_list_join (all_vars, vars_cache.svars);
+		r_list_join (all_vars, vars_cache.rvars);
+		printVarSummary (ds, all_vars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		char *fname = NULL;
-		Sdb *TDB = core->anal->sdb_types;
-		RList *args = r_anal_var_list (core->anal, f, 'b');
-		RList *regs = r_anal_var_list (core->anal, f, 'r');
-		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
-		r_list_sort (args, (RListComparator)var_comparator);
-		r_list_sort (regs, (RListComparator)var_comparator);
-		r_list_sort (sp_vars, (RListComparator)var_comparator);
-		if (fcn_name) {
-			fname = r_type_func_guess (TDB, fcn_name);
-		}
 		if (call) {
 			ds_begin_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
 			ds_print_pre (ds);
-			r_cons_printf ("%s %s %s%s (",
-				COLOR_RESET (ds), COLOR (ds, color_fname),
-				fcn_name, COLOR_RESET (ds));
-			if (fname && r_type_func_exist (TDB, fname)) {
-				int i, argc = r_type_func_args_count (TDB, fname);
-				bool comma = true;
-				// This avoids false positives present in argument recovery
-				// and straight away print arguments fetched from types db
-				for (i = 0; i < argc; i++) {
-					char *type = r_type_func_args_type (TDB, fname, i);
-					const char *name = r_type_func_args_name (TDB, fname, i);
-					if (i == argc - 1) {
-						comma = false;
-					}
-					int len = strlen(type);
-					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
-							name, comma?", ":"");
-					free (type);
-				}
-				goto beach;
+			r_cons_printf ("%s  ", COLOR_RESET (ds));
+			char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, false, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
+			if (sig) {
+				r_cons_print (sig);
+				free (sig);
 			}
-			bool comma = true;
-			bool arg_bp = false;
-			int tmp_len;
-			r_list_foreach (regs, iter, var) {
-				tmp_len = strlen (var->type);
-				r_cons_printf ("%s%s%s%s", var->type,
-					tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
-					var->name, iter->n ? ", " : "");
-			}
-			r_list_foreach (args, iter, var) {
-				if (var->delta > 0) {
-					if (!r_list_empty (regs) && comma) {
-						r_cons_printf (", ");
-						comma = false;
-					}
-					arg_bp = true;
-					tmp_len = strlen (var->type);
-					r_cons_printf ("%s%s%s%s", var->type,
-						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-						var->name, iter->n ? ", " : "");
-				}
-			}
-			comma = true;
-			r_list_foreach (sp_vars, iter, var) {
-				if (var->isarg) {
-					if ((arg_bp || !r_list_empty (regs)) && comma) {
-						comma = false;
-						r_cons_printf (", ");
-					}
-					tmp_len = strlen (var->type);
-					r_cons_printf ("%s%s%s%s", var->type,
-						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-						var->name, iter->n ? ", " : "");
-				}
-			}
-beach:
-			free (fname);
-			r_cons_printf (");");
 			ds_newline (ds);
 		}
-		r_list_join (args, sp_vars);
-		r_list_join (args, regs);
-		r_list_foreach (args, iter, var) {
-				ds_begin_line (ds);
+		RList *all_vars = vars_cache.bvars;
+		r_list_join (all_vars, vars_cache.svars);
+		r_list_join (all_vars, vars_cache.rvars);
+		r_list_foreach (all_vars, iter, var) {
+			ds_begin_line (ds);
 			int idx;
 			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
@@ -1824,11 +1759,8 @@ beach:
 			r_cons_print (COLOR_RESET (ds));
 			ds_newline (ds);
 		}
-		r_list_free (regs);
-		// it's already empty, but rlist instance is still there
-		r_list_free (args);
-		r_list_free (sp_vars);
 	}
+	r_anal_fcn_vars_cache_fini (&vars_cache);
 	if (demangle) {
 		free (fcn_name);
 	}
