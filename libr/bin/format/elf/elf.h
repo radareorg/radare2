@@ -114,7 +114,6 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSection *g_sections;
 	RBinElfSymbol *g_symbols;
 	RBinElfSymbol *g_imports;
-	RBinElfReloc  *g_relocs;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;
