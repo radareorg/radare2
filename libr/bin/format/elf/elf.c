@@ -365,7 +365,7 @@ static int init_shdr(ELFOBJ *bin) {
 }
 
 static bool is_shidx_valid(ELFOBJ *bin, Elf_(Half) value) {
-	return value < bin->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
+	return value >= 0 && value < bin->ehdr.e_shnum && !R_BETWEEN (SHN_LORESERVE, value, SHN_HIRESERVE);
 }
 
 static int init_strtab(ELFOBJ *bin) {
@@ -3038,6 +3038,24 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 	return nsym;
 }
 
+static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) *sym) {
+	if (sym->st_name != 0) {
+		return false;
+	}
+	if (ELF_ST_TYPE (sym->st_info) != STT_SECTION) {
+		return false;
+	}
+	if (ELF_ST_BIND (sym->st_info) != STB_LOCAL) {
+		return false;
+	}
+	if (!is_shidx_valid (bin, sym->st_shndx)) {
+		return false;
+	}
+
+	Elf_(Word) sh_name = bin->shdr[sym->st_shndx].sh_name;
+	return bin->shstrtab && sh_name >= 0 && sh_name < bin->shstrtab_size;
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
@@ -3196,7 +3214,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					int rest = ELF_STRING_LENGTH - 1;
 					int st_name = sym[k].st_name;
 					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
-					if (st_name < 0 || st_name >= maxsize) {
+					if (is_section_local_sym (bin, &sym[k])) {
+						const char *shname = &bin->shstrtab[bin->shdr[sym[k].st_shndx].sh_name];
+						r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH);
+					} else if (st_name <= 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
 						const size_t len = __strnlen (strtab + sym[k].st_name, rest);
