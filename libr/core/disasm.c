@@ -4270,10 +4270,8 @@ static void delete_last_comment(RDisasmState *ds) {
 		return;
 	}
 	ll += ds->buf_line_begin;
-	const char *begin = r_str_nstr (ll, "; ", len);
+	const char *begin = ll;
 	if (begin) {
-		// const int cstrlen = begin + len - ll;
-		// r_cons_drop (cstrlen - (int)(begin - ll));
 		ds_newline (ds);
 		ds_begin_line (ds);
 		ds_setup_print_pre (ds, false, false);
