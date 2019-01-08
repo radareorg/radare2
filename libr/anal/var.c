@@ -965,3 +965,143 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	}
 	r_list_free (list);
 }
+
+R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
+	cache->bvars = r_anal_var_list (anal, fcn, 'b');
+	cache->rvars = r_anal_var_list (anal, fcn, 'r');
+	cache->svars = r_anal_var_list (anal, fcn, 's');
+	r_list_sort (cache->bvars, (RListComparator)var_comparator);
+	r_list_sort (cache->rvars, (RListComparator)var_comparator);
+	r_list_sort (cache->svars, (RListComparator)var_comparator);
+}
+
+R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache) {
+	if (!cache) {
+		return;
+	}
+	r_list_free (cache->bvars);
+	r_list_free (cache->rvars);
+	r_list_free (cache->svars);
+}
+
+R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name, bool return_type,
+		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post) {
+	RAnalFcnVarsCache *cache = NULL;
+
+	if (!fcn_name) {
+		fcn_name = fcn->name;
+		if (!fcn_name) {
+			return NULL;
+		}
+	}
+
+	RStrBuf *buf = r_strbuf_new (NULL);
+	if (!buf) {
+		return NULL;
+	}
+
+	Sdb *TDB = anal->sdb_types;
+	char *type_fcn_name = r_type_func_guess (TDB, fcn_name);
+	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
+		if (return_type) {
+			const char *fcn_type = r_type_func_ret (anal->sdb_types, type_fcn_name);
+			if (fcn_type) {
+				const char *sp = " ";
+				if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
+					sp = "";
+				}
+				r_strbuf_appendf (buf, "%s%s", fcn_type, sp);
+			}
+		}
+	}
+
+	if (fcn_name_pre) {
+		r_strbuf_append (buf, fcn_name_pre);
+	}
+	r_strbuf_append (buf, fcn_name);
+	if (fcn_name_post) {
+		r_strbuf_append (buf, fcn_name_post);
+	}
+	r_strbuf_append (buf, " (");
+
+	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
+		int i, argc = r_type_func_args_count (TDB, type_fcn_name);
+		bool comma = true;
+		// This avoids false positives present in argument recovery
+		// and straight away print arguments fetched from types db
+		for (i = 0; i < argc; i++) {
+			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
+			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
+			if (i == argc - 1) {
+				comma = false;
+			}
+			size_t len = strlen (type);
+			r_strbuf_appendf (buf, "%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
+					name, comma?", ":"");
+			free (type);
+		}
+		goto beach;
+	}
+	free (type_fcn_name);
+
+
+	cache = reuse_cache;
+	if (!cache) {
+		cache = R_NEW0 (RAnalFcnVarsCache);
+		if (!cache) {
+			goto beach;
+		}
+		r_anal_fcn_vars_cache_init (anal, cache, fcn);
+	}
+
+	bool comma = true;
+	bool arg_bp = false;
+	size_t tmp_len;
+	RAnalVar *var;
+	RListIter *iter;
+
+	r_list_foreach (cache->rvars, iter, var) {
+		tmp_len = strlen (var->type);
+		r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+			tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
+			var->name, iter->n ? ", " : "");
+	}
+
+	r_list_foreach (cache->bvars, iter, var) {
+		if (var->delta > 0) {
+			if (!r_list_empty (cache->rvars) && comma) {
+				r_strbuf_append (buf, ", ");
+				comma = false;
+			}
+			arg_bp = true;
+			tmp_len = strlen (var->type);
+			r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+				tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+				var->name, iter->n ? ", " : "");
+		}
+	}
+
+	comma = true;
+	r_list_foreach (cache->svars, iter, var) {
+		if (var->isarg) {
+			if ((arg_bp || !r_list_empty (cache->rvars)) && comma) {
+				comma = false;
+				r_strbuf_append (buf, ", ");
+			}
+			tmp_len = strlen (var->type);
+			r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+				tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+				var->name, iter->n ? ", " : "");
+		}
+	}
+
+beach:
+	r_strbuf_append (buf, ");");
+	free (type_fcn_name);
+	if (!reuse_cache) {
+		// !reuse_cache => we created our own cache
+		r_anal_fcn_vars_cache_fini (cache);
+		free (cache);
+	}
+	return r_strbuf_drain (buf);
+}

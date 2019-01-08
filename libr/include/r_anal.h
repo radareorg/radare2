@@ -1515,6 +1515,19 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
 
+
+typedef struct r_anal_fcn_vars_cache {
+	RList *bvars;
+	RList *rvars;
+	RList *svars;
+} RAnalFcnVarsCache;
+R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
+R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache);
+
+R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name, bool return_type,
+		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post);
+
+
 /* project */
 R_API bool r_anal_xrefs_init (RAnal *anal);
 
