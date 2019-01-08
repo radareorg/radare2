@@ -96,6 +96,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_search.c"
+#include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands",
@@ -4103,6 +4104,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"Project",  "project", cmd_project, cmd_project_init},
 		{"quit",     "exit program session", cmd_quit, cmd_quit_init},
 		{"Q",        "alias for q!", cmd_Quit},
+		{":",        "long commands starting with :", cmd_colon},
 		{"resize",   "change file size", cmd_resize},
 		{"seek",     "seek to an offset", cmd_seek, cmd_seek_init},
 		{"t",        "type information (cparse)", cmd_type, cmd_type_init},

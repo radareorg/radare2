@@ -2994,6 +2994,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* http */
 	SETPREF ("http.log", "true", "Show HTTP requests processed");
 	SETPREF ("http.sync", "", "Remote HTTP server to sync events with");
+	SETPREF ("http.colon", "false", "Only accept the : command");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
 	SETPREF ("http.cors", "false", "Enable CORS");
 	SETPREF ("http.referer", "", "CSFR protection if set");
