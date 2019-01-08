@@ -105,7 +105,7 @@ R_API int r_flag_space_unset(RFlag *f, const char *fs) {
 			}
 			R_FREE (f->spaces[i]);
 			// remove all flags space references
-			r_list_foreach (f->flags, iter, fi) {
+			r_list_foreach (f->flags2, iter, fi) {
 				if (fi->space == i) {
 					fi->space = -1;
 				}
@@ -121,7 +121,7 @@ static int r_flag_space_count(RFlag *f, int n) {
 	int count = 0;
 	RFlagItem *fi;
 	if (n != -1) {
-		r_list_foreach (f->flags, iter, fi) {
+		r_list_foreach (f->flags2, iter, fi) {
 			if (fi->space == n) {
 				count++;
 			}

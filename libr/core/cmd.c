@@ -3018,11 +3018,23 @@ static int foreach_comment(void *user, const char *k, const char *v) {
 	return 1;
 }
 
+struct exec_command_t {
+	RCore *core;
+	const char *cmd;
+};
+
+static bool exec_command_on_flag(RFlagItem *flg, void *u) {
+	struct exec_command_t *user = (struct exec_command_t *)u;
+	r_core_seek (user->core, flg->offset, 1);
+	r_core_block_size (user->core, flg->size);
+	r_core_cmd0 (user->core, user->cmd);
+	return true;
+}
+
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
 	RDebug *dbg = core->dbg;
 	RList *list, *head;
 	RListIter *iter;
-	RFlagItem *flg;
 	int i;
 
 	switch (each[0]) {
@@ -3171,13 +3183,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			char *glob = r_str_trim (strdup (each + 1));
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
-			r_list_foreach (core->flags->flags, iter, flg) {
-				if (r_str_glob (flg->name, glob)) {
-					r_core_seek (core, flg->offset, 1);
-					r_core_block_size (core, flg->size);
-					r_core_cmd0 (core, cmd);
-				}
-			}
+
+			struct exec_command_t u = { .core = core, .cmd = cmd };
+			r_flag_foreach_glob (core->flags, glob, exec_command_on_flag, &u);
 			r_core_seek (core, off, 0);
 			r_core_block_size (core, obs);
 			free (glob);
@@ -3253,6 +3261,29 @@ static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 		each = nextLine;
 	}
 	free (cmd);
+}
+
+struct duplicate_flag_t {
+	int flagspace;
+	RList *ret;
+	const char *word;
+};
+
+static bool duplicate_flag(RFlagItem *flag, void *u) {
+	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
+	/* filter per flag spaces */
+	if ((user->flagspace != -1) && (flag->space != user->flagspace)) {
+		return true;
+	}
+
+	if (r_str_glob (flag->name, user->word)) {
+		RFlagItem *cloned_item = r_flag_item_clone (flag);
+		if (!cloned_item) {
+			return false;
+		}
+		r_list_append (user->ret, cloned_item);
+	}
+	return true;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -3562,20 +3593,12 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				   the command is going to be executed on flags
 				   values at the moment the command is called
 				   (without side effects) */
-				r_list_foreach (core->flags->flags, iter, flag) {
-					/* filter per flag spaces */
-					if ((flagspace != -1) && (flag->space != flagspace)) {
-						continue;
-					}
-
-					if (r_str_glob (flag->name, word)) {
-						RFlagItem *cloned_item = r_flag_item_clone (flag);
-						if (!cloned_item) {
-							break;
-						}
-						r_list_append (match_flag_items, cloned_item);
-					}
-				}
+				struct duplicate_flag_t u = {
+					.flagspace = flagspace,
+					.ret = match_flag_items,
+					.word = word,
+				};
+				r_flag_foreach (core->flags, duplicate_flag, &u);
 
 				/* for all flags that match */
 				r_list_foreach (match_flag_items, iter, flag) {

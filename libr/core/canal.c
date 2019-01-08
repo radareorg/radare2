@@ -3515,10 +3515,22 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 	return true;
 }
 
+struct block_flags_stat_t {
+	ut64 step;
+	ut64 from;
+	RCoreAnalStats *as;
+};
+
+static bool block_flags_stat(RFlagItem *fi, void *user) {
+	struct block_flags_stat_t *u = (struct block_flags_stat_t *)user;
+	int piece = (fi->offset - u->from) / u->step;
+	u->as->block[piece].flags++;
+	return true;
+}
+
 /* core analysis stats */
 /* stats --- colorful bar */
 R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut64 step) {
-	RFlagItem *f;
 	RAnalFunction *F;
 	RBinSymbol *S;
 	RListIter *iter;
@@ -3552,14 +3564,9 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 				(core->io->desc ? core->io->desc->perm: 0);
 	}
 	// iter all flags
-	r_list_foreach (core->flags->flags, iter, f) {
-		//if (f->offset+f->size < from) continue;
-		if (f->offset < from || f->offset > to) {
-			continue;
-		}
-		piece = (f->offset - from) / step;
-		as->block[piece].flags++;
-	}
+	struct block_flags_stat_t u = { .step = step, .from = from, .as = as };
+	r_flag_foreach_range (core->flags, from, to + 1, block_flags_stat, &u);
+
 	// iter all functions
 	r_list_foreach (core->anal->fcns, iter, F) {
 		if (F->addr < from || F->addr > to) {

@@ -1140,23 +1140,23 @@ static void autocomplete_breakpoints(RLine* line, const char* str) {
 	line->completion.argv = tmp_argv;
 }
 
+static bool add_argv(RFlagItem *fi, void *user) {
+	int *i = (int *)user;
+	tmp_argv[(*i)++] = fi->name;
+	if (*i == TMP_ARGV_SZ - 1) {
+		return false;
+	}
+	return true;
+}
+
 static void autocomplete_flags(RLine* line, const char* str) {
 	RCore *core = line->user;
 	if (!core || !str) {
 		return;
 	}
-	RListIter *iter;
-	RFlagItem *flag;
 	int n, i = 0;
 	n = strlen (str);
-	r_list_foreach (core->flags->flags, iter, flag) {
-		if (!strncmp (flag->name, str, n)) {
-			tmp_argv[i++] = flag->name;
-			if (i == (TMP_ARGV_SZ - 1)) {
-				break;
-			}
-		}
-	}
+	r_flag_foreach_prefix (core->flags, str, n, add_argv, &i);
 	tmp_argv[i] = NULL;
 	line->completion.argc = i;
 	line->completion.argv = tmp_argv;
@@ -1461,7 +1461,6 @@ static bool find_autocomplete(RLine *line) {
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
 	RListIter *iter;
-	RFlagItem *flag;
 	if (core) {
 		r_core_free_autocomplete (core);
 		char *pipe = strchr (line->buffer.data, '>');
@@ -1473,14 +1472,7 @@ static int autocomplete(RLine *line) {
 			ptr = (char *)r_str_trim_ro (ptr + 1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
 			sdelta = (int)(size_t)(ptr - line->buffer.data);
-			r_list_foreach (core->flags->flags, iter, flag) {
-				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
-					tmp_argv[i++] = flag->name;
-					if (i == TMP_ARGV_SZ - 1) {
-						break;
-					}
-				}
-			}
+			r_flag_foreach_prefix (core->flags, line->buffer.data + sdelta, n, add_argv, &i);
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;

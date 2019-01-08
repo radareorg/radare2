@@ -58,7 +58,7 @@ typedef struct r_flag_t {
 	RNum *num;
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RList of items */
-	RList *flags;   /* list of RFlagItem contained in the flag */
+	RList *flags2;   /* list of RFlagItem contained in the flag */
 	RList *spacestack;
 	PrintfCallback cb_printf;
 #if R_FLAG_ZONE_USE_SDB
@@ -80,6 +80,8 @@ typedef bool (*RFlagUnsetOff)(RFlag *f, ut64 addr);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 typedef bool (*RFlagPopSpace)(RFlag *f);
 typedef bool (*RFlagPushSpace)(RFlag *f, const char *name);
+
+typedef bool (*RFlagItemCb)(RFlagItem *fi, void *user);
 
 typedef struct r_flag_bind_t {
 	int init;
@@ -115,6 +117,7 @@ R_API bool r_flag_unset_name(RFlag *f, const char *name);
 R_API bool r_flag_unset_off(RFlag *f, ut64 addr);
 R_API void r_flag_unset_all (RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size);
+R_API RFlagItem *r_flag_set_prio(RFlag *fo, const char *name, ut64 addr, ut32 size, int priority);
 R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API bool r_flag_sort(RFlag *f, int namesort);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
@@ -127,6 +130,10 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to);
 R_API bool r_flag_move (RFlag *f, ut64 at, ut64 to);
 R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
+R_API void r_flag_foreach(RFlag *f, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, size_t pfx_len, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user);
 
 /* spaces */
 R_API int r_flag_space_get(RFlag *f, const char *name);

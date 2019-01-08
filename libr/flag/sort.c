@@ -36,7 +36,7 @@ R_API bool r_flag_sort(RFlag *f, int namesort) {
 	do {
 		changes = false;
 		fi = NULL;
-		r_list_foreach (f->flags, iter, flag) {
+		r_list_foreach (f->flags2, iter, flag) {
 			if (!fi || ((namesort)? ncmp (fi, flag): cmp (fi, flag)) > 0) {
 				fi = flag;
 				it_elem = iter;
@@ -45,14 +45,14 @@ R_API bool r_flag_sort(RFlag *f, int namesort) {
 		}
 		if (fi && changes) {
 			ret = true;
-			r_list_split_iter (f->flags, it_elem);
+			r_list_split_iter (f->flags2, it_elem);
 			free (it_elem);
 			r_list_append (tmp, fi);
 		}
 	} while (changes);
 
-	free (f->flags);
-	f->flags = tmp;
-	f->flags->free = free;
+	free (f->flags2);
+	f->flags2 = tmp;
+	f->flags2->free = free;
 	return ret;
 }

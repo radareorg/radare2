@@ -858,9 +858,14 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	return res? true: false;
 }
 
+static bool hudstuff_append(RFlagItem *fi, void *user) {
+	RList *list = (RList *)user;
+	char *s = r_str_newf ("0x%08"PFMT64x"  %s", fi->offset, fi->name);
+	r_list_append (list, s);
+	return true;
+}
+
 R_API bool r_core_visual_hudstuff(RCore *core) {
-	RListIter *iter;
-	RFlagItem *flag;
 	ut64 addr;
 	char *res;
 	RList *list = r_list_new ();
@@ -868,10 +873,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 		return false;
 	}
 	list->free = free;
-	r_list_foreach (core->flags->flags, iter, flag) {
-		r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s",
-			flag->offset, flag->name));
-	}
+	r_flag_foreach (core->flags, hudstuff_append, list);
 	sdb_foreach (core->anal->sdb_meta, cmtcb, list);
 	res = r_cons_hud (list, NULL);
 	if (res) {
@@ -1201,11 +1203,46 @@ R_API int r_core_visual_classes(RCore *core) {
 	return true;
 }
 
+struct track_flag_t {
+	RCore *core;
+	int i, j;
+	int option;
+	int delta;
+	bool hasColor;
+	int hit;
+	const char *fs2;
+};
+
+static bool track_flag(RFlagItem *fi, void *user) {
+	struct track_flag_t *u = (struct track_flag_t *)user;
+	/* filter per flag spaces */
+	if ((u->core->flags->space_idx != -1) &&
+	    (fi->space != u->core->flags->space_idx)) {
+		return true;
+	}
+	if (u->option == u->i) {
+		u->fs2 = fi->name;
+		u->hit = 1;
+	}
+	if ((u->i>=u->option-u->delta) && ((u->i<u->option+u->delta)||((u->option<u->delta)&&(u->i<(u->delta<<1))))) {
+		bool cur = u->option == u->i;
+		if (cur && u->hasColor) {
+			r_cons_printf (Color_INVERT);
+		}
+		r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
+			       cur?'>':' ', u->i, fi->offset, fi->size, fi->name);
+		if (cur && u->hasColor) {
+			r_cons_printf (Color_RESET);
+		}
+		u->j++;
+	}
+	u->i++;
+	return true;
+}
+
 R_API int r_core_visual_trackflags(RCore *core) {
 	const char *fs = NULL, *fs2 = NULL;
 	int hit, i, j, ch;
-	RListIter *iter;
-	RFlagItem *flag;
 	int _option = 0;
 	int option = 0;
 	char cmd[1024];
@@ -1230,30 +1267,23 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
-			r_list_foreach (core->flags->flags, iter, flag) {
-				/* filter per flag spaces */
-				if ((core->flags->space_idx != -1) &&
-					(flag->space != core->flags->space_idx)) {
-					continue;
-				}
-				if (option == i) {
-					fs2 = flag->name;
-					hit = 1;
-				}
-				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-					bool cur = option == i;
-					if (cur && hasColor) {
-						r_cons_printf (Color_INVERT);
-					}
-					r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
-							cur?'>':' ', i, flag->offset, flag->size, flag->name);
-					if (cur && hasColor) {
-						r_cons_printf (Color_RESET);
-					}
-					j++;
-				}
-				i++;
-			}
+			struct track_flag_t u = {
+				.core = core,
+				.i = 0,
+				.j = 0,
+				.delta = delta,
+				.option = 0,
+				.fs2 = NULL,
+				.hit = 0,
+				.hasColor = hasColor
+			};
+			r_flag_foreach (core->flags, track_flag, &u);
+			i = u.i;
+			j = u.j;
+			option = u.option;
+			fs2 = u.fs2;
+			hit = u.hit;
+
 			if (!hit && i > 0) {
 				option = i - 1;
 				continue;
@@ -2747,6 +2777,20 @@ beach:
 	r_config_set_i (core->config, "asm.bytes", asmbytes);
 }
 
+struct seek_next_offset_t {
+	ut64 offset;
+	ut64 *next;
+};
+
+static bool seek_next_offset(RFlagItem *fi, void *user) {
+	struct seek_next_offset_t *u = (struct seek_next_offset_t *)user;
+	if (fi->offset > *u->next && fi->offset < u->offset) {
+		*u->next = fi->offset;
+	}
+	return true;
+}
+
+
 R_API void r_core_seek_next(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = UT64_MAX;
@@ -2766,21 +2810,11 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		}
 	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		RFlagItem *flag;
-		r_list_foreach (core->flags->flags, iter, flag) {
-			if (!strncmp (flag->name, pfx, strlen (pfx))) {
-				if (flag->offset < next && flag->offset > core->offset) {
-					next = flag->offset;
-				}
-			}
-		}
+		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
+		r_flag_foreach_prefix (core->flags, pfx, -1, seek_next_offset, &u);
 	} else { // flags
-		RFlagItem *flag;
-		r_list_foreach (core->flags->flags, iter, flag) {
-			if (flag->offset < next && flag->offset > core->offset) {
-				next = flag->offset;
-			}
-		}
+		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
+		r_flag_foreach (core->flags, seek_next_offset, &u);
 	}
 	if (next != UT64_MAX) {
 		r_core_seek (core, next, 1);
@@ -2802,22 +2836,12 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 		}
 	} else
 	if (strstr (type, "hit")) {
-		RFlagItem *flag;
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		r_list_foreach (core->flags->flags, iter, flag) {
-			if (!strncmp (flag->name, pfx, strlen (pfx))) {
-				if (flag->offset > next && flag->offset < core->offset) {
-					next = flag->offset;
-				}
-			}
-		}
+		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
+		r_flag_foreach_prefix (core->flags, pfx, -1, seek_next_offset, &u);
 	} else { // flags
-		RFlagItem *flag;
-		r_list_foreach (core->flags->flags, iter, flag) {
-			if (flag->offset > next && flag->offset < core->offset) {
-				next = flag->offset;
-			}
-		}
+		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
+		r_flag_foreach (core->flags, seek_next_offset, &u);
 	}
 	if (next != 0) {
 		r_core_seek (core, next, 1);

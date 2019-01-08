@@ -41,7 +41,7 @@ R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
 	char *words = sdb_get (f->tags, k, NULL);
 	RList *res = r_list_newf (NULL);
 	RList *list = r_str_split_list (words, " ");
-	r_list_foreach (f->flags, iter2, flag) {
+	r_list_foreach (f->flags2, iter2, flag) {
 		r_list_foreach (list, iter, word) {
 			if (r_str_glob (flag->name, word)) {
 				r_list_append (res, flag);
