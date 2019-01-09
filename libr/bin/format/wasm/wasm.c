@@ -276,7 +276,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 			goto beach;
 		}
 		ut32 count = ptr ? ptr->param_count : 0;
-		if (!(b->cur + (count * 3) <= max)) { // worst case 3 bytes
+		if (!(b->cur + count <= max)) {
 			goto beach;
 		}
 		if (count > 0) {
