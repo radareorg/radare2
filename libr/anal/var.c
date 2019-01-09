@@ -984,7 +984,7 @@ R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache) {
 	r_list_free (cache->svars);
 }
 
-R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name, bool return_type,
+R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
 		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post) {
 	RAnalFcnVarsCache *cache = NULL;
 
@@ -1003,15 +1003,13 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 	Sdb *TDB = anal->sdb_types;
 	char *type_fcn_name = r_type_func_guess (TDB, fcn_name);
 	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
-		if (return_type) {
-			const char *fcn_type = r_type_func_ret (anal->sdb_types, type_fcn_name);
-			if (fcn_type) {
-				const char *sp = " ";
-				if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
-					sp = "";
-				}
-				r_strbuf_appendf (buf, "%s%s", fcn_type, sp);
+		const char *fcn_type = r_type_func_ret (anal->sdb_types, type_fcn_name);
+		if (fcn_type) {
+			const char *sp = " ";
+			if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
+				sp = "";
 			}
+			r_strbuf_appendf (buf, "%s%s", fcn_type, sp);
 		}
 	}
 
