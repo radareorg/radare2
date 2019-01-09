@@ -125,8 +125,8 @@ static ut64 __r2p_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __r2p_plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "rap://", 6)) \
-		|| (!strncmp (pathname, "raps://", 7));
+	return (!strncmp (pathname, "r2p://", 6)) \
+		|| (!strncmp (pathname, "r2ps://", 7));
 }
 
 static RIODesc *__r2p_open(RIO *io, const char *pathname, int rw, int mode) {

@@ -1427,7 +1427,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 
 	int proto = RTR_PROT_R2P;
 	char *host = (char *)r_str_trim_ro (input);
-	const char *pikaboo = strstr (host, "://");
+	char *pikaboo = strstr (host, "://");
 	if (pikaboo) {
 		struct {
 			const char *name;
@@ -1462,7 +1462,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	file = strchr (ptr, '/');
 	if (file) {	
 		*file = 0;
-		file = r_str_trim_ro (file + 1);
+		file = (char *)r_str_trim_ro (file + 1);
 	} else {
 		if (*host == ':' || strstr (host, "://:")) { // listen
 			// it's fine to listen without serving a file
