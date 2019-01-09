@@ -1,6 +1,5 @@
 files = [
   'flag.c',
-  'sort.c',
   'tags.c',
   'spaces.c',
   'zones.c'

@@ -43,7 +43,6 @@ static const char *help_msg_f[] = {
 	"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
 	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 	"fs","[?]+-*","manage flagspaces",
-	"fS","[on]","sort flags by offset or name",
 	"ft","[?]*","flag tags, useful to find all flags matching some words",
 	"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
 	"fx","[d]","show hexdump (or disasm) of flag:flagsize",
@@ -694,9 +693,6 @@ rep:
 		break;
 	case 't': // "ft"
 		cmd_flag_tags (core, input);
-		break;
-	case 'S':
-		r_flag_sort (core->flags, (input[1]=='n'));
 		break;
 	case 's': // "fs"
 		switch (input[1]) {

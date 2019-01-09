@@ -90,9 +90,12 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 	return f->space_idx;
 }
 
+static bool unset_space(RFlagItem *fi, void *user) {
+	fi->space = -1;
+	return true;
+}
+
 R_API int r_flag_space_unset(RFlag *f, const char *fs) {
-	RListIter *iter;
-	RFlagItem *fi;
 	r_return_val_if_fail (f, false);
 	int i, count = 0;
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
@@ -105,27 +108,23 @@ R_API int r_flag_space_unset(RFlag *f, const char *fs) {
 			}
 			R_FREE (f->spaces[i]);
 			// remove all flags space references
-			r_list_foreach (f->flags2, iter, fi) {
-				if (fi->space == i) {
-					fi->space = -1;
-				}
-			}
+			r_flag_foreach_space (f, i, unset_space, NULL);
 			count++;
 		}
 	}
 	return count;
 }
 
+static bool space_count(RFlagItem *fi, void *user) {
+	int *count = (int *)user;
+	(*count)++;
+	return true;
+}
+
 static int r_flag_space_count(RFlag *f, int n) {
-	RListIter *iter;
 	int count = 0;
-	RFlagItem *fi;
 	if (n != -1) {
-		r_list_foreach (f->flags2, iter, fi) {
-			if (fi->space == n) {
-				count++;
-			}
-		}
+		r_flag_foreach_space (f, n, space_count, &count);
 	}
 	return count;
 }

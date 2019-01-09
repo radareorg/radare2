@@ -8,10 +8,16 @@
 #define MAX_FORMAT 3
 
 enum {
-	R_BYTE_DATA  = 1,
-	R_WORD_DATA  = 2,
-	R_DWORD_DATA = 4,
-	R_QWORD_DATA = 8
+      R_BYTE_DATA  = 1,
+      R_WORD_DATA  = 2,
+      R_DWORD_DATA = 4,
+      R_QWORD_DATA = 8
+};
+
+enum {
+      SORT_NONE,
+      SORT_NAME,
+      SORT_OFFSET
 };
 
 typedef struct {
@@ -1203,41 +1209,36 @@ R_API int r_core_visual_classes(RCore *core) {
 	return true;
 }
 
-struct track_flag_t {
-	RCore *core;
-	int i, j;
-	int option;
-	int delta;
-	bool hasColor;
-	int hit;
-	const char *fs2;
-};
+static int flag_name_sort(const void *a, const void *b) {
+	const RFlagItem *fa = (const RFlagItem *)a;
+	const RFlagItem *fb = (const RFlagItem *)b;
+	return strcmp (fa->name, fb->name);
+}
 
-static bool track_flag(RFlagItem *fi, void *user) {
-	struct track_flag_t *u = (struct track_flag_t *)user;
-	/* filter per flag spaces */
-	if ((u->core->flags->space_idx != -1) &&
-	    (fi->space != u->core->flags->space_idx)) {
-		return true;
+static int flag_offset_sort(const void *a, const void *b) {
+	const RFlagItem *fa = (const RFlagItem *)a;
+	const RFlagItem *fb = (const RFlagItem *)b;
+	if (fa->offset < fb->offset) {
+		return -1;
 	}
-	if (u->option == u->i) {
-		u->fs2 = fi->name;
-		u->hit = 1;
+	if (fa->offset > fb->offset) {
+		return 1;
 	}
-	if ((u->i>=u->option-u->delta) && ((u->i<u->option+u->delta)||((u->option<u->delta)&&(u->i<(u->delta<<1))))) {
-		bool cur = u->option == u->i;
-		if (cur && u->hasColor) {
-			r_cons_printf (Color_INVERT);
-		}
-		r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
-			       cur?'>':' ', u->i, fi->offset, fi->size, fi->name);
-		if (cur && u->hasColor) {
-			r_cons_printf (Color_RESET);
-		}
-		u->j++;
+	return 0;
+}
+
+static void sort_flags(RList *l, int sort) {
+	switch (sort) {
+	case SORT_NAME:
+		r_list_sort (l, flag_name_sort);
+		break;
+	case SORT_OFFSET:
+		r_list_sort (l, flag_offset_sort);
+		break;
+	case SORT_NONE:
+	default:
+		break;
 	}
-	u->i++;
-	return true;
 }
 
 R_API int r_core_visual_trackflags(RCore *core) {
@@ -1249,6 +1250,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int format = 0;
 	int delta = 7;
 	int menu = 0;
+	int sort = SORT_NONE;
 
 	for (j=i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (core->flags->spaces[i]) {
@@ -1267,22 +1269,35 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
 			hit = 0;
 			i = j = 0;
-			struct track_flag_t u = {
-				.core = core,
-				.i = 0,
-				.j = 0,
-				.delta = delta,
-				.option = 0,
-				.fs2 = NULL,
-				.hit = 0,
-				.hasColor = hasColor
-			};
-			r_flag_foreach (core->flags, track_flag, &u);
-			i = u.i;
-			j = u.j;
-			option = u.option;
-			fs2 = u.fs2;
-			hit = u.hit;
+			RList *l = r_flag_all_list (core->flags);
+			RListIter *iter;
+			RFlagItem *fi;
+			sort_flags (l, sort);
+			r_list_foreach (l, iter, fi) {
+				/* filter per flag spaces */
+				if ((core->flags->space_idx != -1) &&
+				    (fi->space != core->flags->space_idx)) {
+					continue;
+				}
+				if (option == i) {
+					fs2 = fi->name;
+					hit = 1;
+				}
+				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					bool cur = option == i;
+					if (cur && hasColor) {
+						r_cons_printf (Color_INVERT);
+					}
+					r_cons_printf (" %c  %03d 0x%08"PFMT64x" %4"PFMT64d" %s\n",
+						       cur?'>':' ', i, fi->offset, fi->size, fi->name);
+					if (cur && hasColor) {
+						r_cons_printf (Color_RESET);
+					}
+					j++;
+				}
+				i++;
+			}
+			r_list_free (l);
 
 			if (!hit && i > 0) {
 				option = i - 1;
@@ -1357,8 +1372,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			}
 			break;
 		case 'J': option += 10; break;
-		case 'o': r_flag_sort (core->flags, 0); break;
-		case 'n': r_flag_sort (core->flags, 1); break;
+		case 'o': sort = SORT_OFFSET; break;
+		case 'n': sort = SORT_NAME; break;
 		case 'j': option++; break;
 		case 'k':
 			if (--option < 0) {
