@@ -8,6 +8,7 @@
 
 #include "r_types.h"
 #include "r_bind.h"
+#include "r_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +71,14 @@ typedef struct r_socket_t {
 	BIO *bio;
 #endif
 } RSocket;
+
+typedef struct r_socket_http_options {
+	RList *authtokens;
+	bool accept_timeout;
+	int timeout;
+	bool httpauth;
+} RSocketHTTPOptions;
+
 
 #define R_SOCKET_PROTO_TCP IPPROTO_TCP
 #define R_SOCKET_PROTO_UDP IPPROTO_UDP
@@ -139,7 +148,7 @@ typedef struct r_socket_http_request {
 	bool auth;
 } RSocketHTTPRequest;
 
-R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, int accept_timeout, int timeout, bool httpauth, const char *authtok);
+R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *so);
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close(RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);

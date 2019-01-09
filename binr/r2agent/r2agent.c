@@ -29,7 +29,7 @@ static int usage (int v) {
 	"  -h        show this help message\n"
 	"  -s        run in sandbox mode\n"
 	"  -u        enable http Authorization access\n"
-	"  -t        user:password token\n"
+	"  -t        user:password authentification file\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
@@ -41,14 +41,16 @@ static int showversion() {
 
 int main(int argc, char **argv) {
 	RSocket *s;
+	RSocketHTTPOptions so;
 	RSocketHTTPRequest *rs;
-	int c, timeout = 3;
+	int c;
 	int dodaemon = 0;
 	int dosandbox = 0;
 	bool listenlocal = true;
 	const char *port = "8080";
-	bool httpauth = false;
-	const char *authtoken = NULL;
+	const char *httpauthfile = NULL;
+	char *pfile = NULL;
+	memset (&so, 0, sizeof (so));
 
 	while ((c = getopt (argc, argv, "adhup:t:sv")) != -1) {
 		switch (c) {
@@ -66,10 +68,10 @@ int main(int argc, char **argv) {
 		case 'v':
 			return showversion ();
 		case 'u':
-			httpauth = true;
+			so.httpauth = true;
 			break;
 		case 't':
-			authtoken = optarg;
+			httpauthfile = optarg;
 			break;
 		case 'p':
 			port = optarg;
@@ -82,9 +84,21 @@ int main(int argc, char **argv) {
 		return usage (0);
 	}
 
-	if (httpauth && authtoken) {
-		if (strlen (authtoken) < 3 || !strchr (authtoken, ':')) {
-			eprintf ("Invalid authorization token '%s'\n", authtoken);
+	so.accept_timeout = 0;
+	so.timeout = 3;
+
+	if (so.httpauth) {
+		if (!httpauthfile) {
+			eprintf ("No authentification user list set\n");
+			return usage (0);
+		}
+
+		int sz;
+		pfile = r_file_slurp (httpauthfile, &sz);
+		if (pfile) {
+			so.authtokens = r_str_split_list (pfile, "\n");
+		} else {
+			eprintf ("Empty list of HTTP users\\n");
 			return usage (0);
 		}
 	}
@@ -111,6 +125,9 @@ int main(int argc, char **argv) {
 	eprintf ("http://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
+		free (pfile);
+		r_list_free (so.authtokens);
+		r_socket_free (s);
 		return 1;
 	}
 
@@ -120,7 +137,7 @@ int main(int argc, char **argv) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
-		rs = r_socket_http_accept (s, 0, timeout, httpauth, authtoken);
+		rs = r_socket_http_accept (s, &so);
 		if (!rs) {
 			continue;
 		}
@@ -157,6 +174,8 @@ int main(int argc, char **argv) {
 				result = result_heap = malloc (1024 + escaped_len);
 				if (!result) {
 					perror ("malloc");
+					free (pfile);
+					r_list_free (so.authtokens);
 					return 1;
 				}
 				sprintf (result_heap,
@@ -174,6 +193,8 @@ int main(int argc, char **argv) {
 		result_heap = NULL;
 	}
 	r_cons_free ();
+	free (pfile);
+	r_list_free (so.authtokens);
 	r_socket_free (s);
 	return 0;
 }

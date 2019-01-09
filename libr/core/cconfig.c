@@ -3028,6 +3028,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
 	SETPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
 	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
+	p = r_sys_getenv ("R2_HTTP_AUTHFILE");
+	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);

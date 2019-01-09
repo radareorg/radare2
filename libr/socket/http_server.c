@@ -9,7 +9,7 @@ R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 
-R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, int timeout, bool httpauth, const char *expauthtoken) {
+R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *so) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
@@ -17,7 +17,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 	if (!hr) {
 		return NULL;
 	}
-	if (accept_timeout > 0) {
+	if (so->accept_timeout) {
 		hr->s = r_socket_accept_timeout (s, 1);
 	} else {
 		hr->s = r_socket_accept (s);
@@ -26,10 +26,10 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 		free (hr);
 		return NULL;
 	}
-	if (timeout > 0) {
-		r_socket_block_time (hr->s, 1, timeout);
+	if (so->timeout > 0) {
+		r_socket_block_time (hr->s, 1, so->timeout);
 	}
-	hr->auth = !httpauth;
+	hr->auth = !so->httpauth;
 	for (;;) {
 #if __WINDOWS__
 		if (breaked)
@@ -65,31 +65,38 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 		} else {
 			if (!hr->referer && !strncmp (buf, "Referer: ", 9)) {
 				hr->referer = strdup (buf + 9);
-			} else
-			if (!hr->agent && !strncmp (buf, "User-Agent: ", 12)) {
+			} else if (!hr->agent && !strncmp (buf, "User-Agent: ", 12)) {
 				hr->agent = strdup (buf + 12);
-			} else
-			if (!hr->host && !strncmp (buf, "Host: ", 6)) {
+			} else if (!hr->host && !strncmp (buf, "Host: ", 6)) {
 				hr->host = strdup (buf + 6);
-			} else
-			if (!strncmp (buf, "Content-Length: ", 16)) {
-				content_length = atoi (buf+16);
-			} else
-			if (!strncmp (buf, "Authorization: Basic ", 21) && httpauth) {
+			} else if (!strncmp (buf, "Content-Length: ", 16)) {
+				content_length = atoi (buf + 16);
+			} else if (so->httpauth && !strncmp (buf, "Authorization: Basic ", 21)) {
 				char *authtoken = buf + 21;
 				size_t authlen = strlen (authtoken);
+				char *curauthtoken;
+				RListIter *iter;
 				char *decauthtoken = calloc (4, authlen + 1);
+				if (!decauthtoken) {
+					eprintf ("Could not allocate decoding buffer\n");
+					return hr;
+				}
+
 				if (r_base64_decode ((ut8 *)decauthtoken, authtoken, authlen) == -1) {
 					eprintf ("Could not decode authorization token\n");
-					free (decauthtoken);
 				} else {
-					if (!strcmp (decauthtoken, expauthtoken)) {
-						hr->auth = 1;
-					} else {
-						eprintf ("Failed attempt login from '%s'\n", hr->host);
+					r_list_foreach (so->authtokens, iter, curauthtoken) {
+						if (!strcmp (decauthtoken, curauthtoken)) {
+							hr->auth = true;
+							break;
+						}
 					}
+				}
 
-					free (decauthtoken);
+				free (decauthtoken);
+
+				if (!hr->auth) {
+					eprintf ("Failed attempt login from '%s'\n", hr->host);
 				}
 			}
 		}
@@ -107,9 +114,9 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
 	const char *strcode = \
 		code==200?"ok":
-		code==301?"moved permanently":
+		code==301?"Moved permanently":
 		code==302?"Found":
-		code==401?"Permission denied":
+		code==401?"Unauthorized":
 		code==403?"Permission denied":
 		code==404?"not found":
 		"UNKNOWN";
@@ -117,11 +124,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 		len = out ? strlen (out) : 0;
 	}
 	if (!headers) {
-		if (code == 401) {
-			headers = "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n";
-		} else {
-			headers = "";
-		}
+		headers = code == 401 ? "WWW-Authenticate: Basic realm=\"R2 Web UI Access\"\n" : "";
 	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
 		"Connection: close\r\nContent-Length: %d\r\n\r\n",
