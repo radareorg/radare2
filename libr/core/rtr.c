@@ -1371,7 +1371,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	}
 
 	if (!rtr_host[rtr_n].fd || !rtr_host[rtr_n].fd->fd) {
-		eprintf("Error: Unknown host\n");
+		eprintf ("Error: Unknown host\n");
 		return;
 	}
 
@@ -1381,13 +1381,18 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	}
 
 	switch (rtr_host[rtr_n].proto) {
-	case RTR_PROT_RAP:
+	case RTR_PROTOCOL_RAP:
 		eprintf ("Error: Cannot use '=<' to a rap connection.\n");
 		break;
-	case RTR_PROT_TCP:
-	case RTR_PROT_UDP:
-	default:
+	case RTR_PROTOCOL_HTTP:
+		eprintf ("TODO\n");
+		break;
+	case RTR_PROTOCOL_TCP:
+	case RTR_PROTOCOL_UDP:
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
+		break;
+	default:
+		eprintf ("Unknown protocol\n");
 		break;
 	}
 	free (str);
@@ -1399,64 +1404,75 @@ R_API void r_core_rtr_list(RCore *core) {
 		if (!rtr_host[i].fd) {
 			continue;
 		}
-		r_cons_printf ("%i - ", rtr_host[i].fd->fd);
+		const char *proto = "rap";
 		switch (rtr_host[i].proto) {
-		case RTR_PROT_HTTP: r_cons_printf ( "http://"); break;
-		case RTR_PROT_TCP: r_cons_printf ("tcp://"); break;
-		case RTR_PROT_UDP: r_cons_printf ("udp://"); break;
-		default: r_cons_printf ("rap://"); break;
+		case RTR_PROTOCOL_HTTP: proto = "http"; break;
+		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
+		case RTR_PROTOCOL_UDP: proto = "udp"; break;
 		}
-		r_cons_printf ("%s:%i/%s\n", rtr_host[i].host,
+		r_cons_printf ("%i - %s://%s:%i/%s\n", 
+			rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
 }
 
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
-	char *port, input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
-	int proto, i, timeout, ret;
+	char *port, input[1024], *file = NULL, *ptr = NULL, buf[1024];
+	int i, timeout, ret;
 	RSocket *fd;
 
 	timeout = r_config_get_i (core->config, "http.timeout");
 	strncpy (input, _input, sizeof (input) - 4);
-	input[sizeof(input)-4] = '\0';
-	/* Parse uri */
-	if ((ptr = strstr (input, "tcp://"))) {
-		proto = RTR_PROT_TCP;
-		host = ptr + 6;
-	} else if ((ptr = strstr(input, "http://"))) {
-		proto = RTR_PROT_HTTP;
-		host = ptr + 7;
-	} else if ((ptr = strstr(input, "udp://"))) {
-		proto = RTR_PROT_UDP;
-		host = ptr + 6;
-	} else if ((ptr = strstr(input, "rap://"))) {
-		proto = RTR_PROT_RAP;
-		host = ptr + 6;
-	} else {
-		proto = RTR_PROT_RAP;
-		host = input;
+	input[sizeof (input)-4] = '\0';
+
+	int proto = RTR_PROTOCOL_RAP;
+	char *host = (char *)r_str_trim_ro (input);
+	char *pikaboo = strstr (host, "://");
+	if (pikaboo) {
+		struct {
+			const char *name;
+			int protocol;
+		} uris[5] = {
+			{"tcp", RTR_PROTOCOL_TCP},
+			{"udp", RTR_PROTOCOL_UDP},
+			{"rap", RTR_PROTOCOL_RAP},
+			{"http", RTR_PROTOCOL_HTTP},
+			{NULL, 0}
+		};
+		char *s = r_str_ndup (input, pikaboo - input);
+		//int nlen = pikaboo - input;
+		for (i = 0; uris[i].name; i++) {
+			if (r_str_endswith (s, uris[i].name)) {
+				proto = uris[i].protocol;
+				host = pikaboo + 3;
+				break;
+			}
+		}
+		free (s);
 	}
-	while (*host && IS_WHITECHAR (*host)) {
-		host++;
+	if (host) {
+		if (!(ptr = strchr (host, ':'))) {
+			ptr = host;
+			port = "80";
+		} else {
+			*ptr++ = '\0';
+			port = ptr;
+		}
+	}
+	file = strchr (ptr, '/');
+	if (file) {	
+		*file = 0;
+		file = (char *)r_str_trim_ro (file + 1);
+	} else {
+		if (*host == ':' || strstr (host, "://:")) { // listen
+			// it's fine to listen without serving a file
+		} else {
+			eprintf ("Error: Missing '/'\n");
+			return;
+		}
 	}
 
-	if (!(ptr = strchr (host, ':'))) {
-		ptr = host;
-		port = "80";
-	} else {
-		*ptr++ = '\0';
-		port = ptr;
-	}
-
-	if (!(file = strchr (ptr, '/'))) {
-		eprintf ("Error: Missing '/'\n");
-		return;
-	}
-	*file++ = 0;
 	port = r_str_trim (port);
-	while (*file == ' ') {
-		file++;
-	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return;
@@ -1468,7 +1484,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		return;
 	}
 	switch (proto) {
-	case RTR_PROT_HTTP:
+	case RTR_PROTOCOL_HTTP:
 		{
 			char prompt[64], prompt2[64], *str, *ptr;
 			int len, flen = strlen (file);
@@ -1577,7 +1593,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		}
 		break;
-	case RTR_PROT_RAP:
+	case RTR_PROTOCOL_RAP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
@@ -1602,7 +1618,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		eprintf ("ok\n");
 		break;
-	case RTR_PROT_TCP:
+	case RTR_PROTOCOL_TCP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -1612,7 +1628,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		core->num->value = 0;
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
-	case RTR_PROT_UDP:
+	case RTR_PROTOCOL_UDP:
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -1757,17 +1773,18 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	// "=:"
 	if (*input == ':' && !strchr (input + 1, ':')) {
+		void *bed = r_cons_sleep_begin ();
 		r_core_rtr_rap_run (core, input);
+		r_cons_sleep_end (bed);
 		return;
 	}
 
-	if (*input == '&') { // "=h&"
-		r_core_cmd0 (core, "& =h");
-#if 0
+	if (*input == '&') { // "=h&" "=&:9090"
 		if (rapthread) {
 			eprintf ("RAP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
+			// TODO: use tasks
 			RapThread *RT = R_NEW0 (RapThread);
 			if (RT) {
 				RT->core = core;
@@ -1778,7 +1795,6 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				eprintf ("Background rap server started.\n");
 			}
 		}
-#endif
 		return;
 	}
 
@@ -1801,7 +1817,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (rtr_host[rtr_n].proto != RTR_PROT_RAP) {
+	if (rtr_host[rtr_n].proto != RTR_PROTOCOL_RAP) {
 		eprintf ("Error: Not a rap:// host\n");
 		return;
 	}

@@ -60,7 +60,7 @@ typedef struct r_socket_t {
 #else
 	int fd;
 #endif
-	int is_ssl;
+	bool is_ssl;
 	int local;	// TODO: merge ssl with local -> flags/options
 	int port;
 	struct sockaddr_in sa;
@@ -77,7 +77,7 @@ typedef struct r_socket_t {
 
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd(int fd);
-R_API RSocket *r_socket_new(int is_ssl);
+R_API RSocket *r_socket_new(bool is_ssl);
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
 R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout);
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
@@ -151,19 +151,20 @@ typedef char *(*rap_server_cmd)(void *user, const char *command);
 typedef int (*rap_server_close)(void *user, int fd);
 
 enum {
-	RAP_RMT_OPEN = 0x01,
-	RAP_RMT_READ,
-	RAP_RMT_WRITE,
-	RAP_RMT_SEEK,
-	RAP_RMT_CLOSE,
-	RAP_RMT_CMD = 0x07,
+	RAP_RMT_OPEN = 1,
+	RAP_RMT_READ = 2,
+	RAP_RMT_WRITE = 3,
+	RAP_RMT_SEEK = 4,
+	RAP_RMT_CLOSE = 5,
+	// system was deprecated in slot 6,
+	RAP_RMT_CMD = 7,
 	RAP_RMT_REPLY = 0x80,
 	RAP_RMT_MAX = 4096
 };
 
 typedef struct r_socket_rap_server_t {
 	RSocket *fd;
-	char port[5];
+	char *port;
 	ut8 buf[RAP_RMT_MAX + 32];	// This should be used as a static buffer for everything done by the server
 	rap_server_open open;
 	rap_server_seek seek;
@@ -235,16 +236,16 @@ R_API int r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
 R_API int r_run_parsefile(RRunProfile *p, const char *b);
 
-/* r2pipe */
-R_API R2Pipe *r2p_open(const char *cmd);
-R_API R2Pipe *r2p_open_corebind(RCoreBind *coreb);
-R_API int r2p_close(R2Pipe *r2p);
+/* rapipe */
+R_API R2Pipe *rap_open(const char *cmd);
+R_API R2Pipe *rap_open_corebind(RCoreBind *coreb);
+R_API int rap_close(R2Pipe *rap);
 
-R_API char *r2p_cmd(R2Pipe *r2p, const char *str);
-R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...);
+R_API char *rap_cmd(R2Pipe *rap, const char *str);
+R_API char *rap_cmdf(R2Pipe *rap, const char *fmt, ...);
 
-R_API int r2p_write(R2Pipe *r2p, const char *str);
-R_API char *r2p_read(R2Pipe *r2p);
+R_API int rap_write(R2Pipe *rap, const char *str);
+R_API char *rap_read(R2Pipe *rap);
 #endif
 
 #ifdef __cplusplus

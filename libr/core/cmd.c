@@ -135,24 +135,25 @@ static const char *help_msg_dot[] = {
 };
 
 static const char *help_msg_equal[] = {
-	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
-	"\nrap commands:", "", "",
+	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
+	"\nremote commands:", "", "",
 	"=", "", "list all open connections",
-	"=<", "[fd] cmd", "send output of local command to remote fd",
+	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
 	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
 	"=!", " cmd", "run command via r_io_system",
-	"=+", " [proto://]host", "add host (default=rap://, tcp://, udp://)",
+	"=+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
 	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
 	"=!=", "", "disable remote cmd mode",
 	"!=!", "", "enable remote cmd mode",
-	"\nrap server:","","",
-	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
+	"\nrap server - radare binary protocol:","","",
+	"=", ":port", "start the rap server (o rap://9999)",
 	"=&", ":port", "start rap server in background",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nother servers:","","",
-	"=h", "[?]", "listen for http connections",
-	"=g", "[?]", "using gdbserver",
+	"\nother:","","",
+	"=g", "[?]", "start the gdbserver",
+	"=h", "[?]", "start the http webserver",
+	"=H", "[?]", "start the http webserver (and laungh the web browser)",
 	NULL
 };
 
