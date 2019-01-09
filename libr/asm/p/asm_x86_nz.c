@@ -90,7 +90,8 @@ typedef enum register_t {
 	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI, X86R_RIP,
 	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15,
 	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS,	// Is this the right order?
-	X86R_CR0 = 0, X86R_CR1, X86R_CR2, X86R_CR3, X86R_CR4, X86R_CR5, X86R_CR6, X86R_CR7
+	X86R_CR0 = 0, X86R_CR1, X86R_CR2, X86R_CR3, X86R_CR4, X86R_CR5, X86R_CR6, X86R_CR7,
+	X86R_DR0 = 0, X86R_DR1, X86R_DR2, X86R_DR3, X86R_DR4, X86R_DR5, X86R_DR6, X86R_DR7
 } Register;
 
 typedef struct operand_t {
@@ -130,6 +131,10 @@ typedef struct Opcode_t {
 	Operand operands[MAX_OPERANDS];
 	bool has_bnd;
 } Opcode;
+
+static inline bool is_debug_or_control(Operand op) {
+	return (op.type & OT_REGTYPE) & (OT_CONTROLREG | OT_DEBUGREG);
+}
 
 static ut8 getsib(const ut8 sib) {
 	if (!sib) {
@@ -1887,11 +1892,11 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		    op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 				return -1;
 		}
-		if (op->operands[0].type & OT_REGTYPE & OT_CONTROLREG &&
+		if (is_debug_or_control (op->operands[0]) &&
 		   !(op->operands[1].type & OT_REGTYPE & OT_GPREG)) {
 			return -1;
 		}
-		if (op->operands[1].type & OT_REGTYPE & OT_CONTROLREG &&
+		if (is_debug_or_control (op->operands[1]) &&
 			!(op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
 			return -1;
 		}
@@ -1930,10 +1935,20 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		offset = op->operands[0].offset * op->operands[0].offset_sign;
 		if (op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 			data[l++] = 0x8c;
-		} else if (op->operands[0].type & OT_REGTYPE & OT_CONTROLREG ||
-				op->operands[1].type & OT_REGTYPE & OT_CONTROLREG) {
+		} else if (is_debug_or_control (op->operands[0])) {
 			data[l++] = 0x0f;
-			data[l++] = op->operands[0].type & OT_REGTYPE & OT_CONTROLREG ? 0x22 : 0x20;
+			if (op->operands[0].type & OT_REGTYPE & OT_DEBUGREG) {
+				data[l++] = 0x23;
+			} else {
+				data[l++] = 0x22;
+			}
+		} else if (is_debug_or_control(op->operands[1])) {
+			data[l++] = 0x0f;
+			if (op->operands[1].type & OT_REGTYPE & OT_DEBUGREG) {
+				data[l++] = 0x21;
+			} else {
+				data[l++] = 0x20;
+			}
 		} else {
 			if (op->operands[0].type & OT_WORD) {
 				data[l++] = 0x66;
@@ -1960,7 +1975,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				return -1;
 			}
 			mod = 0x3;
-			data[l++] = (op->operands[0].type & OT_REGTYPE & OT_CONTROLREG) 
+			data[l++] = (is_debug_or_control (op->operands[0])) 
 				? mod << 6 | op->operands[0].reg << 3 | op->operands[1].reg 
 				: mod << 6 | op->operands[1].reg << 3 | op->operands[0].reg;
 		} else if (op->operands[0].regs[0] == X86R_UNDEFINED) {
@@ -4373,6 +4388,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	const char *regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
 	const char *cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
+	const char *dregs[] = { "dr0", "dr1", "dr2","dr3", "dr4", "dr5", "dr6", "dr7", NULL };
 
 	// Get token (especially the length)
 	size_t nextpos, length;
@@ -4392,10 +4408,19 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		}
 	}
 	// Control registers
-	if (length == 3 && token[1] == 'r') {
+	if (length == 3 && token[0] == 'c') {
 		for (i = 0; cregs[i]; i++) {
 			if (!r_str_ncasecmp (cregs[i], token, length)) {
 				*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
+				return i;
+			}
+		}
+	}
+	// Debug registers
+	if (length == 3 && token[0] == 'd') {
+		for (i = 0; cregs[i]; i++) {
+			if (!r_str_ncasecmp (dregs[i], token, length)) {
+				*type = (OT_DEBUGREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
 		}
