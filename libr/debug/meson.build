@@ -20,7 +20,7 @@ files = [
   'p/debug_native.c',
   'p/debug_null.c',
   'p/debug_qnx.c',
-  'p/debug_rap.c',
+  'p/debug_r2p.c',
   'p/debug_windbg.c',
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',
