@@ -1381,14 +1381,14 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	}
 
 	switch (rtr_host[rtr_n].proto) {
-	case RTR_PROT_R2P:
+	case RTR_PROTOCOL_RAP:
 		eprintf ("Error: Cannot use '=<' to a rap connection.\n");
 		break;
-	case RTR_PROT_HTTP:
+	case RTR_PROTOCOL_HTTP:
 		eprintf ("TODO\n");
 		break;
-	case RTR_PROT_TCP:
-	case RTR_PROT_UDP:
+	case RTR_PROTOCOL_TCP:
+	case RTR_PROTOCOL_UDP:
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
 		break;
 	default:
@@ -1404,11 +1404,11 @@ R_API void r_core_rtr_list(RCore *core) {
 		if (!rtr_host[i].fd) {
 			continue;
 		}
-		const char *proto = "r2p";
+		const char *proto = "rap";
 		switch (rtr_host[i].proto) {
-		case RTR_PROT_HTTP: proto = "http"; break;
-		case RTR_PROT_TCP: proto = "tcp"; break;
-		case RTR_PROT_UDP: proto = "udp"; break;
+		case RTR_PROTOCOL_HTTP: proto = "http"; break;
+		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
+		case RTR_PROTOCOL_UDP: proto = "udp"; break;
 		}
 		r_cons_printf ("%i - %s://%s:%i/%s\n", 
 			rtr_host[i].fd->fd, proto, rtr_host[i].host,
@@ -1425,7 +1425,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	strncpy (input, _input, sizeof (input) - 4);
 	input[sizeof (input)-4] = '\0';
 
-	int proto = RTR_PROT_R2P;
+	int proto = RTR_PROTOCOL_RAP;
 	char *host = (char *)r_str_trim_ro (input);
 	char *pikaboo = strstr (host, "://");
 	if (pikaboo) {
@@ -1433,10 +1433,10 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			const char *name;
 			int protocol;
 		} uris[5] = {
-			{"tcp", RTR_PROT_TCP},
-			{"udp", RTR_PROT_UDP},
-			{"r2p", RTR_PROT_R2P},
-			{"http", RTR_PROT_HTTP},
+			{"tcp", RTR_PROTOCOL_TCP},
+			{"udp", RTR_PROTOCOL_UDP},
+			{"rap", RTR_PROTOCOL_RAP},
+			{"http", RTR_PROTOCOL_HTTP},
 			{NULL, 0}
 		};
 		char *s = r_str_ndup (input, pikaboo - input);
@@ -1484,7 +1484,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		return;
 	}
 	switch (proto) {
-	case RTR_PROT_HTTP:
+	case RTR_PROTOCOL_HTTP:
 		{
 			char prompt[64], prompt2[64], *str, *ptr;
 			int len, flen = strlen (file);
@@ -1593,7 +1593,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		}
 		break;
-	case RTR_PROT_R2P:
+	case RTR_PROTOCOL_RAP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
@@ -1601,7 +1601,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		eprintf ("Connected to %s at port %s\n", host, port);
 		/* send */
-		buf[0] = RTR_R2P_OPEN;
+		buf[0] = RTR_RAP_OPEN;
 		buf[1] = 0;
 		buf[2] = (ut8)(strlen (file) + 1);
 		memcpy (buf + 3, file, buf[2]);
@@ -1611,14 +1611,14 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		fflush (stdout);
 		r_socket_read (fd, (ut8*)buf, 5);
 		i = r_read_at_be32 (buf, 1);
-		if (buf[0] != (char)(RTR_R2P_OPEN | RTR_R2P_REPLY) || i <= 0) {
+		if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
 			eprintf ("Error: Wrong reply\n");
 			r_socket_free (fd);
 			return;
 		}
 		eprintf ("ok\n");
 		break;
-	case RTR_PROT_TCP:
+	case RTR_PROTOCOL_TCP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -1628,7 +1628,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		core->num->value = 0;
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
-	case RTR_PROT_UDP:
+	case RTR_PROTOCOL_UDP:
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -1737,7 +1737,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 }
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
-	char *file = r_str_newf ("r2p://%s", input);
+	char *file = r_str_newf ("rap://%s", input);
 	int flags = R_PERM_RW;
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
 	if (fd) {
@@ -1751,7 +1751,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 		r_cons_singleton ()->context->breaked = true;
 	}
 	return !r_cons_singleton ()->context->breaked;
-	// r_core_cmdf (core, "o r2p://%s", input);
+	// r_core_cmdf (core, "o rap://%s", input);
 }
 
 static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
@@ -1817,8 +1817,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (rtr_host[rtr_n].proto != RTR_PROT_R2P) {
-		eprintf ("Error: Not a r2p:// host\n");
+	if (rtr_host[rtr_n].proto != RTR_PROTOCOL_RAP) {
+		eprintf ("Error: Not a rap:// host\n");
 		return;
 	}
 
@@ -1833,14 +1833,14 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 	/* send request */
-	bufw[0] = R2P_RMT_CMD;
+	bufw[0] = RAP_RMT_CMD;
 	i = strlen (cmd) + 1;
 	r_write_be32 (bufw + 1, i);
 	memcpy (bufw + 5, cmd, i);
 	r_socket_write (fh, bufw, 5 + i);
 	/* read response */
 	r_socket_read (fh, (ut8*)bufr, 5);
-	if (bufr[0] == (char)(R2P_RMT_CMD)) {
+	if (bufr[0] == (char)(RAP_RMT_CMD)) {
 		cmd_len = r_read_at_be32 (bufr, 1);
 		char *rcmd = calloc (1, cmd_len + 1);
 		if (rcmd) {
@@ -1848,7 +1848,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			char *res = r_core_cmd_str (core, rcmd);
 			if (res) {
 				int res_len = strlen (res) + 1;
-				ut8 *pkt = r_rap_packet ((R2P_RMT_CMD | R2P_RMT_REPLY), res_len);
+				ut8 *pkt = r_rap_packet ((RAP_RMT_CMD | RAP_RMT_REPLY), res_len);
 				r_rap_packet_fill (pkt, (const ut8*)res, res_len);
 				r_socket_write (fh, pkt, 5 + res_len);
 				free (res);
@@ -1860,7 +1860,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		r_socket_read (fh, (ut8*)bufr, 5);
 	}
 
-	if (bufr[0] != (char)(R2P_RMT_CMD | RTR_R2P_REPLY)) {
+	if (bufr[0] != (char)(RAP_RMT_CMD | RTR_RAP_REPLY)) {
 		eprintf ("Error: Wrong reply\n");
 		return;
 	}

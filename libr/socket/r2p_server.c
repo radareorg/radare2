@@ -59,58 +59,58 @@ R_API bool r_socket_server_continue (RSocketRapServer *s) {
 	}
 	r_socket_read_block (s->fd, s->buf, 1);
 	switch (s->buf[0]) {
-	case R2P_RMT_OPEN:
+	case RAP_RMT_OPEN:
 		r_socket_read_block (s->fd, &s->buf[1], 2);
 		r_socket_read_block (s->fd, &s->buf[3], (int)s->buf[2]);
 		s->open (s->user, (const char *)&s->buf[3], (int)s->buf[1], 0);
-		s->buf[0] = R2P_RMT_OPEN | R2P_RMT_REPLY;
+		s->buf[0] = RAP_RMT_OPEN | RAP_RMT_REPLY;
 		r_socket_write (s->fd, s->buf, 5);
 		r_socket_flush (s->fd);
 		break;
-	case R2P_RMT_READ:
+	case RAP_RMT_READ:
 		r_socket_read_block (s->fd, &s->buf[1], 4);
 		i = r_read_be32 (&s->buf[1]);
-		if (i > R2P_RMT_MAX || i < 0) {
-			i = R2P_RMT_MAX;
+		if (i > RAP_RMT_MAX || i < 0) {
+			i = RAP_RMT_MAX;
 		}
 		s->read (s->user, &s->buf[5], i);
-		s->buf[0] = R2P_RMT_READ | R2P_RMT_REPLY;
+		s->buf[0] = RAP_RMT_READ | RAP_RMT_REPLY;
 		r_socket_write (s->fd, s->buf, i + 5);
 		r_socket_flush (s->fd);
 		break;
-	case R2P_RMT_WRITE:
+	case RAP_RMT_WRITE:
 		r_socket_read_block (s->fd, s->buf + 1, 4);
 		i = r_read_be32 (s->buf + 1);
-		if (i > R2P_RMT_MAX || i < 0) {
-			i = R2P_RMT_MAX;
+		if (i > RAP_RMT_MAX || i < 0) {
+			i = RAP_RMT_MAX;
 		}
 		r_socket_read_block (s->fd, s->buf + 5, i);
 		r_write_be32 (s->buf + 1, s->write (s->user, s->buf + 5, i));
-		s->buf[0] = R2P_RMT_WRITE | R2P_RMT_REPLY;
+		s->buf[0] = RAP_RMT_WRITE | RAP_RMT_REPLY;
 		r_socket_write (s->fd, s->buf, 5);
 		r_socket_flush (s->fd);
 		break;
-	case R2P_RMT_SEEK:
+	case RAP_RMT_SEEK:
 		{
 		r_socket_read_block (s->fd, &s->buf[1], 9);
 		int whence = s->buf[1];
 		ut64 offset = r_read_be64 (s->buf + 2);
 		offset = s->seek (s->user, offset, whence);
 		/* prepare reply */
-		s->buf[0] = R2P_RMT_SEEK | R2P_RMT_REPLY;
+		s->buf[0] = RAP_RMT_SEEK | RAP_RMT_REPLY;
 		r_write_be64 (s->buf + 1, offset);
 		r_socket_write (s->fd, s->buf, 9);
 		r_socket_flush (s->fd);
 		}
 		break;
-	case R2P_RMT_CMD:
+	case RAP_RMT_CMD:
 		r_socket_read_block (s->fd, &s->buf[1], 4);
 		i = r_read_be32 (&s->buf[1]);
 		r_socket_read_block (s->fd, &s->buf[5], i);
 		ptr = s->cmd (s->user, (const char *)&s->buf[5]);
 		i = (ptr)? strlen (ptr) + 1: 0;
 		r_write_be32 (&s->buf[1], i);
-		s->buf[0] = R2P_RMT_CMD | R2P_RMT_REPLY;
+		s->buf[0] = RAP_RMT_CMD | RAP_RMT_REPLY;
 		r_socket_write (s->fd, s->buf, 5);
 		if (i) {
 			r_socket_write (s->fd, ptr, i);
@@ -118,11 +118,11 @@ R_API bool r_socket_server_continue (RSocketRapServer *s) {
 		r_socket_flush (s->fd);
 		R_FREE (ptr);
 		break;
-	case R2P_RMT_CLOSE:
+	case RAP_RMT_CLOSE:
 		r_socket_read_block (s->fd, &s->buf[1], 4);
 		i = r_read_be32 (&s->buf[1]);
 		s->close (s->user, i);
-		s->buf[0] = R2P_RMT_CLOSE | R2P_RMT_REPLY;
+		s->buf[0] = RAP_RMT_CLOSE | RAP_RMT_REPLY;
 		r_socket_write (s->fd, s->buf, 5);
 		r_socket_flush (s->fd);
 		break;

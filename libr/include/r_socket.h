@@ -151,20 +151,21 @@ typedef char *(*rap_server_cmd)(void *user, const char *command);
 typedef int (*rap_server_close)(void *user, int fd);
 
 enum {
-	R2P_RMT_OPEN = 0x01,
-	R2P_RMT_READ,
-	R2P_RMT_WRITE,
-	R2P_RMT_SEEK,
-	R2P_RMT_CLOSE,
-	R2P_RMT_CMD = 0x07,
-	R2P_RMT_REPLY = 0x80,
-	R2P_RMT_MAX = 4096
+	RAP_RMT_OPEN = 1,
+	RAP_RMT_READ = 2,
+	RAP_RMT_WRITE = 3,
+	RAP_RMT_SEEK = 4,
+	RAP_RMT_CLOSE = 5,
+	// system was deprecated in slot 6,
+	RAP_RMT_CMD = 7,
+	RAP_RMT_REPLY = 0x80,
+	RAP_RMT_MAX = 4096
 };
 
 typedef struct r_socket_rap_server_t {
 	RSocket *fd;
 	char *port;
-	ut8 buf[R2P_RMT_MAX + 32];	// This should be used as a static buffer for everything done by the server
+	ut8 buf[RAP_RMT_MAX + 32];	// This should be used as a static buffer for everything done by the server
 	rap_server_open open;
 	rap_server_seek seek;
 	rap_server_read read;

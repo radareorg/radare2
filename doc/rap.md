@@ -12,11 +12,11 @@ Usage example
 
 Start in one terminal the following command to wait for incoming connections:
 
-	r2 r2p://:9999
+	r2 rap://:9999
 
 In another machine or terminal connect it:
 
-	r2 r2p://localhost:9999//bin/ls
+	r2 rap://localhost:9999//bin/ls
 
 As you see, the path of the remote file to load must be specified, and this handled
 by the open() packet.
@@ -89,9 +89,9 @@ Examples
 
 Python:
 
-	See radare2-bindings/python/remote.py and test-r2p-*.py
+	See radare2-bindings/python/remote.py and test-rap-*.py
 
 C:
 
-	Server: libr/socket/r2p_server.c
-	Client: libr/io/p/io_r2p.c
+	Server: libr/socket/rap_server.c
+	Client: libr/io/p/io_rap.c
