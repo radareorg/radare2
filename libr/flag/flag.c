@@ -101,7 +101,12 @@ static bool set_name(RFlagItem *item, const char *name) {
 	return true;
 }
 
-R_API RFlag * r_flag_new() {
+static void ht_free_flag(HtPPKv *kv) {
+	free (kv->key);
+	r_flag_item_free (kv->value);
+}
+
+R_API RFlag *r_flag_new() {
 	int i;
 	RFlag *f = R_NEW0 (RFlag);
 	if (!f) {
@@ -126,7 +131,7 @@ R_API RFlag * r_flag_new() {
 		r_flag_free (f);
 		return NULL;
 	}
-	f->ht_name = ht_pp_new0 ();
+	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	f->by_off = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 #if R_FLAG_ZONE_USE_SDB
 	sdb_free (f->zones);
@@ -693,8 +698,7 @@ R_API void r_flag_unset_all(RFlag *f) {
 	r_return_if_fail (f);
 	f->space_idx = -1;
 	ht_pp_free (f->ht_name);
-	//don't set free since f->flags will free up items when needed avoiding uaf
-	f->ht_name = ht_pp_new0 ();
+	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	r_skiplist_purge (f->by_off);
 	r_flag_space_unset (f, NULL);
 }
