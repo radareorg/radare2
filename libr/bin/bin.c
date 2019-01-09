@@ -777,7 +777,6 @@ R_API RList *r_bin_patch_relocs(RBin *bin) {
 		o->relocs = tmp;
 		REBASE_PADDR (o, o->relocs, RBinReloc);
 		first = false;
-		return o->relocs;
 	}
 	return o->relocs;
 }
