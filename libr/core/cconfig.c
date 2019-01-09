@@ -3200,7 +3200,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("magic.depth", 100, "Recursivity depth in magic description strings");
 
 	/* rap */
-	SETPREF ("rap.loop", "true", "Run r2p as a forever-listening daemon (=:9090)");
+	SETPREF ("rap.loop", "true", "Run rap as a forever-listening daemon (=:9090)");
 
 	/* nkeys */
 	SETPREF ("key.s", "", "override step into action");

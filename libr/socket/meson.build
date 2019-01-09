@@ -3,7 +3,7 @@ files = [
   'http_server.c',
   'proc.c',
   'r2pipe.c',
-  'r2p_server.c',
+  'rap_server.c',
   'run.c',
   'socket.c',
   'serial.c',
