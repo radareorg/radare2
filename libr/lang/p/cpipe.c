@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 pancake */
+/* radare - LGPL - Copyright 2011-2019 pancake */
 /* vala extension for libr (radare2) */
 // TODO: add cache directory (~/.r2/cache)
 
@@ -24,7 +24,7 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 	if (a) {
 		*a = 0;
 		libpath = name;
-		libname = a+1;
+		libname = a + 1;
 	} else {
 		libpath = ".";
 		libname = name;
@@ -59,23 +59,25 @@ static int lang_cpipe_init(void *user) {
 static int lang_cpipe_run(RLang *lang, const char *code, int len) {
 	FILE *fd = fopen (".tmp.c", "w");
 	if (fd) {
-		fputs ("#include <r_socket.h>\n\n"
-			"#define R2P(x,y...) r2p_cmdf(r2p,x,##y)\n"
-			"int main() {\n"
-			"R2Pipe *r2p = r2p_open(NULL);", fd);
-		fputs (code, fd);
-		fputs ("\n}\n", fd);
-		fclose (fd);
-		lang_cpipe_file (lang, ".tmp.c");
-		r_file_rm (".tmp.c");
-	} else eprintf ("Cannot open .tmp.c\n");
+		eprintf ("Cannot open .tmp.c\n");
+		return false;
+	}
+	fputs ("#include <r_socket.h>\n\n"
+		"#define R2P(x,y...) r2pipe_cmdf(r2p,x,##y)\n"
+		"int main() {\n"
+		"  R2Pipe *r2p = r2pipe_open(NULL);", fd);
+	fputs (code, fd);
+	fputs ("\n}\n", fd);
+	fclose (fd);
+	lang_cpipe_file (lang, ".tmp.c");
+	r_file_rm (".tmp.c");
 	return true;
 }
 
 static RLangPlugin r_lang_plugin_cpipe = {
 	.name = "cpipe",
 	.ext = "c2",
-	.desc = "C r2pipe scripting",
+	.desc = "r2pipe scripting in C",
 	.license = "LGPL",
 	.run = lang_cpipe_run,
 	.init = (void*)lang_cpipe_init,
