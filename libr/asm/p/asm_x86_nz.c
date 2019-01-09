@@ -1975,8 +1975,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				return -1;
 			}
 			mod = 0x3;
-			data[l++] = (is_debug_or_control (op->operands[0])) 
-				? mod << 6 | op->operands[0].reg << 3 | op->operands[1].reg 
+			data[l++] = (is_debug_or_control (op->operands[0]))
+				? mod << 6 | op->operands[0].reg << 3 | op->operands[1].reg
 				: mod << 6 | op->operands[1].reg << 3 | op->operands[0].reg;
 		} else if (op->operands[0].regs[0] == X86R_UNDEFINED) {
 			data[l++] = op->operands[1].reg << 3 | 0x5;
