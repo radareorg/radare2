@@ -89,7 +89,8 @@ typedef enum register_t {
 	X86R_AL = 0, X86R_CL, X86R_DL, X86R_BL, X86R_AH, X86R_CH, X86R_DH, X86R_BH,
 	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI, X86R_RIP,
 	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15,
-	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS	// Is this the right order?
+	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS,	// Is this the right order?
+	X86R_CR0 = 0, X86R_CR1, X86R_CR2, X86R_CR3, X86R_CR4, X86R_CR5, X86R_CR6, X86R_CR7
 } Register;
 
 typedef struct operand_t {
@@ -1886,6 +1887,14 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		    op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 				return -1;
 		}
+		if (op->operands[0].type & OT_REGTYPE & OT_CONTROLREG &&
+		   !(op->operands[1].type & OT_REGTYPE & OT_GPREG)) {
+			return -1;
+		}
+		if (op->operands[1].type & OT_REGTYPE & OT_CONTROLREG &&
+			!(op->operands[0].type & OT_REGTYPE & OT_GPREG)) {
+			return -1;
+		}
 		// Check reg sizes match
 		if (op->operands[0].type & OT_REGTYPE && op->operands[1].type & OT_REGTYPE) {
 			if (!((op->operands[0].type & ALL_SIZE) &
@@ -1921,6 +1930,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		offset = op->operands[0].offset * op->operands[0].offset_sign;
 		if (op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 			data[l++] = 0x8c;
+		} else if (op->operands[0].type & OT_REGTYPE & OT_CONTROLREG ||
+				op->operands[1].type & OT_REGTYPE & OT_CONTROLREG) {
+			data[l++] = 0x0f;
+			data[l++] = op->operands[0].type & OT_REGTYPE & OT_CONTROLREG ? 0x22 : 0x20;
 		} else {
 			if (op->operands[0].type & OT_WORD) {
 				data[l++] = 0x66;
@@ -1947,7 +1960,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				return -1;
 			}
 			mod = 0x3;
-			data[l++] = mod << 6 | op->operands[1].reg << 3 | op->operands[0].reg;
+			data[l++] = (op->operands[0].type & OT_REGTYPE & OT_CONTROLREG) 
+				? mod << 6 | op->operands[0].reg << 3 | op->operands[1].reg 
+				: mod << 6 | op->operands[1].reg << 3 | op->operands[0].reg;
 		} else if (op->operands[0].regs[0] == X86R_UNDEFINED) {
 			data[l++] = op->operands[1].reg << 3 | 0x5;
 			data[l++] = offset;
@@ -4354,9 +4369,10 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	const char *regsext[] = { "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", NULL };
 	const char *regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
-	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL};
+	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "rip", NULL };
 	const char *regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
-	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL};
+	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL };
+	const char *cregs[] = { "cr0", "cr1", "cr2","cr3", "cr4", "cr5", "cr6", "cr7", NULL };
 
 	// Get token (especially the length)
 	size_t nextpos, length;
@@ -4371,6 +4387,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		for (i = 0; regs[i]; i++) {
 			if (!r_str_ncasecmp (regs[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
+				return i;
+			}
+		}
+	}
+	// Control registers
+	if (length == 3 && token[1] == 'r') {
+		for (i = 0; cregs[i]; i++) {
+			if (!r_str_ncasecmp (cregs[i], token, length)) {
+				*type = (OT_CONTROLREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
 		}

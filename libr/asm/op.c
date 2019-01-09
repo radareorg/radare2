@@ -60,7 +60,7 @@ R_API void r_asm_op_set_hex(RAsmOp *op, const char *str) {
 }
 
 R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
-	char *hex = malloc (len * 4);
+	char *hex = malloc (len * 4 + 1);
 	if (hex) {
 		r_hex_bin2str (buf, len, hex);
 		r_asm_op_set_hex (op, hex);
