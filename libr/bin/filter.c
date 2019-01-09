@@ -6,16 +6,23 @@
 static char *hashify(char *s, ut64 vaddr) {
 	r_return_val_if_fail (s, NULL);
 
+	char *ret;
 	char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
-				free (os);
-				return r_str_newf ("_%" PFMT64d, vaddr);
+				ret = r_str_newf ("_%" PFMT64d, vaddr);
+				if (ret) {
+					free (os);
+				}
+				return ret;
 			}
 			ut32 hash = sdb_hash (s);
-			free (os);
-			return r_str_newf ("%x", hash);
+			ret = r_str_newf ("%x", hash);
+			if (ret) {
+				free (os);
+			}
+			return ret;
 		}
 		s++;
 	}
