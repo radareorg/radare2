@@ -73,6 +73,10 @@ static ut64 getnum(RAsm *a, const char *s);
 #define MAX_OPERANDS 3
 #define MAX_REPOP_LENGTH 20
 
+#define is_valid_registers(op)\
+	if (is_debug_or_control(op->operands[0]) || is_debug_or_control(op->operands[1]))\
+		return -1;
+
 const ut8 SEG_REG_PREFIXES[] = {0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65};
 
 typedef enum tokentype_t {
@@ -156,6 +160,7 @@ static int is_al_reg(const Operand *op) {
 static int oprep(RAsm *a, ut8 *data, const Opcode *op);
 
 static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) {
+	is_valid_registers(op);
 	int l = 0;
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
 
@@ -180,6 +185,7 @@ static int process_16bit_group_1(RAsm *a, ut8 *data, const Opcode *op, int op1) 
 }
 
 static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int modrm = 0;
 	int mod_byte = 0;
@@ -274,6 +280,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int modrm = 0;
 	int mod_byte = 0;
@@ -345,6 +352,7 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
+	is_valid_registers(op);
 	int l = 0;
 	int mod_byte = 0;
 	int reg = 0;
@@ -569,6 +577,7 @@ static int opor(RAsm *a, ut8 * data, const Opcode *op) {
 }
 
 static int opxadd(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int i = 0;
 	if (op->operands_count < 2 ) {
 		return -1;
@@ -593,6 +602,7 @@ static int opxadd(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
+	is_valid_registers(op);
 	if (op->operands_count < 2) {
 		return -1;
 	}
@@ -615,6 +625,7 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 }
 
 static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 
 	if (op->operands[0].reg == X86R_UNDEFINED)  {
@@ -662,6 +673,7 @@ static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
 static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_REGALL) {
+		is_valid_registers(op);
 		if (op->operands[0].reg == X86R_UNDEFINED) {
 			return -1;
 		}
@@ -681,6 +693,7 @@ static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int immediate = 0;
 	int offset = 0;
@@ -731,6 +744,7 @@ static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opcmov(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int mod_byte = 0;
 	int offset = 0;
@@ -860,6 +874,7 @@ static int opcmov(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opmovx(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int word = 0;
 	char *movx = op->mnemonic + 3;
@@ -886,6 +901,7 @@ static int opmovx(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opaam(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int immediate = op->operands[0].immediate * op->operands[0].sign;
 	data[l++] = 0xd4;
@@ -902,6 +918,7 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 		eprintf ("Error: Invalid operands\n");
 		return -1;
 	}
+	is_valid_registers(op);
 	int l = 0;
 	int size = op->operands[0].type & ALL_SIZE;
 	if (op->operands[0].explicit_size) {
@@ -1044,6 +1061,7 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 
 	if ( op->operands[0].type & OT_QWORD ) {
@@ -1072,6 +1090,7 @@ static int opidiv(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 
 	if ( op->operands[0].type & OT_QWORD ) {
@@ -1100,6 +1119,7 @@ static int opdiv(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int offset = 0;
 	st64 immediate = 0;
@@ -1239,6 +1259,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opin(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	st32 immediate = 0;
 	if (op->operands[1].reg == X86R_DX) {
@@ -1280,6 +1301,7 @@ static int opin(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int offset = 0;
 	int mod_byte = 0;
@@ -1313,6 +1335,7 @@ static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 		eprintf ("Error: Invalid operands\n");
 		return -1;
 	}
+	is_valid_registers(op);
 	int l = 0;
 	int size = op->operands[0].type & ALL_SIZE;
 	if (op->operands[0].explicit_size) {
@@ -1466,6 +1489,7 @@ static int opint(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	bool is_short = op->is_short;
 	// st64 bigimm = op->operands[0].immediate * op->operands[0].sign;
@@ -2180,6 +2204,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 
 	if ( op->operands[0].type & OT_QWORD ) {
@@ -2208,6 +2233,7 @@ static int opmul(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
@@ -2258,6 +2284,7 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int mod = 0;
 	st32 immediate = 0;;
@@ -2322,6 +2349,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opout(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	st32 immediate = 0;
 	if (op->operands[0].reg == X86R_DX) {
@@ -2361,6 +2389,7 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int oploop(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	data[l++] = 0xe2;
 	st8 delta = op->operands[0].immediate - a->pc - 2;
@@ -2401,6 +2430,7 @@ static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	if (!strcmp(op->mnemonic, "stosw")) {
 		data[l++] = 0x66;
@@ -2480,6 +2510,7 @@ static int opset(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int optest(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
 		eprintf ("Error: Invalid operands\n");
@@ -2539,6 +2570,7 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	int mod_byte = 0;
 	int reg = 0;
@@ -2592,6 +2624,7 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int opcdqe(RAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
 	int l = 0;
 	if (a->bits == 64) {
 		data[l++] = 0x48;
