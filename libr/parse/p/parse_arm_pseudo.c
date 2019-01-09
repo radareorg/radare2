@@ -134,14 +134,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		return false;
 	}
 
-	for (i = 0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (ops[i].narg) {
 			if (argc - 1 != ops[i].narg) {
 				continue;
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr != NULL) {
+			if (newstr) {
 				d = 0;
 				j = 0;
 				ch = ops[i].str[j];
@@ -159,7 +159,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							continue;
 						}
 						const char *w = argv[idx];
-						if (w != NULL) {
+						if (w) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
