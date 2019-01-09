@@ -775,7 +775,7 @@ R_API void r_flag_bind(RFlag *f, RFlagBind *fb) {
 }
 
 static bool flag_count_foreach(RFlagItem *fi, void *user) {
-	int *count = (int *)count;
+	int *count = (int *)user;
 	(*count)++;
 	return true;
 }
