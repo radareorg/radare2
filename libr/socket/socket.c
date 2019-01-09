@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2018 - pancake */
+/* radare - LGPL - Copyright 2006-2019 - pancake */
 
 /* must be included first because of winsock2.h and windows.h */
 #include <r_socket.h>
@@ -183,7 +183,7 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 }
 #endif
 
-R_API RSocket *r_socket_new (int is_ssl) {
+R_API RSocket *r_socket_new (bool is_ssl) {
 	RSocket *s = R_NEW0 (RSocket);
 	if (!s) {
 		return NULL;
@@ -280,11 +280,12 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	}
 	s->fd = socket (AF_INET, SOCK_STREAM, 0);
 #ifdef _MSC_VER
-	if (s->fd == INVALID_SOCKET)
+	if (s->fd == INVALID_SOCKET) {
 #else
-	if (s->fd == -1)
+	if (s->fd == -1) {
 #endif
 		return false;
+	}
 
 	unsigned long iMode = 1;
 	int iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
@@ -486,10 +487,7 @@ R_API int r_socket_free (RSocket *s) {
 
 R_API int r_socket_port_by_name(const char *name) {
 	struct servent *p = getservbyname (name, "tcp");
-	if (p && p->s_port) {
-		return ntohs (p->s_port);
-	}
-	return r_num_get (NULL, name);
+	return (p && p->s_port) ? ntohs (p->s_port) : r_num_get (NULL, name);
 }
 
 R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) {
