@@ -2786,12 +2786,12 @@ R_API bool r_core_serve(RCore *core, RIODesc *file) {
 
 	RIORap *rior = (RIORap *)file->data;
 	if (!rior|| !rior->fd) {
-		eprintf ("r2p: cannot listen.\n");
+		eprintf ("rap: cannot listen.\n");
 		return false;
 	}
 	RSocket *fd = rior->fd;
 	eprintf ("RAP Server started (rap.loop=%s)\n",
-			r_config_get (core->config, "r2p.loop"));
+			r_config_get (core->config, "rap.loop"));
 	r_cons_break_push (rap_break, rior);
 reaccept:
 	while (!r_cons_is_breaked ()) {
@@ -2803,16 +2803,16 @@ reaccept:
 			goto out_of_function;
 		}
 		if (!c) {
-			eprintf ("r2p: cannot accept\n");
+			eprintf ("rap: cannot accept\n");
 			r_socket_free (c);
 			goto out_of_function;
 		}
-		eprintf ("r2p: client connected\n");
+		eprintf ("rap: client connected\n");
 		for (;!r_cons_is_breaked ();) {
 			if (!r_socket_read (c, &cmd, 1)) {
-				eprintf ("r2p: connection closed\n");
-				if (r_config_get_i (core->config, "r2p.loop")) {
-					eprintf ("r2p: waiting for new connection\n");
+				eprintf ("rap: connection closed\n");
+				if (r_config_get_i (core->config, "rap.loop")) {
+					eprintf ("rap: waiting for new connection\n");
 					r_socket_free (c);
 					goto reaccept;
 				}
@@ -2907,10 +2907,10 @@ reaccept:
 						cmd_output = r_core_cmd_str (core, cmd);
 						free (cmd);
 					} else {
-						eprintf ("r2p: cannot malloc\n");
+						eprintf ("rap: cannot malloc\n");
 					}
 				} else {
-					eprintf ("r2p: invalid length '%d'\n", i);
+					eprintf ("rap: invalid length '%d'\n", i);
 				}
 				/* write */
 				if (cmd_output) {
