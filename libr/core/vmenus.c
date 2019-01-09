@@ -2792,19 +2792,25 @@ beach:
 	r_config_set_i (core->config, "asm.bytes", asmbytes);
 }
 
-struct seek_next_offset_t {
+struct seek_flag_offset_t {
 	ut64 offset;
 	ut64 *next;
+	bool is_next;
 };
 
-static bool seek_next_offset(RFlagItem *fi, void *user) {
-	struct seek_next_offset_t *u = (struct seek_next_offset_t *)user;
-	if (fi->offset > *u->next && fi->offset < u->offset) {
-		*u->next = fi->offset;
+static bool seek_flag_offset(RFlagItem *fi, void *user) {
+	struct seek_flag_offset_t *u = (struct seek_flag_offset_t *)user;
+	if (u->is_next) {
+		if (fi->offset < *u->next && fi->offset > u->offset) {
+			*u->next = fi->offset;
+		}
+	} else {
+		if (fi->offset > *u->next && fi->offset < u->offset) {
+			*u->next = fi->offset;
+		}
 	}
 	return true;
 }
-
 
 R_API void r_core_seek_next(RCore *core, const char *type) {
 	RListIter *iter;
@@ -2825,11 +2831,11 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		}
 	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
-		r_flag_foreach_prefix (core->flags, pfx, -1, seek_next_offset, &u);
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
+		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
 	} else { // flags
-		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
-		r_flag_foreach (core->flags, seek_next_offset, &u);
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
+		r_flag_foreach (core->flags, seek_flag_offset, &u);
 	}
 	if (next != UT64_MAX) {
 		r_core_seek (core, next, 1);
@@ -2852,11 +2858,11 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 	} else
 	if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
-		r_flag_foreach_prefix (core->flags, pfx, -1, seek_next_offset, &u);
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
+		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
 	} else { // flags
-		struct seek_next_offset_t u = { .offset = core->offset, .next = &next };
-		r_flag_foreach (core->flags, seek_next_offset, &u);
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
+		r_flag_foreach (core->flags, seek_flag_offset, &u);
 	}
 	if (next != 0) {
 		r_core_seek (core, next, 1);

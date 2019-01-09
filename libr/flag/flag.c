@@ -546,10 +546,6 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
-	return r_flag_set_prio(f, name, off, size, -1);
-}
-
-R_API RFlagItem *r_flag_set_prio(RFlag *f, const char *name, ut64 off, ut32 size, int priority) {
 	r_return_val_if_fail (f && name && *name, NULL);
 
 	RFlagItem *item = r_flag_get (f, name);
@@ -845,9 +841,9 @@ R_API void r_flag_foreach(RFlag *f, RFlagItemCb cb, void *user) {
 	ht_pp_foreach (f->ht_name, flag_foreach_all, &u);
 }
 
-R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, size_t pfx_len, RFlagItemCb cb, void *user) {
+R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, int pfx_len, RFlagItemCb cb, void *user) {
 	struct flag_foreach_t u = { .cb = cb, .user = user, .str = pfx};
-	u.str_len = pfx_len == -1 ? strlen (pfx) : pfx_len;
+	u.str_len = pfx_len < 0 ? strlen (pfx) : pfx_len;
 	ht_pp_foreach (f->ht_name, flag_foreach_prefix, &u);
 }
 

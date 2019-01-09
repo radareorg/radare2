@@ -3264,7 +3264,6 @@ static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 }
 
 struct duplicate_flag_t {
-	int flagspace;
 	RList *ret;
 	const char *word;
 };
@@ -3272,10 +3271,6 @@ struct duplicate_flag_t {
 static bool duplicate_flag(RFlagItem *flag, void *u) {
 	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
 	/* filter per flag spaces */
-	if ((user->flagspace != -1) && (flag->space != user->flagspace)) {
-		return true;
-	}
-
 	if (r_str_glob (flag->name, user->word)) {
 		RFlagItem *cloned_item = r_flag_item_clone (flag);
 		if (!cloned_item) {
@@ -3594,11 +3589,10 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				   values at the moment the command is called
 				   (without side effects) */
 				struct duplicate_flag_t u = {
-					.flagspace = flagspace,
 					.ret = match_flag_items,
 					.word = word,
 				};
-				r_flag_foreach (core->flags, duplicate_flag, &u);
+				r_flag_foreach_space (core->flags, flagspace, duplicate_flag, &u);
 
 				/* for all flags that match */
 				r_list_foreach (match_flag_items, iter, flag) {

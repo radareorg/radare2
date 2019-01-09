@@ -304,11 +304,6 @@ static int cmpflag(const void *_a, const void *_b) {
 	return (flag1->offset - flag2->offset);
 }
 
-static bool append_to_list(RFlagItem *flag, void *list) {
-	r_list_append (list, flag);
-	return true;
-}
-
 struct find_flag_t {
 	RFlagItem *win;
 	ut64 at;
@@ -932,14 +927,13 @@ rep:
 					arg++;
 					if (*arg) {
 						RFlag *f = core->flags;
-						RList *temp = r_list_new ();
+						RList *temp = r_flag_all_list (f);
 						ut64 loff = 0; 
 						ut64 uoff = 0;
 						ut64 curseek = core->offset;
 						char *lmatch = NULL , *umatch = NULL;
 						RFlagItem *flag;
 						RListIter *iter;
-						r_flag_foreach (f, append_to_list, temp);
 						r_list_sort (temp, &cmpflag);
 						r_list_foreach (temp, iter, flag) {
 							if ((f->space_idx != -1) && (flag->space != f->space_idx)) {
