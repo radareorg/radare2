@@ -621,7 +621,7 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 	if (item->name != item->realname) {
 		free (item->realname);
 	}
-	item->realname = R_STR_ISEMPTY (realname) ? NULL : strdup (realname);
+	item->realname = R_STR_ISEMPTY (realname)? NULL: strdup (realname);
 }
 
 /* change the name of a flag item, if the new name is available.
@@ -629,7 +629,11 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
 
+	// TODO: add API in ht to update the key of an existing element
+	HtPPKvFreeFunc ofreefn = f->ht_name->opt.freefn;
+	f->ht_name->opt.freefn = NULL;
 	ht_pp_delete (f->ht_name, item->name);
+	f->ht_name->opt.freefn = ofreefn;
 	if (!set_name (item, name)) {
 		return false;
 	}
