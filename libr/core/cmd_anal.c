@@ -2309,7 +2309,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_free (j);
 	} else {
-		char *sig = r_anal_fcn_format_sig (core->anal, fcn, fcn_name, true, NULL, NULL, NULL);
+		char *sig = r_anal_fcn_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
 		if (sig) {
 			r_cons_printf ("%s\n", sig);
 			free (sig);
