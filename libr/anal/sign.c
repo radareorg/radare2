@@ -717,14 +717,14 @@ static void listGraph(RAnal *a, RSignItem *it, int format) {
 	RSignGraph *graph = it->graph;
 
 	if (format == '*') {
-		a->cb_printf ("za %s g cc=%d nbbs=%d edges=%d ebbs=%d\n",
-			it->name, graph->cc, graph->nbbs, graph->edges, graph->ebbs);
+		a->cb_printf ("za %s g cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
+			it->name, graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
 	} else if (format == 'j') {
-		a->cb_printf ("\"graph\":{\"cc\":\"%d\",\"nbbs\":\"%d\",\"edges\":\"%d\",\"ebbs\":\"%d\"},",
-			graph->cc, graph->nbbs, graph->edges, graph->ebbs);
+		a->cb_printf ("\"graph\":{\"cc\":%d,\"nbbs\":%d,\"edges\":%d,\"ebbs\":%d,\"bbsum\":%d},",
+			graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
 	} else {
-		a->cb_printf ("  graph: cc=%d nbbs=%d edges=%d ebbs=%d\n",
-			graph->cc, graph->nbbs, graph->edges, graph->ebbs);
+		a->cb_printf ("  graph: cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
+			graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
 	}
 }
 
@@ -1227,6 +1227,13 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 	return r_search_update (ss->search, *at, buf, len);
 }
 
+// allow ~10% of margin error
+static int matchCount(int a, int b) {
+	int c = a - b;
+	int m = a / 10;
+	return R_ABS (c) < m;
+}
+
 static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
 	RSignGraph *graph = it->graph;
 	int ebbs = -1;
@@ -1241,6 +1248,9 @@ static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
 		return false;
 	}
 	if (graph->ebbs != -1 && graph->ebbs != ebbs) {
+		return false;
+	}
+	if (graph->bbsum > 0 && matchCount (graph->bbsum, r_anal_fcn_size (fcn))) {
 		return false;
 	}
 	return true;
