@@ -135,6 +135,16 @@ static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
 	return retval;
 }
 
+static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
+	RList *vars = r_sign_fcn_vars (core->anal, fcn);
+	if (!vars) {
+		return false;
+	}
+	bool retval = r_sign_add_vars (core->anal, name, vars);
+	r_list_free (vars);
+	return retval;
+}
+
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;
 	int curspace = core->anal->zign_spaces.space_idx;
@@ -151,6 +161,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	addFcnGraph (core, fcn, zigname);
 	addFcnBytes (core, fcn, zigname);
 	addFcnRefs (core, fcn, zigname);
+	addFcnVars (core, fcn, zigname);
 	addFcnHash (core, fcn, zigname);
 	r_sign_add_offset (core->anal, zigname, fcn->addr);
 
@@ -276,6 +287,23 @@ static bool addRefsZign(RCore *core, const char *name, const char *args0, int na
 	return retval;
 }
 
+static bool addVarsZign(RCore *core, const char *name, const char *args0, int nargs) {
+	int i = 0;
+	if (nargs < 1) {
+		eprintf ("error: invalid syntax\n");
+		return false;
+	}
+
+	RList *vars = r_list_newf ((RListFree) free);
+	for (i = 0; i < nargs; i++) {
+		r_list_append (vars, r_str_new (r_str_word_get0 (args0, i)));
+	}
+
+	bool retval = r_sign_add_vars (core->anal, name, vars);
+	r_list_free (vars);
+	return retval;
+}
+
 static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
 	switch (type) {
 	case R_SIGN_BYTES:
@@ -287,6 +315,8 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 		return addOffsetZign (core, name, args0, nargs);
 	case R_SIGN_REFS:
 		return addRefsZign (core, name, args0, nargs);
+	case R_SIGN_VARS:
+		return addVarsZign (core, name, args0, nargs);
 	case R_SIGN_BBHASH:
 		return addHashZign (core, name, type, args0, nargs);
 	default:
@@ -330,7 +360,7 @@ out_case_manual:
 			return retval;
 		}
 		break;
-	case 'f':
+	case 'f': // "zaf"
 		{
 			RAnalFunction *fcni = NULL;
 			RListIter *iter = NULL;
@@ -402,6 +432,7 @@ out_case_fcn:
 				"  o: original offset\n"
 				"  r: references\n\n"
 				"  h: bbhash (hashing of fcn basic blocks)\n\n"
+				"  v: vars (and args)\n\n"
 				"Bytes patterns:\n"
 				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
 				"Graph metrics:\n"
@@ -414,6 +445,7 @@ out_case_fcn:
 				"  za foo a e811223344\n"
 				"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
 				"  za foo g nbbs=3 edges=3\n"
+				"  za foo v b-32 b-48 b-64\n"
 				"  za foo o 0x08048123\n"
 				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n"
 				"  za foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n");
@@ -428,7 +460,6 @@ out_case_fcn:
 
 	return true;
 }
-
 
 static int cmdOpen(void *data, const char *input) {
 	RCore *core = (RCore *) data;
@@ -844,23 +875,23 @@ static int cmd_zign(void *data, const char *input) {
 	case '-':
 		r_sign_delete (core->anal, input + 1);
 		break;
-	case 'o':
+	case 'o': // "zo"
 		return cmdOpen (data, input + 1);
-	case 'g':
+	case 'g': // "zg"
 		return cmdAdd (data, "F");
-	case 'a':
+	case 'a': // "za"
 		return cmdAdd (data, input + 1);
-	case 'f':
+	case 'f': // "zf"
 		return cmdFlirt (data, input + 1);
-	case '/':
+	case '/': // "z/"
 		return cmdSearch (data, input + 1);
-	case 'c':
+	case 'c': // "zc"
 		return cmdCheck (data, input + 1);
-	case 's':
+	case 's': // "zs"
 		return cmdSpace (data, input + 1);
-	case 'i':
+	case 'i': // "zi"
 		return cmdInfo (data, input + 1);
-	case '?':
+	case '?': // "z?"
 		r_core_cmd_help (core, help_msg_z);
 		break;
 	default:

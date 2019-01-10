@@ -23,6 +23,7 @@ enum {
 	R_SIGN_GRAPH     = 'g', // graph metrics
 	R_SIGN_OFFSET    = 'o', // offset
 	R_SIGN_REFS      = 'r', // references
+	R_SIGN_VARS      = 'v', // variables
 	R_SIGN_BBHASH    = 'h', // basic block hash
 };
 
@@ -51,6 +52,7 @@ typedef struct r_sign_item_t {
 	RSignGraph *graph;
 	ut64 offset;
 	RList *refs;
+	RList *vars;
 	RSignHash *hash;
 } RSignItem;
 
@@ -60,6 +62,7 @@ typedef int (*RSignGraphMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *
 typedef int (*RSignOffsetMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 typedef int (*RSignHashMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 typedef int (*RSignRefsMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
+typedef int (*RSignVarsMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 
 typedef struct r_sign_search_t {
 	RSearch *search;
@@ -74,6 +77,7 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
 R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
+R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len);
@@ -101,6 +105,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
+R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn);
 
 // TODO
 R_API int r_sign_is_flirt(RBuffer *buf);

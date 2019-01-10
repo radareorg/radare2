@@ -1103,7 +1103,7 @@ repeat:
 			break;
 		}
 		if (anal->opt.vars && !varset) {
-			extract_vars(anal, fcn, &op);
+			extract_vars (anal, fcn, &op);
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
