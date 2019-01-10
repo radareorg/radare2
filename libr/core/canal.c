@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -3976,10 +3976,6 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
-	if (r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-		add_string_ref (anal->coreb.core, at);
-		//  r_anal_xrefs_set (core->anal, esil->address, at, R_ANAL_REF_TYPE_DATA);
-	}
 	if (anal && anal->opt.armthumb) {
 		if (anal->cur && anal->cur->arch && anal->bits < 33 &&
 		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
@@ -4004,6 +4000,12 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 				break;
 			}
 
+		}
+	}
+	if (core->assembler->bits == 32 && strstr (core->assembler->cur->name, "arm")) {
+		if (r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
+			add_string_ref (anal->coreb.core, at);
+			//  r_anal_xrefs_set (core->anal, esil->address, at, R_ANAL_REF_TYPE_DATA);
 		}
 	}
 	return 0;
