@@ -2071,7 +2071,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);
 		ds->refline2 = r_anal_reflines_str (ds->core, ds->at,
-			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE);
+			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE);
 		if (ds->line) {
 			if (strchr (ds->line, '<')) {
 				ds->indent_level++;
