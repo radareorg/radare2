@@ -4311,7 +4311,7 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help(core, help_msg_pa);
+			r_core_cmd_help (core, help_msg_pa);
 		} else {
 			int i;
 			int bytes;
