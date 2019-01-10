@@ -1759,6 +1759,12 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 	return item ? item->name : NULL;
 }
 
+static int r_core_print_offsize(void *p, ut64 addr) {
+	RCore *c = (RCore*)p;
+	RFlagItem *item = r_flag_get_i (c->flags, addr);
+	return item ? item->size: -1;
+}
+
 /**
  * Disassemble one instruction at specified address.
  */
@@ -2233,6 +2239,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->user = core;
 	core->print->num = core->num;
 	core->print->offname = r_core_print_offname;
+	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
 	core->print->cb_color = r_cons_rainbow_get;
 	core->print->write = mywrite;

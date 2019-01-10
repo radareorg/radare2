@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include "r_anal.h"
 #include "r_cons.h"
@@ -755,7 +755,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	PrintfCallback printfmt = (PrintfCallback) printf;
 	bool c = p->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
-	int i, j, k, inc = 16;
+	int i, j, k, inc = p? p->cols : 16;
 	int sparse_char = 0;
 	int stride = 0;
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
@@ -771,9 +771,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *pre = "";
 	int last_sparse = 0;
 	bool use_hexa = true;
+	bool use_align = false;
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
+	int rowbytes = p->cols;
 
 	len = len - (len % step);
 	if (p) {
@@ -782,6 +784,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
+		use_align = p->flags & R_PRINT_FLAGS_ALIGN;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
@@ -953,10 +956,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
 	int rows = 0;
-	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
+	int bytes = 0;
+	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
 		}
+		rowbytes = inc;
+		if (use_align) {
+			int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
+			if (sz > 0) { // flags with size 0 dont work
+				rowbytes = sz;
+			}
+		}
+
 		if (use_sparse) {
 			if (checkSparse (buf + i, inc, sparse_char)) {
 				if (i + inc >= len || checkSparse (buf + i + inc, inc, sparse_char)) {
@@ -987,13 +999,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
+				if (j!=i && use_align && rowbytes == inc) {
+					int sz = p->offsize (p->user, addr + j);
+					if (sz >= 0) {
+						rowbytes = bytes;
+					}
+				}
 				if (row_have_cursor == -1) {
 					if (r_print_have_cursor (p, j, 1)) {
 						row_have_cursor = j - i;
 						row_have_addr = addr + j;
 					}
 				}
-				if (!compact && j >= len) {
+				if (!compact && ((j >= len) || bytes >= rowbytes)) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
 							printfmt (j % 2? "  |": "| ");
@@ -1020,13 +1038,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					/* TODO: check step. it should be 2/4 for base(32) and 8 for
 					 *       base(64) */
 					ut64 n = 0;
-					size_t sz_n;
-
-					if (base == 64) {
-						sz_n = sizeof (ut64);
-					} else {
-						sz_n = step == 2? sizeof (ut16): sizeof (ut32);
-					}
+					size_t sz_n = (base == 64) 
+						? sizeof (ut64) : (step == 2)
+						? sizeof (ut16) : sizeof (ut32);
 					sz_n = R_MIN (left, sz_n);
 					if (j + sz_n > len) {
 						// oob
@@ -1092,7 +1106,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						if (mustspace) {
 							printfmt (" ");
 						}
-					} else if (j % 2 || !pairs) {
+					} else if (bytes % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
 								if (!compact) {
@@ -1111,6 +1125,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (hl) {
 					printfmt (Color_RESET);
 				}
+				bytes++;
 			}
 		}
 		if (compact) {
@@ -1125,18 +1140,28 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			printfmt ((col == 2)? "|": " ");
 		}
 		if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+			bytes = 0;
 			for (j = i; j < i + inc; j++) {
-				if (j >= len) {
+				if (j!=i && use_align  && bytes >= rowbytes) {
+					int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
+					if (sz >= 0) {
+						printfmt (" ");
+						break;
+					}
+				}
+				if (j >= len || (use_align && bytes >= rowbytes)) {
 					break;
 				}
 				r_print_byte (p, "%c", j, buf[j]);
+				bytes++;
 			}
 		}
 		/* ascii column */
 		if (col == 2) {
 			printfmt ("|");
 		}
-		if (p && p->flags & R_PRINT_FLAGS_REFS) {
+		bool eol = false;
+		if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
 			ut64 *foo = (ut64 *) (buf + i);
 			ut64 off = *foo;
 			if (base == 32) {
@@ -1155,16 +1180,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				free (rstr);
 			}
 		}
-		if (p && p->use_comments) {
+		if (!eol && p && p->use_comments) {
 			for (; j < i + inc; j++) {
 				printfmt (" ");
 			}
 			for (j = i; j < i + inc; j++) {
+				if (use_align && (j-i) >= rowbytes) {
+					break;
+				}
 				if (p && p->offname) {
 					a = p->offname (p->user, addr + j);
 					if (p->colorfor && a && *a) {
 						const char *color = p->colorfor (p->user, addr + j, true);
-						printfmt ("%s  ; %s"Color_RESET, color?color: "", a);
+						printfmt ("%s  ; %s"Color_RESET, color? color: "", a);
 					}
 				}
 				char *comment = p->get_comments (p->user, addr + j);
@@ -1184,8 +1212,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
+		if (use_align && rowbytes < inc && bytes >= rowbytes) {
+			i -= (inc - bytes);
+		}
 		printfmt ("\n");
 		rows++;
+		bytes = 0;
 
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
