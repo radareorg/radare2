@@ -31,7 +31,6 @@ files = [
   'format.c',
   'pie.c',
   'seven.c',
-  'pool.c',
   'print.c',
   'prof.c',
   'punycode.c',
