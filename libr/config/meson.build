@@ -1,9 +1,9 @@
-files = [
+r_config_sources = [
   'callback.c',
   'config.c',
 ]
 
-r_config = library('r_config', files,
+r_config = library('r_config', r_config_sources,
   include_directories: [platform_inc],
   dependencies: [
     r_util_dep,

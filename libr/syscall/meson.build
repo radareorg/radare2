@@ -1,9 +1,9 @@
-files = [
+r_syscall_sources = [
   'syscall.c',
   'ioports.c'
 ]
 
-r_syscall = library('r_syscall', files,
+r_syscall = library('r_syscall', r_syscall_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [

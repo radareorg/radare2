@@ -1,4 +1,4 @@
-files = [
+r_crypto_sources = [
   'des.c',
   'crypto.c',
   'p/crypto_aes.c',
@@ -21,7 +21,7 @@ files = [
   'p/crypto_xor.c',
 ]
 
-r_crypto = library('r_crypto', files,
+r_crypto = library('r_crypto', r_crypto_sources,
   include_directories: [platform_inc],
   dependencies: [r_util_dep],
   c_args: library_cflags,

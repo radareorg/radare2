@@ -1,4 +1,4 @@
-files = [
+r_reg_sources = [
   'arena.c',
   'cond.c',
   'double.c',
@@ -7,7 +7,7 @@ files = [
   'value.c',
 ]
 
-r_reg = library('r_reg', files,
+r_reg = library('r_reg', r_reg_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [r_util_dep],
