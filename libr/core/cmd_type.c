@@ -808,6 +808,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 		if (name && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
 			eprintf ("%s is not an enum\n", name);
+			free (name);
 			break;
 		}
 		switch (input[1]) {
