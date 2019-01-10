@@ -7196,11 +7196,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	ut64 o_align = geti ("search.align");
+	const char *analin =  r_config_get (core->config, "anal.in");
+	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
+	r_config_set (core->config, "anal.in", "io.maps");
+	eprintf ("[x] Finding xrefs in noncode section with anal.in = 'io.maps'\n");
 
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {
@@ -7268,6 +7272,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 beach:
 	r_cons_break_pop ();
 	// end
+	r_config_set (core->config, "anal.in", tmp);
+	free (tmp);
 	seti ("search.align", o_align);
 }
 
