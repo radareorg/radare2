@@ -417,14 +417,17 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	char buf[32];
 	int ret = 0;
 	RSocket *s;
+	RSocketHTTPOptions so;
 	char *dir;
-	int iport, timeout = r_config_get_i (core->config, "http.timeout");
+	int iport;
 	const char *host = r_config_get (core->config, "http.bind");
 	const char *root = r_config_get (core->config, "http.root");
 	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
+	const char *httpauthfile = r_config_get (core->config, "http.authfile");
+	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
@@ -480,6 +483,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		} else {
 			s->local = true;
 		}
+		memset (&so, 0, sizeof (so));
 	}
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
@@ -491,6 +495,30 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
 			browser, host, atoi (port), path? path:"");
+	}
+
+	so.httpauth = r_config_get_i (core->config, "http.auth");
+
+	if (so.httpauth) {
+		if (!httpauthfile) {
+			r_socket_free (s);
+			eprintf ("No user list set for HTTP Authentification\n");
+			return 1;
+		}
+
+		int sz;
+		pfile = r_file_slurp (httpauthfile, &sz);
+
+		if (pfile) {
+			so.authtokens = r_str_split_list (pfile, "\n");
+		} else {
+			r_socket_free (s);
+			eprintf ("Empty list of HTTP users\n");
+			return 1;
+		}
+
+		so.timeout = r_config_get_i (core->config, "http.timeout");
+		so.accept_timeout = 1;
 	}
 
 	origcfg = core->config;
@@ -523,6 +551,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	newblk = malloc (core->blocksize);
 	if (!newblk) {
 		r_socket_free (s);
+		r_list_free (so.authtokens);
+		free (pfile);
 		return 1;
 	}
 	memcpy (newblk, core->block, core->blocksize);
@@ -552,7 +582,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		activateDieTime (core);
 
 		void *bed = r_cons_sleep_begin ();
-		rs = r_socket_http_accept (s, 1, timeout);
+		rs = r_socket_http_accept (s, &so);
 		r_cons_sleep_end (bed);
 
 		origoff = core->offset;
@@ -608,6 +638,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 		dir = NULL;
 
+		if (!rs->auth) {
+			r_socket_http_response (rs, 401, "", 0, NULL);
+		}
+
 		if (r_config_get_i (core->config, "http.verbose")) {
 			char *peer = r_socket_to_string (rs->s);
 			http_logf (core, "[HTTP] %s %s\n", peer, rs->path);
@@ -658,7 +692,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						free (path);
 					}
 				} else {
-					r_socket_http_response (rs, 403, "Permission denied\n", 0, NULL);
+					r_socket_http_response (rs, 403, "", 0, NULL);
 				}
 			} else if (!strncmp (rs->path, "/cmd/", 5)) {
 				char *cmd = rs->path + 5;
@@ -862,6 +896,7 @@ the_end:
 	}
 	r_cons_break_pop ();
 	core->http_up = false;
+	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
 	if (restoreSandbox) {
