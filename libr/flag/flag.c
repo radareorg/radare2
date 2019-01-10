@@ -792,80 +792,38 @@ R_API int r_flag_count(RFlag *f, const char *glob) {
 	return count;
 }
 
-struct flag_foreach_t {
-	RFlagItemCb cb;
-	void *user;
-	const char *str;
-	size_t str_len;
-	ut64 from;
-	ut64 to;
-	int space;
-};
-
-static bool flag_foreach_all(void *user, const void *key, const void *v) {
-	struct flag_foreach_t *fu = (struct flag_foreach_t *)user;
-	RFlagItem *fi = (RFlagItem *)v;
-	return fu->cb (fi, fu->user);
-}
-
-static bool flag_foreach_prefix(void *user, const void *key, const void *v) {
-	struct flag_foreach_t *fu = (struct flag_foreach_t *)user;
-	RFlagItem *fi = (RFlagItem *)v;
-	if (!strncmp (fi->name, fu->str, fu->str_len)) {
-		return fu->cb (fi, fu->user);
+#define FOREACH_BODY(condition) \
+	RSkipListNode *it, *tmp; \
+	RFlagsAtOffset *flags_at; \
+	RListIter *it2; \
+	RFlagItem *fi; \
+	r_skiplist_foreach_safe (f->by_off, it, tmp, flags_at) { \
+		r_list_foreach (flags_at->flags, it2, fi) { \
+			if (condition) { \
+				if (!cb (fi, user)) { \
+					return; \
+				} \
+			} \
+		} \
 	}
-	return true;
-}
-
-static bool flag_foreach_range(void *user, const void *key, const void *v) {
-	struct flag_foreach_t *fu = (struct flag_foreach_t *)user;
-	RFlagItem *fi = (RFlagItem *)v;
-	if (fi->offset >= fu->from && fi->offset < fu->to) {
-		return fu->cb (fi, fu->user);
-	}
-	return true;
-}
-
-static bool flag_foreach_glob(void *user, const void *key, const void *v) {
-	struct flag_foreach_t *fu = (struct flag_foreach_t *)user;
-	RFlagItem *fi = (RFlagItem *)v;
-	if (!fu->str || r_str_glob (fi->name, fu->str)) {
-		return fu->cb (fi, fu->user);
-	}
-	return true;
-}
-
-static bool flag_foreach_space(void *user, const void *key, const void *v) {
-	struct flag_foreach_t *fu = (struct flag_foreach_t *)user;
-	RFlagItem *fi = (RFlagItem *)v;
-	if (IS_FI_IN_SPACE (fi, fu->space)) {
-		return fu->cb (fi, fu->user);
-	}
-	return true;
-}
 
 R_API void r_flag_foreach(RFlag *f, RFlagItemCb cb, void *user) {
-	struct flag_foreach_t u = { .cb = cb, .user = user };
-	ht_pp_foreach (f->ht_name, flag_foreach_all, &u);
+	FOREACH_BODY (true);
 }
 
 R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, int pfx_len, RFlagItemCb cb, void *user) {
-	struct flag_foreach_t u = { .cb = cb, .user = user, .str = pfx};
-	u.str_len = pfx_len < 0 ? strlen (pfx) : pfx_len;
-	ht_pp_foreach (f->ht_name, flag_foreach_prefix, &u);
+	pfx_len = pfx_len < 0? strlen (pfx): pfx_len;
+	FOREACH_BODY (!strncmp (fi->name, pfx, pfx_len));
 }
 
 R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, void *user) {
-	struct flag_foreach_t u = { .cb = cb, .user = user, .from = from, .to = to };
-	ht_pp_foreach (f->ht_name, flag_foreach_range, &u);
+	FOREACH_BODY (fi->offset >= from && fi->offset < to);
 }
 
 R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user) {
-	struct flag_foreach_t u = { .cb = cb, .user = user, .str = glob };
-	ht_pp_foreach (f->ht_name, flag_foreach_glob, &u);
+	FOREACH_BODY (!glob || r_str_glob (fi->name, glob));
 }
 
 R_API void r_flag_foreach_space(RFlag *f, int space, RFlagItemCb cb, void *user) {
-	struct flag_foreach_t u = { .cb = cb, .user = user, .space = space };
-	ht_pp_foreach (f->ht_name, flag_foreach_space, &u);
+	FOREACH_BODY (IS_FI_IN_SPACE (fi, space));
 }
