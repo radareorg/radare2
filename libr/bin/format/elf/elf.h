@@ -15,7 +15,6 @@
 #define R_BIN_ELF_SYMTAB_SYMBOLS 1 << 0
 #define R_BIN_ELF_DYNSYM_SYMBOLS 1 << 1
 #define R_BIN_ELF_IMPORT_SYMBOLS (1 << 2 | (bin->ehdr.e_type == ET_REL ? R_BIN_ELF_SYMTAB_SYMBOLS : R_BIN_ELF_DYNSYM_SYMBOLS))
-#define R_BIN_ELF_DYNAMIC_SYMBOLS (1 << 3 | (bin->ehdr.e_type == ET_REL ? R_BIN_ELF_SYMTAB_SYMBOLS : R_BIN_ELF_DYNSYM_SYMBOLS))
 #define R_BIN_ELF_ALL_SYMBOLS (R_BIN_ELF_SYMTAB_SYMBOLS | R_BIN_ELF_DYNSYM_SYMBOLS)
 #define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 
@@ -43,6 +42,7 @@ typedef struct r_bin_elf_symbol_t {
 	bool in_shdr;
 	bool is_sht_null;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
+	bool is_imported;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {
@@ -116,7 +116,6 @@ struct Elf_(r_bin_elf_obj_t) {
 	/*cache purpose*/
 	RBinElfSection *g_sections;
 	RBinElfSymbol *g_symbols;
-	RBinElfSymbol *g_dyn_symbols;
 	RBinElfSymbol *g_imports;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
@@ -152,7 +151,6 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSymbol* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin);
-RBinElfSymbol* Elf_(r_bin_elf_get_dynamic_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
@@ -166,5 +164,8 @@ int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);
 RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin);
+RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
+					  struct r_bin_elf_symbol_t *symbol,
+					  const char *namefmt);
 
 #endif
