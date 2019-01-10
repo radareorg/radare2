@@ -379,12 +379,8 @@ R_API int r_core_search_preludes(RCore *core) {
 					(const ut8 *) "\x0f\x0f\xff\xff", 4);
 				break;
 			case 64:
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xf6\x57\xbd\xa9", 4, NULL, 0);
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xfd\x7b\xbf\xa9", 4, NULL, 0);
-				r_core_search_prelude (core, from, to,
-					(const ut8 *) "\xfc\x6f\xbe\xa9", 4, NULL, 0);
+				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
+				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
 				break;
 			default:
 				eprintf ("ap: Unsupported bits: %d\n", bits);
