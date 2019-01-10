@@ -113,12 +113,12 @@ typedef struct _utX{
 #define UT8_ADD_OVFCHK(x,y) ((UT8_MAX - (x)) < (y))
 
 /* copied from bithacks.h */
-#define B_IS_SET(x, n)   (((x) & (1<<(n)))?1:0)
-#define B_SET(x, n)      ((x) |= (1<<(n)))
+#define B_IS_SET(x, n)   (((x) & (1ULL<<(n)))?1:0)
+#define B_SET(x, n)      ((x) |= (1ULL<<(n)))
 #define B_EVEN(x)        (((x)&1)==0)
 #define B_ODD(x)         (!B_EVEN((x)))
-#define B_UNSET(x, n)    ((x) &= ~(1<<(n)))
-#define B_TOGGLE(x, n)   ((x) ^= (1<<(n)))
+#define B_UNSET(x, n)    ((x) &= ~(1ULL<<(n)))
+#define B_TOGGLE(x, n)   ((x) ^= (1ULL<<(n)))
 
 #define B1111 15
 #define B1110 14
