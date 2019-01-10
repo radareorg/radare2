@@ -32,6 +32,7 @@ typedef struct r_sign_graph_t {
 	int nbbs;
 	int edges;
 	int ebbs;
+	int bbsum;
 } RSignGraph;
 
 typedef struct r_sign_bytes_t {

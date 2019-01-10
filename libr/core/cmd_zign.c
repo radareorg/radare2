@@ -122,6 +122,7 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	};
 	// XXX ebbs doesnt gets initialized if calling this from inside the struct
 	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
+	graph.bbsum = r_anal_fcn_size (fcn);
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
@@ -176,6 +177,7 @@ static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
 	graph->nbbs = -1;
 	graph->edges = -1;
 	graph->ebbs = -1;
+	graph->bbsum = 0;
 
 	for (i = 0; i < nargs; i++) {
 		ptr = r_str_word_get0 (args0, i);
@@ -187,6 +189,8 @@ static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
 			graph->edges = atoi (ptr + 6);
 		} else if (r_str_startswith (ptr, "ebbs=")) {
 			graph->ebbs = atoi (ptr + 5);
+		} else if (r_str_startswith (ptr, "bbsum=")) {
+			graph->bbsum = atoi (ptr + 6);
 		} else {
 			return false;
 		}
