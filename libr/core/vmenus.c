@@ -1231,7 +1231,6 @@ static void *widget_list (void *user, RList *list, int rows, int cur, PrintItemC
 }
 
 static void print_fcn(void *_core, void *_item, bool selected) {
-	RCore *core = _core;
 	RAnalFunction *fcn = _item;
 	r_cons_printf ("%c %s\n", selected?'>':' ', fcn->name);
 }
