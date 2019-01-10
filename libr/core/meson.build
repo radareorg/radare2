@@ -1,4 +1,4 @@
-files = [
+r_core_sources = [
   'anal_tp.c',
   'casm.c',
   'blaze.c',
@@ -100,7 +100,7 @@ if use_libuv
   r_core_deps += libuv_dep
 endif
 
-r_core = library('r_core', files,
+r_core = library('r_core', r_core_sources,
   include_directories: r_core_inc,
   c_args: library_cflags,
   dependencies: r_core_deps,

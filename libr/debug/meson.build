@@ -1,4 +1,4 @@
-files = [
+r_debug_sources = [
   'arg.c',
   'ddesc.c',
   'debug.c',
@@ -54,20 +54,20 @@ r_debug_deps = [
 ]
 
 if host_machine.system() == 'linux'
-  files += [
+  r_debug_sources += [
     'p/native/linux/linux_debug.c',
     'p/native/linux/linux_coredump.c'
   ]
 endif
 
 if host_machine.system() != 'windows'
- files += [
+ r_debug_sources += [
   'p/native/procfs.c'
  ]
 endif
 
 if host_machine.system() == 'darwin'
-  files += [
+  r_debug_sources += [
     'p/native/xnu/xnu_debug.c',
     #'p/native/xnu/trap_arm.c',
     #'p/native/xnu/trap_x86.c',
@@ -87,7 +87,7 @@ r_debug_inc = [
   )
 ]
 
-r_debug = library('r_debug', files,
+r_debug = library('r_debug', r_debug_sources,
   include_directories: r_debug_inc,
   c_args: library_cflags,
   dependencies: r_debug_deps,

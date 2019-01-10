@@ -1,4 +1,4 @@
-files = [
+r_socket_sources = [
   'http.c',
   'http_server.c',
   'proc.c',
@@ -15,7 +15,7 @@ if use_sys_openssl
   dependencies += [sys_openssl]
 endif
 
-r_socket = library('r_socket', files,
+r_socket = library('r_socket', r_socket_sources,
   include_directories: [platform_inc],
   dependencies: dependencies,
   c_args: library_cflags,

@@ -1,4 +1,4 @@
-files = [
+r_fs_sources = [
   'file.c',
   'fs.c',
   'shell.c',
@@ -26,7 +26,7 @@ files = [
   #'p/part_dos.c'
 ]
 
-r_fs = library('r_fs', files,
+r_fs = library('r_fs', r_fs_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: [

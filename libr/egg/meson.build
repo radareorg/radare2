@@ -1,4 +1,4 @@
-files = [
+r_egg_sources = [
   'egg.c',
   'egg_Cfile.c',
   'egg_lang.c',
@@ -14,7 +14,7 @@ files = [
   'p/egg_xor.c'
 ]
 
-r_egg = library('r_egg', files,
+r_egg = library('r_egg', r_egg_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [
