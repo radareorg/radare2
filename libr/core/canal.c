@@ -3916,7 +3916,6 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			r_io_read_at (mycore->io, addr, (ut8*)buf, len);
 			break;
 		}
-
 		// TODO incorrect
 		bool validRef = false;
 		if (trace && myvalid (mycore->io, refptr)) {
@@ -3950,12 +3949,12 @@ static void cccb(void *u) {
 
 static void add_string_ref(RCore *core, ut64 xref_to) {
 	int len = 0;
-	char *str_flagname;
 	if (xref_to == UT64_MAX || !xref_to) {
 		return;
 	}
-	str_flagname = is_string_at (core, xref_to, &len);
+	char *str_flagname = is_string_at (core, xref_to, &len);
 	if (str_flagname) {
+		r_anal_xrefs_set (core->anal, core->anal->esil->address, xref_to, R_ANAL_REF_TYPE_DATA);
 		r_name_filter (str_flagname, -1);
 		char *flagname = sdb_fmt ("str.%s", str_flagname);
 		r_flag_space_push (core->flags, "strings");
@@ -3968,15 +3967,19 @@ static void add_string_ref(RCore *core, ut64 xref_to) {
 }
 
 static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
-	RAnal *anal = NULL;
-	RAnalOp *op = NULL;
 	if (!esil) {
 		return 0;
 	}
-	anal = esil->anal;
-	op = esil->user;
+	RAnal *anal = esil->anal;
+	RAnalOp *op = esil->user;
+	RCore *core = anal->coreb.core;
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
+	ut64 at = *val;
+	if (r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
+		add_string_ref (anal->coreb.core, at);
+		//  r_anal_xrefs_set (core->anal, esil->address, at, R_ANAL_REF_TYPE_DATA);
+	}
 	if (anal && anal->opt.armthumb) {
 		if (anal->cur && anal->cur->arch && anal->bits < 33 &&
 		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
