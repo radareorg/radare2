@@ -11,7 +11,7 @@
 #include "../format/mach0/mach0.h"
 #include "objc/mach0_classes.h"
 
-#define R_IS_PTR_AUTHENTICATED(x) ((x) & 0x8000000000000000ULL)
+#define R_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
 
 typedef struct {
 	ut8 version;
@@ -543,7 +543,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 		rebase_info->start_of_data = start_of_data;
 		rebase_info->one_page_buf = one_page_buf;
 		rebase_info->page_size = 4096;
-		rebase_info->slide = estimate_slide (bf, cache, 0xffffffffffffffffULL);
+		rebase_info->slide = estimate_slide (bf, cache, UT64_MAX);
 		rebase_info->toc = (ut16*) tmp_buf_1;
 		rebase_info->toc_count = slide_info.toc_count;
 		rebase_info->entries = tmp_buf_2;
