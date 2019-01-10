@@ -1511,8 +1511,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					int off = (j * 3) - (j / 2) + 13;
 					int notej_len = strlen (note[j]);
 					int sz = R_MIN (notej_len, nb_cons_cols - off);
-					if (j % 2) {
-						off--;
+					if (compact) {
+						off -= (j/2);
+					} else {
+						if (j % 2) {
+							off--;
+						}
 					}
 					memcpy (out + off, note[j], sz);
 					if (sz < notej_len) {
@@ -1534,7 +1538,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		}
 		r_cons_strcat (bytes);
 		r_cons_strcat (chars);
-
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
