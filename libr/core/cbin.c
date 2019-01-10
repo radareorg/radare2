@@ -2294,7 +2294,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %sName\n",
+		r_cons_printf ("Nm Paddr        Size Vaddr       Memsz Perms %sName\n",
                    chksum ? "Checksum          " : "");
 	}
 	if (IS_MODE_SET (mode)) {
@@ -2511,8 +2511,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					perms, str, hashstr ?hashstr : "", section->name);
 #endif
 				// r_cons_printf ("%02i 0x%08"PFMT64x" %10"PFMT64d" 0x%08"PFMT64x" %10"PFMT64d" "
-				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
-					"%s %s%s%s\n",
+				r_cons_printf ("%02i 0x%08"PFMT64x" %6"PFMT64d" 0x%08"PFMT64x" %6"PFMT64d" "
+					"%s %s%s %s\n",
 					i, section->paddr, (ut64)section->size, addr, (ut64)section->vsize,
 					perms, str, hashstr ?hashstr : "", section->name);
 			}
