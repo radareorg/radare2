@@ -755,7 +755,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	PrintfCallback printfmt = (PrintfCallback) printf;
 	bool c = p->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
-	int i, j, k, inc = 16;
+	int i, j, k, inc = p? p->cols : 16;
 	int sparse_char = 0;
 	int stride = 0;
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
@@ -775,7 +775,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
-	int XX = 10; // bytes to show per row (restrict like len)
+	int rowbytes = p->cols;
 
 	len = len - (len % step);
 	if (p) {
@@ -961,11 +961,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
 		}
-		XX = inc;
+		rowbytes = inc;
 		if (use_align) {
 			int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 			if (sz > 0) { // flags with size 0 dont work
-				XX = sz;
+				rowbytes = sz;
 			}
 		}
 
@@ -999,10 +999,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
-				if (j!=i && use_align && XX == inc) {
+				if (j!=i && use_align && rowbytes == inc) {
 					int sz = p->offsize (p->user, addr + j);
 					if (sz >= 0) {
-						XX = bytes;
+						rowbytes = bytes;
 					}
 				}
 				if (row_have_cursor == -1) {
@@ -1011,7 +1011,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						row_have_addr = addr + j;
 					}
 				}
-				if (!compact && ((j >= len) || bytes >= XX)) {
+				if (!compact && ((j >= len) || bytes >= rowbytes)) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
 							printfmt (j % 2? "  |": "| ");
@@ -1142,21 +1142,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
 			bytes = 0;
 			for (j = i; j < i + inc; j++) {
-				if (j!=i && use_align  && bytes >= XX) {
+				if (j!=i && use_align  && bytes >= rowbytes) {
 					int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 					if (sz >= 0) {
-#if 0
-						printfmt ("\n");
-						if (use_offset) {
-							r_print_addr (p, addr + j * zoomsz);
-						}	
-					//	i = j;
-#endif
 						printfmt (" ");
 						break;
 					}
 				}
-				if (j >= len || (use_align && bytes >= XX)) {
+				if (j >= len || (use_align && bytes >= rowbytes)) {
 					break;
 				}
 				r_print_byte (p, "%c", j, buf[j]);
@@ -1192,7 +1185,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt (" ");
 			}
 			for (j = i; j < i + inc; j++) {
-				if (use_align && (j-i) >= XX) {
+				if (use_align && (j-i) >= rowbytes) {
 					break;
 				}
 				if (p && p->offname) {
@@ -1219,7 +1212,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
-		if (use_align && XX < inc && bytes >= XX) {
+		if (use_align && rowbytes < inc && bytes >= rowbytes) {
 			i -= (inc - bytes);
 		}
 		printfmt ("\n");
