@@ -19,9 +19,11 @@ static void pj_comma(PJ *j) {
 
 R_API PJ *pj_new() {
 	PJ *j = R_NEW0 (PJ);
-	if (j) {
-		j->sb = r_strbuf_new ("");
+	if (!j) {
+		return NULL;
 	}
+	j->sb = r_strbuf_new ("");
+	j->is_first = true;
 	return j;
 }
 
@@ -54,10 +56,12 @@ static PJ *pj_begin(PJ *j, char type) {
 }
 
 R_API PJ *pj_o(PJ *j) {
+	pj_comma (j);
 	return pj_begin (j, '{');
 }
 
 R_API PJ *pj_a(PJ *j) {
+	pj_comma (j);
 	return pj_begin (j, '[');
 }
 

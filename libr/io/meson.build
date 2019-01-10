@@ -1,4 +1,4 @@
-files = [
+r_io_sources = [
   'cache.c',
   'desc.c',
   'fd.c',
@@ -41,13 +41,13 @@ files = [
 ]
 
 if host_machine.system() == 'linux'
-  files += [
+  r_io_sources += [
     'p/io_r2k_linux.c',
   ]
 endif
 
 if host_machine.system() == 'windows'
-  files += [
+  r_io_sources += [
     'p/io_r2k_windows.c',
     'p/io_w32.c',
     'p/io_w32dbg.c',
@@ -72,7 +72,7 @@ if use_ptrace_wrap
   r_io_deps += ptrace_wrap_dep
 endif
 
-r_io = library('r_io', files,
+r_io = library('r_io', r_io_sources,
   include_directories: platform_inc,
   dependencies: r_io_deps,
   c_args: library_cflags,

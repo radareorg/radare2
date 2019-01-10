@@ -2199,6 +2199,124 @@ static void afCc(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_fcn_sig(RCore *core, const char *input) {
+	bool json = false;
+	if (input[0] == 'j') {
+		json = true;
+	}
+	char *p = strchr (input, ' ');
+	char *fcn_name = p ? r_str_trim (strdup (p)): NULL;
+	RListIter *iter;
+	RAnalFuncArg *arg;
+
+	RAnalFunction *fcn;
+	if (fcn_name) {
+		fcn = r_anal_fcn_find_name (core->anal, fcn_name);
+	} else {
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		if (fcn) {
+			fcn_name = fcn->name;
+		}
+	}
+	if (!fcn) {
+		return;
+	}
+
+	if (json) {
+		PJ *j = pj_new ();
+		if (!j) {
+			return;
+		}
+		pj_a (j);
+
+		char *key = NULL;
+		if (fcn_name) {
+			key = resolve_fcn_name (core->anal, fcn_name);
+		}
+
+		if (key) {
+			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
+			if (fcn_type) {
+				pj_o (j);
+				pj_ks (j, "name", r_str_get (key));
+				pj_ks (j, "return", r_str_get (fcn_type));
+				pj_k (j, "args");
+				pj_a (j);
+				if (nargs) {
+					RList *list = r_core_get_func_args (core, fcn_name);
+					r_list_foreach (list, iter, arg) {
+						char *type = arg->orig_c_type;
+						pj_o (j);
+						pj_ks (j, "name", arg->name);
+						pj_ks (j, "type", type);
+						pj_end (j);
+					}
+					r_list_free (list);
+				}
+				pj_end (j);
+				pj_ki (j, "count", nargs);
+				pj_end (j);
+			}
+			free (key);
+		} else {
+			pj_o (j);
+			pj_ks (j, "name", r_str_get (fcn_name));
+			pj_k (j, "args");
+			pj_a (j);
+
+			RAnalFcnVarsCache cache;
+			r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+			int nargs = 0;
+			RAnalVar *var;
+			r_list_foreach (cache.rvars, iter, var) {
+				nargs++;
+				pj_o (j);
+				pj_ks (j, "name", var->name);
+				pj_ks (j, "type", var->type);
+				pj_end (j);
+			}
+			r_list_foreach (cache.bvars, iter, var) {
+				if (var->delta <= 0) {
+					continue;
+				}
+				nargs++;
+				pj_o (j);
+				pj_ks (j, "name", var->name);
+				pj_ks (j, "type", var->type);
+				pj_end (j);
+			}
+			r_list_foreach (cache.svars, iter, var) {
+				if (!var->isarg) {
+					continue;
+				}
+				nargs++;
+				pj_o (j);
+				pj_ks (j, "name", var->name);
+				pj_ks (j, "type", var->type);
+				pj_end (j);
+			}
+			r_anal_fcn_vars_cache_fini (&cache);
+
+			pj_end (j);
+			pj_ki (j, "count", nargs);
+			pj_end (j);
+		}
+		pj_end (j);
+		const char *s = pj_string (j);
+		if (s) {
+			r_cons_printf ("%s\n", s);
+		}
+		pj_free (j);
+	} else {
+		char *sig = r_anal_fcn_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		if (sig) {
+			r_cons_printf ("%s\n", sig);
+			free (sig);
+		}
+	}
+}
+
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 
@@ -2527,80 +2645,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'a': // "afca"
 			eprintf ("Todo\n");
 			break;
-		case 'f': { // "afcf"
-			bool json = false;
-			if (input[3] == 'j') {
-				json = true;
-				r_cons_printf ("[");
-			}
-			char *p = strchr (input, ' ');
-			const char *fcn_name = p ? r_str_trim (strdup (p)): NULL;
-			char *key = NULL;
-			RListIter *iter;
-			RAnalFuncArg *arg;
-			if (!fcn_name) {
-				fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				if (fcn) {
-					fcn_name = fcn->name;
-				}
-			}
-			if (fcn_name) {
-				key = resolve_fcn_name (core->anal, fcn_name);
-			}
-			if (key) {
-				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
-				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
-				if (fcn_type) {
-					char *sp = " ";
-					if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
-						sp = "";
-					}
-					if (json) {
-						r_cons_printf ("{\"name\": \"%s\"",r_str_get (key));
-						r_cons_printf (",\"return\": \"%s\"",r_str_get (fcn_type));
-						r_cons_printf (",\"count\": %d", nargs);
-						if (nargs) {
-							r_cons_printf (",\"args\":[", nargs);
-						}
-					} else {
-						r_cons_printf ("%s%s%s(", r_str_get (fcn_type), sp, r_str_get (key));
-						if (!nargs) {
-							r_cons_println ("void)");
-							break;
-						}
-					}
-					bool first = true;
-					RList *list = r_core_get_func_args (core, fcn_name);
-					r_list_foreach (list, iter, arg) {
-						RListIter *nextele = r_list_iter_get_next (iter);
-						char *type = arg->orig_c_type;
-						char *sp1 = " ";
-						if (*type && (type[strlen (type) - 1] == '*')) {
-							sp1 = "";
-						}
-						if (json) {
-							r_cons_printf ("%s{\"name\": \"%s\",\"type\":\"%s\"}",
-									first? "": ",", arg->name, type);
-							first = false;
-						} else {
-							r_cons_printf ("%s%s%s%s", type, sp1, arg->name, nextele?", ":")");
-						}
-					}
-					if (json) {
-						if (nargs) {
-							r_cons_printf ("]");
-						}
-						r_cons_printf ("}");
-					} else {
-						r_cons_println ("");
-					}
-				}
-			}
-			if (json) {
-				r_cons_printf ("]\n");
-			}
+		case 'f': // "afcf"
+			cmd_anal_fcn_sig (core, input + 3);
 			break;
-		}
 		case 'k': // "afck"
 			r_core_cmd0 (core, "k anal/cc/*");
 			break;
@@ -7149,11 +7196,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	ut64 o_align = geti ("search.align");
+	const char *analin =  r_config_get (core->config, "anal.in");
+	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
+	r_config_set (core->config, "anal.in", "io.maps");
+	eprintf ("[x] Finding xrefs in noncode section with anal.in = 'io.maps'\n");
 
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {
@@ -7221,6 +7272,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 beach:
 	r_cons_break_pop ();
 	// end
+	r_config_set (core->config, "anal.in", tmp);
+	free (tmp);
 	seti ("search.align", o_align);
 }
 

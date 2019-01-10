@@ -57,10 +57,10 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
 
 /* rtr */
-#define RTR_PROT_RAP 0
-#define RTR_PROT_TCP 1
-#define RTR_PROT_UDP 2
-#define RTR_PROT_HTTP 3
+#define RTR_PROTOCOL_RAP 0
+#define RTR_PROTOCOL_TCP 1
+#define RTR_PROTOCOL_UDP 2
+#define RTR_PROTOCOL_HTTP 3
 
 #define RTR_RAP_OPEN   0x01
 #define RTR_RAP_CMD    0x07

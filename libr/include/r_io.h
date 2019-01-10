@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2019 - condret, pancake, alvaro */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -435,7 +435,6 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
 /* io/section.c */
 R_API void r_io_section_init (RIO *io);
 R_API void r_io_section_fini (RIO *io);
-R_API int r_io_section_exists_for_id (RIO *io, ut32 id);
 R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 R_API RIOSection *r_io_section_get_i (RIO *io, ut32 id);
 R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id);
@@ -449,7 +448,6 @@ R_API bool r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 R_API bool r_io_section_apply_bin (RIO *io, ut32 bin_id, RIOSectionApplyMethod method);
 R_API RIOSection* r_io_section_get(RIO *io, ut64 paddr);
 R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr);
-R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 addr);
 
 /* io/p_cache.c */
 R_API bool r_io_desc_cache_init (RIODesc *desc);

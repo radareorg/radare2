@@ -1,4 +1,4 @@
-files = [
+r_cons_sources = [
   '2048.c',
   'canvas.c',
   'canvas_line.c',
@@ -19,7 +19,7 @@ files = [
   'utf8.c'
 ]
 
-r_cons = library('r_cons', files,
+r_cons = library('r_cons', r_cons_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [r_util_dep, sdb_dep],

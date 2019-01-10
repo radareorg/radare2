@@ -16,6 +16,8 @@
 #define IFDBG if (DO_THE_DBG)
 #define IFINT if (0)
 
+#define MIPS_PLT_OFFSET 108
+
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
 
@@ -1350,237 +1352,319 @@ out:
 	return NULL;
 }
 
+static ut64 get_dyn_entry(ELFOBJ *bin, int dyn_entry) {
+	int i;
+	for (i = 0; i < bin->dyn_entries; i++) {
+		if (bin->dyn_buf[i].d_tag == dyn_entry) {
+			switch (bin->dyn_buf[i].d_tag) {
+			case DT_REL:
+			case DT_RELA:
+			case DT_PLTGOT:
+			case DT_JMPREL:
+				return bin->dyn_buf[i].d_un.d_ptr;
+			case DT_RELSZ:
+			case DT_RELASZ:
+			case DT_PLTRELSZ:
+				return bin->dyn_buf[i].d_un.d_val;
+			default:
+				r_warn_if_reached ();
+				break;
+			}
+		}
+	}
+
+	return -1;
+}
+
+static ut64 get_got_addr(ELFOBJ *bin) {
+	ut64 ret = get_dyn_entry (bin, DT_PLTGOT);
+	if (ret != -1) {
+		return ret;
+	}
+
+	ret = Elf_(r_bin_elf_get_section_addr) (bin, ".got");
+	if (ret) {
+		return ret;
+	}
+
+	ret = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
+	if (ret) {
+		return ret;
+	}
+
+	return -1;
+}
+
+static ut64 get_import_addr_ppc(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section, int nrel) {
+	ut8 buf[4] = { 0 };
+	int len = r_buf_read_at (bin->b, plt_section->offset, buf, sizeof (buf));
+	if (len < 4) {
+		return -1;
+	}
+
+	if (bin->endian) {
+		ut64 base = r_read_be32 (buf);
+		base -= (nrel * 16);
+		base += (rel->k * 16);
+		return base;
+	}
+	// FIXME: this does not seem to work as
+	// expected. Commenting for now because it makes
+	// refactoring much easier and it seems weird
+	// anyway.
+	// if (bin->is_rela == DT_RELA) {
+	// 	len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
+	// 	if (len < 4) {
+	// 		goto out;
+	//	}
+	// }
+	ut64 base = r_read_le32 (buf);
+	base -= (nrel * 12) + 20;
+	base += (rel->k * 8);
+	return base;
+}
+
+static ut64 get_import_addr_sparc(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
+	if (!plt_section) {
+		return UT64_MAX;
+	}
+	ut64 plt_addr = plt_section->rva;
+	switch (REL_TYPE) {
+	case R_SPARC_JMP_SLOT:
+		plt_addr += rel->k * 12 + 20;
+		// thumb symbol
+		if (plt_addr & 1) {
+			plt_addr--;
+		}
+		return plt_addr;
+	default:
+		bprintf ("Unknown sparc reloc type %d\n", REL_TYPE);
+		return UT64_MAX;
+	}
+}
+
+static ut64 get_import_addr_arm(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
+	if (!plt_section) {
+		return UT32_MAX;
+	}
+	ut64 plt_addr = plt_section->rva;
+	switch (REL_TYPE) {
+	case R_ARM_JUMP_SLOT: {
+		plt_addr += rel->k * 12 + 20;
+		// thumb symbol
+		if (plt_addr & 1) {
+			plt_addr--;
+		}
+		return plt_addr;
+	}
+	case R_AARCH64_JUMP_SLOT:
+		return plt_addr + rel->k * 16 + 32;
+	default:
+		bprintf ("Unsupported relocation type for imports %d\n", REL_TYPE);
+		return UT64_MAX;
+	}
+}
+
+static ut64 get_import_addr_x86(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
+	ut64 plt_addr, plt_sym_addr = -1;
+	ut8 buf[sizeof (Elf_(Addr))];
+	int len;
+
+	RBinElfSection *pltsec_section = get_section_by_name (bin, ".plt.sec");
+	ut64 got_addr = get_got_addr (bin);
+	if (got_addr == -1) {
+		return UT64_MAX;
+	}
+
+	ut64 got_offset = Elf_(r_bin_elf_v2p_new) (bin, got_addr);
+	if (got_offset == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 of = REL_OFFSET - got_addr + got_offset;
+
+	switch (REL_TYPE) {
+	case 1: // unknown relocs found in voidlinux for x86-64
+		// break;
+	// case R_X86_64_GLOB_DAT:
+	// case R_X86_64_JUMP_SLOT:
+	case R_386_GLOB_DAT:
+	case R_386_JMP_SLOT:
+		if (of > bin->size || of + sizeof (Elf_(Addr)) >= bin->size) {
+			return UT64_MAX;
+		}
+
+		len = r_buf_read_at (bin->b, of, buf, sizeof (Elf_(Addr)));
+		if (len < -1) {
+			return UT64_MAX;
+		}
+		plt_sym_addr = sizeof (Elf_(Addr)) == 4
+			? r_read_le32 (buf)
+			: r_read_le64 (buf);
+
+		if (!plt_sym_addr) {
+			//XXX HACK ALERT!!!! full relro?? try to fix it
+			//will there always be .plt.got, what would happen if is .got.plt?
+			RBinElfSection *s = get_section_by_name (bin, ".plt.got");
+			if (Elf_(r_bin_elf_has_relro) (bin) < R_ELF_PART_RELRO || !s) {
+				return 0;
+			}
+			plt_addr = s->offset;
+			of = of + got_addr - got_offset;
+			while (plt_addr + 2 + 4 < s->offset + s->size) {
+				/*we try to locate the plt entry that correspond with the relocation
+					since got does not point back to .plt. In this case it has the following
+					form
+
+					ff253a152000   JMP QWORD [RIP + 0x20153A]
+					6690		     NOP
+					----
+					ff25ec9f0408   JMP DWORD [reloc.puts_236]
+
+					plt_addr + 2 to remove jmp opcode and get the imm reading 4
+					and if RIP (plt_addr + 6) + imm == rel->offset
+					return plt_addr, that will be our sym addr
+
+					perhaps this hack doesn't work on 32 bits
+					*/
+				len = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
+				if (len < -1) {
+					return UT64_MAX;
+				}
+				plt_sym_addr = sizeof (Elf_(Addr)) == 4
+					? r_read_le32 (buf)
+					: r_read_le64 (buf);
+
+				//relative address
+				if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == of) {
+					return plt_addr;
+				}
+				if (plt_sym_addr == of) {
+					return plt_addr;
+				}
+				plt_addr += 8;
+			}
+			return plt_sym_addr;
+		} else {
+			ut64 plt_sym_offset = Elf_(r_bin_elf_v2p_new) (bin, plt_sym_addr);
+			if (plt_sym_offset != UT64_MAX) {
+				len = r_buf_read_at (bin->b, plt_sym_offset - 6, buf, sizeof (buf));
+				if (len > 0 && buf[0] != 0xff) {
+					// the .plt section has been probably split in
+					// .plt and .plt.sec to support Intel MPX. See
+					// https://github.com/hjl-tools/x86-psABI
+					//
+					// This is the new layout of the .plt
+					//
+					//     endbr64
+					//     push 0
+					//     bnd jmp 0x4020
+					//
+					// The .plt.sec section has something like:
+					//
+					//     endbr64
+					//     bnd jmp qword reloc.__ctype_toupper_loc
+					//
+					if (pltsec_section) {
+						// if possible, returns the address in
+						// .plt.sec, which is the address called
+						// by call instructions
+						return pltsec_section->rva + rel->k * 16;
+					}
+					// plt_sym_addr in this case points to the start
+					// of .plt entry
+					return plt_sym_addr;
+				}
+			}
+			// this is a regular .plt section
+			//
+			//     jmp qword reloc.__ctype_toupper_loc
+			//     push 0
+			//     jmp 0x4020
+			//
+			return plt_sym_addr - 6;
+		}
+	default:
+		bprintf ("Unsupported relocation type for imports %d\n", REL_TYPE);
+		return of;
+	}
+}
+
+static ut64 get_import_addr_mips(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section) {
+	RBinElfSection *s = get_section_by_name (bin, ".rela.plt");
+	if (s) {
+		ut8 buf[1024];
+		const ut8 *base;
+		ut64 plt_addr = s->rva + s->size;
+		int len = r_buf_read_at (bin->b, s->offset + s->size, buf, sizeof (buf));
+		if (len != sizeof (buf)) {
+			// oops
+		}
+		base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8 *)"\x3c\x0f\x00", 3, 4);
+		if (base) {
+			plt_addr += (int)(size_t) (base - buf);
+		} else {
+			plt_addr += MIPS_PLT_OFFSET + 8; // HARDCODED HACK
+		}
+		plt_addr += rel->k * 16;
+		return plt_addr;
+	}
+	if (plt_section) {
+		const int sizeOfProcedureLinkageTable = 32;
+		const int sizeOfPltEntry = 16;
+		return plt_section->rva + sizeOfProcedureLinkageTable + (rel->k * sizeOfPltEntry);
+	}
+
+	eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
+		(ut64)REL_TYPE, bin->ehdr.e_machine);
+	return UT64_MAX;
+}
+
 static ut64 get_import_addr(ELFOBJ *bin, int sym) {
-	ut64 plt_sym_addr = -1;
-	ut64 got_addr, got_offset, plt_addr;
-	int len, nrel;
+	int nrel;
 
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
-		return -1;
+		return UT64_MAX;
 	}
 
 	// create rel/rela cache if not already there
 	if (!bin->rel_cache) {
 		bin->rel_cache = rel_cache_new (bin);
 		if (!bin->rel_cache) {
-			return -1;
+			return UT64_MAX;
 		}
 	}
 
 	// lookup the right rel/rela entry
 	struct ht_rel_t *rel = ht_up_find (bin->rel_cache, sym, NULL);
 	if (!rel) {
-		return -1;
+		return UT64_MAX;
 	}
-
-	nrel = bin->rel_cache->count;
-	RBinElfSection *got_section = get_section_by_name (bin, ".got");
-	if (!got_section) {
-		got_section = get_section_by_name (bin, ".got.plt");
-	}
-	if (!got_section) {
-		return -1;
-	}
-
-	got_offset = got_section->offset;
-	got_addr = got_section->rva;
 
 	RBinElfSection *plt_section = get_section_by_name (bin, ".plt");
+	nrel = bin->rel_cache->count;
 
-	int of = REL_OFFSET - got_addr + got_offset;
 	switch (bin->ehdr.e_machine) {
 	case EM_PPC:
-	case EM_PPC64: {
-		RBinElfSection *s = plt_section;
-		if (s) {
-			ut8 buf[4] = { 0 };
-			len = r_buf_read_at (bin->b, s->offset, buf, sizeof (buf));
-			if (len < 4) {
-				goto out;
-			}
-			if (bin->endian) {
-				ut64 base = r_read_be32 (buf);
-				base -= (nrel * 16);
-				base += (rel->k * 16);
-				plt_addr = base;
-			} else {
-				// FIXME: this does not seem to work as
-				// expected. Commenting for now because it makes
-				// refactoring much easier and it seems weird
-				// anyway.
-				// if (bin->is_rela == DT_RELA) {
-				// 	len = r_buf_read_at (bin->b, rel_sec->offset, buf, sizeof (buf));
-				// 	if (len < 4) {
-				// 		goto out;
-				//	}
-				// }
-				ut64 base = r_read_le32 (buf);
-				base -= (nrel * 12) + 20;
-				base += (rel->k * 8);
-				plt_addr = base;
-			}
-			return plt_addr;
-		}
-		break;
-	}
+	case EM_PPC64:
+		return get_import_addr_ppc (bin, rel, plt_section, nrel);
 	case EM_SPARC:
 	case EM_SPARCV9:
 	case EM_SPARC32PLUS:
-		if (!plt_section) {
-			return -1;
-		}
-		plt_addr = plt_section->rva;
-		if (REL_TYPE == R_SPARC_JMP_SLOT) {
-			plt_addr += rel->k * 12 + 20;
-			// thumb symbol
-			if (plt_addr & 1) {
-				plt_addr--;
-			}
-			return plt_addr;
-		}
-		bprintf ("Unknown sparc reloc type %d\n", REL_TYPE);
-		/* SPARC */
-		break;
+		return get_import_addr_sparc (bin, rel, plt_section);
 	case EM_ARM:
 	case EM_AARCH64:
-		if (!plt_section) {
-			return UT32_MAX;
-		}
-		plt_addr = plt_section->rva;
-		switch (REL_TYPE) {
-		case R_ARM_JUMP_SLOT: {
-			plt_addr += rel->k * 12 + 20;
-			// thumb symbol
-			if (plt_addr & 1) {
-				plt_addr--;
-			}
-			return plt_addr;
-			break;
-		}
-		case R_AARCH64_JUMP_SLOT:
-			plt_sym_addr = plt_addr + rel->k * 16 + 32;
-			goto done;
-		default:
-			bprintf ("Unsupported relocation type for imports %d\n", REL_TYPE);
-			break;
-		}
-		break;
+		return get_import_addr_arm (bin, rel, plt_section);
 	case EM_386:
 	case EM_X86_64:
-		switch (REL_TYPE) {
-		case 1: // unknown relocs found in voidlinux for x86-64
-			// break;
-		case R_386_GLOB_DAT:
-		case R_386_JMP_SLOT: {
-			ut8 buf[8];
-			if (of + sizeof (Elf_(Addr)) < bin->size) {
-				// ONLY FOR X86
-				if (of > bin->size || of + sizeof (Elf_(Addr)) > bin->size) {
-					goto out;
-				}
-				len = r_buf_read_at (bin->b, of, buf, sizeof (Elf_(Addr)));
-				if (len < -1) {
-					goto out;
-				}
-				plt_sym_addr = sizeof (Elf_(Addr)) == 4
-					? r_read_le32 (buf)
-					: r_read_le64 (buf);
-
-				if (!plt_sym_addr) {
-					//XXX HACK ALERT!!!! full relro?? try to fix it
-					//will there always be .plt.got, what would happen if is .got.plt?
-					RBinElfSection *s = get_section_by_name (bin, ".plt.got");
-					if (Elf_(r_bin_elf_has_relro) (bin) < R_ELF_PART_RELRO || !s) {
-						goto done;
-					}
-					plt_addr = s->offset;
-					of = of + got_addr - got_offset;
-					while (plt_addr + 2 + 4 < s->offset + s->size) {
-						/*we try to locate the plt entry that correspond with the relocation
-							since got does not point back to .plt. In this case it has the following
-							form
-
-							ff253a152000   JMP QWORD [RIP + 0x20153A]
-							6690		     NOP
-							----
-							ff25ec9f0408   JMP DWORD [reloc.puts_236]
-
-							plt_addr + 2 to remove jmp opcode and get the imm reading 4
-							and if RIP (plt_addr + 6) + imm == rel->offset
-							return plt_addr, that will be our sym addr
-
-							perhaps this hack doesn't work on 32 bits
-							*/
-						len = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
-						if (len < -1) {
-							goto out;
-						}
-						plt_sym_addr = sizeof (Elf_(Addr)) == 4
-							? r_read_le32 (buf)
-							: r_read_le64 (buf);
-
-						//relative address
-						if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == of) {
-							plt_sym_addr = plt_addr;
-							goto done;
-						} else if (plt_sym_addr == of) {
-							plt_sym_addr = plt_addr;
-							goto done;
-						}
-						plt_addr += 8;
-					}
-				} else {
-					plt_sym_addr -= 6;
-				}
-				goto done;
-			}
-			break;
-		}
-		default:
-			bprintf ("Unsupported relocation type for imports %d\n", REL_TYPE);
-			return of;
-			break;
-		}
-		break;
-	case 8:
-		// MIPS32 BIG ENDIAN relocs
-		{
-			RBinElfSection *s = get_section_by_name (bin, ".rela.plt");
-			if (s) {
-				ut8 buf[1024];
-				const ut8 *base;
-				plt_addr = s->rva + s->size;
-				len = r_buf_read_at (bin->b, s->offset + s->size, buf, sizeof (buf));
-				if (len != sizeof (buf)) {
-					// oops
-				}
-				base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8*)"\x3c\x0f\x00", 3, 4);
-				if (base) {
-					plt_addr += (int)(size_t) (base - buf);
-				} else {
-					plt_addr += 108 + 8; // HARDCODED HACK
-				}
-				plt_addr += rel->k * 16;
-				return plt_addr;
-			} else if (plt_section) {
-				const int sizeOfProcedureLinkageTable = 32;
-				const int sizeOfPltEntry = 16;
-				return plt_section->rva + sizeOfProcedureLinkageTable + (rel->k * sizeOfPltEntry);
-			} else {
-				eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
-					(ut64) REL_TYPE, bin->ehdr.e_machine);
-			}
-		}
-		break;
+		return get_import_addr_x86 (bin, rel, plt_section);
+	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
+		return get_import_addr_mips (bin, rel, plt_section);
 	default:
 		eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
 			(ut64) REL_TYPE, bin->ehdr.e_machine);
-		break;
+		return UT64_MAX;
 	}
-done:
-	return plt_sym_addr;
-out:
-	return -1;
 }
 
 int Elf_(r_bin_elf_has_nx)(ELFOBJ *bin) {

@@ -1,4 +1,4 @@
-files = [
+r_parse_sources = [
   'code.c',
   'parse.c',
   'p/parse_6502_pseudo.c',
@@ -17,7 +17,7 @@ files = [
   'p/parse_mreplace/mmemory.c'
 ]
 
-r_parse = library('r_parse', files,
+r_parse = library('r_parse', r_parse_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: [

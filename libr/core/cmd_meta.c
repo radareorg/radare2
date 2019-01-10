@@ -1011,6 +1011,8 @@ static int cmd_meta(void *data, const char *input) {
 		r_comment_vars (core, input + 1);
 		break;
 	case '\0': // "C"
+		r_meta_list (core->anal, R_META_TYPE_ANY, 0);
+		break;
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (input[1] && input[1] == '.') {
