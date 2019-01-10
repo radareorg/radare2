@@ -208,8 +208,9 @@ static RList *symbols(RBinFile *bf) {
 		}
 
 		ptr->forwarder = r_str_const ("NONE");
-		if (!ptr->bind)
+		if (!ptr->bind) {
 			ptr->bind = r_str_const ("NONE");
+		}
 		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;
