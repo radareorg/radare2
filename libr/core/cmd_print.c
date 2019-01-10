@@ -403,6 +403,7 @@ static const char *help_msg_ps[] = {
 
 static const char *help_msg_pt[] = {
 	"Usage: pt", "[dn]", "print timestamps",
+	"pt.", "", "print current time",
 	"pt", "", "print UNIX time (32 bit `cfg.bigendian`) Since January 1, 1970",
 	"ptd", "", "print DOS time (32 bit `cfg.bigendian`) Since January 1, 1980",
 	"pth", "", "print HFS time (32 bit `cfg.bigendian`) Since January 1, 1904",
@@ -5956,6 +5957,13 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
+		case '.':
+			{
+				char nowstr[64] = {0};
+				r_print_date_get_now (core->print, nowstr);
+				r_cons_printf ("%s\n", nowstr);
+			}
+			break;
 		case ' ':
 		case '\0':
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
