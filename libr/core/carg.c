@@ -207,13 +207,21 @@ R_API void r_core_print_func_args(RCore *core) {
 	r_anal_op_fini (op);
 }
 
+static void r_anal_fcn_arg_free(RAnalFuncArg *arg) {
+	if (!arg) {
+		return;
+	}
+	free (arg->orig_c_type);
+	free (arg);
+}
+
 /* Returns a list of RAnalFuncArg */
 R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->anal) {
 		return NULL;
 	}
 	Sdb *TDB = core->anal->sdb_types;
-	RList *list = r_list_new ();
+	RList *list = r_list_newf (r_anal_fcn_arg_free);
 	char *key = resolve_fcn_name (core->anal, fcn_name);
 	if (!key) {
 		return NULL;
@@ -224,6 +232,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	const char *src = r_anal_cc_arg (core->anal, cc, 1); // src of first argument
 	if (!cc) {
 		// unsupported calling convention
+		free (key);
 		return NULL;
 	}
 	int i;
@@ -256,5 +265,6 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 			r_list_append (list, arg);
 		}
 	}
+	free (key);
 	return list;
 }

@@ -37,20 +37,6 @@ R_API void r_io_section_fini(RIO *io) {
 	io->sec_ids = NULL;
 }
 
-R_API int r_io_section_exists_for_id(RIO *io, ut32 id) {
-	SdbListIter *iter;
-	RIOSection *sec;
-	if (!io || !io->sections) {
-		return false;
-	}
-	ls_foreach (io->sections, iter, sec) {
-		if (sec->id == id) {
-			return true;
-		}
-	}
-	return false;
-}
-
 R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 				    ut64 vsize, int perm, const char *name,
 				    ut32 bin_id, int fd) {
@@ -215,22 +201,6 @@ R_API RIOSection* r_io_section_get(RIO *io, ut64 vaddr) {
 		return ret;
 	}
 	return NULL;
-}
-
-R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 paddr) {
-	if (io) {
-		SdbList *sects = r_io_sections_get (io, paddr);
-		ut64 ret = UT64_MAX;
-		if (sects) {
-			if (!ls_empty (sects)) {
-				RIOSection *s = ls_pop (sects);
-				ret = s->paddr;
-			}
-		}
-		ls_free (sects);
-		return ret;
-	}
-	return UT64_MAX;
 }
 
 R_API const char *r_io_section_get_archbits(RIO *io, ut64 vaddr, int *bits) {
