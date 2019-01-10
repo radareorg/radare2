@@ -23,6 +23,8 @@ typedef struct {
 
 // used to speedup strcmp with rconfig.get in loops
 enum {
+	R2_ARCH_THUMB,
+	R2_ARCH_ARM32,
 	R2_ARCH_ARM64
 } R2Arch;
 
@@ -4003,7 +4005,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 		}
 	}
 	if (core->assembler->bits == 32 && strstr (core->assembler->cur->name, "arm")) {
-		if (r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
+		if ((!(at&1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 			add_string_ref (anal->coreb.core, at);
 			//  r_anal_xrefs_set (core->anal, esil->address, at, R_ANAL_REF_TYPE_DATA);
 		}
@@ -4214,8 +4216,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	r_cons_break_push (cccb, core);
 
 	int arch = -1;
-	if (core->anal->bits == 64 && !strcmp (core->anal->cur->arch, "arm")) {
-		arch = R2_ARCH_ARM64;
+	if (!strcmp (core->anal->cur->arch, "arm")) {
+		switch (core->anal->cur->bits) {
+		case 64: arch = R2_ARCH_ARM64; break;
+		case 32: arch = R2_ARCH_ARM32; break;
+		case 16: arch = R2_ARCH_THUMB; break;
+		}
 	}
 
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
