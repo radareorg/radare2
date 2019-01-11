@@ -1232,6 +1232,10 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		ut32 num;
 		ut8 *num8 = (ut8*)&num;
 		RBuffer *buf = r_buf_new_file (file, true);
+		if (!buf) {
+			eprintf ("Cannot open file %s - Permission Denied.\n", file);
+			return NULL;
+		}
 		r_buf_write_at (buf, 0, (const ut8*)"\xca\xfe\xba\xbe", 4);
 		int count = r_list_length (files);
 
