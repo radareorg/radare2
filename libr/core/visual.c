@@ -1864,6 +1864,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		" e  eval var configurations\n"
 		" f  flags\n"
 		" F  functions\n"
+		" g  graph\n"
 		" h  history\n"
 		" i  imports\n"
 		" l  chat logs (previously VT)\n"
@@ -1884,6 +1885,9 @@ R_API void r_core_visual_browse(RCore *core) {
 		r_cons_flush ();
 		char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 		switch (ch) {
+		case 'g':
+			r_core_visual_view_graph (core);
+			break;
 		case 'f':
 			r_core_visual_trackflags (core);
 			break;
@@ -3771,18 +3775,17 @@ static void visual_refresh(RCore *core) {
 			}
 		}
 		r_cons_gotoxy (0, 0);
-		r_core_visual_title (core, color);
-		vi = r_config_get (core->config, "cmd.vprompt");
-		if (vi) {
-			r_core_cmd (core, vi, 0);
-		}
-	} else {
-		vi = r_config_get (core->config, "cmd.vprompt");
-		if (vi) {
-			r_core_cmd (core, vi, 0);
-		}
-		r_core_visual_title (core, color);
 	}
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi && *vi) {
+		r_core_cmd0 (core, vi);
+#if 0
+		char *output = r_core_cmd_str (core, vi);
+		r_cons_strcat_at (output, 10, 5, 20, 20);
+		free (output);
+#endif
+	}
+	r_core_visual_title (core, color);
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
 		// disable screen bounds when it's a user-defined command
@@ -3841,6 +3844,10 @@ static void visual_refresh(RCore *core) {
 	} else {
 		r_cons_reset ();
 	}
+	if (core->scr_gadgets) {
+		r_core_cmd0 (core, "pg");
+		r_cons_flush ();
+	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;
 	core->curtab = 0; // which command are we focusing
@@ -3897,7 +3904,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
-	const char *cmdprompt, *teefile;
+	const char *teefile;
 	ut64 scrseek;
 	int wheel, flags, ch;
 	bool skip;
@@ -4000,10 +4007,12 @@ dodo:
 		if (debug) {
 			r_core_cmd (core, ".dr*", 0);
 		}
+#if 0
 		cmdprompt = r_config_get (core->config, "cmd.vprompt");
 		if (cmdprompt && *cmdprompt) {
 			r_core_cmd (core, cmdprompt, 0);
 		}
+#endif
 		core->print->vflush = !skip;
 		visual_refresh (core);
 		if (insert_mode_enabled (core)) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -189,6 +189,16 @@ typedef struct r_core_visual_t {
 } RCoreVisual;
 // #define RCoreVisual Visual
 
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+	char *cmd;
+} RCoreGadget;
+
+R_API void r_core_gadget_free (RCoreGadget *g);
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -284,6 +294,8 @@ typedef struct r_core_t {
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 	REvent *ev;
+	RList *gadgets;
+	bool scr_gadgets;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -665,6 +677,7 @@ R_API void r_core_seek_next (RCore *core, const char *type);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_visual_define (RCore *core, const char *arg, int distance);
 R_API int r_core_visual_trackflags (RCore *core);
+R_API int r_core_visual_view_graph(RCore *core);
 R_API int r_core_visual_comments (RCore *core);
 R_API int r_core_visual_prompt (RCore *core);
 R_API bool r_core_visual_esil (RCore *core);

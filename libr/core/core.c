@@ -2319,6 +2319,7 @@ R_API bool r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
@@ -2456,6 +2457,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	R_FREE (c->block);
 	r_core_autocomplete_free (c->autocomplete);
 
+	r_list_free (c->gadgets);
 	r_list_free (c->undos);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
@@ -2646,12 +2648,11 @@ static void set_prompt (RCore *r) {
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {
-	int ret, rnv;
 	char line[4096];
 
-	rnv = r->num->value;
+	int rnv = r->num->value;
 	set_prompt (r);
-	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
+	int ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) {
 		return R_CORE_CMD_EXIT; // ^D
 	}
@@ -2664,6 +2665,9 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	}
 	free (r->cmdqueue);
 	r->cmdqueue = strdup (line);
+        if (r->scr_gadgets && *line && *line != 'q') {
+                r_core_cmd0 (r, "pg");
+        }
 	return true;
 }
 

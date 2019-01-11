@@ -2559,6 +2559,9 @@ R_API void r_core_panels_refresh(RCore *core) {
 	}
 
 	r_cons_canvas_print (can);
+	if (core->scr_gadgets) {
+		r_core_cmd0 (core, "pg");
+	}
 	r_cons_flush ();
 }
 
