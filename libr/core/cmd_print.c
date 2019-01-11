@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_asm.h"
 #include "r_core.h"
@@ -182,6 +182,7 @@ static const char *help_msg_p[] = {
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
+	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -957,6 +958,103 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	case '?': // "pF?"
 		r_core_cmd_help (core, help_msg_pF);
 		break;
+	}
+}
+
+R_API void r_core_gadget_free (RCoreGadget *g) {
+	free (g->cmd);
+	free (g);
+}
+
+static const char *help_msg_pg[] = {
+	"Usage: pg[-]", "[asm|hex]", "print (dis)assembled",
+	"pg", " [x y w h cmd]", "add a new gadget",
+	"pg", "", "print them all",
+	"pg", "*", "print the gadgets as r2 commands",
+	"pg-", "*", "remove all the gadgets",
+	NULL
+};
+
+static void cmd_print_gadget(RCore *core, const char *_input) {
+	if (*_input == '?') { // "pg?"
+		r_core_cmd_help (core, help_msg_pg);
+		return;
+	}
+	if (*_input == '-') { // "pg-"
+		// TODO support selecting one
+		r_list_free (core->gadgets);
+		core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
+	} else if (*_input == '*') { // "pg*"
+		RCoreGadget *g;
+		RListIter *iter;
+		r_list_foreach (core->gadgets, iter, g) {
+			r_cons_printf ("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
+		}
+	} else if (*_input == 'b') { // "pgb"
+		eprintf ("TODO: Change gadget background color\n");
+	} else if (*_input == 'm') { // "pgm"
+		int nth = atoi (_input + 1);
+		RCoreGadget *g = r_list_get_n (core->gadgets, nth);
+		if (g) {
+			char *input = strdup (_input);
+			char *space = strchr (input, ' ');
+			if (space) {
+				space++;
+			} else {
+				space = "";
+			}
+			RList *args = r_str_split_list (space, " ");
+			char *x = r_list_pop_head (args);
+			char *y = r_list_pop_head (args);
+			char *w = r_list_pop_head (args);
+			char *h = r_list_pop_head (args);
+			if (x && y && w && h) {
+				g->x = r_num_math (core->num, x);
+				g->y = r_num_math (core->num, y);
+				g->w = r_num_math (core->num, w);
+				g->h = r_num_math (core->num, h);
+			}
+			r_list_free (args);
+			free (input);
+		}
+	} else if (*_input == ' ') { // "pg "
+		char *input = strdup (_input);
+		RList *args = r_str_split_list (input, " ");
+		char *x = r_list_pop_head (args);
+		char *y = r_list_pop_head (args);
+		char *w = r_list_pop_head (args);
+		char *h = r_list_pop_head (args);
+		if (x && y && w && h) {
+			int X = r_num_math (core->num, x);
+			int Y = r_num_math (core->num, y);
+			int W = r_num_math (core->num, w);
+			int H = r_num_math (core->num, h);
+			char *cmd = r_str_list_join (args, " ");
+			if (cmd) {
+		//		eprintf ("%d %d %d %d (%s)\n", X, Y, W, H, cmd);
+				RCoreGadget *g = R_NEW0 (RCoreGadget);
+				g->x = X;
+				g->y = Y;
+				g->w = W;
+				g->h = H;
+				g->cmd = cmd;
+				r_list_append (core->gadgets, g);
+			}
+		}
+		r_list_free (args);
+		free (input);
+	} else if (!*_input) { // "pg"
+		RCoreGadget *g;
+		RListIter *iter;
+		r_list_foreach (core->gadgets, iter, g) {
+			char *res = r_core_cmd_str (core, g->cmd);
+			if (res) {
+				r_cons_strcat_at (res, g->x, g->y, g->w, g->h);
+				free (res);
+			}
+		}
+	} else {
+		r_core_cmd_help (core, help_msg_pg);
 	}
 }
 
@@ -5783,6 +5881,9 @@ static int cmd_print(void *data, const char *input) {
 				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}
+		break;
+	case 'g': // "pg"
+		cmd_print_gadget (core, input + 1);
 		break;
 	case 'f': // "pf"
 		cmd_print_format (core, input, block, len);
