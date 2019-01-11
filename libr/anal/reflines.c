@@ -332,7 +332,7 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 	return false;
 }
 
-static const char* get_corner_char(RAnalRefline *ref, ut64 addr, int is_middle_before) {
+static const char* get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {
 	if (addr == ref->to) {
 		if (is_middle_before) {
 			return (ref->from > ref->to) ? " " : "|";
@@ -347,7 +347,7 @@ static const char* get_corner_char(RAnalRefline *ref, ut64 addr, int is_middle_b
 	return "";
 }
 
-static void add_spaces(RBuffer *b, int level, int pos, int wide) {
+static void add_spaces(RBuffer *b, int level, int pos, bool wide) {
 	if (pos != -1) {
 		if (wide) {
 			pos *= 2;
@@ -360,7 +360,7 @@ static void add_spaces(RBuffer *b, int level, int pos, int wide) {
 	}
 }
 
-static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, int wide) {
+static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, bool wide) {
 	const char *pd;
 	int sz = r->level;
 	if (wide) {
@@ -399,10 +399,10 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RListIter *iter;
 	RAnalRefline *ref;
 	int l;
-	int dir = 0, wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
-	int pos = -1, max_level = -1;
-	int middle_before = opts & R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
-	int middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
+	bool wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
+	int dir = 0, pos = -1, max_level = -1;
+	bool middle_before = opts & R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
+	bool middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
 	char *str = NULL;
 
 	if (!c || !anal || !anal->reflines) {
