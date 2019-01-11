@@ -11,6 +11,7 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
+	"Ll", "", "list lang plugins (same as #!)",
 	"LL", "", "lock screen",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
@@ -234,6 +235,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'a': // "La"
 		r_core_cmd0 (core, "e asm.arch=??");
+		break;
+	case 'l': // "Ll"
+		r_core_cmd0 (core, "#!");
 		break;
 	case 'L': // "LL"
 		screenlock (core);
