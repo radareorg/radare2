@@ -5185,24 +5185,24 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	addr = core->offset;
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
-		RIOSection *sec = r_io_section_vget (core->io, addr);
-		if (sec && (sec->perm & R_PERM_X)) {
+		RIOMap *map = r_io_map_get (core->io, addr);
+		if (map && (map->perm & R_PERM_X)) {
 			// search in current section
-			if (sec->size > binfile->size) {
-				addr = sec->vaddr;
-				if (binfile->size > sec->paddr) {
-					len = binfile->size - sec->paddr;
+			if (map->itv.size > binfile->size) {
+				addr = map->itv.addr;
+				if (binfile->size > map->delta) {
+					len = binfile->size - map->delta;
 				} else {
 					eprintf ("Opps something went wrong aac\n");
 					return;
 				}
 			} else {
-				addr = sec->vaddr;
-				len = sec->size;
+				addr = map->itv.addr;
+				len = map->itv.size;
 			}
 		} else {
-			if (sec && sec->vaddr != sec->paddr && binfile->size > (core->offset - sec->vaddr + sec->paddr)) {
-				len = binfile->size - (core->offset - sec->vaddr + sec->paddr);
+			if (map && map->itv.addr != map->delta && binfile->size > (core->offset - map->itv.addr + map->delta)) {
+				len = binfile->size - (core->offset - map->itv.addr + map->delta);
 			} else {
 				if (binfile->size > core->offset) {
 					len = binfile->size - core->offset;

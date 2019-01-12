@@ -268,7 +268,13 @@ static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 
 R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	int bits = 0;
-	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
+	const char *arch = NULL;
+	RBinObject *o = r_bin_cur_object (core->bin);
+	RBinSection *s = o? r_bin_get_section_at (o, addr, core->io->va): NULL;
+	if (s) {
+		arch = s->arch;
+		bits = s->bits;
+	}
 	if (!bits && !core->fixedbits) {
 		//if we found bits related with anal hints pick it up
 		__choose_bits_anal_hints (core, addr, &bits);
