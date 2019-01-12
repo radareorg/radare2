@@ -5918,8 +5918,7 @@ toro:
 			RDisasmState ds = {
 				.oplen = ret,
 				.at = core->offset + i,
-				.midflags = midflags,
-				.midbb = midbb
+				.midflags = midflags
 			};
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
 			if (midflags) {
