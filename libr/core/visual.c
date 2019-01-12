@@ -2,7 +2,6 @@
 
 #include <r_core.h>
 #include <r_cons.h>
-#include <r_disasm.h>
 
 #define NPF 5
 #define PIDX (R_ABS (core->printidx % NPF))
