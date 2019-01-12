@@ -2943,14 +2943,14 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		bool is_vaddr = false;
 		// zero symbol is always empty
 		// Examine entry and maybe store
-		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == SHT_NULL) {
+		if (type == R_BIN_ELF_IMPORT_SYMBOLS && sym[i].st_shndx == SHT_NULL) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
 			} else if ((toffset = get_import_addr (bin, i)) == -1){
 				toffset = 0;
 			}
 			tsize = 16;
-		} else if (type == R_BIN_ELF_SYMBOLS) {
+		} else if (type == R_BIN_ELF_ALL_SYMBOLS) {
 			tsize = sym[i].st_size;
 			toffset = (ut64) sym[i].st_value;
 			is_sht_null = sym[i].st_shndx == SHT_NULL;
@@ -3018,14 +3018,14 @@ done:
 		ret = p;
 	}
 	ret[ret_ctr].last = 1;
-	if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
+	if (type == R_BIN_ELF_IMPORT_SYMBOLS && !bin->imports_by_ord_size) {
 		bin->imports_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
 			bin->imports_by_ord = (RBinImport * *) calloc (ret_ctr + 1, sizeof (RBinImport*));
 		} else {
 			bin->imports_by_ord = NULL;
 		}
-	} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size && ret_ctr) {
+	} else if (type == R_BIN_ELF_ALL_SYMBOLS && !bin->symbols_by_ord_size && ret_ctr) {
 		bin->symbols_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
 			bin->symbols_by_ord = (RBinSymbol * *) calloc (ret_ctr + 1, sizeof (RBinSymbol*));
@@ -3048,7 +3048,7 @@ static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_symbols)(ELFOBJ *bin) {
 	if (bin->phdr_symbols) {
 		return bin->phdr_symbols;
 	}
-	bin->phdr_symbols = get_symbols_from_phdr (bin, R_BIN_ELF_SYMBOLS);
+	bin->phdr_symbols = get_symbols_from_phdr (bin, R_BIN_ELF_ALL_SYMBOLS);
 	return bin->phdr_symbols;
 }
 
@@ -3059,12 +3059,12 @@ static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_imports)(ELFOBJ *bin) {
 	if (bin->phdr_imports) {
 		return bin->phdr_imports;
 	}
-	bin->phdr_imports = get_symbols_from_phdr (bin, R_BIN_ELF_IMPORTS);
+	bin->phdr_imports = get_symbols_from_phdr (bin, R_BIN_ELF_IMPORT_SYMBOLS);
 	return bin->phdr_imports;
 }
 
 static RBinElfSymbol *Elf_(get_phdr_symbols)(ELFOBJ *bin, int type) {
-	return (type == R_BIN_ELF_SYMBOLS)
+	return (type != R_BIN_ELF_IMPORT_SYMBOLS)
 		? Elf_(r_bin_elf_get_phdr_symbols) (bin)
 		: Elf_(r_bin_elf_get_phdr_imports) (bin);
 }
@@ -3080,9 +3080,9 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 			/* find match in phdr */
 			p = phdr_symbols;
 			while (!p->last) {
-				if (p->offset && d->offset == p->offset) {
+				if (d->offset == p->offset || p->ordinal == d->ordinal) {
 					p->in_shdr = true;
-					if (*p->name && *d->name && (r_str_startswith (d->name, p->name) || r_str_startswith (d->name, "$"))) {
+					if (*p->name && *d->name && r_str_startswith (d->name, "$")) {
 						strcpy (d->name, p->name);
 					}
 				}
@@ -3122,13 +3122,97 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 	return nsym;
 }
 
+static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
+	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
+		return;
+	}
+	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
+	eobj->symbols_by_ord[ord] = ptr;
+}
+
+static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **sym) {
+	int bin_bits = Elf_(r_bin_elf_get_bits) (bin);
+	RBinSymbol *ptr = *sym;
+	int len = strlen (ptr->name);
+	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
+		switch (ptr->name[1]) {
+		case 'a' : //arm
+			ptr->bits = 32;
+			break;
+		case 't': //thumb
+			ptr->bits = 16;
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+			}
+			break;
+		case 'd': //data
+			break;
+		default:
+			goto arm_symbol;
+		}
+	} else {
+arm_symbol:
+		ptr->bits = bin_bits;
+		if (bin_bits != 64) {
+			ptr->bits = 32;
+			if (ptr->paddr != UT64_MAX) {
+				if (ptr->vaddr & 1) {
+					ptr->vaddr--;
+					ptr->bits = 16;
+				}
+				if (ptr->paddr & 1) {
+					ptr->paddr--;
+					ptr->bits = 16;
+				}
+			}
+		}
+	}
+}
+
+RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
+					  struct r_bin_elf_symbol_t *symbol,
+					  const char *namefmt) {
+	ut64 paddr, vaddr;
+	RBinSymbol *ptr = NULL;
+	if (symbol->is_vaddr) {
+		paddr = UT64_MAX;
+		vaddr = symbol->offset;
+	} else {
+		paddr = symbol->offset;
+		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
+	}
+
+	if (!(ptr = R_NEW0 (RBinSymbol))) {
+		return NULL;
+	}
+	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
+	ptr->forwarder = r_str_const ("NONE");
+	ptr->bind = r_str_const (symbol->bind);
+	ptr->type = r_str_const (symbol->type);
+	ptr->paddr = paddr;
+	ptr->vaddr = vaddr;
+	ptr->size = symbol->size;
+	ptr->ordinal = symbol->ordinal;
+	// detect thumb
+	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
+		_set_arm_thumb_bits (bin, &ptr);
+	}
+
+	return ptr;
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;
 	ut64 toffset;
 	ut32 size = 0;
-	RBinElfSymbol  *ret = NULL;
+	RBinElfSymbol *ret = NULL, *import_ret = NULL;
+	RBinSymbol *import_sym_ptr = NULL;
+	size_t ret_size = 0, prev_ret_size = 0, import_ret_ctr = 0;
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
 	ut8 s[sizeof (Elf_(Sym))] = { 0 };
@@ -3144,8 +3228,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		return false;
 	}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
-				(type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
+		if (((type & R_BIN_ELF_SYMTAB_SYMBOLS) && bin->shdr[i].sh_type == SHT_SYMTAB) ||
+				((type & R_BIN_ELF_DYNSYM_SYMBOLS) && bin->shdr[i].sh_type == SHT_DYNSYM)) {
 			if (bin->shdr[i].sh_link < 1) {
 				/* oops. fix out of range pointers */
 				continue;
@@ -3237,28 +3321,30 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				sym[j].st_shndx = READ16 (s, k);
 #endif
 			}
-			free (ret);
-			ret = calloc (nsym, sizeof (RBinElfSymbol));
+			ret = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
 			if (!ret) {
 				bprintf ("Cannot allocate %d symbols\n", nsym);
 				goto beach;
 			}
-			for (k = 1, ret_ctr = 0; k < nsym; k++) {
+			memset (ret + ret_size, 0, nsym * sizeof (RBinElfSymbol));
+			prev_ret_size = ret_size;
+			ret_size += nsym;
+			for (k = 1; k < nsym; k++) {
 				bool is_sht_null = false;
 				bool is_vaddr = false;
-				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
+				bool is_imported = false;
+				if (type == R_BIN_ELF_IMPORT_SYMBOLS)  {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
 					} else if ((toffset = get_import_addr (bin, k)) == -1){
 						toffset = 0;
 					}
 					tsize = 16;
-				} else if (type == R_BIN_ELF_SYMBOLS) {
+					is_imported = sym[k].st_shndx == STN_UNDEF;
+				} else {
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value;
 					is_sht_null = sym[k].st_shndx == SHT_NULL;
-				} else {
-					continue;
 				}
 				if (bin->ehdr.e_type == ET_REL) {
 					if (sym[k].st_shndx < bin->ehdr.e_shnum) {
@@ -3283,6 +3369,20 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					if (st_name < 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
+						bool found = false;
+						j = -1;
+						while (!ret[++j].last && j < prev_ret_size) {
+							if (ret[j].offset == ret[ret_ctr].offset &&
+									strcmp (ret[j].name, "") != 0 && strcmp (ret[j].name, &strtab[st_name]) == 0
+									&& strcmp (ret[j].type, type2str (&sym[k])) == 0) {
+								found = true;
+								break;
+							}
+						}
+						if (found) {
+							memset (ret + ret_ctr, 0, sizeof (RBinElfSymbol));
+							continue;
+						}
 						const size_t len = __strnlen (strtab + sym[k].st_name, rest);
 						memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 					}
@@ -3293,15 +3393,23 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				ret[ret_ctr].is_sht_null = is_sht_null;
 				ret[ret_ctr].is_vaddr = is_vaddr;
 				ret[ret_ctr].last = 0;
+				ret[ret_ctr].is_imported = is_imported;
 				ret_ctr++;
+				if (type == R_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
+					import_ret_ctr++;
+				}
 			}
-			ret[ret_ctr].last = 1; // ugly dirty hack :D
 			R_FREE (strtab);
 			R_FREE (sym);
+			if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
+				break;
+			}
 		}
 	}
 	if (!ret) {
 		return Elf_(get_phdr_symbols) (bin, type);
+	} else {
+		ret[ret_ctr].last = 1; // ugly dirty hack :D
 	}
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
@@ -3317,14 +3425,33 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		aux++;
 	}
 	nsym = max;
-	if (type == R_BIN_ELF_IMPORTS) {
+	if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 		R_FREE (bin->imports_by_ord);
 		bin->imports_by_ord_size = nsym + 1;
 		bin->imports_by_ord = (RBinImport**)calloc (R_MAX (1, nsym + 1), sizeof (RBinImport*));
-	} else if (type == R_BIN_ELF_SYMBOLS) {
 		R_FREE (bin->symbols_by_ord);
 		bin->symbols_by_ord_size = nsym + 1;
 		bin->symbols_by_ord = (RBinSymbol**)calloc (R_MAX (1, nsym + 1), sizeof (RBinSymbol*));
+		import_ret = calloc (import_ret_ctr + 1, sizeof (RBinElfSymbol));
+		if (!import_ret) {
+			bprintf ("Cannot allocate %d symbols\n", nsym);
+			goto beach;
+		}
+		import_ret_ctr = 0;
+		i = -1;
+		while (!ret[++i].last) {
+			if (!(import_sym_ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &ret[i], "%s"))) {
+				continue;
+			}
+			setsymord (bin, import_sym_ptr->ordinal, import_sym_ptr);
+			if (ret[i].is_imported) {
+				memcpy (&import_ret[import_ret_ctr], &ret[i], sizeof (RBinElfSymbol));
+				++import_ret_ctr;
+			}
+		}
+		import_ret[import_ret_ctr].last = 1;
+		R_FREE (ret);
+		return import_ret;
 	}
 	return ret;
 beach:
@@ -3336,15 +3463,14 @@ beach:
 
 RBinElfSymbol *Elf_(r_bin_elf_get_symbols)(ELFOBJ *bin) {
 	if (!bin->g_symbols) {
-		bin->g_symbols = Elf_(_r_bin_elf_get_symbols_imports) (bin, R_BIN_ELF_SYMBOLS);
+		bin->g_symbols = Elf_(_r_bin_elf_get_symbols_imports) (bin, R_BIN_ELF_ALL_SYMBOLS);
 	}
 	return bin->g_symbols;
 }
 
-
 RBinElfSymbol *Elf_(r_bin_elf_get_imports)(ELFOBJ *bin) {
 	if (!bin->g_imports) {
-		bin->g_imports = Elf_(_r_bin_elf_get_symbols_imports) (bin, R_BIN_ELF_IMPORTS);
+		bin->g_imports = Elf_(_r_bin_elf_get_symbols_imports) (bin, R_BIN_ELF_IMPORT_SYMBOLS);
 	}
 	return bin->g_imports;
 }
