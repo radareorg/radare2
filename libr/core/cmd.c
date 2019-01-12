@@ -2566,7 +2566,11 @@ next2:
 			if (ptr[1] == '!') {
 				str = r_core_cmd_str_pipe (core, ptr + 1);
 			} else {
+				// Color disabled when doing backticks ?e `pi 1`
+				int ocolor = r_config_get_i (core->config, "scr.color");
+				r_config_set_i (core->config, "scr.color", 0);
 				str = r_core_cmd_str (core, ptr + 1);
+				r_config_set_i (core->config, "scr.color", ocolor);
 			}
 			if (!str) {
 				goto fail;
