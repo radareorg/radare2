@@ -1180,7 +1180,7 @@ static int esil_asreq(RAnalEsil *esil) {
 						eprintf ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
 						param_num = 30;
 					}
-					if (shift >= 63) {
+					if (shift > 63) {
 						// LL can't handle LShift of 63 or more
 						eprintf ("Invalid asreq shift of %d\n", shift);
 					} else if (op_num & (1LL << shift)) {
