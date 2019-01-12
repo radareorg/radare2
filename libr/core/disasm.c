@@ -369,7 +369,8 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 	if (oaddr == addr) {
 		return section;
 	}
-	RIOSection *s = r_io_section_vget (core->io, addr);
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
 	if (s) {
 		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
 	} else {
@@ -1483,13 +1484,6 @@ static void ds_begin_comment(RDisasmState *ds) {
 	}
 }
 
-static int var_comparator(const RAnalVar *a, const RAnalVar *b){
-	if (a && b) {
-		return a->delta > b->delta;
-	}
-	return false;
-}
-
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
 static ut32 tmp_get_realsize (RAnalFunction *f) {
 	ut32 size = r_anal_fcn_realsize (f);
@@ -2335,12 +2329,8 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		char *str = NULL;
 		if (ds->show_section_perm) {
 			// iosections must die, this should be rbin_section_get
-			RIOSection *s = r_io_section_vget (core->io, ds->at);
-			if (s) {
-				str = strdup (r_str_rwx_i (s->perm));
-			} else {
-				str = strdup ("---");
-			}
+			RIOMap *map = r_io_map_get (core->io, ds->at);
+			str = strdup (map? r_str_rwx_i (map->perm): "---");
 		}
 		if (ds->show_section_name) {
 			str = r_str_appendf (str, " %s", get_section_name (core, ds->at));
@@ -3708,7 +3698,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
-							RIOSection *s = r_io_section_vget (core->io, n);
+							RBinObject *bo = r_bin_cur_object (core->bin);
+							RBinSection *s = bo? r_bin_get_section_at (bo, n, core->io->va): NULL;
 							if (s) {
 								refptrstr = s->name;
 							}
