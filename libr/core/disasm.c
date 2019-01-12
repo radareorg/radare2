@@ -2,7 +2,6 @@
 
 #include "r_core.h"
 #include "r_cons.h"
-#include "r_disasm.h"
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1

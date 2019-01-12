@@ -541,6 +541,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
 R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var);
 
 /* asm.c */
+#define R_MIDFLAGS_SHOW 1
+#define R_MIDFLAGS_REALIGN 2
+#define R_MIDFLAGS_SYMALIGN 3
+
 typedef struct r_core_asm_hit {
 	char *code;
 	int len;
