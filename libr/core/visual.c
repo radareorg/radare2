@@ -3220,7 +3220,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					ut64 entry = r_num_get (core->num, "entry0");
 					if (!entry || entry == UT64_MAX) {
-						RIOSection *s = r_io_section_vget (core->io, core->offset);
+						RBinObject *o = r_bin_cur_object (core->bin);
+						RBinSection *s = o?  r_bin_get_section_at (o, addr, core->io->va): NULL;
 						if (s) {
 							entry = s->vaddr;
 						} else {
@@ -3556,10 +3557,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	{
 		ut64 sz = r_io_size (core->io);
-		ut64 pa;
+		ut64 pa = core->offset;
 		{
-			RIOSection *s = r_io_section_vget (core->io, core->offset);
-			pa =  s ? core->offset - s->vaddr + s->paddr : core->offset;
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				pa = map->delta;
+			}
 		}
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;

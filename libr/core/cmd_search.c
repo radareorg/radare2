@@ -2668,13 +2668,13 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 
 static void __core_cmd_search_asm_byteswap (RCore *core, int nth) {
 	RAsmOp asmop;
-	char buf[32];
+	ut8 buf[32];
 	int i;
 	r_io_read_at (core->io, 0, buf, sizeof (buf));
-	if (nth < 0 || nth >= sizeof (buf)-1) {
+	if (nth < 0 || nth >= sizeof (buf) - 1) {
 		return;
 	}
-	for (i = 0 ;i <= 0xff; i++) {
+	for (i = 0; i <= 0xff; i++) {
 		buf[nth] = i;
 		if (r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf)) > 0) {
 			const char *asmstr = r_strbuf_get (&asmop.buf_asm);

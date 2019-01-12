@@ -221,7 +221,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	Sdb *TDB = core->anal->sdb_types;
-	RList *list = r_list_newf (r_anal_fcn_arg_free);
+	RList *list = r_list_newf ((RListFree)r_anal_fcn_arg_free);
 	char *key = resolve_fcn_name (core->anal, fcn_name);
 	if (!key) {
 		return NULL;

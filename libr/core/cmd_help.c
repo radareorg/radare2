@@ -378,6 +378,9 @@ R_API void r_core_clippy(const char *msg) {
 	int type = R_AVATAR_CLIPPY;
 	if (*msg == '+') {
 		char *space = strchr (msg, ' ');
+		if (!space) {
+			return;
+		}
 		type = R_AVATAR_ORANGG;
 		msg = space + 1;
 	}
