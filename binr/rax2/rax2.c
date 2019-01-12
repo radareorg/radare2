@@ -173,7 +173,7 @@ static int rax(char *str, int len, int last) {
 			case 'L': flags ^= 1 << 19; break;
 			case 'i': flags ^= 1 << 21; break;
 			case 'o': flags ^= 1 << 22; break;
-			case 'v': blob_version ("rax2"); return 0;
+			case 'v': return blob_version ("rax2");
 			case '\0': return !use_stdin ();
 			default:
 				/* not as complete as for positive numbers */

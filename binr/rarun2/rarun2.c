@@ -3,6 +3,8 @@
 #include <r_util.h>
 #include <r_socket.h>
 
+#include "../blob/version.c"
+
 #if __UNIX__
 static void fwd(int sig) {
 	/* do nothing? send kill signal to remote process */
@@ -30,8 +32,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {
-		printf ("rarun2 "R2_VERSION"\n");
-		return 0;
+		return blob_version ("rarun2");
 	}
 	file = argv[1];
 	if (!strcmp (file, "-t")) {

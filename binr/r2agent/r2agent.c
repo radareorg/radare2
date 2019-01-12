@@ -4,6 +4,8 @@
 #include <r_core.h>
 #include <signal.h>
 
+#include "../blob/version.c"
+
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
 #define USE_IOS_JETSAM 1
 
@@ -35,8 +37,7 @@ static int usage (int v) {
 }
 
 static int showversion() {
-	printf (R2_VERSION"\n");
-	return 0;
+	return blob_version ("r2agent");
 }
 
 int main(int argc, char **argv) {
