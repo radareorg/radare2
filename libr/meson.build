@@ -326,6 +326,7 @@ include_files =[
   'include/r_crypto.h',
   'include/r_debug.h',
   'include/r_diff.h',
+  'include/r_disasm.h',
   'include/r_egg.h',
   'include/r_endian.h',
   'include/r_flag.h',

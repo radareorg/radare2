@@ -2,14 +2,11 @@
 
 #include "r_core.h"
 #include "r_cons.h"
+#include "r_disasm.h"
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
 #define DEFAULT_NARGS 4
-
-#define R_MIDFLAGS_SHOW 1
-#define R_MIDFLAGS_REALIGN 2
-#define R_MIDFLAGS_SYMALIGN 3
 
 #define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
 #define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
@@ -1402,6 +1399,18 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 		}
 	}
 	return 0;
+}
+
+R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags) {
+	r_return_val_if_fail (midflags, 0);
+	RDisasmState ds = {
+		.at = at,
+		.oplen = oplen,
+		.midflags = *midflags
+	};
+	int ret = handleMidFlags (core, &ds, true);
+	*midflags = ds.midflags;
+	return ret;
 }
 
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {

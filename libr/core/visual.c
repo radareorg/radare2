@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_cons.h>
+#include <r_disasm.h>
 
 #define NPF 5
 #define PIDX (R_ABS (core->printidx % NPF))
@@ -3878,6 +3879,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = r_config_get_i (core->config, "asm.bb.middle");
 	RAnalFunction *f = NULL;
 	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3888,10 +3890,16 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 		r_asm_set_pc (core->assembler, core->offset);
 		*cols = r_asm_disassemble (core->assembler,
 				op, core->block, 32);
-		if (midbb) {
-			int skip_bytes_bb = 0;
+		if (midflags || midbb) {
+			int skip_bytes_flag = 0, skip_bytes_bb = 0;
+			if (midflags) {
+				skip_bytes_flag = r_core_flag_in_middle (core, core->offset, *cols, &midflags);
+			}
 			if (midbb) {
 				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->offset, *cols);
+			}
+			if (skip_bytes_flag && midflags >= R_MIDFLAGS_REALIGN) {
+				*cols = skip_bytes_flag;
 			}
 			if (skip_bytes_bb && skip_bytes_bb < *cols) {
 				*cols = skip_bytes_bb;
