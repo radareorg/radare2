@@ -1386,6 +1386,8 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 
 static int handleMidBB(RCore *core, RDisasmState *ds) {
 	int i;
+	ds->hasMidbb = false;
+	r_return_val_if_fail (core->anal, 0);
 	// Unfortunately, can't just check the addr of the last insn byte since
 	// a bb (and fcn) can be as small as 1 byte, and advancing i based on
 	// bb->size is unsound if basic blocks can nest or overlap
@@ -1399,12 +1401,10 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 			}
 		}
 	}
-	ds->hasMidbb = false;
 	return 0;
 }
 
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
-	r_return_val_if_fail (core->anal, 0);
 	RDisasmState ds = {
 		.at = at,
 		.oplen = oplen
