@@ -175,10 +175,10 @@ struct flagbar_t {
 static bool flagbar_foreach(RFlagItem *fi, void *user) {
 	struct flagbar_t *u = (struct flagbar_t *)user;
 	ut64 min = 0, max = r_io_size (u->core->io);
-	RIOSection *s = r_io_section_vget (u->core->io, fi->offset);
-	if (s) {
-		min = s->vaddr;
-		max = s->vaddr + s->size;
+	RIOMap *m = r_io_map_get (u->core->io, fi->offset);
+	if (m) {
+		min = m->itv.addr;
+		max = m->itv.addr + m->itv.size;
 	}
 	r_cons_printf ("0x%08"PFMT64x" ", fi->offset);
 	r_print_rangebar (u->core->print, fi->offset, fi->offset + fi->size, min, max, u->cols);
