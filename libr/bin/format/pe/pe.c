@@ -539,7 +539,7 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 
 static char*_time_stamp_to_dos_str(ut32 timeStamp) {
         ut16 date = timeStamp >> 16; 
-        ut16 time = timeStamp & 0xFF;
+        ut16 time = timeStamp & 0xFFFF;
 
         /* Date */
         ut32 year = ((date & 0xfe00) >> 9) + 1980;
@@ -551,30 +551,26 @@ static char*_time_stamp_to_dos_str(ut32 timeStamp) {
         ut32 minutes = (time & 0x07e0) >> 5;
         ut32 seconds = (time & 0x001f) << 1;
 
-	char buf[20] = {0};
-        sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minutes, seconds);
-	return strdup(buf);
-        /*printf("Buffie: %s\n", buf);*/
+	/* Convert to epoch */
+	struct tm t = {0};
+	t.tm_year = year - 1900;
+	t.tm_mon = month - 1;
+	t.tm_mday = day;
+	t.tm_hour = hour;
+	t.tm_min = minutes;
+	t.tm_sec = seconds;
+	t.tm_isdst = -1;
+	time_t epochTime = mktime (&t);
+
+	/* We reuse the exising function to have consistent behaviour with the other timestamp */
+	return _time_stamp_to_str ((ut32) epochTime);
 }
 
-static bool _time_stamp_is_dos_str(char* compileTimeStamp, char* resourceTimeStamp) {
-	if(compileTimeStamp == NULL)
-		return true;
-
-	/* Compile Time Stamp looks like Thu May 15 03:04:05 2018 */
-	/* Resource Time Stamp looks like 2012-05-19 00:07:04 */
-	ut32 lengthCompileTimeStamp = strlen(compileTimeStamp);
-	ut32 lengthResourceTimeStamp = strlen(resourceTimeStamp);
-	if(lengthResourceTimeStamp < 4 || lengthCompileTimeStamp < 4)
+static bool _time_stamp_is_dos_format(const ut32 compileTimeStamp, const ut32 resourceTimeStamp) {
+	/* We assume they're both POSIX timestamp and thus the higher bits would be equal if they're close to each other */
+	if ((compileTimeStamp >> 16) == (resourceTimeStamp >> 16))
 		return false;
-	
-	/*printf("Comparing %s with %s\n", compileTimeStamp + lengthCompileTimeStamp - 4, resourceTimeStamp);*/
-
-	/* Compare whether YEAR is the same, this is our heuristic to differentiate between DOS date and POSIX date */
-	if(strncmp(compileTimeStamp + lengthCompileTimeStamp - 4, resourceTimeStamp, 4) == 0) {
-		return true;
-	}
-	return false;
+	return true;
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
@@ -2401,8 +2397,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
-		const char* compileTimeStamp = sdb_const_get (bin->kv, "image_file_header.TimeDateStamp_string", 0);
-		if ( _time_stamp_is_dos_str (compileTimeStamp, _time_stamp_to_dos_str (dir->TimeDateStamp))) {
+		if (_time_stamp_is_dos_format ((ut32) sdb_num_get (bin->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
 			rs->timestr = _time_stamp_to_dos_str (dir->TimeDateStamp);
 		} else {
 			rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
