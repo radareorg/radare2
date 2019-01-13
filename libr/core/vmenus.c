@@ -8,16 +8,16 @@
 #define MAX_FORMAT 3
 
 enum {
-      R_BYTE_DATA  = 1,
-      R_WORD_DATA  = 2,
-      R_DWORD_DATA = 4,
-      R_QWORD_DATA = 8
+	R_BYTE_DATA  = 1,
+	R_WORD_DATA  = 2,
+	R_DWORD_DATA = 4,
+	R_QWORD_DATA = 8
 };
 
 enum {
-      SORT_NONE,
-      SORT_NAME,
-      SORT_OFFSET
+	SORT_NONE,
+	SORT_NAME,
+	SORT_OFFSET
 };
 
 typedef struct {
@@ -867,7 +867,9 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 static bool hudstuff_append(RFlagItem *fi, void *user) {
 	RList *list = (RList *)user;
 	char *s = r_str_newf ("0x%08"PFMT64x"  %s", fi->offset, fi->name);
-	r_list_append (list, s);
+	if (s) {
+		r_list_append (list, s);
+	}
 	return true;
 }
 

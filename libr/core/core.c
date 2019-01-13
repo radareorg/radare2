@@ -1143,10 +1143,7 @@ static void autocomplete_breakpoints(RLine* line, const char* str) {
 static bool add_argv(RFlagItem *fi, void *user) {
 	int *i = (int *)user;
 	tmp_argv[(*i)++] = fi->name;
-	if (*i == TMP_ARGV_SZ - 1) {
-		return false;
-	}
-	return true;
+	return *i != TMP_ARGV_SZ - 1;
 }
 
 static void autocomplete_flags(RLine* line, const char* str) {

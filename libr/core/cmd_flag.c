@@ -278,9 +278,12 @@ struct rename_flag_t {
 	int count;
 };
 
-bool rename_flag_ordinal(RFlagItem *fi, void *user) {
+static bool rename_flag_ordinal(RFlagItem *fi, void *user) {
 	struct rename_flag_t *u = (struct rename_flag_t *)user;
 	char *newName = r_str_newf ("%s%d", u->pfx, u->count++);
+	if (!newName) {
+		return false;
+	}
 	r_flag_rename (u->core->flags, fi, newName);
 	free (newName);
 	return true;
