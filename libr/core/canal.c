@@ -88,22 +88,6 @@ static int is_string(const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-#if 0
-// Detect if there's code in the given address
-// - falls in section named 'text'
-// - section has exec bit, some const strings are in there
-// - addr is in different section than core->offset
-static bool iscodesection(RCore *core, ut64 addr) {
-	RIOSection *s = r_io_section_vget (core->io, addr);
-	if (s && s->name && strstr (s->name, "text")) {
-		return true;
-	}
-	return false;
-	// BSS return (s && s->flags & R_PERM_W)? 0: 1;
-	// Cstring return (s && s->flags & R_PERM_X)? 1: 0;
-}
-#endif
-
 static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 	ut8 rstr[128] = {0};
 	int ret = 0, len = 0;
@@ -209,7 +193,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	}
 	// check registers
-	if (core->io && core->io->debug && core->dbg) {
+	if (core->io && core->io->debug && core->dbg) { // TODO: if cfg.debug here
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'
@@ -248,21 +232,21 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		}
 	} else {
 		int _perm = -1;
-		RIOSection *ios;
+		RBinSection *s;
 		SdbListIter *iter;
 		if (core->io) {
 			// sections
-			ls_foreach (core->io->sections, iter, ios) {
-				if (addr >= ios->vaddr && addr < (ios->vaddr + ios->vsize)) {
+			ls_foreach (core->io->sections, iter, s) {
+				if (addr >= s->vaddr && addr < (s->vaddr + s->vsize)) {
 					// sections overlap, so we want to get the one with lower perms
-					_perm = (_perm != -1) ? R_MIN (_perm, ios->perm) : ios->perm;
+					_perm = (_perm != -1) ? R_MIN (_perm, s->perm) : s->perm;
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
-					if (strstr (ios->name, "heap")) {
+					if (strstr (s->name, "heap")) {
 						types |= R_ANAL_ADDR_TYPE_HEAP;
 					}
-					if (strstr (ios->name, "stack")) {
+					if (strstr (s->name, "stack")) {
 						types |= R_ANAL_ADDR_TYPE_STACK;
 					}
 				}
@@ -520,27 +504,25 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
-static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
-	ut8 *buf;
+static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
 	ut16 bufsz = 1000;
-	RIOSection *sec;
 	if (!refdepth) {
-		return 1;
+		return false;
 	}
-	sec = r_io_section_vget (core->io, ref->addr);
-	if (!sec) {
-		return 1;
+	RIOMap *map = r_io_map_get (core->io, ref->addr);
+	if (!map) {
+		return false;
 	}
-	buf = calloc (bufsz, 1);
+	ut8 *buf = calloc (bufsz, 1);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
-		return 0;
+		return false;
 	}
 	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
-	if (sec->perm & R_PERM_X &&
-	    r_anal_check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr,
-			      sec->vaddr + sec->vsize)) {
+	if (map->perm & R_PERM_X &&
+	    r_anal_check_fcn (core->anal, buf, bufsz, ref->addr, map->itv.addr,
+			      map->itv.addr + map->itv.size)) {
 		if (core->anal->limit) {
 			if (ref->addr < core->anal->limit->from ||
 			    ref->addr > core->anal->limit->to) {
@@ -786,9 +768,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			r_anal_fcn_insert (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = fcn->addr + r_anal_fcn_size (fcn);
-				RIOSection *sect = r_io_section_vget (core->io, addr);
+				RIOMap *map = r_io_map_get (core->io, addr);
 				// only get next if found on an executable section
-				if (!sect || (sect && sect->perm & R_PERM_X)) {
+				if (!map || (map && map->perm & R_PERM_X)) {
 					for (i = 0; i < nexti; i++) {
 						if (next[i] == addr) {
 							break;
@@ -854,8 +836,8 @@ error:
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr + r_anal_fcn_size (fcn);
-			RIOSection *sect = r_io_section_vget (core->io, newaddr);
-			if (!sect || (sect && (sect->perm & R_PERM_X))) {
+			RIOMap *map = r_io_map_get (core->io, newaddr);
+			if (!map || (map && (map->perm & R_PERM_X))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
 					if (!next[i]) {
@@ -3548,10 +3530,9 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	memset (as->block, 0, as_size);
 	for (at = from; at < to; at += step) {
-		RIOSection *sec = r_io_section_get (core->io, at);
+		RIOMap *map = r_io_map_get (core->io, at);
 		piece = (at - from) / step;
-		as->block[piece].perm = sec ? sec->perm:
-				(core->io->desc ? core->io->desc->perm: 0);
+		as->block[piece].perm = map ? map->perm: (core->io->desc ? core->io->desc->perm: 0);
 	}
 	// iter all flags
 	r_list_foreach (core->flags->flags, iter, f) {
@@ -4172,9 +4153,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (str[0] == ' ') {
 			end = addr + r_num_math (core->num, str + 1);
 		} else {
-			RIOSection *sect = r_io_section_vget (core->io, addr);
-			if (sect) {
-				end = sect->vaddr + sect->size;
+			RIOMap *map = r_io_map_get (core->io, addr);
+			if (map) {
+				end = map->itv.addr + map->itv.size;
 			} else {
 				end = addr + core->blocksize;
 			}

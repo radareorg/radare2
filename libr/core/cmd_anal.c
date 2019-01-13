@@ -5185,24 +5185,24 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	addr = core->offset;
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
-		RIOSection *sec = r_io_section_vget (core->io, addr);
-		if (sec && (sec->perm & R_PERM_X)) {
+		RIOMap *map = r_io_map_get (core->io, addr);
+		if (map && (map->perm & R_PERM_X)) {
 			// search in current section
-			if (sec->size > binfile->size) {
-				addr = sec->vaddr;
-				if (binfile->size > sec->paddr) {
-					len = binfile->size - sec->paddr;
+			if (map->itv.size > binfile->size) {
+				addr = map->itv.addr;
+				if (binfile->size > map->delta) {
+					len = binfile->size - map->delta;
 				} else {
 					eprintf ("Opps something went wrong aac\n");
 					return;
 				}
 			} else {
-				addr = sec->vaddr;
-				len = sec->size;
+				addr = map->itv.addr;
+				len = map->itv.size;
 			}
 		} else {
-			if (sec && sec->vaddr != sec->paddr && binfile->size > (core->offset - sec->vaddr + sec->paddr)) {
-				len = binfile->size - (core->offset - sec->vaddr + sec->paddr);
+			if (map && map->itv.addr != map->delta && binfile->size > (core->offset - map->itv.addr + map->delta)) {
+				len = binfile->size - (core->offset - map->itv.addr + map->delta);
 			} else {
 				if (binfile->size > core->offset) {
 					len = binfile->size - core->offset;
@@ -7077,14 +7077,14 @@ static int compute_coverage(RCore *core) {
 	RListIter *iter;
 	SdbListIter *iter2;
 	RAnalFunction *fcn;
-	RIOSection *sec;
+	RIOMap *map;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		ls_foreach (core->io->sections, iter2, sec) {
-			if (sec->perm & R_PERM_X) {
-				ut64 section_end = sec->vaddr + sec->vsize;
+		ls_foreach (core->io->maps, iter2, map) {
+			if (map->perm & R_PERM_X) {
+				ut64 section_end = map->itv.addr + map->itv.size;
 				ut64 s = r_anal_fcn_realsize (fcn);
-				if (fcn->addr >= sec->vaddr && (fcn->addr + s) < section_end) {
+				if (fcn->addr >= map->itv.addr && (fcn->addr + s) < section_end) {
 					cov += s;
 				}
 			}
@@ -7096,10 +7096,10 @@ static int compute_coverage(RCore *core) {
 static int compute_code (RCore* core) {
 	int code = 0;
 	SdbListIter *iter;
-	RIOSection *sec;
-	ls_foreach (core->io->sections, iter, sec) {
-		if (sec->perm & R_PERM_X) {
-			code += sec->vsize;
+	RIOMap *map;
+	ls_foreach (core->io->maps, iter, map) {
+		if (map->perm & R_PERM_X) {
+			code += map->itv.size;
 		}
 	}
 	return code;

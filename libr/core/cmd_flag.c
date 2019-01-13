@@ -179,10 +179,10 @@ static void flagbars(RCore *core, const char *glob) {
 	}
 	r_list_foreach (core->flags->flags, iter, flag) {
 		ut64 min = 0, max = r_io_size (core->io);
-		RIOSection *s = r_io_section_vget (core->io, flag->offset);
-		if (s) {
-			min = s->vaddr;
-			max = s->vaddr + s->size;
+		RIOMap *map = r_io_map_get (core->io, flag->offset);
+		if (map) {
+			min = map->itv.addr;
+			max = map->itv.addr + map->itv.size;
 		}
 		if (r_str_glob (flag->name, glob)) {
 			r_cons_printf ("0x%08"PFMT64x" ", flag->offset);

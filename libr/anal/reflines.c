@@ -361,16 +361,18 @@ static void add_spaces(RBuffer *b, int level, int pos, bool wide) {
 }
 
 static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, bool wide) {
-	const char *pd;
 	int sz = r->level;
 	if (wide) {
 		sz *= 2;
 	}
-	pd = r_str_pad (ch, sz - 1);
+	const char *pd = r_str_pad (ch, sz - 1);
 	if (pos == -1) {
 		r_buf_append_string (b, pd);
 	} else {
-		r_buf_write_at (b, pos, (ut8 *)pd, strlen (pd));
+		int pdlen = strlen (pd);
+		if (pdlen > 0) {
+			r_buf_write_at (b, pos, (const ut8 *)pd, pdlen);
+		}
 	}
 }
 

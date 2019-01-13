@@ -682,6 +682,7 @@ R_API const char *r_bin_entry_type_string(int etype);
 // binfile functions
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data);
 R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits);
+R_API RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 bin_id);
 R_API RBinFile *r_bin_file_find_by_fd(RBin *bin, ut32 bin_fd);
 R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name);
 R_API bool r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf);
@@ -689,6 +690,8 @@ R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
 R_API bool r_bin_file_deref(RBin *bin, RBinFile *a);
 R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd);
+R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id);
+R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API bool r_bin_file_close(RBin *bin, int bd);
 R_API int r_bin_file_delete_all(RBin *bin);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
