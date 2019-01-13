@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_asm.h"
 #include "r_core.h"
@@ -182,6 +182,7 @@ static const char *help_msg_p[] = {
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
+	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -402,6 +403,7 @@ static const char *help_msg_ps[] = {
 
 static const char *help_msg_pt[] = {
 	"Usage: pt", "[dn]", "print timestamps",
+	"pt.", "", "print current time",
 	"pt", "", "print UNIX time (32 bit `cfg.bigendian`) Since January 1, 1970",
 	"ptd", "", "print DOS time (32 bit `cfg.bigendian`) Since January 1, 1980",
 	"pth", "", "print HFS time (32 bit `cfg.bigendian`) Since January 1, 1904",
@@ -960,6 +962,103 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	}
 }
 
+R_API void r_core_gadget_free (RCoreGadget *g) {
+	free (g->cmd);
+	free (g);
+}
+
+static const char *help_msg_pg[] = {
+	"Usage: pg[-]", "[asm|hex]", "print (dis)assembled",
+	"pg", " [x y w h cmd]", "add a new gadget",
+	"pg", "", "print them all",
+	"pg", "*", "print the gadgets as r2 commands",
+	"pg-", "*", "remove all the gadgets",
+	NULL
+};
+
+static void cmd_print_gadget(RCore *core, const char *_input) {
+	if (*_input == '?') { // "pg?"
+		r_core_cmd_help (core, help_msg_pg);
+		return;
+	}
+	if (*_input == '-') { // "pg-"
+		// TODO support selecting one
+		r_list_free (core->gadgets);
+		core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
+	} else if (*_input == '*') { // "pg*"
+		RCoreGadget *g;
+		RListIter *iter;
+		r_list_foreach (core->gadgets, iter, g) {
+			r_cons_printf ("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
+		}
+	} else if (*_input == 'b') { // "pgb"
+		eprintf ("TODO: Change gadget background color\n");
+	} else if (*_input == 'm') { // "pgm"
+		int nth = atoi (_input + 1);
+		RCoreGadget *g = r_list_get_n (core->gadgets, nth);
+		if (g) {
+			char *input = strdup (_input);
+			char *space = strchr (input, ' ');
+			if (space) {
+				space++;
+			} else {
+				space = "";
+			}
+			RList *args = r_str_split_list (space, " ");
+			char *x = r_list_pop_head (args);
+			char *y = r_list_pop_head (args);
+			char *w = r_list_pop_head (args);
+			char *h = r_list_pop_head (args);
+			if (x && y && w && h) {
+				g->x = r_num_math (core->num, x);
+				g->y = r_num_math (core->num, y);
+				g->w = r_num_math (core->num, w);
+				g->h = r_num_math (core->num, h);
+			}
+			r_list_free (args);
+			free (input);
+		}
+	} else if (*_input == ' ') { // "pg "
+		char *input = strdup (_input);
+		RList *args = r_str_split_list (input, " ");
+		char *x = r_list_pop_head (args);
+		char *y = r_list_pop_head (args);
+		char *w = r_list_pop_head (args);
+		char *h = r_list_pop_head (args);
+		if (x && y && w && h) {
+			int X = r_num_math (core->num, x);
+			int Y = r_num_math (core->num, y);
+			int W = r_num_math (core->num, w);
+			int H = r_num_math (core->num, h);
+			char *cmd = r_str_list_join (args, " ");
+			if (cmd) {
+		//		eprintf ("%d %d %d %d (%s)\n", X, Y, W, H, cmd);
+				RCoreGadget *g = R_NEW0 (RCoreGadget);
+				g->x = X;
+				g->y = Y;
+				g->w = W;
+				g->h = H;
+				g->cmd = cmd;
+				r_list_append (core->gadgets, g);
+			}
+		}
+		r_list_free (args);
+		free (input);
+	} else if (!*_input) { // "pg"
+		RCoreGadget *g;
+		RListIter *iter;
+		r_list_foreach (core->gadgets, iter, g) {
+			char *res = r_core_cmd_str (core, g->cmd);
+			if (res) {
+				r_cons_strcat_at (res, g->x, g->y, g->w, g->h);
+				free (res);
+			}
+		}
+	} else {
+		r_core_cmd_help (core, help_msg_pg);
+	}
+}
+
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
 	int mode = R_PRINT_MUSTSEE;
@@ -1511,8 +1610,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					int off = (j * 3) - (j / 2) + 13;
 					int notej_len = strlen (note[j]);
 					int sz = R_MIN (notej_len, nb_cons_cols - off);
-					if (j % 2) {
-						off--;
+					if (compact) {
+						off -= (j/2);
+					} else {
+						if (j % 2) {
+							off--;
+						}
 					}
 					memcpy (out + off, note[j], sz);
 					if (sz < notej_len) {
@@ -1534,7 +1637,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		}
 		r_cons_strcat (bytes);
 		r_cons_strcat (chars);
-
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
@@ -2662,7 +2764,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			if (off >= at && off < ate) {
 				r_cons_memcat ("^", 1);
 			} else {
-				RIOSection *s = r_io_section_vget (core->io, at);
+				RIOMap *s = r_io_map_get (core->io, at);
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {
@@ -4228,7 +4330,7 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help(core, help_msg_pa);
+			r_core_cmd_help (core, help_msg_pa);
 		} else {
 			int i;
 			int bytes;
@@ -5800,6 +5902,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		break;
+	case 'g': // "pg"
+		cmd_print_gadget (core, input + 1);
+		break;
 	case 'f': // "pf"
 		cmd_print_format (core, input, block, len);
 		break;
@@ -5871,6 +5976,13 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
+		case '.':
+			{
+				char nowstr[64] = {0};
+				r_print_date_get_now (core->print, nowstr);
+				r_cons_printf ("%s\n", nowstr);
+			}
+			break;
 		case ' ':
 		case '\0':
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)

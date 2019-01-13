@@ -1,4 +1,4 @@
-files = [
+r_asm_sources = [
   'asm.c',
   'op.c',
   'code.c',
@@ -175,7 +175,7 @@ r_asm_inc = [
   )
 ]
 
-r_asm = library('r_asm', files,
+r_asm = library('r_asm', r_asm_sources,
   include_directories: r_asm_inc,
   c_args: library_cflags,
   dependencies: [

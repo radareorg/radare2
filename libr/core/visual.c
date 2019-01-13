@@ -1864,6 +1864,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		" e  eval var configurations\n"
 		" f  flags\n"
 		" F  functions\n"
+		" g  graph\n"
 		" h  history\n"
 		" i  imports\n"
 		" l  chat logs (previously VT)\n"
@@ -1884,6 +1885,9 @@ R_API void r_core_visual_browse(RCore *core) {
 		r_cons_flush ();
 		char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 		switch (ch) {
+		case 'g':
+			r_core_visual_view_graph (core);
+			break;
 		case 'f':
 			r_core_visual_trackflags (core);
 			break;
@@ -3216,7 +3220,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				} else {
 					ut64 entry = r_num_get (core->num, "entry0");
 					if (!entry || entry == UT64_MAX) {
-						RIOSection *s = r_io_section_vget (core->io, core->offset);
+						RBinObject *o = r_bin_cur_object (core->bin);
+						RBinSection *s = o?  r_bin_get_section_at (o, addr, core->io->va): NULL;
 						if (s) {
 							entry = s->vaddr;
 						} else {
@@ -3552,10 +3557,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	}
 	{
 		ut64 sz = r_io_size (core->io);
-		ut64 pa;
+		ut64 pa = core->offset;
 		{
-			RIOSection *s = r_io_section_vget (core->io, core->offset);
-			pa =  s ? core->offset - s->vaddr + s->paddr : core->offset;
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				pa = map->delta;
+			}
 		}
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;
@@ -3771,18 +3778,17 @@ static void visual_refresh(RCore *core) {
 			}
 		}
 		r_cons_gotoxy (0, 0);
-		r_core_visual_title (core, color);
-		vi = r_config_get (core->config, "cmd.vprompt");
-		if (vi) {
-			r_core_cmd (core, vi, 0);
-		}
-	} else {
-		vi = r_config_get (core->config, "cmd.vprompt");
-		if (vi) {
-			r_core_cmd (core, vi, 0);
-		}
-		r_core_visual_title (core, color);
 	}
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi && *vi) {
+		r_core_cmd0 (core, vi);
+#if 0
+		char *output = r_core_cmd_str (core, vi);
+		r_cons_strcat_at (output, 10, 5, 20, 20);
+		free (output);
+#endif
+	}
+	r_core_visual_title (core, color);
 	vcmd = r_config_get (core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
 		// disable screen bounds when it's a user-defined command
@@ -3841,6 +3847,10 @@ static void visual_refresh(RCore *core) {
 	} else {
 		r_cons_reset ();
 	}
+	if (core->scr_gadgets) {
+		r_core_cmd0 (core, "pg");
+		r_cons_flush ();
+	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;
 	core->curtab = 0; // which command are we focusing
@@ -3871,6 +3881,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 }
 
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = r_config_get_i (core->config, "asm.bb.middle");
 	RAnalFunction *f = NULL;
 	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3881,10 +3892,16 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 		r_asm_set_pc (core->assembler, core->offset);
 		*cols = r_asm_disassemble (core->assembler,
 				op, core->block, 32);
-		if (midbb) {
-			int skip_bytes_bb = 0;
+		if (midflags || midbb) {
+			int skip_bytes_flag = 0, skip_bytes_bb = 0;
+			if (midflags) {
+				skip_bytes_flag = r_core_flag_in_middle (core, core->offset, *cols, &midflags);
+			}
 			if (midbb) {
 				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->offset, *cols);
+			}
+			if (skip_bytes_flag && midflags >= R_MIDFLAGS_REALIGN) {
+				*cols = skip_bytes_flag;
 			}
 			if (skip_bytes_bb && skip_bytes_bb < *cols) {
 				*cols = skip_bytes_bb;
@@ -3897,7 +3914,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
-	const char *cmdprompt, *teefile;
+	const char *teefile;
 	ut64 scrseek;
 	int wheel, flags, ch;
 	bool skip;
@@ -4000,10 +4017,12 @@ dodo:
 		if (debug) {
 			r_core_cmd (core, ".dr*", 0);
 		}
+#if 0
 		cmdprompt = r_config_get (core->config, "cmd.vprompt");
 		if (cmdprompt && *cmdprompt) {
 			r_core_cmd (core, cmdprompt, 0);
 		}
+#endif
 		core->print->vflush = !skip;
 		visual_refresh (core);
 		if (insert_mode_enabled (core)) {
@@ -4019,6 +4038,11 @@ dodo:
 			} else {
 				ch = r_cons_readchar ();
 			}
+#ifndef __WINDOWS__
+			if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
+				tcflush (STDIN_FILENO, TCIFLUSH);
+			}
+#endif
 			if (r_cons_is_breaked()) {
 				break;
 			}

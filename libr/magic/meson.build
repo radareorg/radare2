@@ -1,4 +1,4 @@
-files = [
+r_magic_sources = [
   'apprentice.c',
   'ascmagic.c',
   'fsmagic.c',
@@ -15,7 +15,7 @@ if use_syslib_magic
   pkgconfig_magic_requires = []
 else
   message('Use bundled magic library')
-  r_magic = library('r_magic', files,
+  r_magic = library('r_magic', r_magic_sources,
     include_directories: platform_inc,
     c_args: library_cflags,
     dependencies: [r_util_dep],

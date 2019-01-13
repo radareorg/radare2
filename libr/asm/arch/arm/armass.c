@@ -47,10 +47,7 @@ enum {
 };
 
 static int strcmpnull(const char *a, const char *b) {
-	if (!a || !b) {
-		return -1;
-	}
-	return strcmp (a, b);
+	return (a && b) ? strcmp (a, b) : -1;
 }
 
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};

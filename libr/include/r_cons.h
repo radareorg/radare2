@@ -517,6 +517,9 @@ typedef struct r_cons_t {
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
 #define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
 
+#define R_CONS_CURSOR_SAVE "\x1b[s"
+#define R_CONS_CURSOR_RESTORE "\x1b[u"
+
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
@@ -737,6 +740,7 @@ R_API void r_cons_set_last_interactive(void);
 R_API int r_cons_printf(const char *format, ...);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
+R_API void r_cons_strcat_at(const char *str, int x, char y, int w, int h);
 #define r_cons_print(x) r_cons_strcat (x)
 R_API void r_cons_println(const char* str);
 

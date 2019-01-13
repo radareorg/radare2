@@ -7,10 +7,6 @@
 #define HAVE_LOCALS 1
 #define DEFAULT_NARGS 4
 
-#define R_MIDFLAGS_SHOW 1
-#define R_MIDFLAGS_REALIGN 2
-#define R_MIDFLAGS_SYMALIGN 3
-
 #define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
 #define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
 #define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
@@ -373,7 +369,8 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 	if (oaddr == addr) {
 		return section;
 	}
-	RIOSection *s = r_io_section_vget (core->io, addr);
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
 	if (s) {
 		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
 	} else {
@@ -1386,6 +1383,8 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 
 static int handleMidBB(RCore *core, RDisasmState *ds) {
 	int i;
+	ds->hasMidbb = false;
+	r_return_val_if_fail (core->anal, 0);
 	// Unfortunately, can't just check the addr of the last insn byte since
 	// a bb (and fcn) can be as small as 1 byte, and advancing i based on
 	// bb->size is unsound if basic blocks can nest or overlap
@@ -1399,12 +1398,22 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 			}
 		}
 	}
-	ds->hasMidbb = false;
 	return 0;
 }
 
+R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags) {
+	r_return_val_if_fail (midflags, 0);
+	RDisasmState ds = {
+		.at = at,
+		.oplen = oplen,
+		.midflags = *midflags
+	};
+	int ret = handleMidFlags (core, &ds, true);
+	*midflags = ds.midflags;
+	return ret;
+}
+
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
-	r_return_val_if_fail (core->anal, 0);
 	RDisasmState ds = {
 		.at = at,
 		.oplen = oplen
@@ -1473,13 +1482,6 @@ static void ds_begin_comment(RDisasmState *ds) {
 		}
 		ds_pre_xrefs (ds, false);
 	}
-}
-
-static int var_comparator(const RAnalVar *a, const RAnalVar *b){
-	if (a && b) {
-		return a->delta > b->delta;
-	}
-	return false;
 }
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
@@ -1670,100 +1672,34 @@ static void ds_show_functions(RDisasmState *ds) {
 		ds->pre = DS_PRE_FCN_MIDDLE;
 	}
 	ds->stackptr = core->anal->stackptr;
+	RAnalFcnVarsCache vars_cache;
+	r_anal_fcn_vars_cache_init (core->anal, &vars_cache, f);
 	if (ds->show_vars && ds->show_varsum) {
-		RList *vars = r_anal_var_list (core->anal, f, 'b');
-		RList *rvars = r_anal_var_list (core->anal, f, 'r');
-		RList *svars = r_anal_var_list (core->anal, f, 's');
-		r_list_join (vars, rvars);
-		r_list_join (vars, svars);
-		printVarSummary (ds, vars);
-		r_list_free (vars);
-		r_list_free (rvars);
-		r_list_free (svars);
+		RList *all_vars = vars_cache.bvars;
+		r_list_join (all_vars, vars_cache.svars);
+		r_list_join (all_vars, vars_cache.rvars);
+		printVarSummary (ds, all_vars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		char *fname = NULL;
-		Sdb *TDB = core->anal->sdb_types;
-		RList *args = r_anal_var_list (core->anal, f, 'b');
-		RList *regs = r_anal_var_list (core->anal, f, 'r');
-		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
-		r_list_sort (args, (RListComparator)var_comparator);
-		r_list_sort (regs, (RListComparator)var_comparator);
-		r_list_sort (sp_vars, (RListComparator)var_comparator);
-		if (fcn_name) {
-			fname = r_type_func_guess (TDB, fcn_name);
-		}
 		if (call) {
 			ds_begin_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
 			ds_print_pre (ds);
-			r_cons_printf ("%s %s %s%s (",
-				COLOR_RESET (ds), COLOR (ds, color_fname),
-				fcn_name, COLOR_RESET (ds));
-			if (fname && r_type_func_exist (TDB, fname)) {
-				int i, argc = r_type_func_args_count (TDB, fname);
-				bool comma = true;
-				// This avoids false positives present in argument recovery
-				// and straight away print arguments fetched from types db
-				for (i = 0; i < argc; i++) {
-					char *type = r_type_func_args_type (TDB, fname, i);
-					const char *name = r_type_func_args_name (TDB, fname, i);
-					if (i == argc - 1) {
-						comma = false;
-					}
-					int len = strlen(type);
-					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
-							name, comma?", ":"");
-					free (type);
-				}
-				goto beach;
+			r_cons_printf ("%s  ", COLOR_RESET (ds));
+			char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
+			if (sig) {
+				r_cons_print (sig);
+				free (sig);
 			}
-			bool comma = true;
-			bool arg_bp = false;
-			int tmp_len;
-			r_list_foreach (regs, iter, var) {
-				tmp_len = strlen (var->type);
-				r_cons_printf ("%s%s%s%s", var->type,
-					tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
-					var->name, iter->n ? ", " : "");
-			}
-			r_list_foreach (args, iter, var) {
-				if (var->delta > 0) {
-					if (!r_list_empty (regs) && comma) {
-						r_cons_printf (", ");
-						comma = false;
-					}
-					arg_bp = true;
-					tmp_len = strlen (var->type);
-					r_cons_printf ("%s%s%s%s", var->type,
-						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-						var->name, iter->n ? ", " : "");
-				}
-			}
-			comma = true;
-			r_list_foreach (sp_vars, iter, var) {
-				if (var->isarg) {
-					if ((arg_bp || !r_list_empty (regs)) && comma) {
-						comma = false;
-						r_cons_printf (", ");
-					}
-					tmp_len = strlen (var->type);
-					r_cons_printf ("%s%s%s%s", var->type,
-						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-						var->name, iter->n ? ", " : "");
-				}
-			}
-beach:
-			free (fname);
-			r_cons_printf (");");
 			ds_newline (ds);
 		}
-		r_list_join (args, sp_vars);
-		r_list_join (args, regs);
-		r_list_foreach (args, iter, var) {
-				ds_begin_line (ds);
+		RList *all_vars = vars_cache.bvars;
+		r_list_join (all_vars, vars_cache.svars);
+		r_list_join (all_vars, vars_cache.rvars);
+		r_list_foreach (all_vars, iter, var) {
+			ds_begin_line (ds);
 			int idx;
 			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
@@ -1824,11 +1760,8 @@ beach:
 			r_cons_print (COLOR_RESET (ds));
 			ds_newline (ds);
 		}
-		r_list_free (regs);
-		// it's already empty, but rlist instance is still there
-		r_list_free (args);
-		r_list_free (sp_vars);
 	}
+	r_anal_fcn_vars_cache_fini (&vars_cache);
 	if (demangle) {
 		free (fcn_name);
 	}
@@ -2140,7 +2073,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);
 		ds->refline2 = r_anal_reflines_str (ds->core, ds->at,
-			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE);
+			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE);
 		if (ds->line) {
 			if (strchr (ds->line, '<')) {
 				ds->indent_level++;
@@ -2396,12 +2329,8 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		char *str = NULL;
 		if (ds->show_section_perm) {
 			// iosections must die, this should be rbin_section_get
-			RIOSection *s = r_io_section_vget (core->io, ds->at);
-			if (s) {
-				str = strdup (r_str_rwx_i (s->perm));
-			} else {
-				str = strdup ("---");
-			}
+			RIOMap *map = r_io_map_get (core->io, ds->at);
+			str = strdup (map? r_str_rwx_i (map->perm): "---");
 		}
 		if (ds->show_section_name) {
 			str = r_str_appendf (str, " %s", get_section_name (core, ds->at));
@@ -3769,7 +3698,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & R_PRINT_FLAGS_SECSUB) {
-							RIOSection *s = r_io_section_vget (core->io, n);
+							RBinObject *bo = r_bin_cur_object (core->bin);
+							RBinSection *s = bo? r_bin_get_section_at (bo, n, core->io->va): NULL;
 							if (s) {
 								refptrstr = s->name;
 							}
@@ -5987,8 +5917,7 @@ toro:
 			RDisasmState ds = {
 				.oplen = ret,
 				.at = core->offset + i,
-				.midflags = midflags,
-				.midbb = midbb
+				.midflags = midflags
 			};
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
 			if (midflags) {

@@ -18,6 +18,8 @@ typedef struct r_event_t {
 typedef enum {
 	R_EVENT_ALL = 0,
 	R_EVENT_META_SET,
+	R_EVENT_META_DEL,
+	R_EVENT_META_CLEAR,
 	R_EVENT_MAX,
 } REventType;
 

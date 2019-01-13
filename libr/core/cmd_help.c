@@ -101,9 +101,9 @@ static const char *help_msg_root[] = {
 	"r","[?] [len]", "resize file",
 	"s","[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
 	"t","[?]", "types, noreturn, signatures, C parser and more",
-	"T","[?] [-] [num|msg]", "Text log utility",
+	"T","[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
 	"u","[?]", "uname/undo seek/write",
-	"V","", "visual mode (V! = panels, VV = fcngraph, VVV = callgraph)",
+	"v","", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
 	"w","[?] [str]", "multiple write operations",
 	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
 	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
@@ -150,7 +150,6 @@ static const char *help_msg_question[] = {
 	"?q", " eip-0x804800", "compute expression like ? or ?v but in quiet mode",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
-	"?S", " addr", "return section name of given address",
 	"?t", " cmd", "returns the time to run a command",
 	"?T", "", "show loading times",
 	"?u", " num", "get value in human units (KB, MB, GB, TB)",
@@ -312,7 +311,38 @@ static char *filterFlags(RCore *core, const char *msg) {
 	return buf;
 }
 
-static const char *getClippy() {
+enum {
+	R_AVATAR_ORANGG,
+	R_AVATAR_CLIPPY,
+};
+
+static const char *getClippy(int type) {
+	if (type == R_AVATAR_ORANGG) {
+#if 0
+		"
+			_______
+			/       \
+			_/(o) (o ) |_
+			/ |  ./.    _ \
+			7` \ _____  / |/
+			\`---'  | /|`
+			/ ,----\ |
+			___| \ ___/ |
+			'-----'`-----'
+			"
+#endif
+			return
+			"      _______\n"
+			"     /       \\      .-%s-.\n"
+			"   _| ( o) (o)\\_    | %s |\n"
+			"  / _     .\\. | \\  <| %s |\n"
+			"  \\| \\   ____ / 7`  | %s |\n"
+			"  '|\\|  `---'/      `-%s-'\n"
+			"     | /----. \\\n"
+			"     | \\___/  |___\n"
+			"     `-----'`-----'\n"
+			;
+	}
 	const int choose = r_num_rand (3);
 	switch (choose) {
 	case 0: return
@@ -325,12 +355,12 @@ static const char *getClippy() {
 " `---'\n";
 	case 1: return
 " .--.     .-%s-.\n"
-" | __\\    | %s |\n"
-" | > <   <  %s |\n"
-" |  \\|    | %s |\n"
-" |/_//    `-%s-'\n"
-" |  / \n"
-" `-'\n";
+" |   \\    | %s |\n"
+" | O o   <  %s |\n"
+" |   | /  | %s |\n"
+" |  ( /   `-%s-'\n"
+" |   / \n"
+" `--'\n";
 	case 2: return
 " .--.     .-%s-.\n"
 " | _|_    | %s |\n"
@@ -344,10 +374,19 @@ static const char *getClippy() {
 }
 
 R_API void r_core_clippy(const char *msg) {
+	int type = R_AVATAR_CLIPPY;
+	if (*msg == '+') {
+		char *space = strchr (msg, ' ');
+		if (!space) {
+			return;
+		}
+		type = R_AVATAR_ORANGG;
+		msg = space + 1;
+	}
 	int msglen = strlen (msg);
 	char *l = strdup (r_str_pad ('-', msglen));
 	char *s = strdup (r_str_pad (' ', msglen));
-	r_cons_printf (getClippy(), l, s, msg, s, l);
+	r_cons_printf (getClippy (type), l, s, msg, s, l);
 	free (l);
 	free (s);
 }
@@ -942,19 +981,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
 		}
 		break;
-	case 'S': { // "?S" section name
-		RIOSection *s;
-		ut64 n = input[1] ? r_num_math (core->num, input + 2) : core->offset;
-		SdbList *sections = core->io->va ? r_io_sections_vget (core->io, n) : r_io_sections_get (core->io, n);
-		SdbListIter *iter;
-		if (sections) {
-			ls_foreach (sections, iter, s) {
-				r_cons_printf ("%s\n", s->name);
-			}
-			ls_free (sections);
-		}
-		break;
-	}
 	case '_': // "?_" hud input
 		r_core_yank_hud_file (core, input+1);
 		break;

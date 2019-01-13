@@ -96,6 +96,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_search.c"
+#include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands",
@@ -2566,7 +2567,11 @@ next2:
 			if (ptr[1] == '!') {
 				str = r_core_cmd_str_pipe (core, ptr + 1);
 			} else {
+				// Color disabled when doing backticks ?e `pi 1`
+				int ocolor = r_config_get_i (core->config, "scr.color");
+				r_config_set_i (core->config, "scr.color", 0);
 				str = r_core_cmd_str (core, ptr + 1);
+				r_config_set_i (core->config, "scr.color", ocolor);
 			}
 			if (!str) {
 				goto fail;
@@ -3634,6 +3639,8 @@ out_finish:
 }
 
 R_API void run_pending_anal(RCore *core) {
+	// allow incall events in the run_pending step
+	core->ev->incall = false;
 	if (core && core->anal && core->anal->cmdtail) {
 		char *res = core->anal->cmdtail;
 		core->anal->cmdtail = NULL;
@@ -4114,6 +4121,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"Project",  "project", cmd_project, cmd_project_init},
 		{"quit",     "exit program session", cmd_quit, cmd_quit_init},
 		{"Q",        "alias for q!", cmd_Quit},
+		{":",        "long commands starting with :", cmd_colon},
 		{"resize",   "change file size", cmd_resize},
 		{"seek",     "seek to an offset", cmd_seek, cmd_seek_init},
 		{"t",        "type information (cparse)", cmd_type, cmd_type_init},

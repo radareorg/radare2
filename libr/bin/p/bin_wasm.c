@@ -24,7 +24,7 @@ static bool find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
 
 static bool find_export(const ut32 *p, const RBinWasmExportEntry* q) {
 	if (q->kind != R_BIN_WASM_EXTERNALKIND_Function) {
-		return false;
+		return true;
 	}
 	return q->index != (*p);
 }
@@ -181,12 +181,11 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
-	ut32 fcn_id = 0;
+	ut32 fcn_id = 1; // wasm function index starts from 1
 	RListIter *sym_it = NULL;
 	RBinWasmCodeEntry *func;
 	RBinWasmExportEntry *export = NULL;
 	RBinWasmSymbol *wasm_sym = NULL;
-	fcn_id = 0;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
@@ -201,6 +200,7 @@ static RList *symbols(RBinFile *bf) {
 			if (sym_it) {
 				export = (RBinWasmExportEntry *) r_list_iter_get_data (sym_it);
 				ptr->name = strdup (export->field_str);
+				ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			} else {
 				// fallback if symbol is not found.
 				ptr->name = r_str_newf ("fcn.%d", fcn_id);
@@ -208,7 +208,9 @@ static RList *symbols(RBinFile *bf) {
 		}
 
 		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const ("NONE");
+		if (!ptr->bind) {
+			ptr->bind = r_str_const ("NONE");
+		}
 		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;

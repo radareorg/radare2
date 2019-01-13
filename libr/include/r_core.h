@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -189,6 +189,16 @@ typedef struct r_core_visual_t {
 } RCoreVisual;
 // #define RCoreVisual Visual
 
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+	char *cmd;
+} RCoreGadget;
+
+R_API void r_core_gadget_free (RCoreGadget *g);
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -281,9 +291,13 @@ typedef struct r_core_t {
 	bool fixedbits;
 	bool fixedarch;
 	bool pava;
+	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 	REvent *ev;
+	RList *gadgets;
+	bool scr_gadgets;
+	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -529,6 +543,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
 R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var);
 
 /* asm.c */
+#define R_MIDFLAGS_SHOW 1
+#define R_MIDFLAGS_REALIGN 2
+#define R_MIDFLAGS_SYMALIGN 3
+
 typedef struct r_core_asm_hit {
 	char *code;
 	int len;
@@ -554,6 +572,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_print_disasm_all (RCore *core, ut64 addr, int l, int len, int mode);
 R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt);
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
+R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx);
 //R_API int r_core_bin_bind(RCore *core, RBinFile *bf);
@@ -665,6 +684,7 @@ R_API void r_core_seek_next (RCore *core, const char *type);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_visual_define (RCore *core, const char *arg, int distance);
 R_API int r_core_visual_trackflags (RCore *core);
+R_API int r_core_visual_view_graph(RCore *core);
 R_API int r_core_visual_comments (RCore *core);
 R_API int r_core_visual_prompt (RCore *core);
 R_API bool r_core_visual_esil (RCore *core);
@@ -697,9 +717,12 @@ R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
 
 /* logs */
+typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
 R_API void r_core_log_init (RCoreLog *log);
+R_API char *r_core_log_get(RCore *core, int index);
 R_API RCoreLog *r_core_log_new (void);
+R_API bool r_core_log_run(RCore *core, const char *buf, RCoreLogCallback cb);
 R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);

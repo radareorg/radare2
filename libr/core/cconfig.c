@@ -278,14 +278,6 @@ static int cb_analhpskip(void *user, void *data) {
 	return true;
 }
 
-/* obey section permissions */
-static int cb_analnoncode(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.noncode = !!node->i_value;
-	return true;
-}
-
 static void update_analarch_options(RCore *core, RConfigNode *node) {
 	RAnalPlugin *h;
 	RListIter *it;
@@ -1342,10 +1334,21 @@ static int cb_hexcompact(void *user, void *data) {
 	return true;
 }
 
-static int cb_hexpairs(void *user, void *data) {
+static int cb_hex_pairs(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pairs = node->i_value;
+	return true;
+}
+
+static int cb_hex_align(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_ALIGN;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_ALIGN;
+	}
 	return true;
 }
 
@@ -1401,6 +1404,13 @@ static int cb_hex_hdroff(void *user, void *data) {
 	} else {
 		core->print->flags &= ~R_PRINT_FLAGS_HDROFF;
 	}
+	return true;
+}
+
+static int cb_log_events (void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->log_events = node->i_value;
 	return true;
 }
 
@@ -1743,6 +1753,13 @@ static int cb_pager(void *user, void *data) {
 static int cb_breaklines(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->break_lines = node->i_value;
+	return true;
+}
+
+static int cb_scr_gadgets(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->scr_gadgets = node->i_value;
 	return true;
 }
 
@@ -2142,6 +2159,7 @@ static int cb_binminstr(void *user, void *data) {
 }
 
 static int cb_searchin(void *user, void *data) {
+	RCore *core = (RCore*)user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
@@ -2168,6 +2186,10 @@ static int cb_searchin(void *user, void *data) {
 			print_node_options (node);
 		}
 		return false;
+	}
+	// Set anal.noncode if exec bit set in anal.in
+	if (r_str_startswith (node->name, "anal")) {
+		core->anal->opt.noncode = (strchr (node->value, 'x') == NULL);
 	}
 	return true;
 }
@@ -2495,7 +2517,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
-	n = NODECB ("anal.in", "io.maps", &cb_searchin);
+	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
 	SETOPTIONS (n, "raw", "block",
 		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
@@ -2526,7 +2548,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB ("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB ("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	SETCB ("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
 	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "Select the architecture to use");
 	update_analarch_options (core, n);
@@ -2798,31 +2819,33 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 
-	/* cfg.log */
-	// R2_LOGLEVEL / cfg.log.level
+	/* log */
+	// R2_LOGLEVEL / log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
-	SETICB ("cfg.log.level", p ? atoi(p) : R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
+	SETICB ("log.level", p ? atoi(p) : R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
 	 " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGTRAP_LEVEL / cfg.log.traplevel
+	// R2_LOGTRAP_LEVEL / log.traplevel
 	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
-	SETICB ("cfg.log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
+	SETICB ("log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
 	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGFILE / cfg.log.file
+	// R2_LOGFILE / log.file
 	p = r_sys_getenv ("R2_LOGFILE");
-	SETCB ("cfg.log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	SETCB ("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
 	free (p);
-	// R2_LOGSRCINFO / cfg.log.srcinfo
+	// R2_LOGSRCINFO / log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
-	SETCB ("cfg.log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+	SETCB ("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
 	free (p);
-	// R2_LOGCOLORS / cfg.log.colors
+	// R2_LOGCOLORS / log.colors
 	p = r_sys_getenv ("R2_LOGCOLORS");
-	SETCB ("cfg.log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
+	SETCB ("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
+
+	SETCB ("log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");
@@ -2965,7 +2988,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.ascii", "true", &cb_hex_ascii, "Show ascii column in hexdump");
 	SETCB ("hex.hdroff", "false", &cb_hex_hdroff, "Show aligned 1 byte in header instead of delta nibble");
 	SETCB ("hex.style", "false", &cb_hex_style, "Improve the hexdump header style");
-	SETCB ("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
+	SETCB ("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
+	SETCB ("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
@@ -2978,6 +3002,8 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* http */
 	SETPREF ("http.log", "true", "Show HTTP requests processed");
+	SETPREF ("http.sync", "", "Remote HTTP server to sync events with");
+	SETPREF ("http.colon", "false", "Only accept the : command");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
 	SETPREF ("http.cors", "false", "Enable CORS");
 	SETPREF ("http.referer", "", "CSFR protection if set");
@@ -3018,6 +3044,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
+	SETPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
+	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
+	p = r_sys_getenv ("R2_HTTP_AUTHFILE");
+	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);
@@ -3093,6 +3123,7 @@ R_API int r_core_config_init(RCore *core) {
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
+	SETCB("scr.gadgets", "false", &cb_scr_gadgets, "Run pg in prompt, visual and panels");
 	SETICB ("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");

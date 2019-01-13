@@ -421,8 +421,9 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	posix_spawn_file_actions_destroy (&fileActions);
 	return p; // -1 ?
 }
-#endif
+#endif // __APPLE__ && !__POWERPC__
 
+#if (!(__APPLE__ && !__POWERPC__))
 typedef struct fork_child_data_t {
 	RIO *io;
 	int bits;
@@ -476,10 +477,11 @@ static void fork_child_callback(void *user) {
 		free (_cmd);
 	}
 }
+#endif
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #if __APPLE__ && !__POWERPC__
-	return fork_and_ptraceme_for_mac(io, bits, cmd);
+	return fork_and_ptraceme_for_mac (io, bits, cmd);
 #else
 	int ret, status, child_pid;
 	bool runprofile = io->runprofile && *(io->runprofile);

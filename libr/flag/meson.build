@@ -1,11 +1,11 @@
-files = [
+r_flag_sources = [
   'flag.c',
   'tags.c',
   'spaces.c',
   'zones.c'
 ]
 
-r_flag = library('r_flag', files,
+r_flag = library('r_flag', r_flag_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [

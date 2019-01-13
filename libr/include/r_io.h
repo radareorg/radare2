@@ -252,9 +252,10 @@ typedef const char *(*RIOFdGetName) (RIO *io, int fd);
 typedef RList *(*RIOFdGetMap) (RIO *io, int fd);
 typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
+typedef RIOMap *(*RIOMapGet) (RIO *io, ut64 addr);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
-typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
+//typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
@@ -287,8 +288,9 @@ typedef struct r_io_bind_t {
 	RIOFdRemap fd_remap;
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
-	RIOSectionVgetSecsAt sections_vget;
-	RIOSectionVgetSec sect_vget;
+	RIOMapGet map_get;
+	//RIOSectionVgetSecsAt sections_vget;
+	//RIOSectionVgetSec sect_vget;
 	RIOSectionAdd section_add;
 #if HAVE_PTRACE
 	RIOPtraceFn ptrace;
@@ -310,8 +312,8 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr);		//returns the map at vaddr with
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
 R_API void r_io_map_reset(RIO* io);
-R_API bool r_io_map_del (RIO *io, ut32 id);
-R_API bool r_io_map_del_for_fd (RIO *io, int fd);
+R_API bool r_io_map_del(RIO *io, ut32 id);
+R_API bool r_io_map_del_for_fd(RIO *io, int fd);
 R_API bool r_io_map_depriorize(RIO* io, ut32 id);
 R_API bool r_io_map_priorize (RIO *io, ut32 id);
 R_API bool r_io_map_priorize_for_fd (RIO *io, int fd);
@@ -435,7 +437,6 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
 /* io/section.c */
 R_API void r_io_section_init (RIO *io);
 R_API void r_io_section_fini (RIO *io);
-R_API int r_io_section_exists_for_id (RIO *io, ut32 id);
 R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 R_API RIOSection *r_io_section_get_i (RIO *io, ut32 id);
 R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id);
@@ -449,7 +450,6 @@ R_API bool r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 R_API bool r_io_section_apply_bin (RIO *io, ut32 bin_id, RIOSectionApplyMethod method);
 R_API RIOSection* r_io_section_get(RIO *io, ut64 paddr);
 R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr);
-R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 addr);
 
 /* io/p_cache.c */
 R_API bool r_io_desc_cache_init (RIODesc *desc);

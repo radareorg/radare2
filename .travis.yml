@@ -34,9 +34,14 @@ matrix:
 cache:
   - ccache
 
+addons:
+  homebrew:
+    packages:
+     - libuv
+     - cabextract
+
 before_install:
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis . ; else rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install libuv cabextract ; fi
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)

@@ -211,6 +211,45 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	}
 }
 
+R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
+	int i, o, len;
+	int cols = 0;
+	int rows = 0;
+	if (x < 0 || y < 0) {
+		int H, W = r_cons_get_size (&H);
+		if (x < 0) {
+			x += W;
+		}
+		if (y < 0) {
+			y += H;
+		}
+	}
+	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
+	r_cons_strcat (R_CONS_CURSOR_SAVE);
+	for (o = i = len = 0; str[i]; i++, len++) {
+		if (w < 0 || rows > w) {
+			break;
+		}
+		if (str[i] == '\n') {
+			r_cons_gotoxy (x, y + rows);
+			int ansilen = r_str_ansi_len (str + o);
+			cols = R_MIN (w, ansilen);
+			const char *end = r_str_ansi_chrn (str + o, cols);
+			cols = end - str + o;
+			r_cons_memcat (str + o, R_MIN (len, cols));
+			o = i + 1;
+			len = 0;
+			rows++;
+		}
+	}
+	if (len > 1) {
+		r_cons_memcat (str + o, len);
+	}
+	r_cons_strcat (Color_RESET);
+	r_cons_strcat (R_CONS_CURSOR_RESTORE);
+	free (str);
+}
+
 R_API RCons *r_cons_singleton() {
 	return &I;
 }

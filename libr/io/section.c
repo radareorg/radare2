@@ -37,20 +37,6 @@ R_API void r_io_section_fini(RIO *io) {
 	io->sec_ids = NULL;
 }
 
-R_API int r_io_section_exists_for_id(RIO *io, ut32 id) {
-	SdbListIter *iter;
-	RIOSection *sec;
-	if (!io || !io->sections) {
-		return false;
-	}
-	ls_foreach (io->sections, iter, sec) {
-		if (sec->id == id) {
-			return true;
-		}
-	}
-	return false;
-}
-
 R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 				    ut64 vsize, int perm, const char *name,
 				    ut32 bin_id, int fd) {
@@ -86,42 +72,6 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 	return sec;
 }
 
-R_API RIOSection *r_io_section_get_i(RIO *io, ut32 id) {
-	SdbListIter *iter;
-	RIOSection *s;
-	if (!io || !io->sections) {
-		return NULL;
-	}
-	ls_foreach (io->sections, iter, s) {
-		if (s->id == id) {
-			return s;
-		}
-	}
-	return NULL;
-}
-
-//List return does not have assigned free function only 
-//the list will be freed. However, caller will might hold
-//an old reference
-R_API SdbList *r_io_section_bin_get(RIO *io, ut32 bin_id) {
-	SdbList *ret = NULL;
-	SdbListIter *iter;
-	RIOSection *s;
-	if (!io || !io->sections) {
-		return NULL;
-	}
-	// O(n) -> we can use the r_id api to resolve s from bin_id
-	ls_foreach (io->sections, iter, s) {
-		if (s->bin_id == bin_id) {
-			if (!ret) {
-				ret = ls_new ();
-			}
-			ls_prepend (ret, s);
-		}
-	}
-	return ret;
-}
-
 R_API void r_io_section_cleanup(RIO *io) {
 	if (!io || !io->sections || !io->sec_ids) {
 		return;
@@ -148,153 +98,6 @@ R_API void r_io_section_cleanup(RIO *io) {
 			}
 		}
 	}
-}
-
-R_API SdbList *r_io_sections_get(RIO *io, ut64 paddr) {
-	SdbList *ret = NULL;
-	SdbListIter *iter;
-	RIOSection *s;
-	if (!io || !io->sections) {
-		return NULL;
-	}
-	ls_foreach (io->sections, iter, s) {
-		if (paddr >= s->paddr && paddr < (s->paddr + s->size)) {
-			if (!ret) {
-				ret = ls_new ();
-			}
-			ls_prepend (ret, s);
-		}
-	}
-	return ret;
-}
-
-R_API SdbList *r_io_sections_vget(RIO *io, ut64 vaddr) {
-	SdbList *ret = NULL;
-	SdbListIter *iter;
-	RIOSection *s;
-	if (!io || !io->sections) {
-		return NULL;
-	}
-	// O(n)
-	ls_foreach (io->sections, iter, s) {
-		if (vaddr >= s->vaddr && vaddr < (s->vaddr + s->vsize)) {
-			if (!ret) {
-				ret = ls_new ();
-			}
-			ls_prepend (ret, s);
-		}
-	}
-	return ret;
-}
-
-R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr) {
-	if (!io) {
-		return NULL;
-	}
-	SdbList *sects = r_io_sections_vget (io, vaddr);
-	RIOSection *ret = NULL;
-	if (sects) {
-		if (!ls_empty (sects)) {
-			ret = ls_pop (sects);
-		}
-	}
-	ls_free (sects);
-	return ret;
-}
-
-R_API RIOSection* r_io_section_get(RIO *io, ut64 vaddr) {
-	if (io) {
-		SdbList *sects = r_io_sections_get (io, vaddr);
-		RIOSection *ret = NULL;
-		if (sects) {
-			if (!ls_empty (sects)) {
-				ret = ls_pop (sects);
-			}
-		}
-		ls_free (sects);
-		return ret;
-	}
-	return NULL;
-}
-
-R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 paddr) {
-	if (io) {
-		SdbList *sects = r_io_sections_get (io, paddr);
-		ut64 ret = UT64_MAX;
-		if (sects) {
-			if (!ls_empty (sects)) {
-				RIOSection *s = ls_pop (sects);
-				ret = s->paddr;
-			}
-		}
-		ls_free (sects);
-		return ret;
-	}
-	return UT64_MAX;
-}
-
-R_API const char *r_io_section_get_archbits(RIO *io, ut64 vaddr, int *bits) {
-	if (!io) {
-		return NULL;
-	}
-	RIOSection *s = r_io_section_vget (io, vaddr);
-	if (!s || !s->arch || !s->bits) {
-		return NULL;
-	}
-	if (bits) {
-		*bits = s->bits;
-	}
-	return r_sys_arch_str (s->arch);
-}
-
-R_API bool r_io_section_priorize(RIO *io, ut32 id) {
-	SdbListIter *iter, *niter;
-	RIOSection *sec;
-	bool ret = false;
-	// assuming id = 0 is invalid
-	if (!id) {
-		return false;
-	}
-	if (!io || !io->sections) {
-		return false;
-	}
-	ls_foreach_safe (io->sections, iter, niter, sec) {
-		if (sec->id == id) {
-			ls_split_iter (io->sections, iter);
-			ls_append (io->sections, sec);
-			ret = true;
-			break;
-		}
-	}
-	if (!ret) {
-		return false;
-	}
-	if (sec->filemap) {
-		ret = r_io_map_priorize (io, sec->filemap);
-		if (!sec->memmap) {
-			return ret; 
-		}
-	}
-	if (sec->filemap != sec->memmap) {
-		return ret & r_io_map_priorize (io, sec->memmap);
-	}
-	return false;
-}
-
-R_API bool r_io_section_priorize_bin(RIO *io, ut32 bin_id) {
-	SdbList *secs;
-	SdbListIter *iter;
-	RIOSection *sec;
-	r_io_section_cleanup (io);
-	if (!(secs = r_io_section_bin_get (io, bin_id))) {
-		return false;
-	}
-	ls_foreach (secs, iter, sec) {
-		r_io_map_priorize (io, sec->filemap);
-		r_io_map_priorize (io, sec->memmap);
-	}
-	ls_free (secs);
-	return true;
 }
 
 static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) {
@@ -385,10 +188,12 @@ static bool _section_apply(RIO *io, RIOSection *sec, RIOSectionApplyMethod metho
 	}
 }
 
+#if 0
 R_API bool r_io_section_apply(RIO *io, ut32 id, RIOSectionApplyMethod method) {
 	RIOSection *sec = r_io_section_get_i (io, id);
 	return sec ? _section_apply (io, sec, method): false;
 }
+#endif
 
 R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod method) {
 	RIOSection *sec;

@@ -417,14 +417,17 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	char buf[32];
 	int ret = 0;
 	RSocket *s;
+	RSocketHTTPOptions so;
 	char *dir;
-	int iport, timeout = r_config_get_i (core->config, "http.timeout");
+	int iport;
 	const char *host = r_config_get (core->config, "http.bind");
 	const char *root = r_config_get (core->config, "http.root");
 	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
+	const char *httpauthfile = r_config_get (core->config, "http.authfile");
+	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
@@ -480,6 +483,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		} else {
 			s->local = true;
 		}
+		memset (&so, 0, sizeof (so));
 	}
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
@@ -491,6 +495,30 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
 			browser, host, atoi (port), path? path:"");
+	}
+
+	so.httpauth = r_config_get_i (core->config, "http.auth");
+
+	if (so.httpauth) {
+		if (!httpauthfile) {
+			r_socket_free (s);
+			eprintf ("No user list set for HTTP Authentification\n");
+			return 1;
+		}
+
+		int sz;
+		pfile = r_file_slurp (httpauthfile, &sz);
+
+		if (pfile) {
+			so.authtokens = r_str_split_list (pfile, "\n");
+		} else {
+			r_socket_free (s);
+			eprintf ("Empty list of HTTP users\n");
+			return 1;
+		}
+
+		so.timeout = r_config_get_i (core->config, "http.timeout");
+		so.accept_timeout = 1;
 	}
 
 	origcfg = core->config;
@@ -523,6 +551,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	newblk = malloc (core->blocksize);
 	if (!newblk) {
 		r_socket_free (s);
+		r_list_free (so.authtokens);
+		free (pfile);
 		return 1;
 	}
 	memcpy (newblk, core->block, core->blocksize);
@@ -552,7 +582,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		activateDieTime (core);
 
 		void *bed = r_cons_sleep_begin ();
-		rs = r_socket_http_accept (s, 1, timeout);
+		rs = r_socket_http_accept (s, &so);
 		r_cons_sleep_end (bed);
 
 		origoff = core->offset;
@@ -608,6 +638,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 		dir = NULL;
 
+		if (!rs->auth) {
+			r_socket_http_response (rs, 401, "", 0, NULL);
+		}
+
 		if (r_config_get_i (core->config, "http.verbose")) {
 			char *peer = r_socket_to_string (rs->s);
 			http_logf (core, "[HTTP] %s %s\n", peer, rs->path);
@@ -658,90 +692,92 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						free (path);
 					}
 				} else {
-					r_socket_http_response (rs, 403, "Permission denied\n", 0, NULL);
+					r_socket_http_response (rs, 403, "", 0, NULL);
 				}
 			} else if (!strncmp (rs->path, "/cmd/", 5)) {
-				char *cmd = rs->path + 5;
-				const char *httpcmd = r_config_get (core->config, "http.uri");
-				const char *httpref = r_config_get (core->config, "http.referer");
-				bool httpref_enabled;
-				char *refstr = NULL;
-				if (httpref && *httpref) {
-					httpref_enabled = true;
-					if (strstr (httpref, "http")) {
-						refstr = strdup (httpref);
-					} else {
-						refstr = r_str_newf ("http://localhost:%d/", atoi (port));
+				const bool colon = r_config_get_i (core->config, "http.colon");
+				if (colon && rs->path[5] != ':') {
+					r_socket_http_response (rs, 403, "Permission denied", 0, headers);
+				} else {
+					char *cmd = rs->path + 5;
+					const char *httpcmd = r_config_get (core->config, "http.uri");
+					const char *httpref = r_config_get (core->config, "http.referer");
+					const bool httpref_enabled = (httpref && *httpref);
+					char *refstr = NULL;
+					if (httpref_enabled) {
+						if (strstr (httpref, "http")) {
+							refstr = strdup (httpref);
+						} else {
+							refstr = r_str_newf ("http://localhost:%d/", atoi (port));
+						}
 					}
-				} else {
-					httpref_enabled = false;
-				}
 
-				while (*cmd == '/') {
-					cmd++;
-				}
-				if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
-					r_socket_http_response (rs, 503, "", 0, headers);
-				} else {
-					if (httpcmd && *httpcmd) {
-						int len; // do remote http query and proxy response
-						char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
-						bed = r_cons_sleep_begin ();
-						res = r_socket_http_get (bar, NULL, &len);
-						r_cons_sleep_end (bed);
-						if (res) {
-							res[len] = 0;
-							r_cons_println (res);
-						}
-						free (bar);
+					while (*cmd == '/') {
+						cmd++;
+					}
+					if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
+						r_socket_http_response (rs, 503, "", 0, headers);
 					} else {
-						char *out, *cmd = rs->path + 5;
-						r_str_uri_decode (cmd);
-						r_config_set (core->config, "scr.interactive", "false");
-
-						if (!r_sandbox_enable (0) &&
-						    (!strcmp (cmd, "=h*") ||
-						     !strcmp (cmd, "=h--"))) {
-							out = NULL;
-						} else if (*cmd == ':') {
-							/* commands in /cmd/: starting with : do not show any output */
-							r_core_cmd0 (core, cmd + 1);
-							out = NULL;
+						if (httpcmd && *httpcmd) {
+							int len; // do remote http query and proxy response
+							char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
+							bed = r_cons_sleep_begin ();
+							res = r_socket_http_get (bar, NULL, &len);
+							r_cons_sleep_end (bed);
+							if (res) {
+								res[len] = 0;
+								r_cons_println (res);
+							}
+							free (bar);
 						} else {
-							out = r_core_cmd_str_pipe (core, cmd);
-						}
+							char *out, *cmd = rs->path + 5;
+							r_str_uri_decode (cmd);
+							r_config_set (core->config, "scr.interactive", "false");
 
-						if (out) {
-							char *res = r_str_uri_encode (out);
-							char *newheaders = r_str_newf (
-								"Content-Type: text/plain\n%s", headers);
-							r_socket_http_response (rs, 200, out, 0, newheaders);
-							free (out);
-							free (newheaders);
-							free (res);
-						} else {
-							r_socket_http_response (rs, 200, "", 0, headers);
-						}
+							if (!r_sandbox_enable (0) &&
+									(!strcmp (cmd, "=h*") ||
+									 !strcmp (cmd, "=h--"))) {
+								out = NULL;
+							} else if (*cmd == ':') {
+								/* commands in /cmd/: starting with : do not show any output */
+								r_core_cmd0 (core, cmd + 1);
+								out = NULL;
+							} else {
+								out = r_core_cmd_str_pipe (core, cmd);
+							}
 
-						if (!r_sandbox_enable (0)) {
-							if (!strcmp (cmd, "=h*")) {
-								/* do stuff */
-								r_socket_http_close (rs);
-								free (dir);
-								free (refstr);
-								ret = -2;
-								goto the_end;
-							} else if (!strcmp (cmd, "=h--")) {
-								r_socket_http_close (rs);
-								free (dir);
-								free (refstr);
-								ret = 0;
-								goto the_end;
+							if (out) {
+								char *res = r_str_uri_encode (out);
+								char *newheaders = r_str_newf (
+										"Content-Type: text/plain\n%s", headers);
+								r_socket_http_response (rs, 200, out, 0, newheaders);
+								free (out);
+								free (newheaders);
+								free (res);
+							} else {
+								r_socket_http_response (rs, 200, "", 0, headers);
+							}
+
+							if (!r_sandbox_enable (0)) {
+								if (!strcmp (cmd, "=h*")) {
+									/* do stuff */
+									r_socket_http_close (rs);
+									free (dir);
+									free (refstr);
+									ret = -2;
+									goto the_end;
+								} else if (!strcmp (cmd, "=h--")) {
+									r_socket_http_close (rs);
+									free (dir);
+									free (refstr);
+									ret = 0;
+									goto the_end;
+								}
 							}
 						}
 					}
+					free (refstr);
 				}
-				free (refstr);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				const char *homeroot = r_config_get (core->config, "http.homeroot");
@@ -862,6 +898,7 @@ the_end:
 	}
 	r_cons_break_pop ();
 	core->http_up = false;
+	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
 	if (restoreSandbox) {
