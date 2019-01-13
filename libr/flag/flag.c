@@ -567,8 +567,6 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 			r_flag_item_free (item);
 			return NULL;
 		}
-		//item share ownership prone to uaf, that is why only
-		//f->flags has set up free pointer
 		ht_pp_insert (f->ht_name, item->name, item);
 	}
 
@@ -792,10 +790,10 @@ R_API int r_flag_count(RFlag *f, const char *glob) {
 #define FOREACH_BODY(condition) \
 	RSkipListNode *it, *tmp; \
 	RFlagsAtOffset *flags_at; \
-	RListIter *it2; \
+	RListIter *it2, *tmp2;	  \
 	RFlagItem *fi; \
 	r_skiplist_foreach_safe (f->by_off, it, tmp, flags_at) { \
-		r_list_foreach (flags_at->flags, it2, fi) { \
+		r_list_foreach_safe (flags_at->flags, it2, tmp2, fi) {	\
 			if (condition) { \
 				if (!cb (fi, user)) { \
 					return; \
