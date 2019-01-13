@@ -25,8 +25,10 @@ static const char *help_detail_tilde[] = {
 	" &",        "", "all words must match to grep the line",
 	" $[n]",     "", "sort numerically / alphabetically the Nth column",
 	" $!",       "", "sort in inverse order",
+	" ,",        "", "token to define another keyword",
 	" +",        "", "case insensitive grep (grep -i)",
 	" ^",        "", "words must be placed at the beginning of line",
+	" <",        "", "perform zoom operation on the buffer",
 	" !",        "", "negate grep",
 	" ?",        "", "count number of matching lines",
 	" ?.",       "", "count number chars",
@@ -150,6 +152,10 @@ static void parse_grep_expression(const char *str) {
 		case '&':
 			str++;
 			grep->amp = 1;
+			break;
+		case '<':
+			grep->zoom = atoi (++str);
+			//grep->zoomy = atoi (arg);
 			break;
 		case '+':
 			if (first) {
@@ -473,6 +479,22 @@ R_API void r_cons_grepbuf() {
 		grep->json = 0;
 		grep->less = 0;
 		grep->hud = 0;
+		return;
+	}
+
+	if (grep->zoom) {
+		char *in = calloc (cons->context->buffer_len + 2, 4);
+		strcpy (in, cons->context->buffer);
+		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy?grep->zoomy:grep->zoom);
+		if (out) {
+			free (cons->context->buffer);
+			cons->context->buffer = out;
+			cons->context->buffer_len = strlen (out);
+			cons->context->buffer_sz = cons->context->buffer_len;
+		}
+		grep->zoom = 0;
+		grep->zoomy = 0;
+		free (in);
 		return;
 	}
 	if (grep->json) {

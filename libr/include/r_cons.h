@@ -86,6 +86,8 @@ typedef struct r_cons_grep_t {
 	int tokens[R_CONS_GREP_TOKENS];
 	int tokens_used;
 	int amp;
+	int zoom;
+	int zoomy; // if set then its scaled unproportionally
 	int neg;
 	int begin;
 	int end;
