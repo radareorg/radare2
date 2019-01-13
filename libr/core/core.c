@@ -2212,6 +2212,10 @@ static char *get_comments_cb(void *user, ut64 addr) {
 }
 
 static void cb_event_handler(REvent *ev, REventType event_type, void *data) {
+	RCore *core = (RCore *)ev->user;
+	if (!core->log_events) {
+		return;
+	}
 	REventMeta *rems = data;
 	char *str = r_base64_encode_dyn (rems->string, -1);
 	switch (event_type) {

@@ -297,6 +297,7 @@ typedef struct r_core_t {
 	REvent *ev;
 	RList *gadgets;
 	bool scr_gadgets;
+	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
