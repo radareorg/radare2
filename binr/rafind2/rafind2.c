@@ -12,6 +12,8 @@
 #include <r_lib.h>
 #include <r_io.h>
 
+#include "../blob/version.c"
+
 static int showstr = 0;
 static int rad = 0;
 static int align = 0;
@@ -342,8 +344,7 @@ int main(int argc, char **argv) {
 			quiet = true;
 			break;
 		case 'v':
-			printf ("rafind2 v"R2_VERSION"\n");
-			return 0;
+			return blob_version ("rafind2");
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':

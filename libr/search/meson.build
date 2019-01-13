@@ -1,4 +1,4 @@
-files = [
+r_search_sources = [
   'aes-find.c',
   'bytepat.c',
   'keyword.c',
@@ -10,7 +10,7 @@ files = [
   'xrefs.c',
 ]
 
-r_search = library('r_search', files,
+r_search = library('r_search', r_search_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [r_util_dep],

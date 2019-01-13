@@ -291,6 +291,7 @@ static void createNewPanel(RCore *core, char *name, char *cmd, bool caching);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
+static void callVisualGraph(RCore *core);
 static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
@@ -1362,6 +1363,24 @@ static void swapPanels(RPanels *panels, int p0, int p1) {
 	panel1->curpos = cur;
 	panel1->baseAddr = ba;
 	panel1->addr = a;
+}
+
+static void callVisualGraph(RCore *core) {
+	if (checkFunc (core)) {
+		RPanels *panels = core->panels;
+
+		r_cons_canvas_free (panels->can);
+		panels->can = NULL;
+
+		int ocolor = r_config_get_i (core->config, "scr.color");
+
+		r_core_visual_graph (core, NULL, NULL, true);
+		r_config_set_i (core->config, "scr.color", ocolor);
+
+		int h, w = r_cons_get_size (&h);
+		panels->can = createNewCanvas (core, w, h);
+		setRefreshAll (panels, false);
+	}
 }
 
 static bool checkFunc(RCore *core) {
@@ -2540,6 +2559,9 @@ R_API void r_core_panels_refresh(RCore *core) {
 	}
 
 	r_cons_canvas_print (can);
+	if (core->scr_gadgets) {
+		r_core_cmd0 (core, "pg");
+	}
 	r_cons_flush ();
 }
 
@@ -3357,19 +3379,7 @@ repeat:
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
-			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-			int ocolor = r_config_get_i (core->config, "scr.color");
-			if (!fun) {
-				r_cons_message ("Not in a function. Type 'df' to define it here");
-				break;
-			} else if (r_list_empty (fun->bbs)) {
-				r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
-				break;
-			}
-			//	reset_print_cur (core->print);
-			eprintf ("\rRendering graph...");
-			r_core_visual_graph (core, NULL, NULL, true);
-			r_config_set_i (core->config, "scr.color", ocolor);
+			callVisualGraph (core);
 		}
 		break;
 	case ':':
@@ -3497,18 +3507,7 @@ repeat:
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
-			if (checkFunc (core)) {
-				r_cons_canvas_free (can);
-				panels->can = NULL;
-
-				int ocolor = r_config_get_i (core->config, "scr.color");
-				r_core_visual_graph (core, NULL, NULL, true);
-				r_config_set_i (core->config, "scr.color", ocolor);
-
-				int h, w = r_cons_get_size (&h);
-				panels->can = createNewCanvas (core, w, h);
-				setRefreshAll (panels, false);
-			}
+			callVisualGraph (core);
 		}
 		break;
 	case ']':

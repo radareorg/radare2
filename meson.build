@@ -59,6 +59,11 @@ endif
 if get_option('r2_gittap') != ''
   gittap = get_option('r2_gittap')
 endif
+# gittap is used for the version of each r_ library
+# in case it has not been set (e.g. a release tarball) set it
+if gittap == ''
+  gittap = r2_version
+endif
 
 if get_option('r2_gittip') != ''
   gittip = get_option('r2_gittip')

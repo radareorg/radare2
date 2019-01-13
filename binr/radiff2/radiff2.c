@@ -787,7 +787,6 @@ int main(int argc, char **argv) {
 			break;
 		case 'v':
 			return blob_version ("radiff2");
-			return 0;
 		case 'q':
 			quiet = true;
 			break;

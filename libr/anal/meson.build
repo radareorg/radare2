@@ -1,4 +1,4 @@
-files = [
+r_anal_sources = [
   'anal.c',
   'anal_ex.c',
   'bb.c',
@@ -123,7 +123,7 @@ r_anal_inc = [
   )
 ]
 
-r_anal = library('r_anal', files,
+r_anal = library('r_anal', r_anal_sources,
   include_directories: r_anal_inc,
   c_args: library_cflags,
   dependencies: [

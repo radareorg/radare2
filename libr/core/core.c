@@ -1759,6 +1759,12 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 	return item ? item->name : NULL;
 }
 
+static int r_core_print_offsize(void *p, ut64 addr) {
+	RCore *c = (RCore*)p;
+	RFlagItem *item = r_flag_get_i (c->flags, addr);
+	return item ? item->size: -1;
+}
+
 /**
  * Disassemble one instruction at specified address.
  */
@@ -1853,7 +1859,6 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
-	RBinSection *sect;
 	char *mapname = NULL;
 	RAnalFunction *fcn;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
@@ -1865,7 +1870,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			mapname = strdup (map->name);
 		}
 	}
-	sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
+	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -2206,6 +2211,50 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
 
+static void cb_event_handler(REvent *ev, REventType event_type, void *data) {
+	RCore *core = (RCore *)ev->user;
+	if (!core->log_events) {
+		return;
+	}
+	REventMeta *rems = data;
+	char *str = r_base64_encode_dyn (rems->string, -1);
+	switch (event_type) {
+	case R_EVENT_META_SET:
+		switch (rems->type) {
+		case 'C':
+			r_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, str? str: ""));
+			break;
+		default:
+			break;
+		}
+		break;
+	case R_EVENT_META_DEL:
+		switch (rems->type) {
+		case 'C':
+			r_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
+			break;
+		default:
+			r_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
+			break;
+		}
+		break;
+	case R_EVENT_META_CLEAR:
+		switch (rems->type) {
+		case 'C':
+			r_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
+			break;
+		default:
+			r_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
+			break;
+		}
+		break;
+	default:
+		// TODO
+		break;
+	}
+	free (str);
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2216,6 +2265,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
+	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler);
 	core->lock = r_th_lock_new (true);
 	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->cmd_depth = core->max_cmd_depth;
@@ -2233,6 +2283,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->user = core;
 	core->print->num = core->num;
 	core->print->offname = r_core_print_offname;
+	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
 	core->print->cb_color = r_cons_rainbow_get;
 	core->print->write = mywrite;
@@ -2312,6 +2363,7 @@ R_API bool r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
@@ -2449,6 +2501,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	R_FREE (c->block);
 	r_core_autocomplete_free (c->autocomplete);
 
+	r_list_free (c->gadgets);
 	r_list_free (c->undos);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
@@ -2639,12 +2692,11 @@ static void set_prompt (RCore *r) {
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {
-	int ret, rnv;
 	char line[4096];
 
-	rnv = r->num->value;
+	int rnv = r->num->value;
 	set_prompt (r);
-	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
+	int ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) {
 		return R_CORE_CMD_EXIT; // ^D
 	}
@@ -2657,6 +2709,9 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	}
 	free (r->cmdqueue);
 	r->cmdqueue = strdup (line);
+        if (r->scr_gadgets && *line && *line != 'q') {
+                r_core_cmd0 (r, "pg");
+        }
 	return true;
 }
 

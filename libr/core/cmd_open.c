@@ -106,9 +106,8 @@ static const char *help_msg_om[] = {
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompd", " mapid", "deprioritize map with corresponding id",
-	"ompf", "[fd]", "prioritize map by fd",
-	"ompb", " binid", "prioritize maps of mapped bin with binid",
-	"omps", " sectionid", "prioritize maps of mapped section with sectionid",
+	"ompf", " [fd]", "prioritize map by fd",
+	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
 	NULL
 };
 
@@ -193,9 +192,8 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 		width = 30;
 	}
 
-	// seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
-
-	ls_foreach_prev (io->maps, iter, s) {			//this must be prev, maps the previous map allways has lower priority
+	// this must be prev, maps the previous map allways has lower priority
+	ls_foreach_prev (io->maps, iter, s) {
 		min = R_MIN (min, s->itv.addr);
 		max = R_MAX (max, r_itv_end (s->itv) - 1);
 	}
@@ -612,14 +610,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		case 'b': // "ompb"
 			id = (ut32)r_num_math (core->num, input + 4);
-			if (!r_io_section_priorize_bin (core->io, id)) {
-				eprintf ("Cannot prioritize bin with binid %d\n", id);
-			}
-			break;
-		case 's': // "omps"
-			id = (ut32)r_num_math (core->num, input + 4);
-			if (!r_io_section_priorize (core->io, id)) {
-				eprintf ("Cannot prioritize section with sectionid %d\n", id);
+			if (!r_bin_file_set_cur_by_id (core->bin, id)) {
+				eprintf ("Cannot prioritize bin with fd %d\n", id);
 			}
 			break;
 		case ' ': // "omp"
@@ -1218,6 +1210,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
+			void *bed = r_cons_sleep_begin ();
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {
@@ -1228,6 +1221,7 @@ static int cmd_open(void *data, const char *input) {
 				eprintf ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
+			r_cons_sleep_end (bed);
 		}
 		r_core_block_read (core);
 		return 0;

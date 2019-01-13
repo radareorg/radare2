@@ -552,7 +552,8 @@ enum {
 enum {
 	R_ANAL_REFLINE_TYPE_UTF8 = 1,
 	R_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
-	R_ANAL_REFLINE_TYPE_MIDDLE = 4, /* do not consider starts/ends of reflines (used for comment lines) */
+	R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE = 4, /* do not consider starts/ends of
+	                                        * reflines (used for comment lines before disasm) */
 	R_ANAL_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
 };
 
@@ -689,6 +690,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
+	Sdb *sdb_classes_attrs;
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1515,6 +1517,19 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
 
+
+typedef struct r_anal_fcn_vars_cache {
+	RList *bvars;
+	RList *rvars;
+	RList *svars;
+} RAnalFcnVarsCache;
+R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
+R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache);
+
+R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
+		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post);
+
+
 /* project */
 R_API bool r_anal_xrefs_init (RAnal *anal);
 
@@ -1791,6 +1806,8 @@ typedef enum {
 R_API void r_anal_class_create(RAnal *anal, const char *name);
 R_API void r_anal_class_delete(RAnal *anal, const char *name);
 R_API bool r_anal_class_exists(RAnal *anal, const char *name);
+R_API SdbList *r_anal_class_get_all(RAnal *anal, bool sorted);
+R_API void r_anal_class_foreach(RAnal *anal, SdbForeachCallback cb, void *user);
 R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const char *new_name);
 
 R_API void r_anal_class_method_fini(RAnalMethod *meth);

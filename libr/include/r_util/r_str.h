@@ -31,6 +31,7 @@ static inline void r_str_rmch(char *s, char ch) {
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rstr(const char *base, const char *p);
+R_API const char *r_strstr_ansi (const char *a, const char *b);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API const char *r_str_closer_chr(const char *b, const char *s);
 R_API int r_str_bounds(const char *str, int *h);
@@ -53,6 +54,7 @@ R_API int r_str_split(char *str, char ch);
 R_API RList *r_str_split_list(char *str, const char *c);
 R_API int *r_str_split_lines(char *str, int *count);
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
+R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define r_str_cpy(x,y) memmove(x,y,strlen(y)+1);
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz);
@@ -175,6 +177,7 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color, cons
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 R_API char *r_str_from_ut64(ut64 val);
 R_API void r_str_stripLine(char *str, const char *key);
+R_API char *r_str_list_join(RList *str, const char *sep);
 #ifdef __cplusplus
 }
 #endif

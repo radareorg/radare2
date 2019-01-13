@@ -218,6 +218,13 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	char key[100], *dtr, *s, *p, *next;
 	const char *val;
 	int i;
+	/* send event */
+	REventMeta rems = {
+		.type = type,
+		.addr = addr,
+		.string = NULL
+	};
+	r_event_send (a->ev, R_EVENT_META_DEL, &rems);
 	if (size == UT64_MAX) {
 		// FULL CLEANUP
 		// XXX: this thing ignores the type
@@ -226,7 +233,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		} else {
 			snprintf (key, sizeof (key)-1, "meta.%c.count", type);
 			int last = (ut64)sdb_num_get (DB, key, NULL)/K;
-			for (i=0; i<last; i++) {
+			for (i = 0; i < last; i++) {
 				snprintf (key, sizeof (key)-1, "meta.%c.%d", type, i);
 				dtr = sdb_get (DB, key, 0);
 				for (p = dtr; p; p = next) {

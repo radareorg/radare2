@@ -786,10 +786,9 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 //ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
+	r_return_val_if_fail (b && buf && len > 0, 0);
+
 	RIOBind *iob = b->iob;
-	if (!b || !buf || len < 1) {
-		return 0;
-	}
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
 	int real_len = len;

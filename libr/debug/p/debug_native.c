@@ -53,6 +53,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #if __KFBSD__ || __DragonFly__
 #include <sys/user.h>
 #include <libutil.h>
+#elif __OpenBSD__
+#include <sys/proc.h>
+#include <sys/sysctl.h>
 #endif
 #include "native/procfs.h"
 
@@ -340,6 +343,45 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 	}
 
 	free (kp);
+
+	return rdi;
+#elif __OpenBSD__
+	struct kinfo_proc *kp;
+	char err[_POSIX2_LINE_MAX];
+	int rc;
+	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	if (!rdi) {
+		return NULL;
+	}
+
+	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, err);
+	if (!kd) {
+		return NULL;
+	}
+
+	kp = kvm_getprocs (kd, KERN_PROC_PID, dbg->pid, sizeof (*kp), &rc);
+	if (kp) {
+		rdi->pid = dbg->pid;
+		rdi->tid = dbg->tid;
+		rdi->uid = kp->p_uid;
+		rdi->gid = kp->p__pgid;
+		rdi->exe = strdup (kp->p_comm);
+
+		rdi->status = R_DBG_PROC_STOP;
+
+		if (kp->p_psflags & PS_ZOMBIE) {
+				rdi->status = R_DBG_PROC_ZOMBIE;
+		} else if (kp->p_psflags & PS_STOPPED){
+				rdi->status = R_DBG_PROC_STOP;
+		} else if (kp->p_psflags & PS_PPWAIT) {
+				rdi->status = R_DBG_PROC_SLEEP;
+		} else if ((kp->p_psflags & PS_EXEC) || (kp->p_psflags & PS_INEXEC)) {
+				rdi->status = R_DBG_PROC_RUN;
+		}
+
+	}
+
+	kvm_close (kd);
 
 	return rdi;
 #elif __WINDOWS__

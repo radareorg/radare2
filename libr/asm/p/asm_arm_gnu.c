@@ -153,8 +153,9 @@ cpucode = 66471;
 	if (oldcpu != a->cpu) {
 		int cpucode = 0;
 		if (a->cpu) {
+ 			int i;
 			cpucode = atoi (a->cpu);
-			for (int i = 0; i < (sizeof(arm_cpucodes) / sizeof(arm_cpucodes[0])); i++) {
+			for (i = 0; i < (sizeof(arm_cpucodes) / sizeof(arm_cpucodes[0])); i++) {
 				if (!strcmp (arm_cpucodes[i].name, a->cpu)) {
 					cpucode = arm_cpucodes[i].cpucode;
 					break;
