@@ -568,8 +568,9 @@ static char*_time_stamp_to_dos_str(ut32 timeStamp) {
 
 static bool _time_stamp_is_dos_format(const ut32 compileTimeStamp, const ut32 resourceTimeStamp) {
 	/* We assume they're both POSIX timestamp and thus the higher bits would be equal if they're close to each other */
-	if ((compileTimeStamp >> 16) == (resourceTimeStamp >> 16))
+	if ((compileTimeStamp >> 16) == (resourceTimeStamp >> 16)) {
 		return false;
+	}
 	return true;
 }
 
