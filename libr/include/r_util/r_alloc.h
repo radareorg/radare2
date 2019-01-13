@@ -13,11 +13,12 @@ typedef void *(RCalloc)(size_t, size_t);
 typedef void *(RRealloc)(void *, size_t);
 typedef void (RFree)(void *);
 
+R_API void* r_malloc_aligned(size_t size, size_t alignment);
+R_API void r_free_aligned(void *p);
+
 #if R_MALLOC_WRAPPER
 
 R_API void r_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f);
-R_API void* r_malloc_aligned(size_t size, size_t alignment);
-R_API void r_free_aligned(void *p);
 
 #if R_MALLOC_GLOBAL
 R_API RMalloc *r_malloc;

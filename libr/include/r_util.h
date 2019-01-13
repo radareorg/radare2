@@ -28,6 +28,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_assert.h"
 #include "r_util/r_itv.h"
 #include "r_util/r_signal.h"
+#include "r_util/r_alloc.h"
 #include "r_util/r_rbtree.h"
 #include "r_util/r_big.h"
 #include "r_util/r_base64.h"

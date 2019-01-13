@@ -4735,7 +4735,6 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_printf ("f dbg.tid = %d\n", rdi->tid);
 					r_cons_printf ("f dbg.uid = %d\n", rdi->uid);
 					r_cons_printf ("f dbg.gid = %d\n", rdi->gid);
-
 				}
 				break;
 			case 'j': // "dij"
@@ -4783,6 +4782,7 @@ static int cmd_debug(void *data, const char *input) {
 			case '?': // "di?"
 			default:
 				r_core_cmd_help (core, help_msg_di);
+				break;
 			}
 			r_debug_info_free (rdi);
 		}

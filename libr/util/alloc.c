@@ -59,7 +59,7 @@ R_API void r_free(void *p) {
 #endif
 
 R_API void* r_malloc_aligned(size_t size, size_t alignment) {
-	int offset = alignment - 1 + sizeof(void*);
+	int offset = alignment - 1 + sizeof (void*);
 	void* p1 = _r_malloc (size + offset);
 	if (!p1) {
 		return NULL;

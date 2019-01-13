@@ -101,7 +101,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		}
 	}
 #endif
-	ut32 *aligned_buf = (ut32*)r_malloc_aligned (len);
+	ut32 *aligned_buf = (ut32*)r_malloc_aligned (len, sizeof (ut32));
 	if (aligned_buf) {
 		int res = debug_os_read_at (io, RIOPTRACE_PID (desc), (ut32*)aligned_buf, len, addr);
 		memcpy (buf, aligned_buf, len);

@@ -299,6 +299,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return tid;
 #endif
 }
+
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 #if __APPLE__
 	return xnu_info (dbg, arg);
