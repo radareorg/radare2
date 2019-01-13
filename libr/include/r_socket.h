@@ -62,6 +62,7 @@ typedef struct r_socket_t {
 	int fd;
 #endif
 	bool is_ssl;
+	bool reuseport;
 	int local;	// TODO: merge ssl with local -> flags/options
 	int port;
 	struct sockaddr_in sa;

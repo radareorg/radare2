@@ -527,6 +527,14 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 	if (ret < 0) {
 		return false;
 	}
+#ifdef SO_REUSEPORT
+	if (s->reuseport) {
+		ret = setsockopt (s->fd, SOL_SOCKET, SO_REUSEPORT, (void*)&optval, sizeof optval);
+		if (ret < 0) {
+			return false;
+		}
+	}
+#endif
 #endif
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;

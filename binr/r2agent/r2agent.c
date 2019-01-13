@@ -32,6 +32,7 @@ static int usage (int v) {
 	"  -s        run in sandbox mode\n"
 	"  -u        enable http Authorization access\n"
 	"  -t        user:password authentification file\n"
+	"  -r        reuse port\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
@@ -48,6 +49,7 @@ int main(int argc, char **argv) {
 	int dodaemon = 0;
 	int dosandbox = 0;
 	bool listenlocal = true;
+	bool reuseport = false;
 	const char *port = "8080";
 	const char *httpauthfile = NULL;
 	char *pfile = NULL;
@@ -73,6 +75,9 @@ int main(int argc, char **argv) {
 			break;
 		case 't':
 			httpauthfile = optarg;
+			break;
+		case 'r':
+			reuseport = true;
 			break;
 		case 'p':
 			port = optarg;
@@ -116,7 +121,12 @@ int main(int argc, char **argv) {
 #endif
 	}
 	s = r_socket_new (false);
+	if (!s) {
+		eprintf ("Cannot create socket\n");
+		return 1;
+	}
 	s->local = listenlocal;
+	s->reuseport = reuseport;
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Cannot listen on %d\n", s->port);
 		r_socket_free (s);

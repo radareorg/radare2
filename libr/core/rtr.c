@@ -427,6 +427,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	const char *httpauthfile = r_config_get (core->config, "http.authfile");
+	bool httpreuseport = r_config_get_i (core->config, "http.reuseport");
 	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
@@ -483,6 +484,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		} else {
 			s->local = true;
 		}
+		s->reuseport = httpreuseport;
 		memset (&so, 0, sizeof (so));
 	}
 	if (!r_socket_listen (s, port, NULL)) {
