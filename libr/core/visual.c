@@ -4039,7 +4039,7 @@ dodo:
 				ch = r_cons_readchar ();
 			}
 #ifndef __WINDOWS__
-			if (!r_config_get_i (core->config, "scr.wheel")) {
+			if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
 				tcflush (STDIN_FILENO, TCIFLUSH);
 			}
 #endif
