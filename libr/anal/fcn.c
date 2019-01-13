@@ -1252,9 +1252,9 @@ repeat:
 			{
 				bool must_eob = anal->opt.eobjmp;
 				if (!must_eob) {
-					RIOSection *s = anal->iob.sect_vget (anal->iob.io, addr);
-					if (s) {
-						must_eob = (op.jump < s->vaddr || op.jump >= s->vaddr + s->vsize);
+					RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
+					if (map) {
+						must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
 					}
 				}
 				if (must_eob) {

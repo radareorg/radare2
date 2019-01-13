@@ -1859,7 +1859,6 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
-	RBinSection *sect;
 	char *mapname = NULL;
 	RAnalFunction *fcn;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
@@ -1871,7 +1870,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			mapname = strdup (map->name);
 		}
 	}
-	sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
+	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {

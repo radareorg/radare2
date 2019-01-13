@@ -252,9 +252,10 @@ typedef const char *(*RIOFdGetName) (RIO *io, int fd);
 typedef RList *(*RIOFdGetMap) (RIO *io, int fd);
 typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
+typedef RIOMap *(*RIOMapGet) (RIO *io, ut64 addr);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
-typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
+//typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
@@ -287,8 +288,9 @@ typedef struct r_io_bind_t {
 	RIOFdRemap fd_remap;
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
-	RIOSectionVgetSecsAt sections_vget;
-	RIOSectionVgetSec sect_vget;
+	RIOMapGet map_get;
+	//RIOSectionVgetSecsAt sections_vget;
+	//RIOSectionVgetSec sect_vget;
 	RIOSectionAdd section_add;
 #if HAVE_PTRACE
 	RIOPtraceFn ptrace;
