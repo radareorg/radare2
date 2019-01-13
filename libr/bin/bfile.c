@@ -15,7 +15,7 @@ static RBinString *find_string_at(RBinFile *bf, RList *ret, ut64 addr) {
 	return NULL;
 }
 
-static void print_string(RBinFile *bf, RBinString *string) {
+static void print_string(RBinFile *bf, RBinString *string, int raw) {
 	r_return_if_fail (bf && string);
 
 	int mode = bf->strmode;
@@ -34,9 +34,18 @@ static void print_string(RBinFile *bf, RBinString *string) {
 	type_string = r_bin_string_type (string->type);
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
+	// If raw string dump mode, use printf to dump directly to stdout.
+	PrintfCallback temp = io->cb_printf;
 	switch (mode) {
-	case R_MODE_SIMPLE:
-		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
+	case R_MODE_SIMPLEST: 
+		io->cb_printf ("%s\n", string->string);
+		break;
+	case R_MODE_SIMPLE: 
+		if (raw == 2) {
+			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
+		} else {
+			io->cb_printf ("%s\n", string->string);
+		}
 		break;
 	case R_MODE_RADARE: {
 		char *f_name, *nstr;
@@ -58,8 +67,8 @@ static void print_string(RBinFile *bf, RBinString *string) {
 		free (nstr);
 		free (f_name);
 		break;
-	}
-	case R_MODE_PRINT:
+		}
+	case R_MODE_PRINT: 
 		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
@@ -70,7 +79,7 @@ static void print_string(RBinFile *bf, RBinString *string) {
 }
 
 static int string_scan_range(RList *list, RBinFile *bf, int min,
-			      const ut64 from, const ut64 to, int type) {
+			      const ut64 from, const ut64 to, int type, int raw) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -250,7 +259,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					ht_up_insert (bf->o->strings_db, bs->vaddr, bs);
 				}
 			} else {
-				print_string (bf, bs);
+				print_string (bf, bs, raw);
 				r_bin_string_free (bs);
 			}
 		}
@@ -304,7 +313,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 			return;
 		}
 	}
-	if (string_scan_range (list, bf, min, from, to, -1) < 0) {
+	if (string_scan_range (list, bf, min, from, to, -1, raw) < 0) {
 		return;
 	}
 	if (bf->o) {
@@ -316,7 +325,6 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		}
 	}
 }
-
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
 	RBinFile *binfile = R_NEW0 (RBinFile);
