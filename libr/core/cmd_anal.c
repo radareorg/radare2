@@ -7077,14 +7077,14 @@ static int compute_coverage(RCore *core) {
 	RListIter *iter;
 	SdbListIter *iter2;
 	RAnalFunction *fcn;
-	RIOSection *sec;
+	RIOMap *map;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		ls_foreach (core->io->sections, iter2, sec) {
-			if (sec->perm & R_PERM_X) {
-				ut64 section_end = sec->vaddr + sec->vsize;
+		ls_foreach (core->io->maps, iter2, map) {
+			if (map->perm & R_PERM_X) {
+				ut64 section_end = map->itv.addr + map->itv.size;
 				ut64 s = r_anal_fcn_realsize (fcn);
-				if (fcn->addr >= sec->vaddr && (fcn->addr + s) < section_end) {
+				if (fcn->addr >= map->itv.addr && (fcn->addr + s) < section_end) {
 					cov += s;
 				}
 			}
@@ -7096,10 +7096,10 @@ static int compute_coverage(RCore *core) {
 static int compute_code (RCore* core) {
 	int code = 0;
 	SdbListIter *iter;
-	RIOSection *sec;
-	ls_foreach (core->io->sections, iter, sec) {
-		if (sec->perm & R_PERM_X) {
-			code += sec->vsize;
+	RIOMap *map;
+	ls_foreach (core->io->maps, iter, map) {
+		if (map->perm & R_PERM_X) {
+			code += map->itv.size;
 		}
 	}
 	return code;

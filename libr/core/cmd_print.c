@@ -2745,7 +2745,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			if (off >= at && off < ate) {
 				r_cons_memcat ("^", 1);
 			} else {
-				RIOSection *s = r_io_section_vget (core->io, at);
+				RIOMap *s = r_io_map_get (core->io, at);
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {

@@ -611,9 +611,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			break;
 		case 'b': // "ompb"
+			// XXX must use r_bin_section api to change current bin
 			id = (ut32)r_num_math (core->num, input + 4);
-			if (!r_io_section_priorize_bin (core->io, id)) {
-				eprintf ("Cannot prioritize bin with binid %d\n", id);
+			if (!r_bin_file_set_cur_by_fd (core->bin, id)) {
+				eprintf ("Cannot prioritize bin with fd %d\n", id);
 			}
 			break;
 		case 's': // "omps"

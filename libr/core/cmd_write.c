@@ -1249,10 +1249,10 @@ static int cmd_write(void *data, const char *input) {
 						r_core_cmd_help (core, help_msg_wt);
 						return 0;
 					}
-					RIOSection *s = r_io_section_vget (core->io, poff);
+					RIOMap *map = r_io_map_get (core->io, poff);
 					toend = true;
 					//use physical address
-					poff =  s ? poff - s->vaddr + s->paddr : poff;
+					poff = map ? poff - map->itv.addr + map->delta : poff;
 					str++;
 				}
 				if (*str == 'f') {

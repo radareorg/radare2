@@ -150,7 +150,6 @@ static const char *help_msg_question[] = {
 	"?q", " eip-0x804800", "compute expression like ? or ?v but in quiet mode",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
-	"?S", " addr", "return section name of given address",
 	"?t", " cmd", "returns the time to run a command",
 	"?T", "", "show loading times",
 	"?u", " num", "get value in human units (KB, MB, GB, TB)",
@@ -982,19 +981,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
 		}
 		break;
-	case 'S': { // "?S" section name
-		RIOSection *s;
-		ut64 n = input[1] ? r_num_math (core->num, input + 2) : core->offset;
-		SdbList *sections = core->io->va ? r_io_sections_vget (core->io, n) : r_io_sections_get (core->io, n);
-		SdbListIter *iter;
-		if (sections) {
-			ls_foreach (sections, iter, s) {
-				r_cons_printf ("%s\n", s->name);
-			}
-			ls_free (sections);
-		}
-		break;
-	}
 	case '_': // "?_" hud input
 		r_core_yank_hud_file (core, input+1);
 		break;
