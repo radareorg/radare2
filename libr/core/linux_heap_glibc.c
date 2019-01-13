@@ -93,8 +93,8 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (strstr (map->name, "[heap]")) {
-				*brk_start = map->itv.addr;
-				*brk_end = map->itv.addr + map->itv.size;
+				*brk_start = map->addr;
+				*brk_end = map->addr + map->addr_end;
 				break;
 			}
 		}
