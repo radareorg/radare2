@@ -266,12 +266,10 @@ static bool print_flag_orig_name(RFlagItem *flag, void *user) {
 	}
 	if (flag->alias) {
 		const char *n = u->real? flag->realname: flag->name;
-		u->f->cb_printf ("%s %"PFMT64d" %s\n",
-			flag->alias, flag->size, n);
+		u->f->cb_printf ("%s %"PFMT64d" %s\n", flag->alias, flag->size, n);
 	} else {
 		const char *n = u->real? flag->realname: (u->f->realnames? flag->realname: flag->name);
-		u->f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-			flag->offset, flag->size, n);
+		u->f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n", flag->offset, flag->size, n);
 	}
 	return true;
 }
@@ -500,10 +498,9 @@ static bool append_to_list(void *user, const void *k, const void *v) {
 
 R_API RList *r_flag_all_list(RFlag *f) {
 	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
+	if (ret) {
+		ht_pp_foreach (f->ht_name, append_to_list, ret);
 	}
-	ht_pp_foreach (f->ht_name, append_to_list, ret);
 	return ret;
 }
 
