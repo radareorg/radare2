@@ -4038,6 +4038,9 @@ dodo:
 			} else {
 				ch = r_cons_readchar ();
 			}
+#ifndef __WINDOWS__
+			tcflush (STDIN_FILENO, TCIFLUSH);
+#endif
 			if (r_cons_is_breaked()) {
 				break;
 			}
