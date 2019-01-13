@@ -205,8 +205,8 @@ static int log_callback_all (RCore *log, int count, const char *line) {
 }
 
 static void http_sync_thread(void *user, char *out) {
-	RCore *core = (RCore *)user;
 	eprintf ("Sync\n");
+	//RCore *core = (RCore *)user;
 	//r_core_task_sleep_begin (user);
 	//r_core_break (user);
 }
@@ -251,7 +251,7 @@ static int cmd_log(void *data, const char *input) {
 	case '?': // "T?"
 		r_core_cmd_help (core, help_msg_T);
 		break;
-	case 'T': // Ts ? as ms?
+	case 'T': // "TT" Ts ? as ms?
 		if (r_config_get_i (core->config, "scr.interactive")) {
 			textlog_chat (core);
 		} else {

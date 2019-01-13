@@ -1407,6 +1407,13 @@ static int cb_hex_hdroff(void *user, void *data) {
 	return true;
 }
 
+static int cb_log_events (void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->log_events = node->i_value;
+	return true;
+}
+
 static int cb_hexcomments(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2837,6 +2844,8 @@ R_API int r_core_config_init(RCore *core) {
 	p = r_sys_getenv ("R2_LOGCOLORS");
 	SETCB ("cfg.log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
+
+	SETCB ("cfg.log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");

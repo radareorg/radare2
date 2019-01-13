@@ -2,7 +2,8 @@
 
 #include <r_core.h>
 
-static int cmd_colon(RCore *core, const char *cmd) {
+static int cmd_colon(void *_core, const char *cmd) {
+	// RCore *core = (RCore*)_core;
 	if (*cmd == '{') {
 		// parse json here, and retrieve arguments
 		return 1;
