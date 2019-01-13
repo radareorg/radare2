@@ -523,6 +523,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_get_map = r_io_map_get_for_fd;
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
+	bnd->map_get = r_io_map_get;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
 	bnd->section_add = r_io_section_add;
 #if HAVE_PTRACE
