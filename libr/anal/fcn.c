@@ -1255,13 +1255,17 @@ repeat:
 					RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
 					if (map) {
 						must_eob = (op.jump < map->itv.addr || op.jump >= map->itv.addr + map->itv.size);
+					} else {
+						must_eob = true;
 					}
 				}
 				if (must_eob) {
 					FITFCNSZ ();
 					op.jump = UT64_MAX;
-					recurseAt (op.jump);
-					recurseAt (op.fail);
+					//  recurseAt (op.jump);
+					if (op.fail != UT64_MAX) {
+						// recurseAt (op.fail);
+					}
 					gotoBeachRet ();
 					return R_ANAL_RET_END;
 				}
