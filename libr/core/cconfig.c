@@ -2819,33 +2819,33 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 
-	/* cfg.log */
-	// R2_LOGLEVEL / cfg.log.level
+	/* log */
+	// R2_LOGLEVEL / log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
-	SETICB ("cfg.log.level", p ? atoi(p) : R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
+	SETICB ("log.level", p ? atoi(p) : R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
 	 " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGTRAP_LEVEL / cfg.log.traplevel
+	// R2_LOGTRAP_LEVEL / log.traplevel
 	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
-	SETICB ("cfg.log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
+	SETICB ("log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
 	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGFILE / cfg.log.file
+	// R2_LOGFILE / log.file
 	p = r_sys_getenv ("R2_LOGFILE");
-	SETCB ("cfg.log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	SETCB ("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
 	free (p);
-	// R2_LOGSRCINFO / cfg.log.srcinfo
+	// R2_LOGSRCINFO / log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
-	SETCB ("cfg.log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+	SETCB ("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
 	free (p);
-	// R2_LOGCOLORS / cfg.log.colors
+	// R2_LOGCOLORS / log.colors
 	p = r_sys_getenv ("R2_LOGCOLORS");
-	SETCB ("cfg.log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
+	SETCB ("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
 
-	SETCB ("cfg.log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
+	SETCB ("log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");
