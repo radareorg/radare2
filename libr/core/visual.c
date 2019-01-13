@@ -4039,7 +4039,9 @@ dodo:
 				ch = r_cons_readchar ();
 			}
 #ifndef __WINDOWS__
-			tcflush (STDIN_FILENO, TCIFLUSH);
+			if (!r_config_get_i (core->config, "scr.wheel")) {
+				tcflush (STDIN_FILENO, TCIFLUSH);
+			}
 #endif
 			if (r_cons_is_breaked()) {
 				break;
