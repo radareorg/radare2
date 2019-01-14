@@ -1884,10 +1884,10 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 'q':
 			mode = *input;
 			break;
-		case 'q':
+		case 'l': // "/alt" "/alf"
 			switch (type) {
-			case 't':
-			case 'f':
+			case 't': // "/alt"
+			case 'f': // "/alf"
 				for (i = 0; i < 64; i++) {
 					const char *str = type == 'f'
 						? r_anal_op_family_to_string (i)
@@ -1901,7 +1901,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					r_cons_println (str);
 				}
 				break;
-			case 's':
+			case 's': // "als"
 				r_core_cmd0 (core, "asl");
 				break;
 			case 0:
