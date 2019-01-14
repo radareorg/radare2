@@ -1288,6 +1288,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 
 static void print_rop(void *_core, void *_item, bool selected) {
 	char *line = _item;
+	// TODO: trim if too long
 	r_cons_printf ("%c %s\n", selected?'>':' ', line);
 }
 
@@ -1304,13 +1305,13 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	if (!line || !*line) {
 		return false;
 	}
-	RList *chain = r_list_newf (free);
 	// maybe store in RCore, so we can save it in project and use it outside visual
 
 	eprintf ("Searching ROP gadgets...\n");
-	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\"", line);
+	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n");
 	int delta = 0;
+	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup (line);
 	while (true) {
@@ -1320,7 +1321,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		// compute chain
 		RStrBuf *sb = r_strbuf_new ("");
 		char *msg;
-		r_list_foreach (chain, iter, msg) {
+		r_list_foreach (core->ropchain, iter, msg) {
 			if (core->assembler->bits == 64) {
 				ut64 n = r_num_get (NULL, msg);
 				n = r_read_be64 (&n);
@@ -1338,60 +1339,68 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			char *sp = strchr (curline, ' ');
 			if (sp) {
 				*sp = 0;
-				addr = r_num_math (NULL, curline);
+				if (!forceaddr) {
+					addr = r_num_math (NULL, curline);
+				}
 				*sp = ' ';
 			}
 			if (addr != UT64_MAX) {
 				r_cons_printf ("Current Gadget:\n");
-				ut64 n = r_num_get (NULL, curline);
-				char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, n);
 				// get comment
-				char *output = r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x"\n", addr + delta);
-				char *out = r_str_newf ("%s ; %s", output, cmt);
-				r_cons_strcat_at (out, 0, 11, scr_w, 10);
-				free (out);
+				char *output = r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x, addr + delta);
+				r_cons_strcat_at (output, 0, 11, scr_w, 10);
 				free (output);
 			}
 		}
 		int count = 0;
+		r_cons_flush ();
 		r_cons_gotoxy (0, 22);
 		r_cons_printf ("ROPChain:\n");
 		if (chainstr) {
 			r_cons_printf ("%s\n", chainstr);
 		}
-		r_list_foreach (chain, iter, msg) {
+		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
 			r_cons_gotoxy (0, extra + 24 + count);
 			r_cons_strcat (msg);
+			char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
+			if (cmt) {
+				r_cons_strcat (cmt);
+				free (cmt);
+			}
 			count ++;
 		}
-		R_FREE (chainstr);
 		r_cons_flush ();
 		int ch = r_cons_readchar ();
 		if (ch == -1 || ch == 4) {
 			free (curline);
 			free (cursearch);
-			r_list_free (chain);
+			R_FREE (chainstr);
 			return false;
 		}
 #define NEWTYPE(x,y) r_mem_dup (&(y), sizeof (x));
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 127:
-			free (r_list_pop (chain));
+			free (r_list_pop (core->ropchain));
 			break;
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("[r2rop-visual] Help\n"
 					" jk - select next/prev rop gadget\n"
+					" JK - scroll next/prev page from list\n"
 					" hl - increase/decrease delta offset in disasm\n"
 					" \\n - enter key or dot will add the current offset into the chain\n"
 					" i  - enter a number to be pushed into the chain\n"
+					" :  - run r2 command\n"
 					" ;  - add comment in current offset\n"
 					" <- - backspace - delete last gadget from the chain\n"
+					" /  - highlight given word\n"
 					" y  - yank current rop chain into the clipboard (y?)\n"
+					" o  - seek to given offset\n"
 					" r  - run /R again\n"
 					" ?  - show this help message\n"
+					" q  - quit this view\n"
 				      );
 			r_cons_flush ();
 			r_cons_any_key (NULL);
@@ -1416,6 +1425,20 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			}
 			break;
 		case 'y':
+			r_core_cmdf (core, "yfx %s", chainstr);
+			break;
+		case 'o':
+			{
+				r_line_set_prompt ("offset: ");
+				const char *line = r_line_readline ();
+				if (line && *line) {
+					ut64 off = r_num_math (core->num, line);
+					r_core_seek (core, off, 1);
+					addr = off;
+					forceaddr = true;
+					delta = 0;
+				}
+			}
 			break;
 		case 'r':
 			{
@@ -1423,7 +1446,14 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				const char *line = r_line_readline ();
 				if (line && *line) {
 					free (cursearch);
+					delta = 0;
+					addr = UT64_MAX;
+					cur = 0;
 					cursearch = strdup (line);
+					free (ropstr);
+					ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
+					r_list_free (rops);
+					rops = r_str_split_list (ropstr, "\n");
 				}
 			}
 			break;
@@ -1436,7 +1466,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				const char *line = r_line_readline ();
 				if (line && *line) {
 					ut64 n = r_num_math (core->num, line);
-					r_list_push (chain, r_str_newf ("0x%08"PFMT64x, n));
+					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x, n));
 				}
 			}
 			break;
@@ -1456,7 +1486,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			if (curline && *curline) {
 				char *line = r_core_cmd_strf (core, "pi 4 @ 0x%08"PFMT64x, addr + delta);
 				r_str_replace_char (line, '\n', ';');
-				r_list_push (chain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
+				r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
 				free (line);
 			}
 			break;
@@ -1468,10 +1498,12 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			break;
 		case 'J':
 			cur+=10;
+			forceaddr = false;
 			delta = 0;
 			break;
 		case 'K':
 			delta = 0;
+			forceaddr = false;
 			if (cur > 10) {
 				cur-=10;
 			} else {
@@ -1485,9 +1517,11 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case 'j':
 			delta = 0;
 			cur++;
+			forceaddr = false;
 			break;
 		case 'k':
 			delta = 0;
+			forceaddr = false;
 			if (cur > 0) {
 				cur--;
 			} else {
@@ -1495,14 +1529,14 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			}
 			break;
 		case 'q':
-			r_list_free (chain);
 			free (curline);
 			free (cursearch);
+			R_FREE (chainstr);
 			return true;
 		}
+		R_FREE (chainstr);
 		free (curline);
 	}
-	r_list_free (chain);
 	free (cursearch);
 	return false;
 }
