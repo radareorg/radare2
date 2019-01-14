@@ -1093,7 +1093,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 					break;
 				}
 			} else {
-				offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0]));
+				offset = (st32) (((ut32)p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0]));
 			}
 			if (m->in_op & FILE_OPINVERSE) {
 				offset = ~offset;
