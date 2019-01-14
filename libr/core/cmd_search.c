@@ -120,8 +120,8 @@ static const char *help_msg_slash_R[] = {
 	"Usage: /R", "", "Search for ROP gadgets",
 	"/R", " [filter-by-string]", "Show gadgets",
 	"/R/", " [filter-by-regexp]", "Show gadgets [regular expression]",
-	"/Rl", " [filter-by-string]", "Show gadgets in a linear manner",
-	"/R/l", " [filter-by-regexp]", "Show gadgets in a linear manner [regular expression]",
+	"/Rq", " [filter-by-string]", "Show gadgets in a quiet manner",
+	"/R/q", " [filter-by-regexp]", "Show gadgets in a quiet manner [regular expression]",
 	"/Rj", " [filter-by-string]", "JSON output",
 	"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
 	"/Rk", " [select-by-class]", "Query stored ROP gadgets",
@@ -1132,7 +1132,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			r_cons_printf ("],\"retaddr\":%"PFMT64d ",\"size\":%d}", hit->addr, size);
 		}
 		break;
-	case 'l':
+	case 'q':
 		// Print gadgets in a 'linear manner', each sequence
 		// on one line.
 		r_cons_printf ("0x%08"PFMT64x ":",
@@ -1467,7 +1467,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (json) {
 						mode = 'j';
 					}
-					if ((mode == 'l') && subchain) {
+					if ((mode == 'q') && subchain) {
 						do {
 							print_rop (core, hitlist, mode, &json_first);
 							hitlist->head = hitlist->head->n;
@@ -1884,7 +1884,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 'q':
 			mode = *input;
 			break;
-		case 'l':
+		case 'q':
 			switch (type) {
 			case 't':
 			case 'f':
@@ -3019,9 +3019,9 @@ reread:
 				free (kwd);
 			}
 		} else if (input[1] == 's') {
-			if (input[2] == 'l') {
+			if (input[2] == 'l') { // "asl"
 				r_core_cmd0 (core, "asl");
-			} else {
+			} else { // "as"
 				do_syscall_search (core, &param);
 			}
 			dosearch = false;

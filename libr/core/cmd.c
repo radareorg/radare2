@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -255,6 +255,9 @@ static const char *help_msg_y[] = {
 	"ytf", " file", "dump the clipboard to given file",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
+	"yfx", " 10203040", "yank from hexpairs (same as ywx)",
+	"yw", " hello world", "yank from string",
+	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
 	"yy", " 0x3344", "paste clipboard",
 	NULL
 };
@@ -640,7 +643,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 'z': // "yz"
 		r_core_yank_string (core, core->offset, r_num_math (core->num, input + 1));
 		break;
-	case 'w': // "yw"
+	case 'w': // "yw" ... we have yf which makes more sense than 'w'
 		switch (input[1]) {
 		case ' ':
 			r_core_yank_set (core, 0, (const ut8*)input + 2, strlen (input + 2));
@@ -660,6 +663,9 @@ static int cmd_yank(void *data, const char *input) {
 			}
 			// r_core_yank_write_hex (core, input + 2);
 			break;
+		default:
+			eprintf ("Usage: ywx [hexpairs]\n");
+			break;
 		}
 		break;
 	case 'p': // "yp"
@@ -674,20 +680,28 @@ static int cmd_yank(void *data, const char *input) {
 			if (!r_file_dump (file, core->yank_buf->buf, core->yank_buf->length, false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}
-		} else {
+		} else if (input[1] == ' ') {
 			r_core_yank_to (core, input + 1);
+		} else {
+			eprintf ("Usage: wt[f] [arg] ..\n");
 		}
 		break;
 	case 'f': // "yf"
 		switch (input[1]) {
-		case ' ': // "wf"
+		case ' ': // "yf"
 			r_core_yank_file_ex (core, input + 1);
 			break;
-		case 'x': // "wfx"
+		case 'x': // "yfx"
 			r_core_yank_hexpair (core, input + 2);
 			break;
-		case 'a': // "wfa"
+		case 'a': // "yfa"
 			r_core_yank_file_all (core, input + 2);
+			break;
+		default:
+			eprintf ("Usage: yf[xa] [arg]\n");
+			eprintf ("yf [file]     - copy blocksize from file into the clipboard\n");
+			eprintf ("yfa [path]    - yank the whole file\n");
+			eprintf ("yfx [hexpair] - yank from hexpair string\n");
 			break;
 		}
 		break;
