@@ -1853,7 +1853,7 @@ static bool insert_mode_enabled(RCore *core) {
 	return true;
 }
 
-R_API void r_core_visual_browse(RCore *core) {
+R_API void r_core_visual_browse(RCore *core, const char *input) {
 	const char *browsemsg = \
 		"Browse stuff:\n"
 		"-------------\n"
@@ -1884,7 +1884,14 @@ R_API void r_core_visual_browse(RCore *core) {
 		r_cons_clear00 ();
 		r_cons_printf ("%s\n", browsemsg);
 		r_cons_flush ();
-		char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
+		char ch = 0;
+		if (input && *input) {
+			ch = *input;
+			input++;
+		} else {
+			ch = r_cons_readchar ();
+		}
+		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 		case 'g':
 			r_core_visual_view_graph (core);
@@ -3313,7 +3320,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, false);
 			break;
 		case 'b':
-			r_core_visual_browse (core);
+			r_core_visual_browse (core, arg + 1);
 			break;
 		case 'B':
 			{
