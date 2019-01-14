@@ -956,6 +956,10 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		return 1;
 	}
 	if (launch == '&') {
+		while (*path == '&') path++;
+		return r_core_cmdf (core, "& =h%s", path);
+	}
+#if 0
 		if (httpthread) {
 			eprintf ("HTTP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
@@ -975,6 +979,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		}
 		return 0;
 	}
+#endif
 	do {
 		ret = r_core_rtr_http_run (core, launch, browse, path);
 	} while (ret == -2);
