@@ -624,7 +624,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		while (ptr) {
 			config = r_str_trim (ptr);
 			(void) r_config_set (cfg, config, val);
-			ptr = strtok(NULL, "=");
+			ptr = strtok (NULL, "=");
 		}
 	} else {
 		char *foo = r_str_trim (names);
