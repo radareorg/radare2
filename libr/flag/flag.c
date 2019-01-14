@@ -85,6 +85,17 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 	}
 }
 
+static char *filter_item_name(const char *name) {
+	char *res = strdup (name);
+	if (!res) {
+		return NULL;
+	}
+
+	r_str_trim (res);
+	r_name_filter (res, 0);
+	return res;
+}
+
 static bool set_name(RFlagItem *item, const char *name) {
 	r_return_val_if_fail (item && name, false);
 	if (item->name != item->realname) {
@@ -94,8 +105,6 @@ static bool set_name(RFlagItem *item, const char *name) {
 	if (!item->name) {
 		return false;
 	}
-	r_str_trim (item->name);
-	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
 	free (item->realname);
 	item->realname = item->name;
 	return true;
@@ -550,10 +559,16 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	r_return_val_if_fail (f && name && *name, NULL);
 
-	RFlagItem *item = r_flag_get (f, name);
+	char *itemname = filter_item_name (name);
+	if (!itemname) {
+		return NULL;
+	}
+
+	RFlagItem *item = r_flag_get (f, itemname);
 	if (item) {
 		if (item->offset == off) {
 			item->size = size;
+			free (itemname);
 			return item;
 		}
 		remove_offsetmap (f, item);
@@ -562,14 +577,15 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		if (!item) {
 			return NULL;
 		}
-		if (!set_name (item, name)) {
-			eprintf ("Invalid flag name '%s'.\n", name);
+		if (!set_name (item, itemname)) {
+			eprintf ("Invalid flag name '%s'.\n", itemname);
 			r_flag_item_free (item);
 			return NULL;
 		}
 		ht_pp_insert (f->ht_name, item->name, item);
 	}
 
+	free (itemname);
 	item->space = f->space_idx;
 	item->offset = off + f->base;
 	item->size = size;
