@@ -2279,6 +2279,7 @@ R_API bool r_core_init(RCore *core) {
 	core->http_up = false;
 	ZERO_FILL (core->root_cmd_descriptor);
 	core->print = r_print_new ();
+	core->ropchain = r_list_newf ((RListFree)free);
 	r_core_bind (core, &(core->print->coreb));
 	core->print->user = core;
 	core->print->num = core->num;
@@ -2488,6 +2489,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
 	// avoid double free
+	r_list_free (c->ropchain);
 	r_core_free_autocomplete (c);
 	r_event_free (c->ev);
 	R_FREE (c->cmdlog);

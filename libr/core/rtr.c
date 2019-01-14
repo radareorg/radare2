@@ -436,6 +436,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 		return false;
 	}
+	if (!path) {
+		return false;
+	}
 	char *arg = strchr (path, ' ');
 	if (arg) {
 		path = arg + 1;

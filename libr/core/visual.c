@@ -1871,6 +1871,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		" m  maps\n"
 		" p  pids/threads\n"
 		" q  quit\n"
+		" r  rop gadgets\n"
 		" s  symbols\n"
 		" t  types\n"
 		" T  themes\n"
@@ -1887,6 +1888,9 @@ R_API void r_core_visual_browse(RCore *core) {
 		switch (ch) {
 		case 'g':
 			r_core_visual_view_graph (core);
+			break;
+		case 'r':
+			r_core_visual_view_rop (core);
 			break;
 		case 'f':
 			r_core_visual_trackflags (core);

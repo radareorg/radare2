@@ -298,6 +298,7 @@ typedef struct r_core_t {
 	RList *gadgets;
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
+	RList *ropchain;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -677,16 +678,17 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 R_API int r_core_rtr_http_stop(RCore *u);
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 
-R_API void r_core_visual_config (RCore *core);
-R_API void r_core_visual_mounts (RCore *core);
-R_API void r_core_visual_anal (RCore *core, const char *input);
-R_API void r_core_seek_next (RCore *core, const char *type);
-R_API void r_core_seek_previous (RCore *core, const char *type);
-R_API void r_core_visual_define (RCore *core, const char *arg, int distance);
-R_API int r_core_visual_trackflags (RCore *core);
+R_API void r_core_visual_config(RCore *core);
+R_API void r_core_visual_mounts(RCore *core);
+R_API void r_core_visual_anal(RCore *core, const char *input);
+R_API void r_core_seek_next(RCore *core, const char *type);
+R_API void r_core_seek_previous(RCore *core, const char *type);
+R_API void r_core_visual_define(RCore *core, const char *arg, int distance);
+R_API int r_core_visual_trackflags(RCore *core);
 R_API int r_core_visual_view_graph(RCore *core);
-R_API int r_core_visual_comments (RCore *core);
-R_API int r_core_visual_prompt (RCore *core);
+R_API int r_core_visual_view_rop(RCore *core);
+R_API int r_core_visual_comments(RCore *core);
+R_API int r_core_visual_prompt(RCore *core);
 R_API bool r_core_visual_esil (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
