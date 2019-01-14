@@ -593,13 +593,14 @@ beach:
 }
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
-	char *ptr, *config, *val, names[1024];
+	char *ptr, *config, *val, *names;
 	unsigned int len;
 	if (!str || !cfg) {
 		return false;
 	}
 	len = strlen (str) + 1;
-	if (len >= sizeof (names)) {
+	names = malloc (sizeof (char) * len);
+	if (!names) {
 		return false;
 	}
 	memcpy (names, str, len);
@@ -607,11 +608,13 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 
 	if (str[0] == '\0' || !strcmp (str, "help")) {
 		r_config_list (cfg, NULL, 0);
+		free (names);
 		return false;
 	}
 
 	if (str[0] == '-') {
 		r_config_rm (cfg, str + 1);
+		free (names);
 		return false;
 	}
 
@@ -630,6 +633,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		char *foo = r_str_trim (names);
 		if (foo[strlen (foo) - 1] == '.') {
 			r_config_list (cfg, names, 0);
+			free (names);
 			return false;
 		} else {
 			/* get */
@@ -640,6 +644,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 			}
 		}
 	}
+	free (names);
 	return true;
 }
 
