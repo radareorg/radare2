@@ -332,6 +332,19 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	return res;
 }
 
+R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
+	if (!input || !*input) {
+		return false;
+	}
+	char *out = strdup (input);
+	int len = r_hex_str2bin (input, out);
+	if (len > 0) {
+		r_core_yank_set (core, 0, out, len);
+	}
+	free (out);
+	return true;
+}
+
 R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	ut64 len = 0, adv = 0, addr = 0;
 	bool res = false;

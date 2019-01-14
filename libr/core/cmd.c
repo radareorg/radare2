@@ -683,6 +683,9 @@ static int cmd_yank(void *data, const char *input) {
 		case ' ': // "wf"
 			r_core_yank_file_ex (core, input + 1);
 			break;
+		case 'x': // "wfx"
+			r_core_yank_hexpair (core, input + 2);
+			break;
 		case 'a': // "wfa"
 			r_core_yank_file_all (core, input + 2);
 			break;
