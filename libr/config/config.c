@@ -593,21 +593,17 @@ beach:
 }
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
-	char *ptr, *a, *b, name[1024];
+	char *ptr, *config, *val, names[1024];
 	unsigned int len;
 	if (!str || !cfg) {
 		return false;
 	}
 	len = strlen (str) + 1;
-	if (len >= sizeof (name)) {
+	if (len >= sizeof (names)) {
 		return false;
 	}
-	memcpy (name, str, len);
-	str = r_str_trim (name);
-
-	if (!str) {
-		return false;
-	}
+	memcpy (names, str, len);
+	str = r_str_trim (names);
 
 	if (str[0] == '\0' || !strcmp (str, "help")) {
 		r_config_list (cfg, NULL, 0);
@@ -619,17 +615,21 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		return false;
 	}
 
-	ptr = strchr (str, '=');
-	if (ptr) {
+	val = strrchr (str, '=');
+	if (val) {
 		/* set */
-		ptr[0] = '\0';
-		a = r_str_trim (name);
-		b = r_str_trim (ptr + 1);
-		(void) r_config_set (cfg, a, b);
+		val[0] = '\0';
+		val = r_str_trim (val + 1);
+		ptr = strtok (names, "=");
+		while (ptr) {
+			config = r_str_trim (ptr);
+			(void) r_config_set (cfg, config, val);
+			ptr = strtok(NULL, "=");
+		}
 	} else {
-		char *foo = r_str_trim (name);
+		char *foo = r_str_trim (names);
 		if (foo[strlen (foo) - 1] == '.') {
-			r_config_list (cfg, name, 0);
+			r_config_list (cfg, names, 0);
 			return false;
 		} else {
 			/* get */
