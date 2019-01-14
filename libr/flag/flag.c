@@ -553,6 +553,29 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 	return NULL;
 }
 
+static RFlagsAtOffset *flags_at_offset(RFlag *f, ut64 off) {
+	RFlagsAtOffset *res = r_flag_get_nearest_list (f, off, 0);
+	if (res) {
+		return res;
+	}
+
+	// there is no existing flagsAtOffset, we create one now
+	res = R_NEW (RFlagsAtOffset);
+	if (!res) {
+		return NULL;
+	}
+
+	res->flags = r_list_new ();
+	if (!res->flags) {
+		free (res);
+		return NULL;
+	}
+
+	res->off = off;
+	r_skiplist_insert (f->by_off, res);
+	return res;
+}
+
 /* create or modify an existing flag item with the given name and parameters.
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */
@@ -575,14 +598,12 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	} else {
 		item = R_NEW0 (RFlagItem);
 		if (!item) {
-			return NULL;
+			goto err;
 		}
 		if (!set_name (item, itemname)) {
 			eprintf ("Invalid flag name '%s'.\n", itemname);
-			r_flag_item_free (item);
-			return NULL;
+			goto err;
 		}
-		ht_pp_insert (f->ht_name, item->name, item);
 	}
 
 	free (itemname);
@@ -590,26 +611,18 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	item->offset = off + f->base;
 	item->size = size;
 
-	RList *list = (RList *)r_flag_get_list (f, off);
-	if (!list) {
-		RFlagsAtOffset *flagsAtOffset = R_NEW (RFlagsAtOffset);
-		if (flagsAtOffset) {
-			list = r_list_new ();
-			flagsAtOffset->flags = list;
-			if (list) {
-				flagsAtOffset->off = off;
-				// CID 1378268:  Resource leaks  (RESOURCE_LEAK)
-				// Ignoring storage allocated by "r_skiplist_insert(f->by_off, flagsAtOffset)" leaks it.
-				r_skiplist_insert (f->by_off, flagsAtOffset);
-			} else {
-				flag_skiplist_free (flagsAtOffset);
-			}
-		}
+	RFlagsAtOffset *flagsAtOffset = flags_at_offset (f, off);
+	if (!flagsAtOffset) {
+		goto err;
 	}
-	if (list) {
-		r_list_append (list, item);
-	}
+
+	r_list_append (flagsAtOffset->flags, item);
+	ht_pp_insert (f->ht_name, item->name, item);
 	return item;
+err:
+	free (itemname);
+	r_flag_item_free (item);
+	return NULL;
 }
 
 /* add/replace/remove the alias of a flag item */
