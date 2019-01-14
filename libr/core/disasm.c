@@ -5084,9 +5084,11 @@ toro:
 				if (strchr (ds->line, '>')) {
 					memset (ds->line, ' ', r_str_len_utf8 (ds->line));
 				}
+				ds_begin_line (ds);
 				ds_print_pre (ds);
-				r_cons_printf ("%s%s%s; --------------------------------------\n",
+				r_cons_printf ("%s%s%s; --------------------------------------",
 					COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
+				ds_newline (ds);
 			}
 			R_FREE (ds->line);
 			R_FREE (ds->refline);
