@@ -618,9 +618,24 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		return false;
 	}
 
-	val = strrchr (str, '=');
+	val = strrchr (names, '=');
 	if (val) {
 		/* set */
+		ptr = strrchr (names, '"');
+		if (ptr == (names + strlen (names) - 1)) {
+			// Value surrounded by quotes
+			char *q = strchr (names, '"');
+			if (q != ptr) {
+				q[0] = '\0';
+				ptr[0] = '\0';
+				ptr = strrchr (names, '=');
+				if (!ptr) {
+					return false;
+				}
+				ptr[0] = '\0';
+				val = q;
+			}
+		}
 		val[0] = '\0';
 		val = r_str_trim (val + 1);
 		ptr = strtok (names, "=");
