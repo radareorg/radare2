@@ -1752,11 +1752,35 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	}
 }
 
+struct count_pz_t {
+	int flagspace;
+	ut64 addr;
+	ut64 size;
+	int *ret;
+};
+
+static bool count_pzs(RFlagItem *fi, void *u) {
+	struct count_pz_t *user = (struct count_pz_t *)u;
+	if (fi->space == user->flagspace &&
+	    ((user->addr <= fi->offset && fi->offset < user->addr + user->size) ||
+	     (user->addr <= fi->offset + fi->size && fi->offset + fi->size < user->addr + user->size))) {
+		(*user->ret)++;
+	}
+
+	return true;
+}
+static bool count_pzf(RFlagItem *fi, void *u) {
+	struct count_pz_t *user = (struct count_pz_t *)u;
+	if (fi->offset <= user->addr && user->addr < fi->offset + fi->size) {
+		(*user->ret)++;
+	}
+	return true;
+}
+
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
 	int j, ret = 0;
-	RListIter *iter;
-	RFlagItem *flag;
+	struct count_pz_t u;
 
 	switch (mode) {
 	case '0': // "pz0"
@@ -1770,10 +1794,9 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 		ret = (ut8) (r_hash_entropy_fraction (bufz, size) * 255);
 		break;
 	case 'f': // "pzf"
-		r_list_foreach (core->flags->flags, iter, flag)
-		if (flag->offset <= addr && addr < flag->offset + flag->size) {
-			ret++;
-		}
+		u.addr = addr;
+		u.ret = &ret;
+		r_flag_foreach (core->flags, count_pzf, &u);
 		break;
 	case 'F': // "pzF"
 		for (j = 0; j < size; j++) {
@@ -1791,15 +1814,11 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 		break;
 	case 's': // "pzs"
 		j = r_flag_space_get (core->flags, "strings");
-		r_list_foreach (core->flags->flags, iter, flag) {
-			if (flag->space == j &&
-			    ((addr <= flag->offset &&
-			      flag->offset < addr + size) ||
-			     (addr <= flag->offset + flag->size &&
-			      flag->offset + flag->size < addr + size))) {
-				ret++;
-			}
-		}
+		u.flagspace = j;
+		u.addr = addr;
+		u.size = size;
+		u.ret = &ret;
+		r_flag_foreach (core->flags, count_pzs, &u);
 		break;
 	case 'h': // "pzh" head
 	default:
