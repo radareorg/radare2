@@ -621,10 +621,10 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 	val = strrchr (names, '=');
 	if (val) {
 		/* set */
-		ptr = strrchr (names, '"');
-		if (ptr == (names + strlen (names) - 1)) {
+		if (r_str_endswith (names, "\"")) {
 			// Value surrounded by quotes
 			char *q = strchr (names, '"');
+			ptr = names + strlen (names) - 1;
 			if (q != ptr) {
 				q[0] = '\0';
 				ptr[0] = '\0';
