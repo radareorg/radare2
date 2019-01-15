@@ -316,13 +316,15 @@ static bool blacklisted_word(char* name) {
 static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mode) {
 	int use_getopt = 0;
 	int use_isatty = 0;
-	bool first = true; // is first iteration of the JSON loop
+	PJ *pj = NULL;
 	char *do_call = NULL;
 	RAnalRef *ref;
 	RListIter *iter;
 	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		// start a new JSON object
+		pj = pj_new ();
+		pj_a(pj);
 	}
 	r_list_foreach (refs, iter, ref) {
 		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
@@ -331,22 +333,18 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
  			if (dump) {
 				// take only strings flags
 				if (!strncmp (f->name, "str.", 4)) {
-					if (mode == 'j') {
-						if (first) {
-							first = false;
-						} else {
-							r_cons_printf (",");
-						}
-						// print output in JSON format
-						r_cons_printf ("{\"addr\":%"PFMT64u", \"ref\":%"PFMT64u",\"flag\": \"%s\"}", ref->at, ref->addr, f->name);
-					}
-					else {
+					if (mode == 'j') { 
+						// add new json item
+						pj_o (pj);
+						pj_kn (pj, "addr", ref->at);
+						pj_kn (pj, "ref", ref->addr);
+						pj_ks (pj, "flag", f->name);
+						pj_end (pj);
+					} else {
 						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 					}
 				}
- 			}
-			// break if a proper autoname found and not in dump mode
-			else if (do_call) {
+ 			} else if (do_call) { // break if a proper autoname found and not in dump mode
  				break;
  			}
 			// enter only if a candidate name hasn't found yet
@@ -383,10 +381,14 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
  			}
  		}
  	}
-	if (mode == 'j') {
-		r_cons_printf ("]\n");
+	if (mode ==  'j') {
+		pj_end (pj);
 	}
 	r_list_free (refs);
+	if (pj) {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
 	// TODO: append counter if name already exists
 	if (use_getopt) {
 		RFlagItem *item = r_flag_get (core->flags, "main");
