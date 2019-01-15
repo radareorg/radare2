@@ -2828,8 +2828,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 's': // "afns"
 			if (input[3] == 'j') { // "afnsj"
 				free (r_core_anal_fcn_autoname (core, core->offset, 1, input[3]));
-			}
-			else {
+			} else {
 				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
 			}
 			break;
