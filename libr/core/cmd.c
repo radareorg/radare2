@@ -3220,7 +3220,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			RAnalFunction *fcn;
 			list = core->anal->fcns;
 			r_list_foreach (list, iter, fcn) {
-				r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
 				r_core_seek (core, fcn->addr, 1);
 				r_core_cmd0 (core, cmd);
 			}
