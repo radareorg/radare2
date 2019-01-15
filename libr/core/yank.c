@@ -337,9 +337,9 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 		return false;
 	}
 	char *out = strdup (input);
-	int len = r_hex_str2bin (input, out);
+	int len = r_hex_str2bin (input, (ut8 *)out);
 	if (len > 0) {
-		r_core_yank_set (core, 0, out, len);
+		r_core_yank_set (core, 0, (ut8 *)out, len);
 	}
 	free (out);
 	return true;
