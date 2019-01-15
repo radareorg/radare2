@@ -1707,3 +1707,19 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	return 0LL;
 #endif
 }
+
+R_API void r_debug_bp_rebase(RDebug *dbg, ut64 baddr) {
+	RBreakpointItem *bp;
+	RListIter *iter;
+	r_list_foreach (dbg->bp->bps, iter, bp) {
+		bp->addr += baddr;
+	}
+}
+
+R_API void r_debug_bp_unrebase(RDebug *dbg, ut64 baddr) {
+	RBreakpointItem *bp;
+	RListIter *iter;
+	r_list_foreach (dbg->bp->bps, iter, bp) {
+		bp->addr -= baddr;
+	}
+}
