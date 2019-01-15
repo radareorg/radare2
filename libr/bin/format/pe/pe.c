@@ -2265,9 +2265,10 @@ static char* _resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs) {
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, char *resource_name) {
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
+	printf ("Koffiedrinker - resource dir func begin: Named Entries = %d, Id Entries = %d\n", dir->NumberOfNamedEntries, dir->NumberOfIdEntries);
 	ut64 rsrc_base = bin->resource_directory_offset;
 	ut64 off;
 	if (totalRes > R_PE_MAX_RESOURCES) {
@@ -2287,6 +2288,35 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			eprintf ("Warning: read resource entry\n");
 			break;
 		}
+		/*printf("Koffiedrinker - resource dir func: NameOffset = %u, NameIsString = %u, Name = %u, Id = %hu\n", entry.u1.s.NameOffset, entry.u1.s.NameIsString, entry.u1.Name, entry.u1.Id);*/
+		typedef struct { ut16 l; } pe_string_resource;
+		pe_string_resource jaja;
+		char* jijweet = NULL;
+		if (entry.u1.s.NameIsString) {
+			printf("Koffiedrinker - resource dir func Name IS A STRING: NameOffset = %u\n", entry.u1.s.NameOffset);
+			ut64 abc = bin->resource_directory_offset + entry.u1.s.NameOffset;
+			r_buf_read_at (bin->b, abc, (ut8*)&jaja, 2);
+			printf("Koffiedrinker - length of name is: %hu\n", jaja.l);
+
+			/* Implementation 1 */
+			char* juju = calloc(jaja.l, 2);
+			char* jiji = calloc(jaja.l, 1);
+			r_buf_read_at (bin->b, abc + 2, (ut8*)juju, jaja.l * 2);
+			printf("\t\tSTRING: ");
+			int j = 0;
+			for(int i = 0; i < 2 * jaja.l; i += 2) {
+				jiji[j] = juju[i]; j++;
+				printf("%c", juju[i]);
+			}
+			printf("\n");
+			jijweet = jiji;
+
+			/* Implementation 2 */
+			wchar_t* jeje = calloc(jaja.l, sizeof(wchar_t));
+			r_buf_read_at (bin->b, abc + 2, (ut8*) jeje, jaja.l);
+			/*printf("STRINGIE: %s\n", r_utf16_to_utf8_l (jeje, jaja.l));
+			printf("STRINGIE: %s\n", r_sys_conv_utf16_to_utf8 (jeje, jaja.l));*/
+		}
 		if (entry.u2.s.DataIsDirectory) {
 			//detect here malicious file trying to making us infinite loop
 			Pe_image_resource_directory identEntry;
@@ -2295,11 +2325,14 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
+			printf ("Koffiedrinker - resource dir func DataIsDirectory: Id is %d\n", entry.u1.Id);
 			_parse_resource_directory (bin, &identEntry,
-				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
+				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, jijweet);
+			printf ("Koffiedrinker - resource dir func DataIsDirectory END\n");
 			continue;
 		}
 
+		/*printf("Koffiedrinker - resource dir func no Datadir: NameOffset = %u, NameIsString = %u, Name = %u, Id = %hu\n", entry.u1.s.NameOffset, entry.u1.s.NameIsString, entry.u1.Name, entry.u1.Id);*/
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
 		if (!data) {
 			break;
@@ -2361,6 +2394,8 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
+		if(resource_name)
+			rs->timestr = resource_name;
 		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;
@@ -2439,7 +2474,8 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (len < 1 || len != sizeof (identEntry)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs);
+			printf ("Koffiedrinker - main func: Id is %d\n", typeEntry.u1.Id);
+			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs, NULL);
 		}
 	}
 	ht_uu_free (dirs);
