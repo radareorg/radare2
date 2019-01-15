@@ -851,7 +851,6 @@ static bool parseOperands(char* str, ArmOp *op) {
 				free (t);
 				return false;
 			}
-            printf("x reg found. reg=%d\n",op->operands[operand].reg);
 			break;
 		case 'w':
 			op->operands_count ++;
