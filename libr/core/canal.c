@@ -2525,6 +2525,33 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RList *refs, *xrefs;
 	int ebbs = 0;
 	char *name = r_core_anal_fcn_name (core, fcn);
+
+	// execution times:
+	r_cons_printf ("execution state: ");
+	if (core->dbg->trace->enabled == 0) {
+		r_cons_printf ("(dbg.trace unset)\n");
+	} else if (core->dbg->trace->enabled == 1) {
+		unsigned long long max_addr = fcn->addr;
+		max_addr += (ut64)r_anal_fcn_size (fcn);
+
+		bool flag = false;
+		int tag = core->dbg->trace->tag;
+		RListIter *iter;
+		RDebugTracepoint *trace;
+		r_list_foreach (core->dbg->trace->traces, iter, trace) {
+		  if (!trace->tag || (tag & trace->tag)) {
+			if (trace->addr >= fcn->addr && trace->addr <= max_addr) {
+			  r_cons_printf ("%d\n", trace->times);
+			  flag = true;
+			  break;
+			}
+		  }
+		}
+		if (!flag) {
+			r_cons_println ("Not Executed");
+		}
+	}
+
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
