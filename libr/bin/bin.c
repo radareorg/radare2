@@ -359,14 +359,10 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	}
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
-		if ((int)opt->sz < 0) {
-			eprintf ("Cannot allocate %d bytes\n", (int)(opt->sz));
-			return false;
-		}
-		const int asz = opt->sz? (int)opt->sz: 1;
+		const unsigned int asz = opt->sz? (unsigned int)opt->sz: 1;
 		buf_bytes = calloc (1, asz);
 		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", asz);
+			eprintf ("Cannot allocate %u bytes.\n", asz);
 			return false;
 		}
 		ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;

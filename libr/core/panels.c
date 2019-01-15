@@ -3352,7 +3352,7 @@ repeat:
 		showHelp (core, panels->mode);
 		break;
 	case 'b':
-		r_core_visual_browse (core);
+		r_core_visual_browse (core, NULL);
 		break;
 	case 'o':
 		r_core_visual_showcursor (core, true);
