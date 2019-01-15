@@ -356,6 +356,7 @@ static const char *help_msg_afn[] = {
 	"afn", " [name]", "rename the function",
 	"afna", "", "construct a function name for the current offset",
 	"afns", "", "list all strings associated with the current function",
+	"afnsj", "", "list all strings associated with the current function in JSON format",
 	NULL
 };
 
@@ -2825,11 +2826,16 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'n': // "afn"
 		switch (input[2]) {
 		case 's': // "afns"
-			free (r_core_anal_fcn_autoname (core, core->offset, 1));
+			if (input[3] == 'j') { // "afnsj"
+				free (r_core_anal_fcn_autoname (core, core->offset, 1, input[3]));
+			}
+			else {
+				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
+			}
 			break;
 		case 'a': // "afna"
 			{
-			char *name = r_core_anal_fcn_autoname (core, core->offset, 0);
+			char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
 			if (name) {
 				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
 				free (name);
