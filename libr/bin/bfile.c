@@ -878,6 +878,7 @@ R_API int r_bin_file_hash_load(RBin *bin, RConfig *config, const char *file) {
 		p += 2;
 	}
 	*p = 0;
+	bf->o->info->file_hash[R_BIN_FILE_HASH_MD5] = r_str_ndup (hash, R_HASH_SIZE_MD5);
 	r_config_set (config, "file.md5", hash);
 	r_hash_free (ctx);
 	ctx = r_hash_new (true, R_HASH_SHA1);
@@ -888,6 +889,7 @@ R_API int r_bin_file_hash_load(RBin *bin, RConfig *config, const char *file) {
 		p += 2;
 	}
 	*p = 0;
+	bf->o->info->file_hash[R_BIN_FILE_HASH_SHA1] = r_str_ndup (hash, R_HASH_SIZE_SHA1);
 	r_config_set (config, "file.sha1", hash);
 	r_hash_free (ctx);
 	free (buf);

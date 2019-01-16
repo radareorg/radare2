@@ -698,6 +698,8 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		pair_ut64 ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
+		pair_str ("md5hash", info->file_hash[R_BIN_FILE_HASH_MD5], mode, false);
+		pair_str ("sha1hash", info->file_hash[R_BIN_FILE_HASH_SHA1], mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);

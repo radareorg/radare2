@@ -125,6 +125,8 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 		return;
 	}
 	free (rb->intrp);
+	free (rb->file_hash[R_BIN_FILE_HASH_MD5]);
+	free (rb->file_hash[R_BIN_FILE_HASH_SHA1]);
 	free (rb->file);
 	free (rb->type);
 	free (rb->bclass);

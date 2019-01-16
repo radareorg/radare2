@@ -195,6 +195,9 @@ typedef struct r_bin_info_t {
 	char *rpath;
 	char *guid;
 	char *debug_file_name;
+#define R_BIN_FILE_HASH_MD5  0
+#define R_BIN_FILE_HASH_SHA1 1
+	char *file_hash[R_BIN_FILE_HASH_SHA1 + 1];
 	const char *lang;
 	int bits;
 	int has_va;
