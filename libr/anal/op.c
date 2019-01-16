@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2019 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -140,13 +140,14 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->size = 1;
 		return -1;
 	}
+	int ret = R_MIN (2, len);
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		int ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -161,17 +162,22 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			r_anal_var_free (op->var);
 			op->var = tmp;
 		}
-		return ret;
-	}
-	if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
+	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return R_MIN (2, len); // HACK
+	} else {
+		op->type = R_ANAL_OP_TYPE_MOV;
+		if (op->cycles == 0) {
+			op->cycles = defaultCycles (op);
+		}
 	}
-	op->type = R_ANAL_OP_TYPE_MOV;
-	if (op->cycles == 0) {
-		op->cycles = defaultCycles (op);
+	if (mask & R_ANAL_OP_MASK_HINT) {
+		RAnalHint *hint = r_anal_hint_get (anal, addr);
+		if (hint) {
+			r_anal_op_hint (op, hint);
+			r_anal_hint_free (hint);
+		}
 	}
-	return R_MIN (2, len); // HACK
+	return ret;
 }
 
 R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {

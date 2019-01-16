@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -921,7 +921,7 @@ static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 static char *get_op_ireg (void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	char *res = NULL;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+	RAnalOp *op = r_core_anal_op (core, addr, 0);
 	if (op && op->ireg) {
 		res = strdup (op->ireg);
 	}
@@ -2376,7 +2376,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 static void ds_print_family(RDisasmState *ds) {
 	if (ds->show_family) {
 		const char *familystr = r_anal_op_family_to_string (ds->analop.family);
-		r_cons_printf ("%5s ", familystr);
+		r_cons_printf ("%5s ", familystr? familystr: "");
 	}
 }
 
@@ -4099,7 +4099,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	esil->cb.hook_reg_write = NULL;
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
-		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ANAL_OP_MASK_ESIL);
+		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (do_esil) {
 				r_anal_esil_set_pc (esil, addr);
@@ -4258,10 +4258,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int i, nargs;
 	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
-	/* apply hint */
-	RAnalHint *hint = r_anal_hint_get (core->anal, at);
-	r_anal_op_hint (&ds->analop, hint);
-	r_anal_hint_free (hint);
 	if (!hc) {
 		return;
 	}
@@ -5323,7 +5319,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
 						ds->at, core->block + i,
-						core->blocksize - i, R_ANAL_OP_MASK_ESIL);
+						core->blocksize - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {

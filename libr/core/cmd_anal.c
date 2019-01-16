@@ -3618,7 +3618,7 @@ repeat:
 	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
-	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL);
+	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 // if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
@@ -3631,12 +3631,6 @@ repeat:
 			return_tail (0);
 		}
 		op.size = 1; // avoid inverted stepping
-	}
-	{
-		/* apply hint */
-		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-		r_anal_op_hint (&op, hint);
-		r_anal_hint_free (hint);
 	}
 	if (r_config_get_i (core->config, "cfg.r2wars")) {
 		// this is x86 and r2wars specific, shouldnt hurt outside x86
@@ -3676,7 +3670,7 @@ repeat:
 			r_anal_esil_set_pc (esil, naddr);
 			(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
 			// TODO: sometimes this is dupe
-			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL);
+			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 			switch (op2.type) {
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_JMP:
@@ -4274,7 +4268,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
-		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL);
+		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		if (len < 1) {
 			eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
@@ -4387,8 +4381,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
-
-
 static void cmd_aespc(RCore *core, ut64 addr, int off) {
 	RAnalEsil *esil = core->anal->esil;
 	int i, j = 0;
@@ -4430,7 +4422,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 		if (!i) {
 			r_io_read_at (core->io, addr, buf, bsize);
 		}
-		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 		instr_size += ret;
 		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 		if (inc < 0) {
@@ -4590,7 +4582,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'l': // "aesl"
 		{
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			RAnalOp *op = r_core_anal_op (core, pc, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *op = r_core_anal_op (core, pc, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 			// TODO: honor hint
 			if (!op) {
 				break;
@@ -4619,7 +4611,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'o': // "aeso"
 			// step over
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
-				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC);
+				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 				until_addr = op->addr + op->size;
 			}
@@ -4664,7 +4656,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
-				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
+				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 				if (!op) {
 					break;
 				}

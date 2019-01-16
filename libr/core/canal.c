@@ -1553,11 +1553,10 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	const char *esil;
-	RAnalOp *op;
 	eprintf ("TODO\n");
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
-		op = r_core_anal_op (core, at, R_ANAL_OP_MASK_ESIL);
+		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_ESIL);
 		if (!op) {
 			break;
 		}
