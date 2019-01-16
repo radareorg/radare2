@@ -2154,16 +2154,13 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 					r_cons_printf (".data: %s\n", meta->str);
 				}
 				i += meta->size;
-				// continue;
 				break;
 			case R_META_TYPE_STRING:
 				i += meta->size;
-				// continue;
 				break;
 			case R_META_TYPE_FORMAT:
 				r_cons_printf (".format : %s\n", meta->str);
 				i += meta->size;
-				// continue;
 				break;
 			case R_META_TYPE_MAGIC:
 				r_cons_printf (".magic : %s\n", meta->str);
@@ -4781,6 +4778,20 @@ toro:
 			ds_free (ds);
 			return 0; //break;
 		}
+		if (core->print->flags & R_PRINT_FLAGS_UNALLOC) {
+			if (!core->anal->iob.is_valid_offset (core->anal->iob.io, ds->at, 0)) {
+				ds_begin_line (ds);
+				ds_print_labels (ds, f);
+				ds_setup_print_pre (ds, false, false);
+				ds_print_lines_left (ds);
+				core->print->resetbg = (ds->asm_highlight == UT64_MAX);
+				ds_start_line_highlight (ds);
+				ds_print_offset (ds);
+				r_cons_printf ("  unmapped\n");
+				inc = 1;
+				continue;
+			}
+		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -4982,8 +4993,8 @@ toro:
 				r_cons_strcat ("; ");
 				r_cons_strcat (desc);
 				ds_print_color_reset (ds);
-				ds_newline(ds);
-				free(desc);
+				ds_newline (ds);
+				free (desc);
 			}
 		}
 
@@ -4995,7 +5006,7 @@ toro:
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
-		if (ds->asm_hint_pos== 0) {
+		if (ds->asm_hint_pos == 0) {
 			ds_print_core_vmode (ds, ds->asm_hint_pos);
 		}
 		ds_print_op_size (ds);
