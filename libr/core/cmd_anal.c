@@ -1739,10 +1739,11 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		switch (mode) {
 		case 'r':
 			if (b->jump == UT64_MAX) {
-				ut64 retaddr = b->addr;
-				if (b->op_pos) {
-					retaddr += b->op_pos[b->ninstr - 2];
+				ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
+				if (retaddr == UT64_MAX) {
+					break;
 				}
+
 				if (!strcmp (input, "*")) {
 					r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
 				} else if (!strcmp (input, "-*")) {
