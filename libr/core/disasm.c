@@ -4261,10 +4261,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int i, nargs;
 	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
-	/* apply hint */
-	RAnalHint *hint = r_anal_hint_get (core->anal, at);
-	r_anal_op_hint (&ds->analop, hint);
-	r_anal_hint_free (hint);
 	if (!hc) {
 		return;
 	}
@@ -4995,7 +4991,7 @@ toro:
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
-		if (ds->asm_hint_pos== 0) {
+		if (ds->asm_hint_pos == 0) {
 			ds_print_core_vmode (ds, ds->asm_hint_pos);
 		}
 		ds_print_op_size (ds);

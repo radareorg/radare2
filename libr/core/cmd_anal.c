@@ -3617,7 +3617,7 @@ repeat:
 	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
-	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL);
+	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 // if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
@@ -3630,12 +3630,6 @@ repeat:
 			return_tail (0);
 		}
 		op.size = 1; // avoid inverted stepping
-	}
-	{
-		/* apply hint */
-		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-		r_anal_op_hint (&op, hint);
-		r_anal_hint_free (hint);
 	}
 	if (r_config_get_i (core->config, "cfg.r2wars")) {
 		// this is x86 and r2wars specific, shouldnt hurt outside x86
