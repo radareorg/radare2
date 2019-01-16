@@ -83,15 +83,16 @@ static const char *help_msg_slash_c[] = {
 
 static const char *help_msg_slash_a[] = {
 	"Usage:", "/a[stf][?ljq] [instr | op.type | op.family]", "Search for assembly",
-	"/a ", "instr", "assemble given instruction and search the bytes",
-	"/at ", "type", "Search for instructions of given type",
-	"/af ", "family", "Search for instruction of specific family",
-	"/as ", "", "Search for syscalls (See /at swi and /af priv)",
+	"/a", "instr", "assemble given instruction and search the bytes",
+	"/ai", "", "Search for infinite loop instructions (jmp $$)",
+	"/at", " type", "Search for instructions of given type",
+	"/af", " family", "Search for instruction of specific family",
+	"/as", "", "Search for syscalls (See /at swi and /af priv)",
 
-	"/al ", "", "Same as aoml, list all opcodes",
-	"/asl ", "", "Same as asl, list all syscalls",
-	"/atl ", "", "List all instruction types",
-	"/afl ", "", "List all instruction families",
+	"/al", "", "Same as aoml, list all opcodes",
+	"/asl", "", "Same as asl, list all syscalls",
+	"/atl", "", "List all instruction types",
+	"/afl", "", "List all instruction families",
 	NULL
 };
 
@@ -2666,6 +2667,34 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	r_hash_free (ctx);
 }
 
+static void __core_cmd_search_asm_infinite (RCore *core, const char *arg) {
+	const char *search_in = r_config_get (core->config, "search.in");
+	RList *boundaries = r_core_get_boundaries_prot (core, -1, search_in, "search");
+	RListIter *iter;
+	RIOMap *map;
+	RAnalOp analop;
+	ut64 at;
+	r_list_foreach (boundaries, iter, map) {
+		ut64 map_begin = map->itv.addr;
+		ut64 map_size = map->itv.size;
+		ut64 map_end = map_begin + map_size;
+		ut8 *buf = calloc (map_end - map_begin, 1);
+		if (!buf) {
+			continue;
+		}
+		(void) r_io_read_at (core->io, map_begin, buf, map_size);
+		for (at = map->itv.addr; at + 24< map_end; at += 1) {
+			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ANAL_OP_MASK_HINT);
+			if (at == analop.jump) {
+				r_cons_printf ("0x%08"PFMT64x"\n", at);
+			}
+			at += analop.size;
+			r_anal_op_fini (&analop);
+		}
+		free (buf);
+	}
+}
+
 static void __core_cmd_search_asm_byteswap (RCore *core, int nth) {
 	RAsmOp asmop;
 	ut8 buf[32];
@@ -3003,6 +3032,8 @@ reread:
 	case 'a': // "/a"
 		if (input[1] == '1') {
 			__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
+		} else if (input[1] == 'i') {
+			__core_cmd_search_asm_infinite (core, r_str_trim_ro (input + 1));
 		} else if (input[1] == ' ') {
 			if (input[param_offset - 1]) {
 				char *kwd = r_core_asm_search (core, input + param_offset);
