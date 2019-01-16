@@ -1694,7 +1694,9 @@ static int cmd_system(void *data, const char *input) {
 				char *out = NULL;
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
+					void *bed = r_cons_sleep_begin ();
 					ret = r_sys_cmd_str_full (cmd + 1, NULL, &out, &olen, NULL);
+					r_cons_sleep_end (bed);
 					r_core_sysenv_end (core, input);
 					r_cons_memcat (out, olen);
 					free (out);
@@ -1723,7 +1725,9 @@ static int cmd_system(void *data, const char *input) {
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
+				void *bed = r_cons_sleep_begin ();
 				ret = r_sys_cmd (cmd);
+				r_cons_sleep_end (bed);
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {
@@ -3220,7 +3224,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			RAnalFunction *fcn;
 			list = core->anal->fcns;
 			r_list_foreach (list, iter, fcn) {
-				r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
 				r_core_seek (core, fcn->addr, 1);
 				r_core_cmd0 (core, cmd);
 			}

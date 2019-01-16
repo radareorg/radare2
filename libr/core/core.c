@@ -1048,9 +1048,14 @@ static void autocomplete_evals(RLine* line, const char* str) {
 	if (!core || !str) {
 		return;
 	}
-	int i = 0, n = strlen (str);
+	int i = 0, n;
 	RConfigNode *bt;
 	RListIter *iter;
+	char *tmp = strrchr (str, ' ');
+	if (tmp) {
+		str = tmp + 1;
+	}
+	n = strlen (str);
 	r_list_foreach (core->config->nodes, iter, bt) {
 		if (!strncmp (bt->name, str, n)) {
 			tmp_argv[i++] = bt->name;

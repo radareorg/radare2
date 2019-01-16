@@ -287,7 +287,7 @@ static const char *help_msg_afc[] = {
 	"afc=", "([cctype])", "Select or show default calling convention",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
-	"afcf", " [name]", "Prints return type function(arg1, arg2...)",
+	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...)",
 	"afck", "", "List SDB details of call loaded calling conventions",
 	"afcl", "", "List all available calling conventions",
 	"afco", " path", "Open Calling Convention sdb profile from given path",
@@ -356,6 +356,7 @@ static const char *help_msg_afn[] = {
 	"afn", " [name]", "rename the function",
 	"afna", "", "construct a function name for the current offset",
 	"afns", "", "list all strings associated with the current function",
+	"afnsj", "", "list all strings associated with the current function in JSON format",
 	NULL
 };
 
@@ -2200,10 +2201,7 @@ static void afCc(RCore *core, const char *input) {
 }
 
 static void cmd_anal_fcn_sig(RCore *core, const char *input) {
-	bool json = false;
-	if (input[0] == 'j') {
-		json = true;
-	}
+	bool json = (input[0] == 'j');
 	char *p = strchr (input, ' ');
 	char *fcn_name = p ? r_str_trim (strdup (p)): NULL;
 	RListIter *iter;
@@ -2645,7 +2643,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'a': // "afca"
 			eprintf ("Todo\n");
 			break;
-		case 'f': // "afcf"
+		case 'f': // "afcf" "afcfj"
 			cmd_anal_fcn_sig (core, input + 3);
 			break;
 		case 'k': // "afck"
@@ -2825,11 +2823,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'n': // "afn"
 		switch (input[2]) {
 		case 's': // "afns"
-			free (r_core_anal_fcn_autoname (core, core->offset, 1));
+			if (input[3] == 'j') { // "afnsj"
+				free (r_core_anal_fcn_autoname (core, core->offset, 1, input[3]));
+			} else {
+				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
+			}
 			break;
 		case 'a': // "afna"
 			{
-			char *name = r_core_anal_fcn_autoname (core, core->offset, 0);
+			char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
 			if (name) {
 				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
 				free (name);

@@ -121,6 +121,24 @@ static RFlagsAtOffset *flags_at_offset(RFlag *f, ut64 off) {
 	return res;
 }
 
+static char *filter_item_name(const char *name) {
+	char *res = strdup (name);
+	if (!res) {
+		return NULL;
+	}
+
+	r_str_trim (res);
+	r_name_filter (res, 0);
+	return res;
+}
+
+static void set_name(RFlagItem *item, char *name) {
+	free_item_name (item);
+	item->name = name;
+	free (item->realname);
+	item->realname = item->name;
+}
+
 static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff) {
 	if (item->offset != newoff) {
 		remove_offsetmap (f, item);
@@ -138,7 +156,8 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff) {
 	return false;
 }
 
-static bool update_flag_item_name(RFlag *f, RFlagItem *item, char *newname) {
+static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname) {
+	bool res = false;
 	if (!newname) {
 		return false;
 	}
@@ -147,29 +166,23 @@ static bool update_flag_item_name(RFlag *f, RFlagItem *item, char *newname) {
 		return false;
 	}
 
-	// TODO: update name and update storage
-	// TODO: replace all places where name is changed with this
-	// FIXME: flags with alias do not need core->offset and should not be shown
-	return false;
-}
-
-static char *filter_item_name(const char *name) {
-	char *res = strdup (name);
-	if (!res) {
-		return NULL;
+	char *filtered_name= filter_item_name (newname);
+	if (!filtered_name) {
+		return false;
 	}
 
-	r_str_trim (res);
-	r_name_filter (res, 0);
-	return res;
-}
+	if (item->name) {
+		res = ht_pp_update_key (f->ht_name, item->name, filtered_name);
+	} else {
+		res = ht_pp_insert (f->ht_name, filtered_name, item);
+	}
 
-static void set_name(RFlagItem *item, char *name) {
-	r_return_if_fail (item && name);
-	free_item_name (item);
-	item->name = name;
-	free (item->realname);
-	item->realname = item->name;
+	if (res) {
+		set_name (item, filtered_name);
+	} else {
+		free (filtered_name);
+	}
+	return res;
 }
 
 static void ht_free_flag(HtPPKv *kv) {
@@ -630,28 +643,24 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	}
 
 	RFlagItem *item = r_flag_get (f, itemname);
-	if (item) {
-		free (itemname);
-		if (item->offset == off) {
-			item->size = size;
-			return item;
-		}
-	} else {
+	free (itemname);
+	if (item && item->offset == off) {
+		item->size = size;
+		return item;
+	}
+
+	if (!item) {
 		item = R_NEW0 (RFlagItem);
 		if (!item) {
 			goto err;
 		}
-		set_name (item, itemname);
 	}
 
 	item->space = f->space_idx;
 	item->size = size;
 
 	update_flag_item_offset (f, item, off + f->base);
-	// NOTE: just insert new elements, do not update in case the item with
-	// that name was already there. In that case, `item` points to the
-	// existing element and it was just updated in this function.
-	ht_pp_insert (f->ht_name, item->name, item);
+	update_flag_item_name (f, item, name);
 	return item;
 err:
 	r_flag_item_free (item);
@@ -683,20 +692,7 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
-
-	char *filtered_name = filter_item_name (name);
-	if (!filtered_name) {
-		return false;
-	}
-
-	// TODO: add API in ht to update the key of an existing element
-	HtPPKvFreeFunc ofreefn = f->ht_name->opt.freefn;
-	f->ht_name->opt.freefn = NULL;
-	ht_pp_delete (f->ht_name, item->name);
-	f->ht_name->opt.freefn = ofreefn;
-	set_name (item, filtered_name);
-	ht_pp_insert (f->ht_name, item->name, item);
-	return true;
+	return update_flag_item_name (f, item, name);
 }
 
 /* unset the given flag item.

@@ -642,6 +642,9 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 		}
 		free (tmp);
 	}
+	if (r_str_startswith (name, "reloc.")) {
+		return r_anal_noreturn_at_name (anal, name + 6);
+	}
 	return false;
 }
 

@@ -313,51 +313,82 @@ static bool blacklisted_word(char* name) {
 	return false;
 }
 
-static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump) {
+static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mode) {
 	int use_getopt = 0;
 	int use_isatty = 0;
+	PJ *pj = NULL;
 	char *do_call = NULL;
 	RAnalRef *ref;
 	RListIter *iter;
 	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	if (mode == 'j') {
+		// start a new JSON object
+		pj = pj_new ();
+		pj_a(pj);
+	}
 	r_list_foreach (refs, iter, ref) {
 		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
 		if (f) {
-			if (dump) {
-				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
-			}
-			if (blacklisted_word (f->name)) {
-				break;
-			}
-			if (strstr (f->name, ".isatty")) {
-				use_isatty = 1;
-			}
-			if (strstr (f->name, ".getopt")) {
-				use_getopt = 1;
-			}
-			if (!strncmp (f->name, "method.", 7)) {
-				free (do_call);
-				do_call = strdup (f->name + 7);
-				break;
-			}
-			if (!strncmp (f->name, "str.", 4)) {
-				free (do_call);
-				do_call = strdup (f->name + 4);
-				break;
-			}
-			if (!strncmp (f->name, "sym.imp.", 8)) {
-				free (do_call);
-				do_call = strdup (f->name + 8);
-				break;
-			}
-			if (!strncmp (f->name, "reloc.", 6)) {
-				free (do_call);
-				do_call = strdup (f->name + 6);
-				break;
-			}
-		}
+			// If dump is true, print all strings referenced by the function
+ 			if (dump) {
+				// take only strings flags
+				if (!strncmp (f->name, "str.", 4)) {
+					if (mode == 'j') { 
+						// add new json item
+						pj_o (pj);
+						pj_kn (pj, "addr", ref->at);
+						pj_kn (pj, "ref", ref->addr);
+						pj_ks (pj, "flag", f->name);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+					}
+				}
+ 			} else if (do_call) { // break if a proper autoname found and not in dump mode
+ 				break;
+ 			}
+			// enter only if a candidate name hasn't found yet
+			if (!do_call) {
+				if (blacklisted_word (f->name)) {
+					continue;
+				}
+				if (strstr (f->name, ".isatty")) {
+					use_isatty = 1;
+				}
+				if (strstr (f->name, ".getopt")) {
+					use_getopt = 1;
+				}
+				if (!strncmp (f->name, "method.", 7)) {
+					free (do_call);
+					do_call = strdup (f->name + 7);
+					continue;
+				}
+				if (!strncmp (f->name, "str.", 4)) {
+					free (do_call);
+					do_call = strdup (f->name + 4);
+					continue;
+				}
+				if (!strncmp (f->name, "sym.imp.", 8)) {
+					free (do_call);
+					do_call = strdup (f->name + 8);
+					continue;
+				}
+				if (!strncmp (f->name, "reloc.", 6)) {
+					free (do_call);
+					do_call = strdup (f->name + 6);
+					continue;
+				}
+ 			}
+ 		}
+ 	}
+	if (mode ==  'j') {
+		pj_end (pj);
 	}
 	r_list_free (refs);
+	if (pj) {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
 	// TODO: append counter if name already exists
 	if (use_getopt) {
 		RFlagItem *item = r_flag_get (core->flags, "main");
@@ -390,7 +421,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 		if (!strncmp (fcn->name, "fcn.", 4) || !strncmp (fcn->name, "sym.func.", 9)) {
 			RFlagItem *item = r_flag_get (core->flags, fcn->name);
 			if (item) {
-				char *name = anal_fcn_autoname (core, fcn, 0);
+				char *name = anal_fcn_autoname (core, fcn, 0, 0);
 				if (name) {
 					r_flag_rename (core->flags, item, name);
 					free (fcn->name);
@@ -472,10 +503,10 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 
 /* suggest a name for the function at the address 'addr'.
  * If dump is true, every strings associated with the function is printed */
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump, int mode) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (fcn) {
-		return anal_fcn_autoname (core, fcn, dump);
+		return anal_fcn_autoname (core, fcn, dump, mode);
 	}
 	return NULL;
 }
