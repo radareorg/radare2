@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_anal.h>
 
@@ -110,6 +110,10 @@ R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
 	setHint (a, "esil:", addr, r_str_trim_ro (esil), 0);
 }
 
+R_API void r_anal_hint_set_type (RAnal *a, ut64 addr, int type) {
+	setHint (a, "type:", addr, NULL, (ut64)type);
+}
+
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
 	setHint (a, "bits:", addr, NULL, bits);
 	if (a && a->hint_cbs.on_bits) {
@@ -178,6 +182,10 @@ R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr) {
 	unsetHint (a, "fail:", addr);
 }
 
+R_API void r_anal_hint_unset_type (RAnal *a, ut64 addr) {
+	unsetHint (a, "type:", addr);
+}
+
 R_API void r_anal_hint_free(RAnalHint *h) {
 	if (h) {
 		free (h->arch);
@@ -219,6 +227,7 @@ R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str) {
 	return bits;
 }
 
+// TODO: missing to_string ()
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	char *r, *nxt, *nxt2;
 	int token = 0;
@@ -254,6 +263,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'B': hint->new_bits = sdb_atoi (nxt); break;
 			case 's': hint->size = sdb_atoi (nxt); break;
 			case 'S': hint->syntax = (char*)sdb_decode (nxt, 0); break;
+			case 't': hint->type = sdb_atoi (nxt); break;
 			case 'o': hint->opcode = (char*)sdb_decode (nxt, 0); break;
 			case 'O': hint->offset = (char*)sdb_decode (nxt, 0); break;
 			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;
