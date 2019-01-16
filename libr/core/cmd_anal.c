@@ -492,6 +492,7 @@ static const char *help_msg_ah[] = {
 	"ahr", " val",  "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
+	"aht", " call", "change opcode type (see aht?)",
 	NULL
 };
 
@@ -1392,7 +1393,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
 		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
-		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ESIL);
+		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx,
+			R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		char *mnem = strdup (r_asm_op_get_asm (&asmop));
@@ -6132,6 +6134,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_arch (core->anal, core->offset);
 		} else {
 			eprintf ("Missing argument\n");
+		}
+		break;
+	case 't': // "aht"
+		if (input[1] == ' ') {
+			const char *arg = r_str_trim_ro (input + 1);
+			int type = r_anal_optype_from_string (arg);
+			r_anal_hint_set_type (core->anal, core->offset, type);
+		} else {
+			eprintf ("Usage: aht [type] # can be mov, jmp, call, ...\n");
 		}
 		break;
 	case 'b': // "ahb" set bits
