@@ -586,7 +586,6 @@ R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API bool r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_rebase(RCore *core, ut64 baddr);
 R_API void r_core_bin_export_info_rad(RCore *core);
-R_API int r_core_hash_load(RCore *core, const char *file);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 obj_idx);
 R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);

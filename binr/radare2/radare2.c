@@ -1319,7 +1319,7 @@ int main(int argc, char **argv, char **envp) {
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (iod && r_core_hash_load (&r, iod->name) == false) {
+			if (iod && r_bin_file_hash_load (r.bin, r.config, iod->name) == false) {
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");

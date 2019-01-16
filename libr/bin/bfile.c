@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
 
 #include <r_bin.h>
+#include <r_hash.h>
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
@@ -846,4 +847,49 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 		return true;
 	}
 	return false;
+}
+
+R_API int r_bin_file_hash_load(RBin *bin, RConfig *config, const char *file) {
+	const ut8 *md5, *sha1;
+	char hash[128], *p;
+	RHash *ctx;
+	ut8* buf;
+	int buf_len = 0;
+	int i;
+	ut64 limit;
+	RBinFile *bf = bin->cur;
+	if (!file && bf) {
+		file = bf->file;
+	}
+	
+	limit = r_config_get_i (config, "cfg.hashlimit");
+	if (bf && bf->size > limit) {
+		return false;
+	}
+	buf = (ut8 *) r_file_slurp (file, &buf_len);
+	if (!buf) {
+		return false;
+	}
+	ctx = r_hash_new (true, R_HASH_MD5);
+	md5 = r_hash_do_md5 (ctx, buf, buf_len);
+	p = hash;
+	for (i = 0; i < R_HASH_SIZE_MD5; i++) {
+		sprintf (p, "%02x", md5[i]);
+		p += 2;
+	}
+	*p = 0;
+	r_config_set (config, "file.md5", hash);
+	r_hash_free (ctx);
+	ctx = r_hash_new (true, R_HASH_SHA1);
+	sha1 = r_hash_do_sha1 (ctx, buf, buf_len);
+	p = hash;
+	for (i = 0; i < R_HASH_SIZE_SHA1; i++) {
+		sprintf (p, "%02x", sha1[i]);
+		p += 2;
+	}
+	*p = 0;
+	r_config_set (config, "file.sha1", hash);
+	r_hash_free (ctx);
+	free (buf);
+	return true;
 }
