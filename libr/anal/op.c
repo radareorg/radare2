@@ -147,7 +147,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		int ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -162,7 +162,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			r_anal_var_free (op->var);
 			op->var = tmp;
 		}
-		return ret;
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {

@@ -472,7 +472,7 @@ typedef enum {
 	R_ANAL_OP_MASK_ESIL  = 1, // It fills RAnalop->esil info
 	R_ANAL_OP_MASK_VAL   = 2, // It fills RAnalop->dst/src info
 	R_ANAL_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
-	R_ANAL_OP_MASK_ALL        = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL
+	R_ANAL_OP_MASK_ALL   = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT
 } RAnalOpMask;
 
 /* TODO: what to do with signed/unsigned conditionals? */
