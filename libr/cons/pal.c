@@ -2,8 +2,8 @@
 
 #include <r_cons.h>
 
-#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_singleton ()->cpal)) + keys[i].coff)
-#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_singleton ()->pal)) + keys[i].off)
+#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_singleton ()->context->cpal)) + keys[i].coff)
+#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_singleton ()->context->pal)) + keys[i].off)
 
 static struct {
 	const char *name;
@@ -102,6 +102,9 @@ struct {
 	{ NULL, RColor_NULL, NULL, NULL }
 };
 
+static void cons_pal_update_event(RConsContext *ctx);
+static void cons_rainbow_free(RConsContext *ctx);
+
 static inline ut8 rgbnum(const char ch1, const char ch2) {
 	ut8 r = 0, r2 = 0;
 	r_hex_to_byte (&r, ch1);
@@ -109,102 +112,100 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 	return r << 4 | r2;
 }
 
-R_API void r_cons_pal_init() {
-	RCons *cons = r_cons_singleton ();
+R_API void r_cons_pal_init(RConsContext *ctx) {
+	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
+	memset (&ctx->pal, 0, sizeof (ctx->pal));
 
-	memset (&cons->cpal, 0, sizeof (cons->cpal));
-	memset (&cons->pal, 0, sizeof (cons->pal));
+	ctx->cpal.b0x00              = (RColor) RColor_GREEN;
+	ctx->cpal.b0x7f              = (RColor) RColor_CYAN;
+	ctx->cpal.b0xff              = (RColor) RColor_RED;
+	ctx->cpal.args               = (RColor) RColor_YELLOW;
+	ctx->cpal.bin                = (RColor) RColor_CYAN;
+	ctx->cpal.btext              = (RColor) RColor_YELLOW;
+	ctx->cpal.call               = (RColor) RColor_GREEN;
+	ctx->cpal.call.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.cjmp               = (RColor) RColor_GREEN;
+	ctx->cpal.cmp                = (RColor) RColor_CYAN;
+	ctx->cpal.comment            = (RColor) RColor_RED;
+	ctx->cpal.usercomment        = (RColor) RColor_WHITE;
+	ctx->cpal.creg               = (RColor) RColor_CYAN;
+	ctx->cpal.flag               = (RColor) RColor_CYAN;
+	ctx->cpal.fline              = (RColor) RColor_CYAN;
+	ctx->cpal.floc               = (RColor) RColor_CYAN;
+	ctx->cpal.flow               = (RColor) RColor_CYAN;
+	ctx->cpal.flow2              = (RColor) RColor_BLUE;
+	ctx->cpal.fname              = (RColor) RColor_RED;
+	ctx->cpal.help               = (RColor) RColor_GREEN;
+	ctx->cpal.input              = (RColor) RColor_WHITE;
+	ctx->cpal.invalid            = (RColor) RColor_RED;
+	ctx->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
+	ctx->cpal.jmp                = (RColor) RColor_GREEN;
+	ctx->cpal.label              = (RColor) RColor_CYAN;
+	ctx->cpal.math               = (RColor) RColor_YELLOW;
+	ctx->cpal.mov                = (RColor) RColor_WHITE;
+	ctx->cpal.nop                = (RColor) RColor_BLUE;
+	ctx->cpal.num                = (RColor) RColor_YELLOW;
+	ctx->cpal.offset             = (RColor) RColor_GREEN;
+	ctx->cpal.other              = (RColor) RColor_WHITE;
+	ctx->cpal.pop                = (RColor) RColor_MAGENTA;
+	ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
+	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
+	ctx->cpal.push               = (RColor) RColor_MAGENTA;
+	ctx->cpal.crypto             = (RColor) RColor_BGBLUE;
+	ctx->cpal.reg                = (RColor) RColor_CYAN;
+	ctx->cpal.ret                = (RColor) RColor_RED;
+	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
+	ctx->cpal.trap               = (RColor) RColor_RED;
+	ctx->cpal.trap.attr          = R_CONS_ATTR_BOLD;
 
-	cons->cpal.b0x00              = (RColor) RColor_GREEN;
-	cons->cpal.b0x7f              = (RColor) RColor_CYAN;
-	cons->cpal.b0xff              = (RColor) RColor_RED;
-	cons->cpal.args               = (RColor) RColor_YELLOW;
-	cons->cpal.bin                = (RColor) RColor_CYAN;
-	cons->cpal.btext              = (RColor) RColor_YELLOW;
-	cons->cpal.call               = (RColor) RColor_GREEN;
-	cons->cpal.call.attr          = R_CONS_ATTR_BOLD;
-	cons->cpal.cjmp               = (RColor) RColor_GREEN;
-	cons->cpal.cmp                = (RColor) RColor_CYAN;
-	cons->cpal.comment            = (RColor) RColor_RED;
-	cons->cpal.usercomment        = (RColor) RColor_WHITE;
-	cons->cpal.creg               = (RColor) RColor_CYAN;
-	cons->cpal.flag               = (RColor) RColor_CYAN;
-	cons->cpal.fline              = (RColor) RColor_CYAN;
-	cons->cpal.floc               = (RColor) RColor_CYAN;
-	cons->cpal.flow               = (RColor) RColor_CYAN;
-	cons->cpal.flow2              = (RColor) RColor_BLUE;
-	cons->cpal.fname              = (RColor) RColor_RED;
-	cons->cpal.help               = (RColor) RColor_GREEN;
-	cons->cpal.input              = (RColor) RColor_WHITE;
-	cons->cpal.invalid            = (RColor) RColor_RED;
-	cons->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
-	cons->cpal.jmp                = (RColor) RColor_GREEN;
-	cons->cpal.label              = (RColor) RColor_CYAN;
-	cons->cpal.math               = (RColor) RColor_YELLOW;
-	cons->cpal.mov                = (RColor) RColor_WHITE;
-	cons->cpal.nop                = (RColor) RColor_BLUE;
-	cons->cpal.num                = (RColor) RColor_YELLOW;
-	cons->cpal.offset             = (RColor) RColor_GREEN;
-	cons->cpal.other              = (RColor) RColor_WHITE;
-	cons->cpal.pop                = (RColor) RColor_MAGENTA;
-	cons->cpal.pop.attr           = R_CONS_ATTR_BOLD;
-	cons->cpal.prompt             = (RColor) RColor_YELLOW;
-	cons->cpal.push               = (RColor) RColor_MAGENTA;
-	cons->cpal.crypto             = (RColor) RColor_BGBLUE;
-	cons->cpal.reg                = (RColor) RColor_CYAN;
-	cons->cpal.ret                = (RColor) RColor_RED;
-	cons->cpal.swi                = (RColor) RColor_MAGENTA;
-	cons->cpal.trap               = (RColor) RColor_RED;
-	cons->cpal.trap.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
+	ctx->cpal.ai_write           = (RColor) RColor_BLUE;
+	ctx->cpal.ai_exec            = (RColor) RColor_RED;
+	ctx->cpal.ai_seq             = (RColor) RColor_MAGENTA;
+	ctx->cpal.ai_ascii           = (RColor) RColor_YELLOW;
 
-	cons->cpal.ai_read            = (RColor) RColor_GREEN;
-	cons->cpal.ai_write           = (RColor) RColor_BLUE;
-	cons->cpal.ai_exec            = (RColor) RColor_RED;
-	cons->cpal.ai_seq             = (RColor) RColor_MAGENTA;
-	cons->cpal.ai_ascii           = (RColor) RColor_YELLOW;
+	ctx->cpal.gui_cflow          = (RColor) RColor_YELLOW;
+	ctx->cpal.gui_dataoffset     = (RColor) RColor_YELLOW;
+	ctx->cpal.gui_background     = (RColor) RColor_BLACK;
+	ctx->cpal.gui_alt_background = (RColor) RColor_WHITE;
+	ctx->cpal.gui_border         = (RColor) RColor_BLACK;
+	ctx->cpal.wordhl             = (RColor) RColor_BGRED;
+	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
 
-	cons->cpal.gui_cflow          = (RColor) RColor_YELLOW;
-	cons->cpal.gui_dataoffset     = (RColor) RColor_YELLOW;
-	cons->cpal.gui_background     = (RColor) RColor_BLACK;
-	cons->cpal.gui_alt_background = (RColor) RColor_WHITE;
-	cons->cpal.gui_border         = (RColor) RColor_BLACK;
-	cons->cpal.wordhl             = (RColor) RColor_BGRED;
-	cons->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
+	ctx->cpal.func_var           = (RColor) RColor_WHITE;
+	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
+	ctx->cpal.func_var_addr      = (RColor) RColor_CYAN;
 
-	cons->cpal.func_var           = (RColor) RColor_WHITE;
-	cons->cpal.func_var_type      = (RColor) RColor_BLUE;
-	cons->cpal.func_var_addr      = (RColor) RColor_CYAN;
+	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00);
+	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
 
-	cons->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00);
-	cons->cpal.widget_sel         = (RColor) RColor_BGRED;
+	ctx->cpal.graph_box          = (RColor) RColor_NULL;
+	ctx->cpal.graph_box2         = (RColor) RColor_BLUE;
+	ctx->cpal.graph_box3         = (RColor) RColor_MAGENTA;
+	ctx->cpal.graph_box4         = (RColor) RColor_GRAY;
+	ctx->cpal.graph_true         = (RColor) RColor_GREEN;
+	ctx->cpal.graph_false        = (RColor) RColor_RED;
+	ctx->cpal.graph_trufae       = (RColor) RColor_BLUE; // single jump
+	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
+	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
 
-	cons->cpal.graph_box          = (RColor) RColor_NULL;
-	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
-	cons->cpal.graph_box3         = (RColor) RColor_MAGENTA;
-	cons->cpal.graph_box4         = (RColor) RColor_GRAY;
-	cons->cpal.graph_true         = (RColor) RColor_GREEN;
-	cons->cpal.graph_false        = (RColor) RColor_RED;
-	cons->cpal.graph_trufae       = (RColor) RColor_BLUE; // single jump
-	cons->cpal.graph_traced       = (RColor) RColor_YELLOW;
-	cons->cpal.graph_current      = (RColor) RColor_BLUE;
+	ctx->pal.rainbow = NULL;
+	ctx->pal.rainbow_sz = 0;
+	r_cons_pal_free (ctx);
+	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 
-	cons->pal.rainbow = NULL;
-	cons->pal.rainbow_sz = 0;
-	r_cons_pal_free ();
-	cons->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
-
-	r_cons_pal_update_event ();
+	cons_pal_update_event (ctx);
 }
 
-R_API void r_cons_pal_free() {
+R_API void r_cons_pal_free(RConsContext *ctx) {
 	int i;
 	for (i = 0; keys[i].name; i++) {
-		char **color = COLOR_AT (i);
+		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		if (color && *color) {
 			R_FREE (*color);
 		}
 	}
-	r_cons_rainbow_free ();
+	r_cons_rainbow_free (ctx);
 }
 
 R_API void r_cons_pal_random() {
@@ -560,14 +561,14 @@ R_API int r_cons_pal_len() {
 	return keys_len;
 }
 
-R_API void r_cons_pal_update_event() {
+static void cons_pal_update_event(RConsContext *ctx) {
 	Sdb *db = sdb_new0 ();
 	int i, n = 0;
 	char **color;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
-		RColor *rcolor = RCOLOR_AT (i);
-		color = COLOR_AT (i);
+		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
+		color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
 		if (*color) {
 			R_FREE (*color);
@@ -579,46 +580,48 @@ R_API void r_cons_pal_update_event() {
 	SdbList *list = sdb_foreach_list (db, true);
 	SdbListIter *iter;
 	SdbKv *kv;
-	r_cons_rainbow_free ();
-	r_cons_rainbow_new (list->length);
+	r_cons_rainbow_free (ctx);
+	r_cons_rainbow_new (ctx, list->length);
 	ls_foreach (list, iter, kv) {
-		r_cons_singleton ()->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+		ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
 	}
-	r_cons_singleton ()->pal.rainbow_sz = n;
+	ctx->pal.rainbow_sz = n;
 	ls_free (list);
 	sdb_free (db);
 }
 
-R_API void r_cons_rainbow_new(int sz) {
-	RCons *cons = r_cons_singleton ();
-	cons->pal.rainbow_sz = sz;
-	free (cons->pal.rainbow);
-	cons->pal.rainbow = calloc (sizeof (char *), sz);
+R_API void r_cons_pal_update_event() {
+	cons_pal_update_event (r_cons_singleton ()->context);
 }
 
-R_API void r_cons_rainbow_free() {
-	RCons *cons = r_cons_singleton ();
-	int i, sz = cons->pal.rainbow_sz;
-	if (cons->pal.rainbow) {
+R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {
+	ctx->pal.rainbow_sz = sz;
+	free (ctx->pal.rainbow);
+	ctx->pal.rainbow = calloc (sizeof (char *), sz);
+}
+
+R_API void r_cons_rainbow_free(RConsContext *ctx) {
+	int i, sz = ctx->pal.rainbow_sz;
+	if (ctx->pal.rainbow) {
 		for (i = 0; i < sz ; i++) {
-			free (cons->pal.rainbow[i]);
+			free (ctx->pal.rainbow[i]);
 		}
 	}
-	cons->pal.rainbow_sz = 0;
-	R_FREE (cons->pal.rainbow);
+	ctx->pal.rainbow_sz = 0;
+	R_FREE (ctx->pal.rainbow);
 }
 
 R_API char *r_cons_rainbow_get(int idx, int last, bool bg) {
 	RCons *cons = r_cons_singleton ();
 	if (last < 0) {
-		last = cons->pal.rainbow_sz;
+		last = cons->context->pal.rainbow_sz;
 	}
-	if (idx < 0 || idx >= last || !cons->pal.rainbow) {
+	if (idx < 0 || idx >= last || !cons->context->pal.rainbow) {
 		return NULL;
 	}
-	int x = (last == cons->pal.rainbow_sz)
-		? idx : (cons->pal.rainbow_sz * idx) / (last + 1);
-	const char *a = cons->pal.rainbow[x];
+	int x = (last == cons->context->pal.rainbow_sz)
+		? idx : (cons->context->pal.rainbow_sz * idx) / (last + 1);
+	const char *a = cons->context->pal.rainbow[x];
 	if (bg) {
 		char *dup = r_str_newf ("%s %s", a, a);
 		char *res = r_cons_pal_parse (dup, NULL);

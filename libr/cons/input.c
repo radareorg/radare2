@@ -234,7 +234,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
 	RCons *cons = r_cons_singleton ();
-	int ret = 0, color = cons->pal.input && *cons->pal.input;
+	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
 		r_cons_set_raw (false);
 		r_cons_show_cursor (true);
@@ -252,7 +252,7 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	fflush (stdout);
 	*buf = '\0';
 	if (color) {
-		const char *p = cons->pal.input;
+		const char *p = cons->context->pal.input;
 		int len = p? strlen (p): 0;
 		if (len > 0) {
 			fwrite (p, len, 1, stdout);

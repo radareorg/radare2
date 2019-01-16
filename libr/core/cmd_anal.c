@@ -1370,7 +1370,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
-		color = core->cons->pal.label;
+		color = core->cons->context->pal.label;
 	}
 	switch (fmt) {
 	case 'j':
@@ -3084,7 +3084,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg) : Color_BWHITE;
 	} else {
 		use_color = NULL;
@@ -3156,7 +3156,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	char *arg;
 
 	if (use_colors) {
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg)
 		: Color_BWHITE;
 	} else {
@@ -5745,7 +5745,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	free (ba);
 	if (color && has_color) {
 		buf_asm = r_print_colorize_opcode (core->print, str,
-				core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+				core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 	} else {
 		buf_asm = r_str_new (str);
 	}
@@ -6029,7 +6029,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								str, sizeof (str), core->print->big_endian);
 						if (has_color) {
 							buf_asm = r_print_colorize_opcode (core->print, str,
-									core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+									core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 						} else {
 							buf_asm = r_str_new (str);
 						}

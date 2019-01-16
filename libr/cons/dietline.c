@@ -451,8 +451,8 @@ static void selection_widget_draw() {
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
-	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT_RESET;
-	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT;
+	char *background_color = cons->color ? cons->context->pal.widget_bg : Color_INVERT_RESET;
+	char *selected_color = cons->color ? cons->context->pal.widget_sel : Color_INVERT;
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
 	int scrollbar_y = 0, scrollbar_l = 0;
 	if (scrollbar) {
