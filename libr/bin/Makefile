@@ -2,7 +2,7 @@ include ../config.mk
 include ../../global.mk
 
 NAME=r_bin
-DEPS=r_util r_io r_socket r_magic r_hash
+DEPS=r_util r_io r_socket r_magic r_hash r_config
 
 .PHONY: pre
 
