@@ -2371,7 +2371,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\",\"at\":%"PFMT64d"}",
 						first? "": ",",
 						refi->addr,
-						r_anal_xrefs_type_tostring(refi->type),
+						r_anal_xrefs_type_tostring (refi->type),
 						refi->at);
 				first = false;
 			}
@@ -2402,7 +2402,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\",\"at\":%"PFMT64d"}",
 						first?"":",",
 						refi->addr,
-						r_anal_xrefs_type_tostring(refi->type),
+						r_anal_xrefs_type_tostring (refi->type),
 						refi->at);
 				first = 0;
 			}
