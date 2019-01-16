@@ -287,7 +287,7 @@ static const char *help_msg_afc[] = {
 	"afc=", "([cctype])", "Select or show default calling convention",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
-	"afcf", " [name]", "Prints return type function(arg1, arg2...)",
+	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...)",
 	"afck", "", "List SDB details of call loaded calling conventions",
 	"afcl", "", "List all available calling conventions",
 	"afco", " path", "Open Calling Convention sdb profile from given path",
@@ -2201,10 +2201,7 @@ static void afCc(RCore *core, const char *input) {
 }
 
 static void cmd_anal_fcn_sig(RCore *core, const char *input) {
-	bool json = false;
-	if (input[0] == 'j') {
-		json = true;
-	}
+	bool json = (input[0] == 'j');
 	char *p = strchr (input, ' ');
 	char *fcn_name = p ? r_str_trim (strdup (p)): NULL;
 	RListIter *iter;
@@ -2646,7 +2643,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'a': // "afca"
 			eprintf ("Todo\n");
 			break;
-		case 'f': // "afcf"
+		case 'f': // "afcf" "afcfj"
 			cmd_anal_fcn_sig (core, input + 3);
 			break;
 		case 'k': // "afck"
