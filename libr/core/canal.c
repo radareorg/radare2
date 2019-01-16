@@ -2368,10 +2368,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			}
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			    refi->type == R_ANAL_REF_TYPE_CALL) {
-				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\",\"at\":%"PFMT64d"}",
+				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\",\"at\":%"PFMT64d"}",
 						first? "": ",",
 						refi->addr,
-						refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
+						r_anal_xrefs_type_tostring(refi->type),
 						refi->at);
 				first = false;
 			}
@@ -2399,10 +2399,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			    refi->type == R_ANAL_REF_TYPE_CALL) {
 				indegree++;
-				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\",\"at\":%"PFMT64d"}",
+				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\",\"at\":%"PFMT64d"}",
 						first?"":",",
 						refi->addr,
-						refi->type==R_ANAL_REF_TYPE_CALL?'C':'J',
+						r_anal_xrefs_type_tostring(refi->type),
 						refi->at);
 				first = 0;
 			}
