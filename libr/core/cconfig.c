@@ -1085,10 +1085,22 @@ static int cb_color(void *user, void *data) {
 	} else if (!strcmp (node->value, "false")) {
 		node->i_value = 0;
 	}
-	r_cons_singleton ()->color = (node->i_value > COLOR_MODE_16M)
+	r_cons_singleton ()->context->color = (node->i_value > COLOR_MODE_16M)
 		? COLOR_MODE_16M: node->i_value;
 	r_cons_pal_update_event ();
 	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
+static int cb_color_getter(void *user, RConfigNode *node) {
+	(void)user;
+	node->i_value = r_cons_singleton ()->context->color;
+	char buf[128];
+	snprintf (buf, sizeof (buf) - 1, "%" PFMT64d, node->i_value);
+	if (!node->value || strcmp (node->value, buf) != 0) {
+		free (node->value);
+		node->value = strdup (buf);
+	}
 	return true;
 }
 
@@ -3150,6 +3162,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
 	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
+	r_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETPREF ("scr.color.pipe", "false", "Enable colors when using pipes");
 	SETPREF ("scr.color.ops", "true", "Colorize numbers and registers in opcodes");

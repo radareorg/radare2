@@ -149,8 +149,6 @@ enum {
 };
 #endif
 
-enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M };
-
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
 enum { R_CONS_ATTR_BOLD = 1 << 1 };
 
@@ -389,6 +387,8 @@ typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
 typedef void (*RConsQueueTaskOneshot)(void *core, void *task, void *user);
 
+typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M } RConsColorMode;
+
 typedef struct r_cons_context_t {
 	RConsGrep grep;
 	RStack *cons_stack;
@@ -410,6 +410,7 @@ typedef struct r_cons_context_t {
 	bool lastEnabled;
 	bool pageable;
 
+	RConsColorMode color;
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 } RConsContext;
@@ -456,7 +457,6 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int color; // 0 = none, 1 = ansi (16), 2 = palette (256), 3 = truecolor (16M)
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
@@ -812,6 +812,7 @@ R_API void r_cons_grepbuf();
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init(void);
+R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);

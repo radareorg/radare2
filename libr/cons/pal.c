@@ -103,7 +103,6 @@ struct {
 };
 
 static void cons_pal_update_event(RConsContext *ctx);
-static void cons_rainbow_free(RConsContext *ctx);
 
 static inline ut8 rgbnum(const char ch1, const char ch2) {
 	ut8 r = 0, r2 = 0;
@@ -447,7 +446,7 @@ R_API void r_cons_pal_show() {
 			colors[i].bgcode,
 			colors[i].name);
 	}
-	switch (r_cons_singleton ()->color) {
+	switch (r_cons_singleton ()->context->color) {
 	case COLOR_MODE_256: // 256 color palette
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_256 ();
@@ -455,6 +454,8 @@ R_API void r_cons_pal_show() {
 	case COLOR_MODE_16M: // 16M (truecolor)
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_rgb ();
+		break;
+	default:
 		break;
 	}
 }
@@ -573,7 +574,7 @@ static void cons_pal_update_event(RConsContext *ctx) {
 		if (*color) {
 			R_FREE (*color);
 		}
-		*color = r_cons_rgb_str (NULL, 0, rcolor);
+		*color = r_cons_rgb_str_mode (ctx->color, NULL, 0, rcolor);
 		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);
 	}

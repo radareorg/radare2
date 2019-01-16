@@ -3786,7 +3786,7 @@ R_API void r_core_visual_colors(RCore *core) {
 	char *color = calloc (1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
-	bool truecolor = r_cons_singleton ()->color == COLOR_MODE_16M;
+	bool truecolor = r_cons_singleton ()->context->color == COLOR_MODE_16M;
 	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x ":"rgb:%x%x%x ";
 	const char *k;
 	RColor rcolor;
