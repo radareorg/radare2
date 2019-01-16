@@ -238,6 +238,50 @@ SDB_API bool Ht_(update)(HtName_(Ht)* ht, const KEY_TYPE key, VALUE_TYPE value) 
 	return insert_update (ht, key, value, true);
 }
 
+// Update the key of an element that has old_key as key and replace it with new_key
+SDB_API bool Ht_(update_key)(HtName_(Ht)* ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
+	// First look for the value associated with old_key
+	bool found;
+	VALUE_TYPE value = Ht_(find) (ht, old_key, &found);
+	if (!found) {
+		return false;
+	}
+
+	// Associate the existing value with new_key
+	bool inserted = insert_update (ht, new_key, value, false);
+	if (!inserted) {
+		return false;
+	}
+
+	// Remove the old_key kv, paying attention to not double free the value
+	HT_(Bucket) *bt = &ht->table[bucketfn (ht, old_key)];
+	const int old_key_len = calcsize_key (ht, old_key);
+	HT_(Kv) *kv;
+	ut32 j;
+
+	BUCKET_FOREACH (ht, bt, j, kv) {
+		if (is_kv_equal (ht, old_key, old_key_len, kv)) {
+			if (!ht->opt.dupvalue) {
+				// do not free the value part if dupvalue is not
+				// set, because the old value has been
+				// associated with the new key and it should not
+				// be freed
+				kv->value = HT_NULL_VALUE;
+				kv->value_len = 0;
+			}
+			freefn (ht, kv);
+
+			void *src = next_kv (ht, kv);
+			memmove (kv, src, (bt->count - j - 1) * ht->opt.elem_size);
+			bt->count--;
+			ht->count--;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // Returns the corresponding SdbKv entry from the key.
 // If `found` is not NULL, it will be set to true if the entry was found, false
 // otherwise.
