@@ -87,13 +87,16 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 
 static bool set_name(RFlagItem *item, const char *name) {
 	r_return_val_if_fail (item && name, false);
+
+	char *new_name = strdup (name);
+	if (!new_name) {
+		return false;
+	}
+
 	if (item->name != item->realname) {
 		free (item->name);
 	}
-	item->name = strdup (name);
-	if (!item->name) {
-		return false;
-	}
+	item->name = new_name;
 	r_str_trim (item->name);
 	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
 	free (item->realname);
@@ -624,15 +627,13 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
 
-	// TODO: add API in ht to update the key of an existing element
-	HtPPKvFreeFunc ofreefn = f->ht_name->opt.freefn;
-	f->ht_name->opt.freefn = NULL;
-	ht_pp_delete (f->ht_name, item->name);
-	f->ht_name->opt.freefn = ofreefn;
+	char *old_name = strdup (item->name);
 	if (!set_name (item, name)) {
+		free (old_name);
 		return false;
 	}
-	ht_pp_insert (f->ht_name, item->name, item);
+	ht_pp_update_key (f->ht_name, old_name, name);
+	free (old_name);
 	return true;
 }
 

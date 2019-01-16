@@ -92,6 +92,8 @@ SDB_API void Ht_(free)(HtName_(Ht)* ht);
 SDB_API bool Ht_(insert)(HtName_(Ht)* ht, const KEY_TYPE key, VALUE_TYPE value);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
 SDB_API bool Ht_(update)(HtName_(Ht)* ht, const KEY_TYPE key, VALUE_TYPE value);
+// Update the key of an element in the hashtable
+SDB_API bool Ht_(update_key)(HtName_(Ht)* ht, const KEY_TYPE old_key, const KEY_TYPE new_key);
 // Delete a key from the hashtable.
 SDB_API bool Ht_(delete)(HtName_(Ht)* ht, const KEY_TYPE key);
 // Find the value corresponding to the matching key.
