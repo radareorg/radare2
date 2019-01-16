@@ -5225,6 +5225,8 @@ static int cmd_print(void *data, const char *input) {
 	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
+			cmd_pCd (core, "");
+			break;
 		case ' ':
 		case 'd':
 			cmd_pCd (core, input + 2);
