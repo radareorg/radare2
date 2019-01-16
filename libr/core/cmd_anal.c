@@ -612,7 +612,7 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
-	"axff", " [addr]", "find data/code references from this function",
+	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
 	NULL
 };
@@ -5949,18 +5949,39 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		r_list_free (list);
 	} break;
 	case 'f':
-		if (input[1] == 'f') {
+		if (input[1] == 'f') { // "axff"
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			RListIter *iter;
+			PJ *pj = NULL;
 			RAnalRef *refi;
+			if (input[2] == 'j') { // "axffj"
+				// start a new JSON object
+				pj = pj_new ();
+				pj_a(pj);
+			}
 			if (fcn) {
 				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 				r_list_foreach (refs, iter, refi) {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					const char *name = f ? f->name: "";
-					r_cons_printf ("%c 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-						refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
-						refi->at, refi->addr, name);
+					if (input[2] == 'j') {
+						pj_o (pj);
+						pj_ks (pj, "type", r_anal_xrefs_type_tostring(refi->type));
+						pj_kn (pj, "at", refi->at);
+						pj_kn (pj, "ref", refi->addr);
+						pj_ks (pj, "name", name);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+							r_anal_xrefs_type_tostring(refi->type), refi->at, refi->addr, name);
+					}
+				}
+				if (input[2] ==  'j') {
+					pj_end (pj);
+				}
+				if (pj) {
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
 				}
 			} else {
 				eprintf ("Cannot find any function\n");
