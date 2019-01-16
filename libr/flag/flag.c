@@ -96,18 +96,14 @@ static char *filter_item_name(const char *name) {
 	return res;
 }
 
-static bool set_name(RFlagItem *item, const char *name) {
-	r_return_val_if_fail (item && name, false);
+static void set_name(RFlagItem *item, char *name) {
+	r_return_if_fail (item && name);
 	if (item->name != item->realname) {
 		free (item->name);
 	}
-	item->name = strdup (name);
-	if (!item->name) {
-		return false;
-	}
+	item->name = name;
 	free (item->realname);
 	item->realname = item->name;
-	return true;
 }
 
 static void ht_free_flag(HtPPKv *kv) {
@@ -589,9 +585,9 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 
 	RFlagItem *item = r_flag_get (f, itemname);
 	if (item) {
+		free (itemname);
 		if (item->offset == off) {
 			item->size = size;
-			free (itemname);
 			return item;
 		}
 		remove_offsetmap (f, item);
@@ -600,13 +596,9 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		if (!item) {
 			goto err;
 		}
-		if (!set_name (item, itemname)) {
-			eprintf ("Invalid flag name '%s'.\n", itemname);
-			goto err;
-		}
+		set_name (item, itemname);
 	}
 
-	free (itemname);
 	item->space = f->space_idx;
 	item->offset = off + f->base;
 	item->size = size;
@@ -617,10 +609,12 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	}
 
 	r_list_append (flagsAtOffset->flags, item);
+	// NOTE: just insert new elements, do not update in case the item with
+	// that name was already there. In that case, `item` points to the
+	// existing element and it was just updated in this function.
 	ht_pp_insert (f->ht_name, item->name, item);
 	return item;
 err:
-	free (itemname);
 	r_flag_item_free (item);
 	return NULL;
 }
@@ -653,14 +647,17 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
 
+	char *filtered_name = filter_item_name (name);
+	if (!filtered_name) {
+		return false;
+	}
+
 	// TODO: add API in ht to update the key of an existing element
 	HtPPKvFreeFunc ofreefn = f->ht_name->opt.freefn;
 	f->ht_name->opt.freefn = NULL;
 	ht_pp_delete (f->ht_name, item->name);
 	f->ht_name->opt.freefn = ofreefn;
-	if (!set_name (item, name)) {
-		return false;
-	}
+	set_name (item, filtered_name);
 	ht_pp_insert (f->ht_name, item->name, item);
 	return true;
 }
