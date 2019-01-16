@@ -167,6 +167,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	}
 	b = r_bp_item_new (bp);
 	b->addr = addr + bp->delta;
+	b->orig_addr = addr;
 	b->size = size;
 	b->enabled = true;
 	b->perm = perm;
