@@ -2519,6 +2519,22 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
+static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
+	int tag = traced->tag;
+	RListIter *iter;
+	RDebugTracepoint *trace;
+
+	r_list_foreach (traced->traces, iter, trace) {
+		if (!trace->tag || (tag & trace->tag)) {
+			if (r_anal_fcn_in (fcn, trace->addr)) {
+				r_cons_printf ("%d\n", trace->times);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
@@ -2528,26 +2544,10 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 
 	// execution times:
 	r_cons_printf ("execution state: ");
-	if (core->dbg->trace->enabled == 0) {
+	if (!core->dbg->trace->enabled) {
 		r_cons_printf ("(dbg.trace unset)\n");
-	} else if (core->dbg->trace->enabled == 1) {
-		unsigned long long max_addr = fcn->addr;
-		max_addr += (ut64)r_anal_fcn_size (fcn);
-
-		bool flag = false;
-		int tag = core->dbg->trace->tag;
-		RListIter *iter;
-		RDebugTracepoint *trace;
-		r_list_foreach (core->dbg->trace->traces, iter, trace) {
-		  if (!trace->tag || (tag & trace->tag)) {
-			if (trace->addr >= fcn->addr && trace->addr <= max_addr) {
-			  r_cons_printf ("%d\n", trace->times);
-			  flag = true;
-			  break;
-			}
-		  }
-		}
-		if (!flag) {
+	} else if (core->dbg->trace->enabled) {
+		if (!is_fcn_traced (core->dbg->trace, fcn)) {
 			r_cons_println ("Not Executed");
 		}
 	}
