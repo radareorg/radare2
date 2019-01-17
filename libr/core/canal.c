@@ -324,7 +324,7 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 	if (mode == 'j') {
 		// start a new JSON object
 		pj = pj_new ();
-		pj_a(pj);
+		pj_a (pj);
 	}
 	r_list_foreach (refs, iter, ref) {
 		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
