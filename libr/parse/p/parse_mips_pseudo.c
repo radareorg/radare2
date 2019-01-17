@@ -258,9 +258,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RList *vars, *args, *spargs;
 
 	if (!p->varlist) {
-                free (tstr);
+		free (tstr);
 		return false;
-        }
+	}
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
 	spargs = p->varlist (p->anal, f, 'e');
