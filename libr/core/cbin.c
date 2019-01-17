@@ -3253,7 +3253,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		}
 		ut64 vaddr = sdb_num_get (sdb, vaddrKey, 0);
 		int size = (int)sdb_num_get (sdb, sizeKey, 0);
-		int name = (int)sdb_num_get (sdb, nameKey, 0);
+		char *name = sdb_get (sdb, nameKey, 0);
 		char *type = sdb_get (sdb, typeKey, 0);
 		char *lang = sdb_get (sdb, languageKey, 0);
 
@@ -3263,14 +3263,14 @@ static void bin_pe_resources(RCore *r, int mode) {
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
+			r_cons_printf ("%s{\"name\":\"%s\", \"index\":%d, \"type\":\"%s\", "
 					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\", \"timestamp\":\"%s\"}",
-					index? ",": "", name, index, type, vaddr, size, lang, timestr);
+					index? ", ": "", name, index, type, vaddr, size, lang, timestr);
 		} else {
 			char humansz[8];
 			r_num_units (humansz, sizeof (humansz), size);
 			r_cons_printf ("Resource %d\n", index);
-			r_cons_printf ("  name: %d\n", name);
+			r_cons_printf ("  name: %s\n", name);
 			r_cons_printf ("  timestamp: %s\n", timestr);
 			r_cons_printf ("  vaddr: 0x%08"PFMT64x"\n", vaddr);
 			r_cons_printf ("  size: %s\n", humansz);
