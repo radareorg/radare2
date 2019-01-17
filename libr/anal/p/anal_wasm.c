@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - xvilka */
+/* radare2 - LGPL - Copyright 2017-2019 - xvilka, deroad */
 
 #include <string.h>
 #include <r_types.h>
