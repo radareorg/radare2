@@ -1096,7 +1096,7 @@ static int cb_color_getter(void *user, RConfigNode *node) {
 	(void)user;
 	node->i_value = r_cons_singleton ()->context->color;
 	char buf[128];
-	snprintf (buf, sizeof (buf) - 1, "%" PFMT64d, node->i_value);
+	r_config_node_value_format_i (buf, sizeof (buf), r_cons_singleton ()->context->color, node);
 	if (!node->value || strcmp (node->value, buf) != 0) {
 		free (node->value);
 		node->value = strdup (buf);
