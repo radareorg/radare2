@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2018 - earada, pancake */
 
 #include <r_core.h>
+#include <r_config.h>
 #include "r_util.h"
 #include "r_util/r_time.h"
 
@@ -685,6 +686,8 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			}
 		}
 	} else {
+		ut64 limit = r_config_get_i (r->config, "cgf.hashlimit");
+		r_bin_file_hash (r->bin, 1024, binfile->file);
 		// XXX: if type is 'fs' show something different?
 		char *tmp_buf;
 		if (IS_MODE_JSON (mode)) {
@@ -698,8 +701,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		pair_ut64 ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
-		pair_str ("md5hash", info->file_hash[R_BIN_FILE_HASH_MD5], mode, false);
-		pair_str ("sha1hash", info->file_hash[R_BIN_FILE_HASH_SHA1], mode, false);
+		pair_str ("hashes", r_strbuf_get (info->hashes), mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);

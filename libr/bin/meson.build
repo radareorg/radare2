@@ -147,8 +147,7 @@ pkgconfig_mod.generate(r_bin,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_io',
-    'r_socket',
-    'r_config'
+    'r_socket'
   ],
   description: 'radare foundation libraries'
 )

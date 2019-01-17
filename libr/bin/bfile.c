@@ -849,48 +849,40 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
-R_API int r_bin_file_hash_load(RBin *bin, RConfig *config, const char *file) {
-	const ut8 *md5, *sha1;
+R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	char hash[128], *p;
 	RHash *ctx;
 	ut8* buf;
-	int buf_len = 0;
+	ut64 buf_len = 0;
 	int i;
-	ut64 limit;
 	RBinFile *bf = bin->cur;
-	if (!file && bf) {
-		file = bf->file;
+	RBinObject *o = bf->o;
+	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
+
+	if (!file && iod) {
+		file = iod->name;
 	}
-	
-	limit = r_config_get_i (config, "cfg.hashlimit");
-	if (bf && bf->size > limit) {
-		return false;
+
+	buf_len = r_io_desc_size (iod);
+	if (buf_len > limit)
+		buf_len = limit;
+	buf = calloc (1, buf_len);
+	r_io_desc_read (iod, buf, buf_len);
+	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+#define BLK_SIZE_OFF 1024
+	for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
+		(void)r_hash_do_md5 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
+		(void)r_hash_do_sha1 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
 	}
-	buf = (ut8 *) r_file_slurp (file, &buf_len);
-	if (!buf) {
-		return false;
-	}
-	ctx = r_hash_new (true, R_HASH_MD5);
-	md5 = r_hash_do_md5 (ctx, buf, buf_len);
+	r_hash_do_end (ctx, R_HASH_MD5);
 	p = hash;
-	for (i = 0; i < R_HASH_SIZE_MD5; i++) {
-		sprintf (p, "%02x", md5[i]);
-		p += 2;
-	}
-	*p = 0;
-	bf->o->info->file_hash[R_BIN_FILE_HASH_MD5] = r_str_ndup (hash, R_HASH_SIZE_MD5);
-	r_config_set (config, "file.md5", hash);
-	r_hash_free (ctx);
-	ctx = r_hash_new (true, R_HASH_SHA1);
-	sha1 = r_hash_do_sha1 (ctx, buf, buf_len);
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
+	o->info->hashes = r_strbuf_new ("");
+	r_strbuf_appendf (o->info->hashes, "md5:%s", hash);
+	r_hash_do_end (ctx, R_HASH_SHA1);
 	p = hash;
-	for (i = 0; i < R_HASH_SIZE_SHA1; i++) {
-		sprintf (p, "%02x", sha1[i]);
-		p += 2;
-	}
-	*p = 0;
-	bf->o->info->file_hash[R_BIN_FILE_HASH_SHA1] = r_str_ndup (hash, R_HASH_SIZE_SHA1);
-	r_config_set (config, "file.sha1", hash);
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
+	r_strbuf_appendf (o->info->hashes, ",sha1:%s", hash);
 	r_hash_free (ctx);
 	free (buf);
 	return true;

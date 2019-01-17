@@ -2,7 +2,6 @@
 #define R2_BIN_H
 
 #include <r_util.h>
-#include <r_config.h>
 #include <r_types.h>
 #include <r_io.h>
 #include <r_list.h>
@@ -195,10 +194,8 @@ typedef struct r_bin_info_t {
 	char *rpath;
 	char *guid;
 	char *debug_file_name;
-#define R_BIN_FILE_HASH_MD5  0
-#define R_BIN_FILE_HASH_SHA1 1
-	char *file_hash[R_BIN_FILE_HASH_SHA1 + 1];
 	const char *lang;
+	RStrBuf *hashes;
 	int bits;
 	int has_va;
 	int has_pi; // pic/pie
@@ -702,7 +699,7 @@ R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API bool r_bin_file_close(RBin *bin, int bd);
 R_API int r_bin_file_delete_all(RBin *bin);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
-R_API int r_bin_file_hash_load(RBin *bin, RConfig *config, const char *file);
+R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file);
 
 // binobject functions
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
