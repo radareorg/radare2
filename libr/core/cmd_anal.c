@@ -864,10 +864,12 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	ut64 off = core->offset;
 	RAnalOp op;
 	char *q = NULL;
+	PJ *pj = NULL;
 	ut64 tgt_addr = UT64_MAX;
 
 	if (use_json) {
-		r_cons_print ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
 
 	r_anal_op (core->anal, &op, off,
@@ -885,8 +887,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 				} else if (!use_json) {
 					r_cons_println (bar->name);
 				} else {
-					r_cons_printf ("{\"type\":\"var\",\"name\":\"%s\"}",
-								bar->name);
+					pj_o (pj);
+					pj_ks (pj, "name", bar->name);
+					pj_ks (pj, "type", "var");
+					pj_kn (pj, "offset", tgt_addr);
+					pj_end (pj);
 				}
 			} else {
 				eprintf ("Cannot find variable\n");
@@ -903,8 +908,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_println (fcn->name);
 			} else {
-				r_cons_printf ("{\"type\":\"function\",\"name\":\"%s\"}",
-							fcn->name);
+				pj_o (pj);
+				pj_ks (pj, "name", fcn->name);
+				pj_ks (pj, "type", "function");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		} else if (f) {
 			if (name) {
@@ -912,8 +920,16 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_println (f->name);
 			} else {
-				r_cons_printf ("{\"type\":\"flag\",\"name\":\"%s\"}",
-							f->name);
+				pj_o (pj);
+				if (name) {
+					pj_ks (pj, "old_name", f->name);
+					pj_ks (pj, "new_name", name);
+				} else {
+					pj_ks (pj, "name", f->name);
+				}
+				pj_ks (pj, "type", "flag");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		} else {
 			if (name) {
@@ -921,14 +937,22 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
-				r_cons_printf ("{\"type\":\"address\",\"offset\":"
-							   "%" PFMT64u "}", tgt_addr);
+				pj_o (pj);
+				pj_ks (pj, "name", name);
+				pj_ks (pj, "type", "address");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		}
 	}
 
 	if (use_json) {
-		r_cons_print ("]\n");
+		pj_end (pj);
+	}
+
+	if (pj) {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 
 	if (q) {
@@ -5957,7 +5981,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (input[2] == 'j') { // "axffj"
 				// start a new JSON object
 				pj = pj_new ();
-				pj_a(pj);
+				pj_a (pj);
 			}
 			if (fcn) {
 				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
