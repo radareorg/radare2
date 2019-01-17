@@ -514,29 +514,6 @@ error:
 	return false;
 }
 
-static char *_time_stamp_to_str(ut32 timeStamp) {
-#ifdef _MSC_VER
-	time_t rawtime;
-	struct tm *tminfo;
-	rawtime = (time_t)timeStamp;
-	tminfo = localtime (&rawtime);
-	//tminfo = gmtime (&rawtime);
-	return r_str_trim (strdup (asctime (tminfo)));
-#else
-	struct my_timezone {
-		int tz_minuteswest;     /* minutes west of Greenwich */
-		int tz_dsttime;         /* type of DST correction */
-	} tz;
-	struct timeval tv;
-	int gmtoff;
-	time_t ts = (time_t) timeStamp;
-	gettimeofday (&tv, (void*) &tz);
-	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
-	ts += (time_t)gmtoff;
-	return r_str_trim (strdup (ctime (&ts)));
-#endif
-}
-
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
@@ -613,7 +590,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	// adding compile time to the SDB
 	{
 		sdb_num_set (bin->kv, "image_file_header.TimeDateStamp", bin->nt_headers->file_header.TimeDateStamp, 0);
-		char *timestr = _time_stamp_to_str (bin->nt_headers->file_header.TimeDateStamp);
+		char *timestr = r_time_stamp_to_str (bin->nt_headers->file_header.TimeDateStamp);
 		sdb_set_owned (bin->kv, "image_file_header.TimeDateStamp_string", timestr, 0);
 	}
 	bin->optional_header = &bin->nt_headers->optional_header;
@@ -2371,7 +2348,12 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			free (data);
 			break;
 		}
-		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
+		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
+		if (r_time_stamp_is_dos_format ((ut32) sdb_num_get (bin->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
+			rs->timestr = r_time_stamp_to_str ( r_dos_time_stamp_to_posix (dir->TimeDateStamp));
+		} else {
+			rs->timestr = r_time_stamp_to_str (dir->TimeDateStamp);
+		}
 		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;

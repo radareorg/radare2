@@ -298,6 +298,7 @@ typedef struct r_core_t {
 	RList *gadgets;
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
+	RList *ropchain;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -381,7 +382,7 @@ R_API void r_core_panels_check_stackbase(RCore *core);
 R_API void r_core_panels_free(RPanels *panels);
 R_API void r_core_panels_layout(RPanels *panels);
 R_API void r_core_panels_layout_refresh(RCore *core);
-R_API void r_core_visual_browse(RCore *core);
+R_API void r_core_visual_browse(RCore *core, const char *arg);
 R_API int r_core_visual_cmd(RCore *core, const char *arg);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
@@ -457,6 +458,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
+R_API bool r_core_yank_hexpair(RCore *core, const char *input);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
 R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
@@ -521,7 +523,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
-R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump);
+R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump, int mode);
 R_API void r_core_anal_autoname_all_fcns(RCore *core);
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core);
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad);
@@ -677,16 +679,17 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 R_API int r_core_rtr_http_stop(RCore *u);
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 
-R_API void r_core_visual_config (RCore *core);
-R_API void r_core_visual_mounts (RCore *core);
-R_API void r_core_visual_anal (RCore *core, const char *input);
-R_API void r_core_seek_next (RCore *core, const char *type);
-R_API void r_core_seek_previous (RCore *core, const char *type);
-R_API void r_core_visual_define (RCore *core, const char *arg, int distance);
-R_API int r_core_visual_trackflags (RCore *core);
+R_API void r_core_visual_config(RCore *core);
+R_API void r_core_visual_mounts(RCore *core);
+R_API void r_core_visual_anal(RCore *core, const char *input);
+R_API void r_core_seek_next(RCore *core, const char *type);
+R_API void r_core_seek_previous(RCore *core, const char *type);
+R_API void r_core_visual_define(RCore *core, const char *arg, int distance);
+R_API int r_core_visual_trackflags(RCore *core);
 R_API int r_core_visual_view_graph(RCore *core);
-R_API int r_core_visual_comments (RCore *core);
-R_API int r_core_visual_prompt (RCore *core);
+R_API int r_core_visual_view_rop(RCore *core);
+R_API int r_core_visual_comments(RCore *core);
+R_API int r_core_visual_prompt(RCore *core);
 R_API bool r_core_visual_esil (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);

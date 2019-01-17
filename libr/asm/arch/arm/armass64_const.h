@@ -225,6 +225,8 @@ struct {
 	{ "SPSel", 0xc210 },
 	{ "NZCV", 0xda10 },
 	{ "DAIF", 0xda11 },
+	{ "DAIFSet", 0x36 },
+	{ "DAIFClr", 0x37 },
 	{ "CurrentEL", 0xc212 },
 	{ "SPSR_irq", 0xe218 },
 	{ "SPSR_abt", 0xe219 },

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2019 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -140,13 +140,14 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->size = 1;
 		return -1;
 	}
+	int ret = R_MIN (2, len);
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		int ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -161,17 +162,22 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			r_anal_var_free (op->var);
 			op->var = tmp;
 		}
-		return ret;
-	}
-	if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
+	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return R_MIN (2, len); // HACK
+	} else {
+		op->type = R_ANAL_OP_TYPE_MOV;
+		if (op->cycles == 0) {
+			op->cycles = defaultCycles (op);
+		}
 	}
-	op->type = R_ANAL_OP_TYPE_MOV;
-	if (op->cycles == 0) {
-		op->cycles = defaultCycles (op);
+	if (mask & R_ANAL_OP_MASK_HINT) {
+		RAnalHint *hint = r_anal_hint_get (anal, addr);
+		if (hint) {
+			r_anal_op_hint (op, hint);
+			r_anal_hint_free (hint);
+		}
 	}
-	return R_MIN (2, len); // HACK
+	return ret;
 }
 
 R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
@@ -312,8 +318,94 @@ R_API bool r_anal_op_ismemref(int t) {
 	}
 }
 
+static struct optype {
+	int type;
+	const char *name;
+} optypes[] = {
+	{ R_ANAL_OP_TYPE_IO, "io" },
+	{ R_ANAL_OP_TYPE_ACMP, "acmp" },
+	{ R_ANAL_OP_TYPE_ADD, "add" },
+	{ R_ANAL_OP_TYPE_SYNC, "sync" },
+	{ R_ANAL_OP_TYPE_AND, "and" },
+	{ R_ANAL_OP_TYPE_CALL, "call" },
+	{ R_ANAL_OP_TYPE_CCALL, "ccall" },
+	{ R_ANAL_OP_TYPE_CJMP, "cjmp" },
+	{ R_ANAL_OP_TYPE_MJMP, "mjmp" },
+	{ R_ANAL_OP_TYPE_CMP, "cmp" },
+	{ R_ANAL_OP_TYPE_IO, "cret" },
+	{ R_ANAL_OP_TYPE_IO, "div" },
+	{ R_ANAL_OP_TYPE_ILL, "ill" },
+	{ R_ANAL_OP_TYPE_JMP, "jmp" },
+	{ R_ANAL_OP_TYPE_LEA, "lea" },
+	{ R_ANAL_OP_TYPE_LEAVE, "leave" },
+	{ R_ANAL_OP_TYPE_LOAD, "load" },
+	{ R_ANAL_OP_TYPE_NEW, "new" },
+	{ R_ANAL_OP_TYPE_MOD, "mod" },
+	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
+	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_MUL, "mul" },
+	{ R_ANAL_OP_TYPE_NOP, "nop" },
+	{ R_ANAL_OP_TYPE_NOT, "not" },
+	{ R_ANAL_OP_TYPE_NULL  , "null" },
+	{ R_ANAL_OP_TYPE_OR    , "or" },
+	{ R_ANAL_OP_TYPE_POP   , "pop" },
+	{ R_ANAL_OP_TYPE_PUSH  , "push" },
+	{ R_ANAL_OP_TYPE_REP   , "rep" },
+	{ R_ANAL_OP_TYPE_RET   , "ret" },
+	{ R_ANAL_OP_TYPE_ROL   , "rol" },
+	{ R_ANAL_OP_TYPE_ROR   , "ror" },
+	{ R_ANAL_OP_TYPE_SAL   , "sal" },
+	{ R_ANAL_OP_TYPE_SAR   , "sar" },
+	{ R_ANAL_OP_TYPE_SHL   , "shl" },
+	{ R_ANAL_OP_TYPE_SHR   , "shr" },
+	{ R_ANAL_OP_TYPE_STORE , "store" },
+	{ R_ANAL_OP_TYPE_SUB   , "sub" },
+	{ R_ANAL_OP_TYPE_SWI   , "swi" },
+	{ R_ANAL_OP_TYPE_CSWI  , "cswi" },
+	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
+	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
+	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
+	{ R_ANAL_OP_TYPE_RCALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
+	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
+	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
+	{ R_ANAL_OP_TYPE_RJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_UNK   , "unk" },
+	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
+	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
+	{ R_ANAL_OP_TYPE_XOR   , "xor" },
+	{ R_ANAL_OP_TYPE_CASE  , "case" },
+	{ R_ANAL_OP_TYPE_CPL   , "cpl" },
+	{ R_ANAL_OP_TYPE_CRYPTO, "crypto" },
+	{0,NULL}
+};
+
+R_API int r_anal_optype_from_string(const char *type) {
+	int i;
+	for  (i = 0; optypes[i].name;i++) {
+		if (!strcmp (optypes[i].name, type)) {
+			return optypes[i].type;
+		}
+	}
+	return -1;
+}
+
 R_API const char *r_anal_optype_to_string(int t) {
 	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
+	int i;
+#if 0
+	// this is slower than a switch table :(
+	for  (i = 0; optypes[i].name;i++) {
+		if (optypes[i].type == t) {
+			return optypes[i].name;
+		}
+	}
+#endif
+	// TODO: delete
 	switch (t) {
 	case R_ANAL_OP_TYPE_IO    : return "io";
 	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
@@ -633,27 +725,31 @@ R_API int r_anal_op_family_from_string(const char *f) {
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
-		if (hint->jump != UT64_MAX) {
+		if (hint->type > 0) {
+			op->type = hint->type;
 			changes++;
+		}
+		if (hint->jump != UT64_MAX) {
 			op->jump = hint->jump;
+			changes++;
 		}
 		if (hint->fail != UT64_MAX) {
-			changes++;
 			op->fail = hint->fail;
+			changes++;
 		}
 		if (hint->opcode) {
-			changes++;
 			/* XXX: this is not correct */
 			free (op->mnemonic);
 			op->mnemonic = strdup (hint->opcode);
+			changes++;
 		}
 		if (hint->esil) {
-			changes++;
 			r_strbuf_set (&op->esil, hint->esil);
+			changes++;
 		}
 		if (hint->size) {
-			changes++;
 			op->size = hint->size;
+			changes++;
 		}
 	}
 	return changes;

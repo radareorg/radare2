@@ -1,6 +1,5 @@
 r_flag_sources = [
   'flag.c',
-  'sort.c',
   'tags.c',
   'spaces.c',
   'zones.c'

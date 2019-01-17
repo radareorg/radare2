@@ -235,19 +235,29 @@ R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var) {
 }
 
 static RList *parse_format(RCore *core, char *fmt) {
+	if (!fmt || !*fmt) {
+		return NULL;
+	}
 	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
 	Sdb *s = core->anal->sdb_fmts;
 	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
 	char *ptr = strchr (fmt, '%');
 	fmt[strlen (fmt) - 1] = '\0';
 	while (ptr) {
-		ptr += 1;
+		ptr++;
 		// strip [width] specifier
-		while (IS_DIGIT (*ptr)) { ptr++; }
+		while (IS_DIGIT (*ptr)) {
+			ptr++;
+		}
 		r_str_ncpy (arr, ptr, sizeof (arr) - 1);
 		char *tmp = arr;
-		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) { tmp++; }
+		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) {
+			tmp++;
+		}
 		*tmp = '\0';
 		const char *query = sdb_fmt ("spec.%s.%s", spec, arr);
 		char *type = (char *) sdb_const_get (s, query, 0);

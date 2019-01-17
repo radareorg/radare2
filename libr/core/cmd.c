@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -255,6 +255,9 @@ static const char *help_msg_y[] = {
 	"ytf", " file", "dump the clipboard to given file",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
+	"yfx", " 10203040", "yank from hexpairs (same as ywx)",
+	"yw", " hello world", "yank from string",
+	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
 	"yy", " 0x3344", "paste clipboard",
 	NULL
 };
@@ -640,7 +643,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 'z': // "yz"
 		r_core_yank_string (core, core->offset, r_num_math (core->num, input + 1));
 		break;
-	case 'w': // "yw"
+	case 'w': // "yw" ... we have yf which makes more sense than 'w'
 		switch (input[1]) {
 		case ' ':
 			r_core_yank_set (core, 0, (const ut8*)input + 2, strlen (input + 2));
@@ -660,6 +663,9 @@ static int cmd_yank(void *data, const char *input) {
 			}
 			// r_core_yank_write_hex (core, input + 2);
 			break;
+		default:
+			eprintf ("Usage: ywx [hexpairs]\n");
+			break;
 		}
 		break;
 	case 'p': // "yp"
@@ -674,17 +680,28 @@ static int cmd_yank(void *data, const char *input) {
 			if (!r_file_dump (file, core->yank_buf->buf, core->yank_buf->length, false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}
-		} else {
+		} else if (input[1] == ' ') {
 			r_core_yank_to (core, input + 1);
+		} else {
+			eprintf ("Usage: wt[f] [arg] ..\n");
 		}
 		break;
 	case 'f': // "yf"
 		switch (input[1]) {
-		case ' ': // "wf"
+		case ' ': // "yf"
 			r_core_yank_file_ex (core, input + 1);
 			break;
-		case 'a': // "wfa"
+		case 'x': // "yfx"
+			r_core_yank_hexpair (core, input + 2);
+			break;
+		case 'a': // "yfa"
 			r_core_yank_file_all (core, input + 2);
+			break;
+		default:
+			eprintf ("Usage: yf[xa] [arg]\n");
+			eprintf ("yf [file]     - copy blocksize from file into the clipboard\n");
+			eprintf ("yfa [path]    - yank the whole file\n");
+			eprintf ("yfx [hexpair] - yank from hexpair string\n");
 			break;
 		}
 		break;
@@ -1677,7 +1694,9 @@ static int cmd_system(void *data, const char *input) {
 				char *out = NULL;
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
+					void *bed = r_cons_sleep_begin ();
 					ret = r_sys_cmd_str_full (cmd + 1, NULL, &out, &olen, NULL);
+					r_cons_sleep_end (bed);
 					r_core_sysenv_end (core, input);
 					r_cons_memcat (out, olen);
 					free (out);
@@ -1706,7 +1725,9 @@ static int cmd_system(void *data, const char *input) {
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
+				void *bed = r_cons_sleep_begin ();
 				ret = r_sys_cmd (cmd);
+				r_cons_sleep_end (bed);
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {
@@ -3024,11 +3045,23 @@ static int foreach_comment(void *user, const char *k, const char *v) {
 	return 1;
 }
 
+struct exec_command_t {
+	RCore *core;
+	const char *cmd;
+};
+
+static bool exec_command_on_flag(RFlagItem *flg, void *u) {
+	struct exec_command_t *user = (struct exec_command_t *)u;
+	r_core_seek (user->core, flg->offset, 1);
+	r_core_block_size (user->core, flg->size);
+	r_core_cmd0 (user->core, user->cmd);
+	return true;
+}
+
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
 	RDebug *dbg = core->dbg;
 	RList *list, *head;
 	RListIter *iter;
-	RFlagItem *flg;
 	int i;
 
 	switch (each[0]) {
@@ -3177,13 +3210,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			char *glob = r_str_trim (strdup (each + 1));
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
-			r_list_foreach (core->flags->flags, iter, flg) {
-				if (r_str_glob (flg->name, glob)) {
-					r_core_seek (core, flg->offset, 1);
-					r_core_block_size (core, flg->size);
-					r_core_cmd0 (core, cmd);
-				}
-			}
+
+			struct exec_command_t u = { .core = core, .cmd = cmd };
+			r_flag_foreach_glob (core->flags, glob, exec_command_on_flag, &u);
 			r_core_seek (core, off, 0);
 			r_core_block_size (core, obs);
 			free (glob);
@@ -3195,7 +3224,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			RAnalFunction *fcn;
 			list = core->anal->fcns;
 			r_list_foreach (list, iter, fcn) {
-				r_cons_printf ("[0x%08"PFMT64x"  %s\n", fcn->addr, fcn->name);
 				r_core_seek (core, fcn->addr, 1);
 				r_core_cmd0 (core, cmd);
 			}
@@ -3259,6 +3287,24 @@ static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 		each = nextLine;
 	}
 	free (cmd);
+}
+
+struct duplicate_flag_t {
+	RList *ret;
+	const char *word;
+};
+
+static bool duplicate_flag(RFlagItem *flag, void *u) {
+	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
+	/* filter per flag spaces */
+	if (r_str_glob (flag->name, user->word)) {
+		RFlagItem *cloned_item = r_flag_item_clone (flag);
+		if (!cloned_item) {
+			return false;
+		}
+		r_list_append (user->ret, cloned_item);
+	}
+	return true;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -3568,20 +3614,11 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				   the command is going to be executed on flags
 				   values at the moment the command is called
 				   (without side effects) */
-				r_list_foreach (core->flags->flags, iter, flag) {
-					/* filter per flag spaces */
-					if ((flagspace != -1) && (flag->space != flagspace)) {
-						continue;
-					}
-
-					if (r_str_glob (flag->name, word)) {
-						RFlagItem *cloned_item = r_flag_item_clone (flag);
-						if (!cloned_item) {
-							break;
-						}
-						r_list_append (match_flag_items, cloned_item);
-					}
-				}
+				struct duplicate_flag_t u = {
+					.ret = match_flag_items,
+					.word = word,
+				};
+				r_flag_foreach_space (core->flags, flagspace, duplicate_flag, &u);
 
 				/* for all flags that match */
 				r_list_foreach (match_flag_items, iter, flag) {

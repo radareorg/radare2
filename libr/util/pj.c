@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - pancake */
+/* radare - LGPL - Copyright 2018-2019 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -73,6 +73,7 @@ R_API PJ *pj_end(PJ *j) {
 		j->level = 0;
 		return j;
 	}
+	j->is_first = false;
 	char msg[2] = { j->braces[j->level], 0 };
 	pj_raw (j, msg);
 	return j;

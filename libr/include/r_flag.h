@@ -58,7 +58,6 @@ typedef struct r_flag_t {
 	RNum *num;
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RList of items */
-	RList *flags;   /* list of RFlagItem contained in the flag */
 	RList *spacestack;
 	PrintfCallback cb_printf;
 #if R_FLAG_ZONE_USE_SDB
@@ -80,6 +79,8 @@ typedef bool (*RFlagUnsetOff)(RFlag *f, ut64 addr);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 typedef bool (*RFlagPopSpace)(RFlag *f);
 typedef bool (*RFlagPushSpace)(RFlag *f, const char *name);
+
+typedef bool (*RFlagItemCb)(RFlagItem *fi, void *user);
 
 typedef struct r_flag_bind_t {
 	int init;
@@ -108,6 +109,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest);
+R_API RList *r_flag_all_list(RFlag *f);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item);
@@ -116,7 +118,6 @@ R_API bool r_flag_unset_off(RFlag *f, ut64 addr);
 R_API void r_flag_unset_all (RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 size);
-R_API bool r_flag_sort(RFlag *f, int namesort);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
@@ -127,6 +128,11 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to);
 R_API bool r_flag_move (RFlag *f, ut64 at, ut64 to);
 R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
+R_API void r_flag_foreach(RFlag *f, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_prefix(RFlag *f, const char *pfx, int pfx_len, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user);
+R_API void r_flag_foreach_space(RFlag *f, int space, RFlagItemCb cb, void *user);
 
 /* spaces */
 R_API int r_flag_space_get(RFlag *f, const char *name);
