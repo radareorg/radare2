@@ -45,6 +45,7 @@ pkgconfig_mod.generate(r_parse,
   requires: [
     'r_util',
     'r_flag',
+    'r_cons',
     'r_syscall',
     'r_reg'
   ],
