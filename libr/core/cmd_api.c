@@ -41,7 +41,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 		return NULL;
 	}
 	r_cmd_alias_free (cmd);
-	r_cmd_macro_free (&cmd->macro);
+	r_cmd_macro_fini (&cmd->macro);
 	// dinitialize plugin commands
 	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
@@ -268,6 +268,20 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 
 /** macro.c **/
 
+R_API RCmdMacroItem *r_cmd_macro_item_new() {
+	return R_NEW0 (RCmdMacroItem);
+}
+
+R_API void r_cmd_macro_item_free(RCmdMacroItem *item) {
+	if (!item) {
+		return;
+	}
+	free (item->name);
+	free (item->args);
+	free (item->code);
+	free (item);
+}
+
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
@@ -276,10 +290,10 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
-	mac->macros = r_list_new ();
+	mac->macros = r_list_newf ((RListFree)r_cmd_macro_item_free);
 }
 
-R_API void r_cmd_macro_free(RCmdMacro *mac) {
+R_API void r_cmd_macro_fini(RCmdMacro *mac) {
 	r_list_free (mac->macros);
 	mac->macros = NULL;
 }
@@ -334,7 +348,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (name, m->name)) {
 			macro = m;
-	//		free (macro->name);
+			// keep macro->name
 			free (macro->code);
 			free (macro->args);
 			macro_update = 1;
@@ -345,8 +359,11 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		*ptr = ' ';
 	}
 	if (!macro) {
-		macro = (struct r_cmd_macro_item_t *)malloc (
-			sizeof (struct r_cmd_macro_item_t));
+		macro = r_cmd_macro_item_new ();
+		if (!macro) {
+			free (name);
+			return 0;
+		}
 		macro->name = strdup (name);
 	}
 
@@ -428,19 +445,17 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	if (ptr) {
 		*ptr = '\0';
 	}
+	bool ret = false;
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (m->name, name)) {
 			r_list_delete (mac->macros, iter);
 			eprintf ("Macro '%s' removed.\n", name);
-			free (m->name);
-			free (m->code);
-			free (m);
-			free (name);
-			return true;
+			ret = true;
+			break;
 		}
 	}
 	free (name);
-	return false;
+	return ret;
 }
 
 // TODO: use mac->cb_printf which is r_cons_printf at the end

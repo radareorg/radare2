@@ -179,7 +179,6 @@ static const char *help_msg_p[] = {
 	"pc", "[?][p] [len]", "output C (or python) format",
 	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdi)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
-	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
@@ -269,6 +268,7 @@ static const char *help_msg_pd[] = {
 	"NOTE: ", "", "Pressing ENTER on empty command will repeat last print command in next page",
 	"pd", " N", "disassemble N instructions",
 	"pd", " -N", "disassemble N instructions backward",
+	"pd--", "[n]", "context disassembly of N instructions",
 	"pD", " N", "disassemble N bytes",
 	"pda", "", "disassemble all possible opcodes (byte per byte)",
 	"pdb", "", "disassemble basic block",
@@ -5225,6 +5225,8 @@ static int cmd_print(void *data, const char *input) {
 	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
+			cmd_pCd (core, "");
+			break;
 		case ' ':
 		case 'd':
 			cmd_pCd (core, input + 2);

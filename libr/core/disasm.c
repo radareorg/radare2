@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -921,7 +921,7 @@ static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 static char *get_op_ireg (void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	char *res = NULL;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+	RAnalOp *op = r_core_anal_op (core, addr, 0);
 	if (op && op->ireg) {
 		res = strdup (op->ireg);
 	}
@@ -2139,13 +2139,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (!ds->asm_meta) {
 		int i = 0;
 		// TODO: do in range
-#if 0
-		RAnalMetaItem *meta = r_meta_find (core->anal, ds->at,
-				R_META_TYPE_ANY, R_META_WHERE_HERE);
-#else
-		RAnalMetaItem *meta = r_meta_find_in (core->anal, ds->at,
-				R_META_TYPE_ANY, R_META_WHERE_HERE);
-#endif
+		RAnalMetaItem *meta = r_meta_find_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (meta && meta->size > 0) {
 			// XXX this is just noise. should be rewritten
 			switch (meta->type) {
@@ -2154,16 +2148,13 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 					r_cons_printf (".data: %s\n", meta->str);
 				}
 				i += meta->size;
-				// continue;
 				break;
 			case R_META_TYPE_STRING:
 				i += meta->size;
-				// continue;
 				break;
 			case R_META_TYPE_FORMAT:
 				r_cons_printf (".format : %s\n", meta->str);
 				i += meta->size;
-				// continue;
 				break;
 			case R_META_TYPE_MAGIC:
 				r_cons_printf (".magic : %s\n", meta->str);
@@ -2379,7 +2370,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 static void ds_print_family(RDisasmState *ds) {
 	if (ds->show_family) {
 		const char *familystr = r_anal_op_family_to_string (ds->analop.family);
-		r_cons_printf ("%5s ", familystr);
+		r_cons_printf ("%5s ", familystr? familystr: "");
 	}
 }
 
@@ -4102,7 +4093,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	esil->cb.hook_reg_write = NULL;
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
-		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ANAL_OP_MASK_ESIL);
+		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (do_esil) {
 				r_anal_esil_set_pc (esil, addr);
@@ -4261,10 +4252,6 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int i, nargs;
 	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
-	/* apply hint */
-	RAnalHint *hint = r_anal_hint_get (core->anal, at);
-	r_anal_op_hint (&ds->analop, hint);
-	r_anal_hint_free (hint);
 	if (!hc) {
 		return;
 	}
@@ -4781,6 +4768,20 @@ toro:
 			ds_free (ds);
 			return 0; //break;
 		}
+		if (core->print->flags & R_PRINT_FLAGS_UNALLOC) {
+			if (!core->anal->iob.is_valid_offset (core->anal->iob.io, ds->at, 0)) {
+				ds_begin_line (ds);
+				ds_print_labels (ds, f);
+				ds_setup_print_pre (ds, false, false);
+				ds_print_lines_left (ds);
+				core->print->resetbg = (ds->asm_highlight == UT64_MAX);
+				ds_start_line_highlight (ds);
+				ds_print_offset (ds);
+				r_cons_printf ("  unmapped\n");
+				inc = 1;
+				continue;
+			}
+		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -4982,8 +4983,8 @@ toro:
 				r_cons_strcat ("; ");
 				r_cons_strcat (desc);
 				ds_print_color_reset (ds);
-				ds_newline(ds);
-				free(desc);
+				ds_newline (ds);
+				free (desc);
 			}
 		}
 
@@ -4995,7 +4996,7 @@ toro:
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
-		if (ds->asm_hint_pos== 0) {
+		if (ds->asm_hint_pos == 0) {
 			ds_print_core_vmode (ds, ds->asm_hint_pos);
 		}
 		ds_print_op_size (ds);
@@ -5312,7 +5313,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
 						ds->at, core->block + i,
-						core->blocksize - i, R_ANAL_OP_MASK_ESIL);
+						core->blocksize - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {

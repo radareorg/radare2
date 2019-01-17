@@ -772,6 +772,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int last_sparse = 0;
 	bool use_hexa = true;
 	bool use_align = false;
+	bool use_unalloc = false;
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
@@ -788,6 +789,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
+		use_unalloc = p->flags & R_PRINT_FLAGS_UNALLOC;
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
 		inc = p->cols; // row width
 		col = p->col;
@@ -1100,7 +1102,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (j >= len) {
 						break;
 					}
-					r_print_byte (p, bytefmt, j, buf[j]);
+					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
+						p->cb_printf ("..");
+					} else {
+						r_print_byte (p, bytefmt, j, buf[j]);
+					}
 					if (pairs && !compact && (inc & 1)) {
 						bool mustspace = (rows % 2) ? !(j&1) : (j&1);
 						if (mustspace) {

@@ -1694,7 +1694,9 @@ static int cmd_system(void *data, const char *input) {
 				char *out = NULL;
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
+					void *bed = r_cons_sleep_begin ();
 					ret = r_sys_cmd_str_full (cmd + 1, NULL, &out, &olen, NULL);
+					r_cons_sleep_end (bed);
 					r_core_sysenv_end (core, input);
 					r_cons_memcat (out, olen);
 					free (out);
@@ -1723,7 +1725,9 @@ static int cmd_system(void *data, const char *input) {
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
+				void *bed = r_cons_sleep_begin ();
 				ret = r_sys_cmd (cmd);
+				r_cons_sleep_end (bed);
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {

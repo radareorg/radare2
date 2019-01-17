@@ -12,7 +12,11 @@ SDB_API SdbList *ls_newf(SdbListFree freefn) {
 }
 
 SDB_API SdbList *ls_new() {
-	return R_NEW0 (SdbList);
+	SdbList *list = R_NEW0 (SdbList);
+	if (!list) {
+		return NULL;
+	}
+	return list;
 }
 
 static void ls_insertion_sort_iter(SdbListIter *iter, SdbListComparator cmp) {

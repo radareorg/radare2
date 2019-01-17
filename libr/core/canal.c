@@ -934,6 +934,7 @@ static void print_hint_h_format(RAnalHint* hint) {
 	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x" =>", hint->addr, hint->addr + hint->size);
 	HINTCMD (hint, arch, " arch='%s'", false);
 	HINTCMD (hint, bits, " bits=%d", false);
+	HINTCMD (hint, type, " type=%d", false);
 	HINTCMD (hint, size, " size=%d", false);
 	HINTCMD (hint, opcode, " opcode='%s'", false);
 	HINTCMD (hint, syntax, " syntax='%s'", false);
@@ -948,6 +949,7 @@ static void print_hint_h_format(RAnalHint* hint) {
 	r_cons_newline ();
 }
 
+// TODO: move this into anal/hint.c ?
 static int cb(void *p, const char *k, const char *v) {
 	HintListState *hls = p;
 	RAnalHint *hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
@@ -972,6 +974,7 @@ static int cb(void *p, const char *k, const char *v) {
 			hls->count>0?",":"", hint->addr, hint->addr+hint->size);
 		HINTCMD (hint, arch, ",\"arch\":\"%s\"", true); // XXX: arch must not contain strange chars
 		HINTCMD (hint, bits, ",\"bits\":%d", true);
+		HINTCMD (hint, type, ",\"type\":%d", true);
 		HINTCMD (hint, size, ",\"size\":%d", true);
 		HINTCMD (hint, opcode, ",\"opcode\":\"%s\"", true);
 		HINTCMD (hint, syntax, ",\"syntax\":\"%s\"", true);
@@ -1022,9 +1025,6 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 	if (mode == 'j') {
 		r_cons_strcat ("[");
 	}
-#if 0
-	sdb_foreach (a->sdb_hints, cb, &hls);
-#else
 	SdbList *ls = sdb_foreach_list (a->sdb_hints, true);
 	SdbListIter *lsi;
 	SdbKv *kv;
@@ -1032,7 +1032,6 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 		cb (&hls, sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (ls);
-#endif
 	if (mode == 'j') {
 		r_cons_strcat ("]\n");
 	}
@@ -1553,11 +1552,10 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	const char *esil;
-	RAnalOp *op;
 	eprintf ("TODO\n");
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
-		op = r_core_anal_op (core, at, R_ANAL_OP_MASK_ESIL);
+		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_ESIL);
 		if (!op) {
 			break;
 		}
@@ -2369,10 +2367,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			}
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			    refi->type == R_ANAL_REF_TYPE_CALL) {
-				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\",\"at\":%"PFMT64d"}",
+				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\",\"at\":%"PFMT64d"}",
 						first? "": ",",
 						refi->addr,
-						refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
+						r_anal_xrefs_type_tostring (refi->type),
 						refi->at);
 				first = false;
 			}
@@ -2400,10 +2398,10 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			    refi->type == R_ANAL_REF_TYPE_CALL) {
 				indegree++;
-				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\",\"at\":%"PFMT64d"}",
+				r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\",\"at\":%"PFMT64d"}",
 						first?"":",",
 						refi->addr,
-						refi->type==R_ANAL_REF_TYPE_CALL?'C':'J',
+						r_anal_xrefs_type_tostring (refi->type),
 						refi->at);
 				first = 0;
 			}
