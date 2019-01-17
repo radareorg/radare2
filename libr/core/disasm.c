@@ -2139,13 +2139,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (!ds->asm_meta) {
 		int i = 0;
 		// TODO: do in range
-#if 0
-		RAnalMetaItem *meta = r_meta_find (core->anal, ds->at,
-				R_META_TYPE_ANY, R_META_WHERE_HERE);
-#else
-		RAnalMetaItem *meta = r_meta_find_in (core->anal, ds->at,
-				R_META_TYPE_ANY, R_META_WHERE_HERE);
-#endif
+		RAnalMetaItem *meta = r_meta_find_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (meta && meta->size > 0) {
 			// XXX this is just noise. should be rewritten
 			switch (meta->type) {
