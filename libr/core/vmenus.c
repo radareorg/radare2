@@ -3306,6 +3306,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," R    find references /r"
 		," s    set string"
 		," S    set strings in current block"
+		," t    set opcode type via aht hints (call, nop, jump, ...)"
 		," u    undefine metadata here"
 		," v    rename variable at offset that matches some hex digits"
 		," x    find xrefs to current address (./r)"
@@ -3349,6 +3350,16 @@ onemoretime:
 		break;
 	case '1':
 		edit_bits (core);
+		break;
+	case 't':
+		{
+			char str[128];
+			r_cons_show_cursor (true);
+			r_line_set_prompt ("type: ");
+			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
+				r_core_cmdf (core, "aht %s @ 0x%"PFMT64x, str, off);
+			}
+		}
 		break;
 	case 'x':
 		r_core_cmd0 (core, "/r $$");
