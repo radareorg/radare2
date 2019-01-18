@@ -322,6 +322,7 @@ static const char *help_msg_afl[] = {
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
+	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "", "sort function list by address",
@@ -2561,6 +2562,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			/* fallthrough */
 		case 'j': // "aflj"
 		case 'q': // "aflq"
+		case 'm': // "aflm"
 		case '+': // "afl+"
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
