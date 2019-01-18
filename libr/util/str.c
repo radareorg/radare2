@@ -996,14 +996,15 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 		}
 		off = (int)(size_t) (p - str);
 		scnd = strdup (p + klen);
-		slen += vlen - klen;
-		newstr = realloc (str, slen + klen + 1);
 		tmp_val = strdup (val);
-
-		if (!newstr || !tmp_val || !scnd) {
+		if (!tmp_val || !scnd) {
 			goto alloc_fail;
 		}
-
+		slen += vlen - klen;
+		newstr = realloc (str, slen + klen + 1);
+		if (!newstr) {
+			goto alloc_fail;
+		}
 		str = newstr;
 		p = str + off;
 
@@ -1033,9 +1034,6 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 alloc_fail:
 	eprintf ("alloc fail\n");
 	free (str);
-	if (str != newstr) {
-		free (newstr);
-	}
 	free (scnd);
 	free (tmp_val);
 	return NULL;
