@@ -4862,7 +4862,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				while (pc < end) {
 					left = R_MIN (end - pc, 32);
 					r_asm_set_pc (core->assembler, pc);
-					ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_ESIL); // read overflow
+					ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
 					if (op.type == R_ANAL_OP_TYPE_RET) {
 						break;
 					}
