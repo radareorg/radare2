@@ -322,9 +322,9 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		defaultPanelPrint (core, can, panel, panel->sx, panel->sy, w, h, color);
 	}
 	if (color) {
-		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->pal.graph_box2);
+		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->context->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->pal.graph_box);
+		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->context->pal.graph_box);
 	}
 }
 
@@ -344,7 +344,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	char title[128], *text, *cmdStr = NULL;
 	if (color) {
 		snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, core->cons->pal.graph_box2, panel->title);
+				"%s[x] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->title);
 	} else {
 		snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->title);
@@ -2511,7 +2511,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	if (panels->mode == PANEL_MODE_MENU) {
 		strcpy (title, "> ");
 	}
-	const char *color = panels->mode == PANEL_MODE_MENU ? core->cons->pal.graph_box : core->cons->pal.graph_box2;
+	const char *color = panels->mode == PANEL_MODE_MENU ? core->cons->context->pal.graph_box : core->cons->context->pal.graph_box2;
 	if (panels->mode == PANEL_MODE_ZOOM) {
 		snprintf (str, sizeof (title) - 1, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, color);
 		strcat (title, str);

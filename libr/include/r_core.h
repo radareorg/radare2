@@ -53,7 +53,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_GRAPH_FORMAT_CMD          5
 
 ///
-#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
+#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x)? core->cons->context->pal.x: def)
 #define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
 
 /* rtr */

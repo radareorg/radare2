@@ -14,6 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	WasmOp wop = {0};
 	int ret = wasm_dis (&wop, buf, len);
 	r_asm_op_set_asm (op, wop.txt);
+	free (wop.txt);
 	op->size = ret;
 	return op->size;
 }

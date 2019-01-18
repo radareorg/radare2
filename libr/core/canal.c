@@ -324,7 +324,7 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 	if (mode == 'j') {
 		// start a new JSON object
 		pj = pj_new ();
-		pj_a(pj);
+		pj_a (pj);
 	}
 	r_list_foreach (refs, iter, ref) {
 		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
@@ -2335,6 +2335,32 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	return 0;
 }
 
+static int fcn_print_makestyle(RCore *core, RAnalFunction *fcn) {
+	RAnalRef *refi;
+	RListIter *iter;
+	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	r_cons_printf ("%s:\n", fcn->name);
+	if (!r_list_empty (refs)) {
+		RList *res = r_list_newf ((RListFree)free);
+		r_list_foreach (refs, iter, refi) {
+			if (refi->type != R_ANAL_REF_TYPE_CALL) {
+				continue;
+			}
+			RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+			char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+			r_list_append (res, dst);
+		}
+		char *s;
+		res = r_list_uniq (res, (RListComparator)strcmp);
+		r_list_foreach (res, iter, s) {
+			r_cons_printf ("    %s\n", s);
+		}
+		r_list_free (res);
+	}
+	r_cons_newline ();
+	return 0;
+}
+
 static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
@@ -2700,6 +2726,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 	case '*':
 		fcn_list_detail (core, fcns);
+		break;
+	case 'm':
+		r_list_foreach (fcns, iter, fcn) {
+			fcn_print_makestyle (core, fcn);
+		}
 		break;
 	case 1:
 		fcn_list_legacy (core, fcns);
@@ -3484,7 +3515,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 	r_io_read_at (core->io, addr, buf, len);
 	buf[len - 1] = 0;
 
-	RConsPrintablePalette *pal = r_config_get_i (core->config, "scr.color")? &r_cons_singleton ()->pal: NULL;
+	RConsPrintablePalette *pal = r_config_get_i (core->config, "scr.color")? &r_cons_singleton ()->context->pal: NULL;
 	for (i = j = 0; j < count; j++) {
 		if (i >= len) {
 			r_io_read_at (core->io, addr + i, buf, len);

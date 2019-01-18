@@ -322,6 +322,7 @@ static const char *help_msg_afl[] = {
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
+	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "", "sort function list by address",
@@ -865,10 +866,12 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	ut64 off = core->offset;
 	RAnalOp op;
 	char *q = NULL;
+	PJ *pj = NULL;
 	ut64 tgt_addr = UT64_MAX;
 
 	if (use_json) {
-		r_cons_print ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
 
 	r_anal_op (core->anal, &op, off,
@@ -886,8 +889,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 				} else if (!use_json) {
 					r_cons_println (bar->name);
 				} else {
-					r_cons_printf ("{\"type\":\"var\",\"name\":\"%s\"}",
-								bar->name);
+					pj_o (pj);
+					pj_ks (pj, "name", bar->name);
+					pj_ks (pj, "type", "var");
+					pj_kn (pj, "offset", tgt_addr);
+					pj_end (pj);
 				}
 			} else {
 				eprintf ("Cannot find variable\n");
@@ -904,8 +910,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_println (fcn->name);
 			} else {
-				r_cons_printf ("{\"type\":\"function\",\"name\":\"%s\"}",
-							fcn->name);
+				pj_o (pj);
+				pj_ks (pj, "name", fcn->name);
+				pj_ks (pj, "type", "function");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		} else if (f) {
 			if (name) {
@@ -913,8 +922,16 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_println (f->name);
 			} else {
-				r_cons_printf ("{\"type\":\"flag\",\"name\":\"%s\"}",
-							f->name);
+				pj_o (pj);
+				if (name) {
+					pj_ks (pj, "old_name", f->name);
+					pj_ks (pj, "new_name", name);
+				} else {
+					pj_ks (pj, "name", f->name);
+				}
+				pj_ks (pj, "type", "flag");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		} else {
 			if (name) {
@@ -922,14 +939,22 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
-				r_cons_printf ("{\"type\":\"address\",\"offset\":"
-							   "%" PFMT64u "}", tgt_addr);
+				pj_o (pj);
+				pj_ks (pj, "name", name);
+				pj_ks (pj, "type", "address");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		}
 	}
 
 	if (use_json) {
-		r_cons_print ("]\n");
+		pj_end (pj);
+	}
+
+	if (pj) {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 
 	if (q) {
@@ -1371,7 +1396,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
-		color = core->cons->pal.label;
+		color = core->cons->context->pal.label;
 	}
 	switch (fmt) {
 	case 'j':
@@ -2537,6 +2562,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			/* fallthrough */
 		case 'j': // "aflj"
 		case 'q': // "aflq"
+		case 'm': // "aflm"
 		case '+': // "afl+"
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
@@ -3086,7 +3112,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg) : Color_BWHITE;
 	} else {
 		use_color = NULL;
@@ -3158,7 +3184,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	char *arg;
 
 	if (use_colors) {
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg)
 		: Color_BWHITE;
 	} else {
@@ -4838,7 +4864,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				while (pc < end) {
 					left = R_MIN (end - pc, 32);
 					r_asm_set_pc (core->assembler, pc);
-					ret = r_anal_op (core->anal, &op, addr, buf, left, R_ANAL_OP_MASK_ESIL); // read overflow
+					ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
+					if (op.type == R_ANAL_OP_TYPE_RET) {
+						break;
+					}
 					if (ret) {
 						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
 						r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
@@ -5739,7 +5768,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	free (ba);
 	if (color && has_color) {
 		buf_asm = r_print_colorize_opcode (core->print, str,
-				core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+				core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 	} else {
 		buf_asm = r_str_new (str);
 	}
@@ -5959,7 +5988,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (input[2] == 'j') { // "axffj"
 				// start a new JSON object
 				pj = pj_new ();
-				pj_a(pj);
+				pj_a (pj);
 			}
 			if (fcn) {
 				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
@@ -6044,7 +6073,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								str, sizeof (str), core->print->big_endian);
 						if (has_color) {
 							buf_asm = r_print_colorize_opcode (core->print, str,
-									core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+									core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 						} else {
 							buf_asm = r_str_new (str);
 						}

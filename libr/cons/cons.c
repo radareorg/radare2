@@ -100,7 +100,7 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	}
 }
 
-static void cons_context_init(RConsContext *context) {
+static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->breaked = false;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
@@ -112,11 +112,21 @@ static void cons_context_init(RConsContext *context) {
 	context->event_interrupt_data = NULL;
 	context->pageable = true;
 	context->log_callback = NULL;
+
+	if (parent) {
+		context->color = parent->color;
+		// TODO: copy
+		r_cons_pal_init (context);
+	} else {
+		context->color = COLOR_MODE_DISABLED;
+		r_cons_pal_init (context);
+	}
 }
 
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
 	r_stack_free (context->break_stack);
+	r_cons_pal_free (context);
 }
 
 static void break_signal(int sig) {
@@ -144,7 +154,7 @@ static inline void r_cons_write(const char *buf, int len) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
-	if (I.color > COLOR_MODE_16) {
+	if (I.context->color > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -420,7 +430,6 @@ R_API RCons *r_cons_new() {
 	I.highlight = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
-	I.color = COLOR_MODE_DISABLED;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -439,7 +448,7 @@ R_API RCons *r_cons_new() {
 	I.lines = 0;
 
 	I.context = &r_cons_context_default;
-	cons_context_init (I.context);
+	cons_context_init (I.context, NULL);
 
 	r_cons_get_size (&I.pagesize);
 	I.num = NULL;
@@ -470,7 +479,6 @@ R_API RCons *r_cons_new() {
 	I.mouse = 0;
 	r_cons_reset ();
 	r_cons_rgb_init ();
-	r_cons_pal_init ();
 
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
 
@@ -482,7 +490,6 @@ R_API RCons *r_cons_free() {
 	if (I.refcnt != 0) {
 		return NULL;
 	}
-	r_cons_pal_free ();
 	if (I.line) {
 		r_line_free ();
 		I.line = NULL;
@@ -678,12 +685,12 @@ R_API void r_cons_pop() {
 	cons_stack_free ((void *)data);
 }
 
-R_API RConsContext *r_cons_context_new(void) {
+R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
 	RConsContext *context = R_NEW0 (RConsContext);
 	if (!context) {
 		return NULL;
 	}
-	cons_context_init (context);
+	cons_context_init (context, parent);
 	return context;
 	/*
 	RStack *stack = r_stack_newf (6, cons_stack_free);
@@ -1562,9 +1569,9 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
  * "command2", "args2", "description"}; */
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color ? cons->pal.args : "",
-			*pal_help_color = use_color ? cons->pal.help : "",
-			*pal_reset = use_color ? cons->pal.reset : "";
+	const char *pal_args_color = use_color ? cons->context->pal.args : "",
+			*pal_help_color = use_color ? cons->context->pal.help : "",
+			*pal_reset = use_color ? cons->context->pal.reset : "";
 	int i, max_length = 0;
 	const char *usage_str = "Usage:";
 

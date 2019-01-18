@@ -523,6 +523,18 @@ R_API int r_config_rm(RConfig *cfg, const char *name) {
 	return false;
 }
 
+R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node) {
+	if (node && node->flags & CN_BOOL) {
+		r_str_ncpy (buf, r_str_bool ((int) i), buf_size);
+		return;
+	}
+	if (i < 1024) {
+		snprintf (buf, buf_size, "%" PFMT64d "", i);
+	} else {
+		snprintf (buf, buf_size, "0x%08" PFMT64x "", i);
+	}
+}
+
 R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
 	if (!cfg || !name) {
@@ -542,12 +554,8 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			}
 			free (node->value);
 		}
-		if (node->flags & CN_BOOL) {
-			node->value = strdup (r_str_bool (i));
-		} else {
-			snprintf (buf, sizeof (buf) - 1, "%" PFMT64d, i);
-			node->value = strdup (buf);
-		}
+		r_config_node_value_format_i (buf, sizeof (buf), i, NULL);
+		node->value = strdup (buf);
 		if (!node->value) {
 			node = NULL;
 			goto beach;
@@ -556,11 +564,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		node->i_value = i;
 	} else {
 		if (!cfg->lock) {
-			if (i < 1024) {
-				snprintf (buf, sizeof (buf), "%" PFMT64d "", i);
-			} else {
-				snprintf (buf, sizeof (buf), "0x%08" PFMT64x "", i);
-			}
+			r_config_node_value_format_i (buf, sizeof (buf), i, NULL);
 			node = r_config_node_new (name, buf);
 			if (!node) {
 				node = NULL;
