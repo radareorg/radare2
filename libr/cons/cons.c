@@ -115,8 +115,7 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 
 	if (parent) {
 		context->color = parent->color;
-		// TODO: copy
-		r_cons_pal_init (context);
+		r_cons_pal_copy (context, parent);
 	} else {
 		context->color = COLOR_MODE_DISABLED;
 		r_cons_pal_init (context);
