@@ -4688,12 +4688,14 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
 				reg = parseReg (a, str, &nextpos, &reg_type);
-				op->reg = reg;
+
 				if (first_reg) {
 					op->extended = false;
 					if (reg > 8) {
 						op->extended = true;
 						op->reg = reg - 9;
+					} else {
+						op->reg = reg;
 					}
 					first_reg = false;
 				} else if (reg > 8) {
