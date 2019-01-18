@@ -391,7 +391,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		0
 	};
 	const char *white = "";
-#define PREOFF(x) (p && p->cons && p->cons->pal.x)? p->cons->pal.x
+#define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x)? p->cons->context->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
@@ -482,7 +482,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	int ch, i;
 
 	if (colors) {
-#define P(x) (p->cons && p->cons->pal.x)? p->cons->pal.x
+#define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
 		color_0x00 = P (b0x00): Color_GREEN;
 		color_0x7f = P (b0x7f): Color_YELLOW;
 		color_0xff = P (b0xff): Color_RED;
@@ -556,7 +556,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 }
 
 static char colorbuffer[64];
-#define P(x) (p->cons && p->cons->pal.x)? p->cons->pal.x
+#define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
 R_API const char *r_print_byte_color(RPrint *p, int ch) {
 	if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
@@ -683,7 +683,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 	return true;
 }
 
-#define Pal(x,y) (x->cons && x->cons->pal.y)? x->cons->pal.y
+#define Pal(x,y) (x->cons && x->cons->context->pal.y)? x->cons->context->pal.y
 R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback) rp->cb_printf;
 	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
@@ -1054,7 +1054,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					// stub for colors
 					if (p && p->colorfor) {
 						if (!p->iob.addr_is_mapped (p->iob.io, addr + j)) {
-							a = p->cons->pal.ai_unmap;
+							a = p->cons->context->pal.ai_unmap;
 						} else {
 							a = p->colorfor (p->user, n, true);
 						}
@@ -1713,16 +1713,17 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 }
 
 R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
+	RConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_NOP:
-		return p->cons->pal.nop;
+		return pal->nop;
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_DIV:
 	case R_ANAL_OP_TYPE_MOD:
 	case R_ANAL_OP_TYPE_LENGTH:
-		return p->cons->pal.math;
+		return pal->math;
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_OR:
 	case R_ANAL_OP_TYPE_XOR:
@@ -1734,23 +1735,23 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_CPL:
-		return p->cons->pal.bin;
+		return pal->bin;
 	case R_ANAL_OP_TYPE_IO:
-		return p->cons->pal.swi;
+		return pal->swi;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_IJMP:
 	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_IRJMP:
 	case R_ANAL_OP_TYPE_MJMP:
-		return p->cons->pal.jmp;
+		return pal->jmp;
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_UCJMP:
 	case R_ANAL_OP_TYPE_SWITCH:
-		return p->cons->pal.cjmp;
+		return pal->cjmp;
 	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_ACMP:
-		return p->cons->pal.cmp;
+		return pal->cmp;
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:
@@ -1758,35 +1759,35 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_UCCALL:
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_CCALL:
-		return p->cons->pal.call;
+		return pal->call;
 	case R_ANAL_OP_TYPE_NEW:
 	case R_ANAL_OP_TYPE_SWI:
-		return p->cons->pal.swi;
+		return pal->swi;
 	case R_ANAL_OP_TYPE_ILL:
 	case R_ANAL_OP_TYPE_TRAP:
-		return p->cons->pal.trap;
+		return pal->trap;
 	case R_ANAL_OP_TYPE_CRET:
 	case R_ANAL_OP_TYPE_RET:
-		return p->cons->pal.ret;
+		return pal->ret;
 	case R_ANAL_OP_TYPE_CAST:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
-		return p->cons->pal.mov;
+		return pal->mov;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
 	case R_ANAL_OP_TYPE_LOAD:
-		return p->cons->pal.push;
+		return pal->push;
 	case R_ANAL_OP_TYPE_POP:
 	case R_ANAL_OP_TYPE_STORE:
-		return p->cons->pal.pop;
+		return pal->pop;
 	case R_ANAL_OP_TYPE_CRYPTO:
-		return p->cons->pal.crypto;
+		return pal->crypto;
 	case R_ANAL_OP_TYPE_NULL:
-		return p->cons->pal.other;
+		return pal->other;
 	case R_ANAL_OP_TYPE_UNK:
 	default:
-		return p->cons->pal.invalid;
+		return pal->invalid;
 	}
 }
 
@@ -1919,7 +1920,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					const char *color = found_var ? print->cons->pal.func_var_type : reg;
+					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");

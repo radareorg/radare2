@@ -1839,7 +1839,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RRegItem *r;
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP(creg): Color_BWHITE;
 	} else {
 		use_color = NULL;
@@ -2102,7 +2102,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	}
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP(creg): Color_BWHITE;
 	} else {
 		use_color = NULL;

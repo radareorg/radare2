@@ -391,9 +391,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	// This info must be stored inside RANode* from RCore*
 	RCons *cons = r_cons_singleton ();
 	if (cur) {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->pal.graph_box);
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
 	}
 }
 
@@ -3445,11 +3445,11 @@ static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
 static void agraph_sdb_init(const RAGraph *g) {
 	sdb_bool_set (g->db, "agraph.is_callgraph", g->is_callgraph, 0);
 	RCons *cons = r_cons_singleton ();
-	sdb_set_enc (g->db, "agraph.color_box", cons->pal.graph_box, 0);
-	sdb_set_enc (g->db, "agraph.color_box2", cons->pal.graph_box2, 0);
-	sdb_set_enc (g->db, "agraph.color_box3", cons->pal.graph_box3, 0);
-	sdb_set_enc (g->db, "agraph.color_true", cons->pal.graph_true, 0);
-	sdb_set_enc (g->db, "agraph.color_false", cons->pal.graph_false, 0);
+	sdb_set_enc (g->db, "agraph.color_box", cons->context->pal.graph_box, 0);
+	sdb_set_enc (g->db, "agraph.color_box2", cons->context->pal.graph_box2, 0);
+	sdb_set_enc (g->db, "agraph.color_box3", cons->context->pal.graph_box3, 0);
+	sdb_set_enc (g->db, "agraph.color_true", cons->context->pal.graph_true, 0);
+	sdb_set_enc (g->db, "agraph.color_false", cons->context->pal.graph_false, 0);
 }
 
 R_API Sdb *r_agraph_get_sdb(RAGraph *g) {

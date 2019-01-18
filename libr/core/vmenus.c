@@ -66,8 +66,8 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, u
 	char *tmp, *spacer = NULL;
 	char *source = (char*)buf_asm;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	const char *color_num = core->cons->pal.num;
-	const char *color_reg = core->cons->pal.reg;
+	const char *color_num = core->cons->context->pal.num;
+	const char *color_reg = core->cons->context->pal.reg;
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 
 	if (!use_color) {
@@ -323,7 +323,7 @@ static bool edit_bits (RCore *core) {
 				r_cons_printf (" |");
 			}
 			if (use_color) {
-				r_cons_printf (" %5s'%s%c"Color_RESET"'", " ", core->cons->pal.btext, ch);
+				r_cons_printf (" %5s'%s%c"Color_RESET"'", " ", core->cons->context->pal.btext, ch);
 			} else {
 				r_cons_printf (" %5s'%c'", " ", ch);
 			}
@@ -346,7 +346,7 @@ static bool edit_bits (RCore *core) {
 		}
 		r_cons_printf ("\nbit: ");
 		if (use_color) {
-			r_cons_print (core->cons->pal.b0x7f);
+			r_cons_print (core->cons->context->pal.b0x7f);
 			colorBits = true;
 		}
 		for (i = 0; i < 8; i++) {
@@ -506,7 +506,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
 	bool use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
-	char *color_sel = vt->core->cons->pal.prompt;
+	char *color_sel = vt->core->cons->context->pal.prompt;
 	if (vt->optword) {
 		if (!strcmp (vt->type, "struct")) {
 			char *s = r_str_newf ("struct.%s.", vt->optword);
@@ -626,10 +626,10 @@ R_API int r_core_visual_types(RCore *core) {
 		for (i = 0; opts[i]; i++) {
 			if (use_color) {
 				if (h_opt == i) {
-					r_cons_printf ("%s[%s]%s ", core->cons->pal.call, 
+					r_cons_printf ("%s[%s]%s ", core->cons->context->pal.call,
 						opts[i], Color_RESET);
 				} else {
-					r_cons_printf ("%s%s%s  ", core->cons->pal.other, 
+					r_cons_printf ("%s%s%s  ", core->cons->context->pal.other,
 						opts[i], Color_RESET);
 				}
 			} else {
@@ -972,7 +972,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 						i, clr, c->addr, c->name);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET"  %s\n",
-						i, core->cons->pal.offset, c->addr, c->name);
+						i, core->cons->context->pal.offset, c->addr, c->name);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x"  %s\n",
@@ -1022,7 +1022,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 						i, clr, m->vaddr, mflags, name);
 				} else {
 					r_cons_printf ("-  %02d %s0x%08"PFMT64x Color_RESET" %s %s\n",
-						i, core->cons->pal.offset, m->vaddr, mflags, name);
+						i, core->cons->context->pal.offset, m->vaddr, mflags, name);
 				}
 			} else {
 				r_cons_printf ("%s %02d 0x%08"PFMT64x" %s %s\n",
@@ -2682,8 +2682,8 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	(void)r_cons_get_size (&window);
 	window -= 8; // Size of printed things
 	bool color = r_config_get_i (core->config, "scr.color");
-	const char *color_addr = core->cons->pal.offset;
-	const char *color_fcn = core->cons->pal.fname;
+	const char *color_addr = core->cons->context->pal.offset;
+	const char *color_fcn = core->cons->context->pal.fname;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (i >= wdelta) {
@@ -2821,7 +2821,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	// Show functions list help in visual mode
 	case 0:
 		if (color) {
-			r_cons_strcat (core->cons->pal.prompt);
+			r_cons_strcat (core->cons->context->pal.prompt);
 		}
 		if (selectPanel) {
 			r_cons_printf ("-- functions -----------------[ %s ]-->>", printCmds[printMode]);
@@ -3797,7 +3797,7 @@ R_API void r_core_visual_colors(RCore *core) {
 	char *color = calloc (1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
-	bool truecolor = r_cons_singleton ()->color == COLOR_MODE_16M;
+	bool truecolor = r_cons_singleton ()->context->color == COLOR_MODE_16M;
 	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x ":"rgb:%x%x%x ";
 	const char *k;
 	RColor rcolor;
