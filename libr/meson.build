@@ -305,6 +305,7 @@ parse_plugins = [
   'mreplace',
   'ppc_pseudo',
   'sh_pseudo',
+  'wasm_pseudo',
   'x86_pseudo',
   'z80_pseudo'
 ]

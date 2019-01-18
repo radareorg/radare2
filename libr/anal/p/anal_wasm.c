@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - xvilka */
+/* radare2 - LGPL - Copyright 2017-2019 - xvilka, deroad */
 
 #include <string.h>
 #include <r_types.h>
@@ -11,22 +11,20 @@
 #include "../../asm/arch/wasm/wasm.c"
 
 #define WASM_STACK_SIZE 256
-#define WASM_END_SIZE (1)
 
-static struct wasm_stack_t {
-	ut64 loop;
-	ut64 end;
-	int size;
-} wasm_stack [WASM_STACK_SIZE];
-
-static int wasm_stack_ptr = 0;
-static ut64 addr_old = 0;
-static WasmOpCodes op_old = 0;
+static ut64 scope_hint = UT64_MAX;
+static ut64 addr_old = UT64_MAX;
 
 // finds the address of the call function (essentially where to jump to).
-static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
+static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
+	ut32 fcn_id;
+
+	if (!read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
+		return UT64_MAX;
+	}
 	r_cons_push ();
-	char *s = anal->coreb.cmdstrf (anal->coreb.core, "isq~[0:%d]", data[1]);
+	// 0xfff.. are bad addresses for wasm.
+	char *s = anal->coreb.cmdstrf (anal->coreb.core, "isq~0x0[0:%u]", fcn_id);
 	r_cons_pop ();
 	if (s) {
 		ut64 n = r_num_get (NULL, s);
@@ -36,84 +34,44 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
 	return UT64_MAX;
 }
 
-/*
- * Searches where the opcode ends.
- * A wasm scope is formed by:
- *   block/loop -> end
- *   if -> end
- *   if -> else -> end
- * Also a function call has an end.
- *   call X -> end
- */
-static ut64 find_scope(ut64 addr, const ut8 *data, int len, bool is_loop) {
+static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
+	ut8 buffer[16];
+	ut8 *ptr = buffer;
+	ut8 *end = ptr + sizeof (buffer);
 	WasmOp wop = {0};
-	st32 count = 0;
-	ut32 offset = addr;
-	while (len > 0) {
-		int ret = wasm_dis (&wop, data, len);
-		switch (wop.op) {
-		/* Calls here are using index instead of address */
-		case WASM_OP_BLOCK:
-			count++;
-			break;
-		case WASM_OP_LOOP:
-			count++;
-			break;
-		case WASM_OP_IF:
-			count++;
-			break;
-		case WASM_OP_ELSE:
-			if (!count && !is_loop) {
-				free (wop.txt);
-				return offset + ret;
-			}
-			break;
-		case WASM_OP_END:
-			if (!count) {
-				free (wop.txt);
-				return offset;
-			} else {
-				count--;
-			}
-			break;
-		default:
+	int size = 0;
+	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
+		size = wasm_dis (&wop, ptr, end - ptr);
+		if (!wop.txt || wop.op == WASM_OP_TRAP) {
+			// if invalid stop here.
 			break;
 		}
-		offset += ret;
-		data += ret;
-		len -= ret;
-		free (wop.txt);
-	}
-	return UT64_MAX;
-}
 
-// set where the branch instruction should go
-
-static void set_br_jump(RAnalOp *op, const ut8 *data, int len) {
-	ut32 val;
-	read_u32_leb128 (data + 1, data + len, &val);
-	ut32 pos = wasm_stack_ptr - (val + 1);
-	if (pos < wasm_stack_ptr) {
-		ut64 jump = wasm_stack[pos].loop;
-		if (jump != UT64_MAX) {
-			// if it is a loop, branch to beginning.
-			op->jump = jump;
-		} else {
-			// if it is a block, branch to the end.
-			jump = wasm_stack[pos].end;
-			if (jump != UT64_MAX) {
-				// always pointing to an 'end'
-				op->jump = jump + 1;
-			}
+		if (wop.op == WASM_OP_LOOP || wop.op == WASM_OP_BLOCK || wop.op == WASM_OP_IF) {
+			depth++;
 		}
+
+		if (use_else && wop.op == WASM_OP_ELSE && !depth) {
+			op->type = expected_type;
+			op->jump = address + 1; // else size == 1
+			return true;
+		} else if (wop.op == WASM_OP_END && depth > 0) {
+			// let's wait till i get the final depth
+			depth--;
+		} else if (wop.op == WASM_OP_END && !depth) {
+			op->type = expected_type;
+			op->jump = address;
+			return true;
+		}
+		address += size;
 	}
+	return false;
 }
 
 // analyzes the wasm opcode.
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	ut64 addr2 = UT64_MAX;
-	int i;
 	WasmOp wop = {0};
+	RAnalHint *hint = NULL;
 	memset (op, '\0', sizeof (RAnalOp));
 	int ret = wasm_dis (&wop, data, len);
 	op->jump = UT64_MAX;
@@ -127,81 +85,152 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	if (!wop.txt || !strncmp (wop.txt, "invalid", 7)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		wasm_stack_ptr = 0;
 		free (wop.txt);
 		return -1;
 	}
-	if (wasm_stack_ptr >= WASM_STACK_SIZE) {
-		wasm_stack_ptr = 0;
-		op->type = R_ANAL_OP_TYPE_NULL;
-		free (wop.txt);
-		return -1;
+
+	if (addr_old == addr && wop.op != WASM_OP_END) {
+		goto anal_end;
 	}
+
 	switch (wop.op) {
 	/* Calls here are using index instead of address */
 	case WASM_OP_LOOP:
-		addr2 = find_scope (addr + op->size, data + op->size, len - op->size, true);
 		op->type = R_ANAL_OP_TYPE_NOP;
-		if (addr2 != UT64_MAX && addr_old != addr) {
-			//eprintf("0x%016x > stack %u (loop)\n", addr, wasm_stack_ptr);
-			wasm_stack[wasm_stack_ptr].loop = addr;
-			wasm_stack[wasm_stack_ptr].end = addr2;
-			wasm_stack[wasm_stack_ptr].size = wop.len;
-			wasm_stack_ptr++;
+		if (!(hint = r_anal_hint_get (anal, addr))) {
+			scope_hint--;
+			r_anal_hint_set_opcode (anal, scope_hint, "loop");
+			r_anal_hint_set_jump (anal, scope_hint, addr);
 		}
-		//op->fail = addr + op->size;
 		break;
 	case WASM_OP_BLOCK:
 		op->type = R_ANAL_OP_TYPE_NOP;
-		addr2 = find_scope (addr + op->size, data + op->size, len - op->size, true);
-		if (addr2 != UT64_MAX && addr_old != addr) {
-			//eprintf("0x%016x > stack %u (block)\n", addr, wasm_stack_ptr);
-			wasm_stack[wasm_stack_ptr].loop = UT64_MAX;
-			wasm_stack[wasm_stack_ptr].end = addr2;
-			wasm_stack[wasm_stack_ptr].size = wop.len;
-			wasm_stack_ptr++;
+		if (!(hint = r_anal_hint_get (anal, addr))) {
+			scope_hint--;
+			r_anal_hint_set_opcode (anal, scope_hint, "block");
+			r_anal_hint_set_jump (anal, scope_hint, addr);
 		}
 		break;
 	case WASM_OP_IF:
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = find_scope (addr + op->size, data + op->size, len - op->size, false);
-		op->fail = addr + op->size;
-		if (op->jump != UT64_MAX && addr_old != addr) {
-			//eprintf("0x%016x > stack %u (if)\n", addr, wasm_stack_ptr);
-			wasm_stack[wasm_stack_ptr].loop = UT64_MAX;
-			wasm_stack[wasm_stack_ptr].end = op->fail;
-			wasm_stack[wasm_stack_ptr].size = wop.len;
-			wasm_stack_ptr++;
+		if (!(hint = r_anal_hint_get (anal, addr))) {
+			scope_hint--;
+			r_anal_hint_set_opcode (anal, scope_hint, "if");
+			r_anal_hint_set_jump (anal, scope_hint, addr);
+			if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, 0, true)) {
+				op->fail = addr + op->size;
+			}
+		} else {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = hint->jump;
+			op->fail = addr + op->size;
 		}
 		break;
 	case WASM_OP_ELSE:
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = find_scope (addr + op->size, data + op->size, len - op->size, false);
+		// get if and set hint.
+		if (!(hint = r_anal_hint_get (anal, addr))) {
+			advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, 0, true);
+		} else {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = hint->jump;
+		}
+		break;
+	case WASM_OP_BR:
+		{
+			RAnalHint *hint2 = NULL;
+			ut32 val;
+			read_u32_leb128 (data + 1, data + len, &val);
+			if ((hint2 = r_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->jump = hint2->jump;
+			} else if ((hint = r_anal_hint_get (anal, scope_hint))) {
+				if (hint->opcode && !strncmp ("loop", hint->opcode, 4)) {
+					op->type = R_ANAL_OP_TYPE_JMP;
+					op->jump = hint->jump;
+					r_anal_hint_set_jump (anal, addr, op->jump);
+				} else {
+					if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, val, false)) {
+						r_anal_hint_set_jump (anal, addr, op->jump);
+					}
+				}
+			} else {
+				if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, val, false)) {
+					eprintf ("[wasm] cannot find jump type for br (using block type)\n");
+					r_anal_hint_set_jump (anal, addr, op->jump);
+				} else {
+					eprintf ("[wasm] cannot find jump for br\n");
+				}
+			}
+			r_anal_hint_free (hint2);
+		}
+		break;
+	case WASM_OP_BRIF:
+		{
+			RAnalHint *hint2 = NULL;
+			ut32 val;
+			read_u32_leb128 (data + 1, data + len, &val);
+			if ((hint2 = r_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = hint2->jump;
+				op->fail = addr + op->size;
+			} else if ((hint = r_anal_hint_get (anal, scope_hint))) {
+				if (hint->opcode && !strncmp ("loop", hint->opcode, 4)) {
+					op->fail = addr + op->size;
+					op->jump = hint->jump;
+					r_anal_hint_set_jump (anal, addr, op->jump);
+				} else {
+					if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, val, false)) {
+						op->fail = addr + op->size;
+						r_anal_hint_set_jump (anal, addr, op->jump);
+					}
+				}
+			} else {
+				if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, val, false)) {
+					eprintf ("[wasm] cannot find jump type for br_if (using block type)\n");
+					op->fail = addr + op->size;
+					r_anal_hint_set_jump (anal, addr, op->jump);
+				} else {
+					eprintf ("[wasm] cannot find jump for br_if\n");
+				}
+			}
+			r_anal_hint_free (hint2);
+		}
+		break;
+	case WASM_OP_END:
+		{
+			op->type = R_ANAL_OP_TYPE_NOP;
+			if (scope_hint < UT64_MAX) {
+				hint = r_anal_hint_get (anal, scope_hint);
+				if (hint && !strncmp ("loop", hint->opcode, 4)) {
+					r_anal_hint_set_jump (anal, addr, op->jump);
+					r_anal_hint_set_jump (anal, op->jump, addr);
+				} else if (hint && !strncmp ("block", hint->opcode, 5)) {
+					// if/else/block
+					r_anal_hint_set_jump (anal, hint->jump, addr);
+					r_anal_hint_set_jump (anal, addr, UT64_MAX);
+				}
+				if (hint) {
+					r_anal_hint_set_opcode (anal, scope_hint, "invalid");
+					r_anal_hint_set_jump (anal, scope_hint, UT64_MAX);
+					r_anal_hint_del (anal, scope_hint, 1);
+					scope_hint++;
+				} else {
+					// all wasm routines ends with an end.
+					op->eob = true;
+					op->type = R_ANAL_OP_TYPE_RET;
+					scope_hint = UT64_MAX;
+				}
+			} else {
+				if (!(hint = r_anal_hint_get (anal, addr))) {
+					// all wasm routines ends with an end.
+					op->eob = true;
+					op->type = R_ANAL_OP_TYPE_RET;
+				}
+			}
+		}
 		break;
 	case WASM_OP_I32REMS:
 	case WASM_OP_I32REMU:
 		op->type = R_ANAL_OP_TYPE_MOD;
-		break;
-	case WASM_OP_END:
-		//eprintf("0x%016x < stack %u (end)\n", addr, wasm_stack_ptr);
-		if (wasm_stack_ptr > 0) {
-			op->type = R_ANAL_OP_TYPE_NOP;
-			if (addr != UT64_MAX) {
-				for (i = wasm_stack_ptr - 1; i > 0; i--) {
-					if (wasm_stack[i].end == addr && wasm_stack[i].loop != UT64_MAX) {
-						op->type = R_ANAL_OP_TYPE_CJMP;
-						op->jump = wasm_stack[i].loop;
-						op->fail = addr + op->size;
-						break;
-					}
-				}
-			}
-			wasm_stack_ptr--;
-		} else {
-			// all wasm routines ends with an end.
-			op->eob = true;
-			op->type = R_ANAL_OP_TYPE_RET;
-		}
 		break;
 	case WASM_OP_GETLOCAL:
 	case WASM_OP_I32LOAD:
@@ -297,21 +326,12 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	case WASM_OP_CALL:
 	case WASM_OP_CALLINDIRECT:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = get_cf_offset (anal, data);
+		op->jump = get_cf_offset (anal, data, len);
 		op->fail = addr + op->size;
 		if (op->jump != UT64_MAX) {
 			op->ptr = op->jump;
 		}
 		r_strbuf_setf (&op->esil, "4,sp,-=,0x%"PFMT64x",sp,=[4],0x%"PFMT64x",pc,=", op->fail, op->jump);
-		break;
-	case WASM_OP_BR:
-		op->type = R_ANAL_OP_TYPE_JMP;
-		set_br_jump(op, data, len - op->size);
-		break;
-	case WASM_OP_BRIF:
-		op->fail = addr + op->size;
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		set_br_jump(op, data, len - op->size);
 		break;
 	case WASM_OP_RETURN:
 		// should be ret, but if there the analisys is stopped.
@@ -319,23 +339,15 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	default:
 		break;
 	}
-	op_old = wop.op;
+
+anal_end:
 	addr_old = addr;
 	free (wop.txt);
+	r_anal_hint_free (hint);
 	return op->size;
 }
 
 static int archinfo(RAnal *a, int q) {
-	return 1;
-}
-
-static int wasm_pre_anal(RAnal *a, struct r_anal_state_type_t *state, ut64 addr) {
-	int i;
-	for (i = 0; i < WASM_STACK_SIZE; ++i) {
-		wasm_stack[i].loop = UT64_MAX;
-		wasm_stack[i].end = UT64_MAX;
-	}
-	wasm_stack_ptr = 0;
 	return 1;
 }
 
@@ -357,10 +369,9 @@ RAnalPlugin r_anal_plugin_wasm = {
 	.arch = "wasm",
 	.bits = 64,
 	.archinfo = archinfo,
-	.pre_anal_fn_cb = wasm_pre_anal,
 	.get_reg_profile = get_reg_profile,
 	.op = &wasm_op,
-	.esil = true,
+	.esil = true
 };
 
 #ifndef CORELIB
