@@ -5573,7 +5573,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	case 'j': // "asj"
 		pj = pj_new ();
-		pj_ (pj);
+		pj_a (pj);
 		list = r_syscall_list (core->anal->syscall);
 		r_list_foreach (list, iter, si) {
 			pj_o (pj);
