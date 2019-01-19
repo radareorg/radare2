@@ -2542,16 +2542,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	int ebbs = 0;
 	char *name = r_core_anal_fcn_name (core, fcn);
 
-	// execution times:
-	r_cons_printf ("execution state: ");
-	if (!core->dbg->trace->enabled) {
-		r_cons_printf ("(dbg.trace unset)\n");
-	} else if (core->dbg->trace->enabled) {
-		if (!is_fcn_traced (core->dbg->trace, fcn)) {
-			r_cons_println ("Not Executed");
-		}
-	}
-
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
@@ -2633,6 +2623,17 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	free (name);
+
+	// execution times:
+	r_cons_printf ("\nexecution state: ");
+	if (core->dbg->trace->enabled) {
+		if (!is_fcn_traced (core->dbg->trace, fcn)) {
+			r_cons_println ("Not Executed");
+		}
+	} else {
+		r_cons_printf ("(dbg.trace unset)\n");
+	}
+
 	return 0;
 }
 
