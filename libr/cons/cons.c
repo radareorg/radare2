@@ -114,10 +114,12 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 	context->log_callback = NULL;
 
 	if (parent) {
+		context->curtheme = parent->curtheme ? strdup (parent->curtheme) : NULL;
 		context->color = parent->color;
 		// TODO: copy
 		r_cons_pal_init (context);
 	} else {
+		context->curtheme = NULL;
 		context->color = COLOR_MODE_DISABLED;
 		r_cons_pal_init (context);
 	}

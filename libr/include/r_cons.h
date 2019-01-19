@@ -410,6 +410,7 @@ typedef struct r_cons_context_t {
 	bool lastEnabled;
 	bool pageable;
 
+	char *curtheme;
 	RConsColorMode color;
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
