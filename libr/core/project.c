@@ -121,7 +121,6 @@ R_API int r_core_project_list(RCore *core, int mode) {
 			// todo. escape string
 			if (r_core_is_project (core, foo)) {
 				pj_s (pj, foo);
-
 			}
 		}
 		pj_end (pj);
