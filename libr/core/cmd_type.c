@@ -291,13 +291,18 @@ static void printFunctionType(RCore *core, const char *input) {
 		}
 		pj_o (pj);
 		pj_ks (pj, "type", type);
-		pj_ks (pj, "name", name);
-		pj_k (pj, i+1==args? "": ",");
+		if (name != NULL) {
+			pj_ks (pj, "name", name);
+		}
+		else {
+			pj_ks (pj, "name", "(null)");
+		}
+		pj_end (pj);
 	}
 	pj_end (pj);
 	pj_end (pj);
 	if (pj) {
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_printf ("%s", pj_string (pj));
 		pj_free (pj);
 	}
 	free (res);
