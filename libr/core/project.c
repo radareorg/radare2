@@ -104,9 +104,9 @@ R_API int r_core_project_cat(RCore *core, const char *name) {
 }
 
 R_API int r_core_project_list(RCore *core, int mode) {
+	PJ *pj = NULL;
 	RListIter *iter;
 	RList *list;
-	bool isfirst = true;
 
 	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	if (!path) {
@@ -115,16 +115,20 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
-		r_cons_printf ("[");
+		pj = pj_new ();
+		pj_a (pj);
 		r_list_foreach (list, iter, foo) {
 			// todo. escape string
 			if (r_core_is_project (core, foo)) {
-				r_cons_printf ("%s\"%s\"",
-					isfirst? "": ",", foo);
-				isfirst = false;
+				pj_s (pj, foo);
+
 			}
 		}
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		if (pj) {
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
 		break;
 	default:
 		r_list_foreach (list, iter, foo) {
