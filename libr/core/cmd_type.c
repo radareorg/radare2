@@ -274,19 +274,32 @@ static int printkey_json_cb(void *user, const char *k, const char *v) {
 
 static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
+	PJ *pj = NULL;
+	pj = pj_new ();
+	pj_o (pj);
 	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
 	const char *name = r_str_trim_ro (input);
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
-	r_cons_printf ("{\"name\":\"%s\",\"args\":[", name);
+	pj_ks (pj, "name", name);
+	pj_k (pj, args);
+	pj_a (pj);
 	for (i = 0; i< args; i++) {
 		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
 		char *name = strchr (type, ',');
 		if (name) {
 			*name++ = 0;
 		}
-		r_cons_printf ("{\"type\":\"%s\",\"name\":\"%s\"}%s", type, name, i+1==args? "": ",");
+		pj_o (pj);
+		pj_ks (pj, "type", type);
+		pj_ks (pj, "name", name);
+		pj_k (pj, i+1==args? "": ",");
 	}
-	r_cons_printf ("]}");
+	pj_end (pj);
+	pj_end (pj);
+	if (pj) {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
 	free (res);
 }
 
@@ -848,8 +861,8 @@ static int cmd_type(void *data, const char *input) {
 				}
 				pj_end (pj);
 				if (pj) {
-				r_cons_printf ("%s\n", pj_string (pj));
-				pj_free (pj);
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
 				}
 				free (name);
 				ls_free (l);
