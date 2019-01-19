@@ -207,6 +207,18 @@ R_API void r_cons_pal_free(RConsContext *ctx) {
 	r_cons_rainbow_free (ctx);
 }
 
+R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
+	memcpy (&dst->cpal, &src->cpal, sizeof (src->cpal));
+	memset (&dst->pal, 0, sizeof (dst->pal));
+
+	dst->pal.rainbow = NULL;
+	dst->pal.rainbow_sz = 0;
+
+	dst->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
+
+	cons_pal_update_event (dst);
+}
+
 R_API void r_cons_pal_random() {
 	int i;
 	RColor *rcolor;
