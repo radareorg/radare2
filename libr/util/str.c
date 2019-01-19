@@ -1704,7 +1704,7 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		int chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
-			i += chlen;
+			i += chlen - 1;
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
