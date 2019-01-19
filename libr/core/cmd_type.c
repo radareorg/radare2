@@ -281,7 +281,7 @@ static void printFunctionType(RCore *core, const char *input) {
 	const char *name = r_str_trim_ro (input);
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
-	pj_k (pj, args);
+	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i< args; i++) {
 		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
@@ -356,14 +356,22 @@ static int print_typelist_r_cb(void *p, const char *k, const char *v) {
 
 static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
+	PJ *pj = NULL;
+	pj = pj_new ();
+	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
 	char *formatcmd = r_str_newf ("type.%s", k);
 	char *format_s = r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd));
-	r_cons_printf ("{\"type\":\"%s\",\"size\":%d,\"format\":\"%s\"}", k,
-			size_s ? atoi (size_s) : -1,
-			format_s);
+	pj_ks (pj, "type", k);
+	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
+	pj_ks (pj, "format", format_s);
+	pj_end (pj);
+	if (pj) {
+		r_cons_printf ("%s", pj_string (pj));
+		pj_free (pj);
+	}
 	free (size_s);
 	free (format_s);
 	free (sizecmd);
