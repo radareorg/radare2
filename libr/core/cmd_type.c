@@ -821,53 +821,62 @@ static int cmd_type(void *data, const char *input) {
 				SdbKv *kv;
 				SdbListIter *iter;
 				SdbList *l = sdb_foreach_list (TDB, true);
-				const char *comma = "";
-				r_cons_printf ("{");
+				PJ *pj = NULL;
+				pj = pj_new ();
+				pj_o (pj);
 				ls_foreach (l, iter, kv) {
 					if (!strcmp (sdbkv_value (kv), "enum")) {
 						if (!name || strcmp (sdbkv_value (kv), name)) {
 							free (name);
 							name = strdup (sdbkv_key (kv));
-							r_cons_printf ("%s\"%s\":", comma, name);
-							//r_cons_printf ("%s\"%s\"", comma, name);
+							pj_k (pj, name);
 							{
 								RList *list = r_type_get_enum (TDB, name);
 								if (list && !r_list_empty (list)) {
-									r_cons_printf ("{");
+									pj_o (pj);
 									RListIter *iter;
 									RTypeEnum *member;
-									const char *comma = "";
 									r_list_foreach (list, iter, member) {
-										r_cons_printf ("%s\"%s\":%d", comma, member->name, r_num_math (NULL, member->val));
-										comma = ",";
+										pj_kn (pj, member->name, r_num_math (NULL, member->val));
 									}
-									r_cons_printf ("}");
+									pj_end (pj);
 								}
 								r_list_free (list);
 							}
-							comma = ",";
 						}
 					}
 				}
-				r_cons_printf ("}\n");
+				pj_end (pj);
+				if (pj) {
+				r_cons_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
+				}
 				free (name);
 				ls_free (l);
 			} else { // "tej ENUM"
 				RListIter *iter;
+				PJ *pj = NULL;
 				RTypeEnum *member;
+				pj = pj_new ();
+				pj_o (pj);
 				if (member_name) {
 					res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 					// NEVER REACHED
 				} else {
 					RList *list = r_type_get_enum (TDB, name);
 					if (list && !r_list_empty (list)) {
-						r_cons_printf ("{\"name\":\"%s\",\"values\":{", name);
-						const char *comma = "";
+						pj_ks (pj, "name", name);
+						pj_k (pj, "values");
+						pj_o (pj);
 						r_list_foreach (list, iter, member) {
-							r_cons_printf ("%s\"%s\":%d", comma, member->name, r_num_math (NULL, member->val));
-							comma = ",";
+							pj_kn (pj, member->name, r_num_math (NULL, member->val));
 						}
-						r_cons_printf ("}}\n");
+						pj_end (pj);
+						pj_end (pj);
+					}
+					if (pj) {
+						r_cons_printf ("%s\n", pj_string (pj));
+						pj_free (pj);
 					}
 					r_list_free (list);
 				}
