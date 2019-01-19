@@ -1318,9 +1318,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 't': {
 		if (!input[1] || input[1] == 'j') {
-			bool json = false;
+			PJ *pj = NULL;
 			if (input[1] == 'j') {
-				r_cons_print ("{");
+				pj = pj_new ();
+				pj_o (pj);
 			}
 			char *name = NULL;
 			SdbKv *kv;
@@ -1334,19 +1335,19 @@ static int cmd_type(void *data, const char *input) {
 						if (!input[1]) {
 							r_cons_println (name);
 						} else {
-							if (json) {
-								r_cons_print (",");
-							}
 							const char *q = sdb_fmt ("typedef.%s", name);
 							const char *res = sdb_const_get (TDB, q, 0);
-							r_cons_printf ("\"%s\":\"%s\"", name, res);
-							json = true;
+							pj_ks (pj, name, res);
 						}
 					}
 				}
 			}
 			if (input[1] == 'j') {
-				r_cons_println ("}");
+				pj_end (pj);
+			}
+			if (pj) {
+				r_cons_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
 			}
 			free (name);
 			ls_free (l);
