@@ -236,6 +236,8 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 		written = snprintf (outstr + i, sz - i, "%dm", fgbg + c);
 		}
 		break;
+	default:
+		break;
 	}
 
 	if (written < 0 || written >= sz - i) {
