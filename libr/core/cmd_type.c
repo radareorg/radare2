@@ -299,10 +299,8 @@ static void printFunctionType(RCore *core, const char *input) {
 	}
 	pj_end (pj);
 	pj_end (pj);
-	if (pj) {
-		r_cons_printf ("%s", pj_string (pj));
-		pj_free (pj);
-	}
+	r_cons_printf ("%s", pj_string (pj));
+	pj_free (pj);
 	free (res);
 }
 
@@ -370,10 +368,8 @@ static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 	pj_ks (pj, "format", format_s);
 	pj_end (pj);
-	if (pj) {
-		r_cons_printf ("%s", pj_string (pj));
-		pj_free (pj);
-	}
+	r_cons_printf ("%s", pj_string (pj));
+	pj_free (pj);
 	free (size_s);
 	free (format_s);
 	free (sizecmd);
@@ -869,10 +865,8 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				pj_end (pj);
-				if (pj) {
-					r_cons_printf ("%s\n", pj_string (pj));
-					pj_free (pj);
-				}
+				r_cons_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
 				free (name);
 				ls_free (l);
 			} else { // "tej ENUM"
@@ -895,10 +889,8 @@ static int cmd_type(void *data, const char *input) {
 						pj_end (pj);
 						pj_end (pj);
 					}
-					if (pj) {
-						r_cons_printf ("%s\n", pj_string (pj));
-						pj_free (pj);
-					}
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
 					r_list_free (list);
 				}
 			}
