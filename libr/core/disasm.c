@@ -3866,7 +3866,8 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 	if (size < 1 || addr == UT64_MAX) {
 		return NULL;
 	}
-	list = r_bin_get_relocs (core->bin);
+	/* list = r_bin_get_relocs (core->bin); */
+	list = r_list_new();
 	r_list_foreach (list, iter, r) {
 		if ((r->vaddr >= addr) && (r->vaddr < (addr + size))) {
 			return r;

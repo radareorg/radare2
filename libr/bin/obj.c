@@ -18,6 +18,17 @@ static void mem_free(void *data) {
 	free (mem);
 }
 
+static int reloc_cmp(const void *a, const RBNode *b) {
+	RBinReloc *ar = (const RBinReloc *)a;
+	RBinReloc *br = container_of (b, const RBinReloc, vrb);
+	return ar->vaddr - br->vaddr;
+}
+
+static void reloc_free(RBNode *rbn) {
+	RBinReloc *r = container_of (rbn, RBinReloc, vrb);
+	free (r);
+}
+
 static void object_delete_items(RBinObject *o) {
 	ut32 i = 0;
 	r_return_if_fail (o);
@@ -26,7 +37,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->imports);
 	r_list_free (o->libs);
-	r_list_free (o->relocs);
+	r_rbtree_free (o->relocs, reloc_free);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
 	ht_up_free (o->strings_db);
@@ -258,6 +269,17 @@ static void filter_classes(RBinFile *bf, RList *list) {
 	sdb_free (db);
 }
 
+static RBNode *list2rbtree(RList *relocs) {
+	RListIter *it;
+	RBinReloc *reloc;
+	RBNode *res = NULL;
+
+	r_list_foreach (relocs, it, reloc) {
+		r_rbtree_insert (&res, reloc, &reloc->vrb, reloc_cmp);
+	}
+	return res;
+}
+
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	RBinObject *old_o;
 	RBinPlugin *cp;
@@ -351,8 +373,11 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (cp->relocs) {
-			o->relocs = cp->relocs (binfile);
-			REBASE_PADDR (o, o->relocs, RBinReloc);
+			RList *l = cp->relocs (binfile);
+			REBASE_PADDR (o, l, RBinReloc);
+			o->relocs = list2rbtree (l);
+			l->free = NULL;
+			r_list_free (l);
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
@@ -420,6 +445,28 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	binfile->o = old_o;
 	return true;
+}
+
+R_IPI RBNode *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
+	r_return_val_if_fail (bin && o, NULL);
+
+	static bool first = true;
+	// r_bin_object_set_items set o->relocs but there we don't have access
+	// to io
+	// so we need to be run from bin_relocs, free the previous reloc and get
+	// the patched ones
+	if (first && o->plugin && o->plugin->patch_relocs) {
+		RList *tmp = o->plugin->patch_relocs (bin);
+		first = false;
+		if (!tmp) {
+			return o->relocs;
+		}
+		r_rbtree_free (o->relocs, reloc_free);
+		REBASE_PADDR (o, tmp, RBinReloc);
+		o->relocs = list2rbtree (tmp);
+		first = false;
+	}
+	return o->relocs;
 }
 
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
