@@ -2527,7 +2527,7 @@ static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
 	r_list_foreach (traced->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (r_anal_fcn_in (fcn, trace->addr)) {
-				r_cons_printf ("%d\n", trace->times);
+				r_cons_printf ("\ntraced: %d\n", trace->times);
 				return true;
 			}
 		}
@@ -2624,16 +2624,10 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	}
 	free (name);
 
-	// execution times:
-	r_cons_printf ("\nexecution state: ");
+	// traced
 	if (core->dbg->trace->enabled) {
-		if (!is_fcn_traced (core->dbg->trace, fcn)) {
-			r_cons_println ("Not Executed");
-		}
-	} else {
-		r_cons_printf ("(dbg.trace unset)\n");
+		is_fcn_traced (core->dbg->trace, fcn);
 	}
-
 	return 0;
 }
 
