@@ -6605,8 +6605,9 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	}
 	case 'd': { // "aggd" - dot format
 		const char *font = r_config_get (core->config, "graph.font");
-		r_cons_printf ("digraph code {\ngraph [bgcolor=white];\n"
-			"node [color=lightgray, style=filled shape=box "
+		r_cons_printf ("digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
+			"edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
+			"node [fillcolor=white, style=filled shape=box "
 			"fontname=\"%s\" fontsize=\"8\"];\n", font);
 		r_agraph_foreach (core->graph, agraph_print_node_dot, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, NULL);
@@ -6633,10 +6634,11 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			char *cmd = graph_cmd (core, "aggd", input + 1);
+			const char *filename = r_str_trim_ro (input + 1)
+			char *cmd = graph_cmd (core, "aggd", filename);
 			if (cmd && *cmd) {
-				if (input[1]) {
-					r_cons_printf ("Saving to file %s ...\n", input + 1);
+				if (input[1] == ' ') {
+					r_cons_printf ("Saving to file '%s'...\n", filename);
 					r_cons_flush ();
 				}
 				r_core_cmd0 (core, cmd);
@@ -6717,7 +6719,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_print_bb_custom (core, fcn);
 			break;
 			}
-		case 'w':// "agfw"
+		case 'w': // "agfw"
 			if (r_config_get_i (core->config, "graph.web")) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
