@@ -4268,11 +4268,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
-	esil->cb.user = ds;
-	esil->cb.hook_reg_write = myregwrite;
-	esil->cb.hook_reg_read = myregread;
-	hook_mem_write = esil->cb.hook_mem_write;
+	if (pc) {
+		r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
+		esil->cb.user = ds;
+		esil->cb.hook_reg_write = myregwrite;
+		esil->cb.hook_reg_read = myregread;
+		hook_mem_write = esil->cb.hook_mem_write;
+	}
 	if (ds->show_emu_stack) {
 		esil->cb.hook_mem_write = mymemwrite2;
 	} else {
