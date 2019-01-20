@@ -1942,18 +1942,21 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 			const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
 			const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 			if (!gv_edge || !*gv_edge) {
-				gv_edge = "arrowhead=\"normal\"";
+				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
 			if (!gv_node || !*gv_node) {
-				gv_node = "fillcolor=gray style=filled shape=box";
+				gv_node = "fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
 			}
 			if (!gv_grph || !*gv_grph) {
-				gv_grph = "bgcolor=white";
+				gv_grph = "bgcolor=azure";
 			}
 			if (!gv_spline || !*gv_spline) {
-				gv_spline = "splines=\"ortho\"";
+				// ortho for bbgraph and curved for callgraph
+				gv_spline = "splines=\"curved\"";
 			}
 			r_cons_printf ("digraph code {\n"
+					"rankdir=LR;\n"
+					"outputorder=edgesfirst;\n"
 					"graph [%s fontname=\"%s\" %s];\n"
 					"node [%s];\n"
 					"edge [%s];\n", gv_grph, font, gv_spline,
@@ -1982,6 +1985,7 @@ repeat:
 		RList *calls = r_list_new ();
 		// TODO: maybe fcni->calls instead ?
 		r_list_foreach (refs, iter2, fcnr) {
+			//  TODO: tail calll jumps are also calls
 			if (fcnr->type == 'C' && r_list_find(calls, fcnr, (RListComparator)RAnalRef_cmp) == NULL) {
 				r_list_append (calls, fcnr);
 			}
@@ -2057,10 +2061,10 @@ repeat:
 				break;
 			case R_GRAPH_FORMAT_DOT:
 				r_cons_printf ("  \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-						fcni->addr, fcnr->addr, fcnr_name,
-						(fcnr->type==R_ANAL_REF_TYPE_CODE ||
-							fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
+						"[color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+						//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+						fcni->addr, fcnr->addr, //, fcnr_name,
+						"#61afef", 
 						fcnr_name, fcnr->addr);
 				r_cons_printf ("  \"0x%08"PFMT64x"\" "
 						"[label=\"%s\""
