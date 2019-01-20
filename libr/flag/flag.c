@@ -139,8 +139,8 @@ static void set_name(RFlagItem *item, char *name) {
 	item->realname = item->name;
 }
 
-static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff) {
-	if (item->offset != newoff) {
+static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool force) {
+	if (item->offset != newoff || force) {
 		remove_offsetmap (f, item);
 		item->offset = newoff;
 
@@ -156,13 +156,13 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff) {
 	return false;
 }
 
-static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname) {
+static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
 	bool res = false;
 	if (!newname) {
 		return false;
 	}
 
-	if (item->name == newname || (item->name && !strcmp (item->name, newname))) {
+	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
 
@@ -659,8 +659,8 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	item->space = f->space_idx;
 	item->size = size;
 
-	update_flag_item_offset (f, item, off + f->base);
-	update_flag_item_name (f, item, name);
+	update_flag_item_offset (f, item, off + f->base, true);
+	update_flag_item_name (f, item, name, true);
 	return item;
 err:
 	r_flag_item_free (item);
@@ -692,7 +692,7 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
-	return update_flag_item_name (f, item, name);
+	return update_flag_item_name (f, item, name, false);
 }
 
 /* unset the given flag item.
@@ -777,7 +777,7 @@ static bool flag_relocate_foreach(RFlagItem *fi, void *user) {
 	if (fn == on) {
 		ut64 fm = fi->offset & u->off_mask;
 		ut64 om = u->to & u->off_mask;
-		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om);
+		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om, false);
 		u->n++;
 	}
 	return true;
