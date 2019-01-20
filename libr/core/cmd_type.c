@@ -274,8 +274,7 @@ static int printkey_json_cb(void *user, const char *k, const char *v) {
 
 static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
-	PJ *pj = NULL;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	pj_o (pj);
 	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
 	const char *name = r_str_trim_ro (input);
@@ -293,8 +292,7 @@ static void printFunctionType(RCore *core, const char *input) {
 		pj_ks (pj, "type", type);
 		if (name != NULL) {
 			pj_ks (pj, "name", name);
-		}
-		else {
+		} else {
 			pj_ks (pj, "name", "(null)");
 		}
 		pj_end (pj);
@@ -361,8 +359,7 @@ static int print_typelist_r_cb(void *p, const char *k, const char *v) {
 
 static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	PJ *pj = NULL;
-	pj = pj_new ();
+	PJ *pj = pj_new ();
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
@@ -847,8 +844,7 @@ static int cmd_type(void *data, const char *input) {
 				SdbKv *kv;
 				SdbListIter *iter;
 				SdbList *l = sdb_foreach_list (TDB, true);
-				PJ *pj = NULL;
-				pj = pj_new ();
+				PJ *pj = pj_new ();
 				pj_o (pj);
 				ls_foreach (l, iter, kv) {
 					if (!strcmp (sdbkv_value (kv), "enum")) {
@@ -881,9 +877,8 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			} else { // "tej ENUM"
 				RListIter *iter;
-				PJ *pj = NULL;
+				PJ *pj = pj_new ();
 				RTypeEnum *member;
-				pj = pj_new ();
 				pj_o (pj);
 				if (member_name) {
 					res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
