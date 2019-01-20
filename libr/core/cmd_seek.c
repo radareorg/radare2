@@ -425,6 +425,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
+		r_cons_printf("(5) addr: %lx, input + 1: %s\n", addr, (char *)(input + 1));
 		r_core_seek (core, addr, 1);
 		r_core_block_read (core);
 	}
@@ -787,6 +788,7 @@ static int cmd_seek(void *data, const char *input) {
 	default:
 		{
 			ut64 n = r_num_math (core->num, input);
+			r_cons_printf("(4) n: %lx, input + 1: %s\n", n, (char *)(input + 1));
 			if (n) {
 				if (!silent) {
 					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
