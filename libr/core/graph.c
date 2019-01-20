@@ -2169,6 +2169,23 @@ static void delete_dup_edges (RAGraph *g) {
 	}
 }
 
+static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
+	if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
+		// do nothing
+		return true;
+	}
+	if (curbb->switch_op) {
+		RListIter *it;
+		RAnalCaseOp *cop;
+		r_list_foreach (curbb->switch_op->cases, it, cop) {
+			if (cop->addr == bb->addr) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
@@ -2208,12 +2225,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-		if (few) {
-			if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
-				// do nothing
-			} else {
-				continue;
-			}
+		if (few && !isbbfew (curbb, bb)) {
+			continue;
 		}
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		char *title = get_title (bb->addr);
@@ -2243,12 +2256,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-		if (few) {
-			if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
-				// do nothing
-			} else {
-				continue;
-			}
+		if (few && !isbbfew (curbb, bb)) {
+			continue;
 		}
 
 		title = get_title (bb->addr);
