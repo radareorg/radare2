@@ -4875,8 +4875,9 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf("l: %0lx\n", l);
 				const int bs = core->blocksize;
 				int bs1 = l * 16;
+				//int bs1 = l;
 				int bsmax = R_MAX (bs, bs1);
-				block1 = malloc (bsmax + 1);
+				block1 = malloc (bsmax);
 				if (block1) {
 					memcpy (block1, block, bs);
 					if (bs1 > bs) {
