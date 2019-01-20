@@ -176,7 +176,16 @@ static void showFormat(RCore *core, const char *name, int mode) {
 		if (fmt) {
 			r_str_trim (fmt);
 			if (mode == 'j') {
-				r_cons_printf ("{\"name\":\"%s\",\"format\":\"%s\"}", name, fmt);
+				PJ *pj = pj_new ();
+				if (!pj) {
+					return;
+				}
+				pj_o (pj);
+				pj_ks (pj, "name", name);
+				pj_ks (pj, "format", fmt);
+				pj_end (pj);
+				r_cons_printf ("%s", pj_string (pj));
+				pj_free (pj);
 			} else {
 				if (mode) {
 					r_cons_printf ("pf.%s %s\n", name, fmt);
@@ -268,7 +277,11 @@ static int printkey_cb(void *user, const char *k, const char *v) {
 }
 
 static int printkey_json_cb(void *user, const char *k, const char *v) {
-	r_cons_printf ("\"%s\"", k);
+	PJ *pj = pj_new ();
+	pj_s (pj, k);
+	r_cons_printf ("%s", pj_string (pj));
+	pj_free (pj);
+	//r_cons_printf ("\"%s\"", k);
 	return 1;
 }
 
@@ -874,7 +887,7 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			} else { // "tej ENUM"
 				RListIter *iter;
-				PJ *pj = pj_new ();
+				PJ *pj = pj_new ();	
 				RTypeEnum *member;
 				pj_o (pj);
 				if (member_name) {
