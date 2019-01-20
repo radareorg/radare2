@@ -275,6 +275,9 @@ static int printkey_json_cb(void *user, const char *k, const char *v) {
 static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	pj_o (pj);
 	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
 	const char *name = r_str_trim_ro (input);
@@ -282,7 +285,7 @@ static void printFunctionType(RCore *core, const char *input) {
 	pj_ks (pj, "name", name);
 	pj_k (pj, "args");
 	pj_a (pj);
-	for (i = 0; i< args; i++) {
+	for (i = 0; i < args; i++) {
 		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
 		char *name = strchr (type, ',');
 		if (name) {
