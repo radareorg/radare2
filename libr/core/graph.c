@@ -2176,6 +2176,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	char *shortcut = NULL;
 	int shortcuts = 0;
 	bool emu = r_config_get_i (core->config, "asm.emu");
+	bool few = r_config_get_i (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
@@ -2189,11 +2190,30 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
 	r_list_sort (fcn->bbs, (RListComparator) bbcmp);
+	RAnalBlock *curbb = NULL;
+	if (few) {
+		r_list_foreach (fcn->bbs, iter, bb) {
+			if (!curbb) {
+				curbb = bb;
+			}
+			if (r_anal_bb_is_in_offset (bb, core->offset)) {
+				curbb = bb;
+				break;
+			}
+		}
+	}
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
+		}
+		if (few) {
+			if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
+				// do nothing
+			} else {
+				continue;
+			}
 		}
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		char *title = get_title (bb->addr);
@@ -2222,6 +2242,13 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		if (bb->addr == UT64_MAX) {
 			continue;
+		}
+		if (few) {
+			if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
+				// do nothing
+			} else {
+				continue;
+			}
 		}
 
 		title = get_title (bb->addr);
@@ -3960,19 +3987,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
-			// agraph_update_seek (g, get_anode (g->curnode), true);
-			// agraph_refresh (r_cons_singleton ()->event_data);
-			// agraph_update_seek (g, get_anode (g->curnode), false);
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
-			// agraph_update_seek (g, get_anode (g->curnode), false);
-			// agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case '0':
 			agraph_set_zoom (g, ZOOM_DEFAULT);
 			agraph_update_seek (g, get_anode (g->curnode), true);
-// update scroll (with minor shift)
+			// update scroll (with minor shift)
 			break;
 		case '|':
 		{         // TODO: edit
@@ -4187,6 +4209,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_core_seek (core, undo->off, 0);
 			} else {
 				eprintf ("Cannot undo\n");
+			}
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
 			}
 			break;
 		}
@@ -4407,12 +4432,18 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 't':
 			agraph_follow_true (g);
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'T':
 			// XXX WIP	agraph_merge_child (g, 0);
 			break;
 		case 'f':
 			agraph_follow_false (g);
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'F':
 			if (okey == 27) {
