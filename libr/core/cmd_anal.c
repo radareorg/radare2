@@ -322,6 +322,7 @@ static const char *help_msg_afl[] = {
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
+	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "", "sort function list by address",
@@ -492,6 +493,7 @@ static const char *help_msg_ah[] = {
 	"ahr", " val",  "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
+	"aht", " call", "change opcode type (see aht?)",
 	NULL
 };
 
@@ -612,7 +614,7 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
-	"axff", " [addr]", "find data/code references from this function",
+	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
 	NULL
 };
@@ -864,10 +866,12 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	ut64 off = core->offset;
 	RAnalOp op;
 	char *q = NULL;
+	PJ *pj = NULL;
 	ut64 tgt_addr = UT64_MAX;
 
 	if (use_json) {
-		r_cons_print ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
 
 	r_anal_op (core->anal, &op, off,
@@ -885,8 +889,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 				} else if (!use_json) {
 					r_cons_println (bar->name);
 				} else {
-					r_cons_printf ("{\"type\":\"var\",\"name\":\"%s\"}",
-								bar->name);
+					pj_o (pj);
+					pj_ks (pj, "name", bar->name);
+					pj_ks (pj, "type", "var");
+					pj_kn (pj, "offset", tgt_addr);
+					pj_end (pj);
 				}
 			} else {
 				eprintf ("Cannot find variable\n");
@@ -903,8 +910,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_println (fcn->name);
 			} else {
-				r_cons_printf ("{\"type\":\"function\",\"name\":\"%s\"}",
-							fcn->name);
+				pj_o (pj);
+				pj_ks (pj, "name", fcn->name);
+				pj_ks (pj, "type", "function");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		} else if (f) {
 			if (name) {
@@ -912,8 +922,16 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_println (f->name);
 			} else {
-				r_cons_printf ("{\"type\":\"flag\",\"name\":\"%s\"}",
-							f->name);
+				pj_o (pj);
+				if (name) {
+					pj_ks (pj, "old_name", f->name);
+					pj_ks (pj, "new_name", name);
+				} else {
+					pj_ks (pj, "name", f->name);
+				}
+				pj_ks (pj, "type", "flag");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		} else {
 			if (name) {
@@ -921,14 +939,22 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 			} else if (!use_json) {
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
-				r_cons_printf ("{\"type\":\"address\",\"offset\":"
-							   "%" PFMT64u "}", tgt_addr);
+				pj_o (pj);
+				pj_ks (pj, "name", name);
+				pj_ks (pj, "type", "address");
+				pj_kn (pj, "offset", tgt_addr);
+				pj_end (pj);
 			}
 		}
 	}
 
 	if (use_json) {
-		r_cons_print ("]\n");
+		pj_end (pj);
+	}
+
+	if (pj) {
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 
 	if (q) {
@@ -1370,7 +1396,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
-		color = core->cons->pal.label;
+		color = core->cons->context->pal.label;
 	}
 	switch (fmt) {
 	case 'j':
@@ -1392,7 +1418,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
 		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
-		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ESIL);
+		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx,
+			R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		char *mnem = strdup (r_asm_op_get_asm (&asmop));
@@ -1739,10 +1766,11 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		switch (mode) {
 		case 'r':
 			if (b->jump == UT64_MAX) {
-				ut64 retaddr = b->addr;
-				if (b->op_pos) {
-					retaddr += b->op_pos[b->ninstr - 2];
+				ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
+				if (retaddr == UT64_MAX) {
+					break;
 				}
+
 				if (!strcmp (input, "*")) {
 					r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
 				} else if (!strcmp (input, "-*")) {
@@ -2534,6 +2562,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			/* fallthrough */
 		case 'j': // "aflj"
 		case 'q': // "aflq"
+		case 'm': // "aflm"
 		case '+': // "afl+"
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
@@ -3083,7 +3112,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg) : Color_BWHITE;
 	} else {
 		use_color = NULL;
@@ -3155,7 +3184,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	char *arg;
 
 	if (use_colors) {
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP (creg)
 		: Color_BWHITE;
 	} else {
@@ -3617,7 +3646,7 @@ repeat:
 	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
-	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL);
+	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 // if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
@@ -3630,12 +3659,6 @@ repeat:
 			return_tail (0);
 		}
 		op.size = 1; // avoid inverted stepping
-	}
-	{
-		/* apply hint */
-		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-		r_anal_op_hint (&op, hint);
-		r_anal_hint_free (hint);
 	}
 	if (r_config_get_i (core->config, "cfg.r2wars")) {
 		// this is x86 and r2wars specific, shouldnt hurt outside x86
@@ -3675,7 +3698,7 @@ repeat:
 			r_anal_esil_set_pc (esil, naddr);
 			(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
 			// TODO: sometimes this is dupe
-			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL);
+			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 			switch (op2.type) {
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_JMP:
@@ -4273,7 +4296,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
-		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL);
+		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		if (len < 1) {
 			eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
@@ -4386,8 +4409,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
-
-
 static void cmd_aespc(RCore *core, ut64 addr, int off) {
 	RAnalEsil *esil = core->anal->esil;
 	int i, j = 0;
@@ -4429,7 +4450,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 		if (!i) {
 			r_io_read_at (core->io, addr, buf, bsize);
 		}
-		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 		instr_size += ret;
 		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 		if (inc < 0) {
@@ -4589,7 +4610,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'l': // "aesl"
 		{
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			RAnalOp *op = r_core_anal_op (core, pc, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *op = r_core_anal_op (core, pc, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 			// TODO: honor hint
 			if (!op) {
 				break;
@@ -4618,7 +4639,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'o': // "aeso"
 			// step over
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
-				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC);
+				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 				until_addr = op->addr + op->size;
 			}
@@ -4663,7 +4684,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
-				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
+				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 				if (!op) {
 					break;
 				}
@@ -4843,7 +4864,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				while (pc < end) {
 					left = R_MIN (end - pc, 32);
 					r_asm_set_pc (core->assembler, pc);
-					ret = r_anal_op (core->anal, &op, addr, buf, left, R_ANAL_OP_MASK_ESIL); // read overflow
+					ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
+					if (op.type == R_ANAL_OP_TYPE_RET) {
+						break;
+					}
 					if (ret) {
 						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
 						r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
@@ -5460,6 +5484,7 @@ static void cmd_asf(RCore *core, const char *input) {
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
+	PJ *pj = NULL;
 	RSyscallItem *si;
 	RListIter *iter;
 	RList *list;
@@ -5547,19 +5572,21 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "asj"
+		pj = pj_new ();
+		pj_a (pj);
 		list = r_syscall_list (core->anal->syscall);
-		r_cons_printf ("[");
 		r_list_foreach (list, iter, si) {
-			r_cons_printf ("{\"name\":\"%s\","
-				"\"swi\":\"%d\",\"num\":\"%d\"}",
-				si->name, si->swi, si->num);
-			if (iter->n) {
-				r_cons_printf (",");
-			}
+			pj_o (pj);
+			pj_ks (pj, "name", si->name);
+			pj_ki (pj, "swi", si->swi);
+			pj_ki (pj, "num", si->num);
+			pj_end (pj);
 		}
-		r_cons_printf ("]\n");
-		r_list_free (list);
-		// JSON support
+		pj_end (pj);
+		if (pj) {
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
 		break;
 	case '\0':
 		cmd_syscall_do (core, -1, core->offset);
@@ -5744,7 +5771,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	free (ba);
 	if (color && has_color) {
 		buf_asm = r_print_colorize_opcode (core->print, str,
-				core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+				core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 	} else {
 		buf_asm = r_str_new (str);
 	}
@@ -5956,18 +5983,39 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		r_list_free (list);
 	} break;
 	case 'f':
-		if (input[1] == 'f') {
+		if (input[1] == 'f') { // "axff"
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			RListIter *iter;
+			PJ *pj = NULL;
 			RAnalRef *refi;
+			if (input[2] == 'j') { // "axffj"
+				// start a new JSON object
+				pj = pj_new ();
+				pj_a (pj);
+			}
 			if (fcn) {
 				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 				r_list_foreach (refs, iter, refi) {
 					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 					const char *name = f ? f->name: "";
-					r_cons_printf ("%c 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-						refi->type == R_ANAL_REF_TYPE_CALL?'C':'J',
-						refi->at, refi->addr, name);
+					if (input[2] == 'j') {
+						pj_o (pj);
+						pj_ks (pj, "type", r_anal_xrefs_type_tostring(refi->type));
+						pj_kn (pj, "at", refi->at);
+						pj_kn (pj, "ref", refi->addr);
+						pj_ks (pj, "name", name);
+						pj_end (pj);
+					} else {
+						r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+							r_anal_xrefs_type_tostring(refi->type), refi->at, refi->addr, name);
+					}
+				}
+				if (input[2] ==  'j') {
+					pj_end (pj);
+				}
+				if (pj) {
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
 				}
 			} else {
 				eprintf ("Cannot find any function\n");
@@ -6028,7 +6076,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								str, sizeof (str), core->print->big_endian);
 						if (has_color) {
 							buf_asm = r_print_colorize_opcode (core->print, str,
-									core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+									core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
 						} else {
 							buf_asm = r_str_new (str);
 						}
@@ -6118,6 +6166,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_arch (core->anal, core->offset);
 		} else {
 			eprintf ("Missing argument\n");
+		}
+		break;
+	case 't': // "aht"
+		if (input[1] == ' ') {
+			const char *arg = r_str_trim_ro (input + 1);
+			int type = r_anal_optype_from_string (arg);
+			r_anal_hint_set_type (core->anal, core->offset, type);
+		} else {
+			eprintf ("Usage: aht [type] # can be mov, jmp, call, ...\n");
 		}
 		break;
 	case 'b': // "ahb" set bits

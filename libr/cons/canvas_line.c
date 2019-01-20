@@ -52,17 +52,17 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	RCons *cons = r_cons_singleton ();
 	switch (style->color) {
 	case LINE_UNCJMP:
-		c->attr = cons->pal.graph_trufae;
+		c->attr = cons->context->pal.graph_trufae;
 		break;
 	case LINE_TRUE:
-		c->attr = cons->pal.graph_true;
+		c->attr = cons->context->pal.graph_true;
 		break;
 	case LINE_FALSE:
-		c->attr = cons->pal.graph_false;
+		c->attr = cons->context->pal.graph_false;
 		break;
 	case LINE_NONE:
 	default:
-		c->attr = cons->pal.graph_trufae;
+		c->attr = cons->context->pal.graph_trufae;
 		break;
 	}
 	if (!c->color) {

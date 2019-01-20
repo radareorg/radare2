@@ -179,7 +179,6 @@ static const char *help_msg_p[] = {
 	"pc", "[?][p] [len]", "output C (or python) format",
 	"pC", "[aAcdDxw] [rows]", "print disassembly in columns (see hex.cols and pdi)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
-	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"pg", "[?][x y w h] [cmd]", "create new visual gadget or print it (see pg? for details)",
@@ -269,6 +268,7 @@ static const char *help_msg_pd[] = {
 	"NOTE: ", "", "Pressing ENTER on empty command will repeat last print command in next page",
 	"pd", " N", "disassemble N instructions",
 	"pd", " -N", "disassemble N instructions backward",
+	"pd--", "[n]", "context disassembly of N instructions",
 	"pD", " N", "disassemble N bytes",
 	"pda", "", "disassemble all possible opcodes (byte per byte)",
 	"pdb", "", "disassemble basic block",
@@ -1440,7 +1440,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 		// r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
 		if (usecolor) {
-			append (ebytes, core->cons->pal.offset);
+			append (ebytes, core->cons->context->pal.offset);
 		}
 		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
 		if (usecolor) {
@@ -1845,7 +1845,7 @@ static void cmd_print_pwn(const RCore *core) {
 }
 
 static int cmd_print_pxA(RCore *core, int len, const char *data) {
-	RConsPrintablePalette *pal = &core->cons->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
 	int show_color = r_config_get_i (core->config, "scr.color");
@@ -2154,7 +2154,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool asm_emu = r_config_get_i (core->config, "asm.emu");
 	bool emu_str = r_config_get_i (core->config, "emu.str");
 	r_config_set_i (core->config, "emu.str", true);
-	RConsPrintablePalette *pal = &core->cons->pal;
+	RConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -3456,7 +3456,7 @@ dsmap {
 }
 #endif
 
-#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 #if 0
 static void disasm_recursive_old(RCore *core, ut64 addr, char type_print) {
 	bool push[512];
@@ -5225,6 +5225,8 @@ static int cmd_print(void *data, const char *input) {
 	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
+			cmd_pCd (core, "");
+			break;
 		case ' ':
 		case 'd':
 			cmd_pCd (core, input + 2);
@@ -6141,7 +6143,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		char rgbstr[32];
-		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
+		const char *k = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
 		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 			k = r_cons_rgb_str_off (rgbstr, sizeof (rgbstr), off);
 		}

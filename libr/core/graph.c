@@ -391,9 +391,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	// This info must be stored inside RANode* from RCore*
 	RCons *cons = r_cons_singleton ();
 	if (cur) {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->pal.graph_box);
+		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, cons->context->pal.graph_box);
 	}
 }
 
@@ -2169,6 +2169,23 @@ static void delete_dup_edges (RAGraph *g) {
 	}
 }
 
+static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
+	if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
+		// do nothing
+		return true;
+	}
+	if (curbb->switch_op) {
+		RListIter *it;
+		RAnalCaseOp *cop;
+		r_list_foreach (curbb->switch_op->cases, it, cop) {
+			if (cop->addr == bb->addr) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
@@ -2176,6 +2193,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	char *shortcut = NULL;
 	int shortcuts = 0;
 	bool emu = r_config_get_i (core->config, "asm.emu");
+	bool few = r_config_get_i (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
@@ -2189,10 +2207,25 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
 	r_list_sort (fcn->bbs, (RListComparator) bbcmp);
+	RAnalBlock *curbb = NULL;
+	if (few) {
+		r_list_foreach (fcn->bbs, iter, bb) {
+			if (!curbb) {
+				curbb = bb;
+			}
+			if (r_anal_bb_is_in_offset (bb, core->offset)) {
+				curbb = bb;
+				break;
+			}
+		}
+	}
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+		if (few && !isbbfew (curbb, bb)) {
 			continue;
 		}
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
@@ -2221,6 +2254,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *title;
 
 		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+		if (few && !isbbfew (curbb, bb)) {
 			continue;
 		}
 
@@ -3445,11 +3481,11 @@ static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
 static void agraph_sdb_init(const RAGraph *g) {
 	sdb_bool_set (g->db, "agraph.is_callgraph", g->is_callgraph, 0);
 	RCons *cons = r_cons_singleton ();
-	sdb_set_enc (g->db, "agraph.color_box", cons->pal.graph_box, 0);
-	sdb_set_enc (g->db, "agraph.color_box2", cons->pal.graph_box2, 0);
-	sdb_set_enc (g->db, "agraph.color_box3", cons->pal.graph_box3, 0);
-	sdb_set_enc (g->db, "agraph.color_true", cons->pal.graph_true, 0);
-	sdb_set_enc (g->db, "agraph.color_false", cons->pal.graph_false, 0);
+	sdb_set_enc (g->db, "agraph.color_box", cons->context->pal.graph_box, 0);
+	sdb_set_enc (g->db, "agraph.color_box2", cons->context->pal.graph_box2, 0);
+	sdb_set_enc (g->db, "agraph.color_box3", cons->context->pal.graph_box3, 0);
+	sdb_set_enc (g->db, "agraph.color_true", cons->context->pal.graph_true, 0);
+	sdb_set_enc (g->db, "agraph.color_false", cons->context->pal.graph_false, 0);
 }
 
 R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
@@ -3960,19 +3996,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
-			// agraph_update_seek (g, get_anode (g->curnode), true);
-			// agraph_refresh (r_cons_singleton ()->event_data);
-			// agraph_update_seek (g, get_anode (g->curnode), false);
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
-			// agraph_update_seek (g, get_anode (g->curnode), false);
-			// agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case '0':
 			agraph_set_zoom (g, ZOOM_DEFAULT);
 			agraph_update_seek (g, get_anode (g->curnode), true);
-// update scroll (with minor shift)
+			// update scroll (with minor shift)
 			break;
 		case '|':
 		{         // TODO: edit
@@ -4092,7 +4123,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" :e cmd.gprompt = agft   - show tinygraph in one side\n"
 				" +/-/0        - zoom in/out/default\n"
 				" ;            - add comment in current basic block\n"
-				" .            - center graph to the current node\n"
+				" . (dot)      - center graph to the current node\n"
+				" , (comma)    - toggle graph.few\n"
 				" ^            - seek to the first bb of the function\n"
 				" =            - toggle graph.layout\n"
 				" :cmd         - run radare command\n"
@@ -4187,6 +4219,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_core_seek (core, undo->off, 0);
 			} else {
 				eprintf ("Cannot undo\n");
+			}
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
 			}
 			break;
 		}
@@ -4401,18 +4436,29 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			  }
 			  agraph_update_seek (g, get_anode (g->curnode), true);
 			  break;
+		case ',':
+			r_config_toggle (core->config, "graph.few");
+			g->need_reload_nodes = true;
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case '.':
 			discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 't':
 			agraph_follow_true (g);
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'T':
 			// XXX WIP	agraph_merge_child (g, 0);
 			break;
 		case 'f':
 			agraph_follow_false (g);
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'F':
 			if (okey == 27) {

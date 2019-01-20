@@ -1410,7 +1410,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_LOAD_WEAK_DYLIB:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "load_dylib", 0);
 			bin->nlibs++;
-			if (!parse_dylib (bin, off)){
+			if (!parse_dylib (bin, off)) {
 				bprintf ("Cannot parse dylib\n");
 				bin->nlibs--;
 				return false;

@@ -8,9 +8,9 @@
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 0xffff && buf[0] != 0xcf && buf[0] != 0x7f) {
 		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
-		/* hacky check to avoid detecting multidex bins as bios */
+		/* hacky check to avoid detecting multidex or MZ bins as bios */
 		/* need better fix for this */
-		if (!memcmp (buf, "dex", 3)) {
+		if (!memcmp (buf, "dex", 3) || !memcmp (buf, "MZ", 2)) {
 			return false;
 		}
 		/* Check if this a 'jmp' opcode */

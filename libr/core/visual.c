@@ -333,7 +333,7 @@ R_API int r_core_visual_hud(RCore *core) {
 	char *homehud = r_str_home (R2_HOME_HUD);
 	char *res = NULL;
 	char *p = 0;
-	r_cons_singleton ()->color = use_color;
+	r_cons_singleton ()->context->color = use_color;
 
 	r_core_visual_showcursor (core, true);
 	if (c && *c && r_file_exists (c)) {
@@ -387,10 +387,10 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
 	int i, max_length = 0, padding = 0;
-	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = cons->color ? cons->pal.args : "",
-		   *pal_help_color = cons->color ? cons->pal.help : "",
-		   *pal_reset = cons->color ? cons->pal.reset : "";
+	RConsContext *cons_ctx = r_cons_singleton ()->context;
+	const char *pal_args_color = cons_ctx->color ? cons_ctx->pal.args : "",
+		   *pal_help_color = cons_ctx->color ? cons_ctx->pal.help : "",
+		   *pal_reset = cons_ctx->color ? cons_ctx->pal.reset : "";
 	for (i = 0; help[i]; i += 2) {
 		max_length = R_MAX (max_length, strlen (help[i]));
 	}
@@ -3428,7 +3428,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 R_API void r_core_visual_title(RCore *core, int color) {
 	bool showDelta = r_config_get_i (core->config, "scr.slow");
 	static ut64 oldpc = 0;
-	const char *BEGIN = core->cons->pal.prompt;
+	const char *BEGIN = core->cons->context->pal.prompt;
 	const char *filename;
 	char pos[512], bar[512], pcs[32];
 	if (!oldpc) {
@@ -3624,7 +3624,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 		const int tabsCount = core->visual.tabs? r_list_length (core->visual.tabs): 0;
 		if (tabsCount > 0) {
-			const char *kolor = core->cons->pal.prompt;
+			const char *kolor = core->cons->context->pal.prompt;
 			char *tabstring = visual_tabstring (core, kolor);
 			if (tabstring) {
 				title = r_str_append (title, tabstring);
@@ -4052,6 +4052,21 @@ dodo:
 #ifndef __WINDOWS__
 			if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
 				tcflush (STDIN_FILENO, TCIFLUSH);
+			} else if (ch == 0x1b) {
+				char chrs[2];
+				chrs[0] = r_cons_readchar ();
+				if (chrs[0] == '[') {
+					chrs[1] = r_cons_readchar ();
+					if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
+						tcflush (STDIN_FILENO, TCIFLUSH);
+						// Following seems to fix an issue where scrolling slows
+						// down to a crawl after some time mashing the up and down
+						// arrow keys
+						r_cons_set_raw (false);
+						r_cons_set_raw (true);
+					}
+				}
+				(void)r_cons_readpush (chrs, R_ARRAY_SIZE (chrs));
 			}
 #endif
 			if (r_cons_is_breaked()) {

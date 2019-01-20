@@ -470,14 +470,14 @@ R_API void r_cons_grepbuf() {
 			R_FREE (grep->json_path);
 		} else {
 			const char *palette[] = {
-				cons->pal.graph_false, // f
-				cons->pal.graph_true, // t
-				cons->pal.num, // k
-				cons->pal.comment, // v
+				cons->context->pal.graph_false, // f
+				cons->context->pal.graph_true, // t
+				cons->context->pal.num, // k
+				cons->context->pal.comment, // v
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (color), "  ", palette);
+			char *out = r_print_json_indent (buf, I (context->color), "  ", palette);
 			if (!out) {
 				return;
 			}
@@ -704,7 +704,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			if (grep->icase) {
 				r_str_case (str, false);
 			}
-			const char *p = strstr (in, grep->strings[i]);
+			const char *p = r_strstr_ansi (in, grep->strings[i]);
 			if (!p) {
 				ampfail = 0;
 				continue;

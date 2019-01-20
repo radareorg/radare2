@@ -1010,15 +1010,22 @@ repeat:
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + (addrbytes * idx), len - (addrbytes * idx), R_ANAL_OP_MASK_ALL)) < 1) {
 			RCore *core = anal->coreb.core;
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
-				const char *reason = (len - (addrbytes*idx) < 4)? "Truncated": "Invalid";
-				eprintf ("%s instruction of %d bytes at 0x%"PFMT64x"\n",
-					reason, (int)(len - (addrbytes * idx)), addr + idx);
+
+				ut8 v = buf[addrbytes*idx] == 0xff;
+				v += buf[addrbytes*(idx+1)] == 0xff;
+				v += buf[addrbytes*(idx+2)] == 0xff;
+				v += buf[addrbytes*(idx+3)] == 0xff;
+				if (v < 2) {
+					// check if this is data, then just skip
+					const char *reason = (len - (addrbytes * idx) < 4)? "Truncated": "Invalid";
+					eprintf ("%s instruction of %d bytes at 0x%"PFMT64x"\n",
+							reason, (int)(len - (addrbytes * idx)), addr + idx);
+				}
 			}
 			gotoBeach (R_ANAL_RET_END);
 		}
 		if (op.hint.new_bits) {
-			r_anal_hint_set_bits (anal, op.jump,
-					      op.hint.new_bits);
+			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
 			bbg = bbget (fcn, addr + idx, anal->opt.jmpmid && x86);
@@ -2040,7 +2047,10 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 	}
 
 	int result = E - N + (2 * P);
-	r_return_val_if_fail (result > 0, 0);
+	if (result < 1) {
+		eprintf ("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x"\n", E, N, P, fcn->addr);
+	}
+	// r_return_val_if_fail (result > 0, 0);
 	return result;
 }
 

@@ -135,7 +135,7 @@ static char *filter_item_name(const char *name) {
 static void set_name(RFlagItem *item, char *name) {
 	free_item_name (item);
 	item->name = name;
-	free (item->realname);
+	free_item_realname (item);
 	item->realname = item->name;
 }
 
