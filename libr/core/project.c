@@ -116,6 +116,9 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	switch (mode) {
 	case 'j':
 		pj = pj_new ();
+		if (!pj) {
+			break;
+		}
 		pj_a (pj);
 		r_list_foreach (list, iter, foo) {
 			// todo. escape string
@@ -124,10 +127,8 @@ R_API int r_core_project_list(RCore *core, int mode) {
 			}
 		}
 		pj_end (pj);
-		if (pj) {
-			r_cons_printf ("%s\n", pj_string (pj));
-			pj_free (pj);
-		}
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		break;
 	default:
 		r_list_foreach (list, iter, foo) {
