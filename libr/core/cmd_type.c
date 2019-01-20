@@ -290,7 +290,7 @@ static void printFunctionType(RCore *core, const char *input) {
 		}
 		pj_o (pj);
 		pj_ks (pj, "type", type);
-		if (name != NULL) {
+		if (name) {
 			pj_ks (pj, "name", name);
 		} else {
 			pj_ks (pj, "name", "(null)");
