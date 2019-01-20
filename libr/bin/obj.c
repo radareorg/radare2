@@ -19,9 +19,15 @@ static void mem_free(void *data) {
 }
 
 static int reloc_cmp(const void *a, const RBNode *b) {
-	RBinReloc *ar = (const RBinReloc *)a;
-	RBinReloc *br = container_of (b, const RBinReloc, vrb);
-	return ar->vaddr - br->vaddr;
+	const RBinReloc *ar = (const RBinReloc *)a;
+	const RBinReloc *br = container_of (b, const RBinReloc, vrb);
+	if (ar->vaddr > br->vaddr) {
+		return 1;
+	} else if (ar->vaddr < br->vaddr) {
+		return -1;
+	} else {
+		return 0;
+	}
 }
 
 static void reloc_free(RBNode *rbn) {
