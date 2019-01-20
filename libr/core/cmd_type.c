@@ -281,7 +281,6 @@ static int printkey_json_cb(void *user, const char *k, const char *v) {
 	pj_s (pj, k);
 	r_cons_printf ("%s", pj_string (pj));
 	pj_free (pj);
-	//r_cons_printf ("\"%s\"", k);
 	return 1;
 }
 
@@ -887,7 +886,7 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			} else { // "tej ENUM"
 				RListIter *iter;
-				PJ *pj = pj_new ();	
+				PJ *pj = pj_new ();
 				RTypeEnum *member;
 				pj_o (pj);
 				if (member_name) {
