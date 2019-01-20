@@ -3518,7 +3518,10 @@ reread:
 				}
 			}
 			const int depth = r_config_get_i (core->config, "anal.depth");
-			r_core_anal_paths (core, addr, core->offset, input[1] == 'g', depth);
+			// Va;ifate input length
+			if (input[1] != '\0') {
+				r_core_anal_paths (core, addr, core->offset, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));
+			}
 		}
 		break;
 	case 'F': // "/F" search file /F [file] ([offset] ([sz]))
