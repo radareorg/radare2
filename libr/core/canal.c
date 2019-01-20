@@ -2560,12 +2560,29 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
+static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
+	int tag = traced->tag;
+	RListIter *iter;
+	RDebugTracepoint *trace;
+
+	r_list_foreach (traced->traces, iter, trace) {
+		if (!trace->tag || (tag & trace->tag)) {
+			if (r_anal_fcn_in (fcn, trace->addr)) {
+				r_cons_printf ("\ntraced: %d\n", trace->times);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
 	RList *refs, *xrefs;
 	int ebbs = 0;
 	char *name = r_core_anal_fcn_name (core, fcn);
+
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
@@ -2647,6 +2664,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	free (name);
+
+	// traced
+	if (core->dbg->trace->enabled) {
+		is_fcn_traced (core->dbg->trace, fcn);
+	}
 	return 0;
 }
 
