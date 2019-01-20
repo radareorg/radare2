@@ -1151,7 +1151,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		sdb_set (DB, "type", r_anal_fcn_type_tostring (fcn->type), 0);
 	} else if (is_json) {
 		// TODO: show vars, refs and xrefs
-		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
+		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
+		r_cons_printf ("{\"name\":\"%s\"", r_str_get (fcn_name_escaped));
+		free (fcn_name_escaped);
 		r_cons_printf (",\"offset\":%"PFMT64d, fcn->addr);
 		r_cons_printf (",\"ninstr\":%"PFMT64d, (ut64)fcn->ninstr);
 		r_cons_printf (",\"nargs\":%d",
