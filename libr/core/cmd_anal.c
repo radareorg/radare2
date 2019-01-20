@@ -4221,19 +4221,16 @@ static void showregs (RList *list) {
 	r_cons_newline();
 }
 
-static void showregs_json (RList *list) {
-	r_cons_printf ("[");
+static void showregs_json (RList *list, PJ *pj) {
+	pj_a (pj);
 	if (!r_list_empty (list)) {
 		char *reg;
 		RListIter *iter;
 		r_list_foreach (list, iter, reg) {
-			r_cons_printf ("\"%s\"", reg);
-			if (iter->n) {
-				r_cons_printf (",");
-			}
+			pj_s (pj, reg);
 		}
 	}
-	r_cons_printf ("]");
+	pj_end (pj);
 }
 
 static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
@@ -4245,6 +4242,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	RAnalOp aop = R_EMPTY;
 	ut8 *buf;
 	RList* regnow;
+	PJ *pj = NULL;
 	if (!core) {
 		return false;
 	}
@@ -4353,18 +4351,24 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	} else if ((mode >> 3) & 1) {
 		showregs (regnow);
 	} else if ((mode >> 4) & 1) {
-		r_cons_printf ("{\"A\":");
-		showregs_json (stats.regs);
-		r_cons_printf (",\"I\":");
-		showregs_json (stats.inputregs);
-		r_cons_printf (",\"R\":");
-		showregs_json (stats.regread);
-		r_cons_printf (",\"W\":");
-		showregs_json (stats.regwrite);
-		r_cons_printf (",\"N\":");
-		showregs_json (regnow);
-		r_cons_printf ("}");
-		r_cons_newline();
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
+		pj_k (pj, "A");
+		showregs_json (stats.regs, pj);
+		pj_k (pj, "I");
+		showregs_json (stats.inputregs, pj);
+		pj_k (pj, "R");
+		showregs_json (stats.regread, pj);
+		pj_k (pj, "W");
+		showregs_json (stats.regwrite, pj);
+		pj_k (pj, "N");
+		showregs_json (regnow, pj);
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	} else if ((mode >> 5) & 1) {
 		// nothing
 	} else {
