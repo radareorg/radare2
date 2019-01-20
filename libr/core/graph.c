@@ -4123,7 +4123,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" :e cmd.gprompt = agft   - show tinygraph in one side\n"
 				" +/-/0        - zoom in/out/default\n"
 				" ;            - add comment in current basic block\n"
-				" .            - center graph to the current node\n"
+				" . (dot)      - center graph to the current node\n"
+				" , (comma)    - toggle graph.few\n"
 				" ^            - seek to the first bb of the function\n"
 				" =            - toggle graph.layout\n"
 				" :cmd         - run radare command\n"
@@ -4435,6 +4436,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			  }
 			  agraph_update_seek (g, get_anode (g->curnode), true);
 			  break;
+		case ',':
+			r_config_toggle (core->config, "graph.few");
+			g->need_reload_nodes = true;
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case '.':
 			discroll = 0;
 			agraph_update_seek (g, get_anode (g->curnode), true);
