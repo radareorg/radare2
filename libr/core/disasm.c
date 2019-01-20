@@ -1608,6 +1608,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
 	char *fcn_name;
+	bool fcn_name_alloc = false; // whether fcn_name needs to be freed by this function
 	char *sign;
 
 	if (!ds->show_functions) {
@@ -1622,12 +1623,24 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	if (demangle) {
 		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name, f->addr);
-		if (!fcn_name) {
-			fcn_name = strdup (f->name);
+		if (fcn_name) {
+			fcn_name_alloc = true;
+		} else {
+			fcn_name = f->name;
 		}
 	} else {
 		fcn_name = f->name;
 	}
+
+	if (ds->use_json) {
+		char *fcn_name_raw = fcn_name;
+		fcn_name = r_str_escape_utf8_for_json (fcn_name_raw, -1);
+		if (fcn_name_alloc) {
+			free (fcn_name_raw);
+		}
+		fcn_name_alloc = true;
+	}
+
 	ds_begin_line (ds);
 	sign = r_anal_fcn_to_string (core->anal, f);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -1762,7 +1775,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 	r_anal_fcn_vars_cache_fini (&vars_cache);
-	if (demangle) {
+	if (fcn_name_alloc) {
 		free (fcn_name);
 	}
 }
@@ -4268,11 +4281,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
-	esil->cb.user = ds;
-	esil->cb.hook_reg_write = myregwrite;
-	esil->cb.hook_reg_read = myregread;
-	hook_mem_write = esil->cb.hook_mem_write;
+	if (pc) {
+		r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
+		esil->cb.user = ds;
+		esil->cb.hook_reg_write = myregwrite;
+		esil->cb.hook_reg_read = myregread;
+		hook_mem_write = esil->cb.hook_mem_write;
+	}
 	if (ds->show_emu_stack) {
 		esil->cb.hook_mem_write = mymemwrite2;
 	} else {

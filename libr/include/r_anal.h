@@ -728,7 +728,7 @@ typedef struct r_anal_hint_t {
 	char *syntax;
 	char *esil;
 	char *offset;
-	int type;
+	ut32 type;
 	int size;
 	int bits;
 	int new_bits; // change asm.bits after evaluating this instruction
