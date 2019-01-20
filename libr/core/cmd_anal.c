@@ -5484,6 +5484,7 @@ static void cmd_asf(RCore *core, const char *input) {
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
+	PJ *pj = NULL;
 	RSyscallItem *si;
 	RListIter *iter;
 	RList *list;
@@ -5571,19 +5572,21 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "asj"
+		pj = pj_new ();
+		pj_a (pj);
 		list = r_syscall_list (core->anal->syscall);
-		r_cons_printf ("[");
 		r_list_foreach (list, iter, si) {
-			r_cons_printf ("{\"name\":\"%s\","
-				"\"swi\":\"%d\",\"num\":\"%d\"}",
-				si->name, si->swi, si->num);
-			if (iter->n) {
-				r_cons_printf (",");
-			}
+			pj_o (pj);
+			pj_ks (pj, "name", si->name);
+			pj_ki (pj, "swi", si->swi);
+			pj_ki (pj, "num", si->num);
+			pj_end (pj);
 		}
-		r_cons_printf ("]\n");
-		r_list_free (list);
-		// JSON support
+		pj_end (pj);
+		if (pj) {
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
 		break;
 	case '\0':
 		cmd_syscall_do (core, -1, core->offset);
