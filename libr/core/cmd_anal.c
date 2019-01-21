@@ -6634,7 +6634,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			const char *filename = r_str_trim_ro (input + 1)
+			const char *filename = r_str_trim_ro (input + 1);
 			char *cmd = graph_cmd (core, "aggd", filename);
 			if (cmd && *cmd) {
 				if (input[1] == ' ') {
