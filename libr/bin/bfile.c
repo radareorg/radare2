@@ -864,10 +864,12 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	}
 
 	buf_len = r_io_desc_size (iod);
-	if (buf_len > limit)
-		buf_len = limit;
-	buf = calloc (1, buf_len);
-	r_io_desc_read (iod, buf, buf_len);
+	// By SLURP_LIMIT normally cannot compute ...
+	if (buf_len > limit) {
+		eprintf ("Cannot compute hash\n");
+		return -1;
+	}
+	buf = r_file_slurp (file, &buf_len);
 	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
 #define BLK_SIZE_OFF 1024
 	for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
@@ -878,11 +880,11 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	p = hash;
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
 	o->info->hashes = r_strbuf_new ("");
-	r_strbuf_appendf (o->info->hashes, "md5:%s", hash);
+	r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
 	r_hash_do_end (ctx, R_HASH_SHA1);
 	p = hash;
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
-	r_strbuf_appendf (o->info->hashes, ",sha1:%s", hash);
+	r_strbuf_appendf (o->info->hashes, " sha1 %s", hash);
 	r_hash_free (ctx);
 	free (buf);
 	return true;

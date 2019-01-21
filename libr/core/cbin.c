@@ -686,8 +686,8 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			}
 		}
 	} else {
-		ut64 limit = r_config_get_i (r->config, "cgf.hashlimit");
-		r_bin_file_hash (r->bin, 1024, binfile->file);
+		ut64 limit = r_config_get_i (r->config, "cfg.hashlimit");
+		r_bin_file_hash (r->bin, limit, binfile->file);
 		// XXX: if type is 'fs' show something different?
 		char *tmp_buf;
 		if (IS_MODE_JSON (mode)) {
