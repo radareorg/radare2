@@ -490,7 +490,6 @@ exit_err:
 }
 
 static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
-	printf("%s\n", regstr);
 	char *regstr_end, *regname, *regtype, *tmp1;
 	ut32 flagnum, regname_len, regsize, regnum;
 	RList *regs;
