@@ -9,14 +9,6 @@
 
 #include "r_list.h"
 
-#ifndef container_of
-# ifdef _MSC_VER
-#  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
-# else
-#  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
-# endif
-#endif
-
 // max height <= 2 * floor(log2(n + 1))
 // We use `int` for size, so <= 2 * 31
 #define R_RBTREE_MAX_HEIGHT 62
