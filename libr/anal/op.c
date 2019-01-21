@@ -333,7 +333,6 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_MJMP, "mjmp" },
 	{ R_ANAL_OP_TYPE_CMP, "cmp" },
 	{ R_ANAL_OP_TYPE_IO, "cret" },
-	{ R_ANAL_OP_TYPE_IO, "div" },
 	{ R_ANAL_OP_TYPE_ILL, "ill" },
 	{ R_ANAL_OP_TYPE_JMP, "jmp" },
 	{ R_ANAL_OP_TYPE_LEA, "lea" },
@@ -344,6 +343,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
 	{ R_ANAL_OP_TYPE_MOV, "mov" },
 	{ R_ANAL_OP_TYPE_MUL, "mul" },
+	{ R_ANAL_OP_TYPE_DIV, "div" },
 	{ R_ANAL_OP_TYPE_NOP, "nop" },
 	{ R_ANAL_OP_TYPE_NOT, "not" },
 	{ R_ANAL_OP_TYPE_NULL  , "null" },
@@ -396,8 +396,8 @@ R_API int r_anal_optype_from_string(const char *type) {
 
 R_API const char *r_anal_optype_to_string(int t) {
 	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
-	int i;
 #if 0
+	int i;
 	// this is slower than a switch table :(
 	for  (i = 0; optypes[i].name;i++) {
 		if (optypes[i].type == t) {
