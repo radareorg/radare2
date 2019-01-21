@@ -629,26 +629,30 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			break;
 		case WASM_OP_F32CONST:
 			{
-				ut32 val = 0;
-				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
+				if (buf_len < 4) {
 					goto err;
 				}
-				long double d =  (long double)val;
-				r_strbuf_setf (sb, "%s %" LDBLFMT, opdef->txt, d);
-				op->len += n;
+				union fi {
+					ut32  v;
+					float f;
+				} u;
+				u.v = r_read_at_le32 (buf, 1);
+				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
+				op->len += 4;
 			}
 			break;
 		case WASM_OP_F64CONST:
 			{
-				ut64 val = 0;
-				size_t n = read_u64_leb128 (buf + 1, buf + buf_len, &val);
-				if (!(n > 0 && n < buf_len)) {
+				if (buf_len < 8) {
 					goto err;
 				}
-				long double d =  (long double) val;
-				r_strbuf_setf (sb, "%s %" LDBLFMT, opdef->txt, d);
-				op->len += n;
+				union di {
+					ut64   v;
+					double f;
+				} u;
+				u.v = r_read_at_le64 (buf, 1);
+				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
+				op->len += 8;
 			}
 			break;
 		default:
