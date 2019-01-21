@@ -286,7 +286,7 @@ static const char *help_msg_pd[] = {
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
-	"pdu", "([addr])@[addr]", "disassemble until specified address",
+	"pdu", "([addr])", "disassemble until specified address",
 	NULL
 };
 
@@ -4851,7 +4851,7 @@ static int cmd_print(void *data, const char *input) {
 			} else { // pdu
 				ut64 start_addr = core->offset;
 				ut8 *buf = NULL;
-				if (strlen(input) < 3){
+				if (strlen (input) < 3){
 					eprintf ("Invalid address ranges\n");
 					break;
 				}
@@ -4868,8 +4868,8 @@ static int cmd_print(void *data, const char *input) {
 								bs1 - (bs - bs % addrbytes));
 					}
 					core->num->value = r_core_print_disasm (core->print, core, start_addr, buf, l, l, 0, 1, 0, NULL);
+					free (buf);
 				}
-				free(buf);
 			}
 			break;
 		case 0:
