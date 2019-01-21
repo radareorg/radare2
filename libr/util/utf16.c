@@ -36,7 +36,7 @@ R_API int r_utf16le_encode(ut8 *ptr, RRune ch) {
 		ptr[1] = ch >> 8 & 0xff;
 		return 2;
 	}
-	if (ch < 0x11000) {
+	if (ch < 0x110000) {
 		RRune high, low;
 		ch -= 0x10000;
 		high = 0xd800 + (ch >> 10 & 0x3ff);
