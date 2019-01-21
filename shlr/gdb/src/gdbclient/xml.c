@@ -372,6 +372,9 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			// openocd mips?
 			g->target.arch = R_SYS_ARCH_MIPS;
 			g->target.bits = 32;
+		} else if (strstr(xml_data, "com.apple.debugserver.x86_64")) {
+			g->target.arch = R_SYS_ARCH_X86;
+			g->target.bits = 64;
 		} else {
 			eprintf ("Unknown architecture parsing XML (%s)\n", xml_data);
 		}
@@ -487,6 +490,7 @@ exit_err:
 }
 
 static RList* _extract_regs(char *regstr, RList *flags, char *pc_alias) {
+	printf("%s\n", regstr);
 	char *regstr_end, *regname, *regtype, *tmp1;
 	ut32 flagnum, regname_len, regsize, regnum;
 	RList *regs;
