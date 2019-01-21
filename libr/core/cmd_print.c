@@ -199,14 +199,6 @@ static const char *help_msg_p[] = {
 	NULL
 };
 
-static const char *help_msg_pdu[] = {
-	"Usage:", "pdu[br]", "disassemble until end of block (branch or ret)/ until return",
-	"pdu", "([addr])@[addr]", "disassemble until specified address",
-	"pdub", "", "disassemble until end of block (branch or ret)",
-	"pdur", "", "disassemble until a ret instruction is found",
-	NULL
-};
-
 static const char *help_msg_pxd[] = {
 	"Usage:", "pxd[1248] ([len])", "show decimal byte/short/word/dword dumps",
 	"pxd", "", "show decimal hexdumps",
@@ -294,6 +286,7 @@ static const char *help_msg_pd[] = {
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
+	"pdu", "([addr])@[addr]", "disassemble until specified address",
 	NULL
 };
 
@@ -899,7 +892,6 @@ static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	r_core_print_disasm_json (core, core->offset, block, core->blocksize, nblines);
 	r_cons_print ("]\n");
 }
-
 
 static void helpCmdTasks(RCore *core) {
 	// TODO: integrate with =h& and bg anal/string/searchs/..
@@ -4577,7 +4569,6 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			l = use_blocksize;
 		}
-		r_cons_printf("Input: %s\n", input);
 		switch (input[1]) {
 		case 'C': // "pdC"
 			r_core_disasm_pdi (core, l, 0, 'C');
@@ -4852,51 +4843,33 @@ static int cmd_print(void *data, const char *input) {
 		case 'u': // pdu
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_core_cmd_help(core, help_msg_pdu);	
+				//todo - print help for pdu/pdub/pdur
 			} else if (input[2] == 'b' ){ // pdub
 				//todo - define pdub
-				r_cons_printf("You selected pdub.\n");
 			} else if (input[2] == 'r') { //pdur
 				//todo - define pdur
-				r_cons_printf("You selected pdur.\n");
 			} else { // pdu
-				r_cons_printf("You selected pdu.\n");
-				ut64 addr = core->offset;
-				ut8 *block1 = NULL;
 				ut64 start_addr = core->offset;
+				ut8 *buf = NULL;
 				if (strlen(input) < 3){
-					eprintf ("Problem with syntax for pdu.\n");
+					eprintf ("Invalid address ranges\n");
 					break;
 				}
-				r_cons_printf("Input: %s\n", (char *)(input + 3));
 				ut64 end_addr = r_num_math (core->num, (char *)(input + 3));
-				//end_addr = 0x500;
 				l = end_addr - start_addr;
-				r_cons_printf("l: %0lx\n", l);
 				const int bs = core->blocksize;
 				int bs1 = l * 16;
-				//int bs1 = l;
 				int bsmax = R_MAX (bs, bs1);
-				block1 = malloc (bsmax);
-				if (block1) {
-					memcpy (block1, block, bs);
+				buf = malloc (bsmax + 1);
+				if (buf) {
+					memcpy (buf, block, bs);
 					if (bs1 > bs) {
-						r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
+						r_io_read_at (core->io, start_addr + bs / addrbytes, buf + (bs - bs % addrbytes),
 								bs1 - (bs - bs % addrbytes));
 					}
-					int bsmax = R_MAX (bs, bs1);
-					block1 = malloc (bsmax + 1);
-					if (block1) {
-						memcpy (block1, block, bs);
-						if (bs1 > bs) {
-							r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
-									bs1 - (bs - bs % addrbytes));
-						}
-					}
-					r_cons_printf("start_addr: %lx, end_addr: %lx, input: %s, l: %lx\n", start_addr, end_addr, input, l);
-					core->num->value = r_core_print_disasm (core->print, core, addr, block1, bs, l, 0, 0, formatted_json, NULL);
+					core->num->value = r_core_print_disasm (core->print, core, start_addr, buf, l, l, 0, 1, 0, NULL);
 				}
-				free(block1);
+				free(buf);
 			}
 			break;
 		case 0:
@@ -4929,14 +4902,12 @@ static int cmd_print(void *data, const char *input) {
 						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
 						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL);
 					} else { // pd
-						//SOLOMON : to use as reference when making pdu
 						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
 							// anal ignorance.
 							start = r_core_prevop_addr_force (core, core->offset, l);
 						}
 						instr_len = core->offset - start;
-						r_cons_printf("(1) core->offset: %lx, start: %lx\n", core->offset, start);
 						ut64 prevaddr = core->offset;
 						int bs = core->blocksize, bs1 = addrbytes * instr_len;
 						if (bs1 > bs) {
@@ -4990,8 +4961,6 @@ static int cmd_print(void *data, const char *input) {
 							r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
 									bs1 - (bs - bs % addrbytes));
 						}
-						r_cons_printf("(2) core->io: %s, core->offset: %lx, start: %lx", core->io, core->offset, start);
-						r_cons_printf("(2) core->print = %ld, block1 = %ld, bs = %ld, l = %ld", core->print, block1, bs, l);
 						core->num->value = r_core_print_disasm (core->print,
 								core, addr, block1, bs, l, 0, 0, formatted_json, NULL);
 					}
