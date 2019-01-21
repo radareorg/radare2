@@ -35,7 +35,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
 	// If raw string dump mode, use printf to dump directly to stdout.
-	PrintfCallback temp = io->cb_printf;
+	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
 	case R_MODE_SIMPLEST: 
 		io->cb_printf ("%s\n", string->string);

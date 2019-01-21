@@ -39,7 +39,7 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	ut8 buffer[16];
 	ut8 *ptr = buffer;
 	ut8 *end = ptr + sizeof (buffer);
-	WasmOp wop = {0};
+	WasmOp wop = {{0}};
 	int size = 0;
 	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
 		size = wasm_dis (&wop, ptr, end - ptr);
@@ -72,7 +72,7 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 
 // analyzes the wasm opcode.
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	WasmOp wop = {0};
+	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
 	memset (op, '\0', sizeof (RAnalOp));
 	int ret = wasm_dis (&wop, data, len);

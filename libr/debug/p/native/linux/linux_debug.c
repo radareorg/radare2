@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_userconf.h>
 
@@ -59,7 +59,7 @@ static int linux_stop_process(int pid);
 
 int linux_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, dbg->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {
@@ -169,7 +169,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		break;
 	case PTRACE_EVENT_CLONE:
 		if (dbg->trace_clone) {
-			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
@@ -180,7 +180,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		break;
 	case PTRACE_EVENT_FORK:
 		if (dbg->trace_forks) {
-			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+			if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
@@ -193,7 +193,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 		}
 		break;
 	case PTRACE_EVENT_EXIT:
-		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+		if (r_debug_ptrace (dbg, PTRACE_GETEVENTMSG, pid, 0, (r_ptrace_data_t)(size_t)&data) == -1) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
@@ -252,7 +252,7 @@ static void linux_detach_all (RDebug *dbg) {
 		RListIter *it;
 		r_list_foreach (th_list, it, th) {
 			if (th->pid != dbg->main_pid) {
-				if (r_debug_ptrace (dbg, PTRACE_DETACH, th->pid, NULL, NULL) == -1) {
+				if (r_debug_ptrace (dbg, PTRACE_DETACH, th->pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
 					perror ("PTRACE_DETACH");
 				}
 			}
@@ -260,7 +260,7 @@ static void linux_detach_all (RDebug *dbg) {
 	}
 
 	// Detaching from main proc
-	if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->main_pid, NULL, NULL) == -1) {
+	if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->main_pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
 		perror ("PTRACE_DETACH");
 	}
 }
@@ -408,7 +408,7 @@ static int linux_stop_process(int pid) {
 static int linux_attach_single_pid(RDebug *dbg, int ptid) {
 	int ret = 0;
 	linux_set_options (dbg, ptid);
-	ret = r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL, NULL);
+	ret = r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL, (r_ptrace_data_t)(size_t)NULL);
 	return ret;
 }
 
@@ -880,7 +880,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
 			};
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, NT_PRSTATUS, &io);
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
 			}
 #elif __BSD__ && __POWERPC__ || __sparc__
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
@@ -932,10 +932,10 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (type == R_REG_TYPE_GPR) {
 #if __arm64__ || __aarch64__
 		struct iovec io = {
-			.iov_base = buf,
+			.iov_base = (void*)buf,
 			.iov_len = sizeof (R_DEBUG_REG_T)
 		};
-		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
+		int ret = r_debug_ptrace (dbg, PTRACE_SETREGSET, dbg->pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
 #elif __POWERPC__ || __sparc__
 		int ret = r_debug_ptrace (dbg, PTRACE_SETREGS, dbg->pid, buf, NULL);
 #else
