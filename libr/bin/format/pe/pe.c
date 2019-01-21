@@ -2283,9 +2283,16 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
+			if(resource_name != NULL && resourceEntryName != NULL) {
+				/* We're about to recursively call this function with a new resource entry name
+				   and we haven't used resource_name, so free it. Only happens in weird PEs. */
+				free (resource_name);
+			}
 			_parse_resource_directory (bin, &identEntry,
 				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, (char *)resourceEntryName);
 			continue;
+		} else {
+			free (resourceEntryName);
 		}
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
