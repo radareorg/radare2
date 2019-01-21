@@ -286,7 +286,7 @@ static const char *help_msg_pd[] = {
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 	"pdt", "", "disassemble the debugger traces (see atd)",
-	"pdu", "([addr])", "disassemble until specified address",
+	"pdu", " [addr]", "disassemble until specified address",
 	NULL
 };
 
