@@ -3269,7 +3269,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 			pj_ks (pj, "name", name);
 			pj_ki (pj, "index", index);
 			pj_ks (pj, "type", type);
-			pj_ks (pj, "vaddr", sdb_fmt ("0x%08"PFMT64x, vaddr));
+			pj_kn (pj, "vaddr", vaddr);
 			pj_ki (pj, "size", size);
 			pj_ks (pj, "lang", lang);
 			pj_ks (pj, "timestamp", timestr);
