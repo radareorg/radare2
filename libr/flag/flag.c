@@ -283,11 +283,11 @@ static bool print_flag_name(RFlagItem *fi, void *user) {
 
 struct print_flag_t {
 	RFlag *f;
+	PJ *pj;
 	bool in_range;
 	ut64 range_from;
 	ut64 range_to;
 	int fs;
-	bool first;
 	bool real;
 	const char *pfx;
 };
@@ -297,19 +297,18 @@ static bool print_flag_json(RFlagItem *flag, void *user) {
 	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
 		return true;
 	}
-	u->f->cb_printf ("%s{\"name\":\"%s\",\"size\":%" PFMT64d ",",
-		u->first? "": ",", flag->name, flag->size);
+	pj_o (u->pj);
+	pj_ks (u->pj, "name", flag->name);
+	pj_ki (u->pj, "size", flag->size);
 	if (flag->alias) {
-		u->f->cb_printf ("\"alias\":\"%s\"", flag->alias);
+		pj_ks (u->pj, "alias", flag->alias);
 	} else {
-		u->f->cb_printf ("\"offset\":%" PFMT64d, flag->offset);
+		pj_ki (u->pj, "offset", flag->offset);
 	}
 	if (flag->comment) {
-		u->f->cb_printf (",\"comment\":\"}");
-	} else {
-		u->f->cb_printf ("}");
+		pj_ks (u->pj, "comment", flag->comment);
 	}
-	u->first = false;
+	pj_end (u->pj);
 	return true;
 }
 
@@ -389,16 +388,19 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 		r_flag_foreach_space (f, f->space_idx, print_flag_name, f);
 		break;
 	case 'j': {
-		f->cb_printf ("[");
+		PJ *pj = pj_new ();
 		struct print_flag_t u = {
 			.f = f,
+			.pj = pj,
 			.in_range = in_range,
 			.range_from = range_from,
-			.range_to = range_to,
-			.first = true
+			.range_to = range_to
 		};
+		pj_a (pj);
 		r_flag_foreach_space (f, f->space_idx, print_flag_json, &u);
-		f->cb_printf ("]\n");
+		pj_end (pj);
+		f->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		break;
 	}
 	case 1:
