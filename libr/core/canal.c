@@ -2341,29 +2341,78 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	return 0;
 }
 
-static int fcn_print_makestyle(RCore *core, RAnalFunction *fcn) {
+// Lists function names and their calls (uniqified)
+static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
+	RListIter *refiter;
+	RListIter *fcniter;
+	RAnalFunction *fcn;
 	RAnalRef *refi;
-	RListIter *iter;
-	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
-	r_cons_printf ("%s:\n", fcn->name);
-	if (!r_list_empty (refs)) {
-		RList *res = r_list_newf ((RListFree)free);
-		r_list_foreach (refs, iter, refi) {
-			if (refi->type != R_ANAL_REF_TYPE_CALL) {
-				continue;
-			}
-			RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
-			char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
-			r_list_append (res, dst);
-		}
-		char *s;
-		res = r_list_uniq (res, (RListComparator)strcmp);
-		r_list_foreach (res, iter, s) {
-			r_cons_printf ("    %s\n", s);
-		}
-		r_list_free (res);
+	RList *refs = NULL;
+	PJ *pj = NULL;
+
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
 	}
-	r_cons_newline ();
+
+	// Iterate over all functions
+	r_list_foreach (fcns, fcniter, fcn) {
+		// Get all refs for a function
+		refs = r_anal_fcn_get_refs (core->anal, fcn);
+		// Uniquify the list by ref->addr
+		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
+	
+		// don't enter for functions with 0 refs
+		if (!r_list_empty (refs)) {
+			if (pj) { // begin json output of function
+				pj_o (pj);
+				pj_ks (pj, "name", fcn->name);
+				pj_kn (pj, "addr", fcn->addr);
+				pj_k (pj, "calls");
+				pj_a (pj);
+			} else {
+				r_cons_printf ("%s", fcn->name);
+			}
+
+			if (mode == 'm') {
+				r_cons_printf (":\n");
+			} else if (mode == 'q') {
+				r_cons_printf (" -> ");
+			}
+			// Iterate over all refs from a function
+			r_list_foreach (refs, refiter, refi) {
+				if (refi->type != R_ANAL_REF_TYPE_CALL) {
+					continue;
+				}
+				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+				if (pj) { // Append calee json item
+					pj_o (pj);
+					pj_ks (pj, "name", dst);
+                	pj_kn (pj, "addr", refi->addr);
+					pj_end (pj); // close referenced item
+				} else if (mode == 'q') {
+					r_cons_printf ("%s ", dst);
+				} else {
+					r_cons_printf ("    %s\n", dst);
+				}
+			}
+			if (pj) {
+				pj_end (pj); // close list of calls
+				pj_end (pj); // close function item
+			} else {
+				r_cons_newline();
+			}
+		}
+	}
+
+	if (mode == 'j') {
+		pj_end (pj); // close json output
+		r_cons_printf ("%s\n", pj_string (pj));
+	}
+	if (pj) {
+		pj_free (pj);
+	}
 	return 0;
 }
 
@@ -2755,11 +2804,19 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	case '*':
 		fcn_list_detail (core, fcns);
 		break;
-	case 'm':
-		r_list_foreach (fcns, iter, fcn) {
-			fcn_print_makestyle (core, fcn);
+	case 'm': // "aflm"
+		{
+			char mode = 'm';
+			if (rad[1] != 0) {
+				if (rad[1] == 'j') { // "aflmj"
+					mode = 'j';
+				} else if (rad[1] == 'q') { // "aflmq"
+					mode = 'q';
+				}
+			}
+			fcn_print_makestyle (core, fcns, mode);
+			break;
 		}
-		break;
 	case 1:
 		fcn_list_legacy (core, fcns);
 		break;
