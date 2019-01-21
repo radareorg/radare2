@@ -3871,11 +3871,11 @@ static int getreloc_tree(const void *user, const RBNode *n) {
 
 	if (gr->vaddr > r->vaddr) {
 		return 1;
-	} else if (gr->vaddr < r->vaddr) {
-		return -1;
-	} else {
-		return 0;
 	}
+	if (gr->vaddr < r->vaddr) {
+		return -1;
+	}
+	return 0;
 }
 
 // TODO: Use sdb in rbin to accelerate this
@@ -3885,6 +3885,9 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 		return NULL;
 	}
 	RBNode *relocs = r_bin_get_relocs (core->bin);
+	if (!relocs) {
+		return NULL;
+	}
 	struct getreloc_t gr = { .vaddr = addr, .size = size };
 	RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree);
 	return res? container_of (res, RBinReloc, vrb): NULL;

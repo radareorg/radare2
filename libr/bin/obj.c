@@ -23,16 +23,15 @@ static int reloc_cmp(const void *a, const RBNode *b) {
 	const RBinReloc *br = container_of (b, const RBinReloc, vrb);
 	if (ar->vaddr > br->vaddr) {
 		return 1;
-	} else if (ar->vaddr < br->vaddr) {
-		return -1;
-	} else {
-		return 0;
 	}
+	if (ar->vaddr < br->vaddr) {
+		return -1;
+	}
+	return 0;
 }
 
 static void reloc_free(RBNode *rbn) {
-	RBinReloc *r = container_of (rbn, RBinReloc, vrb);
-	free (r);
+	free (container_of (rbn, RBinReloc, vrb));
 }
 
 static void object_delete_items(RBinObject *o) {
