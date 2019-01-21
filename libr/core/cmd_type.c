@@ -278,6 +278,9 @@ static int printkey_cb(void *user, const char *k, const char *v) {
 
 static int printkey_json_cb(void *user, const char *k, const char *v) {
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return 0;
+	}
 	pj_s (pj, k);
 	r_cons_printf ("%s", pj_string (pj));
 	pj_free (pj);
