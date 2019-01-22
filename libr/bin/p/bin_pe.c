@@ -108,9 +108,8 @@ static char *signature (RBinFile *bf, bool json) {
 	}
 	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	if (json) {
-		RJSVar *json = r_pkcs7_cms_json (bin->cms);
-		char *c = r_json_stringify (json, false);
-		r_json_var_free (json);
+		PJ *pj = r_pkcs7_cms_json (bin->cms);
+		char *c = pj_string (pj);
 		return c;
 	}
 	return r_pkcs7_cms_to_string (bin->cms);

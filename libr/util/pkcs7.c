@@ -581,7 +581,7 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 	}
 }
 
-RJSVar *r_pkcs7_cms_json (RCMS *container) {
+R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 	PJ *pj = NULL;
 	ut32 i;
 
@@ -626,6 +626,5 @@ RJSVar *r_pkcs7_cms_json (RCMS *container) {
 	}
 	pj_end (pj);
 	pj_end (pj);
-	eprintf ("%s", pj_string (pj));
-	return NULL;
+	return pj;
 }
