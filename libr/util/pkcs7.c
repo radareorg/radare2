@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include "./x509.h"
 
-extern RJSVar *r_x509_name_json (RX509Name* name);
+extern RJSVar *r_x509_name_json (PJ* pj, RX509Name* name);
 extern void r_x509_free_crl (RX509CertificateRevocationList *crl);
 extern void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad, RStrBuf *sb);
 static bool r_pkcs7_parse_attributes (RPKCS7Attributes* attribute, RASN1Object *object);
@@ -512,133 +512,121 @@ R_API char *r_pkcs7_cms_to_string (RCMS* container) {
 	return r_strbuf_drain (sb);
 }
 
-RJSVar *r_x509_signedinfo_json (RPKCS7SignerInfo* si) {
-	RJSVar* array = NULL;
-	RJSVar* var = NULL;
-	RJSVar* obj = r_json_object_new ();
+R_API void r_x509_signedinfo_json (PJ* pj, RPKCS7SignerInfo* si) {
 	ut32 i;
-	if (!si) {
-		return obj;
-	}
+	if (si) {
+		pj_o (pj);
+		pj_ki (pj, "Version", si->version + 1);
+		pj_k (pj, "Issuer");
+		pj_o (pj);
+		r_x509_name_json (pj, &si->issuerAndSerialNumber.issuer);
+		pj_end (pj);
+		if (si->issuerAndSerialNumber.serialNumber) {
+			RASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
+			RASN1String *s = r_asn1_stringify_integer (o->binary, o->length);
+			if (s) {
+				pj_ks (pj, "SerialNumber", s->string);
+			}
+			r_asn1_free_string (s);
+		}
 
-	(void)r_json_object_add (obj, "Version", r_json_number_new (si->version + 1));
-	(void)r_json_object_add (obj, "Issuer", r_x509_name_json (&si->issuerAndSerialNumber.issuer));
-	if (si->issuerAndSerialNumber.serialNumber) {
-		RASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
-		RASN1String *s = r_asn1_stringify_integer (o->binary, o->length);
-		if (s) {
-			(void)r_json_object_add (obj, "SerialNumber", r_json_string_new (s->string));
+		if (si->digestAlgorithm.algorithm) {
+			pj_ks (pj, "DigestAlgorithm", si->digestAlgorithm.algorithm->string);
 		}
-		r_asn1_free_string (s);
-	}
+		pj_k (pj, "AuthenticatedAttributes");
+		pj_a (pj);
+		for (i = 0; i < si->authenticatedAttributes.length; ++i) {
+			RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
+			if (!attr) {
+				continue;
+			}
+			pj_o (pj);
+			if (attr->oid) {
+				pj_ks (pj, "oid", attr->oid->string);
+			}
+			if (attr->data) {
+				pj_ki (pj, "length", attr->data->length);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		if (si->digestEncryptionAlgorithm.algorithm) {
+			pj_ks (pj, "DigestEncryptionAlgorithm", si->digestEncryptionAlgorithm.algorithm->string);
+		}
 
-	if (si->digestAlgorithm.algorithm) {
-		(void) r_json_object_add (obj, "DigestAlgorithm", r_json_string_new (si->digestAlgorithm.algorithm->string));
-	}
+		if (si->encryptedDigest) {
+			RASN1Binary *o = si->encryptedDigest;
+			RASN1String *s = r_asn1_stringify_integer (o->binary, o->length);
+			if (s) {
+				pj_ks (pj, "EncryptedDigest", s->string);
+			}
+			r_asn1_free_string (s);
+		}
 
-	array = r_json_array_new (si->authenticatedAttributes.length);
-	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
-		RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
-		if (!attr) {
-			continue;
+		pj_k (pj, "UnauthenticatedAttributes");
+		pj_a (pj);
+		for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
+			RPKCS7Attribute* attr = si->unauthenticatedAttributes.elements[i];
+			if (!attr) {
+				continue;
+			}
+			if (attr->oid) {
+				pj_ks (pj, "oid", attr->oid->string);
+			}
+			if (attr->data) {
+				pj_ki (pj, "length", attr->data->length);
+			}
 		}
-		RJSVar* attribute = r_json_object_new ();
-		if (attr->oid) {
-			var = r_json_string_new (attr->oid->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (attribute, "oid", var), var);
-		}
-		if (attr->data) {
-			var = r_json_number_new (attr->data->length);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (attribute, "length", var), var);
-		}
-		R_JSON_FREE_ON_FAIL (r_json_array_add (array, attribute), attribute);
+		pj_end (pj);
+		pj_end (pj);
 	}
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "AuthenticatedAttributes", array), array);
-	if (si->digestEncryptionAlgorithm.algorithm) {
-		var = r_json_string_new (si->digestEncryptionAlgorithm.algorithm->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "DigestEncryptionAlgorithm", var), var);
-	}
-
-	if (si->encryptedDigest) {
-		RASN1Binary *o = si->encryptedDigest;
-		RASN1String *s = r_asn1_stringify_integer (o->binary, o->length);
-		if (s) {
-			var = r_json_string_new (s->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "EncryptedDigest", var), var);
-		}
-		r_asn1_free_string (s);
-	}
-
-
-	array = r_json_array_new (si->unauthenticatedAttributes.length);
-	for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
-		RPKCS7Attribute* attr = si->unauthenticatedAttributes.elements[i];
-		if (!attr) {
-			continue;
-		}
-		RJSVar* attribute = r_json_object_new ();
-		if (attr->oid) {
-			var = r_json_string_new (attr->oid->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (attribute, "oid", var), var);
-		}
-		if (attr->data) {
-			var = r_json_number_new (attr->data->length);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (attribute, "length", var), var);
-		}
-		R_JSON_FREE_ON_FAIL (r_json_array_add (array, attribute), attribute);
-	}
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "UnauthenticatedAttributes", array), array);
-
-	return obj;
 }
 
 RJSVar *r_pkcs7_cms_json (RCMS* container) {
-	RJSVar* array = NULL;
-	RJSVar* var = NULL;
-	RJSVar* obj = r_json_object_new ();
+	PJ *pj = NULL;
 	ut32 i;
-	if (!container) {
-		return obj;
-	}
 
-	var = r_json_number_new (container->signedData.version);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Version", var), var);
-	
+	pj = pj_new ();
+
+	pj_o (pj);
+	pj_kn (pj, "Version", container->signedData.version);
+
 	if (container->signedData.digestAlgorithms.elements) {
-		array = r_json_array_new (container->signedData.digestAlgorithms.length);
+		pj_k (pj, "DigestAlgorithms");
+		pj_a (pj);
 		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
 				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
 				if (s) {
-					var = r_json_string_new (s->string);
-					R_JSON_FREE_ON_FAIL (r_json_array_add (array, var), var);
+					pj_s (pj, s->string);
 				}
 			}
 		}
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "DigestAlgorithms", array), array);
+		pj_end (pj);
 	}
 
-	array = r_json_array_new (container->signedData.certificates.length);
+	pj_k (pj, "Certificates");
+	pj_a (pj);
 	for (i = 0; i < container->signedData.certificates.length; ++i) {
-		var = r_x509_certificate_json (container->signedData.certificates.elements[i]);
-		R_JSON_FREE_ON_FAIL (r_json_array_add (array, var), var);
+		r_x509_certificate_json (pj, container->signedData.certificates.elements[i]);
 	}
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Certificates", array), array);
-
-	array = r_json_array_new (container->signedData.crls.length);
+	pj_end (pj);
+	pj_end (pj);
+	pj_k (pj, "CRL");
+	pj_a (pj);
 	for (i = 0; i < container->signedData.crls.length; ++i) {
-		var = r_x509_crl_json (container->signedData.crls.elements[i]);
-		R_JSON_FREE_ON_FAIL (r_json_array_add (array, var), var);
+		r_x509_crl_json (pj, container->signedData.crls.elements[i]);
 	}
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "CRL", array), array);
-
+	pj_end (pj);
+	pj_k (pj, "SignerInfos");
+	pj_a (pj);
 	if (container->signedData.signerinfos.elements) {
-		array = r_json_array_new (container->signedData.signerinfos.length);
-		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
-			var = r_x509_signedinfo_json (container->signedData.signerinfos.elements[i]);
-			R_JSON_FREE_ON_FAIL (r_json_array_add (array, var), var);
-		}
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "SignerInfos", array), array);
+	 	for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+	 		r_x509_signedinfo_json (pj, container->signedData.signerinfos.elements[i]);
+	 	}
 	}
-	return obj;
+	pj_end (pj);
+	pj_end (pj);
+	eprintf ("%s", pj_string (pj));
+	return NULL;
 }

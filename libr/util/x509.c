@@ -616,230 +616,184 @@ R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char
 	return r_strbuf_drain (sb);
 }
 
-RJSVar *r_x509_validity_json (RX509Validity* validity) {
-	RJSVar* obj = r_json_object_new ();
-	RJSVar* var = NULL;
-	if (!validity) {
-		return obj;
+R_API void r_x509_validity_json (PJ* pj, RX509Validity* validity) {
+	if (validity) {
+		if (validity->notBefore) {
+			pj_ks (pj, "NotBefore", validity->notBefore->string);
+		}
+		if (validity->notAfter) {
+			pj_ks (pj, "NotAfter", validity->notAfter->string);
+		}
 	}
-	if (validity->notBefore) {
-		var = r_json_string_new (validity->notBefore->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "NotBefore", var), var);
-	}
-	if (validity->notAfter) {
-		var = r_json_string_new (validity->notAfter->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "NotAfter", var), var);
-	}
-	return obj;
 }
 
-RJSVar *r_x509_name_json (RX509Name* name) {
+R_API void r_x509_name_json (PJ* pj, RX509Name* name) {
 	ut32 i;
-	RJSVar* var = NULL;
-	RJSVar* obj = r_json_object_new ();
-	if (!name) {
-		return obj;
-	}
 	for (i = 0; i < name->length; ++i) {
 		if (!name->oids[i] || !name->names[i]) {
 			continue;
 		}
-		var = r_json_string_new (name->names[i]->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, name->oids[i]->string, var), var);
+		pj_ks (pj, name->oids[i]->string, name->names[i]->string);
 	}
-	return obj;
 }
 
-RJSVar* r_x509_subjectpublickeyinfo_json (RX509SubjectPublicKeyInfo* spki) {
+R_API void r_x509_subjectpublickeyinfo_json (PJ* pj, RX509SubjectPublicKeyInfo* spki) {
 	RASN1String *m = NULL;
-	RJSVar* var = NULL;
-	RJSVar *obj = r_json_object_new ();
-	if (!spki) {
-		return obj;
-	}
-	if (spki->algorithm.algorithm) {
-		var = r_json_string_new (spki->algorithm.algorithm->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Algorithm", var), var);
-	}
-	if (spki->subjectPublicKeyModule) {
-		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
-		if (m) {
-			var = r_json_string_new (m->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Module", var), var);
+	if (spki) {
+		if (spki->algorithm.algorithm) {
+			pj_ks (pj, "Algorithm", spki->algorithm.algorithm->string);
 		}
-		r_asn1_free_string (m);
-	}
-	if (spki->subjectPublicKeyExponent) {
-		m = r_asn1_stringify_integer (spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
-		if (m) {
-			var = r_json_string_new (m->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Exponent", var), var);
-		}
-		r_asn1_free_string (m);
-	}
-	return obj;
-}
-
-RJSVar *r_x509_extensions_json (RX509Extensions* exts) {
-	ut32 i;
-	RASN1String *m = NULL;
-	RJSVar* array = NULL;
-	RJSVar* var = NULL;
-	if (!exts) {
-		return array;
-	}
-	array = r_json_array_new (exts->length);
-	for (i = 0; i < exts->length; ++i) {
-		RX509Extension *e = exts->extensions[i];
-		if (!e) {
-			continue;
-		}
-		RJSVar* obj = r_json_object_new ();
-		if (!obj) {
-			break;
-		}
-		if (e->extnID) {
-			var = r_json_string_new (e->extnID->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "OID", var), var);
-		}
-		if (e->critical) {
-			var = r_json_boolean_new (1);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Critical", var), var);
-		}
-		//TODO handle extensions correctly..
-		if (e->extnValue) {
-			m = r_asn1_stringify_integer (e->extnValue->binary, e->extnValue->length);
+		if (spki->subjectPublicKeyModule) {
+			m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
 			if (m) {
-				var = r_json_string_new (m->string);
-				R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Value", var), var);
+				pj_ks (pj, "Module", m->string);
 			}
 			r_asn1_free_string (m);
 		}
-		R_JSON_FREE_ON_FAIL (r_json_array_add (array, obj), obj);
-	}
-	return array;
-}
-
-RJSVar *r_x509_crlentry_json (RX509CRLEntry *crle) {
-	RASN1String *m = NULL;
-	RJSVar* obj = r_json_object_new ();
-	RJSVar* var = NULL;
-	if (!crle) {
-		return obj;
-	}
-	if (crle->userCertificate) {
-		m = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
-		if (m) {
-			var = r_json_string_new (m->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "UserCertificate", var), var);
+		if (spki->subjectPublicKeyExponent) {
+			m = r_asn1_stringify_integer (spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
+			if (m) {
+				pj_ks (pj, "Exponent", m->string);
+			}
+			r_asn1_free_string (m);
 		}
-		r_asn1_free_string (m);
 	}
-	if (crle->revocationDate) {
-		var = r_json_string_new (crle->revocationDate->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "RevocationDate", var), var);
-	}
-	return obj;
 }
 
-R_API RJSVar *r_x509_crl_json (RX509CertificateRevocationList *crl) {
+R_API void r_x509_extensions_json (PJ* pj, RX509Extensions* exts) {
+	if (exts) {
+		RASN1String *m = NULL;
+		ut32 i;
+		pj_a (pj);
+		for (i = 0; i < exts->length; ++i) {
+			RX509Extension *e = exts->extensions[i];
+			if (!e) {
+				continue;
+			}
+			if (e->extnID) {
+				pj_ks (pj, "OID", e->extnID->string);
+			}
+			if (e->critical) {
+				pj_kb (pj, "Critical", e->critical);
+			}
+			//TODO handle extensions correctly..
+			if (e->extnValue) {
+				m = r_asn1_stringify_integer (e->extnValue->binary, e->extnValue->length);
+				if (m) {
+					pj_ks (pj, "Value", m->string);
+				}
+				r_asn1_free_string (m);
+			}
+		}
+		pj_end (pj);
+		pj_end (pj);
+	}
+}
+
+R_API void r_x509_crlentry_json (PJ* pj, RX509CRLEntry *crle) {
+	RASN1String *m = NULL;
+	if (crle) {
+		if (crle->userCertificate) {
+			m = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
+			if (m) {
+				pj_ks (pj, "UserCertificate", m->string);
+			}
+			r_asn1_free_string (m);
+		}
+		if (crle->revocationDate) {
+			pj_ks (pj, "RevocationDate", crle->revocationDate->string);
+		}
+	}
+}
+
+R_API void r_x509_crl_json (PJ* pj, RX509CertificateRevocationList *crl) {
 	ut32 i;
-	RJSVar* obj = r_json_object_new ();
 	RJSVar* array = NULL;
-	RJSVar* var = NULL;
-	if (!crl) {
-		return obj;
+	if (crl) {
+		if (crl->signature.algorithm) {
+			pj_ks (pj, "Signature", crl->signature.algorithm->string);
+		}
+		pj_k (pj, "Issuer");
+		pj_o (pj);
+		r_x509_name_json (pj, &crl->issuer);
+		pj_end (pj);
+		if (crl->lastUpdate) {
+			pj_ks (pj, "LastUpdate", crl->lastUpdate->string);
+		}
+		if (crl->nextUpdate) {
+			pj_ks (pj, "NextUpdate", crl->nextUpdate->string);
+		}
+		pj_k (pj, "RevokedCertificates");
+		pj_a (pj);
+		array = r_json_array_new (crl->length);
+		for (i = 0; i < crl->length; ++i) {
+			r_x509_crlentry_json (pj, crl->revokedCertificates[i]);
+		}
+		pj_end (pj);
 	}
-
-	if (crl->signature.algorithm) {
-		var = r_json_string_new (crl->signature.algorithm->string);
-		R_JSON_FREE_ON_FAIL(r_json_object_add (obj, "Signature", var), var);
-	}
-	r_json_object_add (obj, "Issuer", r_x509_name_json (&crl->issuer));
-	if (crl->lastUpdate) {
-		var = r_json_string_new (crl->lastUpdate->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "LastUpdate", var), var);
-	}
-	if (crl->nextUpdate) {
-		var = r_json_string_new (crl->nextUpdate->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "NextUpdate", var), var);
-	}
-
-	array = r_json_array_new (crl->length);
-	for (i = 0; i < crl->length; ++i) {
-		var = r_x509_crlentry_json (crl->revokedCertificates[i]);
-		R_JSON_FREE_ON_FAIL (r_json_array_add (array, var), var);
-	}
-
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "RevokedCertificates", array), array);
-	return obj;
 }
 
-RJSVar *r_x509_tbscertificate_json (RX509TBSCertificate* tbsc) {
+R_API void r_x509_tbscertificate_json (PJ* pj, RX509TBSCertificate* tbsc) {
+	pj_o (pj);
 	RASN1String *m = NULL;
-	RJSVar* obj = r_json_object_new ();
-	RJSVar* var = NULL;
-	if (!tbsc) {
-		return obj;
-	}
-	var = r_json_number_new (tbsc->version + 1);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Version", var), var);
-	if (tbsc->serialNumber) {
-		var = r_json_string_new (tbsc->serialNumber->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "SerialNumber", var), var);
-	}
-	if (tbsc->signature.algorithm) {
-		var = r_json_string_new (tbsc->signature.algorithm->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "SignatureAlgorithm", var), var);
-	}
-	var = r_x509_name_json (&tbsc->issuer);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Issuer", var), var);
-	var = r_x509_validity_json (&tbsc->validity);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Validity", var), var);
-	var = r_x509_name_json (&tbsc->subject);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Subject", var), var);
-	var = r_x509_subjectpublickeyinfo_json (&tbsc->subjectPublicKeyInfo);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "SubjectPublicKeyInfo", var), var);
-	if (tbsc->issuerUniqueID) {
-		m = r_asn1_stringify_integer (tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
-		if (m) {
-			var = r_json_string_new (m->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "IssuerUniqueID", var), var);
+	if (tbsc) {
+		pj_ki (pj, "Version", tbsc->version + 1);
+		if (tbsc->serialNumber) {
+			pj_ks (pj, "SerialNumber", tbsc->serialNumber->string);
 		}
-		r_asn1_free_string (m);
-	}
-	if (tbsc->subjectUniqueID) {
-		m = r_asn1_stringify_integer (tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
-		if (m) {
-			var = r_json_string_new (m->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "SubjectUniqueID", var), var);
+		if (tbsc->signature.algorithm) {
+			pj_ks (pj, "SignatureAlgorithm", tbsc->signature.algorithm->string);
 		}
-		r_asn1_free_string (m);
+		pj_k (pj, "Issuer");
+		pj_o (pj);
+		r_x509_name_json (pj, &tbsc->issuer);
+		pj_end (pj);
+		pj_k (pj, "Validity");
+		pj_o (pj);
+		r_x509_validity_json (pj, &tbsc->validity);
+		pj_end (pj);
+		pj_k (pj, "Subject");
+		pj_o (pj);
+		r_x509_name_json (pj, &tbsc->subject);
+		pj_end (pj);
+		pj_k (pj, "SubjectPublicKeyInfo");
+		pj_o (pj);
+		r_x509_subjectpublickeyinfo_json (pj, &tbsc->subjectPublicKeyInfo);
+		pj_end (pj);
+		if (tbsc->issuerUniqueID) {
+			m = r_asn1_stringify_integer (tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
+			if (m) {
+				pj_ks (pj, "IssuerUniqueID", m->string);
+			}
+			r_asn1_free_string (m);
+		}
+		if (tbsc->subjectUniqueID) {
+			m = r_asn1_stringify_integer (tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
+			if (m) {
+				pj_ks (pj, "SubjectUniqueID", m->string);
+			}
+			r_asn1_free_string (m);
+		}
+		pj_k (pj, "Extensions");
+		r_x509_extensions_json (pj, &tbsc->extensions);
 	}
-	var = r_x509_extensions_json (&tbsc->extensions);
-	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Extensions", var), var);
-	return obj;
 }
 
-RJSVar* r_x509_certificate_json (RX509Certificate *certificate) {
-	RASN1String *m = NULL;
-	RJSVar* obj = r_json_object_new ();
-	RJSVar* var = NULL;
-	if (!certificate) {
-		return obj;
-	}
-	r_json_object_add (obj, "TBSCertificate", r_x509_tbscertificate_json (&certificate->tbsCertificate));
-	if (certificate->algorithmIdentifier.algorithm) {
-		var = r_json_string_new (certificate->algorithmIdentifier.algorithm->string);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Algorithm", var), var);
-	}
-	if (certificate->signature) {
-		m = r_asn1_stringify_integer (certificate->signature->binary, certificate->signature->length);
-		if (m) {
-			var = r_json_string_new (m->string);
-			R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Signature", var), var);
+R_API void r_x509_certificate_json (PJ* pj, RX509Certificate *certificate) {
+	if (certificate) {
+		RASN1String *m = NULL;
+		pj_o (pj);
+		pj_k (pj, "TBSCertificate");
+		r_x509_tbscertificate_json (pj, &certificate->tbsCertificate);
+		if (certificate->algorithmIdentifier.algorithm) {
+			pj_ks (pj, "Algorithm", certificate->algorithmIdentifier.algorithm->string);
 		}
-		r_asn1_free_string (m);
+		if (certificate->signature) {
+			m = r_asn1_stringify_integer (certificate->signature->binary, certificate->signature->length);
+			if (m) {
+				pj_ks (pj, "Signature", m->string);
+			}
+			r_asn1_free_string (m);
+		}
 	}
-	return obj;
 }
