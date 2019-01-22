@@ -2946,50 +2946,50 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '\0': // "afx"
 		case 'j': // "afxj"
 		case ' ': // "afx "
-			{
-				PJ *pj = pj_new ();
-				if (input[2] == 'j') {
-					//r_cons_printf ("[");
-					pj_a (pj);
-				}
-				if (!pj) {
-					return false;
-				}
-				// list xrefs from current address
-				{
-					ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
-					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-					if (fcn) {
-						RAnalRef *ref;
-						RListIter *iter;
-						RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
-						r_list_foreach (refs, iter, ref) {
-							if (input[2] == 'j') {
-								pj_o (pj);
-								pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
-								pj_kn (pj, "from", ref->at);
-								pj_kn (pj, "to", ref->addr);
-								pj_end (pj);
-								//r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64u",\"to\":%"PFMT64u"}%s",
-								//		ref->type, ref->at, ref->addr, iter->n? ",": "");
-							} else {
-								r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
-										ref->type, ref->at, ref->addr);
-							}
-						}
-						r_list_free (refs);
-					} else {
-						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", addr);
-					}
-				}
-				if (input[2] == 'j') {
-					pj_end (pj);
-					r_cons_printf ("%s\n", pj_string (pj));
-					//r_cons_printf ("]\n");
-				}
-				pj_free (pj);
-				break;
+		{
+			PJ *pj = pj_new ();
+			if (input[2] == 'j') {
+				//r_cons_printf ("[");
+				pj_a (pj);
 			}
+			if (!pj) {
+				return false;
+			}
+			// list xrefs from current address
+			{
+				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					RAnalRef *ref;
+					RListIter *iter;
+					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+					r_list_foreach (refs, iter, ref) {
+						if (input[2] == 'j') {
+							pj_o (pj);
+							pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
+							pj_kn (pj, "from", ref->at);
+							pj_kn (pj, "to", ref->addr);
+							pj_end (pj);
+							//r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64u",\"to\":%"PFMT64u"}%s",
+							//		ref->type, ref->at, ref->addr, iter->n? ",": "");
+						} else {
+							r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
+									ref->type, ref->at, ref->addr);
+						}
+					}
+					r_list_free (refs);
+				} else {
+					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", addr);
+				}
+			}
+			if (input[2] == 'j') {
+				pj_end (pj);
+				r_cons_printf ("%s\n", pj_string (pj));
+				//r_cons_printf ("]\n");
+			}
+			pj_free (pj);
+			break;
+		}
 		default:
 			eprintf ("Wrong command. Look at af?\n");
 			break;
