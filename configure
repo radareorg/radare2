@@ -164,7 +164,8 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
+printf "
+Optional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --disable-loadlibs     disable loading plugins
@@ -181,8 +182,10 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
-printf "\nSome influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -190,8 +193,10 @@ printf "\nSome influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor
+"
+printf "
+Report bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -599,6 +604,10 @@ if [ "$USEROSTYPE" = "gnulinux" ]; then
 HAVE_PTRACE="1"
 USE_PTRACE_WRAP="1"
 else
+if [ "$USEROSTYPE" = "android" ]; then
+HAVE_PTRACE="1"
+USE_PTRACE_WRAP="1"
+else
 if [ "$USEROSTYPE" = "mingw32" ]; then
 HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
@@ -608,7 +617,7 @@ HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
 else
 HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"; fi; fi; fi
+USE_PTRACE_WRAP="0"; fi; fi; fi; fi
 if [ "$DEBUGGER" = "0" ]; then
 HAVE_PTRACE="0"; fi
 SEDFLAGS=" -e '"
