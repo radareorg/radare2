@@ -2271,7 +2271,8 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&resourceEntryNameLength, sizeof (ut16));
 
 			resourceEntryName = calloc (resourceEntryNameLength, sizeof (ut8));
-			for(int i = 0; i < 2 * resourceEntryNameLength; i += 2) { /* Convert Unicode to ASCII */
+			int i;
+			for (i = 0; i < 2 * resourceEntryNameLength; i += 2) { /* Convert Unicode to ASCII */
 				r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + i, resourceEntryName + (i/2), sizeof (ut8));
 			}
 		}
