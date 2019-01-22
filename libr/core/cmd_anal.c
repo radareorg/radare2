@@ -1390,7 +1390,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAsmOp asmop;
 	RAnalOp op = {0};
 	ut64 addr;
-	bool isFirst = true;
+	PJ *pj = NULL;
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	int totalsize = 0;
 
@@ -1399,9 +1399,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		color = core->cons->context->pal.label;
 	}
 	switch (fmt) {
-	case 'j':
-		r_cons_printf ("[");
-		break;
+	case 'j': {
+		pj = pj_new ();
+		pj_a (pj);
+	} break;
 	case 'r':
 		// Setup for ESIL to REIL conversion
 		esil = r_anal_esil_new (stacksize, iotrap, addrsize);
@@ -1469,6 +1470,98 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else if (fmt == 's') {
 			totalsize += op.size;
+		} else if (fmt == 'j') {
+			pj_o (pj);
+			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
+			char strsub[128] = { 0 };
+			// pc+33
+			r_parse_varsub (core->parser, NULL,
+				core->offset + idx,
+				asmop.size, r_asm_op_get_asm (&asmop),
+				strsub, sizeof (strsub));
+				ut64 killme = UT64_MAX;
+				if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
+					core->parser->relsub_addr = killme;
+				}
+			// 0x33->sym.xx
+			char *p = strdup (strsub);
+			if (p) {
+				r_parse_filter (core->parser, addr, core->flags, p,
+						strsub, sizeof (strsub), be);
+				free (p);
+			}
+			pj_ks (pj, "disasm", strsub);
+			pj_ks (pj, "mnemonic", mnem);
+			if (hint && hint->opcode) {
+				pj_ks (pj, "ophint", hint->opcode);
+			}
+			pj_kb (pj, "sign", op.sign);
+			pj_ki (pj, "prefix", op.prefix);
+			pj_ki (pj, "id", op.id);
+			if (opexstr && *opexstr) {
+				pj_k (pj, "opex");
+				pj_j (pj, opexstr);
+			}
+			pj_kn (pj, "addr", core->offset + idx);
+			for (j = 0; j < size; j++) {
+				pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
+			}
+			if (op.val != UT64_MAX) {
+				pj_ki (pj, "val", op.val);
+			}
+			if (op.ptr != UT64_MAX) {
+				pj_ki (pj, "ptr", op.ptr);
+			}
+			pj_ki (pj, "size", size);
+			pj_ks (pj, "type", r_anal_optype_to_string (op.type));
+			if (op.reg) {
+				pj_ks (pj, "reg", op.reg);
+			}
+			if (op.ireg) {
+				pj_ks (pj, "ireg", op.ireg);
+			}
+			if (op.scale) {
+				pj_ki (pj, "scale", op.scale);
+			}
+			if (hint && hint->esil) {
+				pj_ks (pj, "esil", hint->esil);
+			} else if (*esilstr) {
+				pj_ks (pj, "esil", esilstr);
+			}
+			if (hint && hint->jump != UT64_MAX) {
+				op.jump = hint->jump;
+			}
+			if (op.jump != UT64_MAX) {
+				pj_ki (pj, "jump", op.jump);
+			}
+			if (hint && hint->fail != UT64_MAX) {
+				op.fail = hint->fail;
+			}
+			if (op.refptr != -1) {
+				pj_ki (pj, "refptr", op.refptr);
+			}
+			if (op.fail != UT64_MAX) {
+				pj_ki (pj, "fail", op.fail);
+			}
+			pj_ki (pj, "cycles", op.cycles);
+			if (op.failcycles) {
+				pj_ki (pj, "failcycles", op.failcycles);
+			}
+			pj_ki (pj, "delay", op.delay);
+			const char *p1 = r_anal_stackop_tostring (op.stackop);
+			if (p1 && *p1 && strcmp (p1, "null")) {
+				pj_ks (pj, "stack", p1);
+			}
+			if (op.stackptr) {
+				pj_ki (pj, "stackptr", op.stackptr);
+			}
+			const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
+				? r_anal_cond_tostring (op.cond): NULL;
+			if (arg) {
+				pj_ks (pj, "cond", arg);
+			}
+			pj_ks (pj, "family", r_anal_op_family_to_string (op.family));
+			pj_end (pj);
 		} else if (fmt == 'r') {
 			if (*esilstr) {
 				if (use_color) {
@@ -1480,110 +1573,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_anal_esil_dumpstack (esil);
 				r_anal_esil_stack_free (esil);
 			}
-		} else if (fmt == 'j') {
-			if (isFirst) {
-				isFirst = false;
-			} else {
-				r_cons_print (",");
-			}
-			r_cons_printf ("{\"opcode\":\"%s\",", r_asm_op_get_asm (&asmop));
-			{
-				char strsub[128] = { 0 };
-				// pc+33
-				r_parse_varsub (core->parser, NULL,
-					core->offset + idx,
-					asmop.size, r_asm_op_get_asm (&asmop),
-					strsub, sizeof (strsub));
-				{
-					ut64 killme = UT64_MAX;
-					if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
-						core->parser->relsub_addr = killme;
-					}
-				}
-				// 0x33->sym.xx
-				char *p = strdup (strsub);
-				if (p) {
-					r_parse_filter (core->parser, addr, core->flags, p,
-							strsub, sizeof (strsub), be);
-					free (p);
-				}
-				r_cons_printf ("\"disasm\":\"%s\",", strsub);
-			}
-			r_cons_printf ("\"mnemonic\":\"%s\",", mnem);
-			if (hint && hint->opcode) {
-				r_cons_printf ("\"ophint\":\"%s\",", hint->opcode);
-			}
-			r_cons_printf ("\"sign\":%s,", r_str_bool (op.sign));
-			r_cons_printf ("\"prefix\":%" PFMT64u ",", op.prefix);
-			r_cons_printf ("\"id\":%d,", op.id);
-			if (opexstr && *opexstr) {
-				r_cons_printf ("\"opex\":%s,", opexstr);
-			}
-			r_cons_printf ("\"addr\":%" PFMT64u ",", core->offset + idx);
-			r_cons_printf ("\"bytes\":\"");
-			for (j = 0; j < size; j++) {
-				r_cons_printf ("%02x", buf[j + idx]);
-			}
-			r_cons_printf ("\",");
-			if (op.val != UT64_MAX) {
-				r_cons_printf ("\"val\": %" PFMT64u ",", op.val);
-			}
-			if (op.ptr != UT64_MAX) {
-				r_cons_printf ("\"ptr\": %" PFMT64u ",", op.ptr);
-			}
-			r_cons_printf ("\"size\": %d,", size);
-			r_cons_printf ("\"type\": \"%s\",",
-				r_anal_optype_to_string (op.type));
-			if (op.reg) {
-				r_cons_printf ("\"reg\": \"%s\",", op.reg);
-			}
-			if (op.ireg) {
-				r_cons_printf ("\"ireg\": \"%s\",", op.ireg);
-			}
-			if (op.scale) {
-				r_cons_printf ("\"scale\":%d,", op.scale);
-			}
-			if (hint && hint->esil) {
-				r_cons_printf ("\"esil\": \"%s\",", hint->esil);
-			} else if (*esilstr) {
-				r_cons_printf ("\"esil\": \"%s\",", esilstr);
-			}
-			if (hint && hint->jump != UT64_MAX) {
-				op.jump = hint->jump;
-			}
-			if (op.jump != UT64_MAX) {
-				r_cons_printf ("\"jump\":%" PFMT64u ",", op.jump);
-			}
-			if (hint && hint->fail != UT64_MAX) {
-				op.fail = hint->fail;
-			}
-			if (op.refptr != -1) {
-				r_cons_printf ("\"refptr\":%d,", op.refptr);
-			}
-			if (op.fail != UT64_MAX) {
-				r_cons_printf ("\"fail\":%" PFMT64u ",", op.fail);
-			}
-			r_cons_printf ("\"cycles\":%d,", op.cycles);
-			if (op.failcycles) {
-				r_cons_printf ("\"failcycles\":%d,", op.failcycles);
-			}
-			r_cons_printf ("\"delay\":%d,", op.delay);
-			{
-				const char *p = r_anal_stackop_tostring (op.stackop);
-				if (p && *p && strcmp (p, "null"))
-					r_cons_printf ("\"stack\":\"%s\",", p);
-			}
-			if (op.stackptr) {
-				r_cons_printf ("\"stackptr\":%d,", op.stackptr);
-			}
-			{
-				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
-					? r_anal_cond_tostring (op.cond): NULL;
-				if (arg) {
-					r_cons_printf ("\"cond\":\"%s\",", arg);
-				}
-			}
-			r_cons_printf ("\"family\":\"%s\"}", r_anal_op_family_to_string (op.family));
 		} else {
 #define printline(k, fmt, arg)\
 	{ \
@@ -1701,11 +1690,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_anal_op_fini (&op);
 	}
 	r_anal_op_fini (&op);
-	if (fmt == 'j') {
-		r_cons_printf ("]");
-		r_cons_newline ();
-	} else if (fmt == 's') {
+	if (fmt == 's') {
 		r_cons_printf ("%d\n", totalsize);
+	} else if (fmt == 'j') {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
 	}
 	r_anal_esil_free (esil);
 }

@@ -135,6 +135,13 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 	return j;
 }
 
+R_API PJ *pj_j(PJ *j, const char *k) {
+	pj_comma (j);
+	char *ek = k;
+	pj_raw (j, ek);
+	return j;
+}
+
 R_API PJ *pj_n(PJ *j, ut64 n) {
 	pj_comma (j);
 	pj_raw (j, sdb_fmt ("%" PFMT64u, n));
