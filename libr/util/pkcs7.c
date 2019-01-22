@@ -583,48 +583,50 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 
 R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 	PJ *pj = NULL;
-	ut32 i;
+	if (container) {
+		ut32 i;
 
-	pj = pj_new ();
+		pj = pj_new ();
 
-	pj_o (pj);
-	pj_kn (pj, "Version", container->signedData.version);
+		pj_o (pj);
+		pj_kn (pj, "Version", container->signedData.version);
 
-	if (container->signedData.digestAlgorithms.elements) {
-		pj_k (pj, "DigestAlgorithms");
-		pj_a (pj);
-		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
-			if (container->signedData.digestAlgorithms.elements[i]) {
-				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
-				if (s) {
-					pj_s (pj, s->string);
+		if (container->signedData.digestAlgorithms.elements) {
+			pj_k (pj, "DigestAlgorithms");
+			pj_a (pj);
+			for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
+				if (container->signedData.digestAlgorithms.elements[i]) {
+					RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
+					if (s) {
+						pj_s (pj, s->string);
+					}
 				}
+			}
+			pj_end (pj);
+		}
+
+		pj_k (pj, "Certificates");
+		pj_a (pj);
+		for (i = 0; i < container->signedData.certificates.length; ++i) {
+			r_x509_certificate_json (pj, container->signedData.certificates.elements[i]);
+		}
+		pj_end (pj);
+		pj_end (pj);
+		pj_k (pj, "CRL");
+		pj_a (pj);
+		for (i = 0; i < container->signedData.crls.length; ++i) {
+			r_x509_crl_json (pj, container->signedData.crls.elements[i]);
+		}
+		pj_end (pj);
+		pj_k (pj, "SignerInfos");
+		pj_a (pj);
+		if (container->signedData.signerinfos.elements) {
+			for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+				r_x509_signedinfo_json (pj, container->signedData.signerinfos.elements[i]);
 			}
 		}
 		pj_end (pj);
+		pj_end (pj);
 	}
-
-	pj_k (pj, "Certificates");
-	pj_a (pj);
-	for (i = 0; i < container->signedData.certificates.length; ++i) {
-		r_x509_certificate_json (pj, container->signedData.certificates.elements[i]);
-	}
-	pj_end (pj);
-	pj_end (pj);
-	pj_k (pj, "CRL");
-	pj_a (pj);
-	for (i = 0; i < container->signedData.crls.length; ++i) {
-		r_x509_crl_json (pj, container->signedData.crls.elements[i]);
-	}
-	pj_end (pj);
-	pj_k (pj, "SignerInfos");
-	pj_a (pj);
-	if (container->signedData.signerinfos.elements) {
-		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
-			r_x509_signedinfo_json (pj, container->signedData.signerinfos.elements[i]);
-		}
-	}
-	pj_end (pj);
-	pj_end (pj);
 	return pj;
 }
