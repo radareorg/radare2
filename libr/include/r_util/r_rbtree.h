@@ -9,6 +9,10 @@
 
 #include "r_list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // max height <= 2 * floor(log2(n + 1))
 // We use `int` for size, so <= 2 * 31
 #define R_RBTREE_MAX_HEIGHT 62
@@ -81,5 +85,9 @@ R_API void r_rbtree_iter_prev(RBIter *it);
 
 #define r_rbtree_foreach_prev(root, it, data, struc, rb) \
 	for ((it) = r_rbtree_last (root); (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
