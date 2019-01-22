@@ -97,7 +97,7 @@ static int show_help(char *argv0, int line) {
 	" -n         do not stop on read errors\n"
 	" -r         print using radare commands\n"
 	" -s [str]   search for a specific string (can be used multiple times)\n"
-	" -S [str]   search for a specific wide string (can be used multiple times)\n"
+	" -S [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
 	" -t [to]    stop search at address 'to'\n"
 	" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
 	" -v         print version and exit\n"
