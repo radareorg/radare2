@@ -696,7 +696,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 				*ptr = '\0';
 				RFlagItem *flag = r_flag_get (core->flags, bptr);
-				ret = flag? flag->size: 0LL; // flag 
+				ret = flag? flag->size: 0LL; // flag
 				free (bptr);
 				free (out);
 				return ret;
@@ -1026,6 +1026,47 @@ static const char *radare_argv[] = {
 	"zo?", "zo", "zoz", "zos",
 	"zf?", "zfd", "zfs", "zfz",
 	"z/?", "z/", "z/*",
+	"?", "?v", "whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less",
+	"dH", "ds", "dso", "dsl", "dc", "dd", "dm",
+	"db ", "db-", "dbd", "dbe", "dbs", "dbte", "dbtd", "dbts",
+	"dp", "dr", "dcu", "dmd", "dmp", "dml",
+	"ec","ecs", "eco",
+	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
+	"!", "!!", "!!!", "!!!-",
+	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
+	"#!python", "#!perl", "#!vala",
+	"V", "v",
+	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
+	"ae", "aec", "aex", "aep", "aepc", "aea", "aeA", "aes", "aeso", "aesu", "aesue", "aer", "aei", "aeim", "aef",
+	"aaa", "aac","aae", "aai", "aar", "aan", "aas", "aat", "aap", "aav",
+	"af", "afa", "afan", "afc", "afC", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
+	"aga", "agc", "agd", "agl", "agfl",
+	"e", "et", "e-", "e*", "e!", "e?", "env ",
+	"i", "ie", "ii", "iI", "ir", "iR", "is", "iS", "il", "iz", "id", "idp", "idpi", "idpi*", "idpd",
+	"q", "q!", "q!!", "q!!!",
+	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
+	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
+	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wt", "wta", "wtf", "wp", "obf",
+	"L", "La", "Li", "Lo", "Lc", "Lh", "Ld", "L-",
+	"t", "to", "t-", "tf", "td", "td-", "tb", "tn", "te", "tl", "tk", "ts", "tu",
+	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
+	"r", "r+", "r-",
+	"b", "bf", "b?",
+	"/", "//", "/a", "/c", "/h", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r", "/re",
+	"y", "yy", "y?",
+	"wa", "waf", "wao",
+	"wv", "wv1", "wv2",  "wv4", "wv8",
+	"wx", "wxf", "ww", "w?",
+	"p6d", "p6e", "p8", "pb", "pc",
+	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
+	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
+	"pfj", "pfj.", "pfv", "pfv.",
+	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
+	"z", "z*", "zj", "z-", "z-*",
+	"za", "zaf", "zaF",
+	"zo", "zoz", "zos",
+	"zfd", "zfs", "zfz",
+	"z/", "z/*",
 	"zc",
 	"zs?", "zs", "zs-", "zs-*", "zs+", "zsr",
 	"zi",
@@ -1065,7 +1106,7 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 		*p = 0;
 		if (p == lpath) { // /xxx
 			dirname  = r_str_new ("/");
-		} else if (lpath[0] == '.') { // ./xxx/yyy 
+		} else if (lpath[0] == '.') { // ./xxx/yyy
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy
       			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
@@ -2505,7 +2546,7 @@ static void __init_autocomplete (RCore* core) {
 			}
 		}
 	}
-	
+
 }
 
 static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
