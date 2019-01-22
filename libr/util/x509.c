@@ -12,8 +12,8 @@ static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) 
 		return false;
 	}
 	if (object->klass == CLASS_UNIVERSAL &&
-			object->tag == TAG_SEQUENCE &&
-			object->form == FORM_CONSTRUCTED) {
+		object->tag == TAG_SEQUENCE &&
+		object->form == FORM_CONSTRUCTED) {
 		o = object->list.objects[0];
 		if (o->klass == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
 			if (o->tag == TAG_UTCTIME) {
@@ -34,7 +34,7 @@ static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) 
 	return true;
 }
 
-bool r_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object * object) {
+bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object *object) {
 	if (!ai || !object || object->list.length < 1 || !object->list.objects) {
 		return false;
 	}
@@ -46,7 +46,7 @@ bool r_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object 
 	return true;
 }
 
-bool r_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo * spki, RASN1Object *object) {
+bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
 	RASN1Object *o;
 	if (!spki || !object || object->list.length != 2) {
 		return false;
@@ -68,19 +68,19 @@ bool r_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo * spki, RASN1Ob
 	return true;
 }
 
-bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
+bool r_x509_parse_name (RX509Name *name, RASN1Object *object) {
 	ut32 i;
 	if (!name || !object || !object->list.length) {
 		return false;
 	}
 	if (object->klass == CLASS_UNIVERSAL && object->tag == TAG_SEQUENCE) {
 		name->length = object->list.length;
-		name->names = (RASN1String**) calloc (name->length, sizeof (RASN1String*));
+		name->names = (RASN1String **)calloc (name->length, sizeof (RASN1String *));
 		if (!name->names) {
 			name->length = 0;
 			return false;
 		}
-		name->oids = (RASN1String**) calloc (name->length, sizeof (RASN1String*));
+		name->oids = (RASN1String **)calloc (name->length, sizeof (RASN1String *));
 		if (!name->oids) {
 			name->length = 0;
 			R_FREE (name->names);
@@ -89,15 +89,15 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
 		for (i = 0; i < object->list.length; ++i) {
 			RASN1Object *o = object->list.objects[i];
 			if (o && o->klass == CLASS_UNIVERSAL &&
-					o->tag == TAG_SET &&
-					o->form == FORM_CONSTRUCTED &&
-					o->list.length == 1) {
+				o->tag == TAG_SET &&
+				o->form == FORM_CONSTRUCTED &&
+				o->list.length == 1) {
 				o = o->list.objects[0];
 				if (o && o->list.length > 1 &&
-						o->klass == CLASS_UNIVERSAL &&
-						o->tag == TAG_SEQUENCE) {
+					o->klass == CLASS_UNIVERSAL &&
+					o->tag == TAG_SEQUENCE) {
 					if (o->list.objects[0]->klass == CLASS_UNIVERSAL &&
-							o->list.objects[0]->tag == TAG_OID) {
+						o->list.objects[0]->tag == TAG_OID) {
 						name->oids[i] = r_asn1_stringify_oid (o->list.objects[0]->sector, o->list.objects[0]->length);
 					}
 					RASN1Object *obj1 = o->list.objects[1];
@@ -132,13 +132,13 @@ bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
 	return true;
 }
 
-bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object * object) {
+bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object *object) {
 	ut32 i;
 	if (!ext || !object || object->list.length != 1 || !object->list.objects[0]->length) {
 		return false;
 	}
 	object = object->list.objects[0];
-	ext->extensions = (RX509Extension**) calloc (object->list.length, sizeof (RX509Extension*));
+	ext->extensions = (RX509Extension **)calloc (object->list.length, sizeof (RX509Extension *));
 	if (!ext->extensions) {
 		return false;
 	}
@@ -153,7 +153,7 @@ bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object * object) {
 	return true;
 }
 
-bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * object) {
+bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object *object) {
 	RASN1Object **elems;
 	ut32 i;
 	ut32 shift = 0;
@@ -163,12 +163,12 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 	elems = object->list.objects;
 	//Following RFC
 	if (elems[0]->list.length == 1 &&
-			elems[0]->klass == CLASS_CONTEXT &&
-			elems[0]->form == FORM_CONSTRUCTED &&
-			elems[0]->list.objects[0]->tag == TAG_INTEGER &&
-			elems[0]->list.objects[0]->length == 1) {
+		elems[0]->klass == CLASS_CONTEXT &&
+		elems[0]->form == FORM_CONSTRUCTED &&
+		elems[0]->list.objects[0]->tag == TAG_INTEGER &&
+		elems[0]->list.objects[0]->length == 1) {
 		//Integer inside a CLASS_CONTEXT
-		tbsc->version = (ut32) elems[0]->list.objects[0]->sector[0];
+		tbsc->version = (ut32)elems[0]->list.objects[0]->sector[0];
 		shift = 1;
 	} else {
 		tbsc->version = 0;
@@ -206,7 +206,7 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 	return true;
 }
 
-RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
+RX509Certificate *r_x509_parse_certificate (RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
@@ -238,7 +238,7 @@ fail:
 	return cert;
 }
 
-RX509Certificate * r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
+RX509Certificate *r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
 	RX509Certificate *certificate;
 	RASN1Object *object;
 	if (!buffer || !length) {
@@ -255,7 +255,7 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 	if (!object || object->list.length != 2) {
 		return NULL;
 	}
-	entry = (RX509CRLEntry *) malloc (sizeof (RX509CRLEntry));
+	entry = (RX509CRLEntry *)malloc (sizeof (RX509CRLEntry));
 	if (!entry) {
 		return NULL;
 	}
@@ -264,13 +264,13 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 	return entry;
 }
 
-R_API RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
+R_API RX509CertificateRevocationList *r_x509_parse_crl(RASN1Object *object) {
 	RX509CertificateRevocationList *crl;
 	RASN1Object **elems;
 	if (!object || object->list.length < 4) {
 		return NULL;
 	}
-	crl = (RX509CertificateRevocationList *) malloc (sizeof (RX509CertificateRevocationList));
+	crl = (RX509CertificateRevocationList *)malloc (sizeof (RX509CertificateRevocationList));
 	if (!crl) {
 		return NULL;
 	}
@@ -282,7 +282,7 @@ R_API RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 	crl->nextUpdate = r_asn1_stringify_utctime (elems[3]->sector, elems[3]->length);
 	if (object->list.length > 4 && object->list.objects[4]) {
 		ut32 i;
-		crl->revokedCertificates = calloc (object->list.objects[4]->list.length, sizeof (RX509CRLEntry*));
+		crl->revokedCertificates = calloc (object->list.objects[4]->list.length, sizeof (RX509CRLEntry *));
 		if (!crl->revokedCertificates) {
 			free (crl);
 			return NULL;
@@ -295,7 +295,7 @@ R_API RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 	return crl;
 }
 
-void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai) {
+void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier *ai) {
 	if (ai) {
 		// no need to free ai, since this functions is used internally
 		r_asn1_free_string (ai->algorithm);
@@ -303,7 +303,7 @@ void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai) {
 	}
 }
 
-static void r_x509_free_validity (RX509Validity * validity) {
+static void r_x509_free_validity(RX509Validity *validity) {
 	if (validity) {
 		// not freeing validity since it's not allocated dinamically
 		r_asn1_free_string (validity->notAfter);
@@ -311,7 +311,7 @@ static void r_x509_free_validity (RX509Validity * validity) {
 	}
 }
 
-void r_x509_free_name (RX509Name * name) {
+void r_x509_free_name (RX509Name *name) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -327,7 +327,7 @@ void r_x509_free_name (RX509Name * name) {
 	// not freeing name since it's not allocated dinamically
 }
 
-void r_x509_free_extension (RX509Extension * ex) {
+void r_x509_free_extension (RX509Extension *ex) {
 	if (ex) {
 		r_asn1_free_string (ex->extnID);
 		r_asn1_free_binary (ex->extnValue);
@@ -336,7 +336,7 @@ void r_x509_free_extension (RX509Extension * ex) {
 	}
 }
 
-void r_x509_free_extensions (RX509Extensions * ex) {
+void r_x509_free_extensions (RX509Extensions *ex) {
 	ut32 i;
 	if (!ex) {
 		return;
@@ -350,7 +350,7 @@ void r_x509_free_extensions (RX509Extensions * ex) {
 	//no need to free ex, since this functions is used internally
 }
 
-void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki) {
+void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo *spki) {
 	if (spki) {
 		r_x509_free_algorithmidentifier (&spki->algorithm);
 		r_asn1_free_binary (spki->subjectPublicKey);
@@ -360,7 +360,7 @@ void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki) {
 	}
 }
 
-void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc) {
+void r_x509_free_tbscertificate (RX509TBSCertificate *tbsc) {
 	if (tbsc) {
 		//  version is ut32
 		r_asn1_free_string (tbsc->serialNumber);
@@ -376,7 +376,7 @@ void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc) {
 	}
 }
 
-void r_x509_free_certificate (RX509Certificate * certificate) {
+void r_x509_free_certificate (RX509Certificate *certificate) {
 	if (certificate) {
 		r_asn1_free_binary (certificate->signature);
 		r_x509_free_algorithmidentifier (&certificate->algorithmIdentifier);
@@ -385,7 +385,7 @@ void r_x509_free_certificate (RX509Certificate * certificate) {
 	}
 }
 
-static void r_x509_free_crlentry (RX509CRLEntry *entry) {
+static void r_x509_free_crlentry(RX509CRLEntry *entry) {
 	if (entry) {
 		r_asn1_free_binary (entry->userCertificate);
 		r_asn1_free_string (entry->revocationDate);
@@ -411,19 +411,19 @@ void r_x509_free_crl (RX509CertificateRevocationList *crl) {
 	}
 }
 
-static void r_x509_validity_dump (RX509Validity* validity, const char* pad, RStrBuf *sb) {
+static void r_x509_validity_dump(RX509Validity *validity, const char *pad, RStrBuf *sb) {
 	if (!validity) {
 		return;
 	}
 	if (!pad) {
 		pad = "";
 	}
-	const char* b = validity->notBefore ? validity->notBefore->string : "Missing";
-	const char* a = validity->notAfter ? validity->notAfter->string : "Missing";
+	const char *b = validity->notBefore ? validity->notBefore->string : "Missing";
+	const char *a = validity->notAfter ? validity->notAfter->string : "Missing";
 	r_strbuf_appendf (sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
-void r_x509_name_dump (RX509Name* name, const char* pad, RStrBuf *sb) {
+void r_x509_name_dump (RX509Name *name, const char *pad, RStrBuf *sb) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -439,7 +439,7 @@ void r_x509_name_dump (RX509Name* name, const char* pad, RStrBuf *sb) {
 	}
 }
 
-static void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const char* pad, RStrBuf *sb) {
+static void r_x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, const char *pad, RStrBuf *sb) {
 	const char *a;
 	if (!spki) {
 		return;
@@ -448,7 +448,7 @@ static void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, c
 		pad = "";
 	}
 	a = spki->algorithm.algorithm ? spki->algorithm.algorithm->string : "Missing";
-	RASN1String* m = NULL;
+	RASN1String *m = NULL;
 	if (spki->subjectPublicKeyModule) {
 		m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
 	}
@@ -456,12 +456,12 @@ static void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, c
 	//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
 	//				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
 	r_strbuf_appendf (sb, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
-				pad, spki->subjectPublicKeyExponent ? spki->subjectPublicKeyExponent->length - 1 : 0);
+		pad, spki->subjectPublicKeyExponent ? spki->subjectPublicKeyExponent->length - 1 : 0);
 	r_asn1_free_string (m);
 	//	r_asn1_free_string (e);
 }
 
-static void r_x509_extensions_dump (RX509Extensions* exts, const char* pad, RStrBuf *sb) {
+static void r_x509_extensions_dump(RX509Extensions *exts, const char *pad, RStrBuf *sb) {
 	ut32 i;
 	if (!exts) {
 		return;
@@ -484,7 +484,7 @@ static void r_x509_extensions_dump (RX509Extensions* exts, const char* pad, RStr
 	}
 }
 
-static void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* pad, RStrBuf *sb) {
+static void r_x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *pad, RStrBuf *sb) {
 	RASN1String *sid = NULL, *iid = NULL;
 	if (!tbsc) {
 		return;
@@ -497,9 +497,9 @@ static void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* p
 		return;
 	}
 	r_strbuf_appendf (sb, "%sVersion: v%u\n"
-		"%sSerial Number:\n%s  %s\n"
-		"%sSignature Algorithm:\n%s  %s\n"
-		"%sIssuer:\n",
+			      "%sSerial Number:\n%s  %s\n"
+			      "%sSignature Algorithm:\n%s  %s\n"
+			      "%sIssuer:\n",
 		pad, tbsc->version + 1,
 		pad, pad, tbsc->serialNumber ? tbsc->serialNumber->string : "Missing",
 		pad, pad, tbsc->signature.algorithm ? tbsc->signature.algorithm->string : "Missing",
@@ -535,7 +535,7 @@ static void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* p
 	free (pad2);
 }
 
-void r_x509_certificate_dump (RX509Certificate* cert, const char* pad, RStrBuf *sb) {
+void r_x509_certificate_dump (RX509Certificate *cert, const char *pad, RStrBuf *sb) {
 	RASN1String *algo = NULL;
 	char *pad2;
 	if (!cert) {
@@ -562,7 +562,7 @@ void r_x509_certificate_dump (RX509Certificate* cert, const char* pad, RStrBuf *
 	//	r_asn1_free_string (signature);
 }
 
-void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad, RStrBuf *sb) {
+void r_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
 	RASN1String *id = NULL, *utc = NULL;
 	if (!crle) {
 		return;
@@ -575,13 +575,13 @@ void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad, RStrBuf *sb) {
 		id = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
 	}
 	r_strbuf_appendf (sb, "%sUser Certificate:\n%s  %s\n"
-		"%sRevocation Date:\n%s  %s\n",
+			      "%sRevocation Date:\n%s  %s\n",
 		pad, pad, id ? id->string : "Missing",
 		pad, pad, utc ? utc->string : "Missing");
 	r_asn1_free_string (id);
 }
 
-R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char* pad) {
+R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char *pad) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;
@@ -601,12 +601,12 @@ R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char
 	next = crl->nextUpdate;
 	RStrBuf *sb = r_strbuf_new ("");
 	r_strbuf_appendf (sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
-			algo ? algo->string : "", pad2);
+		algo ? algo->string : "", pad2);
 	r_x509_name_dump (&crl->issuer, pad3, sb);
 
 	r_strbuf_appendf (sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
-				pad2, last ? last->string : "Missing",
-				pad2, next ? next->string : "Missing", pad2);
+		pad2, last ? last->string : "Missing",
+		pad2, next ? next->string : "Missing", pad2);
 
 	for (i = 0; i < crl->length; i++) {
 		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3, sb);
@@ -616,7 +616,7 @@ R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char
 	return r_strbuf_drain (sb);
 }
 
-R_API void r_x509_validity_json (PJ* pj, RX509Validity* validity) {
+R_API void r_x509_validity_json(PJ *pj, RX509Validity *validity) {
 	if (validity) {
 		if (validity->notBefore) {
 			pj_ks (pj, "NotBefore", validity->notBefore->string);
@@ -627,7 +627,7 @@ R_API void r_x509_validity_json (PJ* pj, RX509Validity* validity) {
 	}
 }
 
-R_API void r_x509_name_json (PJ* pj, RX509Name* name) {
+R_API void r_x509_name_json(PJ *pj, RX509Name *name) {
 	ut32 i;
 	for (i = 0; i < name->length; ++i) {
 		if (!name->oids[i] || !name->names[i]) {
@@ -637,7 +637,7 @@ R_API void r_x509_name_json (PJ* pj, RX509Name* name) {
 	}
 }
 
-R_API void r_x509_subjectpublickeyinfo_json (PJ* pj, RX509SubjectPublicKeyInfo* spki) {
+R_API void r_x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *spki) {
 	RASN1String *m = NULL;
 	if (spki) {
 		if (spki->algorithm.algorithm) {
@@ -660,7 +660,7 @@ R_API void r_x509_subjectpublickeyinfo_json (PJ* pj, RX509SubjectPublicKeyInfo* 
 	}
 }
 
-R_API void r_x509_extensions_json (PJ* pj, RX509Extensions* exts) {
+R_API void r_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 	if (exts) {
 		RASN1String *m = NULL;
 		ut32 i;
@@ -690,7 +690,7 @@ R_API void r_x509_extensions_json (PJ* pj, RX509Extensions* exts) {
 	}
 }
 
-R_API void r_x509_crlentry_json (PJ* pj, RX509CRLEntry *crle) {
+R_API void r_x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
 	RASN1String *m = NULL;
 	if (crle) {
 		if (crle->userCertificate) {
@@ -706,9 +706,9 @@ R_API void r_x509_crlentry_json (PJ* pj, RX509CRLEntry *crle) {
 	}
 }
 
-R_API void r_x509_crl_json (PJ* pj, RX509CertificateRevocationList *crl) {
+R_API void r_x509_crl_json(PJ *pj, RX509CertificateRevocationList *crl) {
 	ut32 i;
-	RJSVar* array = NULL;
+	RJSVar *array = NULL;
 	if (crl) {
 		if (crl->signature.algorithm) {
 			pj_ks (pj, "Signature", crl->signature.algorithm->string);
@@ -733,7 +733,7 @@ R_API void r_x509_crl_json (PJ* pj, RX509CertificateRevocationList *crl) {
 	}
 }
 
-R_API void r_x509_tbscertificate_json (PJ* pj, RX509TBSCertificate* tbsc) {
+R_API void r_x509_tbscertificate_json(PJ *pj, RX509TBSCertificate *tbsc) {
 	pj_o (pj);
 	RASN1String *m = NULL;
 	if (tbsc) {
@@ -779,7 +779,7 @@ R_API void r_x509_tbscertificate_json (PJ* pj, RX509TBSCertificate* tbsc) {
 	}
 }
 
-R_API void r_x509_certificate_json (PJ* pj, RX509Certificate *certificate) {
+R_API void r_x509_certificate_json(PJ *pj, RX509Certificate *certificate) {
 	if (certificate) {
 		RASN1String *m = NULL;
 		pj_o (pj);
