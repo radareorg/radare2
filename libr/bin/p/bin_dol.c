@@ -73,6 +73,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		if (bf && bf->o && bf->o->bin_obj) {
 			*bin_obj = bf->o->bin_obj = dol;
 		}
+		free (dol);
 		return true;
 	}
 	free (dol);
@@ -109,7 +110,7 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		s = R_NEW0 (RBinSection);
-		snprintf (s->name, sizeof (s->name), "text_%d", i);
+		s->name = r_str_newf ("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
 		s->size = dol->text_size[i];
@@ -124,7 +125,7 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		s = R_NEW0 (RBinSection);
-		snprintf (s->name, sizeof (s->name), "data_%d", i);
+		s->name = r_str_newf ("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
 		s->size = dol->data_size[i];
@@ -135,7 +136,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	/* bss section */
 	s = R_NEW0 (RBinSection);
-	strcpy (s->name, "bss");
+	s->name = strdup ("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
 	s->size = dol->bss_size;

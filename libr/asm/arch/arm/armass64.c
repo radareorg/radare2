@@ -418,7 +418,13 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 	if (op->operands[0].type & ARM_CONSTANT) {
 		n = op->operands[0].immediate;
 		if (!(n & 0x3 || n > 0x7ffffff)) {
-			n -= addr;
+			if (n >= addr) {
+				n -= addr;
+			} else {
+				n -= addr;
+				n = n & 0xfffffff;
+				k |= 3;
+			}
 			n = n >> 2;
 			int t = n >> 24;
 			int h = n >> 16;
@@ -506,6 +512,8 @@ static ut32 msrk(ut16 v) {
 
 static ut32 msr(ArmOp *op, int w) {
 	ut32 data = UT32_MAX;
+	ut32 seq_data = UT32_MAX;
+	int is_immediate = 0;
 	int i;
 	ut32 r, b;
 	/* handle swapped args */
@@ -524,7 +532,7 @@ static ut32 msr(ArmOp *op, int w) {
 			}
 		}
 		r = op->operands[0].reg;
-		b = msrk (op->operands[0].sp_val);
+		b = op->operands[1].sp_val;
 	} else {
 		if (op->operands[0].reg_type != (ARM_REG64 | ARM_SP)) {
 			if (op->operands[0].type == ARM_CONSTANT) {
@@ -539,19 +547,47 @@ static ut32 msr(ArmOp *op, int w) {
 				return data;
 			}
 		}
-		r = op->operands[0].reg;
-		b = msrk (op->operands[0].sp_val);
+		r = op->operands[1].reg;
+		if ( op->operands[1].sp_val == 0xfffe ) {
+			is_immediate = 1;
+			r = op->operands[1].immediate;
+		}
+		b = op->operands[0].sp_val;
 	}
-	data = (r << 24) | b | 0xd5;
-	if (w) {
-		/* mrs */
-		data |= 0x413000;
+	data = 0x00000000;
+
+	if (is_immediate) {
+		//only msr has immediate mode
+		data = 0xd500401f;
+		if (b == 0xc210) { //op0 is SPSel
+			b = 0x05; //set to immediate mode encoding
+		}
+
+		data |= (b & 0xf0) << 12; //op1
+		data |= (b & 0x0f) << 5; //op2
+		data |= (r & 0xf) << 8; //CRm(#imm)
+
+	} else {
+		if (w) {
+			/* mrs */
+			data |= 0xd5200000;
+		} else {
+			data |= 0xd5000000;
+		}
+		data |= b << 5;
+		data |= r;
 	}
-	if (op->operands[1].reg_type == ARM_REG64) {
+	seq_data = 0x00000000;
+	seq_data |= (data & 0xff) << 8*3;
+	seq_data |= (data & 0xff00) << 8*1;
+	seq_data |= (data & 0xff0000) >> 8*1;
+	seq_data |= (data & 0xff000000) >> 8*3;
+/*
+if (op->operands[1].reg_type == ARM_REG64) {
 		data |= op->operands[1].reg << 24;
 	}
-
-	return data;
+*/
+	return seq_data;
 }
 
 static ut32 orr(ArmOp *op, int addr) {
@@ -725,6 +761,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 	char *x;
 	int imm_count = 0;
 	int mem_opt = 0;
+	int msr_op_index = 0;
 	if (!token) {
 		return false;
 	}
@@ -737,9 +774,45 @@ static bool parseOperands(char* str, ArmOp *op) {
 		while (token[0] == ' ') {
 			token++;
 		}
+		if (operand >= MAX_OPERANDS) {
+			eprintf ("Too many operands\n");
+			return false;
+		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
 		op->operands[operand].shift = ARM_NO_SHIFT;
+
+		//parse MSR (immediate) operand 1
+		if (strcmp (op->mnemonic, "msr") == 0 && operand == 1) {
+
+			//operand 1 must be a immediate
+			if ( token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
+				//immediate operand found.
+				op->operands[operand].sp_val = 0xfffe; //not regiter, but a immediate
+				op->operands[operand].immediate = r_num_math (NULL, token[0]=='#'?token+1:token);
+				operand ++;
+				token = next;
+				continue;
+			}
+		}
+
+		//parse system registers
+		if ((strcmp (op->mnemonic, "mrs") == 0 && operand == 1) || (strcmp (op->mnemonic, "msr") == 0 && operand == 0)) {
+			for(msr_op_index = 0; msr_const[msr_op_index].name; msr_op_index++) {
+				if (strcasecmp (token, msr_const[msr_op_index].name) == 0) {
+					op->operands_count ++;
+					op->operands[operand].type = ARM_CONSTANT;
+					op->operands[operand].immediate = msr_const[msr_op_index].val;
+					imm_count++;
+					break;
+				}
+			}
+			if (msr_const[msr_op_index].name) {
+				operand ++;
+				token = next;
+				continue;
+			}
+		}
 
 		while (token[0] == ' ' || token[0] == '[' || token[0] == ']') {
 			token ++;
@@ -752,10 +825,11 @@ static bool parseOperands(char* str, ArmOp *op) {
 		} else if (!strncmp (token, "asr", 3)) {
 			op->operands[operand].shift = ARM_ASR;
 		}
-		if (op->operands[operand].shift != ARM_NO_SHIFT) {
+		if (strlen (token) > 4 && op->operands[operand].shift != ARM_NO_SHIFT) {
 			op->operands_count ++;
 			op->operands[operand].shift_amount = r_num_math (NULL, token + 4);
 			if (op->operands[operand].shift_amount > 63) {
+				free (t);
 				return false;
 			}
 			operand ++;
@@ -774,6 +848,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].reg_type = ARM_REG64;
 			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			if (op->operands[operand].reg > 31) {
+				free (t);
 				return false;
 			}
 			break;
@@ -783,6 +858,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].reg_type = ARM_REG32;
 			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			if (op->operands[operand].reg > 31) {
+				free (t);
 				return false;
 			}
 			break;

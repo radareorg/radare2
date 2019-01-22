@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 #include "dex/dex.h"
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
@@ -178,6 +179,7 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 				*cp++ = ' ';
 			}
 			if (((cp - str) + len) >= maxSize) {
+				free (str);
 				return NULL;
 			}
 			memcpy (cp, accessStr, len);
@@ -707,7 +709,7 @@ static Sdb *get_sdb (RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
-	return bin? bin->kv: NULL;
+	return bin->kv;
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -871,6 +873,7 @@ static RList *strings(RBinFile *bf) {
 			ptr->string[len] = 0;
 			if ((ptr->string[0] == 'L' && strchr (ptr->string, '/')) || !strncmp (ptr->string, "[L", 2)) {
 				free (ptr->string);
+				free (ptr);
 				continue;
 			}
 			ptr->vaddr = ptr->paddr = bin->strings[i];
@@ -1284,7 +1287,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				sym->paddr = MC;// + 0x10;
 				sym->vaddr = MC;// + 0x10;
 			} else {
-				sym->type = r_str_const ("METH");
+				sym->type = r_str_const (R_BIN_TYPE_METH_STR);
 				sym->paddr = encoded_method_addr - binfile->buf->buf;
 				sym->vaddr = encoded_method_addr - binfile->buf->buf;
 			}
@@ -1915,7 +1918,7 @@ static RList *sections(RBinFile *bf) {
 	ret->free = free;
 
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "header");
+		ptr->name = strdup ("header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
 		ptr->perm = R_PERM_R;
@@ -1923,7 +1926,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "constpool");
+		ptr->name = strdup ("constpool");
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
@@ -1933,7 +1936,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "code");
+		ptr->name = strdup ("code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->vsize = ptr->size;
@@ -1943,7 +1946,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
-		strcpy (ptr->name, "data");
+		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
 		if (ptr->vaddr > bf->buf->length) {
 			ptr->paddr = ptr->vaddr = bin->code_to;

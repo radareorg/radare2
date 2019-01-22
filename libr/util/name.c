@@ -37,14 +37,13 @@ static inline bool is_special_char (char *name) {
 R_API int r_name_filter(char *name, int maxlen) {
 	int i;
 	size_t len;
-	char *oname;
 	if (!name) {
 		return 0;
 	}
 	if (maxlen < 0) {
 		maxlen = strlen (name);
 	}
-	name = oname = r_str_trim_head_tail (name);
+	char *oname = name = r_str_trim_head_tail (name);
 	for (i = 0; *name; name++, i++) {
 		if (maxlen && i > maxlen) {
 			*name = '\0';
@@ -88,11 +87,10 @@ R_API int r_name_filter(char *name, int maxlen) {
 
 R_API char *r_name_filter2(const char *name) {
 	int i;
-	char *res;
 	while (!IS_PRINTABLE (*name)) {
 		name++;
 	}
-	res = strdup (name);
+	char *res = strdup (name);
 	for (i = 0; res[i]; i++) {
 		if (!r_name_validate_char (res[i])) {
 			res[i] = '_';

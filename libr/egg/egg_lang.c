@@ -167,8 +167,7 @@ R_API void r_egg_lang_include_init(REgg *egg) {
 }
 
 static void rcc_set_callname(REgg *egg, const char *s) {
-	free (egg->lang.callname);
-	egg->lang.callname = NULL;
+	R_FREE (egg->lang.callname);
 	egg->lang.nargs = 0;
 	egg->lang.callname = trim (strdup (skipspaces (s)));
 	egg->lang.pushargs = !((!strcmp (s, "goto")) || (!strcmp (s, "break")));
@@ -503,7 +502,6 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 					dotrim = 3;
 					break;
 				default:
-					dotrim = 0;
 					break;
 				}
 				if (dotrim) {
@@ -518,8 +516,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 	len = strlen (str);
 	j = (len - len % e->size) + e->size;
 	e->set_string (egg, egg->lang.dstvar, str, j);
-	free (egg->lang.dstvar);
-	egg->lang.dstvar = NULL;
+	R_FREE (egg->lang.dstvar);
 }
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
@@ -745,8 +742,7 @@ static void set_nested(REgg *egg, const char *s) {
 	/** clear inner levels **/
 	for (i = 1; i < 10; i++) {
 		// egg->lang.nestedi[context+i] = 0;
-		free (egg->lang.nested[CTX + i]);
-		egg->lang.nested[CTX + i] = NULL;
+		R_FREE (egg->lang.nested[CTX + i]);
 	}
 }
 
@@ -915,7 +911,9 @@ static int parsedatachar(REgg *egg, char c) {
 			}
 		}
 	}
-	egg->lang.dstval[egg->lang.ndstval++] = c;
+	if (egg->lang.dstval) {
+		egg->lang.dstval[egg->lang.ndstval++] = c;
+	}
 	return 0;
 }
 
@@ -983,9 +981,8 @@ static void rcc_next(REgg *egg) {
 			eprintf ("Cannot find include file '%s'\n", egg->lang.elem);
 			return;
 		}
-		free (egg->lang.includefile);
-		free (egg->lang.includedir);
-		egg->lang.includefile = egg->lang.includedir = NULL;
+		R_FREE (egg->lang.includefile);
+		R_FREE (egg->lang.includedir);
 		rcc_reset_callname (egg);
 		p = q = r_file_slurp (path, NULL);
 		if (p) {
@@ -1195,8 +1192,7 @@ static void rcc_next(REgg *egg) {
 				        if (egg->lang.varxs=='&')
 				            e->load_ptr (egg, eq);
 				        if (eq) {
-				            free (eq);
-				            eq = NULL;
+				            R_FREE (eq);
 				        }
 				        type = ' ';
 				    } else type = '$';

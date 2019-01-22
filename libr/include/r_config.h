@@ -43,7 +43,7 @@ typedef struct r_config_t {
 	RNum *num;
 	PrintfCallback cb_printf;
 	RList *nodes;
-	SdbHt *ht;
+	HtPP *ht;
 } RConfig;
 
 typedef struct r_config_hold_num_t {
@@ -88,6 +88,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad);
 R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API void r_config_node_free(void *n);
+R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node);
 R_API int r_config_toggle(RConfig *cfg, const char *name);
 R_API int r_config_readonly (RConfig *cfg, const char *key);
 

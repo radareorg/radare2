@@ -39,7 +39,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (i) {
 		l = i - file - 8;
 		fileBochs = r_str_ndup (file + 8, l);
-		l = strlen (i + 1);
 		fileCfg = strdup (i + 1);
 	} else {
 		free (fileCfg);

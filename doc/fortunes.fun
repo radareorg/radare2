@@ -119,7 +119,7 @@ bash: r3: command not found
 R2 loves everyone, even Java coders, but less than others
 It's not a bug, it's a work in progress
 Stop swearing!
-I didn't said that it was working, I said that it's implemented
+I didn't say that it was working, I said that it's implemented
 Wrong argument
 Remember that word: C H A I R
 what happens in #radare, stays in #radare
@@ -263,3 +263,11 @@ This software is sold for home use only and all other rights are expressly rever
 Any commercial use or duplication of this copylefted material without prior licensing is forbidden.
 Violators will be prosecuted.
 This shell has been seized by the Internet's Police.
+OpenBSD might pledge r2 but r2 unveils OpenBSD.
+Error: There's a missing space before the opening parenthesis '('
+WARNING: r_list_length: assertion 'list' failed (line 55)
+This accessory is not supported by this version of radare2.
+When can we have an official anime mascot for radare2?
+Iaito became Cutter the same way Iai-giri became Cut.
+Sorry, radare2 has experienced an internal error.
+Segmentation fault (core dumped)

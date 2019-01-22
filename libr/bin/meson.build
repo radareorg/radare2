@@ -1,13 +1,13 @@
-files = [
+r_bin_sources = [
   'bin.c',
   'bin_write.c',
   'dbginfo.c',
   'demangle.c',
   'dwarf.c',
+  'blang.c',
   'filter.c',
   'bfile.c',
   'obj.c',
-  'open.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',
@@ -97,7 +97,8 @@ files = [
   'mangling/cxx.c',
   'mangling/cxx/cp-demangle.c',
   'mangling/demangler.c',
-  'mangling/dlang.c',
+  'mangling/rust.c',
+  'mangling/java.c',
   'mangling/microsoft_demangle.c',
   'mangling/msvc.c',
   'mangling/objc.c',
@@ -117,7 +118,7 @@ files = [
 
 r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
-r_bin = library('r_bin', files,
+r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
   c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
@@ -138,8 +139,7 @@ r_bin = library('r_bin', files,
 r_bin_dep = declare_dependency(link_with: r_bin,
                                include_directories: r_bin_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_bin],
+pkgconfig_mod.generate(r_bin,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_bin',

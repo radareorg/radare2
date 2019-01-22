@@ -1,4 +1,4 @@
-files = [
+r_core_sources = [
   'anal_tp.c',
   'casm.c',
   'blaze.c',
@@ -29,7 +29,6 @@ files = [
   #'cmd_quit.c',
   #'cmd_search.c',
   #'cmd_search_rop.c',
-  #'cmd_section.c',
   #'cmd_seek.c',
   #'cmd_type.c',
   #'cmd_write.c',
@@ -44,7 +43,7 @@ files = [
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
-  'log.c',
+  'corelog.c',
   'panels.c',
   'patch.c',
   'plugin.c',
@@ -101,7 +100,7 @@ if use_libuv
   r_core_deps += libuv_dep
 endif
 
-r_core = library('r_core', files,
+r_core = library('r_core', r_core_sources,
   include_directories: r_core_inc,
   c_args: library_cflags,
   dependencies: r_core_deps,

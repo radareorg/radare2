@@ -19,7 +19,7 @@ for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/d
  * \param maps RList of maps that will be searched through
  * \param min Pointer to a ut64 that the min will be stored in
  * \param max Pointer to a ut64 that the max will be stored in
- * \param skip How many maps to skip at the start of iteration
+ * \param skip How many maps to skip at the start of an iteration
  * \param width Divisor for the return value
  * \return (max-min)/width
  *
@@ -45,7 +45,7 @@ will check the coding style of the modified lines before committing them.
 You may find some additional notes on this topic in doc/vim.
 
 * Tabs are used for indentation. In a switch statement, the
-  cases are indentend at the switch level.
+  cases are indented at the switch level.
 
 ```c
 switch(n) {
@@ -160,9 +160,24 @@ a = (b << 3) * 5;
  }
 ```
 
+* Structure in the C files
+
+The structure of the C files in r2 must be like this:
+
+```c
+/* Copyright ... */        ## copyright
+#include <r_core.h>        ## includes
+static int globals         ## const, define, global variables
+static void helper() {}    ## static functions
+R_IPI void internal() {}   ## internal apis (used only inside the library
+R_API void public() {}     ## public apis starting with constructor/destructor
+
+```
+
+
 * Why return int vs enum
 
-The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig cant handle that stuff.
+The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'

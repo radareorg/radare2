@@ -23,11 +23,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
-	if (!bf->o->bin_obj) {
-		return false;
-	}
 	obj = bf->o->bin_obj;
-
 	if (obj) {
 		obj->header = (xbe_header *) bytes;
 		if ((obj->header->ep & 0xf0000000) == 0x40000000) {
@@ -45,15 +41,13 @@ static bool load(RBinFile *bf) {
 		}
 		return true;
 	}
-
 	return false;
 }
 
 static int destroy(RBinFile *bf) {
-	free (bf->o->bin_obj);
+	R_FREE (bf->o->bin_obj);
 	r_buf_free (bf->buf);
 	bf->buf = NULL;
-	bf->o->bin_obj = NULL;
 	return true;
 }
 
@@ -145,7 +139,7 @@ static RList *sections(RBinFile *bf) {
 			goto out_error;
 		}
 		tmp[sizeof (tmp) - 1] = 0;
-		snprintf (item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
+		item->name = r_str_newf ("%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
 		item->size = sect[i].size;

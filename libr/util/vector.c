@@ -108,7 +108,9 @@ R_API void r_vector_assign(RVector *vec, void *p, void *elem) {
 
 R_API void *r_vector_assign_at(RVector *vec, size_t index, void *elem) {
 	void *p = r_vector_index_ptr (vec, index);
-	r_vector_assign (vec, p, elem);
+	if (elem) {
+		r_vector_assign (vec, p, elem);
+	}
 	return p;
 }
 
@@ -246,6 +248,16 @@ R_API void *r_pvector_remove_at(RPVector *vec, size_t index) {
 	void *r = r_pvector_at (vec, index);
 	r_vector_remove_at (&vec->v, index, NULL);
 	return r;
+}
+
+R_API void r_pvector_remove_data(RPVector *vec, void *x) {
+	void **el = r_pvector_contains (vec, x);
+	if (!el) {
+		return;
+	}
+
+	size_t index = el - (void **)vec->v.a;
+	r_vector_remove_at (&vec->v, index, NULL);
 }
 
 R_API void *r_pvector_pop(RPVector *vec) {

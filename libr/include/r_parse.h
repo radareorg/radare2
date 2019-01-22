@@ -34,6 +34,7 @@ typedef struct r_parse_t {
 	RAnalHint *hint; // weak anal ref
 	RList *parsers;
 	RAnalVarList varlist;
+	char* (*get_op_ireg)(void *user, ut64 addr);
 	RAnalBind analb;
 } RParse;
 
@@ -66,18 +67,19 @@ R_API int r_parse_is_c_file (const char *file);
 R_API char *r_parse_immtrim (char *opstr);
 
 /* plugin pointers */
-extern RParsePlugin r_parse_plugin_dummy;
-extern RParsePlugin r_parse_plugin_att2intel;
-extern RParsePlugin r_parse_plugin_x86_pseudo;
+extern RParsePlugin r_parse_plugin_6502_pseudo;
 extern RParsePlugin r_parse_plugin_arm_pseudo;
-extern RParsePlugin r_parse_plugin_mips_pseudo;
+extern RParsePlugin r_parse_plugin_att2intel;
+extern RParsePlugin r_parse_plugin_avr_pseudo;
 extern RParsePlugin r_parse_plugin_dalvik_pseudo;
+extern RParsePlugin r_parse_plugin_dummy;
+extern RParsePlugin r_parse_plugin_m68k_pseudo;
+extern RParsePlugin r_parse_plugin_mips_pseudo;
 extern RParsePlugin r_parse_plugin_mreplace;
 extern RParsePlugin r_parse_plugin_ppc_pseudo;
 extern RParsePlugin r_parse_plugin_sh_pseudo;
-extern RParsePlugin r_parse_plugin_avr_pseudo;
-extern RParsePlugin r_parse_plugin_6502_pseudo;
-extern RParsePlugin r_parse_plugin_m68k_pseudo;
+extern RParsePlugin r_parse_plugin_wasm_pseudo;
+extern RParsePlugin r_parse_plugin_x86_pseudo;
 extern RParsePlugin r_parse_plugin_z80_pseudo;
 #endif
 

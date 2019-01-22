@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 - ampotos, pancake */
+/* radare - LGPL - Copyright 2015-2018 - ampotos, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -77,6 +77,10 @@ static RList *entries(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret;
 	ut32 ct_omf_sect = 0;
+
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
 	r_bin_omf_obj *obj = bf->o->bin_obj;
 
 	if (!(ret = r_list_new ())) {
@@ -97,7 +101,9 @@ static RList *symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
-
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}

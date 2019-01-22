@@ -13,6 +13,15 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 
 	memset (&cmd, 0, sizeof (cmd));
 	memset (op, 0, sizeof (RAnalOp));
+	//op->id = ???;
+	op->size = -1;
+	op->nopcode = 1;
+	op->jump = -1;
+	op->fail = -1;
+	op->ptr = -1;
+	op->val = -1;
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->family = R_ANAL_OP_FAMILY_CPU;
 
 	ret = op->size = msp430_decode_command (buf, len, &cmd);
 
@@ -21,8 +30,6 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	}
 
 	op->addr = addr;
-	op->jump = op->fail = UT64_MAX;
-	op->ptr = op->val = -1;
 
 	switch (cmd.type) {
 	case MSP430_ONEOP:
@@ -33,7 +40,10 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		case MSP430_PUSH:
 			op->type = R_ANAL_OP_TYPE_PUSH; break;
 		case MSP430_CALL:
-			op->type = R_ANAL_OP_TYPE_CALL; break;
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->fail = addr + op->size;
+			op->jump = r_read_at_le16 (buf, 2);
+			break;
 		case MSP430_RETI:
 			op->type = R_ANAL_OP_TYPE_RET; break;
 		}

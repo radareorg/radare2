@@ -9,11 +9,6 @@
 #define R_SYS_DEVNULL "/dev/null"
 #endif
 
-#if __linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000)
-#define HAS_CLOCK_NANOSLEEP 1
-#else
-#define HAS_CLOCK_NANOSLEEP 0
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +24,7 @@ enum {
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
 R_API ut64 r_sys_now(void);
+R_API const char *r_time_to_string (ut64 ts);
 R_API int r_sys_fork(void);
 R_API bool r_sys_stop(void);
 R_API char *r_sys_pid_to_path(int pid);
@@ -61,10 +57,10 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #if UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
-#define r_sys_conv_utf8_to_utf16(buf) r_str_mb_to_wc (buf)
-#define r_sys_conv_utf8_to_utf16_l(buf, len) r_str_mb_to_wc_l (buf, len) 
-#define r_sys_conv_utf16_to_utf8(buf) r_str_wc_to_mb (buf)
-#define r_sys_conv_utf16_to_utf8_l(buf, len) r_str_wc_to_mb_l (buf, len) 
+#define r_sys_conv_utf8_to_utf16(buf) r_utf8_to_utf16 ((buf))
+#define r_sys_conv_utf8_to_utf16_l(buf, len) r_utf8_to_utf16_l (buf, len) 
+#define r_sys_conv_utf16_to_utf8(buf) r_utf16_to_utf8 ((buf))
+#define r_sys_conv_utf16_to_utf8_l(buf, len) r_utf16_to_utf8_l (buf, len) 
 #else
 #define W32_TCHAR_FSTR "%s"
 #define W32_TCALL(name) name"A"
@@ -88,17 +84,31 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 
 #if __WINDOWS__
 #include <intrin.h>
-#define r_sys_breakpoint() { __debugbreak(); }
+#  define r_sys_breakpoint() { __debugbreak  (); }
 #else
-#if __i386__ || __x86_64__
-#define r_sys_breakpoint() __asm__ volatile ("int3");
+#if __GNUC__
+#  define r_sys_breakpoint() __builtin_trap()
+#elif __i386__ || __x86_64__
+#   define r_sys_breakpoint() __asm__ volatile ("int3");
 #elif __arm64__ || __aarch64__
-#define r_sys_breakpoint() __asm__ volatile ("brk 0");
-#elif __arm__ || __thumb__
-#define r_sys_breakpoint() __asm__ volatile ("bkpt $0");
+#  define r_sys_breakpoint() __asm__ volatile ("brk 0");
+// #define r_sys_breakpoint() __asm__ volatile ("brk #1");
+#elif (__arm__ || __thumb__)
+#  if __ARM_ARCH > 5
+#    define r_sys_breakpoint() __asm__ volatile ("bkpt $0");
+#  else
+#    define r_sys_breakpoint() __asm__ volatile ("svc $1");
+#  endif
+#elif __mips__
+#  define r_sys_breakpoint() __asm__ volatile ("break");
+// #  define r_sys_breakpoint() __asm__ volatile ("teq $0, $0");
+#elif __EMSCRIPTEN__
+// TODO: cannot find a better way to breakpoint in wasm/asm.js
+#  define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #else
-#warning r_sys_breakpoint not implemented for this platform
-#define r_sys_breakpoint() { char *a = NULL; *a = 0; }
+#  warning r_sys_breakpoint not implemented for this platform
+#  define r_sys_trap() __asm__ __volatile__ (".word 0");
+#   define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #endif
 #endif
 

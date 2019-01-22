@@ -190,4 +190,3 @@ R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 	str[back] = 0;
 	return back;
 }
-

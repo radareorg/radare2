@@ -247,7 +247,7 @@ R_API RAsm *r_asm_free(RAsm *a) {
 		r_syscall_free (a->syscall);
 		free (a->cpu);
 		sdb_free (a->pair);
-		ht_free (a->flags);
+		ht_pp_free (a->flags);
 		a->pair = NULL;
 		free (a);
 	}
@@ -446,20 +446,14 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (ret < 0) {
 		ret = 0;
 	}
-	int oplen = r_asm_op_get_size (op);
 	if (op->bitsize > 0) {
-		oplen = op->size = op->bitsize / 8;
+		op->size = op->bitsize / 8;
 		a->bitshift += op->bitsize % 8;
 		int count = a->bitshift / 8;
 		if (count > 0) {
-			oplen = op->size = op->size + count;
+			op->size = op->size + count;
 			a->bitshift %= 8;
 		}
-	} else {
-		oplen = op->size;
-	}
-	if (oplen < 1) {
-		oplen = 1;
 	}
 
 	if (op->size < 1 || isInvalid (op)) {
@@ -480,11 +474,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		char *buf_asm = r_strbuf_get (&op->buf_asm);
 		r_parse_parse (a->ofilter, buf_asm, buf_asm);
 	}
-	if (op->size > 0) {
-		r_asm_op_set_buf (op, buf, R_MAX (0, R_MIN (len, op->size)));
-	} else {
-		r_asm_op_set_buf (op, buf, 1);  // TODO: honor anal size hint
-	}
+	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
+	r_asm_op_set_buf (op, buf, opsz);
 	return ret;
 }
 
@@ -689,10 +680,9 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 	return ac;
 }
 
-static void flag_free_kv(HtKv *kv) {
+static void flag_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
-	free (kv);
 }
 
 static void *dup_val(const void *v) {
@@ -710,8 +700,8 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
-	ht_free (a->flags);
-	if (!(a->flags = ht_new (dup_val, flag_free_kv, NULL))) {
+	ht_pp_free (a->flags);
+	if (!(a->flags = ht_pp_new (dup_val, flag_free_kv, NULL))) {
 		return NULL;
 	}
 	if (!(acode = r_asm_code_new ())) {
@@ -856,7 +846,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 						}
 						char food[64];
 						snprintf (food, sizeof (food), "0x%"PFMT64x, off);
-						ht_insert (a->flags, ptr_start, food);
+						ht_pp_insert (a->flags, ptr_start, food);
 						// TODO: warning when redefined
 						r_asm_code_set_equ (acode, ptr_start, food);
 					}
@@ -1004,8 +994,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				acode->buf = (ut8*)newbuf;
 
+				const int buf_inc_size = op.buf_inc ? r_buf_size (op.buf_inc): 0;
 				int newlen = strlen (acode->buf_hex) + r_strbuf_length (&op.buf_hex)
-					+ r_buf_size (op.buf_inc) + 128;
+					+ buf_inc_size + 128;
 				newbuf = realloc (acode->buf_hex, newlen);
 				if (!newbuf) {
 					free (lbuf);
@@ -1016,7 +1007,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				memcpy (acode->buf + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf)); // ret);
 				// XXX slow. use strbuf pls
 				strcat (acode->buf_hex, r_strbuf_get (&op.buf_hex));
-				if (r_buf_size (op.buf_inc) > 1) {
+				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
 					if (*acode->buf_hex) {
 						strcat (acode->buf_hex, "\n");
 					}

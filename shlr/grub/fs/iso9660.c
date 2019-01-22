@@ -349,11 +349,8 @@ grub_iso9660_mount (grub_disk_t disk)
   if (! sua)
     goto fail;
 
-  if (grub_disk_read (disk,
-		      (grub_le_to_cpu32 (data->voldesc.rootdir.first_sector)
-		       << GRUB_ISO9660_LOG2_BLKSZ), sua_pos,
-		      sua_size, sua))
-    {
+  ut32 addr = grub_le_to_cpu32 (data->voldesc.rootdir.first_sector) << GRUB_ISO9660_LOG2_BLKSZ;
+  if (grub_disk_read (disk, addr, sua_pos, sua_size, sua)) {
       grub_error (GRUB_ERR_BAD_FS, "not a ISO9660 filesystem");
       goto fail;
     }

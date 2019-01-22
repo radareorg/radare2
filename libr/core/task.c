@@ -185,10 +185,6 @@ static void task_free (RCoreTask *task) {
 }
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
-	if (cmd && *cmd == '=') {
-		eprintf ("=* commands disabled in tasks\n");
-		return NULL;
-	}
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	if (!task) {
 		goto hell;
@@ -206,7 +202,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	}
 
 	if (create_cons) {
-		task->cons_context = r_cons_context_new ();
+		task->cons_context = r_cons_context_new (r_cons_singleton ()->context);
 		if (!task->cons_context) {
 			goto hell;
 		}
@@ -231,17 +227,24 @@ R_API void r_core_task_incref (RCoreTask *task) {
 	if (!task) {
 		return;
 	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (task->core, &old_sigset);
 	task->refcount++;
+	tasks_lock_leave (task->core, &old_sigset);
 }
 
 R_API void r_core_task_decref (RCoreTask *task) {
 	if (!task) {
 		return;
 	}
+	TASK_SIGSET_T old_sigset;
+	RCore *core = task->core;
+	tasks_lock_enter (core, &old_sigset);
 	task->refcount--;
 	if (task->refcount <= 0) {
 		task_free (task);
 	}
+	tasks_lock_leave (core, &old_sigset);
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {

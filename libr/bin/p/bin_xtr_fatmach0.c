@@ -106,9 +106,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 	int narch;
 	struct MACH0_(mach_header) *hdr;
 
-	if (!bin || !bin->cur) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
@@ -153,6 +151,7 @@ static RList * extractall(RBin *bin) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	if (!res) {
+		r_bin_xtrdata_free (data);
 		return NULL;
 	}
 	r_list_append (res, data);
@@ -174,6 +173,10 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
+	if (!res) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
 		data = oneshot (bin, buf, size, i);

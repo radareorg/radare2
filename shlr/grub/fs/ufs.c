@@ -473,11 +473,7 @@ grub_ufs_lookup_symlink (struct grub_ufs_data *data, int ino)
 static grub_err_t
 grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 {
-#ifndef _MSC_VER
-  char fpath[grub_strlen (path) + 1];
-#else
   char * fpath = grub_malloc(grub_strlen (path) + 1);
-#endif
   char *name = fpath;
   char *next;
   unsigned int pos = 0;
@@ -490,7 +486,10 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
     {
       name++;
       if (!*name)
-	return 0;
+        {
+          grub_free (fpath);
+          return 0;
+        }
     }
 
   /* Extract the actual part from the pathname.  */
@@ -503,15 +502,21 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 
   do
     {
-      struct grub_ufs_dirent dirent;
+      struct grub_ufs_dirent dirent = {0};
       int namelen;
 
       if (grub_strlen (name) == 0)
-	return GRUB_ERR_NONE;
+        {
+          grub_free (fpath);
+          return GRUB_ERR_NONE;
+        }
 
       if (grub_ufs_read_file (data, 0, 0, pos, sizeof (dirent),
 			      (char *) &dirent) < 0)
-	return grub_errno;
+        {
+          grub_free (fpath);
+          return grub_errno;
+        }
 
 #ifdef MODE_UFS2
       namelen = dirent.namelen_bsd;
@@ -519,14 +524,14 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
       namelen = grub_num_to_cpu16 (dirent.namelen, data->be);
 #endif
       {
-#ifndef _MSC_VER
-	char filename[namelen + 1];
-#else
 	char * filename = grub_malloc(namelen + 1);
-#endif
 	if (grub_ufs_read_file (data, 0, 0, pos + sizeof (dirent),
 				namelen, filename) < 0)
-	  return grub_errno;
+          {
+            grub_free (fpath);
+            grub_free (filename);
+            return grub_errno;
+          }
 
 	filename[namelen] = '\0';
 
@@ -541,11 +546,19 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 	      {
 		grub_ufs_lookup_symlink (data, dirino);
 		if (grub_errno)
-		  return grub_errno;
+                  {
+                    grub_free (fpath);
+                    grub_free (filename);
+                    return grub_errno;
+                  }
 	      }
 
 	    if (!next)
-	      return 0;
+              {
+                grub_free (fpath);
+                grub_free (filename);
+                return 0;
+              }
 
 	    pos = 0;
 
@@ -558,15 +571,22 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 	      }
 
 	    if ((INODE_MODE(data) & GRUB_UFS_ATTR_TYPE) != GRUB_UFS_ATTR_DIR)
-	      return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
+              {
+                grub_free (fpath);
+                grub_free (filename);
+                return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
+              }
 
+            grub_free (filename);
 	    continue;
 	  }
+	grub_free (filename);
       }
 
       pos += grub_num_to_cpu16 (dirent.direntlen, data->be);
     } while (pos < INODE_SIZE (data));
 
+  grub_free (fpath);
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
   return grub_errno;
 }

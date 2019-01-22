@@ -361,7 +361,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				r_cons_printf (iseq? Color_GREEN: Color_RED);
 			}
 			r_cons_printf (" 0x%08"PFMT64x "  %s %s",
-				core->offset + i, op.buf_asm, colpad);
+				core->offset + i, r_strbuf_get (&op.buf_asm), colpad);
 			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n",
 				iseq? '=': '!', off + j, r_strbuf_get (&op2.buf_asm));
 			if (hascolor) {
@@ -393,18 +393,18 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm); // (!strcmp (op.buf_asm, op2.buf_asm));
 			if (iseq) {
 				r_cons_printf (" 0x%08"PFMT64x "  %s\n",
-					core->offset + i, op.buf_asm);
+					core->offset + i, r_strbuf_get (&op.buf_asm));
 			} else {
 				if (hascolor) {
 					r_cons_printf (Color_RED);
 				}
 				r_cons_printf ("-0x%08"PFMT64x "  %s\n",
-					core->offset + i, op.buf_asm);
+					core->offset + i, r_strbuf_get (&op.buf_asm));
 				if (hascolor) {
 					r_cons_printf (Color_GREEN);
 				}
 				r_cons_printf ("+0x%08"PFMT64x "  %s\n",
-					off + j, op2.buf_asm);
+					off + j, r_strbuf_get (&op2.buf_asm));
 				if (hascolor) {
 					r_cons_printf (Color_RESET);
 				}
@@ -457,7 +457,7 @@ static int cmd_cp(void *data, const char *input) {
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
-	RCore *core = data;
+	RCore *core = (RCore *)data;
 	ut64 val = UT64_MAX;
 	char *filled;
 	ut8 *buf;

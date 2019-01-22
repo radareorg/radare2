@@ -1,7 +1,6 @@
 /* radare2 (from sdb) - MIT - Copyright 2012-2017 - pancake */
 
 #include <r_util.h>
-#include <r_print.h>
 
 
 static void doIndent(int idt, char** o, const char *tab) {

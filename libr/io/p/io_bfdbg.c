@@ -132,10 +132,8 @@ static int __close(RIODesc *fd) {
 	}
 	riom = fd->data;
 	bfvm_free (riom->bfvm);
-	free (riom->buf);
-	riom->buf = NULL;
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (riom->buf);
+	R_FREE (fd->data);
 	return 0;
 }
 

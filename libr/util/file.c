@@ -26,6 +26,24 @@
 #include <process.h>
 #endif
 
+
+static int file_stat (const char *file, struct stat* const pStat) {
+	if (!file || !pStat) {
+		return -1;
+	}
+#if __WINDOWS__
+	wchar_t *wfile = r_utf8_to_utf16 (file);
+	if (!wfile) {
+		return -1;
+	}
+	int ret = _wstat (wfile, pStat);
+	free (wfile);
+	return ret;
+#else // __WINDOWS__
+	return stat (file, pStat);
+#endif // __WINDOWS__
+}
+
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -43,10 +61,15 @@ R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 		return false;
 	}
 #ifdef _MSC_VER
-        _chsize (fd, newsize);
+	int r = _chsize (fd, newsize);
 #else
-	ftruncate (fd, newsize);
+	int r = ftruncate (fd, newsize);
 #endif
+	if (r != 0) {
+		eprintf ("Coult not resize %s file\n", filename);
+		close (fd);
+		return false;
+	}
 	close (fd);
 	return true;
 }
@@ -93,7 +116,7 @@ R_API char *r_file_dirname (const char *path) {
 
 R_API bool r_file_is_regular(const char *str) {
 	struct stat buf = {0};
-	if (!str || !*str || stat (str, &buf) == -1) {
+	if (!str || !*str || file_stat (str, &buf) == -1) {
 		return false;
 	}
 	return ((S_IFREG & buf.st_mode) == S_IFREG)? true: false;
@@ -104,7 +127,7 @@ R_API bool r_file_is_directory(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
-	if (stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
 #ifdef S_IFBLK
@@ -139,20 +162,11 @@ R_API bool r_file_exists(const char *str) {
 		}
 	}
 #endif
-#ifdef _MSC_VER
-	WIN32_FIND_DATAA FindFileData;
-	HANDLE handle = FindFirstFileA (str, &FindFileData);
-	int found = handle != INVALID_HANDLE_VALUE;
-	if (found) {
-		FindClose (handle);
-	}
-	return found > 0;
-#else
-	if (stat (str, &buf) == -1) {
+
+	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return (S_ISREG (buf.st_mode))? true: false;
-#endif
+	return S_IFREG == (S_IFREG & buf.st_mode)? true: false;
 }
 
 R_API long r_file_proc_size(FILE *fd) {
@@ -165,7 +179,7 @@ R_API long r_file_proc_size(FILE *fd) {
 
 R_API ut64 r_file_size(const char *str) {
 	struct stat buf = {0};
-	if (stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) == -1) {
 		return 0;
 	}
 	return (ut64)buf.st_size;
@@ -551,7 +565,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		return false;
 	}
 	if (append) {
-		fd = r_sandbox_fopen (file, "awb");
+		fd = r_sandbox_fopen (file, "ab");
 	} else {
 		r_sys_truncate (file, 0);
 		fd = r_sandbox_fopen (file, "wb");
@@ -593,7 +607,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		return false;
 	}
 	if (append) {
-		fd = r_sandbox_fopen (file, "awb");
+		fd = r_sandbox_fopen (file, "ab");
 	} else {
 		r_sys_truncate (file, 0);
 		fd = r_sandbox_fopen (file, "wb");
@@ -777,8 +791,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
 		MAP_SHARED, fd, (off_t)m->base);
 	if (m->buf == MAP_FAILED) {
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	return m;
 }
@@ -811,8 +824,7 @@ err_r_file_mmap_windows:
 		if (m->fh != INVALID_HANDLE_VALUE) {
 			CloseHandle (m->fh);
 		}
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	free (file_);
 	return m;
@@ -825,8 +837,7 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 		lseek (m->fd, (off_t)0, SEEK_SET);
 		read (m->fd, m->buf, m->len);
 	} else {
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	return m;
 }
@@ -951,7 +962,6 @@ err_r_file_mkstemp:
 	free (path_);
 	free (prefix_);
 #else
-	char name[1024];
 	char pfxx[1024];
 	const char *suffix = strchr (prefix, '*');
 
@@ -963,7 +973,7 @@ err_r_file_mkstemp:
 		suffix = "";
 	}
 
-	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX%s", path, prefix, suffix);
+	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
 		h = mkstemps (name, strlen (suffix));
@@ -974,6 +984,7 @@ err_r_file_mkstemp:
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
 	}
+	free (name);
 #endif
 	free (path);
 	return h;
@@ -1014,8 +1025,7 @@ R_API char *r_file_tmpdir() {
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {
-		free (path);
-		path = NULL;
+		R_FREE (path);
 	}
 	if (!path) {
 #if __ANDROID__

@@ -123,7 +123,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (text->name, "text", R_BIN_SIZEOF_STRINGS);
+	text->name = strdup ("text");
 	text->size = bf->buf->length - N64_ROM_START;
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
@@ -150,7 +150,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("mips");
 	ret->machine = strdup ("Nintendo 64");
 	ret->type = strdup ("ROM");
-	ret->bits = 32;
+	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = true;
 	return ret;

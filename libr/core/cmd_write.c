@@ -537,9 +537,8 @@ static bool cmd_wff(RCore *core, const char *input) {
 		}
 	}
 	if ((buf = (ut8*) r_file_slurp (a, &size))) {
-		int u_size = size;
 		int u_offset = 0;
-		u_size = r_num_math (core->num, p);
+		int u_size = r_num_math (core->num, p);
 		if (u_size < 1) u_size = size;
 		if (p) {
 			*p++ = 0;
@@ -879,7 +878,7 @@ static int cmd_write(void *data, const char *input) {
 				if (len > 0){
 					ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, addr, len);
-					cmd_suc = r_core_seek (core, cur_off, 1);
+					r_core_seek (core, cur_off, 1);
 					core->offset = addr;
 					r_core_block_read (core);
 				}
@@ -906,15 +905,16 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case 's': // "wes"
 			input +=  3;
-			while (*input && *input == ' ') input++;
+			while (*input && *input == ' ') {
+				input++;
+			}
 			len = strlen (input);
-			input_shadow = len > 0? malloc (len+1): 0;
 
 			// since the distance can be negative,
 			// the r_num_math will perform an unwanted operation
 			// the solution is to tokenize the string :/
-			if (input_shadow) {
-				strncpy (input_shadow, input, len+1);
+			if (len > 0) {
+				input_shadow = strdup (input);
 				p = strtok (input_shadow, " ");
 				addr = p && *p ? r_num_math (core->num, p) : 0;
 
@@ -1245,13 +1245,21 @@ static int cmd_write(void *data, const char *input) {
 					return 0;
 				}
 				if (*str == '!') {
-					RIOSection *s = r_io_section_vget (core->io, poff);
+					if (str[1] == '?') {
+						r_core_cmd_help (core, help_msg_wt);
+						return 0;
+					}
+					RIOMap *map = r_io_map_get (core->io, poff);
 					toend = true;
 					//use physical address
-					poff =  s ? poff - s->vaddr + s->paddr : poff;
+					poff = map ? poff - map->itv.addr + map->delta : poff;
 					str++;
 				}
 				if (*str == 'f') {
+					if (str[1] == '?') {
+						r_core_cmd_help (core, help_msg_wt);
+						return 0;
+					}
 					const char *prefix = r_str_trim_ro (str + 1);
 					if (!*prefix) {
 						prefix = "dump";
@@ -1259,7 +1267,11 @@ static int cmd_write(void *data, const char *input) {
 					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
 					if (*str) {
-						filename = str + ((*str == ' ')? 1: 0);
+						if (str[1] == '?') {
+							r_core_cmd_help (core, help_msg_wt);
+							return 0;
+						}
+						filename = r_str_trim_ro (str);
 					} else {
 						filename = "";
 					}
@@ -1337,7 +1349,9 @@ static int cmd_write(void *data, const char *input) {
 				else tmp[i] = str[i>>1];
 			}
 			str = tmp;
-			r_io_use_fd (core->io, core->file->fd);
+			if (core->file) {
+				r_io_use_fd (core->io, core->file->fd);
+			}
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core);

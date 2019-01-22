@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 #include "pe/pe.h"
 
 static Sdb* get_sdb (RBinFile *bf) {
@@ -165,7 +166,9 @@ static RList* sections(RBinFile *bf) {
 			break;
 		}
 		if (sections[i].name[0]) {
-			strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->name = strdup ((char*)sections[i].name);
+		} else {
+			ptr->name = strdup ("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > bin->size) {
@@ -468,7 +471,7 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	bf->file = strdup (bf->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (bf->o->bin_obj);
 	ret->rclass = strdup ("pe");
 	ret->os = PE_(r_bin_pe_get_os) (bf->o->bin_obj);

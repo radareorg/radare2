@@ -1,4 +1,4 @@
-.Dd Sep 30, 2014
+.Dd Oct 30, 2018
 .Dt RASM2 1
 .Sh NAME
 .Nm rasm2
@@ -11,6 +11,7 @@
 .Op Fl c Ar cpu
 .Op Fl F Ar in:out
 .Op Fl o Ar offset
+.Op Fl @ Ar offset
 .Op Fl O Ar ofile
 .Op Fl s Ar syntax
 .Op Fl i Ar int
@@ -56,6 +57,8 @@ Ignore/skip N bytes from the beginning of the input buffer
 List supported asm plugins
 .It Fl o Ar offset
 Offset of the opcode to assemble (default is 0)
+.It Fl @ Ar offset
+Alias for -o
 .It Fl O Ar ofile
 output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl r

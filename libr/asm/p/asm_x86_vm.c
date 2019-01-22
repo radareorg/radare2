@@ -36,10 +36,6 @@ void decompile_vm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			buf_asm = sdb_fmt ("vpcext %xh, %xh", buf[2], buf[3]);
 		}
 		op->size = 4;
-	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 1 && buf[4] == 0) {
-		/* 0F C6 28 01 00 vmcpuid */
-		buf_asm ="vmcpuid";
-		op->size = 5;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x00) {
 		/* 0F C6 28 00 00 vmgetinfo */
 		buf_asm ="vmgetinfo";

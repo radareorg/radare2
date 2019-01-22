@@ -62,9 +62,11 @@ if true ; then
 ${MAKE} clean
 cp -f plugins.tiny.cfg plugins.cfg
 cp -f plugins.ios.cfg plugins.cfg
+
 ./configure --prefix="${PREFIX}" \
 	${CFGFLAGS} \
 	--with-ostype=darwin --with-libr \
+	--without-gpl --without-fork --without-libuv \
 	--with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi

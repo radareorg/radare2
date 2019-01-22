@@ -1,4 +1,4 @@
-files = [
+r_lang_sources = [
   'lang.c',
   # included in lang.c
   #'p/c.c',
@@ -10,7 +10,7 @@ files = [
   #'p/zig.c',
 ]
 
-r_lang = library('r_lang', files,
+r_lang = library('r_lang', r_lang_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [r_util_dep, r_cons_dep],
@@ -22,8 +22,7 @@ r_lang = library('r_lang', files,
 r_lang_dep = declare_dependency(link_with: r_lang,
                                 include_directories: [platform_inc])
 
-pkgconfig_mod.generate(
-  libraries: [r_lang],
+pkgconfig_mod.generate(r_lang,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_lang',

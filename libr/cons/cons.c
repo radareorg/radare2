@@ -1,7 +1,8 @@
 /* radare2 - LGPL - Copyright 2008-2018 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
-#include <r_print.h>
+#include <r_util.h>
+#include <r_util/r_print.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -99,7 +100,7 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	}
 }
 
-static void cons_context_init(RConsContext *context) {
+static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->breaked = false;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
@@ -110,11 +111,21 @@ static void cons_context_init(RConsContext *context) {
 	context->event_interrupt = NULL;
 	context->event_interrupt_data = NULL;
 	context->pageable = true;
+	context->log_callback = NULL;
+
+	if (parent) {
+		context->color = parent->color;
+		r_cons_pal_copy (context, parent);
+	} else {
+		context->color = COLOR_MODE_DISABLED;
+		r_cons_pal_init (context);
+	}
 }
 
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
 	r_stack_free (context->break_stack);
+	r_cons_pal_free (context);
 }
 
 static void break_signal(int sig) {
@@ -142,7 +153,7 @@ static inline void r_cons_write(const char *buf, int len) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
-	if (I.color > COLOR_MODE_16) {
+	if (I.context->color > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -207,6 +218,45 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	if (len > 1) {
 		r_cons_memcat (str + o, len);
 	}
+}
+
+R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
+	int i, o, len;
+	int cols = 0;
+	int rows = 0;
+	if (x < 0 || y < 0) {
+		int H, W = r_cons_get_size (&H);
+		if (x < 0) {
+			x += W;
+		}
+		if (y < 0) {
+			y += H;
+		}
+	}
+	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
+	r_cons_strcat (R_CONS_CURSOR_SAVE);
+	for (o = i = len = 0; str[i]; i++, len++) {
+		if (w < 0 || rows > w) {
+			break;
+		}
+		if (str[i] == '\n') {
+			r_cons_gotoxy (x, y + rows);
+			int ansilen = r_str_ansi_len (str + o);
+			cols = R_MIN (w, ansilen);
+			const char *end = r_str_ansi_chrn (str + o, cols);
+			cols = end - str + o;
+			r_cons_memcat (str + o, R_MIN (len, cols));
+			o = i + 1;
+			len = 0;
+			rows++;
+		}
+	}
+	if (len > 1) {
+		r_cons_memcat (str + o, len);
+	}
+	r_cons_strcat (Color_RESET);
+	r_cons_strcat (R_CONS_CURSOR_RESTORE);
+	free (str);
 }
 
 R_API RCons *r_cons_singleton() {
@@ -367,6 +417,8 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 }
 
+// Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
+// This allows Cutter to set per-task logging redirection
 R_API RCons *r_cons_new() {
 	I.refcnt++;
 	if (I.refcnt != 1) {
@@ -377,7 +429,6 @@ R_API RCons *r_cons_new() {
 	I.highlight = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
-	I.color = COLOR_MODE_DISABLED;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -396,7 +447,7 @@ R_API RCons *r_cons_new() {
 	I.lines = 0;
 
 	I.context = &r_cons_context_default;
-	cons_context_init (I.context);
+	cons_context_init (I.context, NULL);
 
 	r_cons_get_size (&I.pagesize);
 	I.num = NULL;
@@ -427,7 +478,6 @@ R_API RCons *r_cons_new() {
 	I.mouse = 0;
 	r_cons_reset ();
 	r_cons_rgb_init ();
-	r_cons_pal_init ();
 
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
 
@@ -439,14 +489,12 @@ R_API RCons *r_cons_free() {
 	if (I.refcnt != 0) {
 		return NULL;
 	}
-	r_cons_pal_free ();
 	if (I.line) {
 		r_line_free ();
 		I.line = NULL;
 	}
 	if (I.context->buffer) {
-		free (I.context->buffer);
-		I.context->buffer = NULL;
+		R_FREE (I.context->buffer);
 	}
 	R_FREE (I.break_word);
 	cons_context_deinit (I.context);
@@ -585,10 +633,14 @@ R_API const char *r_cons_get_buffer() {
 	return I.context->buffer_len? I.context->buffer : NULL;
 }
 
+R_API int r_cons_get_buffer_len() {
+	return I.context->buffer_len;
+}
+
 R_API void r_cons_filter() {
 	/* grep */
 	if (I.filter || I.context->grep.nstrings > 0 || I.context->grep.tokens_used || I.context->grep.less || I.context->grep.json) {
-		r_cons_grepbuf (I.context->buffer, I.context->buffer_len);
+		(void)r_cons_grepbuf ();
 		I.filter = false;
 	}
 	/* html */
@@ -632,12 +684,12 @@ R_API void r_cons_pop() {
 	cons_stack_free ((void *)data);
 }
 
-R_API RConsContext *r_cons_context_new(void) {
+R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
 	RConsContext *context = R_NEW0 (RConsContext);
 	if (!context) {
 		return NULL;
 	}
-	cons_context_init (context);
+	cons_context_init (context, parent);
 	return context;
 	/*
 	RStack *stack = r_stack_newf (6, cons_stack_free);
@@ -758,9 +810,9 @@ R_API void r_cons_flush(void) {
 				return;
 			}
 #else
-			char buf[64];
-			char *buflen = r_num_units (buf, I.context->buffer_len);
-			if (buflen && !r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
+			char buf[8];
+			r_num_units (buf, sizeof (buf), I.context->buffer_len);
+			if (!r_cons_yesno ('n', "Do you want to print %s chars? (y/N)", buf)) {
 				r_cons_reset ();
 				return;
 			}
@@ -879,7 +931,7 @@ R_API void r_cons_visual_write(char *buffer) {
 	memset (&white, ' ', sizeof (white));
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
-		int lines_needed;
+		int lines_needed = 0;
 
 		*nl = 0;
 		alen = real_strlen (ptr, len);
@@ -996,7 +1048,11 @@ R_API int r_cons_memcat(const char *str, int len) {
 		return -1;
 	}
 	if (I.echo) {
-		write (2, str, len);
+		// Here to silent pedantic meson flags ...
+		int rlen;
+		if ((rlen = write (2, str, len)) != len) {
+			return rlen;
+		}
 	}
 	if (str && len > 0 && !I.null) {
 		if (palloc (len + 1)) {
@@ -1218,8 +1274,8 @@ R_API void r_cons_show_cursor(int cursor) {
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
-static int oldraw = -1;
 R_API void r_cons_set_raw(bool is_raw) {
+	static int oldraw = -1;
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;
@@ -1260,17 +1316,10 @@ R_API void r_cons_invert(int set, int color) {
 */
 R_API void r_cons_set_cup(int enable) {
 #if __UNIX__ || __CYGWIN__
-	if (enable) {
-		const char *code =
-			"\x1b[?1049h" // xterm
-			"\x1b" "7\x1b[?47h"; // xterm-color
-		write (2, code, strlen (code));
-	} else {
-		const char *code =
-			"\x1b[?1049l" // xterm
-			"\x1b[?47l""\x1b""8"; // xterm-color
-		write (2, code, strlen (code));
-	}
+	const char *code = enable
+		? "\x1b[?1049h" "\x1b" "7\x1b[?47h"
+		: "\x1b[?1049l" "\x1b[?47l" "\x1b" "8";
+	write (2, code, strlen (code));
 	fflush (stdout);
 #elif __WINDOWS__ && !__CYGWIN__
 	if (I.ansicon) {
@@ -1374,8 +1423,7 @@ R_API void r_cons_highlight(const char *word) {
 		/* don't free orig - it's assigned
 		 * to I.context->buffer and possibly realloc'd */
 	} else {
-		free (I.highlight);
-		I.highlight = NULL;
+		R_FREE (I.highlight);
 	}
 }
 
@@ -1520,9 +1568,9 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
  * "command2", "args2", "description"}; */
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color ? cons->pal.args : "",
-			*pal_help_color = use_color ? cons->pal.help : "",
-			*pal_reset = use_color ? cons->pal.reset : "";
+	const char *pal_args_color = use_color ? cons->context->pal.args : "",
+			*pal_help_color = use_color ? cons->context->pal.help : "",
+			*pal_reset = use_color ? cons->context->pal.reset : "";
 	int i, max_length = 0;
 	const char *usage_str = "Usage:";
 
@@ -1553,4 +1601,10 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 				padding, "", pal_help_color, help[i + 2], pal_reset);
 		}
 	}
+}
+
+R_API void r_cons_clear_buffer(void) {
+#if __UNIX__ || __CYGWIN__
+	write (1, "\x1b" "c\x1b[3J",  6);
+#endif
 }

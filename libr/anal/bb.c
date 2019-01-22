@@ -170,6 +170,21 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
+	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
+	if (anal->opt.jmpmid && x86) {
+		RAnalBlock *nearest_bb = NULL;
+		r_list_foreach (anal->fcns, iter, fcn) {
+			r_list_foreach (fcn->bbs, iter2, bb) {
+				if (r_anal_bb_op_starts_at (bb, off)) {
+					return bb;
+				} else if (r_anal_bb_is_in_offset (bb, off)
+				           && (!nearest_bb || nearest_bb->addr < bb->addr)) {
+					nearest_bb = bb;
+				}
+			}
+		}
+		return nearest_bb;
+	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		r_list_foreach (fcn->bbs, iter2, bb) {
 			if (r_anal_bb_is_in_offset (bb, off)) {
@@ -224,7 +239,18 @@ R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
 	if (i < 0 || i >= bb->ninstr) {
 		return UT16_MAX;
 	}
-	return (i > 0 && (i - 1) < bb->op_pos_size) ? bb->op_pos[i - 1] : 0;
+	return (i > 0 && (i - 1) < bb->op_pos_size)? bb->op_pos[i - 1]: 0;
+}
+
+/* return the address of the i-th instruction in the basicblock bb.
+ * If the index of the instruction is not valid, it returns UT64_MAX */
+R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i) {
+	ut16 offset = r_anal_bb_offset_inst (bb, i);
+	if (offset == UT16_MAX) {
+		return UT64_MAX;
+	}
+
+	return bb->addr + offset;
 }
 
 /* set the offset of the i-th instruction in the basicblock bb */
@@ -264,5 +290,24 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 		}
 		last_delta = delta;
 	}
-	return UT64_MAX;
+	return bb->addr + last_delta;
+}
+
+/* return true if an instruction starts at a given address of the given
+ * basic block. */
+R_API bool r_anal_bb_op_starts_at(RAnalBlock *bb, ut64 addr) {
+	ut16 off, inst_off;
+	int i;
+
+	if (!r_anal_bb_is_in_offset (bb, addr)) {
+		return false;
+	}
+	off = addr - bb->addr;
+	for (i = 0; i < bb->ninstr; i++) {
+		inst_off = r_anal_bb_offset_inst (bb, i);
+		if (off == inst_off) {
+			return true;
+		}
+	}
+	return false;
 }

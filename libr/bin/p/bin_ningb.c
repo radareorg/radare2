@@ -109,7 +109,7 @@ static RList* sections(RBinFile *bf){
 	ret->free = free;
 
 	rombank[0] = R_NEW0 (RBinSection);
-	strncpy (rombank[0]->name, "rombank00", R_BIN_SIZEOF_STRINGS);
+	rombank[0]->name = strdup ("rombank00");
 	rombank[0]->paddr = 0;
 	rombank[0]->size = 0x4000;
 	rombank[0]->vsize = 0x4000;
@@ -121,7 +121,7 @@ static RList* sections(RBinFile *bf){
 
 	for (i = 1; i < bank; i++) {
 		rombank[i] = R_NEW0 (RBinSection);
-		sprintf (rombank[i]->name,"rombank%02x",i);
+		rombank[i]->name = r_str_newf ("rombank%02x", i);
 		rombank[i]->paddr = i*0x4000;
 		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
 		rombank[i]->size = rombank[i]->vsize = 0x4000;
@@ -217,8 +217,7 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	r_buf_read_at (bf->buf, 0x104, rom_header, 76);
-	ret->file = calloc (1, 17);
-	strncpy (ret->file, (const char*)&rom_header[48], 16);
+	ret->file = r_str_ndup ((const char*)&rom_header[48], 16);
 	ret->type = malloc (128);
 	ret->type[0] = 0;
 	gb_get_gbtype (ret->type, rom_header[66], rom_header[63]);

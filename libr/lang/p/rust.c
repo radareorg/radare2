@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 pancake */
+/* radare - LGPL - Copyright 2016-2018 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -6,14 +6,17 @@
 
 static int lang_rust_file(RLang *lang, const char *file) {
 	void *lib;
-	char *a, *cc, *p, name[512], buf[512];
+	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 
-	if (strlen (file) > (sizeof(name)-10))
+	if (strlen (file) > (sizeof (name) - 10)) {
 		return false;
-	if (!strstr (file, ".rs"))
+	}
+	if (!strstr (file, ".rs")) {
 		sprintf (name, "%s.rs", file);
-	else strcpy (name, file);
+	} else {
+		strcpy (name, file);
+	}
 	if (!r_file_exists (name)) {
 		eprintf ("file not found (%s)\n", name);
 		return false;
@@ -37,22 +40,28 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	if (!cc) {
 		cc = strdup ("rustc");
 	}
-	snprintf (buf, sizeof (buf), "%s --crate-type dylib %s -o %s/lib%s."R_LIB_EXT" -L native=/usr/local/lib/ -l r_core",
+	char *cmd = r_str_newf ("%s --crate-type dylib %s -o %s/lib%s."R_LIB_EXT" -L native=/usr/local/lib/ -l r_core",
 		cc, file, libpath, libname);
 	free (cc);
-	if (r_sandbox_system (buf, 1) != 0)
+	if (r_sandbox_system (cmd, 1) != 0) {
+		free (cmd);
 		return false;
+	}
+	free (cmd);
 
-	snprintf (buf, sizeof (buf), "%s/lib%s."R_LIB_EXT, libpath, libname);
-	lib = r_lib_dl_open (buf);
+	char *path = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
+	lib = r_lib_dl_open (path);
 	if (lib!= NULL) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) fcn (lang->user);
 		else eprintf ("Cannot find 'entry' symbol in library\n");
 		r_lib_dl_close (lib);
-	} else eprintf ("Cannot open library\n");
-	r_file_rm (buf); // remove lib
+	} else {
+		eprintf ("Cannot open library\n");
+	}
+	r_file_rm (path); // remove lib
+	free (path);
 	return 0;
 }
 

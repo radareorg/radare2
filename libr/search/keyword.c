@@ -66,8 +66,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			free (bmbuf);
-			bmbuf = NULL;
+			R_FREE (bmbuf);
 		}
 	}
 	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
@@ -94,23 +93,33 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			free(bmbuf);
-			bmbuf = NULL;
+			R_FREE (bmbuf);
 		}
 	}
 
 	len = strlen(kwbuf);
 	str = malloc((len+1)*2);
-	for (p2=kwbuf, p=str; *p2; p+=2, p2++) {
-		if (ignore_case) {
-			p[0] = tolower((const unsigned char)*p2);
-		} else {
+	for (p2=kwbuf, p=str; *p2; ) {
+		RRune ch;
+		int num_utf8_bytes = r_utf8_decode ((const ut8 *)p2, kwbuf + len - p2, &ch);
+		if (num_utf8_bytes < 1) {
+			eprintf ("WARNING: Malformed UTF8 at pos %td\n", p2 - kwbuf);
 			p[0] = *p2;
+			p[1] = 0;
+			p2++;
+			p += 2;
+			continue;
 		}
-		p[1] = 0;
+		if (ignore_case && ch <= 0xff) {
+			ch = tolower (ch);
+		}
+		int num_wide_bytes = r_utf16le_encode ((ut8 *)p, ch);
+		r_warn_if_fail (num_wide_bytes != 0);
+		p2 += num_utf8_bytes;
+		p += num_wide_bytes;
 	}
 
-	kw = r_search_keyword_new ((ut8 *)str, len*2, bmbuf, bmlen, data);
+	kw = r_search_keyword_new ((ut8 *)str, p - str, bmbuf, bmlen, data);
 	free(str);
 	if (kw) {
 		kw->icase = ignore_case;
@@ -148,7 +157,6 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
-			bmlen = -bmlen;
 			free (bmbuf);
 			free (kwbuf);
 			return NULL;

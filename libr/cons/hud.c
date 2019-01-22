@@ -95,24 +95,112 @@ static bool strmatch(char *entry, char *filter, char *mask, const int mask_size)
 	return true;
 }
 
-// Display a list of entries in the hud, filtered and emphasized based
-// on the user input.
-#define buf_size 512
-R_API char *r_cons_hud(RList *list, const char *prompt) {
-	int ch, nch, first_line, current_entry_n, j, i = 0;
-	char *p, *x;
-	char user_input[buf_size], mask[buf_size];
-	int last_color_change, top_entry_n = 0;
-	char *selected_entry = NULL;
-	char tmp, last_mask = 0;
-	void *current_entry;
+#define HUD_BUF_SIZE 512
+
+static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RListIter *iter;
+	char *current_entry;
+	char mask[HUD_BUF_SIZE];
+	char *p, *x;
+	int j, rows;
+	(void) r_cons_get_size (&rows);
+	int counter = 0;
+	bool first_line = true;
+	RList *res = r_list_newf (free);
+	r_list_foreach (list, iter, current_entry) {
+		memset (mask, 0, HUD_BUF_SIZE);
+		if (*user_input && !strmatch (current_entry, user_input, mask, HUD_BUF_SIZE)) {
+			continue;
+		}
+		if (++counter == rows + top_entry_n) {
+			break;
+		}
+		// if the user scrolled down the list, do not print the first entries
+		if (!top_entry_n || *current_entry_n >= top_entry_n) {
+			// remove everything after a tab (in ??, it contains the commands)
+			x = strchr (current_entry, '\t');
+			if (x) {
+				*x = 0;
+			}
+			p = strdup (current_entry);
+			// if the filter is empty, print the entry and move on
+			if (!user_input[0]) {
+				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', current_entry));
+			} else {
+				// otherwise we need to emphasize the matching part
+				if (I (context->color)) {
+					int last_color_change = 0;
+					int last_mask = 0;
+					char *str = r_str_newf (" %c ", first_line? '-': ' ');
+					// Instead of printing one char at the time
+					// (which would be slow), we group substrings of the same color
+					for (j = 0; p[j] && j < HUD_BUF_SIZE; j++) {
+						if (mask[j] != last_mask) {
+							char tmp = p[j];
+							p[j] = 0;
+							if (mask[j]) {
+								str = r_str_appendf (str, Color_RESET "%s", p + last_color_change);
+							} else {
+								str = r_str_appendf (str, Color_GREEN "%s", p + last_color_change);
+							}
+							p[j] = tmp;
+							last_color_change = j;
+							last_mask = mask[j];
+						}
+					}
+					if (last_mask) {
+						str = r_str_appendf (str, Color_GREEN "%s"Color_RESET, p + last_color_change);
+					} else {
+						str = r_str_appendf (str, Color_RESET "%s", p + last_color_change);
+					}
+					r_list_append (res, str);
+				} else {
+					// Otherwise we print the matching characters uppercase
+					for (j = 0; p[j]; j++) {
+						if (mask[j]) {
+							p[j] = toupper ((unsigned char) p[j]);
+						}
+					}
+					r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
+				}
+			}
+			// Clean up and restore the tab character (if any)
+			free (p);
+			if (x) {
+				*x = '\t';
+			}
+			if (first_line) {
+				*selected_entry = current_entry;
+			}
+			first_line = false;
+		}
+		(*current_entry_n)++;
+
+	}
+	return res;
+}
+
+static void mht_free_kv(HtPPKv *kv) {
+	free (kv->key);
+	r_list_free (kv->value);
+}
+
+// Display a list of entries in the hud, filtered and emphasized based on the user input.
+
+#define HUD_CACHE 0
+R_API char *r_cons_hud(RList *list, const char *prompt) {
+	int ch, nch, current_entry_n, i = 0;
+	char user_input[HUD_BUF_SIZE];
+	int top_entry_n = 0;
+	char *selected_entry = NULL;
+	RListIter *iter;
+
+	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 
 	user_input[0] = 0;
 	r_cons_clear ();
 	// Repeat until the user exits the hud
 	for (;;) {
-		first_line = 1;
 		r_cons_gotoxy (0, 0);
 		current_entry_n = 0;
 		if (top_entry_n < 0) {
@@ -124,82 +212,29 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			r_cons_println (prompt);
 		}
 		r_cons_printf ("%d> %s|\n", top_entry_n, user_input);
-		int counter = 0;
-		int rows;
-		(void) r_cons_get_size (&rows);
-		// Iterate over each entry in the list
-		r_list_foreach (list, iter, current_entry) {
-			memset (mask, 0, buf_size);
-			if (!user_input[0] || strmatch (current_entry, user_input, mask, buf_size)) {
-				counter++;
-				if (counter == rows + top_entry_n) {
-					break;
-				}
-				// if the user scrolled down the list, do not print the first entries
-				if (!top_entry_n || current_entry_n >= top_entry_n) {
-					// remove everything after a tab (in ??, it contains the commands)
-					x = strchr (current_entry, '\t');
-					if (x) {
-						*x = 0;
-					}
-					p = strdup (current_entry);
-					// if the filter is empty, print the entry and move on
-					if (!user_input[0]) {
-						r_cons_printf (" %c %s\n", first_line? '-': ' ', current_entry);
-					} else {
-						// otherwise we need to emphasize the matching part
-						if (I (color)) {
-							last_color_change = 0;
-							last_mask = 0;
-							r_cons_printf (" %c ", first_line? '-': ' ');
-							// Instead of printing one char at the time
-							// (which would be slow), we group substrings of the same color
-							for (j = 0; p[j] && j < buf_size; j++) {
-								if (mask[j] != last_mask) {
-									tmp = p[j];
-									p[j] = 0;
-									if (mask[j]) {
-										r_cons_printf (Color_RESET "%s", p + last_color_change);
-									} else {
-										r_cons_printf (Color_GREEN "%s", p + last_color_change);
-									}
-									p[j] = tmp;
-									last_color_change = j;
-									last_mask = mask[j];
-								}
-							}
-							if (last_mask) {
-								r_cons_printf (Color_GREEN "%s\n"Color_RESET, p + last_color_change);
-							} else {
-								r_cons_printf (Color_RESET "%s\n", p + last_color_change);
-							}
-						} else {
-							// Otherwise we print the matching characters uppercase
-							for (j = 0; p[j]; j++) {
-								if (mask[j]) {
-									p[j] = toupper ((unsigned char) p[j]);
-								}
-							}
-							r_cons_printf (" %c %s\n", first_line? '-': ' ', p);
-						}
-					}
-					// Clean up and restore the tab character (if any)
-					free (p);
-					if (x) {
-						*x = '\t';
-					}
-					if (first_line) {
-						selected_entry = current_entry;
-					}
-					first_line = 0;
-				}
-				current_entry_n++;
-			}
+		char *row;
+		RList *filtered_list = NULL;
+
+		bool found = false;
+		filtered_list = ht_pp_find (ht, user_input, &found);
+		if (!found) {
+			filtered_list = hud_filter (list, user_input,
+				top_entry_n, &current_entry_n, &selected_entry);
+#if HUD_CACHE
+			ht_pp_insert (ht, user_input, filtered_list);
+#endif
 		}
+		r_list_foreach (filtered_list, iter, row) {
+			r_cons_printf ("%s\n", row);
+		}
+#if !HUD_CACHE
+		r_list_free (filtered_list);
+#endif
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
+		int rows;
 		(void) r_cons_get_size (&rows);
 		if (nch == 'J' && ch != 'J') {
 			top_entry_n += (rows - 1);
@@ -255,11 +290,11 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 				break;
 			default:
 				if (IS_PRINTABLE (ch)) {
-					if (i >= buf_size) {
+					if (i >= HUD_BUF_SIZE) {
 						break;
 					}
 					top_entry_n = 0;
-					if (i + 1 >= buf_size) {
+					if (i + 1 >= HUD_BUF_SIZE) {
 						// too many
 						break;
 					}
@@ -270,6 +305,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			}
 		}
 	}
+	ht_pp_free (ht);
 	return NULL;
 }
 
@@ -289,6 +325,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 		if (ret) {
 			tmp = r_str_append (tmp, "/");
 			tmp = r_str_append (tmp, ret);
+			free (ret);
 			ret = r_file_abspath (tmp);
 			free (tmp);
 			tmp = ret;
@@ -320,22 +357,3 @@ R_API char *r_cons_message(const char *msg) {
 	r_cons_any_key (NULL);
 	return NULL;
 }
-
-#ifdef MAIN
-main () {
-	char *res;
-	RFList fl = r_flist_new (3);
-	r_flist_set (fl, 0, "foo is pure cow");
-	r_flist_set (fl, 1, "bla is kinda crazy");
-	r_flist_set (fl, 2, "funny to see you here");
-	r_cons_new ();
-	res = r_cons_hud (fl, NULL, 0);
-	r_cons_clear ();
-	if (res) {
-		r_cons_println (res);
-		free (res);
-	}
-	r_cons_flush ();
-	r_cons_free ();
-}
-#endif

@@ -67,7 +67,7 @@ if [ "${UNCRUST}" = 1 ]; then
 	# yell, rather than overwrite an innocent file
 	command -v uncrustify >/dev/null 2>&1 || {
 		if ! r2pm -r type uncrustify >/dev/null 2>&1; then
-			echo "This script requires uncrustify to function. Check r2pm -i uncrustify"
+			#echo "This script requires uncrustify to function. Check r2pm -i uncrustify"
 			UNCRUST=0
 		fi
 	}
@@ -80,21 +80,43 @@ if [ "${UNCRUST}" = 0 ]; then
 	fi
 fi
 
+indentDirectory() {
+	D=`dirname "$IFILE"`
+	for a in "$D/"*.c ; do
+		IFILE="$a"
+		( indentFile )
+	done
+}
+
 indentFile() {
 	if [ ! -f "${IFILE}" ]; then
 		echo "Cannot find $IFILE"
 		return
 	fi
-	echo "Indenting ${IFILE} ..." >&2
+	echo "${IFILE}" >&2
 	(
 	if [ "${UNCRUST}" = 1 ]; then
 		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
 		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format
 	else
-		cp -f .clang-format ${CWD}/.clang-format
-		cd "$CWD"
-		clang-format "${IFILE}"  > .tmp-format
+		D=$(dirname ${IFILE})
+		if [ -f "${D}/.clang-format" ]; then
+			cp -f "${D}/.clang-format" .tmp-clang-format
+		else
+			rm -f .tmp-clang-format
+		fi
+		cp -f .clang-format ${D}/.clang-format
+		cd "$CWD" 
+		(
+			clang-format "${IFILE}" > .tmp-format
+		)
+		if [ -f "${D}/.tmp-clang-format" ]; then
+			mv .tmp-clang-format "${D}/.clang-format"
+		fi
+		if [ "${D}/.clang-format" != "${CWD}/.clang-format" ]; then
+			rm -f "${D}/.clang-format"
+		fi
 	fi
 # one of those rules fuckups the ascii art in comment blocks
 
@@ -157,16 +179,23 @@ indentFile() {
 	)
 }
 
+if [ ! -f "${CWD}/.clang-format" ]; then
+	echo "Cannot find ${CWD}/.clang-format"
+	exit 1
+fi
+
 while : ; do
 	[ "$PWD" = / ] && break
-		if [ -f .clang-format ]; then
-			ROOTDIR=$PWD
-			while : ; do
-				[ -z "${IFILE}" ] && break
-				indentFile
-				shift
-				IFILE="$1"
-			done
+	ROOTDIR=$PWD
+	while : ; do
+		[ -z "${IFILE}" ] && break
+		if [ -d "$IFILE" ]; then
+			indentDirectory "$1"
+		else
+			indentFile
 		fi
-		cd ..
+		shift
+		IFILE="$1"
+	done
+	cd ..
 done

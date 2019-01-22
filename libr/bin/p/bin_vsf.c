@@ -29,7 +29,7 @@ static Sdb* get_sdb (RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
-	return bin? bin->kv: NULL;
+	return bin->kv;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
@@ -154,7 +154,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "BASIC");
+			ptr->name = strdup ("BASIC");
 			ptr->paddr = ((char *)vsf_obj->rom +
 				      r_offsetof (struct vsf_c64rom, basic)) -
 				     (char *)bf->buf->buf;
@@ -169,7 +169,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "KERNAL");
+			ptr->name = strdup ("KERNAL");
 			ptr->paddr = ((char *)vsf_obj->rom +
 				      r_offsetof (struct vsf_c64rom, kernal)) -
 				     (char *)bf->buf->buf;
@@ -187,7 +187,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "BASIC");
+			ptr->name = strdup ("BASIC");
 			ptr->paddr = ((char *)vsf_obj->rom +
 				      r_offsetof (struct vsf_c128rom, basic)) -
 				     (char *)bf->buf->buf;
@@ -202,7 +202,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "MONITOR");
+			ptr->name = strdup ("MONITOR");
 			// skip first 28kb  since "BASIC" and "MONITOR" share the same section in VSF
 			ptr->paddr = ((char *)vsf_obj->rom +
 				      r_offsetof (struct vsf_c128rom, basic)) +
@@ -218,7 +218,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "EDITOR");
+			ptr->name = strdup ("EDITOR");
 			ptr->paddr = ((char *)vsf_obj->rom +
 				      r_offsetof (struct vsf_c128rom, editor)) -
 				     (char *)bf->buf->buf;
@@ -233,7 +233,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "KERNAL");
+			ptr->name = strdup ("KERNAL");
 			ptr->paddr = ((char *)vsf_obj->rom +
 				      r_offsetof (struct vsf_c128rom, kernal)) -
 				     (char *)bf->buf->buf;
@@ -256,7 +256,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "RAM");
+			ptr->name = strdup ("RAM");
 			ptr->paddr = ((char *)vsf_obj->mem + offset) - (char*) bf->buf->buf;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
@@ -273,7 +273,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "RAM BANK 0");
+			ptr->name = strdup ("RAM BANK 0");
 			ptr->paddr = ((char *)vsf_obj->mem + offset) - (char*) bf->buf->buf;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
@@ -285,7 +285,7 @@ static RList* sections(RBinFile* bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			strcpy (ptr->name, "RAM BANK 1");
+			ptr->name = strdup ("RAM BANK 1");
 			ptr->paddr = ((char *)vsf_obj->mem + offset) + size - (char*) bf->buf->buf;
 			ptr->size = size;
 			ptr->vaddr = 0x0;

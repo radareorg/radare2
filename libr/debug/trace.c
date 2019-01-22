@@ -35,8 +35,7 @@ R_API void r_debug_trace_free (RDebugTrace *trace) {
 	r_list_purge (trace->traces);
 	free (trace->traces);
 	sdb_free (trace->db);
-	free (trace);
-	trace = NULL;
+	R_FREE (trace);
 }
 
 // TODO: added overlap/mask support here... wtf?

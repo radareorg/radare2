@@ -1,38 +1,38 @@
-add comment	?i Comment;CC `?y`
-list comments	CC;?ik
-change block size	?i block size;b `?y`
-analyze all	aa
-analyze function	af
-analyze preludes	ap
-continue process execution	dc;?i
-disable colors	e scr.color=0
-enable colors (ANSI 16)	e scr.color=1
-enable colors (256)	e scr.color=2
-enable colors (16M)	e scr.color=3
-randomize colors	ecr
-hide bytes in disassembly	e asm.bytes=false
-show bytes in disassembly	e asm.bytes=true
-list imports 	ii;?ik
-list sections	iS;?ik
-list symbols	is;?ik
-list processes	dp*;?ik
-run command	?i cmd;`?y`;?ik
-seek to entrypoint	s entry0
-seek to main	s main
-set breakpoint	db;?i new breakpoint address;db `?y`
-remove breakpoint ?i delete breakpoint at given address;db-`?y`
-show backtrace	dbt;?ik
-show bytes in disassembly	e asm.bytes=1
-show debugger register values	dr;?ik
-show process memory maps	dm;?ik
-step instruction	sr pc;pd 1;ds;?ik
-step over call	sr pc;pd 1;dso;?ik
-write string	?i string;w `?y`
-write hexadecimal data in current offset	?i hexpairs;wx `?y`
-xor current block with hexpair key	?i hexpair key;wox `?y`
-edit eval configuration	Veq
-calculator	?i enter math expression;? `?y`;?ik
-disassemble 1024 bytes and pipe to less(1)	b 1024;pd|less -R
-rename function	?i New name;afn `?y`
-set flag	?i Flag name;f `?y`
-unset flag	?i Flag name to delete;f-`?y`
+add comment;?i Comment;CC `ys`
+list comments;CC;?ik
+change block size;?i block size;b `ys`
+analyze all;aa
+analyze function;af
+analyze preludes;ap
+continue process execution;dc;?i
+disable colors;e scr.color=0
+enable colors (ANSI 16);e scr.color=1
+enable colors (256);e scr.color=2
+enable colors (16M);e scr.color=3
+randomize colors;ecr
+hide bytes in disassembly;e asm.bytes=false
+show bytes in disassembly;e asm.bytes=true
+list imports ;ii;?ik
+list sections;iS;?ik
+list symbols;is;?ik
+list processes;dp*;?ik
+run command;?i cmd;`ys`;?ik
+seek to entrypoint;s entry0
+seek to main;s main
+set breakpoint;db;?i new breakpoint address;db `ys`
+remove breakpoint ?i delete breakpoint at given address;db-`ys`
+show backtrace;dbt;?ik
+show bytes in disassembly;e asm.bytes=1
+show debugger register values;dr;?ik
+show process memory maps;dm;?ik
+step instruction;sr pc;pd 1;ds;?ik
+step over call;sr pc;pd 1;dso;?ik
+write string;?i string;w `ys`
+write hexadecimal data in current offset;?i hexpairs;wx `ys`
+xor current block with hexpair key;?i hexpair key;wox `ys`
+edit eval configuration;Veq
+calculator;?i enter math expression;? `ys`;?ik
+disassemble 1024 bytes and pipe to less(1);b 1024;pd|less -R
+rename function;?i New name;afn `ys`
+set flag;?i Flag name;f `ys`
+unset flag;?i Flag name to delete;f-`ys`

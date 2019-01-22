@@ -24,7 +24,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_list_free (list);
 			return false;
 		}
-		strncpy (path, buf, sizeof (path) - 1);
+		r_str_ncpy (path, buf, sizeof (path) - 1);
 	} else {
 		strcpy (path, "/");
 	}
@@ -39,7 +39,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (shell->readline) {
 				ptr = shell->readline ();
 			} else {
-				fgets (buf, sizeof (buf) - 1, stdin);
+				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+					break;
+				}
 				if (feof (stdin)) {
 					break;
 				}
@@ -58,7 +60,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 		} else {
 			printf ("%s", prompt);
-			fgets (buf, sizeof (buf) - 1, stdin);
+			if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+				break;
+			}
 			if (feof (stdin)) {
 				break;
 			}
@@ -114,7 +118,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			eprintf ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
 			char opath[PROMPT_PATH_BUFSIZE];
-			strncpy (opath, path, sizeof (opath) - 1);
+			r_str_ncpy (opath, path, sizeof (opath));
 			input = buf + 3;
 			while (*input == ' ') {
 				input++;
@@ -175,7 +179,6 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				write (1, file->data, file->size);
-				free (file->data);
 				r_fs_close (fs, file);
 			} else {
 				eprintf ("Cannot open file\n");
@@ -218,7 +221,6 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				r_file_dump (input, file->data, file->size, 0);
-				free (file->data);
 				r_fs_close (fs, file);
 			} else {
 				input -= 2; //OMFG!!!! O_O

@@ -284,6 +284,8 @@ static int callback_list(void *u, const char *k, const char *v) {
 		}
 		if (!strchr (si->name, '.')) {
 			r_list_append (list, si);
+		} else {
+			r_syscall_item_free (si);
 		}
 	}
 	return 1; // continue loop

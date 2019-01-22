@@ -92,24 +92,25 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 }
 
 bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
-	RIOMap *map = NULL;
-	int perm = 0;
-	RIODesc *desc;
 	if (!io || !sec) {
 		return false;
 	}
-	desc = r_io_desc_get (io, sec->fd);
+	RIODesc *desc = r_io_desc_get (io, sec->fd);
 	if (!desc) {
 		return false;
 	}
-	perm = sec->perm;
+	int perm = sec->perm;
 	//create file map for patching
+	// workaround to force exec bit in text section
+	if (sec->name &&  strstr (sec->name, "text")) {
+		perm |= R_PERM_X;
+	}
 	if (patch) {
 		//add -w to the map for patching if needed
 		//if the file was not opened with -w desc->perm won't have that bit active
 		perm = perm | desc->perm;
 	}
-	map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
+	RIOMap *map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -118,28 +119,6 @@ bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do
 	return false;
 }
 
-
-R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
-	if (!io || !sec) {
-		return false;
-	}
-	if (sec->vsize - sec->size > 0) {
-		ut64 at = sec->vaddr + sec->size;
-		if (!io_create_mem_map (io, sec, at, false, true)) {
-			return false;
-		}
-		RIOMap *map = r_io_map_get (io, at);
-		r_io_map_set_name (map, sdb_fmt ("mem.%s", sec->name));
-	}
-	if (sec->size) {
-		if (!io_create_file_map (io, sec, sec->size, false, true)) {
-			return false;
-		}
-		RIOMap *map = r_io_map_get (io, sec->vaddr);
-		r_io_map_set_name (map, sdb_fmt ("fmap.%s", sec->name));
-	}
-	return true;
-}
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
@@ -161,6 +140,9 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 		return false;
 	}
 	if (io->va) {
+		if (!hasperm) {
+			return r_io_map_is_mapped (io, offset);
+		}
 		if ((map = r_io_map_get (io, offset))) {
 			return ((map->perm & hasperm) == hasperm);
 		}

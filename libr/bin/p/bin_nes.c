@@ -15,7 +15,14 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	return check_bytes (buf, sz);
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	if (!check_bytes (r_buf_get_at (buf, 0, NULL), buf->length)) {
+		return NULL;
+	}
+	return r_buf_new ();
+}
+
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	ines_hdr ihdr;
 	memset (&ihdr, 0, INES_HDR_SIZE);
@@ -95,7 +102,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "ROM");
+	ptr->name = strdup ("ROM");
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;
@@ -106,10 +113,10 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *mem (RBinFile *bf) {
+static RList *mem(RBinFile *bf) {
 	RList *ret;
 	RBinMem *m, *n;
-	if (!(ret = r_list_new())) {
+	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
@@ -210,6 +217,7 @@ RBinPlugin r_bin_plugin_nes = {
 	.desc = "NES",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.baddr = &baddr,
 	.check_bytes = &check_bytes,
 	.entries = &entries,

@@ -8,6 +8,29 @@
 #include <sys/stat.h>
 #include "sdb.h"
 
+#if 0
+static inline SdbKv *kv_at(HtPP *ht, HtPPBucket *bt, ut32 i) {
+	return (SdbKv *)((char *)bt->arr + i * ht->opt.elem_size);
+}
+
+static inline SdbKv *prev_kv(HtPP *ht, SdbKv *kv) {
+	return (SdbKv *)((char *)kv - ht->opt.elem_size);
+}
+#endif
+
+static inline SdbKv *next_kv(HtPP *ht, SdbKv *kv) {
+	return (SdbKv *)((char *)kv + ht->opt.elem_size);
+}
+
+#define BUCKET_FOREACH(ht, bt, j, kv)					\
+	for ((j) = 0, (kv) = (SdbKv *)(bt)->arr; j < (bt)->count; (j)++, (kv) = next_kv (ht, kv))
+
+#define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv)			\
+	if ((bt)->arr)							\
+		for ((j) = 0, (kv) = (SdbKv *)(bt)->arr, (count) = (ht)->count; \
+		     (j) < (bt)->count;					\
+		     (j) = (count) == (ht)->count? j + 1: j, (kv) = (count) == (ht)->count? next_kv (ht, kv): kv, (count) = (ht)->count)
+
 static inline int nextcas(void) {
 	static ut32 cas = 1;
 	if (!cas) {
@@ -250,7 +273,7 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 		return NULL;
 	}
 	(void) cdb_findstart (&s->db);
-	if (cdb_findnext (&s->db, s->ht->hashfn (key), key, keylen) < 1) {
+	if (cdb_findnext (&s->db, s->ht->opt.hashfn (key), key, keylen) < 1) {
 		return NULL;
 	}
 	len = cdb_datalen (&s->db);
@@ -354,7 +377,8 @@ SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	}
 	kv = (SdbKv*)sdb_ht_find_kvp (s->ht, key, &found);
 	if (found && kv) {
-		return *sdbkv_value (kv);
+		char *v = sdbkv_value (kv);
+		return v && *v;
 	}
 	if (s->fd == -1) {
 		return false;
@@ -593,6 +617,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 	if (kv) {
 		ut32 cas = kv->cas = nextcas ();
 		sdb_ht_insert_kvp (s->ht, kv, true /*update*/);
+		free (kv);
 		sdb_hook_call (s, key, val);
 		return cas;
 	}
@@ -753,8 +778,6 @@ static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb,
 }
 
 SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
-	SdbListIter *iter, *tmp;
-	SdbKv *kv;
 	bool result;
 	if (!s) {
 		return false;
@@ -764,14 +787,18 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	if (!result) {
 		return sdb_foreach_end (s, false);
 	}
+
 	ut32 i;
-	for (i = 0; i < s->ht->size; i++) {
-		ls_foreach_safe (s->ht->table[i], iter, tmp, kv) {
-			if (!kv || !sdbkv_value (kv) || !*sdbkv_value (kv)) {
-				continue;
-			}
-			if (!cb (user, sdbkv_key (kv), sdbkv_value (kv))) {
-				return sdb_foreach_end (s, false);
+	for (i = 0; i < s->ht->size; ++i) {
+		HtPPBucket *bt = &s->ht->table[i];
+		SdbKv *kv;
+		ut32 j, count;
+
+		BUCKET_FOREACH_SAFE (s->ht, bt, j, count, kv) {
+			if (kv && sdbkv_value (kv) && *sdbkv_value (kv)) {
+				if (!cb (user, sdbkv_key (kv), sdbkv_value (kv))) {
+					return sdb_foreach_end (s, false);
+				}
 			}
 		}
 	}
@@ -797,8 +824,6 @@ static int _remove_afer_insert(void *user, const char *k, const char *v) {
 }
 
 SDB_API bool sdb_sync(Sdb* s) {
-	SdbListIter it, *iter;
-	SdbKv *kv;
 	bool result;
 	ut32 i;
 
@@ -809,14 +834,17 @@ SDB_API bool sdb_sync(Sdb* s) {
 	if (!result) {
 		return false;
 	}
+
 	/* append new keyvalues */
 	for (i = 0; i < s->ht->size; ++i) {
-		ls_foreach (s->ht->table[i], iter, kv) {
+		HtPPBucket *bt = &s->ht->table[i];
+		SdbKv *kv;
+		ut32 j, count;
+
+		BUCKET_FOREACH_SAFE (s->ht, bt, j, count, kv) {
 			if (sdbkv_key (kv) && sdbkv_value (kv) && *sdbkv_value (kv) && !kv->expire) {
 				if (sdb_disk_insert (s, sdbkv_key (kv), sdbkv_value (kv))) {
-					it.n = iter->n;
 					sdb_remove (s, sdbkv_key (kv), 0);
-					iter = &it;
 				}
 			}
 		}
@@ -846,7 +874,7 @@ SDB_API SdbKv *sdb_dump_next(Sdb* s) {
 	}
 	vl--;
 	strncpy (sdbkv_key (&s->tmpkv), k, SDB_KSZ - 1);
-	s->tmpkv.base.key[SDB_KSZ - 1] = '\0';
+	sdbkv_key (&s->tmpkv)[SDB_KSZ - 1] = '\0';
 	free (sdbkv_value (&s->tmpkv));
 	s->tmpkv.base.value = v;
 	s->tmpkv.base.value_len = vl;

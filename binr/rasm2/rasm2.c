@@ -235,7 +235,7 @@ static int rasm_show_help(int v) {
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
 			" -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
-			" -o [offset]  Set start address for code (default 0)\n"
+			" -o,-@ [addr] Set start address for code (default 0)\n"
 			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
 			" -p           Run SPP over input for assembly\n"
 			" -q           quiet mode\n"
@@ -358,8 +358,8 @@ static void print_buf(char *str) {
 	}
 }
 
-static bool print_label(void *user, const char *k, void *v) {
-	printf ("f label.%s = %s\n", k, (const char *)v);
+static bool print_label(void *user, const void *k, const void *v) {
+	printf ("f label.%s = %s\n", (const char *)k, (const char *)v);
 	return true;
 }
 
@@ -373,7 +373,11 @@ static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin, b
 	if (acode->len) {
 		ret = acode->len;
 		if (bin) {
-			write (1, acode->buf, acode->len);
+			if ((ret = write (1, acode->buf, acode->len)) != acode->len) {
+				eprintf ("Failed to write buffer\n");
+				r_asm_code_free (acode);
+				return 0;
+			}
 		} else {
 			int b = acode->len;
 			if (bits == 1) {
@@ -430,7 +434,7 @@ static int print_assembly_output(const char *buf, ut64 offset, ut64 len, int bit
 	if (rad) {
 		printf ("f entry = $$\n");
 		printf ("f label.main = $$ + 1\n");
-		ht_foreach (a->flags, print_label, NULL);
+		ht_pp_foreach (a->flags, print_label, NULL);
 	}
 	return ret;
 }
@@ -438,7 +442,7 @@ static int print_assembly_output(const char *buf, ut64 offset, ut64 len, int bit
 int main (int argc, char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
-	unsigned char buf[R_ASM_BUFSIZE];
+	ut8 buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	bool isbig = false;
 	bool rad = false;
@@ -507,7 +511,7 @@ int main (int argc, char *argv[]) {
 		bits = r_num_math (NULL, r2bits);
 		free (r2bits);
 	}
-	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:Lo:O:pqrs:vw")) != -1) {
+	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vw")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -563,6 +567,7 @@ int main (int argc, char *argv[]) {
 			rasm2_list (a, argv[optind]);
 			ret = 1;
 			goto beach;
+		case '@':
 		case 'o':
 			offset = r_num_math (NULL, optarg);
 			break;

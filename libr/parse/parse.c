@@ -123,25 +123,13 @@ static char *findNextNumber(char *op) {
 		if (p[0] == 0x1b && p[1] == '[') {
 			ansi_found = true;
 			p += 2;
-			if (p[0] && p[1] == ';') {
-				// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
-				// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
-				for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++) {
-					;
-				}
-				if (p[0] && p[1] == '\\') {
-					p++;
-				}
-			} else {
-				// "\x1b[%dm", 30 + k
-				for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++) {
-					;
-				}
-				if (*p) {
-					p++;
-					if (!*p) {
-						break;
-					}
+			for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++) {
+				;
+			}
+			if (*p) {
+				p++;
+				if (!*p) {
+					break;
 				}
 			}
 			o = p - 1;
@@ -234,7 +222,8 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 	ptr2 = NULL;
 	// remove "dword" 2
 	char *nptr;
-	while ((nptr = findNextNumber (ptr))) {
+	int count = 0;
+	for (count = 0; (nptr = findNextNumber (ptr)) ; count++) {
 #if 0
 		char *optr = ptr;
 		if (nptr[1]== ' ') {
@@ -382,7 +371,7 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 					}
 					return true;
 				}
-				if (p->tailsub) { //  && off > UT32_MAX && addr > UT32_MAX) {
+				if (p->tailsub) { //  && off > UT32_MAX && addr > UT32_MAX)
 					if (off != UT64_MAX) {
 						if (off == addr) {
 							insert (ptr, "$$");
@@ -399,6 +388,11 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 			}
 		}
 		if (p->hint) {
+			const int nw = p->hint->nword;
+			if (count != nw) {
+				ptr = ptr2;
+				continue;
+			}
 			int pnumleft, immbase = p->hint->immbase;
 			char num[256] = {0}, *pnum, *tmp;
 			bool is_hex = false;

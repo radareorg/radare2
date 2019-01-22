@@ -565,6 +565,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case M68K_INS_NOT:
+		op->type = R_ANAL_OP_TYPE_NOT;
+		break;
 	case M68K_INS_OR:
 	case M68K_INS_ORI:
 		op->type = R_ANAL_OP_TYPE_OR;
@@ -586,8 +588,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_REMS:
 	case M68K_INS_REMU:
 	case M68K_INS_RESET:
+		break;
 	case M68K_INS_ROL:
+		op->type = R_ANAL_OP_TYPE_ROL;
+		break;
 	case M68K_INS_ROR:
+		op->type = R_ANAL_OP_TYPE_ROR;
+		break;
 	case M68K_INS_ROXL:
 	case M68K_INS_ROXR:
 		break;

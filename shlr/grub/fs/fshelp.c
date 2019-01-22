@@ -110,7 +110,7 @@ find_file (const char *currpath, grub_fshelp_node_t currroot,
   if (! *name)
     {
       *currfound = currnode;
-free (fpath);
+      grub_free (fpath);
       return 0;
     }
 
@@ -133,7 +133,7 @@ free (fpath);
       if (type != GRUB_FSHELP_DIR)
 	{
 	  free_node (currnode, c);
-free (fpath);
+	  grub_free (fpath);
 	  return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
 	}
 
@@ -146,7 +146,7 @@ free (fpath);
       if (! found)
 	{
 	  if (grub_errno) {
-free (fpath);
+	    grub_free (fpath);
 	    return grub_errno;
 }
 
@@ -163,7 +163,7 @@ free (fpath);
 	    {
 	      free_node (currnode, c);
 	      free_node (oldnode, c);
-free (fpath);
+	      grub_free (fpath);
 	      return grub_error (GRUB_ERR_SYMLINK_LOOP,
 				 "too deep nesting of symlinks");
 	    }
@@ -174,7 +174,7 @@ free (fpath);
 	  if (!symlink)
 	    {
 	      free_node (oldnode, c);
-free (fpath);
+ 	      grub_free (fpath);
 	      return grub_errno;
 	    }
 
@@ -193,7 +193,7 @@ free (fpath);
 	  if (grub_errno)
 	    {
 	      free_node (oldnode, c);
-free (fpath);
+ 	      grub_free (fpath);
 	      return grub_errno;
 	    }
 	}
@@ -205,14 +205,14 @@ free (fpath);
 	{
 	  *currfound = currnode;
 	  c->foundtype = type;
-free (fpath);
+          grub_free (fpath);
 	  return 0;
 	}
 
       name = next;
     }
 
-free (fpath);
+  grub_free (fpath);
   return grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
 }
 

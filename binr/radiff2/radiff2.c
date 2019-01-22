@@ -61,6 +61,9 @@ static RCore *opencore(const char *f) {
 		r_config_eval (c->config, e);
 	}
 	if (f) {
+#if __WINDOWS__
+		f = r_acp_to_utf8 (f);
+#endif
 		if (!r_core_file_open (c, f, 0, 0)) {
 			r_core_free (c);
 			return NULL;
@@ -214,14 +217,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				int len = R_MAX (4, op->a_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, len);
+				char *acbufasm = strdup (ac->buf_asm);
 				if (quiet) {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "- ");
+					char *bufasm = r_str_prefix_all (acbufasm, "- ");
 					printf ("%s\n", bufasm);
 					free (bufasm);
+					free (acbufasm);
 				} else {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_RED"- ");
+					char *bufasm = r_str_prefix_all (acbufasm, Color_RED"- ");
 					printf ("%s"Color_RESET, bufasm);
 					free (bufasm);
+					free (acbufasm);
 				}
 				// r_asm_code_free (ac);
 			}
@@ -244,14 +250,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				int len = R_MAX (4, op->b_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, len);
+				char *acbufasm = strdup (ac->buf_asm);
 				if (quiet) {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), "+ ");
+					char *bufasm = r_str_prefix_all (acbufasm, "+ ");
 					printf ("%s\n", bufasm);
 					free (bufasm);
+					free (acbufasm);
 				} else {
-					char *bufasm = r_str_prefix_all (strdup (ac->buf_asm), Color_GREEN"+ ");
+					char *bufasm = r_str_prefix_all (acbufasm, Color_GREEN"+ ");
 					printf ("%s\n" Color_RESET, bufasm);
 					free (bufasm);
+					free (acbufasm);
 				}
 				// r_asm_code_free (ac);
 			}
@@ -446,7 +455,11 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		eprintf ("Invalid column width\n");
 		return;
 	}
+	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < sz; i += w) {
+		if (r_cons_is_breaked()) {
+			break;
+		}
 		if (i + w >= sz) {
 			pad = w - sz + i;
 			w = sz - i;
@@ -521,11 +534,14 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			}
 		}
 		r_cons_printf ("\n");
+		r_cons_flush ();
 	}
+	r_cons_break_end ();
+	r_cons_printf ("\n"Color_RESET);
+	r_cons_flush ();
 	if (as != bs) {
 		r_cons_printf ("...\n");
 	}
-	r_cons_flush ();
 }
 
 static void handle_sha256(const ut8 *block, int len) {
@@ -771,7 +787,6 @@ int main(int argc, char **argv) {
 			break;
 		case 'v':
 			return blob_version ("radiff2");
-			return 0;
 		case 'q':
 			quiet = true;
 			break;

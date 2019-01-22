@@ -15,6 +15,7 @@
 #endif
 #if defined(__FreeBSD__)
 # include <sys/param.h>
+# include <sys/sysctl.h>
 # if __FreeBSD_version >= 1000000 
 #  define FREEBSD_WITH_BACKTRACE
 # endif
@@ -27,7 +28,7 @@
 static char** env = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-  defined(FREEBSD_WITH_BACKTRACE)
+  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__
 # include <execinfo.h>
 #endif
 #if __APPLE__
@@ -142,10 +143,15 @@ R_API int r_sys_truncate(const char *file, int sz) {
 		return false;
 	}
 #ifdef _MSC_VER
-	_chsize (fd, sz);
+	int r = _chsize (fd, sz);
 #else
-	ftruncate (fd, sz);
+	int r = ftruncate (fd, sz);
 #endif
+	if (r != 0) {
+		eprintf ("Could not resize '%s' file\n", file);
+		close (fd);
+		return false;
+	}
 	close (fd);
 	return true;
 #else
@@ -212,7 +218,8 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 #endif
 
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
-  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE)
+  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
+  __DragonFly__
 #define HAVE_BACKTRACE 1
 #endif
 
@@ -399,7 +406,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD dwRet;
-	LPTSTR envbuf = NULL, key_ = NULL;
+	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
 	char *val = NULL;
 
 	if (!key) {
@@ -416,10 +423,11 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	} else if (TMP_BUFSIZE < dwRet) {
-		envbuf = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
-		if (!envbuf) {
+		tmp_ptr = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
+		if (!tmp_ptr) {
 			goto err_r_sys_get_env;
 		}
+		envbuf = tmp_ptr;
 		dwRet = GetEnvironmentVariable (key_, envbuf, dwRet);
 		if (!dwRet) {
 			goto err_r_sys_get_env;
@@ -689,10 +697,11 @@ R_API int r_sys_cmd(const char *str) {
 }
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
-	char *output;
+	char *output = NULL;
 	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
 		return output;
 	}
+	free (output);
 	return NULL;
 }
 
@@ -970,17 +979,23 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 #else
 	int ret;
-	char buf[128], pathbuf[1024];
 #if __FreeBSD__
-	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+	char pathbuf[PATH_MAX];
+	size_t pathbufl = sizeof (pathbuf);
+	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
+	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	if (ret != 0) {
+		return NULL;
+	}
 #else
+	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-#endif
 	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
 	if (ret < 1) {
 		return NULL;
 	}
 	pathbuf[ret] = 0;
+#endif
 	return strdup (pathbuf);
 #endif
 }
@@ -1027,6 +1042,7 @@ R_API int r_sys_getpid() {
 
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
+	r_return_val_if_fail (txt, false);
 	const char *says[] = {
 		"say", "termux-tts-speak", NULL
 	};

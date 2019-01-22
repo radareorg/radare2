@@ -88,7 +88,7 @@ static void addrom(RList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, 
 	if (!ptr) {
 		return;
 	}
-	snprintf (ptr->name, sizeof (ptr->name), "%s_%02x", name, i);
+	ptr->name = r_str_newf ("%s_%02x", name, i);
 	ptr->paddr = paddr;
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;

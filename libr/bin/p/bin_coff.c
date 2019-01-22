@@ -115,7 +115,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	char *tmp, *coffname = NULL;
+	char *tmp = NULL;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -127,7 +127,6 @@ static RList *sections(RBinFile *bf) {
 	}
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			free (coffname);
 			tmp = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
 			if (!tmp) {
 				r_list_free (ret);
@@ -135,14 +134,13 @@ static RList *sections(RBinFile *bf) {
 			}
 			//IO does not like sections with the same name append idx
 			//since it will update it
-			coffname = r_str_newf ("%s-%d", tmp, i);
-			free (tmp);
 			ptr = R_NEW0 (RBinSection);
 			if (!ptr) {
-				free (coffname);
+				free (tmp);
 				return ret;
 			}
-			strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
+			ptr->name = r_str_newf ("%s-%d", tmp, i);
+			free (tmp);
 			if (strstr (ptr->name, "data")) {
 				ptr->is_data = true;
 			}
@@ -163,7 +161,6 @@ static RList *sections(RBinFile *bf) {
 			r_list_append (ret, ptr);
 		}
 	}
-	free (coffname);
 	return ret;
 }
 

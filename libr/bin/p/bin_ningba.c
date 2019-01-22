@@ -84,7 +84,7 @@ static RList *sections(RBinFile *bf) {
 		free (s);
 		return NULL;
 	}
-	strcpy (s->name, "ROM");
+	s->name = strdup ("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;
 	s->size = sz;

@@ -96,7 +96,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		}
 		// close old file
 	} else if (ofile) {
-		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
+		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
 			" attempting to open read-only.\n", path, perm);
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_PERM_R, addr);
@@ -256,15 +256,14 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	RCoreFile *cf = r_core_file_cur (r);
-	RBinFile *bf = NULL;
 	if (cf) {
 		result = r_bin_reload (r->bin, cf->fd, baseaddr);
 	}
-	bf = r_bin_cur (r->bin);
-	r_core_bin_set_env (r, bf);
+	r_core_bin_set_env (r, r_bin_cur (r->bin));
 	return result;
 }
 
+#if __linux__ || __APPLE__
 static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	RBreakpointItem *bp;
 	RFlagItem *fi = r_flag_get (r->flags, sym);
@@ -284,6 +283,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	eprintf ("Cannot set breakpoint at %s\n", sym);
 	return false;
 }
+#endif
 
 // XXX - need to handle index selection during debugging
 static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *filenameuri) {
@@ -291,7 +291,6 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
-	RBinOptions *bo = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
 	// TODO : Honor file.path eval var too?
@@ -313,22 +312,16 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
-	int fd = cf ? cf->fd : -1;
-
-	bo = r_bin_options_new (0LL, baseaddr, false);
-	if (!bo) {
-		eprintf ("Failed to create bin options\n");
-		return false;
-	}
-
-	bo->xtr_idx = xtr_idx;
-	bo->iofd = fd;
-	if (r_bin_open (r->bin, filenameuri, bo) == -1) {
+	int fd = cf? cf->fd: -1;
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, false);
+	opt.xtr_idx = xtr_idx;
+	if (!r_bin_open (r->bin, filenameuri, &opt)) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
-			bo->rawstr = true;
-			if (r_bin_open (r->bin, filenameuri, bo) == -1) {
-				r_bin_options_free (bo);
+			r_bin_options_init (&opt, fd, baseaddr, UT64_MAX, true);
+			opt.xtr_idx = xtr_idx;
+			if (!r_bin_open (r->bin, filenameuri, &opt)) {
 				return false;
 			}
 		}
@@ -356,7 +349,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
@@ -367,7 +360,6 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 
-	r_bin_options_free (bo);
 	return true;
 }
 
@@ -382,7 +374,10 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		return false;
 	}
 	r_io_use_fd (r->io, fd);
-	if (!r_bin_load_io (r->bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL)) {
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
+	opt.xtr_idx = xtr_idx;
+	if (!r_bin_open_io (r->bin, &opt)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
@@ -390,7 +385,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
@@ -403,7 +398,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = r_bin_get_object (r->bin);
+		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
@@ -575,7 +570,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 		} else if (binfile) {
-			obj = r_bin_get_object (r->bin);
+			obj = r_bin_cur_object (r->bin);
 			if (obj) {
 				va = obj->info ? obj->info->has_va : va;
 				if (!va) {
@@ -597,7 +592,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+		if (desc) {
+			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+		}
 		if (binfile) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 					r_config_get (r->config, "asm.arch"),
@@ -687,16 +684,13 @@ beach:
 	return true;
 }
 
-R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 loadaddr) {
 	bool openmany = r_config_get_i (r->config, "file.openmany");
 	int opened_count = 0;
-	// ut64 current_loadaddr = loadaddr;
-	RCoreFile *fh; //, *top_file = NULL;
 	RListIter *fd_iter, *iter2;
-	RList *list_fds = NULL;
 	RIODesc *fd;
 
-	list_fds = r_io_open_many (r->io, file, flags, 0644);
+	RList *list_fds = r_io_open_many (r->io, file, perm, 0644);
 
 	if (!list_fds || r_list_length (list_fds) == 0) {
 		r_list_free (list_fds);
@@ -713,17 +707,14 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 			r_list_delete (list_fds, fd_iter);
 			continue;
 		}
-		fh = R_NEW0 (RCoreFile);
+		RCoreFile *fh = R_NEW0 (RCoreFile);
 		if (!fh) {
-			eprintf ("file.c:r_core_many failed to allocate new RCoreFile.\n");
 			break;
 		}
 		fh->alive = 1;
 		fh->core = r;
 		fh->fd = fd->fd;
 		r->file = fh;
-		// XXX - load addr should be at a set offset
-		//r_core_file_get_next_map (r, fh, flags, current_loadaddr);
 		r_bin_bind (r->bin, &(fh->binb));
 		r_list_append (r->files, fh);
 		r_core_bin_load (r, fd->name, 0LL);
@@ -797,7 +788,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		r->files = r_list_newf ((RListFree)r_core_file_free);
 	}
 
-	r_core_file_set_by_file (r, fh);
+	r->file = fh;
+	r_io_use_fd (r->io, fd->fd);
+
 	r_list_append (r->files, fh);
 	if (r_config_get_i (r->config, "cfg.debug")) {
 		bool swstep = true;
@@ -823,25 +816,27 @@ R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (!cf) {
-		return;
-	}
+
+	r_return_if_fail (cf);
+
 	if (!cf->core) {
 		free (cf);
 		return;
 	}
 	res = r_core_files_free (cf->core, cf);
-	//if (!res && cf && cf->alive) {
 	if (res && cf->alive) {
 		// double free libr/io/io.c:70 performs free
 		RIO *io = cf->core->io;
 		if (io) {
-			r_bin_file_deref_by_bind (&cf->binb);
+			RBin *bin = cf->binb.bin;
+			RBinFile *bf = r_bin_cur (bin);
+			if (bf) {
+				r_bin_file_deref (bin, bf);
+			}
 			r_io_fd_close (io, cf->fd);
 			free (cf);
 		}
 	}
-	cf = NULL;
 }
 
 R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
@@ -1049,7 +1044,7 @@ R_API int r_core_file_binlist(RCore *core) {
 	return count;
 }
 
-static bool close_but_cb (void *user, void *data, ut32 id) {
+static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
 	RIODesc *desc = (RIODesc *)data;
 	if (core && desc && core->file) {

@@ -735,12 +735,14 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	}
 	op->size = 2;
 	ut16 b = *(ut16 *)buf;
+	ut32 dword_instr = 0;
+	memcpy (&dword_instr, buf, len);
 	switch (b >> 9) {
 	case 0x76: //call
 		if (len < 4) {
 			goto beach;
 		}
-		if (*(ut32 *)buf >> 28 != 0xf) {
+		if (dword_instr >> 28 != 0xf) {
 			goto beach;
 		}
 		op->size = 4;
@@ -768,7 +770,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		if (len < 4) {
 			goto beach;
 		}
-		if (*(ut32 *)buf >> 28 != 0xf) {
+		if (dword_instr >> 28 != 0xf) {
 			goto beach;
 		}
 		op->size = 4;
@@ -814,12 +816,11 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		if (len < 4) {
 			goto beach;
 		}
-		if (*(ut32 *)buf >> 28 != 0xf) {
+		if (dword_instr >> 28 != 0xf) {
 			goto beach;
 		}
 		op->size = 4;
 		op->cycles = 2;
-		ut32 dword_instr = *(ut32 *)buf;
 		op->jump = ((dword_instr & 0xff) | ((dword_instr & 0xfff0000) >> 8)) * 2;
 		r_strbuf_setf (&op->esil, "0x%x,pc,=", op->jump);
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -873,7 +874,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		if (len < 4) {
 			goto beach;
 		}
-		if (*(ut32 *)buf >> 28 != 0xf) {
+		if (dword_instr >> 28 != 0xf) {
 			goto beach;
 		}
 		op->size = 4;
@@ -1168,8 +1169,8 @@ static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 
 static int anal_pic_set_reg_profile(RAnal *anal) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
-		// TODO: implement
-		return r_reg_set_profile_string (anal->reg, "");
+		// TODO: We are using the midrange profile as the baseline
+		return anal_pic_midrange_set_reg_profile (anal);
 	}
 	if (anal->cpu && strcasecmp (anal->cpu, "midrange") == 0) {
 		return anal_pic_midrange_set_reg_profile (anal);

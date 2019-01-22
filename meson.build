@@ -1,16 +1,16 @@
-project('radare2', 'c', meson_version: '>=0.46.0')
+project('radare2', 'c', license: 'LGPL3', meson_version: '>=0.47.0')
 
-py3_exe = import('python3').find_python()
+py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
-glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
-r2_version = run_command(py3_exe, 'sys/version.py')
-if r2_version.returncode() != 0
-  r2_version = 'unknown-error'
+r2_version = 'unknown-error'
+r = run_command(py3_exe, 'sys/version.py')
+if r.returncode() == 0
+  r2_version = r.stdout().strip()
 else
-  r2_version = r2_version.stdout().strip()
+  message('Cannot find project version with sys/version.py')
 endif
 
 repo = '.'
@@ -59,6 +59,11 @@ endif
 if get_option('r2_gittap') != ''
   gittap = get_option('r2_gittap')
 endif
+# gittap is used for the version of each r_ library
+# in case it has not been set (e.g. a release tarball) set it
+if gittap == ''
+  gittap = r2_version
+endif
 
 if get_option('r2_gittip') != ''
   gittip = get_option('r2_gittip')
@@ -82,7 +87,7 @@ r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
 cc = meson.get_compiler('c')
 # required for linux
 ldl = cc.find_library('dl', required: false)
-pth = cc.find_library('pthread', required: false)
+pth = dependency('threads', required: false)
 utl = cc.find_library('util', required: false)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
@@ -107,7 +112,7 @@ endif
 
 if get_option('default_library') == 'shared'
   if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
-    add_global_arguments('-fvisibility=hidden', language: 'c')
+    add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
@@ -171,20 +176,23 @@ if host_machine.system() == 'windows'
   endforeach
 else
   r2_prefix = get_option('prefix')
-  r2_libdir = join_paths(r2_prefix, get_option('libdir'))
-  r2_incdir = join_paths(r2_prefix, get_option('includedir'), 'libr')
-  r2_datdir = join_paths(r2_prefix, get_option('datadir'))
-  r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
-  r2_sdb = join_paths(get_option('datadir'), 'radare2', r2_version)
-  r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
-  r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
-  r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
-  r2_flags = join_paths(get_option('datadir'), 'radare2', r2_version, 'flag')
-  r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
-  r2_plugins = join_paths(get_option('libdir'), 'radare2', r2_version)
-  r2_extras = join_paths(get_option('libdir'), 'radare2-extras', r2_version)
-  r2_bindings = join_paths(get_option('libdir'), 'radare2-bindings', r2_version)
+  r2_libdir = get_option('libdir')
+  r2_incdir = join_paths(get_option('includedir'), 'libr')
+  r2_datdir = get_option('datadir')
+  r2_datdir_r2 = join_paths(r2_datdir, 'radare2')
+  r2_wwwroot = join_paths(r2_datdir_r2, r2_version, 'www')
+  r2_sdb = join_paths(r2_datdir_r2, r2_version)
+  r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
+  r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
+  r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
+  r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
+  r2_hud = join_paths(r2_datdir_r2, r2_version, 'hud')
+  r2_plugins = join_paths(r2_libdir, 'radare2', r2_version)
+  r2_extras = join_paths(r2_libdir, 'radare2-extras', r2_version)
+  r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
 endif
+
+r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'vendor-completions')
 
 # load plugin configuration
 subdir('libr')
@@ -244,7 +252,7 @@ endif
 
 # handle libuv library
 if get_option('use_libuv')
-  libuv_dep = dependency('libuv', required: false)
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false)
   use_libuv = libuv_dep.found()
   if not libuv_dep.found()
     warning('use_libuv option was set to true, but libuv was not found.')
@@ -259,24 +267,39 @@ else
   message('Not using libuv, thus using fallback server implementations')
 endif
 
+has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())
+
+have_ptrace = have_ptrace and has_debugger
+use_ptrace_wrap = use_ptrace_wrap and has_debugger
 
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
+checks_level = get_option('checks_level')
+if checks_level == 9999
+  if get_option('buildtype') == 'release'
+    checks_level = 1
+  else
+    checks_level = 2
+  endif
+endif
+
+message('R2_CHECKS_LEVEL: @0@'.format(checks_level))
+
 userconf = configuration_data()
-userconf.set('R_CHECKS_LEVEL', get_option('checks_level'))
-userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
-userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
-userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
-userconf.set('USE_LIB_XXHASH', use_sys_xxhash.to_int())
-userconf.set('DEBUGGER', 1)
+userconf.set('R_CHECKS_LEVEL', checks_level)
+userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
+userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
+userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
+userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', r2_prefix)
-userconf.set('LIBDIR', r2_libdir)
-userconf.set('INCLUDEDIR', r2_incdir)
-userconf.set('DATADIR', r2_datdir)
-userconf.set('WWWROOT', r2_wwwroot)
+userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
+userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
+userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
+userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
 userconf.set('SDB', r2_sdb)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
@@ -286,42 +309,38 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
-userconf.set('HAVE_LIBUV', use_libuv.to_int())
-userconf.set('HAVE_FORK', 1)
-userconf.set('HAVE_PTRACE', have_ptrace.to_int())
-userconf.set('USE_PTRACE_WRAP', use_ptrace_wrap.to_int())
-userconf.set('WITH_GPL', 1)
+userconf.set10('HAVE_OPENSSL', use_sys_openssl)
+userconf.set10('HAVE_LIBUV', use_libuv)
+userconf.set10('HAVE_FORK', true)
+userconf.set10('HAVE_PTRACE', have_ptrace)
+userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
+userconf.set10('WITH_GPL', true)
 if host_machine.system() == 'windows'
   userconf.set('DATADIR_R2', r2_datdir)
-  userconf.set('HAVE_JEMALLOC', 0)
+  userconf.set10('HAVE_JEMALLOC', false)
 else
-  userconf.set('DATADIR_R2', join_paths(get_option('datadir'), 'radare2'))
-  userconf.set('HAVE_JEMALLOC', 1)
+  userconf.set('DATADIR_R2', r2_datdir_r2)
+  userconf.set10('HAVE_JEMALLOC', true)
 endif
-if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
-  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 1)
-else
-  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 0)
-endif
+ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
+userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
-if cc.has_function('arc4random_uniform')
-  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 1)
-else
-  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
-endif
-
-if cc.has_function('explicit_bzero')
-  userconf.set('HAVE_EXPLICIT_BZERO', 1)
-else
-  userconf.set('HAVE_EXPLICIT_BZERO', 0)
-endif
+foreach item : [
+    ['arc4random_uniform', '#include <stdlib.h>'],
+    ['explicit_bzero', '#include <string.h>'],
+    ['explicit_memset', '#include <string.h>'],
+    ['clock_nanosleep', '#include <time.h>']
+  ]
+  func = item[0]
+  ok = cc.has_function(func, prefix: item[1])
+  userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
+endforeach
 
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.acr',
   output: 'r_userconf.h',
   configuration: userconf,
-  install_dir: join_paths(get_option('includedir'), 'libr')
+  install_dir: join_paths(r2_incdir)
 )
 
 versionconf = configuration_data()
@@ -335,7 +354,7 @@ r_version_h = configure_file(
   input: 'libr/include/r_version.h.in',
   output: 'r_version.h',
   configuration: versionconf,
-  install_dir: join_paths(get_option('includedir'), 'libr')
+  install_dir: join_paths(r2_incdir)
 )
 
 # Copy missing header
@@ -427,27 +446,50 @@ else
   )
 endif
 
-install_subdir('shlr/www',
-  install_dir: r2_wwwroot,
-  strip_directory: true
-)
+if get_option('use_webui')
+  install_subdir('shlr/www',
+    install_dir: r2_wwwroot,
+    strip_directory: true
+  )
+endif
 
-fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
-install_data(fortunes_files,
+install_data(
+  'doc/fortunes.creepy',
+  'doc/fortunes.fun',
+  'doc/fortunes.nsfw',
+  'doc/fortunes.tips',
   install_dir: r2_fortunes
 )
 
-man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
-install_data(man1_files,
-  install_dir: join_paths(get_option('mandir'), 'man1')
-)
-
-man7_files = run_command(glob_cmd + ['man/*.7']).stdout().strip().split(';')
-install_data(man7_files,
-  install_dir: join_paths(get_option('mandir'), 'man7')
+install_man(
+  'man/r2agent.1',
+  'man/r2-docker.1',
+  'man/r2pm.1',
+  'man/rabin2.1',
+  'man/radare2.1',
+  'man/radiff2.1',
+  'man/rafind2.1',
+  'man/ragg2.1',
+  'man/rahash2.1',
+  'man/rarun2.1',
+  'man/rasm2.1',
+  'man/rax2.1',
+  'man/esil.7'
 )
 
 install_data('doc/hud',
   install_dir: r2_hud,
   rename: 'main'
+)
+
+install_data(
+  'doc/zsh/_r2',
+  'doc/zsh/_rabin2',
+  'doc/zsh/_radiff2',
+  'doc/zsh/_rafind2',
+  'doc/zsh/_ragg2',
+  'doc/zsh/_rahash2',
+  'doc/zsh/_rasm2',
+  'doc/zsh/_rax2',
+  install_dir: r2_zsh_compdir
 )

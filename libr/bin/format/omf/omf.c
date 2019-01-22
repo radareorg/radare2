@@ -74,11 +74,14 @@ static void free_lname(OMF_multi_datas *lname) {
 	R_FREE (lname);
 }
 
-static int load_omf_lnames(OMF_record *record, const ut8 *buf, ut64 buf_size) {
+static bool load_omf_lnames(OMF_record *record, const ut8 *buf, ut64 buf_size) {
 	ut32 tmp_size = 0;
 	ut32 ct_name = 0;
 	OMF_multi_datas *ret = NULL;
 	char **names;
+	if (!record || !buf) {
+		return false;
+	}
 
 	if (!(ret = R_NEW0 (OMF_multi_datas))) {
 		return false;
@@ -656,19 +659,21 @@ static void free_all_omf_names(r_bin_omf_obj *obj) {
 }
 
 void r_bin_free_all_omf_obj(r_bin_omf_obj *obj) {
-	if (obj->records) {
-		free_all_omf_records(obj);
+	if (obj) {
+		if (obj->records) {
+			free_all_omf_records (obj);
+		}
+		if (obj->sections) {
+			free_all_omf_sections (obj);
+		}
+		if (obj->symbols) {
+			free_all_omf_symbols (obj);
+		}
+		if (obj->names) {
+			free_all_omf_names (obj);
+		}
+		free (obj);
 	}
-	if (obj->sections) {
-		free_all_omf_sections(obj);
-	}
-	if (obj->symbols) {
-		free_all_omf_symbols(obj);
-	}
-	if (obj->names) {
-		free_all_omf_names(obj);
-	}
-	R_FREE(obj);
 }
 
 r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size) {
@@ -689,11 +694,14 @@ r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size) {
 	return ret;
 }
 
-int r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
+bool r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
 	ut32 ct_sym = 0;
 	OMF_data *data;
 	ut32 offset = 0;
 
+	if (!obj) {
+		return false;
+	}
 	while (ct_sym < obj->nb_symbol) {
 		if (!strcmp (obj->symbols[ct_sym]->name, "_start")) {
 			if (obj->symbols[ct_sym]->seg_idx - 1 > obj->nb_section) {
@@ -718,6 +726,9 @@ int r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
 
 int r_bin_omf_get_bits(r_bin_omf_obj *obj) {
 	ut32 ct_sec = 0;
+	if (!obj) {
+		return 32;
+	}
 
 	// we assume if one segdef define a 32 segment all opcodes are 32bits
 	while (ct_sec < obj->nb_section) {
@@ -740,9 +751,9 @@ int r_bin_omf_send_sections(RList *list, OMF_segment *section, r_bin_omf_obj *ob
 
 		// if index == 0, it's mean there is no name
 		if (section->name_idx && section->name_idx - 1 < obj->nb_name) {
-			snprintf (new->name, R_BIN_SIZEOF_STRINGS, "%s_%d", obj->names[section->name_idx - 1], ct_name++);
+			new->name = r_str_newf ("%s_%d", obj->names[section->name_idx - 1], ct_name++);
 		} else {
-			snprintf (new->name, R_BIN_SIZEOF_STRINGS, "no_name_%d", ct_name++);
+			new->name = r_str_newf ("no_name_%d", ct_name++);
 		}
 
 		new->size = data->size;

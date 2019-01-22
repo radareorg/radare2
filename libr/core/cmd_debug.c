@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
-#include "r_core.h"
-#include "r_util.h"
-#include "r_cons.h"
-#include "sdb/sdb.h"
+#include <r_core.h>
+#include <r_debug.h>
+#include <sdb/sdb.h>
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
 
@@ -218,7 +217,7 @@ static const char *help_msg_dm[] = {
 	"dmi.", "", "List closest symbol to the current address",
 	"dmiv", "", "Show address of given symbol for given lib",
 	"dmj", "", "List memmaps in JSON format",
-	"dml", " <file>", "Load contents of file into the current map region (see Sl)",
+	"dml", " <file>", "Load contents of file into the current map region",
 	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
 	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
 	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
@@ -716,7 +715,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (!off) {
-		eprintf ("Cannot 'drn pc'\n");
+		eprintf ("Cannot 'drn PC'\n");
 		return false;
 	}
 	if (!addr) {
@@ -951,7 +950,7 @@ static int step_line(RCore *core, int times) {
 	char *tmp_ptr = NULL;
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
-		eprintf ("Cannot 'drn pc'\n");
+		eprintf ("Cannot 'drn PC'\n");
 		return false;
 	}
 	file[0] = 0;
@@ -1840,7 +1839,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RRegItem *r;
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP(creg): Color_BWHITE;
 	} else {
 		use_color = NULL;
@@ -1950,7 +1949,7 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 		break;
 	case ' ': // "drp "
 		ptr = str + 2;
-		while (isspace (*ptr)) {
+		while (isspace ((ut8)*ptr)) {
 			ptr++;
 		}
 		if (r_str_startswith (ptr, "gdb ")) {
@@ -2103,7 +2102,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	}
 	if (use_colors) {
 #undef ConsP
-#define ConsP(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+#define ConsP(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 		use_color = ConsP(creg): Color_BWHITE;
 	} else {
 		use_color = NULL;
@@ -2597,13 +2596,12 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			return;
 		}
 
-		int size = atoi (str + 1);
+		size = atoi (str + 1);
 		if (size) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, str[0], use_color);
 		} else {
 			char *comma = strchr (str + 1, ',');
 			if (comma) {
-				size = 32; // non-zero
 				char *args = strdup (str + 1);
 				char argc = r_str_split (args, ',');
 				for (i = 0; i < argc; i++) {
@@ -2611,7 +2609,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 				free (args);
 			} else {
-				size = showreg (core, str + 1);
+				showreg (core, str + 1);
 			}
 		}
 	}
@@ -3177,6 +3175,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			module = strtok (string, " ");
 			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
 			bpi = r_debug_bp_add (core->dbg, 0, hwbp, false, 0, module, delta);
+			if (!bpi) {
+				eprintf ("Cannot set breakpoint.\n");
+			}
 			free (string);
 		}
 		break;
@@ -3260,7 +3261,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			// XXX(jjd): does t his need an address validity check??
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
-			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
+			if (!bpi) {
+				eprintf ("Cannot set breakpoint (%s)\n", input + 2);
+			}
 		}
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
 		break;
@@ -3401,7 +3404,7 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 	snprintf (dbkey, TN_KEY_LEN, TN_KEY_FMT, addr);
 	t_node = (struct trace_node *)(size_t)sdb_num_get (db, dbkey, NULL);
 	if (!t_node) {
-		t_node = (struct trace_node *)malloc (sizeof (*t_node));
+		t_node = R_NEW0 (struct trace_node);
 		t_node->addr = addr;
 		t_node->refs = 1;
 		sdb_num_set (db, dbkey, (ut64)(size_t)t_node, 0);
@@ -3475,7 +3478,8 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		}
 		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to)) {
 			break;
-		} else if (!r_debug_step (dbg, 1)) {
+		}
+		if (!r_debug_step (dbg, 1)) {
 			break;
 		}
 		debug_to = UT64_MAX;
@@ -3827,7 +3831,6 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_dcu);
 		return false;
 	}
-	from = UT64_MAX;
 	to = UT64_MAX;
 	if (input[2] == '.') {
 		ptr = strchr (input + 3, ' ');
@@ -4048,9 +4051,9 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'p':
+	case 'p': // "dcp"
 		{ // XXX: this is very slow
-			RIOSection *s;
+			RIOMap *s;
 			ut64 pc;
 			int n = 0;
 			int t = core->dbg->trace->enabled;
@@ -4061,7 +4064,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
-				s = r_io_section_vget (core->io, pc);
+				s = r_io_map_get (core->io, pc);
 				if (r_cons_is_breaked ()) {
 					break;
 				}
@@ -4196,7 +4199,8 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
 			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
-				RIOSection *s = r_io_section_vget (core->io, aop.jump);
+				RBinObject *o = r_bin_cur_object (core->bin);
+				RBinSection *s = r_bin_get_section_at (o, aop.jump, true);
 				if (!s) {
 					r_debug_step_over (core->dbg, times);
 					continue;

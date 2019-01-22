@@ -90,7 +90,7 @@ static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool f
 		// allocate memory for address space
 		char *mstr = r_str_newf ("malloc://%d", size);
 		desc = anal->iob.open_at (anal->iob.io, mstr, R_PERM_RW, 0, addr);
-		r_str_free (mstr);
+		free (mstr);
 		// set 8051 address space as name of mapped memory
 		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
 			RList *maps = anal->iob.fd_get_map (anal->iob.io, desc->fd);
@@ -99,7 +99,7 @@ static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool f
 			r_list_foreach (maps, iter, current_map) {
 				char *cmdstr = r_str_newf ("omni %d %s", current_map->id, mem_map[entry].name);
 				anal->coreb.cmd (anal->coreb.core, cmdstr);
-				r_str_free (cmdstr);
+				free (cmdstr);
 			}
 			r_list_free (maps);
 		}

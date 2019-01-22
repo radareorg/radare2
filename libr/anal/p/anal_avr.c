@@ -8,6 +8,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_crypto.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -1452,6 +1453,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
+	op->fail = op->addr + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,

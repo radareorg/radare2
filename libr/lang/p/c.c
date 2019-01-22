@@ -16,7 +16,7 @@ static bool lang_c_set_argv(RLang *lang, int argc, const char **argv) {
 }
 
 static int lang_c_file(RLang *lang, const char *file) {
-	char *a, *cc, *p, name[512], buf[512];
+	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 	void *lib;
 
@@ -51,13 +51,15 @@ static int lang_c_file(RLang *lang, const char *file) {
 	if (!cc || !*cc) {
 		cc = strdup ("gcc");
 	}
-	snprintf (buf, sizeof (buf), "%s -fPIC -shared %s -o %s/lib%s."R_LIB_EXT
+	char *buf = r_str_newf ("%s -fPIC -shared %s -o %s/lib%s."R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core)", cc, file, libpath, libname);
 	free (cc);
 	if (r_sandbox_system (buf, 1) != 0) {
+		free (buf);
 		return false;
 	}
-	snprintf (buf, sizeof (buf), "%s/lib%s."R_LIB_EXT, libpath, libname);
+	free (buf);
+	buf = r_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
 	lib = r_lib_dl_open (buf);
 	if (lib) {
 		void (*fcn)(RCore *, int argc, const char **argv);
@@ -74,6 +76,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		eprintf ("Cannot open library\n");
 	}
 	r_file_rm (buf); // remove lib
+	free (buf);
 	return 0;
 }
 

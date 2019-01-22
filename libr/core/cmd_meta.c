@@ -4,7 +4,7 @@
 #include "r_bin.h"
 #include "r_cons.h"
 #include "r_core.h"
-#include "r_print.h"
+#include "r_util.h"
 #include "r_types.h"
 #include "sdb/sdb.h"
 
@@ -12,6 +12,8 @@ static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
+	"C.", "", "list meta info of current offset in human friendly form",
+	"C*.", "", "list meta info of current offset in r2 commands",
 	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
 	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
@@ -388,8 +390,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		case 'j': // "CCfj"
 			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
 			break;
+		case '*': // "CCf*"
+			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 1, core->offset);
+			break;
 		default:
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
+			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 0, core->offset);
 			break;
 		}
 		break;
@@ -1006,10 +1011,21 @@ static int cmd_meta(void *data, const char *input) {
 		r_comment_vars (core, input + 1);
 		break;
 	case '\0': // "C"
-	case 'j': // "Cj"
-	case '*': // "C*"
-		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+		r_meta_list (core->anal, R_META_TYPE_ANY, 0);
 		break;
+	case 'j': // "Cj"
+	case '*': { // "C*"
+		if (!input[0] || input[1] == '.') {
+			r_meta_list_offset (core->anal, core->offset, *input);
+		} else {
+			r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+		}
+		break;
+	}
+	case '.': { // "C."
+		r_meta_list_offset (core->anal, core->offset, 0);
+		break;
+	}
 	case 'L': // "CL"
 		cmd_meta_lineinfo (core, input + 1);
 		break;

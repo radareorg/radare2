@@ -3,7 +3,7 @@
 #include "r_list.h"
 #include "r_config.h"
 #include "r_core.h"
-#include "r_print.h"
+#include "r_util.h"
 #include "r_bin.h"
 #include "r_debug.h"
 
@@ -52,7 +52,7 @@ static const char *help_msg_o_star[] = {
 };
 
 static const char *help_msg_oa[] = {
-	"Usage:", "oa [addr] ([filename])", " # load bininfo and update flags",
+	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	NULL
@@ -106,9 +106,8 @@ static const char *help_msg_om[] = {
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompd", " mapid", "deprioritize map with corresponding id",
-	"ompf", "[fd]", "prioritize map by fd",
-	"ompb", " binid", "prioritize maps of mapped bin with binid",
-	"omps", " sectionid", "prioritize maps of mapped section with sectionid",
+	"ompf", " [fd]", "prioritize map by fd",
+	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
 	NULL
 };
 
@@ -152,18 +151,7 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
-	RListIter *it;
-	RBinFile *bf;
-	r_list_foreach (bin->binfiles, it, bf) {
-		if (bf->fd == fd) {
-			return bf->id;
-		}
-	}
-	return UT32_MAX;
-}
-
-static RBinObject *find_binfile_by_id (RBin *bin, ut32 id) {
+static RBinObject *find_binfile_by_id(RBin *bin, ut32 id) {
 	RListIter *it, *it2;
 	RBinFile *bf;
 	RBinObject *obj;
@@ -204,9 +192,8 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 		width = 30;
 	}
 
-	// seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
-
-	ls_foreach_prev (io->maps, iter, s) {			//this must be prev, maps the previous map allways has lower priority
+	// this must be prev, maps the previous map allways has lower priority
+	ls_foreach_prev (io->maps, iter, s) {
 		min = R_MIN (min, s->itv.addr);
 		max = R_MAX (max, r_itv_end (s->itv) - 1);
 	}
@@ -287,13 +274,17 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			char *arg = strdup (input + 3);
 			char *filename = strchr (arg, ' ');
 			if (filename) {
+				int saved_fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_R, 0);
 				if (desc) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL);
+					RBinOptions opt;
+					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					r_bin_open_io (core->bin, &opt);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
+					r_io_use_fd (core->io, saved_fd);
 				} else {
 					eprintf ("Cannot open %s\n", filename + 1);
 				}
@@ -302,7 +293,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL);
+					RBinOptions opt;
+					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("No file to load bin from?\n");
@@ -315,7 +308,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RIODesc *desc;
 			RListIter *iter;
 			r_list_foreach (files, iter, desc) {
-				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0, 0, NULL);
+				RBinOptions opt;
+				r_bin_options_init (&opt, desc->fd, core->offset, 0, core->bin->rawstr);
+				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".is*");
 				break;
 			}
@@ -334,17 +329,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				eprintf ("Invalid fd number.");
 				break;
 			}
-			binfile_num = UT32_MAX;
-			fd = *value && r_is_valid_input_num_value (core->num, value) ?
-				r_get_input_num_value (core->num, value) : UT32_MAX;
-			binfile_num = find_binfile_id_by_fd (core->bin, fd);
-			if (binfile_num == UT32_MAX) {
+			fd = *value && r_is_valid_input_num_value (core->num, value)? r_get_input_num_value (core->num, value): UT32_MAX;
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
+			if (!bf) {
 				eprintf ("Invalid fd number.");
 				break;
 			}
-			r_core_bin_raise (core, binfile_num, -1);
-		}
-		break;
+			r_core_bin_raise (core, bf->id, -1);
+	} break;
 	case ' ': // "ob "
 	{
 		ut32 fd;
@@ -364,14 +356,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		fd  = *v && r_is_valid_input_num_value (core->num, tmp) ?
-			r_get_input_num_value (core->num, tmp) : UT32_MAX;
+		fd = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
-			binobj_num  = *v && r_is_valid_input_num_value (core->num, tmp) ?
-				r_get_input_num_value (core->num, tmp) : UT32_MAX;
+			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			binfile_num = find_binfile_id_by_fd (core->bin, fd);
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
+			binfile_num = bf? bf->id: UT32_MAX;
 		}
 		r_core_bin_raise (core, binfile_num, binobj_num);
 		free (v);
@@ -466,7 +457,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case 1:
 		case '*':
 		case 'r':
-			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", map->fd,
+			print->cb_printf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n", map->fd,
 					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->perm),
 					map->name ? " " : "", map->name ? map->name : "");
 			break;
@@ -483,7 +474,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
-static void cmd_omfg (RCore *core, const char *input) {
+static void cmd_omfg(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
 	input = r_str_trim_ro (input);
@@ -513,7 +504,7 @@ static void cmd_omfg (RCore *core, const char *input) {
 	}
 }
 
-static void cmd_omf (RCore *core, const char *input) {
+static void cmd_omf(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
 	char *arg = strdup (r_str_trim_ro (input));
@@ -619,14 +610,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 			break;
 		case 'b': // "ompb"
 			id = (ut32)r_num_math (core->num, input + 4);
-			if (!r_io_section_priorize_bin (core->io, id)) {
-				eprintf ("Cannot prioritize bin with binid %d\n", id);
-			}
-			break;
-		case 's': // "omps"
-			id = (ut32)r_num_math (core->num, input + 4);
-			if (!r_io_section_priorize (core->io, id)) {
-				eprintf ("Cannot prioritize section with sectionid %d\n", id);
+			if (!r_bin_file_set_cur_by_id (core->bin, id)) {
+				eprintf ("Cannot prioritize bin with fd %d\n", id);
 			}
 			break;
 		case ' ': // "omp"
@@ -701,7 +686,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_cons_printf ("%s\n", map->name);
 					break;
 				default:
-					r_io_map_set_name (map, input + 3);
+					r_io_map_set_name (map, r_str_trim_ro (input + 3));
 					break;
 				}
 			}
@@ -852,13 +837,13 @@ static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API void r_core_file_reopen_in_malloc (RCore *core) {
+R_API void r_core_file_reopen_in_malloc(RCore *core) {
 	if (core && core->io && core->io->files) {
 		r_id_storage_foreach (core->io->files, reopen_in_malloc_cb, core->io);
 	}
 }
 
-R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
+R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = NULL;
 	RIODesc *desc;
@@ -880,8 +865,9 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 		return;
 	}
 	int bits = core->assembler->bits;
-	char *oldname = r_file_abspath (binpath);
-	char *newfile = r_str_newf ("dbg://%s %s", oldname, args);
+	char *bin_abspath = r_file_abspath (binpath);
+	char *escaped_path = r_str_arg_escape (bin_abspath);
+	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);
 	char *newfile2 = strdup (newfile);
 	desc->uri = newfile;
 	desc->referer = NULL;
@@ -905,7 +891,8 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 	}
 #endif
 	r_core_cmd0 (core, "sr PC");
-	free (oldname);
+	free (bin_abspath);
+	free (escaped_path);
 	free (binpath);
 	free (newfile);
 }
@@ -1223,6 +1210,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
+			void *bed = r_cons_sleep_begin ();
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {
@@ -1233,6 +1221,7 @@ static int cmd_open(void *data, const char *input) {
 				eprintf ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
+			r_cons_sleep_end (bed);
 		}
 		r_core_block_read (core);
 		return 0;
@@ -1326,25 +1315,25 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'u':
-		{
-			RListIter *iter = NULL;
-			RCoreFile *f;
-			int binfile_num;
-			core->switch_file_view = 0;
-			int num = atoi (input + 2);
+	case 'u': {
+		RListIter *iter = NULL;
+		RCoreFile *f;
+		int binfile_num;
+		core->switch_file_view = 0;
+		int num = atoi (input + 2);
 
-			r_list_foreach (core->files, iter, f) {
-				if (f->fd == num) {
-					core->file = f;
-				}
+		r_list_foreach (core->files, iter, f) {
+			if (f->fd == num) {
+				core->file = f;
 			}
-			r_io_use_fd (core->io, num);
-			binfile_num = find_binfile_id_by_fd (core->bin, num);
-			r_core_bin_raise (core, binfile_num, -1);
 		}
+		r_io_use_fd (core->io, num);
+		RBinFile *bf = r_bin_file_find_by_fd (core->bin, num);
+		binfile_num = bf? bf->id: UT32_MAX;
+		r_core_bin_raise (core, binfile_num, -1);
 		r_core_block_read (core);
 		break;
+	}
 	case 'b': // "ob"
 		cmd_open_bin (core, input);
 		break;
@@ -1357,7 +1346,9 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-			r_list_purge (core->files);
+			if (core->files) {
+				r_list_purge (core->files);
+			}
 			break;
 		case '-': // "o--"
 			eprintf ("All core files, io, anal and flags info purged.\n");

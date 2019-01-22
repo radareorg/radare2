@@ -1,8 +1,9 @@
-files = [
+r_asm_sources = [
   'asm.c',
   'op.c',
   'code.c',
   'p/asm_6502.c',
+  'p/asm_6502_cs.c',
   'p/asm_8051.c',
   'p/asm_arc.c',
   'p/asm_arm_as.c',
@@ -30,6 +31,7 @@ files = [
   'p/asm_lh5801.c',
   'p/asm_lm32.c',
   'p/asm_m68k_cs.c',
+  'p/asm_m680x_cs.c',
   'p/asm_malbolge.c',
   'p/asm_mcs96.c',
   'p/asm_mips_cs.c',
@@ -173,7 +175,7 @@ r_asm_inc = [
   )
 ]
 
-r_asm = library('r_asm', files,
+r_asm = library('r_asm', r_asm_sources,
   include_directories: r_asm_inc,
   c_args: library_cflags,
   dependencies: [
@@ -195,8 +197,7 @@ r_asm = library('r_asm', files,
 r_asm_dep = declare_dependency(link_with: r_asm,
                                include_directories: r_asm_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_asm],
+pkgconfig_mod.generate(r_asm,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_asm',

@@ -61,7 +61,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	if (!wcpath) {
 		return NULL;
 	}
-	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);
+	swprintf (directory, _countof (directory), L"%ls\\*.*", wcpath);
 	fh = FindFirstFileW (directory, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		free (wcpath);

@@ -99,12 +99,12 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 			}
 		}
 	} else {
-		RIOSection *section;
+		RIOMap *map;
 		SdbListIter *iter;
-		ls_foreach (core->io->sections, iter, section) {
-			if (strstr (section->name, "[heap]")) {
-				*brk_start = section->vaddr;
-				*brk_end = section->vaddr + section->size;
+		ls_foreach (core->io->maps, iter, map) {
+			if (strstr (map->name, "[heap]")) {
+				*brk_start = map->itv.addr;
+				*brk_end = map->itv.addr + map->itv.size;
 				break;
 			}
 		}
@@ -133,18 +133,18 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 			r_cons_printf ("f binmap.%d = 0x%"PFMT64x, i, (ut64)main_arena->binmap[i]);
 		}
 		{	/* maybe use SDB instead of flags for this? */
-			char *units = r_num_units (NULL, main_arena->GH(max_system_mem));
+			char units[8];
+			r_num_units (units, sizeof (units), main_arena->GH(max_system_mem));
 			r_cons_printf ("f heap.maxmem = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, main_arena->GH(system_mem));
+
+			r_num_units (units, sizeof (units), main_arena->GH(system_mem));
 			r_cons_printf ("f heap.sysmem = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, main_arena->GH(next_free));
+
+			r_num_units (units, sizeof (units), main_arena->GH(next_free));
 			r_cons_printf ("f heap.nextfree = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, main_arena->GH(next));
+
+			r_num_units (units, sizeof (units), main_arena->GH(next));
 			r_cons_printf ("f heap.next= %s\n", units);
-			free (units);
 		}
 		return;
 	}
@@ -269,17 +269,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
 
-	if (!r_config_get_i (core->config, "cfg.debug")) {
-		RIOSection *section;
-		SdbListIter *iter;
-		ls_foreach (core->io->sections, iter, section) {
-			if (strstr (section->name, "arena")) {
-				libc_addr_sta = section->vaddr;
-				libc_addr_end = section->vaddr + section->vsize;
-				break;
-			}
-		}
-	} else {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
@@ -287,6 +277,16 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			if (strstr (map->name, "/libc-") && map->perm == 6) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
+				break;
+			}
+		}
+	} else {
+		RIOMap *map;
+		SdbListIter *iter;
+		ls_foreach (core->io->maps, iter, map) {
+			if (strstr (map->name, "arena")) {
+				libc_addr_sta = map->itv.addr;
+				libc_addr_end = map->itv.addr + map->itv.size;
 				break;
 			}
 		}
@@ -1218,7 +1218,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 		free (heap_info);
 		free (ms);
 	} else {
-		PRINT_RA ("This address is is not part of the arenas\n");
+		PRINT_RA ("This address is not part of the arenas\n");
 	}
 }
 
@@ -1277,7 +1277,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
 				break;
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 				break;
 			}
 		}
@@ -1364,7 +1364,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_bin) (core, m_state, main_arena, dup);
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 				free (dup);
 				break;
 			}
@@ -1400,7 +1400,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup);
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 				free (dup);
 				break;
 			}
@@ -1440,7 +1440,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 			}
 		}
 		break;

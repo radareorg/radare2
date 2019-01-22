@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if __linux__ || __BSD__
+#if DEBUGGER && (__linux__ || __BSD__)
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -43,8 +43,8 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
-#define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), NULL)
-#define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (void *)(z))
+#define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), R_PTRACE_NODATA)
+#define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (r_ptrace_data_t)(z))
 #if __OpenBSD__ || __KFBSD__
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
@@ -261,9 +261,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else
 	if (!strncmp (cmd, "pid", 3)) {
 		if (iop) {
-			int pid = iop->pid;
 			if (cmd[3] == ' ') {
-				pid = atoi (cmd + 4);
+				int pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
 					(void)r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?

@@ -752,7 +752,7 @@ grub_reiserfs_iterate_dir (grub_fshelp_node_t item,
   do
     {
       struct grub_reiserfs_directory_header *directory_headers;
-      struct grub_fshelp_node directory_item;
+      struct grub_fshelp_node directory_item = {0};
       grub_uint16_t entry_count, entry_number;
       struct grub_reiserfs_item_header *item_headers;
 

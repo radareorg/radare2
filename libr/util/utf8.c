@@ -486,7 +486,7 @@ R_API const char *r_utf_block_name(int idx) {
 #define r_utf_blocks_count (sizeof (r_utf_blocks) / sizeof (r_utf_blocks[0]))
 
 /* Convert an UTF-8 buf into a unicode RRune */
-R_API int r_utf8_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
+R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -515,7 +515,7 @@ R_API int r_utf8_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
 }
 
 /* Convert a unicode RRune into an UTF-8 buf */
-R_API int r_utf8_encode (ut8 *ptr, const RRune ch) {
+R_API int r_utf8_encode(ut8 *ptr, const RRune ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
@@ -542,7 +542,7 @@ R_API int r_utf8_encode (ut8 *ptr, const RRune ch) {
 }
 
 /* Convert a unicode RRune string into an utf-8 one */
-R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length) {
+R_API int r_utf8_encode_str(const RRune *str, ut8 *dst, const int dst_length) {
 	int i, pos = 0;
 
 	if (!str || !dst) {
@@ -558,7 +558,7 @@ R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length) {
 }
 
 /* Returns the size in bytes of the utf-8 encoded char */
-R_API int r_utf8_size (const ut8 *ptr) {
+R_API int r_utf8_size(const ut8 *ptr) {
 	const int utf8_size[] = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -572,7 +572,7 @@ R_API int r_utf8_size (const ut8 *ptr) {
 	return (ptr[0]&0x80) ? utf8_size[ptr[0]^0x80] : 1;
 }
 
-R_API int r_utf8_strlen (const ut8 *str) {
+R_API int r_utf8_strlen(const ut8 *str) {
 	int i, len = 0;
 
 	for (i = 0; str[i]; i++) {
@@ -584,15 +584,14 @@ R_API int r_utf8_strlen (const ut8 *str) {
 	return len;
 }
 
-R_API int r_isprint (const RRune c) {
+R_API int r_isprint(const RRune c) {
 	const int last = nonprintable_ranges_count;
-	int low, hi, mid;
 
-	low = 0;
-	hi = last - 1;
+	int low = 0;
+	int hi = last - 1;
 
 	do {
-		mid = (low + hi) >> 1;
+		int mid = (low + hi) >> 1;
 		if (c >= nonprintable_ranges[mid].from && c <= nonprintable_ranges[mid].to) {
 			return false;
 		}
@@ -608,32 +607,68 @@ R_API int r_isprint (const RRune c) {
 }
 
 #if __WINDOWS__
-R_API char *r_utf16_to_utf8 (const wchar_t *wc) {
-	char *rutf8;
+R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len) {
+	if (!wc || !len || len < -1) {
+		return NULL;
+	}
+	char *rutf8 = NULL;
 	int csize;
 
-	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, -1, NULL, 0, NULL, NULL))) {
+	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, len, NULL, 0, NULL, NULL))) {
+		++csize;
 		if ((rutf8 = malloc (csize))) {
-			WideCharToMultiByte (CP_UTF8, 0, wc, -1, rutf8, csize, NULL, NULL);
+			WideCharToMultiByte (CP_UTF8, 0, wc, len, rutf8, csize, NULL, NULL);
+			if (len != -1) {
+				rutf8[csize - 1] = '\0';
+			}
 		}
 	}
 	return rutf8;
 }
 
-R_API wchar_t *r_utf8_to_utf16 (const char *cstring) {
-	wchar_t *rutf16;
+R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
+	if (!cstring || !len || len < -1) {
+		return NULL;
+	}
+	wchar_t *rutf16 = NULL;
 	int wcsize;
 
-	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, -1, NULL, 0))) {
+	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, len, NULL, 0))) {
+		++wcsize;
 		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
-			MultiByteToWideChar (CP_UTF8, 0, cstring, -1, rutf16, wcsize);
+			MultiByteToWideChar (CP_UTF8, 0, cstring, len, rutf16, wcsize);
+			if (len != -1) {
+				rutf16[wcsize - 1] = L'\0';
+			}
 		}
 	}
 	return rutf16;
 }
-#endif
 
-R_API int r_utf_block_idx (RRune ch) {
+R_API const char *r_acp_to_utf8_l(const ut8 *str, int len) {
+	if (!str || !len || len < -1) {
+		return NULL;
+	}
+	int wcsize;
+	if ((wcsize = MultiByteToWideChar (CP_ACP, 0, str, len, NULL, 0))) {
+		wchar_t *rutf16;
+		++wcsize;
+		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+			MultiByteToWideChar (CP_ACP, 0, str, len, rutf16, wcsize);
+			if (len != -1) {
+				rutf16[wcsize - 1] = L'\0';
+			}
+			const char *ret = r_utf16_to_utf8_l (rutf16, wcsize);
+			free (rutf16);
+			return ret;
+		}
+	}
+	return NULL;
+}
+
+#endif // __WINDOWS__
+
+R_API int r_utf_block_idx(RRune ch) {
 	const int last = r_utf_blocks_count;
 	int low, hi, mid;
 

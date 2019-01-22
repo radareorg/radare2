@@ -21,7 +21,7 @@ static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
 	ut64 sz = bf? r_buf_size (bf->buf): 0;
 	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf? bf->sdb: NULL);
+	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static int destroy(RBinFile *bf) {
@@ -73,7 +73,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("text");
 	ptr->size = textsize;
 	ptr->vsize = textsize + (textsize % 4096);
 	ptr->paddr = 8 * 4;
@@ -87,7 +87,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "data", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("data");
 		ptr->size = datasize;
 		ptr->vsize = datasize + (datasize % 4096);
 		ptr->paddr = textsize + (8 * 4);
@@ -103,7 +103,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "syms", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("syms");
 		ptr->size = symssize;
 		ptr->vsize = symssize + (symssize % 4096);
 		ptr->paddr = datasize + textsize + (8 * 4);
@@ -118,7 +118,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "spsz", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("spsz");
 		ptr->size = spszsize;
 		ptr->vsize = spszsize + (spszsize % 4096);
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
@@ -133,7 +133,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "pcsz", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("pcsz");
 		ptr->size = pcszsize;
 		ptr->vsize = pcszsize + (pcszsize % 4096);
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
@@ -205,7 +205,7 @@ static ut64 size(RBinFile *bf) {
 #if !R_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)
 #define D(x) r_buf_append_ut32 (buf, x)

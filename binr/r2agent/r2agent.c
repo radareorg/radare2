@@ -4,6 +4,8 @@
 #include <r_core.h>
 #include <signal.h>
 
+#include "../blob/version.c"
+
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
 #define USE_IOS_JETSAM 1
 
@@ -28,25 +30,30 @@ static int usage (int v) {
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
 	"  -s        run in sandbox mode\n"
+	"  -u        enable http Authorization access\n"
+	"  -t        user:password authentification file\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
 	return !v;
 }
 
 static int showversion() {
-	printf (R2_VERSION"\n");
-	return 0;
+	return blob_version ("r2agent");
 }
 
 int main(int argc, char **argv) {
 	RSocket *s;
+	RSocketHTTPOptions so;
 	RSocketHTTPRequest *rs;
-	int c, timeout = 3;
+	int c;
 	int dodaemon = 0;
 	int dosandbox = 0;
 	bool listenlocal = true;
 	const char *port = "8080";
+	const char *httpauthfile = NULL;
+	char *pfile = NULL;
+	memset (&so, 0, sizeof (so));
 
-	while ((c = getopt (argc, argv, "adhp:sv")) != -1) {
+	while ((c = getopt (argc, argv, "adhup:t:sv")) != -1) {
 		switch (c) {
 		case 'a':
 			listenlocal = false;
@@ -61,6 +68,12 @@ int main(int argc, char **argv) {
 			return usage (1);
 		case 'v':
 			return showversion ();
+		case 'u':
+			so.httpauth = true;
+			break;
+		case 't':
+			httpauthfile = optarg;
+			break;
 		case 'p':
 			port = optarg;
 			break;
@@ -72,6 +85,24 @@ int main(int argc, char **argv) {
 		return usage (0);
 	}
 
+	so.accept_timeout = 0;
+	so.timeout = 3;
+
+	if (so.httpauth) {
+		if (!httpauthfile) {
+			eprintf ("No authentification user list set\n");
+			return usage (0);
+		}
+
+		int sz;
+		pfile = r_file_slurp (httpauthfile, &sz);
+		if (pfile) {
+			so.authtokens = r_str_split_list (pfile, "\n");
+		} else {
+			eprintf ("Empty list of HTTP users\\n");
+			return usage (0);
+		}
+	}
 #if USE_IOS_JETSAM
 	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
 #endif
@@ -95,15 +126,24 @@ int main(int argc, char **argv) {
 	eprintf ("http://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
+		free (pfile);
+		r_list_free (so.authtokens);
+		r_socket_free (s);
 		return 1;
 	}
+
+	(void)r_cons_new ();
+
 	while (!r_cons_singleton ()->context->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
-		rs = r_socket_http_accept (s, 0, timeout);
+		rs = r_socket_http_accept (s, &so);
 		if (!rs) {
 			continue;
+		}
+		if (!rs->auth) {
+			r_socket_http_response (rs, 401, "", 0, NULL);
 		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {
@@ -135,6 +175,8 @@ int main(int argc, char **argv) {
 				result = result_heap = malloc (1024 + escaped_len);
 				if (!result) {
 					perror ("malloc");
+					free (pfile);
+					r_list_free (so.authtokens);
 					return 1;
 				}
 				sprintf (result_heap,
@@ -151,6 +193,9 @@ int main(int argc, char **argv) {
 		free (result_heap);
 		result_heap = NULL;
 	}
+	r_cons_free ();
+	free (pfile);
+	r_list_free (so.authtokens);
 	r_socket_free (s);
 	return 0;
 }

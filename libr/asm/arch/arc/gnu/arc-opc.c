@@ -4873,9 +4873,8 @@ struct arc_operand_value *
 get_ext_suffix (char *s, char field)
 {
   struct arc_ext_operand_value *suffix = arc_ext_operands;
-  char ctype;
+  char ctype = 0;
 
-  ctype = 0;
   switch(field){
   case 'e' :
       ctype = arc_mach_a4 ? CACHEBYPASS5 : 0;

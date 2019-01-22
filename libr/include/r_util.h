@@ -5,7 +5,6 @@
 
 #include <r_types.h>
 #include <r_diff.h>
-#include <btree.h>
 #include <r_regex.h>
 #include <r_list.h> // radare linked list
 #include <r_skiplist.h> // skiplist
@@ -25,9 +24,10 @@
 #include <windows.h>
 int gettimeofday (struct timeval* p, void* tz);
 #endif
-#include <sys/time.h>
+#include "r_util/r_event.h"
 #include "r_util/r_assert.h"
 #include "r_util/r_itv.h"
+#include "r_util/r_signal.h"
 #include "r_util/r_rbtree.h"
 #include "r_util/r_big.h"
 #include "r_util/r_base64.h"
@@ -35,15 +35,14 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_buf.h"
 #include "r_util/r_bitmap.h"
 #include "r_util/r_constr.h"
+#include "r_util/r_date.h"
 #include "r_util/r_debruijn.h"
 #include "r_util/r_cache.h"
 #include "r_util/r_ctypes.h"
-#include "r_util/r_des.h"
 #include "r_util/r_file.h"
 #include "r_util/r_hex.h"
 #include "r_util/r_log.h"
 #include "r_util/r_mem.h"
-#include "r_util/r_mixed.h"
 #include "r_util/r_name.h"
 #include "r_util/r_num.h"
 #include "r_util/r_graph.h"
@@ -71,6 +70,8 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_json.h"
 #include "r_util/r_x509.h"
 #include "r_util/r_pkcs7.h"
+#include "r_util/pj.h"
+// requires io, core, ... #include "r_util/r_print.h"
 
 #ifdef __cplusplus
 extern "C" {

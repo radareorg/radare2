@@ -258,9 +258,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RList *vars, *args, *spargs;
 
 	if (!p->varlist) {
-                free (tstr);
+		free (tstr);
 		return false;
-        }
+	}
 	vars = p->varlist (p->anal, f, 'v');
 	args = p->varlist (p->anal, f, 'a');
 	spargs = p->varlist (p->anal, f, 'e');
@@ -326,7 +326,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	char bp[32];
 	if (p->anal->reg->name[R_REG_NAME_BP]) {
 		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) -1);
-		if (isupper (*str)) {
+		if (isupper ((ut8)*str)) {
 			r_str_case (bp, true);
 		}
 		bp[sizeof(bp) - 1] = 0;
@@ -363,8 +363,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 
 	bool ret = true;
 	if (len > strlen (tstr)) {
-		strncpy (str, tstr, strlen (tstr));
-		str[strlen (tstr)] = 0;
+		strcpy (str, tstr);
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
 		ret = false;

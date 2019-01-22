@@ -5,7 +5,6 @@
 
 #include <r_util/r_pool.h>
 #include <r_util/r_queue.h>
-#include <r_util.h>
 #include <r_types.h>
 
 #ifdef __cplusplus

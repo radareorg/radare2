@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2018 - pancake */
 
 #include <r_reg.h>
 
@@ -30,11 +30,11 @@ R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
 	int i = R_REG_TYPE_GPR;
 	RListIter *iter;
 	RRegItem *r;
-	if (name) {
-		r_list_foreach (reg->regset[i].regs, iter, r) {
-			if (r->flags && !strcmp (name, r->flags)) {
-				return r;
-			}
+	r_return_val_if_fail (reg && name, NULL);
+
+	r_list_foreach (reg->regset[i].regs, iter, r) {
+		if (r->flags && !strcmp (name, r->flags)) {
+			return r;
 		}
 	}
 	return NULL;

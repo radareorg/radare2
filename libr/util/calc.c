@@ -156,7 +156,6 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		}
 		return v;
 	case RNCNEG:
-		v = nc->number_value;
 		get_token (num, nc);
 		return Nneg (nc->number_value); //prim (num, nc, 1), 1);
 	case RNCINC:

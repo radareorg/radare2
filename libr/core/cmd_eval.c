@@ -53,9 +53,10 @@ static const char *help_msg_ec[] = {
 static const char *help_msg_eco[] = {
 	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
 	"eco", "", "list available themes",
+	"eco.", "", "display current theme name",
+	"ecoo", "", "reload current theme",
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
-	"ecoc", "", "display current theme name",
 	"Path:", "", "",
 	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
 	NULL
@@ -111,6 +112,42 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 		break;
 	}
 	return true;
+}
+
+static bool cmd_load_theme(RCore *core, const char *_arg) {
+	bool failed = false;
+	char *path;
+	if (!_arg || !*_arg) {
+		return false;
+	}
+	char *arg = strdup (_arg);
+
+	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
+	char *home = tmp ? r_str_home (tmp) : NULL;
+	free (tmp);
+
+	tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
+	path = tmp ? r_str_r2_prefix (tmp) : NULL;
+	free (tmp);
+
+	if (!load_theme (core, home)) {
+		if (load_theme (core, path)) {
+			curtheme = r_str_dup (curtheme, arg);
+		} else {
+			if (load_theme (core, arg)) {
+				curtheme = r_str_dup (curtheme, arg);
+			} else {
+				char *absfile = r_file_abspath (arg);
+				eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+				free (absfile);
+				failed = true;
+			}
+		}
+	}
+	free (home);
+	free (path);
+	free (arg);
+	return !failed;
 }
 
 static void list_themes_in_path(RList *list, const char *path) {
@@ -314,7 +351,7 @@ static int cmd_eval(void *data, const char *input) {
 	case 'c': // "ec"
 		switch (input[1]) {
 		case 'd': // "ecd"
-			r_cons_pal_init ();
+			r_cons_pal_init (core->cons->context);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_ec);
@@ -323,42 +360,13 @@ static int cmd_eval(void *data, const char *input) {
 			if (input[2] == 'j') {
 				nextpal (core, 'j');
 			} else if (input[2] == ' ') {
-				bool failed = false;
-				char *home, *path, *tmp;
-
-				tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), input + 3);
-				home = tmp ? r_str_home (tmp) : NULL;
-				free (tmp);
-
-				tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), input + 3);
-				path = tmp ? r_str_r2_prefix (tmp) : NULL;
-				free (tmp);
-
-				if (!load_theme (core, home)) {
-					if (load_theme (core, path)) {
-						//curtheme = r_str_dup (curtheme, path);
-						curtheme = r_str_dup (curtheme, input + 3);
-					} else {
-						if (load_theme (core, input + 3)) {
-							curtheme = r_str_dup (curtheme, input + 3);
-						} else {
-							char *absfile = r_file_abspath (input + 3);
-							eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
-							free (absfile);
-							failed = true;
-						}
-					}
-				}
-				free (home);
-				free (path);
-				if (failed) {
-					eprintf ("Something went wrong\n");
-				}
-			} else if (input[2] == 'c') {
-				eprintf ("%s\n", r_core_get_theme ());
+				cmd_load_theme (core, input + 3);
+			} else if (input[2] == 'o') {
+				cmd_load_theme (core, r_core_get_theme ());
+			} else if (input[2] == 'c' || input[2] == '.') {
+				r_cons_printf ("%s\n", r_core_get_theme ());
 			} else if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_eco);
-				break;
 			} else if (input[2] == 'q') {
 				RList *themes_list = r_core_list_themes (core);
 				RListIter *th_iter;
@@ -372,9 +380,9 @@ static int cmd_eval(void *data, const char *input) {
 				const char *th;
 				r_list_foreach (themes_list, th_iter, th) {
 					if (curtheme && !strcmp (curtheme, th)) {
-						eprintf ("> %s\n", th);
+						r_cons_printf ("> %s\n", th);
 					} else {
-						eprintf ("  %s\n", th);
+						r_cons_printf ("  %s\n", th);
 					}
 				}
 			}
@@ -464,7 +472,7 @@ static int cmd_eval(void *data, const char *input) {
 				return true;
 			}
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->pal.wordhl);
+			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->context->pal.wordhl);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			r_str_argv_free (argv);
 			R_FREE (word);

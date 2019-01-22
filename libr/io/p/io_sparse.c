@@ -46,10 +46,8 @@ static int __close(RIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	free (riom->buf);
-	riom->buf = NULL;
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (riom->buf);
+	R_FREE (fd->data);
 	return 0;
 }
 

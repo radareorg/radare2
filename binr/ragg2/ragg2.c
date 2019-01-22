@@ -2,13 +2,10 @@
 
 #include <r_egg.h>
 #include <r_bin.h>
-#include <r_print.h>
 #include <getopt.c>
 #include "../blob/version.c"
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
+#include <r_util/r_print.h>
+#include <r_util.h>
 
 
 static int usage(int v) {
@@ -71,15 +68,15 @@ static void list(REgg *egg) {
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
+	RBinArchOptions opts;
 	RBuffer *b;
-	if (!r_bin_use_arch (bin, arch, bits, format)) {
-		eprintf ("Cannot set arch\n");
-		r_bin_free (bin);
-		return 1;
-	}
-	b = r_bin_create (bin, code, codelen, NULL, 0); //data, datalen);
+	r_bin_arch_options_init (&opts, arch, bits);
+	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
-		write (1, b->buf, b->length);
+		size_t blen = b->length;
+		if (write (1, b->buf, blen) != blen) {
+			eprintf ("Failed to write buffer\n");
+		}
 		r_buf_free (b);
 	} else {
 		eprintf ("Cannot create binary for this format '%s'.\n", format);
@@ -102,10 +99,13 @@ static int openfile(const char *f, int x) {
 	}
 #endif
 #if _MSC_VER
-	_chsize (fd, 0);
+	int r = _chsize (fd, 0);
 #else
-	ftruncate (fd, 0);
+	int r = ftruncate (fd, 0);
 #endif
+	if (r != 0) {
+		eprintf ("Could not resize\n");
+	}
 	close (1);
 	dup2 (fd, 1);
 	return fd;
@@ -286,11 +286,14 @@ int main(int argc, char **argv) {
 		case 'L':
 			list (egg);
 			r_egg_free (egg);
+			free (sequence);
 			return 0;
 		case 'h':
 			r_egg_free (egg);
+			free (sequence);
 			return usage (1);
 		case 'v':
+			free (sequence);
 			r_egg_free (egg);
 			return blob_version("ragg2");
 		case 'z':
@@ -345,7 +348,9 @@ int main(int argc, char **argv) {
 		if (!strcmp (file, "-")) {
 			char buf[1024];
 			for (;;) {
-				fgets (buf, sizeof (buf) - 1, stdin);
+				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+					break;
+				}
 				if (feof (stdin)) {
 					break;
 				}
@@ -503,11 +508,17 @@ int main(int argc, char **argv) {
 
 	if (show_raw || show_hex || show_execute) {
 		if (show_execute) {
-			return r_egg_run (egg);
+			int r = r_egg_run (egg);
+			r_egg_free (egg);
+			return r;
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
-			write (1, b->buf, b->length);
+			size_t blen = b->length;
+			if (write (1, b->buf, blen) != blen) {
+				eprintf ("Failed to write buffer\n");
+				goto fail;
+			}
 		} else {
 			if (!format) {
 				eprintf ("No format specified wtf\n");
@@ -548,6 +559,7 @@ int main(int argc, char **argv) {
 				eprintf ("unknown executable format (%s)\n", format);
 				goto fail;
 			}
+			r_print_free (p);
 		}
 	}
 	r_egg_free (egg);

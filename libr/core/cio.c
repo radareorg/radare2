@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_core.h"
 
@@ -152,11 +152,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (op=='e') {
 		int wordsize = 1;
 		char *os, *p, *s = strdup (arg);
-		int n, from = 0, to = 0, dif = 0, step = 1;
-		n = from = to;
+		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
 		os = s;
-		to = UT8_MAX;
-		//
 		p = strchr (s, ' ');
 		if (p) {
 			*p = 0;
@@ -182,9 +179,6 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
 		dif = (to <= from)? UT8_MAX: to - from + 1;
 		if (wordsize == 1) {
-			if (to < 1 || to > UT8_MAX) {
-				to = UT8_MAX;
-			}
 			from %= (UT8_MAX + 1);
 		}
 		if (dif < 1) {
@@ -262,24 +256,28 @@ beach:
 	return ret;
 }
 
-
-static void choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
-	RAnalRange *range;
-	RListIter *iter;
-	r_list_foreach (core->anal->bits_ranges, iter, range) {
-		if (addr >= range->from && addr < range->to) {
-			*bits = range->bits;
-			return;
+static void __choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
+	if (core->anal) {
+		int ret =  r_anal_range_tree_find_bits_at (core->anal->rb_hints_ranges,
+							  addr);
+		if (ret) {
+			*bits = ret;
 		}
 	}
 }
 
 R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	int bits = 0;
-	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
+	const char *arch = NULL;
+	RBinObject *o = r_bin_cur_object (core->bin);
+	RBinSection *s = o? r_bin_get_section_at (o, addr, core->io->va): NULL;
+	if (s) {
+		arch = s->arch;
+		bits = s->bits;
+	}
 	if (!bits && !core->fixedbits) {
 		//if we found bits related with anal hints pick it up
-		choose_bits_anal_hints (core, addr, &bits);
+		__choose_bits_anal_hints (core, addr, &bits);
 	}
 	if (bits && !core->fixedbits) {
 		r_config_set_i (core->config, "asm.bits", bits);
@@ -361,7 +359,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 
 	if (b_size == 0 || b_size == (ut64) -1) {
-		res = r_io_use_fd (core->io, core->file->fd);
+		r_io_use_fd (core->io, core->file->fd);
 		file_sz = r_io_size (core->io);
 		if (file_sz == UT64_MAX) {
 			file_sz = 0;

@@ -83,7 +83,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (no_alias && (o->pinfo & INSN_ALIAS)) {
 			continue;
 		}
-		if (isdigit ((int)(o->subset[0])) && atoi (o->subset) != xlen) {
+		if (isdigit ((ut8)(o->subset[0])) && atoi (o->subset) != xlen) {
 			continue;
 		} else {
 			break;

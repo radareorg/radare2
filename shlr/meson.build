@@ -16,7 +16,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = 'e2c1cd46c06744beaceff42dd882de3a90f0a37c'
+    CS_TIP = '58a80a93f995c23a8681dcc38dccfc6bab9cd7a4'
     CS_BRA = 'master'
 
     capstone_git_user = 'aquynh'
@@ -153,7 +153,9 @@ sdb_files = [
   'sdb/src/dict.c',
   'sdb/src/disk.c',
   'sdb/src/fmt.c',
-  'sdb/src/ht.c',
+  'sdb/src/ht_uu.c',
+  'sdb/src/ht_up.c',
+  'sdb/src/ht_pp.c',
   'sdb/src/journal.c',
   'sdb/src/json.c',
   'sdb/src/lock.c',

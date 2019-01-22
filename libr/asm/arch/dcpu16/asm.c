@@ -207,7 +207,7 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 	ut16 wordA = 0, wordB = 0;
 	int basic_opcode = 0;
 	int non_basic_opcode = 0;
-	char line[256], *param;
+	char line[256] = {0}, *param;
 	int off = 0;
 	// uberflow!
 	clean_line (line, unoline);

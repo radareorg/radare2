@@ -1,4 +1,6 @@
 option('static_runtime', type: 'boolean', value: false)
+
+# For Windows
 option('r2_libdir', type: 'string', value: '')
 option('r2_incdir', type: 'string', value: '')
 option('r2_datdir', type: 'string', value: '')
@@ -9,10 +11,11 @@ option('r2_themes', type: 'string', value: '')
 option('r2_fortunes', type: 'string', value: '')
 option('r2_flags', type: 'string', value: '')
 option('r2_hud', type: 'string', value: '')
+
 option('r2_version_commit', type: 'string', value: '')
 option('r2_gittap', type: 'string', value: '')
 option('r2_gittip', type: 'string', value: '')
-option('checks_level', type: 'integer', value: 2, description: 'Value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL)')
+option('checks_level', type: 'integer', value: 9999, description: 'Value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL). By default its value depends on buildtype (2 on debug, 1 on release).')
 option('capstone_in_builddir', type: 'boolean', value: false, description: 'When true, capstone is downloaded in the build directory and not in the source one')
 option('use_sys_capstone', type: 'boolean', value: false)
 option('use_sys_magic', type: 'boolean', value: false)
@@ -22,3 +25,6 @@ option('use_sys_lz4', type: 'boolean', value: false)
 option('use_sys_xxhash', type: 'boolean', value: false)
 option('use_sys_openssl', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
+option('debugger', type: 'boolean', value: true)
+
+option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')
