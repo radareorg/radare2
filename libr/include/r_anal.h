@@ -890,6 +890,7 @@ typedef struct r_anal_ref_t {
 	ut64 at;
 	RAnalRefType type;
 } RAnalRef;
+R_API const char *r_anal_ref_type_tostring(RAnalRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {

@@ -349,3 +349,19 @@ R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
 	return fcn_get_refs (fcn, anal->dict_xrefs);
 }
+
+R_API const char *r_anal_ref_type_tostring(RAnalRefType t) {
+	switch (t) {
+	case R_ANAL_REF_TYPE_NULL:
+		return "null";
+	case R_ANAL_REF_TYPE_CODE:
+		return "code";
+	case R_ANAL_REF_TYPE_CALL:
+		return "call";
+	case R_ANAL_REF_TYPE_DATA:
+		return "data";
+	case R_ANAL_REF_TYPE_STRING:
+		return "string";
+	}
+	return "unknown";
+}
