@@ -107,14 +107,16 @@ static char *signature (RBinFile *bf, bool json) {
 		return NULL;
 	}
 	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	char *json_str = NULL;
 	if (json) {
 		PJ *pj = r_pkcs7_cms_json (bin->cms);
 		if (pj) {
-			char *json_str = strdup((char *)pj_string(pj));
+			json_str = strdup((char *)pj_string(pj));
 			pj_free (pj);
 			return json_str;
 		}
-		
+		json_str = strdup ("{}");
+		return json_str;
 	}
 	return r_pkcs7_cms_to_string (bin->cms);
 }
