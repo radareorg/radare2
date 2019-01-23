@@ -112,6 +112,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 };
 
 R_API int r_sys_fork() {
+eprintf ("GO FORK\n");
 #if HAVE_FORK
 #if __WINDOWS__ && !__CYGWIN__
 	return -1;

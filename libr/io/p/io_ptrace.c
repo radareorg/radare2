@@ -82,9 +82,10 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	/* reopen procpidmem if necessary */
 #if USE_PROC_PID_MEM
 	fd = RIOPTRACE_FD (desc);
-	if (RIOPTRACE_PID(desc) != RIOPTRACE_OPID(desc)) {
-		if (fd != -1)
+	if (RIOPTRACE_PID (desc) != RIOPTRACE_OPID (desc)) {
+		if (fd != -1) {
 			close (fd);
+		}
 		open_pidmem ((RIOPtrace*)desc->data);
 		fd = RIOPTRACE_FD (desc);
 		RIOPTRACE_OPID(desc) = RIOPTRACE_PID(desc);
@@ -139,8 +140,9 @@ static void open_pidmem (RIOPtrace *iop) {
 	char pidmem[32];
 	snprintf (pidmem, sizeof (pidmem), "/proc/%d/mem", iop->pid);
 	iop->fd = open (pidmem, O_RDWR);
-	if (iop->fd == -1)
+	if (iop->fd == -1) {
 		iop->fd = open (pidmem, O_RDONLY);
+	}
 #if 0
 	if (iop->fd == -1)
 		eprintf ("Warning: Cannot open /proc/%d/mem. "
@@ -171,12 +173,18 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
-	if (__plugin_open (io, file,0)) {
-		int pid = atoi (file+9);
+	if (__plugin_open (io, file, 0)) {
+		int pid = atoi (file + 9);
+		// ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
+eprintf ("ATTACH PTRACE %d = %d (me = %d)\n", pid, ret, getpid());
+#if 1
 		if (file[0] == 'p') { //ptrace
+perror("ptrace-attach");
 			ret = 0;
-		} else if (ret == -1) {
+		} else 
+#endif
+		if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf ("ptrace_attach: Operation not permitted\n");
 #else
@@ -264,6 +272,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cmd[3] == ' ') {
 				int pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
+eprintf ("ATTACH %d\n", pid);
 					(void)r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?
 					iop->pid = iop->tid = pid;

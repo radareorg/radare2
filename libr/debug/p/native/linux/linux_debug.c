@@ -80,46 +80,46 @@ int linux_handle_signals (RDebug *dbg) {
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 #warning DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
-			case SIGTRAP:
-			{
-				if (dbg->glob_libs || dbg->glob_unlibs) {
-					ut64 pc_addr = r_debug_reg_get (dbg, "PC");
-					RBreakpointItem *b = r_bp_get_at (dbg->bp, pc_addr - dbg->bpsize);
-					if (b && b->internal) {
-						char *p = strstr (b->data, "dbg.");
-						if (p) {
-							if (r_str_startswith (p, "dbg.libs")) {
-								const char *name;
-								if (strstr (b->data, "sym.imp.dlopen")) {
-									name = r_reg_get_name (dbg->reg, R_REG_NAME_A0);
-								} else {
-									name = r_reg_get_name (dbg->reg, R_REG_NAME_A1);
-								}
-								b->data = r_str_appendf (b->data, ";ps@r:%s", name);
-								dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
-							} else if (r_str_startswith (p, "dbg.unlibs")) {
-								dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
+		case SIGTRAP:
+		{
+			if (dbg->glob_libs || dbg->glob_unlibs) {
+				ut64 pc_addr = r_debug_reg_get (dbg, "PC");
+				RBreakpointItem *b = r_bp_get_at (dbg->bp, pc_addr - dbg->bpsize);
+				if (b && b->internal) {
+					char *p = strstr (b->data, "dbg.");
+					if (p) {
+						if (r_str_startswith (p, "dbg.libs")) {
+							const char *name;
+							if (strstr (b->data, "sym.imp.dlopen")) {
+								name = r_reg_get_name (dbg->reg, R_REG_NAME_A0);
+							} else {
+								name = r_reg_get_name (dbg->reg, R_REG_NAME_A1);
 							}
+							b->data = r_str_appendf (b->data, ";ps@r:%s", name);
+							dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
+						} else if (r_str_startswith (p, "dbg.unlibs")) {
+							dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
 						}
 					}
 				}
-				if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
-					dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
-					dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
-					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
-				}
 			}
-				break;
-			case SIGABRT: // 6 / SIGIOT // SIGABRT
-				dbg->reason.type = R_DEBUG_REASON_ABORT;
-				break;
-			case SIGSEGV:
-				dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
-				break;
-			case SIGCHLD:
-				dbg->reason.type = R_DEBUG_REASON_SIGNAL;
-			default:
-				break;
+			if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
+				dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
+				dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
+				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+			}
+		}
+			break;
+		case SIGABRT: // 6 / SIGIOT // SIGABRT
+			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			break;
+		case SIGSEGV:
+			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+			break;
+		case SIGCHLD:
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+		default:
+			break;
 		}
 		if (dbg->reason.signum != SIGTRAP) {
 			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
@@ -406,9 +406,11 @@ static int linux_stop_process(int pid) {
 }
 
 static int linux_attach_single_pid(RDebug *dbg, int ptid) {
-	int ret = 0;
 	linux_set_options (dbg, ptid);
-	ret = r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL, (r_ptrace_data_t)(size_t)NULL);
+	int ret = r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
+		(r_ptrace_data_t)(size_t)NULL);
+eprintf ("Atah %d = %d\n", ptid, ret);
+perror("attach");
 	return ret;
 }
 
@@ -456,7 +458,7 @@ int linux_attach(RDebug *dbg, int pid) {
 		}
 		int ret = linux_attach_single_pid (dbg, pid);
 		if (ret == -1) {
-			// ignore perror ("ptrace (PT_ATTACH)");
+			perror ("ptrace (PT_ATTACH)");
 		}
 	}
 out:
@@ -678,7 +680,20 @@ void print_fpu (void *f, int r){
 	int i;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;
 #if __x86_64__
-#if !__ANDROID__
+#if __ANDROID__
+	PRINT_FPU (fpregs);
+	for (i = 0;i < 8; i++) {
+		ut64 *b = (ut64 *)&fpregs.st_space[i*4];
+		ut32 *c = (ut32*)&fpregs.st_space;
+		float *f = (float *)&fpregs.st_space;
+		c = c + (i * 4);
+		f = f + (i * 4);
+		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
+			%0.3f (%08x) \n", i,
+			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
+			c[0], (float) f[1], c[1]);
+	}
+#else
 	eprintf ("---- x86-64 ----\n");
 	PRINT_FPU (fpregs);
 	eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
@@ -701,20 +716,7 @@ void print_fpu (void *f, int r){
 			eprintf ("\n");
 		}
 	}
-#else
-	PRINT_FPU (fpregs);
-	for (i = 0;i < 8; i++) {
-		ut64 *b = (ut64 *)&fpregs.st_space[i*4];
-		ut32 *c = (ut32*)&fpregs.st_space;
-		float *f = (float *)&fpregs.st_space;
-		c = c + (i * 4);
-		f = f + (i * 4);
-		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
-			%0.3f (%08x) \n", i,
-			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
-			c[0], (float) f[1], c[1]);
-	}
-#endif	// !__ANDROID__
+#endif // __ANDROID__
 #elif __i386__
 	if (!r) {
 #if !__ANDROID__
@@ -814,7 +816,6 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		struct user_fpregs_struct fpregs;
 		if (type == R_REG_TYPE_FPU) {
 #if __x86_64__
-#if !__ANDROID__
 			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
 			if (showfpu) {
 				print_fpu ((void *)&fpregs, 0);
@@ -827,14 +828,6 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			memcpy (buf, &fpregs, size);
 			return sizeof(fpregs);
-#else
-			ret1 = r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs, 0);
-			if (ret1 != 0) return false;
-			if (sizeof(fpregs) < size) size = sizeof(fpregs);
-			memcpy (buf, &fpregs, size);
-			return sizeof(fpregs);
-#endif // !__ANDROID__
 #elif __i386__
 #if !__ANDROID__
 			struct user_fpxregs_struct fpxregs;
@@ -875,14 +868,16 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
 #if __arm64__ || __aarch64__
-			{
 			struct iovec io = {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
 			};
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)NT_PRSTATUS, (r_ptrace_data_t)(size_t)&io);
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, 1, &io);
+			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
+			if (ret != 0) {
+				perror("ptrace");
 			}
-#elif __BSD__ && __POWERPC__ || __sparc__
+#elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
 #else
 			/* linux -{arm/x86/x86_64} */
@@ -897,16 +892,12 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			if (ret != 0) {
 				return false;
 			}
-			if (sizeof (regs) < size) {
-				size = sizeof (regs);
-			}
-			memcpy (buf, &regs, size);
+			memcpy (buf, &regs, R_MIN (sizeof (regs), size));
 			return sizeof (regs);
 		}
 		break;
 	}
 	return true;
-
 }
 
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
