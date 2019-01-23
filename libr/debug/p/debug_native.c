@@ -169,7 +169,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	if (!dbg || pid == dbg->pid)
 		return dbg->tid;
 #endif
-#if __linux__
+#if __linux__ || __ANDROID__
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__ && !__CYGWIN__
 	int ret;
