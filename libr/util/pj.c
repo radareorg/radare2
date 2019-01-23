@@ -118,7 +118,7 @@ R_API PJ *pj_k(PJ *j, const char *k) {
 
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
 	if (j) {
-		if (k && n != UT64_MAX) {
+		if (k) {
 			pj_k (j, k);
 			pj_n (j, n);
 		}
