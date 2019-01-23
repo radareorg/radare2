@@ -1401,6 +1401,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	switch (fmt) {
 	case 'j': {
 		pj = pj_new ();
+		if (!pj) {
+			break;
+		}
 		pj_a (pj);
 	} break;
 	case 'r':
