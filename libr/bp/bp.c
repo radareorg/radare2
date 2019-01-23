@@ -167,8 +167,9 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	}
 	b = r_bp_item_new (bp);
 	b->addr = addr + bp->delta;
-	if (bp->baddr > addr)
-		eprint ("base addr should not be larger than the breakpoint address.");
+	if (bp->baddr > addr) {
+		eprintf ("base addr should not be larger than the breakpoint address.\n");
+	}
 	b->orig_addr = addr - bp->baddr;
 	b->size = size;
 	b->enabled = true;
