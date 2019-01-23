@@ -1498,19 +1498,19 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (hint) {
 				pj_ks (pj, "esil", hint->esil);
 				pj_ks (pj, "ophint", hint->opcode);
-				pj_ki (pj, "jump", hint->jump);
-				pj_ki (pj, "fail", hint->fail);
+				pj_kn (pj, "jump", hint->jump);
+				pj_kn (pj, "fail", hint->fail);
 			}
 			pj_ks (pj, "esil", esilstr);
 			pj_kb (pj, "sign", op.sign);
-			pj_ki (pj, "prefix", op.prefix);
+			pj_kn (pj, "prefix", op.prefix);
 			pj_ki (pj, "id", op.id);
 			pj_k (pj, "opex");
 			pj_j (pj, opexstr);
 			pj_kn (pj, "addr", core->offset + idx);
 			pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
-			pj_ki (pj, "val", op.val);
-			pj_ki (pj, "ptr", op.ptr);
+			pj_kn (pj, "val", op.val);
+			pj_kn (pj, "ptr", op.ptr);
 			pj_ki (pj, "size", size);
 			pj_ks (pj, "type", r_anal_optype_to_string (op.type));
 			pj_ks (pj, "reg", op.reg);
@@ -1526,7 +1526,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (strcmp (p1, "null")) {
 				pj_ks (pj, "stack", p1);
 			}
-			pj_ki (pj, "stackptr", op.stackptr);
+			pj_kn (pj, "stackptr", op.stackptr);
 			const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
 				? r_anal_cond_tostring (op.cond): NULL;
 			pj_ks (pj, "cond", arg);
