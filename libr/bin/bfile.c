@@ -884,7 +884,7 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	r_hash_do_end (ctx, R_HASH_SHA1);
 	p = hash;
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
-	r_strbuf_appendf (o->info->hashes, " sha1 %s", hash);
+	r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
 	r_hash_free (ctx);
 	free (buf);
 	return true;

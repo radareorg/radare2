@@ -686,8 +686,6 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			}
 		}
 	} else {
-		ut64 limit = r_config_get_i (r->config, "cfg.hashlimit");
-		r_bin_file_hash (r->bin, limit, binfile->file);
 		// XXX: if type is 'fs' show something different?
 		char *tmp_buf;
 		if (IS_MODE_JSON (mode)) {
@@ -701,7 +699,6 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		pair_ut64 ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
-		pair_str ("hashes", r_strbuf_get (info->hashes), mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);
@@ -802,7 +799,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				int len = r_hash_calculate (rh, hash, (const ut8*)
 						binfile->buf->buf+h->from, h->to);
 				if (len < 1) {
-					eprintf ("Invaild wtf\n");
+					eprintf ("Invalid wtf\n");
 				}
 				r_hash_free (rh);
 				r_cons_printf ("%s  %d-%dc  ", h->type, h->from, h->to+h->from);
