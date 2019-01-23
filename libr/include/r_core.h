@@ -539,6 +539,7 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
 R_API int r_core_anal_ref_list(RCore *core, int rad);
 R_API int r_core_anal_all(RCore *core);
 R_API RList* r_core_anal_cycles (RCore *core, int ccl);
+R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn); // get all calls from a function
 
 /*tp.c*/
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
