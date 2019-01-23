@@ -196,15 +196,25 @@ static const char *help_detail_ae[] = {
 };
 
 static const char *help_msg_aea[] = {
-	"Examples:", "aea", " show regs used in a range",
-	"aea", " [ops]", "Show regs used in N instructions (all,read,{no,}written,memreads,memwrites)",
+	"Examples:", "aea", " show regs and memory accesses used in a range",
+	"aea", "  [ops]", "Show regs/memory accesses used in N instructions ",
 	"aea*", " [ops]", "Create mem.* flags for memory accesses",
 	"aeaf", "", "Show regs used in current function",
 	"aear", " [ops]", "Show regs read in N instructions",
 	"aeaw", " [ops]", "Show regs written in N instructions",
 	"aean", " [ops]", "Show regs not written in N instructions",
 	"aeaj", " [ops]", "Show aea output in JSON format",
-	"aeA", " [len]", "Show regs used in N bytes (subcommands are the same)",
+	"aeA", "  [len]", "Show regs used in N bytes (subcommands are the same)",
+	"Legend:", "", "",
+	"I", "", "input registers (read before being set)",
+	"A", "", "all regs accessed",
+	"R", "", "register values read",
+	"W", "", "registers written",
+	"N", "", "not written",
+	"@R", "", "memreads",
+	"@W", "", "memwrites",
+	"NOTE:", "", "mem{reads,writes} with PIC only fetch the offset",
+
 	NULL
 };
 
@@ -4236,15 +4246,42 @@ static void showregs (RList *list) {
 	r_cons_newline();
 }
 
+static void showmem (RList *list) {
+	if (!r_list_empty (list)) {
+		AeaMemItem *item;
+		RListIter *iter;
+		r_list_foreach (list, iter, item) {
+			r_cons_printf (" 0x%08"PFMT64x, item->addr);
+			
+		}
+	}
+	r_cons_newline ();
+}
+
 static void showregs_json (RList *list, PJ *pj) {
 	pj_a (pj);
 	if (!r_list_empty (list)) {
 		char *reg;
 		RListIter *iter;
+
 		r_list_foreach (list, iter, reg) {
 			pj_s (pj, reg);
 		}
 	}
+	pj_end (pj);
+}
+
+static void showmem_json (RList *list, PJ *pj) {
+	pj_a (pj);
+	if (!r_list_empty (list)) {
+		RListIter *iter;
+		AeaMemItem *item;
+
+		r_list_foreach (list, iter, item) {
+				pj_n (pj, item->addr);
+		}
+	}
+	
 	pj_end (pj);
 }
 
@@ -4379,8 +4416,19 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		showregs_json (stats.regread, pj);
 		pj_k (pj, "W");
 		showregs_json (stats.regwrite, pj);
-		pj_k (pj, "N");
-		showregs_json (regnow, pj);
+		if (!r_list_empty (regnow)){
+			pj_k (pj, "N");
+			showregs_json (regnow, pj);
+		}
+		if (!r_list_empty (mymemxsr)){
+			pj_k (pj, "@R");
+			showmem_json (mymemxsr, pj);
+		}
+		if (!r_list_empty (mymemxsw)){
+			pj_k (pj, "@W");
+			showmem_json (mymemxsw, pj);
+		}
+		
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
@@ -4395,29 +4443,20 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		showregs (stats.regread);
 		r_cons_printf (" W: ");
 		showregs (stats.regwrite);
-		r_cons_printf ("NW: ");
-		if (r_list_length (regnow)) {
+		if (r_list_length (regnow)){
+			r_cons_printf (" N: ");
 			showregs (regnow);
-		} else {
-			r_cons_newline();
 		}
-		RListIter *iter;
-		ut64 *n;
-		if (!r_list_empty (mymemxsr)) {
+		if (!r_list_empty (mymemxsr)){
 			r_cons_printf ("@R:");
-			r_list_foreach (mymemxsr, iter, n) {
-				r_cons_printf (" 0x%08"PFMT64x, *n);
-			}
-			r_cons_newline ();
+			showmem (mymemxsr);
 		}
-		if (!r_list_empty (mymemxsw)) {
+		if (!r_list_empty (mymemxsw)){
 			r_cons_printf ("@W:");
-			r_list_foreach (mymemxsw, iter, n) {
-				r_cons_printf (" 0x%08"PFMT64x, *n);
-			}
-			r_cons_newline ();
+			showmem (mymemxsw);
 		}
 	}
+	
 	r_list_free (mymemxsr);
 	r_list_free (mymemxsw);
 	mymemxsr = NULL;
