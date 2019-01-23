@@ -1252,18 +1252,30 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return (foo && *foo) ? foo : NULL;
 }
 
-static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
+static char *get_reloc_name(RCore *r, RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
+	char *demangled_name = NULL;
+	const char *lang = r_config_get (r->config, "bin.lang");
+	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (reloc->import && reloc->import->name) {
-		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->import->name,
+		if (bin_demangle) {
+			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
+		}
+		reloc_name = sdb_fmt ("reloc.%s_%d", demangled_name ? demangled_name : reloc->import->name,
 				      (int)(addr & 0xff));
 		if (!reloc_name) {
+			free (demangled_name);
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->symbol && reloc->symbol->name) {
-		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+		if (bin_demangle) {
+			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
+		}
+		reloc_name = sdb_fmt ("reloc.%s_%d", demangled_name ? demangled_name : reloc->symbol->name,
+				      (int)(addr & 0xff));
 		if (!reloc_name) {
+			free (demangled_name);
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
@@ -1273,6 +1285,7 @@ static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	} else {
 		// TODO(eddyb) implement constant relocs.
 	}
+	free (demangled_name);
 	return reloc_name;
 }
 
@@ -1358,7 +1371,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			r_flag_item_set_realname (fi, realname);
 		}
 	} else {
-		char *reloc_name = get_reloc_name (reloc, addr);
+		char *reloc_name = get_reloc_name (r, reloc, addr);
 		if (reloc_name) {
 			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 		} else {
@@ -1413,6 +1426,7 @@ static bool is_file_reloc(RBinReloc *r) {
 
 static int bin_relocs(RCore *r, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	const char *lang = r_config_get (r->config, "bin.lang");
 	RBIter iter;
 	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
@@ -1476,23 +1490,28 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			} else {
 				r_cons_printf (",{\"name\":");
 			}
+			char *mn = NULL;
 			// take care with very long symbol names! do not use sdb_fmt or similar
 			if (reloc->import) {
+				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
 				r_cons_printf ("\"%s\"", reloc->import->name);
 			} else if (reloc->symbol) {
+				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
 				r_cons_printf ("\"%s\"", reloc->symbol->name);
 			} else {
 				r_cons_printf ("null");
 			}
-
 			r_cons_printf (","
+				"\"demname\":\"%s\","
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d","
 				"\"is_ifunc\":%s}",
+				mn ? mn : "",
 				bin_reloc_type_name (reloc),
 				reloc->vaddr, reloc->paddr,
 				r_str_bool (reloc->is_ifunc));
+			free (mn);
 		} else if (IS_MODE_NORMAL (mode)) {
 			char *name = reloc->import
 				? strdup (reloc->import->name)
