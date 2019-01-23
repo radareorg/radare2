@@ -23,11 +23,10 @@ static void pj_comma(PJ *j) {
 
 R_API PJ *pj_new() {
 	PJ *j = R_NEW0 (PJ);
-	if (!j) {
-		return NULL;
+	if (j) {
+		j->sb = r_strbuf_new ("");
+		j->is_first = true;
 	}
-	j->sb = r_strbuf_new ("");
-	j->is_first = true;
 	return j;
 }
 
@@ -67,28 +66,24 @@ static PJ *pj_begin(PJ *j, char type) {
 		j->braces[j->level] = (type == '{') ? '}' : ']';
 		j->level++;
 		j->is_first = true;
-		return j;
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_o(PJ *j) {
 	if (j) {
 		pj_comma (j);
 		return pj_begin (j, '{');
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_a(PJ *j) {
 	if (j) {
 		pj_comma (j);
 		return pj_begin (j, '[');
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_end(PJ *j) {
@@ -103,138 +98,128 @@ R_API PJ *pj_end(PJ *j) {
 		j->is_first = false;
 		char msg[2] = { j->braces[j->level], 0 };
 		pj_raw (j, msg);
-		return j;
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_k(PJ *j, const char *k) {
-	if (j && k) {
-		r_return_val_if_fail (j && k, NULL);
-		j->is_key = false;
-		pj_s (j, k);
-		pj_raw (j, ":");
-		j->is_first = false;
-		j->is_key = true;
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k) {
+			r_return_val_if_fail (j && k, NULL);
+			j->is_key = false;
+			pj_s (j, k);
+			pj_raw (j, ":");
+			j->is_first = false;
+			j->is_key = true;
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
-	if (j && k && n != UT64_MAX) {
-		pj_k (j, k);
-		pj_n (j, n);
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k && n != UT64_MAX) {
+			pj_k (j, k);
+			pj_n (j, n);
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_kd(PJ *j, const char *k, double d) {
-	if (j && k) {
-		pj_k (j, k);
-		pj_d (j, d);
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k) {
+			pj_k (j, k);
+			pj_d (j, d);
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_ki(PJ *j, const char *k, int i) {
-	if (j && k) {
-		pj_k (j, k);
-		pj_i (j, i);
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k) {
+			pj_k (j, k);
+			pj_i (j, i);
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
-	if (j && v && *v) {
-		pj_k (j, k);
-		pj_s (j, v);
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (v && *v) {
+			pj_k (j, k);
+			pj_s (j, v);
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
-	if (j && k) {
-		pj_k (j, k);
-		pj_b (j, v);
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k) {
+			pj_k (j, k);
+			pj_b (j, v);
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_b(PJ *j, bool v) {
 	if (j) {
 		pj_comma (j);
 		pj_raw (j, r_str_bool (v));
-		return j;
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_s(PJ *j, const char *k) {
-	if (j && k) {
-		pj_comma (j);
-		pj_raw (j, "\"");
-		char *ek = r_str_escape_utf8_for_json (k, -1);
-		pj_raw (j, ek);
-		free (ek);
-		pj_raw (j, "\"");
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k) {
+			pj_comma (j);
+			pj_raw (j, "\"");
+			char *ek = r_str_escape_utf8_for_json (k, -1);
+			pj_raw (j, ek);
+			free (ek);
+			pj_raw (j, "\"");
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_j(PJ *j, const char *k) {
-	if (j && k && *k) {
-		pj_comma (j);
-		pj_raw (j, k);
-		return j;
-	} else {
-		return NULL;
+	if (j) {
+		if (k && *k) {
+			pj_comma (j);
+			pj_raw (j, k);
+		}
 	}
+	return j;
 }
 
 R_API PJ *pj_n(PJ *j, ut64 n) {
 	if (j) {
 		pj_comma (j);
 		pj_raw (j, sdb_fmt ("%" PFMT64u, n));
-		return j;
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_d(PJ *j, double d) {
 	if (j) {
 		pj_comma (j);
 		pj_raw (j, sdb_fmt ("%lf", d));
-		return j;
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API PJ *pj_i(PJ *j, int i) {
 	if (j) {
 		pj_comma (j);
 		pj_raw (j, sdb_fmt ("%d", i));
-		return j;
-	} else {
-		return NULL;
 	}
+	return j;
 }
 
 R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
@@ -277,14 +262,12 @@ R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
 			case 's':
 				pj_s (j, va_arg (ap, const char *));
 				break;
-			case 'S':
-				{
-					const char *s = va_arg (ap, const char *);
-					char *es = r_base64_encode_dyn (s, -1);
-					pj_s (j, es);
-					free (es);
-				}
-				break;
+			case 'S': {
+				const char *s = va_arg (ap, const char *);
+				char *es = r_base64_encode_dyn (s, -1);
+				pj_s (j, es);
+				free (es);
+			} break;
 			case 'n':
 				pj_n (j, va_arg (ap, ut64));
 				break;
