@@ -90,32 +90,42 @@ R_API PJ *pj_k(PJ *j, const char *k) {
 }
 
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
-	pj_k (j, k);
-	pj_n (j, n);
+	if (n) {
+		pj_k (j, k);
+		pj_n (j, n);
+	}
 	return j;
 }
 
 R_API PJ *pj_kd(PJ *j, const char *k, double d) {
-	pj_k (j, k);
-	pj_d (j, d);
+	if (d) {
+		pj_k (j, k);
+		pj_d (j, d);
+	}
 	return j;
 }
 
 R_API PJ *pj_ki(PJ *j, const char *k, int i) {
-	pj_k (j, k);
-	pj_i (j, i);
+	if (i && i != UT64_MAX) {
+		pj_k (j, k);
+		pj_i (j, i);
+	}
 	return j;
 }
 
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
-	pj_k (j, k);
-	pj_s (j, v);
+	if (v && *v) {
+		pj_k (j, k);
+		pj_s (j, v);
+	}
 	return j;
 }
 
 R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
-	pj_k (j, k);
-	pj_b (j, v);
+	if (v) {
+		pj_k (j, k);
+		pj_b (j, v);
+	}
 	return j;
 }
 
@@ -136,9 +146,11 @@ R_API PJ *pj_s(PJ *j, const char *k) {
 }
 
 R_API PJ *pj_j(PJ *j, const char *k) {
-	pj_comma (j);
-	char *ek = k;
-	pj_raw (j, ek);
+	if (k && *k) {
+		pj_comma (j);
+		char *ek = k;
+		pj_raw (j, ek);
+	}
 	return j;
 }
 

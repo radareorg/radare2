@@ -1471,8 +1471,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == 's') {
 			totalsize += op.size;
 		} else if (fmt == 'j') {
-			pj_o (pj);
-			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
 			char strsub[128] = { 0 };
 			// pc+33
 			r_parse_varsub (core->parser, NULL,
@@ -1490,74 +1488,45 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 						strsub, sizeof (strsub), be);
 				free (p);
 			}
+			pj_o (pj);
+			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
 			pj_ks (pj, "disasm", strsub);
 			pj_ks (pj, "mnemonic", mnem);
-			if (hint && hint->opcode) {
+			if (hint) {
+				pj_ks (pj, "esil", hint->esil);
 				pj_ks (pj, "ophint", hint->opcode);
+				pj_ki (pj, "jump", hint->jump);
+				pj_ki (pj, "fail", hint->fail);
 			}
+			pj_ks (pj, "esil", esilstr);
 			pj_kb (pj, "sign", op.sign);
 			pj_ki (pj, "prefix", op.prefix);
 			pj_ki (pj, "id", op.id);
-			if (opexstr && *opexstr) {
-				pj_k (pj, "opex");
-				pj_j (pj, opexstr);
-			}
+			pj_k (pj, "opex");
+			pj_j (pj, opexstr);
 			pj_kn (pj, "addr", core->offset + idx);
 			pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
-			if (op.val != UT64_MAX) {
-				pj_ki (pj, "val", op.val);
-			}
-			if (op.ptr != UT64_MAX) {
-				pj_ki (pj, "ptr", op.ptr);
-			}
+			pj_ki (pj, "val", op.val);
+			pj_ki (pj, "ptr", op.ptr);
 			pj_ki (pj, "size", size);
 			pj_ks (pj, "type", r_anal_optype_to_string (op.type));
-			if (op.reg) {
-				pj_ks (pj, "reg", op.reg);
-			}
-			if (op.ireg) {
-				pj_ks (pj, "ireg", op.ireg);
-			}
-			if (op.scale) {
-				pj_ki (pj, "scale", op.scale);
-			}
-			if (hint && hint->esil) {
-				pj_ks (pj, "esil", hint->esil);
-			} else if (*esilstr) {
-				pj_ks (pj, "esil", esilstr);
-			}
-			if (hint && hint->jump != UT64_MAX) {
-				op.jump = hint->jump;
-			}
-			if (op.jump != UT64_MAX) {
-				pj_ki (pj, "jump", op.jump);
-			}
-			if (hint && hint->fail != UT64_MAX) {
-				op.fail = hint->fail;
-			}
+			pj_ks (pj, "reg", op.reg);
+			pj_ks (pj, "ireg", op.ireg);
+			pj_ki (pj, "scale", op.scale);
 			if (op.refptr != -1) {
 				pj_ki (pj, "refptr", op.refptr);
 			}
-			if (op.fail != UT64_MAX) {
-				pj_ki (pj, "fail", op.fail);
-			}
 			pj_ki (pj, "cycles", op.cycles);
-			if (op.failcycles) {
-				pj_ki (pj, "failcycles", op.failcycles);
-			}
+			pj_ki (pj, "failcycles", op.failcycles);
 			pj_ki (pj, "delay", op.delay);
 			const char *p1 = r_anal_stackop_tostring (op.stackop);
-			if (p1 && *p1 && strcmp (p1, "null")) {
+			if (strcmp (p1, "null")) {
 				pj_ks (pj, "stack", p1);
 			}
-			if (op.stackptr) {
-				pj_ki (pj, "stackptr", op.stackptr);
-			}
+			pj_ki (pj, "stackptr", op.stackptr);
 			const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
 				? r_anal_cond_tostring (op.cond): NULL;
-			if (arg) {
-				pj_ks (pj, "cond", arg);
-			}
+			pj_ks (pj, "cond", arg);
 			pj_ks (pj, "family", r_anal_op_family_to_string (op.family));
 			pj_end (pj);
 		} else if (fmt == 'r') {
