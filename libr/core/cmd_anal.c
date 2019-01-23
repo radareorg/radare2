@@ -5913,34 +5913,46 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
 				}
 			} else if (input[1] == 'j') { // "axtj"
-				r_cons_printf ("[");
+				PJ *pj = pj_new ();
+				if (!pj) {
+					return false;
+				}
+				pj_a (pj);
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					char *str = get_buf_asm (core, addr, ref->addr, fcn, false);
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
-						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
+					pj_o (pj);
+					pj_kn (pj, "from", ref->addr);
+					pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					pj_ks (pj, "opcode", str);
 					if (fcn) {
-						r_cons_printf (",\"fcn_addr\":%"PFMT64u",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
+						pj_kn (pj, "fcn_addr", fcn->addr);
+						pj_ks (pj, "fcn_name", fcn->name);
 					}
 					RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, true);
 					if (fi) {
 						if (fcn) {
 							if (strcmp (fcn->name, fi->name)) {
-								r_cons_printf (",\"flag\":\"%s\"", fi->name);
+								pj_ks (pj, "flag", fi->name);
 							}
 						} else {
-							r_cons_printf (",\"name\":\"");
+							pj_k (pj, "name");
 							if (fi->offset != ref->addr) {
-								r_cons_printf ("%s+%d\"", fi->name,
-							                       (int)(ref->addr - fi->offset));
+								char *name_ref = strdup (fi->name);
+								strcat (name_ref, "+");
+								char fi_offset[32]; 
+								sprintf (fi_offset, "%d", (int)(ref->addr - fi->offset));
+								strcat (name_ref, fi_offset);
+								pj_s (pj, name_ref);
+								free (name_ref);
 							} else {
-								r_cons_printf ("%s\"", name);
+								pj_s (pj, name);
 							}
 						}
 						if (fi->realname && strcmp (fi->name, fi->realname)) {
 							char *escaped = r_str_escape (fi->realname);
 							if (escaped) {
-								r_cons_printf (",\"realname\":\"%s\"", escaped);
+								pj_ks (pj, "realname", escaped);
 								free (escaped);
 							}
 						}
@@ -5948,13 +5960,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *refname = core->anal->coreb.getNameDelta (core, ref->at);
 					if (refname) {
 						r_str_replace_ch (refname, ' ', 0, true);
-						r_cons_printf (",\"refname\":\"%s\"", refname);
+						pj_ks (pj, "refname", refname);
 						free (refname);
 					}
-					r_cons_printf ("}%s", iter->n? ",": "");
+					pj_end (pj);
 					free (str);
 				}
-				r_cons_printf ("]");
+				pj_end (pj);
+				r_cons_printf ("%s", pj_string (pj));
+				pj_free (pj);
 				r_cons_newline ();
 			} else if (input[1] == 'g') { // axtg
 				r_list_foreach (list, iter, ref) {
