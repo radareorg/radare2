@@ -4675,6 +4675,11 @@ static int cmd_print(void *data, const char *input) {
 				// get function in current offset
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+
+				// validate that a function was found in the given address
+				if (!f) {
+					break;
+				}
 				// get all the calls of the function
 				refs = r_core_anal_fcn_get_calls (core, f);
 
