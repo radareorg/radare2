@@ -24,6 +24,8 @@ static const char *help_msg_pdf[] = {
 	"Usage: pdf[bf]", "", "disassemble function",
 	"pdf", "", "disassemble function",
 	"pdfs", "", "disassemble function summary",
+	"pdfc", "", "print all calls from this function",
+	"pdfcj", "", "print all calls from this function in JSON format",
 	NULL
 };
 
@@ -4663,6 +4665,72 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			if (input[2] == '?') {
 				r_core_cmd_help(core, help_msg_pdf);
+			} else if (input[2] == 'c') { // "pdfc"
+
+				RListIter *iter;
+				RAnalRef *refi;
+				RList *refs = NULL;
+				PJ *pj = NULL;
+
+				// get function in current offset
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+				// get all the calls of the function
+				refs = r_core_anal_fcn_get_calls (core, f);
+
+				// sanity check
+				if (!r_list_empty (refs)) {
+					// check for bounds
+					if (input[3] !=0) {
+						if (input[3] == 'j') { // "pdfcj"
+							pj = pj_new ();
+							pj_a (pj);
+						}
+					}
+
+					// store current configurations
+					RConfigHold *hc = r_config_hold_new (core->config);
+					r_config_save_num (hc, "asm.offset", NULL);
+					r_config_save_num (hc, "asm.comments", NULL);
+					r_config_save_num (hc, "asm.tabs", NULL);
+					r_config_save_num (hc, "asm.bytes", NULL);
+					r_config_save_num (hc, "emu.str", NULL);
+
+
+					// temporarily replace configurations
+					r_config_set_i (core->config, "asm.offset", true);
+					r_config_set_i (core->config, "asm.comments", false);
+					r_config_set_i (core->config, "asm.tabs", 0);
+					r_config_set_i (core->config, "asm.bytes", false);
+					r_config_set_i (core->config, "emu.str", false);
+
+					// iterate over all call references
+					r_list_foreach (refs, iter, refi) {
+						if (pj) {
+							RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+							char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+							pj_o (pj);
+							pj_ks (pj, "dest", dst);
+							pj_kn (pj, "addr", refi->addr);
+							pj_kn (pj, "at", refi->at);
+							pj_end (pj);
+						} else {
+							char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
+							r_cons_printf ("%s", s);
+						}
+					}
+
+					// restore saved configuration
+					r_config_restore (hc);
+					r_config_hold_free (hc);
+
+					// print json object
+					if (pj) {
+						pj_end (pj);
+						r_cons_printf ("%s\n", pj_string (pj));
+						pj_free (pj);
+					}
+				}
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
