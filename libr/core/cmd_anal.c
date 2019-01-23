@@ -1496,12 +1496,21 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_ks (pj, "disasm", strsub);
 			pj_ks (pj, "mnemonic", mnem);
 			if (hint) {
-				pj_ks (pj, "esil", hint->esil);
 				pj_ks (pj, "ophint", hint->opcode);
-				pj_kn (pj, "jump", hint->jump);
-				pj_kn (pj, "fail", hint->fail);
 			}
-			pj_ks (pj, "esil", esilstr);
+			if (hint && hint->jump != UT64_MAX) {
+				op.jump = hint->jump;
+			}
+			if (hint && hint->fail != UT64_MAX) {
+				op.fail = hint->fail;
+			}
+			if (op.jump != UT64_MAX) {
+				pj_kn (pj, "jump", op.jump);
+			}
+			if (op.fail != UT64_MAX) {
+				pj_kn (pj, "fail", op.fail);
+			}
+			pj_ks (pj, "esil", (hint && hint->esil)? hint->esil: esilstr);
 			pj_kb (pj, "sign", op.sign);
 			pj_kn (pj, "prefix", op.prefix);
 			pj_ki (pj, "id", op.id);
@@ -1510,7 +1519,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_kn (pj, "addr", core->offset + idx);
 			pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
 			pj_kn (pj, "val", op.val);
-			pj_kn (pj, "ptr", op.ptr);
+			if (op.ptr != UT64_MAX) {
+				pj_kn (pj, "ptr", op.ptr);
+			}
 			pj_ki (pj, "size", size);
 			pj_ks (pj, "type", r_anal_optype_to_string (op.type));
 			pj_ks (pj, "reg", op.reg);
