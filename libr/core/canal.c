@@ -2341,6 +2341,26 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	return 0;
 }
 
+// for a given function returns an RList of all functions that were called in it
+R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn) {
+	RList *refs = NULL;
+	RAnalRef *refi;
+	RListIter *iter;
+
+	// get all references from this function
+	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	// sanity check
+	if (!r_list_empty (refs)) {
+		// iterate over all the references and remove these which aren't of type call
+		r_list_foreach (refs, iter, refi) {
+			if (refi->type != R_ANAL_REF_TYPE_CALL) {
+				r_list_delete (refs, iter);
+			}
+		}
+	}
+	return refs;
+}
+
 // Lists function names and their calls (uniqified)
 static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	RListIter *refiter;
@@ -2358,7 +2378,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	// Iterate over all functions
 	r_list_foreach (fcns, fcniter, fcn) {
 		// Get all refs for a function
-		refs = r_anal_fcn_get_refs (core->anal, fcn);
+		refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
 		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
 	
@@ -2381,9 +2401,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 			}
 			// Iterate over all refs from a function
 			r_list_foreach (refs, refiter, refi) {
-				if (refi->type != R_ANAL_REF_TYPE_CALL) {
-					continue;
-				}
 				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
 				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 				if (pj) { // Append calee json item

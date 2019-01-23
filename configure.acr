@@ -172,6 +172,10 @@ IFEQ USEROSTYPE gnulinux ; {
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 1 ;
 }{
+IFEQ USEROSTYPE android ; {
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 1 ;
+}{
 IFEQ USEROSTYPE mingw32 ; {
 	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
@@ -182,7 +186,7 @@ IFEQ USEROSTYPE solaris ; {
 }{
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
-} } }
+} } } }
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;
