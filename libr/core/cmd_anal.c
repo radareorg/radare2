@@ -6049,7 +6049,14 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == 'j') { // "axtj"
-				r_cons_print ("[]\n");
+				PJ *pj = pj_new ();
+				if (!pj) {
+					return false;
+				}
+				pj_a (pj);
+				pj_end (pj);
+				r_cons_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
 			}
 		}
 		r_list_free (list);
@@ -6122,15 +6129,25 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						r_cons_printf ("0x%" PFMT64x "\n", ref->at);
 					}
 				} else if (input[1] == 'j') { // "axfj"
-					r_cons_print ("[");
+					PJ *pj = pj_new ();
+					if (!pj) {
+						return false;
+					}
+					pj_a (pj);
 					r_list_foreach (list, iter, ref) {
 						r_io_read_at (core->io, ref->at, buf, 12);
 						r_asm_set_pc (core->assembler, ref->at);
 						r_asm_disassemble (core->assembler, &asmop, buf, 12);
-						r_cons_printf ("{\"from\":%" PFMT64u ",\"to\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
-								ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), r_asm_op_get_asm (&asmop), iter->n? ",": "");
+						pj_o (pj);
+						pj_kn (pj, "from", ref->at);
+						pj_kn (pj, "to", ref->addr);
+						pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+						pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
+						pj_end (pj);
 					}
-					r_cons_print ("]\n");
+					pj_end (pj);
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
 				} else if (input[1] == '*') { // "axf*"
 					// TODO: implement multi-line comments
 					r_list_foreach (list, iter, ref) {
