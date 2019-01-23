@@ -1693,6 +1693,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	} else if (fmt == 'j') {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 	r_anal_esil_free (esil);
 }
