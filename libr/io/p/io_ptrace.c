@@ -177,13 +177,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		int pid = atoi (file + 9);
 		// ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
-eprintf ("ATTACH PTRACE %d = %d (me = %d)\n", pid, ret, getpid());
-#if 1
 		if (file[0] == 'p') { //ptrace
-perror("ptrace-attach");
 			ret = 0;
 		} else 
-#endif
 		if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf ("ptrace_attach: Operation not permitted\n");
@@ -272,7 +268,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cmd[3] == ' ') {
 				int pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
-eprintf ("ATTACH %d\n", pid);
 					(void)r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?
 					iop->pid = iop->tid = pid;

@@ -407,11 +407,8 @@ static int linux_stop_process(int pid) {
 
 static int linux_attach_single_pid(RDebug *dbg, int ptid) {
 	linux_set_options (dbg, ptid);
-	int ret = r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
+	return r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL,
 		(r_ptrace_data_t)(size_t)NULL);
-eprintf ("Atah %d = %d\n", ptid, ret);
-perror("attach");
-	return ret;
 }
 
 static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
