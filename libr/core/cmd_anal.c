@@ -1518,7 +1518,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_j (pj, opexstr);
 			pj_kn (pj, "addr", core->offset + idx);
 			pj_ks (pj, "bytes", r_hex_bin2strdup (buf, ret));
-			pj_kn (pj, "val", op.val);
+			if (op.ptr != UT64_MAX) {
+				pj_kn (pj, "val", op.val);
+			}
 			if (op.ptr != UT64_MAX) {
 				pj_kn (pj, "ptr", op.ptr);
 			}
