@@ -2378,7 +2378,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	// Iterate over all functions
 	r_list_foreach (fcns, fcniter, fcn) {
 		// Get all refs for a function
-		refs = r_anal_fcn_get_refs (core->anal, fcn);
+		refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
 		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
 	
@@ -2401,9 +2401,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 			}
 			// Iterate over all refs from a function
 			r_list_foreach (refs, refiter, refi) {
-				if (refi->type != R_ANAL_REF_TYPE_CALL) {
-					continue;
-				}
 				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
 				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 				if (pj) { // Append calee json item
