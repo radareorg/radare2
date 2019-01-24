@@ -1894,7 +1894,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 		case 'g':
-			r_core_visual_view_graph (core);
+			if (r_core_visual_view_graph (core)) {
+				return;
+			}
 			break;
 		case 'r':
 			r_core_visual_view_rop (core);
