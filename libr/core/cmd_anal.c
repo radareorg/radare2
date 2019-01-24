@@ -6055,7 +6055,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 				pj_a (pj);
 				pj_end (pj);
-				r_cons_printf ("%s\n", pj_string (pj));
+				r_cons_println (pj_string (pj));
 				pj_free (pj);
 			}
 		}
@@ -6146,7 +6146,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						pj_end (pj);
 					}
 					pj_end (pj);
-					r_cons_printf ("%s\n", pj_string (pj));
+					r_cons_println (pj_string (pj));
 					pj_free (pj);
 				} else if (input[1] == '*') { // "axf*"
 					// TODO: implement multi-line comments
