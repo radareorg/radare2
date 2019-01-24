@@ -834,7 +834,7 @@ static void var_accesses_list(RAnal *a, RAnalFunction *fcn, int delta, const cha
 			fcn->addr, 1, delta, typestr);
 	const char *xss = sdb_const_get (a->sdb_fcns, var_local, 0);
 	if (xss && *xss) {
-		r_cons_printf ("%s\n", xss);
+		r_cons_println (xss);
 	} else {
 		r_cons_newline ();
 	}
@@ -963,7 +963,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	}
 
 	if (pj) {
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -7413,12 +7413,48 @@ beach:
 }
 
 static void cmd_anal_abt(RCore *core, const char *input) {
-	bool json = false;
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_abt); break;
 	case 'j':
-		json = true;
 		input++;
+		ut64 addr;
+		char *p;
+		int n = 1;
+		p = strchr (input + 1, ' ');
+		if (p) {
+			*p = '\0';
+			n = *(++p)? r_num_math (core->num, p): 1;
+		}
+		addr = r_num_math (core->num, input + 1);
+		RList *paths = r_core_anal_graph_to (core, addr, n);
+		if (paths) {
+			RAnalBlock *bb;
+			PJ *pj = pj_new ();
+			if (!pj) {
+				return;
+			}
+			RList *path;
+			RListIter *pathi;
+			RListIter *bbi;
+			pj_a (pj);
+			r_list_foreach (paths, pathi, path) {
+				pj_a (pj);
+				r_list_foreach (path, bbi, bb) {
+					char bb_addr[16];
+					snprintf (bb_addr, sizeof (bb_addr), "0x%08" PFMT64x, bb->addr);
+					pj_j (pj, bb_addr);
+				}
+				pj_end (pj);
+				r_list_purge (path);
+				free (path);
+			}
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
+			r_list_purge (paths);
+			free (paths);
+		}
+		break;
 	case ' ': {
 		ut64 addr;
 		char *p;
@@ -7435,35 +7471,14 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			RList *path;
 			RListIter *pathi;
 			RListIter *bbi;
-			bool first_path = true, first_bb = true;
-			if (json) {
-				r_cons_printf ("[");
-			}
 			r_list_foreach (paths, pathi, path) {
-				if (json) {
-					if (!first_path) {
-						r_cons_printf (", ");
-					}
-				}
-				r_cons_printf ("[");
 				r_list_foreach (path, bbi, bb) {
-					if (json && !first_bb) {
-						r_cons_printf (", ");
-					}
 					r_cons_printf ("0x%08" PFMT64x, bb->addr);
-					if (!json) {
-						r_cons_printf ("\n");
-					}
-					first_bb = false;
+					r_cons_printf ("\n");
 				}
-				r_cons_printf ("%s", json? "]": "\n");
-				first_bb = true;
-				first_path = false;
+				r_cons_println("");
 				r_list_purge (path);
 				free (path);
-			}
-			if (json) {
-				r_cons_printf ("]\n");
 			}
 			r_list_purge (paths);
 			free (paths);
