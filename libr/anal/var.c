@@ -649,8 +649,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? 1 : 0;
 	if (*sign == '+') {
-		const char *pfx = ((ptr < fcn->maxstack) && (type == 's')) ? VARPREFIX : ARGPREFIX;
-		bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
+		const bool isarg = (ptr >= fcn->maxstack) || (type != 's');
+		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
 		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, isarg, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, ptr, rw, op->addr);
