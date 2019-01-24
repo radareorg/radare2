@@ -869,23 +869,29 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		eprintf ("Cannot compute hash\n");
 		return -1;
 	}
+	//  XXX should use io api not raw file slurping
 	buf = r_file_slurp (file, &buf_len);
-	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
-#define BLK_SIZE_OFF 1024
-	for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
-		(void)r_hash_do_md5 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
-		(void)r_hash_do_sha1 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
+	if (!buf) {
+		return false;
 	}
-	r_hash_do_end (ctx, R_HASH_MD5);
-	p = hash;
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
-	o->info->hashes = r_strbuf_new ("");
-	r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
-	r_hash_do_end (ctx, R_HASH_SHA1);
-	p = hash;
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
-	r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
-	r_hash_free (ctx);
+	if (buf) {
+		ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+#define BLK_SIZE_OFF 1024
+		for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
+			(void)r_hash_do_md5 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
+			(void)r_hash_do_sha1 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
+		}
+		r_hash_do_end (ctx, R_HASH_MD5);
+		p = hash;
+		r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
+		o->info->hashes = r_strbuf_new ("");
+		r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
+		r_hash_do_end (ctx, R_HASH_SHA1);
+		p = hash;
+		r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
+		r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
+		r_hash_free (ctx);
+	}
 	free (buf);
 	return true;
 }
