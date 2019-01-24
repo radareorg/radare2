@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2018 - earada, pancake */
 
 #include <r_core.h>
+#include <r_config.h>
 #include "r_util.h"
 #include "r_util/r_time.h"
 
@@ -798,7 +799,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				int len = r_hash_calculate (rh, hash, (const ut8*)
 						binfile->buf->buf+h->from, h->to);
 				if (len < 1) {
-					eprintf ("Invaild wtf\n");
+					eprintf ("Invalid wtf\n");
 				}
 				r_hash_free (rh);
 				r_cons_printf ("%s  %d-%dc  ", h->type, h->from, h->to+h->from);

@@ -124,6 +124,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
 	}
+	r_strbuf_free (rb->hashes);
 	free (rb->intrp);
 	free (rb->file);
 	free (rb->type);

@@ -1314,12 +1314,13 @@ int main(int argc, char **argv, char **envp) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
+			ut64 limit = r_config_get_i (r.config, "cfg.hashlimit");
 			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
 			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (iod && r_core_hash_load (&r, iod->name) == false) {
+			if (iod && r_bin_file_hash (r.bin, limit, iod->name) == false) {
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
