@@ -29,7 +29,7 @@ static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
 	RSpaces *s = (RSpaces *)user;
 	RAnal *anal = container_of (s, RAnal, meta_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
-	r_meta_space_unset_for (anal, se->data.unset.space->name);
+	r_meta_space_unset_for (anal, se->data.unset.space);
 }
 
 static void meta_count_for(REvent *ev, int type, void *user, void *data) {

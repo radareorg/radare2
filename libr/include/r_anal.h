@@ -1612,7 +1612,7 @@ R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
 R_API void r_meta_free(RAnal *m);
-R_API void r_meta_space_unset_for(RAnal *a, const char *space_name);
+R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);

@@ -861,8 +861,8 @@ static int meta_unset_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-R_API void r_meta_space_unset_for(RAnal *a, const char *space_name) {
-	RAnalMetaUserItem ui = { .anal = a, .user = (void *)space_name };
+R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space) {
+	RAnalMetaUserItem ui = { .anal = a, .user = (void *)space };
 	r_meta_list_cb (a, R_META_TYPE_ANY, 0, meta_unset_cb, &ui, UT64_MAX);
 }
 
