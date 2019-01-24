@@ -856,8 +856,17 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	ut64 buf_len = 0;
 	int i;
 	RBinFile *bf = bin->cur;
+	if (!bf) {
+		return 0;
+	}
 	RBinObject *o = bf->o;
+	if (!o) {
+		return 0;
+	}
 	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
+	if (!iod) {
+		return 0;
+	}
 
 	if (!file && iod) {
 		file = iod->name;
