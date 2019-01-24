@@ -146,7 +146,7 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 	}
 
 	if (str_for_copy) {
-		strcpy  (dst, str_for_copy);
+		r_str_ncpy  (dst, str_for_copy, str_for_copy_len + 1);
 	} else {
 		memset (dst, 0, str_for_copy_len);
 	}
