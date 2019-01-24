@@ -6,6 +6,7 @@
 #include <r_list.h>
 #include <r_cons.h>
 #include <r_util.h>
+#include "i/private.h"
 
 static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
@@ -148,13 +149,13 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;
-	int curspace = core->anal->zign_spaces.space_idx;
+	const RSpace *curspace = r_spaces_current (&core->anal->zign_spaces);
 
 	if (name) {
 		zigname = r_str_new (name);
 	} else {
-		if (curspace != -1) {
-			zigname = r_str_newf ("%s.", core->anal->zign_spaces.spaces[curspace]);
+		if (curspace) {
+			zigname = r_str_newf ("%s.", curspace->name);
 		}
 		zigname = r_str_appendf (zigname, "%s", fcn->name);
 	}
@@ -508,35 +509,35 @@ static int cmdSpace(void *data, const char *input) {
 			eprintf ("usage: zs+zignspace\n");
 			return false;
 		}
-		r_space_push (zs, input + 1);
+		r_spaces_push (zs, input + 1);
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
 			eprintf ("usage: zsr newname\n");
 			return false;
 		}
-		r_space_rename (zs, NULL, input + 2);
+		r_spaces_rename (zs, NULL, input + 2);
 		break;
 	case '-':
 		if (input[1] == '\x00') {
-			r_space_pop (zs);
+			r_spaces_pop (zs);
 		} else if (input[1] == '*') {
-			r_space_unset (zs, NULL);
+			r_spaces_unset (zs, NULL);
 		} else {
-			r_space_unset (zs, input + 1);
+			r_spaces_unset (zs, input + 1);
 		}
 		break;
 	case 'j':
 	case '*':
 	case '\0':
-		r_space_list (zs, input[0]);
+		spaces_list (zs, input[0]);
 		break;
 	case ' ':
 		if (!input[1]) {
 			eprintf ("usage: zs zignspace\n");
 			return false;
 		}
-		r_space_set (zs, input + 1);
+		r_spaces_set (zs, input + 1);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_zs);

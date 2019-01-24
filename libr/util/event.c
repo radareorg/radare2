@@ -41,7 +41,7 @@ static bool add_hook(void *cb, const ut64 k, const void *v) {
 	return true;
 }
 
-R_API void r_event_hook(REvent *ev, REventType type, REventCallback cb) {
+R_API void r_event_hook(REvent *ev, int type, REventCallback cb) {
 	r_return_if_fail (ev);
 	if (type == R_EVENT_ALL) {
 		ht_up_foreach (ev->callbacks, add_hook, cb);
@@ -58,7 +58,7 @@ static bool del_hook(void *cb, const ut64 k, const void *v) {
 	return true;
 }
 
-R_API void r_event_unhook(REvent *ev, REventType type, REventCallback cb) {
+R_API void r_event_unhook(REvent *ev, int type, REventCallback cb) {
 	r_return_if_fail (ev);
 	if (type == R_EVENT_ALL) {
 		ht_up_foreach (ev->callbacks, del_hook, cb);
@@ -68,7 +68,7 @@ R_API void r_event_unhook(REvent *ev, REventType type, REventCallback cb) {
 	}
 }
 
-R_API void r_event_send(REvent *ev, REventType type, void *data) {
+R_API void r_event_send(REvent *ev, int type, void *data) {
 	r_return_if_fail (ev && !ev->incall);
 
 	void **it;
@@ -77,7 +77,7 @@ R_API void r_event_send(REvent *ev, REventType type, void *data) {
 	ev->incall = true;
 	r_pvector_foreach (cbs, it) {
 		REventCallback cb = *it;
-		cb (ev, type, data);
+		cb (ev, type, ev->user, data);
 	}
 	ev->incall = false;
 }

@@ -7,6 +7,7 @@
 #if __UNIX__
 #include <signal.h>
 #endif
+#include "i/private.h"
 
 #define DB core->sdb
 
@@ -1170,20 +1171,22 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 		return;
 	}
 	int length = strlen (msg);
-	RSpaces zs = core->anal->zign_spaces;
-	int j, i = 0;
-	for (j = 0; j < R_SPACES_MAX; j++) {
-		if (zs.spaces[j]) {
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
-			if (!strncmp (msg, zs.spaces[j], length)) {
-				if (i + 1 < TMP_ARGV_SZ) {
-					tmp_argv[i++] = zs.spaces[j];
-				}
+	RSpaces *zs = &core->anal->zign_spaces;
+	RSpace *s;
+	RBIter it;
+	int i = 0;
+
+	r_rbtree_foreach (zs->spaces, it, s, RSpace, rb) {
+		if (i == TMP_ARGV_SZ - 1) {
+			break;
+		}
+		if (!strncmp (msg, s->name, length)) {
+			if (i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = s->name;
 			}
 		}
 	}
+
 	if (strlen (msg) == 0 && i + 1 < TMP_ARGV_SZ) {
 		tmp_argv[i++] = "*";
 	}
@@ -2205,7 +2208,38 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
 
-static void cb_event_handler(REvent *ev, REventType event_type, void *data) {
+R_IPI void spaces_list(RSpaces *sp, int mode) {
+	RBIter it;
+	RSpace *s;
+	bool first = true;
+	const RSpace *cur = r_spaces_current (sp);
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
+	r_rbtree_foreach (sp->spaces, it, s, RSpace, rb) {
+		int count = r_spaces_count (sp, s->name);
+		if (mode == 'j') {
+			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
+				       !first? ",": "", s->name,
+				       cur == s? ",\"selected\":true": "",
+				       count);
+		} else if (mode == '*') {
+			r_cons_printf ("%s %s\n", sp->name, s->name);
+		} else {
+			r_cons_printf ("%d %c %s\n", count, cur == s? '*': '.',
+				       s->name);
+		}
+		first = false;
+	}
+	if (mode == '*' && r_spaces_current (sp)) {
+		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));
+	}
+	if (mode == 'j') {
+		r_cons_printf ("]\n");
+	}
+}
+
+static void cb_event_handler(REvent *ev, int event_type, void *user, void *data) {
 	RCore *core = (RCore *)ev->user;
 	if (!core->log_events) {
 		return;
@@ -2362,7 +2396,6 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
-	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
