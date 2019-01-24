@@ -16,6 +16,7 @@ F+= spec
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-mips-32
+F+= cc-mips-64
 F+= cc-m68k-32
 F+= cc-sparc-32
 F+= cc-arm-64
