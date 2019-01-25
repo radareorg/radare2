@@ -4618,11 +4618,24 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
-				char *fmt = r_str_newf ("d %s", input + 2);
-				if (fmt) {
-					cmd_print (core, fmt);
-					strcpy (fmt + 2, input + 3);
-					cmd_print (core, fmt);
+				char *offs = r_str_newf ("%s", input + 2);
+				if (offs) {
+					ut64 sz = r_num_math (core->num, offs);
+					char *fmt;
+					if (((st64)sz * -1) > core->offset) {
+						// the offset is smaller than the negative value
+						// so only print -offset
+						fmt = r_str_newf ("d %"PFMT64d, -1 * core->offset);
+					} else {
+						fmt = r_str_newf ("d %s", input + 2);
+					}
+					if (fmt) {
+						cmd_print (core, fmt);
+						strcpy (fmt + 2, input + 3);
+						cmd_print (core, fmt);
+						free (fmt);
+					}
+					free (offs);
 				}
 				ret = 0;
 				goto beach;
