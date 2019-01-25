@@ -205,6 +205,7 @@ out:
 	free (k2);
 	free (v2);
 	free (refs);
+	free (vars);
 
 	return retval;
 }
