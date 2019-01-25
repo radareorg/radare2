@@ -362,7 +362,7 @@ R_API bool r_meta_deserialize_val(RAnal *a, RAnalMetaItem *it, int type, ut64 fr
 	if (!v3) {
 		return false;
 	}
-	char *tmp = strndup (v2 + 1, v3 - v2 - 1);
+	char *tmp = r_str_ndup (v2 + 1, v3 - v2 - 1);
 	it->space = r_spaces_add (&a->meta_spaces, tmp);
 	free (tmp);
 	it->str = strchr (v2 + 1, ',');
