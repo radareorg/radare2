@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -333,12 +333,16 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 }
 
 static const char* get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {
+	if (ref->from == ref->to) {
+		return "@";
+	}
 	if (addr == ref->to) {
 		if (is_middle_before) {
 			return (ref->from > ref->to) ? " " : "|";
 		}
 		return (ref->from > ref->to) ? "." : "`";
-	} else if (addr == ref->from) {
+	}
+	if (addr == ref->from) {
 		if (is_middle_before) {
 			return (ref->from > ref->to) ? "|" : " ";
 		}
