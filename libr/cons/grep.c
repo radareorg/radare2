@@ -584,7 +584,7 @@ R_API void r_cons_grepbuf() {
 					char *str = r_str_ndup (tline, ret);
 					int i;
 					for (i = 0; i < grep->nstrings; i++) {
-						if (cons->grep_highlight && grep->str) {
+						if (cons->grep_highlight) {
 							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
 							if (str && newstr) {
 								if (grep->icase) {
