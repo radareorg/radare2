@@ -1887,7 +1887,12 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		free (bbuf);
 		bb = r_anal_fcn_bbget_at (fcn, addr);
 		if (!bb) {
-			eprintf ("fcn_recurse failed\n");
+			if (fcn->addr == addr) {
+				// no need to cry in here
+				return true;
+			}
+			eprintf ("r_anal_fcn_add_bb failed at 0x%08"PFMT64x" for 0x%08"PFMT64x"\n",
+				fcn->addr, addr);
 			return false;
 		}
 	} else {
