@@ -2222,6 +2222,14 @@ static int numbuf_pull() {
 	return distance;
 }
 
+static bool canWrite(RCore *core, ut64 addr) {
+	if (r_config_get_i (core->config, "io.cache")) {
+		return true;
+	}
+	RIOMap *map = r_io_map_get (core->io, addr);
+	return (map && (map->perm & R_PERM_W));
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -2379,8 +2387,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						addr = r_debug_reg_get (core->dbg, "SP");
 					}
 				}
-				RIOMap *map = r_io_map_get (core->io, addr);
-				if (!map || !(map->perm & R_PERM_W)) {
+				if (!canWrite (core, addr)) {
 					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 					r_cons_any_key (NULL);
 					return true;
@@ -2639,13 +2646,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					return true;
 				}
 			}
-			{
-				RIOMap *map = r_io_map_get (core->io, addr);
-				if (!map || !(map->perm & R_PERM_W)) {
-					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-					r_cons_any_key (NULL);
-					return true;
-				}
+			if (!canWrite (core, addr)) {
+				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+				r_cons_any_key (NULL);
+				return true;
 			}
 			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
