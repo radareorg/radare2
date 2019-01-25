@@ -1098,8 +1098,8 @@ R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *on
 	}
 
 	ctx.anal = a;
-	serializeKeySpaceStr (a, oname, NULL, ctx.oprefix);
-	serializeKeySpaceStr (a, nname, NULL, ctx.nprefix);
+	serializeKeySpaceStr (a, oname, "", ctx.oprefix);
+	serializeKeySpaceStr (a, nname, "", ctx.nprefix);
 
 	sdb_foreach (a->sdb_zigns, renameForCB, &ctx);
 }
