@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble, defragger, ret2libc */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble, defragger, ret2libc */
 
 #include <r_anal.h>
 #include <r_cons.h>
@@ -116,7 +116,7 @@ static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
 R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
-	if (!anal) {
+	if (!anal || from == to) {
 		return false;
 	}
 	if (!anal->iob.is_valid_offset (anal->iob.io, from, 0)) {

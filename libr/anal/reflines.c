@@ -18,6 +18,7 @@ typedef struct refline_end {
 static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
 	return a->val > b->val;
 }
+
 static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 	return a->level < b->level;
 }
