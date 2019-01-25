@@ -4056,9 +4056,11 @@ dodo:
 				tcflush (STDIN_FILENO, TCIFLUSH);
 			} else if (ch == 0x1b) {
 				char chrs[2];
+				int chrs_read = 1;
 				chrs[0] = r_cons_readchar ();
 				if (chrs[0] == '[') {
 					chrs[1] = r_cons_readchar ();
+					chrs_read++;
 					if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
 						tcflush (STDIN_FILENO, TCIFLUSH);
 						// Following seems to fix an issue where scrolling slows
@@ -4068,7 +4070,7 @@ dodo:
 						r_cons_set_raw (true);
 					}
 				}
-				(void)r_cons_readpush (chrs, R_ARRAY_SIZE (chrs));
+				(void)r_cons_readpush (chrs, chrs_read);
 			}
 #endif
 			if (r_cons_is_breaked()) {
