@@ -582,21 +582,21 @@ R_API void r_cons_grepbuf() {
 			if (ret > 0) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
-					if (cons->grep_highlight && grep->str) {
-						char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->str);
-						if (str && newstr) {
-							if (grep->icase) {
-								str = r_str_replace_icase (str, grep->str, newstr, 1, 1);
-							} else {
-								str = r_str_replace (str, grep->str, newstr, 1);
+					int i;
+					for (i = 0; i < grep->nstrings; i++) {
+						if (cons->grep_highlight && grep->str) {
+							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
+							if (str && newstr) {
+								if (grep->icase) {
+									str = r_str_replace_icase (str, grep->strings[i], newstr, 1, 1);
+								} else {
+									str = r_str_replace (str, grep->strings[i], newstr, 1);
+								}
 							}
-							if (str) {
-								r_strbuf_append (ob, str);
-								r_strbuf_append (ob, "\n");
-							}
+							free (newstr);
 						}
-						free (newstr);
-					} else {
+					}
+					if (str) {
 						r_strbuf_append (ob, str);
 						r_strbuf_append (ob, "\n");
 					}
