@@ -5345,7 +5345,11 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 			}
 		}
 	} else {
-		ut64 sz = r_num_math (core->num, arg + 1);
+		st64 sz = r_num_math (core->num, arg + 1);
+		if (sz < 1) {
+			eprintf ("Invalid range\n");
+			return;
+		}
 		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, sz, core->offset);
 	}
 ctrl_c:
