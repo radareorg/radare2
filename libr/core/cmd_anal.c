@@ -7472,8 +7472,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			RListIter *bbi;
 			r_list_foreach (paths, pathi, path) {
 				r_list_foreach (path, bbi, bb) {
-					r_cons_printf ("0x%08" PFMT64x, bb->addr);
-					r_cons_newline ();
+					r_cons_printf ("0x%08" PFMT64x "\n", bb->addr);
 				}
 				r_cons_newline ();
 				r_list_purge (path);
