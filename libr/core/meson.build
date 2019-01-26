@@ -56,6 +56,7 @@ r_core_sources = [
   'vmarks.c',
   'vmenus.c',
   'vmenus_graph.c',
+  'vmenus_zigns.c',
   'yank.c',
   'p/core_a2f.c',
   'p/core_java.c',

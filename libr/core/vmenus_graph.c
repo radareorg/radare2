@@ -154,13 +154,6 @@ static RList *__fcns(RCoreVisualViewGraph *status, ut64 addr, bool update) {
 	return r; // core->anal->fcns;
 }
 
-static int __cursor (RCoreVisualViewGraph *status, int n) {
-	if (status->pos == 0) {
-		return status->cur;
-	}
-	return 0;
-}
-
 R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *status) {
 	int h, w = r_cons_get_size (&h);
 	const int colw = w / 4;
@@ -229,17 +222,6 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 }
 
 R_API int r_core_visual_view_graph(RCore *core) {
-
-#if 0
-| xrefs fcns callrefs
-|  pdsf or datarefs
-| <-
-| xrefs xrefs callrefs
-|  pdsf
-| ->
-| xrefs callrefs
-#endif
-
 	RCoreVisualViewGraph status = {0};
 	status.core = core;
 	status.addr = core->offset;
@@ -309,6 +291,19 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			} else {
 				status.cur = 0;
 			}
+			break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"vbg: Visual Browser (Code) Graph:\n\n"
+			" jkJK  - scroll up/down\n"
+			" hl    - move to the left/right panel\n"
+			" q     - quit this visual mode\n"
+			" _     - enter the hud\n"
+			" .     - go back to the initial function list view\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
 			break;
 		case 'q':
 			return false;
