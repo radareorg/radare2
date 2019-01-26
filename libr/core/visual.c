@@ -1893,6 +1893,11 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
+		case 'z':
+			if (r_core_visual_view_zigns (core)) {
+				return;
+			}
+			break;
 		case 'g':
 			if (r_core_visual_view_graph (core)) {
 				return;

@@ -687,6 +687,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_visual_define(RCore *core, const char *arg, int distance);
 R_API int r_core_visual_trackflags(RCore *core);
 R_API int r_core_visual_view_graph(RCore *core);
+R_API int r_core_visual_view_zigns(RCore *core);
 R_API int r_core_visual_view_rop(RCore *core);
 R_API int r_core_visual_comments(RCore *core);
 R_API int r_core_visual_prompt(RCore *core);
