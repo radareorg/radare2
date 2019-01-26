@@ -7433,7 +7433,6 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
 			RAnalBlock *bb;
-			char bb_addr[16];
 			RList *path;
 			RListIter *pathi;
 			RListIter *bbi;
@@ -7441,8 +7440,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			r_list_foreach (paths, pathi, path) {
 				pj_a (pj);
 				r_list_foreach (path, bbi, bb) {
-					snprintf (bb_addr, sizeof (bb_addr), "0x%08" PFMT64x, bb->addr);
-					pj_j (pj, bb_addr);
+					pj_n (pj, bb->addr);
 				}
 				pj_end (pj);
 				r_list_purge (path);
@@ -7475,9 +7473,9 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			r_list_foreach (paths, pathi, path) {
 				r_list_foreach (path, bbi, bb) {
 					r_cons_printf ("0x%08" PFMT64x, bb->addr);
-					r_cons_println ("");
+					r_cons_newline ();
 				}
-				r_cons_println ("");
+				r_cons_newline ();
 				r_list_purge (path);
 				free (path);
 			}
