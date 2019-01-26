@@ -7417,12 +7417,47 @@ beach:
 }
 
 static void cmd_anal_abt(RCore *core, const char *input) {
-	bool json = false;
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_abt); break;
-	case 'j':
-		json = true;
+	case 'j': {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return;
+		}
 		input++;
+		ut64 addr;
+		char *p;
+		int n = 1;
+		p = strchr (input + 1, ' ');
+		if (p) {
+			*p = '\0';
+			n = *(++p)? r_num_math (core->num, p): 1;
+		}
+		addr = r_num_math (core->num, input + 1);
+		RList *paths = r_core_anal_graph_to (core, addr, n);
+		if (paths) {
+			RAnalBlock *bb;
+			RList *path;
+			RListIter *pathi;
+			RListIter *bbi;
+			pj_a (pj);
+			r_list_foreach (paths, pathi, path) {
+				pj_a (pj);
+				r_list_foreach (path, bbi, bb) {
+					pj_n (pj, bb->addr);
+				}
+				pj_end (pj);
+				r_list_purge (path);
+				free (path);
+			}
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
+			r_list_purge (paths);
+			free (paths);
+		}
+	}
+	break;
 	case ' ': {
 		ut64 addr;
 		char *p;
@@ -7439,35 +7474,13 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			RList *path;
 			RListIter *pathi;
 			RListIter *bbi;
-			bool first_path = true, first_bb = true;
-			if (json) {
-				r_cons_printf ("[");
-			}
 			r_list_foreach (paths, pathi, path) {
-				if (json) {
-					if (!first_path) {
-						r_cons_printf (", ");
-					}
-				}
-				r_cons_printf ("[");
 				r_list_foreach (path, bbi, bb) {
-					if (json && !first_bb) {
-						r_cons_printf (", ");
-					}
-					r_cons_printf ("0x%08" PFMT64x, bb->addr);
-					if (!json) {
-						r_cons_printf ("\n");
-					}
-					first_bb = false;
+					r_cons_printf ("0x%08" PFMT64x "\n", bb->addr);
 				}
-				r_cons_printf ("%s", json? "]": "\n");
-				first_bb = true;
-				first_path = false;
+				r_cons_newline ();
 				r_list_purge (path);
 				free (path);
-			}
-			if (json) {
-				r_cons_printf ("]\n");
 			}
 			r_list_purge (paths);
 			free (paths);
