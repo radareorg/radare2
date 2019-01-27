@@ -3351,7 +3351,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 
 // align for comment
 static void ds_align_comment(RDisasmState *ds) {
-	if (!ds->show_comment_right_default) { 
+	if (!ds->show_comment_right_default) {
 		return;
 	}
 	const int cmtcol = ds->cmtcol - 1;
@@ -3894,10 +3894,13 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 }
 
 static void ds_print_relocs(RDisasmState *ds) {
+	char *demname = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
 		return;
 	}
 	RCore *core = ds->core;
+	const char *lang = r_config_get (core->config, "bin.lang");
+	bool demangle = r_config_get_i (core->config, "asm.demangle");
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
@@ -3908,14 +3911,21 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int len = ds->cmtcol - cells;
 		r_cons_memset (' ', len);
 		if (rel->import) {
-			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
+			if (demangle) {
+				demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr);
+			}
+			r_cons_printf ("; RELOC %d %s", rel->type, demname ? demname : rel->import->name);
 		} else if (rel->symbol) {
+			if (demangle) {
+				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr);
+			}
 			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x " + 0x%" PFMT64x,
-					rel->type, rel->symbol->name,
+					rel->type, demname ? demname : rel->symbol->name,
 					rel->symbol->vaddr, rel->addend);
 		} else {
 			r_cons_printf ("; RELOC %d ", rel->type);
 		}
+		free (demname);
 	}
 }
 

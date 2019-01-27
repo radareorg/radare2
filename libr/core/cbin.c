@@ -1369,6 +1369,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			} else {
 				realname = sdb_fmt ("reloc.%s", demname);
 			}
+			r_name_filter(realname, 0);
 			r_flag_item_set_realname (fi, realname);
 		}
 	} else {
