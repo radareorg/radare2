@@ -169,7 +169,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	if (!dbg || pid == dbg->pid)
 		return dbg->tid;
 #endif
-#if __linux__
+#if __linux__ || __ANDROID__
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__ && !__CYGWIN__
 	int ret;
@@ -214,7 +214,7 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #elif __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
-	return r_debug_ptrace (dbg, PTRACE_DETACH, pid, NULL, NULL);
+	return r_debug_ptrace (dbg, PTRACE_DETACH, pid, NULL, (r_ptrace_data_t)(size_t)0);
 #endif
 }
 
@@ -1609,7 +1609,7 @@ static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 
 #if __arm64__ || __aarch64__
 // type = 2 = write
-static volatile uint8_t var[96] __attribute__((__aligned__(32)));
+//static volatile uint8_t var[96] __attribute__((__aligned__(32)));
 
 static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
 	const volatile uint8_t *addr = (void*)(size_t)_addr; //&var[32 + wp];
@@ -1647,7 +1647,7 @@ static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 }
 
 static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
-	const volatile uint8_t *addr = &var[32 + wp];
+	// const volatile uint8_t *addr = &var[32 + wp];
 	// TODO: support multiple watchpoints and find
 	struct user_hwdebug_state dreg_state = {0};
 	struct iovec iov = {0};

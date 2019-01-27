@@ -638,4 +638,12 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
+#ifndef container_of
+# ifdef _MSC_VER
+#  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
+# else
+#  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
+# endif
+#endif
+
 #endif // R2_TYPES_H

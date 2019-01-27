@@ -2518,6 +2518,17 @@ R_API int r_core_config_init(RCore *core) {
 		SETCB ("dir.prefix", pfx, (RConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
 		free (pfx);
 	}
+#if __ANDROID__
+	{ // use dir.home and also adjust check for permissions in directory before choosing a home
+		char *h = r_sys_getenv (R_SYS_HOME);
+		if (h) {
+			if (!strcmp (h, "/")) {
+				r_sys_setenv (R_SYS_HOME, "/data/local/tmp");
+			}
+			free (h);
+		}
+	}
+#endif
 	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
@@ -3081,6 +3092,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
 
 	/* graph */
+	SETPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
 	SETCB ("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");

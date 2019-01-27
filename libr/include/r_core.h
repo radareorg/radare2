@@ -401,7 +401,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
 R_API void r_core_anal_cc_init(RCore *core);
-R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth);
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 
 R_API void r_core_list_io(RCore *core);
 /* visual marks */
@@ -539,6 +539,7 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
 R_API int r_core_anal_ref_list(RCore *core, int rad);
 R_API int r_core_anal_all(RCore *core);
 R_API RList* r_core_anal_cycles (RCore *core, int ccl);
+R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn); // get all calls from a function
 
 /*tp.c*/
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
@@ -585,7 +586,6 @@ R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API bool r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_rebase(RCore *core, ut64 baddr);
 R_API void r_core_bin_export_info_rad(RCore *core);
-R_API int r_core_hash_load(RCore *core, const char *file);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 obj_idx);
 R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
@@ -687,6 +687,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_visual_define(RCore *core, const char *arg, int distance);
 R_API int r_core_visual_trackflags(RCore *core);
 R_API int r_core_visual_view_graph(RCore *core);
+R_API int r_core_visual_view_zigns(RCore *core);
 R_API int r_core_visual_view_rop(RCore *core);
 R_API int r_core_visual_comments(RCore *core);
 R_API int r_core_visual_prompt(RCore *core);
@@ -730,6 +731,9 @@ R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
 
+// TODO MOVE SOMEWHERE ELSE
+typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
+R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb);
 /* help */
 R_API void r_core_cmd_help(const RCore *core, const char * help[]);
 

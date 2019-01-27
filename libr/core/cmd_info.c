@@ -28,6 +28,7 @@ static const char *help_msg_i[] = {
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"iE.", "", "Current export",
+	"iF", "", "File hashes",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
@@ -455,6 +456,13 @@ static int cmd_info(void *data, const char *input) {
 			input--;
 			break;
 		}
+		case 'F': // "iF"
+			if (input[1] == 'j') {
+				r_cons_printf ("{\"%s\"}", r_strbuf_get (core->bin->cur->o->info->hashes));
+			} else {
+				r_cons_printf (r_strbuf_get (core->bin->cur->o->info->hashes));
+			}
+			break;
 		case 'Z': // "iZ"
 			RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 			break;
@@ -541,6 +549,9 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'j' && input[2] == '.') {
 				mode = R_MODE_JSON;
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			} else if (input[1] == 'q' && input[2] == 'q') {
+				mode = R_MODE_SIMPLEST;
+				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			} else {
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			}

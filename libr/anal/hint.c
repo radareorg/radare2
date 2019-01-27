@@ -263,7 +263,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'B': hint->new_bits = sdb_atoi (nxt); break;
 			case 's': hint->size = sdb_atoi (nxt); break;
 			case 'S': hint->syntax = (char*)sdb_decode (nxt, 0); break;
-			case 't': hint->type = sdb_atoi (nxt); break;
+			case 't': hint->type = r_num_get (NULL, nxt);  break;
 			case 'o': hint->opcode = (char*)sdb_decode (nxt, 0); break;
 			case 'O': hint->offset = (char*)sdb_decode (nxt, 0); break;
 			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;

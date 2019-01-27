@@ -1893,8 +1893,15 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
+		case 'z':
+			if (r_core_visual_view_zigns (core)) {
+				return;
+			}
+			break;
 		case 'g':
-			r_core_visual_view_graph (core);
+			if (r_core_visual_view_graph (core)) {
+				return;
+			}
 			break;
 		case 'r':
 			r_core_visual_view_rop (core);
@@ -2215,6 +2222,14 @@ static int numbuf_pull() {
 	return distance;
 }
 
+static bool canWrite(RCore *core, ut64 addr) {
+	if (r_config_get_i (core->config, "io.cache")) {
+		return true;
+	}
+	RIOMap *map = r_io_map_get (core->io, addr);
+	return (map && (map->perm & R_PERM_W));
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
 	RAsmOp op;
@@ -2372,8 +2387,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						addr = r_debug_reg_get (core->dbg, "SP");
 					}
 				}
-				RIOMap *map = r_io_map_get (core->io, addr);
-				if (!map || !(map->perm & R_PERM_W)) {
+				if (!canWrite (core, addr)) {
 					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 					r_cons_any_key (NULL);
 					return true;
@@ -2632,13 +2646,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					return true;
 				}
 			}
-			{
-				RIOMap *map = r_io_map_get (core->io, addr);
-				if (!map || !(map->perm & R_PERM_W)) {
-					r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-					r_cons_any_key (NULL);
-					return true;
-				}
+			if (!canWrite (core, addr)) {
+				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+				r_cons_any_key (NULL);
+				return true;
 			}
 			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
@@ -4054,9 +4065,11 @@ dodo:
 				tcflush (STDIN_FILENO, TCIFLUSH);
 			} else if (ch == 0x1b) {
 				char chrs[2];
+				int chrs_read = 1;
 				chrs[0] = r_cons_readchar ();
 				if (chrs[0] == '[') {
 					chrs[1] = r_cons_readchar ();
+					chrs_read++;
 					if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
 						tcflush (STDIN_FILENO, TCIFLUSH);
 						// Following seems to fix an issue where scrolling slows
@@ -4066,7 +4079,7 @@ dodo:
 						r_cons_set_raw (true);
 					}
 				}
-				(void)r_cons_readpush (chrs, R_ARRAY_SIZE (chrs));
+				(void)r_cons_readpush (chrs, chrs_read);
 			}
 #endif
 			if (r_cons_is_breaked()) {

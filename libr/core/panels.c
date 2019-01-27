@@ -292,6 +292,7 @@ static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
 static void callVisualGraph(RCore *core);
+static char *parsePanelsConfig(const char *cfg, int len);
 static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
@@ -1506,7 +1507,10 @@ static int debuggerCb(void *user) {
 
 static int loadLayoutSavedCb(void *user) {
 	RCore *core = (RCore *)user;
-	loadSavedPanelsLayout (core, false);
+	if (!loadSavedPanelsLayout (core, false)) {
+		createDefaultPanels (core);
+		r_core_panels_layout (core->panels);
+	}
 	core->panels->curnode = 0;
 	core->panels->panelsMenu->depth = 1;
 	return 0;
@@ -1515,6 +1519,7 @@ static int loadLayoutSavedCb(void *user) {
 static int loadLayoutDefaultCb(void *user) {
 	RCore *core = (RCore *)user;
 	initPanels (core, core->panels);
+	createDefaultPanels (core);
 	r_core_panels_layout (core->panels);
 	setRefreshAll (core->panels, false);
 	core->panels->panelsMenu->depth = 1;
@@ -1530,6 +1535,8 @@ static int closeFileCb(void *user) {
 static int saveLayoutCb(void *user) {
 	RCore *core = (RCore *)user;
 	savePanelsLayout (core, false);
+	const char *msg = "Panels layout saved!";
+	r_cons_yesno ('y', msg);
 	return 0;
 }
 
@@ -2926,51 +2933,60 @@ static char *getPanelsConfigPath() {
 
 static void savePanelsLayout(RCore* core, bool temp) {
 	RPanels *panels = core->panels;
-	char buf[128 * PANEL_NUM_LIMIT];
-	char *tmp = buf;
-	int i, sz = sizeof (buf);
+	int i;
+	PJ *pj = NULL;
+	pj = pj_new ();
+	pj_a (pj);
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = getPanel (panels, i);
-		RJSVar* obj = r_json_object_new ();
-		RJSVar* title = r_json_string_new (panel->title);
-		RJSVar* cmd = r_json_string_new (panel->cmd);
-		RJSVar* x = r_json_number_new (panel->pos.x);
-		RJSVar* y = r_json_number_new (panel->pos.y);
-		RJSVar* w = r_json_number_new (panel->pos.w);
-		RJSVar* h = r_json_number_new (panel->pos.h);
-		RJSVar* caching = r_json_number_new (panel->caching);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Title", title), title);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Cmd", cmd), cmd);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "x", x), x);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "y", y), y);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "w", w), w);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "h", h), h);
-		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "caching", caching), caching);
-		char* c = r_json_stringify (obj, true);
-		snprintf (tmp, sz, "%s\n", c);
-		tmp += strlen (c) + 1;
-		sz -= strlen (c) + 1;
-		r_json_var_free (obj);
-		r_json_var_free (title);
-		r_json_var_free (cmd);
-		r_json_var_free (x);
-		r_json_var_free (y);
-		r_json_var_free (w);
-		r_json_var_free (h);
-		r_json_var_free (caching);
-		free (c);
+		pj_o (pj);
+		pj_ks (pj, "Title", panel->title);
+		pj_ks (pj, "Cmd", panel->cmd);
+		pj_kn (pj, "x", panel->pos.x);
+		pj_kn (pj, "y", panel->pos.y);
+		pj_kn (pj, "w", panel->pos.w);
+		pj_kn (pj, "h", panel->pos.h);
+		pj_kb (pj, "caching", panel->caching);
+		pj_end (pj);
 	}
+	pj_end (pj);
 	if (!temp) {
 		char *configPath = getPanelsConfigPath ();
 		FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
 		free (configPath);
 		if (panelsConfig) {
-			fprintf (panelsConfig, "%s", buf);
+			fprintf (panelsConfig, "%s", pj_string (pj));
 			fclose (panelsConfig);
 		}
 	} else {
-		core->panels_tmpcfg = strdup (buf);
+		core->panels_tmpcfg = strdup (pj_string (pj));
 	}
+	pj_free (pj);
+}
+
+static char *parsePanelsConfig(const char *cfg, int len) {
+	if (!cfg || !*cfg || len < 2 || *cfg != '[') {
+		eprintf ("Not valid config!\n");
+		return NULL;
+	}
+	char *tmp = strdup (cfg + 1);
+	int i = 0;
+	for (; i < len; i++) {
+		if (tmp[i] == '}' && i + 1 < len) {
+			if (tmp[i + 1] == ',') {
+				tmp[i + 1] = '\n';
+				continue;
+			}
+			if (tmp[i + 1] == ']') {
+				tmp[i + 1] = '\n';
+				break;
+			}
+			eprintf ("Not valid config!\n");
+			free (tmp);
+			return NULL;
+		}
+	}
+	return tmp;
 }
 
 static int loadSavedPanelsLayout(RCore* core, bool temp) {
@@ -2987,12 +3003,17 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 	} else {
 		panelsConfig = core->panels_tmpcfg;
 	}
-	int count = r_str_split (panelsConfig, '\n');
+	char *parsedConfig = parsePanelsConfig (panelsConfig, strlen (panelsConfig));
+	free (panelsConfig);
+	if (!parsedConfig) {
+		return 0;
+	}
+	int count = r_str_split (parsedConfig, '\n');
 	RPanels *panels = core->panels;
 	panelAllClear (panels);
 	panels->n_panels = 0;
 	panels->curnode = 0;
-	char *title, *cmd, *x, *y, *w, *h, *caching, *cfg = panelsConfig;
+	char *title, *cmd, *x, *y, *w, *h, *caching, *cfg = parsedConfig;
 	for (i = 1; i < count; i++) {
 		title = sdb_json_get_str (cfg, "Title");
 		cmd = sdb_json_get_str (cfg, "Cmd");
@@ -3009,7 +3030,10 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 		addPanelFrame (core, title, cmd, atoi (caching));
 		cfg += strlen (cfg) + 1;
 	}
-	free (panelsConfig);
+	free (parsedConfig);
+	if (!panels->n_panels) {
+		return 0;
+	}
 	setRefreshAll (core->panels, true);
 	return 1;
 }
@@ -3245,9 +3269,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 
 	r_cons_enable_mouse (false);
 
-	if (core->panels_tmpcfg) {
-		loadSavedPanelsLayout (core, true);
-	} else {
+	if (!core->panels_tmpcfg || !loadSavedPanelsLayout (core, true)) {
 		createDefaultPanels (core);
 		r_core_panels_layout (panels);
 	}

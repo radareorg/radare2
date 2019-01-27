@@ -124,6 +124,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
 	}
+	r_strbuf_free (rb->hashes);
 	free (rb->intrp);
 	free (rb->file);
 	free (rb->type);
@@ -752,35 +753,41 @@ R_API RList *r_bin_get_libs(RBin *bin) {
 	return o ? o->libs : NULL;
 }
 
-R_API RList *r_bin_patch_relocs(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	static bool first = true;
-	RBinObject *o = r_bin_cur_object (bin);
-	if (!o) {
-		return NULL;
+static RList *relocs_rbtree2list(RBNode *root) {
+	RList *res = r_list_new ();
+	RBinReloc *reloc;
+	RBIter it;
+
+	r_rbtree_foreach (root, it, reloc, RBinReloc, vrb) {
+		r_list_append (res, reloc);
 	}
-	// r_bin_object_set_items set o->relocs but there we don't have access
-	// to io
-	// so we need to be run from bin_relocs, free the previous reloc and get
-	// the patched ones
-	if (first && o->plugin && o->plugin->patch_relocs) {
-		RList *tmp = o->plugin->patch_relocs (bin);
-		first = false;
-		if (!tmp) {
-			return o->relocs;
-		}
-		r_list_free (o->relocs);
-		o->relocs = tmp;
-		REBASE_PADDR (o, o->relocs, RBinReloc);
-		first = false;
-	}
-	return o->relocs;
+	return res;
 }
 
-R_API RList *r_bin_get_relocs(RBin *bin) {
+R_API RBNode *r_bin_patch_relocs(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBinObject *o = r_bin_cur_object (bin);
+	return o? r_bin_object_patch_relocs (bin, o): NULL;
+}
+
+// return a list of <const RBinReloc> that needs to be freed by the caller
+R_API RList *r_bin_patch_relocs_list(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBNode *root = r_bin_patch_relocs (bin);
+	return root? relocs_rbtree2list (root): NULL;
+}
+
+R_API RBNode *r_bin_get_relocs(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->relocs : NULL;
+}
+
+// return a list of <const RBinReloc> that needs to be freed by the caller
+R_API RList *r_bin_get_relocs_list(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBNode *root = r_bin_get_relocs (bin);
+	return root? relocs_rbtree2list (root): NULL;
 }
 
 R_API RList *r_bin_get_sections(RBin *bin) {

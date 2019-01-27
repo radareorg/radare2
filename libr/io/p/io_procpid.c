@@ -58,7 +58,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int fd, ret = -1;
 	if (__plugin_open (io, file, 0)) {
 		int pid = atoi (file + 10);
-		if (file[0]=='a') {
+		if (file[0] == 'a') {
 			ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 			if (ret == -1) {
 				switch (errno) {
@@ -139,7 +139,7 @@ RIOPlugin r_io_plugin_procpid = {
 };
 
 #else
-struct r_io_plugin_t r_io_plugin_procpid = {
+RIOPlugin r_io_plugin_procpid = {
 	.name = NULL
 };
 #endif

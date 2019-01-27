@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2018 - earada, pancake */
 
 #include <r_core.h>
+#include <r_config.h>
 #include "r_util.h"
 #include "r_util/r_time.h"
 
@@ -798,7 +799,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				int len = r_hash_calculate (rh, hash, (const ut8*)
 						binfile->buf->buf+h->from, h->to);
 				if (len < 1) {
-					eprintf ("Invaild wtf\n");
+					eprintf ("Invalid wtf\n");
 				}
 				r_hash_free (rh);
 				r_cons_printf ("%s  %d-%dc  ", h->type, h->from, h->to+h->from);
@@ -1252,18 +1253,30 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return (foo && *foo) ? foo : NULL;
 }
 
-static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
+static char *get_reloc_name(RCore *r, RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
+	char *demangled_name = NULL;
+	const char *lang = r_config_get (r->config, "bin.lang");
+	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (reloc->import && reloc->import->name) {
-		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->import->name,
+		if (bin_demangle) {
+			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
+		}
+		reloc_name = sdb_fmt ("reloc.%s_%d", demangled_name ? demangled_name : reloc->import->name,
 				      (int)(addr & 0xff));
 		if (!reloc_name) {
+			free (demangled_name);
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->symbol && reloc->symbol->name) {
-		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+		if (bin_demangle) {
+			demangled_name = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
+		}
+		reloc_name = sdb_fmt ("reloc.%s_%d", demangled_name ? demangled_name : reloc->symbol->name,
+				      (int)(addr & 0xff));
 		if (!reloc_name) {
+			free (demangled_name);
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
@@ -1273,6 +1286,7 @@ static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	} else {
 		// TODO(eddyb) implement constant relocs.
 	}
+	free (demangled_name);
 	return reloc_name;
 }
 
@@ -1358,7 +1372,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			r_flag_item_set_realname (fi, realname);
 		}
 	} else {
-		char *reloc_name = get_reloc_name (reloc, addr);
+		char *reloc_name = get_reloc_name (r, reloc, addr);
 		if (reloc_name) {
 			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 		} else {
@@ -1413,17 +1427,19 @@ static bool is_file_reloc(RBinReloc *r) {
 
 static int bin_relocs(RCore *r, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	RListIter *iter;
+	const char *lang = r_config_get (r->config, "bin.lang");
+	RBIter iter;
 	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	int i = 0;
+	bool first = true;
 
 	R_TIME_BEGIN;
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
-	RList *relocs = r_bin_patch_relocs (r->bin);
+	RBNode *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		relocs = r_bin_get_relocs (r->bin);
 	}
@@ -1437,7 +1453,8 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
-	r_list_foreach (relocs, iter, reloc) {
+
+	r_rbtree_foreach (relocs, iter, reloc, RBinReloc, vrb) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
 			/*
@@ -1468,28 +1485,34 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			if (iter->p) {
-				r_cons_printf (",{\"name\":");
-			} else {
+			if (first) {
 				r_cons_printf ("{\"name\":");
+				first = false;
+			} else {
+				r_cons_printf (",{\"name\":");
 			}
+			char *mn = NULL;
 			// take care with very long symbol names! do not use sdb_fmt or similar
 			if (reloc->import) {
+				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
 				r_cons_printf ("\"%s\"", reloc->import->name);
 			} else if (reloc->symbol) {
+				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
 				r_cons_printf ("\"%s\"", reloc->symbol->name);
 			} else {
 				r_cons_printf ("null");
 			}
-
 			r_cons_printf (","
+				"\"demname\":\"%s\","
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d","
 				"\"is_ifunc\":%s}",
+				mn ? mn : "",
 				bin_reloc_type_name (reloc),
 				reloc->vaddr, reloc->paddr,
 				r_str_bool (reloc->is_ifunc));
+			free (mn);
 		} else if (IS_MODE_NORMAL (mode)) {
 			char *name = reloc->import
 				? strdup (reloc->import->name)
@@ -3229,6 +3252,7 @@ static void bin_mach0_versioninfo(RCore *r) {
 static void bin_pe_resources(RCore *r, int mode) {
 	Sdb *sdb = NULL;
 	int index = 0;
+	PJ *pj = NULL;
 	const char *pe_path = "bin/cur/info/pe_resource";
 	if (!(sdb = sdb_ns_path (r->sdb, pe_path, 0))) {
 		return;
@@ -3238,7 +3262,8 @@ static void bin_pe_resources(RCore *r, int mode) {
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("fs resources\n");
 	} else if (IS_MODE_JSON (mode)) {
-		r_cons_printf ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
 	while (true) {
 		const char *timestrKey = sdb_fmt ("resource.%d.timestr", index);
@@ -3253,7 +3278,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		}
 		ut64 vaddr = sdb_num_get (sdb, vaddrKey, 0);
 		int size = (int)sdb_num_get (sdb, sizeKey, 0);
-		int name = (int)sdb_num_get (sdb, nameKey, 0);
+		char *name = sdb_get (sdb, nameKey, 0);
 		char *type = sdb_get (sdb, typeKey, 0);
 		char *lang = sdb_get (sdb, languageKey, 0);
 
@@ -3263,14 +3288,20 @@ static void bin_pe_resources(RCore *r, int mode) {
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
-					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\", \"timestamp\":\"%s\"}",
-					index? ",": "", name, index, type, vaddr, size, lang, timestr);
+			pj_o (pj);
+			pj_ks (pj, "name", name);
+			pj_ki (pj, "index", index);
+			pj_ks (pj, "type", type);
+			pj_kn (pj, "vaddr", vaddr);
+			pj_ki (pj, "size", size);
+			pj_ks (pj, "lang", lang);
+			pj_ks (pj, "timestamp", timestr);
+			pj_end (pj);
 		} else {
 			char humansz[8];
 			r_num_units (humansz, sizeof (humansz), size);
 			r_cons_printf ("Resource %d\n", index);
-			r_cons_printf ("  name: %d\n", name);
+			r_cons_printf ("  name: %s\n", name);
 			r_cons_printf ("  timestamp: %s\n", timestr);
 			r_cons_printf ("  vaddr: 0x%08"PFMT64x"\n", vaddr);
 			r_cons_printf ("  size: %s\n", humansz);
@@ -3279,13 +3310,16 @@ static void bin_pe_resources(RCore *r, int mode) {
 		}
 
 		R_FREE (timestr);
+		R_FREE (name);
 		R_FREE (type);
 		R_FREE (lang)
 
 		index++;
 	}
 	if (IS_MODE_JSON (mode)) {
-		r_cons_printf ("]");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("fs *");
 	}
