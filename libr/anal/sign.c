@@ -68,9 +68,7 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
 
-	if (!a || !fcn) {
-		return NULL;
-	}
+	r_return_val_if_fail (a && fcn, NULL);
 
 	RCore *core = a->coreb.core;
 
@@ -120,7 +118,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	// name (2)
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
 
-	// Deserialize val: size|bytes|mask|graph|offset|refs|bbhash
+	// Deserialize val: size|bytes|mask|graph|addr|refs|bbhash
 	n = r_str_split (v2, '|');
 	if (n != 8) {
 		retval = false;
@@ -132,6 +130,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	if (size > 0) {
 		it->bytes = R_NEW0 (RSignBytes);
 		if (!it->bytes) {
+			retval = false;
 			goto out;
 		}
 		it->bytes->size = size;
@@ -144,6 +143,8 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 		}
 		it->bytes->bytes = malloc (it->bytes->size);
 		if (!it->bytes->bytes) {
+			retval = false;
+			goto out;
 		}
 		r_hex_str2bin (token, it->bytes->bytes);
 
@@ -154,6 +155,10 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 			goto out;
 		}
 		it->bytes->mask = malloc (it->bytes->size);
+		if (!it->bytes->mask) {
+			retval = false;
+			goto out;
+		}
 		r_hex_str2bin (token, it->bytes->mask);
 	}
 
@@ -166,9 +171,9 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 		}
 	}
 
-	// offset (4)
+	// addr (4)
 	token = r_str_word_get0 (v2, 4);
-	it->offset = atoll (token);
+	it->addr = atoll (token);
 
 	// refs (5)
 	token = r_str_word_get0 (v2, 5);
@@ -271,7 +276,7 @@ static void serialize(RAnal *a, RSignItem *it, char *k, char *v) {
 			bytes? hexbytes: "",
 			bytes? hexmask: "",
 			graph? hexgraph: "",
-			it->offset,
+			it->addr,
 			refs? refs: "",
 			vars? vars: "",
 			hash? hash->bbhash: "");
@@ -323,8 +328,8 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 		*dst->graph = *src->graph;
 	}
 
-	if (src->offset != UT64_MAX) {
-		dst->offset = src->offset;
+	if (src->addr != UT64_MAX) {
+		dst->addr = src->addr;
 	}
 
 	if (src->refs) {
@@ -491,9 +496,7 @@ fail:
 }
 
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
-	if (!a || !name || !type || !val || !len) {
-		return false;
-	}
+	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
 		eprintf ("error: hash type unknown");
 	}
@@ -506,16 +509,12 @@ R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val
 }
 
 R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name) {
-	if (!a || !fcn || !name) {
-		return false;
-	}
+	r_return_val_if_fail (a && fcn && name, false);
 	return addBBHash (a, fcn, name);
 }
 
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
-	if (!a || !name || size <= 0 || !bytes || !mask) {
-		return false;
-	}
+	r_return_val_if_fail (a && name && size > 0 && bytes && mask, false);
 
 	return addBytes (a, name, size, bytes, mask);
 }
@@ -524,9 +523,7 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 	ut8 *mask = NULL;
 	bool retval = true;
 
-	if (!a || !name || size <= 0 || !bytes) {
-		return false;
-	}
+	r_return_val_if_fail (a && name && size > 0 && bytes, false);
 
 	mask = r_anal_mask (a, size, bytes, at);
 	if (!mask) {
@@ -567,21 +564,18 @@ R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
 	return retval;
 }
 
-R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset) {
-	RSignItem *it = NULL;
-	bool retval = true;
+R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
+	r_return_val_if_fail (a && name && addr != UT64_MAX, false);
 
-	if (!a || !name || offset == UT64_MAX) {
-		return false;
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return NULL;
 	}
-
-	it = r_sign_item_new ();
-
 	it->name = r_str_new (name);
 	it->space = a->zign_spaces.space_idx;
-	it->offset = offset;
+	it->addr = addr;
 
-	retval = addItem (a, it);
+	bool retval = addItem (a, it);
 
 	r_sign_item_free (it);
 
@@ -683,6 +677,11 @@ struct ctxListCB {
 	int format;
 };
 
+struct ctxGetListCB {
+	RAnal *anal;
+	RList *list;
+};
+
 static void listBytes(RAnal *a, RSignItem *it, int format) {
 	RSignBytes *bytes = it->bytes;
 	char *strbytes = NULL;
@@ -730,11 +729,11 @@ static void listGraph(RAnal *a, RSignItem *it, int format) {
 
 static void listOffset(RAnal *a, RSignItem *it, int format) {
 	if (format == '*') {
-		a->cb_printf ("za %s o 0x%08"PFMT64x"\n", it->name, it->offset);
+		a->cb_printf ("za %s o 0x%08"PFMT64x"\n", it->name, it->addr);
 	} else if (format == 'j') {
-		a->cb_printf ("\"offset\":%"PFMT64d",", it->offset);
+		a->cb_printf ("\"addr\":%"PFMT64d",", it->addr);
 	} else {
-		a->cb_printf ("  offset: 0x%08"PFMT64x"\n", it->offset);
+		a->cb_printf ("  addr: 0x%08"PFMT64x"\n", it->addr);
 	}
 }
 
@@ -890,10 +889,10 @@ static int listCB(void *user, const char *k, const char *v) {
 	}
 
 	// Offset
-	if (it->offset != UT64_MAX) {
+	if (it->addr != UT64_MAX) {
 		listOffset (a, it, ctx->format);
 	} else if (ctx->format == 'j') {
-		a->cb_printf ("\"offset\":-1,");
+		a->cb_printf ("\"addr\":-1,");
 	}
 
 	// References
@@ -931,11 +930,8 @@ out:
 }
 
 R_API void r_sign_list(RAnal *a, int format) {
+	r_return_if_fail (a);
 	struct ctxListCB ctx = { a, 0, format };
-
-	if (!a) {
-		return;
-	}
 
 	if (format == 'j') {
 		a->cb_printf ("[");
@@ -946,6 +942,30 @@ R_API void r_sign_list(RAnal *a, int format) {
 	if (format == 'j') {
 		a->cb_printf ("]\n");
 	}
+}
+
+static int listGetCB(void *user, const char *key, const char *val) {
+	struct ctxGetListCB *ctx = user;
+	RSignItem *item = r_sign_item_new ();
+	if (!item) {
+		return false;
+	}
+	if (!deserialize (ctx->anal, item, key, val)) {
+		r_sign_item_free (item);
+		return false;
+	}
+	r_list_append (ctx->list, item);
+
+	return 1;
+}
+
+R_API RList *r_sign_get_list(RAnal *a) {
+	r_return_val_if_fail (a, NULL);
+	struct ctxGetListCB ctx = { a, r_list_newf ((RListFree)r_sign_item_free) };
+
+	sdb_foreach (a->sdb_zigns, listGetCB, &ctx);
+
+	return ctx.list;
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
@@ -1297,14 +1317,14 @@ R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGrap
 	return r_sign_foreach (a, graphMatchCB, &ctx);
 }
 
-static int offsetMatchCB(RSignItem *it, void *user) {
+static int addrMatchCB(RSignItem *it, void *user) {
 	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
 
-	if (it->offset == UT64_MAX) {
+	if (it->addr == UT64_MAX) {
 		return 1;
 	}
 
-	if (it->offset != ctx->fcn->addr) {
+	if (it->addr != ctx->fcn->addr) {
 		return 1;
 	}
 
@@ -1315,14 +1335,14 @@ static int offsetMatchCB(RSignItem *it, void *user) {
 	return 1;
 }
 
-R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user) {
+R_API bool r_sign_match_addr(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user) {
 	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
 
 	if (!a || !fcn || !cb) {
 		return false;
 	}
 
-	return r_sign_foreach (a, offsetMatchCB, &ctx);
+	return r_sign_foreach (a, addrMatchCB, &ctx);
 }
 
 static int hashMatchCB(RSignItem *it, void *user) {
@@ -1465,7 +1485,7 @@ R_API bool r_sign_match_vars(RAnal *a, RAnalFunction *fcn, RSignVarsMatchCallbac
 R_API RSignItem *r_sign_item_new() {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
-		ret->offset = UT64_MAX;
+		ret->addr = UT64_MAX;
 		ret->space = -1;
 	}
 	return ret;
@@ -1479,7 +1499,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	}
 	RSignItem *ret = r_sign_item_new ();
 	if (!ret) {
-		return false;
+		return NULL;
 	}
 	ret->name = r_str_new (it->name);
 	ret->space = it->space;
@@ -1487,13 +1507,20 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	if (it->bytes) {
 		ret->bytes = R_NEW0 (RSignBytes);
 		if (!ret->bytes) {
-			r_sign_item_free (ret);
-			return false;
+			return NULL;
 		}
 		ret->bytes->size = it->bytes->size;
 		ret->bytes->bytes = malloc (it->bytes->size);
+		if (!ret->bytes->bytes) {
+			r_sign_item_free (ret);
+			return NULL;
+		}
 		memcpy (ret->bytes->bytes, it->bytes->bytes, it->bytes->size);
 		ret->bytes->mask = malloc (it->bytes->size);
+		if (!ret->bytes->mask) {
+			r_sign_item_free (ret);
+			return NULL;
+		}
 		memcpy (ret->bytes->mask, it->bytes->mask, it->bytes->size);
 	}
 
@@ -1501,7 +1528,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 		ret->graph = R_NEW0 (RSignGraph);
 		if (!ret->graph) {
 			r_sign_item_free (ret);
-			return false;
+			return NULL;
 		}
 		*ret->graph = *it->graph;
 	}

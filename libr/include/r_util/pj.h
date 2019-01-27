@@ -36,6 +36,6 @@ R_API PJ *pj_s(PJ *j, const char *k);
 R_API PJ *pj_n(PJ *j, ut64 n);
 R_API PJ *pj_d(PJ *j, double d);
 R_API PJ *pj_i(PJ *j, int d);
-
+R_API PJ *pj_j(PJ *j, const char *k);
 #endif
 

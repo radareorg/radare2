@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
 
 #include <r_bin.h>
+#include <r_hash.h>
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
@@ -846,4 +847,60 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 		return true;
 	}
 	return false;
+}
+
+R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
+	char hash[128], *p;
+	RHash *ctx;
+	ut8* buf;
+	ut64 buf_len = 0;
+	int i;
+	RBinFile *bf = bin->cur;
+	if (!bf) {
+		return 0;
+	}
+	RBinObject *o = bf->o;
+	if (!o) {
+		return 0;
+	}
+	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
+	if (!iod) {
+		return 0;
+	}
+
+	if (!file && iod) {
+		file = iod->name;
+	}
+
+	buf_len = r_io_desc_size (iod);
+	// By SLURP_LIMIT normally cannot compute ...
+	if (buf_len > limit) {
+		eprintf ("Cannot compute hash\n");
+		return -1;
+	}
+	//  XXX should use io api not raw file slurping
+	buf = r_file_slurp (file, &buf_len);
+	if (!buf) {
+		return false;
+	}
+	if (buf) {
+		ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+#define BLK_SIZE_OFF 1024
+		for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
+			(void)r_hash_do_md5 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
+			(void)r_hash_do_sha1 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
+		}
+		r_hash_do_end (ctx, R_HASH_MD5);
+		p = hash;
+		r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
+		o->info->hashes = r_strbuf_new ("");
+		r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
+		r_hash_do_end (ctx, R_HASH_SHA1);
+		p = hash;
+		r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
+		r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
+		r_hash_free (ctx);
+	}
+	free (buf);
+	return true;
 }

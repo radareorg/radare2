@@ -1210,7 +1210,6 @@ static int cmd_open(void *data, const char *input) {
 		}
 		{
 			const char *argv0 = argv ? argv[0] : ptr;
-			void *bed = r_cons_sleep_begin ();
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {
@@ -1221,7 +1220,6 @@ static int cmd_open(void *data, const char *input) {
 				eprintf ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
-			r_cons_sleep_end (bed);
 		}
 		r_core_block_read (core);
 		return 0;

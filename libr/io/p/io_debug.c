@@ -603,7 +603,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				w32->winbase = winbase;
 				w32->tid = wintid;
 			}
-
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
 			_plugin = r_io_plugin_resolve (io, (const char *)uri + 1, false);
