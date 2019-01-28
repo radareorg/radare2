@@ -1,8 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
-#include "r_core.h"
-#include "r_util.h"
-
+#include <r_core.h>
+#include <r_util.h>
 #include <string.h>
 
 #define MAX_FORMAT 3
@@ -484,7 +483,7 @@ static bool edit_bits (RCore *core) {
 			r_cons_set_raw (0);
 			cmd[0]='\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			r_core_cmd (core, cmd, 1);
@@ -1243,95 +1242,12 @@ static void sort_flags(RList *l, int sort) {
 	}
 }
 
-typedef void (*PrintItemCallback)(void *user, void *p, bool selected);
-static void *widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb) {
-	void *item, *curItem = NULL;
-	RListIter *iter;
-	int count = 0;
-	int skip = 0;
-	if (cur > (rows / 2)) {
-		skip = cur - (rows / 2);
-	}
-	r_list_foreach (list, iter, item) {
-		if (cur == count) {
-			curItem = item;
-		}
-		if (rows >= 0) {
-			if (skip > 0) {
-				skip--;
-			} else {
-				cb (user, item, cur == count);
-				rows--;
-				if (rows == 0) {
-					break;
-				}
-			}
-		}
-		count++;
-	}
-	return curItem;
-}
+// TODO: remove this statement, should be a separate .o
 
-static void print_fcn(void *_core, void *_item, bool selected) {
-	RAnalFunction *fcn = _item;
-	r_cons_printf ("%c %s\n", selected?'>':' ', fcn->name);
-}
-
-R_API int r_core_visual_view_graph(RCore *core) {
-	const int rows = 10;
-	int cur = 0;
-
-	while (true) {
-		RList *fcns = core->anal->fcns;
-		r_cons_clear00 ();
-		RAnalFunction *curfcn = widget_list (core, fcns, rows, cur, print_fcn);
-		if (curfcn) {
-			char *output = r_core_cmd_strf (core, "pdsf @ 0x%08"PFMT64x"\n", curfcn->addr);
-			r_cons_strcat_at (output, 10, 5, 20, 20);			
-			free (output);
-		}
-		r_cons_flush();
-		int ch = r_cons_readchar ();
-		if (ch == -1 || ch == 4) {
-			return false;
-		}
-		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
-		switch (ch) {
-		case 'h':
-			break;
-		case 'l':
-			break;
-		case 'J':
-			cur+=10;
-			break;
-		case 'K':
-			if (cur > 10) {
-				cur-=10;
-			} else {
-				cur = 0;
-			}
-			break;
-		case 'j':
-			cur++;
-			break;
-		case 'k':
-			if (cur > 0) {
-				cur--;
-			} else {
-				cur = 0;
-			}
-			break;
-		case 'q':
-			return true;
-		}
-	}
-	return false;
-}
-
-static void print_rop(void *_core, void *_item, bool selected) {
+static char *print_rop(void *_core, void *_item, bool selected) {
 	char *line = _item;
 	// TODO: trim if too long
-	r_cons_printf ("%c %s\n", selected?'>':' ', line);
+	return r_str_newf ("%c %s\n", selected?'>':' ', line);
 }
 
 R_API int r_core_visual_view_rop(RCore *core) {
@@ -1376,7 +1292,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		}
 		char *chainstr = r_strbuf_drain (sb);
 
-		char *curline = r_str_dup (NULL, r_str_trim_ro (widget_list (core, rops, rows, cur, print_rop)));
+		char *curline = r_str_dup (NULL, r_str_trim_ro (r_str_widget_list (core, rops, rows, cur, print_rop)));
 		if (curline) {
 			char *sp = strchr (curline, ' ');
 			if (sp) {

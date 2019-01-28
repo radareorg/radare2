@@ -165,7 +165,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	addFcnRefs (core, fcn, zigname);
 	addFcnVars (core, fcn, zigname);
 	addFcnHash (core, fcn, zigname);
-	r_sign_add_offset (core->anal, zigname, fcn->addr);
+	r_sign_add_addr (core->anal, zigname, fcn->addr);
 
 	free (zigname);
 }
@@ -272,7 +272,7 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 	offstr = r_str_word_get0 (args0, 0);
 	offset = r_num_get (core->num, offstr);
 
-	return r_sign_add_offset (core->anal, name, offset);
+	return r_sign_add_addr (core->anal, name, offset);
 }
 
 static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
@@ -722,7 +722,7 @@ static bool search(RCore *core, bool rad) {
 				r_sign_match_graph (core->anal, fcni, mincc, fcnMatchCB, &graph_match_ctx);
 			}
 			if (useOffset) {
-				r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
+				r_sign_match_addr (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
 			}
 			if (useRefs) {
 				r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
@@ -827,7 +827,7 @@ static int cmdCheck(void *data, const char *input) {
 					r_sign_match_graph (core->anal, fcni, mincc, fcnMatchCB, &graph_match_ctx);
 				}
 				if (useOffset) {
-					r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
+					r_sign_match_addr (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
 				}
 				if (useRefs){
 					r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);

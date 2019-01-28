@@ -2667,7 +2667,7 @@ static void set_prompt (RCore *r) {
 	if (r_config_get_i (r->config, "scr.prompt.file")) {
 		free (filename);
 		filename = r_str_newf ("\"%s\"",
-			r_file_basename (r->io->desc->name));
+			r->io->desc ? r_file_basename (r->io->desc->name) : "");
 	}
 	if (r->cmdremote) {
 		char *s = r_core_cmd_str (r, "s");
