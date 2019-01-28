@@ -113,7 +113,7 @@ static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	}
 
 	// space (1)
-	it->space = r_space_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
+	it->space = r_spaces_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
 
 	// name (2)
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
@@ -210,13 +210,14 @@ out:
 	free (k2);
 	free (v2);
 	free (refs);
+	free (vars);
 
 	return retval;
 }
 
-static void serializeKey(RAnal *a, int space, const char* name, char *k) {
+static void serializeKey(RAnal *a, const RSpace *space, const char* name, char *k) {
 	snprintf (k, R_SIGN_KEY_MAXSZ, "zign|%s|%s",
-		space >= 0? a->zign_spaces.spaces[space]: "*", name);
+		space? space->name: "*", name);
 }
 
 static void serializeKeySpaceStr(RAnal *a, const char *space, const char* name, char *k) {
@@ -464,7 +465,7 @@ static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, co
 		free (it);
 		return false;
 	}
-	it->space = a->zign_spaces.space_idx;
+	it->space = r_spaces_current (&a->zign_spaces);
 	it->bytes = R_NEW0 (RSignBytes);
 	if (!it->bytes) {
 		goto fail;
@@ -550,7 +551,7 @@ R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
 		free (it);
 		return false;
 	}
-	it->space = a->zign_spaces.space_idx;
+	it->space = r_spaces_current (&a->zign_spaces);
 	it->graph = R_NEW0 (RSignGraph);
 	if (!it->graph) {
 		free (it->name);
@@ -572,7 +573,7 @@ R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
 		return NULL;
 	}
 	it->name = r_str_new (name);
-	it->space = a->zign_spaces.space_idx;
+	it->space = r_spaces_current (&a->zign_spaces);
 	it->addr = addr;
 
 	bool retval = addItem (a, it);
@@ -597,7 +598,7 @@ R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
 		r_sign_item_free (it);
 		return false;
 	}
-	it->space = a->zign_spaces.space_idx;
+	it->space = r_spaces_current (&a->zign_spaces);
 	it->vars = r_list_newf ((RListFree) free);
 	r_list_foreach (vars, iter, var) {
 		r_list_append (it->vars, strdup (var));
@@ -622,7 +623,7 @@ R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs) {
 		free (it);
 		return false;
 	}
-	it->space = a->zign_spaces.space_idx;
+	it->space = r_spaces_current (&a->zign_spaces);
 	it->refs = r_list_newf ((RListFree) free);
 	r_list_foreach (refs, iter, ref) {
 		r_list_append (it->refs, strdup (ref));
@@ -657,17 +658,17 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	}
 	// Remove all zigns
 	if (*name == '*') {
-		if (a->zign_spaces.space_idx == -1) {
+		if (!r_spaces_current (&a->zign_spaces)) {
 			sdb_reset (a->sdb_zigns);
 			return true;
 		}
 		ctx.anal = a;
-		serializeKey (a, a->zign_spaces.space_idx, "", ctx.buf);
+		serializeKey (a, r_spaces_current (&a->zign_spaces), "", ctx.buf);
 		sdb_foreach (a->sdb_zigns, deleteBySpaceCB, &ctx);
 		return true;
 	}
 	// Remove specific zign
-	serializeKey (a, a->zign_spaces.space_idx, name, k);
+	serializeKey (a, r_spaces_current (&a->zign_spaces), name, k);
 	return sdb_remove (a->sdb_zigns, k, 0);
 }
 
@@ -843,7 +844,8 @@ static int listCB(void *user, const char *k, const char *v) {
 		goto out;
 	}
 
-	if (a->zign_spaces.space_idx != it->space && a->zign_spaces.space_idx != -1) {
+	RSpace *cur = r_spaces_current (&a->zign_spaces);
+	if (cur != it->space && cur) {
 		goto out;
 	}
 
@@ -857,19 +859,19 @@ static int listCB(void *user, const char *k, const char *v) {
 
 	// Zignspace and name (except for radare format)
 	if (ctx->format == '*') {
-		if (it->space >= 0) {
-			a->cb_printf ("zs %s\n", a->zign_spaces.spaces[it->space]);
+		if (it->space) {
+			a->cb_printf ("zs %s\n", it->space->name);
 		} else {
 			a->cb_printf ("zs *\n");
 		}
 	} else if (ctx->format == 'j') {
-		if (it->space >= 0) {
-			a->cb_printf ("{\"zignspace\":\"%s\",", a->zign_spaces.spaces[it->space]);
+		if (it->space) {
+			a->cb_printf ("{\"zignspace\":\"%s\",", it->space->name);
 		}
 		a->cb_printf ("\"name\":\"%s\",", it->name);
 	} else {
-		if (a->zign_spaces.space_idx == -1 && it->space >= 0) {
-			a->cb_printf ("(%s) ", a->zign_spaces.spaces[it->space]);
+		if (!r_spaces_current (&a->zign_spaces) && it->space) {
+			a->cb_printf ("(%s) ", it->space->name);
 		}
 		a->cb_printf ("%s:\n", it->name);
 	}
@@ -1006,7 +1008,7 @@ beach:
 
 struct ctxCountForCB {
 	RAnal *anal;
-	int idx;
+	const RSpace *space;
 	int count;
 };
 
@@ -1019,7 +1021,7 @@ static int countForCB(void *user, const char *k, const char *v) {
 		goto out;
 	}
 
-	if (it->space == ctx->idx) {
+	if (it->space == ctx->space) {
 		ctx->count++;
 	}
 
@@ -1029,8 +1031,8 @@ out:
 	return 1;
 }
 
-R_API int r_sign_space_count_for(RAnal *a, int idx) {
-	struct ctxCountForCB ctx = { a, idx, 0 };
+R_API int r_sign_space_count_for(RAnal *a, const RSpace *space) {
+	struct ctxCountForCB ctx = { a, space, 0 };
 
 	if (!a) {
 		return 0;
@@ -1043,7 +1045,7 @@ R_API int r_sign_space_count_for(RAnal *a, int idx) {
 
 struct ctxUnsetForCB {
 	RAnal *anal;
-	int idx;
+	const RSpace *space;
 };
 
 static int unsetForCB(void *user, const char *k, const char *v) {
@@ -1058,12 +1060,12 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 		goto out;
 	}
 
-	if (it->space != ctx->idx) {
+	if (it->space != ctx->space) {
 		goto out;
 	}
 
-	if (it->space != -1) {
-		it->space = -1;
+	if (it->space) {
+		it->space = NULL;
 		serialize (a, it, nk, nv);
 		sdb_remove (db, k, 0);
 		sdb_set (db, nk, nv, 0);
@@ -1075,8 +1077,8 @@ out:
 	return 1;
 }
 
-R_API void r_sign_space_unset_for(RAnal *a, int idx) {
-	struct ctxUnsetForCB ctx = { a, idx };
+R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space) {
+	struct ctxUnsetForCB ctx = { a, space };
 
 	if (!a) {
 		return;
@@ -1108,7 +1110,7 @@ static int renameForCB(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname) {
+R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname) {
 	struct ctxRenameForCB ctx;
 
 	if (!a || !oname || !nname) {
@@ -1139,7 +1141,8 @@ static int foreachCB(void *user, const char *k, const char *v) {
 		goto out;
 	}
 
-	if (a->zign_spaces.space_idx != it->space && a->zign_spaces.space_idx != -1) {
+	RSpace *cur = r_spaces_current (&a->zign_spaces);
+	if (cur != it->space && cur) {
 		goto out;
 	}
 
@@ -1486,7 +1489,7 @@ R_API RSignItem *r_sign_item_new() {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
 		ret->addr = UT64_MAX;
-		ret->space = -1;
+		ret->space = NULL;
 	}
 	return ret;
 }

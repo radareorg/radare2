@@ -1817,14 +1817,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	}
 	return true;
 }
-static bool meta_deserialize(RAnalMetaItem *it, const char *k, const char *v) {
+static bool meta_deserialize(RAnal *a, RAnalMetaItem *it, const char *k, const char *v) {
 	if (strlen (k) < 8) {
 		return false;
 	}
 	if (memcmp (k + 6, ".0x", 3)) {
 		return false;
 	}
-	return r_meta_deserialize_val (it, k[5], sdb_atoi (k + 7), v);
+	return r_meta_deserialize_val (a, it, k[5], sdb_atoi (k + 7), v);
 }
 
 static int meta_enumerate_cb(void *user, const char *k, const char *v) {
@@ -1834,7 +1834,7 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	if (!it) {
 		return 0;
 	}
-	if (!meta_deserialize (it, k, v)) {
+	if (!meta_deserialize (ui->anal, it, k, v)) {
 		free (it);
 		goto beach;
 	}

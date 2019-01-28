@@ -2693,7 +2693,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 			if (!metas) {
 				continue;
 			}
-			if (!r_meta_deserialize_val (mi, *infos, ds->at, metas)) {
+			if (!r_meta_deserialize_val (core->anal, mi, *infos, ds->at, metas)) {
 				continue;
 			}
 			// TODO: implement ranged meta find (if not at the begging of function..
