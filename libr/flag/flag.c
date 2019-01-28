@@ -298,7 +298,7 @@ static bool print_flag_json(RFlagItem *flag, void *user) {
 		return true;
 	}
 	pj_o (u->pj);
-	pj_ks (u->pj, "name", flag->name);
+	pj_ks (u->pj, "name", u->real ? flag->realname : flag->name);
 	pj_ki (u->pj, "size", flag->size);
 	if (flag->alias) {
 		pj_ks (u->pj, "alias", flag->alias);
@@ -394,7 +394,8 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			.pj = pj,
 			.in_range = in_range,
 			.range_from = range_from,
-			.range_to = range_to
+			.range_to = range_to,
+			.real = false
 		};
 		pj_a (pj);
 		r_flag_foreach_space (f, f->space_idx, print_flag_json, &u);
@@ -417,15 +418,32 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 		break;
 	}
 	default:
-	case 'n': { // show original name
-		struct print_flag_t u = {
-			.f = f,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.real = (rad == 'n')
-		};
-		r_flag_foreach_space (f, f->space_idx, print_flag_orig_name, &u);
+	case 'n': {
+		if (!pfx || pfx[0] != 'j') {// show original name
+			struct print_flag_t u = {
+				.f = f,
+				.in_range = in_range,
+				.range_from = range_from,
+				.range_to = range_to,
+				.real = (rad == 'n')
+			};
+			r_flag_foreach_space (f, f->space_idx, print_flag_orig_name, &u);
+		} else {
+			PJ *pj = pj_new ();
+			struct print_flag_t u = {
+				.f = f,
+				.pj = pj,
+				.in_range = in_range,
+				.range_from = range_from,
+				.range_to = range_to,
+				.real = true
+			};
+			pj_a (pj);
+			r_flag_foreach_space (f, f->space_idx, print_flag_json, &u);
+			pj_end (pj);
+			f->cb_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
 		break;
 	}
 	}
