@@ -81,7 +81,7 @@ static int space_cmp(const void *incoming, const RBNode *rb) {
 
 R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 	r_return_val_if_fail (sp, NULL);
-	if (!name || *name == '*') {
+	if (!name || !*name || *name == '*') {
 		return NULL;
 	}
 
