@@ -1,5 +1,6 @@
 r_core_sources = [
   'anal_tp.c',
+  'anal_objc.c',
   'casm.c',
   'blaze.c',
   'canal.c',
