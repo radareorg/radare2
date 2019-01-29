@@ -215,12 +215,6 @@ typedef struct r_io_section_t {
 	ut32 memmap;
 } RIOSection;
 
-typedef enum {
-	R_IO_SECTION_APPLY_FOR_PATCH,
-	R_IO_SECTION_APPLY_FOR_ANALYSIS,
-	R_IO_SECTION_APPLY_FOR_EMULATOR
-} RIOSectionApplyMethod;
-
 typedef struct r_io_cache_t {
 	RInterval itv;
 	ut8 *data;
@@ -452,8 +446,7 @@ R_API SdbList *r_io_sections_vget (RIO *io, ut64 vaddr);
 R_API const char *r_io_section_get_archbits (RIO *io, ut64 vaddr, int *bits);
 R_API bool r_io_section_priorize (RIO *io, ut32 id);
 R_API bool r_io_section_priorize_bin (RIO *io, ut32 bin_id);
-R_API bool r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
-R_API bool r_io_section_apply_bin (RIO *io, ut32 bin_id, RIOSectionApplyMethod method);
+R_API bool r_io_section_apply_bin (RIO *io, ut32 bin_id);
 R_API RIOSection* r_io_section_get(RIO *io, ut64 paddr);
 R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr);
 

@@ -100,7 +100,7 @@ R_API void r_io_section_cleanup(RIO *io) {
 	}
 }
 
-static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) {
+static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec) {
 	if (sec->vsize > sec->size) {
 		// in that case, we just have to allocate some memory of the size (vsize-size)
 		if (!sec->memmap) {
@@ -110,92 +110,21 @@ static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) 
 			// craft the uri for the null-fd
 			if (io_create_mem_map (io, sec, at, true, false)) {
 			// we need to create this map for transfering the perm, no real remapping here
-				if (io_create_file_map (io, sec, sec->size, patch, false)) {
+				if (io_create_file_map (io, sec, sec->size, false, false)) {
 					return true;
 				}
 			}
 		}
 	} else {
 		// same as above
-		if (!sec->filemap && io_create_file_map (io, sec, sec->vsize, patch, false)) {
+		if (!sec->filemap && io_create_file_map (io, sec, sec->vsize, false, false)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
-	RIODesc *desc, *oldesc;
-	RIOMap *map;
-	char *uri;
-	size_t size;
-	ut8 *buf = NULL;
-	// if the section doesn't allow writing, we don't need to initialize writeable memory
-	if (!(sec->perm & R_PERM_W)) {
-		return _section_apply_for_anal_patch (io, sec, R_IO_SECTION_APPLY_FOR_ANALYSIS);
-	}
-	if (sec->memmap) {
-		return false;
-	}
-	size = (size_t) (sec->size > sec->vsize)? sec->vsize: sec->size;
-	// allocate a buffer for copying from sec->fd to the malloc-map
-	buf = calloc (1, size + 1);
-	if (!buf) {
-		return false;
-	}
-	// save the current desc
-	oldesc = io->desc;
-	// copy to the buffer
-	r_io_use_fd (io, sec->fd);
-	r_io_pread_at (io, sec->paddr, buf, (int)size);
-	// craft the uri for the opening the malloc-fd
-	uri = r_str_newf ("malloc://%"PFMT64u "", sec->vsize);
-	// open the malloc-fd and map it to vaddr
-	desc = r_io_open_at (io, uri, sec->perm, 664, sec->vaddr);
-	if (!desc) {
-		free (buf);
-		return false;
-	}
-	io->desc = desc;
-	// copy from buffer to the malloc-fd
-	r_io_pwrite_at (io, 0LL, buf, (int) size);
-	free (buf);
-	// get the malloc-map
-	if ((map = r_io_map_get (io, sec->vaddr))) {
-		map->name = r_str_newf ("mmap.%s", sec->name);
-		// set the perm correctly
-		map->perm = sec->perm;
-		// restore old RIODesc
-		io->desc = oldesc;
-		// let the section refere to the map
-		sec->filemap = sec->memmap = map->id;
-		return true;
-	}
-	io->desc = oldesc;
-	return false;
-}
-
-static bool _section_apply(RIO *io, RIOSection *sec, RIOSectionApplyMethod method) {
-	switch (method) {
-	case R_IO_SECTION_APPLY_FOR_PATCH:
-	case R_IO_SECTION_APPLY_FOR_ANALYSIS:
-		return _section_apply_for_anal_patch (io, sec, 
-					method == R_IO_SECTION_APPLY_FOR_ANALYSIS? false : true);
-	case R_IO_SECTION_APPLY_FOR_EMULATOR:
-		return _section_apply_for_emul (io, sec);
-	default:
-		return false;
-	}
-}
-
-#if 0
-R_API bool r_io_section_apply(RIO *io, ut32 id, RIOSectionApplyMethod method) {
-	RIOSection *sec = r_io_section_get_i (io, id);
-	return sec ? _section_apply (io, sec, method): false;
-}
-#endif
-
-R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod method) {
+R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id) {
 	RIOSection *sec;
 	SdbListIter *iter;
 	bool ret = false;
@@ -205,7 +134,7 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 	ls_foreach_prev (io->sections, iter, sec) {
 		if (sec && (sec->bin_id == bin_id)) {
 			ret = true;
-			_section_apply (io, sec, method);
+			_section_apply_for_anal_patch (io, sec);
 		}
 	}
 	io_map_calculate_skyline (io);
