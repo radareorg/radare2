@@ -185,11 +185,6 @@ while_end:
 		strncpy (buf, str, sizeof (buf) - 1);
 	}
 
-	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
-		grep->end = 1;
-		buf[len] = 0;
-	}
-
 	ptr = buf;
 	ptr2 = strchr (ptr, '[');
 	ptr3 = strchr (ptr, ']');
@@ -279,6 +274,13 @@ while_end:
 	if (end_ptr) {
 		*end_ptr = '\0';
 	}
+
+	len = strlen (buf) - 1;
+	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
+		grep->end = 1;
+		buf[len] = '\0';
+	}
+
 	free (grep->str);
 	if (*ptr) {
 		grep->str = (char *) strdup (ptr);
