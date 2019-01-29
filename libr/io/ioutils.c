@@ -44,27 +44,19 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
 
 #endif
 
-bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
-	RIODesc *desc = NULL;
-	char *uri = NULL;
-	bool reused = false;
+bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at) {
+	r_return_val_if_fail (io && sec, false);
 
-	if (!io || !sec) {
-		return false;
-	}
+	bool reused = false;
 	ut64 gap = sec->vsize - sec->size;
-	if (null) {
-		uri = r_str_newf ("null://%"PFMT64u, gap);
-		desc = findReusableFile (io, uri, sec->perm);
-		if (desc) {
-			RIOMap *map = r_io_map_get (io, at);
-			if (!map) {
-				io_map_new (io, desc->fd, desc->perm, 0LL, at, gap, false);
-			}
-			reused = true;
+	char *uri = r_str_newf ("null://%"PFMT64u, gap);
+	RIODesc *desc = findReusableFile (io, uri, sec->perm);
+	if (desc) {
+		RIOMap *map = r_io_map_get (io, at);
+		if (!map) {
+			io_map_new (io, desc->fd, desc->perm, 0LL, at, gap, false);
 		}
-	} else {
-		uri = r_str_newf ("malloc://%"PFMT64u, gap);
+		reused = true;
 	}
 	if (!desc) {
 		desc = r_io_open_at (io, uri, sec->perm, 0664, at);
@@ -73,10 +65,7 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 	if (!desc) {
 		return false;
 	}
-	if (do_skyline) {
-		io_map_calculate_skyline (io);
-	}
-	// this works, because new maps are allways born on the top
+	// this works, because new maps are always born on the top
 	RIOMap *map = r_io_map_get (io, at);
 	// check if the mapping failed
 	if (!map) {
@@ -91,26 +80,20 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 	return true;
 }
 
-bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
-	if (!io || !sec) {
-		return false;
-	}
+bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size) {
+	r_return_val_if_fail (io && sec, false);
+
 	RIODesc *desc = r_io_desc_get (io, sec->fd);
 	if (!desc) {
 		return false;
 	}
 	int perm = sec->perm;
-	//create file map for patching
+	// create file map for patching
 	// workaround to force exec bit in text section
 	if (sec->name &&  strstr (sec->name, "text")) {
 		perm |= R_PERM_X;
 	}
-	if (patch) {
-		//add -w to the map for patching if needed
-		//if the file was not opened with -w desc->perm won't have that bit active
-		perm = perm | desc->perm;
-	}
-	RIOMap *map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
+	RIOMap *map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, false);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);

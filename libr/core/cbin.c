@@ -2532,7 +2532,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			break;
 		}
 	}
-	if (r->bin && r->bin->cur && r->io && !r_io_desc_is_dbg (r->io->desc)) {
+	if (IS_MODE_SET (mode) && !r_io_desc_is_dbg (r->io->desc)) {
 		r_io_section_apply_bin (r->io, r->bin->cur->id);
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {

@@ -102,22 +102,18 @@ R_API void r_io_section_cleanup(RIO *io) {
 
 static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec) {
 	if (sec->vsize > sec->size) {
+		ut64 at = sec->vaddr + sec->size;
 		// in that case, we just have to allocate some memory of the size (vsize-size)
-		if (!sec->memmap) {
-			// offset,where the memory should be mapped to
-			ut64 at = sec->vaddr + sec->size;
-			// TODO: harden this, handle mapslit
-			// craft the uri for the null-fd
-			if (io_create_mem_map (io, sec, at, true, false)) {
-			// we need to create this map for transfering the perm, no real remapping here
-				if (io_create_file_map (io, sec, sec->size, false, false)) {
-					return true;
-				}
+		// craft the uri for the null-fd
+		if (!sec->memmap && io_create_mem_map (io, sec, at)) {
+			// we need to create this map for transferring the perm, no real remapping here
+			if (io_create_file_map (io, sec, sec->size)) {
+				return true;
 			}
 		}
 	} else {
 		// same as above
-		if (!sec->filemap && io_create_file_map (io, sec, sec->vsize, false, false)) {
+		if (!sec->filemap && io_create_file_map (io, sec, sec->vsize)) {
 			return true;
 		}
 	}
