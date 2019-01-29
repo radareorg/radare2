@@ -2655,13 +2655,14 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 
 static int cmd_print_blocks(RCore *core, const char *input) {
 	char mode = input[0];
+	while (mode && mode != ' ') {
+		input++;
+		mode = input[0];
+	}
+
 	if (mode == '?') {
 		r_core_cmd_help (core, help_msg_p_minus);
 		return 0;
-	}
-
-	if (mode && mode != ' ') {
-		input++;
 	}
 
 	int w = (input[0] == ' ')
