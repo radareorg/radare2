@@ -2655,19 +2655,23 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 
 static int cmd_print_blocks(RCore *core, const char *input) {
 	char mode = input[0];
-	while (mode && mode != ' ') {
-		input++;
-		mode = input[0];
-	}
-
 	if (mode == '?') {
 		r_core_cmd_help (core, help_msg_p_minus);
 		return 0;
 	}
 
+	if (mode && mode != ' '){
+		input++;
+	}
+
 	int w = (input[0] == ' ')
 		? (int)r_num_math (core->num, input + 1)
 		: (int)(core->print->cols * 2.7);
+
+	if (w == 0){
+		r_core_cmd_help (core, help_msg_p_minus);
+		return 0;
+	}
 
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
