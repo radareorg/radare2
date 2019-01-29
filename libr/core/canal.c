@@ -4271,6 +4271,7 @@ static inline bool canal_isThumb(RCore *core) {
 
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
+	bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
@@ -4389,11 +4390,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->assembler, cur);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ALL)) {
-			i += minopsize - 1;
+			i += minopsize - 1; //   XXX dupe in op.size below
 		}
 		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
 			// i +=2;
+			r_anal_op_fini (&op);
 			continue;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
@@ -4404,6 +4406,39 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (op.size < 1) {
 			i += minopsize - 1;
 			continue;
+		}
+		if (emu_lazy) {
+			if (op.type & R_ANAL_OP_TYPE_REP) {
+				i += op.size - 1;
+				continue;
+			}
+			switch (op.type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_NOP:
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_IO:
+			case R_ANAL_OP_TYPE_LEAVE:
+			case R_ANAL_OP_TYPE_CRYPTO:
+			case R_ANAL_OP_TYPE_CPL:
+			case R_ANAL_OP_TYPE_SYNC:
+			case R_ANAL_OP_TYPE_SWI:
+			case R_ANAL_OP_TYPE_CMP:
+			case R_ANAL_OP_TYPE_ACMP:
+			case R_ANAL_OP_TYPE_NULL:
+			case R_ANAL_OP_TYPE_CSWI:
+			case R_ANAL_OP_TYPE_TRAP:
+				i += op.size - 1;
+				continue;
+			//  those require write support
+			case R_ANAL_OP_TYPE_PUSH:
+			case R_ANAL_OP_TYPE_POP:
+				i += op.size - 1;
+				continue;
+			}
 		}
 		if (op.type == R_ANAL_OP_TYPE_SWI) {
 			r_flag_space_set (core->flags, "syscalls");
