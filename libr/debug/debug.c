@@ -1717,6 +1717,6 @@ R_API void r_debug_bp_rebase(RDebug *dbg, ut64 baddr) {
 
 	// update bp's address
 	r_list_foreach (dbg->bp->bps, iter, bp) {
-		bp->addr = bp->orig_addr + baddr;
+		bp->addr = baddr + bp->delta;
 	}
 }
