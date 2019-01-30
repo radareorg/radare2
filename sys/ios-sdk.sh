@@ -8,7 +8,7 @@ USE_SIMULATOR=0
 SIMULATOR_ARCHS="x86_64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=1
-CFLAGS="-O2"
+CFLAGS="-O2 -miphoneos-version-min=11.0"
 DOSH=0
 ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="armv7+arm64".
 MERGE_LIBS=1 # Will merge libs if you build for arm and simulator 
