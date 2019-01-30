@@ -45,6 +45,7 @@ static const char *help_msg_aa[] = {
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
+	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
@@ -7728,6 +7729,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	}
 	case 'T': // "aaT"
 		cmd_anal_aftertraps (core, input + 1);
+		break;
+	case 'o': // "aao"
+		cmd_anal_objc (core, input + 1);
 		break;
 	case 'e': // "aae"
 		if (input[1]) {

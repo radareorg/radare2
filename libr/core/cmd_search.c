@@ -25,7 +25,8 @@ static const char *help_msg_slash[] = {
 	"/b", "", "search backwards, command modifier, followed by other command",
 	"/B", "", "search recognized RBin headers",
 	"/c", " jmp [esp]", "search for asm code matching the given string",
-	"/ce", " rsp,rbp", "search for esil expressions matching",
+	"/ce", "[j] rsp,rbp", "search for esil expressions matching",
+	"/ci", "[j] 0x300", "find all the instructions using that immbediate",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -2140,10 +2141,13 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (regexp && input[2] == 'j') {
 		json = true;
 	}
-	if (!end_cmd) {
-		outmode = input[1];
-	} else {
+	if (input[1] && input[2] == 'j') {
+		json = true;
+	}
+	if (end_cmd) {
 		outmode = *(end_cmd - 1);
+	} else {
+		outmode = input[1];
 	}
 	if (outmode != 'j') {
 		json = 0;
@@ -3606,6 +3610,8 @@ reread:
 		dosearch = 0;
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_c);
+		} else if (input[1] == 'i') { // "/ci"
+			do_asm_search (core, &param, input + 1, 'i', search_itv);
 		} else if (input[1] == 'e') { // "/ce"
 			do_asm_search (core, &param, input + 1, 'e', search_itv);
 		} else { // "/c"

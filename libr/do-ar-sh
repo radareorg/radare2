@@ -6,7 +6,14 @@ cd ..
 LIB=libr.a
 TMP=.ar.tmp
 
-RANLIB="xcrun --sdk iphoneos ranlib"
+IOSVER=1
+if [ -n "${IOSVER}" ]; then
+	RANLIB="xcrun --sdk iphoneos ranlib"
+	AR="xcrun --sdk iphoneos ar"
+else
+	RANLIB=ranlib
+	AR=ar
+fi
 
 rm -rf ${TMP}
 mkdir -p ${TMP}
@@ -44,6 +51,6 @@ if [ -z "${OBJS}" ]; then
 	exit 1
 else
 	rm -f "${LIB}"
-	ar qv "${LIB}" ${OBJS}
-	ranlib "${LIB}"
+	${AR} qv "${LIB}" ${OBJS}
+	${RANLIB} "${LIB}"
 fi
