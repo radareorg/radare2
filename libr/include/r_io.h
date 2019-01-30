@@ -236,7 +236,6 @@ typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef RIOMap *(*RIOMapGet) (RIO *io, ut64 addr);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
-typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
 typedef RIOMap *(*RIOMapAdd) (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
