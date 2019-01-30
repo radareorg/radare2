@@ -95,7 +95,6 @@ typedef struct r_io_t {
 	SdbList *maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
 	RPVector map_skyline_shadow; // map parts that are not covered by others
-	SdbList *sections;
 	RIDStorage *files;
 	RCache *buffer;
 	RList *cache;	//sdblist?
@@ -198,23 +197,6 @@ typedef struct r_io_map_skyline_t {
 	RInterval itv;
 } RIOMapSkyline;
 
-// XXX must be deprecated maps should be enough
-typedef struct r_io_section_t {
-	char *name;
-	ut64 paddr;
-	ut64 size;
-	ut64 vaddr;
-	ut64 vsize;
-	int perm;
-	ut32 id;
-	ut32 bin_id;
-	int arch;
-	int bits;
-	int fd;
-	ut32 filemap;
-	ut32 memmap;
-} RIOSection;
-
 typedef struct r_io_cache_t {
 	RInterval itv;
 	ut8 *data;
@@ -255,7 +237,6 @@ typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef RIOMap *(*RIOMapGet) (RIO *io, ut64 addr);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
-//typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
 typedef RIOMap *(*RIOMapAdd) (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 #if HAVE_PTRACE
 typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
@@ -289,8 +270,6 @@ typedef struct r_io_bind_t {
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
 	RIOMapGet map_get;
-	//RIOSectionVgetSecsAt sections_vget;
-	//RIOSectionVgetSec sect_vget;
 	RIOMapAdd map_add;
 #if HAVE_PTRACE
 	RIOPtraceFn ptrace;
@@ -437,21 +416,6 @@ R_API int r_io_cache_list(RIO *io, int rad);
 R_API void r_io_cache_reset(RIO *io, int set);
 R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
-
-/* io/section.c */
-R_API void r_io_section_init (RIO *io);
-R_API void r_io_section_fini (RIO *io);
-R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
-R_API RIOSection *r_io_section_get_i (RIO *io, ut32 id);
-R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id);
-R_API void r_io_section_cleanup (RIO *io);
-R_API SdbList *r_io_sections_get (RIO *io, ut64 addr);
-R_API SdbList *r_io_sections_vget (RIO *io, ut64 vaddr);
-R_API const char *r_io_section_get_archbits (RIO *io, ut64 vaddr, int *bits);
-R_API bool r_io_section_priorize (RIO *io, ut32 id);
-R_API bool r_io_section_priorize_bin (RIO *io, ut32 bin_id);
-R_API RIOSection* r_io_section_get(RIO *io, ut64 paddr);
-R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr);
 
 /* io/p_cache.c */
 R_API bool r_io_desc_cache_init (RIODesc *desc);
