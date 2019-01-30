@@ -2332,12 +2332,12 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
 	return true;
 }
 
-static void add_section(RCore *core, RBinSection *sec, int fd) {
+static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	ut64 size = sec->vsize;
 	// if there is some part of the section that needs to be zeroed by the loader
 	// we add a null map that takes care of it
 	if (sec->vsize > sec->size) {
-		if (!io_create_mem_map (core->io, sec, sec->vaddr + sec->size)) {
+		if (!io_create_mem_map (core->io, sec, addr + sec->size)) {
 			return;
 		}
 
@@ -2356,7 +2356,7 @@ static void add_section(RCore *core, RBinSection *sec, int fd) {
 		perm |= R_PERM_X;
 	}
 
-	RIOMap *map = r_io_map_add_batch (core->io, fd, perm, sec->paddr, sec->vaddr, size);
+	RIOMap *map = r_io_map_add_batch (core->io, fd, perm, sec->paddr, addr, size);
 	if (!map) {
 		free (map_name);
 		return;
@@ -2528,7 +2528,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
 				ht_pp_find (dup_chk_ht, str, &found);
 				if (!found) {
-					add_section (r, section, fd);
+					add_section (r, section, addr, fd);
 					ht_pp_insert (dup_chk_ht, str, NULL);
 				}
 				R_FREE (str);
