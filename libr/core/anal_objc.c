@@ -26,6 +26,9 @@ const bool isInvalid (ut64 addr) {
 }
 
 static bool inBetween(RBinSection *s, ut64 addr) {
+	if (!s || addr == UT64_MAX) {
+		return false;
+	}
 	ut64 from = s->vaddr;
 	ut64 to = from + s->vsize;
 	return R_BETWEEN (from, addr, to);
