@@ -90,7 +90,6 @@ typedef struct r_io_t {
 	int p_cache;
 	int debug;
 //#warning remove debug from RIO
-	RIDPool *sec_ids;
 	RIDPool *map_ids;
 	SdbList *maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
