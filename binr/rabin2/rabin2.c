@@ -73,6 +73,7 @@ static int rabin_show_help(int v) {
 		" -s              symbols\n"
 		" -S              sections\n"
 		" -SS             segments\n"
+		" -t              display file hashes\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"

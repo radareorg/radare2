@@ -3464,12 +3464,20 @@ static int bin_hashes(RCore *r, int mode) {
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
 		r_bin_file_hash (r->bin, lim, iod->name);
+		const char *hashes = r_strbuf_get (r->bin->cur->o->info->hashes);
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("{\"");
-		}
-		r_cons_printf (r_strbuf_get (r->bin->cur->o->info->hashes));
-		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("\"}");
+			PJ *pj = pj_new ();
+			if (!pj) {
+				eprintf ("bin_hashes: pj_new failed\n");
+				return false;
+			}
+			pj_o (pj);
+			pj_ks (pj, "values", hashes);
+			pj_end (pj);
+			r_cons_printf ("%s", pj_string (pj));
+			pj_free (pj);
+		} else {
+			r_cons_printf ("%s", hashes);
 		}
 		return true;
 	}
