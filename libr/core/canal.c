@@ -243,10 +243,10 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
-					if (strstr (s->name, "heap")) {
+					if (s->name && strstr (s->name, "heap")) {
 						types |= R_ANAL_ADDR_TYPE_HEAP;
 					}
-					if (strstr (s->name, "stack")) {
+					if (s->name && strstr (s->name, "stack")) {
 						types |= R_ANAL_ADDR_TYPE_STACK;
 					}
 				}
