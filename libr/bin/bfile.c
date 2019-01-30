@@ -937,3 +937,23 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	r_hash_free (ctx);
 	return true;
 }
+
+R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr) {
+	RBinFile *bf;
+	RListIter *iter;
+	RBinFile *obf = bin->cur; // XXX this must die
+	r_list_foreach (bin->binfiles, iter, bf) {
+		bin->cur = bf;
+		RList *sections = r_bin_get_sections (bin);
+		r_list_foreach (sections, iter, s) {
+			ut64 from = s->vaddr;
+			ut64 to = from + s->vsize;
+			if (R_BETWEEN (from, addr, to)) {
+				bin->cur = obf;
+				return bf;
+			}
+		}
+	}
+	bin->cur = obf;
+	return NULL;
+}
