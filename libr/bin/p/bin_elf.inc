@@ -847,14 +847,14 @@ static RList* patch_relocs(RBin *b) {
 	RIO *io = NULL;
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	RIOSection *g = NULL, *s = NULL;
+	RIOMap *g = NULL, *s = NULL;
 	HtUU *relocs_by_sym;
 	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
 	int cdsz;
 	int i;
-	ut64 n_off, n_vaddr, vaddr, size, offset = 0;
+	ut64 n_vaddr, vaddr, size, offset = 0;
 
 	if (!b)
 		return NULL;
@@ -877,22 +877,24 @@ static RList* patch_relocs(RBin *b) {
 	info = obj ? obj->info: NULL;
 	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
-	ls_foreach (io->sections, iter, s) {
-		if (s->paddr > offset) {
-			offset = s->paddr;
+	ls_foreach (io->maps, iter, s) {
+		if (s->itv.addr > offset) {
+			offset = s->itv.addr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->paddr + g->size;
-	n_vaddr = g->vaddr + g->vsize;
+	n_vaddr = g->itv.addr + g->itv.size;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_PERM_R, ".got.r2", 0, io->desc->fd)) {
+	RIOMap *gotr2map = b->iob.map_add (io, io->desc->fd, R_PERM_R, 0, n_vaddr, size);
+	if (!gotr2map) {
 		return NULL;
 	}
+	gotr2map->name = strdup (".got.r2");
+
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
 		return NULL;
 	}

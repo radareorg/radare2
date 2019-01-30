@@ -2271,6 +2271,100 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 	}
 }
 
+typedef struct {
+	const char *uri;
+	int perm;
+	RIODesc *desc;
+} FindFile;
+
+static bool findFile(void *user, void *data, ut32 id) {
+	FindFile *res = (FindFile*)user;
+	RIODesc *desc = (RIODesc*)data;
+	if (desc->perm && res->perm && !strcmp (desc->uri, res->uri)) {
+		res->desc = desc;
+		return false;
+	}
+	return true;
+}
+
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
+	FindFile arg = {
+		.uri = uri,
+		.perm = perm,
+		.desc = NULL,
+	};
+	r_id_storage_foreach (io->files, findFile, &arg);
+	return arg.desc;
+}
+
+static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
+	r_return_val_if_fail (io && sec, false);
+
+	bool reused = false;
+	ut64 gap = sec->vsize - sec->size;
+	char *uri = r_str_newf ("null://%"PFMT64u, gap);
+	RIODesc *desc = findReusableFile (io, uri, sec->perm);
+	if (desc) {
+		RIOMap *map = r_io_map_get (io, at);
+		if (!map) {
+			r_io_map_add_batch (io, desc->fd, desc->perm, 0LL, at, gap);
+		}
+		reused = true;
+	}
+	if (!desc) {
+		desc = r_io_open_at (io, uri, sec->perm, 0664, at);
+	}
+	free (uri);
+	if (!desc) {
+		return false;
+	}
+	// this works, because new maps are always born on the top
+	RIOMap *map = r_io_map_get (io, at);
+	// check if the mapping failed
+	if (!map) {
+		if (!reused) {
+			r_io_desc_close (desc);
+		}
+		return false;
+	}
+	// let the section refere to the map as a memory-map
+	map->name = r_str_newf ("mmap.%s", sec->name);
+	return true;
+}
+
+static void add_section(RCore *core, RBinSection *sec, int fd) {
+	ut64 size = sec->vsize;
+	// if there is some part of the section that needs to be zeroed by the loader
+	// we add a null map that takes care of it
+	if (sec->vsize > sec->size) {
+		if (!io_create_mem_map (core->io, sec, sec->vaddr + sec->size)) {
+			return;
+		}
+
+		size = sec->size;
+	}
+
+	// then we map the part of the section that comes from the physical file
+	char *map_name = r_str_newf ("fmap.%s", sec->name);
+	if (!map_name) {
+		return;
+	}
+
+	int perm = sec->perm;
+	// workaround to force exec bit in text section
+	if (sec->name &&  strstr (sec->name, "text")) {
+		perm |= R_PERM_X;
+	}
+
+	RIOMap *map = r_io_map_add_batch (core->io, fd, perm, sec->paddr, sec->vaddr, size);
+	if (!map) {
+		free (map_name);
+		return;
+	}
+	map->name = map_name;
+	return;
+}
+
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
@@ -2434,10 +2528,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
 				ht_pp_find (dup_chk_ht, str, &found);
 				if (!found) {
-					r_io_section_add (r->io, section->paddr, addr,
-						section->size, section->vsize,
-						section->perm, section->name,
-						r->bin->cur->id, fd);
+					add_section (r, section, fd);
 					ht_pp_insert (dup_chk_ht, str, NULL);
 				}
 				R_FREE (str);
@@ -2533,7 +2624,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 	}
 	if (IS_MODE_SET (mode) && !r_io_desc_is_dbg (r->io->desc)) {
-		r_io_section_apply_bin (r->io, r->bin->cur->id);
+		r_io_update (r->io);
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_println ("]");

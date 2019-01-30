@@ -525,7 +525,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->map_get = r_io_map_get;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
-	bnd->section_add = r_io_section_add;
+	bnd->map_add = r_io_map_add;
 #if HAVE_PTRACE
 	bnd->ptrace = r_io_ptrace;
 	bnd->ptrace_func = r_io_ptrace_func;

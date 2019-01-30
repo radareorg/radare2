@@ -100,39 +100,64 @@ R_API void r_io_section_cleanup(RIO *io) {
 	}
 }
 
-static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec) {
-	if (sec->vsize > sec->size) {
-		ut64 at = sec->vaddr + sec->size;
-		// in that case, we just have to allocate some memory of the size (vsize-size)
-		// craft the uri for the null-fd
-		if (!sec->memmap && io_create_mem_map (io, sec, at)) {
-			// we need to create this map for transferring the perm, no real remapping here
-			if (io_create_file_map (io, sec, sec->size)) {
-				return true;
-			}
-		}
-	} else {
-		// same as above
-		if (!sec->filemap && io_create_file_map (io, sec, sec->vsize)) {
-			return true;
-		}
-	}
-	return false;
-}
+typedef struct {
+	const char *uri;
+	int perm;
+	RIODesc *desc;
+} FindFile;
 
-R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id) {
-	RIOSection *sec;
-	SdbListIter *iter;
-	bool ret = false;
-	if (!io || !io->sections) {
+static bool findFile(void *user, void *data, ut32 id) {
+	FindFile *res = (FindFile*)user;
+	RIODesc *desc = (RIODesc*)data;
+	if (desc->perm && res->perm && !strcmp (desc->uri, res->uri)) {
+		res->desc = desc;
 		return false;
 	}
-	ls_foreach_prev (io->sections, iter, sec) {
-		if (sec && (sec->bin_id == bin_id)) {
-			ret = true;
-			_section_apply_for_anal_patch (io, sec);
+	return true;
+}
+
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
+	FindFile arg = {
+		.uri = uri,
+		.perm = perm,
+		.desc = NULL,
+	};
+	r_id_storage_foreach (io->files, findFile, &arg);
+	return arg.desc;
+}
+
+static bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at) {
+	r_return_val_if_fail (io && sec, false);
+
+	bool reused = false;
+	ut64 gap = sec->vsize - sec->size;
+	char *uri = r_str_newf ("null://%"PFMT64u, gap);
+	RIODesc *desc = findReusableFile (io, uri, sec->perm);
+	if (desc) {
+		RIOMap *map = r_io_map_get (io, at);
+		if (!map) {
+			io_map_new (io, desc->fd, desc->perm, 0LL, at, gap, false);
 		}
+		reused = true;
 	}
-	io_map_calculate_skyline (io);
-	return ret;
+	if (!desc) {
+		desc = r_io_open_at (io, uri, sec->perm, 0664, at);
+	}
+	free (uri);
+	if (!desc) {
+		return false;
+	}
+	// this works, because new maps are always born on the top
+	RIOMap *map = r_io_map_get (io, at);
+	// check if the mapping failed
+	if (!map) {
+		if (!reused) {
+			r_io_desc_close (desc);
+		}
+		return false;
+	}
+	// let the section refere to the map as a memory-map
+	sec->memmap = map->id;
+	map->name = r_str_newf ("mmap.%s", sec->name);
+	return true;
 }
