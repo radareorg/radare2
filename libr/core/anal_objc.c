@@ -5,7 +5,6 @@
 This code has been written by pancake which has been based on Alvaro's r2pipe-python
 script which was based on FireEye script for IDA Pro.
 
-* 
 * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
 #endif
 

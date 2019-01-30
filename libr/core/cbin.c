@@ -2464,7 +2464,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
-			if (chksum) {
+			if (chksum && section->size > 0) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
 					goto out;
@@ -2474,7 +2474,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				hashstr = build_hash_string (mode, chksum,
 							data, datalen);
 				free (data);
-
 			}
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
