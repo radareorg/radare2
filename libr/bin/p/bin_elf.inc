@@ -889,7 +889,14 @@ static RList* patch_relocs(RBin *b) {
 	n_vaddr = g->itv.addr + g->itv.size;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	RIOMap *gotr2map = b->iob.map_add (io, io->desc->fd, R_PERM_R, 0, n_vaddr, size);
+	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	free (muri);
+	if (!gotr2desc) {
+		return NULL;
+	}
+
+	RIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
 	if (!gotr2map) {
 		return NULL;
 	}
