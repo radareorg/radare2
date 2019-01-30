@@ -1130,6 +1130,12 @@ R_API int r_core_visual_classes(RCore *core) {
 			}
 			break;
 		case 'g':
+			index = 0;
+			break;
+		case 'G':
+			index = r_list_length (list) - 1;
+			break;
+		case 'i':
 			{
 				char *num = prompt ("Index:", NULL);
 				if (num) {
@@ -1179,6 +1185,8 @@ R_API int r_core_visual_classes(RCore *core) {
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
+			" g/G   - go first/last item\n"
+			" i     - specify index"
 			" /     - grep mode\n"
 			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"
