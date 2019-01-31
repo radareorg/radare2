@@ -5636,6 +5636,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		r_cons_printf (",\"family\":\"%s\"",
 				r_anal_op_family_to_string (ds->analop.family));
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (ds->analop.type));
+		// indicate a relocated address
+		RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+		// reloc is true if address in reloc table
+		r_cons_printf (",\"reloc\":%s", rel ? r_str_bool(true) : r_str_bool (false));
 		// wanted the numerical values of the type information
 		r_cons_printf (",\"type_num\":%"PFMT64d, ds->analop.type);
 		r_cons_printf (",\"type2_num\":%"PFMT64d, ds->analop.type2);
