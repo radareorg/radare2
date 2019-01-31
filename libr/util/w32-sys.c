@@ -91,8 +91,14 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	PROCESS_INFORMATION pi = {0};
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
-	char _cmdline_[32768];
 	bool ret;
+	const size_t max_length = 32768;
+	char *_cmdline_ = malloc (max_length);
+
+	if (!_cmdline_) {
+		R_LOG_ERROR ("Failed to allocate memory\n");
+		return false;
+	}
 
 	// Set up members of the STARTUPINFO structure.
 	// This structure specifies the STDIN and STDOUT handles for redirection.
@@ -102,7 +108,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	si.hStdInput = NULL;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
-	ExpandEnvironmentStrings (cmdline_, _cmdline_, 32767);
+	ExpandEnvironmentStrings (cmdline_, _cmdline_, max_length - 1);
 	if ((ret = CreateProcess (NULL,
 			_cmdline_,     // command line
 			NULL,          // process security attributes
