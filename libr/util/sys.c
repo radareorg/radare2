@@ -619,6 +619,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	}
 	if (output) {
 		*output = result;
+		*len = strlen (result);
 	}
 	if (result) {
 		return true;

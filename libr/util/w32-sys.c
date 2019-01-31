@@ -91,6 +91,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	PROCESS_INFORMATION pi = {0};
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
+	char _cmdline_[32768];
 	bool ret;
 
 	// Set up members of the STARTUPINFO structure.
@@ -101,15 +102,16 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	si.hStdInput = NULL;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
+	ExpandEnvironmentStrings (cmdline_, _cmdline_, 32767);
 	if ((ret = CreateProcess (NULL,
-			cmdline_,// command line
+			_cmdline_,     // command line
 			NULL,          // process security attributes
 			NULL,          // primary thread security attributes
 			TRUE,          // handles are inherited
 			0,             // creation flags
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
-			&si,  // STARTUPINFO pointer
+			&si,           // STARTUPINFO pointer
 			&pi))) {  // receives PROCESS_INFORMATION 
 		ret = 1;
 		CloseHandle (pi.hProcess);
