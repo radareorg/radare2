@@ -70,8 +70,6 @@ static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
     input = r_str_newlen(r_str_trim_head_tail(input), sizeof (RStrBuf));
     int len = r_hex_str2bin (input, opBuf);
     r_asm_op_set_hex (op, input);
-	int len = r_hex_str2bin (input, (ut8*)r_strbuf_get (&op->buf));
-	r_asm_op_set_hex (op, r_str_trim_head_tail (input));
 	if (len < 0) {
 		len = -len;
 		len--;
