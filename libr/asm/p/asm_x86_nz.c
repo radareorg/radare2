@@ -107,7 +107,7 @@ typedef struct operand_t {
 	};
 	union {
 		struct {
-			long offset;
+			ut64 offset;
 			st8 offset_sign;
 			Register regs[2];
 			int scale[2];
