@@ -1173,10 +1173,10 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 	int length = strlen (msg);
 	RSpaces *zs = &core->anal->zign_spaces;
 	RSpace *s;
-	RBIter it;
+	RSpaceIter it;
 	int i = 0;
 
-	r_rbtree_foreach (zs->spaces, it, s, RSpace, rb) {
+	r_spaces_foreach (zs, it, s) {
 		if (i == TMP_ARGV_SZ - 1) {
 			break;
 		}
@@ -2209,14 +2209,14 @@ static char *get_comments_cb(void *user, ut64 addr) {
 }
 
 R_IPI void spaces_list(RSpaces *sp, int mode) {
-	RBIter it;
+	RSpaceIter it;
 	RSpace *s;
 	bool first = true;
 	const RSpace *cur = r_spaces_current (sp);
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	r_rbtree_foreach (sp->spaces, it, s, RSpace, rb) {
+	r_spaces_foreach (sp, it, s) {
 		int count = r_spaces_count (sp, s->name);
 		if (mode == 'j') {
 			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",

@@ -1100,9 +1100,9 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		default: {
 			RSpace *s;
-			RBIter it;
+			RSpaceIter it;
 			const RSpace *cur = r_spaces_current (ms);
-			r_rbtree_foreach (ms->spaces, it, s, RSpace, rb) {
+			r_spaces_foreach (ms, it, s) {
 				r_cons_printf ("%c %s\n", (s == cur)? '*': ' ',
 					s->name);
 			}
