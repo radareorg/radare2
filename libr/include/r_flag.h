@@ -146,6 +146,7 @@ R_API bool r_flag_space_rename(RFlag *f, const char *oname, const char *nname);
 R_API bool r_flag_space_pop(RFlag *f);
 R_API bool r_flag_space_push(RFlag *f, const char *name);
 R_API int r_flag_space_stack_list(RFlag *f, int mode);
+R_API int r_flag_space_count(RFlag *f, int n);
 
 /* tags */
 R_API RList *r_flag_tags_list(RFlag *f);

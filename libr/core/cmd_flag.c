@@ -341,6 +341,107 @@ static bool adjust_offset(RFlagItem *flag, void *user) {
 	return true;
 }
 
+static int flag_space_list(RFlag *f, int mode) {
+	r_return_val_if_fail (f, -1);
+	const char *defspace = NULL;
+	int count, len, i, j = 0;
+	bool allSelected = f->space_idx == -1;
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
+		if (!f->spaces[i]) {
+			continue;
+		}
+		count = r_flag_space_count (f, i);
+		if (mode == 'q') {
+			r_cons_printf ("%s\n", f->spaces[i]);
+		} else if (mode == 'j') {
+			r_cons_printf ("%s{\"name\":\"%s\",\"count\":%d,\"selected\":%s}",
+					j? ",":"", f->spaces[i], count,
+					(allSelected || i == f->space_idx)? "true":"false");
+		} else if (mode=='*') {
+			r_cons_printf ("fs %s\n", f->spaces[i]);
+			if (i == f->space_idx) {
+				defspace = f->spaces[i];
+			}
+		} else {
+			#define INDENT 5
+			char num0[64], num1[64], spaces[32];
+			snprintf (num0, sizeof (num0), "%d", i);
+			snprintf (num1, sizeof (num1), "%d", count);
+			memset(spaces, ' ', sizeof (spaces));
+			len = strlen (num0) + strlen (num1);
+			if (len < INDENT) {
+				spaces[INDENT-len] = 0;
+			} else {
+				spaces[0] = 0;
+			}
+			r_cons_printf ("%s%s %s %c %s\n", num0, spaces, num1,
+					(allSelected || i==f->space_idx)?'*':'.',
+					f->spaces[i]);
+		}
+		j++;
+	}
+	if (defspace) {
+		r_cons_printf ("fs %s # current\n", defspace);
+	}
+	if (mode == 'j') {
+		r_cons_printf ("]\n");
+	}
+	return j;
+}
+
+static void print_space_stack(RFlag *f, int ordinal, char *name, bool selected, int mode) {
+	bool first = ordinal == 0;
+	switch (mode) {
+	case 'j':
+		if (!first) {
+			r_cons_printf (",");
+		}
+		{
+		char *ename = r_str_escape (name);
+		r_cons_printf ("{\"ordinal\":%d,\"name\":\"%s\",\"selected\":%s}",
+			ordinal, ename, selected? "true":"false");
+		free (ename);
+		}
+		break;
+	case '*':
+		if (first) {
+			r_cons_printf ("fs %s\n", name);
+		} else {
+			r_cons_printf ("fs+%s\n", name);
+		}
+		break;
+	default:
+		r_cons_printf ("%-2d %s%s\n", ordinal, name, selected? " (selected)":"");
+		break;
+	}
+}
+
+static int flag_space_stack_list(RFlag *f, int mode) {
+	RListIter *iter;
+	char *space;
+	int i = 0;
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
+	r_list_foreach (f->spacestack, iter, space) {
+		print_space_stack (f, i++, space, false, mode);
+	}
+	if (f->space_idx == -1) {
+		print_space_stack (f, i++, "*", true, mode);
+	} else {
+		if (f->spaces[f->space_idx]) {
+			print_space_stack (f, i++, f->spaces[f->space_idx], true, mode);
+		}
+	}
+	if (mode == 'j') {
+		r_cons_printf ("]\n");
+	}
+	return i;
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -709,7 +810,7 @@ rep:
 			}
 			break;
 		case 's':
-			r_flag_space_stack_list (core->flags, input[2]);
+			flag_space_stack_list (core->flags, input[2]);
 			break;
 		case '-':
 			switch (input[2]) {
@@ -734,7 +835,7 @@ rep:
 		case '\0':
 		case '*':
 		case 'q':
-			r_flag_space_list (core->flags, input[1]);
+			flag_space_list (core->flags, input[1]);
 			break;
 		case ' ':
 			r_flag_space_set (core->flags, input+2);
