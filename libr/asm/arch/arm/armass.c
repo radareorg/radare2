@@ -443,7 +443,7 @@ static ut64 getnum(const char *str) {
 	while (*str == '$' || *str == '#') {
 		str++;
 	}
-	val = strtol (str, &endptr, 0);
+	val = strtoll (str, &endptr, 0);
 	if (str != endptr && *endptr == '\0') {
 		return val;
 	}
@@ -565,7 +565,7 @@ static ut32 getthimmed12(const char *str) {
 	ut64 result = 0;
 	if (num <= 0xff) {
 		return num << 8;
-	} else 	if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
+	} else if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
 		result |= (num & 0x000000ff) << 8;
 		result |= 0x00000010;
 		return result;
