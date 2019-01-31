@@ -3512,24 +3512,16 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	filename = desc? desc->name: "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
-#if 1
 		/* TODO: we need a helper into r_flags to do that */
-		bool oss = core->flags->space_strict;
-		int osi = core->flags->space_idx;
 		RFlagItem *f = NULL;
-		core->flags->space_strict = true;
-		core->anal->flb.set_fs (core->flags, "symbols");
+		core->anal->flb.push_fs (core->flags, "symbols");
 		if (core->flags->space_idx != -1) {
 			f = core->anal->flb.get_at (core->flags, addr, showDelta);
 		}
-		core->flags->space_strict = oss;
-		core->flags->space_idx = osi;
+		core->anal->flb.pop_fs (core->flags);
 		if (!f) {
 			f = r_flag_get_at (core->flags, addr, showDelta);
 		}
-#else
-		RFlagItem *f = r_flag_get_at (core->flags, addr, false);
-#endif
 		if (f) {
 			if (f->offset == addr || !f->offset) {
 				snprintf (pos, sizeof (pos), "@ %s", f->name);

@@ -573,7 +573,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	}
 	while (!nice && flags_at) {
 		r_list_foreach (flags_at->flags, iter, item) {
-			if (f->space_strict && IS_FI_NOTIN_SPACE (f, item)) {
+			if (IS_FI_NOTIN_SPACE (f, item)) {
 				continue;
 			}
 			if (item->offset == off) {

@@ -493,9 +493,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
-					core->flags->space_strict = true;
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s+%d", f->name,
@@ -551,9 +549,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
-					core->flags->space_strict = true;
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s + %d\n", f->name,

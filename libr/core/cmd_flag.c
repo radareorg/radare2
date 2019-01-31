@@ -888,7 +888,6 @@ rep:
 			ut64 addr = core->offset;
 			char *arg = NULL;
 			RFlagItem *f = NULL;
-			bool space_strict = true;
 			bool strict_offset = false;
 			switch (input[1]) {
 			case '?':
@@ -901,7 +900,6 @@ rep:
 				addr = core->offset;
 				break;
 			case 'd':
-				space_strict = false;
 				arg = strchr (input, ' ');
 				if (arg) {
 					addr = r_num_math (core->num, arg + 1);
@@ -972,9 +970,7 @@ rep:
 				}
 				break;
 			}
-			core->flags->space_strict = space_strict;
 			f = r_flag_get_at (core->flags, addr, !strict_offset);
-			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
 					// if input contains 'j' print json
