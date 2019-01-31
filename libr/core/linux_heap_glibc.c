@@ -1169,7 +1169,7 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 	free(ta);
 }
 
-void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
+void GH(print_inst_minfo)(RCore *core, GH(RHeapInfo) *heap_info, GHT hinfo) {
 	PRINT_YA ("malloc_info @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)hinfo);
 	PRINT_YA (" {\n  ar_ptr = " );
@@ -1196,7 +1196,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 			return;
 		}
 		r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
-		GH(print_inst_minfo) (heap_info, h_info);
+		GH(print_inst_minfo) (core, heap_info, h_info);
 		MallocState *ms = R_NEW0 (MallocState);
 		if (!ms) {
 			free (heap_info);
@@ -1212,7 +1212,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 			if ((ms->GH(top) >> 16) << 16 != h_info) {
 				h_info = (ms->GH(top) >> 16) << 16;
 				r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
-				GH(print_inst_minfo) (heap_info, h_info);
+				GH(print_inst_minfo) (core, heap_info, h_info);
 			}
 		}
 		free (heap_info);
