@@ -2547,6 +2547,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					// the way IO works maps would be shown
 					// in reverse order
 					struct io_bin_section_info_t *ibs = malloc (sizeof (*ibs));
+					if (!ibs) {
+						bprintf ("Could not allocate memory\n");
+						goto out;
+					}
+
 					ibs->sec = section;
 					ibs->addr = addr;
 					ibs->fd = fd;
