@@ -37,6 +37,7 @@ static const char *help_msg_f[] = {
 	"fla"," [glob]","automatically compute the size of all flags matching glob",
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
+	"fnj","","list flags displaying the real name (demangled) in JSON format",
 	"fo","","show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
@@ -845,7 +846,7 @@ rep:
 		}
 		break;
 	case '\0':
-	case 'n': // "fn"
+	case 'n': // "fn" "fnj"
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"

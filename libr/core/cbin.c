@@ -1885,7 +1885,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
 	RList *symbols = r_bin_get_symbols (r->bin);
-	r_space_set (&r->anal->meta_spaces, "bin");
+	r_spaces_push (&r->anal->meta_spaces, "bin");
 
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_printf ("[");
@@ -2146,7 +2146,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		r_cons_printf ("]");
 	}
 
-	r_space_set (&r->anal->meta_spaces, NULL);
+	r_spaces_pop (&r->anal->meta_spaces);
 	return true;
 }
 
@@ -2464,7 +2464,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
-			if (chksum) {
+			if (chksum && section->size > 0) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
 					goto out;
@@ -2474,7 +2474,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				hashstr = build_hash_string (mode, chksum,
 							data, datalen);
 				free (data);
-
 			}
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","

@@ -29,13 +29,13 @@ typedef struct r_event_meta_t {
 	const char *string;
 } REventMeta;
 
-typedef void (*REventCallback)(REvent *ev, REventType type, void *data);
+typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
-R_API void r_event_hook(REvent *ev, REventType type, REventCallback cb);
-R_API void r_event_unhook(REvent *ev, REventType type, REventCallback cb);
-R_API void r_event_send(REvent *ev, REventType type, void *data);
+R_API void r_event_hook(REvent *ev, int type, REventCallback cb);
+R_API void r_event_unhook(REvent *ev, int type, REventCallback cb);
+R_API void r_event_send(REvent *ev, int type, void *data);
 
 #ifdef __cplusplus
 }

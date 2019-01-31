@@ -793,7 +793,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
-static char get_string_type(const ut8 *buf, ut64 len){
+static char get_string_type(const ut8 *buf, ut64 len) {
 	ut64 needle = 0;
 	int rc, i;
 	char str_type = 0;
@@ -868,7 +868,7 @@ static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	r_cons_printf ("size (of block):  %d  0x%x\n", bsz, bsz);
 }
 
-R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
+R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff) {
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
 	// XXX - this needs to be done here, because
@@ -2667,6 +2667,11 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	int w = (input[0] == ' ')
 		? (int)r_num_math (core->num, input + 1)
 		: (int)(core->print->cols * 2.7);
+
+	if (w == 0) {
+		r_core_cmd_help (core, help_msg_p_minus);
+		return 0;
+	}
 
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
