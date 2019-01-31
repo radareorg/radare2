@@ -3360,7 +3360,6 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		return NULL;
 	}
 	for (i = 0, j = 0; i < bin->num_sections; i++) {
-		//if sz = 0 r_io_section_add will not add it so just skeep
 		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) {
 			continue;
 		}
