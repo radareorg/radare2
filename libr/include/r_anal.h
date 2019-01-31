@@ -752,6 +752,9 @@ typedef struct r_anal_var_access_t {
 #define R_ANAL_VAR_KIND_BPV 'b'
 #define R_ANAL_VAR_KIND_SPV 's'
 
+#define VARPREFIX "var"
+#define ARGPREFIX "arg"
+
 // generic for args and locals
 typedef struct r_anal_var_t {
 	char *name;  /* name of the variable */

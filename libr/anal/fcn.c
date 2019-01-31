@@ -5,9 +5,6 @@
 #include <r_list.h>
 #include <r_core.h>
 
-#define VARPREFIX "local"
-#define ARGPREFIX "arg"
-
 #define USE_SDB_CACHE 0
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
