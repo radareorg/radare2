@@ -1158,7 +1158,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (j >= len || (use_align && bytes >= rowbytes)) {
 					break;
 				}
-				r_print_byte (p, "%c", j, buf[j]);
+				ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
+				                ? ' ' : buf[j];
+				r_print_byte (p, "%c", j, ch);
 				bytes++;
 			}
 		}
