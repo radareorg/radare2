@@ -278,10 +278,9 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 	va_end (ap);
 }
 
-R_API int r_egg_assemble_asm(REgg *egg, char **asm_list) {
+R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	RAsmCode *asmcode = NULL;
 	char *code = NULL;
-	int ret = false;
 	char *asm_name = NULL;
 
 	if (asm_list) {
@@ -318,12 +317,12 @@ R_API int r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		}
 	}
 	free (code);
-	ret = (asmcode != NULL);
+	bool ret = (asmcode != NULL);
 	r_asm_code_free (asmcode);
 	return ret;
 }
 
-R_API int r_egg_assemble(REgg *egg) {
+R_API bool r_egg_assemble(REgg *egg) {
 	return r_egg_assemble_asm (egg, NULL);
 }
 
