@@ -2271,6 +2271,111 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 	}
 }
 
+typedef struct {
+	const char *uri;
+	int perm;
+	RIODesc *desc;
+} FindFile;
+
+static bool findFile(void *user, void *data, ut32 id) {
+	FindFile *res = (FindFile*)user;
+	RIODesc *desc = (RIODesc*)data;
+	if (desc->perm && res->perm && !strcmp (desc->uri, res->uri)) {
+		res->desc = desc;
+		return false;
+	}
+	return true;
+}
+
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
+	FindFile arg = {
+		.uri = uri,
+		.perm = perm,
+		.desc = NULL,
+	};
+	r_id_storage_foreach (io->files, findFile, &arg);
+	return arg.desc;
+}
+
+static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
+	r_return_val_if_fail (io && sec, false);
+
+	bool reused = false;
+	ut64 gap = sec->vsize - sec->size;
+	char *uri = r_str_newf ("null://%"PFMT64u, gap);
+	RIODesc *desc = findReusableFile (io, uri, sec->perm);
+	if (desc) {
+		RIOMap *map = r_io_map_get (io, at);
+		if (!map) {
+			r_io_map_add_batch (io, desc->fd, desc->perm, 0LL, at, gap);
+		}
+		reused = true;
+	}
+	if (!desc) {
+		desc = r_io_open_at (io, uri, sec->perm, 0664, at);
+	}
+	free (uri);
+	if (!desc) {
+		return false;
+	}
+	// this works, because new maps are always born on the top
+	RIOMap *map = r_io_map_get (io, at);
+	// check if the mapping failed
+	if (!map) {
+		if (!reused) {
+			r_io_desc_close (desc);
+		}
+		return false;
+	}
+	// let the section refere to the map as a memory-map
+	map->name = r_str_newf ("mmap.%s", sec->name);
+	return true;
+}
+
+static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
+	if (!r_io_desc_get (core->io, fd) || UT64_ADD_OVFCHK (sec->size, sec->paddr) ||
+	    UT64_ADD_OVFCHK (sec->size, addr) || !sec->vsize) {
+		return;
+	}
+
+	ut64 size = sec->vsize;
+	// if there is some part of the section that needs to be zeroed by the loader
+	// we add a null map that takes care of it
+	if (sec->vsize > sec->size) {
+		if (!io_create_mem_map (core->io, sec, addr + sec->size)) {
+			return;
+		}
+
+		size = sec->size;
+	}
+
+	// then we map the part of the section that comes from the physical file
+	char *map_name = r_str_newf ("fmap.%s", sec->name);
+	if (!map_name) {
+		return;
+	}
+
+	int perm = sec->perm;
+	// workaround to force exec bit in text section
+	if (sec->name &&  strstr (sec->name, "text")) {
+		perm |= R_PERM_X;
+	}
+
+	RIOMap *map = r_io_map_add_batch (core->io, fd, perm, sec->paddr, addr, size);
+	if (!map) {
+		free (map_name);
+		return;
+	}
+	map->name = map_name;
+	return;
+}
+
+struct io_bin_section_info_t {
+	RBinSection *sec;
+	ut64 addr;
+	int fd;
+};
+
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
@@ -2289,6 +2394,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 	bool segments_only = true;
+	RList *io_section_info = NULL;
 
 	if (!dup_chk_ht) {
 		return false;
@@ -2325,6 +2431,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				break;
 			}
 		}
+
+		io_section_info = r_list_newf ((RListFree)free);
 	}
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
@@ -2434,10 +2542,20 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
 				ht_pp_find (dup_chk_ht, str, &found);
 				if (!found) {
-					r_io_section_add (r->io, section->paddr, addr,
-						section->size, section->vsize,
-						section->perm, section->name,
-						r->bin->cur->id, fd);
+					// can't directly add maps because they
+					// need to be reversed, otherwise for
+					// the way IO works maps would be shown
+					// in reverse order
+					struct io_bin_section_info_t *ibs = R_NEW (struct io_bin_section_info_t);
+					if (!ibs) {
+						eprintf ("Could not allocate memory\n");
+						goto out;
+					}
+
+					ibs->sec = section;
+					ibs->addr = addr;
+					ibs->fd = fd;
+					r_list_append (io_section_info, ibs);
 					ht_pp_insert (dup_chk_ht, str, NULL);
 				}
 				R_FREE (str);
@@ -2513,25 +2631,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				str[0] = 0;
 			}
 			if (r->bin->prefix) {
-#if 0
-				r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-					"perm=%s %s%sname=%s.%s\n",
-					i, addr, section->paddr, section->size, section->vsize,
-					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
-#endif
-				// r_cons_printf ("%02i 0x%08"PFMT64x" %10"PFMT64d" 0x%08"PFMT64x" %10"PFMT64d" "
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
 					"%s %s%s%s.%s\n",
 					i, section->paddr, section->size, addr, section->vsize,
 					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
 			} else {
-#if 0
-				r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-					"perm=%s %s%sname=%s\n",
-					i, addr, section->paddr, section->size, section->vsize,
-					perms, str, hashstr ?hashstr : "", section->name);
-#endif
-				// r_cons_printf ("%02i 0x%08"PFMT64x" %10"PFMT64d" 0x%08"PFMT64x" %10"PFMT64d" "
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
 					"%s %s%s%s\n",
 					i, section->paddr, (ut64)section->size, addr, (ut64)section->vsize,
@@ -2545,8 +2649,15 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			break;
 		}
 	}
-	if (r->bin && r->bin->cur && r->io && !r_io_desc_is_dbg (r->io->desc)) {
-		r_io_section_apply_bin (r->io, r->bin->cur->id, R_IO_SECTION_APPLY_FOR_ANALYSIS);
+	if (IS_MODE_SET (mode) && !r_io_desc_is_dbg (r->io->desc)) {
+		RListIter *it;
+		struct io_bin_section_info_t *ibs;
+		r_list_foreach_prev (io_section_info, it, ibs) {
+			add_section (r, ibs->sec, ibs->addr, ibs->fd);
+		}
+		r_io_update (r->io);
+		r_list_free (io_section_info);
+		io_section_info = NULL;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_println ("]");

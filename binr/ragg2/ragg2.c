@@ -11,7 +11,7 @@
 static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
-		"             [-q off] [-dDw off:hex] file|f.asm|-\n");
+		"             [-dDw off:hex] file|f.asm|-\n");
 	if (v) {
 		printf (
 			" -a [arch]       select architecture (x86, mips, arm)\n"

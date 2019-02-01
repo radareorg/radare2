@@ -232,21 +232,21 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		}
 	} else {
 		int _perm = -1;
-		RBinSection *s;
+		RIOMap *s;
 		SdbListIter *iter;
 		if (core->io) {
 			// sections
-			ls_foreach (core->io->sections, iter, s) {
-				if (addr >= s->vaddr && addr < (s->vaddr + s->vsize)) {
+			ls_foreach (core->io->maps, iter, s) {
+				if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
 					// sections overlap, so we want to get the one with lower perms
 					_perm = (_perm != -1) ? R_MIN (_perm, s->perm) : s->perm;
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
-					if (strstr (s->name, "heap")) {
+					if (s->name && strstr (s->name, "heap")) {
 						types |= R_ANAL_ADDR_TYPE_HEAP;
 					}
-					if (strstr (s->name, "stack")) {
+					if (s->name && strstr (s->name, "stack")) {
 						types |= R_ANAL_ADDR_TYPE_STACK;
 					}
 				}

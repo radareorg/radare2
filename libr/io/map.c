@@ -319,6 +319,14 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	return io_map_add (io, fd, perm, delta, addr, size, true);
 }
 
+R_API RIOMap *r_io_map_add_batch(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+	return io_map_add (io, fd, perm, delta, addr, size, false);
+}
+
+R_API void r_io_update(RIO *io) {
+	io_map_calculate_skyline (io);
+}
+
 R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	r_return_val_if_fail (io, NULL);
 	RIOMap* map;
