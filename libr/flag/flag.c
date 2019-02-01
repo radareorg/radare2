@@ -190,6 +190,37 @@ static void ht_free_flag(HtPPKv *kv) {
 	r_flag_item_free (kv->value);
 }
 
+static bool count_flags(RFlagItem *fi, void *user) {
+	int *count = (int *)user;
+	(*count)++;
+	return true;
+}
+
+static bool unset_flags_space(RFlagItem *fi, void *user) {
+	fi->space = NULL;
+	return true;
+}
+
+static void count_flags_in_space(REvent *ev, int type, void *user, void *data) {
+	RSpaces *sp = (RSpaces *)user;
+	RFlag *f = container_of (sp, RFlag, spaces);
+	RSpaceEvent *spe = (RSpaceEvent *)data;
+	r_flag_foreach_space (f, spe->data.count.space, count_flags, &spe->res);
+}
+
+static void unset_flagspace(REvent *ev, int type, void *user, void *data) {
+	RSpaces *sp = (RSpaces *)user;
+	RFlag *f = container_of (sp, RFlag, spaces);
+	const RSpaceEvent *spe = (const RSpaceEvent *)data;
+	r_flag_foreach_space (f, spe->data.unset.space, unset_flags_space, NULL);
+}
+
+static void new_spaces(RFlag *f) {
+	r_spaces_init (&f->spaces, "fs");
+	r_event_hook (f->spaces.event, R_SPACE_EVENT_COUNT, count_flags_in_space);
+	r_event_hook (f->spaces.event, R_SPACE_EVENT_UNSET, unset_flagspace);
+}
+
 R_API RFlag *r_flag_new() {
 	RFlag *f = R_NEW0 (RFlag);
 	if (!f) {
@@ -215,8 +246,7 @@ R_API RFlag *r_flag_new() {
 #else
 	r_list_free (f->zones);
 #endif
-	f->spaces = r_spaces_new ("fs");
-	// TODO: set spaces event hooks
+	new_spaces(f);
 	return f;
 }
 
@@ -256,7 +286,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	r_skiplist_free (f->by_off);
 	ht_pp_free (f->ht_name);
 	sdb_free (f->tags);
-	r_spaces_free (f->spaces);
+	r_spaces_fini (&f->spaces);
 	r_num_free (f->num);
 	free (f);
 	return NULL;
@@ -762,9 +792,8 @@ R_API void r_flag_unset_all(RFlag *f) {
 	ht_pp_free (f->ht_name);
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	r_skiplist_purge (f->by_off);
-	r_spaces_free (f->spaces);
-	f->spaces = r_spaces_new ("fs");
-	// FIXME: create a function to initialize f->spaces and use it in _new as well
+	r_spaces_fini (&f->spaces);
+	new_spaces (f);
 }
 
 struct flag_relocate_t {

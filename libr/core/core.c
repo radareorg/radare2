@@ -1205,7 +1205,7 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	int i = 0;
 	RSpaceIter it;
 	RSpace *s;
-	r_spaces_foreach (flag->spaces, it, s) {
+	r_flag_space_foreach (flag, it, s) {
 		if (i == TMP_ARGV_SZ - 1) {
 			break;
 		}

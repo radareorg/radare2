@@ -612,7 +612,7 @@ R_API int r_core_visual_types(RCore *core) {
 		NULL
 	};
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	if (r_spaces_is_empty (core->flags->spaces)) {
+	if (r_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
 	for (;;) {
@@ -711,7 +711,7 @@ R_API int r_core_visual_types(RCore *core) {
 			option = _option;
 			if (menu==0) {
 				// if no flagspaces, just quit
-				if (r_spaces_is_empty (core->flags->spaces)) {
+				if (r_flag_space_is_empty (core->flags)) {
 					return true;
 				}
 			}
@@ -1508,7 +1508,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int menu = 0;
 	int sort = SORT_NONE;
 
-	if (r_spaces_is_empty (core->flags->spaces)) {
+	if (r_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
 	for (;;) {
@@ -1574,7 +1574,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			RSpaceIter it;
 			const RSpace *s, *cur = r_flag_space_cur (core->flags);
 			int i = 0;
-			r_spaces_foreach (core->flags->spaces, it, s) {
+			r_flag_space_foreach (core->flags, it, s) {
 				if (option == i) {
 					fs = s->name;
 					hit = 1;
@@ -1641,7 +1641,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			if (menu == 0) {
 				r_flag_space_set (core->flags, NULL);
 				// if no flagspaces, just quit
-				if (r_spaces_is_empty (core->flags->spaces)) {
+				if (r_flag_space_is_empty (core->flags)) {
 					return true;
 				}
 			}

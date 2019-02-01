@@ -351,7 +351,7 @@ static int flag_space_list(RFlag *f, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	r_spaces_foreach (f->spaces, it, s) {
+	r_flag_space_foreach (f, it, s) {
 		count = r_flag_space_count (f, s->name);
 		if (mode == 'q') {
 			r_cons_printf ("%s\n", s->name);
@@ -410,7 +410,7 @@ static int flag_space_stack_list(RFlag *f, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	r_list_foreach (f->spaces->spacestack, iter, space) {
+	r_list_foreach (f->spaces.spacestack, iter, space) {
 		print_space_stack (f, i++, space, false, mode);
 	}
 	const char *cur_name = r_flag_space_cur_name (f);
@@ -837,7 +837,7 @@ rep:
 		default: {
 			RSpaceIter it;
 			RSpace *s;
-			r_spaces_foreach (core->flags->spaces, it, s) {
+			r_flag_space_foreach (core->flags, it, s) {
 				r_cons_printf ("%c %s\n",
 					(s == r_flag_space_cur (core->flags))? '*': ' ',
 					s->name);

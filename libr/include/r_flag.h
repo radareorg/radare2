@@ -48,7 +48,7 @@ typedef struct r_flag_item_t {
 } RFlagItem;
 
 typedef struct r_flag_t {
-	RSpaces *spaces;   /* handle flag spaces */
+	RSpaces spaces;   /* handle flag spaces */
 	st64 base;         /* base address for all flag items */
 	bool realnames;
 	Sdb *tags;
@@ -133,40 +133,46 @@ R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, v
 
 /* spaces */
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {
-	return r_spaces_get (f->spaces, name);
+	return r_spaces_get (&f->spaces, name);
 }
 
 static inline RSpace *r_flag_space_cur(RFlag *f) {
-	return r_spaces_current (f->spaces);
+	return r_spaces_current (&f->spaces);
 }
 
 static inline const char *r_flag_space_cur_name(RFlag *f) {
-	return r_spaces_current_name (f->spaces);
+	return r_spaces_current_name (&f->spaces);
 }
 
 static inline RSpace *r_flag_space_set(RFlag *f, const char *name) {
-	return r_spaces_set (f->spaces, name);
+	return r_spaces_set (&f->spaces, name);
 }
 
 static inline bool r_flag_space_unset(RFlag *f, const char *name) {
-	return r_spaces_unset (f->spaces, name);
+	return r_spaces_unset (&f->spaces, name);
 }
 
 static inline bool r_flag_space_rename(RFlag *f, const char *oname, const char *nname) {
-	return r_spaces_rename (f->spaces, oname, nname);
+	return r_spaces_rename (&f->spaces, oname, nname);
 }
 
 static inline bool r_flag_space_push(RFlag *f, const char *name) {
-	return r_spaces_push (f->spaces, name);
+	return r_spaces_push (&f->spaces, name);
 }
 
 static inline bool r_flag_space_pop(RFlag *f) {
-	return r_spaces_pop (f->spaces);
+	return r_spaces_pop (&f->spaces);
 }
 
 static inline int r_flag_space_count(RFlag *f, const char *name) {
-	return r_spaces_count (f->spaces, name);
+	return r_spaces_count (&f->spaces, name);
 }
+
+static inline bool r_flag_space_is_empty(RFlag *f) {
+	return r_spaces_is_empty (&f->spaces);
+}
+
+#define r_flag_space_foreach(f, it, s) r_spaces_foreach (&(f)->spaces, (it), (s))
 
 /* tags */
 R_API RList *r_flag_tags_list(RFlag *f);
