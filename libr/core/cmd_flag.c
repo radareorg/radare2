@@ -343,48 +343,32 @@ static bool adjust_offset(RFlagItem *flag, void *user) {
 
 static int flag_space_list(RFlag *f, int mode) {
 	r_return_val_if_fail (f, -1);
-	const char *defspace = NULL;
-	int count, len, i, j = 0;
-	bool allSelected = f->space_idx == -1;
+	int count, j = 0;
+	const RSpace *cur = r_flag_space_cur (f);
+	const RSpace *s;
+	RSpaceIter it;
+
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-		if (!f->spaces[i]) {
-			continue;
-		}
-		count = r_flag_space_count (f, i);
+	r_spaces_foreach (f->spaces, it, s) {
+		count = r_flag_space_count (f, s->name);
 		if (mode == 'q') {
-			r_cons_printf ("%s\n", f->spaces[i]);
+			r_cons_printf ("%s\n", s->name);
 		} else if (mode == 'j') {
 			r_cons_printf ("%s{\"name\":\"%s\",\"count\":%d,\"selected\":%s}",
-					j? ",":"", f->spaces[i], count,
-					(allSelected || i == f->space_idx)? "true":"false");
-		} else if (mode=='*') {
-			r_cons_printf ("fs %s\n", f->spaces[i]);
-			if (i == f->space_idx) {
-				defspace = f->spaces[i];
-			}
+				j? ",":"", s->name, count,
+				(s == cur)? "true":"false");
+		} else if (mode == '*') {
+			r_cons_printf ("fs %s\n", s->name);
 		} else {
-			#define INDENT 5
-			char num0[64], num1[64], spaces[32];
-			snprintf (num0, sizeof (num0), "%d", i);
-			snprintf (num1, sizeof (num1), "%d", count);
-			memset(spaces, ' ', sizeof (spaces));
-			len = strlen (num0) + strlen (num1);
-			if (len < INDENT) {
-				spaces[INDENT-len] = 0;
-			} else {
-				spaces[0] = 0;
-			}
-			r_cons_printf ("%s%s %s %c %s\n", num0, spaces, num1,
-					(allSelected || i==f->space_idx)?'*':'.',
-					f->spaces[i]);
+			r_cons_printf ("%d %c %s\n", count, (s == cur)? '*': '.',
+				s->name);
 		}
 		j++;
 	}
-	if (defspace) {
-		r_cons_printf ("fs %s # current\n", defspace);
+	if (mode == '*' && cur) {
+		r_cons_printf ("fs %s # current\n", cur->name);
 	}
 	if (mode == 'j') {
 		r_cons_printf ("]\n");
@@ -392,7 +376,7 @@ static int flag_space_list(RFlag *f, int mode) {
 	return j;
 }
 
-static void print_space_stack(RFlag *f, int ordinal, char *name, bool selected, int mode) {
+static void print_space_stack(RFlag *f, int ordinal, const char *name, bool selected, int mode) {
 	bool first = ordinal == 0;
 	switch (mode) {
 	case 'j':
@@ -426,16 +410,11 @@ static int flag_space_stack_list(RFlag *f, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	r_list_foreach (f->spacestack, iter, space) {
+	r_list_foreach (f->spaces->spacestack, iter, space) {
 		print_space_stack (f, i++, space, false, mode);
 	}
-	if (f->space_idx == -1) {
-		print_space_stack (f, i++, "*", true, mode);
-	} else {
-		if (f->spaces[f->space_idx]) {
-			print_space_stack (f, i++, f->spaces[f->space_idx], true, mode);
-		}
-	}
+	const char *cur_name = r_flag_space_cur_name (f);
+	print_space_stack (f, i++, cur_name, true, mode);
 	if (mode == 'j') {
 		r_cons_printf ("]\n");
 	}
@@ -817,12 +796,13 @@ rep:
 			case '*':
 				r_flag_space_unset (core->flags, NULL);
 				break;
-			case '.':
-				{
-				const char *curfs = r_flag_space_cur (core->flags);
-				r_flag_space_unset (core->flags, curfs);
+			case '.': {
+				const RSpace *sp = r_flag_space_cur (core->flags);
+				if (sp) {
+					r_flag_space_unset (core->flags, sp->name);
 				}
 				break;
+			}
 			case 0:
 				r_flag_space_pop (core->flags);
 				break;
@@ -848,21 +828,22 @@ rep:
 			}
 			f = r_flag_get_i (core->flags, off);
 			if (f) {
-				f->space = core->flags->space_idx;
+				f->space = r_flag_space_cur (core->flags);
 			} else {
 				eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
 			}
 			}
 			break;
 		default: {
-			int i, j = 0;
-			for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-				if (core->flags->spaces[i])
-					r_cons_printf ("%02d %c %s\n", j++,
-					(i == core->flags->space_idx)?'*':' ',
-					core->flags->spaces[i]);
+			RSpaceIter it;
+			RSpace *s;
+			r_spaces_foreach (core->flags->spaces, it, s) {
+				r_cons_printf ("%c %s\n",
+					(s == r_flag_space_cur (core->flags))? '*': ' ',
+					s->name);
 			}
-			} break;
+			break;
+		}
 		}
 		break;
 	case 'g':
@@ -1023,47 +1004,46 @@ rep:
 				}
 				return 0;
 				}
-			case 'w':
-				{
+			case 'w': {
 				arg = strchr (input, ' ');
-				if (arg) {
-					arg++;
-					if (*arg) {
-						RFlag *f = core->flags;
-						RList *temp = r_flag_all_list (f);
-						ut64 loff = 0; 
-						ut64 uoff = 0;
-						ut64 curseek = core->offset;
-						char *lmatch = NULL , *umatch = NULL;
-						RFlagItem *flag;
-						RListIter *iter;
-						r_list_sort (temp, &cmpflag);
-						r_list_foreach (temp, iter, flag) {
-							if ((f->space_idx != -1) && (flag->space != f->space_idx)) {
-								continue;
-							}
-							if (strstr (flag->name , arg) != NULL) {
-								if (flag->offset < core->offset) {
-									loff = flag->offset;
-									lmatch = flag->name;							
-									continue;
-								}
-								uoff = flag->offset;
-								umatch = flag->name;
-								break;
-							}	
-						}		
-						char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
-						if (match) {
-							if (*match) {
-								r_cons_println (match);
-							}
-						}	
-						r_list_free (temp);
-					}	
+				if (!arg) {
+					return 0;
 				}
+				arg++;
+				if (!*arg) {
+					return 0;
+				}
+
+				RFlag *f = core->flags;
+				RList *temp = r_flag_all_list (f, true);
+				ut64 loff = 0;
+				ut64 uoff = 0;
+				ut64 curseek = core->offset;
+				char *lmatch = NULL , *umatch = NULL;
+				RFlagItem *flag;
+				RListIter *iter;
+				r_list_sort (temp, &cmpflag);
+				r_list_foreach (temp, iter, flag) {
+					if (strstr (flag->name , arg) != NULL) {
+						if (flag->offset < core->offset) {
+							loff = flag->offset;
+							lmatch = flag->name;
+							continue;
+						}
+						uoff = flag->offset;
+						umatch = flag->name;
+						break;
+					}
+				}
+				char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
+				if (match) {
+					if (*match) {
+						r_cons_println (match);
+					}
+				}
+				r_list_free (temp);
 				return 0;
-				}	
+			}
 			default:
 				arg = strchr (input, ' ');
 				if (arg) {

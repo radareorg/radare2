@@ -69,6 +69,9 @@ static int name_space_cmp(const void *incoming, const RBNode *rb) {
 }
 
 R_API RSpace *r_spaces_get(RSpaces *sp, const char *name) {
+	if (!name) {
+		return NULL;
+	}
 	RBNode *n = r_rbtree_find (sp->spaces, (void *)name, name_space_cmp);
 	return n? container_of (n, RSpace, rb): NULL;
 }

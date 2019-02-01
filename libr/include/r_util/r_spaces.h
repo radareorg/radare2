@@ -92,6 +92,11 @@ static inline const char *r_spaces_current_name(RSpaces *sp) {
 	return sp->current? sp->current->name: "*";
 }
 
+static inline bool r_spaces_is_empty(RSpaces *sp) {
+	RBIter it = r_rbtree_first (sp->spaces);
+	return it.len == 0;
+}
+
 typedef RBIter RSpaceIter;
 #define r_spaces_foreach(sp, it, s) \
 	r_rbtree_foreach ((sp)->spaces, (it), (s), RSpace, rb)

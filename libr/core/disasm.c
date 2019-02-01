@@ -160,7 +160,7 @@ typedef struct {
 	RStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
-	int flagspace_ports;
+	RSpace *flagspace_ports;
 	int show_flag_in_bytes;
 	int lbytes;
 	int show_comment_right;
@@ -985,18 +985,18 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = strdup (ds->hint->opcode);
 		}
 		if (ds->filter) {
-			int ofs = core->parser->flagspace;
-			int fs = ds->flagspace_ports;
+			RSpace *ofs = core->parser->flagspace;
+			RSpace *fs = ds->flagspace_ports;
 			if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
-				core->parser->notin_flagspace = -1;
+				core->parser->notin_flagspace = NULL;
 				core->parser->flagspace = fs;
 			} else {
-				if (fs != -1) {
+				if (fs) {
 					core->parser->notin_flagspace = fs;
 					core->parser->flagspace = fs;
 				} else {
-					core->parser->notin_flagspace = -1;
-					core->parser->flagspace = -1;
+					core->parser->notin_flagspace = NULL;
+					core->parser->flagspace = NULL;
 				}
 			}
 			if (ds->analop.refptr) {
@@ -5362,18 +5362,18 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				}
 			} else if (ds->filter) {
 				char *asm_str;
-				int ofs = core->parser->flagspace;
-				int fs = ds->flagspace_ports;
+				RSpace *ofs = core->parser->flagspace;
+				RSpace *fs = ds->flagspace_ports;
 				if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
-					core->parser->notin_flagspace = -1;
+					core->parser->notin_flagspace = NULL;
 					core->parser->flagspace = fs;
 				} else {
-					if (fs != -1) {
+					if (fs) {
 						core->parser->notin_flagspace = fs;
 						core->parser->flagspace = fs;
 					} else {
-						core->parser->notin_flagspace = -1;
-						core->parser->flagspace = -1;
+						core->parser->notin_flagspace = NULL;
+						core->parser->flagspace = NULL;
 					}
 				}
 				core->parser->hint = ds->hint;

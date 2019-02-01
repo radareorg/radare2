@@ -1202,23 +1202,21 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	}
 	int length = strlen (msg);
 	RFlag *flag = core->flags;
-	int j, i = 0;
-	for (j = 0; j < R_FLAG_SPACES_MAX - 1; j++) {
-		if (flag->spaces[j] && flag->spaces[j][0]) {
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
-			if (!strncmp (msg, flag->spaces[j], length)) {
-				if (i + 1 < TMP_ARGV_SZ) {
-					tmp_argv[i++] = flag->spaces[j];
-				}
+	int i = 0;
+	RSpaceIter it;
+	RSpace *s;
+	r_spaces_foreach (flag->spaces, it, s) {
+		if (i == TMP_ARGV_SZ - 1) {
+			break;
+		}
+		if (!strncmp (msg, s->name, length)) {
+			if (i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = s->name;
 			}
 		}
 	}
-	if (flag->spaces[j] && !strncmp (msg, flag->spaces[j], strlen (msg))) {
-		if (i + 1 < TMP_ARGV_SZ) {
-			tmp_argv[i++] = "*";
-		}
+	if (i + 1 < TMP_ARGV_SZ) {
+		tmp_argv[i++] = "*";
 	}
 	tmp_argv[i] = NULL;
 	line->completion.argc = i;
