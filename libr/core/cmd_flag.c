@@ -341,55 +341,19 @@ static bool adjust_offset(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static int flag_space_list(RFlag *f, int mode) {
-	r_return_val_if_fail (f, -1);
-	int count, j = 0;
-	const RSpace *cur = r_flag_space_cur (f);
-	const RSpace *s;
-	RSpaceIter it;
-
-	if (mode == 'j') {
-		r_cons_printf ("[");
-	}
-	r_flag_space_foreach (f, it, s) {
-		count = r_flag_space_count (f, s->name);
-		if (mode == 'q') {
-			r_cons_printf ("%s\n", s->name);
-		} else if (mode == 'j') {
-			r_cons_printf ("%s{\"name\":\"%s\",\"count\":%d,\"selected\":%s}",
-				j? ",":"", s->name, count,
-				(s == cur)? "true":"false");
-		} else if (mode == '*') {
-			r_cons_printf ("fs %s\n", s->name);
-		} else {
-			r_cons_printf ("%d %c %s\n", count, (s == cur)? '*': '.',
-				s->name);
-		}
-		j++;
-	}
-	if (mode == '*' && cur) {
-		r_cons_printf ("fs %s # current\n", cur->name);
-	}
-	if (mode == 'j') {
-		r_cons_printf ("]\n");
-	}
-	return j;
-}
-
 static void print_space_stack(RFlag *f, int ordinal, const char *name, bool selected, int mode) {
 	bool first = ordinal == 0;
 	switch (mode) {
-	case 'j':
+	case 'j': {
 		if (!first) {
 			r_cons_printf (",");
 		}
-		{
 		char *ename = r_str_escape (name);
 		r_cons_printf ("{\"ordinal\":%d,\"name\":\"%s\",\"selected\":%s}",
 			ordinal, ename, selected? "true":"false");
 		free (ename);
-		}
 		break;
+	}
 	case '*':
 		if (first) {
 			r_cons_printf ("fs %s\n", name);
@@ -398,7 +362,7 @@ static void print_space_stack(RFlag *f, int ordinal, const char *name, bool sele
 		}
 		break;
 	default:
-		r_cons_printf ("%-2d %s%s\n", ordinal, name, selected? " (selected)":"");
+		r_cons_printf ("%-2d %s%s\n", ordinal, name, selected? " (selected)": "");
 		break;
 	}
 }
@@ -815,7 +779,7 @@ rep:
 		case '\0':
 		case '*':
 		case 'q':
-			flag_space_list (core->flags, input[1]);
+			spaces_list (&core->flags->spaces, input[1]);
 			break;
 		case ' ':
 			r_flag_space_set (core->flags, input+2);
