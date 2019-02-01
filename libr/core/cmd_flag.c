@@ -798,16 +798,9 @@ rep:
 			}
 			}
 			break;
-		default: {
-			RSpaceIter it;
-			RSpace *s;
-			r_flag_space_foreach (core->flags, it, s) {
-				r_cons_printf ("%c %s\n",
-					(s == r_flag_space_cur (core->flags))? '*': ' ',
-					s->name);
-			}
+		default:
+			spaces_list (&core->flags->spaces, 0);
 			break;
-		}
 		}
 		break;
 	case 'g':

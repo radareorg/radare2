@@ -2224,7 +2224,7 @@ R_IPI void spaces_list(RSpaces *sp, int mode) {
 		} else if (mode == '*') {
 			r_cons_printf ("%s %s\n", sp->name, s->name);
 		} else {
-			r_cons_printf ("%5d %c %s\n", count, cur == s? '*': '.',
+			r_cons_printf ("%5d %c %s\n", count, (!cur || cur == s)? '*': '.',
 				s->name);
 		}
 		first = false;

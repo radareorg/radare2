@@ -1098,16 +1098,9 @@ static int cmd_meta(void *data, const char *input) {
 		case ' ': // "CS "
 			r_spaces_set (ms, input + 2);
 			break;
-		default: {
-			RSpace *s;
-			RSpaceIter it;
-			const RSpace *cur = r_spaces_current (ms);
-			r_spaces_foreach (ms, it, s) {
-				r_cons_printf ("%c %s\n", (s == cur)? '*': ' ',
-					s->name);
-			}
+		default:
+			spaces_list (ms, 0);
 			break;
-		}
 		}
 		break;
 	}
