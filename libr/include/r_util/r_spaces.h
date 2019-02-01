@@ -73,7 +73,7 @@ R_API RSpace *r_spaces_get(RSpaces *sp, const char *name);
 R_API RSpace *r_spaces_add(RSpaces *sp, const char *name);
 // Add and select a new RSpace if one does not already exist, otherwise return and select the existing one
 R_API RSpace *r_spaces_set(RSpaces *sp, const char *name);
-// Remove the RSpace with the given name
+// Remove the RSpace with the given name or all of them if name is NULL
 R_API bool r_spaces_unset(RSpaces *sp, const char *name);
 // Change the name of RSpace with oname to nname
 R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname);
