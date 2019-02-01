@@ -65,16 +65,22 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 
 // wtf isnt this the same as r_asm_op_set_hex() ??
 static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
-    	ut8 *opBuf = r_asm_op_get_buf (op);
-	// Truncate the input based on the size of the opBuf
-    	input = r_str_newlen (r_str_trim_head_tail (input), sizeof (RStrBuf));
-    	int len = r_hex_str2bin (input, opBuf);
-    	r_asm_op_set_hex (op, input);
-	if (len < 0) {
-		len = -len;
-		len--;
-		eprintf ("Buffer truncated at %d because of the RAsmOp abuse.\nInput: %s\n", len, input);
+	int len;
+	ut8 *opBuf = r_asm_op_get_buf (op);
+	if (!opBuf) {
+		return 0;
 	}
+	ut8 *bin = (ut8*)strdup (input);
+	if (bin) {
+		len = r_hex_str2bin (input, bin);
+		if (len < 0) {
+			len = -len;
+			len--;
+			eprintf ("Buffer truncated at %d because of the RAsmOp abuse.\nInput: %s\n", len, input);
+		}
+		free (bin);
+	}
+	r_asm_op_set_hex (op, input);
 	return len;
 }
 
