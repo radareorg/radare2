@@ -176,6 +176,7 @@ char *ReadFromPipe(HANDLE fh) {
 	CHAR chBuf[BUFSIZE];
 	BOOL bSuccess = FALSE;
 	char *str;
+	int loop;
 	int strl = 0;
 	int strsz = BUFSIZE+1;
 
@@ -183,7 +184,8 @@ char *ReadFromPipe(HANDLE fh) {
 	if (!str) {
 		return NULL;
 	}
-	for (;;) {
+	PeekNamedPipe (fh, NULL, NULL, NULL, &loop, NULL);
+	while (loop) {
 		bSuccess = ReadFile (fh, chBuf, BUFSIZE, &dwRead, NULL);
 		if (!bSuccess || dwRead == 0) {
 			break;
