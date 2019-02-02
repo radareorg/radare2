@@ -8,11 +8,9 @@
 #include <spp/spp.h>
 #include <config.h>
 
-#define R_ASM_BUFSIZE 512
-
 R_LIB_VERSION (r_asm);
 
-char *directives[] = {
+static char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
 	".else", ".set", ".get", NULL
@@ -67,8 +65,6 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 
 // wtf isnt this the same as r_asm_op_set_hex() ??
 static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
-	// assume input fits inside op->buf
-eprintf ("inputs (%s)\n", input);
 	int len = r_hex_str2bin (input, (ut8*)r_strbuf_get (&op->buf));
 	if (len < 0) {
 		eprintf ("Invalid input .hex buffer (odd hexpair string).\n");
@@ -89,6 +85,9 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	}
 	// XXX honor endian here
 	ut8 *buf = (ut8*)r_strbuf_get (&op->buf);
+	if (!buf) {
+		return 0;
+	}
 	if (n == 2) {
 		s = (short)s64;
 		r_write_ble16 (buf, s, a->big_endian);
@@ -673,13 +672,13 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 }
 
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
-	RAsmCode *ac = NULL;
 	char *f = r_file_slurp (file, NULL);
 	if (f) {
-		ac = r_asm_massemble (a, f);
+		RAsmCode *ac = r_asm_massemble (a, f);
 		free (f);
+		return ac;
 	}
-	return ac;
+	return NULL;
 }
 
 static void flag_free_kv(HtPPKv *kv) {
@@ -694,11 +693,14 @@ static void *dup_val(const void *v) {
 R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
-	char *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	const char *asmcpu = NULL;
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
+
+	char *buf_token = NULL;
+	int tokens_size = 32;
+	char **tokens = calloc (sizeof (char*), tokens_size);
 	if (!buf) {
 		return NULL;
 	}
@@ -712,8 +714,8 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	if (!(acode->buf_asm = malloc (strlen (buf) + 16))) {
 		return r_asm_code_free (acode);
 	}
-	strncpy (acode->buf_asm, buf, sizeof (acode->buf_asm) - 1);
-	if (!(acode->buf_hex = malloc (64))) { // WTF unefficient
+	r_str_ncpy (acode->buf_asm, buf, sizeof (acode->buf_asm) - 1);
+	if (!(acode->buf_hex = malloc (64))) {
 		return r_asm_code_free (acode);
 	}
 	*acode->buf_hex = 0;
@@ -764,12 +766,20 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	}
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
-			ctr < R_ASM_BUFSIZE - 1 &&
 			((ptr = strchr (tokens[ctr], ';')) ||
 			(ptr = strchr (tokens[ctr], '\n')) ||
-			(ptr = strchr (tokens[ctr], '\r')));
-			tokens[++ctr] = ptr + 1) {
+			(ptr = strchr (tokens[ctr], '\r')));) {
+		ctr++;
+		if (ctr >= tokens_size) {
+			const int new_tokens_size = tokens_size * 2;
+			char **new_tokens = realloc (tokens, new_tokens_size);
+			if (new_tokens) {
+				tokens_size = new_tokens_size;
+				tokens = new_tokens;
+			}
+		}
 		*ptr = '\0';
+		tokens[ctr] = ptr + 1;
 	}
 
 #define isavrseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
@@ -790,7 +800,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 		r_asm_set_pc (a, pc);
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 				i <= ctr; i++, idx += ret) {
-			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE - 1);
+			buf_token = tokens[i];
 			if (inComment) {
 				if (!strncmp (ptr_start, "*/", 2)) {
 					inComment = false;
@@ -1025,6 +1035,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	}
 	free (lbuf);
 	r_hex_str2bin (acode->buf_hex, acode->buf);
+	free (tokens);
 	return acode;
 }
 
