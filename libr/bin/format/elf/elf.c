@@ -2383,6 +2383,9 @@ char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 				if (!strcmp (section_name, ".note.netbsd.ident")) {
 					return strdup ("netbsd");
 				}
+				if (!strcmp (section_name, ".note.android.ident")) {
+					return strdup ("android");
+				}
 			}
 		}
 	}
