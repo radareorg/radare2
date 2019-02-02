@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -14,10 +14,6 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER(r_asm);
-
-// XXX deprecate!!! too big!
-// the 256th character is left for the null terminator
-#define R_ASM_BUFSIZE 255
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
