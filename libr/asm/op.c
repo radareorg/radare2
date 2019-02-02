@@ -47,7 +47,7 @@ R_API void r_asm_op_set_asm(RAsmOp *op, const char *str) {
 	r_strbuf_set (&op->buf_asm, str);
 }
 
-R_API void r_asm_op_set_hex(RAsmOp *op, const char *str) {
+R_API int r_asm_op_set_hex(RAsmOp *op, const char *str) {
 	r_strbuf_set (&op->buf_hex, str);
 	ut8 *bin = (ut8*)strdup (str);
 	if (bin) {
@@ -56,17 +56,21 @@ R_API void r_asm_op_set_hex(RAsmOp *op, const char *str) {
 			r_strbuf_setbin (&op->buf, bin, len);
 		}
 		free (bin);
+		return len;
 	}
+	return 0;
 }
 
-R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
-	r_return_if_fail (op && buf && len >= 0);
+R_API int r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
+	r_return_val_if_fail (op && buf && len >= 0, 0);
 	char *hex = malloc (len * 4 + 1);
 	if (hex) {
-		r_hex_bin2str (buf, len, hex);
-		r_asm_op_set_hex (op, hex);
+		(void)r_hex_bin2str (buf, len, hex);
+		int olen = r_asm_op_set_hex (op, hex);
 		free (hex);
+		return olen;
 	}
+	return 0;
 	// TODO: update the op->buf too?
 }
 

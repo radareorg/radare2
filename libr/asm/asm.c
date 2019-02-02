@@ -63,17 +63,6 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 	return 0;
 }
 
-// wtf isnt this the same as r_asm_op_set_hex() ??
-static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
-	int len = r_hex_str2bin (input, (ut8*)r_strbuf_get (&op->buf));
-	if (len < 0) {
-		eprintf ("Invalid input .hex buffer (odd hexpair string).\n");
-		return 0;
-	}
-	r_asm_op_set_hex (op, r_str_trim_head_tail (input));
-	return len;
-}
-
 static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	short s;
 	int i;
@@ -913,19 +902,19 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				} else if (!strncmp (ptr, ".os ", 4)) {
 					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 4);
 				} else if (!strncmp (ptr, ".hex ", 5)) {
-					ret = r_asm_pseudo_hex (&op, ptr + 5);
+					ret = r_asm_op_set_hex (&op, ptr + 5);
 				} else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7)) {
-					ret = r_asm_pseudo_int16 (a, &op, ptr+7);
+					ret = r_asm_pseudo_int16 (a, &op, ptr + 7);
 				} else if (!strncmp (ptr, ".int32 ", 7)) {
-					ret = r_asm_pseudo_int32 (a, &op, ptr+7);
+					ret = r_asm_pseudo_int32 (a, &op, ptr + 7);
 				} else if (!strncmp (ptr, ".int64 ", 7)) {
-					ret = r_asm_pseudo_int64 (a, &op, ptr+7);
+					ret = r_asm_pseudo_int64 (a, &op, ptr + 7);
 				} else if (!strncmp (ptr, ".size", 5)) {
 					ret = true; // do nothing, ignored
 				} else if (!strncmp (ptr, ".section", 8)) {
 					ret = true; // do nothing, ignored
 				} else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6))) {
-					ret = r_asm_pseudo_byte (&op, ptr+6);
+					ret = r_asm_pseudo_byte (&op, ptr + 6);
 				} else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
 									 //	eprintf (".global directive not yet implemented\n");
 					ret = 0;
