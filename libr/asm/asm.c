@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_core.h>
@@ -7,6 +7,8 @@
 #include <r_asm.h>
 #include <spp/spp.h>
 #include <config.h>
+
+#define R_ASM_BUFSIZE 512
 
 R_LIB_VERSION (r_asm);
 
@@ -52,7 +54,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
 
 static inline int r_asm_pseudo_bits(RAsm *a, char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		eprintf ("Error: Unsupported bits value\n");
+		eprintf ("Error: Unsupported value for .bits.\n");
 		return -1;
 	}
 	return 0;
@@ -66,13 +68,13 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 // wtf isnt this the same as r_asm_op_set_hex() ??
 static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
 	// assume input fits inside op->buf
+eprintf ("inputs (%s)\n", input);
 	int len = r_hex_str2bin (input, (ut8*)r_strbuf_get (&op->buf));
-	r_asm_op_set_hex (op, r_str_trim_head_tail (input));
 	if (len < 0) {
-		len = -len;
-		len--;
-		eprintf ("Buffer truncated at %d because of the RAsmOp abuse.\nInput: %s\n", len, input);
+		eprintf ("Invalid input .hex buffer (odd hexpair string).\n");
+		return 0;
 	}
+	r_asm_op_set_hex (op, r_str_trim_head_tail (input));
 	return len;
 }
 
