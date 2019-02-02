@@ -217,9 +217,7 @@ R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 	if (!out) {
 		return false;
 	}
-	int olen = r_hex_bin2str (b, len, out);
-eprintf ("OUTLEN (%d) = %d\n", len, olen);
-eprintf ("STROUT (%d)\n", strlen (out));
+	(void)r_hex_bin2str (b, len, out);
 	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
 	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
 	r_buf_append_bytes (egg->buf, (const ut8*)"\n", 1);

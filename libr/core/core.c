@@ -2549,7 +2549,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
 	c->anal = r_anal_free (c->anal);
-	c->assembler = r_asm_free (c->assembler);
+	r_asm_free (c->assembler);
+	c->assembler = NULL;
 	c->print = r_print_free (c->print);
 	c->bin = r_bin_free (c->bin); // XXX segfaults rabin2 -c
 	c->lang = r_lang_free (c->lang); // XXX segfaults
