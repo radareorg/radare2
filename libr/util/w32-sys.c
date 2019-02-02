@@ -53,45 +53,63 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 	return true;
 }
 
-R_API char *r_sys_cmd_str_w32(const char *cmd) {
-	char *ret = NULL;
+R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, char **sterr) {
 	HANDLE out = NULL;
+	HANDLE err = NULL;
 	SECURITY_ATTRIBUTES saAttr;
-	char *argv0 = getexe (cmd);
 
 	// Set the bInheritPlugin flag so pipe handles are inherited.
 	saAttr.nLength = sizeof (SECURITY_ATTRIBUTES);
 	saAttr.bInheritHandle = TRUE;
 	saAttr.lpSecurityDescriptor = NULL;
-	HANDLE fh;
+	HANDLE fo, fe;
 
-	// Create a pipe for the child process's STDOUT.
-	if (!CreatePipe (&fh, &out, &saAttr, 0))
-		ErrorExit ("StdoutRd CreatePipe");
+	// Create a pipe for the child process's STDOUT and STDERR.
+	if (!CreatePipe (&fo, &out, &saAttr, 0)) {
+		ErrorExit ("StdOutRd CreatePipe");
+	}
+	if (!CreatePipe (&fe, &err, &saAttr, 0)) {
+		ErrorExit ("StdErrRd CreatePipe");
+	}
 
-	// Ensure the read handle to the pipe for STDOUT is not inherited.
-	if (!SetHandleInformation (fh, HANDLE_FLAG_INHERIT, 0) )
+	// Ensure the read handle to the pipe for STDOUT and SRDERR is not inherited.
+	if (!SetHandleInformation (fo, HANDLE_FLAG_INHERIT, 0)) {
 		ErrorExit ("Stdout SetHandleInformation");
-
-	r_sys_create_child_proc_w32 (cmd, out);
+	}
+	if (!SetHandleInformation (fe, HANDLE_FLAG_INHERIT, 0)) {
+		ErrorExit ("Stdout SetHandleInformation");
+	}
+	if (!r_sys_create_child_proc_w32 (cmd, input, out, err)) {
+		return false;
+	}
 
 	// Close the write end of the pipe before reading from the
 	// read end of the pipe, to control child process execution.
 	// The pipe is assumed to have enough buffer space to hold the
 	// data the child process has already written to it.
-	if (!CloseHandle (out))
+	if (!CloseHandle (out)) {
 		ErrorExit ("StdOutWr CloseHandle");
-	ret = ReadFromPipe (fh);
-	free (argv0);
+	}
+	if (!CloseHandle (err)) {
+		ErrorExit ("StdErrWr CloseHandle");
+	}
 
-	return ret;
+	if (output) {
+		*output = ReadFromPipe (fo);
+	}
+
+	if (sterr) {
+		*sterr = ReadFromPipe (fe);
+	}
+
+	return true;
 }
 
-R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
+R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err) {
 	PROCESS_INFORMATION pi = {0};
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
-	bool ret;
+	bool ret = false;
 	const size_t max_length = 32768;
 	char *_cmdline_ = malloc (max_length);
 
@@ -103,9 +121,9 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 	// Set up members of the STARTUPINFO structure.
 	// This structure specifies the STDIN and STDOUT handles for redirection.
 	si.cb = sizeof (STARTUPINFO);
-	si.hStdError = out;
+	si.hStdError = err;
 	si.hStdOutput = out;
-	si.hStdInput = NULL;
+	si.hStdInput = in;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
 	ExpandEnvironmentStrings (cmdline_, _cmdline_, max_length - 1);
@@ -119,13 +137,14 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 			NULL,          // use parent's current directory
 			&si,           // STARTUPINFO pointer
 			&pi))) {  // receives PROCESS_INFORMATION 
-		ret = 1;
+		ret = true;
 		CloseHandle (pi.hProcess);
 		CloseHandle (pi.hThread);
 	} else {
 		r_sys_perror ("CreateProcess");
 	}
 	free (cmdline_);
+	free (_cmdline_);
 	return ret;
 }
 
