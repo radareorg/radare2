@@ -2211,16 +2211,19 @@ R_IPI void spaces_list(RSpaces *sp, int mode) {
 	RSpace *s;
 	bool first = true;
 	const RSpace *cur = r_spaces_current (sp);
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
 	r_spaces_foreach (sp, it, s) {
 		int count = r_spaces_count (sp, s->name);
 		if (mode == 'j') {
-			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
-				       !first? ",": "", s->name,
-				       cur == s? ",\"selected\":true": "",
-				       count);
+			pj_o (pj);
+			pj_ks (pj, "name", s->name);
+			pj_ki (pj, "count", count);
+			pj_kb (pj, "selected", cur == s);
+			pj_end (pj);
 		} else if (mode == '*') {
 			r_cons_printf ("%s %s\n", sp->name, s->name);
 		} else {
@@ -2233,7 +2236,9 @@ R_IPI void spaces_list(RSpaces *sp, int mode) {
 		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));
 	}
 	if (mode == 'j') {
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 
