@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - pancake */
+/* radare - LGPL - Copyright 2018-2019 - pancake */
 
 #include <r_asm.h>
 
@@ -32,18 +32,18 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 }
 
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op) {
+	r_return_val_if_fail (op, NULL);
 	return (ut8*)r_strbuf_get (&op->buf);
 }
 
 R_API int r_asm_op_get_size(RAsmOp *op) {
-	if (!op) {
-		return 1;
-	}
+	r_return_val_if_fail (op, 1);
 	const int len = op->size - op->payload;
 	return R_MAX (1, len);
 }
 
 R_API void r_asm_op_set_asm(RAsmOp *op, const char *str) {
+	r_return_if_fail (op && str);
 	r_strbuf_set (&op->buf_asm, str);
 }
 
@@ -60,6 +60,7 @@ R_API void r_asm_op_set_hex(RAsmOp *op, const char *str) {
 }
 
 R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
+	r_return_if_fail (op && buf && len >= 0);
 	char *hex = malloc (len * 4 + 1);
 	if (hex) {
 		r_hex_bin2str (buf, len, hex);
@@ -70,8 +71,7 @@ R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
 }
 
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *buf, int len) {
-	if (op && buf && len >= 0) {
-		r_strbuf_setbin (&op->buf, buf, len);
-		r_asm_op_set_hexbuf (op, buf, len);
-	}
+	r_return_if_fail (op && buf && len >= 0);
+	r_strbuf_setbin (&op->buf, buf, len);
+	r_asm_op_set_hexbuf (op, buf, len);
 }

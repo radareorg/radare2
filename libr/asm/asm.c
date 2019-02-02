@@ -204,15 +204,15 @@ R_API RAsm *r_asm_new() {
 	return a;
 }
 
-R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian) {
-	int ret = 0;
-	ret |= !r_asm_use (a, arch);
-	ret |= !r_asm_set_bits (a, bits);
-	return ret;
+R_API bool r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian) {
+	r_return_val_if_fail (a && arch, false);
+	bool ret = !r_asm_use (a, arch);
+	return ret | !r_asm_set_bits (a, bits);
 }
 
 // TODO: spagueti
 R_API int r_asm_filter_input(RAsm *a, const char *f) {
+	r_return_val_if_fail (a && f, false);
 	if (!a->ifilter) {
 		a->ifilter = r_parse_new ();
 	}
@@ -236,23 +236,23 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 	return true;
 }
 
-R_API RAsm *r_asm_free(RAsm *a) {
-	if (a) {
-		if (a->cur && a->cur->fini) {
-			a->cur->fini (a->cur->user);
-		}
-		if (a->plugins) {
-			r_list_free (a->plugins);
-			a->plugins = NULL;
-		}
-		r_syscall_free (a->syscall);
-		free (a->cpu);
-		sdb_free (a->pair);
-		ht_pp_free (a->flags);
-		a->pair = NULL;
-		free (a);
+R_API void r_asm_free(RAsm *a) {
+	if (!a) {
+		return;
 	}
-	return NULL;
+	if (a->cur && a->cur->fini) {
+		a->cur->fini (a->cur->user);
+	}
+	if (a->plugins) {
+		r_list_free (a->plugins);
+		a->plugins = NULL;
+	}
+	r_syscall_free (a->syscall);
+	free (a->cpu);
+	sdb_free (a->pair);
+	ht_pp_free (a->flags);
+	a->pair = NULL;
+	free (a);
 }
 
 R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
@@ -315,7 +315,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 // TODO: this can be optimized using r_str_hash()
-R_API int r_asm_use(RAsm *a, const char *name) {
+R_API bool r_asm_use(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (!a || !name) {
@@ -326,11 +326,13 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				char *r2prefix = r_str_r2_prefix (R2_SDB_OPCODES);
 				char *file = r_str_newf ("%s/%s.sdb", r_str_get (r2prefix), h->arch);
-				r_asm_set_cpu (a, NULL);
-				sdb_free (a->pair);
-				a->pair = sdb_new (NULL, file, 0);
-				free (r2prefix);
-				free (file);
+				if (file) {
+					r_asm_set_cpu (a, NULL);
+					sdb_free (a->pair);
+					a->pair = sdb_new (NULL, file, 0);
+					free (r2prefix);
+					free (file);
+				}
 			}
 			a->cur = h;
 			return true;
@@ -361,9 +363,7 @@ R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	if (!a || !a->cur) {
-		return false;
-	}
+	r_return_val_if_fail (a && a->cur, false);
 	a->big_endian = false; //little endian by default
 	switch (a->cur->endian) {
 	case R_SYS_ENDIAN_NONE:
@@ -409,14 +409,11 @@ static bool isInvalid (RAsmOp *op) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int ret;
-	if (!a || !buf || !op) {
-		return -1;
-	}
+	r_return_val_if_fail (a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
-	ret = op->payload = 0;
+	int ret = op->payload = 0;
 	op->size = 4;
 	op->bitsize = 0;
 	r_asm_op_set_asm (op, "");
@@ -567,6 +564,7 @@ R_API void r_asm_list_directives() {
 }
 
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	r_return_val_if_fail (a && op && buf, 0);
 	int ret = 0;
 	char *b = strdup (buf);
 	if (!b) {
@@ -611,6 +609,8 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 // TODO: Use RStrBuf api here pls
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
+	r_return_val_if_fail (a && buf && len >= 0, NULL);
+
 	RStrBuf *buf_asm;
 	RAsmCode *acode;
 	ut64 pc = a->pc;
@@ -652,18 +652,16 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 }
 
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
-	RAsmCode *ret;
-	ut8 *buf;
-	int len;
-	if (!(buf = malloc (strlen (hexstr) + 1))) {
+	ut8 *buf = malloc (strlen (hexstr) + 1);
+	if (!buf) {
 		return NULL;
 	}
-	len = r_hex_str2bin (hexstr, buf);
+	int len = r_hex_str2bin (hexstr, buf);
 	if (len < 1) {
 		free (buf);
 		return NULL;
 	}
-	ret = r_asm_mdisassemble (a, buf, (ut64)len);
+	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (ret && a->ofilter) {
 		r_parse_parse (a->ofilter, ret->buf_asm, ret->buf_asm);
 	}
@@ -1064,6 +1062,7 @@ R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits) {
 
 /* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l) {
+	r_return_val_if_fail (a && b && l >= 0, NULL);
 	r_asm_set_pc (a, addr);
 	RAsmCode *code = r_asm_mdisassemble (a, b, l);
 	if (code) {
@@ -1090,6 +1089,7 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 }
 
 R_API int r_asm_syntax_from_string(const char *name) {
+	r_return_val_if_fail (name, -1);
 	if (!strcmp (name, "regnum")) {
 		return R_ASM_SYNTAX_REGNUM;
 	}
@@ -1109,14 +1109,16 @@ R_API int r_asm_syntax_from_string(const char *name) {
 }
 
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
-	if (a && a->cur && a->cur->mnemonics) {
+	r_return_val_if_fail (a && a->cur, NULL);
+	if (a->cur->mnemonics) {
 		return a->cur->mnemonics (a, id, json);
 	}
 	return NULL;
 }
 
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
-	if (a && a->cur && a->cur->mnemonics) {
+	r_return_val_if_fail (a && a->cur, 0);
+	if (a->cur->mnemonics) {
 		int i;
 		for (i = 0; i < 1024; i++) {
 			char *n = a->cur->mnemonics (a, i, false);
@@ -1130,6 +1132,7 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 }
 
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
+	r_return_val_if_fail (a && buf, NULL);
 	char *lbuf = strdup (buf);
 	if (!lbuf) {
 		return NULL;
