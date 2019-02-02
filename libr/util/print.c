@@ -319,6 +319,7 @@ R_API RPrint* r_print_new() {
 	p->esc_bslash = false;
 	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
+	p->io_unalloc_ch = '.';
 	return p;
 }
 
@@ -1103,7 +1104,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						break;
 					}
 					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
-						p->cb_printf ("..");
+						char ch = p->io_unalloc_ch;
+						char dbl_ch_str[] = { ch, ch, 0 };
+						p->cb_printf (dbl_ch_str);
 					} else {
 						r_print_byte (p, bytefmt, j, buf[j]);
 					}
