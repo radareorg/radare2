@@ -63,34 +63,40 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	saAttr.nLength = sizeof (SECURITY_ATTRIBUTES);
 	saAttr.bInheritHandle = TRUE;
 	saAttr.lpSecurityDescriptor = NULL;
-	HANDLE fi, fo, fe;
+	HANDLE fi = NULL;
+	HANDLE fo = NULL;
+	HANDLE fe = NULL;
 
 	// Create a pipe for the child process's STDOUT and STDERR.
-	if (!CreatePipe (&fi, &in, &saAttr, 0)) {
-		ErrorExit ("StdInRd CreatePipe");
+	// Ensure the read handle to the pipe for STDOUT and SRDERR and write handle of STDIN is not inherited.
+	if (output) {
+		if (!CreatePipe (&fo, &out, &saAttr, 0)) {
+			ErrorExit ("StdOutRd CreatePipe");
+		}
+		if (!SetHandleInformation (fo, HANDLE_FLAG_INHERIT, 0)) {
+			ErrorExit ("StdOut SetHandleInformation");
+		}
 	}
-	if (!CreatePipe (&fo, &out, &saAttr, 0)) {
-		ErrorExit ("StdOutRd CreatePipe");
-	}
-	if (!CreatePipe (&fe, &err, &saAttr, 0)) {
-		ErrorExit ("StdErrRd CreatePipe");
-	}
-
-	// Ensure the read handle to the pipe for STDOUT and SRDERR is not inherited.
-	if (!SetHandleInformation (fi, HANDLE_FLAG_INHERIT, 0)) {
-		ErrorExit ("StdIn SetHandleInformation");
-	}
-	if (!SetHandleInformation (fo, HANDLE_FLAG_INHERIT, 0)) {
-		ErrorExit ("StdOut SetHandleInformation");
-	}
-	if (!SetHandleInformation (fe, HANDLE_FLAG_INHERIT, 0)) {
-		ErrorExit ("StdErr SetHandleInformation");
+	if (sterr) {
+		if (!CreatePipe (&fe, &err, &saAttr, 0)) {
+			ErrorExit ("StdErrRd CreatePipe");
+		}
+		if (!SetHandleInformation (fe, HANDLE_FLAG_INHERIT, 0)) {
+			ErrorExit ("StdErr SetHandleInformation");
+		}
 	}
 	if (input) {
+		if (!CreatePipe (&fi, &in, &saAttr, 0)) {
+			ErrorExit ("StdInRd CreatePipe");
+		}
 		LPDWORD nBytesWritten;
 		WriteFile (in, input, strlen(input) + 1, &nBytesWritten, NULL);
+		if (!SetHandleInformation (in, HANDLE_FLAG_INHERIT, 0)) {
+			ErrorExit ("StdIn SetHandleInformation");
+		}
 	}
-	if (!r_sys_create_child_proc_w32 (cmd, in, out, err)) {
+
+	if (!r_sys_create_child_proc_w32 (cmd, fi, out, err)) {
 		return false;
 	}
 
@@ -98,13 +104,13 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	// read end of the pipe, to control child process execution.
 	// The pipe is assumed to have enough buffer space to hold the
 	// data the child process has already written to it.
-	if (!CloseHandle (in)) {
+	if (in && !CloseHandle (in)) {
 		ErrorExit ("StdInWr CloseHandle");
 	}
-	if (!CloseHandle (out)) {
+	if (out && !CloseHandle (out)) {
 		ErrorExit ("StdOutWr CloseHandle");
 	}
-	if (!CloseHandle (err)) {
+	if (err && !CloseHandle (err)) {
 		ErrorExit ("StdErrWr CloseHandle");
 	}
 
@@ -115,16 +121,17 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	if (sterr) {
 		*sterr = ReadFromPipe (fe);
 	}
-	if (!CloseHandle (fi)) {
+	
+	if (fi && !CloseHandle (fi)) {
 		ErrorExit ("PipeIn CloseHandle");
 	}
-	if (!CloseHandle (fo)) {
+	if (fo && !CloseHandle (fo)) {
 		ErrorExit ("PipeOut CloseHandle");
 	}
-	if (!CloseHandle (fe)) {
+	if (fe && !CloseHandle (fe)) {
 		ErrorExit ("PipeErr CloseHandle");
 	}
-
+	
 	return true;
 }
 
@@ -176,7 +183,6 @@ char *ReadFromPipe(HANDLE fh) {
 	CHAR chBuf[BUFSIZE];
 	BOOL bSuccess = FALSE;
 	char *str;
-	int loop;
 	int strl = 0;
 	int strsz = BUFSIZE+1;
 
@@ -184,8 +190,7 @@ char *ReadFromPipe(HANDLE fh) {
 	if (!str) {
 		return NULL;
 	}
-	PeekNamedPipe (fh, NULL, NULL, NULL, &loop, NULL);
-	while (loop) {
+	while (true) {
 		bSuccess = ReadFile (fh, chBuf, BUFSIZE, &dwRead, NULL);
 		if (!bSuccess || dwRead == 0) {
 			break;
