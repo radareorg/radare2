@@ -54,6 +54,7 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 }
 
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, char **sterr) {
+	HANDLE in = NULL;
 	HANDLE out = NULL;
 	HANDLE err = NULL;
 	SECURITY_ATTRIBUTES saAttr;
@@ -62,9 +63,12 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	saAttr.nLength = sizeof (SECURITY_ATTRIBUTES);
 	saAttr.bInheritHandle = TRUE;
 	saAttr.lpSecurityDescriptor = NULL;
-	HANDLE fo, fe;
+	HANDLE fi, fo, fe;
 
 	// Create a pipe for the child process's STDOUT and STDERR.
+	if (!CreatePipe (&fi, &in, &saAttr, 0)) {
+		ErrorExit ("StdInRd CreatePipe");
+	}
 	if (!CreatePipe (&fo, &out, &saAttr, 0)) {
 		ErrorExit ("StdOutRd CreatePipe");
 	}
@@ -73,13 +77,20 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	}
 
 	// Ensure the read handle to the pipe for STDOUT and SRDERR is not inherited.
+	if (!SetHandleInformation (fi, HANDLE_FLAG_INHERIT, 0)) {
+		ErrorExit ("StdIn SetHandleInformation");
+	}
 	if (!SetHandleInformation (fo, HANDLE_FLAG_INHERIT, 0)) {
-		ErrorExit ("Stdout SetHandleInformation");
+		ErrorExit ("StdOut SetHandleInformation");
 	}
 	if (!SetHandleInformation (fe, HANDLE_FLAG_INHERIT, 0)) {
-		ErrorExit ("Stdout SetHandleInformation");
+		ErrorExit ("StdErr SetHandleInformation");
 	}
-	if (!r_sys_create_child_proc_w32 (cmd, input, out, err)) {
+	if (input) {
+		LPDWORD nBytesWritten;
+		WriteFile (in, input, strlen(input) + 1, &nBytesWritten, NULL);
+	}
+	if (!r_sys_create_child_proc_w32 (cmd, in, out, err)) {
 		return false;
 	}
 
@@ -87,6 +98,9 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	// read end of the pipe, to control child process execution.
 	// The pipe is assumed to have enough buffer space to hold the
 	// data the child process has already written to it.
+	if (!CloseHandle (in)) {
+		ErrorExit ("StdInWr CloseHandle");
+	}
 	if (!CloseHandle (out)) {
 		ErrorExit ("StdOutWr CloseHandle");
 	}
@@ -100,6 +114,15 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 
 	if (sterr) {
 		*sterr = ReadFromPipe (fe);
+	}
+	if (!CloseHandle (fi)) {
+		ErrorExit ("PipeIn CloseHandle");
+	}
+	if (!CloseHandle (fo)) {
+		ErrorExit ("PipeOut CloseHandle");
+	}
+	if (!CloseHandle (fe)) {
+		ErrorExit ("PipeErr CloseHandle");
 	}
 
 	return true;
