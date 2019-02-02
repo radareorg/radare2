@@ -493,7 +493,6 @@ static void __load_plugins(RAsmState *as) {
 int main (int argc, char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
-	ut8 buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL;
 	bool isbig = false;
 	bool rad = false;
@@ -696,14 +695,13 @@ int main (int argc, char *argv[]) {
 		char *content;
 		int length = 0;
 		if (!strcmp (file, "-")) {
-			ret = read (0, buf, sizeof (buf) - 1);
-			if (ret == R_ASM_BUFSIZE) {
-				eprintf ("rasm2: Cannot slurp all stdin data\n");
+			int sz = 0;
+			ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
+			if (!buf || sz < 1) {
+				eprintf ("Nothing to do.\n");
+				goto beach;
 			}
-			if (ret >= 0) { // only for text
-				buf[ret] = '\0';
-			}
-			len = ret;
+			len = (ut64)sz;
 			if (dis) {
 				if (skip && length > skip) {
 					if (bin) {
@@ -711,14 +709,14 @@ int main (int argc, char *argv[]) {
 						length -= skip;
 					}
 				}
-				ret = rasm_disasm (as, (char *)buf, offset, len,
-						as->a->bits, ascii, bin, dis - 1);
+				ret = rasm_disasm (as, (char *)buf, offset, len, as->a->bits, ascii, bin, dis - 1);
 			} else if (analinfo) {
 				ret = show_analinfo (as, (const char *)buf, offset);
 			} else {
 				ret = print_assembly_output (as, (char *)buf, offset, len,
 					as->a->bits, bin, use_spp, rad, arch);
 			}
+			free (buf);
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
@@ -736,7 +734,7 @@ int main (int argc, char *argv[]) {
 					ret = rasm_disasm (as, content, offset,
 							length, as->a->bits, ascii, bin, dis - 1);
 				} else if (analinfo) {
-					ret = show_analinfo (as, (const char *)buf, offset);
+					ret = show_analinfo (as, (const char *)content, offset);
 				} else {
 					ret = print_assembly_output (as, content, offset, length,
 							as->a->bits, bin, use_spp, rad, arch);
@@ -752,6 +750,7 @@ int main (int argc, char *argv[]) {
 		if (!strcmp (argv[optind], "-")) {
 			int length;
 			do {
+				char buf[1024]; // TODO: use(implement) r_stdin_line() or so
 				length = read (0, buf, sizeof (buf) - 1);
 				if (length < 1) {
 					break;
