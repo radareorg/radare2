@@ -27,9 +27,13 @@ typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
 
 typedef enum {
 	R_EVENT_ALL = 0,
-	R_EVENT_META_SET,
-	R_EVENT_META_DEL,
-	R_EVENT_META_CLEAR,
+	R_EVENT_META_SET, // REventMeta
+	R_EVENT_META_DEL, // REventMeta
+	R_EVENT_META_CLEAR, // REventMeta
+	R_EVENT_CLASS_NEW, // REventClass
+	R_EVENT_CLASS_DEL, // REventClass
+	R_EVENT_CLASS_RENAME, // REventClassRename
+	R_EVENT_CLASS_ATTR_CHANGE, // REventClass
 	R_EVENT_MAX,
 } REventType;
 
@@ -39,6 +43,14 @@ typedef struct r_event_meta_t {
 	const char *string;
 } REventMeta;
 
+typedef struct r_event_class_t {
+	const char *name;
+} REventClass;
+
+typedef struct r_event_class_rename_t {
+	const char *name_old;
+	const char *name_new;
+} REventClassRename;
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
