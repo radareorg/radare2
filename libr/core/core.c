@@ -2296,7 +2296,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
-	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler);
+	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
 	core->lock = r_th_lock_new (true);
 	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->cmd_depth = core->max_cmd_depth;

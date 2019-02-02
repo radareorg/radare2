@@ -15,9 +15,12 @@ R_API REvent *r_event_new(void *user) {
 	// and if used in hook/unhook/send APIs will raise a warning
 	ut64 i;
 	for (i = 1; i < R_EVENT_MAX; ++i) {
-		ht_up_insert (ev->callbacks, (ut64)i, r_pvector_new (NULL));
+		ht_up_insert (ev->callbacks, (ut64)i, r_vector_new (sizeof (REventCallbackHook), NULL, NULL));
 	}
 	ev->user = user;
+
+	ev->hook_handle_next = 0;
+
 	return ev;
 }
 
@@ -34,50 +37,60 @@ R_API void r_event_free(REvent *ev) {
 	free (ev);
 }
 
-static bool add_hook(void *cb, const ut64 k, const void *v) {
-	RPVector *cbs = (RPVector *)v;
+static bool add_hook(void *hook, const ut64 k, const void *v) {
+	RVector *cbs = (RVector *)v;
 	r_return_val_if_fail (cbs, false);
-	r_pvector_push (cbs, cb);
+	r_vector_push (cbs, hook);
 	return true;
 }
 
-R_API void r_event_hook(REvent *ev, int type, REventCallback cb) {
-	r_return_if_fail (ev);
+R_API int r_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
+	r_return_val_if_fail (ev, -1);
+	REventCallbackHook hook;
+	hook.cb = cb;
+	hook.user = user;
+	hook.handle = ev->hook_handle_next++;
 	if (type == R_EVENT_ALL) {
-		ht_up_foreach (ev->callbacks, add_hook, cb);
+		ht_up_foreach (ev->callbacks, add_hook, &hook);
 	} else {
-		RPVector *cbs = ht_up_find (ev->callbacks, type, NULL);
-		add_hook (cb, 0, cbs);
+		RPVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
+		add_hook (&hook, 0, cbs);
 	}
+	return hook.handle;
 }
 
-static bool del_hook(void *cb, const ut64 k, const void *v) {
-	RPVector *cbs = (RPVector *)v;
+static bool del_hook(void *user, const ut64 k, const void *v) {
+	int handle = (int)(intptr_t)user;
+	RVector *cbs = (RVector *)v;
 	r_return_val_if_fail (cbs, false);
-	r_pvector_remove_data (cbs, cb);
+	for (size_t i=0; i<cbs->len; i++) {
+		REventCallbackHook *hook = r_vector_index_ptr (cbs, i);
+		if (hook->handle == handle) {
+			r_vector_remove_at (cbs, i, NULL);
+			break;
+		}
+	}
 	return true;
 }
 
-R_API void r_event_unhook(REvent *ev, int type, REventCallback cb) {
+R_API void r_event_unhook(REvent *ev, int type, int handle) {
 	r_return_if_fail (ev);
 	if (type == R_EVENT_ALL) {
-		ht_up_foreach (ev->callbacks, del_hook, cb);
+		ht_up_foreach (ev->callbacks, del_hook, (void *)(intptr_t )handle);
 	} else {
-		RPVector *cbs = ht_up_find (ev->callbacks, type, NULL);
-		del_hook (cb, 0, cbs);
+		RPVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
+		del_hook ((void *)(intptr_t )handle, 0, cbs);
 	}
 }
 
 R_API void r_event_send(REvent *ev, int type, void *data) {
 	r_return_if_fail (ev && !ev->incall);
-
-	void **it;
-	RPVector *cbs = ht_up_find (ev->callbacks, type, NULL);
+	RVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
 	r_return_if_fail (cbs);
 	ev->incall = true;
-	r_pvector_foreach (cbs, it) {
-		REventCallback cb = *it;
-		cb (ev, type, ev->user, data);
+	REventCallbackHook *hook;
+	r_vector_foreach (cbs, hook) {
+		hook->cb (ev, type, hook->user, data);
 	}
 	ev->incall = false;
 }
