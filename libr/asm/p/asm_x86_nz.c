@@ -4951,7 +4951,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			break;
 		}
 	}
-	r_asm_op_set_buf (ao, __data, retval);
+	if (retval > 0) {
+		r_asm_op_set_buf (ao, __data, retval);
+	}
 	free (instr.mnemonic);
 	return retval;
 }
