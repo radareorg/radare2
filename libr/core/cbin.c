@@ -1431,9 +1431,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	RBIter iter;
 	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
+	PJ *pj = NULL;
 	char *sdb_module = NULL;
 	int i = 0;
-	bool first = true;
 
 	R_TIME_BEGIN;
 
@@ -1449,7 +1449,11 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
 	} else if (IS_MODE_JSON (mode)) {
-		r_cons_print ("[");
+		// start a new JSON object
+		pj = pj_new ();
+		if (pj) {
+			pj_a (pj);
+		}
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
@@ -1485,34 +1489,38 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			if (first) {
-				r_cons_printf ("{\"name\":");
-				first = false;
-			} else {
-				r_cons_printf (",{\"name\":");
+			if (pj) {
+				pj_o (pj);
+				char *mn = NULL;
+				char *relname = NULL;
+
+				// take care with very long symbol names! do not use sdb_fmt or similar
+				if (reloc->import) {
+					mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
+					relname = strdup (reloc->import->name);
+				} else if (reloc->symbol) {
+					mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
+					relname = strdup (reloc->symbol->name);
+				}
+
+				// check if name is available
+				pj_ks (pj, "name", (relname && strcmp (relname, "")) ? relname : "N/A");
+				pj_ks (pj, "demname", mn ? mn : "");
+				pj_ks (pj, "type",bin_reloc_type_name (reloc));
+				pj_kn (pj, "vaddr", reloc->vaddr);
+				pj_kn (pj, "paddr", reloc->paddr);
+				if (reloc->symbol) {
+					pj_kn (pj, "sym_va", reloc->symbol->vaddr);
+				}
+				pj_kb (pj, "is_ifunc", reloc->is_ifunc);
+				// end reloc item
+				pj_end (pj);
+
+				free (mn);
+				if (relname) {
+					free (relname);
+				}
 			}
-			char *mn = NULL;
-			// take care with very long symbol names! do not use sdb_fmt or similar
-			if (reloc->import) {
-				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
-				r_cons_printf ("\"%s\"", reloc->import->name);
-			} else if (reloc->symbol) {
-				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
-				r_cons_printf ("\"%s\"", reloc->symbol->name);
-			} else {
-				r_cons_printf ("null");
-			}
-			r_cons_printf (","
-				"\"demname\":\"%s\","
-				"\"type\":\"%s\","
-				"\"vaddr\":%"PFMT64d","
-				"\"paddr\":%"PFMT64d","
-				"\"is_ifunc\":%s}",
-				mn ? mn : "",
-				bin_reloc_type_name (reloc),
-				reloc->vaddr, reloc->paddr,
-				r_str_bool (reloc->is_ifunc));
-			free (mn);
 		} else if (IS_MODE_NORMAL (mode)) {
 			char *name = reloc->import
 				? strdup (reloc->import->name)
@@ -1552,12 +1560,18 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
-		r_cons_print ("]");
+		// close Json output
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i relocations\n", i);
 	}
 
+	// free PJ object if used
+	if (pj) {
+		pj_free (pj);
+	}
 	R_FREE (sdb_module);
 	sdb_free (db);
 	db = NULL;
