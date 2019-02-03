@@ -1893,43 +1893,43 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
-		case 'z':
+		case 'z': // "vbz"
 			if (r_core_visual_view_zigns (core)) {
 				return;
 			}
 			break;
-		case 'g':
+		case 'g': // "vbg"
 			if (r_core_visual_view_graph (core)) {
 				return;
 			}
 			break;
-		case 'r':
+		case 'r': // "vbr"
 			r_core_visual_view_rop (core);
 			break;
-		case 'f':
+		case 'f': // "vbf"
 			r_core_visual_trackflags (core);
 			break;
-		case 'F':
+		case 'F': // "vbF"
 			r_core_visual_anal (core, NULL);
 			// r_core_cmd0 (core, "s $(afl~...)");
 			break;
-		case 'v':
+		case 'v': // "vbv"
 			r_core_visual_anal (core, "v");
 			break;
-		case 'e':
+		case 'e': // "vbe"
 			r_core_visual_config (core);
 			break;
-		case 'c':
+		case 'c': // "vbc"
 			r_core_visual_classes (core);
 			break;
-		case 'C':
+		case 'C': // "vbC"
 			r_core_visual_comments (core);
 			//r_core_cmd0 (core, "s $(CC~...)");
 			break;
-		case 't':
+		case 't': // "vbt"
 			r_core_visual_types (core);
 			break;
-		case 'T':
+		case 'T': // "vbT"
 			r_core_cmd0 (core, "eco $(eco~...)");
 			break;
 		case 'l': // previously VT
