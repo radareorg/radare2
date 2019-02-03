@@ -1488,22 +1488,22 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			char *mn = NULL;
+			char *relname = NULL;
 
 			// take care with very long symbol names! do not use sdb_fmt or similar
 			if (reloc->import) {
 				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
-				pj_ks (pj, "name", reloc->import->name);
+				relname = reloc->import->name;
 			} else if (reloc->symbol) {
 				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
-				pj_ks (pj, "name",  reloc->symbol->name);
-			} else {
-				pj_ks (pj, "name", "null");
+				relname = reloc->symbol->name;
 			}
+
+			pj_ks (pj, "name", strcmp(relname, "") ? relname  : "N/A");
 			pj_ks (pj, "demname", mn ? mn : "");
 			pj_ks (pj, "type",bin_reloc_type_name (reloc));
 			pj_kn (pj, "vaddr", reloc->vaddr);
 			pj_kn (pj, "paddr", reloc->paddr);
-			pj_kn (pj, "addend", reloc->addend);
 			if (reloc->symbol) {
 				pj_kn (pj, "sym_va", reloc->symbol->vaddr);
 			}
@@ -1551,6 +1551,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i relocations\n", i);
