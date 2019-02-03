@@ -1007,11 +1007,13 @@ repeat:
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + (addrbytes * idx), len - (addrbytes * idx), R_ANAL_OP_MASK_ALL)) < 1) {
 			RCore *core = anal->coreb.core;
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
-
-				ut8 v = buf[addrbytes*idx] == 0xff;
-				v += buf[addrbytes*(idx+1)] == 0xff;
-				v += buf[addrbytes*(idx+2)] == 0xff;
-				v += buf[addrbytes*(idx+3)] == 0xff;
+				ut8 v = 0;
+				if (addrbytes * (idx + 3) < len) {
+					v += buf[addrbytes*idx] == 0xff;
+					v += buf[addrbytes*(idx+1)] == 0xff;
+					v += buf[addrbytes*(idx+2)] == 0xff;
+					v += buf[addrbytes*(idx+3)] == 0xff;
+				}
 				if (v < 2) {
 					// check if this is data, then just skip
 					const char *reason = (len - (addrbytes * idx) < 4)? "Truncated": "Invalid";
