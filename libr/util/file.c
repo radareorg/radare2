@@ -211,7 +211,14 @@ R_API char *r_file_abspath(const char *file) {
 			return strdup (file);
 		}
 		if (cwd && !strchr (file, ':')) {
-			ret = r_str_newf ("%s\\%s", cwd, file);
+			int len = strlen (file) - 1;
+			char * nfile;
+			if (file[len] == '/') {
+				nfile = r_str_ndup (file, len);
+			} else {
+				nfile = file;
+			}
+			ret = r_str_newf ("%s\\%s", cwd, nfile);
 		}
 #endif
 	}
