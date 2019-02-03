@@ -16,13 +16,12 @@ typedef struct r_event_t {
 	int hook_handle_next;
 } REvent;
 
-typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
-
-typedef struct r_event_callback_hook_t {
-	REventCallback cb;
-	void *user;
+typedef struct r_event_callback_handle_t {
 	int handle;
-} REventCallbackHook;
+	int type;
+} REventCallbackHandle;
+
+typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
 
 typedef enum {
 	R_EVENT_ALL = 0,
@@ -41,8 +40,8 @@ typedef struct r_event_meta_t {
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
-R_API int r_event_hook(REvent *ev, int type, REventCallback cb, void *user);
-R_API void r_event_unhook(REvent *ev, int type, int handle);
+R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb, void *user);
+R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle);
 R_API void r_event_send(REvent *ev, int type, void *data);
 
 #ifdef __cplusplus

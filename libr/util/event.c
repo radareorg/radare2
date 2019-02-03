@@ -3,6 +3,12 @@
 #include <r_util.h>
 #include <r_vector.h>
 
+typedef struct r_event_callback_hook_t {
+	REventCallback cb;
+	void *user;
+	int handle;
+} REventCallbackHook;
+
 R_API REvent *r_event_new(void *user) {
 	REvent *ev = R_NEW0 (REvent);
 	if (!ev) {
@@ -44,8 +50,9 @@ static bool add_hook(void *hook, const ut64 k, const void *v) {
 	return true;
 }
 
-R_API int r_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
-	r_return_val_if_fail (ev, -1);
+R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
+	REventCallbackHandle handle = { 0 };
+	r_return_val_if_fail (ev, handle);
 	REventCallbackHook hook;
 	hook.cb = cb;
 	hook.user = user;
@@ -56,14 +63,17 @@ R_API int r_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
 		RPVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
 		add_hook (&hook, 0, cbs);
 	}
-	return hook.handle;
+	handle.handle = hook.handle;
+	handle.type = type;
+	return handle;
 }
 
 static bool del_hook(void *user, const ut64 k, const void *v) {
-	int handle = (int)(intptr_t)user;
+	int handle = *((int *)user);
 	RVector *cbs = (RVector *)v;
 	r_return_val_if_fail (cbs, false);
-	for (size_t i=0; i<cbs->len; i++) {
+	size_t i;
+	for (i = 0; i < cbs->len; i++) {
 		REventCallbackHook *hook = r_vector_index_ptr (cbs, i);
 		if (hook->handle == handle) {
 			r_vector_remove_at (cbs, i, NULL);
@@ -73,13 +83,13 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-R_API void r_event_unhook(REvent *ev, int type, int handle) {
+R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle) {
 	r_return_if_fail (ev);
-	if (type == R_EVENT_ALL) {
-		ht_up_foreach (ev->callbacks, del_hook, (void *)(intptr_t )handle);
+	if (handle.type == R_EVENT_ALL) {
+		ht_up_foreach (ev->callbacks, del_hook, &handle.handle);
 	} else {
-		RPVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
-		del_hook ((void *)(intptr_t )handle, 0, cbs);
+		RPVector *cbs = ht_up_find (ev->callbacks, (ut64)handle.type, NULL);
+		del_hook (&handle.handle, 0, cbs);
 	}
 }
 

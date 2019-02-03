@@ -202,14 +202,14 @@ static bool unset_flags_space(RFlagItem *fi, void *user) {
 }
 
 static void count_flags_in_space(REvent *ev, int type, void *user, void *data) {
-	RSpaces *sp = (RSpaces *)user;
+	RSpaces *sp = (RSpaces *)ev->user;
 	RFlag *f = container_of (sp, RFlag, spaces);
 	RSpaceEvent *spe = (RSpaceEvent *)data;
 	r_flag_foreach_space (f, spe->data.count.space, count_flags, &spe->res);
 }
 
 static void unset_flagspace(REvent *ev, int type, void *user, void *data) {
-	RSpaces *sp = (RSpaces *)user;
+	RSpaces *sp = (RSpaces *)ev->user;
 	RFlag *f = container_of (sp, RFlag, spaces);
 	const RSpaceEvent *spe = (const RSpaceEvent *)data;
 	r_flag_foreach_space (f, spe->data.unset.space, unset_flags_space, NULL);
@@ -217,8 +217,8 @@ static void unset_flagspace(REvent *ev, int type, void *user, void *data) {
 
 static void new_spaces(RFlag *f) {
 	r_spaces_init (&f->spaces, "fs");
-	r_event_hook (f->spaces.event, R_SPACE_EVENT_COUNT, count_flags_in_space);
-	r_event_hook (f->spaces.event, R_SPACE_EVENT_UNSET, unset_flagspace);
+	r_event_hook (f->spaces.event, R_SPACE_EVENT_COUNT, count_flags_in_space, NULL);
+	r_event_hook (f->spaces.event, R_SPACE_EVENT_UNSET, unset_flagspace, NULL);
 }
 
 R_API RFlag *r_flag_new() {
