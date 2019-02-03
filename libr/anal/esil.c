@@ -565,37 +565,6 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	return true;
 }
 
-static int esil_internal_write(RAnalEsil *esil, const char *str, ut64 num) {
-	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str) && esil, false);
-
-	switch (str[1]) {
-	case 'd': //delay slot state
-		switch (str[2]) {
-		case 's':
-			esil->delay = num;
-			break;
-		default:
-			return false;
-		}
-		break;
-	case 'j': // jump target
-		switch (str[2]) {
-		case 't':
-			esil->jump_target = num;
-			esil->jump_target_set = 1;
-			break;
-		case 's':
-			esil->jump_target_set = num;
-			break;
-		default:
-			return false;
-		}
-	default:
-		return false;
-	}
-	return true;
-}
-
 R_API int r_anal_esil_get_parm_size(RAnalEsil *esil, const char *str, ut64 *num, int *size) {
 	if (!str || !*str) {
 		return false;
@@ -607,7 +576,7 @@ R_API int r_anal_esil_get_parm_size(RAnalEsil *esil, const char *str, ut64 *num,
 	switch (parm_type) {
 	case R_ANAL_ESIL_PARM_INTERNAL:
 		// *num = esil_internal_read (esil, str, num);
-		if (size) {
+		if (size) {	//this is wrong
 			*size = esil->anal->bits;
 		}
 		return esil_internal_read (esil, str, num);
@@ -639,9 +608,6 @@ R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 	IFDBG { eprintf ("%s=0x%" PFMT64x "\n", dst, num); }
 	if (esil && esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, &num);
-	}
-	if (!ret && esil && dst[0] == ESIL_INTERNAL_PREFIX && dst[1]) {
-		ret = esil_internal_write (esil, dst, num);
 	}
 	if (!ret && esil && esil->cb.reg_write) {
 		ret = esil->cb.reg_write (esil, dst, num);
@@ -2876,6 +2842,52 @@ static int esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 	return ret;
 }
 
+static int esil_set_jump_target(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s;
+	char *src = r_anal_esil_pop (esil);
+	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		esil->jump_target = s;
+		esil->jump_target_set = 1;
+		ret = true;
+	} else {
+		free (src);
+		ERR ("esil_set_jump_target: empty stack");
+	}
+	free (src);
+	return ret;
+}
+
+static int esil_set_jump_target_set(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s;
+	char *src = r_anal_esil_pop (esil);
+	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		esil->jump_target_set = s;
+		ret = true;
+	} else {
+		free (src);
+		ERR ("esil_set_jump_target_set: empty stack");
+	}
+	free (src);
+	return ret;
+}
+
+static int esil_set_delay_slot(RAnalEsil *esil) {
+	int ret = 0;
+	ut64 s;
+	char *src = r_anal_esil_pop (esil);
+	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		esil->delay = s;
+		ret = true;
+	} else {
+		free (src);
+		ERR ("esil_set_delay_slot: empty stack");
+	}
+	free (src);
+	return ret;
+}
+
 static int iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 	char t[128];
 	char *h = sdb_itoa (sdb_hash (word), t, 16);
@@ -3299,6 +3311,9 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("SWAP", esil_swap);
 	OP ("TRAP", esil_trap);
 	OP ("BITS", esil_bits);
+	OP ("SETJT", esil_set_jump_target);
+	OP ("SETJTS", esil_set_jump_target_set);
+	OP ("SETD", esil_set_delay_slot);
 }
 
 /* register callbacks using this anal module. */

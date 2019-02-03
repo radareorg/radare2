@@ -269,13 +269,13 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
 		op->dst = anal_regrel_jump (anal, op, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,r%d,2,+,pc,+=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,r%d,2,+,pc,+=", GET_TARGET_REG (code));
 	} else if (IS_BRAF (code)) {
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->dst = anal_regrel_jump (anal, op, GET_TARGET_REG (code));
 		op->eob = true;
 		op->delay = 1;
-		r_strbuf_setf (&op->esil, "1,$ds,=,r%d,2,+,pc,+=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,SETD,r%d,2,+,pc,+=", GET_TARGET_REG (code));
 	} else if (IS_RTS (code)) {
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
@@ -285,9 +285,9 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		//r_strbuf_setf (&op->esil, "1,$ds,=,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		//r_strbuf_setf (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 		//not sure if should be added 4 to pc
-		r_strbuf_setf (&op->esil, "1,$ds,=,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		r_strbuf_setf (&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 	} else if (IS_MOVB_REG_TO_R0REL (code)) {	//0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -629,13 +629,13 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_UCALL; //call to reg
 		op->delay = 1;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG (code));
 	} else if (IS_JMP (code)) {
 		op->type = R_ANAL_OP_TYPE_UJMP; //jmp to reg
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		op->delay = 1;
 		op->eob = true;
-		r_strbuf_setf (&op->esil, "1,$ds,=,r%d,pc,=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,SETD,r%d,pc,=", GET_TARGET_REG (code));
 	} else if (IS_CMPPL (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0,r%d,>,?{,0x1,sr,|=,}", GET_TARGET_REG (code));
@@ -855,10 +855,10 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 		if (IS_BT (code)) {
 			r_strbuf_setf (&op->esil, "sr,1,&,?{,0x%x,pc,=,}", op->jump);
 		} else if (IS_BTS (code)) {
-			r_strbuf_setf (&op->esil, "1,$ds,=,sr,1,&,?{,0x%x,pc,=,}", op->jump);
+			r_strbuf_setf (&op->esil, "1,SETD,sr,1,&,?{,0x%x,pc,=,}", op->jump);
 			op->delay = 1; //Only /S versions have a delay slot
 		} else if (IS_BFS (code)) {
-			r_strbuf_setf (&op->esil, "1,$ds,=,sr,1,&,!,?{,0x%x,pc,=,}",op->jump);
+			r_strbuf_setf (&op->esil, "1,SETD,sr,1,&,!,?{,0x%x,pc,=,}",op->jump);
 			op->delay = 1; //Only /S versions have a delay slot
 		} else if (IS_BF (code)) {
 			r_strbuf_setf (&op->esil, "sr,1,&,!,?{,0x%x,pc,=,}", op->jump);
@@ -912,7 +912,7 @@ static int bra(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->delay = 1;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->eob = true;
-	r_strbuf_setf (&op->esil, "1,$ds,=,0x%x,pc,=", op->jump);
+	r_strbuf_setf (&op->esil, "1,SETD,0x%x,pc,=", op->jump);
 	return op->size;
 }
 
@@ -922,7 +922,7 @@ static int bsr(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->type = R_ANAL_OP_TYPE_CALL;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->delay = 1;
-	r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,0x%x,pc,=", op->jump);
+	r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,0x%x,pc,=", op->jump);
 	return op->size;
 }
 

@@ -73,9 +73,9 @@
 #define USE_DS 0
 #if USE_DS
 // emit ERR trap if executed in a delay slot
-#define ES_TRAP_DS() "0,$ds,>,?{,$$,1,TRAP,BREAK,},"
+#define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
 // jump to address
-#define ES_J(addr) addr",$jt,=,1,$ds,=,"
+#define ES_J(addr) addr",SETJT,1,SETD"
 #else
 #define ES_TRAP_DS() ""
 #define ES_J(addr) addr",pc,="
