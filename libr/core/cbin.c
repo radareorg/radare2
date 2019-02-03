@@ -1500,7 +1500,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				relname = strdup (reloc->symbol->name);
 			}
 
-			pj_ks (pj, "name", relname ? relname : strdup("N/A"));
+			pj_ks (pj, "name", relname ? relname : "N/A");
 			pj_ks (pj, "demname", mn ? mn : "");
 			pj_ks (pj, "type",bin_reloc_type_name (reloc));
 			pj_kn (pj, "vaddr", reloc->vaddr);
