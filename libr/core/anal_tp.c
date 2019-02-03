@@ -382,8 +382,9 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
 						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
 						if (f && !strncmp (f->name, "str", 3)) {
-							types = parse_format (core, f->realname);
-							max += r_list_length (types);
+							if ((types = parse_format (core, f->realname))) {
+								max += r_list_length (types);
+							}
 							format = true;
 						}
 					}
