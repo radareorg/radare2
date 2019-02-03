@@ -1500,7 +1500,8 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				relname = strdup (reloc->symbol->name);
 			}
 
-			pj_ks (pj, "name", relname ? relname : "N/A");
+			// check if name is available
+			pj_ks (pj, "name", (relname && strcmp (relname, "")) ? relname : "N/A");
 			pj_ks (pj, "demname", mn ? mn : "");
 			pj_ks (pj, "type",bin_reloc_type_name (reloc));
 			pj_kn (pj, "vaddr", reloc->vaddr);
@@ -1557,7 +1558,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		// close Json output
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_println (pj_string (pj));
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i relocations\n", i);
