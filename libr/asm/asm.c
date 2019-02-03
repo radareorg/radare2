@@ -678,7 +678,7 @@ static void *dup_val(const void *v) {
 }
 
 R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
-	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
+	int num, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
 	const char *asmcpu = NULL;
 	RAsmCode *acode = NULL;
@@ -748,9 +748,8 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 			p = strstr (p + 5, "$sys.");
 		}
 	}
-	if (strchr (lbuf, ':')) {
-		labels = 1;
-	}
+	bool labels = !!strchr (lbuf, ':');
+
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
 			((ptr = strchr (tokens[ctr], ';')) ||
@@ -785,9 +784,11 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 		}
 		inComment = false;
 		r_asm_set_pc (a, pc);
-		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
-				i <= ctr; i++, idx += ret) {
+		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0'; i <= ctr; i++, idx += ret) {
 			buf_token = tokens[i];
+			if (!buf_token) {
+				continue;
+			}
 			if (inComment) {
 				if (!strncmp (ptr_start, "*/", 2)) {
 					inComment = false;
@@ -796,15 +797,11 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 			}
 			// XXX TODO remove arch-specific hacks
 			if (!strncmp (a->cur->arch, "avr", 3)) {
-				for (ptr_start = buf_token; *ptr_start &&
-							    isavrseparator (*ptr_start);
-					ptr_start++) {
+				for (ptr_start = buf_token; *ptr_start && isavrseparator (*ptr_start); ptr_start++) {
 					;
 				}
 			} else {
-				for (ptr_start = buf_token; *ptr_start &&
-							    IS_SEPARATOR (*ptr_start);
-					ptr_start++) {
+				for (ptr_start = buf_token; *ptr_start && IS_SEPARATOR (*ptr_start); ptr_start++) {
 					;
 				}
 			}
@@ -815,7 +812,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				continue;
 			}
 			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1]!='-') {
+			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1] != '-') {
 				*ptr = '\0';
 			}
 			r_asm_set_pc (a, a->pc + ret);
@@ -838,23 +835,24 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				if (is_a_label) {
 					//if (stage != 2) {
-					if (ptr_start[1] != 0 && ptr_start[1] != ' ') {
+					if (ptr_start[1] && ptr_start[1] != ' ') {
 						*ptr = 0;
 						if (acode->code_align) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
-						char food[64];
-						snprintf (food, sizeof (food), "0x%"PFMT64x, off);
+						char *food = r_str_newf ("0x%"PFMT64x, off);
 						ht_pp_insert (a->flags, ptr_start, food);
 						// TODO: warning when redefined
+tokens[i] = NULL;
 						r_asm_code_set_equ (acode, ptr_start, food);
+						free (food);
 					}
 					//}
 					ptr_start = ptr + 1;
 				}
 				ptr = ptr_start;
 			}
-			if (*ptr_start == '\0') {
+			if (!*ptr_start) {
 				ret = 0;
 				continue;
 			}
@@ -1003,7 +1001,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				acode->buf_hex = newbuf;
 				acode->buf = malloc (4095);
-				memcpy (acode->buf + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf)); // ret);
+				if (acode->buf) {
+					memcpy (acode->buf + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf)); // ret);
+				}
 				// XXX slow. use strbuf pls
 				strcat (acode->buf_hex, r_strbuf_get (&op.buf_hex));
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
@@ -1016,7 +1016,6 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 						free (s);
 					}
 				}
-
 			}
 		}
 	}
