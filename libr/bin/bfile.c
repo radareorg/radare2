@@ -883,6 +883,9 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	if (!buf) {
 		return false;
 	}
+	if (!o->info) {
+		return false;
+	}
 	if (buf) {
 		ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
 #define BLK_SIZE_OFF 1024
