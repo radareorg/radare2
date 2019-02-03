@@ -1203,7 +1203,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					a = p->offname (p->user, addr + j);
 					if (p->colorfor && a && *a) {
 						const char *color = p->colorfor (p->user, addr + j, true);
-						printfmt ("%s  ; %s"Color_RESET, color? color: "", a);
+						printfmt ("%s  ; %s%s", color ? color: "", a,
+						          color ? Color_RESET : "");
 					}
 				}
 				char *comment = p->get_comments (p->user, addr + j);
