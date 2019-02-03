@@ -5954,11 +5954,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						} else {
 							pj_k (pj, "name");
 							if (fi->offset != ref->addr) {
-								char *name_ref = strdup (fi->name);
-								strcat (name_ref, "+");
-								char fi_offset[32]; 
-								sprintf (fi_offset, "%d", (int)(ref->addr - fi->offset));
-								strcat (name_ref, fi_offset);
+								int delta = (int)(ref->addr - fi->offset);
+								char *name_ref = r_str_newf ("%s+%d", fi->name, delta);
 								pj_s (pj, name_ref);
 								free (name_ref);
 							} else {

@@ -326,65 +326,67 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	r_list_foreach (refs, iter, ref) {
-		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
-		if (f) {
-			// If dump is true, print all strings referenced by the function
- 			if (dump) {
-				// take only strings flags
-				if (!strncmp (f->name, "str.", 4)) {
-					if (mode == 'j') { 
-						// add new json item
-						pj_o (pj);
-						pj_kn (pj, "addr", ref->at);
-						pj_kn (pj, "ref", ref->addr);
-						pj_ks (pj, "flag", f->name);
-						pj_end (pj);
-					} else {
-						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+	if (refs) {
+		r_list_foreach (refs, iter, ref) {
+			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
+			if (f) {
+				// If dump is true, print all strings referenced by the function
+				if (dump) {
+					// take only strings flags
+					if (!strncmp (f->name, "str.", 4)) {
+						if (mode == 'j') {
+							// add new json item
+							pj_o (pj);
+							pj_kn (pj, "addr", ref->at);
+							pj_kn (pj, "ref", ref->addr);
+							pj_ks (pj, "flag", f->name);
+							pj_end (pj);
+						} else {
+							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+						}
+					}
+				} else if (do_call) { // break if a proper autoname found and not in dump mode
+					break;
+				}
+				// enter only if a candidate name hasn't found yet
+				if (!do_call) {
+					if (blacklisted_word (f->name)) {
+						continue;
+					}
+					if (strstr (f->name, ".isatty")) {
+						use_isatty = 1;
+					}
+					if (strstr (f->name, ".getopt")) {
+						use_getopt = 1;
+					}
+					if (!strncmp (f->name, "method.", 7)) {
+						free (do_call);
+						do_call = strdup (f->name + 7);
+						continue;
+					}
+					if (!strncmp (f->name, "str.", 4)) {
+						free (do_call);
+						do_call = strdup (f->name + 4);
+						continue;
+					}
+					if (!strncmp (f->name, "sym.imp.", 8)) {
+						free (do_call);
+						do_call = strdup (f->name + 8);
+						continue;
+					}
+					if (!strncmp (f->name, "reloc.", 6)) {
+						free (do_call);
+						do_call = strdup (f->name + 6);
+						continue;
 					}
 				}
- 			} else if (do_call) { // break if a proper autoname found and not in dump mode
- 				break;
- 			}
-			// enter only if a candidate name hasn't found yet
-			if (!do_call) {
-				if (blacklisted_word (f->name)) {
-					continue;
-				}
-				if (strstr (f->name, ".isatty")) {
-					use_isatty = 1;
-				}
-				if (strstr (f->name, ".getopt")) {
-					use_getopt = 1;
-				}
-				if (!strncmp (f->name, "method.", 7)) {
-					free (do_call);
-					do_call = strdup (f->name + 7);
-					continue;
-				}
-				if (!strncmp (f->name, "str.", 4)) {
-					free (do_call);
-					do_call = strdup (f->name + 4);
-					continue;
-				}
-				if (!strncmp (f->name, "sym.imp.", 8)) {
-					free (do_call);
-					do_call = strdup (f->name + 8);
-					continue;
-				}
-				if (!strncmp (f->name, "reloc.", 6)) {
-					free (do_call);
-					do_call = strdup (f->name + 6);
-					continue;
-				}
- 			}
- 		}
- 	}
+			}
+		}
+		r_list_free (refs);
+	}
 	if (mode ==  'j') {
 		pj_end (pj);
 	}
-	r_list_free (refs);
 	if (pj) {
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
@@ -2064,7 +2066,7 @@ repeat:
 						"[color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						fcni->addr, fcnr->addr, //, fcnr_name,
-						"#61afef", 
+						"#61afef",
 						fcnr_name, fcnr->addr);
 				r_cons_printf ("  \"0x%08"PFMT64x"\" "
 						"[label=\"%s\""
@@ -4449,7 +4451,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				r_flag_set_next (core->flags, sdb_fmt ("syscall.%s", si->name), cur, 1);
 			} else {
 				//todo were doing less filtering up top because we cant match against 80 on all platforms
-				// might get too many of this path now.. 
+				// might get too many of this path now..
 			//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
 				r_flag_set_next (core->flags, sdb_fmt ("syscall.%d", snv), cur, 1);
 			}
