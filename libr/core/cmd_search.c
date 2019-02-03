@@ -70,8 +70,9 @@ static const char *help_msg_slash[] = {
 static const char *help_msg_slash_c[] = {
 	"Usage:", "/c [inst]", " Search for code",
 	"/c ", "instr", "search for instruction 'instr'",
-	"/ce ", "esil", "search for esil expressions matching substring",
 	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
+	"/ce ", "esil", "search for esil expressions matching substring",
+	"/ci", "[j] 0x300", "find all the instructions using that immbediate",
 	"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 	"/c/a ", "instr", "search for every byte instruction that matches regexp 'instr'",
 	"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
@@ -2152,10 +2153,12 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (outmode != 'j') {
 		json = 0;
 	}
+	if (input[1] == 'j') {
+		json = true;
+	}
 
 	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
-
 	if (json) {
 		r_cons_print ("[");
 	}
