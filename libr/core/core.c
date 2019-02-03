@@ -1173,10 +1173,10 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 	int length = strlen (msg);
 	RSpaces *zs = &core->anal->zign_spaces;
 	RSpace *s;
-	RBIter it;
+	RSpaceIter it;
 	int i = 0;
 
-	r_rbtree_foreach (zs->spaces, it, s, RSpace, rb) {
+	r_spaces_foreach (zs, it, s) {
 		if (i == TMP_ARGV_SZ - 1) {
 			break;
 		}
@@ -1202,23 +1202,21 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	}
 	int length = strlen (msg);
 	RFlag *flag = core->flags;
-	int j, i = 0;
-	for (j = 0; j < R_FLAG_SPACES_MAX - 1; j++) {
-		if (flag->spaces[j] && flag->spaces[j][0]) {
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
-			if (!strncmp (msg, flag->spaces[j], length)) {
-				if (i + 1 < TMP_ARGV_SZ) {
-					tmp_argv[i++] = flag->spaces[j];
-				}
+	int i = 0;
+	RSpaceIter it;
+	RSpace *s;
+	r_flag_space_foreach (flag, it, s) {
+		if (i == TMP_ARGV_SZ - 1) {
+			break;
+		}
+		if (!strncmp (msg, s->name, length)) {
+			if (i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = s->name;
 			}
 		}
 	}
-	if (flag->spaces[j] && !strncmp (msg, flag->spaces[j], strlen (msg))) {
-		if (i + 1 < TMP_ARGV_SZ) {
-			tmp_argv[i++] = "*";
-		}
+	if (i + 1 < TMP_ARGV_SZ) {
+		tmp_argv[i++] = "*";
 	}
 	tmp_argv[i] = NULL;
 	line->completion.argc = i;
@@ -2209,25 +2207,28 @@ static char *get_comments_cb(void *user, ut64 addr) {
 }
 
 R_IPI void spaces_list(RSpaces *sp, int mode) {
-	RBIter it;
+	RSpaceIter it;
 	RSpace *s;
 	bool first = true;
 	const RSpace *cur = r_spaces_current (sp);
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		pj = pj_new ();
+		pj_a (pj);
 	}
-	r_rbtree_foreach (sp->spaces, it, s, RSpace, rb) {
+	r_spaces_foreach (sp, it, s) {
 		int count = r_spaces_count (sp, s->name);
 		if (mode == 'j') {
-			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
-				       !first? ",": "", s->name,
-				       cur == s? ",\"selected\":true": "",
-				       count);
+			pj_o (pj);
+			pj_ks (pj, "name", s->name);
+			pj_ki (pj, "count", count);
+			pj_kb (pj, "selected", cur == s);
+			pj_end (pj);
 		} else if (mode == '*') {
 			r_cons_printf ("%s %s\n", sp->name, s->name);
 		} else {
-			r_cons_printf ("%d %c %s\n", count, cur == s? '*': '.',
-				       s->name);
+			r_cons_printf ("%5d %c %s\n", count, (!cur || cur == s)? '*': '.',
+				s->name);
 		}
 		first = false;
 	}
@@ -2235,7 +2236,9 @@ R_IPI void spaces_list(RSpaces *sp, int mode) {
 		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));
 	}
 	if (mode == 'j') {
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 

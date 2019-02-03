@@ -73,7 +73,7 @@ R_API RSpace *r_spaces_get(RSpaces *sp, const char *name);
 R_API RSpace *r_spaces_add(RSpaces *sp, const char *name);
 // Add and select a new RSpace if one does not already exist, otherwise return and select the existing one
 R_API RSpace *r_spaces_set(RSpaces *sp, const char *name);
-// Remove the RSpace with the given name
+// Remove the RSpace with the given name or all of them if name is NULL
 R_API bool r_spaces_unset(RSpaces *sp, const char *name);
 // Change the name of RSpace with oname to nname
 R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname);
@@ -91,6 +91,15 @@ static inline RSpace *r_spaces_current(RSpaces *sp) {
 static inline const char *r_spaces_current_name(RSpaces *sp) {
 	return sp->current? sp->current->name: "*";
 }
+
+static inline bool r_spaces_is_empty(RSpaces *sp) {
+	RBIter it = r_rbtree_first (sp->spaces);
+	return it.len == 0;
+}
+
+typedef RBIter RSpaceIter;
+#define r_spaces_foreach(sp, it, s) \
+	r_rbtree_foreach ((sp)->spaces, (it), (s), RSpace, rb)
 
 #ifdef __cplusplus
 }

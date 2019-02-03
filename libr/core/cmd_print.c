@@ -1761,7 +1761,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 }
 
 struct count_pz_t {
-	int flagspace;
+	RSpace *flagspace;
 	ut64 addr;
 	ut64 size;
 	int *ret;
@@ -1821,8 +1821,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 		}
 		break;
 	case 's': // "pzs"
-		j = r_flag_space_get (core->flags, "strings");
-		u.flagspace = j;
+		u.flagspace = r_flag_space_get (core->flags, "strings");
 		u.addr = addr;
 		u.size = size;
 		u.ret = &ret;

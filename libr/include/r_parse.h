@@ -20,8 +20,8 @@ typedef RList* (*RAnalVarList)(RAnal *anal, RAnalFunction *fcn, int kind);
 
 typedef struct r_parse_t {
 	void *user;
-	int flagspace;
-	int notin_flagspace;
+	RSpace *flagspace;
+	RSpace *notin_flagspace;
 	bool pseudo;
 	bool relsub; // replace rip relative expressions in instruction
 	bool tailsub; // replace any immediate relative to current address with .. prefix syntax
