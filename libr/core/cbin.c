@@ -1451,7 +1451,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_JSON (mode)) {
 		// start a new JSON object
 		pj = pj_new ();
-		pj_a(pj);
+		if (pj) {
+			pj_a (pj);
+		}
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
@@ -1487,35 +1489,37 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			char *mn = NULL;
-			char *relname = NULL;
+			if (pj) {
+				pj_o (pj);
+				char *mn = NULL;
+				char *relname = NULL;
 
-			// take care with very long symbol names! do not use sdb_fmt or similar
-			if (reloc->import) {
-				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
-				relname = strdup (reloc->import->name);
-			} else if (reloc->symbol) {
-				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
-				relname = strdup (reloc->symbol->name);
-			}
+				// take care with very long symbol names! do not use sdb_fmt or similar
+				if (reloc->import) {
+					mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
+					relname = strdup (reloc->import->name);
+				} else if (reloc->symbol) {
+					mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
+					relname = strdup (reloc->symbol->name);
+				}
 
-			// check if name is available
-			pj_ks (pj, "name", (relname && strcmp (relname, "")) ? relname : "N/A");
-			pj_ks (pj, "demname", mn ? mn : "");
-			pj_ks (pj, "type",bin_reloc_type_name (reloc));
-			pj_kn (pj, "vaddr", reloc->vaddr);
-			pj_kn (pj, "paddr", reloc->paddr);
-			if (reloc->symbol) {
-				pj_kn (pj, "sym_va", reloc->symbol->vaddr);
-			}
-			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
-			// end reloc item
-			pj_end (pj);
+				// check if name is available
+				pj_ks (pj, "name", (relname && strcmp (relname, "")) ? relname : "N/A");
+				pj_ks (pj, "demname", mn ? mn : "");
+				pj_ks (pj, "type",bin_reloc_type_name (reloc));
+				pj_kn (pj, "vaddr", reloc->vaddr);
+				pj_kn (pj, "paddr", reloc->paddr);
+				if (reloc->symbol) {
+					pj_kn (pj, "sym_va", reloc->symbol->vaddr);
+				}
+				pj_kb (pj, "is_ifunc", reloc->is_ifunc);
+				// end reloc item
+				pj_end (pj);
 
-			free (mn);
-			if (relname) {
-				free (relname);
+				free (mn);
+				if (relname) {
+					free (relname);
+				}
 			}
 		} else if (IS_MODE_NORMAL (mode)) {
 			char *name = reloc->import
