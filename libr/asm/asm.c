@@ -837,14 +837,15 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 					//if (stage != 2) {
 					if (ptr_start[1] && ptr_start[1] != ' ') {
 						*ptr = 0;
+						char *p = strdup (ptr_start);
+						*ptr = ':';
 						if (acode->code_align) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char *food = r_str_newf ("0x%"PFMT64x, off);
 						ht_pp_insert (a->flags, ptr_start, food);
-						// TODO: warning when redefined
-tokens[i] = NULL;
-						r_asm_code_set_equ (acode, ptr_start, food);
+						r_asm_code_set_equ (acode, p, food);
+						free (p);
 						free (food);
 					}
 					//}
@@ -874,7 +875,9 @@ tokens[i] = NULL;
 					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".string ", 8)) {
 					r_str_trim (ptr + 8);
-					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
+					char * str = strdup (ptr + 8);
+					ret = r_asm_pseudo_string (&op, str, 1);
+					free (str);
 				} else if (!strncmp (ptr, ".ascii", 6)) {
 					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
 				} else if (!strncmp (ptr, ".align", 6)) {
