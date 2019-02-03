@@ -1449,6 +1449,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Relocations]");
 	} else if (IS_MODE_JSON (mode)) {
+		// start a new JSON object
 		pj = pj_new ();
 		pj_a(pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -1493,13 +1494,13 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			// take care with very long symbol names! do not use sdb_fmt or similar
 			if (reloc->import) {
 				mn = r_bin_demangle (r->bin->cur, lang, reloc->import->name, addr);
-				relname = reloc->import->name;
+				relname = strdup (reloc->import->name);
 			} else if (reloc->symbol) {
 				mn = r_bin_demangle (r->bin->cur, lang, reloc->symbol->name, addr);
-				relname = reloc->symbol->name;
+				relname = strdup (reloc->symbol->name);
 			}
 
-			pj_ks (pj, "name", strcmp(relname, "") ? relname  : "N/A");
+			pj_ks (pj, "name", relname ? relname : strdup("N/A"));
 			pj_ks (pj, "demname", mn ? mn : "");
 			pj_ks (pj, "type",bin_reloc_type_name (reloc));
 			pj_kn (pj, "vaddr", reloc->vaddr);
@@ -1508,9 +1509,13 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				pj_kn (pj, "sym_va", reloc->symbol->vaddr);
 			}
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
+			// end reloc item
 			pj_end (pj);
 
 			free (mn);
+			if (relname) {
+				free (relname);
+			}
 		} else if (IS_MODE_NORMAL (mode)) {
 			char *name = reloc->import
 				? strdup (reloc->import->name)
@@ -1550,6 +1555,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
+		// close Json output
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 	}
@@ -1557,6 +1563,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		r_cons_printf ("\n%i relocations\n", i);
 	}
 
+	// free PJ object if used
 	if (pj) {
 		pj_free (pj);
 	}
