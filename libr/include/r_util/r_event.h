@@ -8,11 +8,13 @@ extern "C" {
 #endif
 
 #include <sdb/ht_up.h>
+#include <r_vector.h>
 
 typedef struct r_event_t {
 	void *user;
 	bool incall;
 	HtUP *callbacks;
+	RVector *all_callbacks;
 	int hook_handle_next;
 } REvent;
 
