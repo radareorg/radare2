@@ -942,7 +942,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt (" ");
 				}
 				if (!hex_style) {
-					printfmt (" comment ");
+					printfmt (" comment");
 				}
 			}
 			printfmt ("\n");
