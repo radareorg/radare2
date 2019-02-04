@@ -190,14 +190,13 @@ R_API int r_file_is_abspath(const char *file) {
 }
 
 R_API char *r_file_abspath(const char *file) {
-	char *cwd, *ret = NULL;
+	char *ret = NULL;
 	if (!file || !strcmp (file, ".") || !strcmp (file, "./")) {
 		return r_sys_getdir ();
 	}
 	if (strstr (file, "://")) {
 		return strdup (file);
 	}
-	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file + 2);
 	} else {
@@ -210,14 +209,16 @@ R_API char *r_file_abspath(const char *file) {
 		if (!strncmp (file, "\\\\", 2)) {
 			return strdup (file);
 		}
-		if (cwd && !strchr (file, ':')) {
-			char * nfile = r_str_ndup (file, strlen (file) - r_str_endswith (file, "/"));
-			ret = r_str_newf ("%s\\%s", cwd, nfile);
-			free (nfile);
+		if (!strchr (file, ':')) {
+			const ut32 max_size = 32768;
+			char *abspath = malloc (max_size);
+			if (abspath) {
+				GetFullPathName (file, max_size, abspath, NULL);
+				ret = abspath;
+			}
 		}
 #endif
 	}
-	free (cwd);
 	if (!ret) {
 		ret = strdup (file);
 	}
@@ -1049,7 +1050,12 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	return r_sys_cmdf ("copy %s %s", src, dst);
+	char *s = r_file_abspath (src);
+	char *d = r_file_abspath (dst);
+	bool ret = r_sys_cmdf ("copy %s %s", s, d);
+	free (s);
+	free (d);
+	return ret;
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
 	char *dst2 = r_str_replace (strdup (dst), "'", "\\'", 1);
