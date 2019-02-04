@@ -71,22 +71,29 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len) 
 	const char *optype = r_anal_optype_to_string (op->type);
 	char *bytes = r_hex_bin2strdup (buf, ret);
 	if (as->json) {
-		printf ("{\"opcode\": \"0x%08" PFMT64x "\",", offset);
-		printf ("\"bytes\": \"%s\",", bytes);
-		printf ("\"type\": \"%s\",", optype);
-		if (op->jump != -1LL) {
-			printf ("{\"jump\": \"0x%08" PFMT64x ",", op->jump);
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_kn (pj, "opcode", offset);
+		pj_ks (pj, "bytes", bytes);
+		pj_ks (pj, "type", optype);
+		if (op->jump != UT64_MAX) {
+			pj_kn (pj, "jump", op->jump);
 		}
-		if (op->fail != -1LL) {
-			printf ("{\"fail\": \"0x%08" PFMT64x ",", op->fail);
+		if (op->fail != UT64_MAX) {
+			pj_kn (pj, "fail", op->fail);
 		}
-		if (op->val != -1LL) {
-			printf ("{\"value\": \"0x%08" PFMT64x ",", op->val);
+		if (op->val != UT64_MAX) {
+			pj_kn (pj, "val", op->val);
 		}
-		printf ("\"stackop\": \"%s\",", stackop);
-		printf ("\"esil\": \"%s\",", r_strbuf_get (&op->esil));
-		printf ("\"stackptr\": \"0x%08" PFMT64x "\"", op->stackptr);
-		printf ("}");
+		if (op->ptr != UT64_MAX) {
+			pj_kn (pj, "ptr", op->ptr);
+		}
+		pj_ks (pj, "stackop", stackop);
+		pj_ks (pj, "esil", r_strbuf_get (&op->esil));
+		pj_kn (pj, "stackptr", op->stackptr);
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	} else {
 		printf ("offset:   0x%08" PFMT64x "\n", offset);
 		printf ("bytes:    %s\n", bytes);
