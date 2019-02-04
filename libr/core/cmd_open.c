@@ -93,6 +93,7 @@ static const char *help_msg_om[] = {
 	"om-", "mapid", "remove the map with corresponding id",
 	"om-..", "", "hud view of all the maps to select the one to delete",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
+	"oma"," [fd]", "create a map covering all VA for given fd",
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
@@ -732,6 +733,18 @@ static void cmd_open_map(RCore *core, const char *input) {
 				r_io_map_del_name (map);
 			}
 			s = p;
+		}
+		break;
+	case 'a': // "oma"
+		{
+			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
+			RIODesc *desc = r_io_desc_get (core->io, fd);
+			if (desc) {
+				map = r_io_map_add (core->io, fd, desc->perm, 0, 0, UT64_MAX);
+				r_io_map_set_name (map, desc->name);
+			} else {
+				eprintf ("Usage: omm [fd]\n");
+			}
 		}
 		break;
 	case 'm': // "omm"
