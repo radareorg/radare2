@@ -24,7 +24,7 @@ R_API REvent *r_event_new(void *user) {
 	}
 
 	ev->user = user;
-	ev->hook_handle_next = 0;
+	ev->next_handle = 0;
 	ev->callbacks = ht_up_new (NULL, ht_callback_free, NULL);
 	if (!ev->callbacks) {
 		goto err;
@@ -66,7 +66,7 @@ R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb,
 	r_return_val_if_fail (ev, handle);
 	hook.cb = cb;
 	hook.user = user;
-	hook.handle = ev->hook_handle_next++;
+	hook.handle = ev->next_handle++;
 	if (type == R_EVENT_ALL) {
 		r_vector_push (ev->all_callbacks, &hook);
 	} else {
@@ -82,12 +82,12 @@ R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb,
 }
 
 static bool del_hook(void *user, const ut64 k, const void *v) {
-	int handle = *((int *)user);
+	int handle = *(int *)user;
 	RVector *cbs = (RVector *)v;
-	r_return_val_if_fail (cbs, false);
+	REventCallbackHook *hook;
 	size_t i;
-	for (i = 0; i < cbs->len; i++) {
-		REventCallbackHook *hook = r_vector_index_ptr (cbs, i);
+	r_return_val_if_fail (cbs, false);
+	r_vector_enumerate (cbs, hook, i) {
 		if (hook->handle == handle) {
 			r_vector_remove_at (cbs, i, NULL);
 			break;

@@ -15,7 +15,7 @@ typedef struct r_event_t {
 	bool incall;
 	HtUP *callbacks;
 	RVector *all_callbacks;
-	int hook_handle_next;
+	int next_handle;
 } REvent;
 
 typedef struct r_event_callback_handle_t {
