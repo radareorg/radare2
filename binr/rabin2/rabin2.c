@@ -188,8 +188,13 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	if (!path) {
 		return false;
 	}
-	// XXX: Wrong for w32 (/)
 	ptr = strrchr (path, DIRSEP);
+#if __WINDOWS__
+	char *p = strrchr (path, '/');
+	if (p > ptr) {
+		ptr = p;
+	}
+#endif
 	if (ptr) {
 		*ptr++ = '\0';
 	} else {
