@@ -18,7 +18,7 @@ static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
 static const char *nl = "";
-static int is_file = 0;
+static bool is_file = 0;
 
 static int format_output(char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -249,7 +249,7 @@ dotherax:
 		int i, dec_val;
 		for (i = 0; i < len; i++) {
 			if (str[i] == '\\' && !is_file) {
-         		++i; 
+         			++i; 
 				if ((dec_val = escape_to_dec (str[i])) != 2) {
 					printf ("%02x", dec_val);
 				} else if (str[i] == 'x') {	// '\xhhhh..'
@@ -272,7 +272,7 @@ dotherax:
 					} else {	// '\ooo'
 						char octal_str[4], *modified_str;
 						strncpy (octal_str, str + i, 3);
-						i += 2;;
+						i += 2;
 						modified_str = r_str_newf (((*octal_str != '0') ? "0%s" : "%s"), octal_str);
 						ut64 n = r_num_math (num, modified_str);
 						((ut16) n) > 255 ? (printf ("%03x", (ut16) n)) : (printf ("%02x", (ut16) n));
