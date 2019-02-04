@@ -852,8 +852,7 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	char hash[128], *p;
 	RHash *ctx;
-	ut8* buf;
-	ut64 buf_len = 0;
+	ut64 buf_len = 0, r = 0;
 	int i;
 	RBinFile *bf = bin->cur;
 	if (!bf) {
@@ -878,34 +877,25 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		eprintf ("Cannot compute hash\n");
 		return -1;
 	}
-	//  XXX should use io api not raw file slurping
-	int blen = 0;
-	buf = (ut8*)r_file_slurp (file, &blen);
-	if (!buf) {
-		return false;
+	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+	while (r < buf_len) {
+#define BLK_SIZE_OFF 4096
+		ut8 buf[BLK_SIZE_OFF];
+		int b = r_io_desc_read (iod, buf, sizeof (buf));
+		(void)r_hash_do_md5 (ctx, buf, R_MIN (b, sizeof (buf)));
+		(void)r_hash_do_sha1 (ctx, buf, R_MIN (b, sizeof (buf)));
+		r += b;
+		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
 	}
-	buf_len = blen;
-	if (!o->info) {
-		return false;
-	}
-	if (buf) {
-		ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
-#define BLK_SIZE_OFF 1024
-		for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
-			(void)r_hash_do_md5 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
-			(void)r_hash_do_sha1 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
-		}
-		r_hash_do_end (ctx, R_HASH_MD5);
-		p = hash;
-		r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
-		o->info->hashes = r_strbuf_new ("");
-		r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
-		r_hash_do_end (ctx, R_HASH_SHA1);
-		p = hash;
-		r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
-		r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
-		r_hash_free (ctx);
-	}
-	free (buf);
+	r_hash_do_end (ctx, R_HASH_MD5);
+	p = hash;
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
+	o->info->hashes = r_strbuf_new ("");
+	r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
+	r_hash_do_end (ctx, R_HASH_SHA1);
+	p = hash;
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
+	r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
+	r_hash_free (ctx);
 	return true;
 }
