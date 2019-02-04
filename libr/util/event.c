@@ -122,7 +122,9 @@ R_API void r_event_send(REvent *ev, int type, void *data) {
 	ev->incall = false;
 
 	RVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
-	r_return_if_fail (cbs);
+	if (!cbs) {
+		return;
+	}
 	ev->incall = true;
 	r_vector_foreach (cbs, hook) {
 		hook->cb (ev, type, hook->user, data);

@@ -188,7 +188,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	if (!path) {
 		return false;
 	}
-	ptr = r_file_basename (path);
+	ptr = (char *)r_file_basename (path);
 	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
