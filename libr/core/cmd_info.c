@@ -458,7 +458,7 @@ static int cmd_info(void *data, const char *input) {
 		}
 		case 'F': // "iF"
 			if (input[1] == 'j') {
-				r_cons_printf ("{\"%s\"}", r_strbuf_get (core->bin->cur->o->info->hashes));
+				r_cons_printf ("{\"%s\"}", core->bin->cur->o->info->hashes);
 			} else {
 				r_cons_printf (r_strbuf_get (core->bin->cur->o->info->hashes));
 			}

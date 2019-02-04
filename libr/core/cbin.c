@@ -3588,7 +3588,7 @@ static int bin_hashes(RCore *r, int mode) {
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
 		r_bin_file_hash (r->bin, lim, iod->name);
-		const char *hashes = r_strbuf_get (r->bin->cur->o->info->hashes);
+		char *hashes = r->bin->cur->o->info->hashes;
 		if (IS_MODE_JSON (mode)) {
 			PJ *pj = pj_new ();
 			if (!pj) {
