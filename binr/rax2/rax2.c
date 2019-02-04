@@ -18,6 +18,7 @@ static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
 static const char *nl = "";
+static int is_file = 0;
 
 static int format_output(char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -73,6 +74,23 @@ static int format_output(char mode, const char *s) {
 
 static void print_ascii_table() {
 	printf("%s", ret_ascii_table());
+}
+
+static int escape_to_dec(char ch) {
+	switch (ch) {
+	case 'n': return 10;
+	case 'a': return 7;
+	case 'b': return 8;
+	case 'f': return 12;
+	case 'r': return 13;
+	case 't': return 9;
+	case 'v': return 11;
+	case '\\': return 92;
+	case '\'': return 39;
+	case '\"': return 34;
+	case '\?': return 63;
+	default: return 2;
+	}
 }
 
 static int help() {
@@ -189,7 +207,7 @@ static int rax(char *str, int len, int last) {
 				printf ("Usage: rax2 [options] [expr ...]\n");
 				return help ();
 			}
-			str++;		
+			str++;
 		}
 		if (last) {
 			return !use_stdin ();
@@ -228,8 +246,43 @@ dotherax:
 		return true;
 	}
 	if (flags & (1 << 2)) { // -S
+		int i, dec_val;
 		for (i = 0; i < len; i++) {
-			printf ("%02x", (ut8) str[i]);
+			if (str[i] == '\\' && !is_file) {
+         		++i; 
+				if ((dec_val = escape_to_dec (str[i])) != 2) {
+					printf ("%02x", dec_val);
+				} else if (str[i] == 'x') {	// '\xhhhh..'
+					i++;
+					while (IS_HEXCHAR (str[i])) {
+						printf ("%c", tolower (str[i]));
+						i++;
+					}
+					i--; 
+				} else if (IS_OCTAL (str[i])) {
+					if (!IS_OCTAL (str[i + 1])) {	// '\o'
+						printf ("0%c", str[i]);
+					} else if ((IS_OCTAL (str[i + 1])) && !IS_OCTAL (str[i + 2])) { 	// '\oo'
+						char octal_str[3], *modified_str;
+						strncpy (octal_str, str + i, 2);
+						i++;
+						modified_str = r_str_newf (((*octal_str != '0') ? "0%s" : "%s"), octal_str);
+						ut64 n = r_num_math (num, modified_str); 
+						printf ("%02x", (ut8) n);
+					} else {	// '\ooo'
+						char octal_str[4], *modified_str;
+						strncpy (octal_str, str + i, 3);
+						i += 2;;
+						modified_str = r_str_newf (((*octal_str != '0') ? "0%s" : "%s"), octal_str);
+						ut64 n = r_num_math (num, modified_str);
+						((ut16) n) > 255 ? (printf ("%03x", (ut16) n)) : (printf ("%02x", (ut16) n));
+					}
+				} else {
+					printf ("%02x%02x", 92, (ut8) str[i]);
+				}
+			} else { 
+				printf ("%02x", (ut8) str[i]);
+			}
 		}
 		printf ("\n");
 		return true;
@@ -493,7 +546,7 @@ dotherax:
 		// check -r
 		// flags & (1 << 18)
 		char *asnum, *modified_str;
-		
+
 		// To distinguish octal values.
 		if (*str != '0') {
 			modified_str = r_str_newf ("0%s", str);
@@ -567,6 +620,7 @@ static int use_stdin() {
 		return 0;
 	}
 	if (!(flags & (1<<14))) {
+		is_file = 1;
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
