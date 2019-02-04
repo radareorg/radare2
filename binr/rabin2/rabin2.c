@@ -191,9 +191,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	ptr = strrchr (path, DIRSEP);
 #if __WINDOWS__
 	char *p = strrchr (path, '/');
-	if (p > ptr) {
-		ptr = p;
-	}
+	ptr = p > ptr ? p : ptr;
 #endif
 	if (ptr) {
 		*ptr++ = '\0';
