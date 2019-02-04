@@ -42,6 +42,7 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
+	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
@@ -7545,6 +7546,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 's': // "aas"
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @@ entry*");
+		break;
+	case 'F': // "aaF"
+		r_core_anal_inflags (core, input + 1);
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {
