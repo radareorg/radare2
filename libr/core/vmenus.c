@@ -2928,7 +2928,19 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			variable_option = 0;
 			break;
 		case '_':
-			r_core_cmd0 (core, "s $(afl~...)");
+			{
+				r_core_cmd0 (core, "s $(afl~...)");
+				int n = 0;
+				RListIter *iter;
+				RAnalFunction *fcn;
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					if (fcn->addr == core->offset) {
+						option = n;
+						break;
+					}
+					n ++;
+				}
+			}
 			break;
 		case 'j':
 			if (selectPanel) {
