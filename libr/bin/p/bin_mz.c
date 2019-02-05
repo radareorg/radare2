@@ -58,21 +58,26 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		}
 
 		// Check for New Executable, LE/LX or Phar Lap executable
-		if (!memcmp(buf, "MZ", 2) && 
-			!memcmp (buf + new_exe_header_offset, "NE", 2) ||
-			!memcmp (buf + new_exe_header_offset, "LE", 2) ||
-			!memcmp (buf + new_exe_header_offset, "LX", 2) ||
-			!memcmp (buf + new_exe_header_offset, "PL", 2)) {
-            	return false;
+		if(!memcmp(buf, "MZ", 2)){
+			if (!memcmp (buf + new_exe_header_offset, "NE", 2) ||
+				!memcmp (buf + new_exe_header_offset, "LX", 2) ||
+				!memcmp (buf + new_exe_header_offset, "PL", 2)) {
+				if (!checkEntrypoint (buf, length)) {
+					return false;
+				}
+			}
+			else{
+				return true;
+			}
 		}
 	}
-	
+
+	// Raw plain MZ executable (watcom)
 	if (!checkEntrypoint (buf, length)) {
 		return false;
 	}
-	
-	return true;
-	
+
+	return false;
 }
 
 static void *load(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
