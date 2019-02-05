@@ -852,20 +852,19 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	char hash[128], *p;
 	RHash *ctx;
-	RStrBuf *sbuf;
 	ut64 buf_len = 0, r = 0;
 	int i;
 	RBinFile *bf = bin->cur;
 	if (!bf) {
-		return 0;
+		return false;
 	}
 	RBinObject *o = bf->o;
-	if (!o) {
-		return 0;
+	if (!o || !o->info) {
+		return false;
 	}
 	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
 	if (!iod) {
-		return 0;
+		return false;
 	}
 
 	if (!file && iod) {
@@ -876,29 +875,34 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		eprintf ("Cannot compute hash\n");
-		return -1;
+		return false;
+	}
+#define BLK_SIZE_OFF 4096
+	ut8 *buf = malloc (BLK_SIZE_OFF);
+	if (!buf) {
+		eprintf ("Cannot allocate computation buffer\n");
+		return false;
 	}
 	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
 	while (r < buf_len) {
-#define BLK_SIZE_OFF 4096
-		ut8 *buf = malloc (BLK_SIZE_OFF);
-		int b = r_io_desc_read (iod, buf, R_MIN (buf_len-r, BLK_SIZE_OFF));
-		(void)r_hash_do_md5 (ctx, buf, R_MIN (b, BLK_SIZE_OFF));
-		(void)r_hash_do_sha1 (ctx, buf, R_MIN (b, BLK_SIZE_OFF));
-		r += b;
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
-		free (buf);
+		size_t rem_len = R_MIN(buf_len-r, BLK_SIZE_OFF);
+		int b = r_io_desc_read (iod, buf, rem_len);
+		(void)r_hash_do_md5 (ctx, buf, rem_len);
+		(void)r_hash_do_sha1 (ctx, buf, rem_len);
+		r += b;
 	}
 	r_hash_do_end (ctx, R_HASH_MD5);
 	p = hash;
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
-	sbuf = r_strbuf_new ("");
+	RStrBuf *sbuf = r_strbuf_new ("");
 	r_strbuf_appendf (sbuf, "md5 %s", hash);
 	r_hash_do_end (ctx, R_HASH_SHA1);
 	p = hash;
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
 	r_strbuf_appendf (sbuf, "\nsha1 %s", hash);
 	o->info->hashes = r_strbuf_drain (sbuf);
+	free (buf);
 	r_hash_free (ctx);
 	return true;
 }

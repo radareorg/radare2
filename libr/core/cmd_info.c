@@ -458,9 +458,17 @@ static int cmd_info(void *data, const char *input) {
 		}
 		case 'F': // "iF"
 			if (input[1] == 'j') {
-				r_cons_printf ("{\"%s\"}", core->bin->cur->o->info->hashes);
+				PJ *pj = pj_new ();
+				if (!pj) {
+					eprintf ("JSON mode failed\n");
+					return 0;
+				}
+				pj_ks (pj, "values", core->bin->cur->o->info->hashes);
+				pj_end (pj);
+				r_cons_printf ("%s", pj_string (pj));
+				pj_free (pj);
 			} else {
-				r_cons_printf (r_strbuf_get (core->bin->cur->o->info->hashes));
+				r_cons_printf ("%s", core->bin->cur->o->info->hashes);
 			}
 			break;
 		case 'Z': // "iZ"
