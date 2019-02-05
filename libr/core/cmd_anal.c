@@ -118,6 +118,7 @@ static const char *help_msg_ae[] = {
 	"ae?", "", "show this help",
 	"ae??", "", "show ESIL help",
 	"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
+	"aeC", "[arg0 arg1..] @ addr", "appcall in esil",
 	"aec", "[?]", "continue until ^C",
 	"aecs", "", "continue until syscall",
 	"aecc", "", "continue until call",
@@ -227,6 +228,12 @@ static const char *help_msg_aec[] = {
 	"aecc", "", "Continue until call",
 	"aecu", "[addr]", "Continue until address",
 	"aecue", "[addr]", "Continue until esil expression",
+	NULL
+};
+
+static const char *help_msg_aeC[] = {
+	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
+	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
 	NULL
 };
 
@@ -4558,6 +4565,30 @@ static void r_anal_aefa (RCore *core, const char *arg) {
 #endif
 }
 
+static void __core_anal_appcall(RCore *core, const char *input) {
+//	r_reg_arena_push (core->dbg->reg);
+	RListIter *iter;
+	char *arg;
+	char *inp = strdup (input);
+	RList *args = r_str_split_list (inp, " ");
+	int i = 0;
+	r_list_foreach (args, iter, arg) {
+		const char *alias = sdb_fmt ("A%d", i);
+		r_reg_setv (core->anal->reg, alias, r_num_math (core->num, arg));
+		i++;
+	}
+	ut64 sp = r_reg_getv (core->anal->reg, "SP");
+	r_reg_setv (core->anal->reg, "SP", 0);
+
+	r_reg_setv (core->anal->reg, "PC", core->offset);
+	r_core_cmd0 (core, "aesu 0");
+
+	r_reg_setv (core->anal->reg, "SP", sp);
+	free (inp);
+
+//	r_reg_arena_pop (core->dbg->reg);
+}
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -4591,8 +4622,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_pin_list (core->anal);
 			break;
 		case '-':
-			if (input[2])
+			if (input[2]) {
 				addr = r_num_math (core->num, input + 2);
+			}
 			r_anal_pin_unset (core->anal, addr);
 			break;
 		case ' ':
@@ -4618,9 +4650,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
-		if (!esil) {
-			if (!(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize)))
-				return;
+		if (!esil && !(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+			return;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
@@ -4703,6 +4734,13 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_esil_step (core, until_addr, until_expr, NULL);
 			r_core_cmd0 (core, ".ar*");
 			break;
+		}
+		break;
+	case 'C': // "aeC"
+		if (input[1] == '?') { // "aec?"
+			r_core_cmd_help (core, help_msg_aeC);
+		} else {
+			__core_anal_appcall (core, r_str_trim_ro (input + 1));
 		}
 		break;
 	case 'c': // "aec"

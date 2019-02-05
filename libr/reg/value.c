@@ -228,24 +228,21 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 // result value is always casted into ut64
 // TODO: use item->packed_size
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	int packbytes, packmod;
 	ut64 ret = 0LL;
-	RRegSet *regset;
-	int off;
 	if (!reg || !item) {
 		return 0LL;
 	}
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbytes = packbits / 8;
-	packmod = packbits % 8;
+	const int packbytes = packbits / 8;
+	const int packmod = packbits % 8;
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
 		memcpy (&ret, regset->arena->bytes + off, packbytes);
