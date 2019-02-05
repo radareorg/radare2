@@ -233,11 +233,10 @@ R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
 }
 
 R_API void r_reg_free(RReg *reg) {
-	if (!reg) {
-		return;
+	if (reg) {
+		r_reg_free_internal (reg, false);
+		free (reg);
 	}
-	r_reg_free_internal (reg, false);
-	free (reg);
 }
 
 R_API RReg *r_reg_new() {
@@ -286,6 +285,13 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	if (type == -1) {
 		i = 0;
 		e = R_REG_TYPE_LAST;
+		int alias = r_reg_get_name_idx (name);
+		if (alias != -1) {
+			const char *nname = r_reg_get_name (reg, alias);
+			if (nname) {
+				name = nname;
+			}
+		}
 	} else {
 		i = type;
 		e = type + 1;
@@ -324,15 +330,14 @@ R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta) {
 
 /* return the next register in the current regset that differs from */
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize) {
-	int delta, bregsize = BITS2BYTES (regsize);
-	RRegArena *arena;
+	const int bregsize = BITS2BYTES (regsize);
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
-	arena = reg->regset[type].arena;
-	delta = prev_ri ? prev_ri->offset + prev_ri->size : 0;
+	RRegArena *arena = reg->regset[type].arena;
+	int delta = prev_ri ? prev_ri->offset + prev_ri->size : 0;
 	for (;;) {
-		if (delta + bregsize >= arena->size || delta + bregsize >= buflen) {
+		if ((delta + bregsize >= arena->size) || (delta + bregsize >= buflen)) {
 			break;
 		}
 		if (memcmp (arena->bytes + delta, buf + delta, bregsize)) {
@@ -347,10 +352,9 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen,
 }
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type) {
-	RRegSet *rs;
 	if (type < 0 || type >= R_REG_TYPE_LAST) {
 		return NULL;
 	}
-	rs = &r->regset[type];
+	RRegSet *rs = &r->regset[type];
 	return rs->arena ? rs : NULL;
 }
