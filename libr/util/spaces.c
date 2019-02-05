@@ -98,6 +98,7 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 		return NULL;
 	}
 
+	s->priority = R_SPACES_DEFAULT_PRIORITY;
 	s->name = strdup (name);
 	if (!s->name) {
 		free (s);
@@ -111,6 +112,16 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 R_API RSpace *r_spaces_set(RSpaces *sp, const char *name) {
 	sp->current = r_spaces_add (sp, name);
 	return sp->current;
+}
+
+R_API RSpace *r_spaces_set_prio(RSpaces *sp, const char *name, int priority) {
+	RSpace *s = r_spaces_set (sp, name);
+	if (s) {
+		RSpaceEvent ev = { .data.prio.space = s, .data.prio.newprio = priority };
+		r_event_send (sp->event, R_SPACE_EVENT_PRIORITY, &ev);
+		s->priority = priority;
+	}
+	return s;
 }
 
 static bool spaces_unset_single(RSpaces *sp, const char *name) {

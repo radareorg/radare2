@@ -707,7 +707,7 @@ static RDisasmState * ds_init(RCore *core) {
 	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
-	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
+	ds->flagspace_ports = r_flag_space_get (core->flags, R_FLAG_SPACE_PORTS);
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;

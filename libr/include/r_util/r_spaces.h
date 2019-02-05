@@ -2,6 +2,7 @@
 #define R_SPACES_H
 
 #define R_SPACES_MAX 512
+#define R_SPACES_DEFAULT_PRIORITY 100
 
 #include "r_util.h"
 
@@ -25,6 +26,7 @@ extern "C" {
 
 typedef struct r_space_t {
 	char *name;
+	int priority;
 	RBNode rb;
 } RSpace;
 
@@ -32,6 +34,7 @@ typedef enum {
 	R_SPACE_EVENT_COUNT = 1,
 	R_SPACE_EVENT_RENAME,
 	R_SPACE_EVENT_UNSET,
+	R_SPACE_EVENT_PRIORITY,
 } RSpaceEventType;
 
 typedef struct r_space_event_t {
@@ -47,6 +50,10 @@ typedef struct r_space_event_t {
 			const char *oldname;
 			const char *newname;
 		} rename;
+		struct {
+			const RSpace *space;
+			int newprio;
+		} prio;
 	} data;
 	int res;
 } RSpaceEvent;
@@ -73,6 +80,9 @@ R_API RSpace *r_spaces_get(RSpaces *sp, const char *name);
 R_API RSpace *r_spaces_add(RSpaces *sp, const char *name);
 // Add and select a new RSpace if one does not already exist, otherwise return and select the existing one
 R_API RSpace *r_spaces_set(RSpaces *sp, const char *name);
+// Add and select a new RSpace if one does not already exist, otherwise return
+// and select the existing one. In any case, it sets the priority of the RSpace.
+R_API RSpace *r_spaces_set_prio(RSpaces *sp, const char *name, int priority);
 // Remove the RSpace with the given name or all of them if name is NULL
 R_API bool r_spaces_unset(RSpaces *sp, const char *name);
 // Change the name of RSpace with oname to nname

@@ -43,6 +43,14 @@ static int flag_skiplist_cmp(const void *va, const void *vb) {
 	return a->off < b->off? -1: 1;
 }
 
+static int flag_priority_cmp(const void *va, const void *vb) {
+	const RFlagItem *a = (const RFlagItem *)va;
+	const RFlagItem *b = (const RFlagItem *)vb;
+	const int ap = a->space? a->space->priority: R_FLAG_SPACE_DEFAULT_PRIORITY;
+	const int bp = b->space? b->space->priority: R_FLAG_SPACE_DEFAULT_PRIORITY;
+	return ap - bp;
+}
+
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag *)user;
 	RFlagItem *item;
@@ -149,7 +157,7 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 			return false;
 		}
 
-		r_list_append (flagsAtOffset->flags, item);
+		r_list_add_sorted (flagsAtOffset->flags, item, flag_priority_cmp);
 		return true;
 	}
 

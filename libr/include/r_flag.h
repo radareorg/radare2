@@ -14,6 +14,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_flag);
 
 #define R_FLAG_NAME_SIZE 512
+#define R_FLAG_SPACE_DEFAULT_PRIORITY 100
 
 /* zones.c */
 
@@ -142,6 +143,10 @@ static inline RSpace *r_flag_space_cur(RFlag *f) {
 
 static inline const char *r_flag_space_cur_name(RFlag *f) {
 	return r_spaces_current_name (&f->spaces);
+}
+
+static inline RSpace *r_flag_space_add(RFlag *f, const char *name) {
+	return r_spaces_add (&f->spaces, name);
 }
 
 static inline RSpace *r_flag_space_set(RFlag *f, const char *name) {

@@ -52,6 +52,20 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_GRAPH_FORMAT_DOT          4
 #define R_GRAPH_FORMAT_CMD          5
 
+#define R_FLAG_SPACE_SYMBOLS "symbols"
+#define R_FLAG_SPACE_FUNCTIONS "functions"
+#define R_FLAG_SPACE_STRINGS "strings"
+#define R_FLAG_SPACE_SYSCALLS "syscalls"
+#define R_FLAG_SPACE_RELOCS "relocs"
+#define R_FLAG_SPACE_IMPORTS "imports"
+#define R_FLAG_SPACE_SECTIONS "sections"
+#define R_FLAG_SPACE_SEGMENTS "segments"
+#define R_FLAG_SPACE_CLASSES "classes"
+#define R_FLAG_SPACE_RESOURCES "resources"
+#define R_FLAG_SPACE_SEARCH "search"
+#define R_FLAG_SPACE_SIGN "sign"
+#define R_FLAG_SPACE_PORTS "ports"
+
 ///
 #define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x)? core->cons->context->pal.x: def)
 #define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
