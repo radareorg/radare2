@@ -1659,7 +1659,6 @@ static int cmd_open(void *data, const char *input) {
 						r_config_set (core->config, "cfg.debug", "false");
 						ut64 orig_baddr = sdb_num_get (core->sdb, "orig_baddr", 0);
 						r_bin_set_baddr (core->bin, orig_baddr);
-						ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 						r_config_set_i (core->config, "bin.baddr", orig_baddr);
 						r_core_bin_rebase (core, orig_baddr);
 						r_debug_bp_rebase (core->dbg, orig_baddr);
