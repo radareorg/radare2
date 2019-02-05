@@ -440,18 +440,18 @@ static int cmd_cp(void *data, const char *input) {
 		eprintf ("Usage: cp.orig  # cp $file $file.orig\n");
 		return false;
 	}
-	char *src = strdup (input + 2);
-	char *dst = strchr (src, ' ');
-	if (dst) {
-		*dst++ = 0;
-		r_str_trim (src);
-		r_str_trim (dst);
-		bool rc = r_file_copy (src, dst);
-		free (src);
-		return rc;
+	char *cmd = strdup (input + 2);
+	if (cmd) {
+		char **files = r_str_argv (cmd, NULL);
+		if (files[0] && files[1]) {
+			bool rc = r_file_copy (files[0], files[1]);
+			free (cmd);
+			free (files);
+			return rc;
+		}
+		free (files);
 	}
 	eprintf ("Usage: cp src dst\n");
-	free (src);
 	return false;
 }
 
