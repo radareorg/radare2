@@ -211,11 +211,11 @@ R_API char *r_file_abspath(const char *file) {
 			return strdup (file);
 		}
 		if (!strchr (file, ':')) {
-			const ut32 max_size = 32768;
-			char *abspath = malloc (max_size);
+			char *abspath = malloc (MAX_PATH);
 			if (abspath) {
-				GetFullPathName (file, max_size, abspath, NULL);
-				ret = abspath;
+				GetFullPathName (file, MAX_PATH, abspath, NULL);
+				ret = strdup (abspath);
+				free (abspath);
 			}
 		}
 #endif
@@ -1052,11 +1052,15 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	char *s = r_file_abspath (src);
-	char *d = r_file_abspath (dst);
-	bool ret = r_sys_cmdf ("copy %s %s", s, d);
+	char *esrc = r_str_replace (strdup (src), "\"", "^\"", 1);
+	char *edst = r_str_replace (strdup (dst), "\"", "^\"", 1);
+	char *s = r_file_abspath (esrc);
+	char *d = r_file_abspath (edst);
+	bool ret = r_sys_cmdf ("copy \"%s\" \"%s\"", s, d);
 	free (s);
 	free (d);
+	free (esrc);
+	free (edst);
 	return ret;
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
