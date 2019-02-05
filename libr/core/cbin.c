@@ -3898,8 +3898,8 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 			goto out;
 		}
 
-		for (i = 0; i != 64; i++) {
-			ut64 flag = flags & (1UL << i);
+		for (i = 0; i < 64; i++) {
+			ut64 flag = flags & (1ULL << i);
 			if (flag) {
 				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
 				if (flag_string) {
@@ -3915,8 +3915,8 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 
 		r_strbuf_append (buf, "[");
 
-		for (i = 0; i != 64; i++) {
-			ut64 flag = flags & (1LL << i);
+		for (i = 0; i < 64; i++) {
+			ut64 flag = flags & (1ULL << i);
 			if (flag) {
 				const char *flag_string = r_bin_get_meth_flag_string (flag, false);
 				if (len != 0) {
