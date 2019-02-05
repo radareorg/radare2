@@ -9,10 +9,6 @@ typedef struct r_event_callback_hook_t {
 	int handle;
 } REventCallbackHook;
 
-static RVector *new_cbhook_vector(void) {
-	return r_vector_new (sizeof (REventCallbackHook), NULL, NULL);
-}
-
 static void ht_callback_free(HtUPKv *kv) {
 	r_vector_free ((RVector *)kv->value);
 }
@@ -29,10 +25,7 @@ R_API REvent *r_event_new(void *user) {
 	if (!ev->callbacks) {
 		goto err;
 	}
-	ev->all_callbacks = new_cbhook_vector ();
-	if (!ev->all_callbacks) {
-		goto err;
-	}
+	r_vector_init (&ev->all_callbacks, sizeof (REventCallbackHook), NULL, NULL);
 	return ev;
 err:
 	r_event_free (ev);
@@ -44,14 +37,14 @@ R_API void r_event_free(REvent *ev) {
 		return;
 	}
 	ht_up_free (ev->callbacks);
-	r_vector_free (ev->all_callbacks);
+	r_vector_clear (&ev->all_callbacks);
 	free (ev);
 }
 
 static RVector *get_cbs(REvent *ev, int type) {
 	RVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
 	if (!cbs) {
-		cbs = new_cbhook_vector ();
+		cbs = r_vector_new (sizeof (REventCallbackHook), NULL, NULL);
 		if (cbs) {
 			ht_up_insert (ev->callbacks, (ut64)type, cbs);
 		}
@@ -68,7 +61,7 @@ R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb,
 	hook.user = user;
 	hook.handle = ev->next_handle++;
 	if (type == R_EVENT_ALL) {
-		r_vector_push (ev->all_callbacks, &hook);
+		r_vector_push (&ev->all_callbacks, &hook);
 	} else {
 		RVector *cbs = get_cbs (ev, type);
 		if (!cbs) {
@@ -102,7 +95,7 @@ R_API void r_event_unhook(REvent *ev, REventCallbackHandle handle) {
 		// try to delete it both from each list of callbacks and from
 		// the "all_callbacks" vector
 		ht_up_foreach (ev->callbacks, del_hook, &handle.handle);
-		del_hook (&handle.handle, 0, ev->all_callbacks);
+		del_hook (&handle.handle, 0, &ev->all_callbacks);
 	} else {
 		RVector *cbs = ht_up_find (ev->callbacks, (ut64)handle.type, NULL);
 		r_return_if_fail (cbs);
@@ -116,7 +109,7 @@ R_API void r_event_send(REvent *ev, int type, void *data) {
 
 	// send to both the per-type callbacks and to the all_callbacks
 	ev->incall = true;
-	r_vector_foreach (ev->all_callbacks, hook) {
+	r_vector_foreach (&ev->all_callbacks, hook) {
 		hook->cb (ev, type, hook->user, data);
 	}
 	ev->incall = false;
