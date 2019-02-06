@@ -33,7 +33,9 @@ typedef enum {
 	R_EVENT_CLASS_NEW, // REventClass
 	R_EVENT_CLASS_DEL, // REventClass
 	R_EVENT_CLASS_RENAME, // REventClassRename
-	R_EVENT_CLASS_ATTR_CHANGE, // REventClass
+	R_EVENT_CLASS_ATTR_SET, // REventClassAttr
+	R_EVENT_CLASS_ATTR_DEL, // REventClassAttrSet
+	R_EVENT_CLASS_ATTR_RENAME, // REventClassAttrRename
 	R_EVENT_MAX,
 } REventType;
 
@@ -51,6 +53,22 @@ typedef struct r_event_class_rename_t {
 	const char *name_old;
 	const char *name_new;
 } REventClassRename;
+
+typedef struct r_event_class_attr_t {
+	const char *class_name;
+	int attr_type; // RAnalClassAttrType
+	const char *attr_id;
+} REventClassAttr;
+
+typedef struct r_event_class_attr_set_t {
+	REventClassAttr attr;
+	const char *content;
+} REventClassAttrSet;
+
+typedef struct r_event_class_attr_rename_t {
+	REventClassAttr attr;
+	const char *attr_id_new;
+} REventClassAttrRename;
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
