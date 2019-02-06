@@ -716,7 +716,7 @@ add_tstr:
 		pstrcat (buf, buf_size, tstr);
 		v = type->ref->v & ~SYM_STRUCT;
 		if (v >= SYM_FIRST_ANOM) {
-			pstrcat (buf, buf_size, "<anonymous>");
+			strcat_printf (buf, buf_size, "%u", v - SYM_FIRST_ANOM);
 		} else {
 			pstrcat (buf, buf_size, get_tok_str (v, NULL));
 		}
@@ -935,7 +935,10 @@ static void struct_decl(CType *type, int u) {
 			goto do_decl;
 		}
 	} else {
+		static char buf[STRING_MAX_SIZE + 1];
 		v = anon_sym++;
+		snprintf (buf, sizeof(buf), "%u", v - SYM_FIRST_ANOM);
+		name = buf;
 	}
 	type1.t = a;
 	/* we put an undefined size for struct/union */
