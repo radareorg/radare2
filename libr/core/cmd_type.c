@@ -276,9 +276,8 @@ static int stdifstruct(void *user, const char *k, const char *v) {
 	}
 	if (!strcmp (v, "typedef")) {
 		Sdb *TDB = core_->anal->sdb_types;
-		char key[136];
-		snprintf (key, sizeof (key), "typedef.%s", k);
-		const char *type = sdb_const_get (TDB, key, NULL);
+		const char *typedef_key = sdb_fmt ("typedef.%s", k);
+		const char *type = sdb_const_get (TDB, typedef_key, NULL);
 		if (type && !strncmp (type, "struct ", 7)) {
 			return true;
 		}
