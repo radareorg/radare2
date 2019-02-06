@@ -1052,15 +1052,14 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	char *esrc = r_str_replace (strdup (src), "\"", "\"\"", 1);
-	char *edst = r_str_replace (strdup (dst), "\"", "\"\"", 1);
-	char *s = r_file_abspath (esrc);
-	char *d = r_file_abspath (edst);
-	bool ret = r_sys_cmdf ("copy \"%s\" \"%s\"", s, d);
+	char *s = r_file_abspath (src);
+	char *d = r_file_abspath (dst);
+	bool ret = CopyFile (s, d, 0);
+	if (!ret) {
+		eprintf ("File not found\n");
+	}
 	free (s);
 	free (d);
-	free (esrc);
-	free (edst);
 	return ret;
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
