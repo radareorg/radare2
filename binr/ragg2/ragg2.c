@@ -407,7 +407,7 @@ int main(int argc, char **argv) {
 
 	// append the provided string
 	if (str) {
-		int l = strlen(str);
+		int l = strlen (str);
 		if (l > 0) {
 			r_egg_raw (egg, (const ut8*)str, l);
 		}
