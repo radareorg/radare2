@@ -849,7 +849,7 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
-R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
+R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	char hash[128], *p;
 	RHash *ctx;
 	ut64 buf_len = 0, r = 0;
@@ -874,23 +874,30 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
-		eprintf ("Cannot compute hash\n");
+		eprintf ("Cannot compute hash: %zu/%zu\n", buf_len, limit);
 		return false;
 	}
-#define BLK_SIZE_OFF 4096
+#define BLK_SIZE_OFF 64000
 	ut8 *buf = malloc (BLK_SIZE_OFF);
 	if (!buf) {
 		eprintf ("Cannot allocate computation buffer\n");
 		return false;
 	}
 	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
-	while (r < buf_len) {
+	while (r+BLK_SIZE_OFF < buf_len) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
-		size_t rem_len = R_MIN(buf_len-r, BLK_SIZE_OFF);
+		size_t rem_len = R_MIN (buf_len-r, BLK_SIZE_OFF);
 		int b = r_io_desc_read (iod, buf, rem_len);
 		(void)r_hash_do_md5 (ctx, buf, rem_len);
 		(void)r_hash_do_sha1 (ctx, buf, rem_len);
 		r += b;
+	}
+	if (r < buf_len) {
+		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		size_t rem_len = R_MIN (buf_len-r, BLK_SIZE_OFF);
+		int b = r_io_desc_read (iod, buf, rem_len);
+		(void)r_hash_do_md5 (ctx, buf, rem_len);
+		(void)r_hash_do_sha1 (ctx, buf, rem_len);
 	}
 	r_hash_do_end (ctx, R_HASH_MD5);
 	p = hash;
