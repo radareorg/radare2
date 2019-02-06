@@ -267,17 +267,16 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	}
 }
 
-static RCore *core_ = NULL; // HACK
+static Sdb *TDB_ = NULL; // HACK
 
 static int stdifstruct(void *user, const char *k, const char *v) {
-	r_return_val_if_fail (core_ && core_->anal, false);
+	r_return_val_if_fail (TDB_, false);
 	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
-		Sdb *TDB = core_->anal->sdb_types;
 		const char *typedef_key = sdb_fmt ("typedef.%s", k);
-		const char *type = sdb_const_get (TDB, typedef_key, NULL);
+		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
 		if (type && !strncmp (type, "struct ", 7)) {
 			return true;
 		}
@@ -669,7 +668,7 @@ static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
 	char *res;
-	core_ = core; // HACK
+	TDB_ = TDB; // HACK
 
 	switch (input[0]) {
 	case 'n': // "tn"
