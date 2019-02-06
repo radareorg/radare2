@@ -428,7 +428,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
 		const char *type = sdb_const_get (TDB, var2, NULL);
 		// only supports struct atm
-		if (type && !strncmp (type, "struct ", 7) && strcmp (type + 7, t)) {
+		if (type && r_str_startswith (type, "struct ") && strcmp (type + 7, t)) {
 			return r_type_format (TDB, type + 7);
 		}
 	}

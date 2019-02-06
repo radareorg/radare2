@@ -277,7 +277,7 @@ static int stdifstruct(void *user, const char *k, const char *v) {
 	if (!strcmp (v, "typedef")) {
 		const char *typedef_key = sdb_fmt ("typedef.%s", k);
 		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
-		if (type && !strncmp (type, "struct ", 7)) {
+		if (type && r_str_startswith (type, "struct ")) {
 			return true;
 		}
 	}
