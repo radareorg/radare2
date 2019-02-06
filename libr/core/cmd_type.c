@@ -271,7 +271,7 @@ static Sdb *TDB_ = NULL; // HACK
 
 static int stdifstruct(void *user, const char *k, const char *v) {
 	r_return_val_if_fail (TDB_, false);
-	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
+	if (!strcmp (v, "struct")) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
