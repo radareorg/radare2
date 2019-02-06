@@ -423,7 +423,8 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		fmt = r_str_append (fmt, vars);
 		free (vars);
 		return fmt;
-	} else if (!strcmp (kind, "typedef")) {
+	}
+	if (!strcmp (kind, "typedef")) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
 		const char *type = sdb_const_get (TDB, var2, NULL);
 		// only supports struct atm

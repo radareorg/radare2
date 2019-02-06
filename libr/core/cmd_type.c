@@ -272,7 +272,8 @@ static RCore *core_ = NULL; // HACK
 static int stdifstruct(void *user, const char *k, const char *v) {
 	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
 		return true;
-	} else if (!strcmp (v, "typedef")) {
+	}
+	if (!strcmp (v, "typedef")) {
 		r_return_val_if_fail (core_ && core_->anal, false);
 		Sdb *TDB = core_->anal->sdb_types;
 		char key[136];
