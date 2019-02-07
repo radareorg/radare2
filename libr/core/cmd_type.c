@@ -1312,11 +1312,12 @@ static int cmd_type(void *data, const char *input) {
 		}
 		free (tmp);
 	} break;
-	case '-':
+	case '-': // "t-"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_t_minus);
 		} else if (input[1] == '*') {
 			sdb_reset (TDB);
+			r_parse_reset ();
 		} else {
 			const char *name = input + 1;
 			while (IS_WHITESPACE (*name)) name++;
