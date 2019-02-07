@@ -119,3 +119,7 @@ R_API int r_parse_is_c_file (const char *file) {
 	}
 	return false;
 }
+
+R_API void r_parse_reset() {
+	anon_sym = SYM_FIRST_ANOM;
+}
