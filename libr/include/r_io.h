@@ -158,6 +158,7 @@ typedef struct r_io_plugin_t {
 	char *author;
 	char *license;
 	void *widget;
+	const char *uris;
 	int (*listener)(RIODesc *io);
 	int (*init)(void);
 	RIOUndo undo;
