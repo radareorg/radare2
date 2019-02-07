@@ -35,7 +35,7 @@ ST_DATA char **tcc_cb_ptr;
    rsym: return symbol
    anon_sym: anonymous symbol index
 */
-ST_DATA int rsym, anon_sym, ind, loc;
+ST_DATA int rsym, anon_sym = SYM_FIRST_ANOM, ind, loc;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
