@@ -1222,6 +1222,7 @@ RIOPlugin r_io_plugin_gprobe = {
 	.name = "gprobe",
 	.desc = "open gprobe connection using gprobe://",
 	.license = "LGPL3",
+	.uris = "gprobe://file/path",
 	.open = __open,
 	.close = __close,
 	.read = __read,

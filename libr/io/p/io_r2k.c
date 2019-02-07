@@ -132,6 +132,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_r2k = {
 	.name = "r2k",
 	.desc = "kernel access API io (r2k://)",
+	.uris = "r2k://",
 	.license = "LGPL3",
 	.open = r2k__open,
 	.close = r2k__close,

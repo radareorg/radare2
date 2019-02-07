@@ -196,6 +196,7 @@ RIOPlugin r_io_plugin_bfdbg = {
 	.name = "bfdbg",
 	.desc = "BrainFuck Debugger (bfdbg://path/to/file)",
 	.license = "LGPL3",
+	.uris = "bfdbg://file/path",
 	.open = __open,
 	.close = __close,
 	.read = __read,

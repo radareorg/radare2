@@ -129,6 +129,7 @@ RIOPlugin r_io_plugin_procpid = {
 	.name = "procpid",
 	.desc = "/proc/pid/mem io",
 	.license = "LGPL3",
+	.uirs = "procpid://id",
 	.open = __open,
 	.close = __close,
 	.read = __read,

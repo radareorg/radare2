@@ -296,6 +296,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.name = "ptrace",
 	.desc = "ptrace and /proc/pid/mem (if available) io",
 	.license = "LGPL3",
+	.uris = "[ptrace|attach]://pid",
 	.open = __open,
 	.close = __close,
 	.read = __read,

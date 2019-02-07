@@ -180,6 +180,7 @@ RIOPlugin r_io_plugin_r2pipe = {
 	.name = "r2pipe",
         .desc = "r2pipe io plugin",
 	.license = "MIT",
+	.uris = "r2pipe://pipe",
         .open = __open,
         .close = __close,
 	.read = __read,

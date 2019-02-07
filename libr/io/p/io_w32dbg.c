@@ -226,6 +226,7 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
 	.desc = "w32dbg io",
 	.license = "LGPL3",
+	.uris = "[w32dbg|attach]://pid",
 	.open = __open,
 	.close = __close,
 	.read = __read,

@@ -160,6 +160,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_tcp = {
 	.name = "tcp",
         .desc = "load files via TCP (listen or connect)",
+		.uris = "tcp://file/path",
 	.license = "LGPL3",
         .open = __open,
         .close = __close,

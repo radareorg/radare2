@@ -152,6 +152,7 @@ RIOPlugin r_io_plugin_qnx = {
 	.name = "qnx",
 	.license = "LGPL3",
 	.desc = "Attach to QNX pdebug instance, qnx://host:1234",
+	.uris = "qnx://[host]:[port]",
 	.open = __open,
 	.close = __close,
 	.read = __read,

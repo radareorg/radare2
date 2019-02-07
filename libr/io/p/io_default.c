@@ -410,6 +410,7 @@ RIOPlugin r_io_plugin_default = {
 	.name = "default",
 	.desc = "open local files using def_mmap://",
 	.license = "LGPL3",
+	.uris = "[file|nocache|]://file/path",
 	.open = __open_default,
 	.close = __close,
 	.read = __read,

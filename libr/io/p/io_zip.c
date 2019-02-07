@@ -651,6 +651,7 @@ static int r_io_zip_close(RIODesc *fd) {
 RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
 	.desc = "Open zip files [apk|ipa|zip|zipall]://[file//path]",
+	.uris = "[zip|apk|ipa|jar|zipall|apkall|ipaall|jarall]://file/path",
 	.license = "BSD",
 	.open = r_io_zip_open,
 	.open_many = r_io_zip_open_many,

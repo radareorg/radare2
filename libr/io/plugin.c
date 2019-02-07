@@ -112,6 +112,9 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		io->cb_printf ("%s{\"Permissions\":\"%s\",\"Name\":\"%s\",\"Description\":\"%s\",\"License\":\"%s\"",
 				n? "," : "", str, plugin->name,
 			plugin->desc, plugin->license);
+		if (plugin->uris) {
+			io->cb_printf (",\"URIs\":\"%s\"", plugin->uris);
+		}
 		if (plugin->version) {
 			io->cb_printf (",\"version\":\"%s\"", plugin->version);
 		}

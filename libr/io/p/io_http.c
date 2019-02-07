@@ -105,6 +105,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_http = {
 	.name = "http",
         .desc = "http get (http://rada.re/)",
+		.uris = "http://rada.re/",
 	.license = "LGPL3",
         .open = __open,
         .close = __close,

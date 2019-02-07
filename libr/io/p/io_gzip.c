@@ -181,6 +181,7 @@ RIOPlugin r_io_plugin_gzip = {
 	.name = "gzip",
 	.desc = "read/write gzipped files",
 	.license = "LGPL3",
+	.uris = "gzip://file/path",
 	.open = __open,
 	.close = __close,
 	.read = __read,

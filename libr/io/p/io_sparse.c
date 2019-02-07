@@ -102,6 +102,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_sparse = {
 	.name = "sparse",
 	.desc = "sparse buffer allocation (sparse://1024 sparse://)",
+	.uris = "sparse://id",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

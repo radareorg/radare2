@@ -110,6 +110,7 @@ RIOPlugin r_io_plugin_bochs = {
 	.name = "bochs",
 	.desc = "Attach to a BOCHS debugger",
 	.license = "LGPL3",
+	.uris = "bochs://file/path",
 	.open = __open,
 	.close = __close,
 	.read = __read,

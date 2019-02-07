@@ -555,6 +555,7 @@ RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
 	.desc = "mach debugger io plugin (mach://pid)",
 	.license = "LGPL",
+	.uris = "[attach|mach|smach]://pid",
 	.open = __open,
 	.close = __close,
 	.read = __read,

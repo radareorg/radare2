@@ -358,6 +358,7 @@ const char *msg =
 RIOPlugin r_io_plugin_winedbg = {
 	.name = "winedbg",
         .desc = "Wine-dbg io and debug.io plugin for r2",
+		.uris = "winedbg://pid",
 	.license = "MIT",
         .open = __open,
         .close = __close,

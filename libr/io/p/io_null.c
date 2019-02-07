@@ -104,6 +104,7 @@ RIOPlugin r_io_plugin_null = {
 	.name = "null",
 	.desc = "null-plugin (null://23)",
 	.license = "LGPL3",
+	.uris = "null://id",
 	.open = __open,
 	.close = __close,
 	.read = __read,
