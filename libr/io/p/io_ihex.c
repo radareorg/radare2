@@ -422,13 +422,13 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 
 RIOPlugin r_io_plugin_ihex = {
 	.name = "ihex",
-        .desc = "Intel HEX file (ihex://eeproms.hex)",
-		.uris = "ihex://file.hex",
+	.desc = "Intel HEX file (ihex://eeproms.hex)",
+	.uris = "ihex://file.hex",
 	.license = "LGPL",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .check = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize
