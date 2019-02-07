@@ -128,9 +128,9 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 	}
 
 	char* tmp1 = r_strbuf_get (sb);
-	if (r_str_startswith(tmp1, "unsigned long long")) {
+	if (r_str_startswith (tmp1, "unsigned long long")) {
 		r_strbuf_set (sb, "uint64_t");
-	} else if (r_str_startswith(tmp1, "unsigned")) {
+	} else if (r_str_startswith (tmp1, "unsigned")) {
 		r_strbuf_set (sb, "uint32_t");
 	}
 	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
