@@ -538,7 +538,7 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 	return false;
 }
 
-R_API char *r_parse_immtrim (char *opstr) {
+R_API char *r_parse_immtrim(char *opstr) {
 	if (!opstr || !*opstr) {
 		return NULL;
 	}

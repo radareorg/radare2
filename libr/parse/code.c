@@ -107,7 +107,7 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code) {
 	return str;
 }
 
-R_API int r_parse_is_c_file (const char *file) {
+R_API int r_parse_is_c_file(const char *file) {
 	const char *ext = r_str_lchr (file, '.');
 	if (ext) {
 		ext = ext + 1;
