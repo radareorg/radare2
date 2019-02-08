@@ -1053,6 +1053,9 @@ do_decl:
 						}
 					}
 					lbit_pos = 0;
+					// FIXME: Here it handles bitfields only in a way
+					// of the same endianess as the host system (this code was compiled for)
+					// It should depend on the endianess of the `asm.arch` instead.
 					if (bit_size >= 0) {
 						bt = type1.t & VT_BTYPE;
 						if (bt != VT_INT8 &&
@@ -1115,6 +1118,7 @@ do_decl:
 							}
 						}
 #if 1
+						// TODO: Don't use such a small limit?
 						char b[1024];
 						char *varstr = get_tok_str (v, NULL);
 						type_to_str (b, sizeof(b), &type1, NULL);
@@ -1130,20 +1134,21 @@ do_decl:
 							/* compact form */
 							tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
 								ctype, name, varstr, b, offset, arraysize);
-						}
 #if 0
-						printf ("struct.%s.%s.type=%s\n", name, varstr, b);
-						printf ("struct.%s.%s.offset=%d\n", name, varstr, offset);
-						printf ("struct.%s.%s.array=%d\n", name, varstr, arraysize);
+							printf ("struct.%s.%s.type=%s\n", name, varstr, b);
+							printf ("struct.%s.%s.offset=%d\n", name, varstr, offset);
+							printf ("struct.%s.%s.array=%d\n", name, varstr, arraysize);
 #endif
-						// (%s) field (%s) offset=%d array=%d", name, b, get_tok_str(v, NULL), offset, arraysize);
-						arraysize = 0;
-						if (type1.t & VT_BITFIELD) {
-							tcc_appendf (" pos=%d size=%d",
-								(type1.t >> VT_STRUCT_SHIFT) & 0x3f,
-								(type1.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f);
+							// (%s) field (%s) offset=%d array=%d", name, b, get_tok_str(v, NULL), offset, arraysize);
+							arraysize = 0;
+							if (type1.t & VT_BITFIELD) {
+								tcc_appendf ("%s.%s.%s.bitfield.pos=%d\n",
+									ctype, name, varstr, (type1.t >> VT_STRUCT_SHIFT) & 0x3f);
+								tcc_appendf ("%s.%s.%s.bitfield.size=%d\n",
+									ctype, name, varstr, (type1.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f);
+							}
+							// printf("\n");
 						}
-						// printf("\n");
 #endif
 					}
 					if (v == 0 && (type1.t & VT_BTYPE) == VT_STRUCT) {
