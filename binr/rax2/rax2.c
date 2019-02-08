@@ -76,23 +76,6 @@ static void print_ascii_table() {
 	printf("%s", ret_ascii_table());
 }
 
-static int escape_to_dec(char ch) {
-	switch (ch) {
-	case 'n': return 10;
-	case 'a': return 7;
-	case 'b': return 8;
-	case 'f': return 12;
-	case 'r': return 13;
-	case 't': return 9;
-	case 'v': return 11;
-	case '\\': return 92;
-	case '\'': return 39;
-	case '\"': return 34;
-	case '\?': return 63;
-	default: return 2;
-	}
-}
-
 static int help() {
 	printf (
 		"  =[base]                      ;  rax2 =10 0x46 -> output in base 10\n"
@@ -246,41 +229,14 @@ dotherax:
 		return true;
 	}
 	if (flags & (1 << 2)) { // -S
-		int i, dec_val;
-		for (i = 0; i < len; i++) {
-			if (str[i] == '\\' && !is_file) {
-         			++i; 
-				if ((dec_val = escape_to_dec (str[i])) != 2) {
-					printf ("%02x", dec_val);
-				} else if (str[i] == 'x') {	// '\xhhhh..'
-					i++;
-					while (IS_HEXCHAR (str[i])) {
-						printf ("%c", tolower (str[i]));
-						i++;
-					}
-					i--; 
-				} else if (IS_OCTAL (str[i])) {
-					if (!IS_OCTAL (str[i + 1])) {	// '\o'
-						printf ("0%c", str[i]);
-					} else if ((IS_OCTAL (str[i + 1])) && !IS_OCTAL (str[i + 2])) { 	// '\oo'
-						char octal_str[3], *modified_str;
-						strncpy (octal_str, str + i, 2);
-						i++;
-						modified_str = r_str_newf (((*octal_str != '0') ? "0%s" : "%s"), octal_str);
-						ut64 n = r_num_math (num, modified_str); 
-						printf ("%02x", (ut8) n);
-					} else {	// '\ooo'
-						char octal_str[4], *modified_str;
-						strncpy (octal_str, str + i, 3);
-						i += 2;
-						modified_str = r_str_newf (((*octal_str != '0') ? "0%s" : "%s"), octal_str);
-						ut64 n = r_num_math (num, modified_str);
-						((ut16) n) > 255 ? (printf ("%03x", (ut16) n)) : (printf ("%02x", (ut16) n));
-					}
-				} else {
-					printf ("%02x%02x", 92, (ut8) str[i]);
-				}
-			} else { 
+		int i;
+		if (is_file) {
+			for (i = 0; i < len; i++) {
+				printf ("%02x", (ut8) str[i]);
+			}
+		} else {
+			len = r_str_unescape (str);
+			for (i = 0; i < len; i++) {
 				printf ("%02x", (ut8) str[i]);
 			}
 		}
