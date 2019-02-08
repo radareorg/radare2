@@ -228,7 +228,6 @@ dotherax:
 		return true;
 	}
 	if (flags & (1 << 2)) { // -S
-		int i;
 		for (i = 0; i < len; i++) {
 			printf ("%02x", (ut8) str[i]);
 		}
