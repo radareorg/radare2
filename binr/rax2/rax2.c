@@ -613,6 +613,7 @@ R_API int r_core_main_rax2(int argc, char **argv) {
 		use_stdin ();
 	} else {
 		for (i = 1; i < argc; i++) {
+			r_str_unescape (argv[i]);
 			rax (argv[i], 0, i == argc - 1);
 		}
 	}
