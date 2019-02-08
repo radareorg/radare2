@@ -18,7 +18,6 @@ static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
 static const char *nl = "";
-static bool is_file = 0;
 
 static int format_output(char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -230,15 +229,8 @@ dotherax:
 	}
 	if (flags & (1 << 2)) { // -S
 		int i;
-		if (is_file) {
-			for (i = 0; i < len; i++) {
-				printf ("%02x", (ut8) str[i]);
-			}
-		} else {
-			len = r_str_unescape (str);
-			for (i = 0; i < len; i++) {
-				printf ("%02x", (ut8) str[i]);
-			}
+		for (i = 0; i < len; i++) {
+			printf ("%02x", (ut8) str[i]);
 		}
 		printf ("\n");
 		return true;
@@ -576,7 +568,6 @@ static int use_stdin() {
 		return 0;
 	}
 	if (!(flags & (1<<14))) {
-		is_file = 1;
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
