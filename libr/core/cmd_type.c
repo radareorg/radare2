@@ -1027,20 +1027,28 @@ static int cmd_type(void *data, const char *input) {
 				if (!strcmp (filename, "-")) {
 					char *tmp = r_core_editor (core, "*.h", "");
 					if (tmp) {
-						char *out = r_parse_c_string (core->anal, tmp);
+						char *error_msg = NULL;
+						char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 						if (out) {
 							//		r_cons_strcat (out);
 							save_parsed_type (core, out);
 							free (out);
+						} else if (error_msg) {
+							r_cons_printf ("%s", error_msg);
+							free (error_msg);
 						}
 						free (tmp);
 					}
 				} else {
-					char *out = r_parse_c_file (core->anal, filename);
+					char *error_msg = NULL;
+					char *out = r_parse_c_file (core->anal, filename, &error_msg);
 					if (out) {
 						//r_cons_strcat (out);
 						save_parsed_type (core, out);
 						free (out);
+					} else {
+						r_cons_printf ("%s", error_msg);
+						free (error_msg);
 					}
 				}
 				free (homefile);
@@ -1069,10 +1077,14 @@ static int cmd_type(void *data, const char *input) {
 		} else if (input[1] == ' ') {
 			char tmp[8192];
 			snprintf (tmp, sizeof (tmp) - 1, "%s;", input + 2);
-			char *out = r_parse_c_string (core->anal, tmp);
+			char *error_msg = NULL;
+			char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 			if (out) {
 				save_parsed_type (core, out);
 				free (out);
+			} else if (error_msg) {
+				r_cons_printf ("%s", error_msg);
+				free (error_msg);
 			}
 		} else {
 			eprintf ("Invalid use of td. See td? for help\n");
