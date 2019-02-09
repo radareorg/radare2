@@ -149,6 +149,12 @@ static const char *stackPrintCommand(RCore *core) {
 }
 
 static const char *__core_visual_print_command (RCore *core) {
+	if (core->visual.tabs) {
+		RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+		if (tab && tab->name[0] == ':') {
+			return tab->name + 1;
+		}
+	}
 	if (r_config_get_i (core->config, "scr.dumpcols")) {
 		return printfmtColumns[PIDX];
 	}
@@ -1998,11 +2004,8 @@ static char *visual_tabstring(RCore *core, const char *kolor) {
 			str = r_str_appendf (str, "%s___", kolor);
 		}
 		for (i = 0; i < tabs;i++) {
-			const char *name = NULL;
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
-			if (tab && *tab->name) {
-				name = tab->name;
-			}
+			const char *name = (tab && *tab->name)? tab->name: NULL;
 			if (i == core->visual.tab) {
 				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", name? name: "t=", kolor);
 			} else {
@@ -2097,20 +2100,22 @@ static void r_core_visual_tab_update(RCore *core) {
 	}
 }
 
-static void visual_newtab (RCore *core) {
+static RCoreVisualTab *visual_newtab (RCore *core) {
 	if (!core->visual.tabs) {
 		core->visual.tabs = r_list_newf ((RListFree)r_core_visual_tab_free);
 		if (!core->visual.tabs) {
-			return;
+			return NULL;
 		}
 		core->visual.tab = -1;
 		visual_newtab (core);
 	}
 	core->visual.tab++;
 	RCoreVisualTab *tab = r_core_visual_tab_new (core);
-	// r_list_prepend (core->visual.tabs, tab);
-	r_list_append (core->visual.tabs, tab);
-	visual_tabset (core, tab);
+	if (tab) {
+		r_list_append (core->visual.tabs, tab);
+		visual_tabset (core, tab);
+	}
+	return tab;
 }
 
 static void visual_nthtab (RCore *core, int n) {
@@ -2569,9 +2574,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 't':
 			{
-					r_cons_gotoxy (0, 0);
+				r_cons_gotoxy (0, 0);
 				if (core->visual.tabs) {
-					r_cons_printf ("[tnp=+-] ");
+					r_cons_printf ("[tnp:=+-] ");
 				} else {
 					r_cons_printf ("[t] ");
 				}
@@ -2597,6 +2602,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					break;
 				case '-':
 					visual_closetab (core);
+					break;
+				case ':':
+					{
+						RCoreVisualTab *tab = visual_newtab (core);
+						if (tab) {
+							tab->name[0] = ':';
+							r_cons_fgets (tab->name + 1, sizeof (tab->name) - 2, 0, NULL);
+						}
+					}
 					break;
 				case '+':
 				case 't':
