@@ -23,8 +23,8 @@ R_API RParse *r_parse_new() {
 		return NULL;
 	}
 	p->parsers->free = NULL; // memleak
-	p->notin_flagspace = -1;
-	p->flagspace = -1;
+	p->notin_flagspace = NULL;
+	p->flagspace = NULL;
 	p->pseudo = false;
 	p->relsub = false;
 	p->tailsub = false;
@@ -275,11 +275,11 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 					}
 				}
 				if (isvalidflag (flag)) {
-					if (p->notin_flagspace != -1) {
+					if (p->notin_flagspace) {
 						if (p->flagspace == flag->space) {
 							continue;
 						}
-					} else if (p->flagspace != -1 && (p->flagspace != flag->space)) {
+					} else if (p->flagspace && (p->flagspace != flag->space)) {
 						ptr = ptr2;
 						continue;
 					}
@@ -538,7 +538,7 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 	return false;
 }
 
-R_API char *r_parse_immtrim (char *opstr) {
+R_API char *r_parse_immtrim(char *opstr) {
 	if (!opstr || !*opstr) {
 		return NULL;
 	}
@@ -586,10 +586,6 @@ R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, cha
 /* setters */
 R_API void r_parse_set_user_ptr(RParse *p, void *user) {
 	p->user = user;
-}
-
-R_API void r_parse_set_flagspace(RParse *p, int fs) {
-	p->flagspace = fs;
 }
 
 /* TODO: DEPRECATE */

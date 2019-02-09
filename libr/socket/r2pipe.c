@@ -150,7 +150,7 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 		sizeof (buf), sizeof (buf), 0, NULL);
-	if (r_sys_create_child_proc_w32 (cmd, NULL)) {
+	if (r_sys_create_child_proc_w32 (cmd, NULL, NULL, NULL)) {
 		if (ConnectNamedPipe (r2pipe->pipe, NULL)) {
 			return true;
 		}

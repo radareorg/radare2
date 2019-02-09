@@ -796,7 +796,6 @@ R_API RList *r_bin_get_sections(RBin *bin) {
 	return o ? o->sections : NULL;
 }
 
-// TODO: Move into section.c and rename it to r_io_section_get_at ()
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	RBinSection *section;
 	RListIter *iter;

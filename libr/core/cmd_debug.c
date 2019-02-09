@@ -310,6 +310,7 @@ static const char *help_msg_dr[] = {
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
+	"dr??", "", "Same as dr?`drp~=[0]+` # list all reg roles alias names and values",
 	"dra", "[?]", "Manage register arenas. see ara?",
 	"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"drc", " [name]", "Related to conditional flag registers",
@@ -1878,6 +1879,17 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			}
 			break;
 		default:
+			{
+				const char *arg = "";
+				int i;
+				for (i = 0; i< R_REG_NAME_LAST; i++) {
+					const char *t = r_reg_get_name (reg, i);
+					if (t && !strcmp (t, r->name)) {
+						arg = r_reg_get_role (i);
+					}
+				}
+				r_cons_printf ("%3s", arg);
+			}
 			if (bits == 64) {
 				if (r->flags) {
 					tmp = r_reg_get_bvalue (reg, r);
@@ -2121,18 +2133,34 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case '?': // "dr?"
 		if (str[1]) {
-			const char *p = str+1;
-			ut64 off;
-			while (IS_WHITESPACE (*p)) {
-				p++;
+			RListIter *iter;
+			char *all = (char *)r_str_trim_ro (str + 1);
+			if (!strcmp (all, "?")) { // "dr??"
+				all = r_core_cmd_str (core, "drp~=[0]");
+				all = r_str_replace (all, "\n", " ", 1);
+			} else {
+				all = strdup (all);
 			}
+			char *arg;
+			RList *args = r_str_split_list (all, " ");
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
-			off = r_debug_reg_get (core->dbg, p);
-			//		r = r_reg_get (core->dbg->reg, str+1, 0);
-			//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
-			r_cons_printf ("0x%08"PFMT64x"\n", off);
-			core->num->value = off;
-			//r_reg_get_value (core->dbg->reg, r));
+			int count = r_list_length (args);
+			r_list_foreach (args, iter, arg) {
+				ut64 off = r_debug_reg_get (core->dbg, arg);
+				if (count == 1) {
+					r_cons_printf ("0x%08"PFMT64x"\n", off);
+				} else {
+					int type = r_reg_get_name_idx (arg);
+					const char *r = arg;
+					if (type != -1) {
+						r = r_reg_get_name (core->dbg->reg, type);
+					}
+					r_cons_printf ("%3s %3s 0x%08"PFMT64x"\n", arg, r, off);
+				}
+				core->num->value = off;
+			}
+			free (all);
+			r_list_free (args);
 		} else {
 			r_core_cmd_help (core, help_msg_dr);
 		}

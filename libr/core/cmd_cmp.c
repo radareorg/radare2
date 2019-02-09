@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_core.h"
 
@@ -6,6 +6,7 @@ static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "Compare a plain with escaped chars string",
 	"c*", " [string]", "Same as above, but printing r2 commands instead",
+	"c1", " [addr]", "Compare 8 bits from current offset",
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
 	"cat", " [file]", "Show contents of file (see pwd, ls)",
@@ -439,19 +440,57 @@ static int cmd_cp(void *data, const char *input) {
 		eprintf ("Usage: cp.orig  # cp $file $file.orig\n");
 		return false;
 	}
-	char *src = strdup (input + 2);
-	char *dst = strchr (src, ' ');
-	if (dst) {
-		*dst++ = 0;
-		r_str_trim (src);
-		r_str_trim (dst);
-		bool rc = r_file_copy (src, dst);
-		free (src);
-		return rc;
+	char *cmd = strdup (input + 2);
+	if (cmd) {
+		char **files = r_str_argv (cmd, NULL);
+		if (files[0] && files[1]) {
+			bool rc = r_file_copy (files[0], files[1]);
+			free (cmd);
+			free (files);
+			return rc;
+		}
+		free (files);
 	}
 	eprintf ("Usage: cp src dst\n");
-	free (src);
 	return false;
+}
+
+static void __core_cmp_bits (RCore *core, ut64 addr) {
+	const bool scr_color = r_config_get_i (core->config, "scr.color");
+	int i;
+	ut8 a, b;
+	r_io_read_at (core->io, core->offset, &a, 1);
+	r_io_read_at (core->io, addr, &b, 1);
+	const char *color = scr_color? Color_CYAN: "";
+	const char *color_end = scr_color? Color_RESET: "";
+	if (r_config_get_i (core->config, "hex.header")) {
+		char *n = r_str_newf ("0x%08"PFMT64x, core->offset);
+		const char *extra = r_str_pad (' ', strlen (n) - 10);
+		free (n);
+		r_cons_printf ("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
+	}
+	color = scr_color? Color_RED: "";
+	color_end = scr_color? Color_RESET: "";
+
+	r_cons_printf ("%s0x%08"PFMT64x"%s  ", color, core->offset, color_end);
+	for (i = 7; i >= 0; i--) {
+		bool b0 = (a & 1<<i)? 1: 0;
+		bool b1 = (b & 1<<i)? 1: 0;
+		color = scr_color? (b0 == b1)? "": b0? Color_GREEN:Color_RED: "";
+		color_end = scr_color ? Color_RESET: "";
+		r_cons_printf ("%s%d%s ", color, b0, color_end);
+	}
+	color = scr_color? Color_GREEN: "";
+	color_end = scr_color? Color_RESET: "";
+	r_cons_printf ("\n%s0x%08"PFMT64x"%s  ", color, addr, color_end);
+	for (i = 7; i >= 0; i--) {
+		bool b0 = (a & 1<<i)? 1: 0;
+		bool b1 = (b & 1<<i)? 1: 0;
+		color = scr_color? (b0 == b1)? "": b1? Color_GREEN: Color_RED: "";
+		color_end = scr_color ? Color_RESET: "";
+		r_cons_printf ("%s%d%s ", color, b1, color_end);
+	}
+	r_cons_newline ();
 }
 
 static int cmd_cmp(void *data, const char *input) {
@@ -629,6 +668,9 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 			free (home);
 		}
+		break;
+	case '1': // "c1"
+		__core_cmp_bits (core, r_num_math (core->num, input + 1));
 		break;
 	case '2': // "c2"
 		v16 = (ut16) r_num_math (core->num, input + 1);

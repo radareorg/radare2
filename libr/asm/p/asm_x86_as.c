@@ -12,7 +12,6 @@
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	const char *syntaxstr = "";
-	char asm_buf[R_ASM_BUFSIZE];
 	int len = 0;
 
 	int ifd = r_file_mkstemp ("r_as", &ipath);
@@ -35,15 +34,15 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		syntaxstr = ".att_syntax\n";
 	}
 
-	len = snprintf (asm_buf, sizeof (asm_buf),
+	char *asm_buf = r_str_newf (
 			"%s.code%i\n" //.org 0x%"PFMT64x"\n"
 			".ascii \"BEGINMARK\"\n"
 			"%s\n"
 			".ascii \"ENDMARK\"\n",
 			syntaxstr, a->bits, buf); // a->pc ??
-	write (ifd, asm_buf, len);
-	//write (1, asm_buf, len);
+	write (ifd, asm_buf, strlen (asm_buf));
 	close (ifd);
+	free (asm_buf);
 
 	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
 		const ut8 *begin, *end;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 pancake */
+/* radare - LGPL - Copyright 2015-2019 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -19,8 +19,6 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const char *bitconfig = "";
 	char *ipath, *opath;
 	char *as = NULL;
-	char asm_buf[R_ASM_BUFSIZE];
-	int len = 0;
 
 	int ifd = r_file_mkstemp ("r_as", &ipath);
 	if (ifd == -1) {
@@ -46,15 +44,18 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		bitconfig = ".thumb";
 	}
 
-	len = snprintf (asm_buf, sizeof (asm_buf),
-			"%s\n" //.org 0x%"PFMT64x"\n"
+	char *asm_buf = r_str_newf ("%s\n" //.org 0x%"PFMT64x"\n"
 			".ascii \"BEGINMARK\"\n"
 			"%s\n"
 			".ascii \"ENDMARK\"\n",
 			bitconfig, buf); // a->pc ??
-	(void)write (ifd, asm_buf, len);
-	(void)close (ifd);
+	if (asm_buf) {
+		(void)write (ifd, asm_buf, strlen (asm_buf));
+		(void)close (ifd);
+		free (asm_buf);
+	}
 
+	int len = 0;
 	if (!r_sys_cmdf ("%s %s -o %s", as, ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
@@ -83,7 +84,6 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	} else {
 		eprintf ("Error running: %s %s -o %s", as, ipath, opath);
 		eprintf ("export PATH=~/NDK/toolchains/arm-linux*/prebuilt/darwin-arm_64/bin\n");
-		len = 0;
 	}
 
 	close (ofd);
@@ -94,8 +94,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	free (opath);
 	free (as);
 
-	op->size = len;
-	return len;
+	return op->size = len;
 }
 
 RAsmPlugin r_asm_plugin_arm_as = {
@@ -106,9 +105,6 @@ RAsmPlugin r_asm_plugin_arm_as = {
 	.license = "LGPL3",
 	.bits = 16|32|64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = NULL,
 	.assemble = &assemble,
 };
 

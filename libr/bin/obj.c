@@ -379,10 +379,12 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (cp->relocs) {
 			RList *l = cp->relocs (binfile);
-			REBASE_PADDR (o, l, RBinReloc);
-			o->relocs = list2rbtree (l);
-			l->free = NULL;
-			r_list_free (l);
+			if (l) {
+				REBASE_PADDR (o, l, RBinReloc);
+				o->relocs = list2rbtree (l);
+				l->free = NULL;
+				r_list_free (l);
+			}
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
