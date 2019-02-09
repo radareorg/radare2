@@ -1033,8 +1033,9 @@ static int cmd_type(void *data, const char *input) {
 							//		r_cons_strcat (out);
 							save_parsed_type (core, out);
 							free (out);
-						} else if (error_msg) {
-							r_cons_printf ("%s", error_msg);
+						}
+						if (error_msg) {
+							fprintf (stderr, "%s", error_msg);
 							free (error_msg);
 						}
 						free (tmp);
@@ -1046,8 +1047,9 @@ static int cmd_type(void *data, const char *input) {
 						//r_cons_strcat (out);
 						save_parsed_type (core, out);
 						free (out);
-					} else {
-						r_cons_printf ("%s", error_msg);
+					}
+					if (error_msg) {
+						fprintf (stderr, "%s", error_msg);
 						free (error_msg);
 					}
 				}
@@ -1082,8 +1084,9 @@ static int cmd_type(void *data, const char *input) {
 			if (out) {
 				save_parsed_type (core, out);
 				free (out);
-			} else if (error_msg) {
-				r_cons_printf ("%s", error_msg);
+			}
+			if (error_msg) {
+				fprintf (stderr, "%s", error_msg);
 				free (error_msg);
 			}
 		} else {
