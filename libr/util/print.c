@@ -1088,16 +1088,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%4d ", w);
 					r_print_cursor (p, j, 1, 0);
 				} else if (base == -10) {
-					st16 w = r_read_ble16 (buf + j, p && p->big_endian);
-					r_print_cursor (p, j, 2, 1);
-					printfmt ("%7d ", w);
-					r_print_cursor (p, j, 2, 0);
+					if (j + 2 < inc) {
+						st16 w = r_read_ble16 (buf + j, p && p->big_endian);
+						r_print_cursor (p, j, 2, 1);
+						printfmt ("%7d ", w);
+						r_print_cursor (p, j, 2, 0);
+					}
 					j += 1;
 				} else if (base == 10) { // "pxd"
-					int w = r_read_ble32 (buf + j, p && p->big_endian);
-					r_print_cursor (p, j, 4, 1);
-					printfmt ("%13d ", w);
-					r_print_cursor (p, j, 4, 0);
+					if (j + 4 < inc) {
+						int w = r_read_ble32 (buf + j, p && p->big_endian);
+						r_print_cursor (p, j, 4, 1);
+						printfmt ("%13d ", w);
+						r_print_cursor (p, j, 4, 0);
+					}
 					j += 3;
 				} else {
 					if (j >= len) {
@@ -2114,7 +2118,7 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 		return;
 	}
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
-	if (buf == NULL) {
+	if (!buf) {
 		eprintf ("allocation failed\n");
 		return;
 	}
