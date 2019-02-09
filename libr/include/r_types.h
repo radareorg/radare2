@@ -224,11 +224,13 @@ extern "C" {
 #define R_SYS_DIR "\\"
 #define R_SYS_ENVSEP ";"
 #define R_SYS_HOME "USERPROFILE"
+#define R_SYS_TMP "TEMP"
 #else
 #define FS "/"
 #define R_SYS_DIR "/"
 #define R_SYS_ENVSEP ":"
 #define R_SYS_HOME "HOME"
+#define R_SYS_TMP "TMPDIR"
 #endif
 
 #define R_JOIN_2_PATHS(p1, p2) p1 R_SYS_DIR p2
