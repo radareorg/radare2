@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -18,6 +18,7 @@ typedef struct refline_end {
 static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
 	return a->val > b->val;
 }
+
 static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 	return a->level < b->level;
 }
@@ -333,12 +334,16 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 }
 
 static const char* get_corner_char(RAnalRefline *ref, ut64 addr, bool is_middle_before) {
+	if (ref->from == ref->to) {
+		return "@";
+	}
 	if (addr == ref->to) {
 		if (is_middle_before) {
 			return (ref->from > ref->to) ? " " : "|";
 		}
 		return (ref->from > ref->to) ? "." : "`";
-	} else if (addr == ref->from) {
+	}
+	if (addr == ref->from) {
 		if (is_middle_before) {
 			return (ref->from > ref->to) ? "|" : " ";
 		}

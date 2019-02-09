@@ -379,10 +379,18 @@ static const char *help_msg_pi[] = {
 	"pib", "", "print instructions of basic block",
 	"pid", "", "alias for pdi",
 	"pie", "", "print offset + esil expression",
-	"pif", "", "print instructions of function",
+	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
 	NULL
+};
+
+static const char *help_msg_pif[] = {
+	"Usage:", "pif[cj]", "",
+	"pif?", "", "print this help message",
+	"pifc", "", "print all calls from this function",
+	"pifcj", "", "print all calls from this function in JSON format",
+	"pifj", "", "print instructions of function in JSON format",
 };
 
 static const char *help_msg_ps[] = {
@@ -4479,7 +4487,82 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'f': // "pif"
-			if (l != 0) {
+				if (input[2] == '?') { // "pif?"
+					r_core_cmd_help(core, help_msg_pif);
+				} else if (input[2] == 'j') {
+					r_core_cmdf (core, "pdfj%s", input[3]);
+				} else if (input[2] == 'c') { // "pifc"
+
+				RListIter *iter;
+				RAnalRef *refi;
+				RList *refs = NULL;
+				PJ *pj = NULL;
+
+				// get function in current offset
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+
+				// validate that a function was found in the given address
+				if (!f) {
+					break;
+				}
+				// get all the calls of the function
+				refs = r_core_anal_fcn_get_calls (core, f);
+
+				// sanity check
+				if (!r_list_empty (refs)) {
+					// check for bounds
+					if (input[3] !=0) {
+						if (input[3] == 'j') { // "pifcj"
+							pj = pj_new ();
+							pj_a (pj);
+						}
+					}
+
+					// store current configurations
+					RConfigHold *hc = r_config_hold_new (core->config);
+					r_config_save_num (hc, "asm.offset", NULL);
+					r_config_save_num (hc, "asm.comments", NULL);
+					r_config_save_num (hc, "asm.tabs", NULL);
+					r_config_save_num (hc, "asm.bytes", NULL);
+					r_config_save_num (hc, "emu.str", NULL);
+
+
+					// temporarily replace configurations
+					r_config_set_i (core->config, "asm.offset", false);
+					r_config_set_i (core->config, "asm.comments", false);
+					r_config_set_i (core->config, "asm.tabs", 0);
+					r_config_set_i (core->config, "asm.bytes", false);
+					r_config_set_i (core->config, "emu.str", false);
+
+					// iterate over all call references
+					r_list_foreach (refs, iter, refi) {
+						if (pj) {
+							RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+							char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+							pj_o (pj);
+							pj_ks (pj, "dest", dst);
+							pj_kn (pj, "addr", refi->addr);
+							pj_kn (pj, "at", refi->at);
+							pj_end (pj);
+						} else {
+							char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
+							r_cons_printf ("%s", s);
+						}
+					}
+
+					// restore saved configuration
+					r_config_restore (hc);
+					r_config_hold_free (hc);
+
+					// print json object
+					if (pj) {
+						pj_end (pj);
+						r_cons_printf ("%s\n", pj_string (pj));
+						pj_free (pj);
+					}
+				}
+			} else if (l != 0) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f) {
@@ -4536,11 +4619,24 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
-				char *fmt = r_str_newf ("d %s", input + 2);
-				if (fmt) {
-					cmd_print (core, fmt);
-					strcpy (fmt + 2, input + 3);
-					cmd_print (core, fmt);
+				char *offs = r_str_newf ("%s", input + 2);
+				if (offs) {
+					ut64 sz = r_num_math (core->num, offs);
+					char *fmt;
+					if (((st64)sz * -1) > core->offset) {
+						// the offset is smaller than the negative value
+						// so only print -offset
+						fmt = r_str_newf ("d %"PFMT64d, -1 * core->offset);
+					} else {
+						fmt = r_str_newf ("d %s", input + 2);
+					}
+					if (fmt) {
+						cmd_print (core, fmt);
+						strcpy (fmt + 2, input + 3);
+						cmd_print (core, fmt);
+						free (fmt);
+					}
+					free (offs);
 				}
 				ret = 0;
 				goto beach;

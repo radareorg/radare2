@@ -225,7 +225,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 				return true;
 			}
 		}
-		if (input[0] == -1) {
+		if (!*input) {
 			free (nstr);
 			return -1;
 		}

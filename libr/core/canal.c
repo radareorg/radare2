@@ -1151,7 +1151,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		sdb_set (DB, "type", r_anal_fcn_type_tostring (fcn->type), 0);
 	} else if (is_json) {
 		// TODO: show vars, refs and xrefs
-		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
+		char *fcn_name_escaped = r_str_escape_utf8_for_json (fcn->name, -1);
+		r_cons_printf ("{\"name\":\"%s\"", r_str_get (fcn_name_escaped));
+		free (fcn_name_escaped);
 		r_cons_printf (",\"offset\":%"PFMT64d, fcn->addr);
 		r_cons_printf (",\"ninstr\":%"PFMT64d, (ut64)fcn->ninstr);
 		r_cons_printf (",\"nargs\":%d",
@@ -1940,18 +1942,21 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 			const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
 			const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 			if (!gv_edge || !*gv_edge) {
-				gv_edge = "arrowhead=\"normal\"";
+				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
 			if (!gv_node || !*gv_node) {
-				gv_node = "fillcolor=gray style=filled shape=box";
+				gv_node = "fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
 			}
 			if (!gv_grph || !*gv_grph) {
-				gv_grph = "bgcolor=white";
+				gv_grph = "bgcolor=azure";
 			}
 			if (!gv_spline || !*gv_spline) {
-				gv_spline = "splines=\"ortho\"";
+				// ortho for bbgraph and curved for callgraph
+				gv_spline = "splines=\"curved\"";
 			}
 			r_cons_printf ("digraph code {\n"
+					"rankdir=LR;\n"
+					"outputorder=edgesfirst;\n"
 					"graph [%s fontname=\"%s\" %s];\n"
 					"node [%s];\n"
 					"edge [%s];\n", gv_grph, font, gv_spline,
@@ -1980,6 +1985,7 @@ repeat:
 		RList *calls = r_list_new ();
 		// TODO: maybe fcni->calls instead ?
 		r_list_foreach (refs, iter2, fcnr) {
+			//  TODO: tail calll jumps are also calls
 			if (fcnr->type == 'C' && r_list_find(calls, fcnr, (RListComparator)RAnalRef_cmp) == NULL) {
 				r_list_append (calls, fcnr);
 			}
@@ -2055,10 +2061,10 @@ repeat:
 				break;
 			case R_GRAPH_FORMAT_DOT:
 				r_cons_printf ("  \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-						fcni->addr, fcnr->addr, fcnr_name,
-						(fcnr->type==R_ANAL_REF_TYPE_CODE ||
-							fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
+						"[color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+						//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+						fcni->addr, fcnr->addr, //, fcnr_name,
+						"#61afef", 
 						fcnr_name, fcnr->addr);
 				r_cons_printf ("  \"0x%08"PFMT64x"\" "
 						"[label=\"%s\""
@@ -2335,29 +2341,95 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	return 0;
 }
 
-static int fcn_print_makestyle(RCore *core, RAnalFunction *fcn) {
+// for a given function returns an RList of all functions that were called in it
+R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn) {
+	RList *refs = NULL;
 	RAnalRef *refi;
 	RListIter *iter;
-	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
-	r_cons_printf ("%s:\n", fcn->name);
+
+	// get all references from this function
+	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	// sanity check
 	if (!r_list_empty (refs)) {
-		RList *res = r_list_newf ((RListFree)free);
+		// iterate over all the references and remove these which aren't of type call
 		r_list_foreach (refs, iter, refi) {
 			if (refi->type != R_ANAL_REF_TYPE_CALL) {
-				continue;
+				r_list_delete (refs, iter);
 			}
-			RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
-			char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
-			r_list_append (res, dst);
 		}
-		char *s;
-		res = r_list_uniq (res, (RListComparator)strcmp);
-		r_list_foreach (res, iter, s) {
-			r_cons_printf ("    %s\n", s);
-		}
-		r_list_free (res);
 	}
-	r_cons_newline ();
+	return refs;
+}
+
+// Lists function names and their calls (uniqified)
+static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
+	RListIter *refiter;
+	RListIter *fcniter;
+	RAnalFunction *fcn;
+	RAnalRef *refi;
+	RList *refs = NULL;
+	PJ *pj = NULL;
+
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+
+	// Iterate over all functions
+	r_list_foreach (fcns, fcniter, fcn) {
+		// Get all refs for a function
+		refs = r_core_anal_fcn_get_calls (core, fcn);
+		// Uniquify the list by ref->addr
+		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
+	
+		// don't enter for functions with 0 refs
+		if (!r_list_empty (refs)) {
+			if (pj) { // begin json output of function
+				pj_o (pj);
+				pj_ks (pj, "name", fcn->name);
+				pj_kn (pj, "addr", fcn->addr);
+				pj_k (pj, "calls");
+				pj_a (pj);
+			} else {
+				r_cons_printf ("%s", fcn->name);
+			}
+
+			if (mode == 'm') {
+				r_cons_printf (":\n");
+			} else if (mode == 'q') {
+				r_cons_printf (" -> ");
+			}
+			// Iterate over all refs from a function
+			r_list_foreach (refs, refiter, refi) {
+				RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+				char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+				if (pj) { // Append calee json item
+					pj_o (pj);
+					pj_ks (pj, "name", dst);
+                	pj_kn (pj, "addr", refi->addr);
+					pj_end (pj); // close referenced item
+				} else if (mode == 'q') {
+					r_cons_printf ("%s ", dst);
+				} else {
+					r_cons_printf ("    %s\n", dst);
+				}
+			}
+			if (pj) {
+				pj_end (pj); // close list of calls
+				pj_end (pj); // close function item
+			} else {
+				r_cons_newline();
+			}
+		}
+	}
+
+	if (mode == 'j') {
+		pj_end (pj); // close json output
+		r_cons_printf ("%s\n", pj_string (pj));
+	}
+	if (pj) {
+		pj_free (pj);
+	}
 	return 0;
 }
 
@@ -2558,12 +2630,29 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
+static bool is_fcn_traced(RDebugTrace *traced, RAnalFunction *fcn) {
+	int tag = traced->tag;
+	RListIter *iter;
+	RDebugTracepoint *trace;
+
+	r_list_foreach (traced->traces, iter, trace) {
+		if (!trace->tag || (tag & trace->tag)) {
+			if (r_anal_fcn_in (fcn, trace->addr)) {
+				r_cons_printf ("\ntraced: %d\n", trace->times);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
 	RList *refs, *xrefs;
 	int ebbs = 0;
 	char *name = r_core_anal_fcn_name (core, fcn);
+
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
@@ -2645,6 +2734,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	free (name);
+
+	// traced
+	if (core->dbg->trace->enabled) {
+		is_fcn_traced (core->dbg->trace, fcn);
+	}
 	return 0;
 }
 
@@ -2727,11 +2821,19 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	case '*':
 		fcn_list_detail (core, fcns);
 		break;
-	case 'm':
-		r_list_foreach (fcns, iter, fcn) {
-			fcn_print_makestyle (core, fcn);
+	case 'm': // "aflm"
+		{
+			char mode = 'm';
+			if (rad[1] != 0) {
+				if (rad[1] == 'j') { // "aflmj"
+					mode = 'j';
+				} else if (rad[1] == 'q') { // "aflmq"
+					mode = 'q';
+				}
+			}
+			fcn_print_makestyle (core, fcns, mode);
+			break;
 		}
-		break;
 	case 1:
 		fcn_list_legacy (core, fcns);
 		break;
@@ -4490,29 +4592,43 @@ typedef struct {
 	int count; // max number of results
 } RCoreAnalPaths;
 
-static bool printAnalPaths(RCoreAnalPaths *p) {
+static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 	RListIter *iter;
 	RAnalBlock *path;
-	r_cons_printf ("pdb @@= ");
-	r_list_foreach (p->path, iter, path) {
-		r_cons_printf ("0x%08"PFMT64x" ", path->addr);
+	if (pj) {
+		pj_a (pj);
+	} else {
+		r_cons_printf ("pdb @@= ");
 	}
-	r_cons_printf ("\n");
+
+	r_list_foreach (p->path, iter, path) {
+		if (pj) {
+			pj_n (pj, path->addr);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" ", path->addr);
+		}
+	}
+
+	if(pj) {
+		pj_end (pj);
+	} else {
+		r_cons_printf ("\n");
+	}
 	return (p->count < 1 || --p->count > 0);
 }
-static void analPaths(RCoreAnalPaths *p);
+static void analPaths(RCoreAnalPaths *p, PJ *pj);
 
-static void analPathFollow(RCoreAnalPaths *p, ut64 addr) {
+static void analPathFollow(RCoreAnalPaths *p, ut64 addr, PJ *pj) {
 	if (addr == UT64_MAX) {
 		return;
 	}
 	if (!dict_get (&p->visited, addr)) {
 		p->cur = r_anal_bb_from_offset (p->core->anal, addr);
-		analPaths (p);
+		analPaths (p, pj);
 	}
 }
 
-static void analPaths(RCoreAnalPaths *p) {
+static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 	RAnalBlock *cur = p->cur;
 	if (!cur) {
 		// eprintf ("eof\n");
@@ -4528,23 +4644,23 @@ static void analPaths(RCoreAnalPaths *p) {
 		return;
 	}
 	if (p->toBB && cur->addr == p->toBB->addr) {
-		if (!printAnalPaths (p)) {
+		if (!printAnalPaths (p, pj)) {
 			return;
 		}
 	} else {
 		RAnalBlock *c = cur;
 		ut64 j = cur->jump;
 		ut64 f = cur->fail;
-		analPathFollow (p, j);
+		analPathFollow (p, j, pj);
 		cur = c;
-		analPathFollow (p, f);
+		analPathFollow (p, f, pj);
 		if (p->followCalls) {
 			int i;
 			for (i = 0; i < cur->op_pos_size; i++) {
 				ut64 addr = cur->addr + cur->op_pos[i];
 				RAnalOp *op = r_core_anal_op (p->core, addr, R_ANAL_OP_MASK_BASIC);
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-					analPathFollow (p, op->jump);
+					analPathFollow (p, op->jump, pj);
 				}
 				cur = c;
 				r_anal_op_free (op);
@@ -4558,14 +4674,17 @@ static void analPaths(RCoreAnalPaths *p) {
 	}
 }
 
-R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth) {
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json) {
 	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
+	PJ *pj = NULL;
 	if (!b0) {
 		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", from);
+		return;
 	}
 	if (!b1) {
 		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", to);
+		return;
 	}
 	RCoreAnalPaths rcap = {{0}};
 	dict_init (&rcap.visited, 32, free);
@@ -4580,8 +4699,23 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 	rcap.followCalls = followCalls;
 	rcap.followDepth = followDepth;
 
-	analPaths (&rcap);
+	// Initialize a PJ object for json mode
+	if (is_json) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
 
-        dict_fini (&rcap.visited);
+	analPaths (&rcap, pj);
+
+	if (is_json) {
+		pj_end (pj);
+		r_cons_printf ("%s", pj_string (pj));
+	}
+
+	if (pj) {
+		pj_free (pj);
+	}
+
+	dict_fini (&rcap.visited);
 	r_list_free (rcap.path);
 }

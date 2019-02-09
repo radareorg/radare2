@@ -127,11 +127,8 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	int fits_in_arena;
 	ut8 bytes[12];
 	ut8 *src = bytes;
+	r_return_val_if_fail (reg && item, false);
 
-	if (!item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
-		return false;
-	}
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value

@@ -1608,6 +1608,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
 	char *fcn_name;
+	bool fcn_name_alloc = false; // whether fcn_name needs to be freed by this function
 	char *sign;
 
 	if (!ds->show_functions) {
@@ -1622,12 +1623,24 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	if (demangle) {
 		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name, f->addr);
-		if (!fcn_name) {
-			fcn_name = strdup (f->name);
+		if (fcn_name) {
+			fcn_name_alloc = true;
+		} else {
+			fcn_name = f->name;
 		}
 	} else {
 		fcn_name = f->name;
 	}
+
+	if (ds->use_json) {
+		char *fcn_name_raw = fcn_name;
+		fcn_name = r_str_escape_utf8_for_json (fcn_name_raw, -1);
+		if (fcn_name_alloc) {
+			free (fcn_name_raw);
+		}
+		fcn_name_alloc = true;
+	}
+
 	ds_begin_line (ds);
 	sign = r_anal_fcn_to_string (core->anal, f);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -1762,7 +1775,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 	r_anal_fcn_vars_cache_fini (&vars_cache);
-	if (demangle) {
+	if (fcn_name_alloc) {
 		free (fcn_name);
 	}
 }
@@ -3844,22 +3857,40 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 #endif
 }
 
+struct getreloc_t {
+	ut64 vaddr;
+	int size;
+};
+
+static int getreloc_tree(const void *user, const RBNode *n) {
+	struct getreloc_t *gr = (struct getreloc_t *)user;
+	const RBinReloc *r = container_of (n, const RBinReloc, vrb);
+	if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
+		return 0;
+	}
+
+	if (gr->vaddr > r->vaddr) {
+		return 1;
+	}
+	if (gr->vaddr < r->vaddr) {
+		return -1;
+	}
+	return 0;
+}
+
 // TODO: Use sdb in rbin to accelerate this
 // we shuold use aligned reloc addresses instead of iterating all of them
 static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
-	RList *list;
-	RBinReloc *r;
-	RListIter *iter;
 	if (size < 1 || addr == UT64_MAX) {
 		return NULL;
 	}
-	list = r_bin_get_relocs (core->bin);
-	r_list_foreach (list, iter, r) {
-		if ((r->vaddr >= addr) && (r->vaddr < (addr + size))) {
-			return r;
-		}
+	RBNode *relocs = r_bin_get_relocs (core->bin);
+	if (!relocs) {
+		return NULL;
 	}
-	return NULL;
+	struct getreloc_t gr = { .vaddr = addr, .size = size };
+	RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree);
+	return res? container_of (res, RBinReloc, vrb): NULL;
 }
 
 static void ds_print_relocs(RDisasmState *ds) {
@@ -4185,7 +4216,6 @@ static void delete_last_comment(RDisasmState *ds) {
 	if (!ds->show_comment_right_default) {
 		return;
 	}
-	int len = 0;
 	const char *ll = r_cons_get_buffer ();
 	if (!ll) {
 		return;
@@ -4268,11 +4298,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
-	esil->cb.user = ds;
-	esil->cb.hook_reg_write = myregwrite;
-	esil->cb.hook_reg_read = myregread;
-	hook_mem_write = esil->cb.hook_mem_write;
+	if (pc) {
+		r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
+		esil->cb.user = ds;
+		esil->cb.hook_reg_write = myregwrite;
+		esil->cb.hook_reg_read = myregread;
+		hook_mem_write = esil->cb.hook_mem_write;
+	}
 	if (ds->show_emu_stack) {
 		esil->cb.hook_mem_write = mymemwrite2;
 	} else {
