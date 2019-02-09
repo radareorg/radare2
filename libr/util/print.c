@@ -1088,7 +1088,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%4d ", w);
 					r_print_cursor (p, j, 1, 0);
 				} else if (base == -10) {
-					if (j + 1 < inc) {
+					if (j + 1 < len) {
 						st16 w = r_read_ble16 (buf + j, p && p->big_endian);
 						r_print_cursor (p, j, 2, 1);
 						printfmt ("%7d ", w);
@@ -1096,7 +1096,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					j += 1;
 				} else if (base == 10) { // "pxd"
-					if (j + 3 < inc) {
+					if (j + 3 < len) {
 						int w = r_read_ble32 (buf + j, p && p->big_endian);
 						r_print_cursor (p, j, 4, 1);
 						printfmt ("%13d ", w);
