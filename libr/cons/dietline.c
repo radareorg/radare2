@@ -1645,7 +1645,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 9:	// tab
-			if (I.buffer.data[I.buffer.length - 1] == '@') {
+			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
 				strcpy (I.buffer.data + I.buffer.length, " ");
 				I.buffer.length++;
 				I.buffer.index++;

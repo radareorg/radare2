@@ -564,8 +564,6 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 	}
 }
 
-#define VARPREFIX "local"
-#define ARGPREFIX "arg"
 
 //Variable recovery functions
 static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {

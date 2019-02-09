@@ -210,8 +210,13 @@ R_API char *r_file_abspath(const char *file) {
 		if (!strncmp (file, "\\\\", 2)) {
 			return strdup (file);
 		}
-		if (cwd && !strchr (file, ':')) {
-			ret = r_str_newf ("%s\\%s", cwd, file);
+		if (!strchr (file, ':')) {
+			char *abspath = malloc (MAX_PATH);
+			if (abspath) {
+				GetFullPathName (file, MAX_PATH, abspath, NULL);
+				ret = strdup (abspath);
+				free (abspath);
+			}
 		}
 #endif
 	}
@@ -1047,7 +1052,15 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	return r_sys_cmdf ("copy %s %s", src, dst);
+	char *s = r_file_abspath (src);
+	char *d = r_file_abspath (dst);
+	bool ret = CopyFile (s, d, 0);
+	if (!ret) {
+		eprintf ("File not found\n");
+	}
+	free (s);
+	free (d);
+	return ret;
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
 	char *dst2 = r_str_replace (strdup (dst), "'", "\\'", 1);

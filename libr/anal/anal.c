@@ -26,35 +26,35 @@ R_API void r_anal_unset_limits(RAnal *anal) {
 }
 
 static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)user;
+	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, meta_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	r_meta_space_unset_for (anal, se->data.unset.space);
 }
 
 static void meta_count_for(REvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)user;
+	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, meta_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	se->res = r_meta_space_count_for (anal, se->data.count.space);
 }
 
 static void zign_unset_for(REvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)user;
+	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, zign_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	r_sign_space_unset_for (anal, se->data.unset.space);
 }
 
 static void zign_count_for(REvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)user;
+	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, zign_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	se->res = r_sign_space_count_for (anal, se->data.count.space);
 }
 
 static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)user;
+	RSpaces *s = (RSpaces *)ev->user;
 	RAnal *anal = container_of (s, RAnal, zign_spaces);
 	RSpaceEvent *se = (RSpaceEvent *)data;
 	r_sign_space_rename_for (anal, se->data.rename.space,
@@ -167,13 +167,13 @@ R_API RAnal *r_anal_new() {
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	r_spaces_init (&anal->meta_spaces, "CS");
-	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for);
-	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for);
+	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
+	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
 
 	r_spaces_init (&anal->zign_spaces, "zs");
-	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_UNSET, zign_unset_for);
-	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for);
-	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_UNSET, zign_unset_for, NULL);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for, NULL);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);

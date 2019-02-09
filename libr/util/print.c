@@ -319,6 +319,7 @@ R_API RPrint* r_print_new() {
 	p->esc_bslash = false;
 	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
+	p->io_unalloc_ch = '.';
 	return p;
 }
 
@@ -941,7 +942,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt (" ");
 				}
 				if (!hex_style) {
-					printfmt (" comment ");
+					printfmt (" comment");
 				}
 			}
 			printfmt ("\n");
@@ -1087,23 +1088,29 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%4d ", w);
 					r_print_cursor (p, j, 1, 0);
 				} else if (base == -10) {
-					st16 w = r_read_ble16 (buf + j, p && p->big_endian);
-					r_print_cursor (p, j, 2, 1);
-					printfmt ("%7d ", w);
-					r_print_cursor (p, j, 2, 0);
+					if (j + 1 < len) {
+						st16 w = r_read_ble16 (buf + j, p && p->big_endian);
+						r_print_cursor (p, j, 2, 1);
+						printfmt ("%7d ", w);
+						r_print_cursor (p, j, 2, 0);
+					}
 					j += 1;
 				} else if (base == 10) { // "pxd"
-					int w = r_read_ble32 (buf + j, p && p->big_endian);
-					r_print_cursor (p, j, 4, 1);
-					printfmt ("%13d ", w);
-					r_print_cursor (p, j, 4, 0);
+					if (j + 3 < len) {
+						int w = r_read_ble32 (buf + j, p && p->big_endian);
+						r_print_cursor (p, j, 4, 1);
+						printfmt ("%13d ", w);
+						r_print_cursor (p, j, 4, 0);
+					}
 					j += 3;
 				} else {
 					if (j >= len) {
 						break;
 					}
 					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
-						p->cb_printf ("..");
+						char ch = p->io_unalloc_ch;
+						char dbl_ch_str[] = { ch, ch, 0 };
+						p->cb_printf (dbl_ch_str);
 					} else {
 						r_print_byte (p, bytefmt, j, buf[j]);
 					}
@@ -1158,7 +1165,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (j >= len || (use_align && bytes >= rowbytes)) {
 					break;
 				}
-				r_print_byte (p, "%c", j, buf[j]);
+				ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
+				                ? ' ' : buf[j];
+				r_print_byte (p, "%c", j, ch);
 				bytes++;
 			}
 		}
@@ -1198,7 +1207,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					a = p->offname (p->user, addr + j);
 					if (p->colorfor && a && *a) {
 						const char *color = p->colorfor (p->user, addr + j, true);
-						printfmt ("%s  ; %s"Color_RESET, color? color: "", a);
+						printfmt ("%s  ; %s%s", color ? color: "", a,
+						          color ? Color_RESET : "");
 					}
 				}
 				char *comment = p->get_comments (p->user, addr + j);
@@ -2108,7 +2118,7 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 		return;
 	}
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
-	if (buf == NULL) {
+	if (!buf) {
 		eprintf ("allocation failed\n");
 		return;
 	}

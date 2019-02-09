@@ -73,6 +73,7 @@ static int rabin_show_help(int v) {
 		" -s              symbols\n"
 		" -S              sections\n"
 		" -SS             segments\n"
+		" -t              display file hashes\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
@@ -187,13 +188,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	if (!path) {
 		return false;
 	}
-	// XXX: Wrong for w32 (/)
-	ptr = strrchr (path, DIRSEP);
-	if (ptr) {
-		*ptr++ = '\0';
-	} else {
-		ptr = path;
-	}
+	ptr = (char *)r_file_basename (path);
 	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
@@ -631,7 +626,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action & (x))
 #define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxXzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
@@ -653,6 +648,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
 		case 'T': set_action (R_BIN_REQ_SIGNATURE); break;
+		case 't': set_action (R_BIN_REQ_HASHES); break;
 		case 'q':
 			rad = (rad & R_MODE_SIMPLE ?
 				R_MODE_SIMPLEST : R_MODE_SIMPLE);
@@ -1123,6 +1119,7 @@ int main(int argc, char **argv) {
 	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
 	run_action ("sections", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
+	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	if (action & R_BIN_REQ_SRCLINE) {
 		rabin_show_srcline (at);
 	}

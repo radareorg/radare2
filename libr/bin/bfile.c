@@ -879,8 +879,13 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		return -1;
 	}
 	//  XXX should use io api not raw file slurping
-	buf = r_file_slurp (file, &buf_len);
+	int blen = 0;
+	buf = (ut8*)r_file_slurp (file, &blen);
 	if (!buf) {
+		return false;
+	}
+	buf_len = blen;
+	if (!o->info) {
 		return false;
 	}
 	if (buf) {

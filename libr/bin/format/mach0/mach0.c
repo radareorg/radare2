@@ -1130,6 +1130,8 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_FUNCTION_STARTS";
 	case LC_DYLIB_CODE_SIGN_DRS:
 		return "LC_DYLIB_CODE_SIGN_DRS";
+	case LC_NOTE:
+		return "LC_NOTE";
 	case LC_BUILD_VERSION:
 		return "LC_BUILD_VERSION";
 	case LC_VERSION_MIN_MACOSX:

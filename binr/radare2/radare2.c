@@ -1341,7 +1341,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		// no flagspace selected by default the beginning
-		r.flags->space_idx = -1;
+		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
 			char f[128];
@@ -1440,7 +1440,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		// no flagspace selected by default the beginning
-		r.flags->space_idx = -1;
+		r_flag_space_set (r.flags, NULL);
 		if (!debug && r.bin && r.bin->cur && r.bin->cur->o && r.bin->cur->o->info) {
 			if (r.bin->cur->o->info->arch) {
 				r_core_cmd0 (&r, "aeip");

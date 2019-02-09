@@ -63,6 +63,10 @@ R_API void r_anal_class_create(RAnal *anal, const char *name) {
 	if (!sdb_exists (anal->sdb_classes, key)) {
 		sdb_set (anal->sdb_classes, key, "c", 0);
 	}
+
+	REventClass event = { .name = name_sanitized };
+	r_event_send (anal->ev, R_EVENT_CLASS_NEW, &event);
+
 	free (name_sanitized);
 }
 
@@ -106,6 +110,9 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 	free (attr_type_array);
 
 	sdb_remove (anal->sdb_classes_attrs, key_attr_types (class_name_sanitized), 0);
+
+	REventClass event = { .name = class_name_sanitized };
+	r_event_send (anal->ev, R_EVENT_CLASS_DEL, &event);
 
 	free (class_name_sanitized);
 }
@@ -190,6 +197,12 @@ R_API RAnalClassErr r_anal_class_rename(RAnal *anal, const char *old_name, const
 
 	rename_key (anal->sdb_classes_attrs, key_attr_types (old_name_sanitized), key_attr_types (new_name_sanitized));
 
+	REventClassRename event = {
+		.name_old = old_name_sanitized,
+		.name_new = new_name_sanitized
+	};
+	r_event_send (anal->ev, R_EVENT_CLASS_RENAME, &event);
+
 beach:
 	free (old_name_sanitized);
 	free (new_name_sanitized);
@@ -238,6 +251,16 @@ static RAnalClassErr r_anal_class_set_attr_raw(RAnal *anal, const char *class_na
 	sdb_array_add (anal->sdb_classes_attrs, key_attr_type_attrs (class_name, attr_type_str), attr_id, 0);
 	sdb_set (anal->sdb_classes_attrs, key_attr_content (class_name, attr_type_str, attr_id), content, 0);
 
+	REventClassAttrSet event = {
+		.attr = {
+			.class_name = class_name,
+			.attr_type = attr_type,
+			.attr_id = attr_id
+		},
+		.content = content
+	};
+	r_event_send (anal->ev, R_EVENT_CLASS_ATTR_SET, &event);
+
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
 
@@ -275,6 +298,13 @@ static RAnalClassErr r_anal_class_delete_attr_raw(RAnal *anal, const char *class
 	if (!sdb_exists (anal->sdb_classes_attrs, key)) {
 		sdb_array_remove (anal->sdb_classes_attrs, key_attr_types (class_name), attr_type_str, 0);
 	}
+
+	REventClassAttr event = {
+		.class_name = class_name,
+		.attr_type = attr_type,
+		.attr_id = attr_id
+	};
+	r_event_send (anal->ev, R_EVENT_CLASS_ATTR_DEL, &event);
 
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
@@ -329,6 +359,16 @@ static RAnalClassErr r_anal_class_rename_attr_raw(RAnal *anal, const char *class
 		sdb_set (anal->sdb_classes_attrs, key, content, 0);
 		free (content);
 	}
+
+	REventClassAttrRename event = {
+		.attr = {
+			.class_name = class_name,
+			.attr_type = attr_type,
+			.attr_id = attr_id_old
+		},
+		.attr_id_new = attr_id_new
+	};
+	r_event_send (anal->ev, R_EVENT_CLASS_ATTR_RENAME, &event);
 
 	return R_ANAL_CLASS_ERR_SUCCESS;
 }
