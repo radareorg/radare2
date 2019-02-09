@@ -11,7 +11,7 @@
 static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
-		"             [-q off] [-dDw off:hex] file|f.asm|-\n");
+		"             [-S string] [-dDw off:hex] file|f.asm|-\n");
 	if (v) {
 		printf (
 			" -a [arch]       select architecture (x86, mips, arm)\n"
@@ -40,6 +40,7 @@ static int usage(int v) {
 			" -q [fragment]   debruijn pattern offset\n"
 			" -r              show raw bytes instead of hexpairs\n"
 			" -s              show assembler\n"
+			" -S [string]     append a string\n"
 			" -v              show version\n"
 			" -w [off:hex]    patch hexpairs at given offset\n"
 			" -x              execute\n"
@@ -116,6 +117,7 @@ int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
+	const char *str = NULL;
 	char *bytes = NULL;
 	const char *contents = NULL;
 	const char *arch = R_SYS_ARCH;
@@ -139,7 +141,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-	while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:")) != -1) {
+	while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -226,6 +228,9 @@ int main(int argc, char **argv) {
 			}
 			}
 			break;
+		case 'S':
+			str = optarg;
+			break;
 		case 'o':
 			ofile = optarg;
 			break;
@@ -310,7 +315,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset) {
+	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
 		r_egg_free (egg);
 		return usage (0);
 	} else {
@@ -397,6 +402,14 @@ int main(int argc, char **argv) {
 			eprintf ("r_egg_compile: fail\n");
 			r_egg_free (egg);
 			return 1;
+		}
+	}
+
+	// append the provided string
+	if (str) {
+		int l = strlen (str);
+		if (l > 0) {
+			r_egg_raw (egg, (const ut8*)str, l);
 		}
 	}
 

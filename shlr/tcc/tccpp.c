@@ -361,7 +361,7 @@ addv:
 			return table_ident[v - TOK_IDENT]->str;
 		} else if (v >= SYM_FIRST_ANOM) {
 			/* special name for anonymous symbol */
-			sprintf (p, "L.%u", v - SYM_FIRST_ANOM);
+			sprintf (p, "%u", v - SYM_FIRST_ANOM);
 		} else {
 			/* should never happen */
 			return NULL;

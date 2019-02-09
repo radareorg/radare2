@@ -37,6 +37,7 @@ static const char *help_msg_f[] = {
 	"fla"," [glob]","automatically compute the size of all flags matching glob",
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
+	"fnj","","list flags displaying the real name (demangled) in JSON format",
 	"fo","","show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
@@ -338,6 +339,56 @@ static bool adjust_offset(RFlagItem *flag, void *user) {
 	st64 base = *(st64 *)user;
 	flag->offset += base;
 	return true;
+}
+
+static void print_space_stack(RFlag *f, int ordinal, const char *name, bool selected, PJ *pj, int mode) {
+	bool first = ordinal == 0;
+	switch (mode) {
+	case 'j': {
+		char *ename = r_str_escape (name);
+		if (!ename) {
+			return;
+		}
+
+		pj_o (pj);
+		pj_ki (pj, "ordinal", ordinal);
+		pj_ks (pj, "name", ename);
+		pj_kb (pj, "selected", selected);
+		pj_end (pj);
+		free (ename);
+		break;
+	}
+	case '*': {
+		const char *fmt = first? "fs %s\n": "fs+%s\n";
+		r_cons_printf (fmt, name);
+		break;
+	}
+	default:
+		r_cons_printf ("%-2d %s%s\n", ordinal, name, selected? " (selected)": "");
+		break;
+	}
+}
+
+static int flag_space_stack_list(RFlag *f, int mode) {
+	RListIter *iter;
+	char *space;
+	int i = 0;
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	r_list_foreach (f->spaces.spacestack, iter, space) {
+		print_space_stack (f, i++, space, false, pj, mode);
+	}
+	const char *cur_name = r_flag_space_cur_name (f);
+	print_space_stack (f, i++, cur_name, true, pj, mode);
+	if (mode == 'j') {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+	return i;
 }
 
 static int cmd_flag(void *data, const char *input) {
@@ -708,19 +759,20 @@ rep:
 			}
 			break;
 		case 's':
-			r_flag_space_stack_list (core->flags, input[2]);
+			flag_space_stack_list (core->flags, input[2]);
 			break;
 		case '-':
 			switch (input[2]) {
 			case '*':
 				r_flag_space_unset (core->flags, NULL);
 				break;
-			case '.':
-				{
-				const char *curfs = r_flag_space_cur (core->flags);
-				r_flag_space_unset (core->flags, curfs);
+			case '.': {
+				const RSpace *sp = r_flag_space_cur (core->flags);
+				if (sp) {
+					r_flag_space_unset (core->flags, sp->name);
 				}
 				break;
+			}
 			case 0:
 				r_flag_space_pop (core->flags);
 				break;
@@ -733,7 +785,7 @@ rep:
 		case '\0':
 		case '*':
 		case 'q':
-			r_flag_space_list (core->flags, input[1]);
+			spaces_list (&core->flags->spaces, input[1]);
 			break;
 		case ' ':
 			r_flag_space_set (core->flags, input+2);
@@ -746,21 +798,15 @@ rep:
 			}
 			f = r_flag_get_i (core->flags, off);
 			if (f) {
-				f->space = core->flags->space_idx;
+				f->space = r_flag_space_cur (core->flags);
 			} else {
 				eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
 			}
 			}
 			break;
-		default: {
-			int i, j = 0;
-			for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-				if (core->flags->spaces[i])
-					r_cons_printf ("%02d %c %s\n", j++,
-					(i == core->flags->space_idx)?'*':' ',
-					core->flags->spaces[i]);
-			}
-			} break;
+		default:
+			spaces_list (&core->flags->spaces, 0);
+			break;
 		}
 		break;
 	case 'g':
@@ -845,7 +891,7 @@ rep:
 		}
 		break;
 	case '\0':
-	case 'n': // "fn"
+	case 'n': // "fn" "fnj"
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
@@ -887,7 +933,6 @@ rep:
 			ut64 addr = core->offset;
 			char *arg = NULL;
 			RFlagItem *f = NULL;
-			bool space_strict = true;
 			bool strict_offset = false;
 			switch (input[1]) {
 			case '?':
@@ -900,7 +945,6 @@ rep:
 				addr = core->offset;
 				break;
 			case 'd':
-				space_strict = false;
 				arg = strchr (input, ' ');
 				if (arg) {
 					addr = r_num_math (core->num, arg + 1);
@@ -923,47 +967,46 @@ rep:
 				}
 				return 0;
 				}
-			case 'w':
-				{
+			case 'w': {
 				arg = strchr (input, ' ');
-				if (arg) {
-					arg++;
-					if (*arg) {
-						RFlag *f = core->flags;
-						RList *temp = r_flag_all_list (f);
-						ut64 loff = 0; 
-						ut64 uoff = 0;
-						ut64 curseek = core->offset;
-						char *lmatch = NULL , *umatch = NULL;
-						RFlagItem *flag;
-						RListIter *iter;
-						r_list_sort (temp, &cmpflag);
-						r_list_foreach (temp, iter, flag) {
-							if ((f->space_idx != -1) && (flag->space != f->space_idx)) {
-								continue;
-							}
-							if (strstr (flag->name , arg) != NULL) {
-								if (flag->offset < core->offset) {
-									loff = flag->offset;
-									lmatch = flag->name;							
-									continue;
-								}
-								uoff = flag->offset;
-								umatch = flag->name;
-								break;
-							}	
-						}		
-						char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
-						if (match) {
-							if (*match) {
-								r_cons_println (match);
-							}
-						}	
-						r_list_free (temp);
-					}	
+				if (!arg) {
+					return 0;
 				}
+				arg++;
+				if (!*arg) {
+					return 0;
+				}
+
+				RFlag *f = core->flags;
+				RList *temp = r_flag_all_list (f, true);
+				ut64 loff = 0;
+				ut64 uoff = 0;
+				ut64 curseek = core->offset;
+				char *lmatch = NULL , *umatch = NULL;
+				RFlagItem *flag;
+				RListIter *iter;
+				r_list_sort (temp, &cmpflag);
+				r_list_foreach (temp, iter, flag) {
+					if (strstr (flag->name , arg) != NULL) {
+						if (flag->offset < core->offset) {
+							loff = flag->offset;
+							lmatch = flag->name;
+							continue;
+						}
+						uoff = flag->offset;
+						umatch = flag->name;
+						break;
+					}
+				}
+				char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch ;
+				if (match) {
+					if (*match) {
+						r_cons_println (match);
+					}
+				}
+				r_list_free (temp);
 				return 0;
-				}	
+			}
 			default:
 				arg = strchr (input, ' ');
 				if (arg) {
@@ -971,9 +1014,7 @@ rep:
 				}
 				break;
 			}
-			core->flags->space_strict = space_strict;
 			f = r_flag_get_at (core->flags, addr, !strict_offset);
-			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
 					// if input contains 'j' print json

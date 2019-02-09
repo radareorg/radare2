@@ -185,11 +185,6 @@ while_end:
 		strncpy (buf, str, sizeof (buf) - 1);
 	}
 
-	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
-		grep->end = 1;
-		buf[len] = 0;
-	}
-
 	ptr = buf;
 	ptr2 = strchr (ptr, '[');
 	ptr3 = strchr (ptr, ']');
@@ -279,6 +274,13 @@ while_end:
 	if (end_ptr) {
 		*end_ptr = '\0';
 	}
+
+	len = strlen (buf) - 1;
+	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
+		grep->end = 1;
+		buf[len] = '\0';
+	}
+
 	free (grep->str);
 	if (*ptr) {
 		grep->str = (char *) strdup (ptr);
@@ -550,7 +552,7 @@ R_API void r_cons_grepbuf() {
 	while ((int) (size_t) (in - buf) < len) {
 		char *p = strchr (in, '\n');
 		if (!p) {
-			return;
+			break;
 		}
 		l = p - in;
 		if (l > 0) {
@@ -582,9 +584,9 @@ R_API void r_cons_grepbuf() {
 			if (ret > 0) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
-					int i;
-					for (i = 0; i < grep->nstrings; i++) {
-						if (cons->grep_highlight) {
+					if (cons->grep_highlight) {
+						int i;
+						for (i = 0; i < grep->nstrings; i++) {
 							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
 							if (str && newstr) {
 								if (grep->icase) {

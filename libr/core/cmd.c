@@ -920,11 +920,14 @@ static int cmd_interpret(void *data, const char *input) {
 		}
 		break;
 	case ' ': // ". "
-		if (!r_core_run_script (core, input + 1)) {
-			eprintf ("Cannot find script '%s'\n", input + 1);
-			core->num->value = 1;
-		} else {
-			core->num->value = 0;
+		{
+			const char *script_file = r_str_trim_ro (input + 1);
+			if (!r_core_run_script (core, script_file)) {
+				eprintf ("Cannot find script '%s'\n", script_file);
+				core->num->value = 1;
+			} else {
+				core->num->value = 0;
+			}
 		}
 		break;
 	case '!': // ".!"
@@ -2660,7 +2663,7 @@ escape_backtick:
 		bool is_arch_set = false;
 		char *tmpeval = NULL;
 		char *tmpasm = NULL;
-		int flgspc = -123;
+		bool flgspc_changed = false;
 		int tmpfd = -1;
 		int sz, len;
 		ut8 *buf;
@@ -2715,8 +2718,7 @@ repeat_arroba:
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			switch (ptr[0]) {
 			case 'F': // "@F:" // temporary flag space
-				flgspc = r_flag_space_get (core->flags, ptr + 2);
-				r_flag_space_set (core->flags, ptr + 2);
+				flgspc_changed = r_flag_space_push (core->flags, ptr + 2);
 				break;
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 				{
@@ -2999,8 +3001,8 @@ next_arroba:
 			r_core_cmd0 (core, tmpeval);
 			R_FREE (tmpeval);
 		}
-		if (flgspc != -123) {
-			r_flag_space_set_i (core->flags, flgspc);
+		if (flgspc_changed) {
+			r_flag_space_pop (core->flags);
 		}
 		*ptr = '@';
 		rc = ret;
@@ -3604,7 +3606,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 			str[i] = ch;
 			{
-				int flagspace = core->flags->space_idx;
+				const RSpace *flagspace = r_flag_space_cur (core->flags);
 				RList *match_flag_items = r_list_newf ((RListFree)r_flag_item_free);
 				if (!match_flag_items) {
 					break;
@@ -3639,7 +3641,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 
 				r_list_free (match_flag_items);
-				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
 				R_FREE (word);
 			}

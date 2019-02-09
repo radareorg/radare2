@@ -72,7 +72,7 @@ if true; then
 make mrproper
 cp -f ${PLGCFG} plugins.cfg
 ./configure --prefix=${PREFIX} --with-ostype=darwin --with-libr \
-	--without-fork --disable-debugger --with-compiler=ios-sdk \
+	--without-fork --without-libuv --disable-debugger --with-compiler=ios-sdk \
 	--target=arm-unknown-darwin || exit 1
 fi
 

@@ -606,7 +606,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	int fd, fdold, tmp;
+	int fd, fdold;
 
 	if (!file || *file == '\0') {
 		return false;
@@ -633,10 +633,9 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_str_write (fd, "# flags\n");
-		tmp = core->flags->space_idx;
-		core->flags->space_idx = -1;
+		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
-		core->flags->space_idx = tmp;
+		r_flag_space_pop (core->flags);
 		r_cons_flush ();
 	}
 	// Set file.path and file.lastpath to empty string to signal

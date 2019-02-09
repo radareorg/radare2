@@ -1375,6 +1375,13 @@ static int cb_io_unalloc(void *user, void *data) {
 	return true;
 }
 
+static int cb_io_unalloc_ch(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->print->io_unalloc_ch = *node->value ? node->value[0] : ' ';
+	return true;
+}
+
 static int cb_hex_header(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2680,6 +2687,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETPREF ("emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
+	SETPREF ("emu.lazy", "false", "Do not emulate all instructions with aae (optimization)");
 	SETPREF ("emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF ("emu.stroff", "false", "Always show offset when printing asm.emu strings");
@@ -3025,6 +3033,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
 	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
+	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Hexdump char if byte is unallocated");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");

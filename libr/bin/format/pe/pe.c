@@ -1250,8 +1250,6 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	return true;
 }
 
-
-
 static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord callbacks) {
 	PE_DWord paddr, haddr;
 	int count = 0;
@@ -2271,7 +2269,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			ut16 resourceEntryNameLength;
 			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&resourceEntryNameLength, sizeof (ut16));
 
-			resourceEntryName = calloc (resourceEntryNameLength, sizeof (ut8));
+			resourceEntryName = calloc (resourceEntryNameLength + 1, sizeof (ut8));
 			for(i = 0; i < 2 * resourceEntryNameLength; i += 2) { /* Convert Unicode to ASCII */
 				r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + i, resourceEntryName + (i/2), sizeof (ut8));
 			}
@@ -2284,10 +2282,10 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			if(resource_name != NULL && resourceEntryName != NULL) {
+			if (resource_name && resourceEntryName) {
 				/* We're about to recursively call this function with a new resource entry name
 				   and we haven't used resource_name, so free it. Only happens in weird PEs. */
-				free (resource_name);
+				R_FREE (resource_name);
 			}
 			_parse_resource_directory (bin, &identEntry,
 				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, (char *)resourceEntryName);
@@ -2745,7 +2743,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		exports[i].last = 1;
 	}
-	exp = parse_symbol_table (bin, exports, exports_sz - 1);
+	exp = parse_symbol_table (bin, exports, exports_sz - sizeof (struct r_bin_pe_export_t));
 	if (exp) {
 		exports = exp;
 	}
@@ -3360,7 +3358,6 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		return NULL;
 	}
 	for (i = 0, j = 0; i < bin->num_sections; i++) {
-		//if sz = 0 r_io_section_add will not add it so just skeep
 		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) {
 			continue;
 		}

@@ -57,8 +57,8 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!*name || !strcmp (name , "...")) {
 		return;
 	}
-	bool is_default = (!strncmp (v->name, "local_", 6)
-			|| !strncmp (v->name, "arg_", 4))? true: false;
+	bool is_default = (r_str_startswith (v->name, VARPREFIX)
+			|| r_str_startswith (v->name, ARGPREFIX))? true: false;
 	if (*name == '*') {
 		name++;
 	}
@@ -86,7 +86,13 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		// default or void type
 		return;
 	}
-	const char *tmp = strstr (var->type, "int");
+	const char *expand = var->type;
+	if (!strcmp(var->type, "uint32_t")) {
+		expand = "unsigned int";
+	} else if (!strcmp(var->type, "uint64_t")) {
+		expand = "unsigned long long";
+	}
+	const char *tmp = strstr (expand, "int");
 	bool is_default = tmp? true: false;
 	if (!is_default && strncmp (var->type, "void", 4)) {
 		// return since type is already propgated
@@ -119,6 +125,13 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		} else {   //  type => type *
 			r_strbuf_append (sb, " *");
 		}
+	}
+
+	char* tmp1 = r_strbuf_get (sb);
+	if (r_str_startswith (tmp1, "unsigned long long")) {
+		r_strbuf_set (sb, "uint64_t");
+	} else if (r_str_startswith (tmp1, "unsigned")) {
+		r_strbuf_set (sb, "uint32_t");
 	}
 	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
 	r_strbuf_free (sb);
@@ -369,8 +382,9 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
 						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
 						if (f && !strncmp (f->name, "str", 3)) {
-							types = parse_format (core, f->realname);
-							max += r_list_length (types);
+							if ((types = parse_format (core, f->realname))) {
+								max += r_list_length (types);
+							}
 							format = true;
 						}
 					}

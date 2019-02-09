@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,8 +8,6 @@
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	int ifd, ofd;
-	char asm_buf[R_ASM_BUFSIZE];
-	int len = 0;
 	if (a->syntax != R_ASM_SYNTAX_INTEL) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
 		return -1;
@@ -26,19 +24,20 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	len = snprintf (asm_buf, sizeof (asm_buf),
-			"[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
-	write (ifd, asm_buf, len);
+	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
+	if (asm_buf) {
+		write (ifd, asm_buf, strlen (asm_buf));
+		free (asm_buf);
+	}
 
 	close (ifd);
 
 	if (!r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
 		ut8 buf[512]; // TODO: remove limits
-		len = read (ofd, buf, sizeof (buf));
-		r_asm_op_set_buf (op, buf, len);
+		op->size = read (ofd, buf, sizeof (buf));
+		r_asm_op_set_buf (op, buf, op->size);
 	} else {
 		eprintf ("Error running 'nasm'\n");
-		len = 0;
 	}
 
 	close (ofd);
@@ -47,8 +46,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	free (ipath);
 	free (opath);
 
-	op->size = len;
-	return len;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_x86_nasm = {

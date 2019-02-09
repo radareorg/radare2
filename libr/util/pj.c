@@ -43,17 +43,12 @@ R_API char *pj_drain(PJ *pj) {
 		pj->sb = NULL;
 		free (pj);
 		return res;
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
 R_API const char *pj_string(PJ *j) {
-	if (j) {
-		return r_strbuf_get (j->sb);
-	} else {
-		return NULL;
-	}
+	return j? r_strbuf_get (j->sb): NULL;
 }
 
 static PJ *pj_begin(PJ *j, char type) {
@@ -103,65 +98,60 @@ R_API PJ *pj_end(PJ *j) {
 }
 
 R_API PJ *pj_k(PJ *j, const char *k) {
-	if (j) {
-		if (k) {
-			r_return_val_if_fail (j && k, NULL);
-			j->is_key = false;
-			pj_s (j, k);
-			pj_raw (j, ":");
-			j->is_first = false;
-			j->is_key = true;
-		}
+	if (j && k) {
+		r_return_val_if_fail (j && k, NULL);
+		j->is_key = false;
+		pj_s (j, k);
+		pj_raw (j, ":");
+		j->is_first = false;
+		j->is_key = true;
 	}
 	return j;
 }
 
 R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
-	if (j) {
-		if (k) {
-			pj_k (j, k);
-			pj_n (j, n);
-		}
+	if (j && k) {
+		pj_k (j, k);
+		pj_n (j, n);
 	}
 	return j;
 }
 
 R_API PJ *pj_kd(PJ *j, const char *k, double d) {
-	if (j) {
-		if (k) {
-			pj_k (j, k);
-			pj_d (j, d);
-		}
+	if (j && k) {
+		pj_k (j, k);
+		pj_d (j, d);
 	}
 	return j;
 }
 
+R_API PJ *pj_kf(PJ *j, const char *k, float d) {
+	if (j && k) {
+		pj_k (j, k);
+		pj_f (j, d);
+	}
+	return j;
+}
 R_API PJ *pj_ki(PJ *j, const char *k, int i) {
-	if (j) {
-		if (k) {
-			pj_k (j, k);
-			pj_i (j, i);
-		}
+	if (j && k) {
+		pj_k (j, k);
+		pj_i (j, i);
 	}
 	return j;
 }
 
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
-	if (j) {
-		if (v && *v) {
-			pj_k (j, k);
-			pj_s (j, v);
-		}
+	if (j && v && *v) {
+		pj_k (j, k);
+		pj_s (j, v);
 	}
 	return j;
 }
 
 R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
-	if (j) {
-		if (k) {
-			pj_k (j, k);
-			pj_b (j, v);
-		}
+	if (j && k) {
+		pj_k (j, k);
+		pj_b (j, v);
 	}
 	return j;
 }
@@ -175,25 +165,23 @@ R_API PJ *pj_b(PJ *j, bool v) {
 }
 
 R_API PJ *pj_s(PJ *j, const char *k) {
-	if (j) {
-		if (k) {
-			pj_comma (j);
-			pj_raw (j, "\"");
-			char *ek = r_str_escape_utf8_for_json (k, -1);
+	if (j && k) {
+		pj_comma (j);
+		pj_raw (j, "\"");
+		char *ek = r_str_escape_utf8_for_json (k, -1);
+		if (ek) {
 			pj_raw (j, ek);
 			free (ek);
-			pj_raw (j, "\"");
 		}
+		pj_raw (j, "\"");
 	}
 	return j;
 }
 
 R_API PJ *pj_j(PJ *j, const char *k) {
-	if (j) {
-		if (k && *k) {
-			pj_comma (j);
-			pj_raw (j, k);
-		}
+	if (j && k && *k) {
+		pj_comma (j);
+		pj_raw (j, k);
 	}
 	return j;
 }
@@ -202,6 +190,14 @@ R_API PJ *pj_n(PJ *j, ut64 n) {
 	if (j) {
 		pj_comma (j);
 		pj_raw (j, sdb_fmt ("%" PFMT64u, n));
+	}
+	return j;
+}
+
+R_API PJ *pj_f(PJ *j, float f) {
+	if (j) {
+		pj_comma (j);
+		pj_raw (j, sdb_fmt ("%f", f));
 	}
 	return j;
 }

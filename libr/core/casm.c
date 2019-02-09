@@ -62,7 +62,6 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 	return ret;
 }
 
-#define OPSZ 8
 // TODO: add support for byte-per-byte opcode search
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RCoreAsmHit *hit;
@@ -81,7 +80,10 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	if (!input || !*input) {
 		return NULL;
 	}
-	if (core->blocksize <= OPSZ) {
+
+	ut64 usrimm = r_num_math (core->num, input + 1);
+
+	if (core->blocksize < 8) {
 		eprintf ("error: block size too small\n");
 		return NULL;
 	}
@@ -121,7 +123,36 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
 			r_asm_set_pc (core->assembler, addr);
-			if (mode == 'e') {
+			if (mode == 'i') {
+				RAnalOp analop = {0};
+				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, 0) < 1) {
+					idx ++; // TODO: honor mininstrsz
+					continue;
+				}
+				if (analop.val == usrimm) {
+					if (!(hit = r_core_asm_hit_new ())) {
+						r_list_purge (hits);
+						R_FREE (hits);
+						goto beach;
+					}
+					hit->addr = addr;
+					hit->len = analop.size;  //  idx + len - tidx;
+					if (hit->len == -1) {
+						r_core_asm_hit_free (hit);
+						goto beach;
+					}
+					r_asm_disassemble (core->assembler, &op, buf + addrbytes * idx,
+					      core->blocksize - addrbytes * idx);
+					hit->code = r_str_newf (r_strbuf_get (&op.buf_asm));
+					idx = (matchcount)? tidx + 1: idx + 1;
+					matchcount = 0;
+					r_list_append (hits, hit);
+					continue;
+				}
+				r_anal_op_fini (&analop);
+				idx ++; // TODO: honor mininstrsz
+				continue;
+			} else if (mode == 'e') {
 				RAnalOp analop = {0};
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ANAL_OP_MASK_ESIL) < 1) {
 					idx ++; // TODO: honor mininstrsz
@@ -142,7 +173,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				//opsz = op.size;
 				opst = strdup (r_strbuf_get (&op.buf_asm));
 			}
-			matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
+			if (opst) {
+				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
+			}
 			if (matches && tokens[matchcount]) {
 				if (!regexp) {
 					matches = strstr (opst, tokens[matchcount]) != NULL;
@@ -176,7 +209,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						r_core_asm_hit_free (hit);
 						goto beach;
 					}
-					code[strlen (code)-2] = 0;
+					code[strlen (code) - 2] = 0;
 					hit->code = strdup (code);
 					r_list_append (hits, hit);
 					R_FREE (code);

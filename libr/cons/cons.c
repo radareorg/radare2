@@ -132,7 +132,7 @@ static void break_signal(int sig) {
 	r_cons_context_break (&r_cons_context_default);
 }
 
-static inline void r_cons_write(const char *buf, int len) {
+static inline void __cons_write(const char *buf, int len) {
 #if __WINDOWS__ && !__CYGWIN__
 	if (I.ansicon) {
 		(void) write (I.fdout, buf, len);
@@ -149,6 +149,17 @@ static inline void r_cons_write(const char *buf, int len) {
 	}
 	(void) write (I.fdout, buf, len);
 #endif
+}
+
+static inline void r_cons_write(const char *obuf, int olen) {
+	const unsigned int bucket = 64 * 1024;
+	unsigned int i;
+	for (i = 0; (i + bucket) < olen; i += bucket) {
+		__cons_write (obuf + i, bucket);
+	}
+	if (i < olen) {
+		__cons_write (obuf + i, olen - i);
+	}
 }
 
 R_API RColor r_cons_color_random(ut8 alpha) {

@@ -25,7 +25,8 @@ static const char *help_msg_slash[] = {
 	"/b", "", "search backwards, command modifier, followed by other command",
 	"/B", "", "search recognized RBin headers",
 	"/c", " jmp [esp]", "search for asm code matching the given string",
-	"/ce", " rsp,rbp", "search for esil expressions matching",
+	"/ce", "[j] rsp,rbp", "search for esil expressions matching",
+	"/ci", "[j] 0x300", "find all the instructions using that immediate",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -69,8 +70,9 @@ static const char *help_msg_slash[] = {
 static const char *help_msg_slash_c[] = {
 	"Usage:", "/c [inst]", " Search for code",
 	"/c ", "instr", "search for instruction 'instr'",
-	"/ce ", "esil", "search for esil expressions matching substring",
 	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
+	"/ce ", "esil", "search for esil expressions matching substring",
+	"/ci", "[j] 0x300", "find all the instructions using that immediate",
 	"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 	"/c/a ", "instr", "search for every byte instruction that matches regexp 'instr'",
 	"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
@@ -2140,18 +2142,23 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (regexp && input[2] == 'j') {
 		json = true;
 	}
-	if (!end_cmd) {
-		outmode = input[1];
-	} else {
+	if (input[1] && input[2] == 'j') {
+		json = true;
+	}
+	if (end_cmd) {
 		outmode = *(end_cmd - 1);
+	} else {
+		outmode = input[1];
 	}
 	if (outmode != 'j') {
 		json = 0;
 	}
+	if (input[1] == 'j') {
+		json = true;
+	}
 
 	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
 	filter = (int) r_config_get_i (core->config, "asm.filter");
-
 	if (json) {
 		r_cons_print ("[");
 	}
@@ -3606,6 +3613,8 @@ reread:
 		dosearch = 0;
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_c);
+		} else if (input[1] == 'i') { // "/ci"
+			do_asm_search (core, &param, input + 1, 'i', search_itv);
 		} else if (input[1] == 'e') { // "/ce"
 			do_asm_search (core, &param, input + 1, 'e', search_itv);
 		} else { // "/c"

@@ -25,34 +25,40 @@ R_API void r_anal_unset_limits(RAnal *anal) {
 	R_FREE (anal->limit);
 }
 
-static void meta_unset_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	r_meta_space_unset_for (anal, idx);
+static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, meta_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	r_meta_space_unset_for (anal, se->data.unset.space);
 }
 
-static int meta_count_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	return r_meta_space_count_for (anal, idx);
+static void meta_count_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, meta_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	se->res = r_meta_space_count_for (anal, se->data.count.space);
 }
 
-static void zign_unset_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	r_sign_space_unset_for (anal, idx);
+static void zign_unset_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, zign_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	r_sign_space_unset_for (anal, se->data.unset.space);
 }
 
-static int zign_count_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	return r_sign_space_count_for (anal, idx);
+static void zign_count_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, zign_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	se->res = r_sign_space_count_for (anal, se->data.count.space);
 }
 
-static void zign_rename_for(void *user, int idx, const char *oname, const char *nname) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	r_sign_space_rename_for (anal, idx, oname, nname);
+static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, zign_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	r_sign_space_rename_for (anal, se->data.rename.space,
+		se->data.rename.oldname, se->data.rename.newname);
 }
 
 //not used
@@ -160,8 +166,14 @@ R_API RAnal *r_anal_new() {
 	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
-	r_space_new (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, NULL, anal);
-	r_space_new (&anal->zign_spaces, "zs", zign_unset_for, zign_count_for, zign_rename_for, anal);
+	r_spaces_init (&anal->meta_spaces, "CS");
+	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
+	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
+
+	r_spaces_init (&anal->zign_spaces, "zs");
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_UNSET, zign_unset_for, NULL);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for, NULL);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
@@ -217,8 +229,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
-	r_space_free (&a->meta_spaces);
-	r_space_free (&a->zign_spaces);
+	r_spaces_fini (&a->meta_spaces);
+	r_spaces_fini (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
 	r_syscall_free (a->syscall);

@@ -7,6 +7,7 @@
 #if __UNIX__
 #include <signal.h>
 #endif
+#include "i/private.h"
 
 #define DB core->sdb
 
@@ -1170,20 +1171,22 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 		return;
 	}
 	int length = strlen (msg);
-	RSpaces zs = core->anal->zign_spaces;
-	int j, i = 0;
-	for (j = 0; j < R_SPACES_MAX; j++) {
-		if (zs.spaces[j]) {
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
-			if (!strncmp (msg, zs.spaces[j], length)) {
-				if (i + 1 < TMP_ARGV_SZ) {
-					tmp_argv[i++] = zs.spaces[j];
-				}
+	RSpaces *zs = &core->anal->zign_spaces;
+	RSpace *s;
+	RSpaceIter it;
+	int i = 0;
+
+	r_spaces_foreach (zs, it, s) {
+		if (i == TMP_ARGV_SZ - 1) {
+			break;
+		}
+		if (!strncmp (msg, s->name, length)) {
+			if (i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = s->name;
 			}
 		}
 	}
+
 	if (strlen (msg) == 0 && i + 1 < TMP_ARGV_SZ) {
 		tmp_argv[i++] = "*";
 	}
@@ -1199,23 +1202,21 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	}
 	int length = strlen (msg);
 	RFlag *flag = core->flags;
-	int j, i = 0;
-	for (j = 0; j < R_FLAG_SPACES_MAX - 1; j++) {
-		if (flag->spaces[j] && flag->spaces[j][0]) {
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
-			if (!strncmp (msg, flag->spaces[j], length)) {
-				if (i + 1 < TMP_ARGV_SZ) {
-					tmp_argv[i++] = flag->spaces[j];
-				}
+	int i = 0;
+	RSpaceIter it;
+	RSpace *s;
+	r_flag_space_foreach (flag, it, s) {
+		if (i == TMP_ARGV_SZ - 1) {
+			break;
+		}
+		if (!strncmp (msg, s->name, length)) {
+			if (i + 1 < TMP_ARGV_SZ) {
+				tmp_argv[i++] = s->name;
 			}
 		}
 	}
-	if (flag->spaces[j] && !strncmp (msg, flag->spaces[j], strlen (msg))) {
-		if (i + 1 < TMP_ARGV_SZ) {
-			tmp_argv[i++] = "*";
-		}
+	if (i + 1 < TMP_ARGV_SZ) {
+		tmp_argv[i++] = "*";
 	}
 	tmp_argv[i] = NULL;
 	line->completion.argc = i;
@@ -2205,7 +2206,43 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
 
-static void cb_event_handler(REvent *ev, REventType event_type, void *data) {
+R_IPI void spaces_list(RSpaces *sp, int mode) {
+	RSpaceIter it;
+	RSpace *s;
+	bool first = true;
+	const RSpace *cur = r_spaces_current (sp);
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	r_spaces_foreach (sp, it, s) {
+		int count = r_spaces_count (sp, s->name);
+		if (mode == 'j') {
+			pj_o (pj);
+			pj_ks (pj, "name", s->name);
+			pj_ki (pj, "count", count);
+			pj_kb (pj, "selected", cur == s);
+			pj_end (pj);
+		} else if (mode == '*') {
+			r_cons_printf ("%s %s\n", sp->name, s->name);
+		} else {
+			r_cons_printf ("%5d %c %s\n", count, (!cur || cur == s)? '*': '.',
+				s->name);
+		}
+		first = false;
+	}
+	if (mode == '*' && r_spaces_current (sp)) {
+		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));
+	}
+	if (mode == 'j') {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+}
+
+static void cb_event_handler(REvent *ev, int event_type, void *user, void *data) {
 	RCore *core = (RCore *)ev->user;
 	if (!core->log_events) {
 		return;
@@ -2259,7 +2296,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
-	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler);
+	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
 	core->lock = r_th_lock_new (true);
 	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->cmd_depth = core->max_cmd_depth;
@@ -2308,7 +2345,6 @@ R_API bool r_core_init(RCore *core) {
 	core->log = r_core_log_new ();
 	core->times = R_NEW0 (RCoreTimes);
 	core->vmode = false;
-	core->section = NULL;
 	core->oobi = NULL;
 	core->oobi_len = 0;
 	core->printidx = 0;
@@ -2362,7 +2398,6 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
-	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
@@ -2514,7 +2549,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
 	c->anal = r_anal_free (c->anal);
-	c->assembler = r_asm_free (c->assembler);
+	r_asm_free (c->assembler);
+	c->assembler = NULL;
 	c->print = r_print_free (c->print);
 	c->bin = r_bin_free (c->bin); // XXX segfaults rabin2 -c
 	c->lang = r_lang_free (c->lang); // XXX segfaults

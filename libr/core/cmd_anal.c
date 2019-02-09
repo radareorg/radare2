@@ -42,9 +42,11 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
+	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
+	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
@@ -116,6 +118,7 @@ static const char *help_msg_ae[] = {
 	"ae?", "", "show this help",
 	"ae??", "", "show ESIL help",
 	"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
+	"aeC", "[arg0 arg1..] @ addr", "appcall in esil",
 	"aec", "[?]", "continue until ^C",
 	"aecs", "", "continue until syscall",
 	"aecc", "", "continue until call",
@@ -225,6 +228,12 @@ static const char *help_msg_aec[] = {
 	"aecc", "", "Continue until call",
 	"aecu", "[addr]", "Continue until address",
 	"aecue", "[addr]", "Continue until esil expression",
+	NULL
+};
+
+static const char *help_msg_aeC[] = {
+	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
+	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
 	NULL
 };
 
@@ -4249,9 +4258,8 @@ static void showmem_json (RList *list, PJ *pj) {
 	if (!r_list_empty (list)) {
 		RListIter *iter;
 		AeaMemItem *item;
-
 		r_list_foreach (list, iter, item) {
-				pj_n (pj, item->addr);
+			pj_n (pj, item->addr);
 		}
 	}
 	
@@ -4557,6 +4565,30 @@ static void r_anal_aefa (RCore *core, const char *arg) {
 #endif
 }
 
+static void __core_anal_appcall(RCore *core, const char *input) {
+//	r_reg_arena_push (core->dbg->reg);
+	RListIter *iter;
+	char *arg;
+	char *inp = strdup (input);
+	RList *args = r_str_split_list (inp, " ");
+	int i = 0;
+	r_list_foreach (args, iter, arg) {
+		const char *alias = sdb_fmt ("A%d", i);
+		r_reg_setv (core->anal->reg, alias, r_num_math (core->num, arg));
+		i++;
+	}
+	ut64 sp = r_reg_getv (core->anal->reg, "SP");
+	r_reg_setv (core->anal->reg, "SP", 0);
+
+	r_reg_setv (core->anal->reg, "PC", core->offset);
+	r_core_cmd0 (core, "aesu 0");
+
+	r_reg_setv (core->anal->reg, "SP", sp);
+	free (inp);
+
+//	r_reg_arena_pop (core->dbg->reg);
+}
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -4590,8 +4622,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_pin_list (core->anal);
 			break;
 		case '-':
-			if (input[2])
+			if (input[2]) {
 				addr = r_num_math (core->num, input + 2);
+			}
 			r_anal_pin_unset (core->anal, addr);
 			break;
 		case ' ':
@@ -4617,9 +4650,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case ' ':
 		//r_anal_esil_eval (core->anal, input+1);
-		if (!esil) {
-			if (!(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize)))
-				return;
+		if (!esil && !(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+			return;
 		}
 		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
@@ -4702,6 +4734,13 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_esil_step (core, until_addr, until_expr, NULL);
 			r_core_cmd0 (core, ".ar*");
 			break;
+		}
+		break;
+	case 'C': // "aeC"
+		if (input[1] == '?') { // "aec?"
+			r_core_cmd_help (core, help_msg_aeC);
+		} else {
+			__core_anal_appcall (core, r_str_trim_ro (input + 1));
 		}
 		break;
 	case 'c': // "aec"
@@ -5954,11 +5993,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						} else {
 							pj_k (pj, "name");
 							if (fi->offset != ref->addr) {
-								char *name_ref = strdup (fi->name);
-								strcat (name_ref, "+");
-								char fi_offset[32]; 
-								sprintf (fi_offset, "%d", (int)(ref->addr - fi->offset));
-								strcat (name_ref, fi_offset);
+								int delta = (int)(ref->addr - fi->offset);
+								char *name_ref = r_str_newf ("%s+%d", fi->name, delta);
 								pj_s (pj, name_ref);
 								free (name_ref);
 							} else {
@@ -7549,6 +7585,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
+	case 'F': // "aaF"
+		r_core_anal_inflags (core, input + 1);
+		break;
 	case 'n': // "aan"
 		switch (input[1]) {
 		case 'g': // "aang"
@@ -7728,6 +7767,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	}
 	case 'T': // "aaT"
 		cmd_anal_aftertraps (core, input + 1);
+		break;
+	case 'o': // "aao"
+		cmd_anal_objc (core, input + 1);
 		break;
 	case 'e': // "aae"
 		if (input[1]) {

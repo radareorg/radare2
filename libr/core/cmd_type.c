@@ -267,8 +267,21 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	}
 }
 
+static Sdb *TDB_ = NULL; // HACK
+
 static int stdifstruct(void *user, const char *k, const char *v) {
-	return !strncmp (v, "struct", strlen ("struct") + 1);
+	r_return_val_if_fail (TDB_, false);
+	if (!strcmp (v, "struct")) {
+		return true;
+	}
+	if (!strcmp (v, "typedef")) {
+		const char *typedef_key = sdb_fmt ("typedef.%s", k);
+		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
+		if (type && r_str_startswith (type, "struct ")) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static int printkey_cb(void *user, const char *k, const char *v) {
@@ -655,6 +668,7 @@ static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
 	char *res;
+	TDB_ = TDB; // HACK
 
 	switch (input[0]) {
 	case 'n': // "tn"
@@ -1298,11 +1312,12 @@ static int cmd_type(void *data, const char *input) {
 		}
 		free (tmp);
 	} break;
-	case '-':
+	case '-': // "t-"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_t_minus);
 		} else if (input[1] == '*') {
 			sdb_reset (TDB);
+			r_parse_reset ();
 		} else {
 			const char *name = input + 1;
 			while (IS_WHITESPACE (*name)) name++;

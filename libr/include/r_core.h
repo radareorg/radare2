@@ -233,7 +233,6 @@ typedef struct r_core_t {
 	RDebug *dbg;
 	RFlag *flags;
 	RSearch *search;
-	RIOSection *section;
 	RFS *fs;
 	REgg *egg;
 	RCoreLog *log;
@@ -400,6 +399,8 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
+R_API void r_core_anal_inflags (RCore *core, const char *glob);
+R_API int cmd_anal_objc (RCore *core, const char *input);
 R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 
@@ -638,6 +639,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 #define R_CORE_BIN_ACC_INITFINI 0x200000
 #define R_CORE_BIN_ACC_SEGMENTS 0x400000
 #define R_CORE_BIN_ACC_SOURCE 0x800000
+#define R_CORE_BIN_ACC_HASHES 0x10000000
 #define R_CORE_BIN_ACC_ALL	0x504FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001

@@ -1893,43 +1893,43 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
-		case 'z':
+		case 'z': // "vbz"
 			if (r_core_visual_view_zigns (core)) {
 				return;
 			}
 			break;
-		case 'g':
+		case 'g': // "vbg"
 			if (r_core_visual_view_graph (core)) {
 				return;
 			}
 			break;
-		case 'r':
+		case 'r': // "vbr"
 			r_core_visual_view_rop (core);
 			break;
-		case 'f':
+		case 'f': // "vbf"
 			r_core_visual_trackflags (core);
 			break;
-		case 'F':
+		case 'F': // "vbF"
 			r_core_visual_anal (core, NULL);
 			// r_core_cmd0 (core, "s $(afl~...)");
 			break;
-		case 'v':
+		case 'v': // "vbv"
 			r_core_visual_anal (core, "v");
 			break;
-		case 'e':
+		case 'e': // "vbe"
 			r_core_visual_config (core);
 			break;
-		case 'c':
+		case 'c': // "vbc"
 			r_core_visual_classes (core);
 			break;
-		case 'C':
+		case 'C': // "vbC"
 			r_core_visual_comments (core);
 			//r_core_cmd0 (core, "s $(CC~...)");
 			break;
-		case 't':
+		case 't': // "vbt"
 			r_core_visual_types (core);
 			break;
-		case 'T':
+		case 'T': // "vbT"
 			r_core_cmd0 (core, "eco $(eco~...)");
 			break;
 		case 'l': // previously VT
@@ -3512,24 +3512,15 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	filename = desc? desc->name: "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
-#if 1
 		/* TODO: we need a helper into r_flags to do that */
-		bool oss = core->flags->space_strict;
-		int osi = core->flags->space_idx;
 		RFlagItem *f = NULL;
-		core->flags->space_strict = true;
-		core->anal->flb.set_fs (core->flags, "symbols");
-		if (core->flags->space_idx != -1) {
+		if (core->anal->flb.push_fs (core->flags, "symbols")) {
 			f = core->anal->flb.get_at (core->flags, addr, showDelta);
+			core->anal->flb.pop_fs (core->flags);
 		}
-		core->flags->space_strict = oss;
-		core->flags->space_idx = osi;
 		if (!f) {
 			f = r_flag_get_at (core->flags, addr, showDelta);
 		}
-#else
-		RFlagItem *f = r_flag_get_at (core->flags, addr, false);
-#endif
 		if (f) {
 			if (f->offset == addr || !f->offset) {
 				snprintf (pos, sizeof (pos), "@ %s", f->name);

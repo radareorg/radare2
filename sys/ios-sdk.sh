@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # You can modify these variables
 PREFIX="/usr"
@@ -8,7 +8,7 @@ USE_SIMULATOR=0
 SIMULATOR_ARCHS="x86_64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=1
-CFLAGS="-O2"
+CFLAGS="-O2 -miphoneos-version-min=10.0"
 DOSH=0
 ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="armv7+arm64".
 MERGE_LIBS=1 # Will merge libs if you build for arm and simulator 
@@ -21,6 +21,9 @@ export LD="xcrun --sdk iphoneos ld"
 export IOSVER=9.0
 export IOSINC=`pwd`/sys/ios-include
 export USE_IOS_STATIC=0
+
+echo "If xcrun --sdk iphoneos cant find the profile use this line:"
+echo " sudo xcode-select -switch /Applications/Xcode.app"
 
 PLUGINS_CFG=plugins.ios-store.cfg
 #PLUGINS_CFG=plugins.ios.cfg
@@ -41,7 +44,7 @@ iosConfigure() {
 
 iosClean() {
 	make clean
-	rm -rf libr/.libr libr/libr.a libr/libr.dylib
+	rm -rf libr/.libr libr/.libr2 libr/libr.a libr/libr.dylib shlr/libr_shlr.a
 }
 
 iosBuild() {
@@ -237,11 +240,12 @@ if [ "${USE_SIMULATOR}" = 1 ]; then
 fi
 
 # check if arm archs were selected and if so build radare2 for them
+# XXX this is a bashism
 if [ "${#ARCHS}" -gt 0 ]; then
 	iosClean
 	iosConfigure
 	if [ "$?" = 0 ]; then
-		export CPU=$ARCHS
+		export CPU="$ARCHS"
 		export SDK=iphoneos
 		echo "Building for $CPU"
 		sleep 1

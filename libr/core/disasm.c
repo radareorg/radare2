@@ -160,7 +160,7 @@ typedef struct {
 	RStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
-	int flagspace_ports;
+	RSpace *flagspace_ports;
 	int show_flag_in_bytes;
 	int lbytes;
 	int show_comment_right;
@@ -985,18 +985,18 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = strdup (ds->hint->opcode);
 		}
 		if (ds->filter) {
-			int ofs = core->parser->flagspace;
-			int fs = ds->flagspace_ports;
+			RSpace *ofs = core->parser->flagspace;
+			RSpace *fs = ds->flagspace_ports;
 			if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
-				core->parser->notin_flagspace = -1;
+				core->parser->notin_flagspace = NULL;
 				core->parser->flagspace = fs;
 			} else {
-				if (fs != -1) {
+				if (fs) {
 					core->parser->notin_flagspace = fs;
 					core->parser->flagspace = fs;
 				} else {
-					core->parser->notin_flagspace = -1;
-					core->parser->flagspace = -1;
+					core->parser->notin_flagspace = NULL;
+					core->parser->flagspace = NULL;
 				}
 			}
 			if (ds->analop.refptr) {
@@ -2693,7 +2693,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 			if (!metas) {
 				continue;
 			}
-			if (!r_meta_deserialize_val (mi, *infos, ds->at, metas)) {
+			if (!r_meta_deserialize_val (core->anal, mi, *infos, ds->at, metas)) {
 				continue;
 			}
 			// TODO: implement ranged meta find (if not at the begging of function..
@@ -3351,7 +3351,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 
 // align for comment
 static void ds_align_comment(RDisasmState *ds) {
-	if (!ds->show_comment_right_default) { 
+	if (!ds->show_comment_right_default) {
 		return;
 	}
 	const int cmtcol = ds->cmtcol - 1;
@@ -3894,10 +3894,13 @@ static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
 }
 
 static void ds_print_relocs(RDisasmState *ds) {
+	char *demname = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
 		return;
 	}
 	RCore *core = ds->core;
+	const char *lang = r_config_get (core->config, "bin.lang");
+	bool demangle = r_config_get_i (core->config, "asm.demangle");
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
@@ -3908,14 +3911,21 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int len = ds->cmtcol - cells;
 		r_cons_memset (' ', len);
 		if (rel->import) {
-			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
+			if (demangle) {
+				demname = r_bin_demangle (core->bin->cur, lang, rel->import->name, rel->vaddr);
+			}
+			r_cons_printf ("; RELOC %d %s", rel->type, demname ? demname : rel->import->name);
 		} else if (rel->symbol) {
+			if (demangle) {
+				demname = r_bin_demangle (core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr);
+			}
 			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x " + 0x%" PFMT64x,
-					rel->type, rel->symbol->name,
+					rel->type, demname ? demname : rel->symbol->name,
 					rel->symbol->vaddr, rel->addend);
 		} else {
 			r_cons_printf ("; RELOC %d ", rel->type);
 		}
+		free (demname);
 	}
 }
 
@@ -5352,18 +5362,18 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				}
 			} else if (ds->filter) {
 				char *asm_str;
-				int ofs = core->parser->flagspace;
-				int fs = ds->flagspace_ports;
+				RSpace *ofs = core->parser->flagspace;
+				RSpace *fs = ds->flagspace_ports;
 				if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
-					core->parser->notin_flagspace = -1;
+					core->parser->notin_flagspace = NULL;
 					core->parser->flagspace = fs;
 				} else {
-					if (fs != -1) {
+					if (fs) {
 						core->parser->notin_flagspace = fs;
 						core->parser->flagspace = fs;
 					} else {
-						core->parser->notin_flagspace = -1;
-						core->parser->flagspace = -1;
+						core->parser->notin_flagspace = NULL;
+						core->parser->flagspace = NULL;
 					}
 				}
 				core->parser->hint = ds->hint;
@@ -5626,6 +5636,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		r_cons_printf (",\"family\":\"%s\"",
 				r_anal_op_family_to_string (ds->analop.family));
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (ds->analop.type));
+		// indicate a relocated address
+		RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+		// reloc is true if address in reloc table
+		r_cons_printf (",\"reloc\":%s", rel ? r_str_bool(true) : r_str_bool (false));
 		// wanted the numerical values of the type information
 		r_cons_printf (",\"type_num\":%"PFMT64d, ds->analop.type);
 		r_cons_printf (",\"type2_num\":%"PFMT64d, ds->analop.type2);

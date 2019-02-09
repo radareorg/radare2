@@ -47,7 +47,7 @@ typedef struct r_anal_meta_item_t {
 	int type;
 	int subtype;
 	char *str;
-	int space;
+	const RSpace *space;
 } RAnalMetaItem;
 
 typedef struct {
@@ -751,6 +751,9 @@ typedef struct r_anal_var_access_t {
 #define R_ANAL_VAR_KIND_REG 'r'
 #define R_ANAL_VAR_KIND_BPV 'b'
 #define R_ANAL_VAR_KIND_SPV 's'
+
+#define VARPREFIX "var"
+#define ARGPREFIX "arg"
 
 // generic for args and locals
 typedef struct r_anal_var_t {
@@ -1612,8 +1615,8 @@ R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
 R_API void r_meta_free(RAnal *m);
-R_API void r_meta_space_unset_for(RAnal *a, int type);
-R_API int r_meta_space_count_for(RAnal *a, int space_idx);
+R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
+R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
@@ -1636,7 +1639,7 @@ R_API int r_meta_list_cb(RAnal *m, int type, int rad, SdbForeachCallback cb, voi
 R_API void r_meta_list_offset(RAnal *m, ut64 addr, char input);
 R_API void r_meta_item_free(void *_item);
 R_API RAnalMetaItem *r_meta_item_new(int type);
-R_API bool r_meta_deserialize_val(RAnalMetaItem *it, int type, ut64 from, const char *v);
+R_API bool r_meta_deserialize_val(RAnal *a, RAnalMetaItem *it, int type, ut64 from, const char *v);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full);
 
 /* hints */
@@ -1733,9 +1736,9 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
 
 /* zign spaces */
-R_API int r_sign_space_count_for(RAnal *a, int idx);
-R_API void r_sign_space_unset_for(RAnal *a, int idx);
-R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname);
+R_API int r_sign_space_count_for(RAnal *a, const RSpace *space);
+R_API void r_sign_space_unset_for(RAnal *a, const RSpace *space);
+R_API void r_sign_space_rename_for(RAnal *a, const RSpace *space, const char *oname, const char *nname);
 
 /* vtables */
 typedef struct {

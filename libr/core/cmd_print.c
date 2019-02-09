@@ -794,7 +794,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
-static char get_string_type(const ut8 *buf, ut64 len){
+static char get_string_type(const ut8 *buf, ut64 len) {
 	ut64 needle = 0;
 	int rc, i;
 	char str_type = 0;
@@ -869,7 +869,7 @@ static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	r_cons_printf ("size (of block):  %d  0x%x\n", bsz, bsz);
 }
 
-R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
+R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff) {
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
 	// XXX - this needs to be done here, because
@@ -1762,7 +1762,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 }
 
 struct count_pz_t {
-	int flagspace;
+	RSpace *flagspace;
 	ut64 addr;
 	ut64 size;
 	int *ret;
@@ -1822,8 +1822,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 		}
 		break;
 	case 's': // "pzs"
-		j = r_flag_space_get (core->flags, "strings");
-		u.flagspace = j;
+		u.flagspace = r_flag_space_get (core->flags, "strings");
 		u.addr = addr;
 		u.size = size;
 		u.ret = &ret;
@@ -2668,6 +2667,11 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	int w = (input[0] == ' ')
 		? (int)r_num_math (core->num, input + 1)
 		: (int)(core->print->cols * 2.7);
+
+	if (w == 0) {
+		r_core_cmd_help (core, help_msg_p_minus);
+		return 0;
+	}
 
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
@@ -4493,24 +4497,11 @@ static int cmd_print(void *data, const char *input) {
 					r_core_cmdf (core, "pdfj%s", input[3]);
 				} else if (input[2] == 'c') { // "pifc"
 
-				RListIter *iter;
-				RAnalRef *refi;
-				RList *refs = NULL;
-				PJ *pj = NULL;
+					RListIter *iter;
+					RAnalRef *refi;
+					RList *refs = NULL;
+					PJ *pj = NULL;
 
-				// get function in current offset
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-
-				// validate that a function was found in the given address
-				if (!f) {
-					break;
-				}
-				// get all the calls of the function
-				refs = r_core_anal_fcn_get_calls (core, f);
-
-				// sanity check
-				if (!r_list_empty (refs)) {
 					// check for bounds
 					if (input[3] !=0) {
 						if (input[3] == 'j') { // "pifcj"
@@ -4518,65 +4509,83 @@ static int cmd_print(void *data, const char *input) {
 							pj_a (pj);
 						}
 					}
-
-					// store current configurations
-					RConfigHold *hc = r_config_hold_new (core->config);
-					r_config_save_num (hc, "asm.offset", NULL);
-					r_config_save_num (hc, "asm.comments", NULL);
-					r_config_save_num (hc, "asm.tabs", NULL);
-					r_config_save_num (hc, "asm.bytes", NULL);
-					r_config_save_num (hc, "emu.str", NULL);
-
-
-					// temporarily replace configurations
-					r_config_set_i (core->config, "asm.offset", false);
-					r_config_set_i (core->config, "asm.comments", false);
-					r_config_set_i (core->config, "asm.tabs", 0);
-					r_config_set_i (core->config, "asm.bytes", false);
-					r_config_set_i (core->config, "emu.str", false);
-
-					// iterate over all call references
-					r_list_foreach (refs, iter, refi) {
+					// get function in current offset
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+					
+					// validate that a function was found in the given address
+					if (!f) {
+						// print empty json object
 						if (pj) {
-							RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
-							char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
-							pj_o (pj);
-							pj_ks (pj, "dest", dst);
-							pj_kn (pj, "addr", refi->addr);
-							pj_kn (pj, "at", refi->at);
 							pj_end (pj);
-						} else {
-							char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
-							r_cons_printf ("%s", s);
+							r_cons_println (pj_string(pj));
+							pj_free (pj);
 						}
+						break;
 					}
+					// get all the calls of the function
+					refs = r_core_anal_fcn_get_calls (core, f);
 
-					// restore saved configuration
-					r_config_restore (hc);
-					r_config_hold_free (hc);
+					// sanity check
+					if (!r_list_empty (refs)) {
 
+						// store current configurations
+						RConfigHold *hc = r_config_hold_new (core->config);
+						r_config_save_num (hc, "asm.offset", NULL);
+						r_config_save_num (hc, "asm.comments", NULL);
+						r_config_save_num (hc, "asm.tabs", NULL);
+						r_config_save_num (hc, "asm.bytes", NULL);
+						r_config_save_num (hc, "emu.str", NULL);
+
+
+						// temporarily replace configurations
+						r_config_set_i (core->config, "asm.offset", false);
+						r_config_set_i (core->config, "asm.comments", false);
+						r_config_set_i (core->config, "asm.tabs", 0);
+						r_config_set_i (core->config, "asm.bytes", false);
+						r_config_set_i (core->config, "emu.str", false);
+
+						// iterate over all call references
+						r_list_foreach (refs, iter, refi) {
+							if (pj) {
+								RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+								char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+								pj_o (pj);
+								pj_ks (pj, "dest", dst);
+								pj_kn (pj, "addr", refi->addr);
+								pj_kn (pj, "at", refi->at);
+								pj_end (pj);
+							} else {
+								char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
+								r_cons_printf ("%s", s);
+							}
+						}
+
+						// restore saved configuration
+						r_config_restore (hc);
+						r_config_hold_free (hc);
+					}
 					// print json object
 					if (pj) {
 						pj_end (pj);
-						r_cons_printf ("%s\n", pj_string (pj));
+						r_cons_println (pj_string (pj));
 						pj_free (pj);
 					}
+				} else if (l != 0) {
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+					if (f) {
+						ut32 bsz = core->blocksize;
+						// int fsz = r_anal_fcn_realsize (f);
+						int fsz = r_anal_fcn_size (f); // we want max-min here
+						r_core_block_size (core, fsz);
+						r_core_print_disasm_instructions (core, fsz, 0);
+						r_core_block_size (core, bsz);
+					} else {
+						r_core_print_disasm_instructions (core,
+							core->blocksize, l);
+					}
 				}
-			} else if (l != 0) {
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-				if (f) {
-					ut32 bsz = core->blocksize;
-					// int fsz = r_anal_fcn_realsize (f);
-					int fsz = r_anal_fcn_size (f); // we want max-min here
-					r_core_block_size (core, fsz);
-					r_core_print_disasm_instructions (core, fsz, 0);
-					r_core_block_size (core, bsz);
-				} else {
-					r_core_print_disasm_instructions (core,
-						core->blocksize, l);
-				}
-			}
 			break;
 		case 'r': // "pir"
 		{

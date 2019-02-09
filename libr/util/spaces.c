@@ -1,213 +1,214 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2019 - pancake, ret2libc */
 
-#include <r_anal.h>
+#include "r_util/r_spaces.h"
 
-R_API void r_space_new(RSpaces *s, const char *name, void (*unset_for)(void*,int), int (*count_for)(void*,int), void (*rename_for)(void*,int,const char*,const char*), void *user) {
-	int i;
-	s->name = r_str_new (name);
-	s->space_idx = -1;
-	s->spacestack = r_list_new ();
-	s->cb_printf = (PrintfCallback)printf;
-	s->unset_for = unset_for;
-	s->count_for = count_for;
-	s->rename_for = rename_for;
-	s->user = user;
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		s->spaces[i] = NULL;
+R_API RSpaces *r_spaces_new(const char *name) {
+	RSpaces *sp = R_NEW0 (RSpaces);
+	if (!sp || !r_spaces_init (sp, name)) {
+		return NULL;
 	}
+	return sp;
 }
 
-R_API void r_space_free(RSpaces *s) {
-	int i;
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		R_FREE (s->spaces[i]);
+R_API bool r_spaces_init(RSpaces *sp, const char *name) {
+	r_return_val_if_fail (sp && name, false);
+	sp->name = strdup (name);
+	if (!sp->name) {
+		goto fail;
 	}
-	r_list_free (s->spacestack);
-	free (s->name);
-}
 
-R_API int r_space_get(RSpaces *s, const char *name) {
-	int i;
-	if (!name || *name == '*') {
-		return -1;
+	sp->spaces = NULL;
+	sp->current = NULL;
+	sp->spacestack = r_list_new ();
+	if (!sp->spacestack) {
+		goto fail;
 	}
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (s->spaces[i] && !strcmp (name, s->spaces[i])) {
-			return i;
-		}
-	}
-	return -1;
-}
 
-R_API const char *r_space_get_i(RSpaces *s, int idx) {
-	if (idx==-1 || idx>=R_SPACES_MAX) {
-		return "";
+	sp->event = r_event_new (sp);
+	if (!sp->event) {
+		goto fail;
 	}
-	return s->spaces[idx];
-}
 
-R_API int r_space_add(RSpaces *s, const char *name) {
-	int i;
-	if (!name || *name == '*') {
-		return -1;
-	}
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (s->spaces[i] && !strcmp (name, s->spaces[i])) {
-			return i;
-		}
-	}
-	// not found
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!s->spaces[i]) {
-			s->spaces[i] = strdup (name);
-			return i;
-		}
-	}
-	return -1;
-}
+	return true;
 
-R_API bool r_space_push(RSpaces *s, const char *name) {
-	int ret = false;
-	if (name && *name) {
-		if (s->space_idx >= 0 && s->spaces[s->space_idx]) {
-			r_list_push (s->spacestack, s->spaces[s->space_idx]);
-		} else {
-			r_list_push (s->spacestack, "*");
-		}
-		r_space_set (s, name);
-		ret = true;
-	}
-	return ret;
-}
-
-R_API bool r_space_pop(RSpaces *s) {
-	char *p = r_list_pop (s->spacestack);
-	if (p) {
-		if (*p) {
-			r_space_set (s, p);
-		}
-		return true;
-	}
+fail:
+	r_spaces_free (sp);
 	return false;
 }
 
-R_API int r_space_set(RSpaces *s, const char *name) {
-	s->space_idx = r_space_add (s, name);
-	return s->space_idx;
+R_API void r_spaces_free(RSpaces *sp) {
+	r_spaces_fini (sp);
+	free (sp);
 }
 
-R_API int r_space_unset (RSpaces *s, const char *name) {
-	int i, count = 0;
+static void space_free(RSpace *s) {
+	if (s) {
+		free (s->name);
+		free (s);
+	}
+}
+
+static void space_node_free(RBNode *n) {
+	RSpace *s = container_of (n, RSpace, rb);
+	space_free (s);
+}
+
+R_API void r_spaces_fini(RSpaces *sp) {
+	r_list_free (sp->spacestack);
+	sp->spacestack = NULL;
+	r_rbtree_free (sp->spaces, space_node_free);
+	sp->spaces = NULL;
+	r_event_free (sp->event);
+	sp->event = NULL;
+	R_FREE (sp->name);
+}
+
+static int name_space_cmp(const void *incoming, const RBNode *rb) {
+	const RSpace *s = container_of (rb, const RSpace, rb);
+	return strcmp (incoming, s->name);
+}
+
+R_API RSpace *r_spaces_get(RSpaces *sp, const char *name) {
 	if (!name) {
-		r_space_set (s, NULL);
+		return NULL;
 	}
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!s->spaces[i]) {
-			continue;
-		}
-		if (!name || !strcmp (name, s->spaces[i])) {
-			if (s->space_idx == i) {
-				s->space_idx = -1;
-			}
-			R_FREE (s->spaces[i]);
-			if (s->unset_for) {
-				s->unset_for (s, i);
-			}
-			count++;
-		}
-	}
-	return count;
+	RBNode *n = r_rbtree_find (sp->spaces, (void *)name, name_space_cmp);
+	return n? container_of (n, RSpace, rb): NULL;
 }
 
-static int r_space_count (RSpaces *s, int n) {
-	if (s->count_for) {
-		return s->count_for (s, n);
-	}
-	return 0;
+static int space_cmp(const void *incoming, const RBNode *rb) {
+	const RSpace *a = (const RSpace *)incoming;
+	const RSpace *b = container_of (rb, const RSpace, rb);
+	return strcmp (a->name, b->name);
 }
 
-R_API int r_space_list(RSpaces *s, int mode) {
-	const char *defspace = NULL;
-	int count, len, i, j = 0;
-	if (mode == 'j') {
-		s->cb_printf ("[");
+R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
+	r_return_val_if_fail (sp, NULL);
+	if (!name || !*name || *name == '*') {
+		return NULL;
 	}
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!s->spaces[i]) {
-			continue;
-		}
-		count = r_space_count (s, i);
-		if (mode == 'j') {
-			s->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
-				j? ",": "", s->spaces[i],
-				(i == s->space_idx)? ",\"selected\":true": "",
-				count);
-		} else if (mode == '*') {
-			s->cb_printf ("%s %s\n", s->name, s->spaces[i]);
-			if (i == s->space_idx) {
-				defspace = s->spaces[i];
-			}
-		} else {
-			#define INDENT 5
-			char num0[64], num1[64], spaces[32];
-			snprintf (num0, sizeof (num0), "%d", i);
-			snprintf (num1, sizeof (num1), "%d", count);
-			memset (spaces, ' ', sizeof (spaces));
-			len = strlen (num0) + strlen (num1);
-			if (len < INDENT) {
-				spaces[INDENT-len] = 0;
-			} else {
-				spaces[0] = 0;
-			}
-			s->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
-					(i == s->space_idx)? '*': '.',
-					s->spaces[i]);
-		}
-		j++;
+
+	RSpace *s = r_spaces_get (sp, name);
+	if (s) {
+		return s;
 	}
-	if (defspace) {
-		s->cb_printf ("%s %s # current\n", s->name, defspace);
+
+	s = R_NEW0 (RSpace);
+	if (!s) {
+		return NULL;
 	}
-	if (mode == 'j') {
-		s->cb_printf ("]\n");
+
+	s->name = strdup (name);
+	if (!s->name) {
+		free (s);
+		return NULL;
 	}
-	return j;
+
+	r_rbtree_insert (&sp->spaces, s, &s->rb, space_cmp);
+	return s;
 }
 
-R_API bool r_space_rename (RSpaces *s, const char *oname, const char *nname) {
-	int i;
+R_API RSpace *r_spaces_set(RSpaces *sp, const char *name) {
+	sp->current = r_spaces_add (sp, name);
+	return sp->current;
+}
 
-	if (!oname) {
-		if (s->space_idx == -1) {
+static bool spaces_unset_single(RSpaces *sp, const char *name) {
+	RSpace *space = r_spaces_get (sp, name);
+	if (!space) {
+		return false;
+	}
+
+	RSpaceEvent ev = { .data.unset.space = space };
+	r_event_send (sp->event, R_SPACE_EVENT_UNSET, &ev);
+	return r_rbtree_delete (&sp->spaces, (void *)name, name_space_cmp, space_node_free);
+}
+
+R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
+	if (name) {
+		return spaces_unset_single (sp, name);
+	}
+
+	RList *names = r_list_newf ((RListFree)free);
+	if (!names) {
+		return false;
+	}
+
+	RBIter it;
+	RSpace *s;
+	r_spaces_foreach (sp, it, s) {
+		r_list_append (names, strdup (s->name));
+	}
+
+	RListIter *lit;
+	const char *n;
+	bool res = false;
+	r_list_foreach (names, lit, n) {
+		res |= spaces_unset_single (sp, n);
+	}
+	r_list_free (names);
+	return res;
+}
+
+R_API int r_spaces_count(RSpaces *sp, const char *name) {
+	RSpace *s = r_spaces_get (sp, name);
+	if (!s) {
+		return 0;
+	}
+	RSpaceEvent ev = { .data.count.space = s, .res = 0 };
+	r_event_send (sp->event, R_SPACE_EVENT_COUNT, &ev);
+	return ev.res;
+}
+
+R_API bool r_spaces_push(RSpaces *sp, const char *name) {
+	r_return_val_if_fail (sp, false);
+
+	r_list_push (sp->spacestack, sp->current? sp->current->name: "*");
+	r_spaces_set (sp, name);
+	return true;
+}
+
+R_API bool r_spaces_pop(RSpaces *sp) {
+	char *name = r_list_pop (sp->spacestack);
+	if (!name) {
+		return false;
+	}
+
+	RSpace *s = r_spaces_get (sp, name);
+	r_spaces_set (sp, s? s->name: NULL);
+	return true;
+}
+
+R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname) {
+	if (!oname && !sp->current) {
+		return false;
+	}
+
+	RSpace *s;
+	if (oname) {
+		s = r_spaces_get (sp, oname);
+		if (!s) {
 			return false;
 		}
-		oname = s->spaces[s->space_idx];
+	} else {
+		s = sp->current;
 	}
-	if (!nname) {
+
+	RSpace *sn = r_spaces_get (sp, nname);
+	if (sn) {
 		return false;
 	}
 
-	while (*oname==' ') {
-		oname++;
-	}
-	while (*nname==' ') {
-		nname++;
-	}
+	RSpaceEvent ev = {
+		.data.rename.oldname = s->name,
+		.data.rename.newname = nname,
+		.data.rename.space = s
+	};
+	r_event_send (sp->event, R_SPACE_EVENT_RENAME, &ev);
 
-	if (r_space_get (s, nname) != -1) {
-		eprintf ("error: dupplicated name\n");
-		return false;
-	}
-
-	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (s->spaces[i] && !strcmp (oname, s->spaces[i])) {
-			if (s->rename_for) {
-				s->rename_for (s, i, oname, nname);
-			}
-			free (s->spaces[i]);
-			s->spaces[i] = strdup (nname);
-			return true;
-		}
-	}
-	return false;
+	r_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, NULL);
+	free (s->name);
+	s->name = strdup (nname);
+	r_rbtree_insert (&sp->spaces, s, &s->rb, space_cmp);
+	return true;
 }

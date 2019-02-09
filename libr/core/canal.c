@@ -232,21 +232,21 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		}
 	} else {
 		int _perm = -1;
-		RBinSection *s;
+		RIOMap *s;
 		SdbListIter *iter;
 		if (core->io) {
 			// sections
-			ls_foreach (core->io->sections, iter, s) {
-				if (addr >= s->vaddr && addr < (s->vaddr + s->vsize)) {
+			ls_foreach (core->io->maps, iter, s) {
+				if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
 					// sections overlap, so we want to get the one with lower perms
 					_perm = (_perm != -1) ? R_MIN (_perm, s->perm) : s->perm;
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
-					if (strstr (s->name, "heap")) {
+					if (s->name && strstr (s->name, "heap")) {
 						types |= R_ANAL_ADDR_TYPE_HEAP;
 					}
-					if (strstr (s->name, "stack")) {
+					if (s->name && strstr (s->name, "stack")) {
 						types |= R_ANAL_ADDR_TYPE_STACK;
 					}
 				}
@@ -326,65 +326,67 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump, int mo
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	r_list_foreach (refs, iter, ref) {
-		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
-		if (f) {
-			// If dump is true, print all strings referenced by the function
- 			if (dump) {
-				// take only strings flags
-				if (!strncmp (f->name, "str.", 4)) {
-					if (mode == 'j') { 
-						// add new json item
-						pj_o (pj);
-						pj_kn (pj, "addr", ref->at);
-						pj_kn (pj, "ref", ref->addr);
-						pj_ks (pj, "flag", f->name);
-						pj_end (pj);
-					} else {
-						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+	if (refs) {
+		r_list_foreach (refs, iter, ref) {
+			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
+			if (f) {
+				// If dump is true, print all strings referenced by the function
+				if (dump) {
+					// take only strings flags
+					if (!strncmp (f->name, "str.", 4)) {
+						if (mode == 'j') {
+							// add new json item
+							pj_o (pj);
+							pj_kn (pj, "addr", ref->at);
+							pj_kn (pj, "ref", ref->addr);
+							pj_ks (pj, "flag", f->name);
+							pj_end (pj);
+						} else {
+							r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+						}
+					}
+				} else if (do_call) { // break if a proper autoname found and not in dump mode
+					break;
+				}
+				// enter only if a candidate name hasn't found yet
+				if (!do_call) {
+					if (blacklisted_word (f->name)) {
+						continue;
+					}
+					if (strstr (f->name, ".isatty")) {
+						use_isatty = 1;
+					}
+					if (strstr (f->name, ".getopt")) {
+						use_getopt = 1;
+					}
+					if (!strncmp (f->name, "method.", 7)) {
+						free (do_call);
+						do_call = strdup (f->name + 7);
+						continue;
+					}
+					if (!strncmp (f->name, "str.", 4)) {
+						free (do_call);
+						do_call = strdup (f->name + 4);
+						continue;
+					}
+					if (!strncmp (f->name, "sym.imp.", 8)) {
+						free (do_call);
+						do_call = strdup (f->name + 8);
+						continue;
+					}
+					if (!strncmp (f->name, "reloc.", 6)) {
+						free (do_call);
+						do_call = strdup (f->name + 6);
+						continue;
 					}
 				}
- 			} else if (do_call) { // break if a proper autoname found and not in dump mode
- 				break;
- 			}
-			// enter only if a candidate name hasn't found yet
-			if (!do_call) {
-				if (blacklisted_word (f->name)) {
-					continue;
-				}
-				if (strstr (f->name, ".isatty")) {
-					use_isatty = 1;
-				}
-				if (strstr (f->name, ".getopt")) {
-					use_getopt = 1;
-				}
-				if (!strncmp (f->name, "method.", 7)) {
-					free (do_call);
-					do_call = strdup (f->name + 7);
-					continue;
-				}
-				if (!strncmp (f->name, "str.", 4)) {
-					free (do_call);
-					do_call = strdup (f->name + 4);
-					continue;
-				}
-				if (!strncmp (f->name, "sym.imp.", 8)) {
-					free (do_call);
-					do_call = strdup (f->name + 8);
-					continue;
-				}
-				if (!strncmp (f->name, "reloc.", 6)) {
-					free (do_call);
-					do_call = strdup (f->name + 6);
-					continue;
-				}
- 			}
- 		}
- 	}
+			}
+		}
+		r_list_free (refs);
+	}
 	if (mode ==  'j') {
 		pj_end (pj);
 	}
-	r_list_free (refs);
 	if (pj) {
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
@@ -2064,7 +2066,7 @@ repeat:
 						"[color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 						fcni->addr, fcnr->addr, //, fcnr_name,
-						"#61afef", 
+						"#61afef",
 						fcnr_name, fcnr->addr);
 				r_cons_printf ("  \"0x%08"PFMT64x"\" "
 						"[label=\"%s\""
@@ -4271,6 +4273,7 @@ static inline bool canal_isThumb(RCore *core) {
 
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
+	bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
@@ -4389,11 +4392,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->assembler, cur);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ALL)) {
-			i += minopsize - 1;
+			i += minopsize - 1; //   XXX dupe in op.size below
 		}
 		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
 			// i +=2;
+			r_anal_op_fini (&op);
 			continue;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
@@ -4405,6 +4409,39 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			i += minopsize - 1;
 			continue;
 		}
+		if (emu_lazy) {
+			if (op.type & R_ANAL_OP_TYPE_REP) {
+				i += op.size - 1;
+				continue;
+			}
+			switch (op.type & R_ANAL_OP_TYPE_MASK) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_ILL:
+			case R_ANAL_OP_TYPE_NOP:
+			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_IO:
+			case R_ANAL_OP_TYPE_LEAVE:
+			case R_ANAL_OP_TYPE_CRYPTO:
+			case R_ANAL_OP_TYPE_CPL:
+			case R_ANAL_OP_TYPE_SYNC:
+			case R_ANAL_OP_TYPE_SWI:
+			case R_ANAL_OP_TYPE_CMP:
+			case R_ANAL_OP_TYPE_ACMP:
+			case R_ANAL_OP_TYPE_NULL:
+			case R_ANAL_OP_TYPE_CSWI:
+			case R_ANAL_OP_TYPE_TRAP:
+				i += op.size - 1;
+				continue;
+			//  those require write support
+			case R_ANAL_OP_TYPE_PUSH:
+			case R_ANAL_OP_TYPE_POP:
+				i += op.size - 1;
+				continue;
+			}
+		}
 		if (op.type == R_ANAL_OP_TYPE_SWI) {
 			r_flag_space_set (core->flags, "syscalls");
 			int snv = canal_isThumb (core)? op.val: (int)r_reg_getv (core->anal->reg, sn);
@@ -4414,7 +4451,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				r_flag_set_next (core->flags, sdb_fmt ("syscall.%s", si->name), cur, 1);
 			} else {
 				//todo were doing less filtering up top because we cant match against 80 on all platforms
-				// might get too many of this path now.. 
+				// might get too many of this path now..
 			//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
 				r_flag_set_next (core->flags, sdb_fmt ("syscall.%d", snv), cur, 1);
 			}
@@ -4427,6 +4464,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				continue;
 			}
 			r_anal_esil_set_pc (ESIL, cur);
+			r_reg_setv(core->anal->reg, pcname, cur + op.size);
 			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
 			//r_anal_esil_dumpstack (ESIL);
@@ -4718,4 +4756,58 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 
 	dict_fini (&rcap.visited);
 	r_list_free (rcap.path);
+}
+
+static bool __cb(RFlagItem *fi, void *user) {
+	r_list_append (user, r_str_newf ("0x%08"PFMT64x, fi->offset));
+	return true;
+}
+
+static int __addrs_cmp(void *_a, void *_b) {
+	ut64 a = r_num_get (NULL, _a);
+	ut64 b = r_num_get (NULL, _b);
+        return a - b;
+}
+
+R_API void r_core_anal_inflags(RCore *core, const char *glob) {
+	RList *addrs = r_list_newf (free);
+	RListIter *iter;
+	char *anal_in = strdup (r_config_get (core->config, "anal.in"));
+	r_config_set (core->config, "anal.in", "block");
+	glob = r_str_trim_ro (glob);
+	bool simple = 1;
+	char *addr;
+	r_flag_foreach_glob (core->flags, glob, __cb, addrs);
+	r_list_sort (addrs, (RListComparator)__addrs_cmp);
+	r_list_foreach (addrs, iter, addr) {
+		if (!iter->n || r_cons_is_breaked ()) {
+			break;
+		}
+		char *addr2 = iter->n->data;
+		ut64 a0 = r_num_get (NULL, addr);
+		ut64 a1 = r_num_get (NULL, addr2);
+		int sz = a1 - a0;
+		if (sz < 1) {
+			eprintf ("Warning: unsorted flag list\n");
+			continue;
+		}
+		if (simple) {
+			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
+			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
+			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, sz);
+		} else {
+			r_core_cmdf (core, "aab@%s!%s-%s\n", addr, addr2, addr);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
+			if (fcn) {
+				eprintf ("%s  %s %d    # %s\n", addr, "af", sz, fcn->name);
+			} else {
+				r_core_cmdf (core, "af@%s!%s-%s\n", addr, addr2, addr);
+				fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
+				eprintf ("%s  %s %.4d   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
+			}
+		}
+	}
+	r_list_free (addrs);
+	r_config_set (core->config, "anal.in", anal_in);
+	free (anal_in);
 }

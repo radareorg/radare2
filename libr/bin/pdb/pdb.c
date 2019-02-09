@@ -552,17 +552,17 @@ static void finish_pdb_parse(R_PDB *pdb) {
 		switch (i) {
 		case 1:
 			pdb_info_stream = (SPDBInfoStream *) r_list_iter_get (it);
-			pdb_info_stream->free_(pdb_info_stream);
+			free_pdb_stream (pdb_info_stream);
 			free (pdb_info_stream);
 			break;
 		case 2:
 			tpi_stream = (STpiStream *) r_list_iter_get (it);
-			tpi_stream->free_(tpi_stream);
+			free_pdb_stream (tpi_stream);
 			free (tpi_stream);
 			break;
 		case 3:
 			dbi_stream = (SDbiStream *) r_list_iter_get (it);
-			dbi_stream->free_(dbi_stream);
+			free_pdb_stream (dbi_stream);
 			free (dbi_stream);
 			break;
 		default:
@@ -571,7 +571,7 @@ static void finish_pdb_parse(R_PDB *pdb) {
 				break;
 			}
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get (it);
-			pdb_stream->free_(pdb_stream);
+			free_pdb_stream (pdb_stream);
 			free (pdb_stream);
 			break;
 		}

@@ -47,7 +47,7 @@ typedef struct r_sign_hash_t {
 
 typedef struct r_sign_item_t {
 	char *name;
-	int space;
+	const RSpace *space;
 
 	RSignBytes *bytes;
 	RSignGraph *graph;

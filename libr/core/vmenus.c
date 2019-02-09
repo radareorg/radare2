@@ -595,7 +595,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 
 R_API int r_core_visual_types(RCore *core) {
 	RCoreVisualTypes vt = {core, 0, 0};
-	int i, j, ch;
+	int i, ch;
 	int _option = 0;
 	int option = 0;
 	char *txt;
@@ -612,12 +612,7 @@ R_API int r_core_visual_types(RCore *core) {
 		NULL
 	};
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	for (j = i = 0; i < R_FLAG_SPACES_MAX; i++) {
-		if (core->flags->spaces[i]) {
-			j = 1;
-		}
-	}
-	if (j == 0) {
+	if (r_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
 	for (;;) {
@@ -716,12 +711,7 @@ R_API int r_core_visual_types(RCore *core) {
 			option = _option;
 			if (menu==0) {
 				// if no flagspaces, just quit
-				for (j = i = 0; i < R_FLAG_SPACES_MAX; i++) {
-					if (core->flags->spaces[i]) {
-						j = 1;
-					}
-				}
-				if (!j) {
+				if (r_flag_space_is_empty (core->flags)) {
 					return true;
 				}
 			}
@@ -1130,6 +1120,12 @@ R_API int r_core_visual_classes(RCore *core) {
 			}
 			break;
 		case 'g':
+			index = 0;
+			break;
+		case 'G':
+			index = r_list_length (list) - 1;
+			break;
+		case 'i':
 			{
 				char *num = prompt ("Index:", NULL);
 				if (num) {
@@ -1179,6 +1175,8 @@ R_API int r_core_visual_classes(RCore *core) {
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
+			" g/G   - go first/last item\n"
+			" i     - specify index"
 			" /     - grep mode\n"
 			" C     - toggle colors\n"
 			" l/' ' - accept current selection\n"
@@ -1510,12 +1508,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int menu = 0;
 	int sort = SORT_NONE;
 
-	for (j=i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (core->flags->spaces[i]) {
-			j = 1;
-		}
-	}
-	if (j == 0) {
+	if (r_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
 	for (;;) {
@@ -1524,19 +1517,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 
 		if (menu) {
 			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n\n",
-			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
+				r_flag_space_cur_name (core->flags));
 			hit = 0;
 			i = j = 0;
-			RList *l = r_flag_all_list (core->flags);
+			RList *l = r_flag_all_list (core->flags, true);
 			RListIter *iter;
 			RFlagItem *fi;
 			sort_flags (l, sort);
 			r_list_foreach (l, iter, fi) {
-				/* filter per flag spaces */
-				if ((core->flags->space_idx != -1) &&
-				    (fi->space != core->flags->space_idx)) {
-					continue;
-				}
 				if (option == i) {
 					fs2 = fi->name;
 					hit = 1;
@@ -1583,34 +1571,32 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		} else {
 			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
-			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
-				if (core->flags->spaces[i]) {
-					if (option == i) {
-						fs = core->flags->spaces[i];
-						hit = 1;
-					}
-					if ((i >= option - delta) && ((i < option + delta)|| \
-							((option < delta) && (i < (delta << 1))))) {
-						r_cons_printf (" %c %02d %c %s\n",
-							(option==i)?'>':' ', j,
-							(i==core->flags->space_idx)?'*':' ',
-							core->flags->spaces[i]);
-						j++;
-					}
-				}
-			}
-			if (core->flags->spaces[9]) {
-				if (option == j) {
-					fs = "*";
+			RSpaceIter it;
+			const RSpace *s, *cur = r_flag_space_cur (core->flags);
+			int i = 0;
+			r_flag_space_foreach (core->flags, it, s) {
+				if (option == i) {
+					fs = s->name;
 					hit = 1;
 				}
-				r_cons_printf (" %c %02d %c %s\n",
-					(option==j)?'>':' ', j,
-					(i==core->flags->space_idx)?'*':' ',
-					"*");
+				if ((i >= option - delta) && ((i < option + delta) ||
+					((option < delta) && (i < (delta << 1))))) {
+					r_cons_printf (" %c %c %s\n",
+						(option == i)? '>': ' ',
+						(s == cur)? '*': ' ',
+						s->name);
+				}
+				i++;
 			}
-			if (!hit && j > 0) {
-				option = j - 1;
+			if (option == i) {
+				fs = "*";
+				hit = 1;
+			}
+			r_cons_printf (" %c %c %s\n", (option == i)? '>': ' ',
+				!cur? '*': ' ', "*");
+			i++;
+			if (!hit && i > 0) {
+				option = i - 1;
 				continue;
 			}
 		}
@@ -1655,12 +1641,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			if (menu == 0) {
 				r_flag_space_set (core->flags, NULL);
 				// if no flagspaces, just quit
-				for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
-					if (core->flags->spaces[i]) {
-						j = 1;
-					}
-				}
-				if (!j) {
+				if (r_flag_space_is_empty (core->flags)) {
 					return true;
 				}
 			}
@@ -1817,14 +1798,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	}
 	return true;
 }
-static bool meta_deserialize(RAnalMetaItem *it, const char *k, const char *v) {
+static bool meta_deserialize(RAnal *a, RAnalMetaItem *it, const char *k, const char *v) {
 	if (strlen (k) < 8) {
 		return false;
 	}
 	if (memcmp (k + 6, ".0x", 3)) {
 		return false;
 	}
-	return r_meta_deserialize_val (it, k[5], sdb_atoi (k + 7), v);
+	return r_meta_deserialize_val (a, it, k[5], sdb_atoi (k + 7), v);
 }
 
 static int meta_enumerate_cb(void *user, const char *k, const char *v) {
@@ -1834,7 +1815,7 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	if (!it) {
 		return 0;
 	}
-	if (!meta_deserialize (it, k, v)) {
+	if (!meta_deserialize (ui->anal, it, k, v)) {
 		free (it);
 		goto beach;
 	}
@@ -2947,7 +2928,19 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			variable_option = 0;
 			break;
 		case '_':
-			r_core_cmd0 (core, "s $(afl~...)");
+			{
+				r_core_cmd0 (core, "s $(afl~...)");
+				int n = 0;
+				RListIter *iter;
+				RAnalFunction *fcn;
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					if (fcn->addr == core->offset) {
+						option = n;
+						break;
+					}
+					n ++;
+				}
+			}
 			break;
 		case 'j':
 			if (selectPanel) {
