@@ -122,6 +122,10 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 	ut8 *buf = (ut8 *)strdup ((const char *)arg);
 	int ret, len = r_hex_str2bin ((char *)buf, buf);
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return NULL;
+	}
+	
 	RAnalOp aop = { 0 };
 	
 	if (as->json) {
@@ -175,6 +179,9 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	if (as->json) {
 		pj_o (pj);
 	}
@@ -221,11 +228,14 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 			if (as->quiet) {
 				printf ("%s\n", h->name);
 			} else if (as->json) {
-				const char *str_bits = "[32, 64]";
 				const char *license = "GPL";
 				pj_k (pj, h->name);
 				pj_o (pj);
-				pj_ks (pj, "bits", str_bits);
+				pj_k (pj, "bits");
+				pj_a (pj);
+				pj_i (pj, 32);
+				pj_i (pj, 64);
+				pj_end (pj);
 				pj_ks (pj, "license", license);
 				pj_ks (pj, "description", h->desc);
 				pj_ks (pj, "features", feat);
