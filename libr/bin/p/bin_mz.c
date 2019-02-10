@@ -17,19 +17,19 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static bool knownHeader(const ut8 *buf,ut16 offset,ut64 length){
 	// check for PE
-		if (!memcmp (buf + offset, "PE", 2) &&
-			(length > offset + 0x20) &&
-			!memcmp (buf + offset + 0x18, "\x0b\x01", 2)) {
-			return false;
-		}
+	if (!memcmp (buf + offset, "PE", 2) &&
+		(length > offset + 0x20) &&
+		!memcmp (buf + offset + 0x18, "\x0b\x01", 2)) {
+		return false;
+	}
 	// Check for New Executable, LE/LX or Phar Lap executable
-		if (!memcmp (buf + offset, "NE", 2) ||
-			!memcmp (buf + offset, "LE", 2) ||
-			!memcmp (buf + offset, "LX", 2) ||
-			!memcmp (buf + offset, "PL", 2)) {
-			return false;
-		}
-		return true;
+	if (!memcmp (buf + offset, "NE", 2) ||
+		!memcmp (buf + offset, "LE", 2) ||
+		!memcmp (buf + offset, "LX", 2) ||
+		!memcmp (buf + offset, "PL", 2)) {
+		return false;
+	}
+	return true;
 }
 
 static bool checkEntrypoint(const ut8 *buf, ut64 length) {
@@ -67,7 +67,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	// See if there is a new exe header.
 	new_exe_header_offset = r_read_ble16 (buf + 0x3c, false);
 	if (length > new_exe_header_offset + 2) {
-		if(!knownHeader(buf,new_exe_header_offset,length)){
+		if (!knownHeader (buf,new_exe_header_offset, length)) {
 			return false;
 		}
 	}
