@@ -9,6 +9,9 @@ r2_version = 'unknown-error'
 r = run_command(py3_exe, 'sys/version.py')
 if r.returncode() == 0
   r2_version = r.stdout().strip()
+  if host_machine.system() == 'darwin'
+    r2_version = r2_version.split('-')[0]
+  endif
 else
   message('Cannot find project version with sys/version.py')
 endif
@@ -82,6 +85,7 @@ else
 endif
 
 r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
+message('r2 lib version: ' + r2_libversion)
 
 # system dependencies
 cc = meson.get_compiler('c')
