@@ -849,23 +849,22 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
-R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
+R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	char hash[128], *p;
 	RHash *ctx;
-	ut8* buf;
-	ut64 buf_len = 0;
+	ut64 buf_len = 0, r = 0;
 	int i;
 	RBinFile *bf = bin->cur;
 	if (!bf) {
-		return 0;
+		return false;
 	}
 	RBinObject *o = bf->o;
-	if (!o) {
-		return 0;
+	if (!o || !o->info) {
+		return false;
 	}
 	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
 	if (!iod) {
-		return 0;
+		return false;
 	}
 
 	if (!file && iod) {
@@ -876,36 +875,40 @@ R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		eprintf ("Cannot compute hash\n");
-		return -1;
+		return false;
 	}
-	//  XXX should use io api not raw file slurping
-	int blen = 0;
-	buf = (ut8*)r_file_slurp (file, &blen);
+	const size_t blocksize = 64000;
+	ut8 *buf = malloc (blocksize);
 	if (!buf) {
+		eprintf ("Cannot allocate computation buffer\n");
 		return false;
 	}
-	buf_len = blen;
-	if (!o->info) {
-		return false;
+	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+	while (r+blocksize < buf_len) {
+		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		int b = r_io_desc_read (iod, buf, blocksize);
+		(void)r_hash_do_md5 (ctx, buf, blocksize);
+		(void)r_hash_do_sha1 (ctx, buf, blocksize);
+		r += b;
 	}
-	if (buf) {
-		ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
-#define BLK_SIZE_OFF 1024
-		for (i = 0; i < buf_len; i += BLK_SIZE_OFF) {
-			(void)r_hash_do_md5 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
-			(void)r_hash_do_sha1 (ctx, &buf[i], R_MIN (buf_len-i, BLK_SIZE_OFF));
-		}
-		r_hash_do_end (ctx, R_HASH_MD5);
-		p = hash;
-		r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
-		o->info->hashes = r_strbuf_new ("");
-		r_strbuf_appendf (o->info->hashes, "md5 %s", hash);
-		r_hash_do_end (ctx, R_HASH_SHA1);
-		p = hash;
-		r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
-		r_strbuf_appendf (o->info->hashes, "\nsha1 %s", hash);
-		r_hash_free (ctx);
+	if (r < buf_len) {
+		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		const size_t rem_len = buf_len-r;
+		int b = r_io_desc_read (iod, buf, rem_len);
+		(void)r_hash_do_md5 (ctx, buf, rem_len);
+		(void)r_hash_do_sha1 (ctx, buf, rem_len);
 	}
+	r_hash_do_end (ctx, R_HASH_MD5);
+	p = hash;
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
+	RStrBuf *sbuf = r_strbuf_new ("");
+	r_strbuf_appendf (sbuf, "md5 %s", hash);
+	r_hash_do_end (ctx, R_HASH_SHA1);
+	p = hash;
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
+	r_strbuf_appendf (sbuf, "\nsha1 %s", hash);
+	o->info->hashes = r_strbuf_drain (sbuf);
 	free (buf);
+	r_hash_free (ctx);
 	return true;
 }
