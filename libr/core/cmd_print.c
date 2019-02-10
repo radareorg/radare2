@@ -4493,7 +4493,7 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2] == '?') { // "pif?"
 					r_core_cmd_help(core, help_msg_pif);
 				} else if (input[2] == 'j') {
-					r_core_cmdf (core, "pdfj%s", input[3]);
+					r_core_cmdf (core, "pdfj%s", input + 3);
 				} else if (input[2] == 'c') { // "pifc"
 
 					RListIter *iter;

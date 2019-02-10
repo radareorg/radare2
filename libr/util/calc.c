@@ -214,7 +214,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 		*c = nc->oc;
 		nc->oc = 0;
 	} else {
-		if (!nc->calc_buf) {
+		if (!nc->calc_buf || !*nc->calc_buf) {
 			return 0;
 		}
 		*c = nc->calc_buf[nc->calc_i];
