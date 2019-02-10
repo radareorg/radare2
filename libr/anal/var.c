@@ -922,7 +922,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					pj_k (pj, "ref");
 					pj_o (pj);
 					pj_ks (pj, "base", anal->reg->name[R_REG_NAME_SP]);
-					pj_ki (pj, "offset", (int)var->delta);
+					pj_kn (pj, "offset", var->delta);
 					pj_end (pj);
 					pj_end (pj);
 				} else {
