@@ -3359,7 +3359,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		// passthru
 	case ' ': ;// "db"
 		#define DB_ARG(x) r_str_word_get0(str, x)
-		str = strdup (r_str_trim_ro (input + 2));
+		str = strdup (r_str_trim_ro (input + 1));
 		int i = 0;
 		int sl = r_str_word_set0 (str);
 		// For dbw every second argument is 'rw', so we need to skip it.
