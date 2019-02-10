@@ -3589,6 +3589,7 @@ static int bin_hashes(RCore *r, int mode) {
 	ut64 lim = r_config_get_i (r->config, "cfg.hashlimit");
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
+		// recompute again
 		r_bin_file_hash (r->bin, lim, iod->name);
 		char *hashes = r->bin->cur->o->info->hashes;
 		if (IS_MODE_JSON (mode)) {
@@ -3603,7 +3604,7 @@ static int bin_hashes(RCore *r, int mode) {
 			r_cons_printf ("%s", pj_string (pj));
 			pj_free (pj);
 		} else {
-			r_cons_printf ("%s", hashes);
+			r_cons_printf ("%s\n", hashes);
 		}
 		return true;
 	}

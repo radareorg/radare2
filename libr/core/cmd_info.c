@@ -28,7 +28,6 @@ static const char *help_msg_i[] = {
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"iE.", "", "Current export",
-	"iF", "", "File hashes",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
@@ -48,6 +47,7 @@ static const char *help_msg_i[] = {
 	"iS.", "", "Current section",
 	"iS=", "", "Show ascii-art color bars with the section ranges",
 	"iSS", "", "List memory segments (maps with om)",
+	"it", "", "File hashes",
 	"iV", "", "Display file version info",
 	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
@@ -456,7 +456,7 @@ static int cmd_info(void *data, const char *input) {
 			input--;
 			break;
 		}
-		case 'F': // "iF"
+		case 't': // "it"
 			if (input[1] == 'j') {
 				PJ *pj = pj_new ();
 				if (!pj) {
@@ -468,7 +468,8 @@ static int cmd_info(void *data, const char *input) {
 				r_cons_printf ("%s", pj_string (pj));
 				pj_free (pj);
 			} else {
-				r_cons_printf ("%s", core->bin->cur->o->info->hashes);
+				RBinInfo *info = r_bin_get_info (core->bin);
+				r_cons_printf ("%s\n", (info && info->hashes)? info->hashes: "");
 			}
 			break;
 		case 'Z': // "iZ"
