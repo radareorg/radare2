@@ -205,10 +205,12 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 		ls_foreach_prev (io->maps, iter, s) {
 			if (use_color) {
 				color_end = Color_RESET;
-				if (s->perm & R_PERM_X) { // exec bit
-					color = Color_GREEN;
+				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bits
+					color = r_cons_singleton()->context->pal.comment;
+				} else if (s->perm & R_PERM_X) { // exec bit
+					color = r_cons_singleton()->context->pal.args;
 				} else if (s->perm & R_PERM_W) { // write bit
-					color = Color_RED;
+					color = r_cons_singleton()->context->pal.input;
 				} else {
 					color = "";
 					color_end = "";
