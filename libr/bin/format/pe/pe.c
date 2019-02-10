@@ -2297,7 +2297,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			}
 			_parse_resource_directory (bin, &identEntry,
 				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, (char *)resourceEntryName);
-			free (resourceEntryName);
+			// do not dblfree, ownership is transferred free (resourceEntryName);
 			continue;
 		} else {
 			free (resourceEntryName);
