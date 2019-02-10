@@ -463,6 +463,7 @@ static int cmd_info(void *data, const char *input) {
 					eprintf ("JSON mode failed\n");
 					return 0;
 				}
+				pj_o (pj);
 				pj_ks (pj, "values", core->bin->cur->o->info->hashes);
 				pj_end (pj);
 				r_cons_printf ("%s", pj_string (pj));
