@@ -1213,7 +1213,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t)* bin) {
 	return true;
 }
 
-static void _free_resources(r_pe_resource *rs) {
+static void _free_resource(r_pe_resource *rs) {
 	if (rs) {
 		free (rs->name);
 		free (rs->timestr);
@@ -1232,7 +1232,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 		return false;
 	}
 
-	bin->resources = r_list_newf ((RListFree)_free_resources);
+	bin->resources = r_list_newf ((RListFree)_free_resource);
 	if (!bin->resources) {
 		return false;
 	}
@@ -2242,6 +2242,7 @@ static char* _resource_type_str(int type) {
 }
 
 static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, char *resource_name) {
+	ut8 *resourceEntryName = NULL;
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
@@ -2263,15 +2264,22 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			eprintf ("Warning: read resource entry\n");
 			break;
 		}
-		ut8 *resourceEntryName = NULL;
 		if (entry.u1.s.NameIsString) {
 			int i;
-			ut16 resourceEntryNameLength;
-			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&resourceEntryNameLength, sizeof (ut16));
-
+			ut16 buf, resourceEntryNameLength;
+			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&buf, sizeof (ut16));
+			resourceEntryNameLength = r_read_le16 (&buf);
 			resourceEntryName = calloc (resourceEntryNameLength + 1, sizeof (ut8));
-			for(i = 0; i < 2 * resourceEntryNameLength; i += 2) { /* Convert Unicode to ASCII */
-				r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + i, resourceEntryName + (i/2), sizeof (ut8));
+			if (resourceEntryName) {
+				for (i = 0; i < resourceEntryNameLength; i++) { /* Convert Unicode to ASCII */
+					ut8 byte;
+					int r = r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + (i*2), &byte, sizeof (ut8));
+					if (r < 1 || !byte) {
+						R_FREE (resourceEntryName);
+						break;
+					}
+					resourceEntryName[i] = byte;
+				}
 			}
 		}
 		if (entry.u2.s.DataIsDirectory) {
