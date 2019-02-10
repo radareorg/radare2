@@ -1510,6 +1510,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	if (it->bytes) {
 		ret->bytes = R_NEW0 (RSignBytes);
 		if (!ret->bytes) {
+			r_sign_item_free (ret);
 			return NULL;
 		}
 		ret->bytes->size = it->bytes->size;
