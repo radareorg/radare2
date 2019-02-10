@@ -167,6 +167,7 @@ static int main_help(int line) {
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
+		" -T           compute file hashes\n"
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
@@ -498,6 +499,7 @@ int main(int argc, char **argv, char **envp) {
 	bool quietLeak = false;
 	int is_gdb = false;
 	const char * s_seek = NULL;
+	bool compute_hashes = false;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
@@ -554,7 +556,7 @@ int main(int argc, char **argv, char **envp) {
 
 	set_color_default ();
 
-	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuX"
+	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuX"
 #if USE_THREADS
 "t"
 #endif
@@ -707,6 +709,9 @@ int main(int argc, char **argv, char **envp) {
 			threaded = true;
 			break;
 #endif
+		case 'T':
+			compute_hashes = true;
+			break;
 		case 'v':
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
@@ -1320,7 +1325,7 @@ int main(int argc, char **argv, char **envp) {
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (iod && r_bin_file_hash (r.bin, limit, iod->name) == false) {
+			if (compute_hashes && iod && r_bin_file_hash (r.bin, limit, iod->name) == false) {
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
