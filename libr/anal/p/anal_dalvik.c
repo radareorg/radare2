@@ -63,10 +63,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	ut32 vA = 0;
 	ut32 vB = 0;
 	ut32 vC = 0;
-	if (len > 1) {
-		vA = (data[1]);
-		vB = (data[2]);
-		vC = (data[3]);
+	if (len > 3) {
+		vA = data[1];
+		vB = data[2];
+		vC = data[3];
 	}
 	switch (data[0]) {
 	case 0xca: // rem-float:

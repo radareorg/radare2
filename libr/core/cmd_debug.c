@@ -2977,6 +2977,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	if (!addr) {
 		addr = UT64_MAX;
 	}
+	char *str = NULL;
 
 	switch (input[1]) {
 	case '.':
@@ -3358,7 +3359,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		// passthru
 	case ' ': ;// "db"
 		#define DB_ARG(x) r_str_word_get0(str, x)
-		char *str = strdup (r_str_trim_ro (input + 2));
+		str = strdup (r_str_trim_ro (input + 1));
 		int i = 0;
 		int sl = r_str_word_set0 (str);
 		// For dbw every second argument is 'rw', so we need to skip it.
@@ -3376,12 +3377,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 							rw = R_BP_PROT_ACCESS;
 						} else {
 							r_core_cmd_help (core, help_msg_dbw);
-							free (str);
 							break;
 						}
 					} else {
 						r_core_cmd_help (core, help_msg_dbw);
-						free (str);
 						break;
 					}
 				}
@@ -3413,7 +3412,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 			}
 		}
-		free (str);
 		break;
 	case 'i':
 		core_cmd_dbi (core, input, addr);
@@ -3423,6 +3421,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_db);
 		break;
 	}
+	free (str);
 }
 
 static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {

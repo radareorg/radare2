@@ -2240,10 +2240,12 @@ static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, i
 			r_num_units (humansz, sizeof (humansz), s->size);
 			if (use_color) {
 				color_end = Color_RESET;
-				if (s->perm & R_PERM_X) { // exec bit
-					color = Color_GREEN;
+				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bit
+					color = r_cons_singleton()->context->pal.widget_sel;
+				} else if (s->perm & R_PERM_X) { // exec bit
+					color = r_cons_singleton()->context->pal.args;
 				} else if (s->perm & R_PERM_W) { // write bit
-					color = Color_RED;
+					color = r_cons_singleton()->context->pal.input;
 				} else {
 					color = "";
 					color_end = "";
@@ -3587,8 +3589,9 @@ static int bin_hashes(RCore *r, int mode) {
 	ut64 lim = r_config_get_i (r->config, "cfg.hashlimit");
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
+		// recompute again
 		r_bin_file_hash (r->bin, lim, iod->name);
-		const char *hashes = r_strbuf_get (r->bin->cur->o->info->hashes);
+		char *hashes = r->bin->cur->o->info->hashes;
 		if (IS_MODE_JSON (mode)) {
 			PJ *pj = pj_new ();
 			if (!pj) {
@@ -3601,7 +3604,7 @@ static int bin_hashes(RCore *r, int mode) {
 			r_cons_printf ("%s", pj_string (pj));
 			pj_free (pj);
 		} else {
-			r_cons_printf ("%s", hashes);
+			r_cons_printf ("%s\n", hashes);
 		}
 		return true;
 	}

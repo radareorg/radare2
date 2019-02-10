@@ -27,7 +27,7 @@ type.float=f
 type.float.size=32
 
 double=type
-type.double=f
+type.double=F
 type.double.size=64
 
 long long=type
