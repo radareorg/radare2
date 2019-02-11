@@ -118,8 +118,12 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	if (fmt == 'j') {
-		r_cons_print ("{");
+		pj_o (pj);
 	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (arch && *arch) {
@@ -167,8 +171,17 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			} else if (fmt == 'j') {
 				const char *str_bits = "32, 64";
 				const char *license = "GPL";
-				r_cons_printf ("\"%s\":{\"bits\":[%s],\"license\":\"%s\",\"description\":\"%s\",\"features\":\"%s\"}%s",
-						h->name, str_bits, license, h->desc, feat, iter->n? ",": "");
+				pj_k (pj, h->name);
+				pj_o (pj);
+				pj_k (pj, "bits");
+				pj_a (pj);
+				pj_i (pj, 32);
+				pj_i (pj, 64);
+				pj_end (pj);
+				pj_ks (pj, "license", license);
+				pj_ks (pj, "description", h->desc);
+				pj_ks (pj, "features", feat);
+				pj_end (pj);
 			} else {
 				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
@@ -177,7 +190,8 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 		}
 	}
 	if (fmt == 'j') {
-		r_cons_print ("}\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
 	}
 }
 
