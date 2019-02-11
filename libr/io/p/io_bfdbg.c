@@ -194,8 +194,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_bfdbg = {
 	.name = "bfdbg",
-	.desc = "BrainFuck Debugger (bfdbg://path/to/file)",
+	.desc = "Attach to brainFuck Debugger instance",
 	.license = "LGPL3",
+	.uris = "bfdbg://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

@@ -294,8 +294,9 @@ static int __getpid (RIODesc *fd) {
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 RIOPlugin r_io_plugin_ptrace = {
 	.name = "ptrace",
-	.desc = "ptrace and /proc/pid/mem (if available) io",
+	.desc = "Ptrace and /proc/pid/mem (if available) io plugin",
 	.license = "LGPL3",
+	.uris = "ptrace://,attach://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

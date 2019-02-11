@@ -224,8 +224,9 @@ static bool __getbase (RIODesc *fd, ut64 *base) {
 
 RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
-	.desc = "w32dbg io",
+	.desc = "w32 debugger io plugin",
 	.license = "LGPL3",
+	.uris = "w32dbg://,attach://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

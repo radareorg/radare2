@@ -366,7 +366,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_self = {
 	.name = "self",
-	.desc = "read memory from myself using 'self://'",
+	.desc = "Read memory from self",
+	.uris = "self://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

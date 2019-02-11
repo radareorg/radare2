@@ -85,6 +85,9 @@ R_API int r_io_plugin_list(RIO *io) {
 		io->cb_printf ("%s  %-8s %s (%s)",
 				str, plugin->name,
 			plugin->desc, plugin->license);
+		if (plugin->uris) {
+			io->cb_printf (" %s", plugin->uris);
+		}
 		if (plugin->version) {
 			io->cb_printf (" v%s", plugin->version);
 		}
@@ -100,28 +103,55 @@ R_API int r_io_plugin_list(RIO *io) {
 R_API int r_io_plugin_list_json(RIO *io) {
 	RIOPlugin *plugin;
 	SdbListIter *iter;
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return NULL;
+	}
+	
 	char str[4];
 	int n = 0;
-	io->cb_printf("{\"IO_Plugins\":[");
+	pj_o (pj);
+	pj_k (pj, "io_plugins");
+	pj_a (pj);
 	ls_foreach (io->plugins, iter, plugin) {
 		str[0] = 'r';
 		str[1] = plugin->write ? 'w' : '_';
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
 
-		io->cb_printf ("%s{\"Permissions\":\"%s\",\"Name\":\"%s\",\"Description\":\"%s\",\"License\":\"%s\"",
-				n? "," : "", str, plugin->name,
-			plugin->desc, plugin->license);
+		pj_o (pj);
+		pj_ks (pj, "permissions", str);
+		pj_ks (pj, "name", plugin->name);
+		pj_ks (pj, "description", plugin->desc);
+		pj_ks (pj, "license", plugin->license);
+
+		if (plugin->uris) {
+			char *uri;
+			char *uris = strdup (plugin->uris);
+			RList *plist = r_str_split_list (uris, ",");
+			RListIter *piter;
+			pj_k (pj, "uris");
+			pj_a (pj);
+			r_list_foreach (plist, piter, uri) {
+				pj_s (pj, uri);
+			}
+			pj_end (pj);
+			r_list_free (plist);
+			free (uris);
+		}
 		if (plugin->version) {
-			io->cb_printf (",\"version\":\"%s\"", plugin->version);
+			pj_ks (pj, "version", plugin->version);
 		}
 		if (plugin->author) {
-			io->cb_printf (",\"plugin\":\"%s\"", plugin->author);
+			pj_ks (pj, "author", plugin->author);
 		}
-		io->cb_printf ("}");
+		pj_end (pj);
 		n++;
 	}
-	io->cb_printf("]}");
+	pj_end (pj);
+	pj_end (pj);
+	io->cb_printf (pj_string (pj));
+	pj_free (pj);
 	return n;
 }
 
