@@ -206,11 +206,11 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 			if (use_color) {
 				color_end = Color_RESET;
 				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bits
-					color = r_cons_singleton()->context->pal.comment;
+					color = r_cons_singleton()->context->pal.graph_trufae;
 				} else if (s->perm & R_PERM_X) { // exec bit
-					color = r_cons_singleton()->context->pal.args;
+					color = r_cons_singleton()->context->pal.graph_true;
 				} else if (s->perm & R_PERM_W) { // write bit
-					color = r_cons_singleton()->context->pal.input;
+					color = r_cons_singleton()->context->pal.graph_false;
 				} else {
 					color = "";
 					color_end = "";
