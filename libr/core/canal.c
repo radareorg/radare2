@@ -1230,20 +1230,19 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			}
 			r_cons_printf (",\"colorize\":%d", bbi->colorize);
 			r_cons_printf (",\"ops\":");
+			r_cons_print ("[");
 			if (buf) {
 				r_io_read_at (core->io, bbi->addr, buf, bbi->size);
 				if (is_json_format_disasm) {
 					r_core_print_disasm (core->print, core, bbi->addr, buf, bbi->size, bbi->size, 0, 1, true, NULL);
 				} else {
-					r_cons_print ("[");
 					r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
-					r_cons_print ("]");
 				}
 				free (buf);
 			} else {
 				eprintf ("cannot allocate %d byte(s)\n", bbi->size);
 			}
-			r_cons_print ("}");
+			r_cons_print ("]}");
 			continue;
 		}
 		if (bbi->jump != UT64_MAX) {
