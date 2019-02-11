@@ -1011,6 +1011,22 @@ static int cb_cfgdebug(void *user, void *data) {
 	return true;
 }
 
+static int cb_dirhome(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value) {
+		r_sys_setenv (R_SYS_HOME, node->value);
+	}
+	return true;
+}
+
+static int cb_dirtmp (void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value) {
+		r_sys_setenv (R_SYS_TMP, node->value);
+	}
+	return true;
+}
+
 static int cb_dirsrc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore *)user;
@@ -2936,8 +2952,8 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
-	SETPREF ("dir.home", r_sys_getenv (R_SYS_HOME), "Default path for the home directory");
-	SETPREF ("dir.tmp", r_sys_getenv (R_SYS_TMP), "Default path of the tmp directory");
+	SETCB ("dir.home", r_sys_getenv (R_SYS_HOME), &cb_dirhome, "Path for the home directory");
+	SETCB ("dir.tmp", r_sys_getenv (R_SYS_TMP), &cb_dirtmp, "Path of the tmp directory");
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
 #else
