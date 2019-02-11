@@ -105,7 +105,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 	SdbListIter *iter;
 	PJ *pj = pj_new ();
 	if (!pj) {
-		return NULL;
+		return 0;
 	}
 	
 	char str[4];
