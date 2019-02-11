@@ -169,7 +169,6 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			if (fmt == 'q') {
 				r_cons_println (h->name);
 			} else if (fmt == 'j') {
-				const char *str_bits = "32, 64";
 				const char *license = "GPL";
 				pj_k (pj, h->name);
 				pj_o (pj);
