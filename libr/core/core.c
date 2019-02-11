@@ -2035,8 +2035,8 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 
 static void r_core_setenv (RCore *core) {
 	char *e = r_sys_getenv ("PATH");
-	char *h = r_str_home (R2_HOME_BIN R_SYS_ENVSEP);
-	char *n = r_str_newf ("%s%s", h, e);
+	char *h = r_str_home (R2_HOME_BIN);
+	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	r_sys_setenv ("PATH", n);
 	free (n);
 	free (h);

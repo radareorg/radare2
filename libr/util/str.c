@@ -304,10 +304,11 @@ R_API char *r_str_home(const char *str) {
 	if (!dst) {
 		goto fail;
 	}
-	strcpy (dst, home);
+	int home_len = strlen (home);
+	memcpy (dst, home, home_len + 1);
 	if (str) {
-		strcat (dst, R_SYS_DIR);
-		strcat (dst, str);
+		dst[home_len] = R_SYS_DIR[0];
+		strcpy (dst + home_len + 1, str);
 	}
 fail:
 	free (home);

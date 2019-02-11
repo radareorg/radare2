@@ -1057,14 +1057,13 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-static char prefix[128] = {0};
-
 R_API const char *r_sys_prefix(const char *pfx) {
+	static char prefix[1024] = {0};
 	if (!*prefix) {
 		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
 	}
 	if (pfx) {
-		if (strlen (pfx) >= sizeof (prefix) -1) {
+		if (strlen (pfx) >= sizeof (prefix) - 1) {
 			return NULL;
 		}
 		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);
