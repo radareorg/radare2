@@ -44,6 +44,7 @@ iosConfigure() {
 iosClean() {
 	make clean
 	rm -rf libr/.libr libr/.libr2 libr/libr.a libr/libr.dylib shlr/libr_shlr.a
+	rm -rf shlr/capstone
 }
 
 iosBuild() {
