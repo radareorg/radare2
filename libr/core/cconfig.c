@@ -191,6 +191,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	if (fmt == 'j') {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 }
 
