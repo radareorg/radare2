@@ -3978,6 +3978,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (!ds) {
 		return 0;
 	}
+	// TODO Add an option for this?
+	if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+		// reduce false positives in emu.str=true when loading strings via adrp+add
+		return 0;
+	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
 		ssa_set (esil, name);
