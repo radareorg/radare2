@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #define USE_THREADS 1
+#define ALLOW_THREADED 0
 #define UNCOLORIZE_NONTTY 0
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
@@ -164,7 +165,7 @@ static int main_help(int line) {
 		" -R [rr2rule] specify custom rarun2 directive\n"
 		" -s [addr]    initial seek\n"
 		" -S           start r2 in sandbox mode\n"
-#if USE_THREADS
+#if USE_THREADS && ALLOW_THREADED
 		" -t           load rabin2 info in thread\n"
 #endif
 		" -T           do not compute file hashes\n"
@@ -480,7 +481,7 @@ int main(int argc, char **argv, char **envp) {
 	int has_project;
 	bool zerosep = false;
 	int help = 0;
-	int run_anal = 1;
+	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
 	int run_rc = 1;
  	int ret, c, perms = R_PERM_RX;
 	bool sandbox = false;
@@ -663,7 +664,11 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "asm.demangle", "false");
 			break;
 		case 'n':
-			run_anal--;
+			if (load_bin == LOAD_BIN_ALL) { // "-n"
+				load_bin = LOAD_BIN_NOTHING;
+			} else if (load_bin == LOAD_BIN_NOTHING) { // second n => "-nn"
+				load_bin = LOAD_BIN_STRUCTURES_ONLY;
+			}
 			r_config_set (r.config, "file.info", "false");
 			break;
 		case 'N':
@@ -706,7 +711,11 @@ int main(int argc, char **argv, char **envp) {
 			break;
 #if USE_THREADS
 		case 't':
+#if ALLOW_THREADED
 			threaded = true;
+#else
+			eprintf ("WARNING: -t is temporarily disabled!\n");
+#endif
 			break;
 #endif
 		case 'T':
@@ -1131,7 +1140,7 @@ int main(int argc, char **argv, char **envp) {
 						if (iod && perms & R_PERM_X) {
 							iod->perm |= R_PERM_X;
 						}
-						if (run_anal > 0) {
+						if (load_bin == LOAD_BIN_ALL) {
 #if USE_THREADS
 							if (!rabin_th)
 #endif
@@ -1151,7 +1160,7 @@ int main(int argc, char **argv, char **envp) {
 							}
 						} else {
 							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
-							if (run_anal < 0) {
+							if (load_bin == LOAD_BIN_STRUCTURES_ONLY) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
 								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
@@ -1167,8 +1176,8 @@ int main(int argc, char **argv, char **envp) {
 						if (!fh) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
 						}
-						// run_anal = 0;
-						run_anal = -1;
+						// load_bin = LOAD_BIN_NOTHING;
+						load_bin = LOAD_BIN_STRUCTURES_ONLY;
 					} else {
 						eprintf ("Cannot find project file\n");
 					}
@@ -1206,7 +1215,7 @@ int main(int argc, char **argv, char **envp) {
 			if (baddr != UT64_MAX && baddr != 0 && r.dbg->verbose) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
 			}
-			if (run_anal > 0) {
+			if (load_bin == LOAD_BIN_ALL) {
 				if (baddr && baddr != UT64_MAX && r.dbg->verbose) {
 					eprintf ("Using 0x%" PFMT64x "\n", baddr);
 				}
@@ -1258,7 +1267,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
-		if (iod && run_anal > 0 && threaded) {
+		if (iod && load_bin == LOAD_BIN_ALL && threaded) {
 			// XXX: if no rabin2 in path that may fail
 			// TODO: pass -B 0 ? for pie bins?
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
