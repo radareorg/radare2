@@ -558,7 +558,7 @@ int main(int argc, char **argv, char **envp) {
 	set_color_default ();
 
 	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuX"
-#if USE_THREADS && ALLOW_THREADED
+#if USE_THREADS
 "t"
 #endif
 	)) != -1) {
@@ -709,9 +709,13 @@ int main(int argc, char **argv, char **envp) {
 		case 'S':
 			sandbox = true;
 			break;
-#if USE_THREADS && ALLOW_THREADED
+#if USE_THREADS
 		case 't':
+#if ALLOW_THREADED
 			threaded = true;
+#else
+			eprintf ("WARNING: -t is temporarily disabled!\n");
+#endif
 			break;
 #endif
 		case 'T':
