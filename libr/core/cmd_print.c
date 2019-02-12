@@ -882,6 +882,9 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		bsize = -bsize;
 	}
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	pj_a (pj);
 	ut8 *buf = malloc (bsize);
 	if (buf) {
@@ -899,6 +902,9 @@ static void cmd_pDj(RCore *core, const char *arg) {
 static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	int nblines = r_num_math (core->num, arg);
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	pj_a (pj);
 	r_core_print_disasm_json (core, core->offset, block, core->blocksize, nblines, pj);
 	pj_end (pj);
@@ -3648,6 +3654,9 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 	PJ *pj = NULL;
 	if (type_print == 'j') {
 		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
 		pj_a (pj);
 	}
 	while (count-- > 0) {
@@ -3785,6 +3794,9 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	r_list_sort (f->bbs, (RListComparator) bbcmp);
 	if (input == 'j' && b) {
 		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
 		pj_a (pj);
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 			if (r_cons_is_breaked ()) {
@@ -4737,6 +4749,9 @@ static int cmd_print(void *data, const char *input) {
 
 						if (input[2] == 'j') {
 							pj = pj_new ();
+							if (!pj) {
+								break;
+							}
 							pj_a (pj);
 							r_core_print_disasm_json (core, b->addr, block, b->size, 0, pj);
 							pj_end (pj);
@@ -4803,6 +4818,9 @@ static int cmd_print(void *data, const char *input) {
 					r_config_set_i (core->config, "asm.bb.middle", false);
 					cont_size = tmp_get_contsize (f);
 					pj = pj_new ();
+					if (!pj) {
+						break;
+					}
 					pj_o (pj);
 					pj_ks (pj, "name", f->name);
 					pj_kn (pj, "size", fcn_size);

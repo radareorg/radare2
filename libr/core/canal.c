@@ -3098,6 +3098,9 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	}
 	if (is_json) {
 		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
 		pj_a (pj);
 	}
 	r_list_foreach (core->anal->fcns, iter, fcni) {
