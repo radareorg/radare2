@@ -3979,7 +3979,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		return 0;
 	}
 	// TODO Add an option for this?
-	if (!strstr (core->anal->cur->arch, "x86")) {
+	if (!strstr (ds->core->anal->cur->arch, "x86")) {
 		if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 			// reduce false positives in emu.str=true when loading strings via adrp+add
 			return 0;
