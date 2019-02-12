@@ -1001,7 +1001,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 		p->cb_printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval,
 			seeki + ((elem >= 0) ? elem * 8 : 0));
 	} else if (mode & R_PRINT_DOT) {
-		p->cb_printf ("%f", val_f);
+		p->cb_printf ("%.17g", val_f);
 	} else {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
@@ -1010,7 +1010,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 			}
 		}
 		if (size == -1) {
-			p->cb_printf ("%f", val_f);
+			p->cb_printf ("%.17g", val_f);
 		} else {
 			if (!SEEVALUE) {
 				p->cb_printf ("[ ");
@@ -1020,7 +1020,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 				updateAddr (buf + i, 9999, endian, &addr, NULL);
 				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%f", val_f);
+					p->cb_printf ("%.17g", val_f);
 					if (elem == 0) {
 						elem = -2;
 					}
