@@ -117,10 +117,10 @@ R_API PJ *pj_kn(PJ *j, const char *k, ut64 n) {
 	return j;
 }
 
-R_API PJ *pj_ksn(PJ *j, const char *k, st64 n) {
+R_API PJ *pj_kN(PJ *j, const char *k, st64 n) {
 	if (j && k) {
 		pj_k (j, k);
-		pj_sn (j, n);
+		pj_N (j, n);
 	}
 	return j;
 }
@@ -202,7 +202,7 @@ R_API PJ *pj_n(PJ *j, ut64 n) {
 	return j;
 }
 
-R_API PJ *pj_sn(PJ *j, st64 n) {
+R_API PJ *pj_N(PJ *j, st64 n) {
 	if (j) {
 		pj_comma (j);
 		pj_raw (j, sdb_fmt ("%"PFMT64d, n));

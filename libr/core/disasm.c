@@ -5648,14 +5648,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_list_foreach (ds->analop.switch_op->cases, iter, caseop ) {
 				pj_o (pj);
 				pj_kn (pj, "addr", caseop->addr);
-				pj_ksn (pj, "value", (st64) caseop->value);
+				pj_kN (pj, "value", (st64) caseop->value);
 				pj_kn (pj, "jump", caseop->jump);
 				pj_end (pj);
 			}
 			pj_end (pj);
 		}
 		if (ds->analop.jump != UT64_MAX ) {
-			pj_ksn (pj, "jump", ds->analop.jump);
+			pj_kN (pj, "jump", ds->analop.jump);
 			if (ds->analop.fail != UT64_MAX) {
 				pj_kn (pj, "fail", ds->analop.fail);
 			}
