@@ -945,7 +945,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval,
 			seeki + ((elem >= 0) ? elem * 4 : 0));
 	} else if (mode & R_PRINT_DOT) {
-		p->cb_printf ("%f", val_f);
+		p->cb_printf ("%.9g", val_f);
 	} else {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
@@ -954,7 +954,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 			}
 		}
 		if (size == -1) {
-			p->cb_printf ("%f", val_f);
+			p->cb_printf ("%.9g", val_f);
 		} else {
 			if (!SEEVALUE) {
 				p->cb_printf ("[ ");
@@ -962,7 +962,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 			while (size--) {
 				val_f = updateAddr (buf + i, 9999, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%f", val_f);
+					p->cb_printf ("%.9g", val_f);
 					if (elem == 0) {
 						elem = -2;
 					}
