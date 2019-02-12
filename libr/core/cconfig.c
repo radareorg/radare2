@@ -2706,7 +2706,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF ("emu.str.lea", "true", "Disable this in ARM64 code to remove some false positives");
 	SETPREF ("emu.str.off", "false", "Always show offset when printing asm.emu strings");
-	SETPREF ("emu.str.inv", "true", "Color-invert asm.emu strings");
+	SETPREF ("emu.str.inv", "true", "Color-invert emu.str strings");
 	SETPREF ("emu.str.flag", "true", "Also show flag (if any) for asm.emu string");
 	SETPREF ("emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF ("emu.ssa", "false", "Perform SSA checks and show the ssa reg names as comments");
