@@ -2375,7 +2375,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		if (resource_name) {
 			rs->name = strdup (resource_name);
 		} else {
-			char numberbuf[6];
+			char numberbuf[SDB_NUM_BUFSZ];
 			rs->name = strdup (sdb_itoa (id, numberbuf, 10));
 		}
 		r_list_append (bin->resources, rs);
