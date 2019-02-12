@@ -950,7 +950,7 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	RList* symbols_list = symbols (bf);
 	RListIter *iter;
 	RBinSymbol *symbol;
-	bool is_rust = false;
+	bool is_rust = false, is_android = !(strcmp (ret->os, "android"));
 	if (symbols_list) {
 		r_list_foreach (symbols_list, iter, symbol) {
 			if (ret->has_canary == true && is_rust == true) {
@@ -965,6 +965,13 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 			if (!strcmp (symbol->name, "__rust_oom")) {
 				is_rust = true;
 				ret->lang = "rust";
+			}
+			if (!is_android && strstr (symbol->name, "android_")) {
+				is_android = true;
+				free (ret->os);
+				free (ret->subsystem);
+				ret->os = strdup ("android");
+				ret->subsystem = strdup ("android");
 			}
 		}
 		symbols_list->free = r_bin_symbol_free;
