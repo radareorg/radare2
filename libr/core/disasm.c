@@ -123,6 +123,7 @@ typedef struct {
 	bool show_emu_strflag;
 	bool show_emu_stack;
 	bool show_emu_write;
+	bool show_emu_strlea;
 	bool show_emu_ssa;
 	bool show_section;
 	int show_section_col;
@@ -639,9 +640,10 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "emu.str");
-	ds->show_emu_stroff = r_config_get_i (core->config, "emu.stroff");
-	ds->show_emu_strinv = r_config_get_i (core->config, "emu.strinv");
-	ds->show_emu_strflag = r_config_get_i (core->config, "emu.strflag");
+	ds->show_emu_stroff = r_config_get_i (core->config, "emu.str.off");
+	ds->show_emu_strinv = r_config_get_i (core->config, "emu.str.inv");
+	ds->show_emu_strflag = r_config_get_i (core->config, "emu.str.flag");
+	ds->show_emu_strlea = r_config_get_i (core->config, "emu.str.lea");
 	ds->show_emu_write = r_config_get_i (core->config, "emu.write");
 	ds->show_emu_ssa = r_config_get_i (core->config, "emu.ssa");
 	ds->show_emu_stack = r_config_get_i (core->config, "emu.stack");
@@ -3978,12 +3980,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (!ds) {
 		return 0;
 	}
-	// TODO Add an option for this?
-	if (!strstr (ds->core->anal->cur->arch, "x86")) {
-		if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-			// reduce false positives in emu.str=true when loading strings via adrp+add
-			return 0;
-		}
+	if (!ds->show_emu_strlea && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+		// useful for ARM64
+		// reduce false positives in emu.str=true when loading strings via adrp+add
+		return 0;
 	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {

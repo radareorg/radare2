@@ -2704,9 +2704,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("emu.lazy", "false", "Do not emulate all instructions with aae (optimization)");
 	SETPREF ("emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
-	SETPREF ("emu.stroff", "false", "Always show offset when printing asm.emu strings");
-	SETPREF ("emu.strinv", "true", "Color-invert asm.emu strings");
-	SETPREF ("emu.strflag", "true", "Also show flag (if any) for asm.emu string");
+	SETPREF ("emu.str.lea", "true", "Disable this in ARM64 code to remove some false positives");
+	SETPREF ("emu.str.off", "false", "Always show offset when printing asm.emu strings");
+	SETPREF ("emu.str.inv", "true", "Color-invert emu.str strings");
+	SETPREF ("emu.str.flag", "true", "Also show flag (if any) for asm.emu string");
 	SETPREF ("emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF ("emu.ssa", "false", "Perform SSA checks and show the ssa reg names as comments");
 	n = NODECB ("emu.skip", "ds", &cb_emuskip);
