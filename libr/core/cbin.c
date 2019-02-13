@@ -3182,6 +3182,12 @@ static int bin_classes(RCore *r, int mode) {
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
+			r_list_foreach (c->fields, iter2, f) {
+				char *fn = r_str_newf ("field.%s.%s", classname, f->name);
+				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
+				r_flag_set (r->flags, fn, at, 1);
+				free (fn);
+			}
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
