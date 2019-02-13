@@ -436,7 +436,17 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki);
 		}
 		if (!SEEVALUE) {
-			p->cb_printf ("0x%08" PFMT64x " -> 0x%08" PFMT64x " ", seeki, addr);
+			if (ISQUIET) {
+				if (addr == 0LL) {
+					p->cb_printf ("NULL");
+				} else if (addr == UT32_MAX || addr == UT64_MAX) {
+					p->cb_printf ("-1");
+				} else {
+					p->cb_printf ("0x%08" PFMT64x " ", addr);
+				}
+			} else {
+				p->cb_printf ("0x%08" PFMT64x " -> 0x%08" PFMT64x " ", seeki, addr);
+			}
 		}
 		if (res > 0 && buffer[0] != 0xff && buffer[1] != 0xff) {
 			p->cb_printf ("\"%s\"", buffer);
@@ -544,8 +554,12 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
 		}
-		if (size==-1) {
-			p->cb_printf ("%"PFMT64d, addr);
+		if (size == -1) {
+			if (addr == UT64_MAX || addr == UT32_MAX) {
+				p->cb_printf ("-1");
+			} else {
+				p->cb_printf ("%"PFMT64d, addr);
+			}
 		} else {
 			if (!SEEVALUE) {
 				p->cb_printf ("[ ");
@@ -553,7 +567,15 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%"PFMT64d, addr);
+					if (ISQUIET) {
+						if (addr == UT64_MAX || addr == UT32_MAX) {
+							p->cb_printf ("-1");
+						} else {
+							p->cb_printf ("%"PFMT64d, addr);
+						}
+					} else {
+						p->cb_printf ("%"PFMT64d, addr);
+					}
 					if (elem == 0) {
 						elem = -2;
 					}
@@ -779,7 +801,11 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
 		}
 		if (size==-1) {
-			p->cb_printf ("0x%08"PFMT64x, (ut64)addr32);
+			if (ISQUIET && (addr32 == UT32_MAX)) {
+				p->cb_printf ("-1");
+			} else {
+				p->cb_printf ("0x%08"PFMT64x, (ut64)addr32);
+			}
 		} else {
 			if (!SEEVALUE) {
 				p->cb_printf ("[ ");
@@ -2009,10 +2035,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->cb_printf ("(*0x%"PFMT64x")", addr);
 				}
 				isptr = (addr)? PTRBACK: NULLPTR;
-				if (/*addr<(b+len) && addr>=b && */p->iob.read_at) { /* The test was here to avoid segfault in the next line,
-						but len make it doesnt work... */
-					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
-					if ( (i + 3) < len || (i + 7) < len) {
+				if (p->iob.read_at) {
+					p->iob.read_at (p->iob.io, (ut64)addr, buf, len - 4);
+					if (((i + 3) < len) || ((i + 7) < len)) {
 						// XXX this breaks pf *D
 						if (tmp != 'D') {
 							updateAddr (buf + i, len - i, endian, &addr, &addr64);
@@ -2022,7 +2047,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						goto beach;
 					}
 				} else {
-					eprintf ("(SEGFAULT: cannot read at 0x%08"PFMT64x", block: %s, blocksize: 0x%x)\n",
+					eprintf ("(cannot read at 0x%08"PFMT64x", block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
 					p->cb_printf ("\n");
 					goto beach;
