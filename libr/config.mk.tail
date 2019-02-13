@@ -1,6 +1,8 @@
 # config.mk.tail
 
-LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+s+=$(subst \\ ,+,$1)
++s=$(subst +,\\ ,$1)
+LIBR:=$(call +s,$(abspath $(dir $(lastword $(MAKEFILE_LIST)))))
 # neat???!? trick to support path with spaces
 null:=
 SPACE:=$(null) $(null)
