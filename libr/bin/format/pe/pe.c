@@ -2300,7 +2300,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			// do not dblfree, ownership is transferred free (resourceEntryName);
 			continue;
 		} else {
-			free (resourceEntryName);
+			R_FREE (resourceEntryName);
 		}
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
