@@ -5911,6 +5911,18 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case '*': // "ax*"
 		r_anal_xrefs_list (core->anal, input[0]);
 		break;
+	case '.': { // "ax."
+		char *tInput = strdup (input);
+		if (r_str_replace_ch (tInput, '.', 't', false)) {
+			cmd_anal_refs (core, tInput);
+		}
+		char *fInput = strdup (input);
+		if (r_str_replace_ch (fInput, '.', 'f', false)) {
+			cmd_anal_refs (core, fInput);
+		}
+		free (tInput);
+		free (fInput);
+	} break;
 	case 't': { // "axt"
 		RList *list = NULL;
 		RAnalFunction *fcn;
