@@ -6386,7 +6386,12 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 		case R_BIN_JAVA_EV_TAG_ENUM:
 			// Delete the CP Type Objects
 			obj = element_value->value.enum_const_value.const_name_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				RBinJavaCPTypeMetas *ti = obj->metas->type_info;
+				if (ti && ti->allocs && ti->allocs->delete_obj) {
+					ti->allocs->delete_obj (obj);
+				}
+			}
 			obj = element_value->value.enum_const_value.type_name_cp_obj;
 			if (obj && obj->metas) {
 				RBinJavaCPTypeMetas *tm = obj->metas->type_info;
