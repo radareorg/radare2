@@ -2412,7 +2412,7 @@ r_cons_pop();
 						R_FREE (string2);
 					}
 				}
-				if (string) {
+				if (string && addr != UT64_MAX && addr != UT32_MAX) {
 					string = r_str_trim (string);
 					string2 = r_str_trim (string2);
 					//// TODO implememnt avoid duplicated strings
