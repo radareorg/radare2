@@ -3778,6 +3778,9 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 	ut32 i = 0;
 	ut64 curpos, offset = 0;
 	RBinJavaLineNumberAttribute *lnattr;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) {
 		return NULL;
