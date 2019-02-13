@@ -1500,7 +1500,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	}
 
 	i = 0;
-	if (IS_DIGIT(fmt[i])) {
+	if (IS_DIGIT (fmt[i])) {
 		while (IS_DIGIT(fmt[i])) {
 			i++;
 		}
@@ -2179,6 +2179,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 			bool noline = false;
 
+			int oi = i;
 			if (isptr == NULLPTR) {
 				if (MUSTSEEJSON) {
 					p->cb_printf ("\"NULL\"}", tmp, seek + i);
@@ -2460,6 +2461,13 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 			if (mode & R_PRINT_DOT) {
 				p->cb_printf ("}");
+			}
+			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
+				int sz = i - oi;
+				if (sz > 1) {
+					p->cb_printf ("fl %d @ 0x%08"PFMT64x"\n", sz, seeki);
+					p->cb_printf ("Cd %d @ 0x%08"PFMT64x"\n", sz, seeki);
+				}
 			}
 			if (viewflags && p->offname) {
 				const char *s = p->offname (p->user, seeki);
