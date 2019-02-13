@@ -609,6 +609,7 @@ R_API int r_core_visual_types(RCore *core) {
 		"struct",
 		"func",
 		"union",
+		"cc",
 		NULL
 	};
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -634,11 +635,16 @@ R_API int r_core_visual_types(RCore *core) {
 		if (optword) {
 			r_cons_printf (">> %s\n", optword);
 		}
-		vt.t_idx = option;
-		vt.t_ctr = 0;
-		vt.type = opts[h_opt];
-		vt.optword = optword;
-                sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+		if (!strcmp (opts[h_opt], "cc")) {
+			// XXX TODO: make this work (select with cursor, to delete, or add a new one with 'i', etc)
+			r_core_cmdf (core, "tfcl");
+		} else {
+			vt.t_idx = option;
+			vt.t_ctr = 0;
+			vt.type = opts[h_opt];
+			vt.optword = optword;
+			sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+		}
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
