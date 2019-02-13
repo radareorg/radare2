@@ -5,6 +5,12 @@ CS_TIP="$3" # tip commit
 CS_REV="$4" # revert
 CS_DEPTH_CLONE=10
 
+git --help > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "ERROR: Cannot find git command in PATH"
+	exit 1
+fi
+
 fatal_msg() {
 	printf '[capstone] %s\n' "$1" >&2
 	exit 1
