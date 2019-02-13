@@ -1143,26 +1143,14 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 
 static void r_print_format_nulltermstring(const RPrint* p, const int len, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
-	if (!p->iob.is_valid_offset (p->iob.io, seeki, false)) {
-		p->cb_printf ("-1");
-		return;
-	}
-#if 0
-	ut8 n[sizeof (ut64)] = {0};
-	p->iob.read_at (p->iob.io, (ut64)seeki, &n, sizeof (n));
-	// follow pointer ?
-	ut64 at = r_read_le32 (n);
-	if (p->iob.is_valid_offset (p->iob.io, at, false)) {
-		seeki = at;
-	} else {
-		at = r_read_le64 (n);
-		if (p->iob.is_valid_offset (p->iob.io, at, false)) {
-			seeki = at;
+	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
+		ut8 ch = 0xff;
+		// XXX there are some cases where the memory is there but is_valid_offset fails wtf
+		if (p->iob.read_at (p->iob.io, seeki, &ch, 1) != 1 && ch != 0xff) {
+			p->cb_printf ("-1");
+			return;
 		}
 	}
-	p->iob.read_at (p->iob.io, (ut64)seeki, buf + at, size - at);
-p->cb_printf("((%s))", buf + at);
-#endif
 	if (MUSTSET) {
 		int buflen = strlen ((const char *)buf + seeki);
 		int vallen = strlen (setval);
