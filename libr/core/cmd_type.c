@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2019 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #include <string.h>
 #include "r_anal.h"
@@ -33,6 +33,18 @@ static const char *help_msg_t[] = {
 	NULL
 };
 
+static const char *help_msg_tfc[] = {
+	"Usage: tfc", "[-name]", "# type function calling conventions",
+	"tfc", "", "List all calling convcentions",
+	"tfc", " r0 pascal(r0,r1,r2)", "Show signature for the 'pascal' calling convention",
+	"tfc", "-pascal", "Remove the pascal cc",
+	"tfck", "", "List calling conventions in k=v",
+	"tfcl", "", "List the cc signatures",
+	"tfcj", "", "List them in JSON",
+	"tfc*", "", "List them as r2 commands",
+	NULL
+};
+
 static const char *help_msg_t_minus[] = {
 	"Usage: t-", " <type>", "Delete type by its name",
 	NULL
@@ -51,6 +63,8 @@ static const char *help_msg_tf[] = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "List all function definitions loaded",
 	"tf", " <name>", "Show function signature",
+	"tfc", " <name>", "Show function calling conventions",
+	"tfcj", " <name>", "Same as above but in JSON",
 	"tfj", "", "List all function definitions in json",
 	"tfj", " <name>", "Show function signature in json",
 	NULL
@@ -165,6 +179,83 @@ static void cmd_type_init(RCore *core) {
 
 static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
+}
+
+static void __core_cmd_tfc(RCore *core, const char *input) {
+	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg_tfc);
+		break;
+	case '-':
+		r_anal_cc_del (core->anal, r_str_trim_ro (input + 1));
+		break;
+	case 0:
+		r_core_cmd0 (core, "afcl");
+		break;
+	case 'j':
+		{
+			char *ccs = r_core_cmd_strf (core, "afcl");
+			RList *list = r_str_split_list (ccs, "\n");
+			RListIter *iter;
+			const char *cc;
+			PJ *pj = pj_new ();
+			pj_a (pj);
+			r_list_foreach (list, iter, cc) {
+				char *ccexpr = r_anal_cc_get (core->anal, cc);
+				// TODO: expose this as an object, not just an array of strings
+				pj_s (pj, ccexpr);
+				free (ccexpr);
+			}
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+			r_list_free (list);
+			free (ccs);
+		}
+		break;
+	case 'l':
+		{
+			char *ccs = r_core_cmd_strf (core, "afcl");
+			RList *list = r_str_split_list (ccs, "\n");
+			RListIter *iter;
+			const char *cc;
+			r_list_foreach (list, iter, cc) {
+				char *ccexpr = r_anal_cc_get (core->anal, cc);
+				r_cons_printf ("%s\n", ccexpr);
+				free (ccexpr);
+			}
+			r_list_free (list);
+			free (ccs);
+		}
+		break;
+	case '*':
+		{
+			char *ccs = r_core_cmd_strf (core, "afcl");
+			RList *list = r_str_split_list (ccs, "\n");
+			RListIter *iter;
+			const char *cc;
+			r_list_foreach (list, iter, cc) {
+				char *ccexpr = r_anal_cc_get (core->anal, cc);
+				r_cons_printf ("tfc %s\n", ccexpr);
+				free (ccexpr);
+			}
+			r_list_free (list);
+			free (ccs);
+		}
+		break;
+	case 'k':
+		r_core_cmd0 (core, "afck");
+		break;
+	case ' ':
+		if (strchr (input, '(')) {
+			r_anal_cc_set (core->anal, input + 1);
+		} else {
+			char *cc = r_anal_cc_get (core->anal, input + 1);
+			r_cons_printf ("%s\n", cc);
+			free (cc);
+		}
+		break;
+	}
 }
 
 static void showFormat(RCore *core, const char *name, int mode) {
@@ -1356,7 +1447,9 @@ static int cmd_type(void *data, const char *input) {
 					ls_free (l);
 					free (tmp);
 				}
-			} else eprintf ("Invalid use of t- . See t-? for help.\n");
+			} else {
+				eprintf ("Invalid use of t- . See t-? for help.\n");
+			}
 		}
 		break;
 	// tv - get/set type value linked to a given address
@@ -1364,6 +1457,9 @@ static int cmd_type(void *data, const char *input) {
 		switch (input[1]) {
 		case 0:
 			print_keys (TDB, core, stdiffunc, printkey_cb, false);
+			break;
+		case 'c':
+			__core_cmd_tfc (core, input + 2);
 			break;
 		case 'j':
 			if (input[2] == ' ') {

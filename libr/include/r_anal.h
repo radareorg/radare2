@@ -1588,6 +1588,9 @@ R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
 R_API bool r_anal_cc_exist (RAnal *anal, const char *convention);
+R_API void r_anal_cc_del(RAnal *anal, const char *name);
+R_API void r_anal_cc_set(RAnal *anal, const char *expr);
+R_API char *r_anal_cc_get(RAnal *anal, const char *name);
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n);
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention);
