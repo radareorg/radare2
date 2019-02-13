@@ -2209,7 +2209,6 @@ static char *get_comments_cb(void *user, ut64 addr) {
 R_IPI void spaces_list(RSpaces *sp, int mode) {
 	RSpaceIter it;
 	RSpace *s;
-	bool first = true;
 	const RSpace *cur = r_spaces_current (sp);
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -2230,7 +2229,6 @@ R_IPI void spaces_list(RSpaces *sp, int mode) {
 			r_cons_printf ("%5d %c %s\n", count, (!cur || cur == s)? '*': '.',
 				s->name);
 		}
-		first = false;
 	}
 	if (mode == '*' && r_spaces_current (sp)) {
 		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));

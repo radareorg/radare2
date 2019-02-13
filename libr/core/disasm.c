@@ -5443,7 +5443,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	return len;
 }
 
-R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes) {
+R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	RAsmOp asmop;
 	RDisasmState *ds;
 	RAnalFunction *f;
@@ -5451,7 +5451,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
-	//r_cons_printf ("[");
 	int limit_by = 'b';
 	char str[512];
 
@@ -5481,7 +5480,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				nb_opcodes ++;
 				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
 #endif
-					r_cons_printf ("]");
+					pj_end (pj);
 					return false;
 #if BWRETRY
 				}
@@ -5557,9 +5556,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		memset (&asmop, 0, sizeof (RAsmOp));
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
-			r_cons_printf (j > 0 ? ",{" : "{");
-			r_cons_printf ("\"offset\":%"PFMT64d, at);
-			r_cons_printf (",\"size\":1,\"type\":\"invalid\"}");
+			pj_o (pj);
+			pj_kn (pj, "offset", at);
+			pj_ki (pj, "size", 1);
+			pj_ks (pj, "type", "invalid");
+			pj_end (pj);
 			i++;
 			k++;
 			j++;
@@ -5625,48 +5626,32 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 		}
 
-		r_cons_printf (j > 0 ? ",{" : "{");
-		r_cons_printf ("\"offset\":%"PFMT64d, at);
+		pj_o (pj);
+		pj_kn (pj, "offset", at);
 		if (ds->analop.ptr != UT64_MAX) {
-			r_cons_printf (",\"ptr\":%"PFMT64d, ds->analop.ptr);
+			pj_kn (pj, "ptr", ds->analop.ptr);
 		}
 		if (ds->analop.val != UT64_MAX) {
-			r_cons_printf (",\"val\":%"PFMT64d, ds->analop.val);
+			pj_kn (pj, "val", ds->analop.val);
 		}
-		r_cons_printf (",\"esil\":\"%s\"", R_STRBUF_SAFEGET (&ds->analop.esil));
-		r_cons_printf (",\"refptr\":%s", r_str_bool (ds->analop.refptr));
-		if (f) {
-			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);
-			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + r_anal_fcn_size (f) - ds->oplen);
-		} else {
-			r_cons_printf (",\"fcn_addr\":0");
-			r_cons_printf (",\"fcn_last\":0");
-		}
-		r_cons_printf (",\"size\":%d", ds->analop.size);
-		{
-			char *escaped_str = r_str_escape_utf8_for_json (opstr, -1);
-			if (escaped_str) {
-				r_cons_printf (",\"opcode\":\"%s\"", escaped_str);
-			}
-			free (escaped_str);
-
-			escaped_str = r_str_escape_utf8_for_json (str, -1);
-			if (escaped_str) {
-				r_cons_printf (",\"disasm\":\"%s\"", escaped_str);
-			}
-			free (escaped_str);
-		}
-		r_cons_printf (",\"bytes\":\"%s\"", r_asm_op_get_hex (&asmop));
-		r_cons_printf (",\"family\":\"%s\"",
-				r_anal_op_family_to_string (ds->analop.family));
-		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (ds->analop.type));
+		pj_k (pj, "esil"); // split key and value to allow empty strings
+		pj_s (pj, R_STRBUF_SAFEGET (&ds->analop.esil));
+		pj_kb (pj, "refptr", ds->analop.refptr);
+		pj_kn (pj, "fcn_addr", f ? f->addr : 0);
+		pj_kn (pj, "fcn_last", f ? f->addr + r_anal_fcn_size (f) - ds->oplen : 0);
+		pj_ki (pj, "size", ds->analop.size);
+		pj_ks (pj, "opcode", opstr);
+		pj_ks (pj, "disasm", str);
+		pj_ks (pj, "bytes", r_asm_op_get_hex (&asmop));
+		pj_ks (pj, "family", r_anal_op_family_to_string (ds->analop.family));
+		pj_ks (pj, "type", r_anal_optype_to_string (ds->analop.type));
 		// indicate a relocated address
 		RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 		// reloc is true if address in reloc table
-		r_cons_printf (",\"reloc\":%s", rel ? r_str_bool(true) : r_str_bool (false));
+		pj_kb (pj, "reloc", rel);
 		// wanted the numerical values of the type information
-		r_cons_printf (",\"type_num\":%"PFMT64d, ds->analop.type);
-		r_cons_printf (",\"type2_num\":%"PFMT64d, ds->analop.type2);
+		pj_kn (pj, "type_num", ds->analop.type);
+		pj_kn (pj, "type2_num", ds->analop.type2);
 		// handle switch statements
 		if (ds->analop.switch_op && r_list_length (ds->analop.switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
@@ -5674,25 +5659,21 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			// represented during the analysis
 			RListIter *iter;
 			RAnalCaseOp *caseop;
-			int cnt = r_list_length (ds->analop.switch_op->cases);
-			r_cons_printf (", \"switch\":[");
+			pj_k (pj, "switch");
+			pj_a (pj);
 			r_list_foreach (ds->analop.switch_op->cases, iter, caseop ) {
-				cnt--;
-				r_cons_printf ("{");
-				r_cons_printf ("\"addr\":%"PFMT64d, caseop->addr);
-				r_cons_printf (", \"value\":%"PFMT64d, (st64) caseop->value);
-				r_cons_printf (", \"jump\":%"PFMT64d, caseop->jump);
-				r_cons_printf ("}");
-				if (cnt > 0) {
-					r_cons_printf (",");
-				}
+				pj_o (pj);
+				pj_kn (pj, "addr", caseop->addr);
+				pj_kN (pj, "value", (st64) caseop->value);
+				pj_kn (pj, "jump", caseop->jump);
+				pj_end (pj);
 			}
-			r_cons_printf ("]");
+			pj_end (pj);
 		}
 		if (ds->analop.jump != UT64_MAX ) {
-			r_cons_printf (",\"jump\":%"PFMT64d, ds->analop.jump);
+			pj_kN (pj, "jump", ds->analop.jump);
 			if (ds->analop.fail != UT64_MAX) {
-				r_cons_printf (",\"fail\":%"PFMT64d, ds->analop.fail);
+				pj_kn (pj, "fail", ds->analop.fail);
 			}
 		}
 		/* add flags */
@@ -5701,11 +5682,12 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			RFlagItem *flag;
 			RListIter *iter;
 			if (flags && !r_list_empty (flags)) {
-				r_cons_printf (",\"flags\":[");
+				pj_k (pj, "flags");
+				pj_a (pj);
 				r_list_foreach (flags, iter, flag) {
-					r_cons_printf ("%s\"%s\"", iter->p?",":"",flag->name);
+					pj_s (pj, flag->name);
 				}
-				r_cons_printf ("]");
+				pj_end (pj);
 			}
 		}
 		/* add comments */
@@ -5714,7 +5696,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, at);
 			if (comment) {
 				char *b64comment = sdb_encode ((const ut8*)comment, -1);
-				r_cons_printf (",\"comment\":\"%s\"", b64comment);
+				pj_ks (pj, "comment", b64comment);
 				free (comment);
 				free (b64comment);
 			}
@@ -5725,18 +5707,20 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			RListIter *iter;
 			RList *xrefs = r_anal_xrefs_get (core->anal, at);
 			if (xrefs && !r_list_empty (xrefs)) {
-				r_cons_printf (",\"xrefs\":[");
+				pj_k (pj, "xrefs");
+				pj_a (pj);
 				r_list_foreach (xrefs, iter, ref) {
-					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%s\"}",
-							iter->p?",":"", ref->addr,
-						r_anal_xrefs_type_tostring (ref->type));
+					pj_o (pj);
+					pj_kn (pj, "addr", ref->addr);
+					pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					pj_end (pj);
 				}
-				r_cons_printf ("]");
+				pj_end (pj);
 			}
 			r_list_free (xrefs);
 		}
 
-		r_cons_printf ("}");
+		pj_end (pj);
 		i += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // bytes
 		k += ds->oplen + asmop.payload + (ds->asmop.payload % ds->core->assembler->dataalign); // delta from addr
 		j++; // instructions
@@ -5754,7 +5738,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
 	if (!result) {
-		r_cons_printf ("{}");
+		pj_o (pj);
+		pj_end (pj);
 		result = true;
 	}
 	return result;
