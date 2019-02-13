@@ -431,6 +431,7 @@ else
       r_cons_dep,
       r_core_dep,
       r_crypto_dep,
+      r_debug_dep,
       r_egg_dep,
       r_flag_dep,
       r_fs_dep,
