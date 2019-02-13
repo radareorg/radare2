@@ -5434,7 +5434,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
-	//pj_a (pj);
 	int limit_by = 'b';
 	char str[512];
 
