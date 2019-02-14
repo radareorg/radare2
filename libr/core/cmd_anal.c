@@ -7470,16 +7470,18 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		if (!pj) {
 			return;
 		}
-		input++;
-		ut64 addr;
+		ut64 addr = core->offset;
 		char *p;
 		int n = 1;
-		p = strchr (input + 1, ' ');
-		if (p) {
-			*p = '\0';
-			n = *(++p)? r_num_math (core->num, p): 1;
+		input++;
+		if (*input) {
+			p = strchr (input + 1, ' ');
+			if (p) {
+				*p = '\0';
+				n = *(++p)? r_num_math (core->num, p): 1;
+			}
+			addr = r_num_math (core->num, input + 1);
 		}
-		addr = r_num_math (core->num, input + 1);
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
 			RAnalBlock *bb;
