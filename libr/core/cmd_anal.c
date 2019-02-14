@@ -43,6 +43,7 @@ static const char *help_msg_aa[] = {
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
+	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
@@ -7594,8 +7595,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
-	case 'F': // "aaF"
-		r_core_anal_inflags (core, input + 1);
+	case 'F': // "aaF" "aaFa"
+		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
+			r_core_anal_inflags (core, input + 1);
+		} else {
+			eprintf ("Usage: aaF[a] - analyze functions in flag bounds (aaFa uses af/a2f instead of af+/afb+)\n");
+		}
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {
