@@ -4660,7 +4660,7 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 }
 
 // int l is for lines
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, RAnalFunction *pdf) {
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, PJ *pj, RAnalFunction *pdf) {
 	int continueoninvbreak = (len == l) && invbreak;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
@@ -4682,7 +4682,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->pdf = pdf;
 
 	if (json) {
-		ds->pj = pj_new ();
+		ds->pj = pj ? pj : pj_new ();
 		if (!ds->pj) {
 			return 0;
 		}
@@ -4721,7 +4721,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			}
 		}
 	}
-	if (ds->pj) {
+	if (ds->pj && !pj) {
 		pj_a (ds->pj);
 	}
 toro:
@@ -5144,9 +5144,11 @@ toro:
 #endif
 	if (ds->pj) {
 		r_cons_pop ();
-		pj_end (ds->pj);
-		r_cons_printf ("%s", pj_string (ds->pj));
-		pj_free (ds->pj);
+		if (!pj) {
+			pj_end (ds->pj);
+			r_cons_printf ("%s", pj_string (ds->pj));
+			pj_free (ds->pj);
+		}
 	}
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX, calc_row_offsets);
