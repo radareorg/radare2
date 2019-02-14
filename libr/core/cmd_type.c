@@ -334,6 +334,78 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
+static int calculate_type_size(Sdb *sdb_types, char *name) {
+	char *type = NULL;
+	if (!sdb_types || !name || !sdb_exists (sdb_types, name) || !(type = sdb_get (sdb_types, name, 0))) {
+		return 0;
+	}
+	char *type_name = r_str_newf ("%s.%s", type, name);
+	char *type_name_size = r_str_newf ("%s.%s.%s", type, name, "size");
+	int size = 0;
+	if (sdb_exists (sdb_types, type_name_size)) { // size already exists so stop recursion
+		char *v = sdb_get (sdb_types, type_name_size, 0);
+		size = sdb_atoi (v);
+		free (v);
+	} else if (!strcmp (type, "struct") || !strcmp (type, "union")) {
+		int idx;
+		char *v = NULL;
+		//loop through the contents to find individual sizes
+		for (idx = 0; (v = sdb_array_get (sdb_types, type_name, idx, NULL)); ++idx) {
+			char *sub_name = sdb_array_get (sdb_types, sdb_fmt ("%s.%s", type_name, v), 0, NULL);
+			char *ptr = NULL;
+			int sz = 0;
+			if (strchr (sub_name, '*')) {
+				// It is a pointer variable so get its size;
+				sz = calculate_type_size (sdb_types, "void *");
+			} else if ((ptr = strchr (sub_name, ' '))) {
+				sz = calculate_type_size (sdb_types, ptr + 1);
+			} else {
+				sz = calculate_type_size (sdb_types, sub_name);
+			}
+			// count stores the number of elements in case of an array
+			int count = sdb_array_get_num (sdb_types, sdb_fmt ("%s.%s", type_name, v), 2, NULL);
+			if (count) {
+				sz *= count;
+			}
+			if (!strcmp (type, "struct")) {
+				// size of struct is sum of sizes of its elements
+				size += sz;
+			} else {
+				// size of union is max of the sizes of its elements
+				size = sz > size ? sz : size;
+			}
+			free (sub_name);
+			free (v);
+		}
+	}
+	sdb_set (sdb_types, type_name_size, sdb_fmt ("%d", size), 0); // store the size for fast access
+	free (type);
+	free (type_name);
+	free (type_name_size);
+	return size;
+}
+
+R_API void save_parsed_type_size(RCore *core, const char *parsed) {
+	if (!core || !core->anal || !parsed) {
+		return;
+	}
+	char *str = strdup (parsed);
+	if (str) {
+		char *ptr = NULL;
+		int offset = 0;
+		while ((ptr = strstr (str + offset, "=struct\n")) || (ptr = strstr (str + offset, "=union\n"))) {
+			*ptr = 0;
+			char *name = ptr;
+			while (name - 1 >= str && *(name - 1) != '\n' && *(name - 1) != 0) {
+				name--;
+			}
+			calculate_type_size (core->anal->sdb_types, name);
+			offset = ptr + 1 - str;
+		}
+		free (str);
+	}
+}
+
 static void save_parsed_type(RCore *core, const char *parsed) {
 	if (!core || !core->anal || !parsed) {
 		return;
@@ -353,6 +425,7 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 			r_core_cmdf (core, "\"t- %s\"", name);
 			// Now add the type to sdb.
 			sdb_query_lines (core->anal->sdb_types, parsed);
+			save_parsed_type_size (core, parsed);
 		}
 		free (type);
 	}
@@ -373,6 +446,23 @@ static int stdifstruct(void *user, const char *k, const char *v) {
 		}
 	}
 	return false;
+}
+
+static int print_struct_union_list_json_cb(void *p, const char *k, const char *v) {
+	RCore *core = (RCore *)p;
+	PJ *pj = pj_new ();
+	pj_o (pj);
+	Sdb *sdb = core->anal->sdb_types;
+	char *sizecmd = r_str_newf ("%s.%s.size", v, k);
+	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
+	pj_ks (pj, "type", k);
+	pj_ki (pj, "size", size_s ? atoi (size_s) : 0);
+	pj_end (pj);
+	r_cons_printf ("%s", pj_string (pj));
+	pj_free (pj);
+	free (sizecmd);
+	free (size_s);
+	return 1;
 }
 
 static int printkey_cb(void *user, const char *k, const char *v) {
@@ -784,12 +874,12 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			}
 			break;
-		case 'j':
+		case 'j': // "tuj"
 			if (input[2]) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				print_keys (TDB, core, stdifunion, printkey_json_cb, true);
+				print_keys (TDB, core, stdifunion, print_struct_union_list_json_cb, true);
 			}
 			break;
 		case 'c':{
@@ -934,7 +1024,7 @@ static int cmd_type(void *data, const char *input) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				print_keys (TDB, core, stdifstruct, printkey_json_cb, true);
+				print_keys (TDB, core, stdifstruct, print_struct_union_list_json_cb, true);
 			}
 			break;
 		}
