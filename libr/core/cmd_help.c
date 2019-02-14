@@ -318,19 +318,6 @@ enum {
 
 static const char *getClippy(int type) {
 	if (type == R_AVATAR_ORANGG) {
-#if 0
-		"
-			_______
-			/       \
-			_/(o) (o ) |_
-			/ |  ./.    _ \
-			7` \ _____  / |/
-			\`---'  | /|`
-			/ ,----\ |
-			___| \ ___/ |
-			'-----'`-----'
-			"
-#endif
 			return
 			"      _______\n"
 			"     /       \\      .-%s-.\n"
