@@ -194,7 +194,6 @@ R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
-	bool is_first = true;
 	RListIter *iter;
 	RAnalRef *ref;
 	PJ *pj = NULL;

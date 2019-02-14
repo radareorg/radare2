@@ -1862,12 +1862,21 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	return NULL;
 }
 
+#define MAXBBSIZE (1024*1024*1)
 /* rename RAnalFunctionBB.add() */
-R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
+R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
 	RAnalBlock *bb = NULL, *bbi;
 	RListIter *iter;
 	bool mid = false;
 	st64 n;
+	if (size == 0) { // empty basic blocks allowed?
+		eprintf ("warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
+		return false;
+	}
+	if (size > MAXBBSIZE) {
+		eprintf ("warning: cant allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
+		return false;
+	}
 	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
