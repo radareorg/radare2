@@ -267,7 +267,7 @@ R_API int r_io_close_all(RIO* io) { // what about undo?
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
-	r_return_val_if_fail (io && buf && len > 0, -1);
+	r_return_val_if_fail (io && buf && len >= 0, -1);
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
