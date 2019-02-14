@@ -4775,7 +4775,6 @@ static int __addrs_cmp(void *_a, void *_b) {
         return 0;
 }
 
-#define MAXFCNSIZE 1024*1024*1
 R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
@@ -4808,7 +4807,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			continue;
 		}
 		st64 sz = a1 - a0;
-		if (sz < 1 || sz > MAXFCNSIZE) {
+		if (sz < 1 || sz > core->anal->opt.bb_max_size) {
 			eprintf ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", a0, a1);
 			continue;
 		}
