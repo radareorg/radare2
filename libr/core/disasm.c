@@ -2662,7 +2662,6 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				switch (mi->type) {
 				case R_META_TYPE_STRING:
 				{
-					char *quote = "\"";
 					bool esc_bslash = core->print->esc_bslash;
 
 					switch (mi->subtype) {
@@ -2678,8 +2677,8 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					if (!out) {
 						break;
 					}
-					r_cons_printf ("    .string %s%s%s%s%s ; len=%"PFMT64d,
-							COLOR (ds, color_btext), quote, out, quote, COLOR_RESET (ds),
+					r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
+							COLOR (ds, color_btext), out, COLOR_RESET (ds),
 							mi->size);
 					free (out);
 					delta = ds->at - mi->from;
@@ -3993,16 +3992,15 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 #endif
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
-				const char *escquote = "\"";
 				if (escstr) {
 					char *m;
 					if (ds->show_color) {
 						bool inv = ds->show_emu_strinv;
-						m = r_str_newf ("%s%s%s%s%s%s%s",
+						m = r_str_newf ("%s%s%s\"%s\"%s",
 						                  prefix, type ? type : "", inv ? Color_INVERT : "",
-						                  escquote, escstr, escquote, inv ? Color_INVERT_RESET : "");
+						                  escstr, inv ? Color_INVERT_RESET : "");
 					} else {
-						m = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
+						m = r_str_newf ("%s%s\"%s\"", prefix, type? type: "", escstr);
 					}
 					msg = r_str_append_owned (msg, m);
 					emu_str_printed = true;
@@ -4517,7 +4515,6 @@ static void ds_print_comments_right(RDisasmState *ds) {
 							int i;
 							for (i = 0; i < lines_count; i++) {
 								char *c = comment + line_indexes[i];
-								char *escstr = NULL;
 								ds_print_pre (ds);
 								if (ds->show_color) {
 									r_cons_strcat (ds->color_usrcmt);
@@ -4527,7 +4524,6 @@ static void ds_print_comments_right(RDisasmState *ds) {
 									ds_newline (ds);
 									ds_begin_line (ds);
 								}
-								free (escstr);
 							}
 						}
 						free (line_indexes);
