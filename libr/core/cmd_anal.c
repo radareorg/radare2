@@ -7475,12 +7475,14 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		int n = 1;
 		input++;
 		if (*input) {
-			p = strchr (input + 1, ' ');
+			char *tmp = strdup (input);
+			p = strchr (tmp + 1, ' ');
 			if (p) {
-				*p = '\0';
-				n = *(++p)? r_num_math (core->num, p): 1;
+				*p++ = '\0';
+				n = *p? r_num_math (core->num, p): 1;
 			}
-			addr = r_num_math (core->num, input + 1);
+			addr = r_num_math (core->num, tmp + 1);
+			free (tmp);
 		}
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
