@@ -184,7 +184,7 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	}
 	o = strdup (s);
 	int cols = r_str_split (o, ',');
-	if (cols < 3) {
+	if (cols < 4) {
 		free (o);
 		return NULL;
 	}
