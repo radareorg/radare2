@@ -4,11 +4,7 @@
 
 R_API RSpaces *r_spaces_new(const char *name) {
 	RSpaces *sp = R_NEW0 (RSpaces);
-	if (!sp) {
-		return NULL;
-	}
-	if (!r_spaces_init (sp, name)) {
-		R_FREE (sp);
+	if (!sp || !r_spaces_init (sp, name)) {
 		return NULL;
 	}
 	return sp;

@@ -123,6 +123,7 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 	int ret, len = r_hex_str2bin ((char *)buf, buf);
 	PJ *pj = pj_new ();
 	if (!pj) {
+		free (buf);
 		return 0;
 	}
 	
