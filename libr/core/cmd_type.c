@@ -334,6 +334,11 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
+/*!
+ * \brief Save the size of the given datatype in sdb
+ * \param sdb_types pointer to the sdb for types
+ * \param name the datatype whose size if to be stored
+ */
 static void save_type_size(Sdb *sdb_types, char *name) {
 	char *type = NULL;
 	r_return_if_fail (sdb_types && name);
@@ -347,6 +352,11 @@ static void save_type_size(Sdb *sdb_types, char *name) {
 	free (type_name_size);
 }
 
+/*!
+ * \brief Save the sizes of the datatypes which have been parsed
+ * \param core pointer to radare2 core
+ * \param parsed the parsed c string in sdb format
+ */
 R_API void save_parsed_type_size(RCore *core, const char *parsed) {
 	r_return_if_fail (core && core->anal && parsed);
 	char *str = strdup (parsed);
@@ -408,6 +418,12 @@ static int stdifstruct(void *user, const char *k, const char *v) {
 	return false;
 }
 
+/*!
+ * \brief print the data types details in JSON format
+ * \param TDB pointer to the sdb for types
+ * \param filter a callback function for the filtering
+ * \return 1 if success, 0 if failure
+ */
 static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	PJ *pj = pj_new ();
 	if (!pj) {
@@ -417,27 +433,28 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	SdbListIter *it;
 	SdbKv *kv;
 
-	pj_a (pj);
+	pj_a (pj); // [
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
 		if (!k || !*k) {
 			continue;
 		}
 
-		pj_o (pj);
+		pj_o (pj); // {
 		char *sizecmd = r_str_newf ("%s.%s.size", sdbkv_value (kv), k);
 		char *size_s = sdb_querys (TDB, NULL, -1, sizecmd);
-		pj_ks (pj, "type", k);
-		pj_ki (pj, "size", size_s ? atoi (size_s) : 0);
-		pj_end (pj);
+		pj_ks (pj, "type", k); // key value pair of string and string
+		pj_ki (pj, "size", size_s ? atoi (size_s) : 0); // key value pair of string and int
+		pj_end (pj); // }
 
 		free (sizecmd);
 		free (size_s);
 	}
-	pj_end (pj);
+	pj_end (pj); // ]
 
 	r_cons_println (pj_string (pj));
 	pj_free (pj);
+	ls_free (l);
 	return 1;
 }
 
