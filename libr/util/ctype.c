@@ -143,8 +143,8 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 		query = sdb_fmt ("type.%s.size", tmptype);
 		return sdb_num_get (TDB, query, 0); // returns size in bits
 	}
-	if (!strcmp (t, "struct")) {
-		query = sdb_fmt ("struct.%s", tmptype);
+	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
+		query = sdb_fmt ("%s.%s", t, tmptype);
 		char *members = sdb_get (TDB, query, 0);
 		char *next, *ptr = members;
 		int ret = 0;
@@ -154,7 +154,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 				if (!name) {
 					break;
 				}
-				query = sdb_fmt ("struct.%s.%s", tmptype, name);
+				query = sdb_fmt ("%s.%s.%s", t, tmptype, name);
 				char *subtype = sdb_get (TDB, query, 0);
 				if (!subtype) {
 					break;
@@ -170,7 +170,12 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 					if (elements == 0) {
 						elements = 1;
 					}
-					ret += r_type_get_bitsize (TDB, subtype) * elements;
+					if (!strcmp (t, "struct")) {
+						ret += r_type_get_bitsize (TDB, subtype) * elements;
+					} else {
+						int sz = r_type_get_bitsize (TDB, subtype) * elements;
+						ret = sz > ret ? sz : ret;
+					}
 				}
 				free (subtype);
 				ptr = next;
