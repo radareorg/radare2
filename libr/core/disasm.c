@@ -272,8 +272,7 @@ typedef struct {
 	ut64 printed_flag_addr;
 	ut64 min_ref_addr;
 
-	bool use_json;
-	bool first_line;
+	PJ *pj; // not null iff printing json
 	int buf_line_begin;
 	const char *strip;
 	int maxflags;
@@ -451,22 +450,12 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 	if (ds->show_comments) {
 		if (ds->show_comment_right && align) {
 			ds_align_comment (ds);
-		} else if (!ds->use_json) {
+		} else {
 			r_cons_printf ("%s", COLOR (ds, color_comment));
 		}
 	}
 
-	if (!ds->use_json) {
-		r_cons_printf_list (format, ap);
-	} else {
-		char buffer[4096];
-		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = r_str_escape_latin1 (buffer, false, true, true);
-		if (escstr) {
-			r_cons_printf ("%s", escstr);
-			free (escstr);
-		}
-	}
+	r_cons_printf_list (format, ap);
 
 	if (!ds->show_comment_right && nl) {
 		ds_newline (ds);
@@ -1098,19 +1087,19 @@ static void ds_pre_line(RDisasmState *ds) {
 }
 
 static void ds_begin_line(RDisasmState *ds) {
-	if (ds->use_json) {
-		if (!ds->first_line) {
-			r_cons_print (",");
-		}
-		ds->first_line = false;
-		r_cons_printf ("{\"offset\":%"PFMT64d",\"text\":\"", ds->vat);
+	if (ds->pj) {
+		pj_o (ds->pj);
+		pj_kn (ds->pj, "offset", ds->vat);
+		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
 }
 
 static void ds_newline(RDisasmState *ds) {
-	if (ds->use_json) {
-		r_cons_printf ("\"}");
+	if (ds->pj) {
+		pj_s (ds->pj, r_cons_get_buffer ());
+		r_cons_reset ();
+		pj_end (ds->pj);
 	} else {
 		r_cons_newline ();
 	}
@@ -1481,9 +1470,7 @@ static void ds_begin_comment(RDisasmState *ds) {
 	if (ds->show_comment_right) {
 		_ALIGN;
 	} else {
-		if (ds->use_json) {
-			ds_begin_line (ds);
-		}
+		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
 	}
 }
@@ -1636,15 +1623,6 @@ static void ds_show_functions(RDisasmState *ds) {
 		fcn_name = f->name;
 	}
 
-	if (ds->use_json) {
-		char *fcn_name_raw = fcn_name;
-		fcn_name = r_str_escape_utf8_for_json (fcn_name_raw, -1);
-		if (fcn_name_alloc) {
-			free (fcn_name_raw);
-		}
-		fcn_name_alloc = true;
-	}
-
 	ds_begin_line (ds);
 	sign = r_anal_fcn_to_string (core->anal, f);
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -1762,17 +1740,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			char *comment = r_meta_get_var_comment (anal, var->kind, var->delta, f->addr);
 			if (comment) {
-				char *comment_esc = NULL;
-				if (ds->use_json) {
-					comment = comment_esc = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
-				}
-
-				if (comment) {
-					r_cons_printf ("    %s; %s", COLOR (ds, color_comment), comment);
-				}
-				if (comment_esc) {
-					free (comment_esc);
-				}
+				r_cons_printf ("    %s; %s", COLOR (ds, color_comment), comment);
 			}
 			r_cons_print (COLOR_RESET (ds));
 			ds_newline (ds);
@@ -1841,14 +1809,9 @@ static void ds_print_pre(RDisasmState *ds) {
 		return;
 	}
 
-	char *c_esc = NULL;
-	if (ds->use_json) {
-		c = c_esc = r_str_escape (c);
-	}
 	r_cons_printf ("%s%s%s ",
 		COLOR (ds, color_fline), c,
 		COLOR_RESET (ds));
-	free (c_esc);
 }
 
 //XXX review this with asm.cmt.right
@@ -2058,16 +2021,7 @@ static void ds_show_flags(RDisasmState *ds) {
 				}
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
-					char *name_escaped = name;
-					if (ds->use_json) {
-						name_escaped = r_str_escape_utf8_for_json (name, -1);
-					}
-					if (name_escaped) {
-						r_cons_printf ("%s:", name_escaped);
-					}
-					if (ds->use_json) {
-						R_FREE (name_escaped);
-					}
+					r_cons_printf ("%s:", name);
 					R_FREE (name);
 				}
 			}
@@ -2709,7 +2663,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				case R_META_TYPE_STRING:
 				{
 					char *quote = "\"";
-					bool esc_bslash = ds->use_json ? true : core->print->esc_bslash;
+					bool esc_bslash = core->print->esc_bslash;
 
 					switch (mi->subtype) {
 					case R_STRING_ENC_UTF8:
@@ -2724,17 +2678,6 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					if (!out) {
 						break;
 					}
-					if (ds->use_json) {
-						// escape twice for json
-						char *out2 = out;
-						out = r_str_escape (out2);
-						free (out2);
-						if (!out) {
-							break;
-						}
-						quote = "\\\"";
-					}
-
 					r_cons_printf ("    .string %s%s%s%s%s ; len=%"PFMT64d,
 							COLOR (ds, color_btext), quote, out, quote, COLOR_RESET (ds),
 							mi->size);
@@ -3032,15 +2975,7 @@ static void ds_print_indent(RDisasmState *ds) {
 
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
-	if (ds->use_json) {
-		char *escaped_str = r_str_escape_latin1 (ds->opstr, false, true, true);
-		if (escaped_str) {
-			r_cons_strcat (escaped_str);
-		}
-		free (escaped_str);
-	} else {
-		r_cons_strcat (ds->opstr);
-	}
+	r_cons_strcat (ds->opstr);
 	ds_print_color_reset (ds);
 }
 
@@ -3402,9 +3337,6 @@ static void ds_print_dwarf(RDisasmState *ds) {
 				}
 				// handle_set_pre (ds, "  ");
 				ds_align_comment (ds);
-				if (ds->use_json) {
-					chopstr = r_str_escape (chopstr);
-				}
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s"Color_RESET, ds->pal_comment, chopstr);
 				} else {
@@ -4061,7 +3993,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 #endif
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
-				const char *escquote = ds->use_json ? "\\\"" : "\"";
+				const char *escquote = "\"";
 				if (escstr) {
 					char *m;
 					if (ds->show_color) {
@@ -4586,9 +4518,6 @@ static void ds_print_comments_right(RDisasmState *ds) {
 							for (i = 0; i < lines_count; i++) {
 								char *c = comment + line_indexes[i];
 								char *escstr = NULL;
-								if (ds->use_json) {
-									c = escstr = ds_esc_str (ds, c, (int)strlen (c), NULL, true);
-								}
 								ds_print_pre (ds);
 								if (ds->show_color) {
 									r_cons_strcat (ds->color_usrcmt);
@@ -4605,14 +4534,9 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					}
 					free (comment);
 				} else {
-					char *escstr = NULL;
-					if (ds->use_json) {
-						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
-					}
 					if (comment) {
 						r_cons_strcat (comment);
 					}
-					free (escstr);
 				}
 			}
 			//r_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
@@ -4754,10 +4678,18 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->len = len;
 	ds->addr = addr;
 	ds->hint = NULL;
-	ds->use_json = json;
 	ds->buf_line_begin = 0;
-	ds->first_line = true;
 	ds->pdf = pdf;
+
+	if (json) {
+		ds->pj = pj_new ();
+		if (!ds->pj) {
+			return 0;
+		}
+		r_cons_push ();
+	} else {
+		ds->pj = NULL;
+	}
 
 	// disable row_offsets to prevent other commands to overwrite computed info
 	p->calc_row_offsets = false;
@@ -4789,8 +4721,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			}
 		}
 	}
-	if (ds->use_json) {
-		r_cons_print ("[");
+	if (ds->pj) {
+		pj_a (ds->pj);
 	}
 toro:
 	// uhm... is this necesary? imho can be removed
@@ -4828,6 +4760,9 @@ toro:
 		ds->vat = r_core_pava (core, ds->at);
 		if (r_cons_is_breaked ()) {
 			R_FREE (nbuf);
+			if (ds->pj) {
+				r_cons_pop ();
+			}
 			r_cons_break_pop ();
 			ds_free (ds);
 			return 0; //break;
@@ -5207,8 +5142,11 @@ toro:
 		R_FREE (nbuf);
 	}
 #endif
-	if (ds->use_json) {
-		r_cons_print ("]");
+	if (ds->pj) {
+		r_cons_pop ();
+		pj_end (ds->pj);
+		r_cons_printf ("%s", pj_string (ds->pj));
+		pj_free (ds->pj);
 	}
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX, calc_row_offsets);
