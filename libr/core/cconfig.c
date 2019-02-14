@@ -2640,7 +2640,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmpmid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
-	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
+	SETCB ("anal.bb.maxsize", "1M", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);
