@@ -4775,15 +4775,16 @@ static int __addrs_cmp(void *_a, void *_b) {
         return 0;
 }
 
-static int coco = 0;
+#define MAXFCNSIZE 1024*1024*1
 R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
 	bool a2f = r_config_get_i (core->config, "anal.a2f");
 	char *anal_in = strdup (r_config_get (core->config, "anal.in"));
 	r_config_set (core->config, "anal.in", "block");
+	// aaFa = use a2f instead of af+
+	bool simple = (glob && *glob == 'a')? false: true;
 	glob = r_str_trim_ro (glob);
-	bool simple = 1;
 	char *addr;
 	r_flag_foreach_glob (core->flags, glob, __cb, addrs);
 	// should be sorted already 
@@ -4793,13 +4794,24 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			break;
 		}
 		char *addr2 = iter->n->data;
+		if (!addr || !addr2) {
+			break;
+		}
 		ut64 a0 = r_num_get (NULL, addr);
 		ut64 a1 = r_num_get (NULL, addr2);
+		if (a0 == a1) {
+			// ignore
+			continue;
+		}
 		if (a0 > a1) {
-			eprintf ("Warning: unsorted flag list %d 0x%llx 0x%llx\n", coco++, a0, a1);
+			eprintf ("Warning: unsorted flag list 0x%llx 0x%llx\n", a0, a1);
 			continue;
 		}
 		st64 sz = a1 - a0;
+		if (sz < 1 || sz > MAXFCNSIZE) {
+			eprintf ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", a0, a1);
+			continue;
+		}
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
 			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
