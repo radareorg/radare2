@@ -1062,8 +1062,8 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 				comma = false;
 			}
 			size_t len = strlen (type);
-			r_strbuf_appendf (buf, "%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
-					name, comma?", ":"");
+			const char *tc = len > 0 && type[len - 1] == '*'? "": " ";
+			r_strbuf_appendf (buf, "%s%s%s%s", type, tc, name, comma? ", ": "");
 			free (type);
 		}
 		goto beach;
