@@ -336,7 +336,8 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 
 static int calculate_type_size(Sdb *sdb_types, char *name) {
 	char *type = NULL;
-	if (!sdb_types || !name || !sdb_exists (sdb_types, name) || !(type = sdb_get (sdb_types, name, 0))) {
+	r_return_val_if_fail (sdb_types && name, 0);
+	if (!sdb_exists (sdb_types, name) || !(type = sdb_get (sdb_types, name, 0))) {
 		return 0;
 	}
 	char *type_name = r_str_newf ("%s.%s", type, name);
@@ -344,8 +345,10 @@ static int calculate_type_size(Sdb *sdb_types, char *name) {
 	int size = 0;
 	if (sdb_exists (sdb_types, type_name_size)) { // size already exists so stop recursion
 		char *v = sdb_get (sdb_types, type_name_size, 0);
-		size = sdb_atoi (v);
-		free (v);
+		if (v) {
+			size = sdb_atoi (v);
+			free (v);
+		}
 	} else if (!strcmp (type, "struct") || !strcmp (type, "union")) {
 		int idx;
 		char *v = NULL;
@@ -386,9 +389,7 @@ static int calculate_type_size(Sdb *sdb_types, char *name) {
 }
 
 R_API void save_parsed_type_size(RCore *core, const char *parsed) {
-	if (!core || !core->anal || !parsed) {
-		return;
-	}
+	r_return_if_fail (core && core->anal && parsed);
 	char *str = strdup (parsed);
 	if (str) {
 		char *ptr = NULL;
@@ -396,7 +397,7 @@ R_API void save_parsed_type_size(RCore *core, const char *parsed) {
 		while ((ptr = strstr (str + offset, "=struct\n")) || (ptr = strstr (str + offset, "=union\n"))) {
 			*ptr = 0;
 			char *name = ptr;
-			while (name - 1 >= str && *(name - 1) != '\n' && *(name - 1) != 0) {
+			while (name - 1 >= str && *(name - 1) != '\n') {
 				name--;
 			}
 			calculate_type_size (core->anal->sdb_types, name);
@@ -451,6 +452,9 @@ static int stdifstruct(void *user, const char *k, const char *v) {
 static int print_struct_union_list_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	PJ *pj = pj_new ();
+	if (!pj) {
+		return 0;
+	}
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("%s.%s.size", v, k);
