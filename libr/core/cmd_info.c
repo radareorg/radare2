@@ -857,7 +857,7 @@ static int cmd_info(void *data, const char *input) {
 							goto done;
 						}
 						goto done;
-					} else {
+					} else if (obj->classes) {
 						playMsg (core, "classes", r_list_length (obj->classes));
 						if (input[1] == 'l' && obj) { // "icl"
 							r_list_foreach (obj->classes, iter, cls) {
@@ -870,7 +870,7 @@ static int cmd_info(void *data, const char *input) {
 								}
 							}
 						} else if (input[1] == 'c' && obj) { // "icc"
-                					mode = R_MODE_CLASSDUMP;
+							mode = R_MODE_CLASSDUMP;
 							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 							input = " ";
 						} else {
