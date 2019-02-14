@@ -3217,6 +3217,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," h    define anal hint"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
+		," o    opcode string"
 		," r    rename function"
 		," R    find references /r"
 		," s    set string"
@@ -3267,12 +3268,13 @@ onemoretime:
 		edit_bits (core);
 		break;
 	case 't':
+	case 'o':
 		{
 			char str[128];
 			r_cons_show_cursor (true);
-			r_line_set_prompt ("type: ");
+			r_line_set_prompt (ch=='t'?"type: ": "opstr: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "aht %s @ 0x%"PFMT64x, str, off);
+				r_core_cmdf (core, "ah%c %s @ 0x%"PFMT64x, ch, str, off);
 			}
 		}
 		break;
