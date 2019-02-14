@@ -204,13 +204,6 @@ static int log_callback_all (RCore *log, int count, const char *line) {
 	return 0;
 }
 
-static void http_sync_thread(void *user, char *out) {
-	eprintf ("Sync\n");
-	//RCore *core = (RCore *)user;
-	//r_core_task_sleep_begin (user);
-	//r_core_break (user);
-}
-
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *arg, *input2;

@@ -2415,7 +2415,6 @@ R_API char *r_str_uri_encode(const char *s) {
 
 R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
 	ut8 *outstart = dst;
-	const ut8 *processed = src;
 	ut8 *outend = dst + len_dst;
 	ut16 *in = (ut16*)src;
 	ut16 *inend;
@@ -2485,7 +2484,6 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 			}
 			*dst++ = ((c >> bits) & 0x3F) | 0x80;
 		}
-		processed = (const unsigned char*) in;
 	}
 	len_dst = dst - outstart;
 	return len_dst;
