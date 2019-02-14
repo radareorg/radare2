@@ -1423,7 +1423,7 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
 		const char *name, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
-R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
+R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);

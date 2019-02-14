@@ -4766,18 +4766,27 @@ static bool __cb(RFlagItem *fi, void *user) {
 static int __addrs_cmp(void *_a, void *_b) {
 	ut64 a = r_num_get (NULL, _a);
 	ut64 b = r_num_get (NULL, _b);
-        return a - b;
+	if (a > b) {
+		return 1;
+	}
+	if (a < b) {
+		return -1;
+	}
+        return 0;
 }
 
+static int coco = 0;
 R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
+	bool a2f = r_config_get_i (core->config, "anal.a2f");
 	char *anal_in = strdup (r_config_get (core->config, "anal.in"));
 	r_config_set (core->config, "anal.in", "block");
 	glob = r_str_trim_ro (glob);
 	bool simple = 1;
 	char *addr;
 	r_flag_foreach_glob (core->flags, glob, __cb, addrs);
+	// should be sorted already 
 	r_list_sort (addrs, (RListComparator)__addrs_cmp);
 	r_list_foreach (addrs, iter, addr) {
 		if (!iter->n || r_cons_is_breaked ()) {
@@ -4786,11 +4795,11 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 		char *addr2 = iter->n->data;
 		ut64 a0 = r_num_get (NULL, addr);
 		ut64 a1 = r_num_get (NULL, addr2);
-		int sz = a1 - a0;
-		if (sz < 1) {
-			eprintf ("Warning: unsorted flag list\n");
+		if (a0 > a1) {
+			eprintf ("Warning: unsorted flag list %d 0x%llx 0x%llx\n", coco++, a0, a1);
 			continue;
 		}
+		st64 sz = a1 - a0;
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
 			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
@@ -4799,11 +4808,15 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			r_core_cmdf (core, "aab@%s!%s-%s\n", addr, addr2, addr);
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
 			if (fcn) {
-				eprintf ("%s  %s %d    # %s\n", addr, "af", sz, fcn->name);
+				eprintf ("%s  %s %"PFMT64d"    # %s\n", addr, "af", sz, fcn->name);
 			} else {
-				r_core_cmdf (core, "af@%s!%s-%s\n", addr, addr2, addr);
+				if (a2f) {
+					r_core_cmdf (core, "a2f@%s!%s-%s\n", addr, addr2, addr);
+				} else {
+					r_core_cmdf (core, "af@%s!%s-%s\n", addr, addr2, addr);
+				}
 				fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
-				eprintf ("%s  %s %.4d   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
+				eprintf ("%s  %s %.4"PFMT64d"   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
 			}
 		}
 	}
