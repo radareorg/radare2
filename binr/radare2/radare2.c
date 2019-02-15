@@ -1081,10 +1081,14 @@ int main(int argc, char **argv, char **envp) {
 				f = r_acp_to_utf8 (f);
 #	endif // __WINDOWS__
 				if (f) {
+#		if __WINDOWS__
+					pfile = r_str_append (pfile, f);
+#		else
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
-					file = pfile; // r_str_append (file, escaped_path);
 					free (escaped_path);
+#		endif
+					file = pfile; // r_str_append (file, escaped_path);
 				}
 #endif
 				optind++;
