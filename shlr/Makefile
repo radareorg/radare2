@@ -25,8 +25,10 @@ CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
 CS_UPD=20190213
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
-CS_BRA=next
-CS_TIP=38607453f3de85733f9604dffc27778db3b53766
+#CS_BRA=next
+#CS_TIP=38607453f3de85733f9604dffc27778db3b53766
+CS_TIP=09fc20d626d91c762b4c7a13383330e0f49b94a8
+CS_BRA=master
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -249,7 +251,6 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 	mkdir -p capstone/include/capstone
@@ -266,6 +267,7 @@ ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+	@echo "[capstone] Applying patches"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
 	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
