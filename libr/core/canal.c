@@ -114,7 +114,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		}
 		return (char*) str;
 	}
-	
+
 	ut64 *cstr = (ut64*)str;
 	ut64 lowptr = cstr[0];
 	if (lowptr >> 32) { // must be pa mode only
@@ -126,7 +126,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		if (ptr >> 32) { // must be pa mode only
 			ptr &= UT32_MAX;
 		}
-		if (ptr) {	
+		if (ptr) {
 			r_io_read_at (core->io, ptr, rstr, sizeof (rstr));
 			rstr[127] = 0;
 			ret = is_string (rstr, 128, &len);
@@ -435,6 +435,47 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 			}
 		}
 	}
+}
+
+static bool autoname_pe_imp_thunk(RFlagItem *flag, void *u) {
+	RCore *core = (RCore *) u;
+	RAnalFunction *fcn;
+	char *name;
+
+	RList *xrefs = r_anal_xrefs_get (core->anal, flag->offset);
+	if (!xrefs || r_list_length (xrefs) > 1) {
+		goto beach;
+	}
+	RAnalRef *ref = r_list_first (xrefs);
+	if (ref->type == R_ANAL_REF_TYPE_CALL) {
+		goto beach;
+	}
+	fcn = r_anal_get_fcn_at (core->anal, ref->addr,
+			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_LOC);
+	if (!fcn || r_list_length (fcn->bbs) != 1) {
+		goto beach;
+	}
+	if (!r_str_startswith (flag->name, "sym.imp.") || *(flag->name + strlen ("sym.imp.")) == '\0') {
+		goto beach;
+	}
+	name = r_str_newf ("sub.%s", flag->name + strlen ("sym.imp."));
+	if (!name) {
+		goto beach;
+	}
+	RFlagItem *fcn_flag = r_flag_get (core->flags, fcn->name);
+	if (fcn_flag) {
+		r_flag_rename (core->flags, fcn_flag, strdup (name));
+	}
+	free (fcn->name);
+	fcn->name = name;
+beach:
+	r_list_free (xrefs);
+	return true;
+}
+
+R_API void r_core_anal_autoname_all_pe_imp_thunk(RCore *core) {
+	RSpace *imp_space = r_flag_space_get (core->flags, "imports");
+	r_flag_foreach_space (core->flags, imp_space, autoname_pe_imp_thunk, core);
 }
 
 /* reads .gopclntab section in go binaries to recover function names
@@ -2381,7 +2422,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 		refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
 		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
-	
+
 		// don't enter for functions with 0 refs
 		if (!r_list_empty (refs)) {
 			if (pj) { // begin json output of function
@@ -4786,7 +4827,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	glob = r_str_trim_ro (glob);
 	char *addr;
 	r_flag_foreach_glob (core->flags, glob, __cb, addrs);
-	// should be sorted already 
+	// should be sorted already
 	r_list_sort (addrs, (RListComparator)__addrs_cmp);
 	r_list_foreach (addrs, iter, addr) {
 		if (!iter->n || r_cons_is_breaked ()) {

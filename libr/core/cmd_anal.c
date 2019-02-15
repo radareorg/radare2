@@ -4232,7 +4232,7 @@ static void showmem (RList *list) {
 		RListIter *iter;
 		r_list_foreach (list, iter, item) {
 			r_cons_printf (" 0x%08"PFMT64x, item->addr);
-			
+
 		}
 	}
 	r_cons_newline ();
@@ -4260,7 +4260,7 @@ static void showmem_json (RList *list, PJ *pj) {
 			pj_n (pj, item->addr);
 		}
 	}
-	
+
 	pj_end (pj);
 }
 
@@ -4407,7 +4407,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			pj_k (pj, "@W");
 			showmem_json (mymemxsw, pj);
 		}
-		
+
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
@@ -4435,7 +4435,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			showmem (mymemxsw);
 		}
 	}
-	
+
 	r_list_free (mymemxsr);
 	r_list_free (mymemxsw);
 	mymemxsr = NULL;
@@ -7714,6 +7714,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
+
+				RBinInfo *info = r_bin_get_info (core->bin);
+				if (info && !strcmp (info->rclass, "pe")) {
+					oldstr = r_print_rowlog (core->print, "Constructing a function name for all PE import thunks");
+					r_core_anal_autoname_all_pe_imp_thunk (core);
+					r_print_rowlog_done (core->print, oldstr);
+				}
+
 				if (r_config_get_i (core->config, "anal.autoname")) {
 					oldstr = r_print_rowlog (core->print, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
