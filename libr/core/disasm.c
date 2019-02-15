@@ -2756,12 +2756,16 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	case R_ANAL_OP_TYPE_MOV:
 		src = ds->analop.src[0];
 		if (ds->analop.ptr && !ds->analop.refptr) {
-			if (r_io_is_valid_offset (core->io, ds->analop.ptr, 0)) {
-				char *s = r_core_cmd_strf (core, "ps @ 0x%"PFMT64x, ds->analop.ptr);
-				if (s) {
-					r_str_trim (s);
-					r_cons_printf ("  ; \"%s\"", s);
-					free (s);
+			ut64 addr = ds->analop.ptr;
+			if (r_io_is_valid_offset (core->io, addr, 0)) {
+				if (!r_flag_get_i (core->flags, addr)) {
+					char *s = r_core_cmd_strf (core, "ps @ 0x%"PFMT64x, addr);
+					if (s) {
+						r_str_trim (s);
+						_ALIGN;
+						ds_comment (ds, true, "; \"%s\"", s);
+						free (s);
+					}
 				}
 			}
 		}
