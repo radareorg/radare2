@@ -53,6 +53,7 @@ update_capstone_git() {
 #		done
 #		git reset --hard "${CS_TIP}"
 #	fi
+	git reset --hard "${CS_TIP}"
 	if [ -n "${CS_REV}" ]; then
 		if ! git config user.name ; then
 			git config user.name "radare-travis"
