@@ -12,7 +12,7 @@ if [ $? != 0 ]; then
 fi
 
 fatal_msg() {
-	printf '[capstone] %s\n' "$1" >&2
+	echo "[capstone] $1"
 	exit 1
 }
 
@@ -68,7 +68,7 @@ update_capstone_git() {
 if [ -d capstone ] && [ ! -d capstone/.git ]; then
 	printf '[capstone] release with no git?\n' >&2
 	cd capstone || fatal_msg 'Cannot change working directory'
-	patch_capstone
+	#patch_capstone
 	cd -
 else
 	clone_capstone
@@ -85,12 +85,12 @@ else
 #		exit 0
 #	fi
 
-	printf '[capstone] Updating capstone from git...\n' >&2
-	printf 'HEAD %s\n' "${HEAD}" >&2
-	printf 'TIP %s\n' "${CS_TIP}" >&2
+	echo '[capstone] Updating capstone from git...' >&2
+	echo "HEAD ${HEAD}" >&2
+	echo "TIP  ${CS_TIP}" >&2
 
 	cd capstone || fatal_msg 'Cannot change working directory'
 	update_capstone_git
-	patch_capstone
+	#patch_capstone
 	cd -
 fi
