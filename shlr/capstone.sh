@@ -65,9 +65,9 @@ update_capstone_git() {
 
 if [ -d capstone ] && [ ! -d capstone/.git ]; then
 	printf '[capstone] release with no git?\n' >&2
-	pushd capstone
+	cd capstone || fatal_msg 'Cannot change working directory'
 	patch_capstone
-	popd || fatal_msg 'Cannot change working directory'
+	cd -
 else
 	clone_capstone
 
@@ -86,8 +86,8 @@ else
 	printf 'HEAD %s\n' "${HEAD}" >&2
 	printf 'TIP %s\n' "${CS_TIP}" >&2
 
-	pushd capstone || fatal_msg 'Cannot change working directory'
+	cd capstone || fatal_msg 'Cannot change working directory'
 	update_capstone_git
 	patch_capstone
-	popd
+	cd -
 fi
