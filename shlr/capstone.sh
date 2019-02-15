@@ -17,8 +17,9 @@ fatal_msg() {
 }
 
 patch_capstone() {
+	echo "[capstone] Applying patches..."
 	for patchfile in ../capstone-patches/*.patch ; do
-		yes n | patch -R -p 1 -i "${patchfile}"
+		yes n | patch -p 1 -i "${patchfile}"
 	done
 }
 
