@@ -86,6 +86,8 @@ else
 	printf 'HEAD %s\n' "${HEAD}" >&2
 	printf 'TIP %s\n' "${CS_TIP}" >&2
 
-	cd capstone && update_capstone_git
-	cd - || fatal_msg 'Cannot change working directory'
+	pushd capstone || fatal_msg 'Cannot change working directory'
+	update_capstone_git
+	patch_capstone
+	popd
 fi
