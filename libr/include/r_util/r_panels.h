@@ -38,7 +38,7 @@ typedef struct r_panel_t {
 	RPanelType type;
 	ut64 baseAddr;
 	ut64 addr;
-	bool caching;
+	int caching;
 	char *cmdStrCache;
 	int edgeflag;
 } RPanel;

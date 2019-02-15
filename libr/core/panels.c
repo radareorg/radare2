@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2018 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2019 - Author: pancake, vane11ope */
 
 // pls move the typedefs into roons and rename it -> RConsPanel
 
@@ -178,7 +178,7 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
 static void panelAllClear(RPanels *panels);
 static bool checkPanelNum(RPanels *panels);
-static void addPanelFrame(RCore *core, const char *title, const char *cmd, const bool caching);
+static void addPanelFrame(RCore *core, const char *title, const char *cmd, const int caching);
 static bool checkFunc(RCore *core);
 static char *handleCacheCmdStr(RCore *core, RPanel* panel);
 static void activateCursor(RCore *core);
@@ -277,7 +277,7 @@ static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RCore* core, bool temp);
 static int loadSavedPanelsLayout(RCore *core, bool temp);
-static void replaceCmd(RPanels *panels, const char *title, const char *cmd, const bool caching);
+static void replaceCmd(RPanels *panels, const char *title, const char *cmd, const int caching);
 static void swapPanels(RPanels *panels, int p0, int p1);
 static bool handleMenu(RCore *core, const int key);
 static void toggleZoomMode(RPanels *panels);
@@ -287,7 +287,7 @@ static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
 static void showHelp(RCore *core, RPanelsMode mode);
 static void createDefaultPanels(RCore *core);
-static void createNewPanel(RCore *core, char *name, char *cmd, bool caching);
+static void createNewPanel(RCore *core, char *name, char *cmd, int caching);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
@@ -507,7 +507,7 @@ static int layoutSidePanel(void *user) {
 			}
 		}
 	}
-	bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+	int caching = (int)r_cons_yesno ('y', "Cache the result? (Y/n)");
 	addPanelFrame (core, child->name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
 	RPanel *p0 = getPanel (panels, 0);
@@ -1331,7 +1331,7 @@ static void dismantlePanel(RPanels *panels) {
 	}
 }
 
-static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const bool caching) {
+static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const int caching) {
 	RPanel *cur = getCurPanel (panels);
 	freeSinglePanel (cur);
 	cur->title = strdup (title);
@@ -1409,7 +1409,7 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 	}
 }
 
-static void createNewPanel(RCore *core, char *name, char *cmd, bool caching) {
+static void createNewPanel(RCore *core, char *name, char *cmd, int caching) {
 	RPanels *panels = core->panels;
 	addPanelFrame (core, name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
@@ -1439,7 +1439,7 @@ static bool checkPanelNum(RPanels *panels) {
 	return true;
 }
 
-static void addPanelFrame(RCore *core, const char *title, const char *cmd, const bool caching) {
+static void addPanelFrame(RCore *core, const char *title, const char *cmd, const int caching) {
 	RPanels *panels = core->panels;
 	RPanel *p = getPanel (panels, panels->n_panels);
 	if (title) {
@@ -2946,7 +2946,7 @@ static void savePanelsLayout(RCore* core, bool temp) {
 		pj_kn (pj, "y", panel->pos.y);
 		pj_kn (pj, "w", panel->pos.w);
 		pj_kn (pj, "h", panel->pos.h);
-		pj_kb (pj, "caching", panel->caching);
+		pj_kn (pj, "caching", panel->caching);
 		pj_end (pj);
 	}
 	pj_end (pj);
@@ -3342,7 +3342,7 @@ repeat:
 				break;
 			}
 			char *res = r_cons_input ("New panel with command: ");
-			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+			int caching = (int)r_cons_yesno ('y', "Cache the result? (Y/n)");
 			if (res && *res) {
 				createNewPanel (core, res, res, caching);
 			}
@@ -3486,7 +3486,7 @@ repeat:
 		}
 		char *name = r_cons_input ("Name: ");
 		char *cmd = r_cons_input ("Command: ");
-		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		int caching = (int)r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (name && *name && cmd && *cmd) {
 			createNewPanel (core, name, cmd, caching);
 		}
@@ -3498,7 +3498,7 @@ repeat:
 	{
 		char *new_name = r_cons_input ("New name: ");
 		char *new_cmd = r_cons_input ("New command: ");
-		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		int caching = (int)r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (new_name && *new_name && new_cmd && *new_cmd) {
 			replaceCmd (panels, new_name, new_cmd, caching);
 		}
