@@ -12,16 +12,19 @@ int hexagon_anal_instruction(HexInsn *hi, RAnalOp *op) {
 	case HEX_INS_CALL__R22_2: {
 		// call #r22:2
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = op->addr + hi->ops[0].op.imm;
 		break;
 	}
 	case HEX_INS_IF__PU__CALL__R15_2: {
 		// if (Pu) call #r15:2
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = op->addr + hi->ops[1].op.imm;
 		break;
 	}
 	case HEX_INS_IF__NOT_PU_CALL__R15_2: {
 		// if !Pu call #r15:2
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = op->addr + hi->ops[1].op.imm;
 		break;
 	}
 	case HEX_INS_MULT_P0___CMP_EQ__RS____1____IF__P0_NEW__JUMP_NT__R9_2: {

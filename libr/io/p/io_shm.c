@@ -120,7 +120,8 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_shm = {
 	.name = "shm",
-	.desc = "shared memory resources (shm://key)",
+	.desc = "Shared memory resources plugin",
+	.uris = "shm://",
 	.license = "LGPL3",
 	.open = shm__open,
 	.close = shm__close,

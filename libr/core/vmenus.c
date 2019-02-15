@@ -609,6 +609,7 @@ R_API int r_core_visual_types(RCore *core) {
 		"struct",
 		"func",
 		"union",
+		"cc",
 		NULL
 	};
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -634,11 +635,16 @@ R_API int r_core_visual_types(RCore *core) {
 		if (optword) {
 			r_cons_printf (">> %s\n", optword);
 		}
-		vt.t_idx = option;
-		vt.t_ctr = 0;
-		vt.type = opts[h_opt];
-		vt.optword = optword;
-                sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+		if (!strcmp (opts[h_opt], "cc")) {
+			// XXX TODO: make this work (select with cursor, to delete, or add a new one with 'i', etc)
+			r_core_cmdf (core, "tfcl");
+		} else {
+			vt.t_idx = option;
+			vt.t_ctr = 0;
+			vt.type = opts[h_opt];
+			vt.optword = optword;
+			sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+		}
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
@@ -3211,6 +3217,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," h    define anal hint"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
+		," o    opcode string"
 		," r    rename function"
 		," R    find references /r"
 		," s    set string"
@@ -3261,12 +3268,13 @@ onemoretime:
 		edit_bits (core);
 		break;
 	case 't':
+	case 'o':
 		{
 			char str[128];
 			r_cons_show_cursor (true);
-			r_line_set_prompt ("type: ");
+			r_line_set_prompt (ch=='t'?"type: ": "opstr: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "aht %s @ 0x%"PFMT64x, str, off);
+				r_core_cmdf (core, "ah%c %s @ 0x%"PFMT64x, ch, str, off);
 			}
 		}
 		break;

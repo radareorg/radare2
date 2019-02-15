@@ -1220,8 +1220,9 @@ static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_gprobe = {
 	.name = "gprobe",
-	.desc = "open gprobe connection using gprobe://",
+	.desc = "Open gprobe connection",
 	.license = "LGPL3",
+	.uris = "gprobe://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

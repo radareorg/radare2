@@ -43,6 +43,7 @@ static const char *help_msg_aa[] = {
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaf", "[e|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
+	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aang", "", "find function and symbol names from golang binaries",
@@ -1157,9 +1158,6 @@ static int var_cmd(RCore *core, const char *str) {
 	case '*':
 	case 'j':
 		r_anal_var_list_show (core->anal, fcn, type, str[1]);
-		if (str[1] == 'j') {
-			r_cons_print ("\n");
-		}
 		break;
 	case '.':
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0);
@@ -5914,6 +5912,18 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case '*': // "ax*"
 		r_anal_xrefs_list (core->anal, input[0]);
 		break;
+	case '.': { // "ax."
+		char *tInput = strdup (input);
+		if (r_str_replace_ch (tInput, '.', 't', false)) {
+			cmd_anal_refs (core, tInput);
+		}
+		char *fInput = strdup (input);
+		if (r_str_replace_ch (fInput, '.', 'f', false)) {
+			cmd_anal_refs (core, fInput);
+		}
+		free (tInput);
+		free (fInput);
+	} break;
 	case 't': { // "axt"
 		RList *list = NULL;
 		RAnalFunction *fcn;
@@ -7460,16 +7470,20 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		if (!pj) {
 			return;
 		}
-		input++;
-		ut64 addr;
+		ut64 addr = core->offset;
 		char *p;
 		int n = 1;
-		p = strchr (input + 1, ' ');
-		if (p) {
-			*p = '\0';
-			n = *(++p)? r_num_math (core->num, p): 1;
+		input++;
+		if (*input) {
+			char *tmp = strdup (input);
+			p = strchr (tmp + 1, ' ');
+			if (p) {
+				*p++ = '\0';
+				n = *p? r_num_math (core->num, p): 1;
+			}
+			addr = r_num_math (core->num, tmp + 1);
+			free (tmp);
 		}
-		addr = r_num_math (core->num, input + 1);
 		RList *paths = r_core_anal_graph_to (core, addr, n);
 		if (paths) {
 			RAnalBlock *bb;
@@ -7585,8 +7599,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
-	case 'F': // "aaF"
-		r_core_anal_inflags (core, input + 1);
+	case 'F': // "aaF" "aaFa"
+		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
+			r_core_anal_inflags (core, input + 1);
+		} else {
+			eprintf ("Usage: aaF[a] - analyze functions in flag bounds (aaFa uses af/a2f instead of af+/afb+)\n");
+		}
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {

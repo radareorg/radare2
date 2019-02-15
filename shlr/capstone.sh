@@ -5,6 +5,12 @@ CS_TIP="$3" # tip commit
 CS_REV="$4" # revert
 CS_DEPTH_CLONE=10
 
+git --help > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "ERROR: Cannot find git command in PATH"
+	exit 1
+fi
+
 fatal_msg() {
 	printf '[capstone] %s\n' "$1" >&2
 	exit 1
@@ -37,16 +43,16 @@ clone_capstone() {
 
 update_capstone_git() {
 	git checkout "${CS_BRA}" || fatal_msg "Cannot checkout to branch $CS_BRA"
-	if [ -n "${CS_TIP}" ]; then
-		# if our shallow clone not contains CS_TIP, clone until it
-		# contain that commit.
-		cur_depth="$CS_DEPTH_CLONE"
-		until git cat-file -e "${CS_TIP}"'^{commit}'; do
-			cur_depth=$(( cur_depth + 10 ))
-			git pull --depth="$cur_depth"
-		done
-		git reset --hard "${CS_TIP}"
-	fi
+#	if [ -n "${CS_TIP}" ]; then
+#		# if our shallow clone not contains CS_TIP, clone until it
+#		# contain that commit.
+#		cur_depth="$CS_DEPTH_CLONE"
+#		until git cat-file -e "${CS_TIP}^${commit}"; do
+#			cur_depth=$(( cur_depth + 10 ))
+#			git pull --depth="$cur_depth"
+#		done
+#		git reset --hard "${CS_TIP}"
+#	fi
 	if [ -n "${CS_REV}" ]; then
 		if ! git config user.name ; then
 			git config user.name "radare-travis"
@@ -59,13 +65,14 @@ update_capstone_git() {
 
 if [ -d capstone ] && [ ! -d capstone/.git ]; then
 	printf '[capstone] release with no git?\n' >&2
-	cd capstone && patch_capstone
-	cd - || fatal_msg 'Cannot change working directory'
+	pushd capstone
+	patch_capstone
+	popd || fatal_msg 'Cannot change working directory'
 else
 	clone_capstone
 
 	if [ "${BRANCH}" != "${CS_BRA}" ]; then
-		printf '[capstone] Reset capstone\n' >&2
+		echo '[capstone] Reset capstone' >&2
 		rm -rf capstone
 		clone_capstone
 	fi

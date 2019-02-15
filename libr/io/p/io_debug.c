@@ -648,8 +648,9 @@ static int __close (RIODesc *desc) {
 
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-	.desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
+	.desc = "Attach to native debugger instance",
 	.license = "LGPL3",
+	.uris = "dbg://,pidof://,waitfor://",
 	.author = "pancake",
 	.version = "0.2.0",
 	.open = __open,

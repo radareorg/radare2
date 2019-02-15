@@ -3178,12 +3178,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '(':
-		case ')':
 			snowMode = !snowMode;
 			if (!snowMode) {
 				r_list_free (snows);
 				snows = NULL;
 			}
+			break;
+		case ')':
+			rotateAsmemu (core);
 			break;
 		case '#':
 			r_config_toggle (core->config, "asm.bytes");

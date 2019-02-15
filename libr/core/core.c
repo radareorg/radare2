@@ -2035,8 +2035,8 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 
 static void r_core_setenv (RCore *core) {
 	char *e = r_sys_getenv ("PATH");
-	char *h = r_str_home (R2_HOME_BIN R_SYS_ENVSEP);
-	char *n = r_str_newf ("%s%s", h, e);
+	char *h = r_str_home (R2_HOME_BIN);
+	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	r_sys_setenv ("PATH", n);
 	free (n);
 	free (h);
@@ -2141,9 +2141,6 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "zs", R_CORE_AUTOCMPLT_ZIGN, true);
 	/* flag spaces */
 	r_core_autocomplete_add (core->autocomplete, "fs", R_CORE_AUTOCMPLT_FLSP, true);
-	/* macros */
-	r_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
-	r_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
 	/* file path */
 	r_core_autocomplete_add (core->autocomplete, "o", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "idp", R_CORE_AUTOCMPLT_FILE, true);
@@ -2183,6 +2180,9 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "vim", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "less", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_DFLT, true), "-l", R_CORE_AUTOCMPLT_FILE, true);
+	/* macros */
+	r_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
+	r_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
 	/* theme */
 	r_core_autocomplete_add (core->autocomplete, "eco", R_CORE_AUTOCMPLT_THME, true);
 	/* just for hints */
@@ -2209,7 +2209,6 @@ static char *get_comments_cb(void *user, ut64 addr) {
 R_IPI void spaces_list(RSpaces *sp, int mode) {
 	RSpaceIter it;
 	RSpace *s;
-	bool first = true;
 	const RSpace *cur = r_spaces_current (sp);
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -2230,7 +2229,6 @@ R_IPI void spaces_list(RSpaces *sp, int mode) {
 			r_cons_printf ("%5d %c %s\n", count, (!cur || cur == s)? '*': '.',
 				s->name);
 		}
-		first = false;
 	}
 	if (mode == '*' && r_spaces_current (sp)) {
 		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));

@@ -1,29 +1,15 @@
 diff --git a/MCInst.c b/MCInst.c
-index 1694e5d..758c43f 100644
+index 7041022..d173d98 100644
 --- a/MCInst.c
 +++ b/MCInst.c
-@@ -18,20 +18,10 @@
- void MCInst_Init(MCInst *inst)
- {
- 	unsigned int i;
--
-+	memset (inst, 0, sizeof (MCInst));
- 	for (i = 0; i < 48; i++) {
+@@ -23,6 +23,7 @@ void MCInst_Init(MCInst *inst)
  		inst->Operands[i].Kind = kInvalid;
  	}
--
--	inst->Opcode = 0;
--	inst->OpcodePub = 0;
--	inst->size = 0;
--	inst->has_imm = false;
--	inst->op1_size = 0;
--	inst->writeback = false;
--	inst->ac_idx = 0;
--	inst->popcode_adjust = 0;
--	inst->assembly[0] = '\0';
- }
  
- void MCInst_clear(MCInst *inst)
++	memset (inst, 0, sizeof (MCInst));
+ 	inst->Opcode = 0;
+ 	inst->OpcodePub = 0;
+ 	inst->size = 0;
 diff --git a/cs.c b/cs.c
 index d2ffecc..f12051a 100644
 --- a/cs.c

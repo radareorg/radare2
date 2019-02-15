@@ -16,17 +16,17 @@ GIT?=git
 WGET?=wget
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=3.0.5
+CS_VER=4.0.1
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20181224
+CS_UPD=20190213
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
-CS_BRA=master
-CS_TIP=58a80a93f995c23a8681dcc38dccfc6bab9cd7a4
+CS_BRA=next
+CS_TIP=38607453f3de85733f9604dffc27778db3b53766
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1

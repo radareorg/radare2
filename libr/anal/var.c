@@ -844,8 +844,12 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	r_list_sort (list, (RListComparator) var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	if (mode == 'j') {
-		anal->cb_printf ("[");
+		pj_a (pj);
 	}
 	r_list_foreach (list, iter, var) {
 		if (var->kind != kind) {
@@ -872,17 +876,27 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			switch (var->kind) {
 			case R_ANAL_VAR_KIND_BPV:
 				if (var->delta > 0) {
-					anal->cb_printf ("{\"name\":\"%s\","
-						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":"
-						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
-						var->name, var->type, anal->reg->name[R_REG_NAME_BP],
-						(st64)var->delta);
+					pj_o (pj);
+					pj_ks (pj, "name" ,var->name);
+					pj_ks (pj, "kind", "arg");
+					pj_ks (pj, "type", var->type);
+					pj_k (pj, "ref");
+					pj_o (pj);
+					pj_ks (pj, "base", anal->reg->name[R_REG_NAME_BP]);
+					pj_kn (pj, "offset", (st64)var->delta);
+					pj_end (pj);
+					pj_end (pj);
 				} else {
-					anal->cb_printf ("{\"name\":\"%s\","
-						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":"
-						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
-						var->name, var->type, anal->reg->name[R_REG_NAME_BP],
-						(st64)-R_ABS (var->delta));
+					pj_o (pj);
+					pj_ks (pj, "name" ,var->name);
+					pj_ks (pj, "kind", "var");
+					pj_ks (pj, "type", var->type);
+					pj_k (pj, "ref");
+					pj_o (pj);
+					pj_ks (pj, "base", anal->reg->name[R_REG_NAME_BP]);
+					pj_kn (pj, "offset", (st64)-R_ABS (var->delta));
+					pj_end (pj);
+					pj_end (pj);
 				}
 				break;
 			case R_ANAL_VAR_KIND_REG: {
@@ -891,29 +905,43 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					eprintf ("Register not found");
 					break;
 				}
-				anal->cb_printf ("{\"name\":\"%s\","
-					"\"kind\":\"reg\",\"type\":\"%s\",\"ref\":\"%s\"}",
-					var->name, var->type, i->name);
+				pj_o (pj);
+				pj_ks (pj, "name", var->name);
+				pj_ks (pj, "kind", "reg");
+				pj_ks (pj, "type", var->type);
+				pj_ks (pj, "ref", i->name);
+				pj_end (pj);
 			}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
 				if (var->isarg) {
-					anal->cb_printf ("{\"name\":\"%s\","
-						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":"
-						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
-						var->name, var->type, anal->reg->name[R_REG_NAME_SP],
-						var->delta);
+					pj_o (pj);
+					pj_ks (pj, "name", var->name);
+					pj_ks (pj, "kind", "arg");
+					pj_ks (pj, "type", var->type);
+					pj_k (pj, "ref");
+					pj_o (pj);
+					pj_ks (pj, "base", anal->reg->name[R_REG_NAME_SP]);
+					pj_kn (pj, "offset", var->delta);
+					pj_end (pj);
+					pj_end (pj);
 				} else {
-					anal->cb_printf ("{\"name\":\"%s\","
-						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":"
-						"{\"base\":\"%s\", \"offset\":-%"PFMT64d "}}",
-						var->name, var->type, anal->reg->name[R_REG_NAME_SP],
-						(st64)R_ABS(var->delta));
+					pj_o (pj);
+					pj_ks (pj, "name", var->name);
+					pj_ks (pj, "kind", "var");
+					pj_ks (pj, "type", var->type);
+					pj_k (pj, "ref");
+					pj_o (pj);
+					pj_ks (pj, "base", anal->reg->name[R_REG_NAME_SP]);
+					char print_offset[32];
+					sprintf (print_offset, "-%"PFMT64d"", (st64)R_ABS(var->delta)); 
+					char *printoffset = strdup (print_offset);
+					pj_ks (pj, "offset", printoffset);
+					pj_end (pj);
+					pj_end (pj);
+					free (printoffset);
 				}
 				break;
-			}
-			if (iter->n) {
-				anal->cb_printf (",");
 			}
 			break;
 		default:
@@ -959,7 +987,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		}
 	}
 	if (mode == 'j') {
-		anal->cb_printf ("]");
+		pj_end (pj);
+		anal->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 	r_list_free (list);
 }
@@ -1032,8 +1062,8 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 				comma = false;
 			}
 			size_t len = strlen (type);
-			r_strbuf_appendf (buf, "%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
-					name, comma?", ":"");
+			const char *tc = len > 0 && type[len - 1] == '*'? "": " ";
+			r_strbuf_appendf (buf, "%s%s%s%s", type, tc, name, comma? ", ": "");
 			free (type);
 		}
 		goto beach;

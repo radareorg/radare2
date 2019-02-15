@@ -914,6 +914,7 @@ the_end:
 	return ret;
 }
 
+#if 0
 static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 	if (!th) {
 		return false;
@@ -934,6 +935,7 @@ static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 	}
 	return ret ? R_TH_REPEAT : R_TH_STOP;
 }
+#endif
 
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	int ret;

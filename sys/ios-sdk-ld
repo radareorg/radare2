@@ -11,6 +11,11 @@ done
 [ -z "${SDK}" ] && SDK=iphoneos
 APPLE_SDK=`echo ${SDK} | tr a-z A-Z`
 LD="xcrun --sdk ${SDK} ld ${CPUS} -bitcode_bundle"
+if [ "$SDK" = "iphoneos" ]; then
+	LD="$LD -ios_version_min 10.0"
+else
+	LD="$LD -ios_simulator_version_min 10.0"
+fi
 echo "$LD $*"
 ${LD} $*
 r=$?

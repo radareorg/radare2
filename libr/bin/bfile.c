@@ -853,7 +853,6 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	char hash[128], *p;
 	RHash *ctx;
 	ut64 buf_len = 0, r = 0;
-	int i;
 	RBinFile *bf = bin->cur;
 	if (!bf) {
 		return false;
@@ -895,8 +894,12 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
 		const size_t rem_len = buf_len-r;
 		int b = r_io_desc_read (iod, buf, rem_len);
-		(void)r_hash_do_md5 (ctx, buf, rem_len);
-		(void)r_hash_do_sha1 (ctx, buf, rem_len);
+		if (b < 1) {
+			eprintf ("r_io_desc_read: error\n");
+		} else {
+			(void)r_hash_do_md5 (ctx, buf, b);
+			(void)r_hash_do_sha1 (ctx, buf, b);
+		}
 	}
 	r_hash_do_end (ctx, R_HASH_MD5);
 	p = hash;

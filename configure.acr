@@ -25,6 +25,7 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT HAVE_FORK fork disable fork ;
+ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
@@ -190,6 +191,10 @@ IFEQ USEROSTYPE solaris ; {
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;
+}
+
+IFEQ WANT_PTRACE_WRAP 0 ; {
+	USE_PTRACE_WRAP = 0 ;
 }
 
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;

@@ -92,8 +92,9 @@ static int r_io_ar_close(RIODesc *fd) {
 
 RIOPlugin r_io_plugin_ar = {
 	.name = "ar",
-	.desc = "Open ar/lib files [ar|lib]://[file//path]",
+	.desc = "Open ar/lib files",
 	.license = "LGPL3",
+	.uris = "ar://,lib://",
 	.open = r_io_ar_open,
 	.open_many = r_io_ar_open_many,
 	.write = r_io_ar_write,
