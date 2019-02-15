@@ -144,6 +144,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			ut32 vB = (data[3]<<8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 			op->ptr = offset;
+			op->refptr = 0;
 			esilprintf (op, "0x%"PFMT64x",v%d,=", offset, vA);
 		}
 		break;

@@ -791,6 +791,16 @@ enum RAnalOpDirection {
 	R_ANAL_OP_DIR_REF = 8,
 };
 
+typedef enum r_anal_data_type_t {
+	R_ANAL_DATATYPE_NULL = 0,
+	R_ANAL_DATATYPE_ARRAY,
+	R_ANAL_DATATYPE_OBJECT,
+	R_ANAL_DATATYPE_STRING,
+	R_ANAL_DATATYPE_INT32,
+	R_ANAL_DATATYPE_INT64,
+	R_ANAL_DATATYPE_FLOAT,
+} RAnalDataType;
+
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
@@ -830,6 +840,7 @@ typedef struct r_anal_op_t {
 	ut64 disp;
 	RAnalSwitchOp *switch_op;
 	RAnalHint hint;
+	RAnalDataType datatype;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
