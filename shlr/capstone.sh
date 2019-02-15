@@ -78,10 +78,11 @@ else
 		clone_capstone
 	fi
 
-	if [ "${HEAD}" = "${CS_TIP}" ]; then
-		printf '[capstone] Already in TIP, no need to update from git\n' >&2
-		exit 0
-	fi
+#	if [ "${HEAD}" = "${CS_TIP}" ]; then
+#		printf '[capstone] Already in TIP, no need to update from git\n' >&2
+#		git reset --hard
+#		exit 0
+#	fi
 
 	printf '[capstone] Updating capstone from git...\n' >&2
 	printf 'HEAD %s\n' "${HEAD}" >&2
