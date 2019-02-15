@@ -132,6 +132,9 @@ IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS mingw32_nt ; {
 		USEROSTYPE = mingw32 ;
 	}{
+	IFEQ HOST_OS wsl ; {
+		USEROSTYPE =  wsl ;
+	}{
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
 	}{
@@ -158,7 +161,7 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } } } } }
+	} } } } } } } } } } }
 }
 
 (( this hack is required for openbsd ports ))
@@ -172,6 +175,10 @@ IFEQ LIBVERSION xxx ; {
 IFEQ USEROSTYPE gnulinux ; {
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 1 ;
+}{
+IFEQ USEROSTYPE wsl ; {
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 0 ;
 }{
 IFEQ USEROSTYPE android ; {
 	HAVE_PTRACE = 1 ;
@@ -187,7 +194,7 @@ IFEQ USEROSTYPE solaris ; {
 }{
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
-} } } }
+} } } } }
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;
