@@ -773,10 +773,12 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 						if (refs && r_list_length (refs) == 1) {
 							RAnalRef *ref = r_list_first (refs);
-							RFlagItem *flg = r_flag_get_i (core->flags, ref->addr);
-							if (flg && r_str_startswith (flg->name, "sym.imp.")) {
-								R_FREE (fcn->name);
-								fcn->name = r_str_newf ("sub.%s", flg->name + 8);
+							if (ref->type != R_ANAL_REF_TYPE_CALL) { /* Some fcns don't return */
+								RFlagItem *flg = r_flag_get_i (core->flags, ref->addr);
+								if (flg && r_str_startswith (flg->name, "sym.imp.")) {
+									R_FREE (fcn->name);
+									fcn->name = r_str_newf ("sub.%s", flg->name + 8);
+								}
 							}
 						}
 					}
