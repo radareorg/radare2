@@ -767,6 +767,19 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 					}
 					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+					/* Import trampoline naming */
+					if (r_list_length (fcn->bbs) == 1
+					    && ((RAnalBlock *) r_list_first (fcn->bbs))->ninstr == 1) {
+						RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+						if (refs && r_list_length (refs) == 1) {
+							RAnalRef *ref = r_list_first (refs);
+							RFlagItem *flg = r_flag_get_i (core->flags, ref->addr);
+							if (flg && r_str_startswith (flg->name, "sym.imp.")) {
+								R_FREE (fcn->name);
+								fcn->name = r_str_newf ("sub.%s", flg->name + 8);
+							}
+						}
+					}
 				}
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");

@@ -2607,7 +2607,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
-	SETPREF ("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
+	SETPREF ("anal.autoname", "true", "Speculatively set a name for the functions, may result in some false positives");
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
