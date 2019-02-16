@@ -253,20 +253,18 @@ static int parse(RParse *p, const char *data, char *str) {
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAnalVar *var;
 	RListIter *iter;
-	char *oldstr, *newstr;
+	char *oldstr;
 	char *tstr = strdup (data);
-	RList *spargs = NULL;
-	RList *bpargs = NULL;
 
 	if (!p->varlist) {
 		free (tstr);
 		return false;
 	}
-	bpargs = p->varlist (p->anal, f, 'b');
-	spargs = p->varlist (p->anal, f, 's');
-	bool ucase = IS_UPPER (*tstr);
+	RList *bpargs = p->varlist (p->anal, f, 'b');
+	RList *spargs = p->varlist (p->anal, f, 's');
+	const bool ucase = IS_UPPER (*tstr);
 	r_list_foreach (spargs, iter, var) {
-		char *tmpf = NULL;
+		char *tmpf;
 		//TODO: honor asm pseudo
 		if (var->delta < 10) {
 			tmpf = "%d(%s)";
@@ -285,12 +283,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
                         }
                 }
 		if (strstr (tstr, oldstr)) {
-			if (p->localvar_only) {
-				newstr = r_str_newf ("(%s)", var->name);
-			} else {
-				newstr = r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
+			char *newstr = (p->localvar_only) ? r_str_newf ("(%s)", var->name):
+				r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
 						var->name, p->anal->reg->name[R_REG_NAME_SP]);
-			}
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			free (newstr);
 			free (oldstr);
@@ -317,12 +312,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
                         }
                 }
                 if (strstr (tstr, oldstr)) {
-                        if (p->localvar_only) {
-                                newstr = r_str_newf ("(%s)", var->name);
-                        } else {
-                                newstr = r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
-                                                var->name, p->anal->reg->name[R_REG_NAME_BP]);
-                        }
+                        char *newstr = (p->localvar_only) ? r_str_newf ("(%s)", var->name):
+				r_str_newf ("%s%s(%s)", var->delta > 0 ? "" : "-",
+						var->name, p->anal->reg->name[R_REG_NAME_SP]);
                         tstr = r_str_replace (tstr, oldstr, newstr, 1);
                         free (newstr);
                         free (oldstr);
