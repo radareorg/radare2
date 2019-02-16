@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2018 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2019 - Author: pancake, vane11ope */
 
 // pls move the typedefs into roons and rename it -> RConsPanel
 
