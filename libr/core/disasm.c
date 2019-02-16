@@ -4801,7 +4801,7 @@ toro:
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment (core, f, cmt, sizeof (cmt));
-				ds_show_comments_right (ds);
+				// ds_show_comments_right (ds);
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[CORNER_TL],
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
