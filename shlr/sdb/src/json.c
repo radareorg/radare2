@@ -15,7 +15,7 @@ SDB_API char *sdb_json_get_str (const char *json, const char *path) {
 
 SDB_API bool sdb_json_get_bool(const char *json, const char *path) {
 	Rangstr rs = json_get (json, path);
-	const char *p = rs->p + rs->f;
+	const char *p = rs.p + rs.f;
 	return (rangstr_length (&rs) == 4 && !strncmp (p, "true", 4));
 }
 

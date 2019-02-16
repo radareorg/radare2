@@ -3013,7 +3013,8 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 	panelAllClear (panels);
 	panels->n_panels = 0;
 	panels->curnode = 0;
-	char *title, *cmd, *x, *y, *w, *h, *caching, *cfg = parsedConfig;
+	char *title, *cmd, *x, *y, *w, *h, *cfg = parsedConfig;
+	bool caching;
 	for (i = 1; i < count; i++) {
 		title = sdb_json_get_str (cfg, "Title");
 		cmd = sdb_json_get_str (cfg, "Cmd");
@@ -3021,13 +3022,13 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 		y = sdb_json_get_str (cfg, "y");
 		w = sdb_json_get_str (cfg, "w");
 		h = sdb_json_get_str (cfg, "h");
-		caching = sdb_json_get_str (cfg, "caching");
+		caching = sdb_json_get_bool (cfg, "caching");
 		RPanel *p = getPanel (panels, panels->n_panels);
 		p->pos.x = atoi (x);
 		p->pos.y = atoi (y);
 		p->pos.w = atoi (w);
 		p->pos.h = atoi (h);
-		addPanelFrame (core, title, cmd, atoi (caching));
+		addPanelFrame (core, title, cmd, caching);
 		cfg += strlen (cfg) + 1;
 	}
 	free (parsedConfig);
