@@ -80,6 +80,9 @@ if [ -e "${VPATH}/config.guess" ]; then
 fi
 CPU="`uname -m|sed -e 's, ,,g'|cut -d - -f 1`"
 OS="`uname -s|tr A-Z a-z`"
+if uname -a | grep -qE "(Microsoft|WSL)"; then
+	OS="wsl"
+fi
 GNU="`uname --help 2>&1 | grep gnu`"
 [ "${GNU}" ] && OS="${OS}-gnu"
 [ "${CPU}" = ppc ] && CPU="powerpc"
@@ -576,6 +579,9 @@ else
 if [ "$HOST_OS" = "mingw32_nt" ]; then
 USEROSTYPE="mingw32"
 else
+if [ "$HOST_OS" = "wsl" ]; then
+USEROSTYPE="wsl"
+else
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
 else
@@ -600,12 +606,16 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 if [ "$USEROSTYPE" = "gnulinux" ]; then
 HAVE_PTRACE="1"
 USE_PTRACE_WRAP="1"
+else
+if [ "$USEROSTYPE" = "wsl" ]; then
+HAVE_PTRACE="1"
+USE_PTRACE_WRAP="0"
 else
 if [ "$USEROSTYPE" = "android" ]; then
 HAVE_PTRACE="1"
@@ -620,7 +630,7 @@ HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
 else
 HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"; fi; fi; fi; fi
+USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi
 if [ "$DEBUGGER" = "0" ]; then
 HAVE_PTRACE="0"; fi
 if [ "$WANT_PTRACE_WRAP" = "0" ]; then
