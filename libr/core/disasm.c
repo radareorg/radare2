@@ -2763,7 +2763,9 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					if (s) {
 						r_str_trim (s);
 						_ALIGN;
-						ds_comment (ds, true, "; \"%s\"", s);
+						if (*s) {
+							ds_comment (ds, true, "; \"%s\"", s);
+						}
 						free (s);
 					}
 				}
