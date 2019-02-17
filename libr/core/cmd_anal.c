@@ -1713,10 +1713,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RAnalBlock *b;
 	int mode = 0;
 	ut64 addr, bbaddr = UT64_MAX;
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return NULL;
-	}
+	PJ *pj = NULL;
 	bool firstItem = true;
 
 	if (*input == '.') {
@@ -1739,17 +1736,24 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (one) {
 		bbaddr = addr;
 	}
+	if (mode == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return NULL;
+		}
+		pj_a (pj);
+	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
+		if (mode == 'j') {
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
+		}
 		return false;
 	}
-	switch (mode) {
-	case 'j':
-		pj_a (pj);
-		break;
-	case '*':
+	if (mode == '*') {
 		r_cons_printf ("fs blocks\n");
-		break;
 	}
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
