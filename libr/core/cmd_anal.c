@@ -1544,6 +1544,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_ki (pj, "size", size);
 			pj_ks (pj, "type", r_anal_optype_to_string (op.type));
+			{
+				const char *datatype = r_anal_datatype_to_string (op.datatype);
+				if (datatype) {
+					pj_ks (pj, "datatype", datatype);
+				}
+
+			}
 			pj_ks (pj, "reg", op.reg);
 			pj_ks (pj, "ireg", op.ireg);
 			pj_ki (pj, "scale", op.scale);
@@ -1625,6 +1632,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));
 			printline ("type", "%s\n", r_anal_optype_to_string (op.type));
+			const char *datatype = r_anal_datatype_to_string (op.datatype);
+			if (datatype) {
+				printline ("datatype", "%s\n", datatype);
+			}
 			printline ("cycles", "%d\n", op.cycles);
 			if (op.failcycles) {
 				printline ("failcycles", "%d\n", op.failcycles);

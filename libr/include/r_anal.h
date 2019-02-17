@@ -794,8 +794,11 @@ enum RAnalOpDirection {
 typedef enum r_anal_data_type_t {
 	R_ANAL_DATATYPE_NULL = 0,
 	R_ANAL_DATATYPE_ARRAY,
-	R_ANAL_DATATYPE_OBJECT,
+	R_ANAL_DATATYPE_OBJECT, // instance
 	R_ANAL_DATATYPE_STRING,
+	R_ANAL_DATATYPE_CLASS,
+	R_ANAL_DATATYPE_BOOLEAN,
+	R_ANAL_DATATYPE_INT16,
 	R_ANAL_DATATYPE_INT32,
 	R_ANAL_DATATYPE_INT64,
 	R_ANAL_DATATYPE_FLOAT,
@@ -1298,6 +1301,7 @@ R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
+R_API const char *r_anal_datatype_to_string(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API bool r_anal_op_nonlinear(int t);
 R_API bool r_anal_op_ismemref(int t);
