@@ -375,7 +375,7 @@ static const char *help_detail2_pf[] = {
 	"pf", " [10]z[3]i[10]Zb", "Print an fixed size str, widechar, and var",
 	"pfj", " +F @ 0x14","Print the content at given offset with flag",
 	"pf", " n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
-	"pf", " {2}? (plop)structname @ 0", "Print a format n times",
+	"pf", " [2]? (plop)structname @ 0", "Prints an array of structs",
 	"pf", " eqew bigWord beef", "Swap endianess and print with given labels",
 	"pf", ".foo rr (eax)reg1 (eip)reg2", "Create object referencing to register values ",
 	"pf", " tt troll plop", "print time stamps with labels troll and plop",
