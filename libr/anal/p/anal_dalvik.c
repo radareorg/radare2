@@ -46,7 +46,7 @@ static const char *getCondz(ut8 cond) {
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int sz = dalvik_opcodes[data[0]].len;
-	if (!op) {
+	if (!op || sz >= len) {
 		return sz;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
