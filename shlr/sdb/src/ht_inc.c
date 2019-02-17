@@ -46,10 +46,17 @@ static inline void freefn(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	}
 }
 
+static inline ut32 next_idx(ut32 idx) {
+	if (idx != UT32_MAX && idx < S_ARRAY_SIZE (ht_primes_sizes) - 1) {
+		return idx + 1;
+	}
+	return UT32_MAX;
+}
+
 static inline ut32 compute_size(ut32 idx, ut32 sz) {
 	// when possible, use the precomputed prime numbers which help with
 	// collisions, otherwise, at least make the number odd with |1
-	return idx != UT32_MAX ? ht_primes_sizes[idx] : (sz | 1);
+	return idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) ? ht_primes_sizes[idx] : (sz | 1);
 }
 
 static inline bool is_kv_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
@@ -144,11 +151,16 @@ SDB_API void Ht_(free)(HtName_(Ht)* ht) {
 static void internal_ht_grow(HtName_(Ht)* ht) {
 	HtName_(Ht)* ht2;
 	HtName_(Ht) swap;
-	ut32 idx = ht->prime_idx != UT32_MAX ? ht->prime_idx + 1 : UT32_MAX;
+	ut32 idx = next_idx (ht->prime_idx);
 	ut32 sz = compute_size (idx, ht->size * 2);
 	ut32 i;
 
 	ht2 = internal_ht_new (sz, idx, &ht->opt);
+	if (!ht2) {
+		// we can't grow the ht anymore. Never mind, we'll be slower,
+		// but everything can continue to work
+		return;
+	}
 
 	for (i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];

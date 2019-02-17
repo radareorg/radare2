@@ -3472,6 +3472,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char *arg = r_core_cmd_str (core, each + 2);
 			if (arg) {
 				foreachOffset (core, cmd, arg);
+				free (arg);
 			}
 		}
 		break;

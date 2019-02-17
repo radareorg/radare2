@@ -267,7 +267,7 @@ R_API int r_io_close_all(RIO* io) { // what about undo?
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
-	r_return_val_if_fail (io && buf && len > 0, -1);
+	r_return_val_if_fail (io && buf && len >= 0, -1);
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
@@ -298,7 +298,10 @@ static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 // For physical mode, the interface is broken because the actual read bytes are
 // not available. This requires fixes in all call sites.
 R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf && len > 0, false);
+	r_return_val_if_fail (io && buf && len >= 0, false);
+	if (len == 0) {
+		return false;
+	}
 	bool ret = (io->va)
 		? r_io_vread_at_mapped (io, addr, buf, len)
 		: r_io_pread_at (io, addr, buf, len) > 0;
@@ -334,7 +337,10 @@ R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
 // Returns -1 on error.
 R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret;
-	r_return_val_if_fail (io && buf && len > 0, -1);
+	r_return_val_if_fail (io && buf && len >= 0, -1);
+	if (len == 0) {
+		return 0;
+	}
 	if (io->va) {
 		if (io->ff) {
 			memset (buf, io->Oxff, len);

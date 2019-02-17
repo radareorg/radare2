@@ -198,15 +198,15 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	si->swi = (int)r_num_get (NULL, r_str_word_get0 (o, 0));
 	si->num = (int)r_num_get (NULL, r_str_word_get0 (o, 1));
 	si->args = (int)r_num_get (NULL, r_str_word_get0 (o, 2));
-	//in a definition such as syscall=0x80,0,4,
-	//the string at index 3 is 0 causing oob read afterwards
 	si->sargs = calloc (si->args + 1, sizeof (char));
 	if (!si->sargs) {
 		free (si);
 		free (o);
 		return NULL;
 	}
-	strncpy (si->sargs, r_str_word_get0 (o, 3), si->args);
+	if (cols > 3) {
+		strncpy (si->sargs, r_str_word_get0 (o, 3), si->args);
+	}
 	free (o);
 	return si;
 }

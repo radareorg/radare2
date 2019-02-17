@@ -17,7 +17,6 @@
 #define JAYRO_04 0
 
 // 16 KB is the maximum size for a basic block
-#define MAXBBSIZE (16 * 1024)
 #define MAX_FLG_NAME_SIZE 64
 
 #define FIX_JMP_FWD 0
@@ -368,10 +367,10 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth);
 #define recurseAt(x) {\
-		ut8 *bbuf = malloc (MAXBBSIZE);\
+		ut8 *bbuf = malloc (anal->opt.bb_max_size);\
 		if (bbuf) {\
-			anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE);\
-			ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth - 1);\
+			anal->iob.read_at (anal->iob.io, x, bbuf, anal->opt.bb_max_size);\
+			ret = fcn_recurse (anal, fcn, x, bbuf, anal->opt.bb_max_size, depth - 1);\
 			r_anal_fcn_update_tinyrange_bbs (fcn);\
 			free (bbuf);\
 		}\
@@ -996,7 +995,7 @@ repeat:
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if ((len - addrbytes * idx) < 5 && len == MAXBBSIZE) { // TODO: use opt.bb_max_size here
+		if ((len - addrbytes * idx) < 5 && len == anal->opt.bb_max_size) { // TODO: use opt.bb_max_size here
 			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
 			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
 		}
@@ -1862,7 +1861,6 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	return NULL;
 }
 
-#define MAXBBSIZE (1024*1024*1)
 /* rename RAnalFunctionBB.add() */
 R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
 	RAnalBlock *bb = NULL, *bbi;
@@ -1870,10 +1868,12 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 	bool mid = false;
 	st64 n;
 	if (size == 0) { // empty basic blocks allowed?
+		r_warn_if_reached ();
 		eprintf ("warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
 		return false;
 	}
-	if (size > MAXBBSIZE) {
+	if (size > anal->opt.bb_max_size) {
+		r_warn_if_reached ();
 		eprintf ("warning: cant allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
 		return false;
 	}
