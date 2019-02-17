@@ -2014,7 +2014,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 // reset the status of row_offsets
 R_API void r_print_init_rowoffsets(RPrint *p) {
 	if (p->calc_row_offsets) {
-		R_FREE(p->row_offsets);
+		R_FREE (p->row_offsets);
 		p->row_offsets_sz = 0;
 	}
 }
@@ -2058,7 +2058,6 @@ R_API ut32 r_print_rowoff(RPrint *p, int i) {
 R_API int r_print_row_at_off(RPrint *p, ut32 offset) {
 	int i = 0;
 	ut32 tt;
-
 	while ((tt = r_print_rowoff (p, i)) != UT32_MAX && tt <= offset) {
 		i++;
 	}
