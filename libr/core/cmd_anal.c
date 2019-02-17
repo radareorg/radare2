@@ -7715,7 +7715,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
-					oldstr = r_print_rowlog (core->print, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
+					oldstr = r_print_rowlog (core->print, "Speculatively constructing a function name "
+					                         "for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
 					r_print_rowlog_done (core->print, oldstr);
 				}
