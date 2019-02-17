@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake & dso */
+/* radare - LGPL - Copyright 2009-2019 - pancake & dso */
 
 #include "r_core.h"
-#include "r_print.h"
+#include "r_util.h"
 #include "r_io.h"
 
 /*
@@ -330,6 +330,19 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;
+}
+
+R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
+	if (!input || !*input) {
+		return false;
+	}
+	char *out = strdup (input);
+	int len = r_hex_str2bin (input, (ut8 *)out);
+	if (len > 0) {
+		r_core_yank_set (core, 0, (ut8 *)out, len);
+	}
+	free (out);
+	return true;
 }
 
 R_API bool r_core_yank_file_ex(RCore *core, const char *input) {

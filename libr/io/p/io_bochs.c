@@ -39,7 +39,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (i) {
 		l = i - file - 8;
 		fileBochs = r_str_ndup (file + 8, l);
-		l = strlen (i + 1);
 		fileCfg = strdup (i + 1);
 	} else {
 		free (fileCfg);
@@ -109,8 +108,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_bochs = {
 	.name = "bochs",
-	.desc = "Attach to a BOCHS debugger",
+	.desc = "Attach to a BOCHS debugger instance",
 	.license = "LGPL3",
+	.uris = "bochs://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

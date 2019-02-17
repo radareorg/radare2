@@ -99,7 +99,7 @@ static bool strmatch(char *entry, char *filter, char *mask, const int mask_size)
 
 static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RListIter *iter;
-	void *current_entry;
+	char *current_entry;
 	char mask[HUD_BUF_SIZE];
 	char *p, *x;
 	int j, rows;
@@ -128,7 +128,7 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', current_entry));
 			} else {
 				// otherwise we need to emphasize the matching part
-				if (I (color)) {
+				if (I (context->color)) {
 					int last_color_change = 0;
 					int last_mask = 0;
 					char *str = r_str_newf (" %c ", first_line? '-': ' ');
@@ -180,9 +180,9 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	return res;
 }
 
-static void mht_free_kv(HtKv *kv) {
-        free (kv->key);
-        r_list_free (kv->value);
+static void mht_free_kv(HtPPKv *kv) {
+	free (kv->key);
+	r_list_free (kv->value);
 }
 
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
@@ -195,7 +195,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	char *selected_entry = NULL;
 	RListIter *iter;
 
-	SdbHt *ht = ht_new (NULL, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
+	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 
 	user_input[0] = 0;
 	r_cons_clear ();
@@ -216,14 +216,12 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		RList *filtered_list = NULL;
 
 		bool found = false;
-		HtKv *kv = ht_find_kv (ht, user_input, &found);
-		if (found) {
-			filtered_list = kv->value;
-		} else {
+		filtered_list = ht_pp_find (ht, user_input, &found);
+		if (!found) {
 			filtered_list = hud_filter (list, user_input,
 				top_entry_n, &current_entry_n, &selected_entry);
 #if HUD_CACHE
-			ht_insert (ht, user_input, filtered_list);
+			ht_pp_insert (ht, user_input, filtered_list);
 #endif
 		}
 		r_list_foreach (filtered_list, iter, row) {
@@ -307,7 +305,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			}
 		}
 	}
-	ht_free (ht);
+	ht_pp_free (ht);
 	return NULL;
 }
 
@@ -327,6 +325,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 		if (ret) {
 			tmp = r_str_append (tmp, "/");
 			tmp = r_str_append (tmp, ret);
+			free (ret);
 			ret = r_file_abspath (tmp);
 			free (tmp);
 			tmp = ret;

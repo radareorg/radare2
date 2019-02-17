@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 #include "mach0/mach0.h"
 #include "objc/mach0_classes.h"
 
@@ -21,15 +22,9 @@ static Sdb* get_sdb (RBinFile *bf) {
 }
 
 static char *entitlements(RBinFile *bf, bool json) {
-	struct MACH0_(obj_t) *bin;
-	if (!bf || !bf->o || json) {
-		return NULL;
-	}
-	bin = bf->o->bin_obj;
-	if (!bin->signature) {
-		return NULL;
-	}
-	return strdup ((char*) bin->signature);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	return r_str_dup (NULL, (const char*)bin->signature);
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -76,7 +71,9 @@ static bool load(RBinFile *bf) {
 	}
 	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	if (!bf->o || !bf->o->bin_obj) {
-		MACH0_(mach0_free) (bf->o->bin_obj);
+		if (bf->o) {
+			MACH0_(mach0_free) (bf->o->bin_obj);
+		}
 		return false;
 	}
 	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
@@ -128,7 +125,7 @@ static RList* sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		r_str_ncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ((char*)sections[i].name);
 		if (strstr (ptr->name, "la_symbol_ptr")) {
 #ifndef R_BIN_MACH064
 			const int sz = 4;
@@ -141,7 +138,6 @@ static RList* sections(RBinFile *bf) {
 			}
 		}
 
-		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
@@ -581,17 +577,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-#if 0
-typedef struct r_bin_create_t {
-	int arch;
-	ut8 *code;
-	int clen;
-	ut8 *data;
-	int dlen;
-} RBinCreate;
-#endif
-
-static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -604,10 +590,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
 
-	bool is_arm = strstr (bin->cur->o->info->arch, "arm");
+	r_return_val_if_fail (bin && opt, NULL);
+
+	bool is_arm = strstr (opt->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
-	if (bin->cur->o->info->bits == 64) {
+	if (opt->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
 		free (buf);
 		return NULL;

@@ -182,7 +182,7 @@ R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen(char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
+static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
@@ -212,7 +212,7 @@ static void r_cons_rgb_gen(char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 
 	}
 
 	int written = -1;
-	switch (r_cons_singleton ()->color) {
+	switch (mode) {
 	case COLOR_MODE_256: // 256 color palette
 		written = snprintf (outstr + i, sz - i, "%d;5;%dm", fgbg, rgb (r, g, b));
 		break;
@@ -236,6 +236,8 @@ static void r_cons_rgb_gen(char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 
 		written = snprintf (outstr + i, sz - i, "%dm", fgbg + c);
 		}
 		break;
+	default:
+		break;
 	}
 
 	if (written < 0 || written >= sz - i) {
@@ -243,8 +245,8 @@ static void r_cons_rgb_gen(char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 
 	}
 }
 
-/* Return the computed color string for the specified color */
-R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
+/* Return the computed color string for the specified color in the specified mode */
+R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
@@ -259,13 +261,18 @@ R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
 	}
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
-		r_cons_rgb_gen (outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
+		r_cons_rgb_gen (mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
 	}
 	// APPEND
 	size_t len = strlen (outstr);
-	r_cons_rgb_gen (outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
+	r_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
 
 	return outstr;
+}
+
+/* Return the computed color string for the specified color */
+R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
+	return r_cons_rgb_str_mode (r_cons_singleton ()->context->color, outstr, sz, rcolor);
 }
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {

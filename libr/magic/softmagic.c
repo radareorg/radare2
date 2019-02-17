@@ -300,9 +300,7 @@ char * strdupn(const char *str, size_t n) {
 	size_t len;
 	char *copy;
 
-	for (len = 0; len < n && str[len]; len++) {
-		continue;
-	}
+	for (len = 0; len < n && str[len]; len++) {}
 	if (!(copy = malloc (len + 1))) {
 		return NULL;
 	}
@@ -1095,7 +1093,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 					break;
 				}
 			} else {
-				offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0]));
+				offset = (st32) (((ut32)p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0]));
 			}
 			if (m->in_op & FILE_OPINVERSE) {
 				offset = ~offset;
@@ -1359,7 +1357,6 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 		case '>': matched = fv > fl; break;
 		case '<': matched = fv < fl; break;
 		default:
-			matched = 0;
 			file_magerror(ms, "cannot happen with float: invalid relation `%c'", m->reln);
 			return -1;
 		}
@@ -1376,7 +1373,6 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 		case '>': matched = dv > dl; break;
 		case '<': matched = dv < dl; break;
 		default:
-			matched = 0;
 			file_magerror (ms, "cannot happen with double: invalid relation `%c'", m->reln);
 			return -1;
 		}
@@ -1541,7 +1537,6 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 		}
 		break;
 	default:
-		matched = 0;
 		file_magerror (ms, "cannot happen: invalid relation `%c'", m->reln);
 		return -1;
 	}

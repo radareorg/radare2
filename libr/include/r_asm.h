@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -14,10 +14,6 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER(r_asm);
-
-// XXX deprecate!!! too big!
-// the 256th character is left for the null terminator
-#define R_ASM_BUFSIZE 255
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
@@ -120,7 +116,7 @@ typedef struct r_asm_t {
 	int dataalign;
 	int bitshift;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
-	SdbHt *flags;
+	HtPP *flags;
 	int seggrn;
 } RAsm;
 
@@ -149,15 +145,15 @@ typedef struct r_asm_plugin_t {
 #ifdef R_API
 /* asm.c */
 R_API RAsm *r_asm_new(void);
-R_API RAsm *r_asm_free(RAsm *a);
+R_API void r_asm_free(RAsm *a);
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo);
-R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
+R_API bool r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
 R_API int r_asm_is_valid(RAsm *a, const char *name);
-R_API int r_asm_use(RAsm *a, const char *name);
+R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
 R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
@@ -198,13 +194,14 @@ R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
 R_API int r_asm_op_get_size(RAsmOp *op);
 R_API void r_asm_op_set_asm(RAsmOp *op, const char *str);
-R_API void r_asm_op_set_hex(RAsmOp *op, const char *str);
-R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
+R_API int r_asm_op_set_hex(RAsmOp *op, const char *str);
+R_API int r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_6502;
+extern RAsmPlugin r_asm_plugin_6502_cs;
 extern RAsmPlugin r_asm_plugin_8051;
 extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_arm_as;
@@ -231,6 +228,7 @@ extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_lh5801;
 extern RAsmPlugin r_asm_plugin_lm32;
 extern RAsmPlugin r_asm_plugin_m68k_cs;
+extern RAsmPlugin r_asm_plugin_m680x_cs;
 extern RAsmPlugin r_asm_plugin_malbolge;
 extern RAsmPlugin r_asm_plugin_mcore;
 extern RAsmPlugin r_asm_plugin_mcs96;

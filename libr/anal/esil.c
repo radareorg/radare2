@@ -1121,6 +1121,10 @@ static int esil_lsreq(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+			if (num2 > 63) {
+				eprintf ("Invalid shift at 0x%08"PFMT64x"\n", esil->address);
+				num2 = 63;
+			}
 			esil->old = num;
 			num >>= num2;
 			esil->cur = num;
@@ -1137,7 +1141,7 @@ static int esil_lsreq(RAnalEsil *esil) {
 }
 
 static int esil_asreq(RAnalEsil *esil) {
-	int regsize, ret = 0;
+	int regsize = 0, ret = 0;
 	ut64 op_num, param_num;
 	char *op = r_anal_esil_pop (esil);
 	char *param = r_anal_esil_pop (esil);
@@ -1166,7 +1170,20 @@ static int esil_asreq(RAnalEsil *esil) {
 					ut64 mask = (regsize - 1);
 					param_num &= mask;
 					ut64 left_bits = 0;
-					if (op_num & (1 << (regsize - 1))) {
+					int shift = regsize - 1;
+					if (shift < 0 || shift > regsize - 1) {
+						eprintf ("Invalid asreq shift of %d at 0x%"PFMT64x"\n", shift, esil->address);
+						shift = 0;
+					}
+					if (param_num > regsize - 1) {
+						// capstone bug?
+						eprintf ("Invalid asreq shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
+						param_num = 30;
+					}
+					if (shift >= 63) {
+						// LL can't handle LShift of 63 or more
+						eprintf ("Invalid asreq shift of %d at 0x%08"PFMT64x"\n", shift, esil->address);
+					} else if (op_num & (1LL << shift)) {
 						left_bits = (1 << param_num) - 1;
 						left_bits <<= regsize - param_num;
 					}
@@ -1191,12 +1208,17 @@ static int esil_asreq(RAnalEsil *esil) {
 }
 
 static int esil_asr(RAnalEsil *esil) {
-	int regsize, ret = 0;
-	ut64 op_num, param_num;
-	char *op    = r_anal_esil_pop (esil);
+	int regsize = 0, ret = 0;
+	ut64 op_num = 0, param_num = 0;
+	char *op = r_anal_esil_pop (esil);
 	char *param = r_anal_esil_pop (esil);
 	if (op && r_anal_esil_get_parm_size (esil, op, &op_num, &regsize)) {
 		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
+			if (param_num > regsize - 1) {
+				// capstone bug?
+				eprintf ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
+				param_num = 30;
+			}
 			bool isNegative;
 			if (regsize == 32) {
 				isNegative = ((st32)op_num)<0;
@@ -1760,8 +1782,10 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
 					r_write_ble (b, num, esil->anal->big_endian, 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
-					r_write_ble (b, num2, esil->anal->big_endian, 64);
-					ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
+					if (ret == 0) {
+						r_write_ble (b, num2, esil->anal->big_endian, 64);
+						ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
+					}
 					goto out;
 				}
 				ret = -1;

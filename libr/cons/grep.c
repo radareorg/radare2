@@ -2,7 +2,7 @@
 
 #include <r_cons.h>
 #include <r_util.h>
-#include <r_print.h>
+#include <r_util/r_print.h>
 #include <sdb.h>
 
 #define I(x) r_cons_singleton ()->x
@@ -185,11 +185,6 @@ while_end:
 		strncpy (buf, str, sizeof (buf) - 1);
 	}
 
-	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
-		grep->end = 1;
-		buf[len] = 0;
-	}
-
 	ptr = buf;
 	ptr2 = strchr (ptr, '[');
 	ptr3 = strchr (ptr, ']');
@@ -207,7 +202,6 @@ while_end:
 			if (fail) {
 				ZERO_FILL (grep->tokens);
 				grep->tokens_used = 0;
-				fail = 0;
 				break;
 			}
 			switch (*ptr2) {
@@ -280,6 +274,13 @@ while_end:
 	if (end_ptr) {
 		*end_ptr = '\0';
 	}
+
+	len = strlen (buf) - 1;
+	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
+		grep->end = 1;
+		buf[len] = '\0';
+	}
+
 	free (grep->str);
 	if (*ptr) {
 		grep->str = (char *) strdup (ptr);
@@ -378,14 +379,8 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 }
 
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
-	char *ptr;
-
-	if (!cmd) {
-		return;
-	}
-
-	ptr = preprocess_filter_expr (cmd, quotestr);
-
+	r_return_if_fail (cmd && quotestr);
+	char *ptr = preprocess_filter_expr (cmd, quotestr);
 	if (ptr) {
 		r_str_trim (cmd);
 		parse_grep_expression (ptr);
@@ -393,7 +388,7 @@ R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 	}
 }
 
-R_API char * r_cons_grep_strip(char *cmd, const char *quotestr) {
+R_API char *r_cons_grep_strip(char *cmd, const char *quotestr) {
 	char *ptr = NULL;
 
 	if (cmd) {
@@ -445,23 +440,24 @@ static int cmp(const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
-R_API int r_cons_grepbuf(char *buf, int len) {
+R_API void r_cons_grepbuf() {
 	RCons *cons = r_cons_singleton ();
+	const char *buf = cons->context->buffer;
+	const int len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
-	char *tline, *tbuf, *p, *out, *in = buf;
+	const char *in = buf;
 	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
 	bool show = false;
 	if (cons->filter) {
 		cons->context->buffer_len = 0;
 		R_FREE (cons->context->buffer);
-		return 0;
+		return;
 	}
 
-	if ((!len || !buf || buf[0] == '\0') &&
-	    (grep->json || grep->less)) {
+	if ((!len || !buf || buf[0] == '\0') && (grep->json || grep->less)) {
 		grep->json = 0;
 		grep->less = 0;
-		return 0;
+		return;
 	}
 	if (grep->json) {
 		if (grep->json_path) {
@@ -476,16 +472,16 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			R_FREE (grep->json_path);
 		} else {
 			const char *palette[] = {
-				cons->pal.graph_false, // f
-				cons->pal.graph_true, // t
-				cons->pal.num, // k
-				cons->pal.comment, // v
+				cons->context->pal.graph_false, // f
+				cons->context->pal.graph_true, // t
+				cons->context->pal.num, // k
+				cons->context->pal.comment, // v
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (color), "  ", palette);
+			char *out = r_print_json_indent (buf, I (context->color), "  ", palette);
 			if (!out) {
-				return 0;
+				return;
 			}
 			free (cons->context->buffer);
 			cons->context->buffer = out;
@@ -497,44 +493,39 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 				r_cons_less_str (cons->context->buffer, NULL);
 			}
 		}
-		return 3;
+		return;
+		// cons->lines = ?? return 3;
 	}
 	if (grep->less) {
 		int less = grep->less;
 		grep->less = 0;
 		if (less == 2) {
 			char *res = r_cons_hud_string (buf);
-			r_cons_println (res);
-			free (res);
+			if (res) {
+				r_cons_println (res);
+				free (res);
+			}
 		} else {
 			r_cons_less_str (buf, NULL);
-			buf[0] = 0;
 			cons->context->buffer_len = 0;
 			if (cons->context->buffer) {
 				cons->context->buffer[0] = 0;
 			}
 			R_FREE (cons->context->buffer);
 		}
-		return 0;
+		return;
 	}
 	if (!cons->context->buffer) {
 		cons->context->buffer_len = len + 20;
 		cons->context->buffer = malloc (cons->context->buffer_len);
 		cons->context->buffer[0] = 0;
 	}
-	out = tbuf = calloc (1, len);
-	if (!out) {
-		return 0;
-	}
-	tline = malloc (len);
-	if (!tline) {
-		free (out);
-		return 0;
-	}
+	RStrBuf *ob = r_strbuf_new ("");
+	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
 	while ((int) (size_t) (in - buf) < len) {
-		p = strchr (in, '\n');
+		char *p = strchr (in, '\n');
 		if (!p) {
 			break;
 		}
@@ -559,15 +550,13 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	}
 	in = buf;
 	while ((int) (size_t) (in - buf) < len) {
-		p = strchr (in, '\n');
+		char *p = strchr (in, '\n');
 		if (!p) {
-			free (tbuf);
-			free (tline);
-			return 0;
+			break;
 		}
 		l = p - in;
 		if (l > 0) {
-			memcpy (tline, in, l);
+			char *tline = r_str_ndup (in, l);
 			if (cons->grep_color) {
 				tl = l;
 			} else {
@@ -594,29 +583,44 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			}
 			if (ret > 0) {
 				if (show) {
-					memcpy (out, tline, ret);
-					memcpy (out + ret, "\n", 1);
-					out += ret + 1;
+					char *str = r_str_ndup (tline, ret);
+					if (cons->grep_highlight) {
+						int i;
+						for (i = 0; i < grep->nstrings; i++) {
+							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
+							if (str && newstr) {
+								if (grep->icase) {
+									str = r_str_replace_icase (str, grep->strings[i], newstr, 1, 1);
+								} else {
+									str = r_str_replace (str, grep->strings[i], newstr, 1);
+								}
+							}
+							free (newstr);
+						}
+					}
+					if (str) {
+						r_strbuf_append (ob, str);
+						r_strbuf_append (ob, "\n");
+					}
 					buffer_len += ret + 1;
+					free (str);
 				}
 				if (!grep->range_line) {
 					show = false;
 				}
 				cons->lines++;
 			} else if (ret < 0) {
-				free (tbuf);
 				free (tline);
-				return 0;
+				return;
 			}
+			free (tline);
 			in += l + 1;
 		} else {
 			in++;
 		}
 	}
-	memcpy (buf, tbuf, len);
-	cons->context->buffer_len = buffer_len;
-	free (tbuf);
-	free (tline);
+
+	cons->context->buffer_len = r_strbuf_length (ob);
 	if (grep->counter) {
 		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
 		if (cons->context->buffer_len < 10) {
@@ -625,19 +629,32 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		snprintf (cons->context->buffer, cons->context->buffer_len, "%d\n", cnt);
 		cons->context->buffer_len = strlen (cons->context->buffer);
 		cons->num->value = cons->lines;
+		return;
 	}
+	
+	const int ob_len = r_strbuf_length (ob);
+	if (ob_len >= cons->context->buffer_sz) {
+		cons->context->buffer_sz = ob_len + 1;
+		cons->context->buffer = r_strbuf_drain (ob);
+	} else {
+		memcpy (cons->context->buffer, r_strbuf_getbin (ob, NULL), ob_len);
+		cons->context->buffer[ob_len] = 0;
+		r_strbuf_free (ob);
+	}
+	cons->context->buffer_len = ob_len;
+
 	if (grep->sort != -1) {
 #define INSERT_LINES(list)\
-	do {\
-		r_list_foreach (list, iter, str) {\
-			int len = strlen (str);\
-			memcpy (ptr, str, len);\
-			memcpy (ptr + len, "\n", 2);\
-			ptr += len + 1;\
-			nl++;\
+		do {\
+			r_list_foreach (list, iter, str) {\
+				int len = strlen (str);\
+				memcpy (ptr, str, len);\
+				memcpy (ptr + len, "\n", 2);\
+				ptr += len + 1;\
+				nl++;\
+			}\
 		}\
-	}\
-	while (false)
+		while (false)
 
 		RListIter *iter;
 		int nl = 0;
@@ -656,24 +673,23 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		r_list_free (unsorted_lines);
 		unsorted_lines = NULL;
 	}
-	return cons->lines;
 }
 
 R_API int r_cons_grep_line(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	RConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
-	char *in, *out, *tok = NULL;
-	int hit = grep->neg;
+	char *tok = NULL;
+	bool hit = grep->neg;
 	int outlen = 0;
 	bool use_tok = false;
 	size_t i;
 
-	in = calloc (1, len + 1);
+	char *in = calloc (1, len + 1);
 	if (!in) {
 		return 0;
 	}
-	out = calloc (1, len + 2);
+	char *out = calloc (1, len + 2);
 	if (!out) {
 		free (in);
 		return 0;
@@ -690,13 +706,13 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			if (grep->icase) {
 				r_str_case (str, false);
 			}
-			char *p = strstr (in, grep->strings[i]);
+			const char *p = r_strstr_ansi (in, grep->strings[i]);
 			if (!p) {
 				ampfail = 0;
 				continue;
 			}
 			if (grep->begin) {
-				hit = (p == in)? 1: 0;
+				hit = (p == in);
 			} else {
 				hit = !grep->neg;
 			}
@@ -728,7 +744,6 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		if (use_tok && grep->tokens_used) {
 			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
 				tok = strtok (i? NULL: in, delims);
-
 				if (tok) {
 					if (grep->tokens[i]) {
 						int toklen = strlen (tok);
@@ -742,16 +757,14 @@ R_API int r_cons_grep_line(char *buf, int len) {
 						}
 					}
 				} else {
-					if (!(*out)) {
-						free (in);
-						free (out);
-						return 0;
-					} else {
+					if ((*out)) {
 						break;
 					}
+					free (in);
+					free (out);
+					return 0;
 				}
 			}
-
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
 				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
@@ -759,7 +772,6 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				free (out);
 				return -1;
 			}
-
 			memcpy (buf, out, len);
 			len = outlen;
 		}
@@ -941,7 +953,6 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	}
 	if (tag_font) {
 		r_strbuf_append (res, "</font>");
-		tag_font = false;
 	}
 	r_strbuf_append_n (res, str, ptr - str);
 	if (newlen) {
@@ -949,4 +960,3 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	}
 	return r_strbuf_drain (res);
 }
-

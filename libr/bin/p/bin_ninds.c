@@ -66,7 +66,7 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 
-	strcpy (ptr9->name, "arm9");
+	ptr9->name = strdup ("arm9");
 	ptr9->size = loaded_header.arm9_size;
 	ptr9->vsize = loaded_header.arm9_size;
 	ptr9->paddr = loaded_header.arm9_rom_offset;
@@ -75,7 +75,7 @@ static RList *sections(RBinFile *bf) {
 	ptr9->add = true;
 	r_list_append (ret, ptr9);
 
-	strcpy (ptr7->name, "arm7");
+	ptr7->name = strdup ("arm7");
 	ptr7->size = loaded_header.arm7_size;
 	ptr7->vsize = loaded_header.arm7_size;
 	ptr7->paddr = loaded_header.arm7_rom_offset;

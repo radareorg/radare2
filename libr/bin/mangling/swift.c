@@ -2,9 +2,9 @@
 
 #include <r_bin.h>
 
-R_API bool r_bin_lang_swift(RBinFile *binfile) {
-	RBinObject *o = binfile ? binfile->o : NULL;
-	RBinInfo *info = o ? o->info : NULL;
+R_IPI bool r_bin_lang_swift(RBinFile *binfile) {
+	RBinObject *o = binfile? binfile->o: NULL;
+	RBinInfo *info = o? o->info: NULL;
 	RBinSymbol *sym;
 	RListIter *iter;
 	if (info) {

@@ -253,7 +253,7 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistor
 	line->cb_history_down = down;
 	line->offset_hist_index = 0;
 	line->file_hist_index = 0;
-	line->sdbshell_hist_iter = line->sdbshell_hist? r_list_head (line->sdbshell_hist): NULL;
+	line->sdbshell_hist_iter = r_list_head (line->sdbshell_hist);
 	return 1;
 }
 
@@ -372,8 +372,7 @@ R_API void r_line_hist_free() {
 	int i;
 	if (I.history.data) {
 		for (i = 0; i < I.history.size; i++) {
-			free (I.history.data[i]);
-			I.history.data[i] = NULL;
+			R_FREE (I.history.data[i]);
 		}
 	}
 	R_FREE (I.history.data);
@@ -452,8 +451,8 @@ static void selection_widget_draw() {
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
-	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT_RESET;
-	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT;
+	char *background_color = cons->context->color ? cons->context->pal.widget_bg : Color_INVERT_RESET;
+	char *selected_color = cons->context->color ? cons->context->pal.widget_sel : Color_INVERT;
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
 	int scrollbar_y = 0, scrollbar_l = 0;
 	if (scrollbar) {
@@ -1646,7 +1645,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 9:	// tab
-			if (I.buffer.data[I.buffer.length - 1] == '@') {
+			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
 				strcpy (I.buffer.data + I.buffer.length, " ");
 				I.buffer.length++;
 				I.buffer.index++;

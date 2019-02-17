@@ -13,24 +13,36 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
+static bool check_bytes_buf(RBuffer* rbuf) {
+	ut8 buf[4] = {0};
+	return rbuf && r_buf_read_at (rbuf, R_BUF_CUR, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
+}
+
+static bool find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
+	return q->id != (*p);
+}
+
+static bool find_export(const ut32 *p, const RBinWasmExportEntry* q) {
+	if (q->kind != R_BIN_WASM_EXTERNALKIND_Function) {
+		return true;
 	}
-	if (!check_bytes (buf, sz)) {
-		return false;
+	return q->index != (*p);
+}
+
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, NULL);
+
+	if (!check_bytes_buf (buf)) {
+		return NULL;
 	}
-	*bin_obj = r_bin_wasm_init (bf);
-	return true;
+	return r_bin_wasm_init (bf);
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-	if (!bf || !bf->o) {
-		return false;
-	}
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	r_return_val_if_fail (bf && bf->o, false);
+
+	bf->o->bin_obj = load_buffer (bf, bf->buf, bf->o->loadaddr, bf->sdb);
+	return bf->o->bin_obj != NULL;
 }
 
 static int destroy(RBinFile *bf) {
@@ -104,7 +116,7 @@ static RList *sections(RBinFile *bf) {
 			r_list_free (ret);
 			return NULL;
 		}
-		strncpy (ptr->name, (char*)sec->name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ((char*)sec->name);
 		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
 		}
@@ -122,7 +134,7 @@ static RList *sections(RBinFile *bf) {
 
 static RList *symbols(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
-	RList *ret = NULL, *codes = NULL, *imports = NULL;
+	RList *ret = NULL, *codes = NULL, *imports = NULL, *symtab = NULL, *exports = NULL;
 	RBinSymbol *ptr = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -136,6 +148,12 @@ static RList *symbols(RBinFile *bf) {
 		goto bad_alloc;
 	}
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
+		goto bad_alloc;
+	}
+	if (!(symtab = r_bin_wasm_get_symtab (bin))) {
+		goto bad_alloc;
+	}
+	if (!(exports = r_bin_wasm_get_exports (bin))) {
 		goto bad_alloc;
 	}
 
@@ -163,30 +181,52 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
+	ut32 fcn_id = 1; // wasm function index starts from 1
+	RListIter *sym_it = NULL;
 	RBinWasmCodeEntry *func;
+	RBinWasmExportEntry *export = NULL;
+	RBinWasmSymbol *wasm_sym = NULL;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
 		}
-		char tmp[R_BIN_SIZEOF_STRINGS];
-		snprintf (tmp, R_BIN_SIZEOF_STRINGS, "fnc.%d", i);
-		ptr->name = strdup(tmp);
+
+		sym_it = r_list_find (symtab, &fcn_id, (RListComparator) find_symbol);
+		if (sym_it) {
+			wasm_sym = (RBinWasmSymbol *) r_list_iter_get_data (sym_it);
+			ptr->name = strdup (wasm_sym->name);
+		} else {
+			sym_it = r_list_find (exports, &fcn_id, (RListComparator) find_export);
+			if (sym_it) {
+				export = (RBinWasmExportEntry *) r_list_iter_get_data (sym_it);
+				ptr->name = strdup (export->field_str);
+				ptr->bind = R_BIN_BIND_GLOBAL_STR;
+			} else {
+				// fallback if symbol is not found.
+				ptr->name = r_str_newf ("fcn.%d", fcn_id);
+			}
+		}
+
 		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const ("NONE");
+		if (!ptr->bind) {
+			ptr->bind = r_str_const ("NONE");
+		}
 		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;
 		ptr->paddr = (ut64)func->code;
 		ptr->ordinal = i;
 		i++;
+		fcn_id++;
 		r_list_append (ret, ptr);
 	}
 
-	// TODO: use custom section "name" if present
-	// TODO: exports, globals, tables and memories
+	// TODO: globals, tables and memories
 	return ret;
 bad_alloc:
 	// not so sure if imports should be freed.
+	r_list_free (exports);
+	r_list_free (symtab);
 	r_list_free (codes);
 	r_list_free (ret);
 	return NULL;
@@ -256,7 +296,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("module");
 	ret->rclass = strdup ("wasm");
-	ret->os = strdup ("Wasm");
+	ret->os = strdup ("WebAssembly");
 	ret->arch = strdup ("wasm");
 	ret->machine = strdup (ret->arch);
 	ret->subsystem = strdup ("wasm");
@@ -276,7 +316,7 @@ static ut64 size(RBinFile *bf) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)
 #define D(x) r_buf_append_ut32 (buf, x)
@@ -290,7 +330,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.desc = "WebAssembly bin plugin",
 	.license = "MIT",
 	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,

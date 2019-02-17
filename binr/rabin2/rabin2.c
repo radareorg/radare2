@@ -73,6 +73,7 @@ static int rabin_show_help(int v) {
 		" -s              symbols\n"
 		" -S              sections\n"
 		" -SS             segments\n"
+		" -t              display file hashes\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
@@ -112,12 +113,14 @@ static char *stdin_gets() {
 		}
 	}
 	memset (stdin_buf, 0, STDIN_BUF_SIZE);
-        fgets (stdin_buf, STDIN_BUF_SIZE - 1, stdin);
-		if (feof (stdin)) {
-			return NULL;
-		}
-        stdin_buf[strlen (stdin_buf) - 1] = 0;
-        return strdup (stdin_buf);
+	if (!fgets (stdin_buf, STDIN_BUF_SIZE - 1, stdin)) {
+		return NULL;
+	}
+	if (feof (stdin)) {
+		return NULL;
+	}
+	stdin_buf[strlen (stdin_buf) - 1] = 0;
+	return strdup (stdin_buf);
 }
 
 static void __sdb_prompt(Sdb *sdb) {
@@ -145,13 +148,13 @@ static bool isBinopHelp(const char *op) {
 }
 
 static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
-	ut64 bin_size = data ? data->size : 0;
+	ut64 bin_size = data? data->size: 0;
 	ut8 *bytes;
 	const char *xtr_type = "";
 	char *arch = "unknown";
-	int bits = 0;
+	int bits = 0, nb;
 	char *libname = NULL;
-	const char *filename = bf ? bf->file : NULL;
+	const char *filename = bf? bf->file: NULL;
 	char *path = NULL, *ptr = NULL;
 	bool res = false;
 
@@ -168,9 +171,14 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		eprintf ("This is not a fat bin\n");
 		return false;
 	}
-	bytes = data->buffer;
+	bytes = malloc (bin_size);
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
+		return false;
+	}
+	nb = r_buf_read_at (data->buf, 0, bytes, bin_size);
+	if (nb <= 0) {
+		eprintf ("Couldn't read xtrdata\n");
 		return false;
 	}
 	if (!arch) {
@@ -180,13 +188,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	if (!path) {
 		return false;
 	}
-	// XXX: Wrong for w32 (/)
-	ptr = strrchr (path, DIRSEP);
-	if (ptr) {
-		*ptr++ = '\0';
-	} else {
-		ptr = path;
-	}
+	ptr = (char *)r_file_basename (path);
 	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
@@ -210,7 +212,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	free (outfile);
 	free (outpath);
 	free (path);
-	R_FREE (data->buffer);
+	free (bytes);
 	return res;
 }
 
@@ -413,8 +415,8 @@ static int rabin_do_operation(const char *op) {
 			if (cur->xtr_data) {
 				// load the first one
 				RBinXtrData *xtr_data = r_list_get_n (cur->xtr_data, 0);
-				if (!r_bin_file_object_new_from_xtr_data (bin, cur,
-						  UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
+				if (xtr_data && !xtr_data->loaded && !r_bin_file_object_new_from_xtr_data (bin, cur,
+					UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
 					break;
 				}
 			}
@@ -624,7 +626,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action & (x))
 #define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrvLhuxXzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
@@ -645,6 +647,8 @@ int main(int argc, char **argv) {
 			set_action (R_BIN_REQ_VERSIONINFO);
 			break;
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
+		case 'T': set_action (R_BIN_REQ_SIGNATURE); break;
+		case 't': set_action (R_BIN_REQ_HASHES); break;
 		case 'q':
 			rad = (rad & R_MODE_SIMPLE ?
 				R_MODE_SIMPLEST : R_MODE_SIMPLE);
@@ -762,7 +766,9 @@ int main(int argc, char **argv) {
 		case 'o': output = optarg; break;
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
-		case 'v': return blob_version ("rabin2");
+		case 'v': 
+			  r_core_fini (&core);
+			  return blob_version ("rabin2");
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
@@ -803,6 +809,7 @@ int main(int argc, char **argv) {
 			plugin_name = argv[optind];
 		}
 		rabin_list_plugins (plugin_name);
+		r_core_fini (&core);
 		return 0;
 	}
 
@@ -810,6 +817,7 @@ int main(int argc, char **argv) {
 		char *res = NULL;
 		int type;
 		if ((argc - optind) < 2) {
+			r_core_fini (&core);
 			return rabin_show_help (0);
 		}
 		type = r_bin_demangle_type (do_demangle);
@@ -823,6 +831,7 @@ int main(int argc, char **argv) {
 				res = demangleAs (type);
 				if (!res) {
 					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+					r_core_fini (&core);
 					return 1;
 				}
 				if (res && *res) {
@@ -838,6 +847,7 @@ int main(int argc, char **argv) {
 			if (res && *res) {
 				printf ("%s\n", res);
 				free(res);
+				r_core_fini (&core);
 				return 0;
 			} else {
 				printf ("%s\n", file);
@@ -845,6 +855,7 @@ int main(int argc, char **argv) {
 		}
 		free (res);
 		//eprintf ("%s\n", file);
+		r_core_fini (&core);
 		return 1;
 	}
 	file = argv[optind];
@@ -892,18 +903,9 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		codelen = r_hex_str2bin (p, code);
-		if (!arch) {
-			arch = R_SYS_ARCH;
-		}
-		if (!bits) {
-			bits = 32;
-		}
-		if (!r_bin_use_arch (bin, arch, bits, create)) {
-			eprintf ("Cannot set arch\n");
-			r_core_fini (&core);
-			return 1;
-		}
-		b = r_bin_create (bin, code, codelen, data, datalen);
+		RBinArchOptions opts;
+		r_bin_arch_options_init (&opts, arch, bits);
+		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
 			if (r_file_dump (file, b->buf, b->length, 0)) {
 				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
@@ -925,6 +927,7 @@ int main(int argc, char **argv) {
 
 	if (!file) {
 		eprintf ("Missing file.\n");
+		r_core_fini (&core);
 		return 1;
 	}
 
@@ -932,6 +935,7 @@ int main(int argc, char **argv) {
 #if __UNIX__
 		int child = r_sys_fork ();
 		if (child == -1) {
+			r_core_fini (&core);
 			return 1;
 		}
 		if (child == 0) {
@@ -942,9 +946,11 @@ int main(int argc, char **argv) {
 		if (addr) {
 			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
+			r_core_fini (&core);
 			return 0;
 		}
 		eprintf ("Cannot open the '%s' library\n", file);
+		r_core_fini (&core);
 		return 0;
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
@@ -955,6 +961,7 @@ int main(int argc, char **argv) {
 
 		if (optind + 3 > argc) {
 			eprintf ("Usage: rabin2 -X [fat|zip] foo.zip a b c\n");
+			r_core_fini (&core);
 			return 1;
 		}
 		eprintf ("FMT %s\n", format);
@@ -997,17 +1004,12 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	RBinOptions bo = {
-		.offset = 0LL,
-		.baseaddr = baddr,
-		.rawstr = rawstr,
-		.loadaddr = laddr,
-		.xtr_idx = xtr_idx,
-		.iofd = fd,
-	};
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baddr, laddr, rawstr);
+	opt.xtr_idx = xtr_idx;
 
-	if (!r_bin_open (bin, file, &bo)) {
-		//if this return null means that we did not return a valid bin object
+	if (!r_bin_open (bin, file, &opt)) {
+		//if this return false means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
@@ -1023,7 +1025,6 @@ int main(int argc, char **argv) {
 		r_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
-		rawstr = false;
 		RBinFile *bf = r_core_bin_cur (&core);
 		if (bf) {
 			bf->strmode = rad;
@@ -1117,6 +1118,8 @@ int main(int argc, char **argv) {
 	run_action ("pdb", R_BIN_REQ_PDB, R_CORE_BIN_ACC_PDB);
 	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
 	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
+	run_action ("sections", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
+	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
 	if (action & R_BIN_REQ_SRCLINE) {
 		rabin_show_srcline (at);
 	}

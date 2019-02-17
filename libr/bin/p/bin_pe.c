@@ -29,7 +29,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	ut32 hdrsize, p_start, p_opthdr, p_sections, p_lsrlc, n;
 	ut32 baddr = 0x400000;
 	RBuffer *buf = r_buf_new ();
@@ -107,11 +107,16 @@ static char *signature (RBinFile *bf, bool json) {
 		return NULL;
 	}
 	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
+	char *json_str = NULL;
 	if (json) {
-		RJSVar *json = r_pkcs7_cms_json (bin->cms);
-		char *c = r_json_stringify (json, false);
-		r_json_var_free (json);
-		return c;
+		PJ *pj = r_pkcs7_cms_json (bin->cms);
+		if (pj) {
+			json_str = strdup((char *)pj_string(pj));
+			pj_free (pj);
+			return json_str;
+		}
+		json_str = strdup ("{}");
+		return json_str;
 	}
 	return r_pkcs7_cms_to_string (bin->cms);
 }
@@ -291,46 +296,46 @@ static void header(RBinFile *bf) {
 	struct r_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("PE file header:\n");
 	rbin->cb_printf ("IMAGE_NT_HEADERS\n");
-	rbin->cb_printf ("\tSignature : 0x%x\n", bin->nt_headers->Signature);
+	rbin->cb_printf ("  Signature : 0x%x\n", bin->nt_headers->Signature);
 	rbin->cb_printf ("IMAGE_FILE_HEADERS\n");
-	rbin->cb_printf ("\tMachine : 0x%x\n", bin->nt_headers->file_header.Machine);
-	rbin->cb_printf ("\tNumberOfSections : 0x%x\n", bin->nt_headers->file_header.NumberOfSections);
-	rbin->cb_printf ("\tTimeDateStamp : 0x%x\n", bin->nt_headers->file_header.TimeDateStamp);
-	rbin->cb_printf ("\tPointerToSymbolTable : 0x%x\n", bin->nt_headers->file_header.PointerToSymbolTable);
-	rbin->cb_printf ("\tNumberOfSymbols : 0x%x\n", bin->nt_headers->file_header.NumberOfSymbols);
-	rbin->cb_printf ("\tSizeOfOptionalHeader : 0x%x\n", bin->nt_headers->file_header.SizeOfOptionalHeader);
-	rbin->cb_printf ("\tCharacteristics : 0x%x\n", bin->nt_headers->file_header.Characteristics);
+	rbin->cb_printf ("  Machine : 0x%x\n", bin->nt_headers->file_header.Machine);
+	rbin->cb_printf ("  NumberOfSections : 0x%x\n", bin->nt_headers->file_header.NumberOfSections);
+	rbin->cb_printf ("  TimeDateStamp : 0x%x\n", bin->nt_headers->file_header.TimeDateStamp);
+	rbin->cb_printf ("  PointerToSymbolTable : 0x%x\n", bin->nt_headers->file_header.PointerToSymbolTable);
+	rbin->cb_printf ("  NumberOfSymbols : 0x%x\n", bin->nt_headers->file_header.NumberOfSymbols);
+	rbin->cb_printf ("  SizeOfOptionalHeader : 0x%x\n", bin->nt_headers->file_header.SizeOfOptionalHeader);
+	rbin->cb_printf ("  Characteristics : 0x%x\n", bin->nt_headers->file_header.Characteristics);
 	rbin->cb_printf ("IMAGE_OPTIONAL_HEADERS\n");
-	rbin->cb_printf ("\tMagic : 0x%x\n", bin->nt_headers->optional_header.Magic);
-	rbin->cb_printf ("\tMajorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MajorLinkerVersion);
-	rbin->cb_printf ("\tMinorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MinorLinkerVersion);
-	rbin->cb_printf ("\tSizeOfCode : 0x%x\n", bin->nt_headers->optional_header.SizeOfCode);
-	rbin->cb_printf ("\tSizeOfInitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfInitializedData);
-	rbin->cb_printf ("\tSizeOfUninitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfUninitializedData);
-	rbin->cb_printf ("\tAddressOfEntryPoint : 0x%x\n", bin->nt_headers->optional_header.AddressOfEntryPoint);
-	rbin->cb_printf ("\tBaseOfCode : 0x%x\n", bin->nt_headers->optional_header.BaseOfCode);
-	rbin->cb_printf ("\tBaseOfData : 0x%x\n", bin->nt_headers->optional_header.BaseOfData);
-	rbin->cb_printf ("\tImageBase : 0x%x\n", bin->nt_headers->optional_header.ImageBase);
-	rbin->cb_printf ("\tSectionAlignment : 0x%x\n", bin->nt_headers->optional_header.SectionAlignment);
-	rbin->cb_printf ("\tFileAlignment : 0x%x\n", bin->nt_headers->optional_header.FileAlignment);
-	rbin->cb_printf ("\tMajorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorOperatingSystemVersion);
-	rbin->cb_printf ("\tMinorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorOperatingSystemVersion);
-	rbin->cb_printf ("\tMajorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MajorImageVersion);
-	rbin->cb_printf ("\tMinorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MinorImageVersion);
-	rbin->cb_printf ("\tMajorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorSubsystemVersion);
-	rbin->cb_printf ("\tMinorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorSubsystemVersion);
-	rbin->cb_printf ("\tWin32VersionValue : 0x%x\n", bin->nt_headers->optional_header.Win32VersionValue);
-	rbin->cb_printf ("\tSizeOfImage : 0x%x\n", bin->nt_headers->optional_header.SizeOfImage);
-	rbin->cb_printf ("\tSizeOfHeaders : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeaders);
-	rbin->cb_printf ("\tCheckSum : 0x%x\n", bin->nt_headers->optional_header.CheckSum);
-	rbin->cb_printf ("\tSubsystem : 0x%x\n", bin->nt_headers->optional_header.Subsystem);
-	rbin->cb_printf ("\tDllCharacteristics : 0x%x\n", bin->nt_headers->optional_header.DllCharacteristics);
-	rbin->cb_printf ("\tSizeOfStackReserve : 0x%x\n", bin->nt_headers->optional_header.SizeOfStackReserve);
-	rbin->cb_printf ("\tSizeOfStackCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfStackCommit);
-	rbin->cb_printf ("\tSizeOfHeapReserve : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
-	rbin->cb_printf ("\tSizeOfHeapCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
-	rbin->cb_printf ("\tLoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
-	rbin->cb_printf ("\tNumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
+	rbin->cb_printf ("  Magic : 0x%x\n", bin->nt_headers->optional_header.Magic);
+	rbin->cb_printf ("  MajorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MajorLinkerVersion);
+	rbin->cb_printf ("  MinorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MinorLinkerVersion);
+	rbin->cb_printf ("  SizeOfCode : 0x%x\n", bin->nt_headers->optional_header.SizeOfCode);
+	rbin->cb_printf ("  SizeOfInitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfInitializedData);
+	rbin->cb_printf ("  SizeOfUninitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfUninitializedData);
+	rbin->cb_printf ("  AddressOfEntryPoint : 0x%x\n", bin->nt_headers->optional_header.AddressOfEntryPoint);
+	rbin->cb_printf ("  BaseOfCode : 0x%x\n", bin->nt_headers->optional_header.BaseOfCode);
+	rbin->cb_printf ("  BaseOfData : 0x%x\n", bin->nt_headers->optional_header.BaseOfData);
+	rbin->cb_printf ("  ImageBase : 0x%x\n", bin->nt_headers->optional_header.ImageBase);
+	rbin->cb_printf ("  SectionAlignment : 0x%x\n", bin->nt_headers->optional_header.SectionAlignment);
+	rbin->cb_printf ("  FileAlignment : 0x%x\n", bin->nt_headers->optional_header.FileAlignment);
+	rbin->cb_printf ("  MajorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorOperatingSystemVersion);
+	rbin->cb_printf ("  MinorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorOperatingSystemVersion);
+	rbin->cb_printf ("  MajorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MajorImageVersion);
+	rbin->cb_printf ("  MinorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MinorImageVersion);
+	rbin->cb_printf ("  MajorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorSubsystemVersion);
+	rbin->cb_printf ("  MinorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorSubsystemVersion);
+	rbin->cb_printf ("  Win32VersionValue : 0x%x\n", bin->nt_headers->optional_header.Win32VersionValue);
+	rbin->cb_printf ("  SizeOfImage : 0x%x\n", bin->nt_headers->optional_header.SizeOfImage);
+	rbin->cb_printf ("  SizeOfHeaders : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeaders);
+	rbin->cb_printf ("  CheckSum : 0x%x\n", bin->nt_headers->optional_header.CheckSum);
+	rbin->cb_printf ("  Subsystem : 0x%x\n", bin->nt_headers->optional_header.Subsystem);
+	rbin->cb_printf ("  DllCharacteristics : 0x%x\n", bin->nt_headers->optional_header.DllCharacteristics);
+	rbin->cb_printf ("  SizeOfStackReserve : 0x%x\n", bin->nt_headers->optional_header.SizeOfStackReserve);
+	rbin->cb_printf ("  SizeOfStackCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfStackCommit);
+	rbin->cb_printf ("  SizeOfHeapReserve : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
+	rbin->cb_printf ("  SizeOfHeapCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
+	rbin->cb_printf ("  LoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
+	rbin->cb_printf ("  NumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
 		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
@@ -382,8 +387,8 @@ static void header(RBinFile *bf) {
 				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR\n");
 				break;
 			}
-			rbin->cb_printf ("\tVirtualAddress : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
-			rbin->cb_printf ("\tSize : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].Size);
+			rbin->cb_printf ("  VirtualAddress : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
+			rbin->cb_printf ("  Size : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].Size);
 		}
 	}
 }

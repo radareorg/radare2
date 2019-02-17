@@ -41,7 +41,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 		return NULL;
 	}
 	r_cmd_alias_free (cmd);
-	r_cmd_macro_free (&cmd->macro);
+	r_cmd_macro_fini (&cmd->macro);
 	// dinitialize plugin commands
 	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
@@ -69,19 +69,16 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 		free (cmd->aliases.values[i]);
 	}
 	cmd->aliases.count = 0;
-	free (cmd->aliases.keys);
-	free (cmd->aliases.values);
+	R_FREE (cmd->aliases.keys);
+	R_FREE (cmd->aliases.values);
 	free (cmd->aliases.remote);
-	cmd->aliases.keys = NULL;
-	cmd->aliases.values = NULL;
 }
 
 R_API bool r_cmd_alias_del (RCmd *cmd, const char *k) {
 	int i; // find
 	for (i = 0; i < cmd->aliases.count; i++) {
 		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
-			free (cmd->aliases.values[i]);
-			cmd->aliases.values[i] = NULL;
+			R_FREE (cmd->aliases.values[i]);
 			cmd->aliases.count--;
 			if (cmd->aliases.count > 0) {
 				if (i > 0) {
@@ -199,8 +196,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 
 R_API int r_cmd_del(RCmd *cmd, const char *command) {
 	int idx = (ut8)command[0];
-	free (cmd->cmds[idx]);
-	cmd->cmds[idx] = NULL;
+	R_FREE (cmd->cmds[idx]);
 	return 0;
 }
 
@@ -229,7 +225,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 				return true;
 			}
 		}
-		if (input[0] == -1) {
+		if (!*input) {
 			free (nstr);
 			return -1;
 		}
@@ -272,6 +268,20 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 
 /** macro.c **/
 
+R_API RCmdMacroItem *r_cmd_macro_item_new() {
+	return R_NEW0 (RCmdMacroItem);
+}
+
+R_API void r_cmd_macro_item_free(RCmdMacroItem *item) {
+	if (!item) {
+		return;
+	}
+	free (item->name);
+	free (item->args);
+	free (item->code);
+	free (item);
+}
+
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
 	mac->_brk_value = 0;
@@ -280,10 +290,10 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
-	mac->macros = r_list_new ();
+	mac->macros = r_list_newf ((RListFree)r_cmd_macro_item_free);
 }
 
-R_API void r_cmd_macro_free(RCmdMacro *mac) {
+R_API void r_cmd_macro_fini(RCmdMacro *mac) {
 	r_list_free (mac->macros);
 	mac->macros = NULL;
 }
@@ -338,7 +348,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (name, m->name)) {
 			macro = m;
-	//		free (macro->name);
+			// keep macro->name
 			free (macro->code);
 			free (macro->args);
 			macro_update = 1;
@@ -349,8 +359,11 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		*ptr = ' ';
 	}
 	if (!macro) {
-		macro = (struct r_cmd_macro_item_t *)malloc (
-			sizeof (struct r_cmd_macro_item_t));
+		macro = r_cmd_macro_item_new ();
+		if (!macro) {
+			free (name);
+			return 0;
+		}
 		macro->name = strdup (name);
 	}
 
@@ -432,19 +445,17 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	if (ptr) {
 		*ptr = '\0';
 	}
+	bool ret = false;
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (m->name, name)) {
 			r_list_delete (mac->macros, iter);
 			eprintf ("Macro '%s' removed.\n", name);
-			free (m->name);
-			free (m->code);
-			free (m);
-			free (name);
-			return true;
+			ret = true;
+			break;
 		}
 	}
 	free (name);
-	return false;
+	return ret;
 }
 
 // TODO: use mac->cb_printf which is r_cons_printf at the end

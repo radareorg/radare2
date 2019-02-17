@@ -144,7 +144,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case SPARC_INS_RETT:
+		case SPARC_INS_RET:
+		case SPARC_INS_RETL:
 			op->type = R_ANAL_OP_TYPE_RET;
+			op->delay = 1;
 			break;
 		case SPARC_INS_UNIMP:
 			op->type = R_ANAL_OP_TYPE_UNK;
@@ -156,9 +159,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_UCALL;
+				op->delay = 1;
 				break;
 			default:
 				op->type = R_ANAL_OP_TYPE_CALL;
+				op->delay = 1;
 				op->jump = INSOP(0).imm;
 				break;
 			}
@@ -172,6 +177,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case SPARC_INS_JMP:
 		case SPARC_INS_JMPL:
 			op->type = R_ANAL_OP_TYPE_JMP;
+			op->delay = 1;
 			op->jump = INSOP(0).imm;
 			break;
 		case SPARC_INS_LDD:
@@ -212,20 +218,22 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			switch (INSOP(0).type) {
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP (1).imm;
 				}
 				if (INSCC != SPARC_CC_ICC_A) { // always
-					op->fail = addr + 4;
+					op->fail = addr + 8;
 				}
 				break;
 			case SPARC_OP_IMM:
 				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP (0).imm;
 				}
 				if (INSCC != SPARC_CC_ICC_A) { // always
-					op->fail = addr + 4;
+					op->fail = addr + 8;
 				}
 				break;
 			default:

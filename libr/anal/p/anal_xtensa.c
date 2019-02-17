@@ -1390,6 +1390,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &imm_bit);
+	xtensa_operand_decode (isa, opcode, 1, &imm_bit);
 	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm_offset);
 
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 0);
@@ -1641,6 +1642,7 @@ static void esil_set_shift_amount_imm(xtensa_isa isa, xtensa_opcode opcode,
 	ut32 sa_imm;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &sa_imm);
+	xtensa_operand_decode (isa, opcode, 0, &sa_imm);
 
 	r_strbuf_appendf (
 		&op->esil,
@@ -1662,6 +1664,7 @@ static void esil_shift_logic_imm(xtensa_isa isa, xtensa_opcode opcode,
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &reg_dst);
 	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &reg_src);
 	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, &imm_amount);
+	xtensa_operand_decode (isa, opcode, 2, &imm_amount);
 
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);

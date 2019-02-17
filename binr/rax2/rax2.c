@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "../blob/version.c"
-#include <r_print.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 
 #define STDIN_BUFFER_SIZE 354096
 #define R_STATIC_ASSERT(x)\
@@ -112,6 +112,7 @@ static int help() {
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      binary number        ;  rax2 -n 0x1234 # 34120000\n"
+		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
 		"  -N      binary number        ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
 		"  -r      r2 style output      ;  rax2 -r 0x1234\n"
 		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
@@ -171,7 +172,8 @@ static int rax(char *str, int len, int last) {
 			case 'r': flags ^= 1 << 18; break;
 			case 'L': flags ^= 1 << 19; break;
 			case 'i': flags ^= 1 << 21; break;
-			case 'v': blob_version ("rax2"); return 0;
+			case 'o': flags ^= 1 << 22; break;
+			case 'v': return blob_version ("rax2");
 			case '\0': return !use_stdin ();
 			default:
 				/* not as complete as for positive numbers */
@@ -204,7 +206,6 @@ static int rax(char *str, int len, int last) {
 		}
 	}
 dotherax:
-
 	if (flags & 1) { // -s
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = malloc (n);
@@ -354,8 +355,8 @@ dotherax:
 		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 10)) { // -u
-		char buf[80];
-		r_num_units (buf, r_num_math (NULL, str));
+		char buf[8];
+		r_num_units (buf, sizeof (buf), r_num_math (NULL, str));
 		printf ("%s\n", buf);
 		return true;
 	} else if (flags & (1 << 11)) { // -t
@@ -400,7 +401,7 @@ dotherax:
 		}
 		return false;
 	} else if (flags & (1 << 18)) { // -r
-		char *asnum, unit[32];
+		char *asnum, unit[8];
 		char out[128];
 		ut32 n32, s, a;
 		double d;
@@ -419,7 +420,7 @@ dotherax:
 		/* decimal, hexa, octal */
 		s = n >> 16 << 12;
 		a = n & 0x0fff;
-		r_num_units (unit, n);
+		r_num_units (unit, sizeof (unit), n);
 #if 0
 		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
 			" %s %04x:%04x ",
@@ -487,6 +488,33 @@ dotherax:
 		printf ("0x%02x\n", (ut8) str[len-1]);
 		printf ("};\n");
 		printf ("unsigned int buf_len = %d;\n", len);
+		return true;
+	} else if (flags & (1 << 22)) { // -o
+		// check -r
+		// flags & (1 << 18)
+		char *asnum, *modified_str;
+
+		// To distinguish octal values.
+		if (*str != '0') {
+			modified_str = r_str_newf ("0%s", str);
+		} else {
+			modified_str = r_str_newf (str);
+		}
+
+		ut64 n = r_num_math (num, modified_str);
+		free (modified_str);
+		if (num->dbz) {
+			eprintf ("RNum ERROR: Division by Zero\n");
+			return false;
+		}
+
+		asnum = r_num_as_string (NULL, n, false);
+		if (asnum) {
+			printf ("%s", asnum);
+			free (asnum);
+		} else {
+			printf("No String Possible");
+		}
 		return true;
 	}
 
@@ -568,16 +596,23 @@ static int use_stdin() {
 	return 0;
 }
 
-int main(int argc, char **argv) {
+R_API int r_core_main_rax2(int argc, char **argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {
 		use_stdin ();
 	} else {
 		for (i = 1; i < argc; i++) {
+			r_str_unescape (argv[i]);
 			rax (argv[i], 0, i == argc - 1);
 		}
 	}
 	r_num_free (num);
+	num = NULL;
 	return 0;
+}
+
+
+int main(int argc, char **argv) {
+	return r_core_main_rax2 (argc, argv);
 }

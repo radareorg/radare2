@@ -12,8 +12,10 @@
 #define R_BIN_ELF_SCN_IS_READABLE(x)   x & SHF_ALLOC
 #define R_BIN_ELF_SCN_IS_WRITABLE(x)   x & SHF_WRITE
 
-#define R_BIN_ELF_SYMBOLS 0x0
-#define R_BIN_ELF_IMPORTS 0x1
+#define R_BIN_ELF_SYMTAB_SYMBOLS 1 << 0
+#define R_BIN_ELF_DYNSYM_SYMBOLS 1 << 1
+#define R_BIN_ELF_IMPORT_SYMBOLS (1 << 2 | (bin->ehdr.e_type == ET_REL ? R_BIN_ELF_SYMTAB_SYMBOLS : R_BIN_ELF_DYNSYM_SYMBOLS))
+#define R_BIN_ELF_ALL_SYMBOLS (R_BIN_ELF_SYMTAB_SYMBOLS | R_BIN_ELF_DYNSYM_SYMBOLS)
 #define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 
 typedef struct r_bin_elf_section_t {
@@ -39,7 +41,8 @@ typedef struct r_bin_elf_symbol_t {
 	int last;
 	bool in_shdr;
 	bool is_sht_null;
-	bool is_value;  /* when true, sym has no paddr, only vaddr */
+	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
+	bool is_imported;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {
@@ -116,6 +119,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSymbol *g_imports;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
+	HtUP *rel_cache;
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);
@@ -133,7 +137,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin);
 bool Elf_(r_bin_elf_get_stripped)(struct Elf_(r_bin_elf_obj_t) *bin);
-bool Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin);
+bool Elf_(r_bin_elf_is_static)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin);
@@ -160,5 +164,8 @@ int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);
 RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin);
+RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
+					  struct r_bin_elf_symbol_t *symbol,
+					  const char *namefmt);
 
 #endif

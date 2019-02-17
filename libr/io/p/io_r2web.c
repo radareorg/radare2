@@ -73,10 +73,8 @@ static int __close(RIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	free (riom->url);
-	riom->url = NULL;
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (riom->url);
+	R_FREE (fd->data);
 	return 0;
 }
 
@@ -141,7 +139,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 
 RIOPlugin r_io_plugin_r2web = {
 	.name = "r2web",
-	.desc = "r2web io client (r2web://cloud.rada.re/cmd/)",
+	.desc = "r2web io client plugin",
+	.uris = "r2web://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

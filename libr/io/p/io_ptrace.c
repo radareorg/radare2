@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if __linux__ || __BSD__
+#if DEBUGGER && (__linux__ || __BSD__)
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -43,8 +43,8 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
-#define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), NULL)
-#define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (void *)(z))
+#define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), R_PTRACE_NODATA)
+#define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (r_ptrace_data_t)(z))
 #if __OpenBSD__ || __KFBSD__
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
@@ -82,9 +82,10 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	/* reopen procpidmem if necessary */
 #if USE_PROC_PID_MEM
 	fd = RIOPTRACE_FD (desc);
-	if (RIOPTRACE_PID(desc) != RIOPTRACE_OPID(desc)) {
-		if (fd != -1)
+	if (RIOPTRACE_PID (desc) != RIOPTRACE_OPID (desc)) {
+		if (fd != -1) {
 			close (fd);
+		}
 		open_pidmem ((RIOPtrace*)desc->data);
 		fd = RIOPTRACE_FD (desc);
 		RIOPTRACE_OPID(desc) = RIOPTRACE_PID(desc);
@@ -139,8 +140,9 @@ static void open_pidmem (RIOPtrace *iop) {
 	char pidmem[32];
 	snprintf (pidmem, sizeof (pidmem), "/proc/%d/mem", iop->pid);
 	iop->fd = open (pidmem, O_RDWR);
-	if (iop->fd == -1)
+	if (iop->fd == -1) {
 		iop->fd = open (pidmem, O_RDONLY);
+	}
 #if 0
 	if (iop->fd == -1)
 		eprintf ("Warning: Cannot open /proc/%d/mem. "
@@ -171,12 +173,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *desc = NULL;
 	int ret = -1;
-	if (__plugin_open (io, file,0)) {
-		int pid = atoi (file+9);
+	if (__plugin_open (io, file, 0)) {
+		int pid = atoi (file + 9);
+		// ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (file[0] == 'p') { //ptrace
 			ret = 0;
-		} else if (ret == -1) {
+		} else 
+		if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf ("ptrace_attach: Operation not permitted\n");
 #else
@@ -261,9 +265,8 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else
 	if (!strncmp (cmd, "pid", 3)) {
 		if (iop) {
-			int pid = iop->pid;
 			if (cmd[3] == ' ') {
-				pid = atoi (cmd + 4);
+				int pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
 					(void)r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?
@@ -291,8 +294,9 @@ static int __getpid (RIODesc *fd) {
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 RIOPlugin r_io_plugin_ptrace = {
 	.name = "ptrace",
-	.desc = "ptrace and /proc/pid/mem (if available) io",
+	.desc = "Ptrace and /proc/pid/mem (if available) io plugin",
 	.license = "LGPL3",
+	.uris = "ptrace://,attach://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

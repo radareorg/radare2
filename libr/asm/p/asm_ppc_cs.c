@@ -97,14 +97,16 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm (handle, (const ut8*) buf, len, off, 1, &insn);
 	op->size = 4;
 	if (n > 0 && insn->size > 0) {
-		const char *opstr = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+		const char *opstr = sdb_fmt ("%s%s%s", insn->mnemonic,
+			insn->op_str[0] ? " " : "", insn->op_str);
 		r_asm_op_set_asm (op, opstr);
 		cs_free (insn, n);
 		return op->size;
 	}
-	//op->size = -1;
+	r_asm_op_set_asm (op, "invalid");
+	op->size = 4;
 	cs_free (insn, n);
-	return 4;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_ppc_cs = {

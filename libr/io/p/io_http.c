@@ -49,10 +49,8 @@ static int __close(RIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	free (riom->buf);
-	riom->buf = NULL;
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (riom->buf);
+	R_FREE (fd->data);
 	return 0;
 }
 
@@ -106,12 +104,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_http = {
 	.name = "http",
-        .desc = "http get (http://rada.re/)",
+	.desc = "Make http get requests",
+	.uris = "http://",
 	.license = "LGPL3",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .check = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 };

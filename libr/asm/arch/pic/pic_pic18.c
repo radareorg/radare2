@@ -116,7 +116,8 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		op->size = blen;
 		return -1;
 	}
-	ut16 instr = *(ut16 *)b; //instruction
+	ut16 instr = 0 ; // instruction
+	memcpy (&instr, b, sizeof (instr));
 	// if still redundan code is reported think of this of instr=0x2
 	const char *buf_asm = "invalid";
 	strcpy (opbuf, buf_asm);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
 
@@ -28,7 +28,7 @@ R_API void r_core_visual_mark_dump(RCore *core) {
 
 R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr) {
 	if (!marks_init) {
-		r_core_visual_mark_reset(core);
+		r_core_visual_mark_reset (core);
 	}
 	marks[ch] = addr;
 }

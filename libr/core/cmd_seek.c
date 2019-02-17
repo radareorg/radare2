@@ -68,57 +68,6 @@ static void cmd_seek_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, ss);
 }
 
-#define OPDELTA 32
-static ut64 prevop_addr(RCore *core, ut64 addr) {
-	ut8 buf[OPDELTA * 2];
-	ut64 target, base;
-	RAnalBlock *bb;
-	RAnalOp op;
-	int len, ret, i;
-	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-
-	if (minop == maxop) {
-		if (minop == -1) {
-			return addr - 4;
-		}
-		return addr - minop;
-	}
-
-	// let's see if we can use anal info to get the previous instruction
-	// TODO: look in the current basicblock, then in the current function
-	// and search in all functions only as a last chance, to try to speed
-	// up the process.
-	bb = r_anal_bb_from_offset (core->anal, addr - minop);
-	if (bb) {
-		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
-		if (res != UT64_MAX) {
-			return res;
-		}
-	}
-	// if we anal info didn't help then fallback to the dumb solution.
-	target = addr;
-	base = target - OPDELTA;
-	r_io_read_at (core->io, base, buf, sizeof (buf));
-	for (i = 0; i < sizeof (buf); i++) {
-		ret = r_anal_op (core->anal, &op, base + i,
-			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
-		if (!ret) {
-			continue;
-		}
-		len = op.size;
-		r_anal_op_fini (&op); // XXX
-		if (len < 1) {
-			continue;
-		}
-		if (target == base + i + len) {
-			return base + i;
-		}
-		i += len - 1;
-	}
-	return target - 4;
-}
-
 static void __init_seek_line(RCore *core) {
 	ut64 from, to;
 
@@ -206,12 +155,6 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
-#if 0	//review this
-	{
-		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
-		baddr = s? s->paddr: r_config_get_i (core->config, "bin.baddr");
-	}
-#endif
 	baddr = r_config_get_i (core->config, "bin.baddr");
 
 	line_count = start_addr? 0: 1;
@@ -289,7 +232,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 		addr = core->offset;
 		const int mininstrsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {
-			ut64 prev_addr = prevop_addr (core, addr);
+			ut64 prev_addr = r_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {
 				prev_addr = addr - mininstrsize;
 			}
@@ -550,9 +493,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
-					core->flags->space_strict = true;
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s+%d", f->name,
@@ -608,9 +549,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
-					core->flags->space_strict = true;
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s + %d\n", f->name,
@@ -775,9 +714,9 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'g': // "sg"
 	{
-		RIOSection *s = r_io_section_vget (core->io, core->offset);
-		if (s) {
-			r_core_seek (core, s->vaddr, 1);
+		RIOMap *map  = r_io_map_get (core->io, core->offset);
+		if (map) {
+			r_core_seek (core, map->itv.addr, 1);
 		} else {
 			r_core_seek (core, 0, 1);
 		}
@@ -788,10 +727,10 @@ static int cmd_seek(void *data, const char *input) {
 		if (!core->file) {
 			break;
 		}
-		RIOSection *s = r_io_section_vget (core->io, core->offset);
+		RIOMap *map = r_io_map_get (core->io, core->offset);
 		// XXX: this +2 is a hack. must fix gap between sections
-		if (s) {
-			r_core_seek (core, s->vaddr + s->size + 2, 1);
+		if (map) {
+			r_core_seek (core, map->itv.addr + map->itv.size + 2, 1);
 		} else {
 			r_core_seek (core, r_io_fd_size (core->io, core->file->fd), 1);
 		}

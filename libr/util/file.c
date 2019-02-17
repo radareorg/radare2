@@ -61,10 +61,15 @@ R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 		return false;
 	}
 #ifdef _MSC_VER
-        _chsize (fd, newsize);
+	int r = _chsize (fd, newsize);
 #else
-	ftruncate (fd, newsize);
+	int r = ftruncate (fd, newsize);
 #endif
+	if (r != 0) {
+		eprintf ("Coult not resize %s file\n", filename);
+		close (fd);
+		return false;
+	}
 	close (fd);
 	return true;
 }
@@ -205,8 +210,13 @@ R_API char *r_file_abspath(const char *file) {
 		if (!strncmp (file, "\\\\", 2)) {
 			return strdup (file);
 		}
-		if (cwd && !strchr (file, ':')) {
-			ret = r_str_newf ("%s\\%s", cwd, file);
+		if (!strchr (file, ':')) {
+			char *abspath = malloc (MAX_PATH);
+			if (abspath) {
+				GetFullPathName (file, MAX_PATH, abspath, NULL);
+				ret = strdup (abspath);
+				free (abspath);
+			}
 		}
 #endif
 	}
@@ -560,7 +570,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		return false;
 	}
 	if (append) {
-		fd = r_sandbox_fopen (file, "awb");
+		fd = r_sandbox_fopen (file, "ab");
 	} else {
 		r_sys_truncate (file, 0);
 		fd = r_sandbox_fopen (file, "wb");
@@ -602,7 +612,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		return false;
 	}
 	if (append) {
-		fd = r_sandbox_fopen (file, "awb");
+		fd = r_sandbox_fopen (file, "ab");
 	} else {
 		r_sys_truncate (file, 0);
 		fd = r_sandbox_fopen (file, "wb");
@@ -786,8 +796,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
 		MAP_SHARED, fd, (off_t)m->base);
 	if (m->buf == MAP_FAILED) {
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	return m;
 }
@@ -820,8 +829,7 @@ err_r_file_mmap_windows:
 		if (m->fh != INVALID_HANDLE_VALUE) {
 			CloseHandle (m->fh);
 		}
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	free (file_);
 	return m;
@@ -834,8 +842,7 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 		lseek (m->fd, (off_t)0, SEEK_SET);
 		read (m->fd, m->buf, m->len);
 	} else {
-		free (m);
-		m = NULL;
+		R_FREE (m);
 	}
 	return m;
 }
@@ -960,7 +967,6 @@ err_r_file_mkstemp:
 	free (path_);
 	free (prefix_);
 #else
-	char name[1024];
 	char pfxx[1024];
 	const char *suffix = strchr (prefix, '*');
 
@@ -972,7 +978,7 @@ err_r_file_mkstemp:
 		suffix = "";
 	}
 
-	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX%s", path, prefix, suffix);
+	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
 		h = mkstemps (name, strlen (suffix));
@@ -983,6 +989,7 @@ err_r_file_mkstemp:
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
 	}
+	free (name);
 #endif
 	free (path);
 	return h;
@@ -1023,8 +1030,7 @@ R_API char *r_file_tmpdir() {
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {
-		free (path);
-		path = NULL;
+		R_FREE (path);
 	}
 	if (!path) {
 #if __ANDROID__
@@ -1046,7 +1052,15 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	return r_sys_cmdf ("copy %s %s", src, dst);
+	char *s = r_file_abspath (src);
+	char *d = r_file_abspath (dst);
+	bool ret = CopyFile (s, d, 0);
+	if (!ret) {
+		eprintf ("File not found\n");
+	}
+	free (s);
+	free (d);
+	return ret;
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
 	char *dst2 = r_str_replace (strdup (dst), "'", "\\'", 1);

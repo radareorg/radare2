@@ -102,16 +102,15 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
-		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
+		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
 		}
-		eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		//eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
 		return (ut64)r_reg_get_longdouble (reg, item);
-		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
@@ -128,11 +127,8 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	int fits_in_arena;
 	ut8 bytes[12];
 	ut8 *src = bytes;
+	r_return_val_if_fail (reg && item, false);
 
-	if (!item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
-		return false;
-	}
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
@@ -232,24 +228,21 @@ R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 // result value is always casted into ut64
 // TODO: use item->packed_size
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) {
-	int packbytes, packmod;
 	ut64 ret = 0LL;
-	RRegSet *regset;
-	int off;
 	if (!reg || !item) {
 		return 0LL;
 	}
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	packbytes = packbits / 8;
-	packmod = packbits % 8;
+	const int packbytes = packbits / 8;
+	const int packmod = packbits % 8;
 	if (packmod) {
 		eprintf ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
 		memcpy (&ret, regset->arena->bytes + off, packbytes);

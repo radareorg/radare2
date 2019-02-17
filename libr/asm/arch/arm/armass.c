@@ -47,10 +47,7 @@ enum {
 };
 
 static int strcmpnull(const char *a, const char *b) {
-	if (!a || !b) {
-		return -1;
-	}
-	return strcmp (a, b);
+	return (a && b) ? strcmp (a, b) : -1;
 }
 
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
@@ -446,7 +443,7 @@ static ut64 getnum(const char *str) {
 	while (*str == '$' || *str == '#') {
 		str++;
 	}
-	val = strtol (str, &endptr, 0);
+	val = strtoll (str, &endptr, 0);
 	if (str != endptr && *endptr == '\0') {
 		return val;
 	}
@@ -568,7 +565,7 @@ static ut32 getthimmed12(const char *str) {
 	ut64 result = 0;
 	if (num <= 0xff) {
 		return num << 8;
-	} else 	if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
+	} else if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
 		result |= (num & 0x000000ff) << 8;
 		result |= 0x00000010;
 		return result;
@@ -644,12 +641,10 @@ static int getreg(const char *str) {
 
 static st32 getlistmask(char *input) {
 	st32 tempres, res = 0;
-	int i, j;
-	int start, end;
+	int i, j, start, end;
 	char *temp = NULL;
-	char *temp2 = NULL;
 	char *otemp = NULL;
-	temp2 = malloc (strlen (input) + 1);
+	char *temp2 = malloc (strlen (input) + 1);
 	if (!temp2) {
 		res = -1;
 		goto end;
@@ -667,8 +662,7 @@ static st32 getlistmask(char *input) {
 		for (i = 0; input[i] != ',' && input[i] != '\0'; i++) {
 			;
 		}
-		strncpy (temp, input, i);
-		temp[i] = 0;
+		r_str_ncpy (temp, input, i + 1);
 
 		input += i;
 		if (*input != '\0') {
@@ -2206,7 +2200,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_OTHER: {
-			ut16 cond;
+			ut16 cond = 0;
 			ut16 i;
 			
 			const char *conds[] = {
@@ -4807,7 +4801,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if ((num > 4095) || (num < -255)) {
 				return -1;
 			}
-			if ((num >= 0) && (num < 4096)) {
+			if (num >= 0) {
 				if (strsel == 0) {
 					ao->o = 0xc0f80000;
 				} else
@@ -6547,7 +6541,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	int i, j;
 	char buf[128];
 	ArmOpcode aop = {.off = off};
-	for (i = j = 0; i < sizeof (buf) - 1 && str[i]; i++, j++) {
+	for (i = j = 0; i < sizeof (buf) - 1 && str[j]; i++, j++) {
 		if (str[j] == '#') {
 			i--; continue;
 		}

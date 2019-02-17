@@ -7,7 +7,9 @@
 #include <r_bin.h>
 #include <r_io.h>
 #include <r_cons.h>
+#include "../i/private.h"
 #include "elf/elf.h"
+#include <sdb/ht_uu.h>
 
 static RBinInfo* info(RBinFile *bf);
 
@@ -47,14 +49,6 @@ static char* regstate(RBinFile *bf) {
 	return hexregs;
 }
 
-static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
-		return;
-	}
-	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = r_bin_symbol_clone (ptr);
-}
-
 static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
 		return;
@@ -73,11 +67,10 @@ static Sdb* get_sdb(RBinFile *bf) {
 }
 
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct Elf_(r_bin_elf_obj_t) *res;
 	if (!buf) {
 		return NULL;
 	}
-	res = Elf_(r_bin_elf_new_buf) (buf, bf->rbin->verbose);
+	struct Elf_(r_bin_elf_obj_t) *res = Elf_(r_bin_elf_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
@@ -187,7 +180,7 @@ static RList* sections(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				break;
 			}
-			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->name = strdup ((char*)section[i].name);
 			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
 				ptr->is_data = true;
 			}
@@ -228,39 +221,38 @@ static RList* sections(RBinFile *bf) {
 			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
-				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("DYNAMIC");
 				break;
 			case PT_LOAD:
-				snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "LOAD%d", n++);
+				ptr->name = r_str_newf ("LOAD%d", n++);
 				found_load = 1;
 				ptr->add = true;
 				break;
 			case PT_INTERP:
-				strncpy (ptr->name, "INTERP", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("INTERP");
 				break;
 			case PT_GNU_STACK:
-				strncpy (ptr->name, "GNU_STACK", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("GNU_STACK");
 				break;
 			case PT_GNU_RELRO:
-				strncpy (ptr->name, "GNU_RELRO", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("GNU_RELRO");
 				break;
 			case PT_GNU_EH_FRAME:
-				strncpy (ptr->name, "GNU_EH_FRAME", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("GNU_EH_FRAME");
 				break;
 			case PT_PHDR:
-				strncpy (ptr->name, "PHDR", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("PHDR");
 				break;
 			case PT_TLS:
-				strncpy (ptr->name, "TLS", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("TLS");
 				break;
 			case PT_NOTE:
-				strncpy (ptr->name, "NOTE", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("NOTE");
 				break;
 			default:
-				strncpy (ptr->name, "UNKNOWN", R_BIN_SIZEOF_STRINGS);
+				ptr->name = strdup ("UNKNOWN");
 				break;
 			}
-			ptr->name[R_BIN_SIZEOF_STRINGS - 1] = '\0';
 			r_list_append (ret, ptr);
 		}
 	}
@@ -274,7 +266,7 @@ static RList* sections(RBinFile *bf) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
-			sprintf (ptr->name, "uphdr");
+			ptr->name = strdup ("uphdr");
 			ptr->size = bf->size;
 			ptr->vsize = bf->size;
 			ptr->paddr = 0;
@@ -291,7 +283,7 @@ static RList* sections(RBinFile *bf) {
 		if (bf->size < ehdr_size) {
 			ehdr_size = bf->size;
 		}
-		sprintf (ptr->name, "ehdr");
+		ptr->name = strdup ("ehdr");
 		ptr->paddr = 0;
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
@@ -453,86 +445,10 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **sym) {
-	int bin_bits = Elf_(r_bin_elf_get_bits) (bin);
-	RBinSymbol *ptr = *sym;
-	int len = strlen (ptr->name);
-	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
-		switch (ptr->name[1]) {
-		case 'a' : //arm
-			ptr->bits = 32;
-			break;
-		case 't': //thumb
-			ptr->bits = 16;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-			}
-			break;
-		case 'd': //data
-			break;
-		default:
-			goto arm_symbol;
-		}
-	} else {
-arm_symbol:
-		ptr->bits = bin_bits;
-		if (bin_bits != 64) {
-			ptr->bits = 32;
-			if (ptr->paddr != UT64_MAX) {
-				if (ptr->vaddr & 1) {
-					ptr->vaddr--;
-					ptr->bits = 16;
-				}
-				if (ptr->paddr & 1) {
-					ptr->paddr--;
-					ptr->bits = 16;
-				}
-			}
-		}
-	}
-}
-
-static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
-				  struct r_bin_elf_symbol_t *symbol,
-				  const char *namefmt) {
-	ut64 paddr, vaddr;
-	RBinSymbol *ptr = NULL;
-	if (symbol->is_value) {
-		paddr = UT64_MAX;
-		vaddr = symbol->offset;
-	} else {
-		paddr = symbol->offset;
-		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
-	}
-
-	if (!(ptr = R_NEW0 (RBinSymbol))) {
-		return NULL;
-	}
-	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
-	ptr->forwarder = r_str_const ("NONE");
-	ptr->bind = r_str_const (symbol->bind);
-	ptr->type = r_str_const (symbol->type);
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	ptr->size = symbol->size;
-	ptr->ordinal = symbol->ordinal;
-	// detect thumb
-	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
-		_set_arm_thumb_bits (bin, &ptr);
-	}
-
-	return ptr;
-}
-
 static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 			  RBinSymbol *ptr,
 			  bool is_sht_null,
 			  RList *ret) {
-	// put the symbol in symbols_ord table
-	setsymord (bin, ptr->ordinal, ptr);
 	// add it to the list of symbols only if it doesn't point to SHT_NULL
 	if (is_sht_null) {
 		r_bin_symbol_free (ptr);
@@ -563,7 +479,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ptr = convert_symbol (bin, &symbol[i], "%s");
+		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "%s");
 		if (!ptr) {
 			break;
 		}
@@ -578,7 +494,7 @@ static RList* symbols(RBinFile *bf) {
 		if (!symbol[i].size) {
 			continue;
 		}
-		ptr = convert_symbol (bin, &symbol[i], "imp.%s");
+		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "imp.%s");
 		if (!ptr) {
 			break;
 		}
@@ -925,39 +841,20 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 	}
 }
 
-static bool ht_insert_intu64(SdbHt* ht, int key, ut64 value) {
-	ut64 *mvalue = malloc (sizeof (ut64));
-	if (!mvalue) {
-		return false;
-	}
-	*mvalue = value;
-	return ht_insert (ht, sdb_fmt ("%d", key), (void *)mvalue);
-}
-
-static ut64 ht_find_intu64(SdbHt* ht, int key, bool* found) {
-	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt ("%d", key), found);
-	return *found ? *mvalue : 0;
-}
-
-static void relocs_by_sym_free(HtKv *kv) {
-	free (kv->key);
-	free (kv->value);
-}
-
 static RList* patch_relocs(RBin *b) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	RIO *io = NULL;
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	RIOSection *g = NULL, *s = NULL;
-	SdbHt *relocs_by_sym;
+	RIOMap *g = NULL, *s = NULL;
+	HtUU *relocs_by_sym;
 	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
 	int cdsz;
 	int i;
-	ut64 n_off, n_vaddr, vaddr, size, offset = 0;
+	ut64 n_vaddr, vaddr, size, offset = 0;
 
 	if (!b)
 		return NULL;
@@ -980,22 +877,31 @@ static RList* patch_relocs(RBin *b) {
 	info = obj ? obj->info: NULL;
 	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
-	ls_foreach (io->sections, iter, s) {
-		if (s->paddr > offset) {
-			offset = s->paddr;
+	ls_foreach (io->maps, iter, s) {
+		if (s->itv.addr > offset) {
+			offset = s->itv.addr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->paddr + g->size;
-	n_vaddr = g->vaddr + g->vsize;
+	n_vaddr = g->itv.addr + g->itv.size;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_PERM_R, ".got.r2", 0, io->desc->fd)) {
+	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	free (muri);
+	if (!gotr2desc) {
 		return NULL;
 	}
+
+	RIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
+	if (!gotr2map) {
+		return NULL;
+	}
+	gotr2map->name = strdup (".got.r2");
+
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
 		return NULL;
 	}
@@ -1003,7 +909,8 @@ static RList* patch_relocs(RBin *b) {
 		free (relcs);
 		return NULL;
 	}
-	if (!(relocs_by_sym = ht_new (NULL, relocs_by_sym_free, NULL))) {
+	HtUUOptions opt = { 0 };
+	if (!(relocs_by_sym = ht_uu_new_opt (&opt))) {
 		r_list_free (ret);
 		free (relcs);
 		return NULL;
@@ -1014,8 +921,7 @@ static RList* patch_relocs(RBin *b) {
 
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
-				bool found;
-				sym_addr = ht_find_intu64 (relocs_by_sym, relcs[i].sym, &found);
+				sym_addr = ht_uu_find (relocs_by_sym, relcs[i].sym, NULL);
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
 			}
@@ -1030,12 +936,12 @@ static RList* patch_relocs(RBin *b) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;
-			ht_insert_intu64 (relocs_by_sym, relcs[i].sym, vaddr);
+			ht_uu_insert (relocs_by_sym, relcs[i].sym, vaddr);
 			vaddr += cdsz;
 		}
 		r_list_append (ret, ptr);
 	}
-	ht_free (relocs_by_sym);
+	ht_uu_free (relocs_by_sym);
 	free (relcs);
 	return ret;
 }
@@ -1174,7 +1080,7 @@ static RBinInfo* info(RBinFile *bf) {
 	} else {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
-	if (Elf_(r_bin_elf_get_static) (obj)) {
+	if (Elf_(r_bin_elf_is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
 	lookup_sections (bf, ret);

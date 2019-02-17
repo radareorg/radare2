@@ -304,8 +304,7 @@ R_API ut64 r_debug_esil_continue (RDebug *dbg) {
 }
 
 static void ewps_free(EsilBreak *ew) {
-	free (ew->expr);
-	ew->expr = NULL;
+	R_FREE (ew->expr);
 	free (ew);
 }
 

@@ -7,7 +7,6 @@
 #if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
-#include <asm/ptrace.h>
 #include "linux_coredump.h"
 
 /* For compability */
@@ -175,19 +174,19 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		free (t);
 		return NULL;
 	}
-	while (!isdigit (*temp_p_sigpend++)) {
+	while (!isdigit ((ut8)*temp_p_sigpend++)) {
 		//empty body
 	}
 	p_sigpend = temp_p_sigpend - 1;
-	while (isdigit (*temp_p_sigpend++)) {
+	while (isdigit ((ut8)*temp_p_sigpend++)) {
 		//empty body
 	}
 	p_sigpend[temp_p_sigpend - p_sigpend - 1] = '\0';
-	while (!isdigit (*temp_p_sighold++)) {
+	while (!isdigit ((ut8)*temp_p_sighold++)) {
 		//empty body
 	}
 	p_sighold = temp_p_sighold - 1;
-	while (isdigit (*temp_p_sighold++)) {
+	while (isdigit ((ut8)*temp_p_sighold++)) {
 		//empty body
 	}
 	p_sighold[temp_p_sighold - p_sighold - 1] = '\0';
@@ -281,7 +280,7 @@ static bool getAnonymousValue(char *keyw) {
 	if (!keyw) {
 		return false;
 	}
-	while (*keyw && isspace (*keyw)) {
+	while (*keyw && isspace ((ut8)*keyw)) {
 		keyw ++;
 	}
 	return *keyw && *keyw != '0';
@@ -480,7 +479,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 	linux_map_entry_t *me_head = NULL, *me_tail = NULL;
 	RListIter *iter;
 	RDebugMap *map;
-	bool is_anonymous, is_deleted, ret;
+	bool is_anonymous = false, is_deleted = false, ret = 0;
 	char *file = NULL, *buff_maps= NULL, *buff_smaps = NULL;
 	int size_file = 0;
 
@@ -831,11 +830,11 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	temp_p_gid = strstr (buff, "Gid:");
 	/* Uid */
 	if (temp_p_uid) {
-		while (!isdigit (*temp_p_uid++))  {
+		while (!isdigit ((ut8)*temp_p_uid++))  {
 			//empty body
 		}
 		p_uid = temp_p_uid - 1;
-		while (isdigit (*temp_p_uid++)) {
+		while (isdigit ((ut8)*temp_p_uid++)) {
 			//empty body
 		}
 		p_uid[temp_p_uid - p_uid - 1] = '\0';
@@ -846,11 +845,11 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 
 	/* Gid */
 	if (temp_p_gid) {
-		while (!isdigit (*temp_p_gid++)) {
+		while (!isdigit ((ut8)*temp_p_gid++)) {
 			//empty body
 		}
 		p_gid = temp_p_gid - 1;
-		while (isdigit (*temp_p_gid++)) {
+		while (isdigit ((ut8)*temp_p_gid++)) {
 			//empty body
 		}
 		p_gid[temp_p_gid - p_gid - 1] = '\0';

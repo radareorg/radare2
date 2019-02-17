@@ -81,7 +81,7 @@ int handle_qC(libgdbr_t *g) {
 		return -1;
 	}
 	g->data[g->data_len] = '\0';
-	if (read_thread_id (g->data + 2, &g->pid, &g->tid, g->stub_features.multiprocess) , 0) {
+	if (read_thread_id (g->data + 2, &g->pid, &g->tid, g->stub_features.multiprocess) < 0) {
 		send_ack (g);
 		return -1;
 	}

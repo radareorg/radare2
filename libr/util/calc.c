@@ -156,7 +156,6 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		}
 		return v;
 	case RNCNEG:
-		v = nc->number_value;
 		get_token (num, nc);
 		return Nneg (nc->number_value); //prim (num, nc, 1), 1);
 	case RNCINC:
@@ -215,7 +214,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 		*c = nc->oc;
 		nc->oc = 0;
 	} else {
-		if (!nc->calc_buf) {
+		if (!nc->calc_buf || !*nc->calc_buf) {
 			return 0;
 		}
 		*c = nc->calc_buf[nc->calc_i];

@@ -47,7 +47,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_rbuf = {
 	.name = "rbuf",
-	.desc = "RBuffer IO plugin: rbuf://",
+	.desc = "RBuffer IO plugin",
+	.uris = "rbuf://",
 	.license = "LGPL",
 	.open = __open,
 	.close = __close,

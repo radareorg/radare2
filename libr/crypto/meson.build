@@ -1,4 +1,5 @@
-files = [
+r_crypto_sources = [
+  'des.c',
   'crypto.c',
   'p/crypto_aes.c',
   'p/crypto_aes_algo.c',
@@ -20,7 +21,7 @@ files = [
   'p/crypto_xor.c',
 ]
 
-r_crypto = library('r_crypto', files,
+r_crypto = library('r_crypto', r_crypto_sources,
   include_directories: [platform_inc],
   dependencies: [r_util_dep],
   c_args: library_cflags,
@@ -32,8 +33,7 @@ r_crypto = library('r_crypto', files,
 r_crypto_dep = declare_dependency(link_with: r_crypto,
                                   include_directories: [platform_inc])
 
-pkgconfig_mod.generate(
-  libraries: [r_crypto],
+pkgconfig_mod.generate(r_crypto,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_crypto',

@@ -76,6 +76,7 @@ R_API void r_vlog(const char *funcname, const char *filename,
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
+		va_end (args_copy);
 		return;
 	}
 
@@ -83,9 +84,8 @@ R_API void r_vlog(const char *funcname, const char *filename,
 
 	// Build output string with src info, and formatted output
 	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
-	const char *default_tag = R_BETWEEN (0, level, sizeof (level_tags) - 1) ? level_tags[level] : "";
 	if (!tag) {
-		tag = default_tag;
+		tag = R_BETWEEN (0, level, R_ARRAY_SIZE (level_tags) - 1)? level_tags[level]: "";
 	}
 	int offset = snprintf (output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
 	if (cfg_logsrcinfo) {

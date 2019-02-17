@@ -61,9 +61,9 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
-	char *p = NULL;
 	ut64 prev = r_sys_now ();
 #if R2_LOADLIBS
+	char *p = NULL;
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;

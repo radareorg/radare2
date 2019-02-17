@@ -17,16 +17,17 @@ enum {
 
 static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 	r_config_save_num (hc, "esil.romem", "asm.trace", "dbg.trace",
-			"esil.nonull", NULL);
+			"esil.nonull", "dbg.follow", NULL);
 	r_config_set (core->config, "esil.romem", "true");
 	r_config_set (core->config, "asm.trace", "true");
 	r_config_set (core->config, "dbg.trace", "true");
 	r_config_set (core->config, "esil.nonull", "true");
+	r_config_set_i (core->config, "dbg.follow", false);
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if ((bp && !r_reg_getv (core->anal->reg, bp)) && (sp && !r_reg_getv (core->anal->reg, sp))) {
 		eprintf ("Stack isn't initialized.\n");
-		eprintf ("Try running aei and aeim commands before aftm for default stack initialization\n");
+		eprintf ("Try running aei and aeim commands before aft for default stack initialization\n");
 		return false;
 	}
 	return (core->anal->esil != NULL);
@@ -45,9 +46,8 @@ static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int si
 		ut64 sp = r_reg_getv (anal->reg, sp_name);
 		ut64 write_addr = sdb_num_get (trace, sdb_fmt ("%d.mem.write", idx), 0);
 		return (write_addr == sp + size);
-	} else {
-		return SDB_CONTAINS (idx, place);
 	}
+	return SDB_CONTAINS (idx, place);
 }
 
 static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
@@ -57,8 +57,8 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!*name || !strcmp (name , "...")) {
 		return;
 	}
-	bool is_default = (!strncmp (v->name, "local_", 6)
-			|| !strncmp (v->name, "arg_", 4))? true: false;
+	bool is_default = (r_str_startswith (v->name, VARPREFIX)
+			|| r_str_startswith (v->name, ARGPREFIX))? true: false;
 	if (*name == '*') {
 		name++;
 	}
@@ -86,7 +86,13 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		// default or void type
 		return;
 	}
-	const char *tmp = strstr (var->type, "int");
+	const char *expand = var->type;
+	if (!strcmp(var->type, "uint32_t")) {
+		expand = "unsigned int";
+	} else if (!strcmp(var->type, "uint64_t")) {
+		expand = "unsigned long long";
+	}
+	const char *tmp = strstr (expand, "int");
 	bool is_default = tmp? true: false;
 	if (!is_default && strncmp (var->type, "void", 4)) {
 		// return since type is already propgated
@@ -119,6 +125,13 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		} else {   //  type => type *
 			r_strbuf_append (sb, " *");
 		}
+	}
+
+	char* tmp1 = r_strbuf_get (sb);
+	if (r_str_startswith (tmp1, "unsigned long long")) {
+		r_strbuf_set (sb, "uint64_t");
+	} else if (r_str_startswith (tmp1, "unsigned")) {
+		r_strbuf_set (sb, "uint32_t");
 	}
 	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
 	r_strbuf_free (sb);
@@ -235,19 +248,29 @@ R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var) {
 }
 
 static RList *parse_format(RCore *core, char *fmt) {
+	if (!fmt || !*fmt) {
+		return NULL;
+	}
 	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
 	Sdb *s = core->anal->sdb_fmts;
 	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
 	char *ptr = strchr (fmt, '%');
-	fmt[strlen(fmt) - 1] = '\0';
+	fmt[strlen (fmt) - 1] = '\0';
 	while (ptr) {
-		ptr += 1;
+		ptr++;
 		// strip [width] specifier
-		while (IS_DIGIT (*ptr)) { ptr++; }
+		while (IS_DIGIT (*ptr)) {
+			ptr++;
+		}
 		r_str_ncpy (arr, ptr, sizeof (arr) - 1);
 		char *tmp = arr;
-		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) { tmp++; }
+		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) {
+			tmp++;
+		}
 		*tmp = '\0';
 		const char *query = sdb_fmt ("spec.%s.%s", spec, arr);
 		char *type = (char *) sdb_const_get (s, query, 0);
@@ -359,8 +382,9 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
 						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
 						if (f && !strncmp (f->name, "str", 3)) {
-							types = parse_format (core, f->realname);
-							max += r_list_length (types);
+							if ((types = parse_format (core, f->realname))) {
+								max += r_list_length (types);
+							}
 							format = true;
 						}
 					}
@@ -610,7 +634,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					bool jmp = false;
 					RAnalOp *jmp_op = {0};
 					ut64 jmp_addr = next_op->jump;
-					RAnalBlock *jmpbb = r_anal_fcn_bbget_in (fcn, jmp_addr);
+					RAnalBlock *jmpbb = r_anal_fcn_bbget_in (anal, fcn, jmp_addr);
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
@@ -669,7 +693,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 
 		}
 	}
-	const char *place = r_anal_cc_arg (anal, fcn->cc, 1);
 	// Type propgation for register based args
 	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	RAnalVar *rvar, *bp_var;
@@ -707,21 +730,26 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		free (type);
 		r_anal_var_free (lvar);
 	}
+	r_list_free (list);
 	// Type propgation from caller to callee function for stack based arguments
-	if (place && !strncmp (place, "stack", 5)) {
-		RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
-		r_list_foreach (list2, iter2, bp_var) {
-			if (bp_var->isarg) {
-				const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", fcn->addr, (bp_var->delta - 8));
-				char *type = (char *) sdb_const_get (anal->sdb_fcns, query, NULL);
-				if (type) {
-					var_retype (anal, bp_var, NULL, type, fcn->addr, false, false);
+	if (fcn->cc) {
+		const char *place = r_anal_cc_arg (anal, fcn->cc, 1);
+		if (place && !strncmp (place, "stack", 5)) {
+			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
+			r_list_foreach (list2, iter2, bp_var) {
+				if (bp_var->isarg) {
+					const char *query = sdb_fmt ("fcn.0x%08" PFMT64x ".arg.%d", fcn->addr, (bp_var->delta - 8));
+					char *type = (char *)sdb_const_get (anal->sdb_fcns, query, NULL);
+					if (type) {
+						var_retype (anal, bp_var, NULL, type, fcn->addr, false, false);
+					}
 				}
 			}
+			r_list_free (list2);
 		}
-		r_list_free (list2);
+	} else {
+		R_LOG_DEBUG ("No calling convention set for function '%s'\n", fcn->name);
 	}
-	r_list_free (list);
 out_function:
 	free (buf);
 	r_cons_break_pop();

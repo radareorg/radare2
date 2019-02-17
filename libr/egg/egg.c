@@ -212,13 +212,12 @@ R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const
 }
 
 R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
-	char *out;
-	int outlen = len*2; // two hexadecimal digits per byte
-	out = malloc (outlen+1);
+	int outlen = len * 2; // two hexadecimal digits per byte
+	char *out = malloc (outlen + 1);
 	if (!out) {
 		return false;
 	}
-	r_hex_bin2str (b, len, out);
+	(void)r_hex_bin2str (b, len, out);
 	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
 	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
 	r_buf_append_bytes (egg->buf, (const ut8*)"\n", 1);
@@ -227,9 +226,8 @@ R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 }
 
 static int r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
-	char *out;
-	int outlen = len*2; // two hexadecimal digits per byte
-	out = malloc (outlen+1);
+	int outlen = len * 2; // two hexadecimal digits per byte
+	char *out = malloc (outlen + 1);
 	if (!out) {
 		return false;
 	}
@@ -242,7 +240,7 @@ static int r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
 }
 
 static int r_egg_prepend_bytes(REgg *egg, const ut8 *b, int len) {
-	if (!r_egg_raw_prepend(egg, b, len)) {
+	if (!r_egg_raw_prepend (egg, b, len)) {
 		return false;
 	}
 	if (!r_buf_prepend_bytes (egg->bin, b, len)) {
@@ -278,10 +276,9 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 	va_end (ap);
 }
 
-R_API int r_egg_assemble_asm(REgg *egg, char **asm_list) {
+R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	RAsmCode *asmcode = NULL;
 	char *code = NULL;
-	int ret = false;
 	char *asm_name = NULL;
 
 	if (asm_list) {
@@ -318,12 +315,12 @@ R_API int r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		}
 	}
 	free (code);
-	ret = (asmcode != NULL);
+	bool ret = (asmcode != NULL);
 	r_asm_code_free (asmcode);
 	return ret;
 }
 
-R_API int r_egg_assemble(REgg *egg) {
+R_API bool r_egg_assemble(REgg *egg) {
 	return r_egg_assemble_asm (egg, NULL);
 }
 

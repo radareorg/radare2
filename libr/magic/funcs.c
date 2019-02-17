@@ -87,10 +87,11 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 		memcpy (newstr, ms->o.buf, obuflen);
 		memcpy (newstr+obuflen, buf, buflen);
 		free (buf);
+		free (ms->o.buf);
 		if (len < 0) {
+			free (newstr);
 			goto out;
 		}
-		free (ms->o.buf);
 		buf = newstr;
 	}
 	ms->o.buf = buf;

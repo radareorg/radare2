@@ -39,13 +39,15 @@ static const char *help_msg_i[] = {
 	"iM", "", "Show main address",
 	"io", " [file]", "Load info from file (or last opened) use bin.baddr",
 	"iO", "[?]", "Perform binary operation (dump, resize, change sections, ...)",
-	"ir", "", "Relocs",
-	"iR", "", "Resources",
-	"is", "", "Symbols",
+	"ir", "", "List the Relocations",
+	"iR", "", "List the Resources",
+	"is", "", "List the Symbols",
 	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
-	"iSS", " [entropy,sha1]", "Segments",
+	"iS=", "", "Show ascii-art color bars with the section ranges",
+	"iSS", "", "List memory segments (maps with om)",
+	"it", "", "File hashes",
 	"iV", "", "Display file version info",
 	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
@@ -169,7 +171,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			}
 		}
 		{
-			char *escapedFile = r_str_utf16_encode (uri, -1);
+			char *escapedFile = r_str_escape_utf8_for_json (uri, -1);
 			r_cons_printf ("\"file\":\"%s\"", escapedFile);
 			free (escapedFile);
 		}
@@ -180,12 +182,10 @@ static void r_core_file_info(RCore *core, int mode) {
 			ut64 fsz = r_io_desc_size (desc);
 			r_cons_printf (",\"fd\":%d", desc->fd);
 			if (fsz != UT64_MAX) {
+				char humansz[8];
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
-				char *humansz = r_num_units (NULL, fsz);
-				if (humansz) {
-					r_cons_printf (",\"humansz\":\"%s\"", humansz);
-					free (humansz);
-				}
+				r_num_units (humansz, sizeof (humansz), fsz);
+				r_cons_printf (",\"humansz\":\"%s\"", humansz);
 			}
 			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache || desc->perm & R_PERM_W));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (desc->perm & R_PERM_RWX));
@@ -237,12 +237,10 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
 			if (fsz != UT64_MAX) {
+				char humansz[8];
 				pair ("size", sdb_itoca (fsz));
-				char *humansz = r_num_units (NULL, fsz);
-				if (humansz) {
-					pair ("humansz", humansz);
-					free (humansz);
-				}
+				r_num_units (humansz, sizeof (humansz), fsz);
+				pair ("humansz", humansz);
 			}
 		}
 		if (info) {
@@ -349,6 +347,12 @@ static int cmd_info(void *data, const char *input) {
 	if (!strcmp (input, "*")) {
 		input = "I*";
 	}
+	char *question = strchr (input, '?');
+	if (question > input) {
+		question--;
+		r_core_cmdf (core, "i?~ i%c", *question);
+		goto done;
+	}
 	while (*input) {
 		switch (*input) {
 		case 'b': // "ib"
@@ -452,6 +456,23 @@ static int cmd_info(void *data, const char *input) {
 			input--;
 			break;
 		}
+		case 't': // "it"
+			if (input[1] == 'j') {
+				PJ *pj = pj_new ();
+				if (!pj) {
+					eprintf ("JSON mode failed\n");
+					return 0;
+				}
+				pj_o (pj);
+				pj_ks (pj, "values", core->bin->cur->o->info->hashes);
+				pj_end (pj);
+				r_cons_printf ("%s", pj_string (pj));
+				pj_free (pj);
+			} else {
+				RBinInfo *info = r_bin_get_info (core->bin);
+				r_cons_printf ("%s\n", (info && info->hashes)? info->hashes: "");
+			}
+			break;
 		case 'Z': // "iZ"
 			RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
 			break;
@@ -538,6 +559,9 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'j' && input[2] == '.') {
 				mode = R_MODE_JSON;
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			} else if (input[1] == 'q' && input[2] == 'q') {
+				mode = R_MODE_SIMPLEST;
+				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			} else {
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			}
@@ -587,7 +611,6 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				case 'i':
 					info = r_bin_get_info (core->bin);
-					file_found = false;
 					filename = strchr (input, ' ');
 					while (input[2]) input++;
 					if (filename) {
@@ -834,7 +857,7 @@ static int cmd_info(void *data, const char *input) {
 							goto done;
 						}
 						goto done;
-					} else {
+					} else if (obj->classes) {
 						playMsg (core, "classes", r_list_length (obj->classes));
 						if (input[1] == 'l' && obj) { // "icl"
 							r_list_foreach (obj->classes, iter, cls) {
@@ -847,7 +870,7 @@ static int cmd_info(void *data, const char *input) {
 								}
 							}
 						} else if (input[1] == 'c' && obj) { // "icc"
-                					mode = R_MODE_CLASSDUMP;
+							mode = R_MODE_CLASSDUMP;
 							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 							input = " ";
 						} else {

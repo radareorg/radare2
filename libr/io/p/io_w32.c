@@ -27,8 +27,7 @@ static int w32__close(RIODesc *fd) {
 	if (fd->data) {
 		// TODO: handle return value
 		CloseHandle (RIOW32_HANDLE (fd));
-		free (fd->data);
-		fd->data = NULL;
+		R_FREE (fd->data);
 		return 0;
 	}
 	return -1;
@@ -78,6 +77,7 @@ RIOPlugin r_io_plugin_w32 = {
 	.name = "w32",
 	.desc = "w32 API io",
 	.license = "LGPL3",
+	.uris = "w32://",
 	.open = w32__open,
 	.close = w32__close,
 	.read = w32__read,

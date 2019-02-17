@@ -27,7 +27,7 @@ type.float=f
 type.float.size=32
 
 double=type
-type.double=f
+type.double=F
 type.double.size=64
 
 long long=type
@@ -92,7 +92,7 @@ func.calloc.ret=void *
 
 fgetc=func
 func.fgetc.args=1
-func.fgetc.arg.0=FILE *,steam
+func.fgetc.arg.0=FILE *,stream
 func.fgetc.ret=int
 
 fgets=func
@@ -109,7 +109,7 @@ func.free.ret=void
 
 getc=func
 func.getc.args=1
-func.getc.arg.0=FILE *,steam
+func.getc.arg.0=FILE *,stream
 func.getc.ret=int
 
 getchar=func
@@ -120,6 +120,13 @@ getenv=func
 func.getenv.args=1
 func.getenv.arg.0=const char *,name
 func.getenv.ret=char *
+
+setenv=func
+func.setenv.args=3
+func.setenv.arg.0=const char *,name
+func.setenv.arg.1=const char *,value
+func.setenv.arg.2=int,overwrite
+func.setenv.ret=int
 
 getopt=func
 func.getopt.args=3
@@ -2675,6 +2682,38 @@ func.objc_msgSend.args=2
 func.objc_msgSend.arg.0=void *,instance
 func.objc_msgSend.arg.1=char *,selector
 func.objc_msgSend.ret=void *
+
+objc_msgSendSuper2=func
+func.objc_msgSendSuper2.args=2
+func.objc_msgSendSuper2.arg.0=void *,instance
+func.objc_msgSendSuper2.arg.1=char *,selector
+func.objc_msgSendSuper2.ret=void *
+
+objc_storeStrong=func
+func.objc_storeStrong.args=2
+func.objc_storeStrong.arg.0=void *,instance
+func.objc_storeStrong.arg.1=int,type
+func.objc_storeStrong.ret=void *
+
+objc_release=func
+func.objc_release.args=1
+func.objc_release.arg.0=void *,instance
+func.objc_release.ret=void
+
+objc_retain=func
+func.objc_retain.args=1
+func.objc_retain.arg.0=void *,instance
+func.objc_retain.ret=void
+
+objc_retainAutoreleasedReturnValue=func
+func.objc_retainAutoreleasedReturnValue.args=1
+func.objc_retainAutoreleasedReturnValue.arg.0=void *,instance
+func.objc_retainAutoreleasedReturnValue.ret=void
+
+objc_enumerationMutation=func
+func.objc_enumerationMutation.args=1
+func.objc_enumerationMutation.arg.0=void *,instance
+func.objc_enumerationMutation.ret=void
 
 bindtextdomain=func
 func.bindtextdomain.args=2

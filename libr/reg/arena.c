@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 
@@ -142,8 +142,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 			newsize = R_MAX (size, newsize);
 		}
 		if (newsize < 1) {
-			free (arena->bytes);
-			arena->bytes = NULL;
+			R_FREE (arena->bytes);
 			arena->size = 0;
 		} else {
 			ut8 *buf = realloc (arena->bytes, newsize);
@@ -167,8 +166,7 @@ R_API RRegArena *r_reg_arena_new(int size) {
 			size = 1;
 		}
 		if (!(arena->bytes = calloc (1, size + 8))) {
-			free (arena);
-			arena = NULL;
+			R_FREE (arena);
 		} else {
 			arena->size = size;
 		}
@@ -187,6 +185,9 @@ R_API void r_reg_arena_swap(RReg *reg, int copy) {
 	/* XXX: swap current arena to head(previous arena) */
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		if (!reg->regset[i].pool) {
+			continue;
+		}
 		if (r_list_length (reg->regset[i].pool) > 1) {
 			RListIter *ia = reg->regset[i].cur;
 			RListIter *ib = reg->regset[i].pool->head;
@@ -204,6 +205,9 @@ R_API void r_reg_arena_pop(RReg *reg) {
 	RRegArena *a;
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		if (!reg->regset[i].pool) {
+			continue;
+		}
 		if (r_list_length (reg->regset[i].pool) < 2) {
 			continue;
 		}
@@ -236,7 +240,10 @@ R_API int r_reg_arena_push(RReg *reg) {
 		reg->regset[i].arena = b;
 		reg->regset[i].cur = reg->regset[i].pool->tail;
 	}
-	return r_list_length (reg->regset[0].pool);
+	if (reg->regset[0].pool) {
+		return r_list_length (reg->regset[0].pool);
+	}
+	return 0;
 }
 
 R_API void r_reg_arena_zero(RReg *reg) {

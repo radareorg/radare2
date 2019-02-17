@@ -1832,9 +1832,7 @@ print_mips16_insn_arg (char type,
               (*info->fprintf_func) (info->stream, ", %s",
                                      mips_gpr_names[i == 8 ? 30 : (16 + i)]);
               /* Skip over string of set bits.  */
-	      for (j = i; smask & (2 << j); j++) {
-		      continue;
-	      }
+	      for (j = i; smask & (2 << j); j++) {}
 	      if (j > i) {
 		      (*info->fprintf_func) (info->stream, "-%s",
 			      mips_gpr_names[j == 8 ? 30 : (16 + j)]);

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ -z "${STATIC_BINS}" ] && STATIC_BINS=0
+
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
@@ -45,8 +47,15 @@ for a in ${BINS} ; do
 (
 	cd binr/$a
 	${MAKE} clean
-	#LDFLAGS=-static ${MAKE} -j2
-	${MAKE} -j4 || exit 1
+	if [ "`uname`" = Darwin ]; then
+		${MAKE} -j4 || exit 1
+	else
+		if [ "${STATIC_BINS}" = 1 ]; then
+			CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
+		else
+			${MAKE} -j4 || exit 1
+		fi
+	fi
 )
 done
 

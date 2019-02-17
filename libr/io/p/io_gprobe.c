@@ -2,7 +2,8 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_print.h>
+#include <r_util.h>
+#include <r_util/r_print.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -23,10 +24,14 @@
 #include <tchar.h>
 #include <windows.h>
 #else
-#if !__linux__ && !__APPLE__ && !__OpenBSD__ && !__FreeBSD__ && !__NetBSD__
+
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__
+#include <sys/ioctl.h>
+#include <termios.h>
+#else
 #include <stropts.h>
 #endif
-#include <termios.h>
+
 #endif
 
 #define GPROBE_SIZE (1LL << 32)
@@ -1089,16 +1094,13 @@ static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 			return gprobe->offset = GPROBE_SIZE - 1;
 		}
 		return gprobe->offset = offset;
-		break;
 	case SEEK_CUR:
 		if ((gprobe->offset + offset) >= GPROBE_SIZE) {
 			return gprobe->offset = GPROBE_SIZE - 1;
 		}
 		return gprobe->offset += offset;
-		break;
 	case SEEK_END:
 		return gprobe->offset = GPROBE_SIZE - 1;
-		break;
 	}
 	return offset;
 }
@@ -1218,8 +1220,9 @@ static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_gprobe = {
 	.name = "gprobe",
-	.desc = "open gprobe connection using gprobe://",
+	.desc = "Open gprobe connection",
 	.license = "LGPL3",
+	.uris = "gprobe://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

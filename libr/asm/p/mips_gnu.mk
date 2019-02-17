@@ -3,7 +3,6 @@ OBJ_MIPS=asm_mips_gnu.o
 OBJ_MIPS+=../arch/mips/gnu/mips-dis.o
 OBJ_MIPS+=../arch/mips/gnu/mips16-opc.o
 OBJ_MIPS+=../arch/mips/gnu/mips-opc.o
-OBJ_MIPS+=../arch/mips/mipsasm.o
 
 TARGET_MIPS=asm_mips_gnu.${EXT_SO}
 STATIC_OBJ+=${OBJ_MIPS}

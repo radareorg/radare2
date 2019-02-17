@@ -294,7 +294,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	do {
 		/* Eat everything up to the comma */
 		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) - 1; i++) {
-			tmp[i] = tolower (*ptr++);
+			tmp[i] = tolower ((ut8)*ptr++);
 		}
 
 		/* Safety net */

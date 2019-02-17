@@ -263,3 +263,13 @@ This software is sold for home use only and all other rights are expressly rever
 Any commercial use or duplication of this copylefted material without prior licensing is forbidden.
 Violators will be prosecuted.
 This shell has been seized by the Internet's Police.
+OpenBSD might pledge r2 but r2 unveils OpenBSD.
+Error: There's a missing space before the opening parenthesis '('
+WARNING: r_list_length: assertion 'list' failed (line 55)
+This accessory is not supported by this version of radare2.
+When can we have an official anime mascot for radare2?
+Iaito became Cutter the same way Iai-giri became Cut.
+Sorry, radare2 has experienced an internal error.
+Segmentation fault (core dumped)
+Use rabin2 to discover the real TRUTH
+==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -23,7 +23,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 		}
 	}
 	if (!r_file_exists (libpath)) {
-		r_str_free (libpath);
+		free (libpath);
 		return -1;
 	}	
 	
@@ -38,7 +38,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 		}
 		r_lib_dl_close (lib);
 	}
-	r_str_free (libpath);
+	free (libpath);
 	return 0;
 }
 

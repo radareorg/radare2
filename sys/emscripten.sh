@@ -12,8 +12,10 @@ unset LDFLAGS
 export CC="emcc --ignore-dynamic-linking -Oz"
 export AR="emar"
 
-CFGFLAGS="./configure --prefix=/usr --with-compiler=emscripten"
+CFGFLAGS="--prefix=/usr --with-compiler=emscripten"
 CFGFLAGS="${CFGFLAGS} --disable-debugger --with-libr"
+CFGFLAGS="${CFGFLAGS} --without-libuv --without-jemalloc"
+CFGFLAGS="${CFGFLAGS} --without-fork" # no process support in Emscripten
 
 make mrproper
 cp -f plugins.emscripten.cfg plugins.cfg

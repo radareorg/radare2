@@ -119,6 +119,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("m68k");
 	ret->bits = 16;
 	ret->has_va = 1;
+	ret->big_endian = 1;
 	return ret;
 }
 
@@ -255,7 +256,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "vtable");
+	ptr->name = strdup ("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = R_PERM_R;
@@ -265,7 +266,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "header");
+	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
 	ptr->perm = R_PERM_R;
@@ -275,7 +276,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "text");
+	ptr->name = strdup ("text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
 		SMD_Header hdr = {{0}};
@@ -299,14 +300,16 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-#if 0
-	SMD_Header hdr = {{0}};
-	r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof (hdr));
-	ut64 baddr = 0; // r_read_be32 (&hdr.RomStart);
-	ptr->paddr = ptr->vaddr = baddr + 0x100 + sizeof (SMD_Header);
-#endif
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
-	r_list_append (ret, ptr);
+	if (bf->size < sizeof (SMD_Vectors)) {
+		eprintf ("ERR: binfile too small!\n");
+		ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
+		r_list_append (ret, ptr);
+	} else {
+		SMD_Vectors vectors;
+		r_buf_read_at (bf->buf, 0, (ut8*)&vectors, sizeof (vectors));
+		ptr->paddr = ptr->vaddr = r_read_be32 (&vectors.Reset);
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 

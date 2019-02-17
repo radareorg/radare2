@@ -104,14 +104,26 @@ static task_t task_for_pid_ios9pangu(int pid) {
 	return task;
 }
 
-static task_t pid_to_task(int pid) {
+static task_t pid_to_task(RIODesc *fd, int pid) {
 	task_t task = 0;
 	static task_t old_task = 0;
 	static int old_pid = -1;
 	kern_return_t kr;
-	if (old_task != 0 && old_pid == pid) {
-		return old_task;
-	} else if (old_task != 0 && old_pid != pid) {
+
+	RIODescData *iodd = fd? (RIODescData *)fd->data: NULL;
+	RIOMach *riom = NULL;
+	if (iodd) {
+		riom = iodd->data;
+		if (riom && riom->task) {
+			old_task = riom->task;
+			riom->task = 0;
+			old_pid = iodd->pid;
+		}
+	}
+	if (old_task != 0) {
+		if (old_pid == pid) {
+			return old_task;
+		}
 		//we changed the process pid so deallocate a ref from the old_task
 		//since we are going to get a new task
 		kr = mach_port_deallocate (mach_task_self (), old_task);
@@ -137,10 +149,10 @@ static task_t pid_to_task(int pid) {
 	return task;
 }
 
-static bool task_is_dead (int pid) {
+static bool task_is_dead(RIODesc *fd, int pid) {
 	unsigned int count = 0;
 	kern_return_t kr = mach_port_get_refs (mach_task_self (),
-		pid_to_task (pid), MACH_PORT_RIGHT_SEND, &count);
+		pid_to_task (fd, pid), MACH_PORT_RIGHT_SEND, &count);
 	return (kr != KERN_SUCCESS || !count);
 }
 
@@ -154,7 +166,7 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	natural_t depth = 0;
 	kern_return_t kr;
 	int tid = __get_pid (fd);
-	task_t task = pid_to_task (tid);
+	task_t task = pid_to_task (fd, tid);
 	ut64 lower = addr;
 #if __arm64__ || __aarch64__
 	size = osize = 16384; // acording to frida
@@ -210,8 +222,8 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	}
 	memset (buf, 0xff, len);
 	int pid = __get_pid (desc);
-	task_t task = pid_to_task (pid);
-	if (task_is_dead (pid)) {
+	task_t task = pid_to_task (desc, pid);
+	if (task_is_dead (desc, pid)) {
 		return -1;
 	}
 	if (pid == 0) {
@@ -248,7 +260,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		}
 		if (size == 0) {
 			if (blocksize == 1) {
-				memset (buf+copied, 0xff, len-copied);
+				memset (buf + copied, 0xff, len - copied);
 				return len;
 			}
 			blocksize = 1;
@@ -273,7 +285,7 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 
 static int tsk_pagesize(RIODesc *desc) {
 	int tid = __get_pid (desc);
-	task_t task = pid_to_task (tid);
+	task_t task = pid_to_task (desc, tid);
 	static vm_size_t pagesize = 0;
 	return pagesize
 		? pagesize
@@ -314,9 +326,9 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 	if (!desc || pid < 0) {
 		return 0;
 	}
-	task_t task = pid_to_task (pid);
+	task_t task = pid_to_task (desc, pid);
 
-	if (len < 1 || task_is_dead (task)) {
+	if (len < 1 || task_is_dead (desc, task)) {
 		return 0;
 	}
 	pageaddr = tsk_getpagebase (desc, addr);
@@ -369,7 +381,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (endptr == pidfile || pid < 0) {
 		return NULL;
 	}
-	task = pid_to_task (pid);
+	task = pid_to_task (NULL, pid);
 	if (task == -1) {
 		return NULL;
 	}
@@ -409,6 +421,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		iodd->data = NULL;
 	}
 	riom = R_NEW0 (RIOMach);
+	if (!riom) {
+		return NULL;
+	}
 	riom->task = task;
 	iodd->magic = r_str_hash ("mach");
 	iodd->data = riom;
@@ -454,7 +469,7 @@ static int __close(RIODesc *fd) {
 	if (iodd->magic != R_MACH_MAGIC) {
 		return false;
 	}
-	task_t task = pid_to_task (iodd->pid);
+	task_t task = pid_to_task (fd, iodd->pid);
 	kr = mach_port_deallocate (mach_task_self (), task);
 	if (kr != KERN_SUCCESS) {
 		perror ("__close io_mach");
@@ -472,7 +487,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	task_t task = pid_to_task (iodd->tid);
+	task_t task = pid_to_task (fd, iodd->tid);
 	/* XXX ugly hack for testing purposes */
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd + 4);
@@ -485,10 +500,15 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (!strncmp (cmd, "pid", 3)) {
+		RIODescData *iodd = fd->data;
+		RIOMach *riom = iodd->data;
 		const char *pidstr = cmd + 3;
 		int pid = -1;
 		if (*pidstr) {
-			// int pid = __get_pid (fd);
+			pid = __get_pid (fd);
+			//return NULL;
+		} else {
+			eprintf ("%d\n", iodd->pid);
 			return NULL;
 		}
 		if (!strcmp (pidstr, "0")) {
@@ -500,12 +520,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			}
 		}
 		if (pid != -1) {
-			task_t task = pid_to_task (pid);
+			task_t task = pid_to_task (fd, pid);
 			if (task != -1) {
-				eprintf ("PID=%d\n", pid);
-				eprintf ("TODO: must set the pid in io here\n");
-		//		riom->pid = pid;
-		//		riom->task = task;
+				riom->task = task;
+				iodd->pid = pid;
+				iodd->tid = pid;
 				return NULL;
 			}
 		}
@@ -534,8 +553,9 @@ static int __get_pid (RIODesc *desc) {
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
-	.desc = "mach debugger io plugin (mach://pid)",
+	.desc = "Attach to mach debugger instance",
 	.license = "LGPL",
+	.uris = "attach://,mach://,smach://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

@@ -109,7 +109,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		break;
 	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar ();
-#if defined(__HAIKU__)	
+#if defined(__HAIKU__)
 		/* Haiku don use the '[' char for funcion keys */
 		if (ch > 'O') {/* only in f1..f12 funcion keys */
 			ch = 0xf1 + (ch&0xf);
@@ -156,6 +156,23 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case '1':
 			ch = r_cons_readchar ();
 			switch (ch) {
+			// Support st/st-256color term and others
+			// for shift+arrows
+			case ';': // arrow+mod
+				ch = r_cons_readchar ();
+				switch (ch) {
+				case '2': // arrow+shift
+					ch = r_cons_readchar ();
+					switch (ch) {
+					case 'A': ch = 'K'; break;
+					case 'B': ch = 'J'; break;
+					case 'C': ch = 'L'; break;
+					case 'D': ch = 'H'; break;
+					}
+					break;
+				// add other modifiers
+				}
+				break;
 			case ':': // arrow+shift
 				ch = r_cons_readchar ();
 				ch = r_cons_readchar ();
@@ -172,23 +189,23 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			case '3': ch = R_CONS_KEY_F3; break;
 			case '4': ch = R_CONS_KEY_F4; break;
 */
-			case '5': 
+			case '5':
 				r_cons_readchar ();
 				ch = 0xf5;
 				break;
-			case '6': 
+			case '6':
 				r_cons_readchar ();
 				ch = 0xf7;
 				break;
-			case '7': 
+			case '7':
 				r_cons_readchar ();
 				ch = 0xf6;
 				break;
-			case '8': 
+			case '8':
 				r_cons_readchar ();
 				ch = 0xf7;
 				break;
-			case '9': 
+			case '9':
 				r_cons_readchar ();
 				ch = 0xf8;
 				break;
@@ -201,7 +218,12 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case 'B': ch = 'j'; break; // down
 		case 'C': ch = 'l'; break; // right
 		case 'D': ch = 'h'; break; // left
-		case 'M': ch = parseMouseEvent(); break;
+		// Support rxvt-unicode term for shift+arrows
+		case 'a': ch = 'K'; break; // shift+up
+		case 'b': ch = 'J'; break; // shift+down
+		case 'c': ch = 'L'; break; // shift+right
+		case 'd': ch = 'H'; break; // shift+left
+		case 'M': ch = parseMouseEvent (); break;
 		}
 		break;
 	}
@@ -212,7 +234,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
 	RCons *cons = r_cons_singleton ();
-	int ret = 0, color = cons->pal.input && *cons->pal.input;
+	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
 		r_cons_set_raw (false);
 		r_cons_show_cursor (true);
@@ -229,9 +251,8 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	printf ("%s", cons->line->prompt);
 	fflush (stdout);
 	*buf = '\0';
-	fflush (cons->fdin);
 	if (color) {
-		const char *p = cons->pal.input;
+		const char *p = cons->context->pal.input;
 		int len = p? strlen (p): 0;
 		if (len > 0) {
 			fwrite (p, len, 1, stdout);
@@ -524,7 +545,7 @@ R_API int r_cons_readchar() {
 	return r_cons_controlz (buf[0]);
 }
 
-R_API int r_cons_yesno(int def, const char *fmt, ...) {
+R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);
@@ -553,7 +574,7 @@ R_API char *r_cons_password(const char *msg) {
 	fflush (stdout);
 	r_cons_set_raw (1);
 #if __UNIX__
-	RCons *a = r_cons_singleton();
+	RCons *a = r_cons_singleton ();
 	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
 	// //  required to make therm/iterm show the key
 	// // cannot read when enabled in this way
@@ -561,7 +582,7 @@ R_API char *r_cons_password(const char *msg) {
 	tcsetattr (0, TCSADRAIN, &a->term_raw);
 	signal (SIGTSTP, SIG_IGN);
 #endif
-	while (i < sizeof (buf)) {
+	while (i < sizeof (buf) - 1) {
 		int ch = r_cons_readchar ();
 		if (ch == 127) { // backspace
 			if (i < 1) {

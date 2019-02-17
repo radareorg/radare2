@@ -296,7 +296,6 @@ R_API void r_range_percent(RRange *rgs) {
 		} else {
 			step = dif / w;
 		}
-		seek = 0;
 	} else {
 		step = fr = to = 0;
 	}

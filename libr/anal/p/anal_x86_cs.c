@@ -82,7 +82,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case X86_OP_IMM:
 			r_strbuf_appendf (buf, ",\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			r_strbuf_appendf (buf, ",\"value\":%"PFMT64u, op->imm);
 			break;
 		case X86_OP_MEM:
 			r_strbuf_appendf (buf, ",\"type\":\"mem\"");
@@ -96,7 +96,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
 			}
 			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64u"", op->mem.disp);
 			break;
 		default:
 			r_strbuf_appendf (buf, ",\"type\":\"invalid\"");
@@ -208,11 +208,11 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 		return (char *)cs_reg_name (handle, op.reg);
 	case X86_OP_IMM:
 		if (set == 1) {
-			snprintf (out, BUF_SZ, "%"PFMT64d",%s=[%d]",
+			snprintf (out, BUF_SZ, "%"PFMT64u",%s=[%d]",
 				(ut64)op.imm, setarg, op.size);
 			return out;
 		}
-		snprintf (out, BUF_SZ, "%"PFMT64d, (ut64)op.imm);
+		snprintf (out, BUF_SZ, "%"PFMT64u, (ut64)op.imm);
 		return out;
 	case X86_OP_MEM:
 		{
@@ -1356,7 +1356,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
 			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=",
-				src, dst, size);
+				src, dst, (size*8));
 		}
 		break;
 	case X86_INS_SBB:
@@ -1365,7 +1365,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			ut64 size = INSOP(0).size;
-			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=", src, dst, size);
+			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=", src, dst, (size*8));
 		}
 		break;
 	case X86_INS_LIDT:
@@ -1693,8 +1693,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			case X86_INS_BTS:
 			case X86_INS_BTC:
 				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,%d,%s,/,%s,+,%c=[%d]",
-						width * 8, src, width * 8, src, dst_r, width,
-						(insn->id == X86_INS_BTS)?'|':'^');
+						width * 8, src, width * 8, src, dst_r,
+						(insn->id == X86_INS_BTS)?'|':'^', width);
 				break;
 			case X86_INS_BTR:
 				dst_w = getarg (&gop, 0, 1, "&", DST_R_AR);
@@ -2291,6 +2291,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->stackptr = -regsz;
 		op->cycles = CYCLE_MEM + CYCLE_JMP;
 		break;
+	case X86_INS_UD0:
+	case X86_INS_UD2:
+	case X86_INS_UD2B:
 	case X86_INS_INT3:
 		op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
 		break;
@@ -2359,9 +2362,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		case X86_OP_IMM:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			// TODO: what if UCALL?
-			// TODO: use imm_size
-			op->jump = INSOP(0).imm;
-			op->fail = addr+op->size;
+			if (INSOP(1).type == X86_OP_IMM) {
+				ut64 seg = INSOP(0).imm;
+				ut64 off = INSOP(1).imm;
+				op->ptr = INSOP (0).mem.disp;
+				op->jump = (seg << a->seggrn) + off;
+			} else {
+				op->jump = INSOP(0).imm;
+			}
+			op->fail = addr + op->size;
 			break;
 		case X86_OP_MEM:
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -2649,7 +2658,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->stackptr = -INSOP(1).imm;
 			}
 		}
-		op->val = INSOP(1).imm;
+		if (INSOP(1).type == X86_OP_IMM) {
+			op->val = INSOP(1).imm;
+		}
 		break;
 	case X86_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -2994,6 +3005,8 @@ static char *get_reg_profile(RAnal *anal) {
 		 "=A3	rcx\n"
 		 "=A4	r8\n"
 		 "=A5	r9\n"
+		 "=A6	r10\n"
+		 "=A7	r11\n"
 		 "=SN	rax\n"
 		 "gpr	rax	.64	80	0\n"
 		 "gpr	eax	.32	80	0\n"

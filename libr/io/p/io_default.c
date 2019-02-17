@@ -274,7 +274,11 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 				memcpy (a_buf+a_delta, buf, count);
 				for (i = 0; i < a_count; i += aligned) {
 					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
-					(void)write (mmo->fd, a_buf + i, aligned);
+					len = write (mmo->fd, a_buf + i, aligned);
+					if (len != aligned) {
+						free (a_buf);
+						return len;
+					}
 				}
 			}
 			free (a_buf);
@@ -404,8 +408,9 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 
 RIOPlugin r_io_plugin_default = {
 	.name = "default",
-	.desc = "open local files using def_mmap://",
+	.desc = "Open local files",
 	.license = "LGPL3",
+	.uris = "file://,nocache://",
 	.open = __open_default,
 	.close = __close,
 	.read = __read,

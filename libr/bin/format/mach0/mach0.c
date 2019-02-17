@@ -786,7 +786,6 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 					r_buf_read_at (bin->b, data + idx.offset + 0, p, length);
 					ut32 *words = (ut32*)p;
 					eprintf ("Magic: %x\n", words[0]);
-					words += 2;
 					eprintf ("wtf DUMP @%d!%d\n",
 						(int)data + idx.offset + 8, (int)length);
 					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n");
@@ -1131,6 +1130,8 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_FUNCTION_STARTS";
 	case LC_DYLIB_CODE_SIGN_DRS:
 		return "LC_DYLIB_CODE_SIGN_DRS";
+	case LC_NOTE:
+		return "LC_NOTE";
 	case LC_BUILD_VERSION:
 		return "LC_BUILD_VERSION";
 	case LC_VERSION_MIN_MACOSX:
@@ -1336,8 +1337,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_LOAD_DYLINKER:
 			{
 				sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dylinker", 0);
-				free (bin->intrp);
-				bin->intrp = NULL;
+				R_FREE (bin->intrp);
 				//bprintf ("[mach0] load dynamic linker\n");
 				struct dylinker_command dy = {0};
 				ut8 sdy[sizeof (struct dylinker_command)] = {0};
@@ -1412,7 +1412,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_LOAD_WEAK_DYLIB:
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "load_dylib", 0);
 			bin->nlibs++;
-			if (!parse_dylib (bin, off)){
+			if (!parse_dylib (bin, off)) {
 				bprintf ("Cannot parse dylib\n");
 				bin->nlibs--;
 				return false;
@@ -1431,8 +1431,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 					return false;
 				}
 				if (r_buf_read_at (bin->b, off, dyldi, sizeof (struct dyld_info_command)) == -1) {
-					free (bin->dyld_info);
-					bin->dyld_info = NULL;
+					R_FREE (bin->dyld_info);
 					bprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
 				} else {
 					bin->dyld_info->cmd = r_read_ble32 (&dyldi[0], bin->big_endian);
@@ -1738,14 +1737,14 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	return false;
 }
 
-static int inSymtab(SdbHt *hash, const char *name, ut64 addr) {
+static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 	bool found;
 	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
-	(void)sdb_ht_find (hash, key, &found);
+	ht_pp_find (hash, key, &found);
 	if (found) {
 		return true;
 	}
-	sdb_ht_insert (hash, key, "1");
+	ht_pp_insert (hash, key, "1");
 	return false;
 }
 
@@ -1777,7 +1776,10 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	int j, s, stridx, symbols_size, symbols_count;
 	ut32 to, from, i;
 
-	r_return_val_if_fail (bin && bin->symtab && bin->symstr, NULL);
+	r_return_val_if_fail (bin, NULL);
+	if (!bin->symtab || !bin->symstr) {
+		return NULL;
+	}
 
 	/* parse dynamic symbol table */
 	symbols_count = (bin->dysymtab.nextdefsym + \
@@ -1792,7 +1794,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
-	SdbHt *hash = sdb_ht_new ();
+	HtPP *hash = ht_pp_new0 ();
 	if (!hash) {
 		free (symbols);
 		return NULL;
@@ -1826,7 +1828,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		if (to > 0x500000) {
 			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
-			sdb_ht_free (hash);
+			ht_pp_free (hash);
 			return NULL;
 		}
 		if (symbols_count >= maxsymbols) {
@@ -1886,7 +1888,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			}
 			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
-				strncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
 				free (sym_name);
 			} else {
 				symbols[j].name[0] = 0;
@@ -1900,7 +1902,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			}
 		}
 	}
-	sdb_ht_free (hash);
+	ht_pp_free (hash);
 	symbols[j].last = 1;
 	return symbols;
 }
@@ -1954,7 +1956,10 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	int i, j, idx, stridx;
 
-	r_return_val_if_fail (bin && bin->symtab && bin->symstr && bin->sects && bin->indirectsyms, NULL);
+	r_return_val_if_fail (bin && bin->sects, NULL);
+	if (!bin->symtab || !bin->symstr || !bin->indirectsyms) {
+		return NULL;
+	}
 
 	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
@@ -1999,7 +2004,7 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 }
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
-	struct reloc_t *relocs;
+	struct reloc_t *relocs = NULL;
 	int i = 0, len;
 	ulebr ur = {NULL};
 	int wordsize = MACH0_(get_bits)(bin) / 8;
@@ -2042,24 +2047,26 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 			return NULL;
 		}
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = calloc (1, (1 + bind_size + lazy_size) * sizeof (struct reloc_t)))) {
+		int amount = bind_size + lazy_size;
+		if (amount < 0) {
+			amount = 0;
+		}
+		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
 			return NULL;
 		}
-		opcodes = calloc (1, bind_size + lazy_size + 1);
+		opcodes = calloc (1, amount + 1);
 		if (!opcodes) {
 			free (relocs);
 			return NULL;
 		}
 		len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
-		i = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
-		if (len < 1 || i < 1) {
-			bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n",
-			(ut64)(size_t)bin->dyld_info->bind_off);
+		int ls = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
+		if (len < 1 || ls < 1) {
+			bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", (ut64)(size_t)bin->dyld_info->bind_off);
 			free (opcodes);
-			relocs[i].last = 1;
+			relocs[i].last = true;
 			return relocs;
 		}
-		i = 0;
 		// that +2 is a minimum required for uleb128, this may be wrong,
 		// the correct fix would be to make ULEB() must use rutil's
 		// implementation that already checks for buffer boundaries
@@ -2121,7 +2128,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 				if (seg_idx < 0 || seg_idx >= bin->nsegs) {
 					bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
 						" has unexistent segment %d\n", seg_idx);
-					addr = 0LL;
+					R_FREE (relocs);
 					return 0; // early exit to avoid future mayhem
 				} else {
 					addr = bin->segs[seg_idx].vmaddr + ULEB();
@@ -2151,7 +2158,7 @@ relocs[i++].last = 0;\
 					bprintf ("Error: Malformed DO bind opcode\n");
 					goto beach;
 				}
-				DO_BIND();
+				DO_BIND ();
 				addr += wordsize;
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
@@ -2159,8 +2166,8 @@ relocs[i++].last = 0;\
 					bprintf ("Error: Malformed ADDR ULEB bind opcode\n");
 					goto beach;
 				}
-				DO_BIND();
-				addr += ULEB() + wordsize;
+				DO_BIND ();
+				addr += ULEB () + wordsize;
 				break;
 			case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 				if (addr >= segmentAddress) {
@@ -2178,7 +2185,7 @@ relocs[i++].last = 0;\
 						bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
 						goto beach;
 					}
-					DO_BIND();
+					DO_BIND ();
 					addr += skip + wordsize;
 				}
 				break;
@@ -2198,18 +2205,24 @@ relocs[i++].last = 0;\
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
 			return NULL;
 		}
-		if (!(relocs = malloc ((bin->dysymtab.nundefsym + 1) * sizeof (struct reloc_t)))) {
+		int amount = bin->dysymtab.nundefsym;
+		if (amount < 0) {
+			amount = 0;
+		}
+		if (!(relocs = calloc (amount + 1, sizeof (struct reloc_t)))) {
 			return NULL;
 		}
-		for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+		for (j = 0; j < amount; j++) {
 			if (parse_import_ptr (bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
 				relocs[i].ord = j;
-				relocs[i++].last = 0;
+				relocs[i++].last = false;
 			}
 		}
 	}
 beach:
-	relocs[i].last = 1;
+	if (relocs) {
+		relocs[i].last = true;
+	}
 	return relocs;
 }
 
@@ -2650,19 +2663,23 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 }
 
 void MACH0_(mach_headerfields)(RBinFile *file) {
+	PrintfCallback cb_printf = file->rbin->cb_printf;
+	if (!cb_printf) {
+		cb_printf = printf;
+	}
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
 	if (!mh) {
 		return;
 	}
-	printf ("0x00000000  Magic       0x%x\n", mh->magic);
-	printf ("0x00000004  CpuType     0x%x\n", mh->cputype);
-	printf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
-	printf ("0x0000000c  FileType    0x%x\n", mh->filetype);
-	printf ("0x00000010  nCmds       %d\n", mh->ncmds);
-	printf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
-	printf ("0x00000018  Flags       0x%x\n", mh->flags);
+	cb_printf ("0x00000000  Magic       0x%x\n", mh->magic);
+	cb_printf ("0x00000004  CpuType     0x%x\n", mh->cputype);
+	cb_printf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
+	cb_printf ("0x0000000c  FileType    0x%x\n", mh->filetype);
+	cb_printf ("0x00000010  nCmds       %d\n", mh->ncmds);
+	cb_printf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
+	cb_printf ("0x00000018  Flags       0x%x\n", mh->flags);
 	bool is64 = mh->cputype >> 16;
 
 	ut64 addr = 0x20 - 4;
@@ -2681,12 +2698,12 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
 		int lcType = word;
-		eprintf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
+		cb_printf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
 			addr, n, lcType, cmd_to_string (lcType));
 		READWORD ();
 		int lcSize = word;
 		word &= 0xFFFFFF;
-		printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
+		cb_printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
 		if (lcSize < 1) {
 			eprintf ("Invalid size for a load command\n");
 			break;
@@ -2698,40 +2715,47 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 				r_buf_read_at (buf, addr, data, sizeof (data));
 #if R_BIN_MACH064
 				ut64 ep = r_read_ble64 (&data, false); //  bin->big_endian);
-				printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", addr, ep);
+				cb_printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", addr, ep);
 				ut64 ss = r_read_ble64 (&data[8], false); //  bin->big_endian);
-				printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", addr +  8, ss);
+				cb_printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", addr +  8, ss);
 #else
 				ut32 ep = r_read_ble32 (&data, false); //  bin->big_endian);
-				printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)addr, ep);
+				cb_printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)addr, ep);
 				ut32 ss = r_read_ble32 (&data[4], false); //  bin->big_endian);
-				printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)addr +  4, ss);
+				cb_printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)addr +  4, ss);
 #endif
 			}
 			break;
 		case LC_ID_DYLIB: // install_name_tool
-			printf ("0x%08"PFMT64x"  id           %s\n",
+			cb_printf ("0x%08"PFMT64x"  id           %s\n",
 				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
 			break;
 		case LC_UUID:
-			printf ("0x%08"PFMT64x"  uuid         %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 28, NULL));
+			{
+				ut8 i, uuid[16];
+				r_buf_read_at (buf, addr, uuid, sizeof (uuid));
+				cb_printf ("0x%08"PFMT64x"  uuid        ", addr);
+				for (i = 0; i < sizeof (uuid); i++) {
+					cb_printf ("%02x", uuid[i]);
+				}
+				cb_printf ("\n");
+			}
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
-			printf ("0x%08"PFMT64x"  load_dylib  %s\n",
+			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
 				addr + 16, r_buf_get_at (buf, addr + 16, NULL));
 			break;
 		case LC_RPATH:
-			printf ("0x%08"PFMT64x"  rpath       %s\n",
+			cb_printf ("0x%08"PFMT64x"  rpath       %s\n",
 				addr + 4, r_buf_get_at (buf, addr + 4, NULL));
 			break;
 		case LC_CODE_SIGNATURE:
 			{
 			ut32 *words = (ut32*)r_buf_get_at (buf, addr, NULL);
-			printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
-			printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
-			printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
+			cb_printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
+			cb_printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
+			cb_printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
 			}
 			break;
 		}
@@ -2747,6 +2771,7 @@ RList* MACH0_(mach_fields)(RBinFile *bf) {
 	}
 	RList *ret = r_list_new ();
 	if (!ret) {
+		free (mh);
 		return NULL;
 	}
 	ret->free = free;

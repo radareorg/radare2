@@ -16,17 +16,19 @@ GIT?=git
 WGET?=wget
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=3.0.5
+CS_VER=4.0.1
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20180916
+CS_UPD=20190213
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
+#CS_BRA=next
+#CS_TIP=38607453f3de85733f9604dffc27778db3b53766
+CS_TIP=09fc20d626d91c762b4c7a13383330e0f49b94a8
 CS_BRA=master
-CS_TIP=e2c1cd46c06744beaceff42dd882de3a90f0a37c
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -185,7 +187,7 @@ ptrace-wrap-sync sync-ptrace-wrap:
 	sed -e "s, library(, static_library(," -e "s,project(,# project(," -e "s,subdir(,# subdir(," ptrace-wrap.vc/meson.build > ptrace-wrap/meson.build
 	printf "include ../../libr/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
 	rm -rf ptrace-wrap.vc
-	printf "CFLAGS+=-I\$$(STOP)/ptrace-wrap/include\nLINK+=\$$(STOP)/ptrace-wrap/libptrace_wrap.\$$(EXT_AR)\n" > ptrace-wrap/deps.mk
+	printf "CFLAGS+=-I\$$(STOP)/ptrace-wrap/include\nLINK+=\$$(STOP)/ptrace-wrap/libptrace_wrap.\$$(EXT_AR)\nPTRACEWRAP_OBJS=\$$(STOP)/ptrace-wrap/src/ptrace_wrap.o\n" > ptrace-wrap/deps.mk
 
 ptrace-wrap:
 	$(MAKE) -C ptrace-wrap all
@@ -249,7 +251,6 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 	mkdir -p capstone/include/capstone
@@ -266,6 +267,7 @@ ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+	@echo "[capstone] Applying patches"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
 	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done

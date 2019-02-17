@@ -26,7 +26,7 @@ static int r_cmd_test_call() {
 RCorePlugin r_core_plugin_test = {
 	.name = "test",
 	.desc = "lalallala",
-	.license = "Apache",
+	.license = "MIT",
 	.call = r_cmd_test_call,
 };
 

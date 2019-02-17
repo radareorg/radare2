@@ -46,10 +46,8 @@ static int __close(RIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	free (riom->buf);
-	riom->buf = NULL;
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (riom->buf);
+	R_FREE (fd->data);
 	return 0;
 }
 
@@ -103,7 +101,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_sparse = {
 	.name = "sparse",
-	.desc = "sparse buffer allocation (sparse://1024 sparse://)",
+	.desc = "Sparse buffer allocation plugin",
+	.uris = "sparse://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

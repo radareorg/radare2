@@ -1,5 +1,5 @@
 
-files = [
+r_util_sources = [
   'ascii_table.c',
   'assert.c',
   'base85.c',
@@ -8,14 +8,12 @@ files = [
   #'big.c',
   'binheap.c',
   'bitmap.c',
-  'btree.c',
   'buf.c',
   'cache.c',
   'calc.c',
   'chmod.c',
   'constr.c',
   'debruijn.c',
-  'des.c',
   'diff.c',
   'event.c',
   'file.c',
@@ -33,7 +31,6 @@ files = [
   'format.c',
   'pie.c',
   'seven.c',
-  'pool.c',
   'print.c',
   'prof.c',
   'punycode.c',
@@ -50,7 +47,6 @@ files = [
   'sandbox.c',
   'signal.c',
   'skiplist.c',
-  'slist.c',
   'spaces.c',
   'stack.c',
   'str.c',
@@ -66,8 +62,7 @@ files = [
   'thread_pipe.c',
   'tinyrange.c',
   'tree.c',
-  'trie.c',
-  'r_json.c',
+  'pj.c',
   'ubase64.c',
   'uleb128.c',
   'unum.c',
@@ -88,7 +83,7 @@ if host_machine.system().startswith('freebsd')
   r_util_deps += [cc.find_library('execinfo')]
 endif
 
-r_util = library('r_util', files,
+r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: r_util_deps,
@@ -100,8 +95,7 @@ r_util = library('r_util', files,
 r_util_dep = declare_dependency(link_with: r_util,
                                 include_directories: platform_inc)
 
-pkgconfig_mod.generate(
-  libraries: [r_util],
+pkgconfig_mod.generate(r_util,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_util',

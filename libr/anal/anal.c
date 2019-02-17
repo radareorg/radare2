@@ -25,34 +25,127 @@ R_API void r_anal_unset_limits(RAnal *anal) {
 	R_FREE (anal->limit);
 }
 
-static void meta_unset_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	r_meta_space_unset_for (anal, idx);
+static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, meta_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	r_meta_space_unset_for (anal, se->data.unset.space);
 }
 
-static int meta_count_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	return r_meta_space_count_for (anal, idx);
+static void meta_count_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, meta_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	se->res = r_meta_space_count_for (anal, se->data.count.space);
 }
 
-static void zign_unset_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	r_sign_space_unset_for (anal, idx);
+static void zign_unset_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, zign_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	r_sign_space_unset_for (anal, se->data.unset.space);
 }
 
-static int zign_count_for(void *user, int idx) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	return r_sign_space_count_for (anal, idx);
+static void zign_count_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, zign_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	se->res = r_sign_space_count_for (anal, se->data.count.space);
 }
 
-static void zign_rename_for(void *user, int idx, const char *oname, const char *nname) {
-	RSpaces *s = (RSpaces*)user;
-	RAnal *anal = (RAnal*)s->user;
-	r_sign_space_rename_for (anal, idx, oname, nname);
+static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
+	RSpaces *s = (RSpaces *)ev->user;
+	RAnal *anal = container_of (s, RAnal, zign_spaces);
+	RSpaceEvent *se = (RSpaceEvent *)data;
+	r_sign_space_rename_for (anal, se->data.rename.space,
+		se->data.rename.oldname, se->data.rename.newname);
+}
+
+//not used
+#if 0
+static void __anal_hint_tree_calc_max_addr(RBNode *node) {
+	int i;
+	RAnalRange *range = container_of (node, RAnalRange, rb);
+	range->rb_max_addr = range->from;
+	for (i = 0; i < 2; i++) {
+		if (node->child[i]) {
+			RAnalRange *range1 = container_of (node->child[i],
+							   RAnalRange, rb);
+			if (range1->rb_max_addr > range->rb_max_addr) {
+				range->rb_max_addr = range1->rb_max_addr;
+			}
+		}
+	}
+}
+#endif
+
+static int __anal_hint_range_tree_cmp(const void *a_, const RBNode *b_) {
+	const RAnalRange *a = a_;
+	const RAnalRange *b = container_of (b_, const RAnalRange, rb);
+	if (a && b) {
+		ut64 from0 = a->from, from1 = b->from;
+		return from0 < from1 ? -1 : 1;
+	}
+	return 0;
+}
+
+static void __anal_hint_range_tree_free(RBNode *node) {
+	free (container_of (node, RAnalRange, rb));
+}
+
+
+static RAnalRange *__anal_range_hint_tree_find_at(RBNode *node, ut64 addr) {
+	while (node) {
+		RAnalRange *range = container_of (node, RAnalRange, rb);
+		if (range->from == addr) {
+			return range;
+		}
+		node = node->child[range->from < addr];
+	}
+	return NULL;
+}
+
+//not used
+#if 0
+static bool __anal_range_hint_tree_delete(RBNode **root, RAnalRange *data) {
+	if (data) {
+		return r_rbtree_aug_delete (root, data, __anal_hint_range_tree_cmp,
+					    __anal_hint_range_tree_free,
+					    __anal_hint_tree_calc_max_addr)? 1: 0;
+	}
+	return false;
+}
+#endif
+
+static void __anal_range_hint_tree_insert(RBNode **root, RAnalRange *range) {
+	r_rbtree_aug_insert (root, range, &(range->rb),
+			     __anal_hint_range_tree_cmp,
+			     NULL);
+}
+
+static void __anal_add_range_on_hints(RAnal *a, ut64 addr, int bits) {
+	r_return_if_fail (a);
+	//do we have already a node with that addr? if yes then update its bits
+	RAnalRange *range = __anal_range_hint_tree_find_at (a->rb_hints_ranges, addr);
+	if (range) {
+		range->bits = bits;
+		return;
+	}
+
+	//otherwise insert new range into the tree
+	range = R_NEW0 (RAnalRange);
+	if (range) {
+		range->bits = bits;
+		range->from = addr;
+		__anal_range_hint_tree_insert (&a->rb_hints_ranges, range);
+	}
+}
+
+static void __anal_hint_on_bits(RAnal *a, ut64 addr, int bits, bool set) {
+	if (set) {
+		__anal_add_range_on_hints (a, addr, bits);
+	}
+
 }
 
 R_API RAnal *r_anal_new() {
@@ -73,15 +166,24 @@ R_API RAnal *r_anal_new() {
 	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
-	r_space_new (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, NULL, anal);
-	r_space_new (&anal->zign_spaces, "zs", zign_unset_for, zign_count_for, zign_rename_for, anal);
+	r_spaces_init (&anal->meta_spaces, "CS");
+	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
+	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
+
+	r_spaces_init (&anal->zign_spaces, "zs");
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_UNSET, zign_unset_for, NULL);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for, NULL);
+	r_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
+	anal->hint_cbs.on_bits = __anal_hint_on_bits;
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
+	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
+	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
@@ -94,7 +196,7 @@ R_API RAnal *r_anal_new() {
 	anal->reg = r_reg_new ();
 	anal->last_disasm_reg = NULL;
 	anal->stackptr = 0;
-	anal->bits_ranges = r_list_newf (free);
+	anal->rb_hints_ranges = NULL;
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
@@ -108,6 +210,7 @@ R_API RAnal *r_anal_new() {
 	}
 	return anal;
 }
+
 
 R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
@@ -126,16 +229,16 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
-	r_space_free (&a->meta_spaces);
-	r_space_free (&a->zign_spaces);
+	r_spaces_fini (&a->meta_spaces);
+	r_spaces_fini (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
 	r_syscall_free (a->syscall);
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
-	r_list_free (a->bits_ranges);
-	ht_free (a->dict_refs);
-	ht_free (a->dict_xrefs);
+	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
+	ht_up_free (a->dict_refs);
+	ht_up_free (a->dict_xrefs);
 	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {
@@ -143,7 +246,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		a->esil = NULL;
 	}
 	free (a->last_disasm_reg);
-	memset (a, 0, sizeof (RAnal));
 	free (a);
 	return NULL;
 }
@@ -209,14 +311,11 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 	const char *dirPrefix = r_sys_prefix (NULL);
-	char *file = NULL;
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
-	if (name && *name) {
-		file = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name);
-	} else {
-		file = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
+	const char *file = (name && *name)
+		? sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name)
+		: sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
 			anal->os, arch, anal->bits);
-	}
 	if (r_file_exists (file)) {
 		sdb_close (anal->sdb_fcnsign);
 		sdb_free (anal->sdb_fcnsign);
@@ -394,6 +493,8 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_hints);
 	sdb_reset (anal->sdb_types);
 	sdb_reset (anal->sdb_zigns);
+	sdb_reset (anal->sdb_classes);
+	sdb_reset (anal->sdb_classes_attrs);
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
@@ -553,6 +654,9 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 		}
 		free (tmp);
 	}
+	if (r_str_startswith (name, "reloc.")) {
+		return r_anal_noreturn_at_name (anal, name + 6);
+	}
 	return false;
 }
 
@@ -568,8 +672,9 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
 	}
-	// TODO: check return value
-	(void)r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC);
+	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC) < 1) {
+		return false;
+	}
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {
@@ -618,45 +723,70 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	return false;
 }
 
-// based on anal hint we construct a list of RAnalRange to handle
-// better arm/thumb though maybe handy in other contexts
-R_API void r_anal_build_range_on_hints(RAnal *a) {
-	if (a->bits_hints_changed) {
+R_API int r_anal_range_tree_find_bits_at(RBNode *root, ut64 addr) {
+	RAnalRange *tmp = NULL;
+	RBNode *ny;
+	RAnalRange *path[R_RBTREE_MAX_HEIGHT + 1];
+	int i, bits = 0, len = 0;
+	ut64 min_diff = UT64_MAX;
+	if (!root) {
+		return 0;
+	}
+	path[len++] = container_of (root, RAnalRange, rb);
+	ny = root->child[path[0]->from < addr];
+	if (!ny) {
+		return path[0]->bits;
+	}
+	tmp = container_of (ny, RAnalRange, rb);
+	path[len++] = tmp;
+	//build path of RAnalRange
+	while (len < R_RBTREE_MAX_HEIGHT) {
+		ny = ny->child[tmp->from < addr];
+		if (!ny) {
+			break;
+		}
+		tmp = container_of (ny, RAnalRange, rb);
+		path[len++] = tmp;
+	}
+	i = len - 1;
+	//find the nearest RAnalRange
+	while (i >= 0) {
+		ut64 diff = addr - path[i]->from;
+		if ((st64)diff < 0) {
+			i--;
+			continue;
+		}
+		if (diff < min_diff) {
+			bits = path[i]->bits;
+			min_diff = diff;
+		}
+		i--;
+	}
+	return bits;
+}
+
+R_API void r_anal_merge_hint_ranges(RAnal *a) {
+	if (a->merge_hints) {
 		SdbListIter *iter;
-		RListIter *it;
 		SdbKv *kv;
-		RAnalRange *range;
-		int range_bits = 0;
-		// construct again the range from hint to handle properly arm/thumb
-		r_list_free (a->bits_ranges);
-		a->bits_ranges = r_list_newf ((RListFree)free);
 		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
-		//just grab when hint->bit changes with the previous one
+		int range_bits = 0;
+		r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
+		a->rb_hints_ranges = NULL;
 		ls_foreach (sdb_range, iter, kv) {
-			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (sdbkv_key (kv) + 5), sdbkv_value (kv));
-			if (hint->bits && range_bits != hint->bits) {
-				RAnalRange *range = R_NEW0 (RAnalRange);
-				if (range) {
-					range->bits = hint->bits;
-					range->from = hint->addr;
-					range->to = UT64_MAX;
-					r_list_append (a->bits_ranges, range);
-				}
+			ut64 addr = sdb_atoi (sdbkv_key (kv) + 5);
+			int bits = r_anal_hint_get_bits_at (a, addr,  sdbkv_value (kv));
+			if (bits && range_bits == bits) {
+				r_anal_hint_unset_bits (a, addr);
 			} else {
-				//remove this hint is not needed
-				r_anal_hint_unset_bits (a, hint->addr);
+				RAnalRange *range = R_NEW0 (RAnalRange);
+				range->bits = bits;
+				range->from = addr;
+				__anal_range_hint_tree_insert (&a->rb_hints_ranges, range);
 			}
-			range_bits = hint->bits;
-			r_anal_hint_free (hint);
+			range_bits = bits;
 		}
-		//close ranges addr
-		r_list_foreach (a->bits_ranges, it, range) {
-			if (it->n && it->n->data) {
-				range->to = ((RAnalRange *)(it->n->data))->from;
-			}
-		}
-		ls_free (sdb_range);
-		a->bits_hints_changed = false;
+		a->merge_hints = false;
 	}
 }
 

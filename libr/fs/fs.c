@@ -374,7 +374,6 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 					free (str);
 					return false;
 				}
-				free (item->data);
 				r_fs_close (fs, item);
 			}
 			break;

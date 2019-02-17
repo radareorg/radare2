@@ -35,19 +35,19 @@ ut64 extract_bin_op(ut64 ranal2_op_type);
 
 
 static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->pre_anal) {
+	if (anal && anal->cur && anal->cur->pre_anal) {
 		anal->cur->pre_anal (anal, state, addr);
 	}
 }
 
 static void r_anal_ex_perform_pre_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->pre_anal_op_cb) {
+	if (anal && anal->cur && anal->cur->pre_anal_op_cb) {
 		anal->cur->pre_anal_op_cb (anal, state, addr);
 	}
 }
 
 static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->pre_anal_bb_cb) {
+	if (anal && anal->cur && anal->cur->pre_anal_bb_cb) {
 		anal->cur->pre_anal_bb_cb (anal, state, addr);
 	}
 }
@@ -59,13 +59,13 @@ static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalState *state, ut6
 }*/
 
 static void r_anal_ex_perform_post_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->post_anal_op_cb) {
+	if (anal && anal->cur && anal->cur->post_anal_op_cb) {
 		anal->cur->post_anal_op_cb (anal, state, addr);
 	}
 }
 
 static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->post_anal_bb_cb) {
+	if (anal && anal->cur && anal->cur->post_anal_bb_cb) {
 		anal->cur->post_anal_bb_cb (anal, state, addr);
 	}
 }
@@ -77,13 +77,13 @@ static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalState *state, ut
 }*/
 
 static void r_anal_ex_perform_post_anal(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->post_anal) {
+	if (anal && anal->cur && anal->cur->post_anal) {
 		anal->cur->post_anal (anal, state, addr);
 	}
 }
 
 static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->revisit_bb_anal) {
+	if (anal && anal->cur && anal->cur->revisit_bb_anal) {
 		anal->cur->revisit_bb_anal (anal, state, addr);
 	}
 }
@@ -132,7 +132,7 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (current_op) {
 		return current_op;
 	}
-	if (!anal->cur || (!anal->cur->op_from_buffer && !anal->cur->op)) {
+	if (!anal || !anal->cur || (!anal->cur->op_from_buffer && !anal->cur->op)) {
 		return NULL;
 	}
 	if (!r_anal_state_addr_is_valid(state, addr) ||

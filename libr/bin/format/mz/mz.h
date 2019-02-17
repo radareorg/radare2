@@ -8,12 +8,14 @@
 
 struct r_bin_mz_segment_t {
 	ut64 paddr;
+	ut64 vaddr;
 	ut64 size;
 	int last;
 };
 
 struct r_bin_mz_reloc_t {
 	ut64 paddr;
+	ut64 vaddr;
 	int last;
 };
 
@@ -26,15 +28,16 @@ struct r_bin_mz_obj_t {
 
 	int size;
 	int dos_file_size; /* Size of dos file from dos executable header */
+	int load_module_size; /* Size of load module: dos_file_size - header size */
 	const char *file;
 	struct r_buf_t *b;
 	Sdb *kv;
 };
 
-int r_bin_mz_get_entrypoint(const struct r_bin_mz_obj_t *bin);
-struct r_bin_mz_segment_t *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin);
-struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin);
-void *r_bin_mz_free(struct r_bin_mz_obj_t* bin);
-struct r_bin_mz_obj_t* r_bin_mz_new(const char* file);
-struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf);
-ut64 r_bin_mz_get_main_vaddr(struct r_bin_mz_obj_t *bin);
+RBinAddr *r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin);
+RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin);
+struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin);
+void *r_bin_mz_free (struct r_bin_mz_obj_t *bin);
+struct r_bin_mz_obj_t *r_bin_mz_new (const char *file);
+struct r_bin_mz_obj_t *r_bin_mz_new_buf (const struct r_buf_t *buf);
+RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin);

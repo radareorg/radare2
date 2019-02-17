@@ -509,7 +509,6 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		actual_size += bb->size;
 	}
 	r_anal_fcn_set_size (NULL, fcn, state->bytes_consumed);
-	result = state->anal_ret_val;
 	r_list_free (nodes->cfg_node_addrs);
 	free (nodes);
 	//leak to avoid UAF is the easy solution otherwise a whole rewrite is needed
@@ -829,7 +828,7 @@ static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) 
 */
 
 static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method) {
-	RList *the_list = r_bin_java_extract_type_values (method->descriptor);
+	RList *the_list = method ? r_bin_java_extract_type_values (method->descriptor) : NULL;
 	Sdb *D = anal->sdb_types;
 	Sdb *A = anal->sdb_args;
 	const char *type_fmt = "%08"PFMT64x".arg.%d.type",

@@ -3,16 +3,12 @@
 #include <r_types.h>
 #include <r_util.h>
 
-#ifndef R_IPI
-#define R_IPI
-#endif
-
-static const char * const regs[33] = {
-  "zero", "at",   "v0",   "v1",   "a0",   "a1",   "a2",   "a3",
-  "t0",   "t1",   "t2",   "t3",   "t4",   "t5",   "t6",   "t7",
-  "s0",   "s1",   "s2",   "s3",   "s4",   "s5",   "s6",   "s7",
-  "t8",   "t9",   "k0",   "k1",   "gp",   "sp",   "s8",   "ra",
-  NULL
+static const char *const regs[33] = {
+	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
+	"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+	"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+	"t8", "t9", "k0", "k1", "gp", "sp", "s8", "ra",
+	NULL
 };
 
 static struct {
@@ -35,9 +31,9 @@ static struct {
 	{ "xori", 'I', 3, 14, 0 },
 	{ "addi", 'I', 3, 8, 0 },
 	{ "addiu", 'I', 3, 9, 0 },
-	{ "b", 'B', -1, 4, 0},
+	{ "b", 'B', -1, 4, 0 },
 	{ "bnez", 'B', 2, 5, 0 },
-	{ "bal", 'B', -1, -1, 17},
+	{ "bal", 'B', -1, -1, 17 },
 	{ "bne", 'B', 3, 5, 0 },
 	{ "beq", 'B', 3, 4, 0 },
 	{ "bgez", 'B', -2, -1, 1 },
@@ -76,7 +72,7 @@ static struct {
 	{ "jalr", 'R', -2, 9, 0 },
 	{ "jr", 'R', 1, 8, 0 },
 	{ "jal", 'J', 1, 3, 0 },
-	{ "j",   'J', 1, 2, 0 },
+	{ "j", 'J', 1, 2, 0 },
 	{ NULL }
 };
 
@@ -157,6 +153,17 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	r_str_replace_char (s, ')', ' ');
 	*out = 0;
 	*w0=*w1=*w2=*w3=0;
+
+	if (!strncmp (s, "jalr", 4) && !strstr (s, ",")) {
+		char opstr[32];
+		const char *arg = strchr (s, ' ');
+		if (arg) {
+			snprintf (opstr, sizeof (opstr), "jalr ra ra %s", arg + 1);
+			free (s);
+			s = strdup (opstr);
+		}
+	}
+
 	sscanf (s, "%31s", w0);
 	if (*w0) {
 		for (i = 0; ops[i].name; i++) {

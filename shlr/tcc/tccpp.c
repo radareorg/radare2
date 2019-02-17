@@ -361,7 +361,7 @@ addv:
 			return table_ident[v - TOK_IDENT]->str;
 		} else if (v >= SYM_FIRST_ANOM) {
 			/* special name for anonymous symbol */
-			sprintf (p, "L.%u", v - SYM_FIRST_ANOM);
+			sprintf (p, "%u", v - SYM_FIRST_ANOM);
 		} else {
 			/* should never happen */
 			return NULL;
@@ -2914,7 +2914,7 @@ redo:
 				/* NOTE: non zero sa->t indicates VA_ARGS */
 				while ((parlevel > 0 ||
 					(tok != ')' &&
-					 (tok != ',' || sa->type.t))) &&
+					 (tok != ',' || (sa && sa->type.t)))) &&
 				       tok != -1) {
 					if (tok == '(') {
 						parlevel++;
@@ -2931,7 +2931,7 @@ redo:
 				}
 				str.len -= spc;
 				tok_str_add (&str, 0);
-				sa1 = sym_push2 (&args, sa->v & ~SYM_FIELD, sa->type.t, 0);
+				sa1 = sa ? sym_push2 (&args, sa->v & ~SYM_FIELD, sa->type.t, 0) : NULL;
 				if (!sa1) {
 					return -1;
 				}

@@ -2,19 +2,16 @@
 
 #include <r_egg.h>
 #include <r_bin.h>
-#include <r_print.h>
 #include <getopt.c>
 #include "../blob/version.c"
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
+#include <r_util/r_print.h>
+#include <r_util.h>
 
 
 static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
-		"             [-q off] [-dDw off:hex] file|f.asm|-\n");
+		"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-\n");
 	if (v) {
 		printf (
 			" -a [arch]       select architecture (x86, mips, arm)\n"
@@ -43,6 +40,7 @@ static int usage(int v) {
 			" -q [fragment]   debruijn pattern offset\n"
 			" -r              show raw bytes instead of hexpairs\n"
 			" -s              show assembler\n"
+			" -S [string]     append a string\n"
 			" -v              show version\n"
 			" -w [off:hex]    patch hexpairs at given offset\n"
 			" -x              execute\n"
@@ -71,15 +69,15 @@ static void list(REgg *egg) {
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
+	RBinArchOptions opts;
 	RBuffer *b;
-	if (!r_bin_use_arch (bin, arch, bits, format)) {
-		eprintf ("Cannot set arch\n");
-		r_bin_free (bin);
-		return 1;
-	}
-	b = r_bin_create (bin, code, codelen, NULL, 0); //data, datalen);
+	r_bin_arch_options_init (&opts, arch, bits);
+	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
-		write (1, b->buf, b->length);
+		size_t blen = b->length;
+		if (write (1, b->buf, blen) != blen) {
+			eprintf ("Failed to write buffer\n");
+		}
 		r_buf_free (b);
 	} else {
 		eprintf ("Cannot create binary for this format '%s'.\n", format);
@@ -102,10 +100,13 @@ static int openfile(const char *f, int x) {
 	}
 #endif
 #if _MSC_VER
-	_chsize (fd, 0);
+	int r = _chsize (fd, 0);
 #else
-	ftruncate (fd, 0);
+	int r = ftruncate (fd, 0);
 #endif
+	if (r != 0) {
+		eprintf ("Could not resize\n");
+	}
 	close (1);
 	dup2 (fd, 1);
 	return fd;
@@ -116,6 +117,7 @@ int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *pattern = NULL;
+	const char *str = NULL;
 	char *bytes = NULL;
 	const char *contents = NULL;
 	const char *arch = R_SYS_ARCH;
@@ -139,7 +141,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-	while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:")) != -1) {
+	while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -226,6 +228,9 @@ int main(int argc, char **argv) {
 			}
 			}
 			break;
+		case 'S':
+			str = optarg;
+			break;
 		case 'o':
 			ofile = optarg;
 			break;
@@ -286,11 +291,14 @@ int main(int argc, char **argv) {
 		case 'L':
 			list (egg);
 			r_egg_free (egg);
+			free (sequence);
 			return 0;
 		case 'h':
 			r_egg_free (egg);
+			free (sequence);
 			return usage (1);
 		case 'v':
+			free (sequence);
 			r_egg_free (egg);
 			return blob_version("ragg2");
 		case 'z':
@@ -307,7 +315,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset) {
+	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
 		r_egg_free (egg);
 		return usage (0);
 	} else {
@@ -345,7 +353,9 @@ int main(int argc, char **argv) {
 		if (!strcmp (file, "-")) {
 			char buf[1024];
 			for (;;) {
-				fgets (buf, sizeof (buf) - 1, stdin);
+				if (!fgets (buf, sizeof (buf) - 1, stdin)) {
+					break;
+				}
 				if (feof (stdin)) {
 					break;
 				}
@@ -392,6 +402,14 @@ int main(int argc, char **argv) {
 			eprintf ("r_egg_compile: fail\n");
 			r_egg_free (egg);
 			return 1;
+		}
+	}
+
+	// append the provided string
+	if (str) {
+		int l = strlen (str);
+		if (l > 0) {
+			r_egg_raw (egg, (const ut8*)str, l);
 		}
 	}
 
@@ -503,11 +521,17 @@ int main(int argc, char **argv) {
 
 	if (show_raw || show_hex || show_execute) {
 		if (show_execute) {
-			return r_egg_run (egg);
+			int r = r_egg_run (egg);
+			r_egg_free (egg);
+			return r;
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
-			write (1, b->buf, b->length);
+			size_t blen = b->length;
+			if (write (1, b->buf, blen) != blen) {
+				eprintf ("Failed to write buffer\n");
+				goto fail;
+			}
 		} else {
 			if (!format) {
 				eprintf ("No format specified wtf\n");
@@ -548,6 +572,7 @@ int main(int argc, char **argv) {
 				eprintf ("unknown executable format (%s)\n", format);
 				goto fail;
 			}
+			r_print_free (p);
 		}
 	}
 	r_egg_free (egg);

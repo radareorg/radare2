@@ -6,6 +6,7 @@
 #include <r_list.h>
 #include <r_cons.h>
 #include <r_util.h>
+#include "i/private.h"
 
 static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
@@ -122,6 +123,7 @@ static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	};
 	// XXX ebbs doesnt gets initialized if calling this from inside the struct
 	graph.edges = r_anal_fcn_count_edges (fcn, &graph.ebbs);
+	graph.bbsum = r_anal_fcn_size (fcn);
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
@@ -135,15 +137,25 @@ static bool addFcnRefs(RCore *core, RAnalFunction *fcn, const char *name) {
 	return retval;
 }
 
+static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
+	RList *vars = r_sign_fcn_vars (core->anal, fcn);
+	if (!vars) {
+		return false;
+	}
+	bool retval = r_sign_add_vars (core->anal, name, vars);
+	r_list_free (vars);
+	return retval;
+}
+
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;
-	int curspace = core->anal->zign_spaces.space_idx;
+	const RSpace *curspace = r_spaces_current (&core->anal->zign_spaces);
 
 	if (name) {
 		zigname = r_str_new (name);
 	} else {
-		if (curspace != -1) {
-			zigname = r_str_newf ("%s.", core->anal->zign_spaces.spaces[curspace]);
+		if (curspace) {
+			zigname = r_str_newf ("%s.", curspace->name);
 		}
 		zigname = r_str_appendf (zigname, "%s", fcn->name);
 	}
@@ -151,8 +163,9 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	addFcnGraph (core, fcn, zigname);
 	addFcnBytes (core, fcn, zigname);
 	addFcnRefs (core, fcn, zigname);
+	addFcnVars (core, fcn, zigname);
 	addFcnHash (core, fcn, zigname);
-	r_sign_add_offset (core->anal, zigname, fcn->addr);
+	r_sign_add_addr (core->anal, zigname, fcn->addr);
 
 	free (zigname);
 }
@@ -165,6 +178,7 @@ static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
 	graph->nbbs = -1;
 	graph->edges = -1;
 	graph->ebbs = -1;
+	graph->bbsum = 0;
 
 	for (i = 0; i < nargs; i++) {
 		ptr = r_str_word_get0 (args0, i);
@@ -176,6 +190,8 @@ static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
 			graph->edges = atoi (ptr + 6);
 		} else if (r_str_startswith (ptr, "ebbs=")) {
 			graph->ebbs = atoi (ptr + 5);
+		} else if (r_str_startswith (ptr, "bbsum=")) {
+			graph->bbsum = atoi (ptr + 6);
 		} else {
 			return false;
 		}
@@ -256,7 +272,7 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 	offstr = r_str_word_get0 (args0, 0);
 	offset = r_num_get (core->num, offstr);
 
-	return r_sign_add_offset (core->anal, name, offset);
+	return r_sign_add_addr (core->anal, name, offset);
 }
 
 static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
@@ -276,6 +292,23 @@ static bool addRefsZign(RCore *core, const char *name, const char *args0, int na
 	return retval;
 }
 
+static bool addVarsZign(RCore *core, const char *name, const char *args0, int nargs) {
+	int i = 0;
+	if (nargs < 1) {
+		eprintf ("error: invalid syntax\n");
+		return false;
+	}
+
+	RList *vars = r_list_newf ((RListFree) free);
+	for (i = 0; i < nargs; i++) {
+		r_list_append (vars, r_str_new (r_str_word_get0 (args0, i)));
+	}
+
+	bool retval = r_sign_add_vars (core->anal, name, vars);
+	r_list_free (vars);
+	return retval;
+}
+
 static bool addZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
 	switch (type) {
 	case R_SIGN_BYTES:
@@ -287,6 +320,8 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 		return addOffsetZign (core, name, args0, nargs);
 	case R_SIGN_REFS:
 		return addRefsZign (core, name, args0, nargs);
+	case R_SIGN_VARS:
+		return addVarsZign (core, name, args0, nargs);
 	case R_SIGN_BBHASH:
 		return addHashZign (core, name, type, args0, nargs);
 	default:
@@ -330,7 +365,7 @@ out_case_manual:
 			return retval;
 		}
 		break;
-	case 'f':
+	case 'f': // "zaf"
 		{
 			RAnalFunction *fcni = NULL;
 			RListIter *iter = NULL;
@@ -402,6 +437,7 @@ out_case_fcn:
 				"  o: original offset\n"
 				"  r: references\n\n"
 				"  h: bbhash (hashing of fcn basic blocks)\n\n"
+				"  v: vars (and args)\n\n"
 				"Bytes patterns:\n"
 				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
 				"Graph metrics:\n"
@@ -414,6 +450,7 @@ out_case_fcn:
 				"  za foo a e811223344\n"
 				"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
 				"  za foo g nbbs=3 edges=3\n"
+				"  za foo v b-32 b-48 b-64\n"
 				"  za foo o 0x08048123\n"
 				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n"
 				"  za foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n");
@@ -428,7 +465,6 @@ out_case_fcn:
 
 	return true;
 }
-
 
 static int cmdOpen(void *data, const char *input) {
 	RCore *core = (RCore *) data;
@@ -473,35 +509,35 @@ static int cmdSpace(void *data, const char *input) {
 			eprintf ("usage: zs+zignspace\n");
 			return false;
 		}
-		r_space_push (zs, input + 1);
+		r_spaces_push (zs, input + 1);
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
 			eprintf ("usage: zsr newname\n");
 			return false;
 		}
-		r_space_rename (zs, NULL, input + 2);
+		r_spaces_rename (zs, NULL, input + 2);
 		break;
 	case '-':
 		if (input[1] == '\x00') {
-			r_space_pop (zs);
+			r_spaces_pop (zs);
 		} else if (input[1] == '*') {
-			r_space_unset (zs, NULL);
+			r_spaces_unset (zs, NULL);
 		} else {
-			r_space_unset (zs, input + 1);
+			r_spaces_unset (zs, input + 1);
 		}
 		break;
 	case 'j':
 	case '*':
 	case '\0':
-		r_space_list (zs, input[0]);
+		spaces_list (zs, input[0]);
 		break;
 	case ' ':
 		if (!input[1]) {
 			eprintf ("usage: zs zignspace\n");
 			return false;
 		}
-		r_space_set (zs, input + 1);
+		r_spaces_set (zs, input + 1);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_zs);
@@ -664,6 +700,9 @@ static bool search(RCore *core, bool rad) {
 	// Bytes search
 	if (useBytes) {
 		list = r_core_get_boundaries_prot (core, -1, mode, "search");
+		if (!list) {
+			return false;
+		}
 		r_list_foreach (list, iter, map) {
 			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 			retval &= searchRange (core, map->itv.addr, r_itv_end (map->itv), rad, &bytes_search_ctx);
@@ -683,7 +722,7 @@ static bool search(RCore *core, bool rad) {
 				r_sign_match_graph (core->anal, fcni, mincc, fcnMatchCB, &graph_match_ctx);
 			}
 			if (useOffset) {
-				r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
+				r_sign_match_addr (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
 			}
 			if (useRefs) {
 				r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
@@ -788,7 +827,7 @@ static int cmdCheck(void *data, const char *input) {
 					r_sign_match_graph (core->anal, fcni, mincc, fcnMatchCB, &graph_match_ctx);
 				}
 				if (useOffset) {
-					r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
+					r_sign_match_addr (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
 				}
 				if (useRefs){
 					r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
@@ -841,23 +880,23 @@ static int cmd_zign(void *data, const char *input) {
 	case '-':
 		r_sign_delete (core->anal, input + 1);
 		break;
-	case 'o':
+	case 'o': // "zo"
 		return cmdOpen (data, input + 1);
-	case 'g':
+	case 'g': // "zg"
 		return cmdAdd (data, "F");
-	case 'a':
+	case 'a': // "za"
 		return cmdAdd (data, input + 1);
-	case 'f':
+	case 'f': // "zf"
 		return cmdFlirt (data, input + 1);
-	case '/':
+	case '/': // "z/"
 		return cmdSearch (data, input + 1);
-	case 'c':
+	case 'c': // "zc"
 		return cmdCheck (data, input + 1);
-	case 's':
+	case 's': // "zs"
 		return cmdSpace (data, input + 1);
-	case 'i':
+	case 'i': // "zi"
 		return cmdInfo (data, input + 1);
-	case '?':
+	case '?': // "z?"
 		r_core_cmd_help (core, help_msg_z);
 		break;
 	default:

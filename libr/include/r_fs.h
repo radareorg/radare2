@@ -5,6 +5,7 @@
 #include <r_list.h>
 #include <r_bind.h> // RCoreBind
 #include <r_io.h> // RIOBind
+#include <r_util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #define USE_THREADS 1
+#define ALLOW_THREADED 0
 #define UNCOLORIZE_NONTTY 0
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
@@ -164,9 +165,10 @@ static int main_help(int line) {
 		" -R [rr2rule] specify custom rarun2 directive\n"
 		" -s [addr]    initial seek\n"
 		" -S           start r2 in sandbox mode\n"
-#if USE_THREADS
+#if USE_THREADS && ALLOW_THREADED
 		" -t           load rabin2 info in thread\n"
 #endif
+		" -T           do not compute file hashes\n"
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
@@ -288,7 +290,7 @@ static RThreadFunctionRet rabin_delegate(RThread *th) {
 			} while (nptr);
 		}
 		//r_core_cmd (&r, cmd, 0);
-		r_str_free (rabin_cmd);
+		free (rabin_cmd);
 		rabin_cmd = NULL;
 	}
 	if (th) {
@@ -479,7 +481,7 @@ int main(int argc, char **argv, char **envp) {
 	int has_project;
 	bool zerosep = false;
 	int help = 0;
-	int run_anal = 1;
+	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
 	int run_rc = 1;
  	int ret, c, perms = R_PERM_RX;
 	bool sandbox = false;
@@ -498,6 +500,7 @@ int main(int argc, char **argv, char **envp) {
 	bool quietLeak = false;
 	int is_gdb = false;
 	const char * s_seek = NULL;
+	bool compute_hashes = true;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
@@ -554,7 +557,7 @@ int main(int argc, char **argv, char **envp) {
 
 	set_color_default ();
 
-	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuX"
+	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuX"
 #if USE_THREADS
 "t"
 #endif
@@ -661,7 +664,11 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "asm.demangle", "false");
 			break;
 		case 'n':
-			run_anal--;
+			if (load_bin == LOAD_BIN_ALL) { // "-n"
+				load_bin = LOAD_BIN_NOTHING;
+			} else if (load_bin == LOAD_BIN_NOTHING) { // second n => "-nn"
+				load_bin = LOAD_BIN_STRUCTURES_ONLY;
+			}
 			r_config_set (r.config, "file.info", "false");
 			break;
 		case 'N':
@@ -675,9 +682,6 @@ int main(int argc, char **argv, char **envp) {
 				return 0;
 			}
 			r_config_set (r.config, "prj.name", optarg);
-			// FIXME: Doing this here will overwrite -e flags coming before -p on the cmdline.
-			r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
-			r_config_set (r.config, "bin.strings", "false");
 			break;
 		case 'P':
 			patchfile = optarg;
@@ -707,9 +711,16 @@ int main(int argc, char **argv, char **envp) {
 			break;
 #if USE_THREADS
 		case 't':
+#if ALLOW_THREADED
 			threaded = true;
+#else
+			eprintf ("WARNING: -t is temporarily disabled!\n");
+#endif
 			break;
 #endif
+		case 'T':
+			compute_hashes = false;
+			break;
 		case 'v':
 			if (quiet) {
 				printf ("%s\n", R2_VERSION);
@@ -855,6 +866,12 @@ int main(int argc, char **argv, char **envp) {
 
 	r_bin_force_plugin (r.bin, forcebin);
 
+	prj = r_config_get (r.config, "prj.name");
+	if (prj && *prj) {
+		r_core_project_open (&r, prj, threaded);
+		r_config_set (r.config, "bin.strings", "false");
+	}
+
 	//cverify_version (0);
 	if (do_connect) {
 		const char *uri = argv[optind];
@@ -903,7 +920,7 @@ int main(int argc, char **argv, char **envp) {
 				} else {
 					r_sign_load (r.anal, complete_path);
 				}
-				r_str_free (complete_path);
+				free (complete_path);
 			}
 		}
 		r_list_free (list);
@@ -915,11 +932,13 @@ int main(int argc, char **argv, char **envp) {
 		if (debug) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE ();
+			free (pfile);
 			return 1;
 		}
 		if (chdir (argv[optind])) {
 			eprintf ("[d] Cannot open directory\n");
 			LISTS_FREE ();
+			free (pfile);
 			return 1;
 		}
 	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
@@ -929,9 +948,9 @@ int main(int argc, char **argv, char **envp) {
 		eprintf ("^D\n");
 #if __UNIX__
 		// TODO: keep flags :?
-		freopen ("/dev/tty", "rb", stdin);
-		freopen ("/dev/tty","w",stdout);
-		freopen ("/dev/tty","w",stderr);
+		(void)freopen ("/dev/tty", "rb", stdin);
+		(void)freopen ("/dev/tty","w",stdout);
+		(void)freopen ("/dev/tty","w",stderr);
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		return 1;
@@ -939,12 +958,12 @@ int main(int argc, char **argv, char **envp) {
 		if (buf && sz > 0) {
 			char *path = r_str_newf ("malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
-			free (path);
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
 				eprintf ("[=] Cannot open '%s'\n", path);
 				LISTS_FREE ();
+				free (path);
 				return 1;
 			}
 			r_io_map_new (r.io, fh->fd, 7, 0LL, mapaddr,
@@ -952,6 +971,7 @@ int main(int argc, char **argv, char **envp) {
 			r_io_write_at (r.io, mapaddr, buf, sz);
 			r_core_block_read (&r);
 			free (buf);
+			free (path);
 			// TODO: load rbin thing
 		} else {
 			eprintf ("Cannot slurp from stdin\n");
@@ -1061,10 +1081,14 @@ int main(int argc, char **argv, char **envp) {
 				f = r_acp_to_utf8 (f);
 #	endif // __WINDOWS__
 				if (f) {
+#		if __WINDOWS__
+					pfile = r_str_append (pfile, f);
+#		else
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
-					file = pfile; // r_str_append (file, escaped_path);
 					free (escaped_path);
+#		endif
+					file = pfile; // r_str_append (file, escaped_path);
 				}
 #endif
 				optind++;
@@ -1117,10 +1141,10 @@ int main(int argc, char **argv, char **envp) {
 					}
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-						if (perms & R_PERM_X) {
+						if (iod && perms & R_PERM_X) {
 							iod->perm |= R_PERM_X;
 						}
-						if (run_anal > 0) {
+						if (load_bin == LOAD_BIN_ALL) {
 #if USE_THREADS
 							if (!rabin_th)
 #endif
@@ -1140,7 +1164,7 @@ int main(int argc, char **argv, char **envp) {
 							}
 						} else {
 							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
-							if (run_anal < 0) {
+							if (load_bin == LOAD_BIN_STRUCTURES_ONLY) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
 								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
@@ -1156,8 +1180,8 @@ int main(int argc, char **argv, char **envp) {
 						if (!fh) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
 						}
-						// run_anal = 0;
-						run_anal = -1;
+						// load_bin = LOAD_BIN_NOTHING;
+						load_bin = LOAD_BIN_STRUCTURES_ONLY;
 					} else {
 						eprintf ("Cannot find project file\n");
 					}
@@ -1191,17 +1215,20 @@ int main(int argc, char **argv, char **envp) {
 			/* load symbols when doing r2 -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
 			baddr = r_debug_get_baddr (r.dbg, pfile);
-			if (baddr != UT64_MAX && baddr != 0) {
+
+			if (baddr != UT64_MAX && baddr != 0 && r.dbg->verbose) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
 			}
-			if (run_anal > 0) {
-				if (baddr && baddr != UT64_MAX) {
+			if (load_bin == LOAD_BIN_ALL) {
+				if (baddr && baddr != UT64_MAX && r.dbg->verbose) {
 					eprintf ("Using 0x%" PFMT64x "\n", baddr);
 				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
-					RBinObject *obj = r_bin_get_object (r.bin);
+					RBinObject *obj = r_bin_cur_object (r.bin);
 					if (obj && obj->info) {
-						eprintf ("asm.bits %d\n", obj->info->bits);
+						if (r.dbg->verbose) {
+							eprintf ("asm.bits %d\n", obj->info->bits);
+						}
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
 						ut64 bitness = r_config_get_i (r.config, "asm.bits");
 						if (bitness == 32) {
@@ -1244,11 +1271,11 @@ int main(int argc, char **argv, char **envp) {
 		}
 		iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 #if USE_THREADS
-		if (run_anal > 0 && threaded) {
+		if (iod && load_bin == LOAD_BIN_ALL && threaded) {
 			// XXX: if no rabin2 in path that may fail
 			// TODO: pass -B 0 ? for pie bins?
 			rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
-					(debug || r.io->va) ? "" : "p", iod->name);
+					(debug || (r.io && r.io->va)) ? "" : "p", iod->name);
 			/* TODO: only load data if no project is used */
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
@@ -1301,16 +1328,20 @@ int main(int argc, char **argv, char **envp) {
 		r_core_seek (&r, r.offset, 1); // read current block
 
 		/* check if file.sha1 has changed */
-		if (!strstr (iod->uri, "://")) {
+		if (iod && !strstr (iod->uri, "://")) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
+			ut64 limit = r_config_get_i (r.config, "cfg.hashlimit");
 			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
 			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (r_core_hash_load (&r, iod->name) == false) {
+			if (compute_hashes && iod && !r_bin_file_hash (r.bin, limit, iod->name)) {
+				if (!r_bin_file_hash (r.bin, 0, iod->name)) {
+					eprintf ("oops\n");
+				}
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
@@ -1331,7 +1362,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		// no flagspace selected by default the beginning
-		r.flags->space_idx = -1;
+		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
 			char f[128];
@@ -1430,7 +1461,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		// no flagspace selected by default the beginning
-		r.flags->space_idx = -1;
+		r_flag_space_set (r.flags, NULL);
 		if (!debug && r.bin && r.bin->cur && r.bin->cur->o && r.bin->cur->o->info) {
 			if (r.bin->cur->o->info->arch) {
 				r_core_cmd0 (&r, "aeip");

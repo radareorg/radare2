@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2018 - pancake */
 
 #include <r_bin.h>
+#include "i/private.h"
 #include <cxx/demangle.h>
 
 R_API void r_bin_demangle_list(RBin *bin) {
@@ -34,7 +35,7 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	return NULL;
 }
 
-R_API const char *r_bin_lang_tostring (int lang) {
+R_IPI const char *r_bin_lang_tostring(int lang) {
 	switch (lang) {
 	case R_BIN_NM_SWIFT:
 		return "swift";
@@ -54,7 +55,7 @@ R_API const char *r_bin_lang_tostring (int lang) {
 	return NULL;
 }
 
-R_API int r_bin_demangle_type (const char *str) {
+R_API int r_bin_demangle_type(const char *str) {
 	if (!str || !*str) {
 		return R_BIN_NM_NONE;
 	}
@@ -88,11 +89,29 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 		return NULL;
 	}
 	RBin *bin = binfile? binfile->rbin: NULL;
+	RBinObject *o = binfile? binfile->o: NULL;
+	RListIter *iter;
+	const char *lib;
+	if (!strncmp (str, "reloc.", 6)) {
+		str += 6;
+	}
 	if (!strncmp (str, "sym.", 4)) {
 		str += 4;
 	}
 	if (!strncmp (str, "imp.", 4)) {
 		str += 4;
+	}
+	if (o) {
+		r_list_foreach (o->libs, iter, lib) {
+			size_t len = strlen (lib);
+			if (!r_str_ncasecmp (str, lib, len)) {
+				str += len;
+				if (*str == '_') {
+					str++;
+				}
+				break;
+			}
+		}
 	}
 	if (!strncmp (str, "__", 2)) {
 		if (str[2] == 'T') {
@@ -115,6 +134,7 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin? bin->demanglercmd: false);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (binfile, str, vaddr);
+	case R_BIN_NM_MSVC: return r_bin_demangle_msvc (str);
 	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}
 	return NULL;

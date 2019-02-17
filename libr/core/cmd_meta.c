@@ -4,7 +4,7 @@
 #include "r_bin.h"
 #include "r_cons.h"
 #include "r_core.h"
-#include "r_print.h"
+#include "r_util.h"
 #include "r_types.h"
 #include "sdb/sdb.h"
 
@@ -12,6 +12,8 @@ static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
+	"C.", "", "list meta info of current offset in human friendly form",
+	"C*.", "", "list meta info of current offset in r2 commands",
 	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
 	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
@@ -388,8 +390,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		case 'j': // "CCfj"
 			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
 			break;
+		case '*': // "CCf*"
+			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 1, core->offset);
+			break;
 		default:
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
+			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 0, core->offset);
 			break;
 		}
 		break;
@@ -681,7 +686,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		if (!val) {
 			break;
 		}
-		if (!r_meta_deserialize_val (&mi, type, addr, val)) {
+		if (!r_meta_deserialize_val (core->anal, &mi, type, addr, val)) {
 			break;
 		}
 		if (!mi.str) {
@@ -1006,10 +1011,21 @@ static int cmd_meta(void *data, const char *input) {
 		r_comment_vars (core, input + 1);
 		break;
 	case '\0': // "C"
-	case 'j': // "Cj"
-	case '*': // "C*"
-		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+		r_meta_list (core->anal, R_META_TYPE_ANY, 0);
 		break;
+	case 'j': // "Cj"
+	case '*': { // "C*"
+		if (!input[0] || input[1] == '.') {
+			r_meta_list_offset (core->anal, core->offset, *input);
+		} else {
+			r_meta_list (core->anal, R_META_TYPE_ANY, *input);
+		}
+		break;
+	}
+	case '.': { // "C."
+		r_meta_list_offset (core->anal, core->offset, 0);
+		break;
+	}
 	case 'L': // "CL"
 		cmd_meta_lineinfo (core, input + 1);
 		break;
@@ -1054,11 +1070,11 @@ static int cmd_meta(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_CS);
 			break;
 		case '+': // "CS+"
-			r_space_push (ms, input + 2);
+			r_spaces_push (ms, input + 2);
 			break;
 		case 'r': // "CSr"
 			if (input[2] == ' ') {
-				r_space_rename (ms, NULL, input+2);
+				r_spaces_rename (ms, NULL, input+2);
 			} else {
 				eprintf ("Usage: CSr [newname]\n");
 			}
@@ -1066,44 +1082,25 @@ static int cmd_meta(void *data, const char *input) {
 		case '-': // "CS-"
 			if (input[2]) {
 				if (input[2]=='*') {
-					r_space_unset (ms, NULL);
+					r_spaces_unset (ms, NULL);
 				} else {
-					r_space_unset (ms, input+2);
+					r_spaces_unset (ms, input+2);
 				}
 			} else {
-				r_space_pop (ms);
+				r_spaces_pop (ms);
 			}
 			break;
 		case 'j': // "CSj"
 		case '\0': // "CS"
 		case '*': // "CS*"
-			r_space_list (ms, input[1]);
+			spaces_list (ms, input[1]);
 			break;
 		case ' ': // "CS "
-			r_space_set (ms, input + 2);
+			r_spaces_set (ms, input + 2);
 			break;
-#if 0
-		case 'm':
-			{ RFlagItem *f;
-				ut64 off = core->offset;
-				if (input[2] == ' ')
-					off = r_num_math (core->num, input+2);
-				f = r_flag_get_i (core->flags, off);
-				if (f) {
-					f->space = core->flags->space_idx;
-				} else eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
-			}
+		default:
+			spaces_list (ms, 0);
 			break;
-#endif
-		default: {
-				 int i, j = 0;
-				 for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-					 if (!ms->spaces[i]) continue;
-					 r_cons_printf ("%02d %c %s\n", j++,
-						 (i == ms->space_idx)?'*':' ',
-						 ms->spaces[i]);
-				 }
-			 } break;
 		}
 		break;
 	}

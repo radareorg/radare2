@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "sdb.h"
 
-SDB_API dict *dict_new(ut32 size, dict_freecb f) {
+SDB_API dict *dict_new (ut32 size, dict_freecb f) {
 	dict *m = calloc (1, sizeof (dict));
 	if (!dict_init (m, R_MAX (size, 1), f)) {
 		free (m);
@@ -22,14 +22,14 @@ static ut32 dict_bucket(dict *m, dicti k) {
 	return 0;
 }
 
-SDB_API bool dict_init(dict *m, ut32 size, dict_freecb f) {
+SDB_API bool dict_init (dict *m, ut32 size, dict_freecb f) {
 	if (m) {
 		memset (m, 0, sizeof (dict));
 		if (size > 0) {
 			m->table = calloc (size, sizeof (dictkv));
 			if (!m->table) {
 				return false;
-			}	
+			}
 			m->size = size;
 		}
 		m->f = f;
@@ -37,7 +37,7 @@ SDB_API bool dict_init(dict *m, ut32 size, dict_freecb f) {
 	return true;
 }
 
-SDB_API void dict_fini(dict *m) {
+SDB_API void dict_fini (dict *m) {
 	ut32 i;
 	if (m) {
 		if (m->f) {
@@ -45,7 +45,7 @@ SDB_API void dict_fini(dict *m) {
 				dictkv *kv = m->table[i];
 				if (kv) {
 					while (kv->k != MHTNO) {
-						m->f(kv->u);
+						m->f (kv->u);
 						kv++;
 					}
 				}
@@ -57,21 +57,21 @@ SDB_API void dict_fini(dict *m) {
 			}
 		}
 		free (m->table);
-		dict_init(m, 0, NULL);
+		dict_init (m, 0, NULL);
 	}
 }
 
-SDB_API void dict_free(dict *m) {
-	dict_fini(m);
+SDB_API void dict_free (dict *m) {
+	dict_fini (m);
 	free (m);
 }
 
 // collisions are not handled in a dict. use a hashtable if you want to use strings as keys.
-SDB_API dicti dict_hash(const char *s) {
-	return (dicti)sdb_hash(s);
+SDB_API dicti dict_hash (const char *s) {
+	return (dicti)sdb_hash (s);
 }
 
-SDB_API bool dict_set(dict *m, dicti k, dicti v, void *u) {
+SDB_API bool dict_set (dict *m, dicti k, dicti v, void *u) {
 	if (!m || !m->size || k == MHTNO) {
 		return false;
 	}
@@ -114,7 +114,7 @@ SDB_API bool dict_set(dict *m, dicti k, dicti v, void *u) {
 	return false;
 }
 
-SDB_API void dict_stats(dict *m) {
+SDB_API void dict_stats (dict *m) {
 	ut32 i, j;
 	for (i = 0; i < m->size; i++) {
 		printf ("%d: ", i);
@@ -130,7 +130,7 @@ SDB_API void dict_stats(dict *m) {
 	}
 }
 
-SDB_API dictkv *dict_getr(dict *m, dicti k) {
+SDB_API dictkv *dict_getr (dict *m, dicti k) {
 	if (!m->size) {
 		return NULL;
 	}
@@ -147,23 +147,23 @@ SDB_API dictkv *dict_getr(dict *m, dicti k) {
 	return NULL;
 }
 
-SDB_API dicti dict_get(dict *m, dicti k) {
+SDB_API dicti dict_get (dict *m, dicti k) {
 	dictkv *kv = dict_getr (m, k);
-	return kv? kv->v: MHTNO;
+	return kv ? kv->v : MHTNO;
 }
 
-SDB_API void *dict_getu(dict *m, dicti k) {
+SDB_API void *dict_getu (dict *m, dicti k) {
 	dictkv *kv = dict_getr (m, k);
-	return kv? kv->u: NULL;
+	return kv ? kv->u : NULL;
 }
 
-SDB_API bool dict_add(dict *m, dicti k, dicti v, void *u) {
-	return dict_getr(m, k)
-		? dict_set(m, k, v, u)
+SDB_API bool dict_add (dict *m, dicti k, dicti v, void *u) {
+	return dict_getr (m, k)
+		? dict_set (m, k, v, u)
 		: false;
 }
 
-SDB_API bool dict_del(dict *m, dicti k) {
+SDB_API bool dict_del (dict *m, dicti k) {
 	int bucket = dict_bucket (m, k);
 	if (k == MHTNO) {
 		return false;
@@ -193,7 +193,7 @@ SDB_API bool dict_del(dict *m, dicti k) {
 // cb : function that accept a dictkv. When it returns a value != 0, the
 //      iteration stops
 // u : additional information to pass to cb together with the dictkv
-SDB_API void dict_foreach(dict *m, dictkv_cb cb, void *u) {
+SDB_API void dict_foreach (dict *m, dictkv_cb cb, void *u) {
 	bool iterate = true;
 	ut32 i;
 

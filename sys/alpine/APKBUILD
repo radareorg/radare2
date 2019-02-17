@@ -1,0 +1,42 @@
+# Contributor:
+# Maintainer:
+pkgname=radare2
+maintainer="pancake <pancake@nopcode.org>"
+pkgver=3.1.3
+pkgrel=1
+pkgdesc="unix-friendly reverse engineering framework"
+url="https://www.radare.org"
+arch="all"
+license="LGPL"
+depends=""
+makedepends="git make patch gcc libc-dev"
+install=""
+
+subpackages="$pkgname-dev $pkgname-doc"
+# source="https://github.com/radare/radare2/archive/3.1.3.tar.gz"
+source="https://radare.mikelloc.com/get/3.1.3/radare2-3.1.3.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cd "$builddir"
+	(
+		cd libr/debug/p/native/linux/
+		grep -v asm/ptrace linux_coredump.c > .lc.c
+		mv .lc.c linux_coredump.c
+	)
+	pwd
+	./configure --prefix=/usr
+	make -j4 || return 1
+}
+
+check() {
+	cd "$builddir"
+	echo LGTM
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+}
+
+md5sums="9f2c3b445090df07fbe934bb44ee6c53  radare2-3.1.3.tar.gz"

@@ -76,7 +76,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 		ut8 arg2 = _8051_ops[i].arg2;
 		ut8 arg3 = _8051_ops[i].arg3;
 		ut8 oplen = _8051_ops[i].len;
-		ut8 val1, val2 = 0;
+		ut8 val1 = 0, val2 = 0;
 		char* disasm = 0;
 
 		switch (oplen) {

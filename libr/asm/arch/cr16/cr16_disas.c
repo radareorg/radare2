@@ -453,13 +453,12 @@ static inline int cr16_decode_i_r(const ut8 *instr, struct cr16_cmd *cmd)
 	return ret;
 }
 
-static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
-{
+static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd) {
 	int ret = 2;
 	ut32 disp32;
-	ut16 c, disp16;
+	ut16 disp16;
 
-	c = r_read_le16 (instr);
+	ut16 c = r_read_le16 (instr);
 
 	if (cr16_print_ld_sw_opcode(cmd, c)) {
 		return -1;
@@ -504,8 +503,6 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 	if (ret != -1) {
 		return ret;
 	}
-
-	ret = 2;
 
 	switch ((c >> 11) & (~0x4)) {
 	case 0x12:
@@ -562,19 +559,18 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 		return ret;
 	}
 
-	ret = 2;
 	switch (c >> 14) {
 	case 0x3:
 		ret = 2;
 		disp16 = (c & 0x1) | ((c >> 8) & 0x1E);
-		cr16_print_reg_reg_rel(cmd, cr16_get_srcreg(c),
-				disp16, cr16_get_dstreg(c), 1);
+		cr16_print_reg_reg_rel (cmd, cr16_get_srcreg (c),
+				disp16, cr16_get_dstreg (c), 1);
 		break;
 	case 0x2:
 		ret = 2;
 		disp16 = (c & 0x1) | ((c >> 8) & 0x1E);
-		cr16_print_reg_reg_rel(cmd, cr16_get_srcreg(c),
-				disp16, cr16_get_dstreg(c), 0);
+		cr16_print_reg_reg_rel  (cmd, cr16_get_srcreg (c),
+				disp16, cr16_get_dstreg (c), 0);
 		break;
 	default:
 		ret = -1;
@@ -582,24 +578,26 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 	return ret;
 }
 
-static int cr16_decode_slpr(const ut8 *instr, struct cr16_cmd *cmd)
-{
+static int cr16_decode_slpr(const ut8 *instr, struct cr16_cmd *cmd) {
 	int ret = 2;
-	ut16 c;
 
-	c = r_read_le16 (instr);
+	ut16 c = r_read_le16 (instr);
 
-	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "%s",
-			instrs_4bit[c >> 9]);
+	const char *ins = instrs_4bit[c >> 9];
+	if (ins) {
+		r_str_ncpy (cmd->instr, ins, sizeof (cmd->instr) - 1);
+	} else {
+		*cmd->instr = 0;
+	}
 
 	switch (c >> 9) {
 	case CR16_LPR:
-		snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1,
+		snprintf (cmd->operands, CR16_INSTR_MAXLEN - 1,
 				"%s,%s",cr16_regs_names[cr16_get_srcreg(c)],
 				dedicated_regs[cr16_get_dstreg(c)]);
 		break;
 	case CR16_SPR:
-		snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1,
+		snprintf (cmd->operands, CR16_INSTR_MAXLEN - 1,
 				"%s,%s", dedicated_regs[cr16_get_dstreg(c)],
 				cr16_regs_names[cr16_get_srcreg(c)]);
 		break;
@@ -610,8 +608,7 @@ static int cr16_decode_slpr(const ut8 *instr, struct cr16_cmd *cmd)
 	return ret;
 }
 
-static int cr16_decode_r_r(const ut8 *instr, struct cr16_cmd *cmd)
-{
+static int cr16_decode_r_r(const ut8 *instr, struct cr16_cmd *cmd) {
 	int ret = 2;
 	ut16 c;
 

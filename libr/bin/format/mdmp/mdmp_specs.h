@@ -481,24 +481,23 @@ struct minidump_module {
 /* Contains a list of modules. */
 R_PACKED (
 struct minidump_module_list {
-	ut32	number_of_modules;
-
+	ut32 number_of_modules;
 	struct minidump_module *modules;
 });
 
 /* Describes a string. */
 R_PACKED (
 struct minidump_string {
-	ut32	length;
-	ut16	*buffer;
+	ut32 length;
+	ut16 *buffer;
 });
 
 /* Contains processor and operating system information. */
 R_PACKED (
 struct minidump_system_info {
-	ut16	processor_architecture;
-	ut16	processor_level;
-	ut16	processor_revision;
+	ut16 processor_architecture;
+	ut16 processor_level;
+	ut16 processor_revision;
 
 	union {
 		ut16 reserved_0;
@@ -508,29 +507,29 @@ struct minidump_system_info {
 		};
 	};
 
-	ut32	major_version;
-	ut32	minor_version;
-	ut32	build_number;
-	ut32	platform_id;
-	rva_t	csd_version_rva;
+	ut32 major_version;
+	ut32 minor_version;
+	ut32 build_number;
+	ut32 platform_id;
+	rva_t csd_version_rva;
 
 	union {
-		ut32	reserved_1;
+		ut32 reserved_1;
 		struct {
-			ut16	suite_mask;
-			ut16	reserved_2;
+			ut16 suite_mask;
+			ut16 reserved_2;
 		};
 	};
 
 	union {
 		struct {
-			ut32	vendor_id[3];
-			ut32	version_information;
-			ut32	feature_information;
-			ut32	amd_extended_cpu_features;
+			ut32 vendor_id[3];
+			ut32 version_information;
+			ut32 feature_information;
+			ut32 amd_extended_cpu_features;
 		} x86_cpu_info;
 		struct {
-			ut64	processor_features[2];
+			ut64 processor_features[2];
 		} other_cpu_info;
 	} cpu;
 });
@@ -538,12 +537,11 @@ struct minidump_system_info {
 /* Contains information for a specific thread. */
 R_PACKED (
 struct minidump_thread {
-	ut32	thread_id;
-	ut32	suspend_count;
-	ut32	priority_class;
-	ut32	priority;
-	ut64	teb;
-
+	ut32 thread_id;
+	ut32 suspend_count;
+	ut32 priority_class;
+	ut32 priority;
+	ut64 teb;
 	struct minidump_memory_descriptor stack;
 	struct minidump_location_descriptor thread_context;
 });
@@ -551,8 +549,7 @@ struct minidump_thread {
 /* Contains a list of threads. */
 R_PACKED (
 struct minidump_thread_list {
-	ut32	number_of_threads;
-
+	ut32 number_of_threads;
 	struct minidump_thread *threads;
 });
 

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2012-2015 - pancake */
 
 #include <r_bin.h>
+#include "../i/private.h"
 
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	char *ret = NULL;
@@ -10,7 +11,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	int i, nargs = 0;
 	const char *type = NULL;
 
-	if (!binfile || !sym) {
+	if (!sym) {
 		return NULL;
 	}
 	if (binfile && binfile->o && binfile->o->classes) {
@@ -57,6 +58,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 			type = "public";
 		}
 		if (type) {
+			free (clas);
 			clas = strdup (sym + 2);
 			name = strchr (clas, ' ');
 			if (name) {
@@ -130,7 +132,6 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 				ret = r_str_newf ("%s int %s::%s(%s)", type, clas, name, args);
 				if (binfile) {
 					r_bin_class_add_method (binfile, clas, name, nargs);
-
 				}
 			}
 		}

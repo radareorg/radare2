@@ -30,5 +30,4 @@ Build farm, see `sys/android-shell.sh` and `sys/android-build.sh`
 
 Environment:
 
-    NDK_ARCH=arm|x86
-    STATIC_BUILD=0|1
+    NDK_ARCH=arm|arm64|x86

@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 #include "pe/pe.h"
 
 static Sdb* get_sdb (RBinFile *bf) {
@@ -165,7 +166,9 @@ static RList* sections(RBinFile *bf) {
 			break;
 		}
 		if (sections[i].name[0]) {
-			strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->name = strdup ((char*)sections[i].name);
+		} else {
+			ptr->name = strdup ("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > bin->size) {

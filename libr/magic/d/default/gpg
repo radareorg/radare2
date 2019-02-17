@@ -2,3 +2,14 @@
 0	string	BEGIN\ PGP\ PUBLIC\ KEY\ BLOCK	PGP Public key
 0	string	BEGIN\ PRIVATE\ KEY	PGP Private key
 0	string	BEGIN\ PUBLIC\ KEY	Public key
+0	string  \x8c\x0d\x04\x01\x03\x02	GPG-IDEA
+0	string  \x8c\x0d\x04\x02\x03\x02	GPG-3DES
+0	string  \x8c\x0d\x04\x03\x03\x02	GPG-CAST5
+0	string  \x8c\x0d\x04\x04\x03\x02	GPG-BLOWFISH
+0	string  \x8c\x0d\x04\x07\x03\x02	GPG-AES128
+0	string  \x8c\x0d\x04\x08\x03\x02	GPG-AES192
+0	string  \x8c\x0d\x04\x09\x03\x02	GPG-AES256
+0	string  \x8c\x0d\x04\x0a\x03\x02	GPG-TWOFISH
+0	string  \x8c\x0d\x04\x0b\x03\x02	GPG-CAMELLIA128
+0	string  \x8c\x0d\x04\x0c\x03\x02	GPG-CAMELLIA192
+0	string  \x8c\x0d\x04\x0d\x03\x02	GPG-CAMELLIA256

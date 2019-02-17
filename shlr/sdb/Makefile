@@ -71,7 +71,7 @@ install-dirs:
 	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR} 
 	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
-INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht.h src/types.h
+INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht_uu.h src/ht_up.h src/ht_pp.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h src/sdbht.h
 INCFILES+=src/dict.h
 
@@ -128,7 +128,9 @@ symstall: install-dirs
 	ln -fs ${PWD}/src/sdb.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/sdb_version.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/cdb.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/ht_uu.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/ht_up.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/ht_pp.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/types.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/ls.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/cdb_make.h ${DESTDIR}${INCDIR}/sdb

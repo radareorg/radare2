@@ -41,10 +41,15 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
-//static int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_info *info);
 bfd_boolean cris_parse_disassembler_options (disassemble_info *info, int distype);
+
+// TODO: refactor the gnu code to have a getter instead of exposing so many disasm entrypoints
 int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_cris_with_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_cris_without_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_with_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_without_register_prefix (bfd_vma vma, disassemble_info *info);
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
@@ -69,11 +74,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	if (a->cpu && *a->cpu) {
-		if (!strcmp (a->cpu, "v10+v32")) {
+		// enum cris_disass_family { cris_dis_v0_v10, cris_dis_common_v10_v32, cris_dis_v32 };
+		// 0: v0-v10
+		// 1: v10-v32
+		// 2: v32
+		mode = 0;
+		if (strstr (a->cpu,  "v10")) {
 			mode = 1;
-		} else if (!strcmp (a->cpu, "v10")) {
-			mode = 0;
-		} else {
+		}
+		if (strstr (a->cpu,  "v32")) {
 			mode = 2;
 		}
 	} else {
@@ -81,11 +90,29 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	(void)cris_parse_disassembler_options (&disasm_obj, mode);
 	if (a->syntax == R_ASM_SYNTAX_ATT) {
-		op->size = print_insn_crisv10_v32_with_register_prefix (
-			(bfd_vma)Offset, &disasm_obj);
+		switch (mode) {
+		case 0:
+			op->size = print_insn_cris_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			break;
+		case 1:
+			op->size = print_insn_crisv10_v32_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			break;
+		default:
+			op->size = print_insn_crisv32_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			break;
+		}
 	} else {
-		op->size = print_insn_crisv10_v32_without_register_prefix (
-			(bfd_vma)Offset, &disasm_obj);
+		switch (mode) {
+		case 0:
+			op->size = print_insn_cris_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			break;
+		case 1:
+			op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			break;
+		default:
+			op->size = print_insn_crisv32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			break;
+		}
 	}
 	if (op->size == -1) {
 		r_strbuf_set (&op->buf_asm, "(data)");
@@ -96,7 +123,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_cris_gnu = {
 	.name = "cris",
 	.arch = "cris",
-	.cpus = "v10,v32,v10+v32",
+	.cpus = "v0,v10,v32",
 	.license = "GPL3",
 	.author = "pancake",
 	.bits = 32,

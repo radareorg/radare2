@@ -104,9 +104,9 @@ R_API int r_core_project_cat(RCore *core, const char *name) {
 }
 
 R_API int r_core_project_list(RCore *core, int mode) {
+	PJ *pj = NULL;
 	RListIter *iter;
 	RList *list;
-	bool isfirst = true;
 
 	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	if (!path) {
@@ -115,16 +115,20 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
-		r_cons_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			break;
+		}
+		pj_a (pj);
 		r_list_foreach (list, iter, foo) {
 			// todo. escape string
 			if (r_core_is_project (core, foo)) {
-				r_cons_printf ("%s\"%s\"",
-					isfirst? "": ",", foo);
-				isfirst = false;
+				pj_s (pj, foo);
 			}
 		}
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		break;
 	default:
 		r_list_foreach (list, iter, foo) {
@@ -469,7 +473,9 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	fd = r_sandbox_fopen (prj, "r");
 	if (fd) {
 		for (;;) {
-			fgets (buf, sizeof (buf), fd);
+			if (!fgets (buf, sizeof (buf), fd)) {
+				break;
+			}
 			if (feof (fd)) {
 				break;
 			}
@@ -600,7 +606,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	int fd, fdold, tmp;
+	int fd, fdold;
 
 	if (!file || *file == '\0') {
 		return false;
@@ -627,10 +633,9 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_str_write (fd, "# flags\n");
-		tmp = core->flags->space_idx;
-		core->flags->space_idx = -1;
+		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
-		core->flags->space_idx = tmp;
+		r_flag_space_pop (core->flags);
 		r_cons_flush ();
 	}
 	// Set file.path and file.lastpath to empty string to signal

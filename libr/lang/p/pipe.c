@@ -111,9 +111,21 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	int input[2];
 	int output[2];
 
-	pipe (input);
-	pipe (output);
-
+	if (pipe (input) != 0) {
+		eprintf ("r_lang_pipe: pipe failed on input\n");
+		if (safe_in != -1) {
+			close (safe_in);
+		}
+		return false;
+	}
+	if (pipe (output) != 0) {
+		eprintf ("r_lang_pipe: pipe failed on output\n");
+		if (safe_in != -1) {
+			close (safe_in);
+		}
+		return false;
+	}
+	
 	env ("R2PIPE_IN", input[0]);
 	env ("R2PIPE_OUT", output[1]);
 

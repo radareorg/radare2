@@ -406,6 +406,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 								bin_name = r_str_ndup (slash + 1, (bin_name - slash) -1);
 								char *chkstr = r_str_newf ("Payload/%s.app/%s", bin_name, bin_name);
 								if (!strcmp (name, chkstr)) {
+									free (zip_filename);
 									zip_filename = r_str_newf ("//%s", chkstr);
 									free (chkstr);
 									free (bin_name);
@@ -649,7 +650,8 @@ static int r_io_zip_close(RIODesc *fd) {
 
 RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
-	.desc = "Open zip files [apk|ipa|zip|zipall]://[file//path]",
+	.desc = "Open zip files",
+	.uris = "zip://,apk://,ipa://,jar://,zipall://,apkall://,ipaall://,jarall://",
 	.license = "BSD",
 	.open = r_io_zip_open,
 	.open_many = r_io_zip_open_many,

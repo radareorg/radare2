@@ -401,7 +401,7 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       if (! leaf)
         {
           grub_error (GRUB_ERR_BAD_FS, "invalid extent");
-	  free (buf);
+	  grub_free (buf);
           return -1;
         }
 
@@ -416,7 +416,7 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
         {
           fileblock -= grub_le_to_cpu32 (ext[i].block);
           if (fileblock >= grub_le_to_cpu16 (ext[i].len)) {
-  	    free (buf);
+  	    grub_free (buf);
             return 0;
           } else
             {
@@ -424,7 +424,7 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
 
               start = grub_le_to_cpu16 (ext[i].start_hi);
               start = (start << 32) + grub_le_to_cpu32 (ext[i].start);
-  	    free (buf);
+              grub_free (buf);
 
               return fileblock + start;
             }
@@ -432,7 +432,7 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
       else
         {
           grub_error (GRUB_ERR_BAD_FS, "something wrong with extent");
-  	    free (buf);
+          grub_free (buf);
           return -1;
         }
     }
@@ -491,7 +491,7 @@ grub_ext2_read_block (grub_fshelp_node_t node, grub_disk_addr_t fileblock)
 }
 
       blknr = grub_le_to_cpu32 (indir[rblock % perblock]);
-            grub_free (indir);
+      grub_free (indir);
     }
   /* triple indirect.  */
   else

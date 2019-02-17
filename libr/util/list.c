@@ -38,9 +38,15 @@ R_API RListIter *r_list_get_next(RListIter *list) {
 	return list->n;
 }
 
+//  rename to head/last
 R_API void *r_list_first(const RList *list) {
 	r_return_val_if_fail (list, NULL);
 	return list->head ? list->head->data : NULL;
+}
+
+R_API void *r_list_last(const RList *list) {
+	r_return_val_if_fail (list, NULL);
+	return list->tail ? list->tail->data : NULL;
 }
 
 R_API void r_list_init(RList *list) {

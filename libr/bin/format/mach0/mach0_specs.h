@@ -243,6 +243,15 @@ typedef struct {
 	uint32_t pad;
 } cache_img_t;
 
+typedef struct
+{
+	uint32_t version;
+	uint32_t page_size;
+	uint32_t page_starts_count;
+	uint32_t padding;
+	uint64_t auth_value_add;
+} cache_slide3_t;
+
 typedef struct {
 	uint32_t version;
 	uint32_t page_size;
@@ -253,6 +262,15 @@ typedef struct {
 	uint64_t delta_mask;
 	uint64_t value_add;
 } cache_slide2_t;
+
+typedef struct {
+	uint32_t version;
+	uint32_t toc_offset;
+	uint32_t toc_count;
+	uint32_t entries_offset;
+	uint32_t entries_count;
+	uint32_t entries_size;
+} cache_slide1_t;
 
 typedef struct
 {
@@ -289,4 +307,5 @@ typedef struct
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA 0x8000
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_NO_REBASE 0x4000
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_END 0x8000
+#define DYLD_CACHE_SLIDE_V3_PAGE_ATTR_NO_REBASE 0xFFFF
 #endif
