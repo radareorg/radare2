@@ -1090,7 +1090,7 @@ static int cmd_kuery(void *data, const char *input) {
 		if (core->http_up) {
 			return false;
 		}
-		if (!r_config_get_i (core->config, "scr.interactive")) {
+		if (!r_cons_is_interactive ()) {
 			return false;
 		}
 		if (input[1] == ' ') {
@@ -1374,7 +1374,7 @@ static int cmd_visual(void *data, const char *input) {
 	if (core->http_up) {
 		return false;
 	}
-	if (!r_config_get_i (core->config, "scr.interactive")) {
+	if (!r_cons_is_interactive ()) {
 		return false;
 	}
 #if 0
@@ -1828,7 +1828,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
 		return -1;
 	}
-	si = r_config_get_i (core->config, "scr.interactive");
+	si = r_cons_is_interactive ();
 	r_config_set_i (core->config, "scr.interactive", 0);
 	if (!r_config_get_i (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
@@ -1992,7 +1992,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	} else {
 		if (rep > INTERACTIVE_MAX_REP) {
-			if (r_config_get_i (core->config, "scr.interactive")) {
+			if (r_cons_is_interactive ()) {
 				if (!r_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 					goto beach;
 				}

@@ -415,7 +415,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 #endif
 	}
 	if (askuser) {
-		if (r_config_get_i (core->config, "scr.interactive")) {
+		if (r_cons_is_interactive ()) {
 			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
 		}
 	}
@@ -880,7 +880,7 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prjName) {
 
 R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcpath) {
 	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
-	const bool scr_interactive = r_config_get_i (core->config, "scr.interactive");
+	const bool scr_interactive = r_cons_is_interactive ();
 	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
 	(void) projectLoadRop (core, prjName);
 	bool ret = r_core_cmd_file (core, rcpath);

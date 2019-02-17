@@ -3889,7 +3889,7 @@ static void rotateColor(RCore *core) {
 
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
-	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
+	int o_scrinteractive = r_cons_is_interactive ();
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;

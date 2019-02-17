@@ -1942,7 +1942,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			if (r_sandbox_enable (0)) {
 				eprintf ("sandbox not enabled\n");
 			} else {
-				if (r_config_get_i (core->config, "scr.interactive")) {
+				if (r_cons_is_interactive ()) {
 					r_core_cmd0 (core, "TT");
 				}
 			}

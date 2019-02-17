@@ -309,7 +309,7 @@ static void playMsg(RCore *core, const char *n, int len) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	bool newline = r_config_get_i (core->config, "scr.interactive");
+	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i, va = core->io->va || core->io->debug;
