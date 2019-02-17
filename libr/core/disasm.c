@@ -3510,7 +3510,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, core->print->big_endian));
 			if (str && *str) {
-				const char *ptr = str;
+				const char *ptr = str + 1;
 				bool printable = true;
 				for (; *ptr; ptr++) {
 					if (!IS_PRINTABLE (*ptr)) {
@@ -3747,12 +3747,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 			}
-			//XXX this should be refactored with along the above
-			kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
+			// XXX this should be refactored with along the above
+			char *m = msg;
+			int l = len;
+			if (l > 1 && !IS_PRINTABLE (*m) && *m < l) {
+				m++;
+				l--;
+			}
+			kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)m, l);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
-					if (!string_printed && *msg) {
-						ds_print_str (ds, msg, len, refaddr);
+					if (!string_printed && *m) {
+						ds_print_str (ds, m, l, refaddr);
 						string_printed = true;
 					}
 				} else if (!strcmp (kind, "invalid")) {
