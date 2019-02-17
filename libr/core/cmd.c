@@ -1398,7 +1398,7 @@ static int cmd_pipein(void *user, const char *input) {
 	return 0;
 }
 
-static int cmd_thread(void *data, const char *input) {
+static int cmd_tasks(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	switch (input[0]) {
 	case '\0': // "&"
@@ -4115,7 +4115,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"#",        "calculate hash", cmd_hash},
 		{"$",        "alias", cmd_alias},
 		{"%",        "short version of 'env' command", cmd_env},
-		{"&",        "threading capabilities", cmd_thread},
+		{"&",        "tasks", cmd_tasks},
 		{"(",        "macro", cmd_macro, cmd_macro_init},
 		{"*",        "pointer read/write", cmd_pointer},
 		{"-",        "open cfg.editor and run script", cmd_stdin},

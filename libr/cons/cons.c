@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2018 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2019 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -106,6 +106,7 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
 	context->buffer_len = 0;
+	context->is_interactive = false;
 	context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
 	context->event_interrupt = NULL;
@@ -335,6 +336,10 @@ R_API void r_cons_break_pop() {
 	r_cons_context_break_pop (I.context, true);
 }
 
+R_API bool r_cons_is_interactive() {
+	return I.context->is_interactive;
+}
+
 R_API bool r_cons_is_breaked() {
 	if (I.cb_break) {
 		I.cb_break (I.user);
@@ -449,7 +454,6 @@ R_API RCons *r_cons_new() {
 	I.force_columns = 0;
 	I.event_resize = NULL;
 	I.event_data = NULL;
-	I.is_interactive = true;
 	I.noflush = false;
 	I.linesleep = 0;
 	I.fdin = stdin;
@@ -793,7 +797,7 @@ R_API void r_cons_flush(void) {
 		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
-	if (I.is_interactive && I.fdout == 1) {
+	if (r_cons_is_interactive () && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (CTX (pageable) && CTX (buffer) && I.pager && *I.pager && CTX (buffer_len) > 0 && r_str_char_count (CTX (buffer), '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
@@ -846,7 +850,7 @@ R_API void r_cons_flush(void) {
 	r_cons_highlight (I.highlight);
 
 	// is_html must be a filter, not a write endpoint
-	if (I.is_interactive && !r_sandbox_enable (false)) {
+	if (r_cons_is_interactive () && !r_sandbox_enable (false)) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
 			int pagesize = R_MAX (1, I.pagesize);
@@ -1365,15 +1369,16 @@ R_API void r_cons_column(int c) {
 	free (b);
 }
 
-static int lasti = 0; /* last interactive mode */
+//  XXX deprecate must be push/pop context state
+static bool lasti = false; /* last interactive mode */
 
 R_API void r_cons_set_interactive(bool x) {
-	lasti = r_cons_singleton ()->is_interactive;
-	r_cons_singleton ()->is_interactive = x;
+	lasti = r_cons_singleton ()->context->is_interactive;
+	r_cons_singleton ()->context->is_interactive = x;
 }
 
 R_API void r_cons_set_last_interactive() {
-	r_cons_singleton ()->is_interactive = lasti;
+	r_cons_singleton ()->context->is_interactive = lasti;
 }
 
 R_API void r_cons_set_title(const char *str) {

@@ -1718,7 +1718,7 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
-static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
+static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
 	RListIter *iter;
 	RAnalBlock *b;
@@ -1750,7 +1750,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (mode == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return NULL;
+			return false;
 		}
 		pj_a (pj);
 	}
@@ -3826,7 +3826,6 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 		addr = r_num_math (core->num, addrstr);
 	}
 	type = r_core_anal_address (core, addr);
-	int isp = 0;
 	switch (fmt) {
 	case 'j': {
 		PJ *pj = pj_new ();

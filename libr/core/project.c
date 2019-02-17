@@ -360,12 +360,16 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 /*** ^^^ thready ***/
 
 R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
-	int askuser = 1;
+	bool askuser = true;
 	int ret, close_current_session = 1;
 	char *oldbin;
 	const char *newbin;
 	ut64 mapaddr = 0;
 	if (!prjfile || !*prjfile) {
+		return false;
+	}
+	if (thready) {
+		eprintf ("Loading projects in a thread has been deprecated. Use tasks\n");
 		return false;
 	}
 	char *prj = projectScriptPath (core, prjfile);
@@ -403,7 +407,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	oldbin = strdup (file_path);
 	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
 		// eprintf ("Reloading project\n");
-		askuser = 0;
+		askuser = false;
 #if 0
 		free (prj);
 		free (filepath);
@@ -554,7 +558,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
-	r_cons_singleton ()->is_interactive = false;
+	r_cons_singleton ()->context->is_interactive = false; // NOES must use api
 
 	r_str_write (fd, "# r2 rdb project file\n");
 
@@ -591,7 +595,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 	}
 
 	r_cons_singleton ()->fdout = fdold;
-	r_cons_singleton ()->is_interactive = true;
+	r_cons_singleton ()->context->is_interactive = true;
 
 	if (ohl) {
 		r_cons_highlight (ohl);
@@ -627,7 +631,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
-	r_cons_singleton ()->is_interactive = false;
+	r_cons_singleton ()->context->is_interactive = false;
 
 	r_str_write (fd, "# r2 rdb project file\n");
 
@@ -700,7 +704,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 
 	r_cons_singleton ()->fdout = fdold;
-	r_cons_singleton ()->is_interactive = true;
+	r_cons_singleton ()->context->is_interactive = true;
 
 	if (ohl) {
 		r_cons_highlight (ohl);

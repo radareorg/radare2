@@ -3892,7 +3892,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			from = r_num_math (core->num, input + 3);
 		}
 	}
-	if (core->num->nc.errors && r_cons_singleton ()->is_interactive) {
+	if (core->num->nc.errors && r_cons_is_interactive ()) {
 		eprintf ("Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
 		return false;
 	}

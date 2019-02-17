@@ -1060,7 +1060,7 @@ int main(int argc, char **argv) {
 	bin->cb_printf = r_cons_printf;
 	filter.offset = at;
 	filter.name = name;
-	r_cons_new ()->is_interactive = false;
+	r_cons_new ()->context->is_interactive = false;
 
 	if (isradjson) {
 		r_cons_print ("{");

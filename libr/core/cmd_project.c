@@ -73,7 +73,7 @@ static int cmd_project(void *data, const char *input) {
 	case 'o':
 		//	if (r_file_is_regular (file))
 		if (input[1] == '&') {
-			r_core_project_open (core, file, true);
+			r_core_cmdf (core, "& Po %s", file);
 		} else if (input[1]) {
 			r_core_project_open (core, file, false);
 		} else {
