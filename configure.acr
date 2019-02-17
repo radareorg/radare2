@@ -177,6 +177,10 @@ IFEQ USEROSTYPE gnulinux ; {
 	USE_PTRACE_WRAP = 1 ;
 }{
 IFEQ USEROSTYPE wsl ; {
+	BUILD = ${SPLIT_CPU}-unknown-linux-gnu ;
+	HOST = $BUILD ;
+	TARGET = $HOST ;
+	USEROSTYPE = gnulinux ;
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
 }{

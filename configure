@@ -356,7 +356,7 @@ echo "ERROR: ${CC} cannot create executables" >&2 ;
 exit 1 ; fi
 printf "checking for dynamic library... "
 HAVE_LIB_DL=0
-for OS in gnulinux linux gnu/kfreebsd syllable sunos darwin beos solaris ; do
+for OS in gnulinux linux gnu/kfreebsd syllable sunos darwin beos solaris wsl ; do
 if [ "${HOST_OS}" = "${OS}" ]; then
 	HAVE_LIB_DL=1
 	break;
@@ -614,6 +614,10 @@ HAVE_PTRACE="1"
 USE_PTRACE_WRAP="1"
 else
 if [ "$USEROSTYPE" = "wsl" ]; then
+BUILD="${SPLIT_CPU}-unknown-linux-gnu"
+HOST="$BUILD"
+TARGET="$HOST"
+USEROSTYPE="gnulinux"
 HAVE_PTRACE="1"
 USE_PTRACE_WRAP="0"
 else
