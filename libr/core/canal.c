@@ -767,12 +767,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 					}
 					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
-					/* Autoname PE import thunk */
-					RBinInfo *info;
+					/* Import trampoline naming */
 					if (r_list_length (fcn->bbs) == 1
-					    && ((RAnalBlock *) r_list_first (fcn->bbs))->ninstr == 1
-					    && (info = r_bin_get_info (core->bin))
-					    && !strcmp (info->rclass, "pe")) {
+					    && ((RAnalBlock *) r_list_first (fcn->bbs))->ninstr == 1) {
 						RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 						if (refs && r_list_length (refs) == 1) {
 							RAnalRef *ref = r_list_first (refs);
