@@ -346,6 +346,9 @@ static void save_type_size(Sdb *sdb_types, char *name) {
 		return;
 	}
 	char *type_name_size = r_str_newf ("%s.%s.%s", type, name, "size");
+	if (!type_name_size) {
+		return;
+	}
 	int size = r_type_get_bitsize (sdb_types, name);
 	sdb_set (sdb_types, type_name_size, sdb_fmt ("%d", size), 0);
 	free (type);
@@ -357,7 +360,7 @@ static void save_type_size(Sdb *sdb_types, char *name) {
  * \param core pointer to radare2 core
  * \param parsed the parsed c string in sdb format
  */
-R_API void save_parsed_type_size(RCore *core, const char *parsed) {
+static void save_parsed_type_size(RCore *core, const char *parsed) {
 	r_return_if_fail (core && core->anal && parsed);
 	char *str = strdup (parsed);
 	if (str) {
@@ -366,10 +369,14 @@ R_API void save_parsed_type_size(RCore *core, const char *parsed) {
 		while ((ptr = strstr (str + offset, "=struct\n")) || (ptr = strstr (str + offset, "=union\n"))) {
 			*ptr = 0;
 			char *name = ptr;
+			if (str + offset == ptr) {
+				break;
+			}
 			while (name - 1 >= str && *(name - 1) != '\n') {
 				name--;
 			}
 			save_type_size (core->anal->sdb_types, name);
+			*ptr = '=';
 			offset = ptr + 1 - str;
 		}
 		free (str);
@@ -442,6 +449,9 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 
 		pj_o (pj); // {
 		char *sizecmd = r_str_newf ("%s.%s.size", sdbkv_value (kv), k);
+		if (!sizecmd) {
+			break;
+		}
 		char *size_s = sdb_querys (TDB, NULL, -1, sizecmd);
 		pj_ks (pj, "type", k); // key value pair of string and string
 		pj_ki (pj, "size", size_s ? atoi (size_s) : 0); // key value pair of string and int
@@ -974,7 +984,6 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
-
 		case 'c':{
 			char *name = NULL;
 			SdbKv *kv;

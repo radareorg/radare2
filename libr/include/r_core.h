@@ -498,7 +498,6 @@ R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
 R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to);
-R_API void save_parsed_type_size(RCore *core, const char *parsed);
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
