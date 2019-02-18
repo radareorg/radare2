@@ -1224,16 +1224,16 @@ static int cb_dbg_gdb_retries(void *user, void *data) {
 static int cb_dbg_execs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-#if !__linux__
-	if (node->i_value) {
-		eprintf ("Option not supported.\n");
-	}
-	return false;
-#else
+#if __linux__
 	core->dbg->trace_execs = node->i_value;
 	if (core->io->debug) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
+#else
+	if (node->i_value) {
+		eprintf ("Option not supported.\n");
+	}
+	return false;
 #endif
 	return true;
 }
