@@ -401,6 +401,7 @@ r_util_files = [
   'include/r_util/r_strpool.h',
   'include/r_util/r_str_util.h',
   'include/r_util/r_sys.h',
+  'include/r_util/r_alloc.h',
   'include/r_util/r_date.h',
   'include/r_util/r_time.h',
   'include/r_util/r_tree.h',
