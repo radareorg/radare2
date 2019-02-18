@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#define R_MALLOC_WRAPPER 1
+#define R_MALLOC_WRAPPER 0
 #define R_MALLOC_GLOBAL 0
 
 typedef void *(RMalloc)(size_t);
