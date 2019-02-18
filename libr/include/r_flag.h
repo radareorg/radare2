@@ -103,6 +103,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
+R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, int nspaces, ...);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest);
 R_API RList *r_flag_all_list(RFlag *f, bool by_space);

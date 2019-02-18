@@ -502,6 +502,36 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	return list ? evalFlag (f, r_list_get_top (list)) : NULL;
 }
 
+/* return the first flag that matches an offset ordered by the order of
+ * operands to the function.
+ * XXX this is kind of super ugly! */
+R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, int nspaces, ...) {
+	RFlagItem *ret = NULL;
+	RFlagItem *flg = NULL;
+	RListIter *iter;
+	RSpace *myspace;
+	const char *spacename;
+	int i;
+	va_list ap;
+	va_start (ap, nspaces);
+	for (i = 0; i < nspaces; i++) {
+		spacename = va_arg (ap, const char *);
+		myspace = r_spaces_get (&(f->spaces), spacename);
+		if (myspace) {
+			const RList *list = r_flag_get_list (f, off);
+			r_list_foreach (list, iter, flg) {
+				if (flg->space == myspace) {
+					ret = flg;
+					goto beach;
+				}
+			}
+		}
+	}
+beach:
+	va_end (ap);
+	return ret;
+}
+
 /* return the first flag item at offset "off" that doesn't start with "loc.",
  * "fcn.", "section." or NULL if such a flag doesn't exist.
  *
