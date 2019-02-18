@@ -1082,7 +1082,9 @@ int main(int argc, char **argv, char **envp) {
 #	endif // __WINDOWS__
 				if (f) {
 #		if __WINDOWS__
+					pfile = r_str_append (pfile, "\"");
 					pfile = r_str_append (pfile, f);
+					pfile = r_str_append (pfile, "\"");
 #		else
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
