@@ -532,6 +532,11 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off,  ...) {
 		}
 		spacename = va_arg (ap, const char *);
 	}
+	if (!ret) {
+		/* if we couldn't find it in a preferred space, just grab it from
+		 * any of the flag spaces. */
+		ret = r_list_get_top (list);
+	}
 beach:
 	va_end (ap);
 	return ret? evalFlag (f, ret): NULL;
