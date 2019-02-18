@@ -65,8 +65,14 @@ R_API void *r_lib_dl_open(const char *libname) {
 	LPTSTR libname_;
 
 	if (!libname || !*libname) {
-		libname_ = malloc (MAX_PATH);
-		GetModuleFileName (NULL, libname_, MAX_PATH);
+		libname_ = calloc (MAX_PATH, sizeof (char));
+		if (!libname_) {
+			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
+			return NULL;
+		}
+		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {
+			libname_[0] = '\0';
+		}
 	} else {
 		libname_ = r_sys_conv_utf8_to_utf16 (libname);
 	}
