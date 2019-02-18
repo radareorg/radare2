@@ -136,9 +136,9 @@ static int update_self_regions(RIO *io, int pid) {
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
 	size_t size = VirtualQuery (0, &mbi, sizeof (mbi));
+	char *name = calloc (1024, sizeof (char));
 	while (size) {
 		ut64 to = (ut8 *) mbi.BaseAddress + mbi.RegionSize;
-		char *name = calloc (1024, sizeof (char));
 		GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, 1024);
 		perm = 0;
 		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
@@ -152,9 +152,10 @@ static int update_self_regions(RIO *io, int pid) {
 		self_sections[self_sections_count].name = strdup (name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
-		free (name);
 		size = VirtualQuery (to, &mbi, sizeof (mbi));
+		name[0] = '\0';
 	}
+	free (name);
 	CloseHandle (h);
 	return true;
 #else
