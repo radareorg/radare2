@@ -7,13 +7,21 @@ _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 
 # Build against last capstone release or next
+ifeq ($(shell test -d ../.git && echo 1),1)
 CS_RELEASE=0
+else
+CS_RELEASE=1
+endif
 
 CAPSTONE_CFLAGS?=-g
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
 GIT?=git
-WGET?=wget
+ifeq ($(shell type wget && echo 1),1)
+WGET?=wget -c --no-check-certificate -O
+else
+WGET?=curl -o
+endif
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.1
@@ -247,6 +255,7 @@ capstone-clean:
 	cd capstone ; $(MAKE) clean
 
 capstone: capstone-$(CS_VER).tar.gz
+	curl -o capstone-$(CS_VER).tar.gz $(CS_TAR)
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
@@ -257,7 +266,7 @@ endif
 	cp -rf capstone/include/*.h capstone/include/capstone
 
 capstone-$(CS_VER).tar.gz:
-	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
+	$(WGET) capstone-$(CS_VER).tar.gz $(CS_TAR)
 else
 
 capstone: capstone-sync
