@@ -245,7 +245,7 @@ static int cmd_log(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_T);
 		break;
 	case 'T': // "TT" Ts ? as ms?
-		if (r_config_get_i (core->config, "scr.interactive")) {
+		if (r_cons_is_interactive ()) {
 			textlog_chat (core);
 		} else {
 			eprintf ("Only available when the screen is interactive\n");

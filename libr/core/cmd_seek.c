@@ -417,7 +417,7 @@ static int cmd_seek(void *data, const char *input) {
 	{
 		ut64 addr = r_num_math (core->num, input + 1);
 		if (core->num->nc.errors) {
-			if (r_cons_singleton ()->is_interactive) {
+			if (r_cons_singleton ()->context->is_interactive) {
 				eprintf ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
 			}
 			break;

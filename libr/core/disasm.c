@@ -589,7 +589,7 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->atabs = 0;
 	}
 	ds->filter = r_config_get_i (core->config, "asm.filter");
-	ds->interactive = r_config_get_i (core->config, "scr.interactive");
+	ds->interactive = r_cons_is_interactive ();
 	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");

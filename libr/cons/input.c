@@ -549,6 +549,10 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);
+
+	if (!r_cons_is_interactive ()) {
+		return def == 'y';
+	}
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
 	fflush (stderr);

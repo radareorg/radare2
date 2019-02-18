@@ -514,7 +514,7 @@ static int cmd_eval(void *data, const char *input) {
 			free (file);
 		} else {
 			char *file = r_str_home (".radare2rc");
-			if (r_config_get_i (core->config, "scr.interactive")) {
+			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
 				char * res = r_cons_editor (file, NULL);
 				if (res) {

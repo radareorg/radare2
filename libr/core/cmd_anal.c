@@ -1718,7 +1718,7 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
-static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
+static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	RDebugTracepoint *tp = NULL;
 	RListIter *iter;
 	RAnalBlock *b;
@@ -1750,7 +1750,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (mode == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return NULL;
+			return false;
 		}
 		pj_a (pj);
 	}
@@ -3826,7 +3826,6 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 		addr = r_num_math (core->num, addrstr);
 	}
 	type = r_core_anal_address (core, addr);
-	int isp = 0;
 	switch (fmt) {
 	case 'j': {
 		PJ *pj = pj_new ();
@@ -6771,7 +6770,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			core->graph->force_update_seek = true;
 			core->graph->need_set_layout = true;
 			core->graph->layout = r_config_get_i (core->config, "graph.layout");
-			int ov = r_config_get_i (core->config, "scr.interactive");
+			int ov = r_cons_is_interactive ();
 			core->graph->need_update_dim = true;
 			r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
@@ -7719,7 +7718,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			char *dh_orig = NULL;
 			if (!strncmp (input, "aaaaa", 5)) {
 				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
-				if (r_config_get_i (core->config, "scr.interactive")) {
+				if (r_cons_is_interactive ()) {
 					r_cons_any_key (NULL);
 				}
 				goto jacuzzi;
