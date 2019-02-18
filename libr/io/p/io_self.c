@@ -133,17 +133,17 @@ static int update_self_regions(RIO *io, int pid) {
 #else
 #ifdef _MSC_VER
 	int perm;
-	size_t name_size = 1024;
+	const size_t name_size = 1024;
+	ut64 to = 0;
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
-	size_t size = VirtualQuery (0, &mbi, sizeof (mbi));
 	char *name = calloc (name_size, sizeof (char));
 	if (!name) {
 		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
 		return false;
 	}
-	while (size) {
-		ut64 to = (ut8 *) mbi.BaseAddress + mbi.RegionSize;
+	while (VirtualQuery (to, &mbi, sizeof (mbi))) {
+		to = (ut8 *) mbi.BaseAddress + mbi.RegionSize;
 		perm = 0;
 		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
 		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
@@ -159,7 +159,6 @@ static int update_self_regions(RIO *io, int pid) {
 		self_sections[self_sections_count].name = strdup (name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
-		size = VirtualQuery (to, &mbi, sizeof (mbi));
 		name[0] = '\0';
 	}
 	free (name);
