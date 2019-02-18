@@ -16,6 +16,7 @@ R_API void r_debug_plugin_init(RDebug *dbg) {
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
+	const char *old = (dbg && dbg->h)? dbg->h->name: "";
 	if (str) {
 		RDebugPlugin *h;
 		RListIter *iter;
@@ -23,6 +24,11 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			if (h->name && !strcmp (str, h->name)) {
 				dbg->h = h;
 				if (dbg->anal && dbg->anal->cur) {
+#if 0
+					if (old && strcmp (old, h->name) && dbg->iob.io->desc) {
+						dbg->iob.io->desc->data = NULL;
+					}
+#endif
 					r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
 				}
 				dbg->bp->breakpoint = dbg->h->breakpoint;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include <errno.h>
 #include <r_io.h>
@@ -485,7 +485,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #else
 	int ret, status, child_pid;
 	bool runprofile = io->runprofile && *(io->runprofile);
-
 	fork_child_data child_data;
 	child_data.io = io;
 	child_data.bits = bits;

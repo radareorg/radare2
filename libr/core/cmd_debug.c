@@ -4654,19 +4654,26 @@ static int cmd_debug(void *data, const char *input) {
 		cmd_debug_pid (core, input);
 		break;
 	case 'L': // "dL"
-		if (input[1]=='q') {
+		switch (input[1]) {
+		case 'q':
 			r_debug_plugin_list (core->dbg, 'q');
-		} else if (input[1]=='j') {
+			break;
+		case 'j':
 			r_debug_plugin_list (core->dbg, 'j');
-		} else if (input[1]=='?') {
+			break;
+		case '?':
 			r_core_cmd_help (core, help_msg_dL);
-		} else if (input[1]==' ') {
+			break;
+		case ' ': {
 			char *str = r_str_trim (strdup (input + 2));
 			r_config_set (core->config, "dbg.backend", str);
 			// implicit by config.set r_debug_use (core->dbg, str);
 			free (str);
-		} else {
+			}
+			break;
+		default:
 			r_debug_plugin_list (core->dbg, 0);
+			break;
 		}
 		break;
 	case 'i': // "di"

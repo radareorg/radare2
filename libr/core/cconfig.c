@@ -1303,6 +1303,7 @@ static int cb_dbgbackend(void *user, void *data) {
 		return false;
 	}
 	if (!strcmp (node->value, "bf")) {
+		// hack
 		r_config_set (core->config, "asm.arch", "bf");
 	}
 	r_debug_use (core->dbg, node->value);

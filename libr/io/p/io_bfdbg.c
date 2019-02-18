@@ -11,6 +11,7 @@
 #include "../debug/p/bfvm.c"
 
 typedef struct {
+	ut32 magic;
 	int fd;
 	ut8 *buf;
 	ut32 size;
