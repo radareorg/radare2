@@ -61,15 +61,26 @@ R_API void *r_lib_dl_open(const char *libname) {
 		return dlopen (NULL, RTLD_NOW);
 	}
 #endif
-	if (!libname || !*libname) {
-		return NULL;
-	}
 #if __WINDOWS__
 	LPTSTR libname_;
 
-	libname_ = r_sys_conv_utf8_to_utf16 (libname);
+	if (!libname || !*libname) {
+		libname_ = calloc (MAX_PATH, sizeof (char));
+		if (!libname_) {
+			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
+			return NULL;
+		}
+		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {
+			libname_[0] = '\0';
+		}
+	} else {
+		libname_ = r_sys_conv_utf8_to_utf16 (libname);
+	}
 	ret = DLOPEN (libname_);
 #else
+	if (!libname || !*libname) {
+		return NULL;
+	}
 	ret = DLOPEN (libname);
 #endif
 	if (__has_debug && !ret) {
