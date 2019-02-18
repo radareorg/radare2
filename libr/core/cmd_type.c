@@ -383,7 +383,7 @@ static void save_parsed_type_size(RCore *core, const char *parsed) {
 	}
 }
 
-static void save_parsed_type(RCore *core, const char *parsed) {
+R_API void save_parsed_type(RCore *core, const char *parsed) {
 	if (!core || !core->anal || !parsed) {
 		return;
 	}
