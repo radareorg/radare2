@@ -383,10 +383,8 @@ static void save_parsed_type_size(RCore *core, const char *parsed) {
 	}
 }
 
-R_API void save_parsed_type(RCore *core, const char *parsed) {
-	if (!core || !core->anal || !parsed) {
-		return;
-	}
+R_API void r_core_save_parsed_type(RCore *core, const char *parsed) {
+	r_return_if_fail (core && core->anal && parsed);
 	// First, if this exists, let's remove it.
 	char *type = strdup (parsed);
 	if (type) {
@@ -1214,7 +1212,7 @@ static int cmd_type(void *data, const char *input) {
 						char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 						if (out) {
 							//		r_cons_strcat (out);
-							save_parsed_type (core, out);
+							r_core_save_parsed_type (core, out);
 							free (out);
 						}
 						if (error_msg) {
@@ -1228,7 +1226,7 @@ static int cmd_type(void *data, const char *input) {
 					char *out = r_parse_c_file (core->anal, filename, &error_msg);
 					if (out) {
 						//r_cons_strcat (out);
-						save_parsed_type (core, out);
+						r_core_save_parsed_type (core, out);
 						free (out);
 					}
 					if (error_msg) {
@@ -1265,7 +1263,7 @@ static int cmd_type(void *data, const char *input) {
 			char *error_msg = NULL;
 			char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 			if (out) {
-				save_parsed_type (core, out);
+				r_core_save_parsed_type (core, out);
 				free (out);
 			}
 			if (error_msg) {
