@@ -61,15 +61,20 @@ R_API void *r_lib_dl_open(const char *libname) {
 		return dlopen (NULL, RTLD_NOW);
 	}
 #endif
-	if (!libname || !*libname) {
-		return NULL;
-	}
 #if __WINDOWS__
 	LPTSTR libname_;
 
-	libname_ = r_sys_conv_utf8_to_utf16 (libname);
+	if (!libname || !*libname) {
+		libname_ = malloc (MAX_PATH);
+		GetModuleFileName (NULL, libname_, MAX_PATH);
+	} else {
+		libname_ = r_sys_conv_utf8_to_utf16 (libname);
+	}
 	ret = DLOPEN (libname_);
 #else
+	if (!libname || !*libname) {
+		return NULL;
+	}
 	ret = DLOPEN (libname);
 #endif
 	if (__has_debug && !ret) {

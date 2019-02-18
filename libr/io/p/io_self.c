@@ -36,6 +36,7 @@ bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
+#include <psapi.h>
 #endif
 
 typedef struct {
@@ -131,7 +132,31 @@ static int update_self_regions(RIO *io, int pid) {
 	return bsd_proc_vmmaps(io, pid);
 #else
 #ifdef _MSC_VER
-#pragma message ("Not yet implemented for this platform")
+	int perm;
+	MEMORY_BASIC_INFORMATION mbi;
+	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
+	size_t size = VirtualQuery (0, &mbi, sizeof (mbi));
+	while (size) {
+		ut64 to = (ut8 *) mbi.BaseAddress + mbi.RegionSize;
+		char *name = calloc (1024, sizeof (char));
+		GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, 1024);
+		perm = 0;
+		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
+		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE ? R_PERM_X : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
+		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
+		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;
+		self_sections[self_sections_count].to = to;
+		self_sections[self_sections_count].name = strdup (name);
+		self_sections[self_sections_count].perm = perm;
+		self_sections_count++;
+		free (name);
+		size = VirtualQuery (to, &mbi, sizeof (mbi));
+	}
+	CloseHandle (h);
+	return true;
 #else
 	#warning not yet implemented for this platform
 #endif
