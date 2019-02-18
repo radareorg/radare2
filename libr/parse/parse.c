@@ -262,8 +262,8 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 			}
 			if (f) {
 				RFlagItem *flag2;
-				flag = r_flag_get_by_spaces (f, off, 4, "symbols", "imports",
-						"relocs", "strings");
+				flag = r_flag_get_by_spaces (f, off, "symbols", "imports",
+						"relocs", "strings", NULL);
 				if (!flag) {
 					flag = r_flag_get_i2 (f, off);
 				}
@@ -273,8 +273,8 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 				}
 				if ((!flag || arm) && p->relsub_addr) {
 					computed = true;
-					flag2 = r_flag_get_by_spaces (f, p->relsub_addr, 4, "symbols",
-							"imports", "relocs", "strings");
+					flag2 = r_flag_get_by_spaces (f, p->relsub_addr, "symbols",
+							"imports", "relocs", "strings", NULL);
 					if (!flag2) {
 						flag2 = r_flag_get_i2 (f, p->relsub_addr);
 					}
