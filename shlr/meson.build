@@ -16,7 +16,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = '09fc20d626d91c762b4c7a13383330e0f49b94a8'
+    CS_TIP = '0b37390f49499527fd9aca64afddeb5dfbe5e663'
     CS_BRA = 'master'
 
     capstone_git_user = 'aquynh'
