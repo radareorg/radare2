@@ -2208,7 +2208,18 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 		free (name);
 		return false;
 	}
-#if 1
+	free (fcn->name);
+	fcn->name = name;
+	if (core->anal->cb.on_fcn_rename) {
+		core->anal->cb.on_fcn_rename (core->anal,
+				core->anal->user, fcn, name);
+	}
+	return true;
+}
+
+#if 0
+#if 0
+{
 	const RList *list = r_flag_get_list (core->flags, fcn->addr);
 	RFlagItem *fi;
 	RListIter *iter;
@@ -2249,6 +2260,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	free (name);
 	return true;
 }
+#endif
 
 static void afCc(RCore *core, const char *input) {
 	ut64 addr;
