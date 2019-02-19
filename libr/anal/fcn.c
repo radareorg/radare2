@@ -1729,10 +1729,10 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	fcn->bits = a->bits;
 	r_anal_fcn_set_size (append ? NULL : a, fcn, size);
 	free (fcn->name);
-	if (!name) {
-		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
-	} else {
+	if (name) {
 		fcn->name = strdup (name);
+	} else {
+		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 	}
 	fcn->type = type;
 	if (diff) {

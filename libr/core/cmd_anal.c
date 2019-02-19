@@ -2183,42 +2183,52 @@ static bool fcnNeedsPrefix(const char *name) {
 
 /* TODO: move into r_anal_fcn_rename(); */
 static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
-	char *name, *nname = NULL;
-	RAnalFunction *fcn;
+	char *name = NULL, *nname = NULL;
 	if (!core || !_name) {
 		return false;
 	}
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-	if (!fcnpfx) {
+	if (!fcnpfx || !*fcnpfx) {
 		fcnpfx = "fcn";
 	}
-	if (r_reg_get (core->anal->reg, _name, -1)) {
-		name = r_str_newf ("%s.%s", fcnpfx, _name);
-	} else {
-		name = strdup (_name);
+	if (!fcnNeedsPrefix (_name)) {
+		fcnpfx = "";
 	}
-	fcn = r_anal_get_fcn_in (core->anal, off,
-				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
+	if (r_reg_get (core->anal->reg, _name, -1)) {
+		name = r_str_newf ("%s%s%08"PFMT64x, fcnpfx, *fcnpfx? ".":"", off);
+	} else {
+		name = r_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", _name);
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
+			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) {
 		free (name);
 		return false;
 	}
-	if (prefix && fcnNeedsPrefix (name)) {
-		nname = r_str_newf ("%s.%s", fcnpfx, name);
-	} else {
-		nname = strdup (name);
-	}
 	char *oname = fcn->name;
-	RFlagItem *fi = r_flag_get (core->flags, fcn->name);
-	if (fi) {
-		r_flag_rename (core->flags, fi, nname);
-	} else {
-		// if we cant find a flag for that function.. create it?
+	RFlagItem *fi;
+	const RList *list = r_flag_get_list (core->flags, fcn->addr);
+	RListIter *iter;
+	bool nameSet = false;
+	r_list_foreach (list, iter, fi) {
+		if (r_reg_get (core->anal->reg, fi->name, -1)) {
+			continue;
+		}
+		if (fi) {
+			r_flag_rename (core->flags, fi, name);
+		} else {
+			// if we cant find a flag for that function.. create it?
+		}
+		fcn->name = strdup (name);
+		if (core->anal->cb.on_fcn_rename) {
+			core->anal->cb.on_fcn_rename (core->anal,
+						core->anal->user, fcn, name);
+		}
+		nameSet = true;
+		break;
 	}
-	fcn->name = strdup (nname);
-	if (core->anal->cb.on_fcn_rename) {
-		core->anal->cb.on_fcn_rename (core->anal,
-					core->anal->user, fcn, nname);
+	if (!nameSet) {
+		fcn->name = strdup (name);
 	}
 	free (oname);
 	free (nname);
