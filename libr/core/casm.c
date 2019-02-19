@@ -76,11 +76,13 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int tokcount, matchcount, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
-	ut64 usrimm = r_num_math (core->num, input + 1);
 
 	if (!input || !*input) {
 		return NULL;
 	}
+
+	ut64 usrimm = r_num_math (core->num, input + 1);
+
 	if (core->blocksize < 8) {
 		eprintf ("error: block size too small\n");
 		return NULL;

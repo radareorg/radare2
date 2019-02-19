@@ -1,12 +1,10 @@
 /* radare2 - LGPL - Copyright 2019 - pancake */
 
-#if 0
-
-This code has been written by pancake which has been based on Alvaro's r2pipe-python
-script which was based on FireEye script for IDA Pro.
-
-* https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
-#endif
+/* This code has been written by pancake which has been based on Alvaro's
+ * r2pipe-python script which was based on FireEye script for IDA Pro.
+ *
+ * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
+ */
 
 #include <r_core.h>
 
@@ -21,8 +19,12 @@ typedef struct {
 	RBinSection *_data;
 } RCoreObjc;
 
-const bool isInvalid (ut64 addr) {
+static const bool isInvalid (ut64 addr) {
 	return (!addr || addr == UT64_MAX);
+}
+
+static const char *addr_key (ut64 va) {
+	return sdb_fmt ("refs.0x%08"PFMT64x, va);
 }
 
 static bool inBetween(RBinSection *s, ut64 addr) {
@@ -61,7 +63,8 @@ static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
 	ut64 namePtr = readQword (objc, classMethodsVA);
 	int i, cnt = 0;
 	ut64 res_at = 0LL;
-	const char *k = sdb_fmt ("refs.0x%08"PFMT64x, namePtr);
+	const char *k = addr_key (namePtr);
+
 	*res = false;
 	for (i = 0; ; i++) {
 		ut64 at = sdb_array_get_num (objc->db, k, i, NULL);
@@ -91,19 +94,14 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	if (!buf) {
 		return false;
 	}
-	r_io_read_at (objc->core->io, objc->_const->vaddr, buf, objc->_const->vsize);
+	(void)r_io_read_at (objc->core->io, objc->_const->vaddr, buf, objc->_const->vsize);
 	for (off = 0; off < objc->_const->vsize; off += objc->word_size) {
 		ut64 va = objc->_const->vaddr + off;
-		ut64 xrefs_to = readQword (objc, objc->_const->vaddr + off);
-		//  ut64 xrefs_to = r_read_le64 (buf + off);
+		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (!xrefs_to) {
 			continue;
 		}
-		const char *k = sdb_fmt ("refs.0x%08"PFMT64x, va);
-if (va == 4298425544) {
-	eprintf ("VA2k %lld %lld\n", va,  xrefs_to);
-}
-		sdb_array_add_num (objc->db, k, xrefs_to, 0);
+		sdb_array_add_num (objc->db, addr_key (va), xrefs_to, 0);
 	}
 	free (buf);
 
@@ -114,16 +112,11 @@ if (va == 4298425544) {
 	r_io_read_at (objc->core->io, objc->_selrefs->vaddr, buf, objc->_selrefs->vsize);
 	for (off = 0; off < objc->_selrefs->vsize; off += objc->word_size) {
 		ut64 va = objc->_selrefs->vaddr + off;
-		//ut64 xrefs_to = r_read_le64 (buf + off);
-		ut64 xrefs_to = readQword (objc, objc->_selrefs->vaddr + off);  //r_read_le64 (buf + off);
+		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (!xrefs_to) {
 			continue;
 		}
-		const char *k = sdb_fmt ("refs.0x%08"PFMT64x, va);
-		sdb_array_add_num (objc->db, k, xrefs_to, 0);
-if (va == 4298425544) {
-	eprintf ("VA2s %lld %lld\n", va,  xrefs_to);
-}
+		sdb_array_add_num (objc->db, addr_key (xrefs_to), va, 0);
 	}
 	free (buf);
 	return true;
@@ -179,7 +172,6 @@ static bool objc_find_refs(RCore *core) {
 	for (off = 0; off < objc._data->vsize ; off += objc2ClassSize) {
 		ut64 va = objc._data->vaddr + off;
 		ut64 classRoVA = readQword (&objc, va + objc2ClassInfoOffs);
-		//eprintf ("crv %lld\n", classRoVA);
 		if (isInvalid (classRoVA)) {
 			continue;
 		}
@@ -189,7 +181,6 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		int count = readDword (&objc, classMethodsVA + 4);
-//eprintf ("COUNT %d\n", count);
 		classMethodsVA += 8; // advance to start of class methods array
 		ut64 from = classMethodsVA;
 		ut64 to = from + (objc2ClassMethSize * count);
@@ -197,27 +188,19 @@ static bool objc_find_refs(RCore *core) {
 		for (va2 = from; va2 < to; va2 += objc2ClassMethSize) {
 			bool isMsgRef = false;
 			ut64 selRefVA = getRefPtr (&objc, va2, &isMsgRef);
-if (va2 == 4298425544) {
-	eprintf ("VA2 %lld %lld\n", va2,  selRefVA);
-}
 			if (!selRefVA) {
 				continue;
 			}
-eprintf ("found ref %lld -> %lld\n",  from, to);
 			// # adjust pointer to beginning of message_ref struct to get xrefs
 			if (isMsgRef) {
 				selRefVA -= 8;
 			}
 			ut64 funcVA = readQword (&objc, va2 + objc2ClassMethImpOffs);
-			// add xref to func and change instruction to point to function instead of selref
-			const char *k = sdb_fmt ("refs.0x%08"PFMT64x, selRefVA);
-			int i;
-			for (i=0; ; i++) {
-				ut64 at = sdb_array_get_num (objc.db, k, i, NULL);
-				if (!at) {
-					break;
-				}
-				r_core_cmdf (core, "axC 0x%08"PFMT64x" 0x%08"PFMT64x,  funcVA, at);
+			RList *list = r_anal_xrefs_get (core->anal, selRefVA);
+			RListIter *iter;
+			RAnalRef *ref;
+			r_list_foreach (list, iter, ref) {
+				r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_META_TYPE_CODE);
 				total++;
 			}
 		}
@@ -231,10 +214,10 @@ eprintf ("found ref %lld -> %lld\n",  from, to);
 	total = 0;
 	ut64 a;
 	for (a = from; a < to; a += objc.word_size) {
-		r_core_cmdf (core, "Cd 8 @ 0x%08"PFMT64x, a);
+		r_meta_add (core->anal, R_META_TYPE_DATA, a, a + 8, NULL);
 		total ++;
 	}
-	eprintf ("[+] Set %d dwords\n", total);
+	eprintf ("[+] Set %d dwords at 0x%08"PFMT64x"\n", total, from);
 	return true;
 }
 

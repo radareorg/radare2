@@ -318,19 +318,6 @@ enum {
 
 static const char *getClippy(int type) {
 	if (type == R_AVATAR_ORANGG) {
-#if 0
-		"
-			_______
-			/       \
-			_/(o) (o ) |_
-			/ |  ./.    _ \
-			7` \ _____  / |/
-			\`---'  | /|`
-			/ ,----\ |
-			___| \ ___/ |
-			'-----'`-----'
-			"
-#endif
 			return
 			"      _______\n"
 			"     /       \\      .-%s-.\n"
@@ -986,7 +973,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'i': // "?i" input num
 		r_cons_set_raw(0);
-		if (!r_config_get_i (core->config, "scr.interactive")) {
+		if (!r_cons_is_interactive ()) {
 			eprintf ("Not running in interactive mode\n");
 		} else {
 			switch (input[1]) {

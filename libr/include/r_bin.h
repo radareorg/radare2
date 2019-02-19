@@ -62,6 +62,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_RESOURCES 0x8000000
 #define R_BIN_REQ_INITFINI 0x10000000
 #define R_BIN_REQ_SEGMENTS 0x20000000
+#define R_BIN_REQ_HASHES 0x40000000
 #define R_BIN_REQ_SIGNATURE 0x80000000
 
 /* RBinSymbol->method_flags : */
@@ -196,7 +197,7 @@ typedef struct r_bin_info_t {
 	char *guid;
 	char *debug_file_name;
 	const char *lang;
-	RStrBuf *hashes;
+	char *hashes;
 	int bits;
 	int has_va;
 	int has_pi; // pic/pie
@@ -276,7 +277,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_t *rbin;
 } RBinFile;
 
-typedef struct RBinFileOptions {
+typedef struct r_bin_file_options_t {
 	int rawstr;
 	ut64 baddr; // base address
 	ut64 laddr; // load address
@@ -700,7 +701,7 @@ R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API bool r_bin_file_close(RBin *bin, int bd);
 R_API int r_bin_file_delete_all(RBin *bin);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
-R_API int r_bin_file_hash(RBin *bin, ut64 limit, const char *file);
+R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file);
 
 // binobject functions
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);

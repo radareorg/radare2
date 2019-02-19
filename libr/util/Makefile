@@ -13,7 +13,7 @@ endif
 
 OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
-OBJS+=list.o flist.o chmod.o graph.o event.o
+OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_sem.o thread_lock.o thread_cond.o
 OBJS+=strpool.o bitmap.o date.o format.o pie.o print.o ctype.o
@@ -21,7 +21,7 @@ OBJS+=seven.o randomart.o zip.o debruijn.o log.o
 OBJS+=utf8.o utf16.o utf32.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o idpool.o assert.o
 OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o pj.o
-OBJS+=r_json.o rbtree.o qrcode.o vector.o str_trim.o ascii_table.o
+OBJS+=rbtree.o qrcode.o vector.o str_trim.o ascii_table.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)

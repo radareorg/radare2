@@ -1455,14 +1455,13 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		case 'f': // "waf"
-			if ((input[2]==' '||input[2]=='*')) {
-				const char *file = input[2]=='*'? input+4: input+3;
-				RAsmCode *acode;
+			if ((input[2] == ' ' || input[2] == '*')) {
+				const char *file = input + ((input[2] == '*')? 4: 3);
 				r_asm_set_pc (core->assembler, core->offset);
-				acode = r_asm_assemble_file (core->assembler, file);
+				RAsmCode *acode = r_asm_assemble_file (core->assembler, file);
 				if (acode) {
-					if (input[2]=='*') {
-						cmd_write_hexpair(core, acode->buf_hex);
+					if (input[2] == '*') {
+						cmd_write_hexpair (core, acode->buf_hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
 							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
@@ -1475,8 +1474,12 @@ static int cmd_write(void *data, const char *input) {
 						r_core_block_read (core);
 					}
 					r_asm_code_free (acode);
-				} else eprintf ("Cannot assemble file\n");
-			} else eprintf ("Wrong argument\n");
+				} else {
+					eprintf ("Cannot assemble file\n");
+				}
+			} else {
+				eprintf ("Wrong argument\n");
+			}
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_wa);

@@ -1397,6 +1397,9 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, struct ht_rel_t *rel, RBinElfSection *plt_section, int nrel) {
 	ut8 buf[4] = { 0 };
+	if (!plt_section) {
+		return -1;
+	}
 	int len = r_buf_read_at (bin->b, plt_section->offset, buf, sizeof (buf));
 	if (len < 4) {
 		return -1;
@@ -2382,6 +2385,9 @@ char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 				}
 				if (!strcmp (section_name, ".note.netbsd.ident")) {
 					return strdup ("netbsd");
+				}
+				if (!strcmp (section_name, ".note.android.ident")) {
+					return strdup ("android");
 				}
 			}
 		}

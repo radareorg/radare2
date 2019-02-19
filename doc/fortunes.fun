@@ -271,3 +271,5 @@ When can we have an official anime mascot for radare2?
 Iaito became Cutter the same way Iai-giri became Cut.
 Sorry, radare2 has experienced an internal error.
 Segmentation fault (core dumped)
+Use rabin2 to discover the real TRUTH
+==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

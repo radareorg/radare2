@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2018 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2014-2019 - pancake, thestr4ng3r */
 
 #include <r_core.h>
 
@@ -38,6 +38,7 @@ typedef struct oneshot_t {
 R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	switch (mode) {
 	case 'j':
+		{
 		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
 		case R_CORE_TASK_STATE_BEFORE_START:
@@ -59,6 +60,7 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 		} else {
 			r_cons_printf ("null}");
 		}
+		}
 		break;
 	default: {
 		const char *info = task->cmd;
@@ -70,8 +72,8 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
 					   info ? info : "");
+		}
 		break;
-	}
 	}
 }
 
@@ -330,7 +332,7 @@ static void task_wakeup(RCoreTask *current) {
 
 	tasks_lock_leave (core, &old_sigset);
 
-	if(!single) {
+	if (!single) {
 		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 	}
 

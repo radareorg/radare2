@@ -28,7 +28,6 @@ static const char *help_msg_i[] = {
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"iE.", "", "Current export",
-	"iF", "", "File hashes",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
@@ -48,6 +47,7 @@ static const char *help_msg_i[] = {
 	"iS.", "", "Current section",
 	"iS=", "", "Show ascii-art color bars with the section ranges",
 	"iSS", "", "List memory segments (maps with om)",
+	"it", "", "File hashes",
 	"iV", "", "Display file version info",
 	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
@@ -309,7 +309,7 @@ static void playMsg(RCore *core, const char *n, int len) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	bool newline = r_config_get_i (core->config, "scr.interactive");
+	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i, va = core->io->va || core->io->debug;
@@ -456,11 +456,21 @@ static int cmd_info(void *data, const char *input) {
 			input--;
 			break;
 		}
-		case 'F': // "iF"
+		case 't': // "it"
 			if (input[1] == 'j') {
-				r_cons_printf ("{\"%s\"}", r_strbuf_get (core->bin->cur->o->info->hashes));
+				PJ *pj = pj_new ();
+				if (!pj) {
+					eprintf ("JSON mode failed\n");
+					return 0;
+				}
+				pj_o (pj);
+				pj_ks (pj, "values", core->bin->cur->o->info->hashes);
+				pj_end (pj);
+				r_cons_printf ("%s", pj_string (pj));
+				pj_free (pj);
 			} else {
-				r_cons_printf (r_strbuf_get (core->bin->cur->o->info->hashes));
+				RBinInfo *info = r_bin_get_info (core->bin);
+				r_cons_printf ("%s\n", (info && info->hashes)? info->hashes: "");
 			}
 			break;
 		case 'Z': // "iZ"
@@ -847,7 +857,7 @@ static int cmd_info(void *data, const char *input) {
 							goto done;
 						}
 						goto done;
-					} else {
+					} else if (obj->classes) {
 						playMsg (core, "classes", r_list_length (obj->classes));
 						if (input[1] == 'l' && obj) { // "icl"
 							r_list_foreach (obj->classes, iter, cls) {
@@ -860,7 +870,7 @@ static int cmd_info(void *data, const char *input) {
 								}
 							}
 						} else if (input[1] == 'c' && obj) { // "icc"
-                					mode = R_MODE_CLASSDUMP;
+							mode = R_MODE_CLASSDUMP;
 							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 							input = " ";
 						} else {

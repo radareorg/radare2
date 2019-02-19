@@ -510,10 +510,22 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = len;
 		size = len;
 	}
-	op->payload = payload;
-	size += payload; // XXX
-	// align to 2
-	op->size = size;
+
+	if (payload < 0) {
+		op->payload = 0;
+	} else if (payload >= len) {
+		op->payload = len;
+	} else {
+		op->payload = payload;
+	}
+
+	if (size + op->payload < 0) {
+		op->size = 0;
+	} else if (size + op->payload >= len) {
+		op->size = len;
+	} else {
+		op->size = size + op->payload;
+	}
 	free (strasm);
 	return size;
 }

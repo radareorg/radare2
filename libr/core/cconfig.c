@@ -118,8 +118,12 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
 	if (fmt == 'j') {
-		r_cons_print ("{");
+		pj_o (pj);
 	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (arch && *arch) {
@@ -165,10 +169,18 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			if (fmt == 'q') {
 				r_cons_println (h->name);
 			} else if (fmt == 'j') {
-				const char *str_bits = "32, 64";
 				const char *license = "GPL";
-				r_cons_printf ("\"%s\":{\"bits\":[%s],\"license\":\"%s\",\"description\":\"%s\",\"features\":\"%s\"}%s",
-						h->name, str_bits, license, h->desc, feat, iter->n? ",": "");
+				pj_k (pj, h->name);
+				pj_o (pj);
+				pj_k (pj, "bits");
+				pj_a (pj);
+				pj_i (pj, 32);
+				pj_i (pj, 64);
+				pj_end (pj);
+				pj_ks (pj, "license", license);
+				pj_ks (pj, "description", h->desc);
+				pj_ks (pj, "features", feat);
+				pj_end (pj);
 			} else {
 				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
@@ -177,7 +189,9 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 		}
 	}
 	if (fmt == 'j') {
-		r_cons_print ("}\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -786,6 +800,7 @@ static int cb_asmos(void *user, void *data) {
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
 	r_anal_set_os (core->anal, node->value);
+
 	return true;
 }
 
@@ -997,6 +1012,22 @@ static int cb_cfgdebug(void *user, void *data) {
 	return true;
 }
 
+static int cb_dirhome(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value) {
+		r_sys_setenv (R_SYS_HOME, node->value);
+	}
+	return true;
+}
+
+static int cb_dirtmp (void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->value) {
+		r_sys_setenv (R_SYS_TMP, node->value);
+	}
+	return true;
+}
+
 static int cb_dirsrc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore *)user;
@@ -1194,10 +1225,17 @@ static int cb_dbg_gdb_retries(void *user, void *data) {
 static int cb_dbg_execs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+#if __linux__
 	core->dbg->trace_execs = node->i_value;
 	if (core->io->debug) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
+#else
+	if (node->i_value) {
+		eprintf ("Option not supported.\n");
+	}
+	return false;
+#endif
 	return true;
 }
 
@@ -1273,6 +1311,7 @@ static int cb_dbgbackend(void *user, void *data) {
 		return false;
 	}
 	if (!strcmp (node->value, "bf")) {
+		// hack
 		r_config_set (core->config, "asm.arch", "bf");
 	}
 	r_debug_use (core->dbg, node->value);
@@ -1372,6 +1411,13 @@ static int cb_io_unalloc(void *user, void *data) {
 	} else {
 		core->print->flags &= ~R_PRINT_FLAGS_UNALLOC;
 	}
+	return true;
+}
+
+static int cb_io_unalloc_ch(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->print->io_unalloc_ch = *node->value ? node->value[0] : ' ';
 	return true;
 }
 
@@ -1921,7 +1967,7 @@ static int cb_scrint(void *user, void *data) {
 	if (node->i_value && r_sandbox_enable (0)) {
 		return false;
 	}
-	r_cons_singleton ()->is_interactive = node->i_value;
+	r_cons_singleton ()->context->is_interactive = node->i_value;
 	return true;
 }
 
@@ -2570,7 +2616,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
-	SETPREF ("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
+	SETPREF ("anal.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
@@ -2603,7 +2649,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmpmid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
-	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
+	SETCB ("anal.bb.maxsize", "1M", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);
@@ -2650,6 +2696,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETPREF ("asm.bytes", "true", "Display the bytes of each instruction");
+	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
 	SETPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF ("asm.cmt.right", "true", "Show comments at right of disassembly if they fit in screen");
@@ -2683,9 +2730,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("emu.lazy", "false", "Do not emulate all instructions with aae (optimization)");
 	SETPREF ("emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
-	SETPREF ("emu.stroff", "false", "Always show offset when printing asm.emu strings");
-	SETPREF ("emu.strinv", "true", "Color-invert asm.emu strings");
-	SETPREF ("emu.strflag", "true", "Also show flag (if any) for asm.emu string");
+	SETPREF ("emu.str.lea", "true", "Disable this in ARM64 code to remove some false positives");
+	SETPREF ("emu.str.off", "false", "Always show offset when printing asm.emu strings");
+	SETPREF ("emu.str.inv", "true", "Color-invert emu.str strings");
+	SETPREF ("emu.str.flag", "true", "Also show flag (if any) for asm.emu string");
 	SETPREF ("emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF ("emu.ssa", "false", "Perform SSA checks and show the ssa reg names as comments");
 	n = NODECB ("emu.skip", "ds", &cb_emuskip);
@@ -2914,6 +2962,8 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
+	SETCB ("dir.home", r_sys_getenv (R_SYS_HOME), &cb_dirhome, "Path for the home directory");
+	SETCB ("dir.tmp", r_sys_getenv (R_SYS_TMP), &cb_dirtmp, "Path of the tmp directory");
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
 #else
@@ -3026,6 +3076,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
 	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
+	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Hexdump char if byte is unallocated");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");

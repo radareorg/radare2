@@ -17,6 +17,17 @@ typedef struct {
 
 static libbochs_t *desc = NULL;
 
+static bool isBochs(RDebug *dbg) {
+	RIODesc *d = dbg->iob.io->desc;
+	if (d && d->plugin && d->plugin->name) {
+		if (!strcmp ("bochs", d->plugin->name)) {
+			return true;
+		}
+	}
+	eprintf ("error: the iodesc data is not bochs friendly\n");
+	return false;
+}
+
 static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	char cmd[64];
 	char num[4];
@@ -80,6 +91,9 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	char strLimit[19];
 	int i = 0, pos = 0, lenRec = 0;
 	ut64 val = 0, valRIP = 0; //, posRIP = 0;
+	if (!isBochs (dbg)) {
+		return 0;
+	}
 
 	//eprintf ("bochs_reg_read\n");
 	if (bCapturaRegs == true) {
@@ -206,6 +220,9 @@ void map_free(RDebugMap *map) {
 }
 
 static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
+	if (!isBochs (dbg)) {
+		return NULL;
+	}
 	//eprintf("bochs_map_getdebug:\n");
 	RDebugMap *mr;
 	RList *list = r_list_newf ((RListFree)map_free);
@@ -228,6 +245,9 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 }
 
 static int r_debug_bochs_step(RDebug *dbg) {
+	if (!isBochs (dbg)) {
+		return false;
+	}
 	//eprintf ("bochs_step\n");
 	bochs_send_cmd (desc,"s",true);
 	bCapturaRegs = true;
@@ -250,6 +270,9 @@ static void bochs_debug_break(void *u) {
 }
 
 static int r_debug_bochs_wait(RDebug *dbg, int pid) {
+	if (!isBochs (dbg)) {
+		return false;
+	}
 	char strIP[19];
 	int i = 0;
 	const char *x;

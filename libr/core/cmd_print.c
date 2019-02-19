@@ -361,14 +361,24 @@ static const char *help_detail2_pf[] = {
 	"pf", " E (EnumType)arg_name`", "enum type",
 	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",
 	"pf", " obj=xxdz prev next size name", "Same as above",
+	"pf", " *z*i*w nb name blob", "Print the pointers with given labels",
 	"pf", " iwq foo bar troll", "Print the iwq format with foo, bar, troll as the respective names for the fields",
 	"pf", " 0iwq foo bar troll", "Same as above, but considered as a union (all fields at offset 0)",
 	"pf.", "plop ? (troll)mystruct", "Use structure troll previously defined",
+	"pfj.", "plop @ 0x14", "Apply format object at the given offset",
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
+	"pf", " 5sqw string quad word", "Print an array with sqw struct along with its field names",
 	"pf", " {integer}? (bifc)", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
-	"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structres",
-	"pf", "n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
+	"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structures",
+	"pf", " ;..x", "Print value located 6 bytes from current offset",
+	"pf", " [10]z[3]i[10]Zb", "Print an fixed size str, widechar, and var",
+	"pfj", " +F @ 0x14","Print the content at given offset with flag",
+	"pf", " n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
+	"pf", " [2]? (plop)structname @ 0", "Prints an array of structs",
+	"pf", " eqew bigWord beef", "Swap endianess and print with given labels",
+	"pf", ".foo rr (eax)reg1 (eip)reg2", "Create object referencing to register values ",
+	"pf", " tt troll plop", "print time stamps with labels troll and plop",
 	NULL
 };
 
@@ -881,23 +891,35 @@ static void cmd_pDj(RCore *core, const char *arg) {
 	if (bsize < 0) {
 		bsize = -bsize;
 	}
-	r_cons_print ("[");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_a (pj);
 	ut8 *buf = malloc (bsize);
 	if (buf) {
 		r_io_read_at (core->io, core->offset, buf, bsize);
-		r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
+		r_core_print_disasm_json (core, core->offset, buf, bsize, 0, pj);
 		free (buf);
 	} else {
 		eprintf ("cannot allocate %d byte(s)\n", bsize);
 	}
-	r_cons_print ("]");
+	pj_end (pj);
+	r_cons_printf ("%s", pj_string (pj));
+	pj_free (pj);
 }
 
 static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	int nblines = r_num_math (core->num, arg);
-	r_cons_print ("[");
-	r_core_print_disasm_json (core, core->offset, block, core->blocksize, nblines);
-	r_cons_print ("]\n");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_a (pj);
+	r_core_print_disasm_json (core, core->offset, block, core->blocksize, nblines, pj);
+	pj_end (pj);
+	r_cons_printf ("%s\n", pj_string (pj));
+	pj_free (pj);
 }
 
 static void helpCmdTasks(RCore *core) {
@@ -1761,7 +1783,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 }
 
 struct count_pz_t {
-	int flagspace;
+	RSpace *flagspace;
 	ut64 addr;
 	ut64 size;
 	int *ret;
@@ -1821,8 +1843,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 		}
 		break;
 	case 's': // "pzs"
-		j = r_flag_space_get (core->flags, "strings");
-		u.flagspace = j;
+		u.flagspace = r_flag_space_get (core->flags, "strings");
 		u.addr = addr;
 		u.size = size;
 		u.ret = &ret;
@@ -2413,7 +2434,7 @@ r_cons_pop();
 						R_FREE (string2);
 					}
 				}
-				if (string) {
+				if (string && addr != UT64_MAX && addr != UT32_MAX) {
 					string = r_str_trim (string);
 					string2 = r_str_trim (string2);
 					//// TODO implememnt avoid duplicated strings
@@ -3640,8 +3661,13 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 	RAnalOp aop = {0};
 	int ret;
 	ut8 buf[128];
+	PJ *pj = NULL;
 	if (type_print == 'j') {
-		r_cons_print ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 	}
 	while (count-- > 0) {
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
@@ -3653,10 +3679,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 		}
 	//	r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, aop.size, addr);
 		if (type_print == 'j') {
-			r_core_print_disasm_json (core, addr, buf, sizeof (buf), 1);
-			if (count) {
-				r_cons_print (",");
-			}
+			r_core_print_disasm_json (core, addr, buf, sizeof (buf), 1, pj);
 		} else {
 			r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 		}
@@ -3674,7 +3697,9 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 		addr += aop.size;
 	}
 	if (type_print == 'j') {
-		r_cons_print ("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -3761,6 +3786,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	RListIter *locs_it = NULL;
 	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
 	r_config_set_i (core->config, "asm.bb.middle", false);
+	PJ *pj = NULL;
 
 	if (f->fcn_locs) {
 		locs_it = f->fcn_locs->head;
@@ -3777,8 +3803,11 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 	}
 	r_list_sort (f->bbs, (RListComparator) bbcmp);
 	if (input == 'j' && b) {
-		r_cons_print ("[");
-		bool isFirst = true;
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -3794,17 +3823,12 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				break;
 			}
 			r_list_foreach (tmp_func->bbs, iter, b) {
-				if (isFirst) {
-					isFirst = false;
-				} else {
-					r_cons_print (",");
-				}
 // const char *cmd = (type_print == 'D')? "pDj": "pIj";
 // r_core_cmdf (core, "%s %d @ 0x%"PFMT64x, cmd, b->size, b->addr);
 				ut8 *buf = malloc (b->size);
 				if (buf) {
 					r_io_read_at (core->io, b->addr, buf, b->size);
-					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+					r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 					free (buf);
 				} else {
 					eprintf ("cannot allocate %d byte(s)\n", b->size);
@@ -3819,11 +3843,6 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					core->cons->null = false;
 				}
 			}
-			if (isFirst) {
-				isFirst = false;
-			} else {
-				r_cons_print (",");
-			}
 #if 0
 			r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 			const char *cmd = (type_print == 'D')? "pDj": "pIj";
@@ -3832,7 +3851,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			ut8 *buf = malloc (b->size);
 			if (buf) {
 				r_io_read_at (core->io, b->addr, buf, b->size);
-				r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+				r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 				free (buf);
 			} else {
 				eprintf ("cannot allocate %d byte(s)\n", b->size);
@@ -3850,11 +3869,6 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 						core->cons->null = false;
 					}
 				}
-				if (isFirst) {
-					isFirst = false;
-				} else {
-					r_cons_print (",");
-				}
 #if 0
 				const char *cmd = (type_print == 'D')? "pDj": "pIj";
 				r_core_cmdf (core, "%s %d @0x%"PFMT64x, cmd, b->size, b->addr);
@@ -3862,14 +3876,17 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				ut8 *buf = malloc (b->size);
 				if (buf) {
 					r_io_read_at (core->io, b->addr, buf, b->size);
-					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+					r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 					free (buf);
 				} else {
 					eprintf ("cannot allocate %d byte(s)\n", b->size);
 				}
 			}
 		}
-		r_cons_print ("]");
+
+		pj_end (pj);
+		r_cons_printf ("%s", pj_string (pj));
+		pj_free (pj);
 	} else {
 		bool asm_lines = r_config_get_i (core->config, "asm.lines.bb");
 		bool emu = r_config_get_i (core->config, "asm.emu");
@@ -4086,6 +4103,7 @@ static int cmd_print(void *data, const char *input) {
 	const int addrbytes = core->io->addrbytes;
 	i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
+	PJ *pj = NULL;
 
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
@@ -4494,27 +4512,14 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2] == '?') { // "pif?"
 					r_core_cmd_help(core, help_msg_pif);
 				} else if (input[2] == 'j') {
-					r_core_cmdf (core, "pdfj%s", input[3]);
+					r_core_cmdf (core, "pdfj%s", input + 3);
 				} else if (input[2] == 'c') { // "pifc"
 
-				RListIter *iter;
-				RAnalRef *refi;
-				RList *refs = NULL;
-				PJ *pj = NULL;
+					RListIter *iter;
+					RAnalRef *refi;
+					RList *refs = NULL;
+					PJ *pj = NULL;
 
-				// get function in current offset
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-
-				// validate that a function was found in the given address
-				if (!f) {
-					break;
-				}
-				// get all the calls of the function
-				refs = r_core_anal_fcn_get_calls (core, f);
-
-				// sanity check
-				if (!r_list_empty (refs)) {
 					// check for bounds
 					if (input[3] !=0) {
 						if (input[3] == 'j') { // "pifcj"
@@ -4522,65 +4527,83 @@ static int cmd_print(void *data, const char *input) {
 							pj_a (pj);
 						}
 					}
-
-					// store current configurations
-					RConfigHold *hc = r_config_hold_new (core->config);
-					r_config_save_num (hc, "asm.offset", NULL);
-					r_config_save_num (hc, "asm.comments", NULL);
-					r_config_save_num (hc, "asm.tabs", NULL);
-					r_config_save_num (hc, "asm.bytes", NULL);
-					r_config_save_num (hc, "emu.str", NULL);
-
-
-					// temporarily replace configurations
-					r_config_set_i (core->config, "asm.offset", false);
-					r_config_set_i (core->config, "asm.comments", false);
-					r_config_set_i (core->config, "asm.tabs", 0);
-					r_config_set_i (core->config, "asm.bytes", false);
-					r_config_set_i (core->config, "emu.str", false);
-
-					// iterate over all call references
-					r_list_foreach (refs, iter, refi) {
+					// get function in current offset
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+					
+					// validate that a function was found in the given address
+					if (!f) {
+						// print empty json object
 						if (pj) {
-							RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
-							char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
-							pj_o (pj);
-							pj_ks (pj, "dest", dst);
-							pj_kn (pj, "addr", refi->addr);
-							pj_kn (pj, "at", refi->at);
 							pj_end (pj);
-						} else {
-							char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
-							r_cons_printf ("%s", s);
+							r_cons_println (pj_string(pj));
+							pj_free (pj);
 						}
+						break;
 					}
+					// get all the calls of the function
+					refs = r_core_anal_fcn_get_calls (core, f);
 
-					// restore saved configuration
-					r_config_restore (hc);
-					r_config_hold_free (hc);
+					// sanity check
+					if (!r_list_empty (refs)) {
 
+						// store current configurations
+						RConfigHold *hc = r_config_hold_new (core->config);
+						r_config_save_num (hc, "asm.offset", NULL);
+						r_config_save_num (hc, "asm.comments", NULL);
+						r_config_save_num (hc, "asm.tabs", NULL);
+						r_config_save_num (hc, "asm.bytes", NULL);
+						r_config_save_num (hc, "emu.str", NULL);
+
+
+						// temporarily replace configurations
+						r_config_set_i (core->config, "asm.offset", false);
+						r_config_set_i (core->config, "asm.comments", false);
+						r_config_set_i (core->config, "asm.tabs", 0);
+						r_config_set_i (core->config, "asm.bytes", false);
+						r_config_set_i (core->config, "emu.str", false);
+
+						// iterate over all call references
+						r_list_foreach (refs, iter, refi) {
+							if (pj) {
+								RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+								char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+								pj_o (pj);
+								pj_ks (pj, "dest", dst);
+								pj_kn (pj, "addr", refi->addr);
+								pj_kn (pj, "at", refi->at);
+								pj_end (pj);
+							} else {
+								char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
+								r_cons_printf ("%s", s);
+							}
+						}
+
+						// restore saved configuration
+						r_config_restore (hc);
+						r_config_hold_free (hc);
+					}
 					// print json object
 					if (pj) {
 						pj_end (pj);
-						r_cons_printf ("%s\n", pj_string (pj));
+						r_cons_println (pj_string (pj));
 						pj_free (pj);
 					}
+				} else if (l != 0) {
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+					if (f) {
+						ut32 bsz = core->blocksize;
+						// int fsz = r_anal_fcn_realsize (f);
+						int fsz = r_anal_fcn_size (f); // we want max-min here
+						r_core_block_size (core, fsz);
+						r_core_print_disasm_instructions (core, fsz, 0);
+						r_core_block_size (core, bsz);
+					} else {
+						r_core_print_disasm_instructions (core,
+							core->blocksize, l);
+					}
 				}
-			} else if (l != 0) {
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-				if (f) {
-					ut32 bsz = core->blocksize;
-					// int fsz = r_anal_fcn_realsize (f);
-					int fsz = r_anal_fcn_size (f); // we want max-min here
-					r_core_block_size (core, fsz);
-					r_core_print_disasm_instructions (core, fsz, 0);
-					r_core_block_size (core, bsz);
-				} else {
-					r_core_print_disasm_instructions (core,
-						core->blocksize, l);
-				}
-			}
 			break;
 		case 'r': // "pir"
 		{
@@ -4735,13 +4758,19 @@ static int cmd_print(void *data, const char *input) {
 						r_io_read_at (core->io, b->addr, block, b->size);
 
 						if (input[2] == 'j') {
-							r_cons_print ("[");
-							r_core_print_disasm_json (core, b->addr, block, b->size, 0);
-							r_cons_print ("]\n");
+							pj = pj_new ();
+							if (!pj) {
+								break;
+							}
+							pj_a (pj);
+							r_core_print_disasm_json (core, b->addr, block, b->size, 0, pj);
+							pj_end (pj);
+							r_cons_printf ("%s\n", pj_string (pj));
+							pj_free (pj);
 						} else {
 							core->num->value = r_core_print_disasm (
 								core->print, core, b->addr, block,
-								b->size, 9999, 0, 2, input[2] == 'J', NULL);
+								b->size, 9999, 0, 2, input[2] == 'J', NULL, NULL);
 						}
 						free (block);
 						pd_result = 0;
@@ -4798,15 +4827,18 @@ static int cmd_print(void *data, const char *input) {
 					const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
 					r_config_set_i (core->config, "asm.bb.middle", false);
 					cont_size = tmp_get_contsize (f);
-					r_cons_printf ("{");
-					r_cons_printf ("\"name\":\"%s\"", f->name);
-					r_cons_printf (",\"size\":%d", fcn_size);
-					r_cons_printf (",\"addr\":%"PFMT64u, f->addr);
-					r_cons_printf (",\"ops\":[");
+					pj = pj_new ();
+					if (!pj) {
+						break;
+					}
+					pj_o (pj);
+					pj_ks (pj, "name", f->name);
+					pj_kn (pj, "size", fcn_size);
+					pj_kn (pj, "addr", f->addr);
+					pj_k (pj, "ops");
+					pj_a (pj);
 					// instructions are all outputted as a json list
 					//  DEAD CODE cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
-					bool first = true;
-					bool prev_result = true;
 					// TODO: can loc jump to another locs?
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						if (tmp_func->addr > f->addr) {
@@ -4815,45 +4847,33 @@ static int cmd_print(void *data, const char *input) {
 						cont_size = tmp_get_contsize (tmp_func);
 						loc_buf = calloc (cont_size, 1);
 						r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-						if (!first && prev_result) {
-							r_cons_print (",");
-						}
-						prev_result = r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
-						first = false;
+						r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0, pj);
 						free (loc_buf);
 					}
-					prev_result = true;
 					r_list_foreach (f->bbs, locs_it, b) {
 
 						ut8 *buf = malloc (b->size);
 						if (buf) {
-							if (first) {
-								first = false;
-							} else if (!first && prev_result) {
-								r_cons_print (",");
-							}
 							r_io_read_at (core->io, b->addr, buf, b->size);
-							prev_result = r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+							r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 							free (buf);
 						} else {
 							eprintf ("cannot allocate %d byte(s)\n", b->size);
 						}
 					}
-					prev_result = true;
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						cont_size = tmp_get_contsize (tmp_func);
 						loc_buf = calloc (cont_size, 1);
 						if (loc_buf) {
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-							if (!first && prev_result) {
-								r_cons_print (",");
-							}
-							prev_result = r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
-							first = false;
+							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0, pj);
 							free (loc_buf);
 						}
 					}
-					r_cons_printf ("]}\n");
+					pj_end (pj);
+					pj_end (pj);
+					r_cons_printf ("%s\n", pj_string (pj));
+					pj_free (pj);
 					pd_result = 0;
 					r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
 				} else if (f) {
@@ -4878,7 +4898,7 @@ static int cmd_print(void *data, const char *input) {
 						sz = R_MAX (sz, rs);
 						ut8 *buf = calloc (sz, 1);
 						(void)r_io_read_at (core->io, at, buf, sz);
-						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, f);
+						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, NULL, f);
 						free (buf);
 						// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
 					}
@@ -4969,7 +4989,7 @@ static int cmd_print(void *data, const char *input) {
 							break;
 						}
 						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
-						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL);
+						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL, NULL);
 					} else { // pd
 						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
@@ -4996,7 +5016,7 @@ static int cmd_print(void *data, const char *input) {
 								bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block1, R_MAX (bs, bs1), l, 0, 1, formatted_json, NULL);
+							core, core->offset, block1, R_MAX (bs, bs1), l, 0, 1, formatted_json, NULL, NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -5016,7 +5036,7 @@ static int cmd_print(void *data, const char *input) {
 							memcpy (block1, block, addrbytes * l);
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL);
+							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
 						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
@@ -5031,7 +5051,7 @@ static int cmd_print(void *data, const char *input) {
 									bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block1, bs, l, 0, 0, formatted_json, NULL);
+								core, addr, block1, bs, l, 0, 0, formatted_json, NULL, NULL);
 					}
 				}
 			}

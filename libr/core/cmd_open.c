@@ -93,6 +93,7 @@ static const char *help_msg_om[] = {
 	"om-", "mapid", "remove the map with corresponding id",
 	"om-..", "", "hud view of all the maps to select the one to delete",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
+	"oma"," [fd]", "create a map covering all VA for given fd",
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
 	"om.", "", "show map, that is mapped to current offset",
 	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
@@ -204,10 +205,12 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 		ls_foreach_prev (io->maps, iter, s) {
 			if (use_color) {
 				color_end = Color_RESET;
-				if (s->perm & R_PERM_X) { // exec bit
-					color = Color_GREEN;
+				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bits
+					color = r_cons_singleton()->context->pal.graph_trufae;
+				} else if (s->perm & R_PERM_X) { // exec bit
+					color = r_cons_singleton()->context->pal.graph_true;
 				} else if (s->perm & R_PERM_W) { // write bit
-					color = Color_RED;
+					color = r_cons_singleton()->context->pal.graph_false;
 				} else {
 					color = "";
 					color_end = "";
@@ -732,6 +735,18 @@ static void cmd_open_map(RCore *core, const char *input) {
 				r_io_map_del_name (map);
 			}
 			s = p;
+		}
+		break;
+	case 'a': // "oma"
+		{
+			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
+			RIODesc *desc = r_io_desc_get (core->io, fd);
+			if (desc) {
+				map = r_io_map_add (core->io, fd, desc->perm, 0, 0, UT64_MAX);
+				r_io_map_set_name (map, desc->name);
+			} else {
+				eprintf ("Usage: omm [fd]\n");
+			}
 		}
 		break;
 	case 'm': // "omm"

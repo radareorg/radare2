@@ -549,6 +549,10 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start (ap, fmt);
+
+	if (!r_cons_is_interactive ()) {
+		return def == 'y';
+	}
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
 	fflush (stderr);
@@ -574,7 +578,7 @@ R_API char *r_cons_password(const char *msg) {
 	fflush (stdout);
 	r_cons_set_raw (1);
 #if __UNIX__
-	RCons *a = r_cons_singleton();
+	RCons *a = r_cons_singleton ();
 	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
 	// //  required to make therm/iterm show the key
 	// // cannot read when enabled in this way

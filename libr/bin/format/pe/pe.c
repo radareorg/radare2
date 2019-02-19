@@ -1213,7 +1213,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t)* bin) {
 	return true;
 }
 
-static void _free_resources(r_pe_resource *rs) {
+static void _free_resource(r_pe_resource *rs) {
 	if (rs) {
 		free (rs->name);
 		free (rs->timestr);
@@ -1232,7 +1232,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 		return false;
 	}
 
-	bin->resources = r_list_newf ((RListFree)_free_resources);
+	bin->resources = r_list_newf ((RListFree)_free_resource);
 	if (!bin->resources) {
 		return false;
 	}
@@ -1249,8 +1249,6 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->resource_directory_offset = resource_dir_paddr;
 	return true;
 }
-
-
 
 static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord callbacks) {
 	PE_DWord paddr, haddr;
@@ -2244,6 +2242,7 @@ static char* _resource_type_str(int type) {
 }
 
 static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, char *resource_name) {
+	ut8 *resourceEntryName = NULL;
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
@@ -2265,15 +2264,22 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			eprintf ("Warning: read resource entry\n");
 			break;
 		}
-		ut8 *resourceEntryName = NULL;
 		if (entry.u1.s.NameIsString) {
 			int i;
-			ut16 resourceEntryNameLength;
-			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&resourceEntryNameLength, sizeof (ut16));
-
-			resourceEntryName = calloc (resourceEntryNameLength, sizeof (ut8));
-			for(i = 0; i < 2 * resourceEntryNameLength; i += 2) { /* Convert Unicode to ASCII */
-				r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + i, resourceEntryName + (i/2), sizeof (ut8));
+			ut16 buf, resourceEntryNameLength;
+			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&buf, sizeof (ut16));
+			resourceEntryNameLength = r_read_le16 (&buf);
+			resourceEntryName = calloc (resourceEntryNameLength + 1, sizeof (ut8));
+			if (resourceEntryName) {
+				for (i = 0; i < resourceEntryNameLength; i++) { /* Convert Unicode to ASCII */
+					ut8 byte;
+					int r = r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + (i*2), &byte, sizeof (ut8));
+					if (r < 1 || !byte) {
+						R_FREE (resourceEntryName);
+						break;
+					}
+					resourceEntryName[i] = byte;
+				}
 			}
 		}
 		if (entry.u2.s.DataIsDirectory) {
@@ -2284,16 +2290,17 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			if(resource_name != NULL && resourceEntryName != NULL) {
+			if (resource_name) {
 				/* We're about to recursively call this function with a new resource entry name
 				   and we haven't used resource_name, so free it. Only happens in weird PEs. */
-				free (resource_name);
+				R_FREE (resource_name);
 			}
 			_parse_resource_directory (bin, &identEntry,
 				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, (char *)resourceEntryName);
+			// do not dblfree, ownership is transferred free (resourceEntryName);
 			continue;
 		} else {
-			free (resourceEntryName);
+			R_FREE (resourceEntryName);
 		}
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
@@ -2366,9 +2373,9 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;
 		if (resource_name) {
-			rs->name = resource_name;
+			rs->name = strdup (resource_name);
 		} else {
-			char numberbuf[6];
+			char numberbuf[SDB_NUM_BUFSZ];
 			rs->name = strdup (sdb_itoa (id, numberbuf, 10));
 		}
 		r_list_append (bin->resources, rs);
@@ -2673,9 +2680,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		if (r_buf_read_at (bin->b, bin_pe_rva_to_paddr (bin, bin->export_directory->Name), (ut8*) dll_name, PE_NAME_LENGTH) < 1) {
+			// we dont stop if dll name cant be read, we set dllname to null and continue
 			bprintf ("Warning: read (dll name)\n");
-			free (exports);
-			return NULL;
+			dll_name[0] = '\0';
 		}
 		functions_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfFunctions);
 		names_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfNames);
@@ -3360,7 +3367,6 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		return NULL;
 	}
 	for (i = 0, j = 0; i < bin->num_sections; i++) {
-		//if sz = 0 r_io_section_add will not add it so just skeep
 		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) {
 			continue;
 		}

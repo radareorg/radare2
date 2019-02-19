@@ -189,7 +189,7 @@ static int rax(char *str, int len, int last) {
 				printf ("Usage: rax2 [options] [expr ...]\n");
 				return help ();
 			}
-			str++;		
+			str++;
 		}
 		if (last) {
 			return !use_stdin ();
@@ -493,7 +493,7 @@ dotherax:
 		// check -r
 		// flags & (1 << 18)
 		char *asnum, *modified_str;
-		
+
 		// To distinguish octal values.
 		if (*str != '0') {
 			modified_str = r_str_newf ("0%s", str);
@@ -603,6 +603,7 @@ R_API int r_core_main_rax2(int argc, char **argv) {
 		use_stdin ();
 	} else {
 		for (i = 1; i < argc; i++) {
+			r_str_unescape (argv[i]);
 			rax (argv[i], 0, i == argc - 1);
 		}
 	}

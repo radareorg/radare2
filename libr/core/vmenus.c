@@ -595,7 +595,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 
 R_API int r_core_visual_types(RCore *core) {
 	RCoreVisualTypes vt = {core, 0, 0};
-	int i, j, ch;
+	int i, ch;
 	int _option = 0;
 	int option = 0;
 	char *txt;
@@ -609,15 +609,11 @@ R_API int r_core_visual_types(RCore *core) {
 		"struct",
 		"func",
 		"union",
+		"cc",
 		NULL
 	};
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	for (j = i = 0; i < R_FLAG_SPACES_MAX; i++) {
-		if (core->flags->spaces[i]) {
-			j = 1;
-		}
-	}
-	if (j == 0) {
+	if (r_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
 	for (;;) {
@@ -639,11 +635,16 @@ R_API int r_core_visual_types(RCore *core) {
 		if (optword) {
 			r_cons_printf (">> %s\n", optword);
 		}
-		vt.t_idx = option;
-		vt.t_ctr = 0;
-		vt.type = opts[h_opt];
-		vt.optword = optword;
-                sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+		if (!strcmp (opts[h_opt], "cc")) {
+			// XXX TODO: make this work (select with cursor, to delete, or add a new one with 'i', etc)
+			r_core_cmdf (core, "tfcl");
+		} else {
+			vt.t_idx = option;
+			vt.t_ctr = 0;
+			vt.type = opts[h_opt];
+			vt.optword = optword;
+			sdb_foreach (core->anal->sdb_types, sdbforcb, &vt);
+		}
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
@@ -716,12 +717,7 @@ R_API int r_core_visual_types(RCore *core) {
 			option = _option;
 			if (menu==0) {
 				// if no flagspaces, just quit
-				for (j = i = 0; i < R_FLAG_SPACES_MAX; i++) {
-					if (core->flags->spaces[i]) {
-						j = 1;
-					}
-				}
-				if (!j) {
+				if (r_flag_space_is_empty (core->flags)) {
 					return true;
 				}
 			}
@@ -1518,12 +1514,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int menu = 0;
 	int sort = SORT_NONE;
 
-	for (j=i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (core->flags->spaces[i]) {
-			j = 1;
-		}
-	}
-	if (j == 0) {
+	if (r_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
 	for (;;) {
@@ -1532,19 +1523,14 @@ R_API int r_core_visual_trackflags(RCore *core) {
 
 		if (menu) {
 			r_cons_printf ("Flags in flagspace '%s'. Press '?' for help.\n\n",
-			(core->flags->space_idx==-1)?"*":core->flags->spaces[core->flags->space_idx]);
+				r_flag_space_cur_name (core->flags));
 			hit = 0;
 			i = j = 0;
-			RList *l = r_flag_all_list (core->flags);
+			RList *l = r_flag_all_list (core->flags, true);
 			RListIter *iter;
 			RFlagItem *fi;
 			sort_flags (l, sort);
 			r_list_foreach (l, iter, fi) {
-				/* filter per flag spaces */
-				if ((core->flags->space_idx != -1) &&
-				    (fi->space != core->flags->space_idx)) {
-					continue;
-				}
 				if (option == i) {
 					fs2 = fi->name;
 					hit = 1;
@@ -1591,34 +1577,32 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		} else {
 			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
-			for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
-				if (core->flags->spaces[i]) {
-					if (option == i) {
-						fs = core->flags->spaces[i];
-						hit = 1;
-					}
-					if ((i >= option - delta) && ((i < option + delta)|| \
-							((option < delta) && (i < (delta << 1))))) {
-						r_cons_printf (" %c %02d %c %s\n",
-							(option==i)?'>':' ', j,
-							(i==core->flags->space_idx)?'*':' ',
-							core->flags->spaces[i]);
-						j++;
-					}
-				}
-			}
-			if (core->flags->spaces[9]) {
-				if (option == j) {
-					fs = "*";
+			RSpaceIter it;
+			const RSpace *s, *cur = r_flag_space_cur (core->flags);
+			int i = 0;
+			r_flag_space_foreach (core->flags, it, s) {
+				if (option == i) {
+					fs = s->name;
 					hit = 1;
 				}
-				r_cons_printf (" %c %02d %c %s\n",
-					(option==j)?'>':' ', j,
-					(i==core->flags->space_idx)?'*':' ',
-					"*");
+				if ((i >= option - delta) && ((i < option + delta) ||
+					((option < delta) && (i < (delta << 1))))) {
+					r_cons_printf (" %c %c %s\n",
+						(option == i)? '>': ' ',
+						(s == cur)? '*': ' ',
+						s->name);
+				}
+				i++;
 			}
-			if (!hit && j > 0) {
-				option = j - 1;
+			if (option == i) {
+				fs = "*";
+				hit = 1;
+			}
+			r_cons_printf (" %c %c %s\n", (option == i)? '>': ' ',
+				!cur? '*': ' ', "*");
+			i++;
+			if (!hit && i > 0) {
+				option = i - 1;
 				continue;
 			}
 		}
@@ -1663,12 +1647,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			if (menu == 0) {
 				r_flag_space_set (core->flags, NULL);
 				// if no flagspaces, just quit
-				for (j=i=0;i<R_FLAG_SPACES_MAX;i++) {
-					if (core->flags->spaces[i]) {
-						j = 1;
-					}
-				}
-				if (!j) {
+				if (r_flag_space_is_empty (core->flags)) {
 					return true;
 				}
 			}
@@ -2955,7 +2934,19 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			variable_option = 0;
 			break;
 		case '_':
-			r_core_cmd0 (core, "s $(afl~...)");
+			{
+				r_core_cmd0 (core, "s $(afl~...)");
+				int n = 0;
+				RListIter *iter;
+				RAnalFunction *fcn;
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					if (fcn->addr == core->offset) {
+						option = n;
+						break;
+					}
+					n ++;
+				}
+			}
 			break;
 		case 'j':
 			if (selectPanel) {
@@ -3226,6 +3217,7 @@ R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
 		," h    define anal hint"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
+		," o    opcode string"
 		," r    rename function"
 		," R    find references /r"
 		," s    set string"
@@ -3276,12 +3268,13 @@ onemoretime:
 		edit_bits (core);
 		break;
 	case 't':
+	case 'o':
 		{
 			char str[128];
 			r_cons_show_cursor (true);
-			r_line_set_prompt ("type: ");
+			r_line_set_prompt (ch=='t'?"type: ": "opstr: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "aht %s @ 0x%"PFMT64x, str, off);
+				r_core_cmdf (core, "ah%c %s @ 0x%"PFMT64x, ch, str, off);
 			}
 		}
 		break;

@@ -7,26 +7,36 @@ _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 
 # Build against last capstone release or next
+ifeq ($(shell test -d ../.git && echo 1),1)
 CS_RELEASE=0
+else
+CS_RELEASE=1
+endif
 
 CAPSTONE_CFLAGS?=-g
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
 GIT?=git
-WGET?=wget
+ifeq ($(shell type wget && echo 1),1)
+WGET?=wget -c --no-check-certificate -O
+else
+WGET?=curl -o
+endif
 
 ifeq ($(CS_RELEASE),1)
-CS_VER=3.0.5
+CS_VER=4.0.1
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20181224
+CS_UPD=20190213
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
+#CS_BRA=next
+#CS_TIP=38607453f3de85733f9604dffc27778db3b53766
+CS_TIP=0b37390f49499527fd9aca64afddeb5dfbe5e663
 CS_BRA=master
-CS_TIP=58a80a93f995c23a8681dcc38dccfc6bab9cd7a4
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -245,18 +255,18 @@ capstone-clean:
 	cd capstone ; $(MAKE) clean
 
 capstone: capstone-$(CS_VER).tar.gz
+	curl -o capstone-$(CS_VER).tar.gz $(CS_TAR)
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 	mkdir -p capstone/include/capstone
 	cp -rf capstone/include/*.h capstone/include/capstone
 
 capstone-$(CS_VER).tar.gz:
-	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
+	$(WGET) capstone-$(CS_VER).tar.gz $(CS_TAR)
 else
 
 capstone: capstone-sync
@@ -266,6 +276,7 @@ ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+	@echo "[capstone] Applying patches"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
 	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done

@@ -408,8 +408,9 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 
 RIOPlugin r_io_plugin_default = {
 	.name = "default",
-	.desc = "open local files using def_mmap://",
+	.desc = "Open local files",
 	.license = "LGPL3",
+	.uris = "file://,nocache://",
 	.open = __open_default,
 	.close = __close,
 	.read = __read,

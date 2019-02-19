@@ -127,8 +127,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_procpid = {
 	.name = "procpid",
-	.desc = "/proc/pid/mem io",
+	.desc = "Open /proc/[pid]/mem io",
 	.license = "LGPL3",
+	.uris = "procpid://",
 	.open = __open,
 	.close = __close,
 	.read = __read,

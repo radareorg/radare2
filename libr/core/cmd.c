@@ -741,7 +741,7 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 			free (out);
 		}
 	} else if (r_parse_is_c_file (file)) {
-		char *out = r_parse_c_file (core->anal, file);
+		char *out = r_parse_c_file (core->anal, file, NULL);
 		if (out) {
 			r_cons_strcat (out);
 			sdb_query_lines (core->anal->sdb_types, out);
@@ -1090,7 +1090,7 @@ static int cmd_kuery(void *data, const char *input) {
 		if (core->http_up) {
 			return false;
 		}
-		if (!r_config_get_i (core->config, "scr.interactive")) {
+		if (!r_cons_is_interactive ()) {
 			return false;
 		}
 		if (input[1] == ' ') {
@@ -1374,7 +1374,7 @@ static int cmd_visual(void *data, const char *input) {
 	if (core->http_up) {
 		return false;
 	}
-	if (!r_config_get_i (core->config, "scr.interactive")) {
+	if (!r_cons_is_interactive ()) {
 		return false;
 	}
 #if 0
@@ -1398,7 +1398,7 @@ static int cmd_pipein(void *user, const char *input) {
 	return 0;
 }
 
-static int cmd_thread(void *data, const char *input) {
+static int cmd_tasks(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	switch (input[0]) {
 	case '\0': // "&"
@@ -1828,7 +1828,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
 		return -1;
 	}
-	si = r_config_get_i (core->config, "scr.interactive");
+	si = r_cons_is_interactive ();
 	r_config_set_i (core->config, "scr.interactive", 0);
 	if (!r_config_get_i (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
@@ -1992,7 +1992,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	} else {
 		if (rep > INTERACTIVE_MAX_REP) {
-			if (r_config_get_i (core->config, "scr.interactive")) {
+			if (r_cons_is_interactive ()) {
 				if (!r_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 					goto beach;
 				}
@@ -2663,7 +2663,7 @@ escape_backtick:
 		bool is_arch_set = false;
 		char *tmpeval = NULL;
 		char *tmpasm = NULL;
-		int flgspc = -123;
+		bool flgspc_changed = false;
 		int tmpfd = -1;
 		int sz, len;
 		ut8 *buf;
@@ -2718,8 +2718,7 @@ repeat_arroba:
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			switch (ptr[0]) {
 			case 'F': // "@F:" // temporary flag space
-				flgspc = r_flag_space_get (core->flags, ptr + 2);
-				r_flag_space_set (core->flags, ptr + 2);
+				flgspc_changed = r_flag_space_push (core->flags, ptr + 2);
 				break;
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 				{
@@ -3002,8 +3001,8 @@ next_arroba:
 			r_core_cmd0 (core, tmpeval);
 			R_FREE (tmpeval);
 		}
-		if (flgspc != -123) {
-			r_flag_space_set_i (core->flags, flgspc);
+		if (flgspc_changed) {
+			r_flag_space_pop (core->flags);
 		}
 		*ptr = '@';
 		rc = ret;
@@ -3473,6 +3472,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char *arg = r_core_cmd_str (core, each + 2);
 			if (arg) {
 				foreachOffset (core, cmd, arg);
+				free (arg);
 			}
 		}
 		break;
@@ -3607,7 +3607,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 			str[i] = ch;
 			{
-				int flagspace = core->flags->space_idx;
+				const RSpace *flagspace = r_flag_space_cur (core->flags);
 				RList *match_flag_items = r_list_newf ((RListFree)r_flag_item_free);
 				if (!match_flag_items) {
 					break;
@@ -3642,7 +3642,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 
 				r_list_free (match_flag_items);
-				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
 				R_FREE (word);
 			}
@@ -4116,7 +4115,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"#",        "calculate hash", cmd_hash},
 		{"$",        "alias", cmd_alias},
 		{"%",        "short version of 'env' command", cmd_env},
-		{"&",        "threading capabilities", cmd_thread},
+		{"&",        "tasks", cmd_tasks},
 		{"(",        "macro", cmd_macro, cmd_macro_init},
 		{"*",        "pointer read/write", cmd_pointer},
 		{"-",        "open cfg.editor and run script", cmd_stdin},

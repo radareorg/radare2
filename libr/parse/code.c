@@ -75,13 +75,31 @@ static int typeload(void *p, const char *k, const char *v) {
 	return 0;
 }
 
-R_API char *r_parse_c_file(RAnal *anal, const char *path) {
+static void error_func(void *opaque, const char *msg) {
+	appendstring (msg, opaque);
+	char **p = (char **)opaque;
+	if (p && *p) {
+		int n = strlen(*p);
+		char *ptr = malloc (n + 2);
+		if (!ptr) {
+			return;
+		}
+		strcpy (ptr, *p);
+		ptr[n] = '\n';
+		ptr[n + 1] = 0;
+		free (*p);
+		*p = ptr;
+	}
+}
+
+R_API char *r_parse_c_file(RAnal *anal, const char *path, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
 		return NULL;
 	}
 	tcc_set_callback (T, &appendstring, &str);
+	tcc_set_error_func (T, (void *)error_msg, error_func);
 	sdb_foreach (anal->sdb_types, typeload, anal);
 	if (tcc_add_file (T, path) == -1) {
 		free (str);
@@ -91,13 +109,14 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path) {
 	return str;
 }
 
-R_API char *r_parse_c_string(RAnal *anal, const char *code) {
+R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
 		return NULL;
 	}
 	tcc_set_callback (T, &appendstring, &str);
+	tcc_set_error_func (T, (void *)error_msg, error_func);
 	sdb_foreach (anal->sdb_types, typeload, NULL);
 	if (tcc_compile_string (T, code) != 0) {
 		free (str);
@@ -107,7 +126,7 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code) {
 	return str;
 }
 
-R_API int r_parse_is_c_file (const char *file) {
+R_API int r_parse_is_c_file(const char *file) {
 	const char *ext = r_str_lchr (file, '.');
 	if (ext) {
 		ext = ext + 1;
@@ -118,4 +137,8 @@ R_API int r_parse_is_c_file (const char *file) {
 		}
 	}
 	return false;
+}
+
+R_API void r_parse_reset() {
+	anon_sym = SYM_FIRST_ANOM;
 }

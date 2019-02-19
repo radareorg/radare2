@@ -5,6 +5,10 @@ dist: trusty
 conditions: v1
 sudo: required
 
+branches:
+  only:
+  - master
+
 services:
   - docker
 

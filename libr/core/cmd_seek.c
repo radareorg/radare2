@@ -417,7 +417,7 @@ static int cmd_seek(void *data, const char *input) {
 	{
 		ut64 addr = r_num_math (core->num, input + 1);
 		if (core->num->nc.errors) {
-			if (r_cons_singleton ()->is_interactive) {
+			if (r_cons_singleton ()->context->is_interactive) {
 				eprintf ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
 			}
 			break;
@@ -493,9 +493,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
-					core->flags->space_strict = true;
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s+%d", f->name,
@@ -551,9 +549,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_list_foreach (list, iter, undo) {
 					char *name = NULL;
 
-					core->flags->space_strict = true;
 					RFlagItem *f = r_flag_get_at (core->flags, undo->off, true);
-					core->flags->space_strict = false;
 					if (f) {
 						if (f->offset != undo->off) {
 							name = r_str_newf ("%s + %d\n", f->name,

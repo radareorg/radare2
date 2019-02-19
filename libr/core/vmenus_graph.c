@@ -4,7 +4,7 @@
 
 // find a better name and move to r_util or r_cons?
 R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb) {
-	void *item, *curItem = NULL;
+	void *item;
 	RStrBuf *sb = r_strbuf_new ("");
 	RListIter *iter;
 	int count = 0;
@@ -13,9 +13,6 @@ R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintI
 		skip = cur - (rows / 2);
 	}
 	r_list_foreach (list, iter, item) {
-		if (cur == count) {
-			curItem = item;
-		}
 		if (rows >= 0) {
 			if (skip > 0) {
 				skip--;
@@ -33,7 +30,6 @@ R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintI
 		}
 		count++;
 	}
-	// return curItem;
 	return r_strbuf_drain (sb);
 }
 
@@ -212,7 +208,8 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	r_cons_strcat_at (col2str, colx * 2, 2, colw, colh);
 	char *output = r_core_cmd_strf (core, "pd %d @e:asm.flags=0@ 0x%08"PFMT64x"; pds 256 @ 0x%08"PFMT64x"\n",
 		32, addr);
-	r_cons_strcat_at (output, 10, colh, w, h-colh);			
+	int disy = colh + 2;
+	r_cons_strcat_at (output, 10, disy, w, h-disy);
 	free (output);
 	r_list_free (col0);
 	r_list_free (col1);

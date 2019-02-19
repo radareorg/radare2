@@ -613,17 +613,15 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #elif __WINDOWS__
 // TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	char *result = r_sys_cmd_str_w32 (cmd);
+	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, sterr);
 	if (len) {
 		*len = 0;
+		if (output && result) {
+			*len = strlen (*output);
+		}
 	}
-	if (output) {
-		*output = result;
-	}
-	if (result) {
-		return true;
-	}
-	return false;
+
+	return result;
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
@@ -1059,14 +1057,13 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-static char prefix[128] = {0};
-
 R_API const char *r_sys_prefix(const char *pfx) {
+	static char prefix[1024] = {0};
 	if (!*prefix) {
 		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
 	}
 	if (pfx) {
-		if (strlen (pfx) >= sizeof (prefix) -1) {
+		if (strlen (pfx) >= sizeof (prefix) - 1) {
 			return NULL;
 		}
 		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);

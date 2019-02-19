@@ -62,8 +62,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
-	cs_m680x *m680x;
-	cs_detail *detail;
 
 	int mode = m680xmode (a->cpu);
 
@@ -95,8 +93,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		opsize = -1;
 		goto beach;
 	}
-	detail = insn->detail;
-	m680x = &detail->m680x;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
 	op->id = insn->id;

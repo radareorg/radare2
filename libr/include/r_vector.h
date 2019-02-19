@@ -125,6 +125,10 @@ R_API void *r_vector_shrink(RVector *vec);
 	if ((vec) && (vec)->a) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
+#define r_vector_enumerate(vec, it, i) \
+	if ((vec) && (vec)->a) \
+		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
+
 
 // RPVector
 

@@ -205,7 +205,7 @@ static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap)
 	vsnprintf (buf + len, buf_size - len, fmt, ap);
 }
 
-static void strcat_printf(char *buf, int buf_size, const char *fmt, ...)
+PUB_FUNC void strcat_printf(char *buf, int buf_size, const char *fmt, ...)
 {
 	va_list ap;
 	va_start (ap, fmt);
@@ -355,7 +355,6 @@ static int tcc_compile(TCCState *s1)
 	preprocess_init (s1);
 
 	funcname = "";
-	anon_sym = SYM_FIRST_ANOM;
 
 	/* define some often used types */
 	int8_type.t = VT_INT8;

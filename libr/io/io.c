@@ -106,7 +106,6 @@ R_API RIO* r_io_init(RIO* io) {
 	r_pvector_init (&io->map_skyline, free);
 	r_pvector_init (&io->map_skyline_shadow, free);
 	r_io_map_init (io);
-	r_io_section_init (io);
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	r_io_undo_init (io);
@@ -259,18 +258,16 @@ R_API int r_io_close_all(RIO* io) { // what about undo?
 	}
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
-	r_io_section_fini (io);
 	ls_free (io->plugins);
 	r_io_desc_init (io);
 	r_io_map_init (io);
-	r_io_section_init (io);
 	r_io_cache_fini (io);
 	r_io_plugin_init (io);
 	return true;
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
-	r_return_val_if_fail (io && buf && len > 0, -1);
+	r_return_val_if_fail (io && buf && len >= 0, -1);
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
@@ -301,7 +298,10 @@ static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 // For physical mode, the interface is broken because the actual read bytes are
 // not available. This requires fixes in all call sites.
 R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (io && buf && len > 0, false);
+	r_return_val_if_fail (io && buf && len >= 0, false);
+	if (len == 0) {
+		return false;
+	}
 	bool ret = (io->va)
 		? r_io_vread_at_mapped (io, addr, buf, len)
 		: r_io_pread_at (io, addr, buf, len) > 0;
@@ -337,7 +337,10 @@ R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
 // Returns -1 on error.
 R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret;
-	r_return_val_if_fail (io && buf && len > 0, -1);
+	r_return_val_if_fail (io && buf && len >= 0, -1);
+	if (len == 0) {
+		return 0;
+	}
 	if (io->va) {
 		if (io->ff) {
 			memset (buf, io->Oxff, len);
@@ -525,7 +528,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->map_get = r_io_map_get;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
-	bnd->section_add = r_io_section_add;
+	bnd->map_add = r_io_map_add;
 #if HAVE_PTRACE
 	bnd->ptrace = r_io_ptrace;
 	bnd->ptrace_func = r_io_ptrace_func;
@@ -659,7 +662,6 @@ R_API int r_io_fini(RIO* io) {
 	r_io_desc_cache_fini_all (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
-	r_io_section_fini (io);
 	ls_free (io->plugins);
 	r_list_free (io->cache);
 	r_list_free (io->undo.w_list);

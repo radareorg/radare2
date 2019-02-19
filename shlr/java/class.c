@@ -3778,6 +3778,9 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 	ut32 i = 0;
 	ut64 curpos, offset = 0;
 	RBinJavaLineNumberAttribute *lnattr;
+	if (sz < 6) {
+		return NULL;
+	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	if (!attr) {
 		return NULL;
@@ -6386,7 +6389,12 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 		case R_BIN_JAVA_EV_TAG_ENUM:
 			// Delete the CP Type Objects
 			obj = element_value->value.enum_const_value.const_name_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				RBinJavaCPTypeMetas *ti = obj->metas->type_info;
+				if (ti && ti->allocs && ti->allocs->delete_obj) {
+					ti->allocs->delete_obj (obj);
+				}
+			}
 			obj = element_value->value.enum_const_value.type_name_cp_obj;
 			if (obj && obj->metas) {
 				RBinJavaCPTypeMetas *tm = obj->metas->type_info;

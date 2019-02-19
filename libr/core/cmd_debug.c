@@ -310,6 +310,7 @@ static const char *help_msg_dr[] = {
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
+	"dr??", "", "Same as dr?`drp~=[0]+` # list all reg roles alias names and values",
 	"dra", "[?]", "Manage register arenas. see ara?",
 	"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"drc", " [name]", "Related to conditional flag registers",
@@ -1358,31 +1359,32 @@ show_help:
 		r_core_cmd_help (core, help_msg_dmm);
 		return;
 	}
+	PJ *pj = pj_new ();
 	if (mode == 'j') {
-		r_cons_print ("[");
+		pj_a (pj);
 	}
 	// TODO: honor mode
 	list = r_debug_modules_list (core->dbg);
 	r_list_foreach (list, iter, map) {
 		switch (mode) {
 		case 0:
-			r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x"  %s\n", map->addr, map->addr_end, map->file);
 			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
-				r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
+				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x"  %s\n", map->addr, map->addr_end, map->file);
 				goto beach;
 			}
 			break;
 		case 'j':
 			{
 				/* Escape backslashes (e.g. for Windows). */
-				char *escaped_path = r_str_escape (map->file);
-				char *escaped_name = r_str_escape (map->name);
-				r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
-					map->addr, escaped_name, escaped_path, iter->n?",":"");
-				free (escaped_path);
-				free (escaped_name);
+				pj_o (pj);
+				pj_kn (pj, "addr", map->addr);
+				pj_kn (pj, "addr_end", map->addr_end);
+				pj_ks (pj, "file", map->file);
+				pj_ks (pj, "name", map->name);
+				pj_end (pj);
 			}
 			break;
 		case ':':
@@ -1409,7 +1411,9 @@ show_help:
 	}
 beach:
 	if (mode == 'j') {
-		r_cons_print ("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 	r_list_free (list);
 }
@@ -1878,6 +1882,17 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			}
 			break;
 		default:
+			{
+				const char *arg = "";
+				int i;
+				for (i = 0; i< R_REG_NAME_LAST; i++) {
+					const char *t = r_reg_get_name (reg, i);
+					if (t && !strcmp (t, r->name)) {
+						arg = r_reg_get_role (i);
+					}
+				}
+				r_cons_printf ("%3s", arg);
+			}
 			if (bits == 64) {
 				if (r->flags) {
 					tmp = r_reg_get_bvalue (reg, r);
@@ -2002,34 +2017,37 @@ static void cmd_reg_profile (RCore *core, char from, const char *str) { // "arp"
 			RListIter *iter;
 			RRegItem *r;
 			int i;
-			int first = 1;
-			r_cons_printf ("{\"alias_info\":[");
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_k (pj, "alias_info");
+			pj_a (pj);
 			for (i = 0; i < R_REG_NAME_LAST; i++) {
 				if (core->dbg->reg->name[i]) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"role\":%d,", i);
-					r_cons_printf ("\"role_str\":\"%s\",",
-							r_reg_get_role (i));
-					r_cons_printf ("\"reg\":\"%s\"}",
-							core->dbg->reg->name[i]);
-					first = 0;
+					pj_o (pj);
+					pj_kn (pj, "role", i);
+					pj_ks (pj, "role_str", r_reg_get_role (i));
+					pj_ks (pj, "reg", core->dbg->reg->name[i]);
+					pj_end (pj);
 				}
 			}
-			r_cons_printf ("],\"reg_info\":[");
-			first = 1;
+			pj_end (pj);
+			pj_k (pj, "reg_info");
+			pj_a (pj);
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
 				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
-					if (!first) r_cons_printf (",");
-					r_cons_printf ("{\"type\":%d,", r->type);
-					r_cons_printf ("\"type_str\":\"%s\",",
-							r_reg_get_type (r->type));
-					r_cons_printf ("\"name\":\"%s\",", r->name);
-					r_cons_printf ("\"size\":%d,", r->size);
-					r_cons_printf ("\"offset\":%d}", r->offset);
-					first = 0;
+					pj_o (pj);
+					pj_kn (pj, "type", r->type);
+					pj_ks (pj, "type_str", r_reg_get_type (r->type));
+					pj_ks (pj, "name", r->name);
+					pj_kn (pj, "size", r->size);
+					pj_kn (pj, "offset", r->offset);
+					pj_end (pj);
 				}
 			}
-			r_cons_printf ("]}");
+			pj_end (pj); // "]"
+			pj_end (pj); // "}"
+			r_cons_printf ("%s", pj_string (pj));
+			pj_free (pj);
 		}
 		break;
 	case '?': // "drp?"
@@ -2121,18 +2139,34 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case '?': // "dr?"
 		if (str[1]) {
-			const char *p = str+1;
-			ut64 off;
-			while (IS_WHITESPACE (*p)) {
-				p++;
+			RListIter *iter;
+			char *all = (char *)r_str_trim_ro (str + 1);
+			if (!strcmp (all, "?")) { // "dr??"
+				all = r_core_cmd_str (core, "drp~=[0]");
+				all = r_str_replace (all, "\n", " ", 1);
+			} else {
+				all = strdup (all);
 			}
+			char *arg;
+			RList *args = r_str_split_list (all, " ");
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
-			off = r_debug_reg_get (core->dbg, p);
-			//		r = r_reg_get (core->dbg->reg, str+1, 0);
-			//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
-			r_cons_printf ("0x%08"PFMT64x"\n", off);
-			core->num->value = off;
-			//r_reg_get_value (core->dbg->reg, r));
+			int count = r_list_length (args);
+			r_list_foreach (args, iter, arg) {
+				ut64 off = r_debug_reg_get (core->dbg, arg);
+				if (count == 1) {
+					r_cons_printf ("0x%08"PFMT64x"\n", off);
+				} else {
+					int type = r_reg_get_name_idx (arg);
+					const char *r = arg;
+					if (type != -1) {
+						r = r_reg_get_name (core->dbg->reg, type);
+					}
+					r_cons_printf ("%3s %3s 0x%08"PFMT64x"\n", arg, r, off);
+				}
+				core->num->value = off;
+			}
+			free (all);
+			r_list_free (args);
 		} else {
 			r_core_cmd_help (core, help_msg_dr);
 		}
@@ -2949,6 +2983,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	if (!addr) {
 		addr = UT64_MAX;
 	}
+	char *str = NULL;
 
 	switch (input[1]) {
 	case '.':
@@ -3330,7 +3365,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		// passthru
 	case ' ': ;// "db"
 		#define DB_ARG(x) r_str_word_get0(str, x)
-		char *str = strdup (r_str_trim_ro (input + 2));
+		str = strdup (r_str_trim_ro (input + 1));
 		int i = 0;
 		int sl = r_str_word_set0 (str);
 		// For dbw every second argument is 'rw', so we need to skip it.
@@ -3348,12 +3383,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 							rw = R_BP_PROT_ACCESS;
 						} else {
 							r_core_cmd_help (core, help_msg_dbw);
-							free (str);
 							break;
 						}
 					} else {
 						r_core_cmd_help (core, help_msg_dbw);
-						free (str);
 						break;
 					}
 				}
@@ -3385,7 +3418,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 			}
 		}
-		free (str);
 		break;
 	case 'i':
 		core_cmd_dbi (core, input, addr);
@@ -3395,6 +3427,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_db);
 		break;
 	}
+	free (str);
 }
 
 static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
@@ -3859,7 +3892,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			from = r_num_math (core->num, input + 3);
 		}
 	}
-	if (core->num->nc.errors && r_cons_singleton ()->is_interactive) {
+	if (core->num->nc.errors && r_cons_is_interactive ()) {
 		eprintf ("Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
 		return false;
 	}
@@ -4621,19 +4654,26 @@ static int cmd_debug(void *data, const char *input) {
 		cmd_debug_pid (core, input);
 		break;
 	case 'L': // "dL"
-		if (input[1]=='q') {
+		switch (input[1]) {
+		case 'q':
 			r_debug_plugin_list (core->dbg, 'q');
-		} else if (input[1]=='j') {
+			break;
+		case 'j':
 			r_debug_plugin_list (core->dbg, 'j');
-		} else if (input[1]=='?') {
+			break;
+		case '?':
 			r_core_cmd_help (core, help_msg_dL);
-		} else if (input[1]==' ') {
+			break;
+		case ' ': {
 			char *str = r_str_trim (strdup (input + 2));
 			r_config_set (core->config, "dbg.backend", str);
 			// implicit by config.set r_debug_use (core->dbg, str);
 			free (str);
-		} else {
+			}
+			break;
+		default:
 			r_debug_plugin_list (core->dbg, 0);
+			break;
 		}
 		break;
 	case 'i': // "di"
@@ -4695,7 +4735,6 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_printf ("f dbg.tid = %d\n", rdi->tid);
 					r_cons_printf ("f dbg.uid = %d\n", rdi->uid);
 					r_cons_printf ("f dbg.gid = %d\n", rdi->gid);
-
 				}
 				break;
 			case 'j': // "dij"
@@ -4743,6 +4782,7 @@ static int cmd_debug(void *data, const char *input) {
 			case '?': // "di?"
 			default:
 				r_core_cmd_help (core, help_msg_di);
+				break;
 			}
 			r_debug_info_free (rdi);
 		}
