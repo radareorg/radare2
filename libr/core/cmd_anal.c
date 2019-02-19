@@ -1597,12 +1597,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
 				}
-#if 0
-				// addr should not override core->offset + idx.. its silly
-				if (hint->addr != UT64_MAX) {
-					printline ("addr", "0x%08" PFMT64x "\n", (hint->addr + idx));
-				}
-#endif
 			}
 			printline ("prefix", "%" PFMT64u "\n", op.prefix);
 			printline ("id", "%d\n", op.id);
@@ -2192,6 +2186,9 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 	} else {
 		fcnpfx = "";
 	}
+	if (strlen (name) < 4) {
+		return r_str_newf ("%s.%s", (*fcnpfx)? fcnpfx: "fcn", name);
+	}
 	if (r_reg_get (core->anal->reg, name, -1)) {
 		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
 	}
@@ -2216,51 +2213,6 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	}
 	return true;
 }
-
-#if 0
-#if 0
-{
-	const RList *list = r_flag_get_list (core->flags, fcn->addr);
-	RFlagItem *fi;
-	RListIter *iter;
-	bool nameSet = true;
-	r_list_foreach (list, iter, fi) {
-		if (r_reg_get (core->anal->reg, fi->name, -1)) {
-			continue;
-		}
-		char *nname = getFunctionName (core, off, name, prefix);
-		free (name);
-		name = nname;
-		if (fi) {
-			r_flag_rename (core->flags, fi, name);
-		} else {
-			// if we cant find a flag for that function.. create it?
-		}
-#if 1
-		free (fcn->name);
-		fcn->name = strdup (name);
-#endif
-		if (core->anal->cb.on_fcn_rename) {
-			core->anal->cb.on_fcn_rename (core->anal,
-						core->anal->user, fcn, name);
-		}
-		nameSet = true;
-		break;
-	}
-	if (!nameSet) {
-		free (fcn->name);
-		fcn->name = strdup (name);
-	}
-#else
-	RFlagItem *fi = r_flag_get (core->flags, fcn->name);
-	if (fi) {
-		r_flag_rename (core->flags, fi, name);
-	}
-#endif
-	free (name);
-	return true;
-}
-#endif
 
 static void afCc(RCore *core, const char *input) {
 	ut64 addr;
