@@ -3022,7 +3022,7 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 		y = sdb_json_get_str (cfg, "y");
 		w = sdb_json_get_str (cfg, "w");
 		h = sdb_json_get_str (cfg, "h");
-		caching = sdb_json_get_bool (cfg, "caching");
+		caching = true; //sdb_json_get_bool (cfg, "caching");
 		RPanel *p = getPanel (panels, panels->n_panels);
 		p->pos.x = atoi (x);
 		p->pos.y = atoi (y);
