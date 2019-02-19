@@ -368,12 +368,15 @@ static void save_parsed_type_size(RCore *core, const char *parsed) {
 		int offset = 0;
 		while ((ptr = strstr (str + offset, "=struct\n")) || (ptr = strstr (str + offset, "=union\n"))) {
 			*ptr = 0;
-			char *name = ptr;
 			if (str + offset == ptr) {
 				break;
 			}
-			while (name - 1 >= str && *(name - 1) != '\n') {
+			char *name = ptr - 1;
+			while (name > str && *name != '\n') {
 				name--;
+			}
+			if (*name == '\n') {
+				name++;
 			}
 			save_type_size (core->anal->sdb_types, name);
 			*ptr = '=';
