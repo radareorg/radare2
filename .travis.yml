@@ -27,14 +27,14 @@ matrix:
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true
     - if: head_branch =~ ^asan-* OR tag =~ ^release-* OR type = push
       os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -DR2_ASSERT_STDOUT=1" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DR2_ASSERT_STDOUT=1" LDFLAGS="-fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
   allow_failures:
     - os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -DR2_ASSERT_STDOUT=1" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DR2_ASSERT_STDOUT=1" LDFLAGS="-fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
 cache:
   - ccache
 

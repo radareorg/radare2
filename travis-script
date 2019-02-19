@@ -29,7 +29,7 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
 
-    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
+    meson --buildtype=release --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
     pushd build
     ninja || exit 1
     ninja install || exit 1
@@ -37,6 +37,7 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 else
     echo "Installing with acr + make"
+    export CFLAGS="-O2 ${CFLAGS}"
     ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
     make -s -j2 > /dev/null || exit 1
     make install > /dev/null || exit 1
