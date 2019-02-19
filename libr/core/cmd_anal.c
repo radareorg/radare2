@@ -1597,12 +1597,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
 				}
-#if 0
-				// addr should not override core->offset + idx.. its silly
-				if (hint->addr != UT64_MAX) {
-					printline ("addr", "0x%08" PFMT64x "\n", (hint->addr + idx));
-				}
-#endif
 			}
 			printline ("prefix", "%" PFMT64u "\n", op.prefix);
 			printline ("id", "%d\n", op.id);
@@ -2181,48 +2175,42 @@ static bool fcnNeedsPrefix(const char *name) {
 	return (!strchr (name, '.'));
 }
 
+static char * getFunctionName (RCore *core, ut64 off, const char *name, bool prefix) {
+	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+	if (prefix) {
+		if (fcnNeedsPrefix (name)) {
+			if (!fcnpfx || !*fcnpfx) {
+				fcnpfx = "fcn";
+			}
+		}
+	} else {
+		fcnpfx = "";
+	}
+	if (strlen (name) < 4) {
+		return r_str_newf ("%s.%s", (*fcnpfx)? fcnpfx: "fcn", name);
+	}
+	if (r_reg_get (core->anal->reg, name, -1)) {
+		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
+	}
+	return strdup (name); // r_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", name);
+}
+
 /* TODO: move into r_anal_fcn_rename(); */
 static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
-	char *name, *nname = NULL;
-	RAnalFunction *fcn;
-	if (!core || !_name) {
-		return false;
-	}
-	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-	if (!fcnpfx) {
-		fcnpfx = "fcn";
-	}
-	if (r_reg_get (core->anal->reg, _name, -1)) {
-		name = r_str_newf ("%s.%s", fcnpfx, _name);
-	} else {
-		name = strdup (_name);
-	}
-	fcn = r_anal_get_fcn_in (core->anal, off,
-				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
+	r_return_val_if_fail (core && _name, false);
+	char *name = getFunctionName (core, off, _name, prefix);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off,
+			R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) {
 		free (name);
 		return false;
 	}
-	if (prefix && fcnNeedsPrefix (name)) {
-		nname = r_str_newf ("%s.%s", fcnpfx, name);
-	} else {
-		nname = strdup (name);
-	}
-	char *oname = fcn->name;
-	RFlagItem *fi = r_flag_get (core->flags, fcn->name);
-	if (fi) {
-		r_flag_rename (core->flags, fi, nname);
-	} else {
-		// if we cant find a flag for that function.. create it?
-	}
-	fcn->name = strdup (nname);
+	free (fcn->name);
+	fcn->name = name;
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal,
-					core->anal->user, fcn, nname);
+				core->anal->user, fcn, name);
 	}
-	free (oname);
-	free (nname);
-	free (name);
 	return true;
 }
 
