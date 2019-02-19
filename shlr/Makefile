@@ -167,7 +167,8 @@ sdb-clean clean-sdb:
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
-	git clone --depth 1 ${SDB_URL} sdb.vc
+	git clone ${SDB_URL} sdb.vc
+	cd sdb.vc && git reset --hard 9c954145dfbf58d3d5a7df2bf897854524687ce5
 	mkdir -p sdb
 	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
