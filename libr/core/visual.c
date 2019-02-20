@@ -1528,7 +1528,6 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 
 	cursor_ocur (core, use_ocur);
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
-		//int cols = r_config_get_i (core->config, "hex.cols") * 3.5;
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
 		p->cur += cols > 0? cols: 0;
@@ -1569,8 +1568,12 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 			return;
 		}
 		next_roff = r_print_rowoff (p, row + 1);
-		if (next_roff == -1) {
+		if (next_roff == UT32_MAX) {
 			p->cur++;
+			return;
+		}
+		if (next_roff > core->blocksize) {
+			p->cur += 32; // XXX workaround to "fix" cursor nextrow far away scrolling issue
 			return;
 		}
 		if (next_roff + 32 < core->blocksize) {
@@ -1942,7 +1945,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			if (r_sandbox_enable (0)) {
 				eprintf ("sandbox not enabled\n");
 			} else {
-				if (r_config_get_i (core->config, "scr.interactive")) {
+				if (r_cons_is_interactive ()) {
 					r_core_cmd0 (core, "TT");
 				}
 			}

@@ -589,7 +589,7 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->atabs = 0;
 	}
 	ds->filter = r_config_get_i (core->config, "asm.filter");
-	ds->interactive = r_config_get_i (core->config, "scr.interactive");
+	ds->interactive = r_cons_is_interactive ();
 	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
@@ -4801,7 +4801,12 @@ toro:
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment (core, f, cmt, sizeof (cmt));
-				ds_show_comments_right (ds);
+				char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
+				if (comment) {
+					ds_pre_xrefs (ds, true);
+					r_cons_printf ("; %s\n", comment);
+					free (comment);
+				}
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[CORNER_TL],
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));

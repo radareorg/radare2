@@ -12,13 +12,14 @@ if [ $? != 0 ]; then
 fi
 
 fatal_msg() {
-	printf '[capstone] %s\n' "$1" >&2
+	echo "[capstone] $1"
 	exit 1
 }
 
 patch_capstone() {
+	echo "[capstone] Applying patches..."
 	for patchfile in ../capstone-patches/*.patch ; do
-		yes n | patch -R -p 1 -i "${patchfile}"
+		yes n | patch -p 1 -i "${patchfile}"
 	done
 }
 
@@ -53,6 +54,7 @@ update_capstone_git() {
 #		done
 #		git reset --hard "${CS_TIP}"
 #	fi
+	git reset --hard "${CS_TIP}"
 	if [ -n "${CS_REV}" ]; then
 		if ! git config user.name ; then
 			git config user.name "radare-travis"
@@ -65,9 +67,9 @@ update_capstone_git() {
 
 if [ -d capstone ] && [ ! -d capstone/.git ]; then
 	printf '[capstone] release with no git?\n' >&2
-	pushd capstone
-	patch_capstone
-	popd || fatal_msg 'Cannot change working directory'
+	cd capstone || fatal_msg 'Cannot change working directory'
+	#patch_capstone
+	cd -
 else
 	clone_capstone
 
@@ -77,15 +79,18 @@ else
 		clone_capstone
 	fi
 
-	if [ "${HEAD}" = "${CS_TIP}" ]; then
-		printf '[capstone] Already in TIP, no need to update from git\n' >&2
-		exit 0
-	fi
+#	if [ "${HEAD}" = "${CS_TIP}" ]; then
+#		printf '[capstone] Already in TIP, no need to update from git\n' >&2
+#		git reset --hard
+#		exit 0
+#	fi
 
-	printf '[capstone] Updating capstone from git...\n' >&2
-	printf 'HEAD %s\n' "${HEAD}" >&2
-	printf 'TIP %s\n' "${CS_TIP}" >&2
+	echo '[capstone] Updating capstone from git...' >&2
+	echo "HEAD ${HEAD}" >&2
+	echo "TIP  ${CS_TIP}" >&2
 
-	cd capstone && update_capstone_git
-	cd - || fatal_msg 'Cannot change working directory'
+	cd capstone || fatal_msg 'Cannot change working directory'
+	update_capstone_git
+	#patch_capstone
+	cd -
 fi

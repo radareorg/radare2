@@ -650,6 +650,22 @@ static void function_rename(RFlag *flags, RAnalFunction *fcn) {
 	}
 }
 
+static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
+	if (r_list_length (fcn->bbs) == 1 && ((RAnalBlock *) r_list_first (fcn->bbs))->ninstr == 1) {
+		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+		if (refs && r_list_length (refs) == 1) {
+			RAnalRef *ref = r_list_first (refs);
+			if (ref->type != R_ANAL_REF_TYPE_CALL) { /* Some fcns don't return */
+				RFlagItem *flg = r_flag_get_i (core->flags, ref->addr);
+				if (flg && r_str_startswith (flg->name, "sym.imp.")) {
+					R_FREE (fcn->name);
+					fcn->name = r_str_newf ("sub.%s", flg->name + 8);
+				}
+			}
+		}
+	}
+}
+
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
@@ -767,6 +783,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 					}
 					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+					autoname_imp_trampoline (core, fcn);
 				}
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");
@@ -4775,7 +4792,6 @@ static int __addrs_cmp(void *_a, void *_b) {
         return 0;
 }
 
-#define MAXFCNSIZE 1024*1024*1
 R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 	RList *addrs = r_list_newf (free);
 	RListIter *iter;
@@ -4808,7 +4824,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			continue;
 		}
 		st64 sz = a1 - a0;
-		if (sz < 1 || sz > MAXFCNSIZE) {
+		if (sz < 1 || sz > core->anal->opt.bb_max_size) {
 			eprintf ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", a0, a1);
 			continue;
 		}

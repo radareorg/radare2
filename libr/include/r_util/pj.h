@@ -1,7 +1,9 @@
 #ifndef R_PJ_H
 #define R_PJ_H 1
-
 #define R_PRINT_JSON_DEPTH_LIMIT 128
+
+#include <r_util/r_strbuf.h>
+
 typedef struct pj_t {
 	RStrBuf *sb;
 	bool is_first;

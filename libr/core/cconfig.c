@@ -800,6 +800,7 @@ static int cb_asmos(void *user, void *data) {
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
 	r_anal_set_os (core->anal, node->value);
+
 	return true;
 }
 
@@ -1224,10 +1225,17 @@ static int cb_dbg_gdb_retries(void *user, void *data) {
 static int cb_dbg_execs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
+#if __linux__
 	core->dbg->trace_execs = node->i_value;
 	if (core->io->debug) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
+#else
+	if (node->i_value) {
+		eprintf ("Option not supported.\n");
+	}
+	return false;
+#endif
 	return true;
 }
 
@@ -1303,6 +1311,7 @@ static int cb_dbgbackend(void *user, void *data) {
 		return false;
 	}
 	if (!strcmp (node->value, "bf")) {
+		// hack
 		r_config_set (core->config, "asm.arch", "bf");
 	}
 	r_debug_use (core->dbg, node->value);
@@ -1958,7 +1967,7 @@ static int cb_scrint(void *user, void *data) {
 	if (node->i_value && r_sandbox_enable (0)) {
 		return false;
 	}
-	r_cons_singleton ()->is_interactive = node->i_value;
+	r_cons_singleton ()->context->is_interactive = node->i_value;
 	return true;
 }
 
@@ -2607,7 +2616,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
-	SETPREF ("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
+	SETPREF ("anal.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
@@ -2640,7 +2649,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmpmid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
-	SETCB ("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
+	SETCB ("anal.bb.maxsize", "1M", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);

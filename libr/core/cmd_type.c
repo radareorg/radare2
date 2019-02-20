@@ -334,10 +334,60 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
-static void save_parsed_type(RCore *core, const char *parsed) {
-	if (!core || !core->anal || !parsed) {
+/*!
+ * \brief Save the size of the given datatype in sdb
+ * \param sdb_types pointer to the sdb for types
+ * \param name the datatype whose size if to be stored
+ */
+static void save_type_size(Sdb *sdb_types, char *name) {
+	char *type = NULL;
+	r_return_if_fail (sdb_types && name);
+	if (!sdb_exists (sdb_types, name) || !(type = sdb_get (sdb_types, name, 0))) {
 		return;
 	}
+	char *type_name_size = r_str_newf ("%s.%s.%s", type, name, "size");
+	if (!type_name_size) {
+		return;
+	}
+	int size = r_type_get_bitsize (sdb_types, name);
+	sdb_set (sdb_types, type_name_size, sdb_fmt ("%d", size), 0);
+	free (type);
+	free (type_name_size);
+}
+
+/*!
+ * \brief Save the sizes of the datatypes which have been parsed
+ * \param core pointer to radare2 core
+ * \param parsed the parsed c string in sdb format
+ */
+static void save_parsed_type_size(RCore *core, const char *parsed) {
+	r_return_if_fail (core && core->anal && parsed);
+	char *str = strdup (parsed);
+	if (str) {
+		char *ptr = NULL;
+		int offset = 0;
+		while ((ptr = strstr (str + offset, "=struct\n")) || (ptr = strstr (str + offset, "=union\n"))) {
+			*ptr = 0;
+			if (str + offset == ptr) {
+				break;
+			}
+			char *name = ptr - 1;
+			while (name > str && *name != '\n') {
+				name--;
+			}
+			if (*name == '\n') {
+				name++;
+			}
+			save_type_size (core->anal->sdb_types, name);
+			*ptr = '=';
+			offset = ptr + 1 - str;
+		}
+		free (str);
+	}
+}
+
+R_API void r_core_save_parsed_type(RCore *core, const char *parsed) {
+	r_return_if_fail (core && core->anal && parsed);
 	// First, if this exists, let's remove it.
 	char *type = strdup (parsed);
 	if (type) {
@@ -353,6 +403,7 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 			r_core_cmdf (core, "\"t- %s\"", name);
 			// Now add the type to sdb.
 			sdb_query_lines (core->anal->sdb_types, parsed);
+			save_parsed_type_size (core, parsed);
 		}
 		free (type);
 	}
@@ -373,6 +424,49 @@ static int stdifstruct(void *user, const char *k, const char *v) {
 		}
 	}
 	return false;
+}
+
+/*!
+ * \brief print the data types details in JSON format
+ * \param TDB pointer to the sdb for types
+ * \param filter a callback function for the filtering
+ * \return 1 if success, 0 if failure
+ */
+static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return 0;
+	}
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	SdbListIter *it;
+	SdbKv *kv;
+
+	pj_a (pj); // [
+	ls_foreach (l, it, kv) {
+		const char *k = sdbkv_key (kv);
+		if (!k || !*k) {
+			continue;
+		}
+
+		pj_o (pj); // {
+		char *sizecmd = r_str_newf ("%s.%s.size", sdbkv_value (kv), k);
+		if (!sizecmd) {
+			break;
+		}
+		char *size_s = sdb_querys (TDB, NULL, -1, sizecmd);
+		pj_ks (pj, "type", k); // key value pair of string and string
+		pj_ki (pj, "size", size_s ? atoi (size_s) : 0); // key value pair of string and int
+		pj_end (pj); // }
+
+		free (sizecmd);
+		free (size_s);
+	}
+	pj_end (pj); // ]
+
+	r_cons_println (pj_string (pj));
+	pj_free (pj);
+	ls_free (l);
+	return 1;
 }
 
 static int printkey_cb(void *user, const char *k, const char *v) {
@@ -784,12 +878,12 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			}
 			break;
-		case 'j':
+		case 'j': // "tuj"
 			if (input[2]) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				print_keys (TDB, core, stdifunion, printkey_json_cb, true);
+				print_struct_union_list_json (TDB, stdifunion);
 			}
 			break;
 		case 'c':{
@@ -891,7 +985,6 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
-
 		case 'c':{
 			char *name = NULL;
 			SdbKv *kv;
@@ -934,7 +1027,7 @@ static int cmd_type(void *data, const char *input) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				print_keys (TDB, core, stdifstruct, printkey_json_cb, true);
+				print_struct_union_list_json (TDB, stdifstruct);
 			}
 			break;
 		}
@@ -1122,7 +1215,7 @@ static int cmd_type(void *data, const char *input) {
 						char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 						if (out) {
 							//		r_cons_strcat (out);
-							save_parsed_type (core, out);
+							r_core_save_parsed_type (core, out);
 							free (out);
 						}
 						if (error_msg) {
@@ -1136,7 +1229,7 @@ static int cmd_type(void *data, const char *input) {
 					char *out = r_parse_c_file (core->anal, filename, &error_msg);
 					if (out) {
 						//r_cons_strcat (out);
-						save_parsed_type (core, out);
+						r_core_save_parsed_type (core, out);
 						free (out);
 					}
 					if (error_msg) {
@@ -1173,7 +1266,7 @@ static int cmd_type(void *data, const char *input) {
 			char *error_msg = NULL;
 			char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 			if (out) {
-				save_parsed_type (core, out);
+				r_core_save_parsed_type (core, out);
 				free (out);
 			}
 			if (error_msg) {

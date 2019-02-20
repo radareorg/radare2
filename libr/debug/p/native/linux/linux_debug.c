@@ -508,11 +508,9 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 	rdi->gid = found ? th->gid : -1;
 	rdi->cwd = read_link (rdi->pid, "cwd");
 	rdi->exe = read_link (rdi->pid, "exe");
-	snprintf (proc_buff, sizeof (proc_buff),
-				"/proc/%d/cmdline", rdi->pid);
+	snprintf (proc_buff, sizeof (proc_buff), "/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = r_file_slurp (proc_buff, NULL);
-	snprintf (proc_buff, sizeof (proc_buff),
-				"/proc/%d/stack", rdi->pid);
+	snprintf (proc_buff, sizeof (proc_buff), "/proc/%d/stack", rdi->pid);
 	rdi->kernel_stack = r_file_slurp (proc_buff, NULL);
 	rdi->status = found ? th->status : R_DBG_PROC_STOP;
 	if (list_alloc) {

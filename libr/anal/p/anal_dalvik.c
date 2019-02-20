@@ -46,7 +46,7 @@ static const char *getCondz(ut8 cond) {
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int sz = dalvik_opcodes[data[0]].len;
-	if (!op) {
+	if (!op || sz >= len) {
 		return sz;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
@@ -139,16 +139,19 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case 0x1a: // const-string
 		op->type = R_ANAL_OP_TYPE_MOV;
+		op->datatype = R_ANAL_DATATYPE_STRING;
 		if (len > 2) {
 			ut32 vA = data[1];
 			ut32 vB = (data[3]<<8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 			op->ptr = offset;
+			op->refptr = 0;
 			esilprintf (op, "0x%"PFMT64x",v%d,=", offset, vA);
 		}
 		break;
 	case 0x1c: // const-class
 		op->type = R_ANAL_OP_TYPE_MOV;
+		op->datatype = R_ANAL_DATATYPE_CLASS;
 		break;
 	case 0x89: // float-to-double
 	case 0x8a: // double-to-int
@@ -174,6 +177,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case 0x8f: // int-to-short
 		op->type = R_ANAL_OP_TYPE_CAST;
+		// op->datatype = R_ANAL_DATATYPE_INT32 | R_ANAL_DATATYPE_INT16;
 		{
 		ut32 vA = (data[1] & 0x0f);
 		ut32 vB = (data[1] & 0xf0) >> 4;
@@ -191,12 +195,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x20: // instance-of
 		{
 		op->type = R_ANAL_OP_TYPE_CMP;
-
 		esilprintf (op, "%d,instanceof,%d,-,!,v%d,=", vC, vB, vA);
 		}
 		break;
 	case 0x21: // array-length
 		op->type = R_ANAL_OP_TYPE_LENGTH;
+		op->datatype = R_ANAL_DATATYPE_ARRAY;
 		break;
 	case 0x44: // aget
 	case 0x45: //aget-bool
@@ -240,9 +244,20 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x63: // sget-boolean
+		{
+		const char *vT = "-boolean";
+		op->datatype = R_ANAL_DATATYPE_BOOLEAN;
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		ut32 vA = (data[1] & 0x0f);
+		ut32 vB = (data[1] & 0xf0) >> 4;
+		ut32 vC = (data[2] & 0x0f);
+		esilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
+		}
+		break;
 	case 0x62: // sget-object
 		{
 		const char *vT = "-object";
+		op->datatype = R_ANAL_DATATYPE_OBJECT;
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		ut32 vA = (data[1] & 0x0f);
 		ut32 vB = (data[1] & 0xf0) >> 4;

@@ -391,7 +391,7 @@ static bool mustSaveHistory(RConfig *c) {
 	if (!r_config_get_i (c, "scr.histsave")) {
 		return false;
 	}
-	if (!r_config_get_i (c, "scr.interactive")) {
+	if (!r_cons_is_interactive ()) {
 		return false;
 	}
 	return true;
@@ -1081,10 +1081,16 @@ int main(int argc, char **argv, char **envp) {
 				f = r_acp_to_utf8 (f);
 #	endif // __WINDOWS__
 				if (f) {
+#		if __WINDOWS__
+					pfile = r_str_append (pfile, "\"");
+					pfile = r_str_append (pfile, f);
+					pfile = r_str_append (pfile, "\"");
+#		else
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
-					file = pfile; // r_str_append (file, escaped_path);
 					free (escaped_path);
+#		endif
+					file = pfile; // r_str_append (file, escaped_path);
 				}
 #endif
 				optind++;
@@ -1365,7 +1371,7 @@ int main(int argc, char **argv, char **envp) {
 			snprintf (f, sizeof (f), "%s.r2", pfile);
 			if (r_file_exists (f)) {
 				// TODO: should 'q' unset the interactive bit?
-				bool isInteractive = r_config_get_i (r.config, "scr.interactive");
+				bool isInteractive = r_cons_is_interactive ();
 				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", f)) {
 					r_core_cmd_file (&r, f);
 				}
@@ -1496,7 +1502,7 @@ int main(int argc, char **argv, char **envp) {
 #endif
 			ret = r.num->value;
 			debug = r_config_get_i (r.config, "cfg.debug");
-			if (ret != -1 && r_config_get_i (r.config, "scr.interactive")) {
+			if (ret != -1 && r_cons_is_interactive ()) {
 				char *question;
 				bool no_question_debug = ret & 1;
 				bool no_question_save = (ret & 2) >> 1;

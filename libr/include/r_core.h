@@ -497,6 +497,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
+R_API void r_core_save_parsed_type(RCore *core, const char *parsed);
 R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to);
 
 /* anal.c */

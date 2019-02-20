@@ -19,6 +19,7 @@ sdb_files = [
   'types-arm-ios-16',
   'types-arm-ios-32',
   'types-arm-ios-64',
+  'types-darwin',
   'types-linux',
   'types',
   'types-windows',

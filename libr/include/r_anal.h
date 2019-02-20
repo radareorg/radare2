@@ -791,6 +791,19 @@ enum RAnalOpDirection {
 	R_ANAL_OP_DIR_REF = 8,
 };
 
+typedef enum r_anal_data_type_t {
+	R_ANAL_DATATYPE_NULL = 0,
+	R_ANAL_DATATYPE_ARRAY,
+	R_ANAL_DATATYPE_OBJECT, // instance
+	R_ANAL_DATATYPE_STRING,
+	R_ANAL_DATATYPE_CLASS,
+	R_ANAL_DATATYPE_BOOLEAN,
+	R_ANAL_DATATYPE_INT16,
+	R_ANAL_DATATYPE_INT32,
+	R_ANAL_DATATYPE_INT64,
+	R_ANAL_DATATYPE_FLOAT,
+} RAnalDataType;
+
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
@@ -830,6 +843,7 @@ typedef struct r_anal_op_t {
 	ut64 disp;
 	RAnalSwitchOp *switch_op;
 	RAnalHint hint;
+	RAnalDataType datatype;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
@@ -1287,6 +1301,7 @@ R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
+R_API const char *r_anal_datatype_to_string(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API bool r_anal_op_nonlinear(int t);
 R_API bool r_anal_op_ismemref(int t);

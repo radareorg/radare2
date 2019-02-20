@@ -3892,7 +3892,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			from = r_num_math (core->num, input + 3);
 		}
 	}
-	if (core->num->nc.errors && r_cons_singleton ()->is_interactive) {
+	if (core->num->nc.errors && r_cons_is_interactive ()) {
 		eprintf ("Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
 		return false;
 	}
@@ -4654,19 +4654,26 @@ static int cmd_debug(void *data, const char *input) {
 		cmd_debug_pid (core, input);
 		break;
 	case 'L': // "dL"
-		if (input[1]=='q') {
+		switch (input[1]) {
+		case 'q':
 			r_debug_plugin_list (core->dbg, 'q');
-		} else if (input[1]=='j') {
+			break;
+		case 'j':
 			r_debug_plugin_list (core->dbg, 'j');
-		} else if (input[1]=='?') {
+			break;
+		case '?':
 			r_core_cmd_help (core, help_msg_dL);
-		} else if (input[1]==' ') {
+			break;
+		case ' ': {
 			char *str = r_str_trim (strdup (input + 2));
 			r_config_set (core->config, "dbg.backend", str);
 			// implicit by config.set r_debug_use (core->dbg, str);
 			free (str);
-		} else {
+			}
+			break;
+		default:
 			r_debug_plugin_list (core->dbg, 0);
+			break;
 		}
 		break;
 	case 'i': // "di"
@@ -4728,7 +4735,6 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_printf ("f dbg.tid = %d\n", rdi->tid);
 					r_cons_printf ("f dbg.uid = %d\n", rdi->uid);
 					r_cons_printf ("f dbg.gid = %d\n", rdi->gid);
-
 				}
 				break;
 			case 'j': // "dij"
@@ -4776,6 +4782,7 @@ static int cmd_debug(void *data, const char *input) {
 			case '?': // "di?"
 			default:
 				r_core_cmd_help (core, help_msg_di);
+				break;
 			}
 			r_debug_info_free (rdi);
 		}

@@ -3520,20 +3520,28 @@ R_API void r_agraph_print(RAGraph *g) {
 	}
 }
 
-R_API void r_agraph_print_json(RAGraph *g) {
+R_API void r_agraph_print_json(RAGraph *g, PJ *pj) {
 	RList *nodes = g->graph->nodes, *neighbours = NULL;
 	RListIter *it, *itt;
 	RGraphNode *node = NULL, *neighbour = NULL;
+	if (!pj) {
+		return;
+	}
 	r_list_foreach (nodes, it, node) {
 		RANode *anode = (RANode *) node->data;
 		char *label = strdup (anode->body);
-		r_cons_printf ("%s{\"id\":%d,\"title\":\"%s\",\"body\":\"%s\",\"out_nodes\":[",
-			it == nodes->head ? "" : ",", anode->gnode->idx, anode->title, label);
+		pj_o (pj);
+		pj_ki (pj, "id", anode->gnode->idx);
+		pj_ks (pj, "title", anode->title);
+		pj_ks (pj, "body", label);
+		pj_k (pj, "out_nodes");
+		pj_a (pj);
 		neighbours = anode->gnode->out_nodes;
 		r_list_foreach (neighbours, itt, neighbour) {
-			r_cons_printf ("%s%d", itt == neighbours->head ? "" : ",", neighbour->idx);
+			pj_i (pj, neighbour->idx);
 		}
-		r_cons_printf ("]}");
+		pj_end (pj);
+		pj_end (pj);
 		free (label);
 	}
 }
@@ -3881,7 +3889,7 @@ static void rotateColor(RCore *core) {
 
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
-	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
+	int o_scrinteractive = r_cons_is_interactive ();
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;
