@@ -1444,7 +1444,11 @@ static RList *classes(RBinFile *bf) {
 			if (sections[i].size == 0) {
 				continue;
 			}
-			if (!strstr (sections[i].name, "__objc_classlist")) {
+
+			bool is_classlist = strstr (sections[i].name, "__objc_classlist");
+			bool is_catlist = strstr (sections[i].name, "__objc_catlist");
+
+			if (!is_classlist && !is_catlist) {
 				continue;
 			}
 
@@ -1472,7 +1476,11 @@ static RList *classes(RBinFile *bf) {
 
 				bf->o->bin_obj = mach0;
 				bf->buf = cache->buf;
-				MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false);
+				if (is_classlist) {
+					MACH0_(get_class_t) ((ut64) pointer_to_class, bf, klass, false);
+				} else {
+					MACH0_(get_category_t) ((ut64) pointer_to_class, bf, klass, NULL);
+				}
 				bf->o->bin_obj = cache;
 				bf->buf = orig_buf;
 
@@ -1563,7 +1571,7 @@ static void header(RBinFile *bf) {
 	bin->cb_printf ("\nslide info (v%d):\n", version);
 	bin->cb_printf ("slide: 0x%"PFMT64x"\n", slide);
 	if (version == 2) {
-		RDyldRebaseInfo2 * info2 = (RDyldRebaseInfo2*) cache->rebase_info;
+		RDyldRebaseInfo2 *info2 = (RDyldRebaseInfo2*) cache->rebase_info;
 		bin->cb_printf ("page_starts_count: 0x%"PFMT64x"\n", info2->page_starts_count);
 		bin->cb_printf ("page_extras_count: 0x%"PFMT64x"\n", info2->page_extras_count);
 		bin->cb_printf ("delta_mask: 0x%"PFMT64x"\n", info2->delta_mask);
@@ -1571,7 +1579,7 @@ static void header(RBinFile *bf) {
 		bin->cb_printf ("delta_shift: 0x%"PFMT64x"\n", info2->delta_shift);
 		bin->cb_printf ("page_size: 0x%"PFMT64x"\n", info2->page_size);
 	} else if (version == 1) {
-		RDyldRebaseInfo1 * info1 = (RDyldRebaseInfo1*) cache->rebase_info;
+		RDyldRebaseInfo1 *info1 = (RDyldRebaseInfo1*) cache->rebase_info;
 		bin->cb_printf ("toc_count: 0x%"PFMT64x"\n", info1->toc_count);
 		bin->cb_printf ("entries_size: 0x%"PFMT64x"\n", info1->entries_size);
 		bin->cb_printf ("page_size: 0x%"PFMT64x"\n", 4096);
