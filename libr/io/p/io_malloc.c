@@ -192,7 +192,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_malloc = {
 	.name = "malloc",
-	.desc = "memory allocation (malloc://1024 hex://cd8090)",
+	.desc = "Memory allocation plugin",
+	.uris = "malloc://,hex://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

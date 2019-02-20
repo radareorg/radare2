@@ -2300,7 +2300,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			// do not dblfree, ownership is transferred free (resourceEntryName);
 			continue;
 		} else {
-			free (resourceEntryName);
+			R_FREE (resourceEntryName);
 		}
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
@@ -2375,7 +2375,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		if (resource_name) {
 			rs->name = strdup (resource_name);
 		} else {
-			char numberbuf[6];
+			char numberbuf[SDB_NUM_BUFSZ];
 			rs->name = strdup (sdb_itoa (id, numberbuf, 10));
 		}
 		r_list_append (bin->resources, rs);
@@ -2680,9 +2680,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		if (r_buf_read_at (bin->b, bin_pe_rva_to_paddr (bin, bin->export_directory->Name), (ut8*) dll_name, PE_NAME_LENGTH) < 1) {
+			// we dont stop if dll name cant be read, we set dllname to null and continue
 			bprintf ("Warning: read (dll name)\n");
-			free (exports);
-			return NULL;
+			dll_name[0] = '\0';
 		}
 		functions_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfFunctions);
 		names_paddr = bin_pe_rva_to_paddr (bin, bin->export_directory->AddressOfNames);

@@ -2,6 +2,7 @@
 r_util_sources = [
   'ascii_table.c',
   'assert.c',
+  'alloc.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
@@ -63,7 +64,6 @@ r_util_sources = [
   'tinyrange.c',
   'tree.c',
   'pj.c',
-  'r_json.c',
   'ubase64.c',
   'uleb128.c',
   'unum.c',

@@ -5,6 +5,7 @@
 R_API RSpaces *r_spaces_new(const char *name) {
 	RSpaces *sp = R_NEW0 (RSpaces);
 	if (!sp || !r_spaces_init (sp, name)) {
+		free (sp);
 		return NULL;
 	}
 	return sp;
@@ -32,7 +33,7 @@ R_API bool r_spaces_init(RSpaces *sp, const char *name) {
 	return true;
 
 fail:
-	r_spaces_free (sp);
+	r_spaces_fini (sp);
 	return false;
 }
 
@@ -60,6 +61,7 @@ R_API void r_spaces_fini(RSpaces *sp) {
 	sp->spaces = NULL;
 	r_event_free (sp->event);
 	sp->event = NULL;
+	sp->current = NULL;
 	R_FREE (sp->name);
 }
 
@@ -121,6 +123,9 @@ static bool spaces_unset_single(RSpaces *sp, const char *name) {
 
 	RSpaceEvent ev = { .data.unset.space = space };
 	r_event_send (sp->event, R_SPACE_EVENT_UNSET, &ev);
+	if (sp->current == space) {
+		sp->current = NULL;
+	}
 	return r_rbtree_delete (&sp->spaces, (void *)name, name_space_cmp, space_node_free);
 }
 

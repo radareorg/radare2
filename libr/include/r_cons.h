@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <r_types.h>
+#include <r_util/pj.h>
 #include <r_util/r_graph.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_log.h>
@@ -408,6 +409,7 @@ typedef struct r_cons_context_t {
 	int lastLength;
 	bool lastMode;
 	bool lastEnabled;
+	bool is_interactive;
 	bool pageable;
 
 	RConsColorMode color;
@@ -419,7 +421,6 @@ typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
 	int is_html;
-	int is_interactive;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime
@@ -683,6 +684,7 @@ R_API char *r_cons_lastline_utf8_ansi_len(int *len);
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked(void);
+R_API bool r_cons_is_interactive(void);
 R_API void r_cons_break_timeout(int timeout);
 R_API void r_cons_breakword(const char *s);
 R_API void *r_cons_sleep_begin(void);
@@ -1028,7 +1030,7 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth);
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_print(RAGraph *g);
-R_API void r_agraph_print_json(RAGraph *g);
+R_API void r_agraph_print_json(RAGraph *g, PJ *pj);
 R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);

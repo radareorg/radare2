@@ -25,7 +25,7 @@ else
 fi
 
 git log ${PREV}..${VERS} > .l
-cat .l | grep ^Author | cut -d : -f 2- | sort -u > .A
+cat .l | grep ^Author | cut -d : -f 2- | sed -e 's,radare,pancake,' | sort -u > .A
 
 echo "Release Notes"
 echo "-------------"

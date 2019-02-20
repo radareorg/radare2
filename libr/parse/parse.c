@@ -105,6 +105,9 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 
 static bool isvalidflag(RFlagItem *flag) {
 	if (flag) {
+		if (strstr (flag->name, "main") || strstr (flag->name, "entry")) {
+			return true;
+		}
 		if (strchr (flag->name, '.')) {
 			return strncmp (flag->name, "section.", 8);
 		}

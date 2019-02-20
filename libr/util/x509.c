@@ -708,7 +708,6 @@ R_API void r_x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
 
 R_API void r_x509_crl_json(PJ *pj, RX509CertificateRevocationList *crl) {
 	ut32 i;
-	RJSVar *array = NULL;
 	if (crl) {
 		if (crl->signature.algorithm) {
 			pj_ks (pj, "Signature", crl->signature.algorithm->string);
@@ -725,7 +724,6 @@ R_API void r_x509_crl_json(PJ *pj, RX509CertificateRevocationList *crl) {
 		}
 		pj_k (pj, "RevokedCertificates");
 		pj_a (pj);
-		array = r_json_array_new (crl->length);
 		for (i = 0; i < crl->length; ++i) {
 			r_x509_crlentry_json (pj, crl->revokedCertificates[i]);
 		}

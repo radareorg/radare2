@@ -501,15 +501,6 @@ static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
 
 #include "armass64_const.h"
 
-static ut32 msrk(ut16 v) {
-	ut32 r = 0;
-	ut32 a = ((v >> 12) & 0xf) << 1;
-	ut32 b = ((v & 0xfff) >> 3) & 0xff;
-	r |= a << 8;
-	r |= b << 16;
-	return r;
-}
-
 static ut32 msr(ArmOp *op, int w) {
 	ut32 data = UT32_MAX;
 	ut32 seq_data = UT32_MAX;

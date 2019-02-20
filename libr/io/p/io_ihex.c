@@ -422,12 +422,13 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 
 RIOPlugin r_io_plugin_ihex = {
 	.name = "ihex",
-        .desc = "Intel HEX file (ihex://eeproms.hex)",
+	.desc = "Open intel HEX file",
+	.uris = "ihex://",
 	.license = "LGPL",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .check = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize
@@ -436,7 +437,7 @@ RIOPlugin r_io_plugin_ihex = {
 #ifndef CORELIB
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_hex,
+	.data = &r_io_plugin_ihex,
 	.version = R2_VERSION
 };
 #endif

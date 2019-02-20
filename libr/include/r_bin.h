@@ -277,7 +277,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_t *rbin;
 } RBinFile;
 
-typedef struct RBinFileOptions {
+typedef struct r_bin_file_options_t {
 	int rawstr;
 	ut64 baddr; // base address
 	ut64 laddr; // load address

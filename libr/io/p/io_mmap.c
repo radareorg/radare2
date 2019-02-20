@@ -193,7 +193,8 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 
 struct r_io_plugin_t r_io_plugin_mmap = {
 	.name = "mmap",
-	.desc = "open file using mmap://",
+	.desc = "Open files using mmap",
+	.uris = "mmap://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

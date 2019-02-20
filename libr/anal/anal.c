@@ -346,7 +346,22 @@ R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int 
 	return r_anal_use (anal, arch);
 }
 
+// copypasta from core/cbin.c
+static void sdb_concat_by_path(Sdb *s, const char *path) {
+	Sdb *db = sdb_new (0, path, 0);
+	sdb_merge (s, db);
+	sdb_close (db);
+	sdb_free (db);
+}
+
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
+	Sdb *types = anal->sdb_types;
+	const char *dir_prefix = r_sys_prefix (NULL);
+	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+		dir_prefix, os);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
