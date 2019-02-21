@@ -2176,7 +2176,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	reloc->ord = sym_ord;\
 	reloc->type = rel_type;\
 	if (sym_name)\
-		strlcpy (reloc->name, sym_name, 256);\
+		r_str_ncpy (reloc->name, sym_name, 256);\
 	r_skiplist_insert (relocs, reloc);\
 } while (0)
 			case BIND_OPCODE_DO_BIND:
