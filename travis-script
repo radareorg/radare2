@@ -10,6 +10,7 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
 
     OPTS=""
+    BUILDTYPE="--buildtype=release"
     if [ "${R2_SYS_CAPSTONE}" != "" ] ; then
         OPTS="${OPTS} -D use_sys_capstone=${R2_SYS_CAPSTONE}"
     fi
@@ -27,9 +28,10 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     fi
     if [ "${COVERAGE}" == "1" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
+        BUILDTYPE="--buildtype=debug"
     fi
 
-    meson --buildtype=release --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
+    meson ${BUILDTYPE} --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
     pushd build
     ninja || exit 1
     ninja install || exit 1
