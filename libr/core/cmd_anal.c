@@ -7464,7 +7464,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps");
-	eprintf ("[x] Finding xrefs in noncode section with anal.in = 'io.maps'\n");
+	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in = 'io.maps");
+	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword
 	if (core->assembler->bits == 64) {
