@@ -48,6 +48,7 @@
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <sys/sysctl.h>
 #include <libutil.h>
 #endif
 #endif
@@ -237,6 +238,19 @@ static void setRVA(const char *v) {
 		close (fd);
 	}
 }
+#elif __FreeBSD__ && __FreeBSD_version >= 1300000
+static void setRVA(int val) {
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("kern.elf32.aslr.enable", &val, &vlen, NULL, 0) == -1) {
+		eprintf ("Failed to set RVA 32 bits\n");
+	}
+
+#if __LP64__
+	if (sysctlbyname ("kern.elf64.aslr.enable", &val, &vlen, NULL, 0) == -1) {
+		eprintf ("Failed to set RVA 64 bits\n");
+	}
+#endif
+}
 #endif
 
 // TODO: move into r_util? r_run_... ? with the rest of funcs?
@@ -268,6 +282,12 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
+#elif __FreeBSD__
+	if (enabled) {
+		setRVA (1);
+	} else {
+		setRVA (0);
+	}
 #else
 	// not supported for this platform
 #endif
