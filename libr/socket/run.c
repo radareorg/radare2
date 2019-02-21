@@ -227,47 +227,14 @@ static int parseBool(const char *e) {
 		0: 1): 1): 1): 1);
 }
 
-#if __linux__
-#define RVAS "/proc/sys/kernel/randomize_va_space"
-static void setRVA(const char *v) {
-	int fd = open (RVAS, O_WRONLY);
-	if (fd != -1) {
-		if (write (fd, v, 2) != 2) {
-			eprintf ("Failed to set RVA\n");
-		}
-		close (fd);
-	}
-}
-#elif __FreeBSD__ && __FreeBSD_version >= 1300000
-static void setRVA(int val) {
-	size_t vlen = sizeof (val);
-	if (sysctlbyname ("kern.elf32.aslr.enable", &val, &vlen, NULL, 0) == -1) {
-		eprintf ("Failed to set RVA 32 bits\n");
-	}
-
-#if __LP64__
-	if (sysctlbyname ("kern.elf64.aslr.enable", &val, &vlen, NULL, 0) == -1) {
-		eprintf ("Failed to set RVA 64 bits\n");
-	}
-#endif
-}
-#endif
-
 // TODO: move into r_util? r_run_... ? with the rest of funcs?
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
-	if (enabled) {
-		setRVA ("2\n");
-	} else {
-#if __ANDROID__
-		setRVA ("0\n");
-#else
+	r_sys_aslr (enabled);
 #if HAVE_DECL_ADDR_NO_RANDOMIZE
-		if (personality (ADDR_NO_RANDOMIZE) == -1) {
+	if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
-			setRVA ("0\n");
-		}
-#endif
+		r_sys_aslr (0);
 	}
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
@@ -283,11 +250,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
 #elif __FreeBSD__
-	if (enabled) {
-		setRVA (1);
-	} else {
-		setRVA (0);
-	}
+	r_sys_aslr (enabled);
 #else
 	// not supported for this platform
 #endif
