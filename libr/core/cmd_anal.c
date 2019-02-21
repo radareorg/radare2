@@ -3127,6 +3127,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 // size: 0: bits; -1: any; >0: exact size
 static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
+	if (mode == 'i') {
+		r_core_debug_ri (core, core->anal->reg, 0);
+		return;
+	}
 	RReg *hack = core->dbg->reg;
 	const char *use_color;
 	int use_colors = r_config_get_i (core->config, "scr.color");
@@ -3195,6 +3199,17 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
+	if (0) {
+		/* enable this block when dr and ar use the same code but just using 
+		   core->dbg->reg or core->anal->reg and removing all the debugger
+		   dependent code */
+		RReg *reg = core->dbg->reg;
+		core->dbg->reg = core->anal->reg;
+		cmd_debug_reg (core, str);
+		core->dbg->reg = reg;
+		return;
+	}
+
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
@@ -3308,10 +3323,10 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case 'r': // "arr"
 		switch (str[1]) {
 		case 'j': // "arrj"
-			r_core_debug_rr (core, core->dbg->reg, 'j');
+			r_core_debug_rr (core, core->anal->reg, 'j');
 			break;
 		default:
-			r_core_debug_rr (core, core->dbg->reg, 0);
+			r_core_debug_rr (core, core->anal->reg, 0);
 			break;
 		}
 		break;
@@ -3486,6 +3501,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case '*': // "ar*"
 	case 'R': // "arR"
 	case 'j': // "arj"
+	case 'i': // "arj"
 	case '\0': // "ar"
 		__anal_reg_list (core, type, size, str[0]);
 		break;

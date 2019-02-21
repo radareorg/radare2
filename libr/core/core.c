@@ -1842,7 +1842,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 	if (verbose) {
-		return r_core_anal_hasrefs_to_depth(core, value, r_config_get_i (core->config, "hex.depth"));
+		return r_core_anal_hasrefs_to_depth (core, value, r_config_get_i (core->config, "hex.depth"));
 	}
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
 	if (fi) {
@@ -1853,12 +1853,10 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
-	ut64 type;
 	char *mapname = NULL;
-	RAnalFunction *fcn;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
-	type = r_core_anal_address (core, value);
-	fcn = r_anal_get_fcn_in (core->anal, value, 0);
+	ut64 type = r_core_anal_address (core, value);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (value && value != UT64_MAX) {
 		RDebugMap *map = r_debug_map_get (core->dbg, value);
 		if (map && map->name && map->name[0]) {
@@ -1877,7 +1875,10 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		}
 	}
 	if (fi) {
-		r_strbuf_appendf (s, " %s", fi->name);
+		RRegItem *r = r_reg_get (core->dbg->reg, fi->name, -1);
+		if (!r) {
+			r_strbuf_appendf (s, " %s", fi->name);
+		}
 	}
 	if (fcn) {
 		r_strbuf_appendf (s, " %s", fcn->name);
