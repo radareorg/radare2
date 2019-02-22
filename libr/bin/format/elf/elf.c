@@ -3210,6 +3210,31 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
+static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	if (name[0] != '$' || name[0] == '\0') {
+		return false;
+	}
+	switch (name[1]) {
+	case 'a':
+	case 't':
+	case 'd':
+		return ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
+			ELF_ST_BIND (sym->st_info) == STB_LOCAL &&
+			ELF_ST_VISIBILITY (sym->st_info) == STV_DEFAULT;
+	default:
+		return false;
+	}
+}
+
+static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	switch (bin->ehdr.e_machine) {
+	case EM_ARM:
+		return is_special_arm_symbol (bin, sym, name);
+	default:
+		return false;
+	}
+}
+
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
@@ -3392,6 +3417,11 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						const size_t len = __strnlen (strtab + sym[k].st_name, rest);
 						memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 					}
+				}
+				// ignore special symbols for now, as they just add a lot of noise
+				// TODO: add a way to retrieve them, e.g. to use them for anal hints, etc.
+				if (is_special_symbol (bin, &sym[k], ret[ret_ctr].name)) {
+					continue;
 				}
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
