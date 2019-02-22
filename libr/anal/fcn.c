@@ -91,15 +91,19 @@ static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
 	return 0;
 }
 
-static void _fcn_tree_calc_max_addr(RBNode *node) {
+static void _fcn_tree_calc_minmax_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
-	fcn->rb_max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
+	fcn->rb_max_addr = fcn->bbr.max_value;
+	fcn->rb_min_addr = fcn->bbr.min_value;
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
 			RAnalFunction *fcn1 = FCN_CONTAINER (node->child[i]);
 			if (fcn1->rb_max_addr > fcn->rb_max_addr) {
 				fcn->rb_max_addr = fcn1->rb_max_addr;
+			}
+			if (fcn1->rb_min_addr < fcn->rb_min_addr) {
+				fcn->rb_min_addr = fcn1->rb_min_addr;
 			}
 		}
 	}
@@ -124,8 +128,8 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 			x = y;
 			continue;
 		}
-		if (x->addr <= to - 1) {
-			if (from <= x->addr + (x->_size == 0 ? 0 : x->_size - 1)) {
+		if (x->rb_min_addr <= to - 1) {
+			if (from <= x->rb_max_addr) {
 				return x_;
 			}
 			if ((y_ = x_->child[1])) {
@@ -141,63 +145,16 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 }
 
 R_API bool r_anal_fcn_tree_delete(RBNode **root, RAnalFunction *data) {
-	return r_rbtree_aug_delete (root, data, _fcn_tree_cmp_addr, _fcn_tree_free, _fcn_tree_calc_max_addr);
+	return r_rbtree_aug_delete (root, data, _fcn_tree_cmp_addr, _fcn_tree_free, _fcn_tree_calc_minmax_addr);
 }
 
 R_API void r_anal_fcn_tree_insert(RBNode **root, RAnalFunction *fcn) {
-	r_rbtree_aug_insert (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_insert (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_minmax_addr);
 }
 
 static void _fcn_tree_update_size(RBNode *root, RAnalFunction *fcn) {
-	r_rbtree_aug_update_sum (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_update_sum (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_minmax_addr);
 }
-
-#if 0
-static void _fcn_tree_print_dot_node(RBNode *n) {
-	int i;
-	RAnalFunction *fcn = FCN_CONTAINER (n);
-
-	ut64 max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
-	for (i = 0; i < 2; i++) {
-		if (n->child[i]) {
-			RAnalFunction *fcn1 = FCN_CONTAINER (n->child[i]);
-			if (fcn1->rb_max_addr > max_addr) {
-				max_addr = fcn1->rb_max_addr;
-			}
-		}
-	}
-
-	bool valid = max_addr == fcn->rb_max_addr;
-
-	r_cons_printf ("  \"%p\" [label=\"%p\\naddr: 0x%08"PFMT64x"\\nmax_addr: 0x%08"PFMT64x"\"%s];\n",
-				   n, fcn, fcn->addr, fcn->rb_max_addr, valid ? "" : ", color=\"red\", fillcolor=\"white\"");
-
-	for (i=0; i<2; i++) {
-		if (n->child[i]) {
-			_fcn_tree_print_dot_node (n->child[i]);
-			bool valid = true;
-			if (n->child[i]) {
-				RAnalFunction *childfcn = FCN_CONTAINER (n->child[i]);
-				if ((i == 0 && childfcn->addr >= fcn->addr) || (i == 1 && childfcn->addr <= fcn->addr)) {
-					valid = false;
-				}
-			}
-			r_cons_printf ("  \"%p\" -> \"%p\" [label=\"%d\"%s];\n", n, n->child[i], i, valid ? "" : ", style=\"bold\", color=\"red\"");
-		} else {
-			r_cons_printf ("  \"null_%p_%d\" [shape=point];\n", n, i);
-			r_cons_printf ("  \"%p\" -> \"null_%p_%d\" [label=\"%d\"];\n", n, n, i, i);
-		}
-	}
-}
-
-static void _fcn_tree_print_dot(RBNode *n) {
-	r_cons_print ("digraph fcn_tree {\n");
-	if (n) {
-		_fcn_tree_print_dot_node (n);
-	}
-	r_cons_print ("}\n");
-}
-#endif
 
 // Find RAnalFunction whose addr is equal to addr
 static RAnalFunction *_fcn_tree_find_addr(RBNode *n, ut64 addr) {
@@ -237,11 +194,11 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 		}
 		x_ = it->path[--it->len];
 		x = FCN_CONTAINER (x_);
-		if (to - 1 < x->addr) {
+		if (to - 1 < x->rb_min_addr) {
 			it->cur = NULL;
 			break;
 		}
-		if (from <= x->addr + (x->_size == 0 ? 0 : x->_size - 1)) {
+		if (from <= x->rb_max_addr) {
 			it->cur = x_;
 			break;
 		}

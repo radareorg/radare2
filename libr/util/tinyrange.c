@@ -3,13 +3,17 @@
 #include <r_util.h>
 
 R_API RRangeTiny *r_tinyrange_new() {
-	return R_NEW0 (RRangeTiny);
+	RRangeTiny *res = R_NEW (RRangeTiny);
+	r_tinyrange_init (res);
+	return res;
 }
 
 R_API void r_tinyrange_init(RRangeTiny *bbr) {
 	bbr->count = 0;
 	bbr->pairs = 0;
 	bbr->ranges = NULL;
+	bbr->min_value = 0;
+	bbr->max_value = UT64_MAX;
 }
 
 R_API void r_tinyrange_fini(RRangeTiny *bbr) {
@@ -20,7 +24,7 @@ R_API void r_tinyrange_fini(RRangeTiny *bbr) {
 
 R_API void r_tinyrange_free(RRangeTiny *bbr) {
 	r_tinyrange_fini (bbr);
-	R_FREE (bbr);
+	free (bbr);
 }
 
 //bool value if true return bb->addr otherwise a boolean to notify was found
@@ -89,18 +93,11 @@ R_API bool r_tinyrange_add(RRangeTiny *bbr, ut64 from, ut64 to) {
 		bbr->ranges[1] = to;
 	}
 	bbr->count++;
+	if (bbr->min_value > from) {
+		bbr->min_value = from;
+	}
+	if (bbr->max_value < to) {
+		bbr->max_value = to;
+	}
 	return true;
 }
-
-#if 0
-main() {
-	RRangeTiny *bbr = r_tinyrange_new ();
-	r_tinyrange_add (bbr, 100, 200);
-	r_tinyrange_add (bbr, 300, 400);
-	r_tinyrange_add (bbr, 400, 500);
-	eprintf ("%d\n", r_tinyrange_in (bbr, 100));
-	eprintf ("%d\n", r_tinyrange_in (bbr, 250));
-	eprintf ("%d\n", r_tinyrange_in (bbr, 450));
-//	r_tinyrange_free (bbr);
-}
-#endif

@@ -8,6 +8,8 @@ extern "C" {
 typedef struct r_range_tiny_t {
 	int pairs;
 	int count;
+	ut64 min_value;
+	ut64 max_value;
 	ut64 *ranges;
 } RRangeTiny;
 
