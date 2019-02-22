@@ -94,8 +94,8 @@ static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
 static void _fcn_tree_calc_minmax_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
-	fcn->rb_max_addr = fcn->bbr.max_value != UT64_MAX? fcn->bbr.max_value - 1: fcn->addr;
-	fcn->rb_min_addr = fcn->bbr.min_value;
+	fcn->rb_max_addr = fcn->bbr.count? fcn->bbr.max_value - 1: fcn->addr;
+	fcn->rb_min_addr = fcn->bbr.count? fcn->bbr.min_value: fcn->addr;
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
 			RAnalFunction *fcn1 = FCN_CONTAINER (node->child[i]);
