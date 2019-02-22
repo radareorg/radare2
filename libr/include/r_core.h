@@ -45,6 +45,17 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_ANAL_KEYVALUE            16
 #define R_CORE_ANAL_JSON_FORMAT_DISASM  32
 
+#define R_FLAGS_FS_CLASSES "classes"
+#define R_FLAGS_FS_FUNCTIONS "functions"
+#define R_FLAGS_FS_IMPORTS "imports"
+#define R_FLAGS_FS_RELOCS "relocs"
+#define R_FLAGS_FS_RESOURCES "resources"
+#define R_FLAGS_FS_SECTIONS "sections"
+#define R_FLAGS_FS_SEGMENTS "segments"
+#define R_FLAGS_FS_STRINGS "strings"
+#define R_FLAGS_FS_SYMBOLS "symbols"
+#define R_FLAGS_FS_SYSCALLS "syscalls"
+
 #define R_GRAPH_FORMAT_NO           0
 #define R_GRAPH_FORMAT_GMLFCN       1
 #define R_GRAPH_FORMAT_JSON         2

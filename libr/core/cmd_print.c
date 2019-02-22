@@ -1843,7 +1843,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 		}
 		break;
 	case 's': // "pzs"
-		u.flagspace = r_flag_space_get (core->flags, "strings");
+		u.flagspace = r_flag_space_get (core->flags, R_FLAGS_FS_STRINGS);
 		u.addr = addr;
 		u.size = size;
 		u.ret = &ret;
