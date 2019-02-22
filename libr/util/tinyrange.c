@@ -12,8 +12,8 @@ R_API void r_tinyrange_init(RRangeTiny *bbr) {
 	bbr->count = 0;
 	bbr->pairs = 0;
 	bbr->ranges = NULL;
-	bbr->min_value = 0;
-	bbr->max_value = UT64_MAX;
+	bbr->min_value = UT64_MAX;
+	bbr->max_value = 0;
 }
 
 R_API void r_tinyrange_fini(RRangeTiny *bbr) {
