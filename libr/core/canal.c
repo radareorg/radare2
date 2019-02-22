@@ -1847,7 +1847,7 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 		r_list_foreach (refs, iter, ref) {
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
-			if (binsec->is_data) {
+			if (binsec && binsec->is_data) {
 				if (!found) {
 					r_cons_printf ("agn %s\n", me);
 					found = true;
