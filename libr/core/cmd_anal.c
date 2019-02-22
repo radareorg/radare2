@@ -5764,7 +5764,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 			}
 		} else {
 			if (is_r2) {
-				r_cons_printf ("age 0x%08"PFMT64x"\n", fcn->addr);
+				r_cons_printf ("age 0x%08"PFMT64x"\n", addr);
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
