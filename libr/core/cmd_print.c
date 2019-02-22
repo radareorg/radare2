@@ -2721,7 +2721,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 
 	PJ *pj = pj_new ();
 	if (!pj) {
-		return 1;
+		return 0;
 	}
 	switch (mode) {
 	case 'j': // "p-j"
@@ -2761,22 +2761,27 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 				pj_kn (pj, "offset", at);
 				pj_kn (pj, "size", piece);
 			}
-#define PRINT_VALUE(name, cond, v) { \
-			if (cond) { \
-				pj_ki (pj, name, v); \
-			}}
-#define PRINT_VALUE2(name, v) PRINT_VALUE(name, v, v)
-			PRINT_VALUE2 ("flags", as->block[p].flags);
-			PRINT_VALUE2 ("functions", as->block[p].functions);
-			PRINT_VALUE2 ("in_functions", as->block[p].in_functions);
-			PRINT_VALUE2 ("comments", as->block[p].comments);
-			PRINT_VALUE2 ("symbols", as->block[p].symbols);
-			PRINT_VALUE2 ("strings", as->block[p].strings);
+			if (as->block[p].flags) {
+				pj_ki (pj, "flags", as->block[p].flags);
+			}
+			if (as->block[p].functions) {
+				pj_ki (pj, "functions", as->block[p].functions);
+			}
+			if (as->block[p].in_functions) {
+				pj_ki (pj, "in_functions", as->block[p].in_functions);
+			}
+			if (as->block[p].comments) {
+				pj_ki (pj, "comments", as->block[p].comments);
+			}
+			if (as->block[p].symbols) {
+				pj_ki (pj, "symbols", as->block[p].symbols);
+			}
+			if (as->block[p].strings) {
+				pj_ki (pj, "strings", as->block[p].strings);
+			}
 			if (as->block[p].perm) {
 				pj_ks (pj, "perm", r_str_rwx_i (as->block[p].perm));
 			}
-#undef PRINT_VALUE
-#undef PRINT_VALUE2
 			pj_end (pj);
 			len++;
 			break;
