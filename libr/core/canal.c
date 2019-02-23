@@ -466,7 +466,7 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	ut32 size = r_read_le32 (temp_size);
 	int num_syms = 0;
 	//r_cons_print ("[x] Reading .gopclntab...\n");
-	r_flag_space_push (core->flags, "symbols");
+	r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
 	while (offset < gopclntab + size) {
 		ut8 temp_delta[4] = {0};
 		ut8 temp_func_addr[4] = {0};
@@ -786,7 +786,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 					autoname_imp_trampoline (core, fcn);
 				}
 				/* Add flag */
-				r_flag_space_push (core->flags, "functions");
+				r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 				r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
 				r_flag_space_pop (core->flags);
 			}
@@ -878,7 +878,7 @@ error:
 					r_anal_fcn_type_tostring (fcn->type),
 					at);
 				/* Add flag */
-				r_flag_space_push (core->flags, "functions");
+				r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 				r_flag_set (core->flags, fcn->name, at, r_anal_fcn_size (fcn));
 				r_flag_space_pop (core->flags);
 			}
@@ -1626,7 +1626,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		int result = R_ANAL_RET_ERROR;
 		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
 		/* update the flags after running the analysis function of the plugin */
-		r_flag_space_push (core->flags, "functions");
+		r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
 		}
@@ -3380,7 +3380,7 @@ static void found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 			if (str_string) {
 				r_name_filter (str_string, -1);
 				char *str_flagname = r_str_newf ("str.%s", str_string);
-				r_flag_space_push (core->flags, "strings");
+				r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
 				(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
 				r_flag_space_pop (core->flags);
 				free (str_flagname);
@@ -4128,7 +4128,7 @@ static void add_string_ref(RCore *core, ut64 xref_to) {
 		r_anal_xrefs_set (core->anal, core->anal->esil->address, xref_to, R_ANAL_REF_TYPE_DATA);
 		r_name_filter (str_flagname, -1);
 		char *flagname = sdb_fmt ("str.%s", str_flagname);
-		r_flag_space_push (core->flags, "strings");
+		r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
 		r_flag_set (core->flags, flagname, xref_to, len);
 		r_flag_space_pop (core->flags);
 		r_meta_add (core->anal, 's', xref_to, xref_to + len, str_flagname);
@@ -4460,7 +4460,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 		}
 		if (op.type == R_ANAL_OP_TYPE_SWI) {
-			r_flag_space_set (core->flags, "syscalls");
+			r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
 			int snv = canal_isThumb (core)? op.val: (int)r_reg_getv (core->anal->reg, sn);
 			RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
 			if (si) {

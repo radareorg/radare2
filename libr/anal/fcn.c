@@ -1707,10 +1707,8 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
-	if (anal->flb.set && anal->flb.push_fs && anal->flb.pop_fs) {
-		anal->flb.push_fs (anal->flb.f, "functions");
-		anal->flb.set (anal->flb.f, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
-		anal->flb.pop_fs (anal->flb.f);
+	if (anal->flg_fcn_set) {
+		anal->flg_fcn_set (anal->flb.f, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
 	}
 	return true;
 }
