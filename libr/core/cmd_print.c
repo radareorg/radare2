@@ -2719,13 +2719,18 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		return 0;
 	}
 
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return 0;
+	}
 	switch (mode) {
 	case 'j': // "p-j"
-		r_cons_printf (
-			"{\"from\":%"PFMT64u ","
-			"\"to\":%"PFMT64u ","
-			"\"blocksize\":%d,"
-			"\"blocks\":[", from, to, piece);
+		pj_o (pj);
+		pj_kn (pj, "from", from);
+		pj_kn (pj, "to", to);
+		pj_ki (pj, "blocksize", piece);
+		pj_k (pj, "blocks");
+		pj_a (pj);
 		break;
 	case 'h': // "p-h"
 		r_cons_printf (".-------------.----------------------------.\n");
@@ -2741,38 +2746,43 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	int i;
 	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to - from) / piece); i++) {
-		bool insert_separator = false;
 		ut64 at = from + (piece * i);
 		ut64 ate = at + piece;
 		ut64 p = (at - from) / piece;
 		switch (mode) {
 		case 'j':
-			r_cons_printf ("%s{", len? ",": "");
+			pj_o (pj);
 			if ((as->block[p].flags)
 				|| (as->block[p].functions)
 				|| (as->block[p].comments)
 				|| (as->block[p].symbols)
 				|| (as->block[p].perm)
 				|| (as->block[p].strings)) {
-				r_cons_printf ("\"offset\":%"PFMT64u ",", at);
-				r_cons_printf ("\"size\":%"PFMT64u ",", piece);
+				pj_kn (pj, "offset", at);
+				pj_kn (pj, "size", piece);
 			}
-#define PRINT_VALUE(name, cond, v) { \
-			if (cond) { \
-				r_cons_printf ("%s\"" name "\":%d", insert_separator? ",": "", (v)); \
-				insert_separator = true; \
-			}}
-#define PRINT_VALUE2(name, v) PRINT_VALUE(name, v, v)
-			PRINT_VALUE2 ("flags", as->block[p].flags);
-			PRINT_VALUE2 ("functions", as->block[p].functions);
-			PRINT_VALUE2 ("in_functions", as->block[p].in_functions);
-			PRINT_VALUE2 ("comments", as->block[p].comments);
-			PRINT_VALUE2 ("symbols", as->block[p].symbols);
-			PRINT_VALUE2 ("strings", as->block[p].strings);
-			PRINT_VALUE ("perm", as->block[p].perm, r_str_rwx_i (as->block[p].perm));
-#undef PRINT_VALUE
-#undef PRINT_VALUE2
-			r_cons_strcat ("}");
+			if (as->block[p].flags) {
+				pj_ki (pj, "flags", as->block[p].flags);
+			}
+			if (as->block[p].functions) {
+				pj_ki (pj, "functions", as->block[p].functions);
+			}
+			if (as->block[p].in_functions) {
+				pj_ki (pj, "in_functions", as->block[p].in_functions);
+			}
+			if (as->block[p].comments) {
+				pj_ki (pj, "comments", as->block[p].comments);
+			}
+			if (as->block[p].symbols) {
+				pj_ki (pj, "symbols", as->block[p].symbols);
+			}
+			if (as->block[p].strings) {
+				pj_ki (pj, "strings", as->block[p].strings);
+			}
+			if (as->block[p].perm) {
+				pj_ks (pj, "perm", r_str_rwx_i (as->block[p].perm));
+			}
+			pj_end (pj);
 			len++;
 			break;
 		case 'h':
@@ -2831,7 +2841,10 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	}
 	switch (mode) {
 		case 'j':
-			r_cons_strcat ("]}\n");
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 			break;
 		case 'h':
 			// r_cons_printf ("  total    | flags funcs cmts syms str  |\n");
