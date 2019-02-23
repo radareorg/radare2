@@ -810,7 +810,7 @@ static int cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 }
 
-static int cb_asmstrenc (void *user, void *data) {
+static int cb_binstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
@@ -2835,9 +2835,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
 	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
-	n = NODECB ("asm.strenc", "guess", &cb_asmstrenc);
-	SETDESC (n, "Assumed string encoding for disasm");
-	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
 
 	/* bin */
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
@@ -2860,6 +2857,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
+	n = NODECB ("bin.strenc", "guess", &cb_binstrenc);
+	SETDESC (n, "Default string encoding of binary");
+	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
 	SETCB ("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
