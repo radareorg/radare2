@@ -1,5 +1,6 @@
 # travis.yml for testing radare2. Initially written in 2014-2016, by jn__.  Updated 2018 by damo22
 
+
 language: generic
 dist: trusty
 conditions: v1
