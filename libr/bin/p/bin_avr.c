@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2016-2017 - pancake */
 
 #include <r_bin.h>
+#include <r_lib.h>
 
 #define CHECK4INSTR(b, instr, size) \
 	if (!instr (b) ||\
