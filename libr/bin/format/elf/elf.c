@@ -3211,7 +3211,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
-	if (name[0] != '$' || name[0] == '\0') {
+	if (name[0] != '$') {
 		return false;
 	}
 	switch (name[1]) {
