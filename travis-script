@@ -28,6 +28,9 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     if [ "${COVERAGE}" == "1" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
+    if [ "${ASAN}" == "1" ] ; then
+        OPTS="${OPTS} -Db_sanitize=address"
+    fi
 
     meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
     pushd build
@@ -37,6 +40,10 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 else
     echo "Installing with acr + make"
+    if [ "${ASAN}" == "1" ] ; then
+        export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+        export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+    fi
     ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
     make -s -j2 > /dev/null || exit 1
     make install > /dev/null || exit 1
