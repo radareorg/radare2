@@ -80,6 +80,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			imp = R_NEW0 (RBinImport);
 			if (!imp) {
 				R_FREE (sym);
+				free (symName);
 				break;
 			}
 			imp->name  = symName;

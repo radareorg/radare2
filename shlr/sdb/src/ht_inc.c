@@ -46,10 +46,17 @@ static inline void freefn(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	}
 }
 
+static inline ut32 next_idx(ut32 idx) {
+	if (idx != UT32_MAX && idx < S_ARRAY_SIZE (ht_primes_sizes) - 1) {
+		return idx + 1;
+	}
+	return UT32_MAX;
+}
+
 static inline ut32 compute_size(ut32 idx, ut32 sz) {
 	// when possible, use the precomputed prime numbers which help with
 	// collisions, otherwise, at least make the number odd with |1
-	return idx != UT32_MAX ? ht_primes_sizes[idx] : (sz | 1);
+	return idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) ? ht_primes_sizes[idx] : (sz | 1);
 }
 
 static inline bool is_kv_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
@@ -144,11 +151,16 @@ SDB_API void Ht_(free)(HtName_(Ht)* ht) {
 static void internal_ht_grow(HtName_(Ht)* ht) {
 	HtName_(Ht)* ht2;
 	HtName_(Ht) swap;
-	ut32 idx = ht->prime_idx != UT32_MAX ? ht->prime_idx + 1 : UT32_MAX;
+	ut32 idx = next_idx (ht->prime_idx);
 	ut32 sz = compute_size (idx, ht->size * 2);
 	ut32 i;
 
 	ht2 = internal_ht_new (sz, idx, &ht->opt);
+	if (!ht2) {
+		// we can't grow the ht anymore. Never mind, we'll be slower,
+		// but everything can continue to work
+		return;
+	}
 
 	for (i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
@@ -236,6 +248,50 @@ SDB_API bool Ht_(insert)(HtName_(Ht)* ht, const KEY_TYPE key, VALUE_TYPE value) 
 // Does allow for "update" of the value.
 SDB_API bool Ht_(update)(HtName_(Ht)* ht, const KEY_TYPE key, VALUE_TYPE value) {
 	return insert_update (ht, key, value, true);
+}
+
+// Update the key of an element that has old_key as key and replace it with new_key
+SDB_API bool Ht_(update_key)(HtName_(Ht)* ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
+	// First look for the value associated with old_key
+	bool found;
+	VALUE_TYPE value = Ht_(find) (ht, old_key, &found);
+	if (!found) {
+		return false;
+	}
+
+	// Associate the existing value with new_key
+	bool inserted = insert_update (ht, new_key, value, false);
+	if (!inserted) {
+		return false;
+	}
+
+	// Remove the old_key kv, paying attention to not double free the value
+	HT_(Bucket) *bt = &ht->table[bucketfn (ht, old_key)];
+	const int old_key_len = calcsize_key (ht, old_key);
+	HT_(Kv) *kv;
+	ut32 j;
+
+	BUCKET_FOREACH (ht, bt, j, kv) {
+		if (is_kv_equal (ht, old_key, old_key_len, kv)) {
+			if (!ht->opt.dupvalue) {
+				// do not free the value part if dupvalue is not
+				// set, because the old value has been
+				// associated with the new key and it should not
+				// be freed
+				kv->value = HT_NULL_VALUE;
+				kv->value_len = 0;
+			}
+			freefn (ht, kv);
+
+			void *src = next_kv (ht, kv);
+			memmove (kv, src, (bt->count - j - 1) * ht->opt.elem_size);
+			bt->count--;
+			ht->count--;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Returns the corresponding SdbKv entry from the key.

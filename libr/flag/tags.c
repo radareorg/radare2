@@ -32,22 +32,32 @@ R_API void r_flag_tags_reset(RFlag *f, const char *name) {
 	sdb_reset (f->tags);
 }
 
+struct iter_glob_flag_t {
+	RList *res;
+	RList *words;
+};
+
+static bool iter_glob_flag(RFlagItem *fi, void *user) {
+	struct iter_glob_flag_t *u = (struct iter_glob_flag_t *)user;
+	RListIter *iter;
+	const char *word;
+
+	r_list_foreach (u->words, iter, word) {
+		if (r_str_glob (fi->name, word)) {
+			r_list_append (u->res, fi);
+		}
+	}
+	return true;
+}
+
 R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
 	r_return_val_if_fail (f && name, NULL);
 	const char *k = sdb_fmt ("tag.%s", name);
-	RListIter *iter, *iter2;
-	const char *word;
-	RFlagItem *flag;
 	char *words = sdb_get (f->tags, k, NULL);
 	RList *res = r_list_newf (NULL);
 	RList *list = r_str_split_list (words, " ");
-	r_list_foreach (f->flags, iter2, flag) {
-		r_list_foreach (list, iter, word) {
-			if (r_str_glob (flag->name, word)) {
-				r_list_append (res, flag);
-			}
-		}
-	}
+	struct iter_glob_flag_t u = { .res = res, .words = list };
+	r_flag_foreach (f, iter_glob_flag, &u);
 	r_list_free (list);
 	return res;
 }

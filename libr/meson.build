@@ -305,6 +305,7 @@ parse_plugins = [
   'mreplace',
   'ppc_pseudo',
   'sh_pseudo',
+  'wasm_pseudo',
   'x86_pseudo',
   'z80_pseudo'
 ]
@@ -379,7 +380,6 @@ r_util_files = [
   'include/r_util/r_hex.h',
   'include/r_util/r_idpool.h',
   'include/r_util/r_itv.h',
-  'include/r_util/r_json.h',
   'include/r_util/r_log.h',
   'include/r_util/r_mem.h',
   'include/r_util/r_name.h',
@@ -401,6 +401,8 @@ r_util_files = [
   'include/r_util/r_strpool.h',
   'include/r_util/r_str_util.h',
   'include/r_util/r_sys.h',
+  'include/r_util/r_alloc.h',
+  'include/r_util/r_date.h',
   'include/r_util/r_time.h',
   'include/r_util/r_tree.h',
   'include/r_util/r_uleb128.h',

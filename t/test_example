@@ -1,9 +1,0 @@
-[ -f ../radare2-regressions/tests.sh ] && \
-   . ../radare2-regressions/tests.sh
-
-NAME='test example'
-FILE=-
-CMDS='?e hello world'
-EXPECT='hello world
-'
-run_test

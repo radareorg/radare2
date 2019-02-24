@@ -1,4 +1,4 @@
-files = [
+r_parse_sources = [
   'code.c',
   'parse.c',
   'p/parse_6502_pseudo.c',
@@ -11,13 +11,14 @@ files = [
   'p/parse_mreplace.c',
   'p/parse_ppc_pseudo.c',
   'p/parse_sh_pseudo.c',
+  'p/parse_wasm_pseudo.c',
   'p/parse_x86_pseudo.c',
   'p/parse_z80_pseudo.c',
   'p/parse_mreplace/mreplace.c',
   'p/parse_mreplace/mmemory.c'
 ]
 
-r_parse = library('r_parse', files,
+r_parse = library('r_parse', r_parse_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: [
@@ -25,6 +26,7 @@ r_parse = library('r_parse', files,
     r_flag_dep,
     r_syscall_dep,
     r_reg_dep,
+    r_cons_dep,
     sdb_dep,
     tcc_dep
   ],
@@ -44,6 +46,7 @@ pkgconfig_mod.generate(r_parse,
   requires: [
     'r_util',
     'r_flag',
+    'r_cons',
     'r_syscall',
     'r_reg'
   ],

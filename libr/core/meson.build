@@ -1,5 +1,6 @@
-files = [
+r_core_sources = [
   'anal_tp.c',
+  'anal_objc.c',
   'casm.c',
   'blaze.c',
   'canal.c',
@@ -55,6 +56,8 @@ files = [
   'visual.c',
   'vmarks.c',
   'vmenus.c',
+  'vmenus_graph.c',
+  'vmenus_zigns.c',
   'yank.c',
   'p/core_a2f.c',
   'p/core_java.c',
@@ -100,7 +103,7 @@ if use_libuv
   r_core_deps += libuv_dep
 endif
 
-r_core = library('r_core', files,
+r_core = library('r_core', r_core_sources,
   include_directories: r_core_inc,
   c_args: library_cflags,
   dependencies: r_core_deps,

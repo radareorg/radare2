@@ -875,6 +875,7 @@ PUB_FUNC void tcc_memstats(void);
 PUB_FUNC void tcc_error_noabort(const char *fmt, ...);
 PUB_FUNC void tcc_error(const char *fmt, ...);
 PUB_FUNC void tcc_warning(const char *fmt, ...);
+PUB_FUNC void strcat_printf(char *buf, int buf_size, const char *fmt, ...);
 
 /* other utilities */
 ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data);

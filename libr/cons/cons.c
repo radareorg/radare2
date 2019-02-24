@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2018 - pancake, Jody Frankowski */
+/* radare2 - LGPL - Copyright 2008-2019 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -100,30 +100,40 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	}
 }
 
-static void cons_context_init(RConsContext *context) {
+static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->breaked = false;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
 	context->buffer_len = 0;
+	context->is_interactive = false;
 	context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
 	context->event_interrupt = NULL;
 	context->event_interrupt_data = NULL;
 	context->pageable = true;
 	context->log_callback = NULL;
+
+	if (parent) {
+		context->color = parent->color;
+		r_cons_pal_copy (context, parent);
+	} else {
+		context->color = COLOR_MODE_DISABLED;
+		r_cons_pal_init (context);
+	}
 }
 
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
 	r_stack_free (context->break_stack);
+	r_cons_pal_free (context);
 }
 
 static void break_signal(int sig) {
 	r_cons_context_break (&r_cons_context_default);
 }
 
-static inline void r_cons_write(const char *buf, int len) {
+static inline void __cons_write(const char *buf, int len) {
 #if __WINDOWS__ && !__CYGWIN__
 	if (I.ansicon) {
 		(void) write (I.fdout, buf, len);
@@ -142,9 +152,20 @@ static inline void r_cons_write(const char *buf, int len) {
 #endif
 }
 
+static inline void r_cons_write(const char *obuf, int olen) {
+	const unsigned int bucket = 64 * 1024;
+	unsigned int i;
+	for (i = 0; (i + bucket) < olen; i += bucket) {
+		__cons_write (obuf + i, bucket);
+	}
+	if (i < olen) {
+		__cons_write (obuf + i, olen - i);
+	}
+}
+
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
-	if (I.color > COLOR_MODE_16) {
+	if (I.context->color > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -211,6 +232,45 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	}
 }
 
+R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
+	int i, o, len;
+	int cols = 0;
+	int rows = 0;
+	if (x < 0 || y < 0) {
+		int H, W = r_cons_get_size (&H);
+		if (x < 0) {
+			x += W;
+		}
+		if (y < 0) {
+			y += H;
+		}
+	}
+	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
+	r_cons_strcat (R_CONS_CURSOR_SAVE);
+	for (o = i = len = 0; str[i]; i++, len++) {
+		if (w < 0 || rows > w) {
+			break;
+		}
+		if (str[i] == '\n') {
+			r_cons_gotoxy (x, y + rows);
+			int ansilen = r_str_ansi_len (str + o);
+			cols = R_MIN (w, ansilen);
+			const char *end = r_str_ansi_chrn (str + o, cols);
+			cols = end - str + o;
+			r_cons_memcat (str + o, R_MIN (len, cols));
+			o = i + 1;
+			len = 0;
+			rows++;
+		}
+	}
+	if (len > 1) {
+		r_cons_memcat (str + o, len);
+	}
+	r_cons_strcat (Color_RESET);
+	r_cons_strcat (R_CONS_CURSOR_RESTORE);
+	free (str);
+}
+
 R_API RCons *r_cons_singleton() {
 	return &I;
 }
@@ -274,6 +334,10 @@ R_API void r_cons_break_push(RConsBreak cb, void *user) {
 
 R_API void r_cons_break_pop() {
 	r_cons_context_break_pop (I.context, true);
+}
+
+R_API bool r_cons_is_interactive() {
+	return I.context->is_interactive;
 }
 
 R_API bool r_cons_is_breaked() {
@@ -381,7 +445,6 @@ R_API RCons *r_cons_new() {
 	I.highlight = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
-	I.color = COLOR_MODE_DISABLED;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -391,7 +454,6 @@ R_API RCons *r_cons_new() {
 	I.force_columns = 0;
 	I.event_resize = NULL;
 	I.event_data = NULL;
-	I.is_interactive = true;
 	I.noflush = false;
 	I.linesleep = 0;
 	I.fdin = stdin;
@@ -400,7 +462,7 @@ R_API RCons *r_cons_new() {
 	I.lines = 0;
 
 	I.context = &r_cons_context_default;
-	cons_context_init (I.context);
+	cons_context_init (I.context, NULL);
 
 	r_cons_get_size (&I.pagesize);
 	I.num = NULL;
@@ -431,7 +493,6 @@ R_API RCons *r_cons_new() {
 	I.mouse = 0;
 	r_cons_reset ();
 	r_cons_rgb_init ();
-	r_cons_pal_init ();
 
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
 
@@ -443,7 +504,6 @@ R_API RCons *r_cons_free() {
 	if (I.refcnt != 0) {
 		return NULL;
 	}
-	r_cons_pal_free ();
 	if (I.line) {
 		r_line_free ();
 		I.line = NULL;
@@ -639,12 +699,12 @@ R_API void r_cons_pop() {
 	cons_stack_free ((void *)data);
 }
 
-R_API RConsContext *r_cons_context_new(void) {
+R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent) {
 	RConsContext *context = R_NEW0 (RConsContext);
 	if (!context) {
 		return NULL;
 	}
-	cons_context_init (context);
+	cons_context_init (context, parent);
 	return context;
 	/*
 	RStack *stack = r_stack_newf (6, cons_stack_free);
@@ -737,7 +797,7 @@ R_API void r_cons_flush(void) {
 		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
-	if (I.is_interactive && I.fdout == 1) {
+	if (r_cons_is_interactive () && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (CTX (pageable) && CTX (buffer) && I.pager && *I.pager && CTX (buffer_len) > 0 && r_str_char_count (CTX (buffer), '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
@@ -790,7 +850,7 @@ R_API void r_cons_flush(void) {
 	r_cons_highlight (I.highlight);
 
 	// is_html must be a filter, not a write endpoint
-	if (I.is_interactive && !r_sandbox_enable (false)) {
+	if (r_cons_is_interactive () && !r_sandbox_enable (false)) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
 			int pagesize = R_MAX (1, I.pagesize);
@@ -1309,15 +1369,16 @@ R_API void r_cons_column(int c) {
 	free (b);
 }
 
-static int lasti = 0; /* last interactive mode */
+//  XXX deprecate must be push/pop context state
+static bool lasti = false; /* last interactive mode */
 
 R_API void r_cons_set_interactive(bool x) {
-	lasti = r_cons_singleton ()->is_interactive;
-	r_cons_singleton ()->is_interactive = x;
+	lasti = r_cons_singleton ()->context->is_interactive;
+	r_cons_singleton ()->context->is_interactive = x;
 }
 
 R_API void r_cons_set_last_interactive() {
-	r_cons_singleton ()->is_interactive = lasti;
+	r_cons_singleton ()->context->is_interactive = lasti;
 }
 
 R_API void r_cons_set_title(const char *str) {
@@ -1523,9 +1584,9 @@ R_API void r_cons_breakword(R_NULLABLE const char *s) {
  * "command2", "args2", "description"}; */
 R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
-	const char *pal_args_color = use_color ? cons->pal.args : "",
-			*pal_help_color = use_color ? cons->pal.help : "",
-			*pal_reset = use_color ? cons->pal.reset : "";
+	const char *pal_args_color = use_color ? cons->context->pal.args : "",
+			*pal_help_color = use_color ? cons->context->pal.help : "",
+			*pal_reset = use_color ? cons->context->pal.reset : "";
 	int i, max_length = 0;
 	const char *usage_str = "Usage:";
 

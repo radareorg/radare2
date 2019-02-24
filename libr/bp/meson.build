@@ -1,4 +1,4 @@
-files = [
+r_bp_sources = [
   'bp.c',
   'bp_io.c',
   'bp_plugin.c',
@@ -12,7 +12,7 @@ files = [
   'p/bp_x86.c'
 ]
 
-r_bp = library('r_bp', files,
+r_bp = library('r_bp', r_bp_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
   dependencies: [r_util_dep],

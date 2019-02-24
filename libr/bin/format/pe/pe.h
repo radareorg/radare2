@@ -68,7 +68,7 @@ typedef struct _PE_RESOURCE {
 	char *timestr;
 	char *type;
 	char *language;
-	int name;
+	char *name;
 	Pe_image_resource_data_entry *data;
 } r_pe_resource;
 

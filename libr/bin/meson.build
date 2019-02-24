@@ -1,4 +1,4 @@
-files = [
+r_bin_sources = [
   'bin.c',
   'bin_write.c',
   'dbginfo.c',
@@ -118,7 +118,7 @@ files = [
 
 r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
-r_bin = library('r_bin', files,
+r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
   c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [

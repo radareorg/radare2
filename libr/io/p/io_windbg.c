@@ -99,7 +99,8 @@ static int __close(RIODesc *fd) {
 
 RIOPlugin r_io_plugin_windbg = {
 	.name = "windbg",
-	.desc = "Attach to a KD debugger (windbg://socket)",
+	.desc = "Attach to a KD debugger",
+	.uris = "windbg://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,

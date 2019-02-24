@@ -304,10 +304,11 @@ R_API char *r_str_home(const char *str) {
 	if (!dst) {
 		goto fail;
 	}
-	strcpy (dst, home);
+	int home_len = strlen (home);
+	memcpy (dst, home, home_len + 1);
 	if (str) {
-		strcat (dst, R_SYS_DIR);
-		strcat (dst, str);
+		dst[home_len] = R_SYS_DIR[0];
+		strcpy (dst + home_len + 1, str);
 	}
 fail:
 	free (home);
@@ -998,14 +999,15 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 		}
 		off = (int)(size_t) (p - str);
 		scnd = strdup (p + klen);
-		slen += vlen - klen;
-		newstr = realloc (str, slen + klen + 1);
 		tmp_val = strdup (val);
-
-		if (!newstr || !tmp_val || !scnd) {
+		if (!tmp_val || !scnd) {
 			goto alloc_fail;
 		}
-
+		slen += vlen - klen;
+		newstr = realloc (str, slen + klen + 1);
+		if (!newstr) {
+			goto alloc_fail;
+		}
 		str = newstr;
 		p = str + off;
 
@@ -1035,9 +1037,6 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 alloc_fail:
 	eprintf ("alloc fail\n");
 	free (str);
-	if (str != newstr) {
-		free (newstr);
-	}
 	free (scnd);
 	free (tmp_val);
 	return NULL;
@@ -1706,7 +1705,7 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		int chlen = __str_ansi_length (str + i);
 		if (chlen > 1) {
-			i += chlen;
+			i += chlen - 1;
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
@@ -2416,7 +2415,6 @@ R_API char *r_str_uri_encode(const char *s) {
 
 R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
 	ut8 *outstart = dst;
-	const ut8 *processed = src;
 	ut8 *outend = dst + len_dst;
 	ut16 *in = (ut16*)src;
 	ut16 *inend;
@@ -2486,7 +2484,6 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 			}
 			*dst++ = ((c >> bits) & 0x3F) | 0x80;
 		}
-		processed = (const unsigned char*) in;
 	}
 	len_dst = dst - outstart;
 	return len_dst;
@@ -3379,3 +3376,14 @@ R_API void r_str_stripLine(char *str, const char *key) {
 	}
 }
 
+R_API char *r_str_list_join(RList *str, const char *sep) {
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p;
+	while ((p = r_list_pop_head (str))) {
+		if (r_strbuf_length (sb) != 0) {
+			r_strbuf_append (sb, sep);
+		}
+		r_strbuf_append (sb, p);
+	}
+	return r_strbuf_drain (sb);
+}

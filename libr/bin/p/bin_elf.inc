@@ -49,14 +49,6 @@ static char* regstate(RBinFile *bf) {
 	return hexregs;
 }
 
-static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
-		return;
-	}
-	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = r_bin_symbol_clone (ptr);
-}
-
 static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
 		return;
@@ -453,86 +445,10 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **sym) {
-	int bin_bits = Elf_(r_bin_elf_get_bits) (bin);
-	RBinSymbol *ptr = *sym;
-	int len = strlen (ptr->name);
-	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
-		switch (ptr->name[1]) {
-		case 'a' : //arm
-			ptr->bits = 32;
-			break;
-		case 't': //thumb
-			ptr->bits = 16;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-			}
-			break;
-		case 'd': //data
-			break;
-		default:
-			goto arm_symbol;
-		}
-	} else {
-arm_symbol:
-		ptr->bits = bin_bits;
-		if (bin_bits != 64) {
-			ptr->bits = 32;
-			if (ptr->paddr != UT64_MAX) {
-				if (ptr->vaddr & 1) {
-					ptr->vaddr--;
-					ptr->bits = 16;
-				}
-				if (ptr->paddr & 1) {
-					ptr->paddr--;
-					ptr->bits = 16;
-				}
-			}
-		}
-	}
-}
-
-static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
-				  struct r_bin_elf_symbol_t *symbol,
-				  const char *namefmt) {
-	ut64 paddr, vaddr;
-	RBinSymbol *ptr = NULL;
-	if (symbol->is_vaddr) {
-		paddr = UT64_MAX;
-		vaddr = symbol->offset;
-	} else {
-		paddr = symbol->offset;
-		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
-	}
-
-	if (!(ptr = R_NEW0 (RBinSymbol))) {
-		return NULL;
-	}
-	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
-	ptr->forwarder = r_str_const ("NONE");
-	ptr->bind = r_str_const (symbol->bind);
-	ptr->type = r_str_const (symbol->type);
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	ptr->size = symbol->size;
-	ptr->ordinal = symbol->ordinal;
-	// detect thumb
-	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
-		_set_arm_thumb_bits (bin, &ptr);
-	}
-
-	return ptr;
-}
-
 static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 			  RBinSymbol *ptr,
 			  bool is_sht_null,
 			  RList *ret) {
-	// put the symbol in symbols_ord table
-	setsymord (bin, ptr->ordinal, ptr);
 	// add it to the list of symbols only if it doesn't point to SHT_NULL
 	if (is_sht_null) {
 		r_bin_symbol_free (ptr);
@@ -563,7 +479,7 @@ static RList* symbols(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ptr = convert_symbol (bin, &symbol[i], "%s");
+		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "%s");
 		if (!ptr) {
 			break;
 		}
@@ -578,7 +494,7 @@ static RList* symbols(RBinFile *bf) {
 		if (!symbol[i].size) {
 			continue;
 		}
-		ptr = convert_symbol (bin, &symbol[i], "imp.%s");
+		ptr = Elf_(_r_bin_elf_convert_symbol) (bin, &symbol[i], "imp.%s");
 		if (!ptr) {
 			break;
 		}
@@ -931,14 +847,14 @@ static RList* patch_relocs(RBin *b) {
 	RIO *io = NULL;
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	RIOSection *g = NULL, *s = NULL;
+	RIOMap *g = NULL, *s = NULL;
 	HtUU *relocs_by_sym;
 	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;
 	int cdsz;
 	int i;
-	ut64 n_off, n_vaddr, vaddr, size, offset = 0;
+	ut64 n_vaddr, vaddr, size, offset = 0;
 
 	if (!b)
 		return NULL;
@@ -961,22 +877,31 @@ static RList* patch_relocs(RBin *b) {
 	info = obj ? obj->info: NULL;
 	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 
-	ls_foreach (io->sections, iter, s) {
-		if (s->paddr > offset) {
-			offset = s->paddr;
+	ls_foreach (io->maps, iter, s) {
+		if (s->itv.addr > offset) {
+			offset = s->itv.addr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->paddr + g->size;
-	n_vaddr = g->vaddr + g->vsize;
+	n_vaddr = g->itv.addr + g->itv.size;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_PERM_R, ".got.r2", 0, io->desc->fd)) {
+	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
+	RIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	free (muri);
+	if (!gotr2desc) {
 		return NULL;
 	}
+
+	RIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
+	if (!gotr2map) {
+		return NULL;
+	}
+	gotr2map->name = strdup (".got.r2");
+
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
 		return NULL;
 	}

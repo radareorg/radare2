@@ -52,6 +52,7 @@ R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(char *buf);
 R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
+R_API bool r_sys_aslr(int val);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
 #if UNICODE
@@ -69,8 +70,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #define r_sys_conv_utf16_to_utf8_l(buf, len) r_str_newlen (buf, len)
 #endif
 R_API int r_sys_get_src_dir_w32(char *buf);
-R_API char *r_sys_cmd_str_w32(const char *cmd);
-R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out);
+R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, char **sterr);
+R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 #endif
 R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);

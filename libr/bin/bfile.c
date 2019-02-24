@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
 
 #include <r_bin.h>
+#include <r_hash.h>
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
@@ -15,7 +16,7 @@ static RBinString *find_string_at(RBinFile *bf, RList *ret, ut64 addr) {
 	return NULL;
 }
 
-static void print_string(RBinFile *bf, RBinString *string) {
+static void print_string(RBinFile *bf, RBinString *string, int raw) {
 	r_return_if_fail (bf && string);
 
 	int mode = bf->strmode;
@@ -34,9 +35,18 @@ static void print_string(RBinFile *bf, RBinString *string) {
 	type_string = r_bin_string_type (string->type);
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
+	// If raw string dump mode, use printf to dump directly to stdout.
+	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
-	case R_MODE_SIMPLE:
-		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
+	case R_MODE_SIMPLEST: 
+		io->cb_printf ("%s\n", string->string);
+		break;
+	case R_MODE_SIMPLE: 
+		if (raw == 2) {
+			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
+		} else {
+			io->cb_printf ("%s\n", string->string);
+		}
 		break;
 	case R_MODE_RADARE: {
 		char *f_name, *nstr;
@@ -58,8 +68,8 @@ static void print_string(RBinFile *bf, RBinString *string) {
 		free (nstr);
 		free (f_name);
 		break;
-	}
-	case R_MODE_PRINT:
+		}
+	case R_MODE_PRINT: 
 		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
@@ -70,7 +80,7 @@ static void print_string(RBinFile *bf, RBinString *string) {
 }
 
 static int string_scan_range(RList *list, RBinFile *bf, int min,
-			      const ut64 from, const ut64 to, int type) {
+			      const ut64 from, const ut64 to, int type, int raw) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -250,7 +260,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					ht_up_insert (bf->o->strings_db, bs->vaddr, bs);
 				}
 			} else {
-				print_string (bf, bs);
+				print_string (bf, bs, raw);
 				r_bin_string_free (bs);
 			}
 		}
@@ -304,7 +314,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 			return;
 		}
 	}
-	if (string_scan_range (list, bf, min, from, to, -1) < 0) {
+	if (string_scan_range (list, bf, min, from, to, -1, raw) < 0) {
 		return;
 	}
 	if (bf->o) {
@@ -316,7 +326,6 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		}
 	}
 }
-
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
 	RBinFile *binfile = R_NEW0 (RBinFile);
@@ -609,12 +618,14 @@ R_IPI RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) 
 	return bf;
 }
 
+R_API bool r_bin_file_set_cur_by_id(RBin *bin, ut32 bin_id) {
+	RBinFile *bf = r_bin_file_find_by_id (bin, bin_id);
+	return bf? r_bin_file_set_cur_binfile (bin, bf): false;
+}
+
 R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 	RBinFile *bf = r_bin_file_find_by_fd (bin, bin_fd);
-	if (!bf) {
-		return false;
-	}
-	return r_bin_file_set_cur_binfile (bin, bf);
+	return bf? r_bin_file_set_cur_binfile (bin, bf): false;
 }
 
 R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
@@ -836,4 +847,71 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 		return true;
 	}
 	return false;
+}
+
+R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
+	char hash[128], *p;
+	RHash *ctx;
+	ut64 buf_len = 0, r = 0;
+	RBinFile *bf = bin->cur;
+	if (!bf) {
+		return false;
+	}
+	RBinObject *o = bf->o;
+	if (!o || !o->info) {
+		return false;
+	}
+	RIODesc *iod = r_io_desc_get (bin->iob.io, bf->fd);
+	if (!iod) {
+		return false;
+	}
+
+	if (!file && iod) {
+		file = iod->name;
+	}
+
+	buf_len = r_io_desc_size (iod);
+	// By SLURP_LIMIT normally cannot compute ...
+	if (buf_len > limit) {
+		eprintf ("Cannot compute hash\n");
+		return false;
+	}
+	const size_t blocksize = 64000;
+	ut8 *buf = malloc (blocksize);
+	if (!buf) {
+		eprintf ("Cannot allocate computation buffer\n");
+		return false;
+	}
+	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
+	while (r+blocksize < buf_len) {
+		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		int b = r_io_desc_read (iod, buf, blocksize);
+		(void)r_hash_do_md5 (ctx, buf, blocksize);
+		(void)r_hash_do_sha1 (ctx, buf, blocksize);
+		r += b;
+	}
+	if (r < buf_len) {
+		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		const size_t rem_len = buf_len-r;
+		int b = r_io_desc_read (iod, buf, rem_len);
+		if (b < 1) {
+			eprintf ("r_io_desc_read: error\n");
+		} else {
+			(void)r_hash_do_md5 (ctx, buf, b);
+			(void)r_hash_do_sha1 (ctx, buf, b);
+		}
+	}
+	r_hash_do_end (ctx, R_HASH_MD5);
+	p = hash;
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
+	RStrBuf *sbuf = r_strbuf_new ("");
+	r_strbuf_appendf (sbuf, "md5 %s", hash);
+	r_hash_do_end (ctx, R_HASH_SHA1);
+	p = hash;
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
+	r_strbuf_appendf (sbuf, "\nsha1 %s", hash);
+	o->info->hashes = r_strbuf_drain (sbuf);
+	free (buf);
+	r_hash_free (ctx);
+	return true;
 }

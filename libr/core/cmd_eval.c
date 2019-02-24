@@ -351,7 +351,7 @@ static int cmd_eval(void *data, const char *input) {
 	case 'c': // "ec"
 		switch (input[1]) {
 		case 'd': // "ecd"
-			r_cons_pal_init ();
+			r_cons_pal_init (core->cons->context);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_ec);
@@ -472,7 +472,7 @@ static int cmd_eval(void *data, const char *input) {
 				return true;
 			}
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->pal.wordhl);
+			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->context->pal.wordhl);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			r_str_argv_free (argv);
 			R_FREE (word);
@@ -514,7 +514,7 @@ static int cmd_eval(void *data, const char *input) {
 			free (file);
 		} else {
 			char *file = r_str_home (".radare2rc");
-			if (r_config_get_i (core->config, "scr.interactive")) {
+			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
 				char * res = r_cons_editor (file, NULL);
 				if (res) {

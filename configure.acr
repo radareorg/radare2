@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 3.2.0
+VERSION 3.3.0
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -25,6 +25,7 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT HAVE_FORK fork disable fork ;
+ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
@@ -100,15 +101,19 @@ IFNULL SSL_LDFLAGS {
 	}
 }
 
-CHKLIB libuv
-PKGCFG LIBUV_CFLAGS LIBUV_LDFLAGS libuv
-IFNOTNULL LIBUV_LDFLAGS {
-	HAVE_LIBUV = 1 ;
+CHKVER libuv 1.0.0
+IF HAVE_LIBUV_VERSION_1_0_0 {
+	PKGCFG LIBUV_CFLAGS LIBUV_LDFLAGS libuv
+	IFNOTNULL LIBUV_LDFLAGS {
+		HAVE_LIBUV = 1 ;
+	}{
+		HAVE_LIBUV = 0 ;
+	}
+	ARG_WITHOUT WANT_LIBUV libuv disable libuv dependency ;
+	IFNOT WANT_LIBUV {
+		HAVE_LIBUV = 0 ;
+	}
 }{
-	HAVE_LIBUV = 0 ;
-}
-ARG_WITHOUT WANT_LIBUV libuv disable libuv dependency ;
-IFNOT WANT_LIBUV {
 	HAVE_LIBUV = 0 ;
 }
 
@@ -126,6 +131,9 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS mingw32_nt ; {
 		USEROSTYPE = mingw32 ;
+	}{
+	IFEQ HOST_OS wsl ; {
+		USEROSTYPE =  wsl ;
 	}{
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
@@ -153,7 +161,7 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } } } } }
+	} } } } } } } } } } }
 }
 
 (( this hack is required for openbsd ports ))
@@ -168,6 +176,18 @@ IFEQ USEROSTYPE gnulinux ; {
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 1 ;
 }{
+IFEQ USEROSTYPE wsl ; {
+	BUILD = ${SPLIT_CPU}-unknown-linux-gnu ;
+	HOST = $BUILD ;
+	TARGET = $HOST ;
+	USEROSTYPE = gnulinux ;
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
+IFEQ USEROSTYPE android ; {
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 1 ;
+}{
 IFEQ USEROSTYPE mingw32 ; {
 	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
@@ -178,10 +198,14 @@ IFEQ USEROSTYPE solaris ; {
 }{
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
-} } }
+} } } } }
 
 IFNOT DEBUGGER {
 	HAVE_PTRACE = 0 ;
+}
+
+IFEQ WANT_PTRACE_WRAP 0 ; {
+	USE_PTRACE_WRAP = 0 ;
 }
 
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;

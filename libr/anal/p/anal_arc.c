@@ -1024,7 +1024,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	/* ARCtangent A4 */
 	op->size = 4;
 	op->fail = addr + 4;
-	ut8 basecode = (b[3] & 0xf8) >> 3;
+	ut8 basecode = (len > 3)? ((b[3] & 0xf8) >> 3): 0;
 	switch (basecode) {
 	case 0x04: /* Branch */
 	case 0x05: /* Branch with Link */

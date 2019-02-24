@@ -202,7 +202,7 @@ Quantum dissasemble: it's there as long as you don't observe it
 Ceci n'est pas une r2pipe
 Buy a mac
 (gdb) ^D
-((fn [f s n] (cat [(f f s n) "dare2"])) (fn [f s n] (pr s) (if (> n 0) (f f (cat [s "ra"]) (dec n)) s)) "" Infty)
+((fn [f s n] (str (f f s n) "dare2")) (fn [f s n] (pr s) (if (> n 0) (f f (str s "ra") (dec n)) s)) "" (/ 1.0 0))
 There's no way you could crash radare2. No. Way.
 When in doubt, try 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; pd;'
 .-. .- -.. .- .-. . ..---
@@ -271,3 +271,5 @@ When can we have an official anime mascot for radare2?
 Iaito became Cutter the same way Iai-giri became Cut.
 Sorry, radare2 has experienced an internal error.
 Segmentation fault (core dumped)
+Use rabin2 to discover the real TRUTH
+==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

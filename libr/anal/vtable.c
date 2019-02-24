@@ -233,9 +233,6 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 	RVTableInfo* table;
 
 	RList* vtables = r_anal_vtable_search (&context);
-	if (!vtables) {
-		return;
-	}
 
 	if (rad == 'j') {
 		bool isFirstElement = true;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include <errno.h>
 #include <r_io.h>
@@ -421,8 +421,9 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	posix_spawn_file_actions_destroy (&fileActions);
 	return p; // -1 ?
 }
-#endif
+#endif // __APPLE__ && !__POWERPC__
 
+#if (!(__APPLE__ && !__POWERPC__))
 typedef struct fork_child_data_t {
 	RIO *io;
 	int bits;
@@ -476,14 +477,14 @@ static void fork_child_callback(void *user) {
 		free (_cmd);
 	}
 }
+#endif
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #if __APPLE__ && !__POWERPC__
-	return fork_and_ptraceme_for_mac(io, bits, cmd);
+	return fork_and_ptraceme_for_mac (io, bits, cmd);
 #else
 	int ret, status, child_pid;
 	bool runprofile = io->runprofile && *(io->runprofile);
-
 	fork_child_data child_data;
 	child_data.io = io;
 	child_data.bits = bits;
@@ -601,7 +602,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				w32->winbase = winbase;
 				w32->tid = wintid;
 			}
-
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
 			_plugin = r_io_plugin_resolve (io, (const char *)uri + 1, false);
@@ -647,8 +647,9 @@ static int __close (RIODesc *desc) {
 
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-	.desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
+	.desc = "Attach to native debugger instance",
 	.license = "LGPL3",
+	.uris = "dbg://,pidof://,waitfor://",
 	.author = "pancake",
 	.version = "0.2.0",
 	.open = __open,

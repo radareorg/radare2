@@ -124,6 +124,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
 	}
+	free (rb->hashes);
 	free (rb->intrp);
 	free (rb->file);
 	free (rb->type);
@@ -359,14 +360,10 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	}
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
-		if ((int)opt->sz < 0) {
-			eprintf ("Cannot allocate %d bytes\n", (int)(opt->sz));
-			return false;
-		}
-		const int asz = opt->sz? (int)opt->sz: 1;
+		const unsigned int asz = opt->sz? (unsigned int)opt->sz: 1;
 		buf_bytes = calloc (1, asz);
 		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", asz);
+			eprintf ("Cannot allocate %u bytes.\n", asz);
 			return false;
 		}
 		ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
@@ -756,36 +753,41 @@ R_API RList *r_bin_get_libs(RBin *bin) {
 	return o ? o->libs : NULL;
 }
 
-R_API RList *r_bin_patch_relocs(RBin *bin) {
-	r_return_val_if_fail (bin, NULL);
-	static bool first = true;
-	RBinObject *o = r_bin_cur_object (bin);
-	if (!o) {
-		return NULL;
+static RList *relocs_rbtree2list(RBNode *root) {
+	RList *res = r_list_new ();
+	RBinReloc *reloc;
+	RBIter it;
+
+	r_rbtree_foreach (root, it, reloc, RBinReloc, vrb) {
+		r_list_append (res, reloc);
 	}
-	// r_bin_object_set_items set o->relocs but there we don't have access
-	// to io
-	// so we need to be run from bin_relocs, free the previous reloc and get
-	// the patched ones
-	if (first && o->plugin && o->plugin->patch_relocs) {
-		RList *tmp = o->plugin->patch_relocs (bin);
-		first = false;
-		if (!tmp) {
-			return o->relocs;
-		}
-		r_list_free (o->relocs);
-		o->relocs = tmp;
-		REBASE_PADDR (o, o->relocs, RBinReloc);
-		first = false;
-		return o->relocs;
-	}
-	return o->relocs;
+	return res;
 }
 
-R_API RList *r_bin_get_relocs(RBin *bin) {
+R_API RBNode *r_bin_patch_relocs(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBinObject *o = r_bin_cur_object (bin);
+	return o? r_bin_object_patch_relocs (bin, o): NULL;
+}
+
+// return a list of <const RBinReloc> that needs to be freed by the caller
+R_API RList *r_bin_patch_relocs_list(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBNode *root = r_bin_patch_relocs (bin);
+	return root? relocs_rbtree2list (root): NULL;
+}
+
+R_API RBNode *r_bin_get_relocs(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->relocs : NULL;
+}
+
+// return a list of <const RBinReloc> that needs to be freed by the caller
+R_API RList *r_bin_get_relocs_list(RBin *bin) {
+	r_return_val_if_fail (bin, NULL);
+	RBNode *root = r_bin_get_relocs (bin);
+	return root? relocs_rbtree2list (root): NULL;
 }
 
 R_API RList *r_bin_get_sections(RBin *bin) {
@@ -794,7 +796,6 @@ R_API RList *r_bin_get_sections(RBin *bin) {
 	return o ? o->sections : NULL;
 }
 
-// TODO: Move into section.c and rename it to r_io_section_get_at ()
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	RBinSection *section;
 	RListIter *iter;
@@ -1233,6 +1234,10 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		ut32 num;
 		ut8 *num8 = (ut8*)&num;
 		RBuffer *buf = r_buf_new_file (file, true);
+		if (!buf) {
+			eprintf ("Cannot open file %s - Permission Denied.\n", file);
+			return NULL;
+		}
 		r_buf_write_at (buf, 0, (const ut8*)"\xca\xfe\xba\xbe", 4);
 		int count = r_list_length (files);
 

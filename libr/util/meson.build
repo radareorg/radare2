@@ -1,7 +1,8 @@
 
-files = [
+r_util_sources = [
   'ascii_table.c',
   'assert.c',
+  'alloc.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
@@ -31,7 +32,6 @@ files = [
   'format.c',
   'pie.c',
   'seven.c',
-  'pool.c',
   'print.c',
   'prof.c',
   'punycode.c',
@@ -64,7 +64,6 @@ files = [
   'tinyrange.c',
   'tree.c',
   'pj.c',
-  'r_json.c',
   'ubase64.c',
   'uleb128.c',
   'unum.c',
@@ -85,7 +84,7 @@ if host_machine.system().startswith('freebsd')
   r_util_deps += [cc.find_library('execinfo')]
 endif
 
-r_util = library('r_util', files,
+r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: r_util_deps,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include "r_anal.h"
 #include "r_cons.h"
@@ -319,6 +319,7 @@ R_API RPrint* r_print_new() {
 	p->esc_bslash = false;
 	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
+	p->io_unalloc_ch = '.';
 	return p;
 }
 
@@ -391,7 +392,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		0
 	};
 	const char *white = "";
-#define PREOFF(x) (p && p->cons && p->cons->pal.x)? p->cons->pal.x
+#define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x)? p->cons->context->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
@@ -482,7 +483,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	int ch, i;
 
 	if (colors) {
-#define P(x) (p->cons && p->cons->pal.x)? p->cons->pal.x
+#define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
 		color_0x00 = P (b0x00): Color_GREEN;
 		color_0x7f = P (b0x7f): Color_YELLOW;
 		color_0xff = P (b0xff): Color_RED;
@@ -556,7 +557,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 }
 
 static char colorbuffer[64];
-#define P(x) (p->cons && p->cons->pal.x)? p->cons->pal.x
+#define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
 R_API const char *r_print_byte_color(RPrint *p, int ch) {
 	if (p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
@@ -683,7 +684,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 	return true;
 }
 
-#define Pal(x,y) (x->cons && x->cons->pal.y)? x->cons->pal.y
+#define Pal(x,y) (x->cons && x->cons->context->pal.y)? x->cons->context->pal.y
 R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback) rp->cb_printf;
 	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
@@ -755,7 +756,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	PrintfCallback printfmt = (PrintfCallback) printf;
 	bool c = p->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
-	int i, j, k, inc = 16;
+	int i, j, k, inc = p? p->cols : 16;
 	int sparse_char = 0;
 	int stride = 0;
 	int col = 0; // selected column (0=none, 1=hex, 2=ascii)
@@ -771,9 +772,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *pre = "";
 	int last_sparse = 0;
 	bool use_hexa = true;
+	bool use_align = false;
+	bool use_unalloc = false;
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
+	int rowbytes = p->cols;
 
 	len = len - (len % step);
 	if (p) {
@@ -782,9 +786,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
+		use_align = p->flags & R_PRINT_FLAGS_ALIGN;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
+		use_unalloc = p->flags & R_PRINT_FLAGS_UNALLOC;
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
 		inc = p->cols; // row width
 		col = p->col;
@@ -936,7 +942,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt (" ");
 				}
 				if (!hex_style) {
-					printfmt (" comment ");
+					printfmt (" comment");
 				}
 			}
 			printfmt ("\n");
@@ -953,10 +959,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
 	int rows = 0;
-	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
+	int bytes = 0;
+	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
 		}
+		rowbytes = inc;
+		if (use_align) {
+			int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
+			if (sz > 0) { // flags with size 0 dont work
+				rowbytes = sz;
+			}
+		}
+
 		if (use_sparse) {
 			if (checkSparse (buf + i, inc, sparse_char)) {
 				if (i + inc >= len || checkSparse (buf + i + inc, inc, sparse_char)) {
@@ -987,13 +1002,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
+				if (j!=i && use_align && rowbytes == inc) {
+					int sz = p->offsize (p->user, addr + j);
+					if (sz >= 0) {
+						rowbytes = bytes;
+					}
+				}
 				if (row_have_cursor == -1) {
 					if (r_print_have_cursor (p, j, 1)) {
 						row_have_cursor = j - i;
 						row_have_addr = addr + j;
 					}
 				}
-				if (!compact && j >= len) {
+				if (!compact && ((j >= len) || bytes >= rowbytes)) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
 							printfmt (j % 2? "  |": "| ");
@@ -1020,13 +1041,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					/* TODO: check step. it should be 2/4 for base(32) and 8 for
 					 *       base(64) */
 					ut64 n = 0;
-					size_t sz_n;
-
-					if (base == 64) {
-						sz_n = sizeof (ut64);
-					} else {
-						sz_n = step == 2? sizeof (ut16): sizeof (ut32);
-					}
+					size_t sz_n = (base == 64) 
+						? sizeof (ut64) : (step == 2)
+						? sizeof (ut16) : sizeof (ut32);
 					sz_n = R_MIN (left, sz_n);
 					if (j + sz_n > len) {
 						// oob
@@ -1038,7 +1055,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					// stub for colors
 					if (p && p->colorfor) {
 						if (!p->iob.addr_is_mapped (p->iob.io, addr + j)) {
-							a = p->cons->pal.ai_unmap;
+							a = p->cons->context->pal.ai_unmap;
 						} else {
 							a = p->colorfor (p->user, n, true);
 						}
@@ -1071,28 +1088,38 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%4d ", w);
 					r_print_cursor (p, j, 1, 0);
 				} else if (base == -10) {
-					st16 w = r_read_ble16 (buf + j, p && p->big_endian);
-					r_print_cursor (p, j, 2, 1);
-					printfmt ("%7d ", w);
-					r_print_cursor (p, j, 2, 0);
+					if (j + 1 < len) {
+						st16 w = r_read_ble16 (buf + j, p && p->big_endian);
+						r_print_cursor (p, j, 2, 1);
+						printfmt ("%7d ", w);
+						r_print_cursor (p, j, 2, 0);
+					}
 					j += 1;
 				} else if (base == 10) { // "pxd"
-					int w = r_read_ble32 (buf + j, p && p->big_endian);
-					r_print_cursor (p, j, 4, 1);
-					printfmt ("%13d ", w);
-					r_print_cursor (p, j, 4, 0);
+					if (j + 3 < len) {
+						int w = r_read_ble32 (buf + j, p && p->big_endian);
+						r_print_cursor (p, j, 4, 1);
+						printfmt ("%13d ", w);
+						r_print_cursor (p, j, 4, 0);
+					}
 					j += 3;
 				} else {
 					if (j >= len) {
 						break;
 					}
-					r_print_byte (p, bytefmt, j, buf[j]);
+					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
+						char ch = p->io_unalloc_ch;
+						char dbl_ch_str[] = { ch, ch, 0 };
+						p->cb_printf (dbl_ch_str);
+					} else {
+						r_print_byte (p, bytefmt, j, buf[j]);
+					}
 					if (pairs && !compact && (inc & 1)) {
 						bool mustspace = (rows % 2) ? !(j&1) : (j&1);
 						if (mustspace) {
 							printfmt (" ");
 						}
-					} else if (j % 2 || !pairs) {
+					} else if (bytes % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
 								if (!compact) {
@@ -1111,6 +1138,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (hl) {
 					printfmt (Color_RESET);
 				}
+				bytes++;
 			}
 		}
 		if (compact) {
@@ -1125,18 +1153,30 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			printfmt ((col == 2)? "|": " ");
 		}
 		if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+			bytes = 0;
 			for (j = i; j < i + inc; j++) {
-				if (j >= len) {
+				if (j!=i && use_align  && bytes >= rowbytes) {
+					int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
+					if (sz >= 0) {
+						printfmt (" ");
+						break;
+					}
+				}
+				if (j >= len || (use_align && bytes >= rowbytes)) {
 					break;
 				}
-				r_print_byte (p, "%c", j, buf[j]);
+				ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
+				                ? ' ' : buf[j];
+				r_print_byte (p, "%c", j, ch);
+				bytes++;
 			}
 		}
 		/* ascii column */
 		if (col == 2) {
 			printfmt ("|");
 		}
-		if (p && p->flags & R_PRINT_FLAGS_REFS) {
+		bool eol = false;
+		if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
 			ut64 *foo = (ut64 *) (buf + i);
 			ut64 off = *foo;
 			if (base == 32) {
@@ -1155,16 +1195,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				free (rstr);
 			}
 		}
-		if (p && p->use_comments) {
+		if (!eol && p && p->use_comments) {
 			for (; j < i + inc; j++) {
 				printfmt (" ");
 			}
 			for (j = i; j < i + inc; j++) {
+				if (use_align && (j-i) >= rowbytes) {
+					break;
+				}
 				if (p && p->offname) {
 					a = p->offname (p->user, addr + j);
 					if (p->colorfor && a && *a) {
 						const char *color = p->colorfor (p->user, addr + j, true);
-						printfmt ("%s  ; %s"Color_RESET, color?color: "", a);
+						printfmt ("%s  ; %s%s", color ? color: "", a,
+						          color ? Color_RESET : "");
 					}
 				}
 				char *comment = p->get_comments (p->user, addr + j);
@@ -1184,8 +1228,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
+		if (use_align && rowbytes < inc && bytes >= rowbytes) {
+			i -= (inc - bytes);
+		}
 		printfmt ("\n");
 		rows++;
+		bytes = 0;
 
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
@@ -1675,16 +1723,17 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 }
 
 R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
+	RConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_NOP:
-		return p->cons->pal.nop;
+		return pal->nop;
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_DIV:
 	case R_ANAL_OP_TYPE_MOD:
 	case R_ANAL_OP_TYPE_LENGTH:
-		return p->cons->pal.math;
+		return pal->math;
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_OR:
 	case R_ANAL_OP_TYPE_XOR:
@@ -1696,23 +1745,23 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_CPL:
-		return p->cons->pal.bin;
+		return pal->bin;
 	case R_ANAL_OP_TYPE_IO:
-		return p->cons->pal.swi;
+		return pal->swi;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_IJMP:
 	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_IRJMP:
 	case R_ANAL_OP_TYPE_MJMP:
-		return p->cons->pal.jmp;
+		return pal->jmp;
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_UCJMP:
 	case R_ANAL_OP_TYPE_SWITCH:
-		return p->cons->pal.cjmp;
+		return pal->cjmp;
 	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_ACMP:
-		return p->cons->pal.cmp;
+		return pal->cmp;
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:
@@ -1720,35 +1769,35 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_UCCALL:
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_CCALL:
-		return p->cons->pal.call;
+		return pal->call;
 	case R_ANAL_OP_TYPE_NEW:
 	case R_ANAL_OP_TYPE_SWI:
-		return p->cons->pal.swi;
+		return pal->swi;
 	case R_ANAL_OP_TYPE_ILL:
 	case R_ANAL_OP_TYPE_TRAP:
-		return p->cons->pal.trap;
+		return pal->trap;
 	case R_ANAL_OP_TYPE_CRET:
 	case R_ANAL_OP_TYPE_RET:
-		return p->cons->pal.ret;
+		return pal->ret;
 	case R_ANAL_OP_TYPE_CAST:
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
-		return p->cons->pal.mov;
+		return pal->mov;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
 	case R_ANAL_OP_TYPE_LOAD:
-		return p->cons->pal.push;
+		return pal->push;
 	case R_ANAL_OP_TYPE_POP:
 	case R_ANAL_OP_TYPE_STORE:
-		return p->cons->pal.pop;
+		return pal->pop;
 	case R_ANAL_OP_TYPE_CRYPTO:
-		return p->cons->pal.crypto;
+		return pal->crypto;
 	case R_ANAL_OP_TYPE_NULL:
-		return p->cons->pal.other;
+		return pal->other;
 	case R_ANAL_OP_TYPE_UNK:
 	default:
-		return p->cons->pal.invalid;
+		return pal->invalid;
 	}
 }
 
@@ -1881,7 +1930,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					const char *color = found_var ? print->cons->pal.func_var_type : reg;
+					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
@@ -1933,20 +1982,13 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		case '0': /* address */
 			if (p[i + 1] == 'x') {
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
-					RIOSection *s = NULL;
-					SdbList *secs = print->iob.sections_vget (print->iob.io, r_num_get (NULL, p + i));
-					if (secs) {
-						s = (RIOSection *)ls_pop (secs);
-						secs->free = NULL;
-						ls_free (secs);
-						secs = NULL;
-					}
-					if (s) {
-						if (strlen (s->name) + j + 1 >= COLORIZE_BUFSIZE) {
+					RIOMap *map = print->iob.map_get (print->iob.io, r_num_get (NULL, p + i));
+					if (map && map->name) {
+						if (strlen (map->name) + j + 1 >= COLORIZE_BUFSIZE) {
 							eprintf ("stop before overflow\n");
 							break;
 						}
-						strcpy (o + j, s->name);
+						strcpy (o + j, map->name);
 						j += strlen (o + j);
 						strcpy (o + j, ".");
 						j++;
@@ -1972,7 +2014,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 // reset the status of row_offsets
 R_API void r_print_init_rowoffsets(RPrint *p) {
 	if (p->calc_row_offsets) {
-		R_FREE(p->row_offsets);
+		R_FREE (p->row_offsets);
 		p->row_offsets_sz = 0;
 	}
 }
@@ -2016,7 +2058,6 @@ R_API ut32 r_print_rowoff(RPrint *p, int i) {
 R_API int r_print_row_at_off(RPrint *p, ut32 offset) {
 	int i = 0;
 	ut32 tt;
-
 	while ((tt = r_print_rowoff (p, i)) != UT32_MAX && tt <= offset) {
 		i++;
 	}
@@ -2076,7 +2117,7 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 		return;
 	}
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
-	if (buf == NULL) {
+	if (!buf) {
 		eprintf ("allocation failed\n");
 		return;
 	}

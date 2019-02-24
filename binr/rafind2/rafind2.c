@@ -12,6 +12,8 @@
 #include <r_lib.h>
 #include <r_io.h>
 
+#include "../blob/version.c"
+
 static int showstr = 0;
 static int rad = 0;
 static int align = 0;
@@ -95,7 +97,7 @@ static int show_help(char *argv0, int line) {
 	" -n         do not stop on read errors\n"
 	" -r         print using radare commands\n"
 	" -s [str]   search for a specific string (can be used multiple times)\n"
-	" -S [str]   search for a specific wide string (can be used multiple times)\n"
+	" -S [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
 	" -t [to]    stop search at address 'to'\n"
 	" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
 	" -v         print version and exit\n"
@@ -342,8 +344,7 @@ int main(int argc, char **argv) {
 			quiet = true;
 			break;
 		case 'v':
-			printf ("rafind2 v"R2_VERSION"\n");
-			return 0;
+			return blob_version ("rafind2");
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':

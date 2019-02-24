@@ -114,7 +114,11 @@ static ut64 remainingBytes(ut64 limit, ut64 length, ut64 offset) {
 }
 // ret copied length if successful, -1 if failed
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
-	r_return_val_if_fail (b && !b->empty, 0);
+	r_return_val_if_fail (b, 0);
+
+	if (b->empty) {
+		return 0;
+	}
 
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
@@ -780,16 +784,19 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	return r_buf_cpy (b, addr, buf, b->buf, len, false);
 }
 
-R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
+R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	return r_buf_fcpy_at (b, addr, buf, fmt, n, false);
 }
 
 //ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
-	RIOBind *iob = b->iob;
-	if (!b || !buf || len < 1) {
+	r_return_val_if_fail (b && buf && len >= 0, 0);
+
+	if (len == 0) {
 		return 0;
 	}
+
+	RIOBind *iob = b->iob;
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
 	int real_len = len;

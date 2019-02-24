@@ -9,6 +9,9 @@ r2_version = 'unknown-error'
 r = run_command(py3_exe, 'sys/version.py')
 if r.returncode() == 0
   r2_version = r.stdout().strip()
+  if host_machine.system() == 'darwin'
+    r2_version = r2_version.split('-')[0]
+  endif
 else
   message('Cannot find project version with sys/version.py')
 endif
@@ -59,6 +62,11 @@ endif
 if get_option('r2_gittap') != ''
   gittap = get_option('r2_gittap')
 endif
+# gittap is used for the version of each r_ library
+# in case it has not been set (e.g. a release tarball) set it
+if gittap == ''
+  gittap = r2_version
+endif
 
 if get_option('r2_gittip') != ''
   gittip = get_option('r2_gittip')
@@ -77,6 +85,7 @@ else
 endif
 
 r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
+message('r2 lib version: ' + r2_libversion)
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -247,7 +256,7 @@ endif
 
 # handle libuv library
 if get_option('use_libuv')
-  libuv_dep = dependency('libuv', required: false)
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false)
   use_libuv = libuv_dep.found()
   if not libuv_dep.found()
     warning('use_libuv option was set to true, but libuv was not found.')
@@ -422,6 +431,7 @@ else
       r_cons_dep,
       r_core_dep,
       r_crypto_dep,
+      r_debug_dep,
       r_egg_dep,
       r_flag_dep,
       r_fs_dep,

@@ -185,11 +185,6 @@ while_end:
 		strncpy (buf, str, sizeof (buf) - 1);
 	}
 
-	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
-		grep->end = 1;
-		buf[len] = 0;
-	}
-
 	ptr = buf;
 	ptr2 = strchr (ptr, '[');
 	ptr3 = strchr (ptr, ']');
@@ -279,6 +274,13 @@ while_end:
 	if (end_ptr) {
 		*end_ptr = '\0';
 	}
+
+	len = strlen (buf) - 1;
+	if (len > 1 && buf[len] == '$' && buf[len - 1] != '\\') {
+		grep->end = 1;
+		buf[len] = '\0';
+	}
+
 	free (grep->str);
 	if (*ptr) {
 		grep->str = (char *) strdup (ptr);
@@ -470,14 +472,14 @@ R_API void r_cons_grepbuf() {
 			R_FREE (grep->json_path);
 		} else {
 			const char *palette[] = {
-				cons->pal.graph_false, // f
-				cons->pal.graph_true, // t
-				cons->pal.num, // k
-				cons->pal.comment, // v
+				cons->context->pal.graph_false, // f
+				cons->context->pal.graph_true, // t
+				cons->context->pal.num, // k
+				cons->context->pal.comment, // v
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (color), "  ", palette);
+			char *out = r_print_json_indent (buf, I (context->color), "  ", palette);
 			if (!out) {
 				return;
 			}
@@ -550,7 +552,7 @@ R_API void r_cons_grepbuf() {
 	while ((int) (size_t) (in - buf) < len) {
 		char *p = strchr (in, '\n');
 		if (!p) {
-			return;
+			break;
 		}
 		l = p - in;
 		if (l > 0) {
@@ -582,21 +584,21 @@ R_API void r_cons_grepbuf() {
 			if (ret > 0) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
-					if (cons->grep_highlight && grep->str) {
-						char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->str);
-						if (str && newstr) {
-							if (grep->icase) {
-								str = r_str_replace_icase (str, grep->str, newstr, 1, 1);
-							} else {
-								str = r_str_replace (str, grep->str, newstr, 1);
+					if (cons->grep_highlight) {
+						int i;
+						for (i = 0; i < grep->nstrings; i++) {
+							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
+							if (str && newstr) {
+								if (grep->icase) {
+									str = r_str_replace_icase (str, grep->strings[i], newstr, 1, 1);
+								} else {
+									str = r_str_replace (str, grep->strings[i], newstr, 1);
+								}
 							}
-							if (str) {
-								r_strbuf_append (ob, str);
-								r_strbuf_append (ob, "\n");
-							}
+							free (newstr);
 						}
-						free (newstr);
-					} else {
+					}
+					if (str) {
 						r_strbuf_append (ob, str);
 						r_strbuf_append (ob, "\n");
 					}

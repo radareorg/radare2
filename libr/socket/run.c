@@ -48,6 +48,7 @@
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <sys/sysctl.h>
 #include <libutil.h>
 #endif
 #endif
@@ -226,34 +227,14 @@ static int parseBool(const char *e) {
 		0: 1): 1): 1): 1);
 }
 
-#if __linux__
-#define RVAS "/proc/sys/kernel/randomize_va_space"
-static void setRVA(const char *v) {
-	int fd = open (RVAS, O_WRONLY);
-	if (fd != -1) {
-		if (write (fd, v, 2) != 2) {
-			eprintf ("Failed to set RVA\n");
-		}
-		close (fd);
-	}
-}
-#endif
-
 // TODO: move into r_util? r_run_... ? with the rest of funcs?
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
-	if (enabled) {
-		setRVA ("2\n");
-	} else {
-#if __ANDROID__
-		setRVA ("0\n");
-#else
+	r_sys_aslr (enabled);
 #if HAVE_DECL_ADDR_NO_RANDOMIZE
-		if (personality (ADDR_NO_RANDOMIZE) == -1) {
+	if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
-			setRVA ("0\n");
-		}
-#endif
+		r_sys_aslr (0);
 	}
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
@@ -268,6 +249,8 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
+#elif __FreeBSD__
+	r_sys_aslr (enabled);
 #else
 	// not supported for this platform
 #endif

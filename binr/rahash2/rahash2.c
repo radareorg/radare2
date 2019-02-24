@@ -690,6 +690,7 @@ int main(int argc, char **argv) {
 					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
 					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
+						free (iv);
 						return 1;
 					}
 					r_io_pwrite_at (io, 0, buf, sz);

@@ -451,8 +451,8 @@ static void selection_widget_draw() {
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
-	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT_RESET;
-	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT;
+	char *background_color = cons->context->color ? cons->context->pal.widget_bg : Color_INVERT_RESET;
+	char *selected_color = cons->context->color ? cons->context->pal.widget_sel : Color_INVERT;
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
 	int scrollbar_y = 0, scrollbar_l = 0;
 	if (scrollbar) {
@@ -1645,7 +1645,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 9:	// tab
-			if (I.buffer.data[I.buffer.length - 1] == '@') {
+			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
 				strcpy (I.buffer.data + I.buffer.length, " ");
 				I.buffer.length++;
 				I.buffer.index++;
