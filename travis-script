@@ -40,6 +40,9 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 else
     echo "Installing with acr + make"
+    if [ "${R2_PLUGINS_FILE}" != "" ] ; then
+	cp "plugins.${R2_PLUGINS_FILE}.cfg" plugins.cfg
+    fi
     if [ "${ASAN}" == "1" ] ; then
         export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
         export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
