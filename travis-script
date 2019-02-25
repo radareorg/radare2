@@ -53,7 +53,7 @@ else
     export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
 fi
 
-if [ "${R2_TESTS_DISABLE=1}" != "1" ] ; then
+if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
     export NOOK=1
     export NOREPORT=1
     cd radare2-regressions
