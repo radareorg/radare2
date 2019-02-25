@@ -625,10 +625,12 @@ int main (int argc, char *argv[]) {
 		case 's':
 			if (*optarg == '?') {
 				printf ("att\nintel\nmasm\njz\nregnum\n");
+				__as_free (as);
 				return 0;
 			} else {
 				int syntax = r_asm_syntax_from_string (optarg);
 				if (syntax == -1) {
+					__as_free (as);
 					return 1;
 				}
 				r_asm_set_syntax (as->a, syntax);
