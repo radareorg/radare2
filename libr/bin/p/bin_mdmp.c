@@ -326,21 +326,24 @@ static RList *sections(RBinFile *bf) {
 		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->perm = 0;
 
-		r_list_append (ret, ptr);
+		if (!r_list_append (ret, ptr)) {
+			free (ptr);
+			break;
+		}
 
 		/* Grab the pe sections */
 		r_list_foreach (obj->pe32_bins, it0, pe32_bin) {
 			if (pe32_bin->vaddr == module->base_of_image && pe32_bin->bin) {
 				pe_secs = Pe32_r_bin_mdmp_pe_get_sections(pe32_bin);
 				r_list_join (ret, pe_secs);
-				r_list_free(pe_secs);
+				r_list_free (pe_secs);
 			}
 		}
 		r_list_foreach (obj->pe64_bins, it0, pe64_bin) {
 			if (pe64_bin->vaddr == module->base_of_image && pe64_bin->bin) {
 				pe_secs = Pe64_r_bin_mdmp_pe_get_sections(pe64_bin);
 				r_list_join (ret, pe_secs);
-				r_list_free(pe_secs);
+				r_list_free (pe_secs);
 			}
 		}
 	}
