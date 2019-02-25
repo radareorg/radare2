@@ -5754,7 +5754,7 @@ static int cmd_print(void *data, const char *input) {
 							char *rstr = core->print->hasrefs (core->print->user, val, true);
 							if (rstr && *rstr) {
 								char *ns = r_str_escape (rstr);
-								pj_ks (pj, "ref", *ns == ' ' ? ns + 1 : ns);
+								pj_ks (pj, "ref", r_str_trim_ro (ns));
 								pj_end (pj);
 								free (ns);
 								withref = 1;
