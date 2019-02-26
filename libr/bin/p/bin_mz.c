@@ -2,6 +2,7 @@
 
 #include <r_types.h>
 #include <r_bin.h>
+#include <r_lib.h>
 #include "mz/mz.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
