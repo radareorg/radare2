@@ -1863,6 +1863,27 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			mapname = strdup (map->name);
 		}
 	}
+	int bits = core->assembler->bits;
+	switch (bits) {
+	case 16: // umf, not in sync with pxr
+		{
+			st16 v = (st16)(value & 0xffff);
+			if (v > - 0xfff && v < 0) {
+				r_strbuf_appendf (s," %hd", v);
+			}
+		}
+		break;
+	case 32:
+		if ((st32)value > -0xffff && (st32)value < 0) {
+			r_strbuf_appendf (s," %d", (st32)(value&0xffffffff));
+		}
+		break;
+	case 64:
+		if ((st32)value > -0xfffff && (st32)value < 0) {
+			r_strbuf_appendf (s," %"PFMT64d, value);
+		}
+		break;
+	}
 	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
