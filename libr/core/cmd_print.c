@@ -3327,7 +3327,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
 				ut64 off = blocksize * i;
-				const char *comma = (i + 1 < (nblocks))? ",": "";
 				off += from;
 				pj_o (pj);
 				pj_kn (pj, "addr", off);
@@ -5727,9 +5726,8 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2] == 'j') {
 					PJ *pj = pj_new ();
 					if (!pj) {
-						return NULL;
+						return 0;
 					}
-
 					int base = core->anal->bits;
 					pj_a (pj);
 					const char *comma = "";
