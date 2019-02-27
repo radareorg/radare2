@@ -3102,7 +3102,6 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		// f = r_anal_get_fcn_in (core->anal, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->name && ds->opstr && !strstr (ds->opstr, f->name)) {
-			//beginline (core, ds, f);
 			// print label
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
