@@ -79,6 +79,7 @@ static const char *help_msg_ab[] = {
 static const char *help_msg_abt[] = {
 	"Usage:", "abt", "[addr] [num] # find num paths from current offset to addr",
 	"abt", " [addr] [num]", "find num paths from current offset to addr",
+	"abte", " [addr]", "emulate from begining of function to the given address",
 	"abtj", " [addr] [num]", "display paths in JSON",
 	NULL
 };
@@ -144,6 +145,7 @@ static const char *help_msg_ae[] = {
 	"aesb", "", "step back",
 	"aeso", " ", "step over",
 	"aesu", " [addr]", "step until given address",
+	"aesou", " [addr]", "step over until given address",
 	"aesue", " [esil]", "step until esil expression match",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 	"aex", " [hex]", "evaluate opcode expression",
@@ -3696,6 +3698,13 @@ repeat:
 		}
 		op.size = 1; // avoid inverted stepping
 	}
+	if (op.type == R_ANAL_OP_TYPE_CALL) {
+		ret = 0;
+		if (addr == until_addr) {
+			return_tail (0);
+		}
+		return 1;
+	}
 	if (r_config_get_i (core->config, "cfg.r2wars")) {
 		// this is x86 and r2wars specific, shouldnt hurt outside x86
 		ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
@@ -4733,15 +4742,27 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'o': // "aeso"
-			// step over
-			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
-				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
-			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-				until_addr = op->addr + op->size;
+			if (input[2] == 'u') { // "aesou"
+				if (input[2] == 'e') {
+					until_expr = input + 3;
+				} else {
+					until_addr = r_num_math (core->num, input + 2);
+				}
+				r_core_esil_step (core, until_addr, until_expr, NULL);
+				r_core_cmd0 (core, ".ar*");
+			} else if (input[2] == ' ') { // "aeso [addr]"
+				// step over
+				op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
+					r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
+					until_addr = op->addr + op->size;
+				}
+				r_core_esil_step (core, until_addr, until_expr, NULL);
+				r_anal_op_free (op);
+				r_core_cmd0 (core, ".ar*");
+			} else {
+				eprintf ("Usage: aesou [addr] # step over until given address\n");
 			}
-			r_core_esil_step (core, until_addr, until_expr, NULL);
-			r_anal_op_free (op);
-			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
@@ -7556,7 +7577,46 @@ beach:
 
 static void cmd_anal_abt(RCore *core, const char *input) {
 	switch (*input) {
-	case '?': r_core_cmd_help (core, help_msg_abt); break;
+	case 'e':
+		{
+		int n = 1;
+		char *p = strchr (input + 1, ' ');
+		if (!p) {
+			eprintf ("Usage: abte [addr] # emulate from begining of function to the given address.\n");
+			return;
+		}
+		ut64 addr = r_num_math (core->num, p + 1);
+		RList *paths = r_core_anal_graph_to (core, addr, n);
+		if (paths) {
+			RAnalBlock *bb;
+			RList *path;
+			RListIter *pathi;
+			RListIter *bbi;
+			r_cons_printf ("f orip=`dr?PC`\n");
+			r_list_foreach (paths, pathi, path) {
+				r_list_foreach (path, bbi, bb) {
+					r_cons_printf ("# 0x%08" PFMT64x "\n", bb->addr);
+					if (addr >= bb->addr && addr < bb->addr + bb->size) {
+						r_cons_printf ("aepc 0x%08"PFMT64x"\n", bb->addr);
+						r_cons_printf ("aesou 0x%08"PFMT64x"\n", addr);
+					} else {
+						r_cons_printf ("aepc 0x%08"PFMT64x"\n", bb->addr);
+						r_cons_printf ("aesou 0x%08"PFMT64x"\n", bb->addr + bb->size);
+					}
+				}
+				r_cons_newline ();
+				r_list_purge (path);
+				free (path);
+			}
+			r_list_purge (paths);
+			r_cons_printf ("aepc orip\n");
+			free (paths);
+		}
+		}
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_abt);
+		break;
 	case 'j': {
 		PJ *pj = pj_new ();
 		if (!pj) {
