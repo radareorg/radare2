@@ -29,7 +29,8 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
     if [ "${ASAN}" == "1" ] ; then
-        OPTS="${OPTS} -Db_sanitize=address"
+        # -Db_lundef=false required for issue with clang+meson (see https://github.com/mesonbuild/meson/issues/764)
+        OPTS="${OPTS} -Db_sanitize=address -Db_lundef=false"
     fi
 
     meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
