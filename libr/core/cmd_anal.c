@@ -10,6 +10,9 @@ static const char *help_msg_a[] = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[b] [addr]", "analyze block at given address",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
+	"ac", "[?]", "manage classes",
+	"aC", "[?]", "analyze function call",
+	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
@@ -26,7 +29,6 @@ static const char *help_msg_a[] = {
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
 	"av", "[?] [.]", "show vtables",
-	"ac", "[?]", "manage classes",
 	"ax", "[?]", "manage refs/xrefs (see also afx?)",
 	NULL
 };
@@ -4651,7 +4653,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'p': // "aep"
 		switch (input[1]) {
-		case 'c':
+		case 'c': // "aepc"
 			if (input[2] == ' ') {
 				// seek to this address
 				r_core_cmdf (core, "ar PC=%s", input + 3);
@@ -8373,6 +8375,132 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	}
 }
 
+static void show_reg_args(RCore *core, int nargs) {
+	int i;
+	char regname[8];
+	if (nargs < 0) {
+		nargs = 4; // default args if not defined
+	}
+	for (i = 0; i < nargs; i++) {
+		snprintf (regname, sizeof (regname), "A%d", i);
+		ut64 v = r_reg_getv (core->anal->reg, regname);
+		r_cons_printf ("A%d 0x%08"PFMT64x"\n", i, v);
+	}
+}
+
+// ripped from disasm.c: dupe code from there
+// TODO: Implement aC* and aCj
+static void cmd_anal_aC(RCore *core, const char *input) {
+	RAnalFuncArg *arg;
+	RListIter *iter;
+	RListIter *nextele;
+	const char *iarg = strchr (input, ' ');
+	if (iarg) {
+		iarg++;
+	}
+	if (!iarg) {
+		eprintf ("Usage: aC[e] [addr-of-call] # analyze call args (aCe does esil emulation with abte)\n");
+		return;
+	}
+	ut64 pcv = r_num_math (core->num, iarg);
+	if (input[0] == 'e') { // "aCe"
+		r_core_cmdf (core, ".abte 0x%08"PFMT64x, pcv);
+	}
+	RAnalOp* op = r_core_anal_op (core, pcv, -1);
+	if (!op) {
+		return;
+	}
+	if (op->type != R_ANAL_OP_TYPE_CALL) {
+		show_reg_args (core, -1);
+		return;
+	}
+	const char *fcn_name = NULL;
+	RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
+	if (fcn) {
+		fcn_name = fcn->name;
+	} else {
+		RFlagItem *item = r_flag_get_i (core->flags, op->jump);
+		if (item) {
+			fcn_name = item->name;
+		}
+	}
+	char *key = (fcn_name)? resolve_fcn_name (core->anal, fcn_name): NULL;
+	if (key) {
+		const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+		int nargs = r_type_func_args_count (core->anal->sdb_types, key);
+		// remove other comments
+		if (fcn_type) {
+			r_cons_printf ("%s%s%s(", r_str_get (fcn_type),
+					(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
+					r_str_get (key));
+			if (!nargs) {
+				r_cons_printf ("void)\n");
+			}
+		} else {
+			eprintf ("Cannot find any function type..lets just use some standards?\n");
+		}
+	} else {
+		show_reg_args (core, -1);
+		return;
+	}
+	ut64 s_width = (core->anal->bits == 64)? 8: 4;
+	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	ut64 spv = r_reg_getv (core->anal->reg, sp);
+	r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
+	RList *list = r_core_get_func_args (core, fcn_name);
+	// show_reg_args (core, -1);
+	if (!r_list_empty (list)) {
+		bool warning = false;
+		bool on_stack = false;
+		r_list_foreach (list, iter, arg) {
+			if (r_str_startswith (arg->cc_source, "stack")) {
+				on_stack = true;
+			}
+			if (!arg->size) {
+				r_cons_printf ("%s: unk_size", arg->c_type);
+				warning = true;
+			}
+			nextele = r_list_iter_get_next (iter);
+			if (!arg->fmt) {
+				r_cons_printf ("?%s", nextele? ", ": "");
+			} else {
+				// print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
+				// const char *fmt = arg->orig_c_type;
+				ut64 addr = arg->src;
+				char *res = r_core_cmd_strf (core, "pfq %s @ 0x%08" PFMT64x, arg->fmt, addr);
+				// r_cons_printf ("pfq *%s @ 0x%08" PFMT64x"\n", arg->fmt, addr);
+				r_str_trim (res);
+				r_cons_printf ("%s", res);
+				free (res);
+			}
+		}
+		r_cons_printf (")");
+	} else {
+		// function name not resolved
+		int i, nargs = 4; // DEFAULT_NARGS;
+		if (fcn) {
+			// @TODO: fcn->nargs should be updated somewhere and used here instead
+			nargs = r_anal_var_count (core->anal, fcn, 's', 1) +
+				r_anal_var_count (core->anal, fcn, 'b', 1) +
+				r_anal_var_count (core->anal, fcn, 'r', 1);
+		}
+		if (nargs > 0) {
+			if (fcn_name) {
+				r_cons_printf ("; %s(", fcn_name);
+			} else {
+				r_cons_printf ("; 0x%"PFMT64x"(", pcv);
+			}
+			for (i = 0; i < nargs; i++) {
+				ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
+				r_cons_printf ("%s0x%"PFMT64x, i?", ":"", v);
+			}
+			r_cons_printf (")");
+		}
+	}
+	r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
+	r_cons_newline ();
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
@@ -8439,11 +8567,16 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_ab);
 		}
 		break;
-	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
-	case 'c': cmd_anal_classes (core, input + 1); break; // "ac"
+	case 'c': // "ac"
+		cmd_anal_classes (core, input + 1);
+		break;
+	case 'C': // "aC"
+		cmd_anal_aC (core, input + 1);
+		break;
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
+	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
 	case 'F': // "aF"
