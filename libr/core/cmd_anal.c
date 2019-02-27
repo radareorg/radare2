@@ -146,8 +146,8 @@ static const char *help_msg_ae[] = {
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
 	"aeso", " ", "step over",
-	"aesu", " [addr]", "step until given address",
 	"aesou", " [addr]", "step over until given address",
+	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 	"aex", " [hex]", "evaluate opcode expression",
@@ -3596,7 +3596,7 @@ static ut64 initializeEsil(RCore *core) {
 	return addr;
 }
 
-R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr) {
+R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define return_tail(x) { tail_return_value = x; goto tail_return; }
 	int tail_return_value = 0;
 	int ret;
@@ -3700,12 +3700,16 @@ repeat:
 		}
 		op.size = 1; // avoid inverted stepping
 	}
-	if (op.type == R_ANAL_OP_TYPE_CALL) {
-		ret = 0;
-		if (addr == until_addr) {
-			return_tail (0);
+	if (stepOver) {
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_SWI:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_CALL:
+			if (addr == until_addr) {
+				return_tail (0);
+			}
+			return 1;
 		}
-		return 1;
 	}
 	if (r_config_get_i (core->config, "cfg.r2wars")) {
 		// this is x86 and r2wars specific, shouldnt hurt outside x86
@@ -3826,10 +3830,10 @@ R_API int r_core_esil_step_back(RCore *core) {
 	eprintf ("NOTE: you are going to fix it by making it consistent with dts, which is also broken as hell\n");
 	eprintf ("Execute until 0x%08"PFMT64x"\n", end);
 	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, end, NULL, &prev);
+	r_core_esil_step (core, end, NULL, &prev, false);
 	eprintf ("Before 0x%08"PFMT64x"\n", prev);
 	r_anal_esil_session_set (esil, before);
-	r_core_esil_step (core, prev, NULL, NULL);
+	r_core_esil_step (core, prev, NULL, NULL, false);
 	return 1;
 }
 
@@ -4544,7 +4548,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 		r_anal_op_fini (&aop);
 	}
 	r_reg_set_value (core->dbg->reg, r, curpc);
-	r_core_esil_step (core, curpc + instr_size, NULL, NULL);
+	r_core_esil_step (core, curpc + instr_size, NULL, NULL, false);
 	r_core_seek (core, oldoff, 1);
 }
 
@@ -4722,7 +4726,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!op) {
 				break;
 			}
-			r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
 			r_anal_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
@@ -4740,7 +4744,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			} else {
 				until_addr = r_num_math (core->num, input + 2);
 			}
-			r_core_esil_step (core, until_addr, until_expr, NULL);
+			r_core_esil_step (core, until_addr, until_expr, NULL, false);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'o': // "aeso"
@@ -4750,7 +4754,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				} else {
 					until_addr = r_num_math (core->num, input + 2);
 				}
-				r_core_esil_step (core, until_addr, until_expr, NULL);
+				r_core_esil_step (core, until_addr, until_expr, NULL, true);
 				r_core_cmd0 (core, ".ar*");
 			} else if (input[2] == ' ') { // "aeso [addr]"
 				// step over
@@ -4759,7 +4763,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 					until_addr = op->addr + op->size;
 				}
-				r_core_esil_step (core, until_addr, until_expr, NULL);
+				r_core_esil_step (core, until_addr, until_expr, NULL, true);
 				r_anal_op_free (op);
 				r_core_cmd0 (core, ".ar*");
 			} else {
@@ -4780,14 +4784,14 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case ' ':
 			n = strchr (input, ' ');
 			if (!(n + 1)) {
-				r_core_esil_step (core, until_addr, until_expr, NULL);
+				r_core_esil_step (core, until_addr, until_expr, NULL, false);
 				break;
 			}
 			off = r_num_math (core->num, n + 1);
 			cmd_aespc (core, -1, off);
 			break;
 		default:
-			r_core_esil_step (core, until_addr, until_expr, NULL);
+			r_core_esil_step (core, until_addr, until_expr, NULL, false);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		}
@@ -4805,7 +4809,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			for (;;) {
-				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL)) {
+				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL, false)) {
 					break;
 				}
 				r_core_cmd0 (core, ".ar*");
@@ -4834,7 +4838,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		} else if (input[1] == 'c') { // "aecc"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			for (;;) {
-				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL)) {
+				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL, false)) {
 					break;
 				}
 				r_core_cmd0 (core, ".ar*");
@@ -4865,7 +4869,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			else if (input[1] == 'u')
 				until_addr = r_num_math (core->num, input + 2);
 			else until_expr = "0";
-			r_core_esil_step (core, until_addr, until_expr, NULL);
+			r_core_esil_step (core, until_addr, until_expr, NULL, false);
 			r_core_cmd0 (core, ".ar*");
 		}
 		break;
