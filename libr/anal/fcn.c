@@ -735,7 +735,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		eprintf ("[anal.jmptbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		eprintf ("[anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
 		return false;
 	}
 
