@@ -1148,7 +1148,14 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_LEA:
-			leaddr = op.ptr; // XXX movptr is dupped but seems to be trashed sometimes, better track leaddr separately
+			// if first byte in op.ptr is 0xff, then set leaddr assuming its a jumptable
+			{
+				ut8 buf[4];
+				anal->iob.read_at (anal->iob.io, op.ptr, &buf, sizeof (buf));
+				if (buf[2] == 0xff && buf[3] == 0xff) {
+					leaddr = op.ptr; // XXX movptr is dupped but seems to be trashed sometimes, better track leaddr separately
+				}
+			}
 			// skip lea reg,[reg]
 			if (anal->opt.hpskip && regs_exist (op.src[0], op.dst)
 			&& !strcmp (op.src[0]->reg->name, op.dst->reg->name)) {
