@@ -1867,20 +1867,29 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	switch (bits) {
 	case 16: // umf, not in sync with pxr
 		{
-			st16 v = (st16)(value & 0xffff);
-			if (v > - 0xfff && v < 0) {
+			st16 v = (st16)(value & UT16_MAX);
+			st16 h = UT16_MAX / 0x100;
+			if (v > -h && v < h) {
 				r_strbuf_appendf (s," %hd", v);
 			}
 		}
 		break;
 	case 32:
-		if ((st32)value > -0xffff && (st32)value < 0) {
-			r_strbuf_appendf (s," %d", (st32)(value&0xffffffff));
+		{
+			st32 v = (st32)(value & 0xffffffff);
+			st32 h = UT32_MAX / 0x10000;
+			if (v > -h && v < h) {
+				r_strbuf_appendf (s," %d", v);
+			}
 		}
 		break;
 	case 64:
-		if ((st32)value > -0xfffff && (st32)value < 0) {
-			r_strbuf_appendf (s," %"PFMT64d, value);
+		{
+			st64 v = (st64)(value);
+			st64 h = UT64_MAX / 0x1000000;
+			if (v > -h && v < h) {
+				r_strbuf_appendf (s," %"PFMT64d, v);
+			}
 		}
 		break;
 	}
