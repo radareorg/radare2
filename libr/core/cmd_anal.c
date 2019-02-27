@@ -147,6 +147,7 @@ static const char *help_msg_ae[] = {
 	"aesb", "", "step back",
 	"aeso", " ", "step over",
 	"aesou", " [addr]", "step over until given address",
+	"aess", " ", "step skip (in case of CALL, just skip, instead of step into)",
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
@@ -4747,6 +4748,19 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_esil_step (core, until_addr, until_expr, NULL, false);
 			r_core_cmd0 (core, ".ar*");
 			break;
+		case 's': // "aess"
+			if (input[2] == 'u') { // "aessu"
+				if (input[2] == 'e') {
+					until_expr = input + 3;
+				} else {
+					until_addr = r_num_math (core->num, input + 2);
+				}
+				r_core_esil_step (core, until_addr, until_expr, NULL, true);
+				r_core_cmd0 (core, ".ar*");
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, true);
+			}
+			break;
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"
 				if (input[2] == 'e') {
@@ -4756,14 +4770,14 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 				r_core_esil_step (core, until_addr, until_expr, NULL, true);
 				r_core_cmd0 (core, ".ar*");
-			} else if (input[2] == ' ') { // "aeso [addr]"
+			} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
 				// step over
 				op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
 					r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 					until_addr = op->addr + op->size;
 				}
-				r_core_esil_step (core, until_addr, until_expr, NULL, true);
+				r_core_esil_step (core, until_addr, until_expr, NULL, false);
 				r_anal_op_free (op);
 				r_core_cmd0 (core, ".ar*");
 			} else {
