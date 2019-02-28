@@ -184,7 +184,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_cons_printf ("fs strings");
 	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
-		r_flag_space_set (r->flags, "strings");
+		r_flag_space_set (r->flags, R_FLAGS_FS_STRINGS);
 		r_cons_break_push (NULL, NULL);
 	}
 	if (IS_MODE_NORMAL (mode)) {
@@ -1055,7 +1055,7 @@ static int bin_main(RCore *r, int mode, int va) {
 	addr = va ? r_bin_a2b (r->bin, binmain->vaddr) : binmain->paddr;
 
 	if (IS_MODE_SET (mode)) {
-		r_flag_space_set (r->flags, "symbols");
+		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 		r_flag_set (r->flags, "main", addr, r->blocksize);
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("%"PFMT64d, addr);
@@ -1134,7 +1134,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		const char *hpaddr_key = (entry->type == R_BIN_ENTRY_TYPE_PROGRAM)
 		                ? "haddr" : "hpaddr";
 		if (IS_MODE_SET (mode)) {
-			r_flag_space_set (r->flags, "symbols");
+			r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry.init%i", init_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
@@ -1451,7 +1451,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			pj_a (pj);
 		}
 	} else if (IS_MODE_SET (mode)) {
-		r_flag_space_set (r->flags, "relocs");
+		r_flag_space_set (r->flags, R_FLAGS_FS_RELOCS);
 	}
 
 	r_rbtree_foreach (relocs, iter, reloc, RBinReloc, vrb) {
@@ -1900,7 +1900,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_printf ("[");
 	} else if (IS_MODE_SET (mode)) {
-		r_flag_space_set (r->flags, "symbols");
+		r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 	} else if (!at && exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
@@ -1967,12 +1967,12 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			}
 			if (!strncmp (r_symbol_name, "imp.", 4)) {
 				if (lastfs != 'i') {
-					r_flag_space_set (r->flags, "imports");
+					r_flag_space_set (r->flags, R_FLAGS_FS_IMPORTS);
 				}
 				lastfs = 'i';
 			} else {
 				if (lastfs != 's') {
-					r_flag_space_set (r->flags, "symbols");
+					r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 				}
 				lastfs = 's';
 			}
@@ -2430,7 +2430,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_cons_printf ("Current section\n");
 	} else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
-		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
+		r_flag_space_set (r->flags, print_segments? R_FLAGS_FS_SEGMENTS: R_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %sName\n",
@@ -2827,7 +2827,7 @@ static int bin_classes(RCore *r, int mode) {
 		if (!r_config_get_i (r->config, "bin.classes")) {
 			return false;
 		}
-		r_flag_space_set (r->flags, "classes");
+		r_flag_space_set (r->flags, R_FLAGS_FS_CLASSES);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_println ("fs classes");
 	}
@@ -3380,7 +3380,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		return;
 	}
 	if (IS_MODE_SET (mode)) {
-		r_flag_space_set (r->flags, "resources");
+		r_flag_space_set (r->flags, R_FLAGS_FS_RESOURCES);
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("fs resources\n");
 	} else if (IS_MODE_JSON (mode)) {

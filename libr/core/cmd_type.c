@@ -826,7 +826,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 				r_reg_set_value (esil->anal->reg, pc, at);
 				set_retval (core, at - ret);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 			free (dlink);
 			free (vlink);

@@ -1021,6 +1021,7 @@ static char *get_reg_profile(RAnal *anal) {
 	case 32: p =
 		"=PC    pc\n"
 		"=SP    sp\n"
+		"=BP    fp\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"
@@ -1067,6 +1068,7 @@ static char *get_reg_profile(RAnal *anal) {
 	case 64: p =
 		"=PC    pc\n"
 		"=SP    sp\n"
+		"=BP    fp\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"

@@ -1843,9 +1843,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 
 HEAPTYPE(ut64);
 
-static int regcmp(void *a, void *b) {
-	ut64 *A = a;
-	ut64 *B = b;
+static int regcmp(const void *a, const void *b) {
+	const ut64 *A = (const ut64*)a;
+	const ut64 *B = (const ut64*)b;
 	if (*A > *B) {
 		return 1;
 	}

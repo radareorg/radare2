@@ -45,6 +45,17 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_ANAL_KEYVALUE            16
 #define R_CORE_ANAL_JSON_FORMAT_DISASM  32
 
+#define R_FLAGS_FS_CLASSES "classes"
+#define R_FLAGS_FS_FUNCTIONS "functions"
+#define R_FLAGS_FS_IMPORTS "imports"
+#define R_FLAGS_FS_RELOCS "relocs"
+#define R_FLAGS_FS_RESOURCES "resources"
+#define R_FLAGS_FS_SECTIONS "sections"
+#define R_FLAGS_FS_SEGMENTS "segments"
+#define R_FLAGS_FS_STRINGS "strings"
+#define R_FLAGS_FS_SYMBOLS "symbols"
+#define R_FLAGS_FS_SYSCALLS "syscalls"
+
 #define R_GRAPH_FORMAT_NO           0
 #define R_GRAPH_FORMAT_GMLFCN       1
 #define R_GRAPH_FORMAT_JSON         2
@@ -518,8 +529,8 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr);
 R_API void r_core_anal_importxrefs(RCore *core);
 R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
-R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr);
 R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
+R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 R_API int r_core_esil_step_back(RCore *core);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);

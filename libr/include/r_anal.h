@@ -653,6 +653,9 @@ typedef struct r_anal_t {
 	double diff_thfcn;
 	RIOBind iob;
 	RFlagBind flb;
+	RFlagSet flg_class_set;
+	RFlagGet flg_class_get;
+	RFlagSet flg_fcn_set;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 	RCoreBind coreb;
 	int decode;
