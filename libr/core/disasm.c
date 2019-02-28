@@ -4290,6 +4290,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_CJMP:
 		ds_comment_esil (ds, true, true, ds->esil_likely? "; likely" : "; unlikely");
 		break;
+	case R_ANAL_OP_TYPE_JMP:
+		{
+			ut64 addr = ds->analop.jump;
+			if (!r_anal_get_fcn_at (ds->core->anal, addr, R_ANAL_FCN_TYPE_NULL)
+					&& !r_flag_get_at (core->flags, addr, false)) {
+				break;
+			}
+		}
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:
