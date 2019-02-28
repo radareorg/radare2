@@ -35,7 +35,7 @@ matrix:
     # release-only: meson build with system libraries
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-*
       os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true R2_SYS_OPENSSL=true
     # release-only: meson build with ASAN and R2_ASSERT_STDOUT
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-*
       os: linux
