@@ -1408,6 +1408,10 @@ static bool is_section_symbol(RBinSymbol *s) {
 	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
+static bool is_special_symbol(RBinSymbol *s) {
+	return !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
+}
+
 static bool is_section_reloc(RBinReloc *r) {
 	return is_section_symbol (r->symbol);
 }
@@ -1946,10 +1950,11 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol) || is_special_symbol (symbol))) {
 			/*
 			 * Skip section symbols because they will have their own flag.
 			 * Skip also file symbols because not useful for now.
+			 * Skip special symbols we do not want to flag them, as they are better used as analysis hints.
 			 */
 		} else if (IS_MODE_SET (mode)) {
 			if (is_arm && info->bits < 33) { // 16 or 32

@@ -2817,6 +2817,31 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	return ret;
 }
 
+static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	if (name[0] != '$') {
+		return false;
+	}
+	switch (name[1]) {
+	case 'a':
+	case 't':
+	case 'd':
+		return ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
+			ELF_ST_BIND (sym->st_info) == STB_LOCAL &&
+			ELF_ST_VISIBILITY (sym->st_info) == STV_DEFAULT;
+	default:
+		return false;
+	}
+}
+
+static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
+	switch (bin->ehdr.e_machine) {
+	case EM_ARM:
+		return is_special_arm_symbol (bin, sym, name);
+	default:
+		return false;
+	}
+}
+
 static const char *bind2str(Elf_(Sym) *sym) {
 	switch (ELF_ST_BIND(sym->st_info)) {
 	case STB_LOCAL:  return R_BIN_BIND_LOCAL_STR;
@@ -2833,25 +2858,31 @@ static const char *bind2str(Elf_(Sym) *sym) {
 
 static const char *type2str(Elf_(Sym) *sym) {
 	switch (ELF_ST_TYPE (sym->st_info)) {
-	case STT_NOTYPE:  return R_BIN_TYPE_NOTYPE_STR;
-	case STT_OBJECT:  return R_BIN_TYPE_OBJECT_STR;
-	case STT_FUNC:    return R_BIN_TYPE_FUNC_STR;
+	case STT_NOTYPE: return R_BIN_TYPE_NOTYPE_STR;
+	case STT_OBJECT: return R_BIN_TYPE_OBJECT_STR;
+	case STT_FUNC: return R_BIN_TYPE_FUNC_STR;
 	case STT_SECTION: return R_BIN_TYPE_SECTION_STR;
-	case STT_FILE:    return R_BIN_TYPE_FILE_STR;
-	case STT_COMMON:  return R_BIN_TYPE_COMMON_STR;
-	case STT_TLS:     return R_BIN_TYPE_TLS_STR;
-	case STT_NUM:     return R_BIN_TYPE_NUM_STR;
-	case STT_LOOS:    return R_BIN_TYPE_LOOS_STR;
-	case STT_HIOS:    return R_BIN_TYPE_HIOS_STR;
-	case STT_LOPROC:  return R_BIN_TYPE_LOPROC_STR;
-	case STT_HIPROC:  return R_BIN_TYPE_HIPROC_STR;
-	default:          return R_BIN_TYPE_UNKNOWN_STR;
+	case STT_FILE: return R_BIN_TYPE_FILE_STR;
+	case STT_COMMON: return R_BIN_TYPE_COMMON_STR;
+	case STT_TLS: return R_BIN_TYPE_TLS_STR;
+	case STT_NUM: return R_BIN_TYPE_NUM_STR;
+	case STT_LOOS: return R_BIN_TYPE_LOOS_STR;
+	case STT_HIOS: return R_BIN_TYPE_HIOS_STR;
+	case STT_LOPROC: return R_BIN_TYPE_LOPROC_STR;
+	case STT_HIPROC: return R_BIN_TYPE_HIPROC_STR;
+	default: return R_BIN_TYPE_UNKNOWN_STR;
 	}
 }
+static const char *bintype2str(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
+	if (is_special_symbol (bin, sym, ret->name)) {
+		return R_BIN_TYPE_SPECIAL_SYM_STR;
+	}
+	return type2str(sym);
+}
 
-static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
+static void fill_symbol_bind_and_type(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
 	ret->bind = bind2str (sym);
-	ret->type = type2str (sym);
+	ret->type = bintype2str (bin, ret, sym);
 }
 
 static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
@@ -2999,7 +3030,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].ordinal = i;
 		ret[ret_ctr].in_shdr = false;
 		ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
-		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[i]);
+		fill_symbol_bind_and_type (bin, &ret[ret_ctr], &sym[i]);
 		ret[ret_ctr].is_sht_null = is_sht_null;
 		ret[ret_ctr].is_vaddr = is_vaddr;
 		ret[ret_ctr].last = 0;
@@ -3210,31 +3241,6 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
-	if (name[0] != '$') {
-		return false;
-	}
-	switch (name[1]) {
-	case 'a':
-	case 't':
-	case 'd':
-		return ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
-			ELF_ST_BIND (sym->st_info) == STB_LOCAL &&
-			ELF_ST_VISIBILITY (sym->st_info) == STV_DEFAULT;
-	default:
-		return false;
-	}
-}
-
-static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name) {
-	switch (bin->ehdr.e_machine) {
-	case EM_ARM:
-		return is_special_arm_symbol (bin, sym, name);
-	default:
-		return false;
-	}
-}
-
 // TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
@@ -3418,14 +3424,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 					}
 				}
-				// ignore special symbols for now, as they just add a lot of noise
-				// TODO: add a way to retrieve them, e.g. to use them for anal hints, etc.
-				if (is_special_symbol (bin, &sym[k], ret[ret_ctr].name)) {
-					continue;
-				}
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
-				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
+				fill_symbol_bind_and_type (bin, &ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].is_sht_null = is_sht_null;
 				ret[ret_ctr].is_vaddr = is_vaddr;
 				ret[ret_ctr].last = 0;
