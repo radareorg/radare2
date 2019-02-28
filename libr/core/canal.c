@@ -540,7 +540,8 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 }
 
 static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
-	ut16 bufsz = 1000;
+	ut16 bufsz = 1000; // XXX this is wrong
+	eprintf ("Warning: r_anal_try_get_fcn: is slow, should not use fixed bufsz\n");
 	if (!refdepth) {
 		return false;
 	}
@@ -697,10 +698,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	}
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RAnalHint *hint = NULL;
-	ut8 *buf = NULL;
 	int i, nexti = 0;
 	ut64 *next = NULL;
-	int buflen, fcnlen;
+	int fcnlen;
 	RAnalFunction *fcn = r_anal_fcn_new ();
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 	if (!fcnpfx) {
@@ -725,30 +725,32 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
-	buflen = core->anal->opt.bb_max_size;
-	buf = calloc (1, buflen);
-	if (!buf) {
-		eprintf ("Error: malloc (buf)\n");
-		goto error;
-	}
 	do {
 		RFlagItem *f;
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
 		if (core->io->va) {
-			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
+			if (!r_io_is_valid_offset (core->io, at + delta, !core->anal->opt.noncode)) {
+				goto error;
+			}
+		} else {
+			if (!r_io_is_valid_offset (core->io, at + delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
 		}
+#if 0
 		// TODO bring back old hack, should be fixed
-		if (!r_io_read_at (core->io, at + delta, buf, 4)) {
-			goto error;
+		{
+			ut8 buf [4];
+			if (!r_io_read_at (core->io, at + delta, buf, 4)) {
+				goto error;
+			}
 		}
-		(void)r_io_read_at (core->io, at + delta, buf, buflen);
+#endif
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		fcnlen = r_anal_fcn (core->anal, fcn, at + delta, buf, buflen, reftype);
+		fcnlen = r_anal_fcn (core->anal, fcn, at + delta, reftype);
 		if (core->anal->opt.searchstringrefs) {
 			r_anal_set_stringrefs (core, fcn);
 		}
@@ -849,7 +851,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
-	R_FREE (buf);
 
 	if (has_next) {
 		for (i = 0; i < nexti; i++) {
@@ -864,7 +865,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	return true;
 
 error:
-	free (buf);
 	// ugly hack to free fcn
 	if (fcn) {
 		if (!r_anal_fcn_size (fcn) || fcn->addr == UT64_MAX) {
@@ -904,7 +904,7 @@ error:
 	return false;
 }
 
-/* decode and return the RANalOp at the address addr */
+/* decode and return the RAnalOp at the address addr */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	int len;
 	ut8 buf[32];
@@ -961,10 +961,10 @@ static void print_hint_h_format(RAnalHint* hint) {
 	HINTCMD (hint, immbase, " immbase=%d", false);
 	HINTCMD (hint, esil, " esil='%s'", false);
 	if (hint->jump != UT64_MAX) {
-		r_cons_printf (" jump: 0x%"PFMT64x, hint->jump);
+		r_cons_printf (" jump=0x%08"PFMT64x, hint->jump);
 	}
 	if (hint->ret != UT64_MAX) {
-		r_cons_printf (" ret: 0x%"PFMT64x, hint->ret);
+		r_cons_printf (" ret=0x%08"PFMT64x, hint->ret);
 	}
 	r_cons_newline ();
 }
@@ -1492,8 +1492,9 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 	}
 
 	if (ret == R_ANAL_RET_NEW) { /* New bb */
-		// XXX: use static buffer size of 512 or so
-		buf = malloc (core->anal->opt.bb_max_size);
+		// XXX: use read_ahead and so on, but dont allocate that much in here
+		const int buflen = core->anal->opt.bb_max_size; // OMG THIS IS SO WRONG
+		buf = calloc (1, buflen);
 		if (!buf) {
 			goto error;
 		}
@@ -1507,7 +1508,6 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 			if (!r_io_read_at (core->io, at, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;
 			}
-			int buflen = core->anal->opt.bb_max_size;
 			bblen = r_anal_bb (core->anal, bb, at, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR || (bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
@@ -2911,11 +2911,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
 		return;
 	}
-	int bb_size = core->anal->opt.bb_max_size;
-	ut8 *buf = calloc (1, bb_size);
-	if (!buf) {
-		return;
-	}
+	const int max_bb_size = core->anal->opt.bb_max_size;
 	r_list_foreach (fcn->bbs, tmp, bb) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -2923,12 +2919,8 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		if (bb->size < 1) {
 			continue;
 		}
-		if (bb->size > bb_size) {
+		if (bb->size > max_bb_size) {
 			continue;
-		}
-		if (!r_io_read_at (core->io, bb->addr, buf, bb->size)) {
-			//eprintf ("read error\n");
-			break;
 		}
 		pos = bb->addr;
 		while (pos < bb->addr + bb->size) {
@@ -2952,7 +2944,6 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			pos += opsize;
 		}
 	}
-	free (buf);
 	return;
 }
 
@@ -4325,9 +4316,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
-#if 0
-	RAsmOp asmop;
-#endif
 	RAnalOp op = R_EMPTY;
 	ut8 *buf = NULL;
 	bool end_address_set = false;

@@ -758,3 +758,21 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	}
 	return changes;
 }
+
+// returns the '33' in 'rax + 33'
+// returns value for the given register name in specific address / range
+// imho this should not iterate, should be just a helper to get that value
+R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
+	ut8 buf[32];
+	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
+	RAnalOp op = { 0 };
+	ut64 ret = UT64_MAX;
+	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
+		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
+			if (op.src[0]) {
+				return op.src[0]->delta;
+			}
+		}
+	}
+	return 0;
+}
