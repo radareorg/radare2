@@ -125,7 +125,7 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 			p = strdup (current_entry);
 			// if the filter is empty, print the entry and move on
 			if (!user_input[0]) {
-				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', current_entry));
+				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
 			} else {
 				// otherwise we need to emphasize the matching part
 				if (I (context->color)) {
