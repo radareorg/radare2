@@ -904,6 +904,7 @@ R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 	if (p) {
 		(void)vsnprintf (p, ret, fmt, ap);
 		ptr = r_str_append (ptr, p);
+		free (p);
 	}
 	va_end (ap2);
 	va_end (ap);
