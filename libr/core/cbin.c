@@ -1409,7 +1409,7 @@ static bool is_section_symbol(RBinSymbol *s) {
 }
 
 static bool is_special_symbol(RBinSymbol *s) {
-	return !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
+	return s->type && !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
 }
 
 static bool is_section_reloc(RBinReloc *r) {
