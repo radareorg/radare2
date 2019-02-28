@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2019 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -848,26 +848,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 	return idx;
 }
 
-#if 0
-static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
-	ut8 buf[1024];
-	int i;
-	eprintf ("WALK SWITCH TABLE INTO (0x%"PFMT64x ") %"PFMT64x "\n", from, at);
-	for (i = 0; i < 10; i++) {
-		(void) anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
-		// TODO check for return value
-		int sz = r_anal_case (anal, fcn, from, at, buf, sizeof (buf), 0);
-		if (sz < 1) {
-			break;
-		}
-		at += sz;
-	}
-	return 0;
-}
-#endif
-
-static bool purity_checked(HtUP *ht, RAnalFunction *fcn)
-{
+static bool purity_checked(HtUP *ht, RAnalFunction *fcn) {
 	bool checked;
 	ht_up_find (ht, fcn->addr, &checked);
 	return checked;
@@ -1451,7 +1432,6 @@ repeat:
 		case R_ANAL_OP_TYPE_IRJMP:
 			// if the next instruction is a symbol
 			if (anal->opt.ijmp && isSymbolNextInstruction (anal, &op)) {
-				//  do nothing
 				gotoBeach (R_ANAL_RET_END);
 			}
 			// switch statement
