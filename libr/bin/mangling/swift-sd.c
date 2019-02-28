@@ -448,7 +448,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					break;
 				case '_':
 					// it's return value time!
-					p = resolve (types, q+1, &attr); // type
+					p = resolve (types, q + 1, &attr); // type
 					//printf ("RETURN TYPE %s\n", attr);
 					break;
 				default:
@@ -459,6 +459,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					q = getnum (p, &len);
 					if (attr && !strcmp (attr, "generic")) {
 						is_generic = 1;
+					}
+					if (len < 1 || len > 256) {
+						// invalid length
+						break;
 					}
 					//printf ("TYPE: %s LEN %d VALUE %s\n",
 					//	attr, len, getstring (q, len));
@@ -485,7 +489,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 						retmode = 1;
 						len++;
 					}
-					if (len <= (q_end-q)  && q[len]) {
+					if (len <= (q_end - q) && q[len]) {
 						const char *s = getstring (q, len);
 						if (s && *s) {
 							if (is_first) {	
