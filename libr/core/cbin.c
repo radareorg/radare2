@@ -2053,6 +2053,9 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("%s\n", name);
+		} else if (IS_MODE_RAD (mode) && is_special_symbol (symbol)) {
+			/* Skip special symbols because we do not flag them and
+			 * they shouldn't be printed in the rad format either */
 		} else if (IS_MODE_RAD (mode)) {
 			RBinFile *binfile;
 			RBinPlugin *plugin;
