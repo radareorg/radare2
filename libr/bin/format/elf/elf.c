@@ -2856,7 +2856,10 @@ static const char *bind2str(Elf_(Sym) *sym) {
 	}
 }
 
-static const char *type2str(Elf_(Sym) *sym) {
+static const char *type2str(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
+	if (bin && ret && is_special_symbol (bin, sym, ret->name)) {
+		return R_BIN_TYPE_SPECIAL_SYM_STR;
+	}
 	switch (ELF_ST_TYPE (sym->st_info)) {
 	case STT_NOTYPE: return R_BIN_TYPE_NOTYPE_STR;
 	case STT_OBJECT: return R_BIN_TYPE_OBJECT_STR;
@@ -2873,16 +2876,10 @@ static const char *type2str(Elf_(Sym) *sym) {
 	default: return R_BIN_TYPE_UNKNOWN_STR;
 	}
 }
-static const char *bintype2str(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
-	if (is_special_symbol (bin, sym, ret->name)) {
-		return R_BIN_TYPE_SPECIAL_SYM_STR;
-	}
-	return type2str(sym);
-}
 
 static void fill_symbol_bind_and_type(ELFOBJ *bin, struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
 	ret->bind = bind2str (sym);
-	ret->type = bintype2str (bin, ret, sym);
+	ret->type = type2str (bin, ret, sym);
 }
 
 static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
@@ -2997,7 +2994,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		// since we don't know the size of the sym table in this case,
 		// let's stop at the first invalid entry
 		if (!strcmp (bind2str (&sym[i]), R_BIN_BIND_UNKNOWN_STR) ||
-		    !strcmp (type2str (&sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
+		    !strcmp (type2str (NULL, NULL, &sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
 		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
@@ -3411,7 +3408,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						while (!ret[++j].last && j < prev_ret_size) {
 							if (ret[j].offset == ret[ret_ctr].offset &&
 									strcmp (ret[j].name, "") != 0 && strcmp (ret[j].name, &strtab[st_name]) == 0
-									&& strcmp (ret[j].type, type2str (&sym[k])) == 0) {
+									&& strcmp (ret[j].type, type2str (NULL, NULL, &sym[k])) == 0) {
 								found = true;
 								break;
 							}
