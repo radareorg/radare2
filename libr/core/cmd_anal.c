@@ -1312,7 +1312,6 @@ static const char *syscallNumber(int n) {
 }
 
 R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
-	char *res = NULL;
 	int i;
 	char str[64];
 	int defVector = r_syscall_get_swi (core->anal->syscall);
@@ -1330,11 +1329,9 @@ R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 		? r_syscall_get (core->anal->syscall, n, -1)
 		: r_syscall_get (core->anal->syscall, 0, n);
 	if (!item) {
-		res = r_str_appendf (res, "%s = unknown ()", syscallNumber (n));
-		return res;
+		return r_str_newf ("%s = unknown ()", syscallNumber (n));
 	}
-
-	res = r_str_appendf (res, "%s = %s (", syscallNumber (item->num), item->name);
+	char *res = r_str_newf ("%s = %s (", syscallNumber (item->num), item->name);
 	// TODO: move this to r_syscall
 	//TODO replace the hardcoded CC with the sdb ones
 	for (i = 0; i < item->args; i++) {
@@ -1384,8 +1381,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 		}
 	}
 	r_syscall_item_free (item);
-	res = r_str_appendf (res, ")");
-	return res;
+	return r_str_appendf (res, ")");
 }
 
 static void cmd_syscall_do(RCore *core, int n, ut64 addr) {
