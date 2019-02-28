@@ -895,7 +895,7 @@ R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 	va_start (ap, fmt);
 	if (!strchr (fmt, '%')) {
 		va_end (ap);
-		return strdup (fmt);
+		return r_str_append (ptr, fmt);
 	}
 	va_copy (ap2, ap);
 	int ret = vsnprintf (NULL, 0, fmt, ap2);
