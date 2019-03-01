@@ -2053,65 +2053,66 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("%s\n", name);
-		} else if (IS_MODE_RAD (mode) && is_special_symbol (symbol)) {
+		} else if (IS_MODE_RAD (mode)) {
 			/* Skip special symbols because we do not flag them and
 			 * they shouldn't be printed in the rad format either */
-		} else if (IS_MODE_RAD (mode)) {
-			RBinFile *binfile;
-			RBinPlugin *plugin;
-			char *name = strdup (sn.demname? sn.demname: r_symbol_name);
-			r_name_filter (name, -1);
-			if (!strncmp (name, "imp.", 4)) {
-				if (lastfs != 'i') {
-					r_cons_printf ("fs imports\n");
-				}
-				lastfs = 'i';
-			} else {
-				if (lastfs != 's') {
-					r_cons_printf ("fs %s\n",
-						exponly? "exports": "symbols");
-				}
-				lastfs = 's';
-			}
-			if (r->bin->prefix) {
-				if (symbol->dup_count) {
-					r_cons_printf ("f %s.sym.%s_%d %u 0x%08"PFMT64x"\n",
-						r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
+			if (!is_special_symbol (symbol)) {
+				RBinFile *binfile;
+				RBinPlugin *plugin;
+				char *name = strdup (sn.demname? sn.demname: r_symbol_name);
+				r_name_filter (name, -1);
+				if (!strncmp (name, "imp.", 4)) {
+					if (lastfs != 'i') {
+						r_cons_printf ("fs imports\n");
+					}
+					lastfs = 'i';
 				} else {
-					r_cons_printf ("f %s.sym.%s %u 0x%08"PFMT64x"\n",
-						r->bin->prefix, name, symbol->size, addr);
+					if (lastfs != 's') {
+						r_cons_printf ("fs %s\n",
+							exponly? "exports": "symbols");
+					}
+					lastfs = 's';
 				}
-			} else {
-				if (*name) {
+				if (r->bin->prefix) {
 					if (symbol->dup_count) {
-						r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
-								name, symbol->dup_count, symbol->size, addr);
+						r_cons_printf ("f %s.sym.%s_%d %u 0x%08" PFMT64x "\n",
+							r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
 					} else {
-						r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
-								name, symbol->size, addr);
+						r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
+							r->bin->prefix, name, symbol->size, addr);
 					}
 				} else {
-					// we dont want unnamed symbol flags
-				}
-			}
-			binfile = r_core_bin_cur (r);
-			plugin = r_bin_file_cur_plugin (binfile);
-			if (plugin && plugin->name) {
-				if (!strncmp (plugin->name, "pe", 2)) {
-					char *p, *module = strdup (r_symbol_name);
-					p = strstr (module, ".dll_");
-					if (p) {
-						const char *symname = p + 5;
-						*p = 0;
-						if (r->bin->prefix) {
-							r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
-								module, symbol->ordinal, r->bin->prefix, symname);
+					if (*name) {
+						if (symbol->dup_count) {
+							r_cons_printf ("f sym.%s_%d %u 0x%08" PFMT64x "\n",
+								name, symbol->dup_count, symbol->size, addr);
 						} else {
-							r_cons_printf ("k bin/pe/%s/%d=%s\n",
-								module, symbol->ordinal, symname);
+							r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
+								name, symbol->size, addr);
 						}
+					} else {
+						// we dont want unnamed symbol flags
 					}
-					free (module);
+				}
+				binfile = r_core_bin_cur (r);
+				plugin = r_bin_file_cur_plugin (binfile);
+				if (plugin && plugin->name) {
+					if (!strncmp (plugin->name, "pe", 2)) {
+						char *p, *module = strdup (r_symbol_name);
+						p = strstr (module, ".dll_");
+						if (p) {
+							const char *symname = p + 5;
+							*p = 0;
+							if (r->bin->prefix) {
+								r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
+									module, symbol->ordinal, r->bin->prefix, symname);
+							} else {
+								r_cons_printf ("k bin/pe/%s/%d=%s\n",
+									module, symbol->ordinal, symname);
+							}
+						}
+						free (module);
+					}
 				}
 			}
 		} else {
