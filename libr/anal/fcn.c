@@ -372,6 +372,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			anal->iob.read_at (anal->iob.io, x, bbuf, anal->opt.bb_max_size);\
 			ret = fcn_recurse (anal, fcn, x, bbuf, anal->opt.bb_max_size, depth - 1);\
 			r_anal_fcn_update_tinyrange_bbs (fcn);\
+			r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));\
 			free (bbuf);\
 		}\
 }
