@@ -511,32 +511,58 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	const RList *list = r_flag_get_list (f, off);
 	RFlagItem *ret = NULL;
 	const char *spacename;
-	va_list ap;
+	RSpace **spaces;
+	RListIter *iter;
+	RFlagItem *flg;
+	va_list ap, aq;
+	size_t n_spaces = 0, i;
 
 	va_start (ap, off);
 	if (r_list_empty (list)) {
 		goto beach;
 	}
 
-	/* if we won't find anything in a preferred spaces, just grab it from
-	 * any of the flag spaces. */
-	ret = r_list_get_top (list);
+	va_copy (aq, ap);
+	spacename = va_arg (aq, const char *);
+	while (spacename) {
+		n_spaces++;
+		spacename = va_arg (aq, const char *);
+	}
+	va_end (aq);
+
+	i = 0;
+	spaces = R_NEWS (RSpace *, n_spaces);
 	spacename = va_arg (ap, const char *);
 	while (spacename) {
-		RSpace *myspace = r_flag_space_get (f, spacename);
-		if (myspace) {
-			RListIter *iter;
-			RFlagItem *flg;
-
-			r_list_foreach (list, iter, flg) {
-				if (flg->space == myspace) {
-					ret = flg;
-					goto beach;
-				}
-			}
+		RSpace *space = r_flag_space_get (f, spacename);
+		if (space) {
+			spaces[i++] = space;
 		}
 		spacename = va_arg (ap, const char *);
 	}
+	n_spaces = i;
+
+	ut64 min_space_i = n_spaces + 1;
+	r_list_foreach (list, iter, flg) {
+		for (i = 0; i < n_spaces; ++i) {
+			if (flg->space == spaces[i]) {
+				break;
+			}
+			if (i >= min_space_i) {
+				break;
+			}
+		}
+
+		if (i < min_space_i) {
+			min_space_i = i;
+			ret = flg;
+		}
+		if (!min_space_i) {
+			// this is the best flag we can find, let's stop immediately
+			break;
+		}
+	}
+	free (spaces);
 beach:
 	va_end (ap);
 	return ret? evalFlag (f, ret): NULL;

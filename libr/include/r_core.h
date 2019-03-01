@@ -52,6 +52,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_FLAGS_FS_RESOURCES "resources"
 #define R_FLAGS_FS_SECTIONS "sections"
 #define R_FLAGS_FS_SEGMENTS "segments"
+#define R_FLAGS_FS_SIGNS "sign"
 #define R_FLAGS_FS_STRINGS "strings"
 #define R_FLAGS_FS_SYMBOLS "symbols"
 #define R_FLAGS_FS_SYSCALLS "syscalls"
@@ -352,6 +353,7 @@ R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
+R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
 R_API int r_core_flush(RCore *core, const char *cmd);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
