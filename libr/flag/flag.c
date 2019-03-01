@@ -522,6 +522,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 		goto beach;
 	}
 
+	// count spaces in the vaarg
 	va_copy (aq, ap);
 	spacename = va_arg (aq, const char *);
 	while (spacename) {
@@ -530,6 +531,7 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	}
 	va_end (aq);
 
+	// get RSpaces from the names
 	i = 0;
 	spaces = R_NEWS (RSpace *, n_spaces);
 	spacename = va_arg (ap, const char *);
@@ -544,6 +546,8 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 
 	ut64 min_space_i = n_spaces + 1;
 	r_list_foreach (list, iter, flg) {
+		// get the "priority" of the flag flagspace and
+		// check if better than what we found so far
 		for (i = 0; i < n_spaces; ++i) {
 			if (flg->space == spaces[i]) {
 				break;
