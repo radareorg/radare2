@@ -741,7 +741,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				continue;
 			}
 		}
-		f = r_flag_get_i2 (core->flags, fcn->addr);
+		f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
 
 		if (f && f->name && strncmp (f->name, "sect", 4)) {
 			if (!strncmp (fcn->name, "loc.", 4)) {
@@ -754,11 +754,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		} else {
 			R_FREE (fcn->name);
-			f = r_flag_get_i (core->flags, fcn->addr);
 			if (f && *f->name && strncmp (f->name, "sect", 4)) {
 				fcn->name = strdup (f->name);
 			} else {
-
 				fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
 			}
 		}
@@ -769,22 +767,18 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			f = r_flag_get_i2 (core->flags, fcn->addr);
-			R_FREE (fcn->name);
-			if (f && f->name) { /* Check if it's already flagged */
+			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
+			if (f && f->name && (!fcn->name || strcmp (fcn->name, f->name)) && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
+				R_FREE (fcn->name);
 				fcn->name = strdup (f->name);
 			} else {
-				f = r_flag_get_i (core->flags, fcn->addr);
-				if (f && *f->name && strncmp (f->name, "sect", 4)) {
-					fcn->name = strdup (f->name);
-				} else {
-					const char *fcnpfx = r_anal_fcn_type_tostring (fcn->type);
-					if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
-						fcnpfx = r_config_get (core->config, "anal.fcnprefix");
-					}
-					fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
-					autoname_imp_trampoline (core, fcn);
+				R_FREE (fcn->name);
+				const char *fcnpfx = r_anal_fcn_type_tostring (fcn->type);
+				if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
+					fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 				}
+				fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+				autoname_imp_trampoline (core, fcn);
 				/* Add flag */
 				r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 				r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
@@ -4540,7 +4534,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 								if (cfg_anal_strings) {
 									add_string_ref (core, dst);
 								}
-								if ((f = r_flag_get_i2 (core->flags, dst))) {
+								if ((f = r_core_flag_get_by_spaces (core->flags, dst))) {
 									r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
 								} else if ((str = is_string_at (mycore, dst, NULL))) {
 									char *str2 = sdb_fmt ("esilref: '%s'", str);

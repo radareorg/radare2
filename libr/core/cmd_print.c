@@ -2424,7 +2424,7 @@ r_cons_pop();
 				ut64 ptr = r_num_math (NULL, str);
 				RFlagItem *flag = NULL;
 				if (str) {
-					flag = r_flag_get_i2 (core->flags, ptr);
+					flag = r_core_flag_get_by_spaces (core->flags, ptr);
 				}
 				if (!flag) {
 					if (string && !strncmp (string, "0x", 2)) {

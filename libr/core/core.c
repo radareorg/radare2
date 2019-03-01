@@ -2336,7 +2336,7 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 	return res;
 }
 
-static RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
+R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off) {
 	return r_flag_get_by_spaces (f, off,
 		R_FLAGS_FS_FUNCTIONS,
 		R_FLAGS_FS_SIGNS,
@@ -2463,6 +2463,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
+	core->anal->flag_get = r_core_flag_get_by_spaces;
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;

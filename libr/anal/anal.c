@@ -726,7 +726,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	RFlagItem *fi = r_flag_get_i2 (anal->flb.f, addr);
+	RFlagItem *fi = anal->flag_get (anal->flb.f, addr);
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->name)) {
 			return true;
