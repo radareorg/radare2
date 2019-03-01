@@ -1220,7 +1220,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			if (fun) {
 				if (iter != xrefs->tail) {
 					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
-					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1);
+					next_fun = fcnIn (ds, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
 						r_list_append (addrs, r_num_dup (refi->addr));
 						continue;
