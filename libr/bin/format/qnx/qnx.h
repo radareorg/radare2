@@ -78,8 +78,8 @@ typedef struct lmf_rw_end {
 
 R_PACKED (
 typedef struct {
-	Sdb *kv;
-	lmf_header lmfh;
+    Sdb *kv;
+    lmf_header lmfh;
     RList* sections;
     lmf_rw_end rwend;
 }) QnxObj;
