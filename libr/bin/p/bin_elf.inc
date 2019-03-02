@@ -61,7 +61,13 @@ static char *setphname(ut16 mach, Elf_(Word) ptyp) {
 	// TODO to complete over time
 	if (mach == EM_ARM) {
 		if (ptyp == SHT_ARM_EXIDX) {
-			return strdup ("EIXDX");
+			return strdup ("EXIDX");
+		}
+	} else if (mach == EM_MIPS) {
+		if (ptyp == PT_MIPS_ABIFLAGS) {
+			return strdup ("ABIFLAGS");
+		} else if (ptyp == PT_MIPS_REGINFO) {
+			return strdup ("REGINFO");
 		}
 	}
 
