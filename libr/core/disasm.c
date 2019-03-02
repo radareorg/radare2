@@ -685,7 +685,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
-	const char *strenc_str = r_config_get (core->config, "asm.strenc");
+	const char *strenc_str = r_config_get (core->config, "bin.str.enc");
 	if (!strcmp (strenc_str, "latin1")) {
 		ds->strenc = R_STRING_ENC_LATIN1;
 	} else if (!strcmp (strenc_str, "utf8")) {
@@ -3102,7 +3102,6 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		// f = r_anal_get_fcn_in (core->anal, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->name && ds->opstr && !strstr (ds->opstr, f->name)) {
-			//beginline (core, ds, f);
 			// print label
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
@@ -4291,6 +4290,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_CJMP:
 		ds_comment_esil (ds, true, true, ds->esil_likely? "; likely" : "; unlikely");
 		break;
+	case R_ANAL_OP_TYPE_JMP:
+		{
+			ut64 addr = ds->analop.jump;
+			if (!r_anal_get_fcn_at (ds->core->anal, addr, R_ANAL_FCN_TYPE_NULL)
+					&& !r_flag_get_at (core->flags, addr, false)) {
+				break;
+			}
+		}
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:

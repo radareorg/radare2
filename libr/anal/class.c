@@ -4,9 +4,6 @@
 #include <r_vector.h>
 #include "../include/r_anal.h"
 
-#define CLASSES_FLAGSPACE "classes"
-
-
 static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name);
 static void r_anal_class_method_delete_class(RAnal *anal, const char *class_name);
 static void r_anal_class_vtable_delete_class(RAnal *anal, const char *class_name);
@@ -422,37 +419,32 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 }
 
 static void r_anal_class_set_flag(RAnal *anal, const char *name, ut64 addr) {
-	if (!name || !anal->flb.set || !anal->flb.push_fs || !anal->flb.pop_fs) {
+	if (!name || !anal->flg_class_set) {
 		return;
 	}
-	anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
-	anal->flb.set (anal->flb.f, name, addr, 0);
-	anal->flb.pop_fs (anal->flb.f);
+	anal->flg_class_set (anal->flb.f, name, addr, 0);
 }
 
 static void r_anal_class_unset_flag(RAnal *anal, const char *name) {
-	if (!name || !anal->flb.unset_name || !anal->flb.push_fs || !anal->flb.pop_fs) {
+	if (!name || !anal->flb.unset_name || !anal->flg_class_get) {
 		return;
 	}
-	anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
-	anal->flb.unset_name (anal->flb.f, name);
-	anal->flb.pop_fs (anal->flb.f);
+	if (anal->flg_class_get (anal->flb.f, name)) {
+		anal->flb.unset_name (anal->flb.f, name);
+	}
 }
 
 static void r_anal_class_rename_flag(RAnal *anal, const char *old_name, const char *new_name) {
-	if (!old_name || !new_name || !anal->flb.set || !anal->flb.get || !anal->flb.push_fs || !anal->flb.pop_fs || !anal->flb.unset_name) {
+	if (!old_name || !new_name || !anal->flb.unset || !anal->flg_class_get || !anal->flg_class_set) {
 		return;
 	}
-	anal->flb.push_fs (anal->flb.f, CLASSES_FLAGSPACE);
-	RFlagItem *flag = anal->flb.get (anal->flb.f, old_name);
+	RFlagItem *flag = anal->flg_class_get (anal->flb.f, old_name);
 	if (!flag) {
-		anal->flb.pop_fs (anal->flb.f);
 		return;
 	}
 	ut64 addr = flag->offset;
 	anal->flb.unset (anal->flb.f, flag);
-	anal->flb.set (anal->flb.f, new_name, addr, 0);
-	anal->flb.pop_fs (anal->flb.f);
+	anal->flg_class_set (anal->flb.f, new_name, addr, 0);
 }
 
 static RAnalClassErr r_anal_class_add_attr_unique_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {

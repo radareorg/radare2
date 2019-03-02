@@ -229,7 +229,6 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 			if (as->quiet) {
 				printf ("%s\n", h->name);
 			} else if (as->json) {
-				const char *license = "GPL";
 				pj_k (pj, h->name);
 				pj_o (pj);
 				pj_k (pj, "bits");
@@ -237,7 +236,7 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 				pj_i (pj, 32);
 				pj_i (pj, 64);
 				pj_end (pj);
-				pj_ks (pj, "license", license);
+				pj_ks (pj, "license", h->license? h->license: "unknown");
 				pj_ks (pj, "description", h->desc);
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
@@ -625,10 +624,12 @@ int main (int argc, char *argv[]) {
 		case 's':
 			if (*optarg == '?') {
 				printf ("att\nintel\nmasm\njz\nregnum\n");
+				__as_free (as);
 				return 0;
 			} else {
 				int syntax = r_asm_syntax_from_string (optarg);
 				if (syntax == -1) {
+					__as_free (as);
 					return 1;
 				}
 				r_asm_set_syntax (as->a, syntax);

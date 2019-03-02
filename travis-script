@@ -25,8 +25,15 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     if [ "${R2_SYS_LZ4}" != "" ] ; then
         OPTS="${OPTS} -D use_sys_lz4=${R2_SYS_LZ4}"
     fi
+    if [ "${R2_SYS_OPENSSL}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_openssl=${R2_SYS_OPENSSL}"
+    fi
     if [ "${COVERAGE}" == "1" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
+    fi
+    if [ "${ASAN}" == "1" ] ; then
+        # -Db_lundef=false required for issue with clang+meson (see https://github.com/mesonbuild/meson/issues/764)
+        OPTS="${OPTS} -Db_sanitize=address -Db_lundef=false"
     fi
 
     meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
@@ -37,22 +44,32 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 else
     echo "Installing with acr + make"
+    if [ "${R2_PLUGINS_FILE}" != "" ] ; then
+	cp "plugins.${R2_PLUGINS_FILE}.cfg" plugins.cfg
+    fi
+    if [ "${ASAN}" == "1" ] ; then
+        export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+        export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+    fi
     ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
     make -s -j2 > /dev/null || exit 1
     make install > /dev/null || exit 1
     export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
 fi
-export NOOK=1
-export NOREPORT=1
-cd radare2-regressions
-git remote -v
-git branch
-git rev-parse HEAD
-VERBOSE=1 make -k all || exit 1
 
-if [ "${COVERAGE}" == "1" ] ; then
-    cd ../build
-    curl -s https://codecov.io/bash > ./codecov.sh
-    chmod +x ./codecov.sh
-    ./codecov.sh -K -v 2>/dev/null
+if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
+    export NOOK=1
+    export NOREPORT=1
+    cd radare2-regressions
+    git remote -v
+    git branch
+    git rev-parse HEAD
+    VERBOSE=1 make -k all || exit 1
+
+    if [ "${COVERAGE}" == "1" ] ; then
+        cd ../build
+        curl -s https://codecov.io/bash > ./codecov.sh
+        chmod +x ./codecov.sh
+        ./codecov.sh -K -v 2>/dev/null
+    fi
 fi

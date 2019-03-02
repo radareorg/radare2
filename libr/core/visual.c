@@ -3533,9 +3533,9 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 		/* TODO: we need a helper into r_flags to do that */
 		RFlagItem *f = NULL;
-		if (core->anal->flb.push_fs (core->flags, "symbols")) {
-			f = core->anal->flb.get_at (core->flags, addr, showDelta);
-			core->anal->flb.pop_fs (core->flags);
+		if (r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS)) {
+			f = r_flag_get_at (core->flags, addr, showDelta);
+			r_flag_space_pop (core->flags);
 		}
 		if (!f) {
 			f = r_flag_get_at (core->flags, addr, showDelta);

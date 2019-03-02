@@ -1798,8 +1798,8 @@ void backedge_info (RAGraph *g) {
 				e->is_reversed = true;
 				e->from = a;
 				e->to = b;
-				e->x = r_list_new();
-				e->y = r_list_new();
+				e->x = r_list_new ();
+				e->y = r_list_new ();
 
 				if (r < l) {
 					r_list_append ((g->layout == 0 ? e->x : e->y), (void *) (size_t) (max + 1));
@@ -1823,8 +1823,8 @@ void backedge_info (RAGraph *g) {
 		e->is_reversed = true;
 		e->from = NULL;
 		e->to = NULL;
-		e->x = r_list_new();
-		e->y = r_list_new();
+		e->x = r_list_new ();
+		e->y = r_list_new ();
 		if (g->layout == 0) {
 			r_list_append (e->y, (void *) (size_t) (n->y - 1 - inedge));
 		} else {
@@ -1938,7 +1938,7 @@ static void set_layout(RAGraph *g) {
 	switch (g->layout) {
 	default:
 	case 0: // vertical layout
-		/* finalize x coordinate */
+		/* horizontal finalize x coordinate */
 		for (i = 0; i < g->n_layers; ++i) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
@@ -1973,7 +1973,7 @@ static void set_layout(RAGraph *g) {
 		break;
 	/* experimental */
 	case 1: // horizontal layout
-		/* finalize x coordinate */
+		/* vertical y coordinate */
 		for (i = 0; i < g->n_layers; i++) {
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
@@ -1986,7 +1986,8 @@ static void set_layout(RAGraph *g) {
 		}
 
 		set_layer_gap (g);
-		/* vertical align */
+
+		/* horizontal align */
 		for (i = 0; i < g->n_layers; i++) {
 			int xval = 1 + g->layers[0].gap + 1;
 			for (k = 1; k <= i; k++) {
@@ -2953,15 +2954,30 @@ static void agraph_print_edges(RAGraph *g) {
 					style.dot_style = DOT_STYLE_BACKEDGE;
 				}
 
-				ax = a->x + a->w;
-				ay = a->is_dummy ? a->y : a->y + R_EDGES_X_INC + out_nth;
+				ax = a->x;
+				if (g->zoom > 0) {
+					ax += a->w;
+				} else {
+					ax ++;
+				}
+				ay = a->y;
+				if (!a->is_dummy && g->zoom > 0) {
+					ay += R_EDGES_X_INC + out_nth;
+				}
 				bx = b->x - 1;
-				by = b->is_dummy ? b->y : b->y + R_EDGES_X_INC + out_nth;
-
+				by = b->y;
+				if (!b->is_dummy && g->zoom > 0) {
+					by += R_EDGES_X_INC + out_nth;
+				}
 
 				if (a->w < a->layer_width) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
-					ax = a->x + a->layer_width;
+					ax = a->x;
+					if (g->zoom > 1) {
+						ax += a->layer_width;
+					} else {
+						ax += 1;
+					}
 					style.symbol = LINE_NOSYM_HORIZ;
 				}
 				if (bx >= ax) {

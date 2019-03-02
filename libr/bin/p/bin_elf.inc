@@ -57,6 +57,23 @@ static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	eobj->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
+static char *setphname(ut16 mach, Elf_(Word) ptyp) {
+	// TODO to complete over time
+	if (mach == EM_ARM) {
+		if (ptyp == SHT_ARM_EXIDX) {
+			return strdup ("EXIDX");
+		}
+	} else if (mach == EM_MIPS) {
+		if (ptyp == PT_MIPS_ABIFLAGS) {
+			return strdup ("ABIFLAGS");
+		} else if (ptyp == PT_MIPS_REGINFO) {
+			return strdup ("REGINFO");
+		}
+	}
+
+	return strdup ("UNKNOWN");
+}
+
 static Sdb* get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (o && o->bin_obj) {
@@ -204,6 +221,7 @@ static RList* sections(RBinFile *bf) {
 	}
 
 	// program headers is another section
+	ut16 mach = obj->ehdr.e_machine;
 	num = obj->ehdr.e_phnum;
 	phdr = obj->phdr;
 	if (phdr) {
@@ -250,7 +268,7 @@ static RList* sections(RBinFile *bf) {
 				ptr->name = strdup ("NOTE");
 				break;
 			default:
-				ptr->name = strdup ("UNKNOWN");
+				ptr->name = setphname (mach, phdr[i].p_type);
 				break;
 			}
 			r_list_append (ret, ptr);

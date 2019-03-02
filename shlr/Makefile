@@ -255,7 +255,6 @@ capstone-clean:
 	cd capstone ; $(MAKE) clean
 
 capstone: capstone-$(CS_VER).tar.gz
-	curl -o capstone-$(CS_VER).tar.gz $(CS_TAR)
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone

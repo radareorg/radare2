@@ -1842,7 +1842,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 	if (verbose) {
-		return r_core_anal_hasrefs_to_depth(core, value, r_config_get_i (core->config, "hex.depth"));
+		return r_core_anal_hasrefs_to_depth (core, value, r_config_get_i (core->config, "hex.depth"));
 	}
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
 	if (fi) {
@@ -1853,17 +1853,45 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
-	ut64 type;
 	char *mapname = NULL;
-	RAnalFunction *fcn;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
-	type = r_core_anal_address (core, value);
-	fcn = r_anal_get_fcn_in (core->anal, value, 0);
+	ut64 type = r_core_anal_address (core, value);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (value && value != UT64_MAX) {
 		RDebugMap *map = r_debug_map_get (core->dbg, value);
 		if (map && map->name && map->name[0]) {
 			mapname = strdup (map->name);
 		}
+	}
+	int bits = core->assembler->bits;
+	switch (bits) {
+	case 16: // umf, not in sync with pxr
+		{
+			st16 v = (st16)(value & UT16_MAX);
+			st16 h = UT16_MAX / 0x100;
+			if (v > -h && v < h) {
+				r_strbuf_appendf (s," %hd", v);
+			}
+		}
+		break;
+	case 32:
+		{
+			st32 v = (st32)(value & 0xffffffff);
+			st32 h = UT32_MAX / 0x10000;
+			if (v > -h && v < h) {
+				r_strbuf_appendf (s," %d", v);
+			}
+		}
+		break;
+	case 64:
+		{
+			st64 v = (st64)(value);
+			st64 h = UT64_MAX / 0x1000000;
+			if (v > -h && v < h) {
+				r_strbuf_appendf (s," %"PFMT64d, v);
+			}
+		}
+		break;
 	}
 	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
@@ -1877,7 +1905,10 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		}
 	}
 	if (fi) {
-		r_strbuf_appendf (s, " %s", fi->name);
+		RRegItem *r = r_reg_get (core->dbg->reg, fi->name, -1);
+		if (!r) {
+			r_strbuf_appendf (s, " %s", fi->name);
+		}
 	}
 	if (fcn) {
 		r_strbuf_appendf (s, " %s", fcn->name);
@@ -2284,6 +2315,27 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 	free (str);
 }
 
+static RFlagItem *core_flg_class_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
+	r_flag_space_push (f, R_FLAGS_FS_CLASSES);
+	RFlagItem *res = r_flag_set (f, name, addr, size);
+	r_flag_space_pop (f);
+	return res;
+}
+
+static RFlagItem *core_flg_class_get(RFlag *f, const char *name) {
+	r_flag_space_push (f, R_FLAGS_FS_CLASSES);
+	RFlagItem *res = r_flag_get (f, name);
+	r_flag_space_pop (f);
+	return res;
+}
+
+static RFlagItem *core_flg_fcn_set (RFlag *f, const char *name, ut64 addr, ut32 size) {
+	r_flag_space_push (f, R_FLAGS_FS_FUNCTIONS);
+	RFlagItem *res = r_flag_set (f, name, addr, size);
+	r_flag_space_pop (f);
+	return res;
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2442,6 +2494,9 @@ R_API bool r_core_init(RCore *core) {
 	r_core_bind (core, &(core->fs->cob));
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));
+	core->anal->flg_class_set = core_flg_class_set;
+	core->anal->flg_class_get = core_flg_class_get;
+	core->anal->flg_fcn_set = core_flg_fcn_set;
 	r_anal_bind (core->anal, &(core->parser->analb));
 
 	r_core_bind (core, &(core->anal->coreb));
