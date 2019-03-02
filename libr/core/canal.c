@@ -743,21 +743,20 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
 
-		if (f && f->name && strncmp (f->name, "sect", 4)) {
+		if (f && f->name) {
 			if (!strncmp (fcn->name, "loc.", 4)) {
 				R_FREE (fcn->name);
 				fcn->name = strdup (f->name);
-			}
-			if (!strncmp (fcn->name, "fcn.", 4)) {
+			} else if (!strncmp (fcn->name, "fcn.", 4)) {
 				R_FREE (fcn->name);
 				fcn->name = strdup (f->name);
-			}
-		} else {
-			R_FREE (fcn->name);
-			if (f && *f->name && strncmp (f->name, "sect", 4)) {
-				fcn->name = strdup (f->name);
 			} else {
-				fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
+				R_FREE (fcn->name);
+				if (strncmp (f->name, "sect", 4)) {
+					fcn->name = strdup (f->name);
+				} else {
+					fcn->name = r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr);
+				}
 			}
 		}
 		if (fcnlen == R_ANAL_RET_ERROR ||
