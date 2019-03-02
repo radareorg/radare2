@@ -767,7 +767,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
-			if (f && f->name && (!fcn->name || strcmp (fcn->name, f->name)) && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
+			if (f && f->name && strncmp (f->name, "sect", 4)) { /* Check if it's already flagged */
 				R_FREE (fcn->name);
 				fcn->name = strdup (f->name);
 			} else {
