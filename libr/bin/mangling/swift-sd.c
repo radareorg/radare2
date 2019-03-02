@@ -460,7 +460,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					if (attr && !strcmp (attr, "generic")) {
 						is_generic = 1;
 					}
-					if (len < 1 || len > 256) {
+					if (len < 0 || len > 256) {
 						// invalid length
 						break;
 					}
