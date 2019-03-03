@@ -2636,7 +2636,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
 	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
-	SETICB ("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
+	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
 
