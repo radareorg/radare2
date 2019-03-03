@@ -93,10 +93,10 @@ static const char *help_msg_ac[] = {
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
 	"acv", " [class name] [addr] ([offset])", "add vtable address to class",
-	"acv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
+	"acv-", " [class name] [vtable id]", "delete vtable by id (from acv [class name])",
 	"acb", " [class name]", "list bases of class",
 	"acb", " [class name] [base class name] ([offset])", "add base class",
-	"acb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
+	"acb-", " [class name] [base class id]", "delete base by id (from acb [class name])",
 	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
 	"acmn", " [class name] [method name] [new name]", "rename method",
@@ -616,7 +616,7 @@ static const char *help_msg_av[] = {
 	"av*", "", "like av, but as r2 commands",
 	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
-	"avrr", "", "recover class info from all findable RTTI (see aC)",
+	"avrr", "", "recover class info from all findable RTTI (see ac)",
 	"avrD", " [classname]", "demangle a class name from RTTI",
 	NULL
 };
@@ -8114,9 +8114,9 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ': // "aCm"
-	case '-': // "aCm-"
-	case 'n': { // "aCmn"
+	case ' ': // "acm"
+	case '-': // "acm-"
+	case 'n': { // "acmn"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -8200,8 +8200,8 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ': // "aCb"
-	case '-': { // "aCb-"
+	case ' ': // "acb"
+	case '-': { // "acb-"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -8267,8 +8267,8 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ': // "aCv"
-	case '-': { // "aCv-"
+	case ' ': // "acv"
+	case '-': { // "acv-"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -8288,7 +8288,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			if (c == ' ') {
 				r_anal_class_list_vtables (core->anal, cstr);
 			} else /*if (c == '-')*/ {
-				eprintf ("No vtable id given. See aCv [class name].\n");
+				eprintf ("No vtable id given. See acv [class name].\n");
 			}
 			free (cstr);
 			break;
@@ -8332,12 +8332,12 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
-	case 'l': // "aCl"
+	case 'l': // "acl"
 		r_anal_class_list (core->anal, input[1]);
 		break;
-	case ' ': // "aC"
-	case '-': // "aC-"
-	case 'n': { // "aCn"
+	case ' ': // "ac"
+	case '-': // "ac-"
+	case 'n': { // "acn"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			break;
@@ -8377,13 +8377,13 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'v':
 		cmd_anal_class_vtable (core, input + 1);
 		break;
-	case 'b': // "aCb"
+	case 'b': // "acb"
 		cmd_anal_class_base (core, input + 1);
 		break;
-	case 'm': // "aCm"
+	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
-	default: // "aC?"
+	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
