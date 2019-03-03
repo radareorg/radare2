@@ -265,6 +265,7 @@ static const char *help_msg_af[] = {
 	"afr", " ([name]) ([addr])", "analyze functions recursively",
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
+	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
@@ -2355,17 +2356,33 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
-	case 'f': // "aff"
-		r_anal_fcn_fit_overlaps (core->anal, NULL);
+	case '-': // "af-"
+		if (!input[2] || !strcmp (input + 2, "*")) {
+			RAnalFunction *f;
+			RListIter *iter;
+			r_list_foreach (core->anal->fcns, iter, f) {
+				r_anal_del_jmprefs (core->anal, f);
+			}
+			r_list_purge (core->anal->fcns);
+			core->anal->fcn_tree = NULL;
+		} else {
+			ut64 addr = input[2]
+				? r_num_math (core->num, input + 2)
+				: core->offset;
+			r_anal_fcn_del_locs (core->anal, addr);
+			r_anal_fcn_del (core->anal, addr);
+		}
 		break;
-	case 'a':
-		if (input[2] == 'l') { // afal : list function call arguments
+	case 'a': // "afa"
+		if (input[2] == 'l') { // "afal" : list function call arguments
 			int show_args = r_config_get_i (core->config, "dbg.funcarg");
 			if (show_args) {
 				r_core_print_func_args (core);
 			}
-			break;
+		} else {
+			r_core_print_func_args (core);
 		}
+		break;
 	case 'd': // "afd"
 		{
 		ut64 addr = 0;
@@ -2389,22 +2406,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case '-': // "af-"
-		if (!input[2] || !strcmp (input + 2, "*")) {
-			RAnalFunction *f;
-			RListIter *iter;
-			r_list_foreach (core->anal->fcns, iter, f) {
-				r_anal_del_jmprefs (core->anal, f);
-			}
-			r_list_purge (core->anal->fcns);
-			core->anal->fcn_tree = NULL;
-		} else {
-			ut64 addr = input[2]
-				? r_num_math (core->num, input + 2)
-				: core->offset;
-			r_anal_fcn_del_locs (core->anal, addr);
-			r_anal_fcn_del (core->anal, addr);
-		}
+	case 'f': // "aff"
+		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		break;
 	case 'u': // "afu"
 		{
