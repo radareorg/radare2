@@ -1462,7 +1462,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 }
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
-R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
+R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 	RAnalBlock *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
@@ -1480,9 +1480,9 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	}
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (at >= bbi->addr && at < bbi->addr + bbi->size
-		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, at))) {
-			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, at);
+		if (addr >= bbi->addr && addr < bbi->addr + bbi->size
+		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, addr))) {
+			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, addr);
 			break;
 		}
 	}
@@ -1494,20 +1494,22 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 
 	if (ret == R_ANAL_RET_NEW) { /* New bb */
 		// XXX: use static buffer size of 512 or so
-		ut8 *buf = malloc (core->anal->opt.bb_max_size);
+		buf = malloc (core->anal->opt.bb_max_size);
 		if (!buf) {
 			goto error;
 		}
 		int bblen = 0;
+		ut64 at;
 		do {
-			if (!r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
+			at = addr + bblen;
+			if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 				goto error;
 			}
-			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
+			if (!r_io_read_at (core->io, at, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;
 			}
 			int buflen = core->anal->opt.bb_max_size;
-			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
+			bblen = r_anal_bb (core->anal, bb, at, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR || (bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
 			}
