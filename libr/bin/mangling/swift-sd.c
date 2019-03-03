@@ -460,10 +460,6 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 					if (attr && !strcmp (attr, "generic")) {
 						is_generic = 1;
 					}
-					if (len < 0 || len > 256) {
-						// invalid length
-						break;
-					}
 					//printf ("TYPE: %s LEN %d VALUE %s\n",
 					//	attr, len, getstring (q, len));
 					if (!len) {
@@ -488,6 +484,10 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 						}
 						retmode = 1;
 						len++;
+					}
+					if (len < 0 || len > 256) {
+						// invalid length
+						break;
 					}
 					if (len <= (q_end - q) && q[len]) {
 						const char *s = getstring (q, len);
