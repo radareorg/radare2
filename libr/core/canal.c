@@ -1695,7 +1695,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
 			if (r_anal_fcn_in (fcni, addr)) {
-				r_anal_fcn_tree_delete (&core->anal->fcn_tree, fcni);
+				r_anal_fcn_tree_delete (core->anal, fcni);
 				r_list_delete (core->anal->fcns, iter);
 			}
 		}
@@ -4026,7 +4026,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	r_anal_fcn_set_size (core->anal, f1, max - min);
 	// resize
 	f2->bbs = NULL;
-	r_anal_fcn_tree_delete (&core->anal->fcn_tree, f2);
+	r_anal_fcn_tree_delete (core->anal, f2);
 	r_list_foreach (core->anal->fcns, iter, f2) {
 		if (f2 == f3) {
 			r_list_delete (core->anal->fcns, iter);
