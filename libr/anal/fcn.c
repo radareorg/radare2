@@ -1096,7 +1096,7 @@ repeat:
 			break;
 		}
 		if (anal->opt.vars && !varset) {
-			extract_vars (anal, fcn, &op);
+			r_anal_extract_vars (anal, fcn, &op);
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
@@ -2310,6 +2310,9 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
+		if (!buf) {
+			continue;
+		}
 		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
@@ -2321,6 +2324,7 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 			idx += op.size;
 			at += op.size;
 			totalCycles += op.cycles;
+			r_anal_op_fini (&op);
 		}
 		free (buf);
 	}
@@ -2350,11 +2354,12 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 }
 
 R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
-	if (!fcn->has_changed) {
-		return fcn->is_pure;
+	if (fcn->has_changed) {
+		HtUP *ht = ht_up_new (NULL, NULL, NULL);
+		if (ht) {
+			check_purity (ht, anal, fcn);
+			ht_up_free (ht);
+		}
 	}
-	HtUP* ht = ht_up_new (NULL, NULL, NULL);
-	check_purity (ht, anal, fcn);
-	ht_up_free (ht);
 	return fcn->is_pure;
 }

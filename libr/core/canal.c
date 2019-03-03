@@ -906,15 +906,15 @@ error:
 /* decode and return the RANalOp at the address addr */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	int len;
-	RAnalOp *op;
-	ut8 buf[128];
+	ut8 buf[32];
 	ut8 *ptr;
 	RAsmOp asmop;
 
-	if (!core || addr == UT64_MAX) {
+	r_return_val_if_fail (core, NULL);
+	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	op = R_NEW0 (RAnalOp);
+	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (!op) {
 		return NULL;
 	}
@@ -2926,9 +2926,9 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 				//eprintf ("Cannot get op\n");
 				break;
 			}
-			extract_rarg (core->anal, op, fcn, reg_set, &count);
+			r_anal_extract_rarg (core->anal, op, fcn, reg_set, &count);
 			if (!argonly) {
-				extract_vars (core->anal, fcn, op);
+				r_anal_extract_vars (core->anal, fcn, op);
 			}
 			int opsize = op->size;
 			r_anal_op_free (op);

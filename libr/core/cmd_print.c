@@ -5730,7 +5730,6 @@ static int cmd_print(void *data, const char *input) {
 					}
 					int base = core->anal->bits;
 					pj_a (pj);
-					const char *comma = "";
 					const ut8 *buf = core->block;
 					int withref = 0;
 					const int wordsize = base / 8;
@@ -5745,7 +5744,6 @@ static int cmd_print(void *data, const char *input) {
 						pj_kn (pj, "addr", addr);
 						pj_kn (pj, "value", val);
 
-						comma = ",";
 						// XXX: this only works in little endian
 						withref = 0;
 						if (core->print->hasrefs) {

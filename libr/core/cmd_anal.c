@@ -1720,7 +1720,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	int mode = 0;
 	ut64 addr, bbaddr = UT64_MAX;
 	PJ *pj = NULL;
-	bool firstItem = true;
 
 	if (*input == '.') {
 		one = true;
@@ -1815,7 +1814,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 			pj_o (pj);
 
-			firstItem = false;
 			if (b->jump != UT64_MAX) {
 				pj_kn (pj, "jump", b->jump);
 			}
@@ -1877,7 +1875,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			if (b->fail != UT64_MAX) {
 				outputs ++;
 			}
-			firstItem = false;
 			if (b->jump != UT64_MAX) {
 				r_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
 			}
@@ -8464,6 +8461,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	RList *list = r_core_get_func_args (core, fcn_name);
 	// show_reg_args (core, -1);
 	if (!r_list_empty (list)) {
+#if 0
 		bool warning = false;
 		bool on_stack = false;
 		r_list_foreach (list, iter, arg) {
@@ -8474,6 +8472,8 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 				r_cons_printf ("%s: unk_size", arg->c_type);
 				warning = true;
 			}
+#endif
+		r_list_foreach (list, iter, arg) {
 			nextele = r_list_iter_get_next (iter);
 			if (!arg->fmt) {
 				r_cons_printf ("?%s", nextele? ", ": "");
