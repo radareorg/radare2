@@ -1877,6 +1877,39 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
+static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, ut64 addr) {
+	if (!strcmp (symbol->name, "$a")) {
+		eprintf ("setting 32bit at %llx\n", addr);
+		r_anal_hint_set_bits (core->anal, addr, 32);
+	} else if (!strcmp (symbol->name, "$t")) {
+		eprintf ("setting 16bit at %llx\n", addr);
+		r_anal_hint_set_bits (core->anal, addr, 16);
+	} else if (!strcmp (symbol->name, "$d")) {
+		eprintf ("setting data at %llx\n", addr);
+		r_meta_add (core->anal, R_META_TYPE_DATA, addr, addr + symbol->size, NULL);
+	} else {
+		R_LOG_WARN ("Special symbol %s not handled", symbol->name);
+	}
+}
+
+static void handle_arm_symbol(RCore *core, RBinSymbol *symbol, RBinInfo *info, ut64 addr) {
+	if (info->bits > 32) { // we look at 16 or 32 bit only
+		return;
+	}
+
+	int force_bits = 0;
+	if (symbol->paddr & 1 || symbol->bits == 16) {
+		force_bits = 16;
+	} else if (info->bits == 16 && symbol->bits == 32) {
+		force_bits = 32;
+	} else if (!(symbol->paddr & 1) && symbol->bits == 32) {
+		force_bits = 32;
+	}
+	if (force_bits) {
+		r_anal_hint_set_bits (core->anal, addr, force_bits);
+	}
+}
+
 static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
@@ -1950,25 +1983,20 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol) || is_special_symbol (symbol))) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
 			/*
 			 * Skip section symbols because they will have their own flag.
 			 * Skip also file symbols because not useful for now.
-			 * Skip special symbols we do not want to flag them, as they are better used as analysis hints.
 			 */
+		} else if (IS_MODE_SET (mode) && is_special_symbol (symbol)) {
+			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
+			if (is_arm) {
+				handle_arm_special_symbol (r, symbol, addr);
+			}
 		} else if (IS_MODE_SET (mode)) {
-			if (is_arm && info->bits < 33) { // 16 or 32
-				int force_bits = 0;
-				if (symbol->paddr & 1 || symbol->bits == 16) {
-					force_bits = 16;
-				} else if (info->bits == 16 && symbol->bits == 32) {
-					force_bits = 32;
-				} else if (!(symbol->paddr & 1) && symbol->bits == 32) {
-					force_bits = 32;
-				}
-				if (force_bits) {
-					r_anal_hint_set_bits (r->anal, addr, force_bits);
-				}
+			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
+			if (is_arm) {
+				handle_arm_symbol (r, symbol, info, addr);
 			}
 			if (!strncmp (r_symbol_name, "imp.", 4)) {
 				if (lastfs != 'i') {
