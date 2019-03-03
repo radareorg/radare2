@@ -1466,7 +1466,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	RAnalBlock *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
-	int bblen = 0, rc = true;
+	int rc = true;
 	int ret = R_ANAL_RET_NEW;
 	bool x86 = core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86");
 
@@ -1486,6 +1486,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			break;
 		}
 	}
+	ut8 *buf = NULL;
 	if (ret == R_ANAL_RET_DUP) {
 		/* Dupped basic block */
 		goto error;
@@ -1497,6 +1498,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		if (!buf) {
 			goto error;
 		}
+		int bblen = 0;
 		do {
 			if (!r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;
@@ -1505,7 +1507,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			}
 			int buflen = core->anal->opt.bb_max_size;
-			int bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
+			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR || (bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
 			}
@@ -1533,6 +1535,7 @@ error:
 fin:
 	r_list_delete_data (fcn->bbs, bb);
 	r_anal_bb_free (bb);
+	free (buf);
 	return rc;
 }
 
