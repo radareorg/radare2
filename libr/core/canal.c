@@ -8,8 +8,6 @@
 
 #include <string.h>
 
-#define SLOW_IO 0
-
 #define HINTCMD_ADDR(hint,x,y) if((hint)->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", (hint)->x, (hint)->addr)
 #define HINTCMD(hint,x,y,json) if((hint)->x) \
@@ -304,7 +302,11 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 
 static bool blacklisted_word(char* name) {
 	const char * list[] = {
-		"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"
+		"__stack_chk_guard",
+		"__stderrp",
+		"__stdinp",
+		"__stdoutp",
+		"_DefaultRuneLocale"
 	};
 	int i;
 	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
@@ -1460,12 +1462,11 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 }
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
-R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
+R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 	RAnalBlock *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
-	ut8 *buf = NULL;
-	int buflen, bblen = 0, rc = true;
+	int rc = true;
 	int ret = R_ANAL_RET_NEW;
 	bool x86 = core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86");
 
@@ -1479,12 +1480,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	}
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (at >= bbi->addr && at < bbi->addr + bbi->size
-		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, at))) {
-			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, at);
+		if (addr >= bbi->addr && addr < bbi->addr + bbi->size
+		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, addr))) {
+			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, addr);
 			break;
 		}
 	}
+	ut8 *buf = NULL;
 	if (ret == R_ANAL_RET_DUP) {
 		/* Dupped basic block */
 		goto error;
@@ -1496,22 +1498,18 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		if (!buf) {
 			goto error;
 		}
+		int bblen = 0;
+		ut64 at;
 		do {
-#if SLOW_IO
-			if (!r_io_read_at (core->io, at + bblen, buf, 4)) { // ETOOSLOW
+			at = addr + bblen;
+			if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 				goto error;
 			}
-			r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size);
-#else
-			if (!r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
+			if (!r_io_read_at (core->io, at, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;
 			}
-#endif
-			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
-				goto error;
-			}
-			buflen = core->anal->opt.bb_max_size;
-			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
+			int buflen = core->anal->opt.bb_max_size;
+			bblen = r_anal_bb (core->anal, bb, at, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR || (bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
 			}

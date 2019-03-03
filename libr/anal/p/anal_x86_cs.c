@@ -1744,15 +1744,12 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			switch (insn->id) {
 			case X86_INS_BTS:
 			case X86_INS_BTC:
-				dst_w = getarg (&gop, 0, 1, (insn->id == X86_INS_BTS)?"|":"^",
-						DST_R_AR);
-				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,%s",
-						width * 8, src, dst_w);
+				dst_w = getarg (&gop, 0, 1, (insn->id == X86_INS_BTS)?"|":"^", DST_R_AR);
+				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,%s", width * 8, src, dst_w);
 				break;
 			case X86_INS_BTR:
 				dst_w = getarg (&gop, 0, 1, "&", DST_R_AR);
-				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,-1,^,%s",
-						width * 8, src, dst_w);
+				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,-1,^,%s", width * 8, src, dst_w);
 				break;
 			}
 		}
