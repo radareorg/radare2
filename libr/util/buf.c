@@ -402,6 +402,7 @@ R_API RBuffer *r_buf_new() {
 }
 
 R_API const ut8 *r_buf_buffer (RBuffer *b) {
+	eprintf ("WARNING: The use of r_buf_buffer is deprecated.\n");
 	return (b && !b->sparse)? b->buf: NULL;
 }
 
