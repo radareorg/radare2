@@ -267,6 +267,15 @@ static RList* sections(RBinFile *bf) {
 			case PT_NOTE:
 				ptr->name = strdup ("NOTE");
 				break;
+			case PT_OPENBSD_RANDOMIZE:
+				ptr->name = strdup ("OPENBSD_RANDOMIZE");
+				break;
+			case PT_OPENBSD_WXNEEDED:
+				ptr->name = strdup ("OPENBSD_WXNEEDED");
+				break;
+			case PT_OPENBSD_BOOTDATA:
+				ptr->name = strdup ("OPENBSD_BOOTDATA");
+				break;
 			default:
 				ptr->name = setphname (mach, phdr[i].p_type);
 				break;
