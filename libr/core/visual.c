@@ -162,6 +162,7 @@ static const char *__core_visual_print_command (RCore *core) {
 }
 
 static const char *help_msg_visual[] = {
+	"$", "set the program counter to the current offset + cursor",
 	"?", "show visual help menu",
 	"??", "show this help",
 	"???", "show the user-friendly hud",
@@ -485,6 +486,7 @@ repeat:
 	case 'd':
 		r_strbuf_appendf (p, "Visual Debugger Help:\n\n");
 		r_strbuf_appendf (p,
+			" $   -> set the program counter (PC register)\n"
 			" s   -> step in\n"
 			" S   -> step over\n"
 			" B   -> toggle breakpoint\n"
@@ -2504,6 +2506,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'c':
 			setcursor (core, !core->print->cur_enabled);
+			break;
+		case '$':
+			if (core->print->cur_enabled) {
+				r_core_cmdf (core, "dr PC=$$+%d", core->print->cur);
+			} else {
+				r_core_cmd0 (core, "dr PC=$$");
+			}
 			break;
 		case '@':
 			if (core->print->cur_enabled) {
