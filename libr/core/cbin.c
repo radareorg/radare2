@@ -1899,19 +1899,31 @@ static RBinSymbol *get_next_special(RCore *core, RBinSymbol *current) {
 	return res;
 }
 
-static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
+static void handle_arm_special_symbol(RCore *core, RListIter *it, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	if (!strcmp (symbol->name, "$a")) {
 		r_anal_hint_set_bits (core->anal, addr, 32);
 	} else if (!strcmp (symbol->name, "$t")) {
 		r_anal_hint_set_bits (core->anal, addr, 16);
 	} else if (!strcmp (symbol->name, "$d")) {
+		// ignore symbols that are in unmapped addresses
+		if (!r_io_addr_is_mapped (core->io, addr)) {
+			return;
+		}
 		// special symbol $d does not have a size, but just mark the
 		// beginning of a data region. As an heuristic, let's find the
 		// next special symbol to know where the data region ends.
-		RBinSymbol *next_special = get_next_special (core, symbol);
+		RListIter *it_next = r_list_iter_get_next (it);
+		if (!it_next) {
+			return;
+		}
+		RBinSymbol *next_special = (RBinSymbol *)r_list_iter_get_data (it_next);
 		if (next_special) {
 			ut64 next_addr = compute_addr (core->bin, next_special->paddr, next_special->vaddr, va);
+			// ignore symbols that are in unmapped addresses
+			if (!r_io_addr_is_mapped (core->io, addr) && !r_io_addr_is_mapped (core->io, addr - 1)) {
+				return;
+			}
 			r_meta_add (core->anal, R_META_TYPE_DATA, addr, next_addr, NULL);
 		}
 	} else {
@@ -1946,6 +1958,15 @@ static void handle_arm_entry(RCore *core, RBinAddr *entry, RBinInfo *info, int v
 	return handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
 }
 
+static int sort_symbols_by_vaddr(const void *a, const void *b) {
+	const RBinSymbol *sa = (const RBinSymbol *)a;
+	const RBinSymbol *sb = (const RBinSymbol *)b;
+	if (sa->vaddr == sb->vaddr) {
+		return 0;
+	}
+	return sa->vaddr < sb->vaddr? -1: 1;
+}
+
 static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
@@ -1967,7 +1988,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	bool is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	const char *lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
-	RList *symbols = r_bin_get_symbols (r->bin);
+	RList *symbols = r_bin_get_symbols (r->bin), *special_symbols = NULL;
 	r_spaces_push (&r->anal->meta_spaces, "bin");
 
 	if (IS_MODE_JSON (mode) && !printHere) {
@@ -1989,6 +2010,16 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("Num Paddr      Vaddr      Bind     Type Size Name\n");
+	}
+
+	if (IS_MODE_SET (mode)) {
+		special_symbols = r_list_new ();
+		r_list_foreach (symbols, iter, symbol) {
+			if (is_special_symbol (symbol)) {
+				r_list_append (special_symbols, symbol);
+			}
+		}
+		r_list_sort (special_symbols, sort_symbols_by_vaddr);
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
@@ -2025,11 +2056,6 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			 * Skip also file symbols because not useful for now.
 			 * Skip special symbols we do not want to flag them, as they are better used as analysis hints.
 			 */
-		} else if (IS_MODE_SET (mode) && is_special_symbol (symbol)) {
-			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
-			if (is_arm) {
-				handle_arm_special_symbol (r, symbol, va);
-			}
 		} else if (IS_MODE_SET (mode)) {
 			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
 			if (is_arm) {
@@ -2205,6 +2231,12 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 	}
 
+	if (IS_MODE_SET (mode) && is_arm) {
+		r_list_foreach (special_symbols, iter, symbol) {
+			handle_arm_special_symbol (r, iter, symbol, va);
+		}
+	}
+
 	//handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		r_list_foreach (entries, iter, entry) {
@@ -2217,6 +2249,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		r_cons_printf ("]");
 	}
 
+	r_list_free (special_symbols);
 	r_spaces_pop (&r->anal->meta_spaces);
 	return true;
 }
