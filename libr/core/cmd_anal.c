@@ -93,10 +93,10 @@ static const char *help_msg_ac[] = {
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
 	"acv", " [class name] [addr] ([offset])", "add vtable address to class",
-	"acv-", " [class name] [vtable id]", "delete vtable by id (from aCv [class name])",
+	"acv-", " [class name] [vtable id]", "delete vtable by id (from acv [class name])",
 	"acb", " [class name]", "list bases of class",
 	"acb", " [class name] [base class name] ([offset])", "add base class",
-	"acb-", " [class name] [base class id]", "delete base by id (from aCb [class name])",
+	"acb-", " [class name] [base class id]", "delete base by id (from acb [class name])",
 	"acm", " [class name] [method name] [offset] ([vtable offset])", "add/edit method",
 	"acm-", " [class name] [method name]", "delete method",
 	"acmn", " [class name] [method name] [new name]", "rename method",
@@ -265,6 +265,7 @@ static const char *help_msg_af[] = {
 	"afr", " ([name]) ([addr])", "analyze functions recursively",
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
+	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
@@ -616,7 +617,7 @@ static const char *help_msg_av[] = {
 	"av*", "", "like av, but as r2 commands",
 	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
-	"avrr", "", "recover class info from all findable RTTI (see aC)",
+	"avrr", "", "recover class info from all findable RTTI (see ac)",
 	"avrD", " [classname]", "demangle a class name from RTTI",
 	NULL
 };
@@ -1720,7 +1721,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	int mode = 0;
 	ut64 addr, bbaddr = UT64_MAX;
 	PJ *pj = NULL;
-	bool firstItem = true;
 
 	if (*input == '.') {
 		one = true;
@@ -1815,7 +1815,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 			pj_o (pj);
 
-			firstItem = false;
 			if (b->jump != UT64_MAX) {
 				pj_kn (pj, "jump", b->jump);
 			}
@@ -1877,7 +1876,6 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			if (b->fail != UT64_MAX) {
 				outputs ++;
 			}
-			firstItem = false;
 			if (b->jump != UT64_MAX) {
 				r_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
 			}
@@ -2358,17 +2356,33 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
-	case 'f': // "aff"
-		r_anal_fcn_fit_overlaps (core->anal, NULL);
+	case '-': // "af-"
+		if (!input[2] || !strcmp (input + 2, "*")) {
+			RAnalFunction *f;
+			RListIter *iter;
+			r_list_foreach (core->anal->fcns, iter, f) {
+				r_anal_del_jmprefs (core->anal, f);
+			}
+			r_list_purge (core->anal->fcns);
+			core->anal->fcn_tree = NULL;
+		} else {
+			ut64 addr = input[2]
+				? r_num_math (core->num, input + 2)
+				: core->offset;
+			r_anal_fcn_del_locs (core->anal, addr);
+			r_anal_fcn_del (core->anal, addr);
+		}
 		break;
-	case 'a':
-		if (input[2] == 'l') { // afal : list function call arguments
+	case 'a': // "afa"
+		if (input[2] == 'l') { // "afal" : list function call arguments
 			int show_args = r_config_get_i (core->config, "dbg.funcarg");
 			if (show_args) {
 				r_core_print_func_args (core);
 			}
-			break;
+		} else {
+			r_core_print_func_args (core);
 		}
+		break;
 	case 'd': // "afd"
 		{
 		ut64 addr = 0;
@@ -2392,22 +2406,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case '-': // "af-"
-		if (!input[2] || !strcmp (input + 2, "*")) {
-			RAnalFunction *f;
-			RListIter *iter;
-			r_list_foreach (core->anal->fcns, iter, f) {
-				r_anal_del_jmprefs (core->anal, f);
-			}
-			r_list_purge (core->anal->fcns);
-			core->anal->fcn_tree = NULL;
-		} else {
-			ut64 addr = input[2]
-				? r_num_math (core->num, input + 2)
-				: core->offset;
-			r_anal_fcn_del_locs (core->anal, addr);
-			r_anal_fcn_del (core->anal, addr);
-		}
+	case 'f': // "aff"
+		r_anal_fcn_fit_overlaps (core->anal, NULL);
 		break;
 	case 'u': // "afu"
 		{
@@ -6883,7 +6883,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 static void cmd_anal_graph(RCore *core, const char *input) {
 	// Honor asm.graph=false in json as well
 	RConfigHold *hc = r_config_hold_new (core->config);
-	r_config_save_num (hc, "asm.offset", NULL);
+	r_config_hold_i (hc, "asm.offset", NULL);
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 
 	switch (input[0]) {
@@ -6930,7 +6930,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_config_set_i (core->config, "asm.offset", o_graph_offset);
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			break;
 		case 'g':{ // "agfg"
@@ -8114,9 +8114,9 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ': // "aCm"
-	case '-': // "aCm-"
-	case 'n': { // "aCmn"
+	case ' ': // "acm"
+	case '-': // "acm-"
+	case 'n': { // "acmn"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -8200,8 +8200,8 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ': // "aCb"
-	case '-': { // "aCb-"
+	case ' ': // "acb"
+	case '-': { // "acb-"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -8267,8 +8267,8 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
 	char c = input[0];
 	switch (c) {
-	case ' ': // "aCv"
-	case '-': { // "aCv-"
+	case ' ': // "acv"
+	case '-': { // "acv-"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			eprintf ("No class name given.\n");
@@ -8288,7 +8288,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			if (c == ' ') {
 				r_anal_class_list_vtables (core->anal, cstr);
 			} else /*if (c == '-')*/ {
-				eprintf ("No vtable id given. See aCv [class name].\n");
+				eprintf ("No vtable id given. See acv [class name].\n");
 			}
 			free (cstr);
 			break;
@@ -8332,12 +8332,12 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
-	case 'l': // "aCl"
+	case 'l': // "acl"
 		r_anal_class_list (core->anal, input[1]);
 		break;
-	case ' ': // "aC"
-	case '-': // "aC-"
-	case 'n': { // "aCn"
+	case ' ': // "ac"
+	case '-': // "ac-"
+	case 'n': { // "acn"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			break;
@@ -8377,13 +8377,13 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'v':
 		cmd_anal_class_vtable (core, input + 1);
 		break;
-	case 'b': // "aCb"
+	case 'b': // "acb"
 		cmd_anal_class_base (core, input + 1);
 		break;
-	case 'm': // "aCm"
+	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
-	default: // "aC?"
+	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
@@ -8464,6 +8464,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	RList *list = r_core_get_func_args (core, fcn_name);
 	// show_reg_args (core, -1);
 	if (!r_list_empty (list)) {
+#if 0
 		bool warning = false;
 		bool on_stack = false;
 		r_list_foreach (list, iter, arg) {
@@ -8474,6 +8475,8 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 				r_cons_printf ("%s: unk_size", arg->c_type);
 				warning = true;
 			}
+#endif
+		r_list_foreach (list, iter, arg) {
 			nextele = r_list_iter_get_next (iter);
 			if (!arg->fmt) {
 				r_cons_printf ("?%s", nextele? ", ": "");

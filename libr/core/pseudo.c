@@ -180,11 +180,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	if (!hc) {
 		return false;
 	}
-	r_config_save_num (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
-	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
-	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
-	r_config_save_num (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
-	r_config_save_num (hc, "io.cache", NULL);
+	r_config_hold_i (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
+	r_config_hold_i (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
+	r_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
+	r_config_hold_i (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
+	r_config_hold_i (hc, "io.cache", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		r_config_hold_free (hc);
@@ -401,7 +401,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	} while (n_bb > 0);
 	r_list_free (visited);
 	r_cons_printf ("\n}\n");
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	sdb_free (db);
 	return true;

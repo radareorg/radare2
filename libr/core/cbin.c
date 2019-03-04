@@ -2019,10 +2019,11 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol) || is_special_symbol (symbol))) {
 			/*
 			 * Skip section symbols because they will have their own flag.
 			 * Skip also file symbols because not useful for now.
+			 * Skip special symbols we do not want to flag them, as they are better used as analysis hints.
 			 */
 		} else if (IS_MODE_SET (mode) && is_special_symbol (symbol)) {
 			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata

@@ -663,7 +663,7 @@ beach:
 	free (esil_buf);
 }
 
-R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
+R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	const char *opsreg = NULL;
 	const char *opdreg = NULL;
 	int i, argc = 0;
@@ -735,7 +735,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 	}
 }
 
-R_API void extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	r_return_if_fail (anal && fcn && op);
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];

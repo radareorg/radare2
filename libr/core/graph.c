@@ -43,6 +43,7 @@ static const char *mousemodes[] = {
 
 #define BODY_OFFSETS    0x1
 #define BODY_SUMMARY    0x2
+#define BODY_COMMENTS   0x4
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
@@ -119,6 +120,10 @@ static bool is_summary(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_SUMMARY;
 }
 
+static bool is_comments(const RAGraph *g) {
+	return g->mode == R_AGRAPH_MODE_COMMENTS;
+}
+
 static int next_mode(int mode) {
 	return (mode + 1) % R_AGRAPH_MODE_MAX;
 }
@@ -137,6 +142,8 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 		submode = "MINI";
 	} else if (is_offset (g)) {
 		submode = "OFF";
+	} else if (is_comments (g)) {
+		submode = "COMM";
 	} else if (is_summary (g)) {
 		submode = "SUMM";
 	} else {
@@ -151,6 +158,9 @@ static int mode2opts(const RAGraph *g) {
 	int opts = 0;
 	if (is_offset (g)) {
 		opts |= BODY_OFFSETS;
+	}
+	if (is_comments (g)) {
+		opts |= BODY_COMMENTS;
 	}
 	if (is_summary (g)) {
 		opts |= BODY_SUMMARY;
@@ -2022,7 +2032,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	r_config_save_num (hc, "asm.lines", "asm.bytes",
+	r_config_hold_i (hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
@@ -2031,7 +2041,15 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const bool o_flags_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
-
+	if (opts & BODY_COMMENTS) {
+		r_core_visual_toggle_decompiler_disasm (core, true);
+		char * res = r_core_cmd_strf (core, "pD %d @ 0x%08"PFMT64x, size, addr);
+		res = r_str_replace (res, "; ", "", true);
+		res = r_str_replace (res, "\n\n", "\n", true);
+		r_str_trim (res);
+		r_core_visual_toggle_decompiler_disasm (core, true);
+		return res;
+	}
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
@@ -2059,7 +2077,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 
 	// restore original options
 	core->print->cur_enabled = o_cursor;
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return body;
 }
@@ -3920,7 +3938,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	if (!hc) {
 		return false;
 	}
-	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
+	r_config_hold_i (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
@@ -3943,7 +3961,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
 			eprintf ("No function in current seek\n");
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			r_cons_canvas_free (can);
 			return false;
@@ -3951,7 +3969,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		g = r_agraph_new (can);
 		if (!g) {
 			r_cons_canvas_free (can);
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			return false;
 		}
@@ -3979,7 +3997,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd = R_NEW0 (struct agraph_refresh_data);
 	if (!grd) {
 		r_cons_canvas_free (can);
-		r_config_restore (hc);
+		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
 		r_agraph_free (g);
 		return false;
@@ -4217,12 +4235,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_toggle (core->config, "graph.refs");
 			break;
 		case '#':
-			r_config_toggle (core->config, "graph.hints");
+			if (g->mode == R_AGRAPH_MODE_COMMENTS) {
+				g->mode = R_AGRAPH_MODE_NORMAL;
+			} else {
+				g->mode = R_AGRAPH_MODE_COMMENTS;
+			}
+			g->need_reload_nodes = true;
+			// r_config_toggle (core->config, "graph.hints");
 			break;
 		case 'p':
-			if (!fcn) {
-				break;
-			}
 			g->mode = next_mode (g->mode);
 			g->need_reload_nodes = true;
 			break;
@@ -4644,7 +4665,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		g->can = o_can;
 	}
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return !is_error;
 }

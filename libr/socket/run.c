@@ -231,11 +231,13 @@ static int parseBool(const char *e) {
 static void setASLR(RRunProfile *r, int enabled) {
 #if __linux__
 	r_sys_aslr (enabled);
-#if HAVE_DECL_ADDR_NO_RANDOMIZE
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
 	if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
 		r_sys_aslr (0);
+#if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
 	}
+#endif
 #elif __APPLE__
 	// TOO OLD setenv ("DYLD_NO_PIE", "1", 1);
 	// disable this because its

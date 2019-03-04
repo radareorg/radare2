@@ -80,6 +80,34 @@ static void applyHexMode(RCore *core, int hexMode) {
 	}
 }
 
+R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph) {
+	static RConfigHold *hold = NULL;
+	if (hold) {
+		r_config_hold_restore (hold);
+		r_config_hold_free (hold);
+		hold = NULL;
+	} else {
+		hold = r_config_hold_new (core->config);
+		r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
+		"asm.indent", "asm.bytes", "asm.comments", "asm.usercomments", "asm.instr", NULL);
+		if (for_graph) {
+			r_config_set (core->config, "asm.hint.pos", "-1");
+			r_config_set (core->config, "asm.lines", "false");
+			r_config_set (core->config, "asm.indent", "false");
+		} else {
+			r_config_set (core->config, "asm.hint.pos", "0");
+			r_config_set (core->config, "asm.indent", "true");
+			r_config_set (core->config, "asm.lines", "true");
+		}
+		r_config_set (core->config, "asm.cmt.col", "0");
+		r_config_set (core->config, "asm.offset", "false");
+		r_config_set (core->config, "asm.bytes", "false");
+		r_config_set (core->config, "asm.comments", "false");
+		r_config_set (core->config, "asm.usercomments", "true");
+		r_config_set (core->config, "asm.instr", "false");
+	}
+}
+
 static void applyDisMode(RCore *core, int disMode) {
 	switch (disMode % 5) {
 	case 0:
@@ -162,6 +190,7 @@ static const char *__core_visual_print_command (RCore *core) {
 }
 
 static const char *help_msg_visual[] = {
+	"$", "set the program counter to the current offset + cursor",
 	"?", "show visual help menu",
 	"??", "show this help",
 	"???", "show the user-friendly hud",
@@ -173,7 +202,7 @@ static const char *help_msg_visual[] = {
 	"=", "set cmd.vprompt (top row)",
 	"|", "set cmd.cprompt (right column)",
 	".", "seek to program counter",
-	"#", "toggle bytes in disasm view",
+	"#", "toggle decompiler comments in disasm (see pdd* from r2dec)",
 	"\\", "toggle visual split mode",
 	"\"", "toggle the column mode (uses pC..)",
 	"/", "in cursor mode search in current block",
@@ -485,6 +514,7 @@ repeat:
 	case 'd':
 		r_strbuf_appendf (p, "Visual Debugger Help:\n\n");
 		r_strbuf_appendf (p,
+			" $   -> set the program counter (PC register)\n"
 			" s   -> step in\n"
 			" S   -> step over\n"
 			" B   -> toggle breakpoint\n"
@@ -2505,6 +2535,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'c':
 			setcursor (core, !core->print->cur_enabled);
 			break;
+		case '$':
+			if (core->print->cur_enabled) {
+				r_core_cmdf (core, "dr PC=$$+%d", core->print->cur);
+			} else {
+				r_core_cmd0 (core, "dr PC=$$");
+			}
+			break;
 		case '@':
 			if (core->print->cur_enabled) {
 				char buf[128];
@@ -3191,7 +3228,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			rotateAsmemu (core);
 			break;
 		case '#':
-			r_config_toggle (core->config, "asm.bytes");
+			if (core->printidx == 1) {
+				r_core_visual_toggle_decompiler_disasm (core, false);
+			} else {
+				// do nothing for now :?, px vs pxa?
+			}
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
