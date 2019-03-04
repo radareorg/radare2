@@ -80,7 +80,7 @@ static void applyHexMode(RCore *core, int hexMode) {
 	}
 }
 
-static void toggle_decompiler_disasm(RCore *core) {
+R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph) {
 	static RConfigHold *hold = NULL;
 	if (hold) {
 		r_config_hold_restore (hold);
@@ -88,10 +88,17 @@ static void toggle_decompiler_disasm(RCore *core) {
 		hold = NULL;
 	} else {
 		hold = r_config_hold_new (core->config);
-		r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset",
+		r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
 		"asm.indent", "asm.bytes", "asm.comments", "asm.usercomments", "asm.instr", NULL);
-		r_config_set (core->config, "asm.hint.pos", "0");
-		r_config_set (core->config, "asm.indent", "true");
+		if (for_graph) {
+			r_config_set (core->config, "asm.hint.pos", "-1");
+			r_config_set (core->config, "asm.lines", "false");
+			r_config_set (core->config, "asm.indent", "false");
+		} else {
+			r_config_set (core->config, "asm.hint.pos", "0");
+			r_config_set (core->config, "asm.indent", "true");
+			r_config_set (core->config, "asm.lines", "true");
+		}
 		r_config_set (core->config, "asm.cmt.col", "0");
 		r_config_set (core->config, "asm.offset", "false");
 		r_config_set (core->config, "asm.bytes", "false");
@@ -3222,7 +3229,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '#':
 			if (core->printidx == 1) {
-				toggle_decompiler_disasm (core);
+				r_core_visual_toggle_decompiler_disasm (core, false);
 			} else {
 				// do nothing for now :?, px vs pxa?
 			}
