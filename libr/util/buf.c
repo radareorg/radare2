@@ -37,7 +37,6 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 				s->from = addr;
 				s->to = addr + len;
 				s->size = len;
-				s->odata = NULL;
 				memcpy (s->data, data, len);
 				return r_list_append (l, s)? s: NULL;
 			}
@@ -359,13 +358,19 @@ R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
 	return r_buf_new_with_bytes (b->buf, b->length);
 }
 
+static void buffer_sparse_free(void *a) {
+	RBufferSparse *s = (RBufferSparse *)a;
+	free (s->data);
+	free (s);
+}
+
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 	RBuffer *b = r_buf_new ();
 	if (!b) {
 		return NULL;
 	}
 	b->Oxff = Oxff;
-	b->sparse = r_list_newf ((RListFree)free);
+	b->sparse = r_list_newf (buffer_sparse_free);
 	return b;
 }
 
@@ -870,7 +875,6 @@ R_API bool r_buf_fini(RBuffer *b) {
 		if (b->fd != -1) {
 			r_sandbox_close (b->fd);
 			b->fd = -1;
-			return false;
 		}
 		if (b->sparse) {
 			r_list_free (b->sparse);
