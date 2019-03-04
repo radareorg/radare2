@@ -89,8 +89,9 @@ static void toggle_decompiler_disasm(RCore *core) {
 	} else {
 		hold = r_config_hold_new (core->config);
 		r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset",
-		"asm.bytes", "asm.comments", "asm.usercomments", "asm.instr", NULL);
+		"asm.indent", "asm.bytes", "asm.comments", "asm.usercomments", "asm.instr", NULL);
 		r_config_set (core->config, "asm.hint.pos", "0");
+		r_config_set (core->config, "asm.indent", "true");
 		r_config_set (core->config, "asm.cmt.col", "0");
 		r_config_set (core->config, "asm.offset", "false");
 		r_config_set (core->config, "asm.bytes", "false");
@@ -3220,7 +3221,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			rotateAsmemu (core);
 			break;
 		case '#':
-			toggle_decompiler_disasm (core);
+			if (core->printidx == 1) {
+				toggle_decompiler_disasm (core);
+			} else {
+				// do nothing for now :?, px vs pxa?
+			}
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
