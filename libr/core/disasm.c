@@ -2975,8 +2975,8 @@ static void ds_print_indent(RDisasmState *ds) {
 }
 
 static void ds_print_opstr(RDisasmState *ds) {
+	ds_print_indent (ds);
 	if (ds->asm_instr) {
-		ds_print_indent (ds);
 		r_cons_strcat (ds->opstr);
 		ds_print_color_reset (ds);
 	}
