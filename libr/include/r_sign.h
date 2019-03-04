@@ -112,7 +112,7 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn);
 // TODO
 R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
-R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file);
+R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file);
 #endif
 
 #ifdef __cplusplus

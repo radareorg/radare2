@@ -95,12 +95,11 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 static void gprobe_frame_i2c (RBuffer *frame) {
 	ut8 size = r_buf_size (frame) + 1;
 	ut8 header[] = {0x51, 0x80 + size + 3, 0xc2, 0x00, 0x00};
-	ut8 checksum;
 
 	r_buf_prepend_bytes (frame, &size, 1);
 	r_buf_prepend_bytes (frame, header, sizeof (header));
 
-	checksum = gprobe_checksum_i2c (r_buf_buffer (frame), r_buf_size (frame), GPROBE_I2C_ADDR);
+	ut8 checksum = gprobe_checksum_i2c (r_buf_buffer (frame), r_buf_size (frame), GPROBE_I2C_ADDR);
 
 	r_buf_append_bytes (frame, &checksum, 1);
 }

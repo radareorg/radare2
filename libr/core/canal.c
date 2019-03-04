@@ -8,8 +8,6 @@
 
 #include <string.h>
 
-#define SLOW_IO 0
-
 #define HINTCMD_ADDR(hint,x,y) if((hint)->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", (hint)->x, (hint)->addr)
 #define HINTCMD(hint,x,y,json) if((hint)->x) \
@@ -304,7 +302,11 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 
 static bool blacklisted_word(char* name) {
 	const char * list[] = {
-		"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"
+		"__stack_chk_guard",
+		"__stderrp",
+		"__stdinp",
+		"__stdoutp",
+		"_DefaultRuneLocale"
 	};
 	int i;
 	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
@@ -899,15 +901,15 @@ error:
 /* decode and return the RANalOp at the address addr */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	int len;
-	RAnalOp *op;
-	ut8 buf[128];
+	ut8 buf[32];
 	ut8 *ptr;
 	RAsmOp asmop;
 
-	if (!core || addr == UT64_MAX) {
+	r_return_val_if_fail (core, NULL);
+	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	op = R_NEW0 (RAnalOp);
+	RAnalOp *op = R_NEW0 (RAnalOp);
 	if (!op) {
 		return NULL;
 	}
@@ -1352,7 +1354,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 					//	" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
 					RConfigHold *hc = r_config_hold_new (core->config);
-					r_config_save_num (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
+					r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
 							"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
 					RDiff *d = r_diff_new ();
 					r_config_set_i (core->config, "scr.color", 0);
@@ -1453,12 +1455,11 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 }
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
-R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
+R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 addr, int head) {
 	RAnalBlock *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
-	ut8 *buf = NULL;
-	int buflen, bblen = 0, rc = true;
+	int rc = true;
 	int ret = R_ANAL_RET_NEW;
 	bool x86 = core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86");
 
@@ -1472,12 +1473,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	}
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (at >= bbi->addr && at < bbi->addr + bbi->size
-		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, at))) {
-			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, at);
+		if (addr >= bbi->addr && addr < bbi->addr + bbi->size
+		    && (!core->anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbi, addr))) {
+			ret = r_anal_fcn_split_bb (core->anal, fcn, bbi, addr);
 			break;
 		}
 	}
+	ut8 *buf = NULL;
 	if (ret == R_ANAL_RET_DUP) {
 		/* Dupped basic block */
 		goto error;
@@ -1489,22 +1491,18 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		if (!buf) {
 			goto error;
 		}
+		int bblen = 0;
+		ut64 at;
 		do {
-#if SLOW_IO
-			if (!r_io_read_at (core->io, at + bblen, buf, 4)) { // ETOOSLOW
+			at = addr + bblen;
+			if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 				goto error;
 			}
-			r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size);
-#else
-			if (!r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
+			if (!r_io_read_at (core->io, at, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;
 			}
-#endif
-			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
-				goto error;
-			}
-			buflen = core->anal->opt.bb_max_size;
-			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
+			int buflen = core->anal->opt.bb_max_size;
+			bblen = r_anal_bb (core->anal, bb, at, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR || (bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
 			}
@@ -1688,7 +1686,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
 			if (r_anal_fcn_in (fcni, addr)) {
-				r_anal_fcn_tree_delete (&core->anal->fcn_tree, fcni);
+				r_anal_fcn_tree_delete (core->anal, fcni);
 				r_list_delete (core->anal->fcns, iter);
 			}
 		}
@@ -1708,7 +1706,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	}
 
 	RConfigHold *hc = r_config_hold_new (core->config);
-	r_config_save_num (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
+	r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
 	  "asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
 	/*r_config_set_i (core->config, "scr.color", 0);*/
 	r_config_set_i (core->config, "scr.utf8", 0);
@@ -1732,7 +1730,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			free (body_b64);
 			free (body);
 			free (title);
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			return false;
 		}
@@ -1743,7 +1741,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		free (title);
 	}
 
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -2919,9 +2917,9 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 				//eprintf ("Cannot get op\n");
 				break;
 			}
-			extract_rarg (core->anal, op, fcn, reg_set, &count);
+			r_anal_extract_rarg (core->anal, op, fcn, reg_set, &count);
 			if (!argonly) {
-				extract_vars (core->anal, fcn, op);
+				r_anal_extract_vars (core->anal, fcn, op);
 			}
 			int opsize = op->size;
 			r_anal_op_free (op);
@@ -3080,12 +3078,12 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		return false;
 	}
 
-	r_config_save_num (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
+	r_config_hold_i (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
 	//opts |= R_CORE_ANAL_GRAPHBODY;
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
 	if (!is_json_format_disasm) {
-		r_config_save_num (hc, "asm.bytes", NULL);
+		r_config_hold_i (hc, "asm.bytes", NULL);
 		r_config_set_i (core->config, "asm.bytes", 0);
 	}
 	if (!is_html && !is_json && !is_keva) {
@@ -3142,7 +3140,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return true;
 }
@@ -4019,7 +4017,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	r_anal_fcn_set_size (core->anal, f1, max - min);
 	// resize
 	f2->bbs = NULL;
-	r_anal_fcn_tree_delete (&core->anal->fcn_tree, f2);
+	r_anal_fcn_tree_delete (core->anal, f2);
 	r_list_foreach (core->anal->fcns, iter, f2) {
 		if (f2 == f3) {
 			r_list_delete (core->anal->fcns, iter);

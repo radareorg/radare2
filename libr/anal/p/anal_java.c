@@ -627,7 +627,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 			break;
 		}
 		//r_listrange_add (anal->fcnstore, fcn);
-		r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
+		r_anal_fcn_tree_insert (anal, fcn);
 		r_list_append (anal->fcns, fcn);
 		offset += r_anal_fcn_size (fcn);
 		if (!analyze_all) {
@@ -679,7 +679,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 				}
 				//r_listrange_add (anal->fcnstore, fcn);
 				r_anal_fcn_update_tinyrange_bbs (fcn);
-				r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
+				r_anal_fcn_tree_insert (anal, fcn);
 				r_list_append (anal->fcns, fcn);
 			}
 		} // End of methods loop
