@@ -1361,7 +1361,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 					//	" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
 					RConfigHold *hc = r_config_hold_new (core->config);
-					r_config_save_num (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
+					r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
 							"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
 					RDiff *d = r_diff_new ();
 					r_config_set_i (core->config, "scr.color", 0);
@@ -1713,7 +1713,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	}
 
 	RConfigHold *hc = r_config_hold_new (core->config);
-	r_config_save_num (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
+	r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
 	  "asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
 	/*r_config_set_i (core->config, "scr.color", 0);*/
 	r_config_set_i (core->config, "scr.utf8", 0);
@@ -1737,7 +1737,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			free (body_b64);
 			free (body);
 			free (title);
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			return false;
 		}
@@ -1748,7 +1748,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		free (title);
 	}
 
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -3085,12 +3085,12 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		return false;
 	}
 
-	r_config_save_num (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
+	r_config_hold_i (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
 	//opts |= R_CORE_ANAL_GRAPHBODY;
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
 	if (!is_json_format_disasm) {
-		r_config_save_num (hc, "asm.bytes", NULL);
+		r_config_hold_i (hc, "asm.bytes", NULL);
 		r_config_set_i (core->config, "asm.bytes", 0);
 	}
 	if (!is_html && !is_json && !is_keva) {
@@ -3147,7 +3147,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return true;
 }

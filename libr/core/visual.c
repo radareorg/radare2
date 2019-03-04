@@ -80,6 +80,26 @@ static void applyHexMode(RCore *core, int hexMode) {
 	}
 }
 
+static void toggle_decompiler_disasm(RCore *core) {
+	static RConfigHold *hold = NULL;
+	if (hold) {
+		r_config_hold_restore (hold);
+		r_config_hold_free (hold);
+		hold = NULL;
+	} else {
+		hold = r_config_hold_new (core->config);
+		r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset",
+		"asm.bytes", "asm.comments", "asm.usercomments", "asm.instr", NULL);
+		r_config_set (core->config, "asm.hint.pos", "0");
+		r_config_set (core->config, "asm.cmt.col", "0");
+		r_config_set (core->config, "asm.offset", "false");
+		r_config_set (core->config, "asm.bytes", "false");
+		r_config_set (core->config, "asm.comments", "false");
+		r_config_set (core->config, "asm.usercomments", "true");
+		r_config_set (core->config, "asm.instr", "false");
+	}
+}
+
 static void applyDisMode(RCore *core, int disMode) {
 	switch (disMode % 5) {
 	case 0:
@@ -174,7 +194,7 @@ static const char *help_msg_visual[] = {
 	"=", "set cmd.vprompt (top row)",
 	"|", "set cmd.cprompt (right column)",
 	".", "seek to program counter",
-	"#", "toggle bytes in disasm view",
+	"#", "toggle decompiler comments in disasm (see pdd* from r2dec)",
 	"\\", "toggle visual split mode",
 	"\"", "toggle the column mode (uses pC..)",
 	"/", "in cursor mode search in current block",
@@ -3200,7 +3220,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			rotateAsmemu (core);
 			break;
 		case '#':
-			r_config_toggle (core->config, "asm.bytes");
+			toggle_decompiler_disasm (core);
 			break;
 		case '*':
 			if (core->print->cur_enabled) {

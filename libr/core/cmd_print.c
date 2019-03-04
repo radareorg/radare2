@@ -4576,11 +4576,11 @@ static int cmd_print(void *data, const char *input) {
 
 						// store current configurations
 						RConfigHold *hc = r_config_hold_new (core->config);
-						r_config_save_num (hc, "asm.offset", NULL);
-						r_config_save_num (hc, "asm.comments", NULL);
-						r_config_save_num (hc, "asm.tabs", NULL);
-						r_config_save_num (hc, "asm.bytes", NULL);
-						r_config_save_num (hc, "emu.str", NULL);
+						r_config_hold_i (hc, "asm.offset", NULL);
+						r_config_hold_i (hc, "asm.comments", NULL);
+						r_config_hold_i (hc, "asm.tabs", NULL);
+						r_config_hold_i (hc, "asm.bytes", NULL);
+						r_config_hold_i (hc, "emu.str", NULL);
 
 
 						// temporarily replace configurations
@@ -4607,7 +4607,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 
 						// restore saved configuration
-						r_config_restore (hc);
+						r_config_hold_restore (hc);
 						r_config_hold_free (hc);
 					}
 					// print json object
