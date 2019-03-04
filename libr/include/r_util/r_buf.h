@@ -33,7 +33,6 @@ typedef struct r_buf_cache_t {
         ut64 to;
         int size;
         ut8 *data;
-        ut8 *odata;
         int written;
 } RBufferSparse;
 
