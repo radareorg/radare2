@@ -2045,8 +2045,9 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_core_visual_toggle_decompiler_disasm (core, true);
 		char * res = r_core_cmd_strf (core, "pD %d @ 0x%08"PFMT64x, size, addr);
 		res = r_str_replace (res, "; ", "", true);
-		res = r_str_replace (res, "\n\n", "\n", true);
+		// res = r_str_replace (res, "\n", "(\n)", true);
 		r_str_trim (res);
+		res = r_str_trim_lines (res);
 		r_core_visual_toggle_decompiler_disasm (core, true);
 		return res;
 	}
