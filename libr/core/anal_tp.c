@@ -16,7 +16,7 @@ enum {
 };
 
 static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
-	r_config_save_num (hc, "esil.romem", "asm.trace", "dbg.trace",
+	r_config_hold_i (hc, "esil.romem", "asm.trace", "dbg.trace",
 			"esil.nonull", "dbg.follow", NULL);
 	r_config_set (core->config, "esil.romem", "true");
 	r_config_set (core->config, "asm.trace", "true");
@@ -34,7 +34,7 @@ static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 }
 
 static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 }
 
