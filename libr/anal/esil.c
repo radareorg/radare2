@@ -1583,11 +1583,9 @@ static int esil_add(RAnalEsil *esil) {
 	ut64 s, d;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+	if ((src && r_anal_esil_get_parm (esil, src, &s)) && (dst && r_anal_esil_get_parm (esil, dst, &d))) {
 			r_anal_esil_pushnum (esil, s + d);
 			ret = true;
-		}
 	} else {
 		ERR ("esil_add: invalid parameters");
 	}
