@@ -200,6 +200,7 @@ R_API RAnal *r_anal_new() {
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
+	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
@@ -513,6 +514,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
+	anal->fcn_addr_tree = NULL;
 	r_list_free (anal->refs);
 	anal->refs = r_anal_ref_list_new ();
 	return 0;

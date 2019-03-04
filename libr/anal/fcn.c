@@ -35,6 +35,7 @@
 #define VERBOSE_DELAY if (0)
 
 #define FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, rb)
+#define FCN_ADDR_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, addr_rb)
 #define fcn_tree_foreach_intersect(root, it, data, from, to)										\
 	for ((it) = _fcn_tree_iter_first (root, from, to); (it).cur && ((data) = FCN_CONTAINER ((it).cur), 1); _fcn_tree_iter_next (&(it), from, to))
 
@@ -116,6 +117,16 @@ static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
 	return 0;
 }
 
+static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_) {
+	const RAnalFunction *a = (const RAnalFunction *)a_;
+	const RAnalFunction *b = FCN_ADDR_CONTAINER (b_);
+	ut64 from0 = a->addr, from1 = b->addr;
+	if (from0 != from1) {
+		return from0 < from1 ? -1 : 1;
+	}
+	return 0;
+}
+
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
@@ -168,11 +179,15 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 }
 
 R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data) {
-	return r_rbtree_aug_delete (&anal->fcn_tree, data, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr);
+	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, data, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr);
+	bool ret_addr = !!r_rbtree_aug_delete (&anal->fcn_addr_tree, data, _fcn_addr_tree_cmp, NULL, NULL);
+	r_return_val_if_fail (ret_min == ret_addr, false);
+	return ret_min;
 }
 
 R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn) {
 	r_rbtree_aug_insert (&anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_addr_tree_cmp, NULL);
 }
 
 static void _fcn_tree_update_size(RAnal *anal, RAnalFunction *fcn) {
@@ -226,11 +241,11 @@ static void _fcn_tree_print_dot(RBNode *n) {
 }
 #endif
 
-#if 0
 // Find RAnalFunction whose addr is equal to addr
-static RAnalFunction *_fcn_tree_find_addr(RBNode *n, ut64 addr) {
+static RAnalFunction *_fcn_addr_tree_find_addr(RAnal *anal, ut64 addr) {
+	RBNode *n = anal->fcn_addr_tree;
 	while (n) {
-		RAnalFunction *x = FCN_CONTAINER (n);
+		RAnalFunction *x = FCN_ADDR_CONTAINER (n);
 		if (x->addr == addr) {
 			return x;
 		}
@@ -238,7 +253,6 @@ static RAnalFunction *_fcn_tree_find_addr(RBNode *n, ut64 addr) {
 	}
 	return NULL;
 }
-#endif
 
 // _fcn_tree_{iter_first,iter_next} are used to iterate functions whose intervals intersect [from, to) in O(log(n) + |candidates|) time
 static FcnTreeIter _fcn_tree_iter_first(RBNode *x_, ut64 from, ut64 to) {
@@ -1858,11 +1872,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	RAnalFunction *fcn;
 	FcnTreeIter it;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
-# if 0
-		return _fcn_tree_find_addr (anal->fcn_tree, addr);
-# else
-		type = 0; // HACK
-# endif
+		return _fcn_addr_tree_find_addr (anal, addr);
 	}
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
 		if (!type || (fcn && fcn->type & type)) {
@@ -2190,11 +2200,7 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
 	RAnalFunction *fcn;
 	FcnTreeIter it;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
-# if 0
-		return _fcn_tree_find_addr (anal->fcn_tree, addr);
-# else
-		type = 0; // HACK
-# endif
+		return _fcn_addr_tree_find_addr (anal, addr);
 	}
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
 		if (!type || (fcn && fcn->type & type)) {

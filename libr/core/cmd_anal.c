@@ -2374,6 +2374,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			r_list_purge (core->anal->fcns);
 			core->anal->fcn_tree = NULL;
+			core->anal->fcn_addr_tree = NULL;
 		} else {
 			ut64 addr = input[2]
 				? r_num_math (core->num, input + 2)

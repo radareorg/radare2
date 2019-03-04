@@ -279,7 +279,7 @@ typedef struct r_anal_function_t {
 	const char *cc; // calling convention
 	char* attr; // __attribute__(()) list
 	ut64 addr;
-	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for interval tree
+	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for fcn interval tree
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
@@ -298,6 +298,7 @@ typedef struct r_anal_function_t {
 	RAnalFcnMeta meta;
 	RRangeTiny bbr;
 	RBNode rb;
+	RBNode addr_rb;
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {
@@ -637,7 +638,8 @@ typedef struct r_anal_t {
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
 	RList *fcns;
-	RBNode *fcn_tree;
+	RBNode *fcn_tree; // keyed on meta.min
+	RBNode *fcn_addr_tree; // keyed on addr
 	RListRange *fcnstore;
 	RList *refs;
 	RList *vartypes;
