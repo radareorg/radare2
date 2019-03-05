@@ -35,7 +35,7 @@
 #define VERBOSE_DELAY if (0)
 
 #define FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, rb)
-#define FCN_ADDR_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, addr_rb)
+#define ADDR_FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, addr_rb)
 #define fcn_tree_foreach_intersect(root, it, data, from, to)										\
 	for ((it) = _fcn_tree_iter_first (root, from, to); (it).cur && ((data) = FCN_CONTAINER ((it).cur), 1); _fcn_tree_iter_next (&(it), from, to))
 
@@ -119,7 +119,7 @@ static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
 
 static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_) {
 	const RAnalFunction *a = (const RAnalFunction *)a_;
-	const RAnalFunction *b = FCN_ADDR_CONTAINER (b_);
+	const RAnalFunction *b = ADDR_FCN_CONTAINER (b_);
 	ut64 from0 = a->addr, from1 = b->addr;
 	if (from0 != from1) {
 		return from0 < from1 ? -1 : 1;
@@ -245,7 +245,7 @@ static void _fcn_tree_print_dot(RBNode *n) {
 static RAnalFunction *_fcn_addr_tree_find_addr(RAnal *anal, ut64 addr) {
 	RBNode *n = anal->fcn_addr_tree;
 	while (n) {
-		RAnalFunction *x = FCN_ADDR_CONTAINER (n);
+		RAnalFunction *x = ADDR_FCN_CONTAINER (n);
 		if (x->addr == addr) {
 			return x;
 		}
