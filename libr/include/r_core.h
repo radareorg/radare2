@@ -184,6 +184,11 @@ typedef struct r_core_visual_tab_t {
 	int cols;
 	int disMode;
 	int hexMode;
+	int asm_offset;
+	int asm_instr;
+	int asm_indent;
+	int asm_bytes;
+	int asm_cmt_col;
 	int printMode;
 	int current3format;
 	int current4format;
@@ -376,7 +381,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
-R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph);
+R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
@@ -854,7 +859,6 @@ extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_a2f;
 
 #endif
-
 
 #ifdef __cplusplus
 }
