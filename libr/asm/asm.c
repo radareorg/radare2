@@ -603,7 +603,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RStrBuf *buf_asm;
 	RAsmCode *acode;
 	ut64 pc = a->pc;
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	ut64 idx;
 	int ret, slen;
 	const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;

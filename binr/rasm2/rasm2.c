@@ -354,7 +354,7 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 			r_anal_op_fini (&aop);
 		}
 	} else if (hex) {
-		RAsmOp op;
+		RAsmOp op = R_EMPTY;
 		r_asm_set_pc (as->a, offset);
 		while ((len - ret) > 0) {
 			int dr = r_asm_disassemble (as->a, &op, data + ret, len - ret);

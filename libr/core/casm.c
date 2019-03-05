@@ -65,7 +65,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 // TODO: add support for byte-per-byte opcode search
 R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RCoreAsmHit *hit;
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	RList *hits;
 	ut64 at, toff = core->offset;
 	ut8 *buf;
@@ -333,7 +333,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 	ut64 temp_instr_len = 0;
 	ut64 start = 0, end = 0;
 	ut8 is_valid = false;
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 
 	if (end_addr < current_instr_addr) {
 		return end_addr;
@@ -452,7 +452,7 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 }
 
 R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	// len = n * 32;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
@@ -522,7 +522,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	RList *hits = r_core_asm_hit_list_new ();
 	RCoreAsmHit dummy_value;
 	RCoreAsmHit *hit = NULL;
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	ut8 *buf = (ut8 *)malloc (len + extra_padding);
 	int current_instr_len = 0;
 	ut64 current_instr_addr = addr,
@@ -577,7 +577,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 
 static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
 	RList *hits;;
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
 		last_num_invalid = 0;

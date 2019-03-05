@@ -1913,7 +1913,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			r_strbuf_appendf (s, " %sW%s", c, cend);
 		}
 		if (type & R_ANAL_ADDR_TYPE_EXEC) {
-			RAsmOp op;
+			RAsmOp op = R_EMPTY;
 			ut8 buf[32];
 			r_strbuf_appendf (s, " %sX%s", c, cend);
 			/* instruction disassembly */

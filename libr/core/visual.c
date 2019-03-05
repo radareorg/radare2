@@ -979,7 +979,7 @@ R_API void r_core_visual_seek_animation(RCore *core, ut64 addr) {
 }
 
 static void setprintmode(RCore *core, int n) {
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	if (n > 0) {
 		core->printidx = R_ABS ((core->printidx + 1) % NPF);
 	} else {
@@ -1524,7 +1524,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	RPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 
 	cursor_ocur (core, use_ocur);
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
@@ -1648,7 +1648,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 				prev_roff = 0;
 				prev_sz = 1;
 			} else {
-				RAsmOp op;
+				RAsmOp op = R_EMPTY;
 				prev_roff = 0;
 				r_core_seek (core, prev_addr, 1);
 				prev_sz = r_asm_disassemble (core->assembler, &op,
@@ -1712,7 +1712,7 @@ static bool fix_cursor(RCore *core) {
 			r_core_seek_delta (core, p->cur);
 			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
-			RAsmOp op;
+			RAsmOp op = R_EMPTY;
 			int sz = r_asm_disassemble (core->assembler,
 				&op, core->block, 32);
 			if (sz < 1) {
@@ -2240,7 +2240,7 @@ static bool canWrite(RCore *core, ut64 addr) {
 
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 ch = arg[0];
-	RAsmOp op;
+	RAsmOp op = R_EMPTY;
 	ut64 offset = core->offset;
 	char buf[4096];
 	const char *key_s;

@@ -770,7 +770,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 }
 
 static int step_until_inst(RCore *core, const char *instr, bool regex) {
-	RAsmOp asmop;
+	RAsmOp asmop = R_EMPTY;
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
