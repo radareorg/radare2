@@ -14,14 +14,7 @@ struct VarUsedType {
 
 R_API RAnalOp *r_anal_op_new () {
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (op) {
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->val = UT64_MAX;
-		r_strbuf_init (&op->esil);
-	}
+	r_anal_op_init(op);
 	return op;
 }
 
@@ -34,7 +27,14 @@ R_API RList *r_anal_op_list_new() {
 }
 
 R_API void r_anal_op_init(RAsmOp *op) {
-	memset (op, 0, sizeof (*op));
+	if (op) {
+		memset (op, 0, sizeof (*op));
+		op->addr = UT64_MAX;
+		op->jump = UT64_MAX;
+		op->fail = UT64_MAX;
+		op->ptr = UT64_MAX;
+		op->val = UT64_MAX;
+	}
 }
 
 R_API bool r_anal_op_fini(RAnalOp *op) {
