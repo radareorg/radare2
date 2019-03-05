@@ -710,6 +710,7 @@ typedef struct r_anal_t {
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	char *cmdtail;
 	int seggrn;
+	RFlagGetAtAddr flag_get;
 	REvent *ev;
 } RAnal;
 

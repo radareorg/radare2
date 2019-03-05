@@ -3480,7 +3480,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					if (bpi) {
 						free (bpi->name);
 						if (!strcmp (DB_ARG (i), "$$")) {
-							RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+							RFlagItem *f = r_core_flag_get_by_spaces (core->flags, addr);
 							if (f) {
 								if (addr > f->offset) {
 									bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);

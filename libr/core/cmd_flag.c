@@ -494,9 +494,6 @@ rep:
 	case 'm': // "fm"
 		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
 		break;
-	case '2': // "f2"
-		r_flag_get_i2 (core->flags, r_num_math (core->num, input+1));
-		break;
 	case 'R': // "fR"
 		switch(*str) {
 		case '\0':
