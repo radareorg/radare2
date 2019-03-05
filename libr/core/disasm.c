@@ -771,6 +771,7 @@ static RDisasmState * ds_init(RCore *core) {
 		}
 	}
 	r_asm_op_init (&ds->asmop);
+	r_anal_op_init (&ds->analop);
 	return ds;
 }
 
@@ -1134,7 +1135,7 @@ static void ds_show_refs(RDisasmState *ds) {
 			free (cmt);
 		}
 		if (ref->type & R_ANAL_REF_TYPE_CALL) {
-			RAnalOp aop;
+			RAnalOp aop = R_EMPTY;
 			ut8 buf[12];
 			r_io_read_at (ds->core->io, ref->at, buf, sizeof (buf));
 			r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
@@ -5732,7 +5733,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), core->print->big_endian);
 				if (scr_color) {
-					RAnalOp aop;
+					RAnalOp aop = R_EMPTY;
 					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ANAL_OP_MASK_ALL);
 					char *buf_asm = r_print_colorize_opcode (core->print, str,

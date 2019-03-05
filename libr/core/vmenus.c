@@ -134,7 +134,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 	int x = 0;
 	RAnalEsil *esil;
 	RAsmOp asmop = R_EMPTY;
-	RAnalOp analop;
+	RAnalOp analop = R_EMPTY;
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
@@ -277,7 +277,7 @@ static bool edit_bits (RCore *core) {
 	int analopType;
 	int i, j, x = 0;
 	RAsmOp asmop = R_EMPTY;
-	RAnalOp analop;
+	RAnalOp analop = R_EMPTY;
 	ut8 buf[sizeof (ut64)];
 
 	if (core->blocksize < sizeof (ut64)) {
@@ -3073,7 +3073,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
-		RAnalOp aop;
+		RAnalOp aop = R_EMPTY;
 		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
@@ -3361,7 +3361,7 @@ onemoretime:
 		break;
 	case 'n':
 	{
-		RAnalOp op;
+		RAnalOp op = R_EMPTY;
 		char *q = NULL;
 		ut64 tgt_addr = UT64_MAX;
 		if (!isDisasmPrint (core->printidx)) {
@@ -3461,7 +3461,7 @@ onemoretime:
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		}
 		if (fcn) {
-			RAnalOp op;
+			RAnalOp op = R_EMPTY;
 			ut64 size;
 			if (r_anal_op (core->anal, &op, off, core->block+delta,
 					core->blocksize-delta, R_ANAL_OP_MASK_BASIC)) {
@@ -3623,7 +3623,7 @@ onemoretime:
 		break;
         case 'v':
         {
-		RAnalOp op;
+		RAnalOp op = R_EMPTY;
 		ut64 N;
 		char *endptr = NULL;
 		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");

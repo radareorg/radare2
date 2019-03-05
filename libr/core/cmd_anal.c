@@ -885,7 +885,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 static int cmd_an(RCore *core, bool use_json, const char *name)
 {
 	ut64 off = core->offset;
-	RAnalOp op;
+	RAnalOp op = R_EMPTY;
 	char *q = NULL;
 	PJ *pj = NULL;
 	ut64 tgt_addr = UT64_MAX;
@@ -4954,7 +4954,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_list_foreach (fcn->bbs, iter, bb) {
 				ut64 pc = bb->addr;
 				ut64 end = bb->addr + bb->size;
-				RAnalOp op;
+				RAnalOp op = R_EMPTY;
 				ut8 *buf;
 				int ret, bbs = end - pc;
 				if (bbs < 1 || bbs > 0xfffff) {
@@ -5429,7 +5429,7 @@ ctrl_c:
 }
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
-	RAnalOp op;
+	RAnalOp op = R_EMPTY;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
@@ -6270,7 +6270,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								ref->type, ref->at, buf_asm);
 
 						if (ref->type == R_ANAL_REF_TYPE_CALL) {
-							RAnalOp aop;
+							RAnalOp aop = R_EMPTY;
 							r_anal_op (core->anal, &aop, ref->at, buf, 12, R_ANAL_OP_MASK_BASIC);
 							if (aop.type == R_ANAL_OP_TYPE_UCALL) {
 								cmd_anal_ucall_ref (core, ref->addr);

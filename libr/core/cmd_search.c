@@ -1645,7 +1645,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
 	ut8 *arr;
-	RAnalOp aop;
+	RAnalOp aop = R_EMPTY;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
@@ -1873,7 +1873,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	RSearch *search = core->search;
 	ut64 at;
 	ut8 *buf;
-	RAnalOp aop;
+	RAnalOp aop = R_EMPTY;
 	int type = 0;
 	int mode = 0;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
@@ -2679,7 +2679,7 @@ static void __core_cmd_search_asm_infinite (RCore *core, const char *arg) {
 	RList *boundaries = r_core_get_boundaries_prot (core, -1, search_in, "search");
 	RListIter *iter;
 	RIOMap *map;
-	RAnalOp analop;
+	RAnalOp analop = R_EMPTY;
 	ut64 at;
 	r_list_foreach (boundaries, iter, map) {
 		ut64 map_begin = map->itv.addr;

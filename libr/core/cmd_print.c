@@ -1884,7 +1884,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
-	RAnalOp op;
+	RAnalOp op = R_EMPTY;
 
 	if (len < 0 || len > core->blocksize) {
 		eprintf ("Invalid length\n");

@@ -33,6 +33,10 @@ R_API RList *r_anal_op_list_new() {
 	return list;
 }
 
+R_API void r_anal_op_init(RAsmOp *op) {
+	memset (op, 0, sizeof (*op));
+}
+
 R_API bool r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return false;
