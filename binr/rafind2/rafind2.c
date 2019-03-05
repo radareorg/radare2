@@ -197,7 +197,11 @@ static int rafind_open_file(char *file) {
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
 			if (hexstr) {
-				r_search_kw_add (rs, r_search_keyword_new_hex (kw, mask, NULL));
+				if (mask) {
+					r_search_kw_add (rs, r_search_keyword_new_hex (kw, mask, NULL));
+				} else {
+					r_search_kw_add (rs, r_search_keyword_new_hexmask (kw, NULL));
+				}
 			} else if (widestr) {
 				r_search_kw_add (rs, r_search_keyword_new_wide (kw, mask, NULL, 0));
 			} else {
