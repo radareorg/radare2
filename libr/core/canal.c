@@ -668,6 +668,27 @@ static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
 	}
 }
 
+static void set_fcn_name_from_flag(RAnalFunction *fcn, RFlagItem *f, const char *fcnpfx) {
+#define SET_NAME(newname) \
+	R_FREE (fcn->name); \
+	fcn->name = (newname); \
+	is_name_set = true
+
+	bool is_name_set = false;
+	if (f && f->name) {
+		if (!strncmp (fcn->name, "loc.", 4) || !strncmp (fcn->name, "fcn.", 4)) {
+			SET_NAME (strdup (f->name));
+		} else if (strncmp (f->name, "sect", 4)) {
+			SET_NAME (strdup (f->name));
+		}
+	}
+	if (!is_name_set) {
+		SET_NAME (r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr));
+	}
+
+#undef SET_NAME
+}
+
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
@@ -744,23 +765,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		}
 		f = r_core_flag_get_by_spaces (core->flags, fcn->addr);
+		set_fcn_name_from_flag (fcn, f, fcnpfx);
 
-		if (f && f->name) {
-			if (!strncmp (fcn->name, "loc.", 4)) {
-				R_FREE (fcn->name);
-				fcn->name = strdup (f->name);
-			} else if (!strncmp (fcn->name, "fcn.", 4)) {
-				R_FREE (fcn->name);
-				fcn->name = strdup (f->name);
-			} else {
-				R_FREE (fcn->name);
-				if (strncmp (f->name, "sect", 4)) {
-					fcn->name = strdup (f->name);
-				} else {
-					fcn->name = r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr);
-				}
-			}
-		}
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && r_anal_fcn_size (fcn) < 1)) { /* Error analyzing function */
 			if (core->anal->opt.followbrokenfcnsrefs) {
