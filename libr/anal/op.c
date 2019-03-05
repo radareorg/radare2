@@ -26,7 +26,7 @@ R_API RList *r_anal_op_list_new() {
 	return list;
 }
 
-R_API void r_anal_op_init(RAsmOp *op) {
+R_API void r_anal_op_init(RAnalOp *op) {
 	if (op) {
 		memset (op, 0, sizeof (*op));
 		op->addr = UT64_MAX;

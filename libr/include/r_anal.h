@@ -1360,7 +1360,7 @@ R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb);
 R_API const char *r_anal_stackop_tostring(int s);
 R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
-R_API bool r_anal_op_init(RAnalOp *op);
+R_API void r_anal_op_init(RAnalOp *op);
 R_API bool r_anal_op_fini(RAnalOp *op);
 R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
