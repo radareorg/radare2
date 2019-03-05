@@ -2514,7 +2514,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->flg_class_get = core_flg_class_get;
 	core->anal->flg_fcn_set = core_flg_fcn_set;
 	r_anal_bind (core->anal, &(core->parser->analb));
-	core->parser->get_flag = r_core_flag_get_by_spaces;
+	core->parser->flag_get = r_core_flag_get_by_spaces;
 
 	r_core_bind (core, &(core->anal->coreb));
 

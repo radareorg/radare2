@@ -253,11 +253,11 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 			}
 			if (f) {
 				RFlagItem *flag2;
-				flag = p->get_flag (f, off);
+				flag = p->flag_get (f, off);
 				computed = false;
 				if ((!flag || arm) && p->relsub_addr) {
 					computed = true;
-					flag2 = p->get_flag (f, p->relsub_addr);
+					flag2 = p->flag_get (f, p->relsub_addr);
 					if (!flag || arm) {
 						flag = flag2;
 					}
