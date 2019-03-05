@@ -414,14 +414,15 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 //return a boolean denoting whether is was possible to priorized
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	RIOMap* map;
-	SdbListIter* iter;
+	RIOMap *map;
+	SdbListIter *iter;
 	ls_foreach (io->maps, iter, map) {
 		// search for iter with the correct map
 		if (map->id == id) {
 			ls_split_iter (io->maps, iter);
 			ls_append (io->maps, map);
 			io_map_calculate_skyline (io);
+			free (iter);
 			return true;
 		}
 	}
@@ -430,14 +431,15 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 
 R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	RIOMap* map;
-	SdbListIter* iter;
+	RIOMap *map;
+	SdbListIter *iter;
 	ls_foreach (io->maps, iter, map) {
 		// search for iter with the correct map
 		if (map->id == id) {
 			ls_split_iter (io->maps, iter);
 			ls_prepend (io->maps, map);
 			io_map_calculate_skyline (io);
+			free (iter);
 			return true;
 		}
 	}
