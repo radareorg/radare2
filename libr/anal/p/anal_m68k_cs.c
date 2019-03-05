@@ -318,6 +318,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case M68K_INS_EXG:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case M68K_INS_EXT:
 	case M68K_INS_EXTB:
 		break;
