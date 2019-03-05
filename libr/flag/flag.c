@@ -518,7 +518,12 @@ R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	size_t n_spaces = 0, i;
 
 	va_start (ap, off);
+	// some quick checks for common cases
 	if (r_list_empty (list)) {
+		goto beach;
+	}
+	if (r_list_length (list) == 1) {
+		ret = r_list_get_top (list);
 		goto beach;
 	}
 
