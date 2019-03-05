@@ -40,6 +40,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 static int destroy(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	r_list_free (qo->sections);
+	r_list_free (qo->fixups);
 	bf->o->bin_obj = NULL;
 	free (qo);
 	return true;
@@ -54,12 +55,13 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	lmf_resource *lres = R_NEW0 (lmf_resource);
 	lmf_data *ldata = R_NEW0 (lmf_data);
 	ut64 offset = QNX_RECORD_SIZE;
-	RList *ret = NULL;
+	RList *sections = NULL;
+	RList *fixups = NULL;
 	
 	if (!qo) {
 		return false;
 	}
-	if (!(ret = r_list_new ())) {
+	if (!(sections = r_list_new ()) || !(fixups = r_list_new ())) {
 		return false;
 	}
 	qo->kv = sdb_new0 ();
@@ -96,7 +98,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 			ptr->vsize = lrec->data_nbytes - sizeof (lmf_resource);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		 	r_list_append (ret, ptr);
+		 	r_list_append (sections, ptr);
 		} else if (lrec->rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
@@ -111,14 +113,37 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 			ptr->vsize = lrec->data_nbytes - sizeof (lmf_data);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
-		 	r_list_append (ret, ptr);
+		 	r_list_append (sections, ptr);
+		} else if (lrec->rec_type == LMF_FIXUP_REC) {
+			RBinReloc *ptr = R_NEW0(RBinReloc);
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
+				return false;
+			}
+			if (!ptr) {
+				return false;
+			}
+			ptr->vaddr = ptr->paddr = ldata->offset;
+			ptr->type = "LMF_FIXUP";
+			r_list_append (fixups, ptr);
+		} else if (lrec->rec_type == LMF_8087_FIXUP_REC) {
+			RBinReloc *ptr = R_NEW0(RBinReloc);
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
+				return false;
+			}
+			if (!ptr) {
+				return false;
+			}
+			ptr->vaddr = ptr->paddr = ldata->offset;
+			ptr->type = "LMF_8087_FIXUP";
+			r_list_append (fixups, ptr);
 		} else if (lrec->rec_type == LMF_RW_END_REC) {
 			r_buf_fread_at (bf->buf, offset, (ut8 *) &qo->rwend, "ii", 1);
 		}
 		offset += lrec->data_nbytes;
     	}
 	sdb_ns_set (sdb, "info", qo->kv);
-	qo->sections = ret;
+	qo->sections = sections;
+	qo->fixups = fixups;
 	*bin_obj = qo;
 	free (lrec);
 	free (lres);
@@ -157,6 +182,11 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+static RList *relocs(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o, NULL);
+	QnxObj *qo = bf->o->bin_obj;
+	return r_list_clone (qo->fixups);
+}
 static void header(RBinFile *bf) {
 	r_return_if_fail (bf && bf->o && bf->rbin);
 	QnxObj *bin = bf->o->bin_obj;
@@ -262,6 +292,7 @@ RBinPlugin r_bin_plugin_qnx = {
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
+	.relocs = &relocs,
 	.baddr = &baddr,
 	.author = "deepakchethan",
 	.check_bytes = &check_bytes,

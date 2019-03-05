@@ -80,6 +80,7 @@ R_PACKED (
 typedef struct {
 	Sdb *kv;
 	lmf_header lmfh;
+	RList* fixups;
 	RList* sections;
 	lmf_rw_end rwend;
 }) QnxObj;
