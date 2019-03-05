@@ -50,7 +50,7 @@ MCORE, mcs96, RSP, SuperH-4, VAX.
 ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
 Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
-WASM (WebAssembly binary), Commodore VICE emulator, 
+WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
 ## Operating Systems
