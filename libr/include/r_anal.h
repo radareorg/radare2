@@ -1600,7 +1600,7 @@ R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall);
 /* TODO move to r_core */
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
 R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
