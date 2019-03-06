@@ -407,6 +407,7 @@ subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
+subdir('libr/main')
 
 if not meson.is_subproject()
   subdir('binr/rahash2')
@@ -430,6 +431,7 @@ else
       r_config_dep,
       r_cons_dep,
       r_core_dep,
+      r_main_dep,
       r_crypto_dep,
       r_debug_dep,
       r_egg_dep,

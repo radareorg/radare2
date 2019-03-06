@@ -9,8 +9,9 @@ LIBS4=asm
 LIBS5=egg
 LIBS6=debug
 LIBS7=core
+LIBS8=main
 
-LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
+LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7) $(LIBS8)
 endif
 
 .PHONY: $(LIBS)

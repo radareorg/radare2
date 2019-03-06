@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_list.h"
 #include "r_config.h"
@@ -86,6 +86,7 @@ static const char *help_msg_om[] = {
 	"Usage:", "om[-] [arg]", " # map opened files",
 	"om", "", "list all defined IO maps",
 	"omq", "", "list all maps and their fds",
+	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"om*", "", "list all maps in r2 commands format",
 	"om=", "", "list all maps in ascii art",
 	"omj", "", "list all maps in json format",
@@ -440,12 +441,16 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 	bool first = true;
 	ls_foreach_prev (io->maps, iter, map) {			//this must be prev
-		if (fd != -1 && map->fd != fd) {
+		if (fd >= 0 && map->fd != fd) {
 			continue;
 		}
 		switch (mode) {
 		case 'q':
-			print->cb_printf ("%d %d\n", map->fd, map->id);
+			if (fd == -2) {
+				print->cb_printf ("0x%08"PFMT64x"\n", map->itv.addr);
+			} else {
+				print->cb_printf ("%d %d\n", map->fd, map->id);
+			}
 			break;
 		case 'j':
 			if (!first) {
@@ -794,7 +799,11 @@ static void cmd_open_map(RCore *core, const char *input) {
 				core->print->cb_printf ("%i\n", map->id);
 			}
 		} else {
-			map_list (core->io, input[1], core->print, -1);
+			if (input[2] == 'q') { // "omqq"
+				map_list (core->io, input[1], core->print, -2);
+			} else {
+				map_list (core->io, input[1], core->print, -1);
+			}
 		}
 		break;
 	case '=': // "om="
