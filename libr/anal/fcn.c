@@ -6,6 +6,7 @@
 #include <r_core.h>
 
 #define USE_SDB_CACHE 0
+#define Dprintf if (anal->verbose) eprintf
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
 #define JMPTBLSZ 512
@@ -736,7 +737,9 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		eprintf ("[anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		if (anal->verbose) {
+			eprintf ("Warning: [anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		}
 		return false;
 	}
 
@@ -934,7 +937,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
-			eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
+			if (anal->verbose) {
+				eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
+			}
 		}
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -954,7 +959,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	bb = appendBasicBlock (anal, fcn, addr);
 
-	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+	if (anal->verbose) {
+		eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+	}
 
 	ut64 leaddr = UT64_MAX;
 	bool last_is_push = false;
@@ -988,7 +995,9 @@ repeat:
 		r_anal_op_fini (&op);
 		if (isInvalidMemory (buf + addrbytes * idx, len - addrbytes * idx)) {
 			FITFCNSZ ();
-			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+			if (anal->verbose) {
+				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+			}
 			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + (addrbytes * idx), len - (addrbytes * idx), R_ANAL_OP_MASK_ALL)) < 1) {
@@ -1021,7 +1030,9 @@ repeat:
 					r_anal_fcn_split_bb (anal, fcn, bbg, addr + idx);
 				}
 				overlapped = 1;
-				VERBOSE_ANAL eprintf ("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+				if (anal->verbose) {
+					eprintf ("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+				}
 				// return R_ANAL_RET_END;
 			}
 		}
@@ -1523,8 +1534,8 @@ analopfinish:
 				recurseAt (op.jump);
 				gotoBeachRet ();
 			} else {
-				if (!op.cond) {
-					VERBOSE_ANAL eprintf("RET 0x%08"PFMT64x ". %d %d %d\n",
+				if (!op.cond && anal->verbose) {
+					eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
 					addr + delay.un_idx - oplen, overlapped,
 					bb->size, r_anal_fcn_size (fcn));
 					gotoBeach (R_ANAL_RET_END);
@@ -2047,7 +2058,7 @@ R_API int r_anal_fcn_loops(RAnalFunction *fcn) {
 	return loops;
 }
 
-R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
+R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 /*
         CC = E - N + 2P
         E = the number of edges of the graph.
@@ -2060,7 +2071,7 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if (bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+		if (anal->verbose && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			eprintf ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x"\n", bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {

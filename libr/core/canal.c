@@ -2278,7 +2278,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			r_anal_fcn_realsize (fcn),
 			r_list_length (fcn->bbs),
 			r_anal_fcn_count_edges (fcn, &ebbs),
-			r_anal_fcn_cc (fcn),
+			r_anal_fcn_cc (core->anal, fcn),
 			r_anal_fcn_cost (core->anal, fcn),
 			addrwidth, fcn->meta.min,
 			r_anal_fcn_size (fcn),
@@ -2465,7 +2465,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	pj_ks (pj, "calltype", fcn->cc);
 	pj_ki (pj, "cost", r_anal_fcn_cost (core->anal, fcn));
-	pj_ki (pj, "cc", r_anal_fcn_cc (fcn));
+	pj_ki (pj, "cc", r_anal_fcn_cc (core->anal, fcn));
 	pj_ki (pj, "bits", fcn->bits);
 	pj_ks (pj, "type", r_anal_fcn_type_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
@@ -2674,7 +2674,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	r_cons_printf ("\ncall-convention: %s", fcn->cc);
 	r_cons_printf ("\ncyclomatic-cost : %d", r_anal_fcn_cost (core->anal, fcn));
-	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
+	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_fcn_cc (core->anal, fcn));
 	r_cons_printf ("\nbits: %d", fcn->bits);
 	r_cons_printf ("\ntype: %s", r_anal_fcn_type_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {

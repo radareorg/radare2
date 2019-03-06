@@ -118,7 +118,7 @@ out:
 
 static bool addFcnGraph(RCore *core, RAnalFunction *fcn, const char *name) {
 	RSignGraph graph = {
-		.cc = r_anal_fcn_cc (fcn),
+		.cc = r_anal_fcn_cc (fcn, core->anal->verbose),
 		.nbbs = r_list_length (fcn->bbs)
 	};
 	// XXX ebbs doesnt gets initialized if calling this from inside the struct
