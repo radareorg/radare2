@@ -2424,7 +2424,7 @@ r_cons_pop();
 				ut64 ptr = r_num_math (NULL, str);
 				RFlagItem *flag = NULL;
 				if (str) {
-					flag = r_flag_get_i2 (core->flags, ptr);
+					flag = r_core_flag_get_by_spaces (core->flags, ptr);
 				}
 				if (!flag) {
 					if (string && !strncmp (string, "0x", 2)) {
@@ -3311,20 +3311,34 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	if (print_bars) {
 		int i;
 		switch (submode) {
-		case 'j':
-			r_cons_printf ("{\"blocksize\":%d,\"address\":%"PFMT64u ",\"size\":%"PFMT64u ",\"entropy\":[",
-				blocksize, from, totalsize);
+		case 'j': {
+			PJ *pj = pj_new ();
+			if (!pj) {
+				return;
+			}
+
+			pj_o (pj);
+			pj_kn (pj, "blocksize", blocksize);
+			pj_kn (pj, "address", from);
+			pj_kn (pj, "size", totalsize);
+			pj_k (pj, "entropy");
+			pj_a (pj);
+
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
 				ut64 off = blocksize * i;
-				const char *comma = (i + 1 < (nblocks))? ",": "";
 				off += from;
-				r_cons_printf ("{\"addr\":%"PFMT64u ",\"value\":%d}%s",
-					off, ep, comma);
+				pj_o (pj);
+				pj_kn (pj, "addr", off);
+				pj_ki (pj, "value", ep);
+				pj_end (pj);
 
 			}
-			r_cons_printf ("]}\n");
-			break;
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
+		}	break;
 		case 'q':
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * i);
@@ -4562,11 +4576,11 @@ static int cmd_print(void *data, const char *input) {
 
 						// store current configurations
 						RConfigHold *hc = r_config_hold_new (core->config);
-						r_config_save_num (hc, "asm.offset", NULL);
-						r_config_save_num (hc, "asm.comments", NULL);
-						r_config_save_num (hc, "asm.tabs", NULL);
-						r_config_save_num (hc, "asm.bytes", NULL);
-						r_config_save_num (hc, "emu.str", NULL);
+						r_config_hold_i (hc, "asm.offset", NULL);
+						r_config_hold_i (hc, "asm.comments", NULL);
+						r_config_hold_i (hc, "asm.tabs", NULL);
+						r_config_hold_i (hc, "asm.bytes", NULL);
+						r_config_hold_i (hc, "emu.str", NULL);
 
 
 						// temporarily replace configurations
@@ -4593,7 +4607,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 
 						// restore saved configuration
-						r_config_restore (hc);
+						r_config_hold_restore (hc);
 						r_config_hold_free (hc);
 					}
 					// print json object
@@ -5710,9 +5724,12 @@ static int cmd_print(void *data, const char *input) {
 		case 'r': // "pxr"
 			if (l) {
 				if (input[2] == 'j') {
+					PJ *pj = pj_new ();
+					if (!pj) {
+						return 0;
+					}
 					int base = core->anal->bits;
-					r_cons_printf ("[");
-					const char *comma = "";
+					pj_a (pj);
 					const ut8 *buf = core->block;
 					int withref = 0;
 					const int wordsize = base / 8;
@@ -5723,26 +5740,30 @@ static int cmd_print(void *data, const char *input) {
 						if (base == 32) {
 							val &= UT32_MAX;
 						}
-						r_cons_printf ("%s{\"addr\":%"PFMT64u ",\"value\":%"\
-							PFMT64u, comma, addr, val);
-						comma = ",";
+						pj_o (pj);
+						pj_kn (pj, "addr", addr);
+						pj_kn (pj, "value", val);
+
 						// XXX: this only works in little endian
 						withref = 0;
 						if (core->print->hasrefs) {
 							char *rstr = core->print->hasrefs (core->print->user, val, true);
 							if (rstr && *rstr) {
 								char *ns = r_str_escape (rstr);
-								r_cons_printf (",\"ref\":\"%s\"}", *ns == ' ' ? ns + 1 : ns);
+								pj_ks (pj, "ref", r_str_trim_ro (ns));
+								pj_end (pj);
 								free (ns);
 								withref = 1;
 							}
 							free (rstr);
 						}
 						if (!withref) {
-							r_cons_printf ("}");
+							pj_end (pj);
 						}
 					}
-					r_cons_printf ("]\n");
+					pj_end (pj);
+					r_cons_println (pj_string (pj));
+					pj_free (pj);
 				} else {
 					const int ocols = core->print->cols;
 					int bitsize = core->assembler->bits;

@@ -499,50 +499,82 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	r_return_val_if_fail (f, NULL);
 	const RList *list = r_flag_get_list (f, off);
-	return list ? evalFlag (f, r_list_get_top (list)) : NULL;
+	return list? evalFlag (f, r_list_get_top (list)): NULL;
 }
 
-/* return the first flag item at offset "off" that doesn't start with "loc.",
- * "fcn.", "section." or NULL if such a flag doesn't exist.
- *
- * XXX: this function is buggy and it's not really clear what's the purpose */
-R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
+/* return the first flag that matches an offset ordered by the order of
+ * operands to the function.
+ * Pass in the name of each space, in order, followed by a NULL */
+R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	r_return_val_if_fail (f, NULL);
-	RFlagItem *oitem = NULL, *item = NULL;
-	RListIter *iter;
+
 	const RList *list = r_flag_get_list (f, off);
-	if (!list) {
-		return NULL;
+	RFlagItem *ret = NULL;
+	const char *spacename;
+	RSpace **spaces;
+	RListIter *iter;
+	RFlagItem *flg;
+	va_list ap, aq;
+	size_t n_spaces = 0, i;
+
+	va_start (ap, off);
+	// some quick checks for common cases
+	if (r_list_empty (list)) {
+		goto beach;
 	}
-	r_list_foreach (list, iter, item) {
-		if (!item->name) {
-			continue;
+	if (r_list_length (list) == 1) {
+		ret = r_list_get_top (list);
+		goto beach;
+	}
+
+	// count spaces in the vaarg
+	va_copy (aq, ap);
+	spacename = va_arg (aq, const char *);
+	while (spacename) {
+		n_spaces++;
+		spacename = va_arg (aq, const char *);
+	}
+	va_end (aq);
+
+	// get RSpaces from the names
+	i = 0;
+	spaces = R_NEWS (RSpace *, n_spaces);
+	spacename = va_arg (ap, const char *);
+	while (spacename) {
+		RSpace *space = r_flag_space_get (f, spacename);
+		if (space) {
+			spaces[i++] = space;
 		}
-		/* catch sym. first */
-		if (!strncmp (item->name, "loc.", 4)) {
-			continue;
+		spacename = va_arg (ap, const char *);
+	}
+	n_spaces = i;
+
+	ut64 min_space_i = n_spaces + 1;
+	r_list_foreach (list, iter, flg) {
+		// get the "priority" of the flag flagspace and
+		// check if better than what we found so far
+		for (i = 0; i < n_spaces; ++i) {
+			if (flg->space == spaces[i]) {
+				break;
+			}
+			if (i >= min_space_i) {
+				break;
+			}
 		}
-		if (!strncmp (item->name, "fcn.", 4)) {
-			continue;
+
+		if (i < min_space_i) {
+			min_space_i = i;
+			ret = flg;
 		}
-		if (!strncmp (item->name, "section.", 8)) {
-			continue;
-		}
-		if (!strncmp (item->name, "section_end.", 12)) {
-			continue;
-		}
-		if (r_str_nlen (item->name, 5) > 4 &&
-		    item->name[3] == '.') {
-			oitem = item;
+		if (!min_space_i) {
+			// this is the best flag we can find, let's stop immediately
 			break;
 		}
-		oitem = item;
-		if (strlen (item->name) < 5 || item->name[3] != '.') {
-			continue;
-		}
-		oitem = item;
 	}
-	return oitem? evalFlag (f, oitem): NULL;
+	free (spaces);
+beach:
+	va_end (ap);
+	return ret? evalFlag (f, ret): NULL;
 }
 
 static bool isFunctionFlag(const char *n) {

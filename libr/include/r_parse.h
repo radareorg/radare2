@@ -36,6 +36,7 @@ typedef struct r_parse_t {
 	RAnalVarList varlist;
 	char* (*get_op_ireg)(void *user, ut64 addr);
 	RAnalBind analb;
+	RFlagGetAtAddr flag_get;
 } RParse;
 
 typedef struct r_parse_plugin_t {

@@ -810,7 +810,7 @@ static int cb_asmparser(void *user, void *data) {
 	return r_parse_use (core->parser, node->value);
 }
 
-static int cb_asmstrenc (void *user, void *data) {
+static int cb_binstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
@@ -1223,9 +1223,9 @@ static int cb_dbg_gdb_retries(void *user, void *data) {
 }
 
 static int cb_dbg_execs(void *user, void *data) {
-	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 #if __linux__
+	RCore *core = (RCore*) user;
 	core->dbg->trace_execs = node->i_value;
 	if (core->io->debug) {
 		r_debug_attach (core->dbg, core->dbg->pid);
@@ -2109,6 +2109,13 @@ static int cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
+static int cb_analverbose(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->anal->verbose = node->i_value;
+	return true;
+}
+
 static int cb_binverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2589,6 +2596,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* anal */
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETI ("anal.gp2", 0, "Set anal.gp before emulating each instruction (workaround)");
@@ -2609,8 +2617,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
-	SETCB ("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
-	SETCB ("anal.afterjmp", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
+	SETCB ("anal.jmp.eob", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
+	SETCB ("anal.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETCB ("anal.endsize", "true", &cb_anal_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
 	SETICB ("anal.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
@@ -2634,19 +2642,19 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF ("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
-	SETCB ("anal.ijmp", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
+	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
-	SETICB ("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
+	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
-	SETCB ("anal.jmptbl", "true", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
+	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
 
-	SETCB ("anal.cjmpref", "false", &cb_anal_cjmpref, "Create references for conditional jumps");
-	SETCB ("anal.jmpref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
+	SETCB ("anal.jmp.cref", "false", &cb_anal_cjmpref, "Create references for conditional jumps");
+	SETCB ("anal.jmp.ref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
 
-	SETCB ("anal.jmpabove", "true", &cb_anal_jmpabove, "Jump above function pointer");
+	SETCB ("anal.jmp.above", "true", &cb_anal_jmpabove, "Jump above function pointer");
 	SETCB ("anal.datarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
 	SETCB ("anal.brokenrefs", "false", &cb_anal_brokenrefs, "Follow function references as well if function analysis was failed");
-	SETCB ("anal.jmpmid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
+	SETCB ("anal.jmp.mid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
 	SETCB ("anal.bb.maxsize", "1M", &cb_anal_bb_max_size, "Maximum basic block size");
@@ -2694,6 +2702,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.xrefs.fold", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETI ("asm.xrefs.max", 20,  "Maximum number of xrefs to be displayed without folding");
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
+	SETPREF ("asm.instr", "true", "Display the disassembled instruction");
 	SETPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETPREF ("asm.bytes", "true", "Display the bytes of each instruction");
 	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
@@ -2835,9 +2844,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmt.patch", "false", "Show patch comments in disasm");
 	SETPREF ("asm.cmt.off", "nodup", "Show offset comment in disasm (true, false, nodup)");
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
-	n = NODECB ("asm.strenc", "guess", &cb_asmstrenc);
-	SETDESC (n, "Assumed string encoding for disasm");
-	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
 
 	/* bin */
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
@@ -2860,12 +2866,15 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
+	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
+	SETDESC (n, "Default string encoding of binary");
+	SETOPTIONS (n, "latin1", "utf8", "utf16le", "utf32le", "guess", NULL);
 	SETCB ("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETPREF ("bin.classes", "true", "Load classes from rbin on startup");
-	SETCB ("bin.verbose", "true", &cb_binverbose, "Show RBin warnings when loading binaries");
+	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
 	SETPREF ("prj.name", "", "Name of current project");

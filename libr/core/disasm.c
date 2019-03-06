@@ -112,6 +112,7 @@ typedef struct {
 	int adistrick;
 	bool asm_meta;
 	int asm_demangle;
+	bool asm_instr;
 	bool show_offset;
 	bool show_offdec; // dupe for r_print->flags
 	bool show_bbline;
@@ -629,6 +630,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_section_name = r_config_get_i (core->config, "asm.section.name");
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
+	ds->asm_instr = r_config_get_i (core->config, "asm.instr");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "emu.str");
 	ds->show_emu_stroff = r_config_get_i (core->config, "emu.str.off");
@@ -685,7 +687,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
-	const char *strenc_str = r_config_get (core->config, "asm.strenc");
+	const char *strenc_str = r_config_get (core->config, "bin.str.enc");
 	if (!strcmp (strenc_str, "latin1")) {
 		ds->strenc = R_STRING_ENC_LATIN1;
 	} else if (!strcmp (strenc_str, "utf8")) {
@@ -2974,8 +2976,10 @@ static void ds_print_indent(RDisasmState *ds) {
 
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
-	r_cons_strcat (ds->opstr);
-	ds_print_color_reset (ds);
+	if (ds->asm_instr) {
+		r_cons_strcat (ds->opstr);
+		ds_print_color_reset (ds);
+	}
 }
 
 static void ds_print_color_reset(RDisasmState *ds) {
@@ -3102,7 +3106,6 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		// f = r_anal_get_fcn_in (core->anal, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
 		if (f && f->name && ds->opstr && !strstr (ds->opstr, f->name)) {
-			//beginline (core, ds, f);
 			// print label
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
@@ -3570,10 +3573,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (f) {
 				ut64 relsub_addr = core->parser->relsub_addr;
 				if (relsub_addr && relsub_addr != p) {
-					f2 = r_flag_get_i2 (core->flags, relsub_addr);
-					if (!f2) {
-						f2 = r_flag_get_i (core->flags, relsub_addr);
-					}
+					f2 = r_core_flag_get_by_spaces (core->flags, relsub_addr);
 					f2_in_opstr = f2 && ds->opstr && strstr (ds->opstr, f2->name);
 				}
 				refaddr = p;
@@ -4275,7 +4275,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_anal_esil_set_pc (esil, at);
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
-	r_config_save_num (hc, "io.cache", NULL);
+	r_config_hold_i (hc, "io.cache", NULL);
 	r_config_set (core->config, "io.cache", "true");
 	if (!ds->show_comments) {
 		goto beach;
@@ -4291,6 +4291,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_CJMP:
 		ds_comment_esil (ds, true, true, ds->esil_likely? "; likely" : "; unlikely");
 		break;
+	case R_ANAL_OP_TYPE_JMP:
+		{
+			ut64 addr = ds->analop.jump;
+			if (!r_anal_get_fcn_at (ds->core->anal, addr, R_ANAL_FCN_TYPE_NULL)
+					&& !r_flag_get_at (core->flags, addr, false)) {
+				break;
+			}
+		}
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:
@@ -4414,7 +4422,7 @@ beach:
 	if (esil) {
 		esil->cb.hook_mem_write = hook_mem_write;
 	}
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 }
 
@@ -4606,7 +4614,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
-		flag = r_flag_get_i2 (f, addr);
+		flag = r_core_flag_get_by_spaces (f, addr);
 		if (flag) {
 			name = flag->name;
 		} else {
@@ -5360,7 +5368,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				r_parse_immtrim (ds->opstr);
 			}
 		}
-		{
+		if (ds->asm_instr) {
 			const char *opcolor = NULL;
 			if (ds->show_color) {
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);

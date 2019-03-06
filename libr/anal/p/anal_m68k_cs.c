@@ -318,6 +318,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case M68K_INS_EXG:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case M68K_INS_EXT:
 	case M68K_INS_EXTB:
 		break;
@@ -707,30 +709,30 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	a5	.32	52	0\n"
 		"gpr	a6 	.32	56	0\n"
 		"gpr	a7 	.32	60	0\n"
-		"gpr	fp0	.32	64	0\n"
-		"gpr	fp1	.32	68	0\n"
-		"gpr	fp2	.32	72	0\n"
-		"gpr	fp3 	.32	76	0\n"
-		"gpr	fp4 	.32	80	0\n"
-		"gpr	fp5 	.32	84	0\n"
-		"gpr	fp6 	.32	88	0\n"
-		"gpr	fp7 	.32	92	0\n"
+		"gpr	fp0	.32	64	0\n" //FPU register 0, 96bits to write and read max
+		"gpr	fp1	.32	68	0\n" //FPU register 1, 96bits to write and read max
+		"gpr	fp2	.32	72	0\n" //FPU register 2, 96bits to write and read max
+		"gpr	fp3 	.32	76	0\n" //FPU register 3, 96bits to write and read max
+		"gpr	fp4 	.32	80	0\n" //FPU register 4, 96bits to write and read max
+		"gpr	fp5 	.32	84	0\n" //FPU register 5, 96bits to write and read max
+		"gpr	fp6 	.32	88	0\n" //FPU register 6, 96bits to write and read max
+		"gpr	fp7 	.32	92	0\n" //FPU register 7, 96bits to write and read max
 		"gpr	pc 	.32	96	0\n"
-		"gpr	sr 	.32	100	0\n"
-		"gpr	ccr 	.32	104	0\n"
-		"gpr	sfc 	.32	108	0\n"
-		"gpr	dfc	.32	112	0\n"
-		"gpr	usp	.32	116	0\n"
-		"gpr	vbr	.32	120	0\n"
-		"gpr	cacr	.32	124	0\n"
-		"gpr	caar	.32	128	0\n"
-		"gpr	msp	.32	132	0\n"
-		"gpr	isp	.32	136	0\n"
+		"gpr	sr 	.32	100	0\n" //only available for read and write access during supervisor mode 16bit
+		"gpr	ccr 	.32	104	0\n" //subset of the SR, available from any mode
+		"gpr	sfc 	.32	108	0\n" //source function code register
+		"gpr	dfc	.32	112	0\n" //destination function code register
+		"gpr	usp	.32	116	0\n" //user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
+		"gpr	vbr	.32	120	0\n" //vector base register, this is a Address pointer
+		"gpr	cacr	.32	124	0\n" //cache control register, implementation specific
+		"gpr	caar	.32	128	0\n" //cache address register, 68020, 68EC020, 68030 and 68EC030 only.  
+		"gpr	msp	.32	132	0\n" //master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
+		"gpr	isp	.32	136	0\n" //interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
 		"gpr	tc	.32	140	0\n"
-		"gpr	itt0	.32	144	0\n"
-		"gpr	itt1	.32	148	0\n"
-		"gpr	dtt0	.32	156	0\n"
-		"gpr	dtt1	.32	160	0\n"
+		"gpr	itt0	.32	144	0\n" //in 68EC040 this is IACR0
+		"gpr	itt1	.32	148	0\n" //in 68EC040 this is IACR1
+		"gpr	dtt0	.32	156	0\n" //in 68EC040 this is DACR0
+		"gpr	dtt1	.32	160	0\n" //in 68EC040 this is DACR1
 		"gpr	mmusr	.32	164	0\n"
 		"gpr	urp	.32	168	0\n"
 		"gpr	srp	.32	172	0\n"

@@ -663,7 +663,7 @@ beach:
 	free (esil_buf);
 }
 
-R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
+R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	const char *opsreg = NULL;
 	const char *opdreg = NULL;
 	int i, argc = 0;
@@ -735,7 +735,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 	}
 }
 
-R_API void extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	r_return_if_fail (anal && fcn && op);
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];
@@ -839,13 +839,12 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	return (a && b)? a->delta > b->delta: false;
 }
 
-R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode) {
+R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
 	RList *list = r_anal_var_list (anal, fcn, kind);
 	r_list_sort (list, (RListComparator) var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
-	PJ *pj = pj_new ();
-	if (!pj) {
+	if (!pj && mode == 'j') {
 		return;
 	}
 	if (mode == 'j') {
@@ -988,8 +987,6 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		anal->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
 	r_list_free (list);
 }

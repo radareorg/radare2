@@ -16,7 +16,7 @@ enum {
 };
 
 static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
-	r_config_save_num (hc, "esil.romem", "asm.trace", "dbg.trace",
+	r_config_hold_i (hc, "esil.romem", "asm.trace", "dbg.trace",
 			"esil.nonull", "dbg.follow", NULL);
 	r_config_set (core->config, "esil.romem", "true");
 	r_config_set (core->config, "asm.trace", "true");
@@ -34,7 +34,7 @@ static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 }
 
 static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 }
 
@@ -522,7 +522,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
 				r_reg_set_value (core->dbg->reg, r, addr + ret);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 			bool userfnc = false;
 			Sdb *trace = anal->esil->db_trace;

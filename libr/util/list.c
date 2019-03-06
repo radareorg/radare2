@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake, alvarofe */
+/* radare - LGPL - Copyright 2007-2019 - pancake, alvarofe */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
@@ -186,10 +186,9 @@ R_API RList *r_list_newf(RListFree f) {
 
 R_API RListIter *r_list_item_new(void *data) {
 	RListIter *item = R_NEW0 (RListIter);
-	if (!item) {
-		return NULL;
+	if (item) {
+		item->data = data;
 	}
-	item->data = data;
 	return item;
 }
 

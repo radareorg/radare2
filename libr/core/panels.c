@@ -2818,6 +2818,9 @@ static bool handleMenu(RCore *core, const int key) {
 			panels->mode = PANEL_MODE_DEFAULT;
 		}
 		break;
+	case '$':
+		r_core_cmd0 (core, "dr PC=$$");
+		break;
 	case ' ':
 	case '\r':
 	case '\n':

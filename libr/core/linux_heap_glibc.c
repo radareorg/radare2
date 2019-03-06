@@ -891,7 +891,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		free (cnk);
 		free (cnk_next);
 		r_cons_canvas_free (can);
-		r_config_restore (hc);
+		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
 		return;
 	}
@@ -1010,7 +1010,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			GH(RHeapTcache) *tcache_heap = R_NEW0 (GH(RHeapTcache));
 			if (!tcache_heap) {
 				r_cons_canvas_free (can);
-				r_config_restore (hc);
+				r_config_hold_restore (hc);
 				r_config_hold_free (hc);
 				free (g);
 				free (cnk);
@@ -1130,7 +1130,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		}
 		r_agraph_print (g);
 		r_cons_canvas_free (can);
-		r_config_restore (hc);
+		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
 		break;
 	}

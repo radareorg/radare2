@@ -711,42 +711,24 @@ R_API char *r_str_trunc_ellipsis(const char *str, int len) {
 	return buf;
 }
 
-// Returns a new heap-allocated string that matches the format-string
-// specification.
 R_API char *r_str_newf(const char *fmt, ...) {
-	int ret, ret2;
-	char *tmp, *p, string[1024];
 	va_list ap, ap2;
+
 	va_start (ap, fmt);
-	va_start (ap2, fmt);
 	if (!strchr (fmt, '%')) {
-		va_end (ap2);
 		va_end (ap);
 		return strdup (fmt);
 	}
-	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
-	if (ret < 1 || ret >= sizeof (string)) {
-		p = calloc (1, ret + 3);
-		if (!p) {
-			va_end (ap2);
-			va_end (ap);
-			return NULL;
-		}
-		ret2 = vsnprintf (p, ret + 1, fmt, ap2);
-		if (ret2 < 1 || ret2 > ret + 1) {
-			free (p);
-			va_end (ap2);
-			va_end (ap);
-			return NULL;
-		}
-		tmp = r_str_new (p);
-		free (p);
-	} else {
-		tmp = r_str_new (string);
+	va_copy (ap2, ap);
+	int ret = vsnprintf (NULL, 0, fmt, ap2);
+	ret++;
+	char *p = calloc (1, ret);
+	if (p) {
+		(void)vsnprintf (p, ret, fmt, ap);
 	}
 	va_end (ap2);
 	va_end (ap);
-	return tmp;
+	return p;
 }
 
 // Secure string copy with null terminator (like strlcpy or strscpy but ours
@@ -908,30 +890,30 @@ R_API char *r_str_append(char *ptr, const char *string) {
 }
 
 R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
-	int ret;
-	char string[4096];
-	va_list ap;
+	va_list ap, ap2;
+
 	va_start (ap, fmt);
-	ret = vsnprintf (string, sizeof (string), fmt, ap);
-	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 2);
-		if (!p) {
-			va_end (ap);
-			return NULL;
-		}
-		vsnprintf (p, ret + 1, fmt, ap);
+	if (!strchr (fmt, '%')) {
+		va_end (ap);
+		return r_str_append (ptr, fmt);
+	}
+	va_copy (ap2, ap);
+	int ret = vsnprintf (NULL, 0, fmt, ap2);
+	ret++;
+	char *p = calloc (1, ret);
+	if (p) {
+		(void)vsnprintf (p, ret, fmt, ap);
 		ptr = r_str_append (ptr, p);
 		free (p);
-	} else {
-		ptr = r_str_append (ptr, string);
 	}
+	va_end (ap2);
 	va_end (ap);
 	return ptr;
 }
 
 R_API char *r_str_appendch(char *x, char y) {
 	char b[2] = { y, 0 };
-	return r_str_append (x,b);
+	return r_str_append (x, b);
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {

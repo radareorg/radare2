@@ -1408,6 +1408,10 @@ static bool is_section_symbol(RBinSymbol *s) {
 	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
+static bool is_special_symbol(RBinSymbol *s) {
+	return s->type && !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
+}
+
 static bool is_section_reloc(RBinReloc *r) {
 	return is_section_symbol (r->symbol);
 }
@@ -1873,6 +1877,18 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
+static void select_flag_space(RCore *core, RBinSymbol *symbol) {
+	if (!strncmp (symbol->name, "imp.", 4)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
+	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_OBJECT_STR)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_OBJECTS);
+	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_SECTION_STR)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_SECTIONS);
+	} else {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
+	}
+}
+
 static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
@@ -1946,10 +1962,11 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol) || is_special_symbol (symbol))) {
 			/*
 			 * Skip section symbols because they will have their own flag.
 			 * Skip also file symbols because not useful for now.
+			 * Skip special symbols we do not want to flag them, as they are better used as analysis hints.
 			 */
 		} else if (IS_MODE_SET (mode)) {
 			if (is_arm && info->bits < 33) { // 16 or 32
@@ -1965,17 +1982,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					r_anal_hint_set_bits (r->anal, addr, force_bits);
 				}
 			}
-			if (!strncmp (r_symbol_name, "imp.", 4)) {
-				if (lastfs != 'i') {
-					r_flag_space_set (r->flags, R_FLAGS_FS_IMPORTS);
-				}
-				lastfs = 'i';
-			} else {
-				if (lastfs != 's') {
-					r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
-				}
-				lastfs = 's';
-			}
+			select_flag_space (r, symbol);
 			/* If that's a Classed symbol (method or so) */
 			if (sn.classname) {
 				RFlagItem *fi = r_flag_get (r->flags, sn.methflag);
@@ -2019,6 +2026,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
 					addr, symbol->size, sn.demname);
 			}
+			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_escape_utf8_for_json (r_symbol_name, -1);
 			// str = r_str_replace (str, "\"", "\\\"", 1);
@@ -2049,61 +2057,65 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("%s\n", name);
 		} else if (IS_MODE_RAD (mode)) {
-			RBinFile *binfile;
-			RBinPlugin *plugin;
-			char *name = strdup (sn.demname? sn.demname: r_symbol_name);
-			r_name_filter (name, -1);
-			if (!strncmp (name, "imp.", 4)) {
-				if (lastfs != 'i') {
-					r_cons_printf ("fs imports\n");
-				}
-				lastfs = 'i';
-			} else {
-				if (lastfs != 's') {
-					r_cons_printf ("fs %s\n",
-						exponly? "exports": "symbols");
-				}
-				lastfs = 's';
-			}
-			if (r->bin->prefix) {
-				if (symbol->dup_count) {
-					r_cons_printf ("f %s.sym.%s_%d %u 0x%08"PFMT64x"\n",
-						r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
+			/* Skip special symbols because we do not flag them and
+			 * they shouldn't be printed in the rad format either */
+			if (!is_special_symbol (symbol)) {
+				RBinFile *binfile;
+				RBinPlugin *plugin;
+				char *name = strdup (sn.demname? sn.demname: r_symbol_name);
+				r_name_filter (name, -1);
+				if (!strncmp (name, "imp.", 4)) {
+					if (lastfs != 'i') {
+						r_cons_printf ("fs imports\n");
+					}
+					lastfs = 'i';
 				} else {
-					r_cons_printf ("f %s.sym.%s %u 0x%08"PFMT64x"\n",
-						r->bin->prefix, name, symbol->size, addr);
+					if (lastfs != 's') {
+						r_cons_printf ("fs %s\n",
+							exponly? "exports": "symbols");
+					}
+					lastfs = 's';
 				}
-			} else {
-				if (*name) {
+				if (r->bin->prefix) {
 					if (symbol->dup_count) {
-						r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
-								name, symbol->dup_count, symbol->size, addr);
+						r_cons_printf ("f %s.sym.%s_%d %u 0x%08" PFMT64x "\n",
+							r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
 					} else {
-						r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
-								name, symbol->size, addr);
+						r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
+							r->bin->prefix, name, symbol->size, addr);
 					}
 				} else {
-					// we dont want unnamed symbol flags
-				}
-			}
-			binfile = r_core_bin_cur (r);
-			plugin = r_bin_file_cur_plugin (binfile);
-			if (plugin && plugin->name) {
-				if (!strncmp (plugin->name, "pe", 2)) {
-					char *p, *module = strdup (r_symbol_name);
-					p = strstr (module, ".dll_");
-					if (p) {
-						const char *symname = p + 5;
-						*p = 0;
-						if (r->bin->prefix) {
-							r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
-								module, symbol->ordinal, r->bin->prefix, symname);
+					if (*name) {
+						if (symbol->dup_count) {
+							r_cons_printf ("f sym.%s_%d %u 0x%08" PFMT64x "\n",
+								name, symbol->dup_count, symbol->size, addr);
 						} else {
-							r_cons_printf ("k bin/pe/%s/%d=%s\n",
-								module, symbol->ordinal, symname);
+							r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
+								name, symbol->size, addr);
 						}
+					} else {
+						// we dont want unnamed symbol flags
 					}
-					free (module);
+				}
+				binfile = r_core_bin_cur (r);
+				plugin = r_bin_file_cur_plugin (binfile);
+				if (plugin && plugin->name) {
+					if (r_str_startswith (plugin->name, "pe")) {
+						char *module = strdup (r_symbol_name);
+						char *p = strstr (module, ".dll_");
+						if (p) {
+							const char *symname = p + 5;
+							*p = 0;
+							if (r->bin->prefix) {
+								r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
+									module, symbol->ordinal, r->bin->prefix, symname);
+							} else {
+								r_cons_printf ("k bin/pe/%s/%d=%s\n",
+									module, symbol->ordinal, symname);
+							}
+						}
+						free (module);
+					}
 				}
 			}
 		} else {

@@ -95,7 +95,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {
-				VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				if (anal->verbose) {
+					eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				}
 				return R_ANAL_RET_END;
 			}
 			break;
@@ -118,7 +120,11 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			if (bb->cond) {
 				// TODO: get values from anal backend
 				bb->cond->type = R_ANAL_COND_EQ;
-			} else VERBOSE_ANAL eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
+			} else {
+				if (anal->verbose) {
+					eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
+				}
+			}
 			bb->conditional = 1;
 			bb->fail = op->fail;
 			bb->jump = op->jump;

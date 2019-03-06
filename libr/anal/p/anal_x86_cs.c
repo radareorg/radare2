@@ -1301,6 +1301,39 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 		}
 		break;
+	case X86_INS_BSF:
+		{
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			int bits = INSOP (0).size * 8;
+
+			/*
+			 * Here we first set ZF depending on the source operand
+			 * (and bail out if it's 0), then test each bit in a loop
+			 * by creating a mask on the stack and applying it, returning
+			 * result if bit is set.
+			 */
+			esilprintf (op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
+					"%d,DUP,%d,-,1,<<,%s,&,?{,%d,-,%s,=,BREAK,},12,REPEAT",
+					src, bits, bits, src, bits, dst);
+		}
+		break;
+	case X86_INS_BSR:
+		{
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			int bits = INSOP (0).size * 8;
+
+			/*
+			 * Similar to BSF, except we naturally don't
+			 * need to substract anything to create
+			 * a mask and return the result.
+			 */
+			esilprintf (op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
+					"%d,DUP,1,<<,%s,&,?{,%s,=,BREAK,},12,REPEAT",
+					src, bits, src, dst);
+		}
+		break;
 	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
@@ -1711,15 +1744,12 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			switch (insn->id) {
 			case X86_INS_BTS:
 			case X86_INS_BTC:
-				dst_w = getarg (&gop, 0, 1, (insn->id == X86_INS_BTS)?"|":"^",
-						DST_R_AR);
-				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,%s",
-						width * 8, src, dst_w);
+				dst_w = getarg (&gop, 0, 1, (insn->id == X86_INS_BTS)?"|":"^", DST_R_AR);
+				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,%s", width * 8, src, dst_w);
 				break;
 			case X86_INS_BTR:
 				dst_w = getarg (&gop, 0, 1, "&", DST_R_AR);
-				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,-1,^,%s",
-						width * 8, src, dst_w);
+				r_strbuf_appendf (&op->esil, ",%d,%s,%%,1,<<,-1,^,%s", width * 8, src, dst_w);
 				break;
 			}
 		}

@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2018 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2019 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -43,6 +43,7 @@ static const char *mousemodes[] = {
 
 #define BODY_OFFSETS    0x1
 #define BODY_SUMMARY    0x2
+#define BODY_COMMENTS   0x4
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
@@ -119,6 +120,10 @@ static bool is_summary(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_SUMMARY;
 }
 
+static bool is_comments(const RAGraph *g) {
+	return g->mode == R_AGRAPH_MODE_COMMENTS;
+}
+
 static int next_mode(int mode) {
 	return (mode + 1) % R_AGRAPH_MODE_MAX;
 }
@@ -137,6 +142,8 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 		submode = "MINI";
 	} else if (is_offset (g)) {
 		submode = "OFF";
+	} else if (is_comments (g)) {
+		submode = "COMM";
 	} else if (is_summary (g)) {
 		submode = "SUMM";
 	} else {
@@ -151,6 +158,9 @@ static int mode2opts(const RAGraph *g) {
 	int opts = 0;
 	if (is_offset (g)) {
 		opts |= BODY_OFFSETS;
+	}
+	if (is_comments (g)) {
+		opts |= BODY_COMMENTS;
 	}
 	if (is_summary (g)) {
 		opts |= BODY_SUMMARY;
@@ -237,9 +247,9 @@ static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int
 	if (shortcut) {
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			strncat (title, sdb_fmt (Color_YELLOW"[g%s]",  shortcut), left);
+			strncat (title, sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut), left);
 		} else {
-			strncat (title, sdb_fmt ("[g%s]", shortcut), left);
+			strncat (title, sdb_fmt ("[o%s]", shortcut), left);
 		}
 		free (shortcut);
 	}
@@ -1798,8 +1808,8 @@ void backedge_info (RAGraph *g) {
 				e->is_reversed = true;
 				e->from = a;
 				e->to = b;
-				e->x = r_list_new();
-				e->y = r_list_new();
+				e->x = r_list_new ();
+				e->y = r_list_new ();
 
 				if (r < l) {
 					r_list_append ((g->layout == 0 ? e->x : e->y), (void *) (size_t) (max + 1));
@@ -1823,8 +1833,8 @@ void backedge_info (RAGraph *g) {
 		e->is_reversed = true;
 		e->from = NULL;
 		e->to = NULL;
-		e->x = r_list_new();
-		e->y = r_list_new();
+		e->x = r_list_new ();
+		e->y = r_list_new ();
 		if (g->layout == 0) {
 			r_list_append (e->y, (void *) (size_t) (n->y - 1 - inedge));
 		} else {
@@ -1938,7 +1948,7 @@ static void set_layout(RAGraph *g) {
 	switch (g->layout) {
 	default:
 	case 0: // vertical layout
-		/* finalize x coordinate */
+		/* horizontal finalize x coordinate */
 		for (i = 0; i < g->n_layers; ++i) {
 			for (j = 0; j < g->layers[i].n_nodes; ++j) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
@@ -1973,7 +1983,7 @@ static void set_layout(RAGraph *g) {
 		break;
 	/* experimental */
 	case 1: // horizontal layout
-		/* finalize x coordinate */
+		/* vertical y coordinate */
 		for (i = 0; i < g->n_layers; i++) {
 			for (j = 0; j < g->layers[i].n_nodes; j++) {
 				RANode *n = get_anode (g->layers[i].nodes[j]);
@@ -1986,7 +1996,8 @@ static void set_layout(RAGraph *g) {
 		}
 
 		set_layer_gap (g);
-		/* vertical align */
+
+		/* horizontal align */
 		for (i = 0; i < g->n_layers; i++) {
 			int xval = 1 + g->layers[0].gap + 1;
 			for (k = 1; k <= i; k++) {
@@ -2021,7 +2032,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	r_config_save_num (hc, "asm.lines", "asm.bytes",
+	r_config_hold_i (hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
@@ -2030,7 +2041,16 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const bool o_flags_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
-
+	if (opts & BODY_COMMENTS) {
+		r_core_visual_toggle_decompiler_disasm (core, true, false);
+		char * res = r_core_cmd_strf (core, "pD %d @ 0x%08"PFMT64x, size, addr);
+		res = r_str_replace (res, "; ", "", true);
+		// res = r_str_replace (res, "\n", "(\n)", true);
+		r_str_trim (res);
+		res = r_str_trim_lines (res);
+		r_core_visual_toggle_decompiler_disasm (core, true, false);
+		return res;
+	}
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
@@ -2058,7 +2078,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 
 	// restore original options
 	core->print->cur_enabled = o_cursor;
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return body;
 }
@@ -2953,15 +2973,30 @@ static void agraph_print_edges(RAGraph *g) {
 					style.dot_style = DOT_STYLE_BACKEDGE;
 				}
 
-				ax = a->x + a->w;
-				ay = a->is_dummy ? a->y : a->y + R_EDGES_X_INC + out_nth;
+				ax = a->x;
+				if (g->zoom > 0) {
+					ax += a->w;
+				} else {
+					ax ++;
+				}
+				ay = a->y;
+				if (!a->is_dummy && g->zoom > 0) {
+					ay += R_EDGES_X_INC + out_nth;
+				}
 				bx = b->x - 1;
-				by = b->is_dummy ? b->y : b->y + R_EDGES_X_INC + out_nth;
-
+				by = b->y;
+				if (!b->is_dummy && g->zoom > 0) {
+					by += R_EDGES_X_INC + out_nth;
+				}
 
 				if (a->w < a->layer_width) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
-					ax = a->x + a->layer_width;
+					ax = a->x;
+					if (g->zoom > 1) {
+						ax += a->layer_width;
+					} else {
+						ax += 1;
+					}
 					style.symbol = LINE_NOSYM_HORIZ;
 				}
 				if (bx >= ax) {
@@ -3904,7 +3939,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	if (!hc) {
 		return false;
 	}
-	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
+	r_config_hold_i (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
@@ -3927,7 +3962,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
 			eprintf ("No function in current seek\n");
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			r_cons_canvas_free (can);
 			return false;
@@ -3935,7 +3970,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		g = r_agraph_new (can);
 		if (!g) {
 			r_cons_canvas_free (can);
-			r_config_restore (hc);
+			r_config_hold_restore (hc);
 			r_config_hold_free (hc);
 			return false;
 		}
@@ -3963,7 +3998,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd = R_NEW0 (struct agraph_refresh_data);
 	if (!grd) {
 		r_cons_canvas_free (can);
-		r_config_restore (hc);
+		r_config_hold_restore (hc);
 		r_config_hold_free (hc);
 		r_agraph_free (g);
 		return false;
@@ -4172,7 +4207,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" e            - rotate graph.edges (show/hide edges)\n"
 				" E            - rotate graph.linemode (square/diagonal lines)\n"
 				" F            - enter flag selector\n"
-				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
+				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[oa])\n"
 				" G            - debug trace callgraph (generated with dtc)\n"
 				" hjkl/HJKL    - scroll canvas or node depending on graph cursor (uppercase for faster)\n"
 				" m/M          - change mouse modes\n"
@@ -4201,14 +4236,20 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_toggle (core->config, "graph.refs");
 			break;
 		case '#':
-			r_config_toggle (core->config, "graph.hints");
+			if (g->mode == R_AGRAPH_MODE_COMMENTS) {
+				g->mode = R_AGRAPH_MODE_NORMAL;
+			} else {
+				g->mode = R_AGRAPH_MODE_COMMENTS;
+			}
+			g->need_reload_nodes = true;
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			// r_config_toggle (core->config, "graph.hints");
 			break;
 		case 'p':
-			if (!fcn) {
-				break;
-			}
 			g->mode = next_mode (g->mode);
 			g->need_reload_nodes = true;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'P':
 			if (!fcn) {
@@ -4216,11 +4257,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			g->mode = prev_mode (g->mode);
 			g->need_reload_nodes = true;
-			break;
-		case 'g':
-			goto_asmqjmps (g, core);
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'o':
+			goto_asmqjmps (g, core);
+			break;
+		case 'g':
 			showcursor (core, true);
 			visual_offset (g, core);
 			showcursor (core, false);
@@ -4504,6 +4546,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case ':':
 			r_core_visual_prompt_input (core);
+			g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
 			get_bbupdate (g, core, fcn);
 			break;
 		case 'w':
@@ -4628,7 +4671,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		g->can = o_can;
 	}
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	return !is_error;
 }

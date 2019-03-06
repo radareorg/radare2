@@ -1843,9 +1843,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 
 HEAPTYPE(ut64);
 
-static int regcmp(void *a, void *b) {
-	ut64 *A = a;
-	ut64 *B = b;
+static int regcmp(const void *a, const void *b) {
+	const ut64 *A = (const ut64*)a;
+	const ut64 *B = (const ut64*)b;
 	if (*A > *B) {
 		return 1;
 	}
@@ -3480,7 +3480,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					if (bpi) {
 						free (bpi->name);
 						if (!strcmp (DB_ARG (i), "$$")) {
-							RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+							RFlagItem *f = r_core_flag_get_by_spaces (core->flags, addr);
 							if (f) {
 								if (addr > f->offset) {
 									bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);

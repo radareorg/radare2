@@ -547,18 +547,21 @@ static int nonreturn_print_commands(void *p, const char *k, const char *v) {
 
 static int nonreturn_print(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
-	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		const char *query = sdb_fmt ("func.%s.noreturn", k);
-		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("%s\n", k);
+	if (!strncmp (k, "func.", 5) && strstr (k, ".noreturn")) {
+		char *s = strdup (k + 5);
+		char *d = strchr (s, '.');
+		if (d) {
+			*d = 0;
 		}
+		anal->cb_printf ("%s\n", s);
+		free (s);
 	}
 	if (!strncmp (k, "addr.", 5)) {
 		char *off;
 		if (!(off = strdup (k + 5))) {
 			return 1;
 		}
-		char *ptr = strstr (off, ".noret");
+		char *ptr = strstr (off, ".noreturn");
 		if (ptr) {
 			*ptr = 0;
 			anal->cb_printf ("0x%s\n", off);
@@ -588,8 +591,10 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	const char *tmp_name = NULL;
 	Sdb *TDB = anal->sdb_types;
 	char *fnl_name = NULL;
-	if (sdb_bool_set (TDB, K_NORET_ADDR (addr), true, 0)) {
-		return true;
+	if (addr != UT64_MAX) {
+		if (sdb_bool_set (TDB, K_NORET_ADDR (addr), true, 0)) {
+			return true;
+		}
 	}
 	if (name && *name) {
 		tmp_name = name;
@@ -605,56 +610,63 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	if (r_type_func_exist (TDB, tmp_name)) {
 		fnl_name = strdup (tmp_name);
 	} else if (!(fnl_name = r_type_func_guess (TDB, (char *)tmp_name))) {
-		eprintf ("Cant find prototype for %s in types databse\n", tmp_name);
-		return false;
+		if (addr == UT64_MAX) {
+			if (name) {
+				sdb_bool_set (TDB, K_NORET_FUNC (name), true, 0);
+			} else {
+				eprintf ("Cant find prototype for: %s\n", tmp_name);
+			}
+		} else {
+			eprintf ("Cant find prototype for: %s\n", tmp_name);
+		}
+		//return false;
 	}
-	sdb_bool_set (TDB, K_NORET_FUNC(fnl_name), true, 0);
-	free (fnl_name);
+	if (fnl_name) {
+		sdb_bool_set (TDB, K_NORET_FUNC (fnl_name), true, 0);
+		free (fnl_name);
+	}
 	return true;
 }
 
 static int is_func(void *p, const char *k, const char *v) {
-	return !strcmp (v, "func");
+	if (!strstr (k, "noreturn")) {
+		return 0;
+	}
+	// eprintf ("FILTER (%s) %s\n", k, v);
+	return !strcmp (v, "func") || !strcmp (v, "addr");
 }
 
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
-	if (!strcmp (expr, "*")) {
-		SdbList *noreturns = sdb_foreach_list_filter (TDB, is_func, false);
-		SdbListIter *it;
-		SdbKv *kv;
-
-		ls_foreach (noreturns, it, kv) {
-			sdb_unset (TDB, K_NORET_FUNC(sdbkv_key (kv)), 0);
-		}
-		ls_free (noreturns);
-		return true;
-	} else {
-		const char *fcnname = NULL;
-		char *tmp;
-		if (!strncmp (expr, "0x", 2)) {
-			ut64 n = r_num_math (NULL, expr);
-			RAnalFunction *fcn = r_anal_get_fcn_in (anal, n, -1);
-			if (!fcn) {
-				eprintf ("can't find function at 0x%"PFMT64x"\n", n);
-				return false;
-			}
-			fcnname = fcn->name;
-		} else {
-			fcnname = expr;
-		}
-		if (r_type_func_exist (TDB, fcnname)) {
-			sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
-			return true;
-		} else if ((tmp = r_type_func_guess (TDB, (char *)fcnname))) {
-			sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
-			free (tmp);
-			return true;
-		} else {
-			eprintf ("Cant find prototype for %s in types databse", fcnname);
+	expr = r_str_trim_ro (expr);
+	const char *fcnname = NULL;
+	if (!strncmp (expr, "0x", 2)) {
+		ut64 n = r_num_math (NULL, expr);
+		sdb_unset (TDB, K_NORET_ADDR (n), 0);
+		RAnalFunction *fcn = r_anal_get_fcn_in (anal, n, -1);
+		if (!fcn) {
+			// eprintf ("can't find function at 0x%"PFMT64x"\n", n);
 			return false;
 		}
+		fcnname = fcn->name;
+	} else {
+		fcnname = expr;
 	}
+	sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
+#if 0
+	char *tmp;
+	// unnsecessary checks, imho the noreturn db should be pretty simple to allow forward and custom declarations without having to define the function prototype before
+	if (r_type_func_exist (TDB, fcnname)) {
+		sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
+		return true;
+	} else if ((tmp = r_type_func_guess (TDB, (char *)fcnname))) {
+		sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
+		free (tmp);
+		return true;
+	}
+	eprintf ("Cant find prototype for %s in types databse", fcnname);
+#endif
+	return false;
 }
 
 static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
@@ -726,7 +738,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	RFlagItem *fi = r_flag_get_i2 (anal->flb.f, addr);
+	RFlagItem *fi = anal->flag_get (anal->flb.f, addr);
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->name)) {
 			return true;

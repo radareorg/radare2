@@ -294,15 +294,29 @@ static void showFormat(RCore *core, const char *name, int mode) {
 static void cmd_type_noreturn(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '-': // "tn-"
-		r_anal_noreturn_drop (core->anal, input + 1);
+		if (input[1] == '*') {
+			r_core_cmd0 (core, "tn-`tn`");
+		} else {
+			char *s = strdup (r_str_trim_ro (input + 1));
+			RListIter *iter;
+			char *k;
+			RList *list = r_str_split_list (s, " ");
+			r_list_foreach (list, iter, k) {
+				r_anal_noreturn_drop (core->anal, k);
+			}
+			r_list_free (list);
+			free (s);
+		}
 		break;
 	case ' ': // "tn"
-		if (input[1] == '0' && input[2] == 'x') {
-			r_anal_noreturn_add (core->anal, NULL,
-					r_num_math (core->num, input + 1));
-		} else {
-			r_anal_noreturn_add (core->anal, input + 1,
-					r_num_math (core->num, input + 1));
+		{
+			const char *arg = r_str_trim_ro (input + 1);
+			ut64 n = r_num_math (core->num, arg);
+			if (n) {
+				r_anal_noreturn_add (core->anal, arg, n);
+			} else {
+				r_anal_noreturn_add (core->anal, arg, UT64_MAX);
+			}
 		}
 		break;
 	case 'a': // "tna"
@@ -316,6 +330,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	case 'n': // "tnn"
 		if (input[1] == ' ') {
 			/* do nothing? */
+			r_anal_noreturn_add (core->anal, r_str_trim_ro (input + 2), UT64_MAX);
 		} else {
 			r_core_cmd_help (core, help_msg_tn);
 		}
@@ -826,7 +841,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 				r_reg_set_value (esil->anal->reg, pc, at);
 				set_retval (core, at - ret);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 			free (dlink);
 			free (vlink);

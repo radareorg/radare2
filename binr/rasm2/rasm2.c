@@ -229,7 +229,6 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 			if (as->quiet) {
 				printf ("%s\n", h->name);
 			} else if (as->json) {
-				const char *license = "GPL";
 				pj_k (pj, h->name);
 				pj_o (pj);
 				pj_k (pj, "bits");
@@ -237,7 +236,7 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 				pj_i (pj, 32);
 				pj_i (pj, 64);
 				pj_end (pj);
-				pj_ks (pj, "license", license);
+				pj_ks (pj, "license", h->license? h->license: "unknown");
 				pj_ks (pj, "description", h->desc);
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
@@ -292,6 +291,7 @@ static int rasm_show_help(int v) {
 			" -r           output in radare commands\n"
 			" -s [syntax]  Select syntax (intel, att)\n"
 			" -v           Show version information\n"
+			" -x           Use hex dwords instead of hex pairs when assembling.\n"
 			" -w           What's this instruction for? describe opcode\n"
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
@@ -412,7 +412,7 @@ static bool print_label(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp) {
+static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool hexwords) {
 	RAsmCode *acode;
 	int i, j, ret = 0;
 	r_asm_set_pc (as->a, offset);
@@ -438,7 +438,19 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 				}
 				printf ("\n");
 			} else {
-				print_buf (as, acode->buf_hex);
+				if (hexwords) {
+					size_t i = 0;
+					for (i = 0; i < acode->len; i += sizeof (ut32)) {
+						ut32 dword = r_read_ble32 (acode->buf + i, R_SYS_ENDIAN);
+						printf ("0x%08x ", dword);
+						if ((i/4) == 7) {
+							printf ("\n");
+						}
+					}
+					printf ("\n");
+				} else {
+					print_buf (as, acode->buf_hex);
+				}
 			}
 		}
 	}
@@ -463,7 +475,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
-                                 int bin, bool use_spp, bool rad, char *arch) {
+                                 int bin, bool use_spp, bool rad, bool hexwords, char *arch) {
 	int ret = 0;
 	if (rad) {
 		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
@@ -473,7 +485,7 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 		}
 		printf ("wx ");
 	}
-	ret = rasm_asm (as, (char *)buf, offset, len, as->a->bits, bin, use_spp);
+	ret = rasm_asm (as, (char *)buf, offset, len, as->a->bits, bin, use_spp, hexwords);
 	if (rad) {
 		printf ("f entry = $$\n");
 		printf ("f label.main = $$ + 1\n");
@@ -523,6 +535,7 @@ int main (int argc, char *argv[]) {
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
+	bool hexwords = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	int help = 0;
@@ -547,7 +560,7 @@ int main (int argc, char *argv[]) {
 		free (r2bits);
 	}
 
-	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vw")) != -1) {
+	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -625,10 +638,12 @@ int main (int argc, char *argv[]) {
 		case 's':
 			if (*optarg == '?') {
 				printf ("att\nintel\nmasm\njz\nregnum\n");
+				__as_free (as);
 				return 0;
 			} else {
 				int syntax = r_asm_syntax_from_string (optarg);
 				if (syntax == -1) {
+					__as_free (as);
 					return 1;
 				}
 				r_asm_set_syntax (as->a, syntax);
@@ -643,6 +658,9 @@ int main (int argc, char *argv[]) {
 			goto beach;
 		case 'w':
 			whatsop = true;
+			break;
+		case 'x':
+			hexwords = true;
 			break;
 		default:
 			ret = rasm_show_help (0);
@@ -740,7 +758,7 @@ int main (int argc, char *argv[]) {
 				ret = show_analinfo (as, (const char *)buf, offset);
 			} else {
 				ret = print_assembly_output (as, (char *)buf, offset, len,
-					as->a->bits, bin, use_spp, rad, arch);
+					as->a->bits, bin, use_spp, rad, hexwords, arch);
 			}
 			free (buf);
 		} else {
@@ -763,7 +781,7 @@ int main (int argc, char *argv[]) {
 					ret = show_analinfo (as, (const char *)content, offset);
 				} else {
 					ret = print_assembly_output (as, content, offset, length,
-							as->a->bits, bin, use_spp, rad, arch);
+							as->a->bits, bin, use_spp, rad, hexwords, arch);
 				}
 				ret = !ret;
 				free (content);
@@ -805,7 +823,7 @@ int main (int argc, char *argv[]) {
 				} else if (analinfo) {
 					ret = show_analinfo (as, (const char *)buf, offset);
 				} else {
-					ret = rasm_asm (as, (const char *)buf, offset, length, as->a->bits, bin, use_spp);
+					ret = rasm_asm (as, (const char *)buf, offset, length, as->a->bits, bin, use_spp, hexwords);
 				}
 				idx += ret;
 				offset += ret;
@@ -841,7 +859,7 @@ int main (int argc, char *argv[]) {
 			ret = show_analinfo (as, (const char *)argv[optind], offset);
 		} else {
 			ret = print_assembly_output (as, argv[optind], offset, len, as->a->bits,
-							bin, use_spp, rad, arch);
+							bin, use_spp, rad, hexwords, arch);
 		}
 		if (!ret) {
 			eprintf ("invalid\n");
