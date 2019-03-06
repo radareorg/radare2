@@ -909,7 +909,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	RAnalOp *op;
 	ut8 buf[128];
 	ut8 *ptr;
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 
 	if (!core || addr == UT64_MAX) {
 		return NULL;
@@ -938,7 +938,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 
 	// decode instruction here
 	r_asm_set_pc (core->assembler, addr);
-	// r_asm_op_init (&asmop); // Not needed anymore, asmop is set to R_EMPTY
+	r_asm_op_init (&asmop);
 	if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0) {
 		op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
 	}

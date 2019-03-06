@@ -770,8 +770,6 @@ static RDisasmState * ds_init(RCore *core) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 		}
 	}
-	r_asm_op_init (&ds->asmop);
-	r_anal_op_init (&ds->analop);
 	return ds;
 }
 
@@ -5013,7 +5011,7 @@ toro:
 
 			ds_print_asmop_payload (ds, buf + addrbytes * idx);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
-				RAsmOp ao = R_EMPTY; /* disassemble for the vm .. */
+				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
 				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx,
@@ -5042,7 +5040,7 @@ toro:
 
 			ds_print_asmop_payload (ds, buf + addrbytes * idx);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
-				RAsmOp ao = R_EMPTY; /* disassemble for the vm .. */
+				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
 				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx,
@@ -5387,7 +5385,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 }
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	RDisasmState *ds;
 	RAnalFunction *f;
 	int i, j, k, ret, line;
@@ -5693,7 +5691,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	if (l < 1) {
 		l = len;
 	}
@@ -5811,7 +5809,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
 	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
 	const int addrbytes = core->io->addrbytes;

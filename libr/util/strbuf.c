@@ -48,6 +48,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 		*(ptr + l) = 0;
 	} else {
 		R_FREE (sb->ptr);
+		sb->ptr = NULL;
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}

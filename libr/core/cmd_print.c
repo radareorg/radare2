@@ -4941,7 +4941,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'l': // "pdl"
 			processed_cmd = true;
 			{
-				RAsmOp asmop = R_EMPTY;
+				RAsmOp asmop;
 				int j, ret;
 				if (!l) {
 					l = len;

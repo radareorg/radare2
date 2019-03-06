@@ -957,7 +957,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	const char *start = NULL, *end = NULL;
 	char *grep_str = NULL;
 	RCoreAsmHit *hit = NULL;
@@ -1081,7 +1081,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 	char *buf_asm = NULL;
 	unsigned int size = 0;
 	RAnalOp analop = R_EMPTY;
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	Sdb *db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
@@ -1247,7 +1247,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	int delta = 0;
 	ut8 *buf;
 	RIOMap *map;
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 
 	Sdb *gadgetSdb = NULL;
 	if (r_config_get_i (core->config, "rop.sdb")) {
@@ -1839,7 +1839,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RAnalRef *ref;
 	RListIter *iter;
 	ut8 buf[12];
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {
@@ -2703,7 +2703,7 @@ static void __core_cmd_search_asm_infinite (RCore *core, const char *arg) {
 }
 
 static void __core_cmd_search_asm_byteswap (RCore *core, int nth) {
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	ut8 buf[32];
 	int i;
 	r_io_read_at (core->io, 0, buf, sizeof (buf));

@@ -1349,7 +1349,7 @@ static int cmd_type(void *data, const char *input) {
 				addr = core->offset;
 			}
 			r_str_trim (type);
-			RAsmOp asmop = R_EMPTY;
+			RAsmOp asmop;
 			RAnalOp op = { 0 };
 			ut8 code[128] = { 0 };
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));

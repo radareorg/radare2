@@ -610,7 +610,7 @@ static void cursorRight(RCore *core) {
 		int row = r_print_row_at_off (print, print->cur);
 		if (row >= threshold) {
 			core->offset = cur->addr;
-			RAsmOp op = R_EMPTY;
+			RAsmOp op;
 			ut32 next_roff = r_print_rowoff (print, row + 1);
 			int sz = r_asm_disassemble (core->assembler, &op,
 					core->block + next_roff, 32);
@@ -708,7 +708,7 @@ static void cursorDown(RCore *core) {
 	RPrint *print = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta, threshold = cursorThreshold (cur);
-	RAsmOp op = R_EMPTY;
+	RAsmOp op;
 	if (print->row_offsets) {
 		row = r_print_row_at_off (print, print->cur);
 		roff = r_print_rowoff (print, row);
@@ -1899,7 +1899,7 @@ static void directionDisassemblyCb(void *user, int direction) {
 			r_core_block_read (core);
 			cur->addr = core->offset;
 		} else {
-			RAsmOp op = R_EMPTY;
+			RAsmOp op;
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->offset + cols, 1);
 			r_core_block_read (core);

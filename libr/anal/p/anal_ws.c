@@ -13,7 +13,7 @@ static ut64 ws_find_label(int l, RIOBind iob) {
 	RIO *io = iob.io;
 	ut64 cur = 0, size = iob.desc_size (io->desc);
 	ut8 buf[128];
-	RAsmOp aop = R_EMPTY;
+	RAsmOp aop;
 	iob.read_at (iob.io, cur, buf, 128);
 	while (cur <= size && wsdis (&aop, buf, 128)) {
 		const char *buf_asm = r_strbuf_get (&aop.buf_asm); // r_asm_op_get_asm (&aop);

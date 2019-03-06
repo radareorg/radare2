@@ -133,8 +133,8 @@ R_API bool r_core_visual_esil(RCore *core) {
 	char *word = NULL;
 	int x = 0;
 	RAnalEsil *esil;
-	RAsmOp asmop = R_EMPTY;
-	RAnalOp analop = R_EMPTY;
+	RAsmOp asmop;
+	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
@@ -276,8 +276,8 @@ static bool edit_bits (RCore *core) {
 	bool colorBits = false;
 	int analopType;
 	int i, j, x = 0;
-	RAsmOp asmop = R_EMPTY;
-	RAnalOp analop = R_EMPTY;
+	RAsmOp asmop;
+	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 
 	if (core->blocksize < sizeof (ut64)) {

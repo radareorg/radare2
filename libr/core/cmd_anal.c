@@ -1405,7 +1405,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	const char *opexstr;
 	RAnalHint *hint;
 	RAnalEsil *esil = NULL;
-	RAsmOp asmop = R_EMPTY;
+	RAsmOp asmop;
 	RAnalOp op = {0};
 	ut64 addr;
 	PJ *pj = NULL;
@@ -6198,7 +6198,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 		} else { // "axf"
 			ut8 buf[12];
-			RAsmOp asmop = R_EMPTY;
+			RAsmOp asmop;
 			char *buf_asm = NULL;
 			RList *list, *list_ = NULL;
 			RAnalRef *ref;
