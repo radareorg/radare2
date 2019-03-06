@@ -511,7 +511,7 @@ static const char *help_msg_ah[] = {
 	"ahc", " 0x804804", "override call/jump address",
 	"ahe", " 3,eax,+=", "set vm analysis string",
 	"ahf", " 0x804840", "override fallback address for call",
-	"ahh", " 0x804840", "highlight this adrress offset in disasm",
+	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
 	"aho", " foo a0,33", "replace opcode string",
@@ -3584,7 +3584,25 @@ static ut64 initializeEsil(RCore *core) {
 	}
 	ut64 addr;
 	RAnalEsil *esil = core->anal->esil;
+	esil->verbose = r_config_get_i (core->config, "esil.verbose");
+	esil->cmd = r_core_esil_cmd;
 	r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+	{
+		const char *cmd_esil_step = r_config_get (core->config, "cmd.esil.step");
+		if (cmd_esil_step && *cmd_esil_step) {
+			esil->cmd_step = strdup (cmd_esil_step);
+		}
+		{
+			const char *s = r_config_get (core->config, "cmd.esil.intr");
+			if (s) {
+				char *my = strdup (s);
+				if (my) {
+					r_config_set (core->config, "cmd.esil.intr", my);
+					free (my);
+				}
+			}
+		}
+	}
 	esil->exectrap = exectrap;
 	RList *entries = r_bin_get_entries (core->bin);
 	RBinAddr *entry = NULL;
@@ -3612,33 +3630,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	bool breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
 	if (!esil) {
-// TODO		inititalizeEsil (core);
-
-		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		int romem = r_config_get_i (core->config, "esil.romem");
-		int stats = r_config_get_i (core->config, "esil.stats");
-		int noNULL = r_config_get_i (core->config, "esil.noNULL");
-		int verbose = r_config_get_i (core->config, "esil.verbose");
-		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
-			return 0;
-		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
-		core->anal->esil = esil;
-		esil->verbose = verbose;
-		{
-			const char *s = r_config_get (core->config, "cmd.esil.intr");
-			if (s) {
-				char *my = strdup (s);
-				if (my) {
-					r_config_set (core->config, "cmd.esil.intr", my);
-					free (my);
-				}
-			}
-		}
+		initializeEsil (core);
 	}
-	esil->cmd = r_core_esil_cmd;
 	ut64 addr = r_reg_getv (core->anal->reg, name);
 	r_cons_break_push (NULL, NULL);
 repeat:
@@ -4664,9 +4657,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'p': // "aep"
 		switch (input[1]) {
 		case 'c': // "aepc"
-			if (input[2] == ' ') {
+			if (input[2] == ' ' || input[2] == '=') {
 				// seek to this address
-				r_core_cmdf (core, "ar PC=%s", input + 3);
+				r_core_cmdf (core, "ar PC=%s", r_str_trim_ro (input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
 				eprintf ("Missing argument\n");
