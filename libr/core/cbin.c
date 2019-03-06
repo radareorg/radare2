@@ -1880,8 +1880,6 @@ static bool isAnExport(RBinSymbol *s) {
 static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 	if (!strncmp (symbol->name, "imp.", 4)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
-	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_OBJECT_STR)) {
-		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_OBJECTS);
 	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_SECTION_STR)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_SECTIONS);
 	} else {
