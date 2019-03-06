@@ -36,9 +36,6 @@ R_LIB_VERSION_HEADER(r_anal);
    bb_has_ops=0 -> 350MB
  */
 
-// TODO: Remove this define? /cc @nibble_ds
-#define VERBOSE_ANAL if(0)
-
 /* meta */
 typedef struct r_anal_meta_item_t {
 	ut64 from;
@@ -708,6 +705,7 @@ typedef struct r_anal_t {
 	bool fillval;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
+	bool verbose;
 	char *cmdtail;
 	int seggrn;
 	RFlagGetAtAddr flag_get;
@@ -1476,7 +1474,7 @@ R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn);
 R_API void r_anal_fcn_set_size(RAnal *anal, RAnalFunction *fcn, ut32 size);
 R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn);
 R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
-R_API int r_anal_fcn_cc(RAnalFunction *fcn);
+R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_loops(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bbi, ut64 addr);
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);

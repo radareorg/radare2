@@ -11,7 +11,7 @@
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
-#define bprintf if(bin->verbose) eprintf
+#define bprintf if (bin->verbose) eprintf
 #define COFF_SYMBOL_SIZE 18
 
 struct SCV_NB10_HEADER;
