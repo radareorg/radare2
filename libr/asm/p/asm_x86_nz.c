@@ -670,6 +670,47 @@ static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x18);
 }
 
+static int opbs(RAsm *a, ut8 *data, const Opcode *op) {
+	int l = 0;
+	if (a->bits >= 32 && op->operands[1].type & OT_MEMORY && op->operands[1].reg_size & OT_WORD) {
+		return -1;
+	}
+	if (!(op->operands[1].type & OT_MEMORY) && 
+		!((op->operands[0].type & ALL_SIZE) == (op->operands[1].type & ALL_SIZE))) {
+		return -1;
+	}
+	if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
+		if (a->bits == 64) {
+			if (op->operands[1].type & OT_MEMORY && 
+				op->operands[1].reg_size & OT_DWORD) {
+				data[l++] = 0x67;
+			}
+			if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
+			if (op->operands[0].type & OT_QWORD) {
+				data[l++] = 0x48;
+			}
+		} else if (op->operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+		}
+		data[l++] = 0x0f;
+		if (!strcmp (op->mnemonic, "bsf")) {
+			data[l++] = 0xbc;
+		} else {
+			data[l++] = 0xbd;
+		}
+		if (op->operands[1].type & OT_GPREG && !(op->operands[1].type & OT_MEMORY)) {
+			data[l] = 0xc0;
+		} else if (!(op->operands[1].type & OT_MEMORY)) {
+			return -1;
+		}
+		data[l] += op->operands[0].reg << 3;
+		data[l++] += op->operands[1].reg;
+	}
+	return l;
+}
+
 static int opbswap(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_REGALL) {
@@ -4034,6 +4075,8 @@ LookupTable oplookup[] = {
 	{"adx", 0, NULL, 0xd4, 1},
 	{"amx", 0, NULL, 0xd5, 1},
 	{"and", 0, &opand, 0},
+	{"bsf", 0, &opbs, 0},
+	{"bsr", 0, &opbs, 0},
 	{"bswap", 0, &opbswap, 0},
 	{"call", 0, &opcall, 0},
 	{"cbw", 0, NULL, 0x6698, 2},
