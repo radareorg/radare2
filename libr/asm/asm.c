@@ -398,10 +398,12 @@ static bool isInvalid (RAsmOp *op) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	r_asm_op_init (op);
 	r_return_val_if_fail (a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
+
 	int ret = op->payload = 0;
 	op->size = 4;
 	op->bitsize = 0;
