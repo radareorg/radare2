@@ -484,7 +484,7 @@ not_a_number:
 
 static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	ut8 bit;
-	r_return_val_if_fail (esil && str && *str, false);
+	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), false);
 
 	if (esil->cb.hook_flag_read) {
 		if (esil->cb.hook_flag_read (esil, str + 1, num)) {
@@ -561,7 +561,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 }
 
 static int esil_internal_write(RAnalEsil *esil, const char *str, ut64 num) {
-	r_return_val_if_fail (esil && str && *str && esil, false);
+	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str) && esil, false);
 
 	switch (str[1]) {
 	case 'd': //delay slot state
@@ -2922,7 +2922,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
-	r_return_val_if_fail (esil && str && *str, 0);
+	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), 0);
 
 	if (esil->cmd_step) {
 		if (esil->cmd (esil, esil->cmd_step, esil->address, 0)) {

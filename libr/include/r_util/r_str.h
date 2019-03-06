@@ -21,12 +21,14 @@ typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {
-		if (*s==ch)
-			memmove (s, s+1, strlen (s));
+		if (*s==ch) {
+			memmove (s, s + 1, strlen (s));
+		}
 	}
 }
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
+#define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
