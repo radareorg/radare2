@@ -161,7 +161,6 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 			x = y;
 			continue;
 		}
-		set_meta_min_if_needed (x);
 		if (x->meta.min <= to - 1) {
 			if (from <= x->meta.min + (x->_size == 0 ? 0 : x->_size - 1)) {
 				return x_;
@@ -280,7 +279,6 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 		}
 		x_ = it->path[--it->len];
 		x = FCN_CONTAINER (x_);
-		set_meta_min_if_needed (x);
 		if (to - 1 < x->meta.min) {
 			it->cur = NULL;
 			break;
