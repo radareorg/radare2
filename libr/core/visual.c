@@ -192,6 +192,49 @@ static const char *__core_visual_print_command (RCore *core) {
 	return printfmtSingle[PIDX];
 }
 
+static bool __core_visual_gogo (RCore *core, int ch) {
+	RIOMap *map;
+	int ret = -1;
+	switch (ch) {
+	case 'g':
+		if (core->io->va) {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (!map) {
+				SdbListIter *i = ls_tail (core->io->maps);
+				map = ls_iter_get (i);
+			}
+			if (map) {
+				r_core_seek (core, r_itv_begin (map->itv), 1);
+			}
+		} else {
+			r_core_seek (core, 0, 1);
+		}
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		return true;
+	case 'G':
+		map = r_io_map_get (core->io, core->offset);
+		if (!map) {
+			SdbListIter *i = ls_head (core->io->maps);
+			map = ls_iter_get (i);
+		}
+		if (map) {
+			RPrint *p = core->print;
+			int scr_rows;
+			if (!p->consbind.get_size) {
+				break;
+			}
+			(void)p->consbind.get_size (&scr_rows);
+			int scols = r_config_get_i (core->config, "hex.cols");
+			ret = r_core_seek (core, r_itv_end (map->itv) - (scr_rows - 2) * scols, 1);
+		}
+		if (ret != -1) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
+		return true;
+	}
+	return false;
+}
+
 static const char *help_msg_visual[] = {
 	"$", "set the program counter to the current offset + cursor",
 	"?", "show visual help menu",
@@ -225,14 +268,13 @@ static const char *help_msg_visual[] = {
 	"d[f?]", "define function, data, code, ..",
 	"D", "enter visual diff mode (set diff.from/to)",
 	"f/F", "set/unset or browse flags. f- to unset, F to browse, ..",
-	"gG", "go seek to begin and end of file (0-$s)",
 	"hjkl", "move around (or HJKL) (left-down-up-right)",
 	"i", "insert hex or string (in hexdump) use tab to toggle",
 	"I", "insert hexpair block ",
 	"mK/'K", "mark/go to Key (any key)",
 	"M", "walk the mounted filesystems",
 	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
-	"o", "go/seek to given offset",
+	"g", "go/seek to given offset (o[g/G]<enter> to seek begin/end of file)",
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to radare shell",
@@ -1180,11 +1222,15 @@ R_API void r_core_visual_offset(RCore *core) {
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
-		if (buf[2] == '.') {
-			buf[1] = '.';
+		if (!strcmp (buf + 2, "g") || !strcmp (buf + 2, "G")) {
+			__core_visual_gogo (core, buf[2]);
+		} else {
+			if (buf[2] == '.') {
+				buf[1] = '.';
+			}
+			r_core_cmd0 (core, buf);
+			restore_current_addr (core, addr, bsze, newaddr);
 		}
-		r_core_cmd0 (core, buf);
-		restore_current_addr (core, addr, bsze, newaddr);
 	}
 	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 	core->cons->line->offset_prompt = false;
@@ -2075,7 +2121,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut64 offset = core->offset;
 	char buf[4096];
 	const char *key_s;
-	int i, ret, cols = core->print->cols;
+	int i, cols = core->print->cols;
 	int wheelspeed;
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar ();
@@ -2302,7 +2348,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '!':
 			r_core_visual_panels (core, NULL);
 			break;
-		case 'o':
+		case 'g':
 		{
 			r_core_visual_showcursor (core, true);
 			r_core_visual_offset (core);
@@ -2619,44 +2665,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'v':
 			r_core_visual_anal (core, NULL);
-			break;
-		case 'g':
-			if (core->io->va) {
-				RIOMap *map = r_io_map_get (core->io, core->offset);
-				if (!map) {
-					SdbListIter *i = ls_tail (core->io->maps);
-					map = ls_iter_get (i);
-				}
-				if (map) {
-					r_core_seek (core, r_itv_begin (map->itv), 1);
-				}
-			} else {
-				r_core_seek (core, 0, 1);
-			}
-			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-			break;
-		case 'G':
-			ret = -1;
-			{
-				RIOMap *map = r_io_map_get (core->io, core->offset);
-				if (!map) {
-					SdbListIter *i = ls_head (core->io->maps);
-					map = ls_iter_get (i);
-				}
-				if (map) {
-					RPrint *p = core->print;
-					int scr_rows;
-					if (!p->consbind.get_size) {
-						break;
-					}
-					(void)p->consbind.get_size (&scr_rows);
-					int scols = r_config_get_i (core->config, "hex.cols");
-					ret = r_core_seek (core, r_itv_end (map->itv) - (scr_rows - 2) * scols, 1);
-				}
-			}
-			if (ret != -1) {
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-			}
 			break;
 		case 'h':
 		case 'l':
