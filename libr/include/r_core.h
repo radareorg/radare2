@@ -55,7 +55,6 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_FLAGS_FS_SIGNS "sign"
 #define R_FLAGS_FS_STRINGS "strings"
 #define R_FLAGS_FS_SYMBOLS "symbols"
-#define R_FLAGS_FS_SYMBOLS_OBJECTS "symbols.objects"
 #define R_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
 #define R_FLAGS_FS_SYSCALLS "syscalls"
 
