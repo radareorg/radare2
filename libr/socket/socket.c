@@ -110,7 +110,7 @@ WSACleanup: closes all network connections
 #endif
 #define BUFFER_SIZE 4096
 
-R_API bool r_socket_is_connected (RSocket *s) {
+R_API bool r_socket_is_connected(RSocket *s) {
 #if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
 	char buf[2];
 	r_socket_block_time (s, 0, 0);
@@ -183,7 +183,7 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 }
 #endif
 
-R_API RSocket *r_socket_new (bool is_ssl) {
+R_API RSocket *r_socket_new(bool is_ssl) {
 	RSocket *s = R_NEW0 (RSocket);
 	if (!s) {
 		return NULL;
@@ -216,7 +216,7 @@ R_API RSocket *r_socket_new (bool is_ssl) {
 	return s;
 }
 
-R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
+R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	// XXX TODO: dont use sockets, we can achieve the same with pipes
 	const int port = 2000 + r_num_rand (2000);
 	int childPid = r_sys_fork ();
@@ -265,7 +265,7 @@ R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
 	return true;
 }
 
-R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 #if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
 	struct sockaddr_in sa;
 	struct hostent *he;
@@ -429,7 +429,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 }
 
 /* close the file descriptor associated with the RSocket s */
-R_API int r_socket_close_fd (RSocket *s) {
+R_API int r_socket_close_fd(RSocket *s) {
 #ifdef _MSC_VER
 	return s->fd != INVALID_SOCKET ? closesocket (s->fd) : false;
 #else
@@ -438,7 +438,7 @@ R_API int r_socket_close_fd (RSocket *s) {
 }
 
 /* shutdown the socket and close the file descriptor */
-R_API int r_socket_close (RSocket *s) {
+R_API int r_socket_close(RSocket *s) {
 	int ret = false;
 	if (!s) {
 		return false;
@@ -469,7 +469,7 @@ R_API int r_socket_close (RSocket *s) {
 }
 
 /* shutdown the socket, close the file descriptor and free the RSocket */
-R_API int r_socket_free (RSocket *s) {
+R_API int r_socket_free(RSocket *s) {
 	int res = r_socket_close (s);
 #if HAVE_LIB_SSL
 	if (s && s->is_ssl) {
@@ -490,8 +490,8 @@ R_API int r_socket_port_by_name(const char *name) {
 	return (p && p->s_port) ? ntohs (p->s_port) : r_num_get (NULL, name);
 }
 
-R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #if __UNIX__ || defined(__CYGWIN__)
+R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
@@ -645,7 +645,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
 
-R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+R_API int r_socket_block_time(RSocket *s, int block, int sec) {
 #if __UNIX__ || defined(__CYGWIN__)
 	int ret, flags;
 #endif
