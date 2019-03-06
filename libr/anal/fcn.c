@@ -6,7 +6,6 @@
 #include <r_core.h>
 
 #define USE_SDB_CACHE 0
-#define Dprintf if (anal->verbose) eprintf
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
 #define JMPTBLSZ 512
@@ -1534,10 +1533,12 @@ analopfinish:
 				recurseAt (op.jump);
 				gotoBeachRet ();
 			} else {
-				if (!op.cond && anal->verbose) {
-					eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
-					addr + delay.un_idx - oplen, overlapped,
-					bb->size, r_anal_fcn_size (fcn));
+				if (!op.cond) {
+					if (anal->verbose) {
+						eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
+							addr + delay.un_idx - oplen, overlapped,
+							bb->size, r_anal_fcn_size (fcn));
+					}
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
@@ -2071,7 +2072,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if (anal->verbose && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+		if ((anal && anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			eprintf ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x"\n", bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
