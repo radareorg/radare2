@@ -12,7 +12,7 @@ static RAnalEsilCallbacks ocbs = {0};
 
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
-	if (*name=='0') {
+	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
 		return 0;
 	}

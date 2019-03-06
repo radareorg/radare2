@@ -279,7 +279,7 @@ typedef struct r_anal_function_t {
 	const char *cc; // calling convention
 	char* attr; // __attribute__(()) list
 	ut64 addr;
-	ut64 rb_max_addr; // maximum of addr + _size - 1 in the subtree, for interval tree
+	ut64 rb_max_addr; // maximum of meta.min + _size - 1 in the subtree, for fcn interval tree
 	int stack; //stack frame size
 	int maxstack;
 	int ninstr;
@@ -298,6 +298,7 @@ typedef struct r_anal_function_t {
 	RAnalFcnMeta meta;
 	RRangeTiny bbr;
 	RBNode rb;
+	RBNode addr_rb;
 } RAnalFunction;
 
 typedef struct r_anal_func_arg_t {
@@ -637,7 +638,8 @@ typedef struct r_anal_t {
 	void *user;
 	ut64 gp; // global pointer. used for mips. but can be used by other arches too in the future
 	RList *fcns;
-	RBNode *fcn_tree;
+	RBNode *fcn_tree; // keyed on meta.min
+	RBNode *fcn_addr_tree; // keyed on addr
 	RListRange *fcnstore;
 	RList *refs;
 	RList *vartypes;
@@ -1157,6 +1159,7 @@ typedef struct r_anal_esil_t {
 	int trace_idx;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
+	char *cmd_step; // r2 (external) command to run before a step is performed
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when a trap occurs
 	char *cmd_mdev; // r2 (external) command to run when an memory mapped device address is used
@@ -1359,6 +1362,7 @@ R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb);
 R_API const char *r_anal_stackop_tostring(int s);
 R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
+R_API void r_anal_op_init(RAnalOp *op);
 R_API bool r_anal_op_fini(RAnalOp *op);
 R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
