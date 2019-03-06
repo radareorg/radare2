@@ -247,9 +247,9 @@ static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int
 	if (shortcut) {
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			strncat (title, sdb_fmt (Color_YELLOW"[g%s]"Color_RESET,  shortcut), left);
+			strncat (title, sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut), left);
 		} else {
-			strncat (title, sdb_fmt ("[g%s]", shortcut), left);
+			strncat (title, sdb_fmt ("[o%s]", shortcut), left);
 		}
 		free (shortcut);
 	}
@@ -4207,7 +4207,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" e            - rotate graph.edges (show/hide edges)\n"
 				" E            - rotate graph.linemode (square/diagonal lines)\n"
 				" F            - enter flag selector\n"
-				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
+				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[oa])\n"
 				" G            - debug trace callgraph (generated with dtc)\n"
 				" hjkl/HJKL    - scroll canvas or node depending on graph cursor (uppercase for faster)\n"
 				" m/M          - change mouse modes\n"
@@ -4259,10 +4259,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			g->need_reload_nodes = true;
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
-		case 'g':
+		case 'o':
 			goto_asmqjmps (g, core);
 			break;
-		case 'o':
+		case 'g':
 			showcursor (core, true);
 			visual_offset (g, core);
 			showcursor (core, false);
