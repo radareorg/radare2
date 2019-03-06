@@ -1171,7 +1171,6 @@ static RList *MACH0_(parse_categories)(RBinFile *bf) {
 	bool is_found = false;
 	ut64 paddr;
 	ut64 s_size;
-	bool bigendian = obj->info->big_endian;
 
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {

@@ -640,7 +640,6 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
 	expr = r_str_trim_ro (expr);
 	const char *fcnname = NULL;
-	char *tmp;
 	if (!strncmp (expr, "0x", 2)) {
 		ut64 n = r_num_math (NULL, expr);
 		sdb_unset (TDB, K_NORET_ADDR (n), 0);
@@ -655,6 +654,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	}
 	sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
 #if 0
+	char *tmp;
 	// unnsecessary checks, imho the noreturn db should be pretty simple to allow forward and custom declarations without having to define the function prototype before
 	if (r_type_func_exist (TDB, fcnname)) {
 		sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);

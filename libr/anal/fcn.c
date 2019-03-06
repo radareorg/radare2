@@ -1133,7 +1133,7 @@ repeat:
 			// if first byte in op.ptr is 0xff, then set leaddr assuming its a jumptable
 			{
 				ut8 buf[4];
-				anal->iob.read_at (anal->iob.io, op.ptr, &buf, sizeof (buf));
+				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
 				if (buf[2] == 0xff && buf[3] == 0xff) {
 					leaddr = op.ptr; // XXX movptr is dupped but seems to be trashed sometimes, better track leaddr separately
 				}
