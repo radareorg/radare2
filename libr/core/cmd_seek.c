@@ -258,7 +258,7 @@ static int cmd_seek_opcode_forward (RCore *core, int n) {
 	// N forward instructions
 	int i, ret, val = 0;
 	for (val = i = 0; i < n; i++) {
-		RAnalOp op = R_EMPTY;
+		RAnalOp op;
 		ret = r_anal_op (core->anal, &op, core->offset, core->block,
 			core->blocksize, R_ANAL_OP_MASK_BASIC);
 		if (ret < 1) {

@@ -817,7 +817,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 }
 
 static int step_until_optype(RCore *core, const char *_optypes) {
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
@@ -1121,7 +1121,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 }
 
 static void cmd_debug_backtrace(RCore *core, const char *input) {
-	RAnalOp analop = R_EMPTY;
+	RAnalOp analop;
 	ut64 addr, len = r_num_math (core->num, input);
 	if (!len) {
 		r_bp_traptrace_list (core->dbg->bp);
@@ -3584,7 +3584,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 
 	while (true) {
 		ut8 buf[32];
-		RAnalOp aop = R_EMPTY;
+		RAnalOp aop;
 		int addr_in_range;
 
 		if (r_cons_is_breaked()) {
@@ -4228,7 +4228,7 @@ static char *get_corefile_name (const char *raw_name, int pid) {
 static int cmd_debug_step (RCore *core, const char *input) {
 	ut64 addr;
 	ut8 buf[64];
-	RAnalOp aop = R_EMPTY;
+	RAnalOp aop;
 	int i, times = 1;
 	if (strlen (input) > 2) {
 		times = r_num_math (core->num, input + 2);
@@ -4308,10 +4308,9 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	case 'p': // "dsp"
 		r_reg_arena_swap (core->dbg->reg, true);
 		for (i = 0; i < times; i++) {
-			// Are these variables really needed here? They already exist in the outer scope!
 			ut8 buf[64];
 			ut64 addr;
-			RAnalOp aop = R_EMPTY;
+			RAnalOp aop;
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			addr = r_debug_reg_get (core->dbg, "PC");
 			r_io_read_at (core->io, addr, buf, sizeof (buf));

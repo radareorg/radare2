@@ -265,7 +265,7 @@ R_API int r_core_hack(RCore *core, const char *op) {
 		eprintf ("TODO: write hacks are only for x86\n");
 	}
 	if (hack) {
-		RAnalOp analop = R_EMPTY;
+		RAnalOp analop;
 		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			eprintf ("anal op fail\n");
 			return false;

@@ -3073,7 +3073,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
-		RAnalOp aop = R_EMPTY;
+		RAnalOp aop;
 		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
@@ -3361,7 +3361,7 @@ onemoretime:
 		break;
 	case 'n':
 	{
-		RAnalOp op = R_EMPTY;
+		RAnalOp op;
 		char *q = NULL;
 		ut64 tgt_addr = UT64_MAX;
 		if (!isDisasmPrint (core->printidx)) {
@@ -3461,7 +3461,7 @@ onemoretime:
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		}
 		if (fcn) {
-			RAnalOp op = R_EMPTY;
+			RAnalOp op;
 			ut64 size;
 			if (r_anal_op (core->anal, &op, off, core->block+delta,
 					core->blocksize-delta, R_ANAL_OP_MASK_BASIC)) {
@@ -3623,7 +3623,7 @@ onemoretime:
 		break;
         case 'v':
         {
-		RAnalOp op = R_EMPTY;
+		RAnalOp op;
 		ut64 N;
 		char *endptr = NULL;
 		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");

@@ -80,7 +80,7 @@ R_API void r_anal_reflines_free (RAnalRefline *rl) {
 R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RList *list, *sten;
 	RListIter *iter;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	struct refline_end *el;
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -88,7 +88,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	int res, sz = 0, count = 0;
 	ut64 opc = addr;
 
-	// memset (&op, 0, sizeof (op)); // Not needed, op = R_EMPTY
+	memset (&op, 0, sizeof (op));
 	/*
 	 * 1) find all reflines
 	 * 2) sort "from"s and "to"s in a list

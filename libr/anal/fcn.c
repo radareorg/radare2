@@ -2301,13 +2301,13 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 		return 0;
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
-		RAnalOp op = R_EMPTY;
+		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
 		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
-			// memset (&op, 0, sizeof (op)); // Not needed, op = R_EMPTY
+			memset (&op, 0, sizeof (op));
 			(void) r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ANAL_OP_MASK_BASIC);
 			if (op.size < 1) {
 				op.size = 1;

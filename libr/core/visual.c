@@ -1010,7 +1010,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	ut8 buf[OPDELTA * 2];
 	ut64 target, base;
 	RAnalBlock *bb;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	int len, ret, i;
 	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);

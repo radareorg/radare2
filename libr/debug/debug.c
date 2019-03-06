@@ -737,7 +737,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	int br, i, ret;
 	union {
 		ut64 r64;
@@ -914,7 +914,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 }
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
@@ -1251,7 +1251,7 @@ R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	ut8 buf[DBG_BUF_SIZE];
 
 	if (r_debug_is_dead (dbg)) {

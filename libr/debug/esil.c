@@ -214,7 +214,7 @@ R_API void r_debug_esil_prestep (RDebug *d, int p) {
 }
 
 R_API int r_debug_esil_stepi (RDebug *d) {
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;

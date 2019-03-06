@@ -444,7 +444,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
 	RBinSection *s;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op;
 	ut64 ret = 0;
 
 	if (ok) {
