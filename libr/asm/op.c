@@ -3,8 +3,8 @@
 #include <r_asm.h>
 
 R_API RAsmOp *r_asm_op_new() {
-	RAsmOp *op = R_NEW0 (RAsmOp);
-	r_asm_op_init(op);
+	RAsmOp *op = R_NEW (RAsmOp);
+	r_asm_op_init (op);
 	return op;
 }
 
