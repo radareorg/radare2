@@ -330,7 +330,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 	class_type_offset -= 2 * context->word_size;
 	RFlagItem *flag;
 
-	flag = r_flag_get_i(core->flags, class_type_offset);
+	flag = context->anal->flag_get (core->flags, class_type_offset);
 	if (!flag) {
 		eprintf ("No RTTI found\n");
 		return false;
