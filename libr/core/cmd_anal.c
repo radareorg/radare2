@@ -1163,11 +1163,20 @@ static int var_cmd(RCore *core, const char *str) {
 	switch (str[1]) { // afv[bsr]
 	case '\0':
 	case '*':
-	case 'j':
-		r_anal_var_list_show (core->anal, fcn, type, str[1]);
+		r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+		break;
+	case 'j': {
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return -1;
+		}
+		r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
+	} 
 		break;
 	case '.':
-		r_anal_var_list_show (core->anal, fcn, core->offset, 0);
+		r_anal_var_list_show (core->anal, fcn, core->offset, 0, NULL);
 		break;
 	case '-': // "afv[bsr]-"
 		if (str[2] == '*') {
