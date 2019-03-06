@@ -3284,8 +3284,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		return false;
 	}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (((type & R_BIN_ELF_SYMTAB_SYMBOLS) && bin->shdr[i].sh_type == (is_bin_etrel (bin) ? SHT_SYMTAB : SHT_DYNSYM)) ||
-			((type & R_BIN_ELF_DYNSYM_SYMBOLS) && bin->shdr[i].sh_type == (Elf_ (r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
+		if (((type & R_BIN_ELF_SYMTAB_SYMBOLS) && bin->shdr[i].sh_type == (SHT_SYMTAB)) ||
+			((type & R_BIN_ELF_DYNSYM_SYMBOLS) && bin->shdr[i].sh_type == (SHT_DYNSYM))) {
 			if (bin->shdr[i].sh_link < 1) {
 				/* oops. fix out of range pointers */
 				continue;
