@@ -132,9 +132,9 @@ static int defaultCycles(RAnalOp *op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
+	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	memset (op, 0, sizeof (RAnalOp));
 	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
 	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
 	if (anal->pcalign && addr % anal->pcalign) {
