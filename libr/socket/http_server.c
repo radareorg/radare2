@@ -32,8 +32,10 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 	hr->auth = !so->httpauth;
 	for (;;) {
 #if __WINDOWS__
-		if (breaked)
-			break;
+		if (breaked && *breaked) {
+			r_socket_http_close (hr);
+			return NULL;
+		}
 #endif
 		memset (buf, 0, sizeof (buf));
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
