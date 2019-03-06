@@ -246,6 +246,7 @@ static const char *help_msg_aeC[] = {
 static const char *help_msg_aep[] = {
 	"Usage:", "aep[-c] ", " [...]",
 	"aepc", " [addr]", "change program counter for esil",
+	"aepc", "=[addr]", "alias for aepc [addr]",
 	"aep", "-[addr]", "remove pin",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep", "", "list pins",
