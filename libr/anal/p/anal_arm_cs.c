@@ -2628,10 +2628,14 @@ jmp $$ + 4 + ( [delta] * 2 )
 
 #endif
 	case ARM_INS_TBH: // half word table
-	case ARM_INS_TBB: // byte table
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
-		// TABLE JUMP  used for switch statements
+		op->ptrsize = 2;
+		break;
+	case ARM_INS_TBB: // byte jump table
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->cycles = 2;
+		op->ptrsize = 1;
 		break;
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch

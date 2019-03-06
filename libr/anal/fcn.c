@@ -35,6 +35,7 @@
 #define VERBOSE_DELAY if (0)
 
 #define FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, rb)
+#define ADDR_FCN_CONTAINER(x) container_of ((RBNode*)(x), RAnalFunction, addr_rb)
 #define fcn_tree_foreach_intersect(root, it, data, from, to)										\
 	for ((it) = _fcn_tree_iter_first (root, from, to); (it).cur && ((data) = FCN_CONTAINER ((it).cur), 1); _fcn_tree_iter_next (&(it), from, to))
 
@@ -76,12 +77,37 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 	}
 }
 
-// _fcn_tree_{cmp_addr,calc_max_addr,free,probe} are used by interval tree.
-static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
+static void set_meta_min_if_needed(RAnalFunction *x) {
+	if (x->meta.min == UT64_MAX) {
+		if (r_list_length (x->bbs) == 0) {
+			x->meta.min = x->addr;
+		} else {
+			ut64 min = UT64_MAX;
+			ut64 max = UT64_MIN;
+			RListIter *bbs_iter;
+			RAnalBlock *bbi;
+			r_list_foreach (x->bbs, bbs_iter, bbi) {
+				if (min > bbi->addr) {
+					min = bbi->addr;
+				}
+				if (max < bbi->addr + bbi->size) {
+					max = bbi->addr + bbi->size;
+				}
+			}
+			x->meta.min = min;
+			x->_size = max - min; // HACK TODO Fix af size calculation
+		}
+	}
+}
+
+// _fcn_tree_{cmp,calc_max_addr,free,probe} are used by interval tree.
+static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
 	const RAnalFunction *a = (const RAnalFunction *)a_;
 	const RAnalFunction *b = FCN_CONTAINER (b_);
-	ut64 from0 = a->addr, to0 = a->addr + a->_size,
-		from1 = b->addr, to1 = b->addr + b->_size;
+	set_meta_min_if_needed ((RAnalFunction *)a);
+	set_meta_min_if_needed ((RAnalFunction *)b);
+	ut64 from0 = a->meta.min, to0 = a->meta.min + a->_size,
+		from1 = b->meta.min, to1 = b->meta.min + b->_size;
 	if (from0 != from1) {
 		return from0 < from1 ? -1 : 1;
 	}
@@ -91,10 +117,21 @@ static int _fcn_tree_cmp_addr(const void *a_, const RBNode *b_) {
 	return 0;
 }
 
+static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_) {
+	const RAnalFunction *a = (const RAnalFunction *)a_;
+	const RAnalFunction *b = ADDR_FCN_CONTAINER (b_);
+	ut64 from0 = a->addr, from1 = b->addr;
+	if (from0 != from1) {
+		return from0 < from1 ? -1 : 1;
+	}
+	return 0;
+}
+
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
-	fcn->rb_max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
+	set_meta_min_if_needed (fcn);
+	fcn->rb_max_addr = fcn->meta.min + (fcn->_size == 0 ? 0 : fcn->_size - 1);
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
 			RAnalFunction *fcn1 = FCN_CONTAINER (node->child[i]);
@@ -124,8 +161,8 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 			x = y;
 			continue;
 		}
-		if (x->addr <= to - 1) {
-			if (from <= x->addr + (x->_size == 0 ? 0 : x->_size - 1)) {
+		if (x->meta.min <= to - 1) {
+			if (from <= x->meta.min + (x->_size == 0 ? 0 : x->_size - 1)) {
 				return x_;
 			}
 			if ((y_ = x_->child[1])) {
@@ -141,15 +178,19 @@ static RBNode *_fcn_tree_probe(FcnTreeIter *it, RBNode *x_, ut64 from, ut64 to) 
 }
 
 R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *data) {
-	return r_rbtree_aug_delete (&anal->fcn_tree, data, _fcn_tree_cmp_addr, _fcn_tree_free, _fcn_tree_calc_max_addr);
+	bool ret_min = !!r_rbtree_aug_delete (&anal->fcn_tree, data, _fcn_tree_cmp, _fcn_tree_free, _fcn_tree_calc_max_addr);
+	bool ret_addr = !!r_rbtree_delete (&anal->fcn_addr_tree, data, _fcn_addr_tree_cmp, NULL);
+	r_return_val_if_fail (ret_min == ret_addr, false);
+	return ret_min;
 }
 
 R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn) {
-	r_rbtree_aug_insert (&anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_insert (&anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr);
+	r_rbtree_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_addr_tree_cmp);
 }
 
 static void _fcn_tree_update_size(RAnal *anal, RAnalFunction *fcn) {
-	r_rbtree_aug_update_sum (anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_update_sum (anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr);
 }
 
 #if 0
@@ -200,9 +241,10 @@ static void _fcn_tree_print_dot(RBNode *n) {
 #endif
 
 // Find RAnalFunction whose addr is equal to addr
-static RAnalFunction *_fcn_tree_find_addr(RBNode *n, ut64 addr) {
+static RAnalFunction *_fcn_addr_tree_find_addr(RAnal *anal, ut64 addr) {
+	RBNode *n = anal->fcn_addr_tree;
 	while (n) {
-		RAnalFunction *x = FCN_CONTAINER (n);
+		RAnalFunction *x = ADDR_FCN_CONTAINER (n);
 		if (x->addr == addr) {
 			return x;
 		}
@@ -237,11 +279,11 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 		}
 		x_ = it->path[--it->len];
 		x = FCN_CONTAINER (x_);
-		if (to - 1 < x->addr) {
+		if (to - 1 < x->meta.min) {
 			it->cur = NULL;
 			break;
 		}
-		if (from <= x->addr + (x->_size == 0 ? 0 : x->_size - 1)) {
+		if (from <= x->meta.min + (x->_size == 0 ? 0 : x->_size - 1)) {
 			it->cur = x_;
 			break;
 		}
@@ -298,6 +340,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	r_tinyrange_init (&fcn->bbr);
+	fcn->meta.min = UT64_MAX;
 	return fcn;
 }
 
@@ -736,7 +779,9 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		eprintf ("[anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		if (anal->verbose) {
+			eprintf ("Warning: [anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		}
 		return false;
 	}
 
@@ -934,7 +979,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
-			eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
+			if (anal->verbose) {
+				eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
+			}
 		}
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -954,7 +1001,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	bb = appendBasicBlock (anal, fcn, addr);
 
-	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+	if (anal->verbose) {
+		eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+	}
 
 	ut64 leaddr = UT64_MAX;
 	bool last_is_push = false;
@@ -988,7 +1037,9 @@ repeat:
 		r_anal_op_fini (&op);
 		if (isInvalidMemory (buf + addrbytes * idx, len - addrbytes * idx)) {
 			FITFCNSZ ();
-			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+			if (anal->verbose) {
+				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+			}
 			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + (addrbytes * idx), len - (addrbytes * idx), R_ANAL_OP_MASK_ALL)) < 1) {
@@ -1021,7 +1072,9 @@ repeat:
 					r_anal_fcn_split_bb (anal, fcn, bbg, addr + idx);
 				}
 				overlapped = 1;
-				VERBOSE_ANAL eprintf ("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+				if (anal->verbose) {
+					eprintf ("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+				}
 				// return R_ANAL_RET_END;
 			}
 		}
@@ -1133,7 +1186,7 @@ repeat:
 			// if first byte in op.ptr is 0xff, then set leaddr assuming its a jumptable
 			{
 				ut8 buf[4];
-				anal->iob.read_at (anal->iob.io, op.ptr, &buf, sizeof (buf));
+				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
 				if (buf[2] == 0xff && buf[3] == 0xff) {
 					leaddr = op.ptr; // XXX movptr is dupped but seems to be trashed sometimes, better track leaddr separately
 				}
@@ -1524,9 +1577,11 @@ analopfinish:
 				gotoBeachRet ();
 			} else {
 				if (!op.cond) {
-					VERBOSE_ANAL eprintf("RET 0x%08"PFMT64x ". %d %d %d\n",
-					addr + delay.un_idx - oplen, overlapped,
-					bb->size, r_anal_fcn_size (fcn));
+					if (anal->verbose) {
+						eprintf ("RET 0x%08"PFMT64x ". %d %d %d\n",
+							addr + delay.un_idx - oplen, overlapped,
+							bb->size, r_anal_fcn_size (fcn));
+					}
 					gotoBeach (R_ANAL_RET_END);
 				}
 			}
@@ -1815,7 +1870,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	RAnalFunction *fcn;
 	FcnTreeIter it;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		return _fcn_tree_find_addr (anal->fcn_tree, addr);
+		return _fcn_addr_tree_find_addr (anal, addr);
 	}
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
 		if (!type || (fcn && fcn->type & type)) {
@@ -2047,7 +2102,7 @@ R_API int r_anal_fcn_loops(RAnalFunction *fcn) {
 	return loops;
 }
 
-R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
+R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 /*
         CC = E - N + 2P
         E = the number of edges of the graph.
@@ -2060,7 +2115,7 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if (bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+		if ((anal && anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			eprintf ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x"\n", bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
@@ -2143,7 +2198,7 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
 	RAnalFunction *fcn;
 	FcnTreeIter it;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
-		return _fcn_tree_find_addr (anal->fcn_tree, addr);
+		return _fcn_addr_tree_find_addr (anal, addr);
 	}
 	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
 		if (!type || (fcn && fcn->type & type)) {

@@ -3,7 +3,9 @@
 #include <r_asm.h>
 
 R_API RAsmOp *r_asm_op_new() {
-	return R_NEW0 (RAsmOp);
+	RAsmOp *op = R_NEW (RAsmOp);
+	r_asm_op_init (op);
+	return op;
 }
 
 R_API void r_asm_op_free(RAsmOp *op) {
@@ -12,7 +14,9 @@ R_API void r_asm_op_free(RAsmOp *op) {
 }
 
 R_API void r_asm_op_init(RAsmOp *op) {
-	memset (op, 0, sizeof (*op));
+	if (op) {
+		memset (op, 0, sizeof (*op));
+	}
 }
 
 R_API void r_asm_op_fini(RAsmOp *op) {

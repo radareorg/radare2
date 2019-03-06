@@ -1603,6 +1603,17 @@ static int cb_mdevrange(void *user, void *data) {
 	return true;
 }
 
+static int cb_cmd_esil_step(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->cmd_step);
+		core->anal->esil->cmd_step = strdup (node->value);
+	}
+	return true;
+}
+
 static int cb_cmd_esil_mdev(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2109,6 +2120,13 @@ static int cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
+static int cb_analverbose(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->anal->verbose = node->i_value;
+	return true;
+}
+
 static int cb_binverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2589,6 +2607,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* anal */
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETI ("anal.gp2", 0, "Set anal.gp before emulating each instruction (workaround)");
@@ -2866,7 +2885,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETPREF ("bin.classes", "true", "Load classes from rbin on startup");
-	SETCB ("bin.verbose", "true", &cb_binverbose, "Show RBin warnings when loading binaries");
+	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
 	SETPREF ("prj.name", "", "Name of current project");
@@ -3057,6 +3076,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.visual", "", "Replace current print mode");
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
 
+	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "Command to run before performing a step in the emulator");
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
 	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
@@ -3128,7 +3148,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
-	SETPREF ("http.verbose", "true", "Output server logs to stdout");
+	SETPREF ("http.verbose", "false", "Output server logs to stdout");
 	SETPREF ("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");

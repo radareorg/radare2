@@ -1967,6 +1967,16 @@ static int sort_symbols_by_vaddr(const void *a, const void *b) {
 	return sa->vaddr < sb->vaddr? -1: 1;
 }
 
+static void select_flag_space(RCore *core, RBinSymbol *symbol) {
+	if (!strncmp (symbol->name, "imp.", 4)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
+	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_SECTION_STR)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_SECTIONS);
+	} else {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
+	}
+}
+
 static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
@@ -2061,17 +2071,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			if (is_arm) {
 				handle_arm_symbol (r, symbol, info, va);
 			}
-			if (!strncmp (r_symbol_name, "imp.", 4)) {
-				if (lastfs != 'i') {
-					r_flag_space_set (r->flags, R_FLAGS_FS_IMPORTS);
-				}
-				lastfs = 'i';
-			} else {
-				if (lastfs != 's') {
-					r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
-				}
-				lastfs = 's';
-			}
+			select_flag_space (r, symbol);
 			/* If that's a Classed symbol (method or so) */
 			if (sn.classname) {
 				RFlagItem *fi = r_flag_get (r->flags, sn.methflag);
@@ -2115,6 +2115,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
 					addr, symbol->size, sn.demname);
 			}
+			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_escape_utf8_for_json (r_symbol_name, -1);
 			// str = r_str_replace (str, "\"", "\\\"", 1);

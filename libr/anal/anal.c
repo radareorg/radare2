@@ -200,6 +200,7 @@ R_API RAnal *r_anal_new() {
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
+	anal->fcn_addr_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
@@ -513,6 +514,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
+	anal->fcn_addr_tree = NULL;
 	r_list_free (anal->refs);
 	anal->refs = r_anal_ref_list_new ();
 	return 0;
@@ -640,7 +642,6 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
 	expr = r_str_trim_ro (expr);
 	const char *fcnname = NULL;
-	char *tmp;
 	if (!strncmp (expr, "0x", 2)) {
 		ut64 n = r_num_math (NULL, expr);
 		sdb_unset (TDB, K_NORET_ADDR (n), 0);
@@ -655,6 +656,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	}
 	sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
 #if 0
+	char *tmp;
 	// unnsecessary checks, imho the noreturn db should be pretty simple to allow forward and custom declarations without having to define the function prototype before
 	if (r_type_func_exist (TDB, fcnname)) {
 		sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
@@ -738,7 +740,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	RFlagItem *fi = r_flag_get_i2 (anal->flb.f, addr);
+	RFlagItem *fi = anal->flag_get (anal->flb.f, addr);
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->name)) {
 			return true;

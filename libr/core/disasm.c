@@ -3092,44 +3092,42 @@ static void ds_print_sysregs(RDisasmState *ds) {
 }
 
 static void ds_print_fcn_name(RDisasmState *ds) {
-	int delta;
-	const char *label;
-	RAnalFunction *f;
-	RCore *core = ds->core;
 	if (!ds->show_comments) {
 		return;
 	}
-	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_CALL:
-		// f = r_anal_get_fcn_in (core->anal, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-		f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
-		if (f && f->name && ds->opstr && !strstr (ds->opstr, f->name)) {
-			// print label
-			delta = ds->analop.jump - f->addr;
-			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
-			if (!ds->show_comment_right) {
-				ds_begin_line (ds);
-			}
-			if (label) {
-				_ALIGN;
-				ds_comment (ds, true, "; %s.%s", f->name, label);
-			} else {
-				RAnalFunction *f2 = fcnIn (ds, ds->at, 0); //r_anal_get_fcn_in (core->anal, ds->at, 0);
-				if (f != f2) {
-					_ALIGN;
-					if (delta > 0) {
-						ds_comment (ds, true, "; %s+0x%x", f->name, delta);
-					} else if (delta < 0) {
-						ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
-					} else {
-						ds_comment (ds, true, "; %s", f->name);
-					}
-				}
-			}
+	if (ds->analop.type != R_ANAL_OP_TYPE_JMP
+		&& ds->analop.type != R_ANAL_OP_TYPE_CJMP
+		&& ds->analop.type != R_ANAL_OP_TYPE_CALL) {
+		return;
+	}
+	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
+	if (!f || !f->name || !ds->opstr || strstr (ds->opstr, f->name)) {
+		return;
+	}
+	st64 delta = ds->analop.jump - f->addr;
+	const char *label = r_anal_fcn_label_at (ds->core->anal, f, ds->analop.jump);
+	if (label) {
+		if (!ds->show_comment_right) {
+			ds_begin_line (ds);
 		}
-		break;
+		_ALIGN;
+		ds_comment (ds, true, "; %s.%s", f->name, label);
+	} else {
+		RAnalFunction *f2 = fcnIn (ds, ds->at, 0);
+		if (f == f2) {
+			return;
+		}
+		if (!ds->show_comment_right) {
+			ds_begin_line (ds);
+		}
+		_ALIGN;
+		if (delta > 0) {
+			ds_comment (ds, true, "; %s+0x%x", f->name, delta);
+		} else if (delta < 0) {
+			ds_comment (ds, true, "; %s-0x%x", f->name, -delta);
+		} else {
+			ds_comment (ds, true, "; %s", f->name);
+		}
 	}
 }
 
@@ -3573,10 +3571,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (f) {
 				ut64 relsub_addr = core->parser->relsub_addr;
 				if (relsub_addr && relsub_addr != p) {
-					f2 = r_flag_get_i2 (core->flags, relsub_addr);
-					if (!f2) {
-						f2 = r_flag_get_i (core->flags, relsub_addr);
-					}
+					f2 = r_core_flag_get_by_spaces (core->flags, relsub_addr);
 					f2_in_opstr = f2 && ds->opstr && strstr (ds->opstr, f2->name);
 				}
 				refaddr = p;
@@ -4617,7 +4612,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
-		flag = r_flag_get_i2 (f, addr);
+		flag = r_core_flag_get_by_spaces (f, addr);
 		if (flag) {
 			name = flag->name;
 		} else {

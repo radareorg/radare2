@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2018 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2019 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -247,9 +247,9 @@ static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int
 	if (shortcut) {
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			strncat (title, sdb_fmt (Color_YELLOW"[g%s]",  shortcut), left);
+			strncat (title, sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut), left);
 		} else {
-			strncat (title, sdb_fmt ("[g%s]", shortcut), left);
+			strncat (title, sdb_fmt ("[o%s]", shortcut), left);
 		}
 		free (shortcut);
 	}
@@ -2042,12 +2042,13 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
 	if (opts & BODY_COMMENTS) {
-		r_core_visual_toggle_decompiler_disasm (core, true);
+		r_core_visual_toggle_decompiler_disasm (core, true, false);
 		char * res = r_core_cmd_strf (core, "pD %d @ 0x%08"PFMT64x, size, addr);
 		res = r_str_replace (res, "; ", "", true);
-		res = r_str_replace (res, "\n\n", "\n", true);
+		// res = r_str_replace (res, "\n", "(\n)", true);
 		r_str_trim (res);
-		r_core_visual_toggle_decompiler_disasm (core, true);
+		res = r_str_trim_lines (res);
+		r_core_visual_toggle_decompiler_disasm (core, true, false);
 		return res;
 	}
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
@@ -4206,7 +4207,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" e            - rotate graph.edges (show/hide edges)\n"
 				" E            - rotate graph.linemode (square/diagonal lines)\n"
 				" F            - enter flag selector\n"
-				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[ga])\n"
+				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[oa])\n"
 				" G            - debug trace callgraph (generated with dtc)\n"
 				" hjkl/HJKL    - scroll canvas or node depending on graph cursor (uppercase for faster)\n"
 				" m/M          - change mouse modes\n"
@@ -4241,11 +4242,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->mode = R_AGRAPH_MODE_COMMENTS;
 			}
 			g->need_reload_nodes = true;
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			// r_config_toggle (core->config, "graph.hints");
 			break;
 		case 'p':
 			g->mode = next_mode (g->mode);
 			g->need_reload_nodes = true;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'P':
 			if (!fcn) {
@@ -4253,11 +4257,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			g->mode = prev_mode (g->mode);
 			g->need_reload_nodes = true;
-			break;
-		case 'g':
-			goto_asmqjmps (g, core);
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'o':
+			goto_asmqjmps (g, core);
+			break;
+		case 'g':
 			showcursor (core, true);
 			visual_offset (g, core);
 			showcursor (core, false);
@@ -4541,6 +4546,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case ':':
 			r_core_visual_prompt_input (core);
+			g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
 			get_bbupdate (g, core, fcn);
 			break;
 		case 'w':
