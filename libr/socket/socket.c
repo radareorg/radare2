@@ -319,6 +319,9 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	if (iResult != NO_ERROR) {
 		eprintf ("ioctlsocket error: %d\n", iResult);
 	}
+	if (timeout > 0) {
+		r_socket_block_time (s, 1, timeout);
+	}
 	fd_set Write, Err;
 	FD_ZERO (&Write);
 	FD_ZERO (&Err);
@@ -450,10 +453,12 @@ R_API int r_socket_close(RSocket *s) {
 #if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
-		do {
-			char buf = 0;
-			ret = recv (s->fd, &buf, 1, 0);
-		} while (ret != 0 && ret != SOCKET_ERROR);
+		if (r_socket_ready (s, 0, 250)) {
+			do {
+				char buf = 0;
+				ret = recv (s->fd, &buf, 1, 0);
+			} while (ret != 0 && ret != SOCKET_ERROR);
+		}
 		ret = closesocket (s->fd);
 #else
 		ret = close (s->fd);
@@ -490,12 +495,11 @@ R_API int r_socket_port_by_name(const char *name) {
 	return (p && p->s_port) ? ntohs (p->s_port) : r_num_get (NULL, name);
 }
 
-#if __UNIX__ || defined(__CYGWIN__)
 R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
-#endif
+
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
@@ -509,7 +513,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		return false;
 	}
-#if __UNIX__ || defined(__CYGWIN__)
+
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
@@ -527,7 +531,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if (ret < 0) {
 		return false;
 	}
-#endif
+
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
@@ -664,8 +668,6 @@ R_API int r_socket_block_time(RSocket *s, int block, int sec) {
 		return false;
 	}
 #elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
-	// HACK: nonblocking io on w32 behaves strange
-	return true;
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0) {
@@ -702,8 +704,6 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	fds[0].revents = POLLNVAL | POLLHUP | POLLERR;
 	return poll ((struct pollfd *)&fds, 1, msecs);
 #elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
-	return 1;
-#if XXX_THIS_IS_NOT_WORKING_WELL
 	fd_set rfds;
 	struct timeval tv;
 	if (s->fd == -1) {
@@ -713,11 +713,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	FD_SET (s->fd, &rfds);
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
-	if (select (s->fd + 1, &rfds, NULL, NULL, &tv) == -1) {
-		return -1;
-	}
-	return FD_ISSET (0, &rfds);
-#endif
+	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
 #else
 	return true; /* always ready if unknown */
 #endif
@@ -802,6 +798,9 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 	if (!s) {
 		return -1;
 	}
+	if (r_socket_ready (s, 2, 0) <= 0) {
+		return -1;
+	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		if (s->bio) {
@@ -814,9 +813,6 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 rep:
 	{
 	int ret = recv (s->fd, (void *)buf, len, 0);
-	//if (ret != len)
-	//	return 0;
-	//r_sys_perror ("recv");
 	if (ret == -1) goto rep;
 	return ret;
 	}
