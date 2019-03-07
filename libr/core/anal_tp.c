@@ -452,12 +452,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	Sdb *TDB = anal->sdb_types;
 	bool resolved = false;
 
-	if (!core|| !fcn) {
-		return;
-	}
-	if (!core->anal->esil) {
-		return;
-	}
+	r_return_if_fail (core && fcn && core->anal && core->anal->esil);
+
 	bool chk_constraint = r_config_get_i (core->config, "anal.types.constraint");
 	int ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
@@ -528,7 +524,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			Sdb *trace = anal->esil->db_trace;
 			cur_idx = sdb_num_get (trace, "idx", 0);
 			RAnalVar *var = aop.var;
-			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
 				RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
@@ -554,7 +550,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						const char *query = sdb_fmt ("%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
-						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_BASIC);
+						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
 						if (mop && mop->var) {
 							ut32 type = mop->type & R_ANAL_OP_TYPE_MASK;
 							if (type == R_ANAL_OP_TYPE_MOV) {
