@@ -904,13 +904,18 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 4) {
+		if (memcmp (buf, "\xfe\xed\xfa\xcf", 4) &&
+			memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+			return false;
+		}
+	}
 	RPrelinkRange *prelink_range = get_prelink_info_range (buf, length);
 	if (!prelink_range) {
 		return false;
 	}
 	return true;
 }
-
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return (bool) check_bytes (buf, sz);
