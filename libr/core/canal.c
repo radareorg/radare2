@@ -3545,6 +3545,19 @@ static bool isValidSymbol(RBinSymbol *symbol) {
 	return false;
 }
 
+static bool isDllImport(RBinSymbol *s) {
+	if (s && s->name && s->bind) {
+		if (!strcmp (s->bind, "NONE")) {
+			if (r_str_startswith (s->name, "imp.")) {
+				if (strstr (s->name, ".dll_")) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 R_API int r_core_anal_all(RCore *core) {
 	RList *list;
 	RListIter *iter;
@@ -3573,7 +3586,8 @@ R_API int r_core_anal_all(RCore *core) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (strstr (symbol->name, ".dll_")) { // Stop analyzing PE imports further
+			// Stop analyzing PE imports further
+			if (isDllImport (symbol)) {
 				continue;
 			}
 			if (isValidSymbol (symbol)) {
