@@ -693,7 +693,7 @@ R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
 	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR (addr), NULL);
 }
 
-bool noreturn_recurse(RAnal *anal, ut64 addr) {
+static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	RAnalOp op = {0};
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
@@ -701,7 +701,7 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
 	}
-	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC) < 1) {
+	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL) < 1) {
 		return false;
 	}
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
