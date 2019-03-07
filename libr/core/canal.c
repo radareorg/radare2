@@ -3266,7 +3266,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				switch (mode) {
 				case 'c':
 					(void)opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch);
-					if (op.size <1) {
+					if (op.size < 1) {
 						op.size = 1;
 					}
 					break;
@@ -3327,6 +3327,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 						count ++;
 					}
 					break;
+				}
+				if (op.size < 1) {
+					op.size = 1;
 				}
 				i += op.size - 1;
 				r_anal_op_fini (&op);
