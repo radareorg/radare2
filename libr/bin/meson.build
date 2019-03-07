@@ -130,6 +130,7 @@ r_bin = library('r_bin', r_bin_sources,
     r_hash_dep,
     r_magic_dep,
     r_socket_dep,
+    r_syscall_dep,
     sdb_dep,
     java_dep,
     lz4_dep
@@ -150,7 +151,8 @@ pkgconfig_mod.generate(r_bin,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_io',
-    'r_socket'
+    'r_socket',
+    'r_syscall'
   ],
   description: 'radare foundation libraries'
 )
