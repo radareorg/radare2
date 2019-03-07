@@ -25,7 +25,6 @@ typedef struct _RCFParseState {
 	RCFValueArray *array;
 } RCFParseState;
 
-
 static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase);
 static void r_cf_parse_state_free(RCFParseState *state);
 
@@ -43,239 +42,259 @@ static void r_cf_value_array_print(RCFValueArray *dict);
 
 static RCFValueString *r_cf_value_string_new(char *string);
 static void r_cf_value_string_free(RCFValueString *string);
-static void r_cf_value_string_print (RCFValueString *string);
+static void r_cf_value_string_print(RCFValueString *string);
 
 static RCFValueInteger *r_cf_value_integer_new(char *string);
 static void r_cf_value_integer_free(RCFValueInteger *integer);
-static void r_cf_value_integer_print (RCFValueInteger *integer);
+static void r_cf_value_integer_print(RCFValueInteger *integer);
 
 static RCFValueData *r_cf_value_data_new(char *string);
 static void r_cf_value_data_free(RCFValueData *data);
-static void r_cf_value_data_print (RCFValueData *data);
+static void r_cf_value_data_print(RCFValueData *data);
 
 static RCFValueNULL *r_cf_value_null_new();
 static void r_cf_value_null_free(RCFValueNULL *null);
-static void r_cf_value_null_print (RCFValueNULL *null);
+static void r_cf_value_null_print(RCFValueNULL *null);
 
 static RCFValueBool *r_cf_value_bool_new(bool value);
 static void r_cf_value_bool_free(RCFValueBool *bool_value);
-static void r_cf_value_bool_print (RCFValueBool *bool_value);
+static void r_cf_value_bool_print(RCFValueBool *bool_value);
 
 static void r_cf_value_free(RCFValue *value);
 
-RCFValueDict *r_cf_value_dict_parse(RBuffer *file_buf, ut64 offset, ut64 size, int options) {
-  RCFValueDict *result = NULL;
-  void *xml_buf;
-  yxml_t x;
-  int i, depth = 0;
-  char *content = NULL;
-  RList *stack = NULL;
+RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
+	RCFValueDict *result = NULL;
+	yxml_t x;
+	int i, depth = 0;
+	char *content = NULL;
 
-  xml_buf = malloc(XMLBUFSIZE);
-  yxml_init(&x, xml_buf, XMLBUFSIZE);
-
-  stack = r_list_newf ((RListFree)&r_cf_parse_state_free);
-  if (!stack) {
-	  goto beach;
-  }
-
-  r_list_push (stack, r_cf_parse_state_new (R_CF_STATE_ROOT));
-
-  for (i = 0; i < size; i++) {
-	ut8 doc = 0;
-	r_buf_read_at (file_buf, offset + i, &doc, 1);
-	if (!doc) {
-		break;
+	void *xml_buf = malloc (XMLBUFSIZE);
+	if (!xml_buf) {
+		return NULL;
 	}
 
-	yxml_ret_t r = yxml_parse(&x, doc);
-	if (r < 0) {
-		eprintf ("Parsing error at :%"PRIu32":%"PRIu64" byte offset %"PRIu64"\n",
-			x.line, x.byte, x.total);
+	yxml_init (&x, xml_buf, XMLBUFSIZE);
+
+	RList *stack = r_list_newf ((RListFree)&r_cf_parse_state_free);
+	if (!stack) {
 		goto beach;
 	}
 
-	switch (r) {
-	case YXML_ELEMSTART:
-	{
-		RCFParseState *state = (RCFParseState*)r_list_get_top (stack);
-		RCFParseState *next_state = NULL;
+	r_list_push (stack, r_cf_parse_state_new (R_CF_STATE_ROOT));
 
-		if (!strcmp (x.elem, "dict")) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_DICT);
-			next_state->dict = r_cf_value_dict_new ();
-		} else if (!strcmp (x.elem, "array")) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_ARRAY);
-			next_state->array = r_cf_value_array_new ();
-		} else if (!strcmp (x.elem, "key") && state->phase == R_CF_STATE_IN_DICT) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_KEY);
-			next_state->dict = state->dict;
-		} else if (!strcmp (x.elem, "string")) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
-			next_state->value_type = R_CF_STRING;
-		} else if (!strcmp (x.elem, "integer")) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
-			next_state->value_type = R_CF_INTEGER;
-		} else if (!strcmp (x.elem, "data")) {
-			if (options & R_CF_OPTION_SKIP_NSDATA) {
-				next_state = r_cf_parse_state_new (R_CF_STATE_IN_IGNORE);
-			} else {
-				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
-				next_state->value_type = R_CF_DATA;
-			}
-		} else if (!strcmp (x.elem, "true")) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
-			next_state->value_type = R_CF_TRUE;
-		} else if (!strcmp (x.elem, "false")) {
-			next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
-			next_state->value_type = R_CF_FALSE;
-		}
-
-		if (next_state) {
-			r_list_push (stack, next_state);
-		} else {
-			eprintf ("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
+	for (i = 0; i < size; i++) {
+		ut8 doc = 0;
+		r_buf_read_at (file_buf, offset + i, &doc, 1);
+		if (!doc) {
 			break;
 		}
-		depth ++;
 
-		break;
-	}
-	case YXML_ELEMEND:
-	{
-		RCFParseState *state = (RCFParseState*)r_list_pop (stack);
-		RCFParseState *next_state = (RCFParseState*)r_list_get_top (stack);
-
-		if (next_state->phase == R_CF_STATE_ROOT) {
-			if (state->phase == R_CF_STATE_IN_DICT) {
-				result = state->dict;
-				r_cf_parse_state_free (state);
-				break;
-			} else {
-				eprintf ("Root element is not a dict\n");
-				goto beach;
-			}
+		yxml_ret_t r = yxml_parse (&x, doc);
+		if (r < 0) {
+			eprintf ("Parsing error at :%" PRIu32 ":%" PRIu64 " byte offset %" PRIu64 "\n",
+				x.line, x.byte, x.total);
+			goto beach;
 		}
 
-		if (next_state->phase == R_CF_STATE_IN_DICT && state->phase == R_CF_STATE_IN_KEY) {
-			if (!content) {
-				eprintf ("NULL key not supported");
-				goto beach;
-			}
-			next_state->key = content;
-		}
+		switch (r) {
+		case YXML_ELEMSTART: {
+			RCFParseState *state = (RCFParseState *)r_list_get_top (stack);
+			RCFParseState *next_state = NULL;
 
-		if (state->phase != R_CF_STATE_IN_KEY) {
-			RCFValue *value = NULL;
-
-			switch (state->phase) {
-			case R_CF_STATE_IN_DICT:
-				value = (RCFValue*)state->dict;
-				break;
-			case R_CF_STATE_IN_ARRAY:
-				value = (RCFValue*)state->array;
-				break;
-			case R_CF_STATE_IN_SCALAR:
-				if (!content && state->value_type != R_CF_FALSE && state->value_type != R_CF_TRUE) {
-					value = (RCFValue*)r_cf_value_null_new ();
+			if (!strcmp (x.elem, "dict")) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_DICT);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->dict = r_cf_value_dict_new ();
+			} else if (!strcmp (x.elem, "array")) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_ARRAY);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->array = r_cf_value_array_new ();
+			} else if (!strcmp (x.elem, "key") && state->phase == R_CF_STATE_IN_DICT) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_KEY);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->dict = state->dict;
+			} else if (!strcmp (x.elem, "string")) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->value_type = R_CF_STRING;
+			} else if (!strcmp (x.elem, "integer")) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->value_type = R_CF_INTEGER;
+			} else if (!strcmp (x.elem, "data")) {
+				if (options & R_CF_OPTION_SKIP_NSDATA) {
+					next_state = r_cf_parse_state_new (R_CF_STATE_IN_IGNORE);
 				} else {
-					switch (state->value_type) {
-					case R_CF_STRING:
-						value = (RCFValue*)r_cf_value_string_new (content);
-						break;
-					case R_CF_INTEGER:
-						value = (RCFValue*)r_cf_value_integer_new (content);
-						R_FREE (content);
-						break;
-					case R_CF_DATA:
-						value = (RCFValue*)r_cf_value_data_new (content);
-						R_FREE (content);
-						break;
-					case R_CF_TRUE:
-						value = (RCFValue*)r_cf_value_bool_new (true);
-						break;
-					case R_CF_FALSE:
-						value = (RCFValue*)r_cf_value_bool_new (false);
-						break;
-					default:
-						break;
+					next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+					if (!next_state) {
+						goto beach;
+					}
+					next_state->value_type = R_CF_DATA;
+				}
+			} else if (!strcmp (x.elem, "true")) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->value_type = R_CF_TRUE;
+			} else if (!strcmp (x.elem, "false")) {
+				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				if (!next_state) {
+					goto beach;
+				}
+				next_state->value_type = R_CF_FALSE;
+			}
+
+			if (next_state) {
+				r_list_push (stack, next_state);
+			} else {
+				eprintf ("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
+				break;
+			}
+			depth++;
+
+			break;
+		}
+		case YXML_ELEMEND: {
+			RCFParseState *state = (RCFParseState *)r_list_pop (stack);
+			RCFParseState *next_state = (RCFParseState *)r_list_get_top (stack);
+			if (!state || !next_state) {
+				goto beach;
+			}
+
+			if (next_state->phase == R_CF_STATE_ROOT) {
+				if (state->phase == R_CF_STATE_IN_DICT) {
+					result = state->dict;
+					r_cf_parse_state_free (state);
+					break;
+				} else {
+					eprintf ("Root element is not a dict\n");
+					goto beach;
+				}
+			}
+
+			if (next_state->phase == R_CF_STATE_IN_DICT && state->phase == R_CF_STATE_IN_KEY) {
+				if (!content) {
+					eprintf ("NULL key not supported");
+					goto beach;
+				}
+				next_state->key = content;
+			}
+
+			if (state->phase != R_CF_STATE_IN_KEY) {
+				RCFValue *value = NULL;
+
+				switch (state->phase) {
+				case R_CF_STATE_IN_DICT:
+					value = (RCFValue *)state->dict;
+					break;
+				case R_CF_STATE_IN_ARRAY:
+					value = (RCFValue *)state->array;
+					break;
+				case R_CF_STATE_IN_SCALAR:
+					if (!content && state->value_type != R_CF_FALSE && state->value_type != R_CF_TRUE) {
+						value = (RCFValue *)r_cf_value_null_new ();
+					} else {
+						switch (state->value_type) {
+						case R_CF_STRING:
+							value = (RCFValue *)r_cf_value_string_new (content);
+							break;
+						case R_CF_INTEGER:
+							value = (RCFValue *)r_cf_value_integer_new (content);
+							R_FREE (content);
+							break;
+						case R_CF_DATA:
+							value = (RCFValue *)r_cf_value_data_new (content);
+							R_FREE (content);
+							break;
+						case R_CF_TRUE:
+							value = (RCFValue *)r_cf_value_bool_new (true);
+							break;
+						case R_CF_FALSE:
+							value = (RCFValue *)r_cf_value_bool_new (false);
+							break;
+						default:
+							break;
+						}
+					}
+					break;
+				default:
+					break;
+				}
+
+				if (next_state->phase == R_CF_STATE_IN_DICT) {
+					if (value) {
+						RCFKeyValue *key_value = r_cf_key_value_new (next_state->key, value);
+						r_cf_value_dict_add (next_state->dict, key_value);
+					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
+						eprintf ("Missing value for key %s\n", next_state->key);
+						goto beach;
+					}
+				} else if (next_state->phase == R_CF_STATE_IN_ARRAY) {
+					if (value) {
+						r_cf_value_array_add (next_state->array, value);
+					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
+						eprintf ("Missing value for array\n");
+						goto beach;
 					}
 				}
-				break;
-			default:
-				break;
 			}
 
-			if (next_state->phase == R_CF_STATE_IN_DICT) {
-				if (value) {
-					RCFKeyValue *key_value = r_cf_key_value_new (next_state->key, value);
-					r_cf_value_dict_add (next_state->dict, key_value);
-				} else if (state->phase != R_CF_STATE_IN_IGNORE) {
-					eprintf ("Missing value for key %s\n", next_state->key);
-					goto beach;
-				}
-			} else if (next_state->phase == R_CF_STATE_IN_ARRAY) {
-				if (value) {
-					r_cf_value_array_add (next_state->array, value);
-				} else if (state->phase != R_CF_STATE_IN_IGNORE) {
-					eprintf ("Missing value for array\n");
-					goto beach;
-				}
-			}
-		}
-
-		depth--;
-		content = NULL;
-		r_cf_parse_state_free (state);
-		break;
-	}
-	case YXML_CONTENT:
-	{
-		RCFParseState *state = (RCFParseState*)r_list_get_top (stack);
-		if (state->phase == R_CF_STATE_IN_IGNORE) {
+			depth--;
+			content = NULL;
+			r_cf_parse_state_free (state);
 			break;
 		}
-		if (!content) {
-			content = r_str_new (x.data);
-		} else {
-			content = r_str_append (content, x.data);
+		case YXML_CONTENT: {
+			RCFParseState *state = (RCFParseState *)r_list_get_top (stack);
+			if (state->phase == R_CF_STATE_IN_IGNORE) {
+				break;
+			}
+			if (!content) {
+				content = r_str_new (x.data);
+			} else {
+				content = r_str_append (content, x.data);
+			}
+			break;
+		}
+		default:
+			break;
 		}
 
-		break;
-	}
-	default:
-		break;
+		if (result) {
+			break;
+		}
 	}
 
-	if (result) {
-		break;
+	yxml_ret_t r = yxml_eof (&x);
+	if (r < 0) {
+		eprintf ("Invalid xml\n");
 	}
-  }
-
-  yxml_ret_t r = yxml_eof(&x);
-  if (r < 0) {
-	  eprintf ("Invalid xml\n");
-  }
 
 beach:
-  if (xml_buf) {
 	R_FREE (xml_buf);
-  }
-  if (stack) {
-	  r_list_free (stack);
-  }
+	if (stack) {
+		r_list_free (stack);
+	}
 
-  return result;
+	return result;
 }
 
 static RCFParseState *r_cf_parse_state_new(RCFParsePhase phase) {
 	RCFParseState *state = R_NEW0 (RCFParseState);
-	if (!state) {
-		return NULL;
+	if (state) {
+		state->phase = phase;
 	}
-
-	state->phase = phase;
-
 	return state;
 }
 
@@ -325,10 +344,8 @@ static RCFValueDict *r_cf_value_dict_new() {
 	return dict;
 }
 
-void r_cf_value_dict_free(RCFValueDict *dict) {
-	if (!dict) {
-		return;
-	}
+void r_cf_value_dict_free (RCFValueDict *dict) {
+	r_return_if_fail (dict);
 
 	if (dict->pairs) {
 		r_list_free (dict->pairs);
@@ -436,7 +453,7 @@ static void r_cf_value_string_free(RCFValueString *string) {
 	R_FREE (string);
 }
 
-static void r_cf_value_string_print (RCFValueString *string) {
+static void r_cf_value_string_print(RCFValueString *string) {
 	char *escaped = strdup (string->value);
 	escaped = r_str_replace (escaped, "\"", "\\\"", 1);
 	printf ("\"%s\"", escaped);
@@ -464,7 +481,7 @@ static void r_cf_value_integer_free(RCFValueInteger *integer) {
 	R_FREE (integer);
 }
 
-static void r_cf_value_integer_print (RCFValueInteger *integer) {
+static void r_cf_value_integer_print(RCFValueInteger *integer) {
 	printf ("%llu", integer->value);
 }
 
@@ -504,7 +521,7 @@ static void r_cf_value_data_free(RCFValueData *data) {
 	R_FREE (data);
 }
 
-static void r_cf_value_data_print (RCFValueData *data) {
+static void r_cf_value_data_print(RCFValueData *data) {
 	printf ("\"...\"");
 }
 
@@ -528,7 +545,7 @@ static void r_cf_value_null_free(RCFValueNULL *null) {
 	R_FREE (null);
 }
 
-static void r_cf_value_null_print (RCFValueNULL *null) {
+static void r_cf_value_null_print(RCFValueNULL *null) {
 	printf ("null");
 }
 
@@ -549,7 +566,7 @@ static void r_cf_value_bool_free(RCFValueBool *bool_value) {
 	}
 }
 
-static void r_cf_value_bool_print (RCFValueBool *bool_value) {
+static void r_cf_value_bool_print(RCFValueBool *bool_value) {
 	if (bool_value->type == R_CF_TRUE) {
 		printf ("true");
 	} else {
@@ -563,62 +580,61 @@ static void r_cf_value_free(RCFValue *value) {
 
 	switch (value->type) {
 	case R_CF_DICT:
-		r_cf_value_dict_free ((RCFValueDict*)value);
+		r_cf_value_dict_free ((RCFValueDict *)value);
 		break;
 	case R_CF_ARRAY:
-		r_cf_value_array_free ((RCFValueArray*)value);
+		r_cf_value_array_free ((RCFValueArray *)value);
 		break;
 	case R_CF_STRING:
-		r_cf_value_string_free ((RCFValueString*)value);
+		r_cf_value_string_free ((RCFValueString *)value);
 		break;
 	case R_CF_INTEGER:
-		r_cf_value_integer_free ((RCFValueInteger*)value);
+		r_cf_value_integer_free ((RCFValueInteger *)value);
 		break;
 	case R_CF_DATA:
-		r_cf_value_data_free ((RCFValueData*)value);
+		r_cf_value_data_free ((RCFValueData *)value);
 		break;
 	case R_CF_NULL:
-		r_cf_value_null_free ((RCFValueNULL*)value);
+		r_cf_value_null_free ((RCFValueNULL *)value);
 		break;
 	case R_CF_TRUE:
 	case R_CF_FALSE:
-		r_cf_value_bool_free ((RCFValueBool*)value);
+		r_cf_value_bool_free ((RCFValueBool *)value);
 		break;
 	default:
 		break;
 	}
 }
 
-void r_cf_value_print(RCFValue *value) {
+void r_cf_value_print (RCFValue *value) {
 	if (!value) {
 		return;
 	}
 
 	switch (value->type) {
 	case R_CF_DICT:
-		r_cf_value_dict_print ((RCFValueDict*)value);
+		r_cf_value_dict_print ((RCFValueDict *)value);
 		break;
 	case R_CF_ARRAY:
-		r_cf_value_array_print ((RCFValueArray*)value);
+		r_cf_value_array_print ((RCFValueArray *)value);
 		break;
 	case R_CF_STRING:
-		r_cf_value_string_print ((RCFValueString*)value);
+		r_cf_value_string_print ((RCFValueString *)value);
 		break;
 	case R_CF_INTEGER:
-		r_cf_value_integer_print ((RCFValueInteger*)value);
+		r_cf_value_integer_print ((RCFValueInteger *)value);
 		break;
 	case R_CF_DATA:
-		r_cf_value_data_print ((RCFValueData*)value);
+		r_cf_value_data_print ((RCFValueData *)value);
 		break;
 	case R_CF_NULL:
-		r_cf_value_null_print ((RCFValueNULL*)value);
+		r_cf_value_null_print ((RCFValueNULL *)value);
 		break;
 	case R_CF_TRUE:
 	case R_CF_FALSE:
-		r_cf_value_bool_print ((RCFValueBool*)value);
+		r_cf_value_bool_print ((RCFValueBool *)value);
 		break;
 	default:
 		break;
 	}
 }
-
