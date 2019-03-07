@@ -909,12 +909,24 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 			memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
 			return false;
 		}
+		if (length >= 4096) {
+			const char *features[] = {
+				"__PRELINK_INFO",
+				"__PRELINK_DATA",
+				"__PRELINK_TEXT",
+				"__KLD"
+			};
+			int i;
+			for (i = 0; i < 4; i++) {
+				const ut8 *needle = (const ut8 *) features[i];
+				if (!r_mem_mem (buf, 4096, needle, strlen (needle))) {
+					break;
+				}
+			}
+			return i == 4;
+		}
 	}
-	RPrelinkRange *prelink_range = get_prelink_info_range (buf, length);
-	if (!prelink_range) {
-		return false;
-	}
-	return true;
+	return false;
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
