@@ -5,6 +5,7 @@
 #include <r_list.h>
 #include <r_core.h>
 
+#define USE_FCN_RECURSE 1
 #define USE_SDB_CACHE 0
 #define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
@@ -1724,9 +1725,14 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype) {
 		}
 	}
 	fcn->maxstack = 0;
+#if USE_FCN_RECURSE
 	ret = fcn_recurse (anal, fcn, addr, anal->opt.depth);
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
+#else
+	int depth = anal->opt.depth;
+	recurseAt (addr)
+#endif
 
 	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
@@ -1926,12 +1932,16 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 	st64 n;
 	if (size == 0) { // empty basic blocks allowed?
 		r_warn_if_reached ();
-		eprintf ("warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
+		if (anal->verbose) {
+			eprintf ("warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
+		}
 		return false;
 	}
 	if (size > anal->opt.bb_max_size) {
 		r_warn_if_reached ();
-		eprintf ("warning: cant allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
+		if (anal->verbose) {
+			eprintf ("warning: cant allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
+		}
 		return false;
 	}
 	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
@@ -1941,7 +1951,8 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 			bb = bbi;
 			mid = false;
 			break;
-		} else if ((addr > bbi->addr) && (addr < bbi->addr + bbi->size)) {
+		}
+		if ((addr > bbi->addr) && (addr < bbi->addr + bbi->size)) {
 			mid = true;
 		}
 	}
@@ -1957,7 +1968,12 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		if (bb) {
 			r_list_delete_data (fcn->bbs, bb);
 		}
+#if USE_FCN_RECURSE
 		fcn_recurse (anal, fcn, addr, 1);
+#else
+		int ret, depth = 1;
+		recurseAt (addr);
+#endif
 		r_anal_fcn_update_tinyrange_bbs (fcn);
 		r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
 		bb = r_anal_fcn_bbget_at (fcn, addr);
@@ -1965,8 +1981,10 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 			if (fcn->addr == addr) {
 				return true;
 			}
-			eprintf ("r_anal_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n",
-				fcn->addr, addr);
+			if (anal->verbose) {
+				eprintf ("Warning: r_anal_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n",
+						fcn->addr, addr);
+			}
 			return false;
 		}
 	} else {
