@@ -83,17 +83,6 @@ typedef struct _RKmodInfo {
 	ut64 start;
 } RKmodInfo;
 
-#define KEXT_SHORT_NAME(kext) ({\
-	const char *sn = strrchr (kext->name, '.');\
-	sn ? sn + 1 : kext->name;\
-})
-
-/*
- * com.apple.driver.AppleMesaSEPDriver.3.__TEXT_EXEC.__text
- *                       |
- *                       |
- * AppleMesaSEPDriver <--+
- */
 #define KEXT_SHORT_NAME_FROM_SECTION(io_section) ({\
 	char *result = NULL;\
 	char *clone = strdup (io_section->name);\
@@ -799,6 +788,17 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 	}
 }
 
+/*
+ * com.apple.driver.AppleMesaSEPDriver.3.__TEXT_EXEC.__text
+ *                       |
+ *                       |
+ * AppleMesaSEPDriver <--+
+ */
+static const char *kext_short_name(RKext *kext) {
+	const char *sn = strrchr (kext->name, '.');
+	return sn ? sn + 1 : kext->name;
+}
+
 static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointers) {
 	int i = 0;
 	int count = 0;
@@ -820,7 +820,7 @@ static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointe
 			break;
 		}
 
-		sym->name = r_str_newf ("%s.%s.%d", KEXT_SHORT_NAME (kext), (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
+		sym->name = r_str_newf ("%s.%s.%d", kext_short_name (kext), (type == R_BIN_ENTRY_TYPE_INIT) ? "init" : "fini", count++);
 		sym->vaddr = func_vaddr;
 		sym->paddr = func_vaddr - kext->pa2va_exec;
 		sym->size = 0;
@@ -1096,7 +1096,7 @@ static RList *symbols(RBinFile *bf) {
 		case MH_MAGIC_64:
 			symbols_from_mach0 (ret, kext->mach0, bf, kext->range.offset, r_list_length (ret));
 			symbols_from_stubs (ret, kernel_syms_by_addr, obj, bf, kext, r_list_length (ret));
-			process_constructors (obj, kext->mach0, ret, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, KEXT_SHORT_NAME (kext));
+			process_constructors (obj, kext->mach0, ret, kext->range.offset, false, R_K_CONSTRUCTOR_TO_SYMBOL, kext_short_name (kext));
 			process_kmod_init_term (obj, kext, ret, &inits, &terms);
 
 			break;
@@ -1564,7 +1564,7 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 			break;
 		}
 
-		remote_sym->name = r_str_newf ("exp.%s.0x%"PFMT64x, KEXT_SHORT_NAME (remote_kext), target_addr);
+		remote_sym->name = r_str_newf ("exp.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr);
 		remote_sym->vaddr = target_addr;
 		remote_sym->paddr = target_addr - obj->pa2va_exec;
 		remote_sym->size = 0;
@@ -1579,7 +1579,7 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 			break;
 		}
 
-		local_sym->name = r_str_newf ("stub.%s.0x%"PFMT64x, KEXT_SHORT_NAME (remote_kext), target_addr);
+		local_sym->name = r_str_newf ("stub.%s.0x%"PFMT64x, kext_short_name (remote_kext), target_addr);
 		local_sym->vaddr = vaddr;
 		local_sym->paddr = stubs_cursor;
 		local_sym->size = 12;
