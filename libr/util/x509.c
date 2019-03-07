@@ -120,7 +120,7 @@ bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
 	if (o && o->tag == TAG_OID) {
 		ext->extnID = r_asn1_stringify_oid (o->sector, o->length);
 		o = object->list.objects[1];
-		if (o->tag == TAG_BOOLEAN) {
+		if (o->tag == TAG_BOOLEAN && object->list.length > 2) {
 			//This field is optional (so len must be 3)
 			ext->critical = o->sector[0] != 0;
 			o = object->list.objects[2];
