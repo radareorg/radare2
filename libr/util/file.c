@@ -211,11 +211,16 @@ R_API char *r_file_abspath(const char *file) {
 			return strdup (file);
 		}
 		if (!strchr (file, ':')) {
-			char *abspath = malloc (MAX_PATH);
+			PTCHAR abspath = malloc (MAX_PATH * sizeof (TCHAR));
 			if (abspath) {
-				GetFullPathName (file, MAX_PATH, abspath, NULL);
-				ret = strdup (abspath);
-				free (abspath);
+				PTCHAR tmp = r_sys_conv_acp_to_utf8 (file);
+				PTCHAR f = r_sys_conv_utf8_to_utf16 (tmp);
+				if (GetFullPathName (f, MAX_PATH, abspath, NULL) > MAX_PATH) {
+					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+				}
+				ret = abspath;
+				free (f);
+				free (tmp);
 			}
 		}
 #endif
@@ -1052,8 +1057,8 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	char *s = r_file_abspath (src);
-	char *d = r_file_abspath (dst);
+	PTCHAR s = r_file_abspath (src);
+	PTCHAR d = r_file_abspath (dst);
 	bool ret = CopyFile (s, d, 0);
 	if (!ret) {
 		eprintf ("File not found\n");
