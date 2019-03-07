@@ -3573,7 +3573,7 @@ R_API int r_core_anal_all(RCore *core) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (strstr (symbol->name, ".dll_") && !strncmp (symbol->name, "imp.", 4)) { // Stop analyzing PE imports further
+			if (strstr (symbol->name, ".dll_") && strstr (symbol->name, "imp.")) { // Stop analyzing PE imports further
 				continue;
 			}
 			if (isValidSymbol (symbol)) {
