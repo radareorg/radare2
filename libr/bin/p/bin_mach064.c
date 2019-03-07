@@ -5,61 +5,11 @@
 
 #include "objc/mach064_classes.h"
 
-static bool is_kernelcache(struct MACH0_(obj_t) *mach0) {
-	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (mach0))) {
-		return false;
-	}
-
-	int incomplete = 3;
-	int i = 0;
-	for (; !sections[i].last; i++) {
-		if (strstr (sections[i].name, "__PRELINK_INFO.__info")) {
-			if (!--incomplete) {
-				break;
-			}
-		}
-
-		if (strstr (sections[i].name, "__PRELINK_TEXT.__text")) {
-			if (!--incomplete) {
-				break;
-			}
-		}
-
-		if (strstr (sections[i].name, "__PRELINK_DATA.__data")) {
-			if (!--incomplete) {
-				break;
-			}
-		}
-	}
-
-	R_FREE (sections);
-
-	return incomplete == 0;
-}
-
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 4) {
 		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
 			!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			RBuffer *tbuf = r_buf_new ();
-			if (!tbuf) {
-				return false;
-			}
-			struct MACH0_(obj_t) *test = NULL;
-			bool regular_mach0 = true;
-			r_buf_set_bytes (tbuf, buf, length);
-			struct MACH0_(opts_t) opts;
-			MACH0_(opts_set_default) (&opts, NULL);
-			test = MACH0_(new_buf) (tbuf, &opts);
-			if (!test) {
-				regular_mach0 = false;
-			} else {
-				regular_mach0 = !is_kernelcache (test);
-				MACH0_(mach0_free) (test);
-			}
-			r_buf_free (tbuf);
-			return regular_mach0;
+			return true;
 		}
 	}
 	return false;
