@@ -437,37 +437,37 @@ int r_main_rahash2(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = r_getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
-			iterations = atoi (optarg);
+			iterations = atoi (r_optarg);
 			if (iterations < 0) {
 				eprintf ("error: -i argument must be positive\n");
 				return 1;
 			}
 			break;
 		case 'j': rad = 'j'; break;
-		case 'S': seed = optarg; break;
-		case 'I': ivseed = optarg; break;
+		case 'S': seed = r_optarg; break;
+		case 'I': ivseed = r_optarg; break;
 		case 'n': numblocks = 1; break;
-		case 'D': decrypt = optarg; break;
-		case 'E': encrypt = optarg; break;
+		case 'D': decrypt = r_optarg; break;
+		case 'E': encrypt = r_optarg; break;
 		case 'L': algolist (); return 0;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
-		case 'p': ptype = optarg; break;
-		case 'a': algo = optarg; break;
+		case 'p': ptype = r_optarg; break;
+		case 'a': algo = r_optarg; break;
 		case 'B': incremental = 0; break;
-		case 'b': bsize = (int) r_num_math (NULL, optarg); break;
-		case 'f': from = r_num_math (NULL, optarg); break;
-		case 't': to = 1 + r_num_math (NULL, optarg); break;
+		case 'b': bsize = (int) r_num_math (NULL, r_optarg); break;
+		case 'f': from = r_num_math (NULL, r_optarg); break;
+		case 't': to = 1 + r_num_math (NULL, r_optarg); break;
 		case 'v': return r_main_version ("rahash2");
 		case 'h': return do_help (0);
-		case 's': setHashString (optarg, 0); break;
-		case 'x': setHashString (optarg, 1); break;
-		case 'c': compareStr = optarg; break;
+		case 's': setHashString (r_optarg, 0); break;
+		case 'x': setHashString (r_optarg, 1); break;
+		case 'c': compareStr = r_optarg; break;
 		default: return do_help (0);
 		}
 	}
@@ -528,7 +528,7 @@ int r_main_rahash2(int argc, char **argv) {
 		// TODO: support p=%s (horizontal bars)
 		// TODO: list supported statistical metrics
 		// TODO: support -f and -t
-		for (i = optind; i < argc; i++) {
+		for (i = r_optind; i < argc; i++) {
 			printf ("%s:\n", argv[i]);
 			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
 		}
@@ -651,7 +651,7 @@ int r_main_rahash2(int argc, char **argv) {
 			return ret;
 		}
 	}
-	if (optind >= argc) {
+	if (r_optind >= argc) {
 		free (iv);
 		return do_help (1);
 	}
@@ -664,7 +664,7 @@ int r_main_rahash2(int argc, char **argv) {
 	}
 
 	io = r_io_new ();
-	for (ret = 0, i = optind; i < argc; i++) {
+	for (ret = 0, i = r_optind; i < argc; i++) {
 		if (encrypt) {// for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {
