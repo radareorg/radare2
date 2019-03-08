@@ -4337,31 +4337,39 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
 				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+#if 0
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
 					if (bpi) r_core_cmd0 (core, delb);
 					break;
 				}
+#endif
 				addr += aop.size;
 			}
 			r_debug_reg_set (core->dbg, "PC", addr);
+			r_reg_setv (core->anal->reg, "PC", addr);
+			r_core_cmd0 (core, ".dr*");
 			if (bpi) {
 				r_core_cmd0 (core, delb);
 			}
 			break;
 		}
 	case 'o': // "dso"
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			char delb[128] = R_EMPTY;
-			addr = r_debug_reg_get (core->dbg, "PC");
-			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
-			sprintf(delb, "db 0x%"PFMT64x"", addr);
-			r_bp_del (core->dbg->bp, addr);
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_step_over (core->dbg, times);
-			if (bpi) r_core_cmd0 (core, delb);
+		if (r_config_get_i (core->config, "dbg.skipover")) {
+			r_core_cmdf (core, "dss%s", input + 2);
 		} else {
-			r_core_cmdf (core, "aeso%s", input + 2);
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				char delb[128] = R_EMPTY;
+				addr = r_debug_reg_get (core->dbg, "PC");
+				RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+				sprintf(delb, "db 0x%"PFMT64x"", addr);
+				r_bp_del (core->dbg->bp, addr);
+				r_reg_arena_swap (core->dbg->reg, true);
+				r_debug_step_over (core->dbg, times);
+				if (bpi) r_core_cmd0 (core, delb);
+			} else {
+				r_core_cmdf (core, "aeso%s", input + 2);
+			}
 		}
 		break;
 	case 'b': // "dsb"

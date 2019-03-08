@@ -313,7 +313,7 @@ static const char *help_msg_afc[] = {
 	"afc=", "([cctype])", "Select or show default calling convention",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
-	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...)",
+	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...), see afij",
 	"afck", "", "List SDB details of call loaded calling conventions",
 	"afcl", "", "List all available calling conventions",
 	"afco", " path", "Open Calling Convention sdb profile from given path",
@@ -3707,6 +3707,9 @@ repeat:
 		case R_ANAL_OP_TYPE_CALL:
 			if (addr == until_addr) {
 				return_tail (0);
+			} else {
+				r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
+				r_reg_setv (core->dbg->reg, "PC", op.addr + op.size);
 			}
 			return 1;
 		}
