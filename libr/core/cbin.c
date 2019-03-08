@@ -1543,7 +1543,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 			free (name);
 			if (reloc->addend) {
-				if (reloc->import && reloc->addend > 0) {
+				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
 					r_cons_printf (" +");
 				}
 				if (reloc->addend < 0) {
