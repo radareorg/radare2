@@ -4271,9 +4271,12 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		}
 	}
 	ds->esil_likely = 0;
-	mipsTweak (ds);
-	r_anal_esil_set_pc (esil, at);
-	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
+	const char *esilstr = R_STRBUF_SAFEGET (&ds->analop.esil);
+	if (R_STR_ISNOTEMPTY (esilstr)) {
+		mipsTweak (ds);
+		r_anal_esil_set_pc (esil, at);
+		r_anal_esil_parse (esil, esilstr);
+	}
 	r_anal_esil_stack_free (esil);
 	r_config_hold_i (hc, "io.cache", NULL);
 	r_config_set (core->config, "io.cache", "true");

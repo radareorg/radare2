@@ -2998,6 +2998,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
+	SETPREF ("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB ("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
