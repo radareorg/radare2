@@ -3167,6 +3167,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
 
 	/* graph */
+	SETPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
