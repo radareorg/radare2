@@ -98,7 +98,7 @@ R_API int r_main_r2agent(int argc, char **argv) {
 #endif
 	if (dodaemon) {
 #if LIBC_HAVE_FORK
-		int pid = fork ();
+		int pid = r_sys_fork ();
 		if (pid > 0) {
 			printf ("%d\n", pid);
 			return 0;
