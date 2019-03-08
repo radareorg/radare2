@@ -356,9 +356,7 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut
 	binfile->xtr_obj = NULL;
 
 	if (!binfile->buf) {
-		//r_bin_file_free (binfile);
 		binfile->buf = r_buf_new ();
-		//	return NULL;
 	}
 
 	if (sdb) {

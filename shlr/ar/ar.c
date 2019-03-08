@@ -18,7 +18,7 @@ static int index_filename = -2;
 R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	int r;
 	RList *files = NULL;
-	RBuffer *b = r_buf_new_file (arname, 0);
+	RBuffer *b = r_buf_new_file (arname, O_RDWR, 0);
 	if (!b) {
 		r_sys_perror (__FUNCTION__);
 		return NULL;
@@ -80,7 +80,7 @@ R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
 }
 
 int ar_read(RBuffer *b, void *dest, int len) {
-	int r = r_buf_read_at (b, R_BUF_CUR, dest, len);
+	int r = r_buf_read (b, dest, len);
 	if (!r) {
 		return 0;
 	}

@@ -4883,7 +4883,7 @@ static int cmd_debug(void *data, const char *input) {
 			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
 			eprintf ("Writing to file '%s'\n", corefile);
 			r_file_rm (corefile);
-			RBuffer *dst = r_buf_new_file (corefile, true);
+			RBuffer *dst = r_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
 				if (!core->dbg->h->gcore (core->dbg, dst)) {
 					eprintf ("dg: coredump failed\n");

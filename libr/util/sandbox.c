@@ -224,27 +224,38 @@ static char *expand_home(const char *p) {
 	return strdup (p);
 }
 
-R_API int r_sandbox_lseek (int fd, ut64 addr, int whence) {
+R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {
 	if (enabled) {
 		return -1;
 	}
 	return lseek (fd, (off_t)addr, whence);
 }
 
-R_API int r_sandbox_read (int fd, ut8* buf, int len) {
-	return enabled? -1 : read (fd, buf, len);
+R_API int r_sandbox_truncate(int fd, ut64 length) {
+	if (enabled) {
+		return -1;
+	}
+#ifdef _MSC_VER
+	return _chsize_s (fd, length);
+#else
+	return ftruncate (fd, (off_t)length);
+#endif
 }
 
-R_API int r_sandbox_write (int fd, const ut8* buf, int len) {
-	return enabled? -1 : write (fd, buf, len);
+R_API int r_sandbox_read(int fd, ut8 *buf, int len) {
+	return enabled? -1: read (fd, buf, len);
 }
 
-R_API int r_sandbox_close (int fd) {
-	return enabled? -1 : close (fd);
+R_API int r_sandbox_write(int fd, const ut8* buf, int len) {
+	return enabled? -1: write (fd, buf, len);
+}
+
+R_API int r_sandbox_close(int fd) {
+	return enabled? -1: close (fd);
 }
 
 /* perm <-> mode */
-R_API int r_sandbox_open (const char *path, int mode, int perm) {
+R_API int r_sandbox_open(const char *path, int mode, int perm) {
 	if (!path) {
 		return -1;
 	}
