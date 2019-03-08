@@ -3152,7 +3152,7 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	}
 	if (shortcut) {
 		if (ds->core->is_asmqjmps_letter) {
-			r_cons_printf ("%s[g%s]", ch, shortcut);
+			r_cons_printf ("%s[o%s]", ch, shortcut);
 			slen++;
 		} else {
 			r_cons_printf ("%s[%s]", ch, shortcut);
