@@ -3130,6 +3130,7 @@ static void agraph_set_zoom(RAGraph *g, int v) {
  * the screen on the selected one */
 static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	r_agraph_reset (g);
+
 	return reload_nodes (g, core, fcn);
 }
 
