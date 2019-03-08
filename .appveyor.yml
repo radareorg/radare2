@@ -58,11 +58,11 @@ build_script:
   - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
   - if %builder% == msvc_cccl_64 ( sys\msvc.bat && make windist WINBITS=%builder% )
 
-  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2017_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x86 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x86 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 test_script:
   - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%;%PATH%
