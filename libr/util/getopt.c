@@ -1,4 +1,8 @@
+/* radare - MIT - Copyright 2019 - pancake */
+
 #include <r_util.h>
+
+#if __WINDOWS__
 
 /*
  * Copyright (c) 1987, 1993, 1994
@@ -114,3 +118,4 @@ R_API int r_getopt(int nargc, char * const *nargv, const char *ostr) {
 	}
 	return r_optopt;			/* dump back option letter */
 }
+#endif
