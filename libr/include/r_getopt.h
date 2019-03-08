@@ -14,8 +14,8 @@ Duplicated code in here:
 
 #if __WINDOWS__
 
-extern int r_optind;
-extern char *r_optarg;
+extern R_API int r_optind;
+extern R_API char *r_optarg;
 R_API int r_getopt(int nargc, char * const *nargv, const char *ostr);
 
 #else
