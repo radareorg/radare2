@@ -48,6 +48,35 @@ static ut8 *buf_get_at(RBuffer *b, ut64 addr, int *len) {
 	return b->methods->get_at? b->methods->get_at (b, addr, len): NULL;
 }
 
+static RBuffer *new_buffer(RBufferType type, const void *user) {
+	RBuffer *b = R_NEW0 (RBuffer);
+	if (!b) {
+		return NULL;
+	}
+	switch (type) {
+	case R_BUFFER_BYTES:
+		b->methods = &buffer_bytes_methods;
+		break;
+	case R_BUFFER_SPARSE:
+		b->methods = &buffer_sparse_methods;
+		break;
+	case R_BUFFER_FILE:
+		b->methods = &buffer_file_methods;
+		break;
+	case R_BUFFER_IO:
+		b->methods = &buffer_io_methods;
+		break;
+	default:
+		r_warn_if_reached ();
+		break;
+	}
+	if (!buf_init (b, user)) {
+		free (b);
+		return NULL;
+	}
+	return b;
+}
+
 // TODO: Optimize to use memcpy when buffers are not in range..
 // check buf boundaries and offsets and use memcpy or memmove
 
@@ -379,14 +408,10 @@ R_API RBuffer *r_buf_new_with_io(void *iob, int fd) {
 }
 
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len) {
-	RBuffer *b = r_buf_new ();
-	if (b && bytes && len > 0 && len != UT64_MAX) {
-		b->buf = (ut8 *)bytes;
-		b->length = len;
-		b->empty = false;
-		b->ro = true;
-	}
-	return b;
+	struct buf_bytes_user u = { 0 };
+	u.data_steal = bytes;
+	u.length = len;
+	return new_buffer (R_BUFFER_BYTES, &u);
 }
 
 R_API RBuffer *r_buf_new_empty(ut64 len) {
@@ -404,11 +429,14 @@ R_API RBuffer *r_buf_new_empty(ut64 len) {
 }
 
 R_API RBuffer *r_buf_new_with_bytes(const ut8 *bytes, ut64 len) {
-	RBuffer *b = r_buf_new ();
-	if (b && bytes && (len > 0 && len != UT64_MAX)) {
-		r_buf_set_bytes (b, bytes, len);
-	}
-	return b;
+	struct buf_bytes_user u = { 0 };
+	u.data = bytes;
+	u.length = len;
+	return new_buffer (R_BUFFER_BYTES, &u);
+}
+
+R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size) {
+	return NULL;
 }
 
 R_API RBuffer *r_buf_new_with_string(const char *msg) {
@@ -429,35 +457,6 @@ static void buffer_sparse_free(void *a) {
 	RBufferSparse *s = (RBufferSparse *)a;
 	free (s->data);
 	free (s);
-}
-
-static RBuffer *new_buffer(RBufferType type, const void *user) {
-	RBuffer *b = R_NEW0 (RBuffer);
-	if (!b) {
-		return NULL;
-	}
-	switch (type) {
-	case R_BUFFER_BYTES:
-		b->methods = &buffer_bytes_methods;
-		break;
-	case R_BUFFER_SPARSE:
-		b->methods = &buffer_sparse_methods;
-		break;
-	case R_BUFFER_FILE:
-		b->methods = &buffer_file_methods;
-		break;
-	case R_BUFFER_IO:
-		b->methods = &buffer_io_methods;
-		break;
-	default:
-		r_warn_if_reached ();
-		break;
-	}
-	if (!buf_init (b, user)) {
-		free (b);
-		return NULL;
-	}
-	return b;
 }
 
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
