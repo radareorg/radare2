@@ -699,22 +699,22 @@ R_API int r_main_radiff2(int argc, char **argv) {
 
 	evals = r_list_newf (NULL);
 
-	while ((o = getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zq")) != -1) {
+	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zq")) != -1) {
 		switch (o) {
 		case 'a':
-			arch = optarg;
+			arch = r_optarg;
 			break;
 		case 'A':
 			anal_all++;
 			break;
 		case 'b':
-			bits = atoi (optarg);
+			bits = atoi (r_optarg);
 			break;
 		case 'B':
 			diffmode = 'B';
 			break;
 		case 'e':
-			r_list_append (evals, optarg);
+			r_list_append (evals, r_optarg);
 			break;
 		case 'p':
 			useva = false;
@@ -724,10 +724,10 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			break;
 		case 'g':
 			mode = MODE_GRAPH;
-			addr = optarg;
+			addr = r_optarg;
 			break;
 		case 'G':
-			runcmd = optarg;
+			runcmd = r_optarg;
 			break;
 		case 'c':
 			showcount = 1;
@@ -745,8 +745,8 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			diffops = 1;
 			break;
 		case 't':
-			threshold = atoi (optarg);
-			printf ("%s\n", optarg);
+			threshold = atoi (r_optarg);
+			printf ("%s\n", r_optarg);
 			break;
 		case 'd':
 			delta = 1;
@@ -772,7 +772,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			}
 			break;
 		case 'S':
-			columnSort = optarg;
+			columnSort = r_optarg;
 			break;
 		case 'x':
 			mode = MODE_COLS;
@@ -802,11 +802,11 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		}
 	}
 
-	if (argc < 3 || optind + 2 > argc) {
+	if (argc < 3 || r_optind + 2 > argc) {
 		return show_help (0);
 	}
-	file = (optind < argc)? argv[optind]: NULL;
-	file2 = (optind + 1 < argc)? argv[optind + 1]: NULL;
+	file = (r_optind < argc)? argv[r_optind]: NULL;
+	file2 = (r_optind + 1 < argc)? argv[r_optind + 1]: NULL;
 
 	switch (mode) {
 	case MODE_GRAPH:

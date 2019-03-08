@@ -140,37 +140,37 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-	while ((c = getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
+	while ((c = r_getopt (argc, argv, "n:N:he:a:b:f:o:sxrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:")) != -1) {
 		switch (c) {
 		case 'a':
-			arch = optarg;
+			arch = r_optarg;
 			if (!strcmp (arch, "trace")) {
 				show_asm = 1;
 				show_hex = 0;
 			}
 			break;
 		case 'e':
-			encoder = optarg;
+			encoder = r_optarg;
 			break;
 		case 'b':
-			bits = atoi (optarg);
+			bits = atoi (r_optarg);
 			break;
 		case 'B':
-			bytes = r_str_append (bytes, optarg);
+			bytes = r_str_append (bytes, r_optarg);
 			break;
 		case 'C':
-			contents = optarg;
+			contents = r_optarg;
 			break;
 		case 'w':
 			{
-			char *arg = strdup (optarg);
+			char *arg = strdup (r_optarg);
 			char *p = strchr (arg, ':');
 			if (p) {
 				int len, off;
 				ut8 *b;
 				*p++ = 0;
 				off = r_num_math (NULL, arg);
-				b = malloc (strlen (optarg) + 1);
+				b = malloc (strlen (r_optarg) + 1);
 				len = r_hex_str2bin (p, b);
 				if (len > 0) {
 					r_egg_patch (egg, off, (const ut8*)b, len);
@@ -186,14 +186,14 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'n':
 			{
-			ut32 n = r_num_math (NULL, optarg);
+			ut32 n = r_num_math (NULL, r_optarg);
 			append = 1;
 			r_egg_patch (egg, -1, (const ut8*)&n, 4);
 			}
 			break;
 		case 'N':
 			{
-			ut64 n = r_num_math (NULL, optarg);
+			ut64 n = r_num_math (NULL, r_optarg);
 			r_egg_patch (egg, -1, (const ut8*)&n, 8);
 			append = 1;
 			}
@@ -201,10 +201,10 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		case 'd':
 			{
 			ut32 off, n;
-			char *p = strchr (optarg, ':');
+			char *p = strchr (r_optarg, ':');
 			if (p) {
 				*p = 0;
-				off = r_num_math (NULL, optarg);
+				off = r_num_math (NULL, r_optarg);
 				n = r_num_math (NULL, p + 1);
 				*p = ':';
 				// TODO: honor endianness here
@@ -216,9 +216,9 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'D':
 			{
-			char *p = strchr (optarg, ':');
+			char *p = strchr (r_optarg, ':');
 			if (p) {
-				ut64 n, off = r_num_math (NULL, optarg);
+				ut64 n, off = r_num_math (NULL, r_optarg);
 				n = r_num_math (NULL, p + 1);
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 8);
@@ -228,34 +228,34 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			}
 			break;
 		case 'S':
-			str = optarg;
+			str = r_optarg;
 			break;
 		case 'o':
-			ofile = optarg;
+			ofile = r_optarg;
 			break;
 		case 'O':
 			ofileauto = 1;
 			break;
 		case 'I':
-			r_egg_lang_include_path (egg, optarg);
+			r_egg_lang_include_path (egg, r_optarg);
 			break;
 		case 'i':
-			 shellcode = optarg;
+			 shellcode = r_optarg;
 			 break;
 		case 'p':
-			padding = optarg;
+			padding = r_optarg;
 			break;
 		case 'P':
-			pattern = optarg;
+			pattern = r_optarg;
 			break;
 		case 'c':
 			{
-			char *p = strchr (optarg, '=');
+			char *p = strchr (r_optarg, '=');
 			if (p) {
 				*p++ = 0;
-				r_egg_option_set (egg, optarg, p);
+				r_egg_option_set (egg, r_optarg, p);
 			} else {
-				r_egg_option_set (egg, optarg, "true");
+				r_egg_option_set (egg, r_optarg, "true");
 			}
 			}
 			break;
@@ -270,7 +270,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			show_asm = 0;
 			break;
 		case 'f':
-			format = optarg;
+			format = r_optarg;
 			show_asm = 0;
 			break;
 		case 's':
@@ -278,7 +278,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			show_hex = 0;
 			break;
 		case 'k':
-			os = optarg;
+			os = r_optarg;
 			break;
 		case 'r':
 			show_raw = 1;
@@ -305,7 +305,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'q':
 			get_offset = 1;
-			sequence = strdup (optarg);
+			sequence = strdup (r_optarg);
 			break;
 		default:
 			free (sequence);
@@ -314,11 +314,11 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
+	if (r_optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
 		r_egg_free (egg);
 		return usage (0);
 	} else {
-		file = argv[optind];
+		file = argv[r_optind];
 	}
 
 	if (bits == 64) {
@@ -470,7 +470,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			fd = openfile ("a.out", ISEXEC);
 		}
 		if (fd == -1) {
-			eprintf ("cannot open file '%s'\n", optarg);
+			eprintf ("cannot open file '%s'\n", r_optarg);
 			goto fail;
 		}
 	}

@@ -626,7 +626,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 #define is_active(x) (action & (x))
 #define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ")) != -1) {
+	while ((c = r_getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
@@ -655,14 +655,14 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			break;
 		case 'j': rad = R_MODE_JSON; break;
 		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
-		case 'a': arch = optarg; break;
+		case 'a': arch = r_optarg; break;
 		case 'C':
 			set_action (R_BIN_REQ_CREATE);
-			create = strdup (optarg);
+			create = strdup (r_optarg);
 			break;
 		case 'u': bin->filter = 0; break;
-		case 'k': query = optarg; break;
-		case 'K': chksum = optarg; break;
+		case 'k': query = r_optarg; break;
+		case 'K': chksum = r_optarg; break;
 		case 'c':
 			if (is_active (R_BIN_REQ_CLASSES)) {
 				rad = R_MODE_CLASSDUMP;
@@ -670,11 +670,11 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			  	set_action (R_BIN_REQ_CLASSES);
 			}
 			break;
-		case 'f': arch_name = strdup (optarg); break;
-		case 'F': forcebin = optarg; break;
-		case 'b': bits = r_num_math (NULL, optarg); break;
+		case 'f': arch_name = strdup (r_optarg); break;
+		case 'F': forcebin = r_optarg; break;
+		case 'b': bits = r_num_math (NULL, r_optarg); break;
 		case 'm':
-			at = r_num_math (NULL, optarg);
+			at = r_num_math (NULL, r_optarg);
 			set_action (R_BIN_REQ_SRCLINE);
 			break;
 		case 'i': set_action (R_BIN_REQ_IMPORTS); break;
@@ -714,13 +714,13 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			}
 			break;
 		case 'D':
-			if (argv[optind] && argv[optind+1] && \
-				(!argv[optind+1][0] || !strcmp (argv[optind+1], "all"))) {
-				r_config_set (core.config, "bin.lang", argv[optind]);
+			if (argv[r_optind] && argv[r_optind+1] && \
+				(!argv[r_optind+1][0] || !strcmp (argv[r_optind+1], "all"))) {
+				r_config_set (core.config, "bin.lang", argv[r_optind]);
 				r_config_set (core.config, "bin.demangle", "true");
-				optind += 2;
+				r_optind += 2;
 			} else {
-				do_demangle = argv[optind];
+				do_demangle = argv[r_optind];
 			}
 			break;
 		case 'e':
@@ -741,7 +741,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
 		case 'w': rw = true; break;
 		case 'O':
-			op = optarg;
+			op = r_optarg;
 			set_action (R_BIN_REQ_OPERATION);
 			r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
 			if (isBinopHelp (op)) {
@@ -757,13 +757,13 @@ R_API int r_main_rabin2(int argc, char **argv) {
 				r_core_fini (&core);
 				return 0;
 			}
-			if (optind == argc) {
+			if (r_optind == argc) {
 				eprintf ("Missing filename\n");
 				r_core_fini (&core);
 				return 1;
 			}
 			break;
-		case 'o': output = optarg; break;
+		case 'o': output = r_optarg; break;
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
 		case 'v': 
@@ -773,23 +773,23 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
 		case 'G':
-			laddr = r_num_math (NULL, optarg);
+			laddr = r_num_math (NULL, r_optarg);
 			if (laddr == UT64_MAX) {
 				va = false;
 			}
 			break;
 		case 'B':
-			baddr = r_num_math (NULL, optarg);
+			baddr = r_num_math (NULL, r_optarg);
 			break;
 		case '@':
-			at = r_num_math (NULL, optarg);
+			at = r_num_math (NULL, r_optarg);
 			break;
 		case 'n':
-			name = optarg;
+			name = r_optarg;
 			break;
 		case 'N':
-			tmp = strchr (optarg, ':');
-			r_config_set (core.config, "bin.minstr", optarg);
+			tmp = strchr (r_optarg, ':');
+			r_config_set (core.config, "bin.minstr", r_optarg);
 			if (tmp) {
 				r_config_set (core.config, "bin.maxstr", tmp + 1);
 			}
@@ -805,8 +805,8 @@ R_API int r_main_rabin2(int argc, char **argv) {
 
 	if (is_active (R_BIN_REQ_LISTPLUGINS)) {
 		const char* plugin_name = NULL;
-		if (optind < argc) {
-			plugin_name = argv[optind];
+		if (r_optind < argc) {
+			plugin_name = argv[r_optind];
 		}
 		rabin_list_plugins (plugin_name);
 		r_core_fini (&core);
@@ -816,12 +816,12 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	if (do_demangle) {
 		char *res = NULL;
 		int type;
-		if ((argc - optind) < 2) {
+		if ((argc - r_optind) < 2) {
 			r_core_fini (&core);
 			return rabin_show_help (0);
 		}
 		type = r_bin_demangle_type (do_demangle);
-		file = argv[optind + 1];
+		file = argv[r_optind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
 				file = stdin_gets();
@@ -858,7 +858,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_core_fini (&core);
 		return 1;
 	}
-	file = argv[optind];
+	file = argv[r_optind];
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);
@@ -955,18 +955,18 @@ R_API int r_main_rabin2(int argc, char **argv) {
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
 		RList *files = r_list_newf (NULL);
-		const char *format = argv[optind];
-		const char *file = argv[optind + 1];
+		const char *format = argv[r_optind];
+		const char *file = argv[r_optind + 1];
 		int i, rc = 0;
 
-		if (optind + 3 > argc) {
+		if (r_optind + 3 > argc) {
 			eprintf ("Usage: rabin2 -X [fat|zip] foo.zip a b c\n");
 			r_core_fini (&core);
 			return 1;
 		}
 		eprintf ("FMT %s\n", format);
 		eprintf ("PKG %s\n", file);
-		for (i = optind + 2; i < argc; i++) {
+		for (i = r_optind + 2; i < argc; i++) {
 			eprintf ("ADD %s\n", argv[i]);
 			r_list_append (files, argv[i]);
 		}

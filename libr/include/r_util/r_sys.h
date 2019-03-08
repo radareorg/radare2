@@ -21,10 +21,6 @@ enum {
 	R_SYS_BITS_64 = 8,
 };
 
-extern int r_optind;
-extern char *r_optarg;
-R_API int r_getopt(int nargc, char * const *nargv, const char *ostr);
-
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
 R_API ut64 r_sys_now(void);

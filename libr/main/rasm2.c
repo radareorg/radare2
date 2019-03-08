@@ -559,22 +559,22 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 		free (r2bits);
 	}
 
-	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx")) != -1) {
+	while ((c = r_getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx")) != -1) {
 		switch (c) {
 		case 'a':
-			arch = optarg;
+			arch = r_optarg;
 			break;
 		case 'A':
 			analinfo = true;
 			break;
 		case 'b':
-			bits = r_num_math (NULL, optarg);
+			bits = r_num_math (NULL, r_optarg);
 			break;
 		case 'B':
 			bin = 1;
 			break;
 		case 'c':
-			cpu = optarg;
+			cpu = r_optarg;
 			break;
 		case 'C':
 			as->coutput = true;
@@ -592,35 +592,35 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 			dis = 3;
 			break;
 		case 'f':
-			file = optarg;
+			file = r_optarg;
 			break;
 		case 'F':
-			filters = optarg;
+			filters = r_optarg;
 			break;
 		case 'h':
 			help++;
 		case 'i':
-			skip = r_num_math (NULL, optarg);
+			skip = r_num_math (NULL, r_optarg);
 			break;
 		case 'j':
 			as->json = true;
 			break;
 		case 'k':
-			kernel = optarg;
+			kernel = r_optarg;
 			break;
 		case 'l':
-			len = r_num_math (NULL, optarg);
+			len = r_num_math (NULL, r_optarg);
 			break;
 		case 'L':
-			rasm2_list (as, argv[optind]);
+			rasm2_list (as, argv[r_optind]);
 			ret = 1;
 			goto beach;
 		case '@':
 		case 'o':
-			offset = r_num_math (NULL, optarg);
+			offset = r_num_math (NULL, r_optarg);
 			break;
 		case 'O':
-			fd = open (optarg, O_TRUNC | O_RDWR | O_CREAT, 0644);
+			fd = open (r_optarg, O_TRUNC | O_RDWR | O_CREAT, 0644);
 			if (fd != -1) {
 				dup2 (fd, 1);
 			}
@@ -635,12 +635,12 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 			rad = true;
 			break;
 		case 's':
-			if (*optarg == '?') {
+			if (*r_optarg == '?') {
 				printf ("att\nintel\nmasm\njz\nregnum\n");
 				__as_free (as);
 				return 0;
 			} else {
-				int syntax = r_asm_syntax_from_string (optarg);
+				int syntax = r_asm_syntax_from_string (r_optarg);
 				if (syntax == -1) {
 					__as_free (as);
 					return 1;
@@ -706,7 +706,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 		r_anal_set_big_endian (as->anal, canbebig);
 	}
 	if (whatsop) {
-		const char *s = r_asm_describe (as->a, argv[optind]);
+		const char *s = r_asm_describe (as->a, argv[r_optind]);
 		ret = 1;
 		if (s) {
 			printf ("%s\n", s);
@@ -789,8 +789,8 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 				ret = 1;
 			}
 		}
-	} else if (argv[optind]) {
-		if (!strcmp (argv[optind], "-")) {
+	} else if (argv[r_optind]) {
+		if (!strcmp (argv[r_optind], "-")) {
 			int length;
 			do {
 				char buf[1024]; // TODO: use(implement) r_stdin_line() or so
@@ -834,7 +834,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 			goto beach;
 		}
 		if (dis) {
-			char *usrstr = argv[optind];
+			char *usrstr = argv[r_optind];
 			len = strlen (usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
@@ -855,9 +855,9 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 			ret = rasm_disasm (as, (char *)usrstr, offset, len,
 					as->a->bits, ascii, bin, dis - 1);
 		} else if (analinfo) {
-			ret = show_analinfo (as, (const char *)argv[optind], offset);
+			ret = show_analinfo (as, (const char *)argv[r_optind], offset);
 		} else {
-			ret = print_assembly_output (as, argv[optind], offset, len, as->a->bits,
+			ret = print_assembly_output (as, argv[r_optind], offset, len, as->a->bits,
 							bin, use_spp, rad, hexwords, arch);
 		}
 		if (!ret) {

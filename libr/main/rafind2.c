@@ -281,10 +281,10 @@ R_API int r_main_rafind2(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
+	while ((c = r_getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
-			align = r_num_math (NULL, optarg);
+			align = r_num_math (NULL, r_optarg);
 			break;
 		case 'r':
 			rad = 1;
@@ -301,42 +301,42 @@ R_API int r_main_rafind2(int argc, char **argv) {
 		case 'e':
 			mode = R_SEARCH_REGEXP;
 			hexstr = 0;
-			r_list_append (keywords, optarg);
+			r_list_append (keywords, r_optarg);
 			break;
 		case 'E':
 			mode = R_SEARCH_ESIL;
-			r_list_append (keywords, optarg);
+			r_list_append (keywords, r_optarg);
 			break;
 		case 's':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 0;
-			r_list_append (keywords, optarg);
+			r_list_append (keywords, r_optarg);
 			break;
 		case 'S':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 1;
-			r_list_append (keywords, optarg);
+			r_list_append (keywords, r_optarg);
 			break;
 		case 'b':
-			bsize = r_num_math (NULL, optarg);
+			bsize = r_num_math (NULL, r_optarg);
 			break;
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 1;
 			widestr = 0;
-			r_list_append (keywords, optarg);
+			r_list_append (keywords, r_optarg);
 			break;
 		case 'M':
 			// XXX should be from hexbin
-			mask = optarg;
+			mask = r_optarg;
 			break;
 		case 'f':
-			from = r_num_math (NULL, optarg);
+			from = r_num_math (NULL, r_optarg);
 			break;
 		case 't':
-			to = r_num_math (NULL, optarg);
+			to = r_num_math (NULL, r_optarg);
 			break;
 		case 'X':
 			pr = r_print_new ();
@@ -358,15 +358,15 @@ R_API int r_main_rafind2(int argc, char **argv) {
 			return show_help (argv[0], 1);
 		}
 	}
-	if (optind == argc) {
+	if (r_optind == argc) {
 		return show_help (argv[0], 1);
 	}
 	/* Enable quiet mode if searching just a single file */
-	if (optind + 1 == argc && !r_file_is_directory (argv[optind])) {
+	if (r_optind + 1 == argc && !r_file_is_directory (argv[r_optind])) {
 		quiet = true;
 	}
-	for (; optind < argc; optind++) {
-		rafind_open (argv[optind]);
+	for (; r_optind < argc; r_optind++) {
+		rafind_open (argv[r_optind]);
 	}
 	return 0;
 }

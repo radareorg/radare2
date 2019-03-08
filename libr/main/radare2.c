@@ -539,7 +539,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_config_set (r.config, "bin.filter", "false");
 			break;
 		case 'a':
-			asmarch = optarg;
+			asmarch = r_optarg;
 			break;
 		case 'z':
 			zflag++;
@@ -548,16 +548,16 @@ R_API int r_main_radare2(int argc, char **argv) {
 			do_analysis += do_analysis ? 1: 2;
 			break;
 		case 'b':
-			asmbits = optarg;
+			asmbits = r_optarg;
 			break;
 		case 'B':
-			baddr = r_num_math (r.num, optarg);
+			baddr = r_num_math (r.num, r_optarg);
 			break;
 		case 'X':
 			r_config_set (r.config, "bin.usextr", "false");
 			break;
 		case 'c':
-			r_list_append (cmds, optarg);
+			r_list_append (cmds, r_optarg);
 			break;
 		case 'C':
 			do_connect = true;
@@ -569,8 +569,8 @@ R_API int r_main_radare2(int argc, char **argv) {
 #endif
 		case 'D':
 			debug = 2;
-			debugbackend = optarg;
-			if (!strcmp (optarg, "?")) {
+			debugbackend = r_optarg;
+			if (!strcmp (r_optarg, "?")) {
 				r_debug_plugin_list (r.dbg, 'q');
 				r_cons_flush();
 				LISTS_FREE ();
@@ -578,43 +578,43 @@ R_API int r_main_radare2(int argc, char **argv) {
 			}
 			break;
 		case 'e':
-			if (!strcmp (optarg, "q")) {
+			if (!strcmp (r_optarg, "q")) {
 				r_core_cmd0 (&r, "eq");
 			} else {
-				r_config_eval (r.config, optarg);
-				r_list_append (evals, optarg);
+				r_config_eval (r.config, r_optarg);
+				r_list_append (evals, r_optarg);
 			}
 			break;
 		case 'f':
 			fullfile = true;
 			break;
 		case 'F':
-			forcebin = optarg;
+			forcebin = r_optarg;
 			break;
 		case 'h':
 			help++;
 			break;
 		case 'H':
-			main_print_var (optarg);
+			main_print_var (r_optarg);
 			LISTS_FREE ();
 			return 0;
 		case 'i':
-			r_list_append (files, optarg);
+			r_list_append (files, r_optarg);
 			break;
 		case 'I':
-			r_list_append (prefiles, optarg);
+			r_list_append (prefiles, r_optarg);
 			break;
 		case 'k':
-			asmos = optarg;
+			asmos = r_optarg;
 			break;
 		case 'l':
-			r_lib_open (r.lib, optarg);
+			r_lib_open (r.lib, r_optarg);
 			break;
 		case 'L':
 			do_list_io_plugins = true;
 			break;
 		case 'm':
-			mapaddr = r_num_math (r.num, optarg);
+			mapaddr = r_num_math (r.num, r_optarg);
 			r_config_set_i (r.config, "file.offset", mapaddr);
 			break;
 		case 'M':
@@ -633,16 +633,16 @@ R_API int r_main_radare2(int argc, char **argv) {
 			run_rc = 0;
 			break;
 		case 'p':
-			if (!strcmp (optarg, "?")) {
+			if (!strcmp (r_optarg, "?")) {
 				r_core_project_list (&r, 0);
 				r_cons_flush ();
 				LISTS_FREE ();
 				return 0;
 			}
-			r_config_set (r.config, "prj.name", optarg);
+			r_config_set (r.config, "prj.name", r_optarg);
 			break;
 		case 'P':
-			patchfile = optarg;
+			patchfile = r_optarg;
 			break;
 		case 'Q':
 			quiet = true;
@@ -656,13 +656,13 @@ R_API int r_main_radare2(int argc, char **argv) {
 			break;
 		case 'r':
 			haveRarunProfile = true;
-			r_config_set (r.config, "dbg.profile", optarg);
+			r_config_set (r.config, "dbg.profile", r_optarg);
 			break;
 		case 'R':
-			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", optarg);
+			customRarunProfile = r_str_appendf (customRarunProfile, "%s\n", r_optarg);
 			break;
 		case 's':
-			s_seek = optarg;
+			s_seek = r_optarg;
 			break;
 		case 'S':
 			sandbox = true;
