@@ -1,7 +1,7 @@
 BIN=radare2
 BINDEPS=r_core r_parse r_search r_cons r_config
 BINDEPS+=r_bin r_debug r_anal r_reg r_bp r_io r_fs
-BINDEPS+=r_lang r_asm r_syscall r_hash
+BINDEPS+=r_lang r_asm r_syscall r_hash r_main
 BINDEPS+=r_magic r_socket r_flag r_egg r_crypto r_util
 
 include ../../config-user.mk
@@ -78,6 +78,7 @@ endif
 
 include ../../libr/socket/deps.mk
 include ../../libr/magic/deps.mk
+include ../../libr/main/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk
