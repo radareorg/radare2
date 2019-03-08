@@ -317,6 +317,7 @@ include_files =[
   'include/r_anal.h',
   'include/r_asm.h',
   'include/r_bind.h',
+  'include/r_getopt.h',
   'include/r_bin_dwarf.h',
   'include/r_bin.h',
   'include/r_binheap.h',
