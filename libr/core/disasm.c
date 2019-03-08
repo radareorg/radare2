@@ -151,6 +151,7 @@ typedef struct {
 	bool show_calls;
 	bool show_cmtflgrefs;
 	bool show_cycles;
+	bool show_refptr;
 	bool show_stackptr;
 	int stackFd;
 	bool show_xrefs;
@@ -674,6 +675,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
 	ds->asm_hints = r_config_get_i (core->config, "asm.hints"); // only for cdiv wtf
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
+	ds->show_refptr = r_config_get_i (core->config, "asm.refptr");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
 	ds->cmtcol = r_config_get_i (core->config, "asm.cmt.col");
@@ -3586,7 +3588,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 		r_io_read_at (core->io, refaddr, (ut8*)msg, len - 1);
-		if (refptr) {
+		if (refptr && ds->show_refptr) {
 			ut64 num = r_read_ble (msg, core->print->big_endian, refptr * 8);
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
