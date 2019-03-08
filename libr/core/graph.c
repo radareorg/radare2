@@ -132,6 +132,7 @@ static int prev_mode(int mode) {
 	return (mode + R_AGRAPH_MODE_MAX - 1) % R_AGRAPH_MODE_MAX;
 }
 
+#if 0
 static const char *mode2str(const RAGraph *g, const char *prefix) {
 	static char m[20];
 	const char *submode;
@@ -153,6 +154,7 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 	snprintf (m, sizeof (m), "%s-%s", prefix, submode);
 	return m;
 }
+#endif
 
 static int mode2opts(const RAGraph *g) {
 	int opts = 0;
@@ -2190,6 +2192,26 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->anal->stackptr = saved_stackptr;
 }
 
+static void fold_asm_trace(RCore *core, RAGraph *g) {
+	const RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn;
+	RListIter *it;
+	RANode *n;
+
+	graph_foreach_anode (nodes, it, gn, n) {
+		if (get_anode (g->curnode) == n) {
+			n->is_mini = false;
+			g->need_reload_nodes = true;
+			continue;
+		}
+		ut64 addr = r_num_get (NULL, n->title);
+		RDebugTracepoint *tp = r_debug_trace_get (core->dbg, addr);
+		n->is_mini = (tp == NULL);
+	}
+	g->need_update_dim = 1;
+	//agraph_refresh (r_cons_singleton ()->event_data);
+}
+
 static void delete_dup_edges (RAGraph *g) {
 	RListIter *it, *in_it, *in_it2, *in_it2_tmp;
 	RGraphNode *n, *a, *b;
@@ -3130,6 +3152,7 @@ static void agraph_set_zoom(RAGraph *g, int v) {
  * the screen on the selected one */
 static int agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	r_agraph_reset (g);
+
 	return reload_nodes (g, core, fcn);
 }
 
@@ -3238,13 +3261,21 @@ static void agraph_prev_node(RAGraph *g) {
 	agraph_update_seek (g, get_anode (g->curnode), false);
 }
 
-static void agraph_update_title(RAGraph *g, RAnalFunction *fcn) {
+static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
+#if 0
 	const char *mode_str = g->is_callgraph? mode2str (g, "CG"): mode2str (g, "BB");
 	char *new_title = r_str_newf (
-		"%s[0x%08"PFMT64x "]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s mov-speed:%d",
+		"%s[0x%08"PFMT64x "]> agfi @ %s (n:%d e:%d z:%d%%) %s m:%s ms:%d",
 		graphCursor? "(cursor)": "",
 		fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 		g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
+#endif
+	RANode *a = get_anode (g->curnode);
+	char *sig = r_core_cmd_str (core, "afcf");
+	char *new_title = r_str_newf (
+		"%s[0x%08"PFMT64x "]> %s # %s ",
+		graphCursor? "(cursor)": "",
+		fcn->addr, a? a->title: "", sig);
 	r_agraph_set_title (g, new_title);
 	free (new_title);
 }
@@ -3267,7 +3298,13 @@ static int check_changes(RAGraph *g, int is_interactive,
 		}
 	}
 	if (fcn) {
-		agraph_update_title (g, fcn);
+		agraph_update_title (core, g, fcn);
+	}
+	if (core && core->config) {
+		if (r_config_get_i (core->config, "graph.trace")) {
+			// fold all bbs not traced
+			fold_asm_trace (core, g);
+		}
 	}
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
 		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph, g->layout);
@@ -4056,9 +4093,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
+			g->force_update_seek = true;
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
+			g->force_update_seek = true;
 			break;
 		case '0':
 			agraph_set_zoom (g, ZOOM_DEFAULT);
@@ -4226,8 +4265,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" V            - toggle basicblock / call graphs\n"
 				" w            - toggle between movements speed 1 and graph.scroll\n"
 				" x/X          - jump to xref/ref\n"
-				" y            - toggle node folding/minification\n"
 				" Y            - toggle tiny graph\n"
+				" z            - toggle node folding\n"
 				" Z            - follow parent node");
 			r_cons_less ();
 			r_cons_any_key (NULL);
@@ -4315,7 +4354,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_cmd0 (core, "e!asm.hint.lea");
 			break;
 		case '$':
+			r_core_cmd (core, "dr PC=$$", 0);
 			r_core_cmd (core, "sr PC", 0);
+			g->need_reload_nodes = true;
 			break;
 		case 'R':
 			if (r_config_get_i (core->config, "scr.randpal")) {
@@ -4400,7 +4441,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_toggle_tiny (g);
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
-		case 'y':
+		case 'z':
 			agraph_toggle_mini (g);
 			break;
 		case 'v':

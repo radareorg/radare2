@@ -1877,6 +1877,52 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
+static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
+}
+
+static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
+	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
+	if (!strcmp (symbol->name, "$a")) {
+		r_anal_hint_set_bits (core->anal, addr, 32);
+	} else if (!strcmp (symbol->name, "$t")) {
+		r_anal_hint_set_bits (core->anal, addr, 16);
+	} else if (!strcmp (symbol->name, "$d")) {
+		// TODO: we could add data meta type at addr, but sometimes $d
+		// is in the middle of the code and it would make the code less
+		// readable.
+	} else {
+		R_LOG_WARN ("Special symbol %s not handled", symbol->name);
+	}
+}
+
+static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
+	if (info->bits > 32) { // we look at 16 or 32 bit only
+		return;
+	}
+
+	int force_bits = 0;
+	ut64 addr = compute_addr (core->bin, paddr, vaddr, va);
+	if (paddr & 1 || bits == 16) {
+		force_bits = 16;
+	} else if (info->bits == 16 && bits == 32) {
+		force_bits = 32;
+	} else if (!(paddr & 1) && bits == 32) {
+		force_bits = 32;
+	}
+	if (force_bits) {
+		r_anal_hint_set_bits (core->anal, addr, force_bits);
+	}
+}
+
+static void handle_arm_symbol(RCore *core, RBinSymbol *symbol, RBinInfo *info, int va) {
+	return handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
+}
+
+static void handle_arm_entry(RCore *core, RBinAddr *entry, RBinInfo *info, int va) {
+	return handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
+}
+
 static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 	if (!strncmp (symbol->name, "imp.", 4)) {
 		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
@@ -1937,7 +1983,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			continue;
 		}
 		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
-		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
+		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};
 
@@ -1960,25 +2006,19 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol) || is_special_symbol (symbol))) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
 			/*
 			 * Skip section symbols because they will have their own flag.
 			 * Skip also file symbols because not useful for now.
-			 * Skip special symbols we do not want to flag them, as they are better used as analysis hints.
 			 */
+		} else if (IS_MODE_SET (mode) && is_special_symbol (symbol)) {
+			if (is_arm) {
+				handle_arm_special_symbol (r, symbol, va);
+			}
 		} else if (IS_MODE_SET (mode)) {
-			if (is_arm && info->bits < 33) { // 16 or 32
-				int force_bits = 0;
-				if (symbol->paddr & 1 || symbol->bits == 16) {
-					force_bits = 16;
-				} else if (info->bits == 16 && symbol->bits == 32) {
-					force_bits = 32;
-				} else if (!(symbol->paddr & 1) && symbol->bits == 32) {
-					force_bits = 32;
-				}
-				if (force_bits) {
-					r_anal_hint_set_bits (r->anal, addr, force_bits);
-				}
+			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
+			if (is_arm) {
+				handle_arm_symbol (r, symbol, info, va);
 			}
 			select_flag_space (r, symbol);
 			/* If that's a Classed symbol (method or so) */
@@ -2101,7 +2141,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					if (r_str_startswith (plugin->name, "pe")) {
 						char *module = strdup (r_symbol_name);
 						char *p = strstr (module, ".dll_");
-						if (p) {
+						if (p && strstr (module, "imp.")) {
 							const char *symname = p + 5;
 							*p = 0;
 							if (r->bin->prefix) {
@@ -2145,20 +2185,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	if (is_arm) {
 		r_list_foreach (entries, iter, entry) {
 			if (IS_MODE_SET (mode)) {
-				if (info->bits < 33) { // 16 or 32
-					int force_bits = 0;
-					ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
-					if (entry->paddr & 1 || entry->bits == 16) {
-						force_bits = 16;
-					} else if (info->bits == 16 && entry->bits == 32) {
-						force_bits = 32;
-					} else if (!(entry->paddr & 1)) {
-						force_bits = 32;
-					}
-					if (force_bits) {
-						r_anal_hint_set_bits (r->anal, addr, force_bits);
-					}
-				}
+				handle_arm_entry (r, entry, info, va);
 			}
 		}
 	}

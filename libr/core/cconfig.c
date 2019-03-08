@@ -2747,6 +2747,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETPREF ("emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
+	SETPREF ("asm.refptr", "true", "Show refpointer information in disasm");
 	SETPREF ("emu.lazy", "false", "Do not emulate all instructions with aae (optimization)");
 	SETPREF ("emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
@@ -2997,6 +2998,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
+	SETPREF ("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB ("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
@@ -3148,7 +3150,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
-	SETPREF ("http.verbose", "true", "Output server logs to stdout");
+	SETPREF ("http.verbose", "false", "Output server logs to stdout");
 	SETPREF ("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
@@ -3165,6 +3167,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
 
 	/* graph */
+	SETPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");

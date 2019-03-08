@@ -2456,22 +2456,35 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		return -1;
 	}
 	int ebbs = 0;
-	char *name = r_core_anal_fcn_name (core, fcn);
 	pj_o (pj);
 	pj_kn (pj, "offset", fcn->addr);
-	pj_ks (pj, "name", name);
+	char *name = r_core_anal_fcn_name (core, fcn);
+	if (name) {
+		pj_ks (pj, "name", name);
+	}
 	pj_ki (pj, "size", r_anal_fcn_size (fcn));
 	pj_ks (pj, "is-pure", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 	pj_ki (pj, "realsz", r_anal_fcn_realsize (fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
-	pj_ks (pj, "calltype", fcn->cc);
-	pj_ki (pj, "cost", r_anal_fcn_cost (core->anal, fcn));
-	pj_ki (pj, "cc", r_anal_fcn_cc (core->anal, fcn));
+	if (fcn->cc) {
+		pj_ks (pj, "calltype", fcn->cc); // calling conventions
+	}
+	pj_ki (pj, "cost", r_anal_fcn_cost (core->anal, fcn)); // execution cost
+	pj_ki (pj, "cc", r_anal_fcn_cc (core->anal, fcn)); // cyclic cost
 	pj_ki (pj, "bits", fcn->bits);
 	pj_ks (pj, "type", r_anal_fcn_type_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
 	pj_ki (pj, "edges", r_anal_fcn_count_edges (fcn, &ebbs));
 	pj_ki (pj, "ebbs", ebbs);
+	{
+		char *sig = r_core_cmd_strf (core, "afcf @ 0x%"PFMT64x, fcn->addr);
+		if (sig) {
+			sig = r_str_trim (sig);
+			pj_ks (pj, "signature", sig);
+			free (sig);
+		}
+
+	}
 	pj_ki (pj, "minbound", fcn->meta.min);
 	pj_ki (pj, "maxbound", fcn->meta.max);
 
@@ -2590,7 +2603,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 }
 
 static int fcn_list_verbose_json(RCore *core, RList *fcns) {
-	return fcn_list_json(core, fcns, false);
+	return fcn_list_json (core, fcns, false);
 }
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
@@ -2673,7 +2686,9 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
 	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
-	r_cons_printf ("\ncall-convention: %s", fcn->cc);
+	if (fcn->cc) {
+		r_cons_printf ("\ncall-convention: %s", fcn->cc);
+	}
 	r_cons_printf ("\ncyclomatic-cost : %d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_fcn_cc (core->anal, fcn));
 	r_cons_printf ("\nbits: %d", fcn->bits);
@@ -2779,7 +2794,8 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
-	if (!core || !core->anal || r_list_empty (core->anal->fcns)) {
+	r_return_val_if_fail (core && core->anal, 0);
+	if (r_list_empty (core->anal->fcns)) {
 		return 0;
 	}
 
@@ -3266,7 +3282,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				switch (mode) {
 				case 'c':
 					(void)opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch);
-					if (op.size <1) {
+					if (op.size < 1) {
 						op.size = 1;
 					}
 					break;
@@ -3327,6 +3343,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 						count ++;
 					}
 					break;
+				}
+				if (op.size < 1) {
+					op.size = 1;
 				}
 				i += op.size - 1;
 				r_anal_op_fini (&op);
@@ -3545,6 +3564,19 @@ static bool isValidSymbol(RBinSymbol *symbol) {
 	return false;
 }
 
+static bool isDllImport(RBinSymbol *s) {
+	if (s && s->name && s->bind) {
+		if (!strcmp (s->bind, "NONE")) {
+			if (r_str_startswith (s->name, "imp.")) {
+				if (strstr (s->name, ".dll_")) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 R_API int r_core_anal_all(RCore *core) {
 	RList *list;
 	RListIter *iter;
@@ -3573,7 +3605,8 @@ R_API int r_core_anal_all(RCore *core) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (strstr (symbol->name, ".dll_")) { // Stop analyzing PE imports further
+			// Stop analyzing PE imports further
+			if (isDllImport (symbol)) {
 				continue;
 			}
 			if (isValidSymbol (symbol)) {

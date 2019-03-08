@@ -160,11 +160,13 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (op->nopcode < 1) {
 			op->nopcode = 1;
 		}
-		//free the previous var in op->var
-		RAnalVar *tmp = get_used_var (anal, op);
-		if (tmp) {
-			r_anal_var_free (op->var);
-			op->var = tmp;
+		if (mask & R_ANAL_OP_MASK_VAL) {
+			//free the previous var in op->var
+			RAnalVar *tmp = get_used_var (anal, op);
+			if (tmp) {
+				r_anal_var_free (op->var);
+				op->var = tmp;
+			}
 		}
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
