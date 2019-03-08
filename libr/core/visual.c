@@ -289,7 +289,7 @@ static const char *help_msg_visual[] = {
 	"xX", "show xrefs/refs of current function from/to data/code",
 	"yY", "copy and paste selection",
 	"z", "fold/unfold comments in disassembly",
-	"Z", "toggle zoom mode",
+	"Z", "shift-tab rotate print modes", // ctoggle zoom mode",
 	"Enter", "follow address of jump/call",
 	NULL
 };

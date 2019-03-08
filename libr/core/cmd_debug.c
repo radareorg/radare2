@@ -4484,22 +4484,34 @@ static int cmd_debug(void *data, const char *input) {
 			core->dbg->trace = r_debug_trace_new ();
 			break;
 		case '+': // "dt+"
-			ptr = input + 3;
-			addr = r_num_math (core->num, ptr);
-			ptr = strchr (ptr, ' ');
-			if (ptr) {
-				RAnalOp *op = r_core_op_anal (core, addr);
-				if (op) {
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-					if (!tp) {
+			if (input[2] == '+') { // "dt++"
+				char *a, *s = r_str_trim (strdup (input + 3));
+				RList *args = r_str_split_list (s, " ");
+				RListIter *iter;
+				r_list_foreach (args, iter, a) {
+					ut64 addr = r_num_get (NULL, a);
+					(void)r_debug_trace_add (core->dbg, addr, 1);
+				}
+				r_list_free (args);
+				free (s);
+			} else {
+				ptr = input + 3;
+				addr = r_num_math (core->num, ptr);
+				ptr = strchr (ptr, ' ');
+				if (ptr) {
+					RAnalOp *op = r_core_op_anal (core, addr);
+					if (op) {
+						RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+						if (!tp) {
+							r_anal_op_free (op);
+							break;
+						}
+						tp->count = r_num_math (core->num, ptr + 1);
+						r_anal_trace_bb (core->anal, addr);
 						r_anal_op_free (op);
-						break;
+					} else {
+						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 					}
-					tp->count = r_num_math (core->num, ptr + 1);
-					r_anal_trace_bb (core->anal, addr);
-					r_anal_op_free (op);
-				} else {
-					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 				}
 			}
 			break;

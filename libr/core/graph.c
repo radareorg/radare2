@@ -2190,6 +2190,26 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->anal->stackptr = saved_stackptr;
 }
 
+static void fold_asm_trace(RCore *core, RAGraph *g) {
+	const RList *nodes = r_graph_get_nodes (g->graph);
+	RGraphNode *gn;
+	RListIter *it;
+	RANode *n;
+
+	graph_foreach_anode (nodes, it, gn, n) {
+		if (get_anode (g->curnode) == n) {
+			n->is_mini = false;
+			g->need_reload_nodes = true;
+			continue;
+		}
+		ut64 addr = r_num_get (NULL, n->title);
+		RDebugTracepoint *tp = r_debug_trace_get (core->dbg, addr);
+		n->is_mini = (tp == NULL);
+	}
+	g->need_update_dim = 1;
+	//agraph_refresh (r_cons_singleton ()->event_data);
+}
+
 static void delete_dup_edges (RAGraph *g) {
 	RListIter *it, *in_it, *in_it2, *in_it2_tmp;
 	RGraphNode *n, *a, *b;
@@ -3268,7 +3288,13 @@ static int check_changes(RAGraph *g, int is_interactive,
 		}
 	}
 	if (fcn) {
-		agraph_update_title (g, fcn);
+		agraph_update_title (core, g, fcn);
+	}
+	if (core && core->config) {
+		if (r_config_get_i (core->config, "graph.trace")) {
+			// fold all bbs not traced
+			fold_asm_trace (core, g);
+		}
 	}
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
 		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph, g->layout);
@@ -4227,8 +4253,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" V            - toggle basicblock / call graphs\n"
 				" w            - toggle between movements speed 1 and graph.scroll\n"
 				" x/X          - jump to xref/ref\n"
-				" y            - toggle node folding/minification\n"
 				" Y            - toggle tiny graph\n"
+				" z            - toggle node folding\n"
 				" Z            - follow parent node");
 			r_cons_less ();
 			r_cons_any_key (NULL);
@@ -4316,7 +4342,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_cmd0 (core, "e!asm.hint.lea");
 			break;
 		case '$':
+			r_core_cmd (core, "dr PC=$$", 0);
 			r_core_cmd (core, "sr PC", 0);
+			g->need_reload_nodes = true;
 			break;
 		case 'R':
 			if (r_config_get_i (core->config, "scr.randpal")) {
@@ -4401,7 +4429,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_toggle_tiny (g);
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
-		case 'y':
+		case 'z':
 			agraph_toggle_mini (g);
 			break;
 		case 'v':
