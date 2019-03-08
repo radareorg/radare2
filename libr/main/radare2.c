@@ -515,7 +515,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 	set_color_default ();
 
-	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuX"
+	while ((c = r_getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuX"
 #if USE_THREADS
 "t"
 #endif
@@ -748,7 +748,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				pfile = NULL; //strdup ("");
 			}
 		} else {
-			pfile = argv[optind] ? strdup (argv[optind]) : NULL;
+			pfile = argv[r_optind] ? strdup (argv[r_optind]) : NULL;
 		}
 	}
 	if (do_list_io_plugins) {
@@ -785,12 +785,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 		free (tfn);
 	}
 	if (debug == 1) {
-		if (optind >= argc && !haveRarunProfile) {
+		if (r_optind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
 			LISTS_FREE ();
 			return 1;
 		}
-		const char *src = haveRarunProfile? pfile: argv[optind];
+		const char *src = haveRarunProfile? pfile: argv[r_optind];
 		if (src && *src) {
 			char *uri = strdup (src);
 			if (uri) {
@@ -832,8 +832,8 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 	//cverify_version (0);
 	if (do_connect) {
-		const char *uri = argv[optind];
-		if (optind >= argc) {
+		const char *uri = argv[r_optind];
+		if (r_optind >= argc) {
 			eprintf ("Missing URI for -C\n");
 			LISTS_FREE ();
 			return 1;
@@ -841,7 +841,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (!strncmp (uri, "http://", 7)) {
 			r_core_cmdf (&r, "=+%s", uri);
 		} else {
-			r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+			r_core_cmdf (&r, "=+http://%s/cmd/", argv[r_optind]);
 		}
 		LISTS_FREE ();
 		return 0;
@@ -885,7 +885,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 		free (path);
 	}
 
-	// if (argv[optind] && r_file_is_directory (argv[optind]))
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
@@ -893,13 +892,13 @@ R_API int r_main_radare2(int argc, char **argv) {
 			free (pfile);
 			return 1;
 		}
-		if (chdir (argv[optind])) {
+		if (chdir (argv[r_optind])) {
 			eprintf ("[d] Cannot open directory\n");
 			LISTS_FREE ();
 			free (pfile);
 			return 1;
 		}
-	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
+	} else if (argv[r_optind] && !strcmp (argv[r_optind], "=")) {
 		int sz;
 		/* stdin/batch mode */
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
@@ -935,7 +934,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			eprintf ("Cannot slurp from stdin\n");
 			return 1;
 		}
-	} else if (strcmp (argv[optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
+	} else if (strcmp (argv[r_optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
 		if (threaded) {
 			loading_start ();
 		}
@@ -946,7 +945,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_PERM_RWX;
-			if (optind >= argc) {
+			if (r_optind >= argc) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
 				return 1;
@@ -956,12 +955,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 				r_config_set (r.config, "dbg.backend", debugbackend);
 				if (strcmp (debugbackend, "native")) {
 					if (!haveRarunProfile) {
-						pfile = strdup (argv[optind++]);
+						pfile = strdup (argv[r_optind++]);
 					}
 					perms = R_PERM_RX; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://")) {
-						optind--; // take filename
+						r_optind--; // take filename
 					}
 #if __WINDOWS__
 					pfile = r_acp_to_utf8 (pfile);
@@ -1008,7 +1007,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 					}
 				}
 			} else {
-				const char *f = (haveRarunProfile && pfile)? pfile: argv[optind];
+				const char *f = (haveRarunProfile && pfile)? pfile: argv[r_optind];
 				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
 				if (!is_gdb) {
 					pfile = strdup ("dbg://");
@@ -1051,13 +1050,13 @@ R_API int r_main_radare2(int argc, char **argv) {
 					file = pfile; // r_str_append (file, escaped_path);
 				}
 #endif
-				optind++;
-				while (optind < argc) {
-					char *escaped_arg = r_str_arg_escape (argv[optind]);
+				r_optind++;
+				while (r_optind < argc) {
+					char *escaped_arg = r_str_arg_escape (argv[r_optind]);
 					file = r_str_append (file, " ");
 					file = r_str_append (file, escaped_arg);
 					free (escaped_arg);
-					optind++;
+					r_optind++;
 				}
 				pfile = file;
 			}
@@ -1074,16 +1073,16 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 		if (!debug || debug == 2) {
 			const char *dbg_profile = r_config_get (r.config, "dbg.profile");
-			if (optind == argc && dbg_profile && *dbg_profile) {
+			if (r_optind == argc && dbg_profile && *dbg_profile) {
 				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 				if (fh) {
 					r_core_bin_load (&r, pfile, baddr);
 				}
 			}
-			if (optind < argc) {
+			if (r_optind < argc) {
 				R_FREE (pfile);
-				while (optind < argc) {
-					pfile = argv[optind++];
+				while (r_optind < argc) {
+					pfile = argv[r_optind++];
 #if __WINDOWS__
 					pfile = r_acp_to_utf8 (pfile);
 #endif // __WINDOWS__

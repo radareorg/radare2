@@ -3,7 +3,6 @@
 #include "index.h"
 #include <r_main.h>
 #include <r_core.h>
-#include <getopt.h>
 
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
 #define USE_IOS_JETSAM 1
@@ -44,7 +43,7 @@ R_API int r_main_r2agent(int argc, char **argv) {
 	char *pfile = NULL;
 	memset (&so, 0, sizeof (so));
 
-	while ((c = getopt (argc, argv, "adhup:t:sv")) != -1) {
+	while ((c = r_getopt (argc, argv, "adhup:t:sv")) != -1) {
 		switch (c) {
 		case 'a':
 			listenlocal = false;
@@ -63,16 +62,16 @@ R_API int r_main_r2agent(int argc, char **argv) {
 			so.httpauth = true;
 			break;
 		case 't':
-			httpauthfile = optarg;
+			httpauthfile = r_optarg;
 			break;
 		case 'p':
-			port = optarg;
+			port = r_optarg;
 			break;
 		default:
 			return usage (0);
 		}
 	}
-	if (optind != argc) {
+	if (r_optind != argc) {
 		return usage (0);
 	}
 
