@@ -4337,31 +4337,39 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
 				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+#if 0
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
 					if (bpi) r_core_cmd0 (core, delb);
 					break;
 				}
+#endif
 				addr += aop.size;
 			}
 			r_debug_reg_set (core->dbg, "PC", addr);
+			r_reg_setv (core->anal->reg, "PC", addr);
+			r_core_cmd0 (core, ".dr*");
 			if (bpi) {
 				r_core_cmd0 (core, delb);
 			}
 			break;
 		}
 	case 'o': // "dso"
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			char delb[128] = R_EMPTY;
-			addr = r_debug_reg_get (core->dbg, "PC");
-			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
-			sprintf(delb, "db 0x%"PFMT64x"", addr);
-			r_bp_del (core->dbg->bp, addr);
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_step_over (core->dbg, times);
-			if (bpi) r_core_cmd0 (core, delb);
+		if (r_config_get_i (core->config, "dbg.skipover")) {
+			r_core_cmdf (core, "dss%s", input + 2);
 		} else {
-			r_core_cmdf (core, "aeso%s", input + 2);
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				char delb[128] = R_EMPTY;
+				addr = r_debug_reg_get (core->dbg, "PC");
+				RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
+				sprintf(delb, "db 0x%"PFMT64x"", addr);
+				r_bp_del (core->dbg->bp, addr);
+				r_reg_arena_swap (core->dbg->reg, true);
+				r_debug_step_over (core->dbg, times);
+				if (bpi) r_core_cmd0 (core, delb);
+			} else {
+				r_core_cmdf (core, "aeso%s", input + 2);
+			}
 		}
 		break;
 	case 'b': // "dsb"
@@ -4476,22 +4484,34 @@ static int cmd_debug(void *data, const char *input) {
 			core->dbg->trace = r_debug_trace_new ();
 			break;
 		case '+': // "dt+"
-			ptr = input + 3;
-			addr = r_num_math (core->num, ptr);
-			ptr = strchr (ptr, ' ');
-			if (ptr) {
-				RAnalOp *op = r_core_op_anal (core, addr);
-				if (op) {
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-					if (!tp) {
+			if (input[2] == '+') { // "dt++"
+				char *a, *s = r_str_trim (strdup (input + 3));
+				RList *args = r_str_split_list (s, " ");
+				RListIter *iter;
+				r_list_foreach (args, iter, a) {
+					ut64 addr = r_num_get (NULL, a);
+					(void)r_debug_trace_add (core->dbg, addr, 1);
+				}
+				r_list_free (args);
+				free (s);
+			} else {
+				ptr = input + 3;
+				addr = r_num_math (core->num, ptr);
+				ptr = strchr (ptr, ' ');
+				if (ptr) {
+					RAnalOp *op = r_core_op_anal (core, addr);
+					if (op) {
+						RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+						if (!tp) {
+							r_anal_op_free (op);
+							break;
+						}
+						tp->count = r_num_math (core->num, ptr + 1);
+						r_anal_trace_bb (core->anal, addr);
 						r_anal_op_free (op);
-						break;
+					} else {
+						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 					}
-					tp->count = r_num_math (core->num, ptr + 1);
-					r_anal_trace_bb (core->anal, addr);
-					r_anal_op_free (op);
-				} else {
-					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 				}
 			}
 			break;

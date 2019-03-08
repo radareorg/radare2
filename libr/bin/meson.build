@@ -47,6 +47,7 @@ r_bin_sources = [
   'p/bin_pe64.c',
   'p/bin_pebble.c',
   'p/bin_psxexe.c',
+  'p/bin_qnx.c',
   'p/bin_sfc.c',
   'p/bin_smd.c',
   'p/bin_sms.c',
@@ -61,6 +62,7 @@ r_bin_sources = [
   'p/bin_write_pe.c',
   'p/bin_write_pe64.c',
   'p/bin_xbe.c',
+  'p/bin_xnu_kernelcache.c',
   'p/bin_xtr_dyldcache.c',
   'p/bin_xtr_fatmach0.c',
   'p/bin_z64.c',
@@ -77,6 +79,8 @@ r_bin_sources = [
   'format/mach0/fatmach0.c',
   'format/mach0/mach0.c',
   'format/mach0/mach064.c',
+  'format/xnu/r_cf_dict.c',
+  'format/xnu/yxml.c',
   'format/mdmp/mdmp.c',
   'format/mdmp/mdmp_pe.c',
   'format/mdmp/mdmp_pe64.c',
@@ -127,6 +131,7 @@ r_bin = library('r_bin', r_bin_sources,
     r_hash_dep,
     r_magic_dep,
     r_socket_dep,
+    r_syscall_dep,
     sdb_dep,
     java_dep,
     lz4_dep
@@ -147,7 +152,8 @@ pkgconfig_mod.generate(r_bin,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_io',
-    'r_socket'
+    'r_socket',
+    'r_syscall'
   ],
   description: 'radare foundation libraries'
 )

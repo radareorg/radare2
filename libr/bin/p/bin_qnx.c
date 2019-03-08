@@ -115,26 +115,20 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 			ptr->add = true;
 		 	r_list_append (sections, ptr);
 		} else if (lrec->rec_type == LMF_FIXUP_REC) {
-			RBinReloc *ptr = R_NEW0(RBinReloc);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
-			}
-			if (!ptr) {
+			RBinReloc *ptr = R_NEW0 (RBinReloc);
+			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
 				return false;
 			}
 			ptr->vaddr = ptr->paddr = ldata->offset;
-			ptr->type = "LMF_FIXUP";
+			ptr->type = 'f'; // "LMF_FIXUP";
 			r_list_append (fixups, ptr);
 		} else if (lrec->rec_type == LMF_8087_FIXUP_REC) {
-			RBinReloc *ptr = R_NEW0(RBinReloc);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
-			}
-			if (!ptr) {
+			RBinReloc *ptr = R_NEW0 (RBinReloc);
+			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
 				return false;
 			}
 			ptr->vaddr = ptr->paddr = ldata->offset;
-			ptr->type = "LMF_8087_FIXUP";
+			ptr->type = 'F'; // "LMF_8087_FIXUP";
 			r_list_append (fixups, ptr);
 		} else if (lrec->rec_type == LMF_RW_END_REC) {
 			r_buf_fread_at (bf->buf, offset, (ut8 *) &qo->rwend, "ii", 1);
@@ -151,11 +145,15 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	return true;
 }
 
+// XXX this is wrong, do not copy the data this way
 static bool load(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, false);
 	ut64 size = bf? r_buf_size (bf->buf): 0;
-	const ut8 *byte = bf? r_buf_get_at (bf->buf, 0, NULL): NULL;
-	return load_bytes (bf, &bf->o->bin_obj, bf->buf, size, bf->o->loadaddr, bf->sdb);
+	ut8 *buf = malloc (size);
+	r_buf_read_at (bf->buf, 0, buf, size);
+	bool rc = load_bytes (bf, &bf->o->bin_obj, buf, size, bf->o->loadaddr, bf->sdb); 
+	free (buf);
+	return rc;
 }
 
 /*

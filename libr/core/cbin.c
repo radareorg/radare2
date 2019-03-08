@@ -2141,7 +2141,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					if (r_str_startswith (plugin->name, "pe")) {
 						char *module = strdup (r_symbol_name);
 						char *p = strstr (module, ".dll_");
-						if (p) {
+						if (p && strstr (module, "imp.")) {
 							const char *symname = p + 5;
 							*p = 0;
 							if (r->bin->prefix) {
