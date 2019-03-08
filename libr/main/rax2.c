@@ -7,10 +7,6 @@
 // dont use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
 
-// avoid globals and create new/free model
-typedef struct r_main_rax2 {
-} RMainRax2;
-
 static RNum *num;
 static int help();
 static ut64 flags = 0;
