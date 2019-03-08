@@ -132,6 +132,7 @@ static int prev_mode(int mode) {
 	return (mode + R_AGRAPH_MODE_MAX - 1) % R_AGRAPH_MODE_MAX;
 }
 
+#if 0
 static const char *mode2str(const RAGraph *g, const char *prefix) {
 	static char m[20];
 	const char *submode;
@@ -153,6 +154,7 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 	snprintf (m, sizeof (m), "%s-%s", prefix, submode);
 	return m;
 }
+#endif
 
 static int mode2opts(const RAGraph *g) {
 	int opts = 0;
@@ -3259,13 +3261,21 @@ static void agraph_prev_node(RAGraph *g) {
 	agraph_update_seek (g, get_anode (g->curnode), false);
 }
 
-static void agraph_update_title(RAGraph *g, RAnalFunction *fcn) {
+static void agraph_update_title(RCore *core, RAGraph *g, RAnalFunction *fcn) {
+#if 0
 	const char *mode_str = g->is_callgraph? mode2str (g, "CG"): mode2str (g, "BB");
 	char *new_title = r_str_newf (
-		"%s[0x%08"PFMT64x "]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s mov-speed:%d",
+		"%s[0x%08"PFMT64x "]> agfi @ %s (n:%d e:%d z:%d%%) %s m:%s ms:%d",
 		graphCursor? "(cursor)": "",
 		fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 		g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
+#endif
+	RANode *a = get_anode (g->curnode);
+	char *sig = r_core_cmd_str (core, "afcf");
+	char *new_title = r_str_newf (
+		"%s[0x%08"PFMT64x "]> %s # %s ",
+		graphCursor? "(cursor)": "",
+		fcn->addr, a? a->title: "", sig);
 	r_agraph_set_title (g, new_title);
 	free (new_title);
 }
@@ -4083,9 +4093,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
+			g->force_update_seek = true;
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
+			g->force_update_seek = true;
 			break;
 		case '0':
 			agraph_set_zoom (g, ZOOM_DEFAULT);
