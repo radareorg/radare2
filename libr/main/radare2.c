@@ -1291,16 +1291,15 @@ R_API int r_main_radare2(int argc, char **argv) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
-			ut64 limit = r_config_get_i (r.config, "cfg.hashlimit");
+			ut64 limit = r_config_get_i (r.config, "bin.hashlimit");
 			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
 			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
-			if (compute_hashes && iod && !r_bin_file_hash (r.bin, limit, iod->name)) {
-				if (!r_bin_file_hash (r.bin, 0, iod->name)) {
-					eprintf ("oops\n");
-				}
+			if (compute_hashes && iod) {
+				// TODO: recall with limit=0 ?
+				(void)r_bin_file_hash (r.bin, limit, iod->name);
 				//eprintf ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");

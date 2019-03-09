@@ -3619,16 +3619,15 @@ static int bin_header(RCore *r, int mode) {
 }
 
 static int bin_hashes(RCore *r, int mode) {
-	ut64 lim = r_config_get_i (r->config, "cfg.hashlimit");
+	ut64 lim = r_config_get_i (r->config, "bin.hashlimit");
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
 		// recompute again
 		r_bin_file_hash (r->bin, lim, iod->name);
-		char *hashes = r->bin->cur->o->info->hashes;
+		char *hashes = (r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info)? r->bin->cur->o->info->hashes: NULL;
 		if (IS_MODE_JSON (mode)) {
 			PJ *pj = pj_new ();
 			if (!pj) {
-				eprintf ("bin_hashes: pj_new failed\n");
 				return false;
 			}
 			pj_o (pj);
@@ -3641,7 +3640,6 @@ static int bin_hashes(RCore *r, int mode) {
 		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -3747,9 +3745,12 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			}
 		}
 	}
+#if 0
+	// only compute when requested
 	if ((action & R_CORE_BIN_ACC_HASHES)) {
 		ret &= bin_hashes (core, mode);
 	}
+#endif
 	return ret;
 }
 

@@ -3605,9 +3605,11 @@ static void scrollbar(RCore *core) {
 		}
 	}
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
-	r_cons_gotoxy (w - strlen (s) + 1, h + 1);
-	r_cons_strcat (s);
-	free (s);
+	if (s) {
+		r_cons_gotoxy (w - strlen (s) + 1, h + 1);
+		r_cons_strcat (s);
+		free (s);
+	}
 	r_cons_flush ();
 }
 

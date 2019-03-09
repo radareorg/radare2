@@ -457,20 +457,48 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		case 't': // "it"
-			if (input[1] == 'j') {
-				PJ *pj = pj_new ();
-				if (!pj) {
-					eprintf ("JSON mode failed\n");
-					return 0;
-				}
-				pj_o (pj);
-				pj_ks (pj, "values", core->bin->cur->o->info->hashes);
-				pj_end (pj);
-				r_cons_printf ("%s", pj_string (pj));
-				pj_free (pj);
-			} else {
+			{
+				ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
+				const char *fileName;
 				RBinInfo *info = r_bin_get_info (core->bin);
-				r_cons_printf ("%s\n", (info && info->hashes)? info->hashes: "");
+				if (info) {
+					fileName = info->file;
+				} else {
+					int fd = r_io_fd_get_current (core->io);
+					RIODesc *desc = r_io_desc_get (core->io, fd);
+					fileName = desc? desc->name: NULL;
+				}
+				if (!info || !info->hashes) {
+					(void)r_bin_file_hash (core->bin, limit, fileName);
+				} else {
+				// TODO: compare
+					char *old = strdup (info->hashes);
+					(void)r_bin_file_hash (core->bin, limit, fileName);
+					if (strcmp (info->hashes, old)) {
+						eprintf ("File has been modified.\n");
+						char *s = r_str_prefix_all (old, "- ");
+						r_cons_printf ("%s\n", s);
+						free (s);
+						s = r_str_prefix_all (info->hashes, "+ ");
+						r_cons_printf ("%s\n", s);
+						free (s);
+						break;
+					}
+				}
+				if (input[1] == 'j') {
+					PJ *pj = pj_new ();
+					if (!pj) {
+						eprintf ("JSON mode failed\n");
+						return 0;
+					}
+					pj_o (pj);
+					pj_ks (pj, "values", info->hashes);
+					pj_end (pj);
+					r_cons_printf ("%s", pj_string (pj));
+					pj_free (pj);
+				} else {
+					r_cons_printf ("%s\n", (info && info->hashes)? info->hashes: "");
+				}
 			}
 			break;
 		case 'Z': // "iZ"
