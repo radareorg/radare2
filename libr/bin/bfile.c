@@ -850,6 +850,8 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 }
 
 R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
+	r_return_val_if_fail (bin, false);
+
 	char hash[128], *p;
 	RHash *ctx;
 	ut64 buf_len = 0, r = 0;
@@ -865,15 +867,15 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	if (!iod) {
 		return false;
 	}
-
 	if (!file && iod) {
 		file = iod->name;
 	}
-
 	buf_len = r_io_desc_size (iod);
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
-		eprintf ("Cannot compute hash\n");
+	//	if (bin->verbose) {
+			eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+	//	}
 		return false;
 	}
 	const size_t blocksize = 64000;
@@ -883,7 +885,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		return false;
 	}
 	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
-	while (r+blocksize < buf_len) {
+	while (r + blocksize < buf_len) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
 		int b = r_io_desc_read (iod, buf, blocksize);
 		(void)r_hash_do_md5 (ctx, buf, blocksize);
@@ -906,10 +908,13 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
 	RStrBuf *sbuf = r_strbuf_new ("");
 	r_strbuf_appendf (sbuf, "md5 %s", hash);
+
 	r_hash_do_end (ctx, R_HASH_SHA1);
 	p = hash;
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
 	r_strbuf_appendf (sbuf, "\nsha1 %s", hash);
+	// TODO: add here more rows
+
 	o->info->hashes = r_strbuf_drain (sbuf);
 	free (buf);
 	r_hash_free (ctx);

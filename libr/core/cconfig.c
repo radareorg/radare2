@@ -2556,7 +2556,6 @@ static int cb_dbg_verbose(void *user, void *data) {
 	return true;
 }
 
-#define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -2859,6 +2858,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 
 	/* bin */
+	SETPREF ("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.strpurge", "", &cb_strpurge, "Purge strings (e bin.strpurge=? provides more detail)");
@@ -2918,7 +2918,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun, nsfw, creepy)");
 	SETPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
-	SETI ("cfg.hashlimit", SLURP_LIMIT, "If the file is bigger than hashlimit, do not compute hashes");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
