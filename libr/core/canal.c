@@ -750,7 +750,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		fcnlen = r_anal_fcn (core->anal, fcn, at + delta, reftype);
+		fcnlen = r_anal_fcn (core->anal, fcn, at + delta, core->anal->opt.bb_max_size, reftype);
 		if (core->anal->opt.searchstringrefs) {
 			r_anal_set_stringrefs (core, fcn);
 		}

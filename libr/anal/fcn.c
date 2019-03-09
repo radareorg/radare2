@@ -448,9 +448,9 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		return R_ANAL_RET_ERROR;\
 	}
 
-static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
+static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth);
 #define recurseAt(x) {\
-	ret = fcn_recurse (anal, fcn, x, depth - 1);\
+	ret = fcn_recurse (anal, fcn, x, anal->opt.bb_max_size, depth - 1);\
 	r_anal_fcn_update_tinyrange_bbs (fcn);\
 	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));\
 }
@@ -938,7 +938,7 @@ static void check_purity(HtUP *ht, RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
-static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
+static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
 	const int noncode = anal->opt.noncode;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -1026,7 +1026,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
 	}
 	ut64 movptr = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
-	while (addrbytes * idx < anal->opt.bb_max_size) {
+	int maxlen = len * addrbytes;
+	while (addrbytes * idx < maxlen) {
 		if (anal->limit && anal->limit->to <= addr + idx) {
 			break;
 		}
@@ -1326,11 +1327,8 @@ repeat:
 				if (must_eob) {
 					FITFCNSZ ();
 					op.jump = UT64_MAX;
-					//  recurseAt (op.jump);
-					if (op.fail != UT64_MAX) {
-						// recurseAt (op.fail);
-					}
-					gotoBeach (R_ANAL_RET_END);
+					gotoBeachRet ();
+					return R_ANAL_RET_END;
 				}
 			}
 #if FIX_JMP_FWD
@@ -1708,7 +1706,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
-R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype) {
+R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
 	int ret;
 	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	/* defines fcn. or loc. prefix */
@@ -1726,7 +1724,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype) {
 	}
 	fcn->maxstack = 0;
 #if USE_FCN_RECURSE
-	ret = fcn_recurse (anal, fcn, addr, anal->opt.depth);
+	ret = fcn_recurse (anal, fcn, addr, len, anal->opt.depth);
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 #else
@@ -1969,7 +1967,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 			r_list_delete_data (fcn->bbs, bb);
 		}
 #if USE_FCN_RECURSE
-		fcn_recurse (anal, fcn, addr, 1);
+		fcn_recurse (anal, fcn, size, addr, 1);
 #else
 		int ret, depth = 1;
 		recurseAt (addr);
