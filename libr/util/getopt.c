@@ -1,5 +1,6 @@
 /* radare - MIT - Copyright 2019 - pancake */
 
+#define GETOPT_C
 #include <r_util.h>
 
 #if __WINDOWS__
