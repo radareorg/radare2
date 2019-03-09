@@ -485,7 +485,7 @@ static int cmd_info(void *data, const char *input) {
 						break;
 					}
 				}
-				if (input[1] == 'j') {
+				if (input[1] == 'j') { // "itj"
 					PJ *pj = pj_new ();
 					if (!pj) {
 						eprintf ("JSON mode failed\n");
