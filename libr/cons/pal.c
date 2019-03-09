@@ -158,6 +158,8 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
 	ctx->cpal.trap               = (RColor) RColor_RED;
 	ctx->cpal.trap.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.ucall              = (RColor) RColor_GREEN;
+	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 
 	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
 	ctx->cpal.ai_write           = (RColor) RColor_BLUE;

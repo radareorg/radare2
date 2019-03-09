@@ -7,7 +7,9 @@ ec b0x7f rgb:577
 ec b0xff rgb:8cf
 ec bin rgb:fff
 ec btext rgb:fff
+ec ucall rgb:2fa
 ec call rgb:f2a
+ec ujmp rgb:4cf
 ec cjmp rgb:4cf
 ec jmp rgb:4cf
 ec cmp rgb:fff
