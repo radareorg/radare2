@@ -19,6 +19,8 @@ ec other gray
 ec btext cyan
 ec invalid red
 ec trap red
+ec ucall cyan
+ec ujmp green
 ec args green
 ec help yellow
 ec prompt white

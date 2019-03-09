@@ -1,4 +1,5 @@
 ec call rgb:ffff00
+ec ucall rgb:ffff00
 ec comment rgb:32302f
 ec usrcmt rgb:ffc5f3
 ec ret rgb:fb4934
@@ -26,6 +27,7 @@ ec pop rgb:87afaf
 ec crypto rgb:0000ff
 ec jmp rgb:ff5f87
 ec cjmp rgb:afaf00
+ec ujmp rgb:ff5f87
 ec nop rgb:5f8787
 ec trap rgb:ff0000
 ec swi rgb:ff0000
