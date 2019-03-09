@@ -18,7 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 		} else if (opcode == 0x00EE) {
 			buf_asm = "ret";
 		} else if ((opcode & 0xFFF0) == 0x00C0) {
-			buf_asm = sdb_fmt ("scd  0x%01x", nibble);
+			buf_asm = sdb_fmt ("scd 0x%01x", nibble);
 		} else if (opcode == 0x00FB) {
 			buf_asm = "scr";
 		} else if (opcode == 0x00FC) {
