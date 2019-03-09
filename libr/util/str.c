@@ -1882,6 +1882,53 @@ R_API bool r_str_char_fullwidth (const char* s, int left) {
 
 }
 
+/**
+ * Returns size in bytes of the utf8 char
+ * Returns 1 in case of ASCII
+ * str - Pointer to buffer
+ */
+R_API int r_str_utf8_charsize(const char *str) {
+	r_return_val_if_fail (str, 0);
+	int size = 0;
+	int length = strlen (str);
+	while (size < length) {
+		size++;
+		if ((str[size] & 0xc0) != 0x80) {
+			break;
+		}
+	}
+	return size;
+}
+
+/**
+ * Returns size in bytes of the previous utf8 char
+ * Returns 1 in case of ASCII
+ * str - Pointer to leading utf8 char
+ * len - Length in bytes of the buffer previous to str
+ */
+R_API int r_str_utf8_charsize_reverse(const char *str, int len) {
+	r_return_val_if_fail (str, 0);
+	int size = 0, pos = 0;
+	while (size < len) {
+		size++;
+		if ((str[--pos] & 0xc0) != 0x80) {
+			break;
+		}
+	}
+	return size;
+}
+
+/**
+ * Returns size in bytes of the last utf8 char of the string
+ * Returns 1 in case of ASCII
+ * str - Pointer to buffer
+ */
+R_API int r_str_utf8_lastcharsize(const char *str) {
+	r_return_val_if_fail (str, 0);
+	int len = strlen (str);
+	return r_str_utf8_charsize_reverse (str + len, len);
+}
+
 R_API void r_str_filter_zeroline(char *str, int len) {
 	int i;
 	for (i = 0; i < len && str[i]; i++) {

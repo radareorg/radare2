@@ -187,11 +187,11 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 #endif
 
 #if __WINDOWS__
-static int r_line_readchar_win(int *vch) { // this function handle the input in console mode
+static ut8 *r_line_readchar_win(int *vch) { // this function handle the input in console mode
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
-	ut8 buf[2];
+	ut8 *buf = malloc (2);
 	HANDLE h;
 	int i;
 	void *bed;
@@ -218,12 +218,25 @@ do_it_again:
 	ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 	r_cons_sleep_end (bed);
 	if (ret < 1) {
+		free (buf);
 		return 0;
 	}
 	if (irInBuf.EventType == KEY_EVENT) {
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
-			if (irInBuf.Event.KeyEvent.uChar.AsciiChar) {
-				*buf = irInBuf.Event.KeyEvent.uChar.AsciiChar;
+			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
+				free (buf);
+#if UNICODE
+				buf = r_sys_conv_utf16_to_utf8 (&irInBuf.Event.KeyEvent.uChar.UnicodeChar);
+#else
+				buf = strdup (&irInBuf.Event.KeyEvent.uChar.AsciiChar);
+#endif
+				int len = strlen (buf);
+				if (len > 1) {
+					int size = r_str_utf8_charsize (buf);
+					if (size != len) {	// Somehow we read 2+ chars
+						buf[size] = 0;
+					}
+				}
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 			}
 			else {
@@ -244,7 +257,7 @@ do_it_again:
 		goto do_it_again;
 	}
 	SetConsoleMode (h, mode);
-	return buf[0];
+	return buf;
 }
 #endif
 
@@ -701,11 +714,12 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
 	signed char buf[10];
-	int ch, i = 0;	/* grep completion */
+	ut8 *ch;
+	int i = 0;	/* grep completion */
 	int vch = 0;
 	char *tmp_ed_cmd, prev = 0;
 	HANDLE hClipBoard;
-	char *clipText;
+	PTCHAR clipText;
 	int prev_buflen = 0;
 
 	I.buffer.index = I.buffer.length = 0;
@@ -749,7 +763,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			r_cons_break_pop ();
 			return NULL;
 		}
-		buf[0] = ch;
+		r_str_cpy (buf, ch);
 		if (I.echo) {
 			if (I.ansicon) {
 				printf ("\r%s", R_CONS_CLEAR_LINE);
@@ -760,7 +774,9 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		/* process special at vch codes first*/
 		switch (vch) {
 		case 37:	// left arrow
-			I.buffer.index = I.buffer.index? I.buffer.index - 1: 0;
+			I.buffer.index = I.buffer.index
+				? I.buffer.index - r_str_utf8_charsize_reverse (I.buffer.data + I.buffer.index, I.buffer.index)
+				: 0;
 			break;
 		case 38:	// up arrow
 			if (I.sel_widget) {
@@ -774,8 +790,9 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 39:// right arrow
-			I.buffer.index = I.buffer.index < I.buffer.length?
-					 I.buffer.index + 1: I.buffer.length;
+			I.buffer.index = I.buffer.index < I.buffer.length
+				? I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index)
+				: I.buffer.length;
 			break;
 		case 40:// down arrow
 			if (I.sel_widget) {
@@ -836,13 +853,14 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 46:// supr
 			if (I.buffer.index < I.buffer.length) {
 				memmove (I.buffer.data + I.buffer.index,
-					I.buffer.data + I.buffer.index + 1,
+					I.buffer.data + I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index),
 					strlen (I.buffer.data + I.buffer.index + 1) + 1);
 			}
 			if (buf[1] == -1) {
 				r_cons_break_pop ();
 				return NULL;
 			}
+			I.buffer.length = strlen (I.buffer.data);
 			break;
 
 		default:
@@ -942,17 +960,23 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 22:// ^V - Paste from windows clipboard
 			if (OpenClipboard (NULL)) {
+#if UNICODE
+				hClipBoard = GetClipboardData (CF_UNICODETEXT);
+#else
 				hClipBoard = GetClipboardData (CF_TEXT);
+#endif
 				if (hClipBoard) {
 					clipText = GlobalLock (hClipBoard);
 					if (clipText) {
-						I.buffer.length += strlen (clipText);
+						char *txt = r_sys_conv_utf16_to_utf8 (clipText);
+						I.buffer.length += strlen (txt);
 						if (I.buffer.length < R_LINE_BUFSIZE) {
 							I.buffer.index = I.buffer.length;
-							strcat (I.buffer.data, clipText);
+							strcat (I.buffer.data, txt);
 						} else {
 							I.buffer.length -= strlen (I.clipboard);
 						}
+						free (txt);
 					}
 					GlobalUnlock (hClipBoard);
 				}
@@ -993,10 +1017,9 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 127:
 			if (I.buffer.index < I.buffer.length) {
 				if (I.buffer.index > 0) {
-					int len = 0;
+					int len = r_str_utf8_charsize_reverse (I.buffer.data + I.buffer.index, I.buffer.index);
 					// TODO: WIP
-					len = 1;
-					I.buffer.index--;
+					I.buffer.index -= len;
 					memmove (I.buffer.data + I.buffer.index,
 						I.buffer.data + I.buffer.index + len,
 						strlen (I.buffer.data + I.buffer.index));
@@ -1005,7 +1028,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				}
 			} else {
 // OK
-				I.buffer.index = --I.buffer.length;
+				I.buffer.length -= r_str_utf8_lastcharsize (I.buffer.data);
+				I.buffer.index = I.buffer.length;
 				if (I.buffer.length < 0) {
 					I.buffer.length = 0;
 				}
@@ -1040,19 +1064,25 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				gcomp++;
 			}
 			if (I.buffer.index < I.buffer.length) {
-				for (i = ++I.buffer.length; i > I.buffer.index; i--) {
-					I.buffer.data[i] = I.buffer.data[i - 1];
+				int size = r_str_utf8_charsize (buf);
+				I.buffer.length += size;
+				for (i = I.buffer.length; i - size + 1 > I.buffer.index; i--) {
+					I.buffer.data[i] = I.buffer.data[i - size];
 				}
-				I.buffer.data[I.buffer.index] = buf[0];
+				while (size) {
+					I.buffer.data[i--] = buf[--size];
+				}
 			} else {
-				I.buffer.data[I.buffer.length] = buf[0];
-				I.buffer.length++;
+				for (i = 0; i < R_LINE_BUFSIZE - 1 && buf[i]; i++) {
+					I.buffer.data[I.buffer.length + i] = buf[i];
+				}
+				I.buffer.length += strlen (buf);
 				if (I.buffer.length > (R_LINE_BUFSIZE - 1)) {
 					I.buffer.length--;
 				}
 				I.buffer.data[I.buffer.length] = '\0';
 			}
-			I.buffer.index++;
+			I.buffer.index += strlen (buf);
 			break;
 		}
 		if (I.sel_widget && I.buffer.length != prev_buflen) {

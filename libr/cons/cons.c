@@ -469,6 +469,10 @@ R_API RCons *r_cons_new() {
 	I.null = 0;
 #if __WINDOWS__
 	I.ansicon = r_sys_getenv ("ANSICON");
+#if UNICODE
+	SetConsoleOutputCP (CP_UTF8);
+	SetConsoleCP (CP_UTF8);
+#endif
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
