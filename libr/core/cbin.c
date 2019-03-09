@@ -181,7 +181,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_cons_printf ("[");
 	}
 	if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs strings");
+		r_cons_println ("fs strings");
 	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_STRINGS);
