@@ -1750,6 +1750,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 		return pal->swi;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
+		return pal->ujmp;
 	case R_ANAL_OP_TYPE_IJMP:
 	case R_ANAL_OP_TYPE_RJMP:
 	case R_ANAL_OP_TYPE_IRJMP:
@@ -1763,6 +1764,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 	case R_ANAL_OP_TYPE_ACMP:
 		return pal->cmp;
 	case R_ANAL_OP_TYPE_UCALL:
+		return pal->ucall;
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_RCALL:
 	case R_ANAL_OP_TYPE_IRCALL:
