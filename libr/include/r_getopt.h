@@ -14,8 +14,10 @@ Duplicated code in here:
 
 #if __WINDOWS__
 
-extern R_API int r_optind;
-extern R_API char *r_optarg;
+#ifndef GETOPT_C
+__declspec(dllimport) int r_optind;
+__declspec(dllimport) char *r_optarg;
+#endif
 R_API int r_getopt(int nargc, char * const *nargv, const char *ostr);
 
 #else
