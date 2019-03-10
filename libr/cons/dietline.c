@@ -228,7 +228,7 @@ do_it_again:
 #if UNICODE
 				buf = r_sys_conv_utf16_to_utf8 (&irInBuf.Event.KeyEvent.uChar.UnicodeChar);
 #else
-				buf = strdup (&irInBuf.Event.KeyEvent.uChar.AsciiChar);
+				buf = r_acp_to_utf8 (&irInBuf.Event.KeyEvent.uChar.AsciiChar);
 #endif
 				int len = strlen (buf);
 				if (len > 1) {
