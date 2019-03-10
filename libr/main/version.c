@@ -1,4 +1,4 @@
-/* copyright 2015-2017 radare2 by pancake */
+/* copyright 2015-2019 radare2 by pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -15,7 +15,7 @@
 #define R2_BIRTH "unknown"
 #endif
 
-static int blob_version(const char *program) {
+R_API int r_main_version(const char *program) {
 	printf ("%s "R2_VERSION" %d @ "
 			R_SYS_OS"-"
 			R_SYS_ARCH"-%d git.%s\n",
@@ -27,3 +27,4 @@ static int blob_version(const char *program) {
 	}
 	return 0;
 }
+

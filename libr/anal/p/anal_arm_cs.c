@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -1072,6 +1072,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BLR:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%s,pc,=", REG64 (0));
 		break;
+	case ARM64_INS_LDRH:
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDR:
 	case ARM64_INS_LDRSB:
@@ -1083,6 +1084,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		case ARM64_INS_LDRSB:
 		case ARM64_INS_LDRB:
 		    size = 1;
+		    break;
+		case ARM64_INS_LDRH:
+		    size = 2;
 		    break;
 		case ARM64_INS_LDRSW:
 		    size = 4;
@@ -2628,10 +2632,14 @@ jmp $$ + 4 + ( [delta] * 2 )
 
 #endif
 	case ARM_INS_TBH: // half word table
-	case ARM_INS_TBB: // byte table
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
-		// TABLE JUMP  used for switch statements
+		op->ptrsize = 2;
+		break;
+	case ARM_INS_TBB: // byte jump table
+		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->cycles = 2;
+		op->ptrsize = 1;
 		break;
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch

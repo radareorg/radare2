@@ -3,8 +3,10 @@ ec label rgb:0cf rgb:000
 ec math rgb:ccc
 ec bin rgb:f90
 ec call rgb:000 rgb:ff0
+ec ucall rgb:000 rgb:ff0
 ec jmp rgb:ff3
 ec cjmp rgb:ff0
+ec ujmp rgb:ff3
 ec ret rgb:f00
 ec trap rgb:000 rgb:f00
 ec offset rgb:fff

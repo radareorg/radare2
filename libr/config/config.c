@@ -746,7 +746,7 @@ R_API void r_config_bump(RConfig *cfg, const char *key) {
 	free (orig);
 }
 
-R_API bool r_config_save_char(RConfigHold *h, ...) {
+R_API bool r_config_hold_s(RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	if (!h->list_char) {
@@ -769,7 +769,7 @@ R_API bool r_config_save_char(RConfigHold *h, ...) {
 	return true;
 }
 
-R_API bool r_config_save_num(RConfigHold *h, ...) {
+R_API bool r_config_hold_i(RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	if (!h) {
@@ -806,16 +806,17 @@ R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
 	return NULL;
 }
 
-R_API void r_config_restore(RConfigHold *h) {
+R_API void r_config_hold_restore(RConfigHold *h) {
+	RConfig *cfg = h->cfg;
 	RListIter *iter;
 	RConfigHoldChar *hchar;
 	RConfigHoldNum *hnum;
 	if (h) {
 		r_list_foreach (h->list_num, iter, hnum) {
-			(void)r_config_set_i (h->cfg, hnum->key, hnum->value);
+			(void)r_config_set_i (cfg, hnum->key, hnum->value);
 		}
 		r_list_foreach (h->list_char, iter, hchar) {
-			(void)r_config_set (h->cfg, hchar->key, hchar->value);
+			(void)r_config_set (cfg, hchar->key, hchar->value);
 		}
 	}
 }

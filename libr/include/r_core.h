@@ -52,8 +52,10 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_FLAGS_FS_RESOURCES "resources"
 #define R_FLAGS_FS_SECTIONS "sections"
 #define R_FLAGS_FS_SEGMENTS "segments"
+#define R_FLAGS_FS_SIGNS "sign"
 #define R_FLAGS_FS_STRINGS "strings"
 #define R_FLAGS_FS_SYMBOLS "symbols"
+#define R_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
 #define R_FLAGS_FS_SYSCALLS "syscalls"
 
 #define R_GRAPH_FORMAT_NO           0
@@ -184,6 +186,11 @@ typedef struct r_core_visual_tab_t {
 	int cols;
 	int disMode;
 	int hexMode;
+	int asm_offset;
+	int asm_instr;
+	int asm_indent;
+	int asm_bytes;
+	int asm_cmt_col;
 	int printMode;
 	int current3format;
 	int current4format;
@@ -352,6 +359,7 @@ R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
+R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
 R_API int r_core_flush(RCore *core, const char *cmd);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
@@ -376,6 +384,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
+R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
@@ -853,7 +862,6 @@ extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_a2f;
 
 #endif
-
 
 #ifdef __cplusplus
 }

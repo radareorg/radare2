@@ -5,7 +5,7 @@ cc.ms.name=ms
 cc.ms.arg1=rcx
 cc.ms.arg2=rdx
 cc.ms.arg3=r8
-cc.ms.arg3=r9
+cc.ms.arg4=r9
 cc.ms.argn=stack
 cc.ms.ret=rax
 

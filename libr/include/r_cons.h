@@ -204,6 +204,8 @@ typedef struct r_cons_palette_t {
 	RColor ret;
 	RColor swi;
 	RColor trap;
+	RColor ucall;
+	RColor ujmp;
 	RColor ai_read;
 	RColor ai_write;
 	RColor ai_exec;
@@ -273,6 +275,8 @@ typedef struct r_cons_printable_palette_t {
 	char *ret;
 	char *swi;
 	char *trap;
+	char *ucall;
+	char *ujmp;
 	char *ai_read;
 	char *ai_write;
 	char *ai_exec;
@@ -970,7 +974,8 @@ typedef struct r_ascii_node_t {
 #define R_AGRAPH_MODE_MINI 2
 #define R_AGRAPH_MODE_TINY 3
 #define R_AGRAPH_MODE_SUMMARY 4
-#define R_AGRAPH_MODE_MAX 5
+#define R_AGRAPH_MODE_COMMENTS 5
+#define R_AGRAPH_MODE_MAX 6
 
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);

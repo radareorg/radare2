@@ -276,9 +276,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	RListIter *iter;
 	RRegItem *r;
 	int i, e;
-	if (!reg || !name) {
-		return NULL;
-	}
+	r_return_val_if_fail (reg && name, NULL);
 	if (type == R_REG_TYPE_FLG) {
 		type = R_REG_TYPE_GPR;
 	}

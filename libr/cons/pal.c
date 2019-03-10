@@ -41,6 +41,8 @@ static struct {
 	{ "nop", r_offsetof (RConsPrintablePalette, nop), r_offsetof (RConsPalette, nop) },
 	{ "ret", r_offsetof (RConsPrintablePalette, ret), r_offsetof (RConsPalette, ret) },
 	{ "trap", r_offsetof (RConsPrintablePalette, trap), r_offsetof (RConsPalette, trap) },
+	{ "ucall", r_offsetof (RConsPrintablePalette, ucall), r_offsetof (RConsPalette, ucall) },
+	{ "ujmp", r_offsetof (RConsPrintablePalette, ujmp), r_offsetof (RConsPalette, ujmp) },
 	{ "swi", r_offsetof (RConsPrintablePalette, swi), r_offsetof (RConsPalette, swi) },
 	{ "cmp", r_offsetof (RConsPrintablePalette, cmp), r_offsetof (RConsPalette, cmp) },
 	{ "reg", r_offsetof (RConsPrintablePalette, reg), r_offsetof (RConsPalette, reg) },
@@ -156,6 +158,8 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
 	ctx->cpal.trap               = (RColor) RColor_RED;
 	ctx->cpal.trap.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.ucall              = (RColor) RColor_GREEN;
+	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 
 	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
 	ctx->cpal.ai_write           = (RColor) RColor_BLUE;

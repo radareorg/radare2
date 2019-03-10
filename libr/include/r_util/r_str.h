@@ -21,12 +21,14 @@ typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {
-		if (*s==ch)
-			memmove (s, s+1, strlen (s));
+		if (*s==ch) {
+			memmove (s, s + 1, strlen (s));
+		}
 	}
 }
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
+#define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
@@ -94,6 +96,7 @@ R_API int r_str_word_set0_stack(char *str);
 R_API const char *r_str_word_get0(const char *str, int idx);
 R_API char *r_str_word_get_first(const char *string);
 R_API char *r_str_trim(char *str);
+R_API char *r_str_trim_lines(char *str);
 R_API char *r_str_trim_head(char *str);
 R_API const char *r_str_trim_ro(const char *str);
 R_API const char *r_str_trim_wp(const char *str);

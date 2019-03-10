@@ -1261,7 +1261,7 @@ static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
 	RSignGraph *graph = it->graph;
 	int ebbs = -1;
 
-	if (graph->cc != -1 && graph->cc != r_anal_fcn_cc (fcn)) {
+	if (graph->cc != -1 && graph->cc != r_anal_fcn_cc (NULL, fcn)) {
 		return false;
 	}
 	if (graph->nbbs != -1 && graph->nbbs != r_list_length (fcn->bbs)) {

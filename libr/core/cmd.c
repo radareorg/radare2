@@ -129,6 +129,7 @@ static const char *help_msg_dot[] = {
 	".--", "", "terminate tcp server for remote commands",
 	".", " foo.r2", "interpret r2 script",
 	".-", "", "open cfg.editor and interpret tmp file",
+	".*", " file ...", "same as #!pipe open cfg.editor and interpret tmp file",
 	".!", "rabin -ri $FILE", "interpret output of command",
 	".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
 	"./", " ELF", "interpret output of command /m ELF as r. commands",
@@ -910,6 +911,20 @@ static int cmd_interpret(void *data, const char *input) {
 				r_core_cmd (core, str, 0);
 				free (str);
 			}
+		}
+		break;
+	case '*': // ".*"
+		{
+			const char *a = r_str_trim_ro (input + 1);
+			char *s = strdup (a);
+			char *sp = strchr (s, ' ');
+			if (sp) {
+				*sp = 0;
+			}
+			if (R_STR_ISNOTEMPTY (s)) {
+				r_core_run_script (core, s);
+			}
+			free (s);
 		}
 		break;
 	case '-': // ".-"

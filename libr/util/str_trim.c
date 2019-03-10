@@ -56,6 +56,24 @@ R_API void r_str_trim_path(char *s) {
 	}
 }
 
+R_API char* r_str_trim_lines(char *str) {
+	RList *list = r_str_split_list (str, "\n");
+	char *s;
+	RListIter *iter;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_list_foreach (list, iter, s) {
+		//r_str_ansi_trim (s, -1, 99999);
+		r_str_ansi_filter (s, NULL, NULL, -1);
+		r_str_trim (s);
+		if (*s) {
+			r_strbuf_appendf (sb, "%s\n", s);
+		}
+	}
+	r_list_free (list);
+	free (str);
+	return r_strbuf_drain (sb);
+}
+
 R_API char *r_str_trim(char *str) {
 	if (!str) {
 		return NULL;

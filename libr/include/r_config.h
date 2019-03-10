@@ -63,11 +63,13 @@ typedef struct r_config_hold_t {
 } RConfigHold;
 
 #ifdef R_API
-R_API bool r_config_save_num(RConfigHold *h, ...);
-R_API bool r_config_save_char(RConfigHold *h, ...);
 R_API RConfigHold* r_config_hold_new(RConfig *cfg);
 R_API void r_config_hold_free(RConfigHold *h);
-R_API void r_config_restore(RConfigHold *h);
+
+R_API bool r_config_hold_i(RConfigHold *h, ...);
+R_API bool r_config_hold_s(RConfigHold *h, ...);
+
+R_API void r_config_hold_restore(RConfigHold *h);
 
 R_API RConfig *r_config_new(void *user);
 R_API RConfig *r_config_clone (RConfig *cfg);

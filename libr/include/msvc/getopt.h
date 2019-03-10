@@ -1,3 +1,6 @@
+#if 0
+// XXX dupe in libr/util/getopt.c
+
 #include <string.h>
 #include <stdio.h>
 
@@ -11,13 +14,11 @@ char    *optarg;                /* argument associated with option */
 #define BADARG  (int)':'
 #define EMSG    ""
 
-								/*
-								* getopt --
-								*      Parse argc/argv argument vector.
-								*/
-int
-getopt (int nargc, char * const nargv[], const char *ostr)
-{
+/*
+ * getopt --
+ *      Parse argc/argv argument vector.
+ */
+int getopt (int nargc, char * const nargv[], const char *ostr) {
 	static char *place = EMSG;              /* option letter processing */
 	const char *oli;                        /* option letter list index */
 
@@ -70,3 +71,4 @@ getopt (int nargc, char * const nargv[], const char *ostr)
 	}
 	return (optopt);                        /* dump back option letter */
 }
+#endif

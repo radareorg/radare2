@@ -1603,6 +1603,17 @@ static int cb_mdevrange(void *user, void *data) {
 	return true;
 }
 
+static int cb_cmd_esil_step(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->cmd_step);
+		core->anal->esil->cmd_step = strdup (node->value);
+	}
+	return true;
+}
+
 static int cb_cmd_esil_mdev(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2109,6 +2120,13 @@ static int cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
+static int cb_analverbose(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->anal->verbose = node->i_value;
+	return true;
+}
+
 static int cb_binverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2538,7 +2556,6 @@ static int cb_dbg_verbose(void *user, void *data) {
 	return true;
 }
 
-#define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -2589,6 +2606,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* anal */
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETI ("anal.gp2", 0, "Set anal.gp before emulating each instruction (workaround)");
@@ -2636,7 +2654,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
 	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
-	SETICB ("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
+	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
 
@@ -2694,6 +2712,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.xrefs.fold", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETI ("asm.xrefs.max", 20,  "Maximum number of xrefs to be displayed without folding");
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
+	SETPREF ("asm.instr", "true", "Display the disassembled instruction");
 	SETPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETPREF ("asm.bytes", "true", "Display the bytes of each instruction");
 	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
@@ -2727,6 +2746,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETPREF ("emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
+	SETPREF ("asm.refptr", "true", "Show refpointer information in disasm");
 	SETPREF ("emu.lazy", "false", "Do not emulate all instructions with aae (optimization)");
 	SETPREF ("emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
 	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
@@ -2793,6 +2813,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETPREF ("asm.var.subonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
+	SETPREF ("asm.regsub", "false", "Substitute register names with their associated role name (drp~=)");
 	SETPREF ("asm.relsub", "true", "Substitute pc relative expressions in disasm");
 	SETPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETPREF ("asm.family", "false", "Show family name in disasm");
@@ -2837,6 +2858,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.payloads", "false", "Show payload bytes in disasm");
 
 	/* bin */
+	SETPREF ("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.strpurge", "", &cb_strpurge, "Purge strings (e bin.strpurge=? provides more detail)");
@@ -2865,7 +2887,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETPREF ("bin.classes", "true", "Load classes from rbin on startup");
-	SETCB ("bin.verbose", "true", &cb_binverbose, "Show RBin warnings when loading binaries");
+	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
 	SETPREF ("prj.name", "", "Name of current project");
@@ -2896,7 +2918,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun, nsfw, creepy)");
 	SETPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
-	SETI ("cfg.hashlimit", SLURP_LIMIT, "If the file is bigger than hashlimit, do not compute hashes");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
@@ -2977,6 +2998,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
+	SETPREF ("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB ("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
@@ -3056,6 +3078,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.visual", "", "Replace current print mode");
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
 
+	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "Command to run before performing a step in the emulator");
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
 	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
@@ -3127,7 +3150,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
-	SETPREF ("http.verbose", "true", "Output server logs to stdout");
+	SETPREF ("http.verbose", "false", "Output server logs to stdout");
 	SETPREF ("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
@@ -3144,6 +3167,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
 
 	/* graph */
+	SETPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");

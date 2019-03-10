@@ -244,13 +244,6 @@ extern "C" {
 
 typedef int (*PrintfCallback)(const char *str, ...);
 
-// TODO NOT USED. DEPREACATE
-#if R_RTDEBUG
-#define IFRTDBG if (getenv ("LIBR_DEBUG"))
-#else
-#define IFRTDBG if (0)
-#endif
-
 /* compile-time introspection helpers */
 #define CTO(y,z) ((size_t) &((y*)0)->z)
 #define CTA(x,y,z) (x+CTO(y,z))

@@ -181,7 +181,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_cons_printf ("[");
 	}
 	if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs strings");
+		r_cons_println ("fs strings");
 	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_STRINGS);
@@ -1408,6 +1408,10 @@ static bool is_section_symbol(RBinSymbol *s) {
 	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
+static bool is_special_symbol(RBinSymbol *s) {
+	return s->type && !strcmp (s->type, R_BIN_TYPE_SPECIAL_SYM_STR);
+}
+
 static bool is_section_reloc(RBinReloc *r) {
 	return is_section_symbol (r->symbol);
 }
@@ -1539,7 +1543,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 			free (name);
 			if (reloc->addend) {
-				if (reloc->import && reloc->addend > 0) {
+				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
 					r_cons_printf (" +");
 				}
 				if (reloc->addend < 0) {
@@ -1873,6 +1877,62 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
+static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
+}
+
+static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
+	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
+	if (!strcmp (symbol->name, "$a")) {
+		r_anal_hint_set_bits (core->anal, addr, 32);
+	} else if (!strcmp (symbol->name, "$t")) {
+		r_anal_hint_set_bits (core->anal, addr, 16);
+	} else if (!strcmp (symbol->name, "$d")) {
+		// TODO: we could add data meta type at addr, but sometimes $d
+		// is in the middle of the code and it would make the code less
+		// readable.
+	} else {
+		R_LOG_WARN ("Special symbol %s not handled", symbol->name);
+	}
+}
+
+static void handle_arm_hint(RCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
+	if (info->bits > 32) { // we look at 16 or 32 bit only
+		return;
+	}
+
+	int force_bits = 0;
+	ut64 addr = compute_addr (core->bin, paddr, vaddr, va);
+	if (paddr & 1 || bits == 16) {
+		force_bits = 16;
+	} else if (info->bits == 16 && bits == 32) {
+		force_bits = 32;
+	} else if (!(paddr & 1) && bits == 32) {
+		force_bits = 32;
+	}
+	if (force_bits) {
+		r_anal_hint_set_bits (core->anal, addr, force_bits);
+	}
+}
+
+static void handle_arm_symbol(RCore *core, RBinSymbol *symbol, RBinInfo *info, int va) {
+	return handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
+}
+
+static void handle_arm_entry(RCore *core, RBinAddr *entry, RBinInfo *info, int va) {
+	return handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
+}
+
+static void select_flag_space(RCore *core, RBinSymbol *symbol) {
+	if (!strncmp (symbol->name, "imp.", 4)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_IMPORTS);
+	} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_SECTION_STR)) {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS_SECTIONS);
+	} else {
+		r_flag_space_push (core->flags, R_FLAGS_FS_SYMBOLS);
+	}
+}
+
 static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RList *entries = r_bin_get_entries (r->bin);
@@ -1923,7 +1983,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			continue;
 		}
 		char *r_symbol_name = r_str_escape_utf8 (symbol->name, false, true);
-		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
+		ut64 addr = compute_addr (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn = {0};
 
@@ -1951,31 +2011,16 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			 * Skip section symbols because they will have their own flag.
 			 * Skip also file symbols because not useful for now.
 			 */
+		} else if (IS_MODE_SET (mode) && is_special_symbol (symbol)) {
+			if (is_arm) {
+				handle_arm_special_symbol (r, symbol, va);
+			}
 		} else if (IS_MODE_SET (mode)) {
-			if (is_arm && info->bits < 33) { // 16 or 32
-				int force_bits = 0;
-				if (symbol->paddr & 1 || symbol->bits == 16) {
-					force_bits = 16;
-				} else if (info->bits == 16 && symbol->bits == 32) {
-					force_bits = 32;
-				} else if (!(symbol->paddr & 1) && symbol->bits == 32) {
-					force_bits = 32;
-				}
-				if (force_bits) {
-					r_anal_hint_set_bits (r->anal, addr, force_bits);
-				}
+			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
+			if (is_arm) {
+				handle_arm_symbol (r, symbol, info, va);
 			}
-			if (!strncmp (r_symbol_name, "imp.", 4)) {
-				if (lastfs != 'i') {
-					r_flag_space_set (r->flags, R_FLAGS_FS_IMPORTS);
-				}
-				lastfs = 'i';
-			} else {
-				if (lastfs != 's') {
-					r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
-				}
-				lastfs = 's';
-			}
+			select_flag_space (r, symbol);
 			/* If that's a Classed symbol (method or so) */
 			if (sn.classname) {
 				RFlagItem *fi = r_flag_get (r->flags, sn.methflag);
@@ -2019,6 +2064,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
 					addr, symbol->size, sn.demname);
 			}
+			r_flag_space_pop (r->flags);
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_escape_utf8_for_json (r_symbol_name, -1);
 			// str = r_str_replace (str, "\"", "\\\"", 1);
@@ -2049,61 +2095,65 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 			const char *name = sn.demname? sn.demname: r_symbol_name;
 			r_cons_printf ("%s\n", name);
 		} else if (IS_MODE_RAD (mode)) {
-			RBinFile *binfile;
-			RBinPlugin *plugin;
-			char *name = strdup (sn.demname? sn.demname: r_symbol_name);
-			r_name_filter (name, -1);
-			if (!strncmp (name, "imp.", 4)) {
-				if (lastfs != 'i') {
-					r_cons_printf ("fs imports\n");
-				}
-				lastfs = 'i';
-			} else {
-				if (lastfs != 's') {
-					r_cons_printf ("fs %s\n",
-						exponly? "exports": "symbols");
-				}
-				lastfs = 's';
-			}
-			if (r->bin->prefix) {
-				if (symbol->dup_count) {
-					r_cons_printf ("f %s.sym.%s_%d %u 0x%08"PFMT64x"\n",
-						r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
+			/* Skip special symbols because we do not flag them and
+			 * they shouldn't be printed in the rad format either */
+			if (!is_special_symbol (symbol)) {
+				RBinFile *binfile;
+				RBinPlugin *plugin;
+				char *name = strdup (sn.demname? sn.demname: r_symbol_name);
+				r_name_filter (name, -1);
+				if (!strncmp (name, "imp.", 4)) {
+					if (lastfs != 'i') {
+						r_cons_printf ("fs imports\n");
+					}
+					lastfs = 'i';
 				} else {
-					r_cons_printf ("f %s.sym.%s %u 0x%08"PFMT64x"\n",
-						r->bin->prefix, name, symbol->size, addr);
+					if (lastfs != 's') {
+						r_cons_printf ("fs %s\n",
+							exponly? "exports": "symbols");
+					}
+					lastfs = 's';
 				}
-			} else {
-				if (*name) {
+				if (r->bin->prefix) {
 					if (symbol->dup_count) {
-						r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
-								name, symbol->dup_count, symbol->size, addr);
+						r_cons_printf ("f %s.sym.%s_%d %u 0x%08" PFMT64x "\n",
+							r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
 					} else {
-						r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
-								name, symbol->size, addr);
+						r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
+							r->bin->prefix, name, symbol->size, addr);
 					}
 				} else {
-					// we dont want unnamed symbol flags
-				}
-			}
-			binfile = r_core_bin_cur (r);
-			plugin = r_bin_file_cur_plugin (binfile);
-			if (plugin && plugin->name) {
-				if (!strncmp (plugin->name, "pe", 2)) {
-					char *p, *module = strdup (r_symbol_name);
-					p = strstr (module, ".dll_");
-					if (p) {
-						const char *symname = p + 5;
-						*p = 0;
-						if (r->bin->prefix) {
-							r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
-								module, symbol->ordinal, r->bin->prefix, symname);
+					if (*name) {
+						if (symbol->dup_count) {
+							r_cons_printf ("f sym.%s_%d %u 0x%08" PFMT64x "\n",
+								name, symbol->dup_count, symbol->size, addr);
 						} else {
-							r_cons_printf ("k bin/pe/%s/%d=%s\n",
-								module, symbol->ordinal, symname);
+							r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
+								name, symbol->size, addr);
 						}
+					} else {
+						// we dont want unnamed symbol flags
 					}
-					free (module);
+				}
+				binfile = r_core_bin_cur (r);
+				plugin = r_bin_file_cur_plugin (binfile);
+				if (plugin && plugin->name) {
+					if (r_str_startswith (plugin->name, "pe")) {
+						char *module = strdup (r_symbol_name);
+						char *p = strstr (module, ".dll_");
+						if (p && strstr (module, "imp.")) {
+							const char *symname = p + 5;
+							*p = 0;
+							if (r->bin->prefix) {
+								r_cons_printf ("k bin/pe/%s/%d=%s.%s\n",
+									module, symbol->ordinal, r->bin->prefix, symname);
+							} else {
+								r_cons_printf ("k bin/pe/%s/%d=%s\n",
+									module, symbol->ordinal, symname);
+							}
+						}
+						free (module);
+					}
 				}
 			}
 		} else {
@@ -2135,20 +2185,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 	if (is_arm) {
 		r_list_foreach (entries, iter, entry) {
 			if (IS_MODE_SET (mode)) {
-				if (info->bits < 33) { // 16 or 32
-					int force_bits = 0;
-					ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
-					if (entry->paddr & 1 || entry->bits == 16) {
-						force_bits = 16;
-					} else if (info->bits == 16 && entry->bits == 32) {
-						force_bits = 32;
-					} else if (!(entry->paddr & 1)) {
-						force_bits = 32;
-					}
-					if (force_bits) {
-						r_anal_hint_set_bits (r->anal, addr, force_bits);
-					}
-				}
+				handle_arm_entry (r, entry, info, va);
 			}
 		}
 	}
@@ -2943,7 +2980,7 @@ static int bin_classes(RCore *r, int mode) {
 			}
 		} else {
 			int m = 0;
-			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] (sz %"PFMT64d") class %d %s",
+			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" class %d %s",
 				c->addr, at_min, at_max, (at_max - at_min), c->index, c->name);
 			if (c->super) {
 				r_cons_printf (" super: %s\n", c->super);
@@ -3582,16 +3619,15 @@ static int bin_header(RCore *r, int mode) {
 }
 
 static int bin_hashes(RCore *r, int mode) {
-	ut64 lim = r_config_get_i (r->config, "cfg.hashlimit");
+	ut64 lim = r_config_get_i (r->config, "bin.hashlimit");
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
 		// recompute again
 		r_bin_file_hash (r->bin, lim, iod->name);
-		char *hashes = r->bin->cur->o->info->hashes;
+		char *hashes = (r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info)? r->bin->cur->o->info->hashes: NULL;
 		if (IS_MODE_JSON (mode)) {
 			PJ *pj = pj_new ();
 			if (!pj) {
-				eprintf ("bin_hashes: pj_new failed\n");
 				return false;
 			}
 			pj_o (pj);
@@ -3604,7 +3640,6 @@ static int bin_hashes(RCore *r, int mode) {
 		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -3710,9 +3745,12 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			}
 		}
 	}
+#if 0
+	// only compute when requested
 	if ((action & R_CORE_BIN_ACC_HASHES)) {
 		ret &= bin_hashes (core, mode);
 	}
+#endif
 	return ret;
 }
 

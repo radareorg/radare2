@@ -13,15 +13,8 @@ struct VarUsedType {
 };
 
 R_API RAnalOp *r_anal_op_new () {
-	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (op) {
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->val = UT64_MAX;
-		r_strbuf_init (&op->esil);
-	}
+	RAnalOp *op = R_NEW (RAnalOp);
+	r_anal_op_init (op);
 	return op;
 }
 
@@ -31,6 +24,17 @@ R_API RList *r_anal_op_list_new() {
 		list->free = &r_anal_op_free;
 	}
 	return list;
+}
+
+R_API void r_anal_op_init(RAnalOp *op) {
+	if (op) {
+		memset (op, 0, sizeof (*op));
+		op->addr = UT64_MAX;
+		op->jump = UT64_MAX;
+		op->fail = UT64_MAX;
+		op->ptr = UT64_MAX;
+		op->val = UT64_MAX;
+	}
 }
 
 R_API bool r_anal_op_fini(RAnalOp *op) {
@@ -128,9 +132,9 @@ static int defaultCycles(RAnalOp *op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
+	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	memset (op, 0, sizeof (RAnalOp));
 	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
 	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
 	if (anal->pcalign && addr % anal->pcalign) {
@@ -156,11 +160,13 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (op->nopcode < 1) {
 			op->nopcode = 1;
 		}
-		//free the previous var in op->var
-		RAnalVar *tmp = get_used_var (anal, op);
-		if (tmp) {
-			r_anal_var_free (op->var);
-			op->var = tmp;
+		if (mask & R_ANAL_OP_MASK_VAL) {
+			//free the previous var in op->var
+			RAnalVar *tmp = get_used_var (anal, op);
+			if (tmp) {
+				r_anal_var_free (op->var);
+				op->var = tmp;
+			}
 		}
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;

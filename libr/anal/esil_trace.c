@@ -12,7 +12,7 @@ static RAnalEsilCallbacks ocbs = {0};
 
 static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
-	if (*name=='0') {
+	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
 		return 0;
 	}
@@ -91,6 +91,10 @@ static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	const char *expr = r_strbuf_get (&op->esil);
+	if (R_STR_ISEMPTY (expr)) {
+		// do nothing
+		return;
+	}
 	int esil_verbose = esil->verbose;
 	if (ocbs_set) {
 		eprintf ("cannot call recursively\n");

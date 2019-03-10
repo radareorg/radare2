@@ -16,7 +16,7 @@ enum {
 };
 
 static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
-	r_config_save_num (hc, "esil.romem", "asm.trace", "dbg.trace",
+	r_config_hold_i (hc, "esil.romem", "asm.trace", "dbg.trace",
 			"esil.nonull", "dbg.follow", NULL);
 	r_config_set (core->config, "esil.romem", "true");
 	r_config_set (core->config, "asm.trace", "true");
@@ -34,7 +34,7 @@ static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 }
 
 static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
-	r_config_restore (hc);
+	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 }
 
@@ -139,7 +139,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RAnal *anal = core->anal;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL);
 	if (!op) {
 		return;
 	}
@@ -350,12 +350,12 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 			if (instr_addr < baddr) {
 				break;
 			}
-			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
 			if (!op) {
 				r_anal_op_free (op);
 				break;
 			}
-			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
 			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL
 							|| next_op->type == R_ANAL_OP_TYPE_JMP))) {
 				r_anal_op_free (op);
@@ -452,12 +452,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	Sdb *TDB = anal->sdb_types;
 	bool resolved = false;
 
-	if (!core|| !fcn) {
-		return;
-	}
-	if (!core->anal->esil) {
-		return;
-	}
+	r_return_if_fail (core && fcn && core->anal && core->anal->esil);
+
 	bool chk_constraint = r_config_get_i (core->config, "anal.types.constraint");
 	int ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
@@ -506,7 +502,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, addr, buf, bsize);
 			}
-			ret = r_anal_op (anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+			ret = r_anal_op (anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
@@ -528,7 +524,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			Sdb *trace = anal->esil->db_trace;
 			cur_idx = sdb_num_get (trace, "idx", 0);
 			RAnalVar *var = aop.var;
-			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC);
+			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
 				RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
@@ -554,7 +550,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						const char *query = sdb_fmt ("%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
-						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_BASIC);
+						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
 						if (mop && mop->var) {
 							ut32 type = mop->type & R_ANAL_OP_TYPE_MASK;
 							if (type == R_ANAL_OP_TYPE_MOV) {

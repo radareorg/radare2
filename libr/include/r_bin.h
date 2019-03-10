@@ -112,6 +112,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_TYPE_HIOS_STR "HIOS"
 #define R_BIN_TYPE_LOPROC_STR "LOPROC"
 #define R_BIN_TYPE_HIPROC_STR "HIPROC"
+#define R_BIN_TYPE_SPECIAL_SYM_STR "SPECIAL_SYM"
 #define R_BIN_TYPE_UNKNOWN_STR "UNK"
 
 enum {
@@ -779,7 +780,7 @@ extern RBinPlugin r_bin_plugin_xbe;
 extern RBinPlugin r_bin_plugin_bflt;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
-extern RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed; 
+extern RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed;
 extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;
@@ -787,6 +788,7 @@ extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_bootimg;
 extern RBinPlugin r_bin_plugin_dol;
 extern RBinPlugin r_bin_plugin_nes;
+extern RBinPlugin r_bin_plugin_qnx;
 extern RBinPlugin r_bin_plugin_mbn;
 extern RBinPlugin r_bin_plugin_smd;
 extern RBinPlugin r_bin_plugin_sms;
@@ -794,6 +796,7 @@ extern RBinPlugin r_bin_plugin_psxexe;
 extern RBinPlugin r_bin_plugin_spc700;
 extern RBinPlugin r_bin_plugin_vsf;
 extern RBinPlugin r_bin_plugin_dyldcache;
+extern RBinPlugin r_bin_plugin_xnu_kernelcache;
 extern RBinPlugin r_bin_plugin_avr;
 extern RBinPlugin r_bin_plugin_menuet;
 extern RBinPlugin r_bin_plugin_wasm;

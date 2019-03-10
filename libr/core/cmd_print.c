@@ -2424,7 +2424,7 @@ r_cons_pop();
 				ut64 ptr = r_num_math (NULL, str);
 				RFlagItem *flag = NULL;
 				if (str) {
-					flag = r_flag_get_i2 (core->flags, ptr);
+					flag = r_core_flag_get_by_spaces (core->flags, ptr);
 				}
 				if (!flag) {
 					if (string && !strncmp (string, "0x", 2)) {
@@ -4576,11 +4576,11 @@ static int cmd_print(void *data, const char *input) {
 
 						// store current configurations
 						RConfigHold *hc = r_config_hold_new (core->config);
-						r_config_save_num (hc, "asm.offset", NULL);
-						r_config_save_num (hc, "asm.comments", NULL);
-						r_config_save_num (hc, "asm.tabs", NULL);
-						r_config_save_num (hc, "asm.bytes", NULL);
-						r_config_save_num (hc, "emu.str", NULL);
+						r_config_hold_i (hc, "asm.offset", NULL);
+						r_config_hold_i (hc, "asm.comments", NULL);
+						r_config_hold_i (hc, "asm.tabs", NULL);
+						r_config_hold_i (hc, "asm.bytes", NULL);
+						r_config_hold_i (hc, "emu.str", NULL);
 
 
 						// temporarily replace configurations
@@ -4607,7 +4607,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 
 						// restore saved configuration
-						r_config_restore (hc);
+						r_config_hold_restore (hc);
 						r_config_hold_free (hc);
 					}
 					// print json object
@@ -5730,7 +5730,6 @@ static int cmd_print(void *data, const char *input) {
 					}
 					int base = core->anal->bits;
 					pj_a (pj);
-					const char *comma = "";
 					const ut8 *buf = core->block;
 					int withref = 0;
 					const int wordsize = base / 8;
@@ -5745,7 +5744,6 @@ static int cmd_print(void *data, const char *input) {
 						pj_kn (pj, "addr", addr);
 						pj_kn (pj, "value", val);
 
-						comma = ",";
 						// XXX: this only works in little endian
 						withref = 0;
 						if (core->print->hasrefs) {

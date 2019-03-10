@@ -267,6 +267,15 @@ static RList* sections(RBinFile *bf) {
 			case PT_NOTE:
 				ptr->name = strdup ("NOTE");
 				break;
+			case PT_OPENBSD_RANDOMIZE:
+				ptr->name = strdup ("OPENBSD_RANDOMIZE");
+				break;
+			case PT_OPENBSD_WXNEEDED:
+				ptr->name = strdup ("OPENBSD_WXNEEDED");
+				break;
+			case PT_OPENBSD_BOOTDATA:
+				ptr->name = strdup ("OPENBSD_BOOTDATA");
+				break;
 			default:
 				ptr->name = setphname (mach, phdr[i].p_type);
 				break;
@@ -719,7 +728,7 @@ static RList* relocs(RBinFile *bf) {
 	return ret;
 }
 
-static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 val;
 	ut64 A = rel->addend, P = rel->rva;
 	ut8 buf[8];
@@ -945,7 +954,7 @@ static RList* patch_relocs(RBin *b) {
 			}
 		}
 		// TODO relocation types B, L
-		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr ? sym_addr : vaddr, 0, n_vaddr + size);
+		_patch_reloc (bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr? sym_addr: vaddr, 0, n_vaddr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}

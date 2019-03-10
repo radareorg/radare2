@@ -17,7 +17,14 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	}
 	memcpy (ninlogohead, buf + 0xc0, 6);
 	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
-	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true: false;
+	if (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6)){
+		return true;
+	/* begin of Homebrew magic */
+	} else if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)){
+		return true;
+	} else {
+		return false;
+	}
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {

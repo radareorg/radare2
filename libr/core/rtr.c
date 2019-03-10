@@ -445,6 +445,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	}
 	if (path && atoi (path)) {
 		port = path;
+		r_config_set (core->config, "http.port", port);
 		path = NULL;
 	} else {
 		if (core->file && (!path || !*path)) {
