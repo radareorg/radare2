@@ -1055,10 +1055,10 @@ repeat:
 			RCore *core = anal->coreb.core;
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
 				ut8 v = 0;
-				v += buf[0] == 0xff;
-				v += buf[1] == 0xff;
-				v += buf[2] == 0xff;
-				v += buf[3] == 0xff;
+				int i = 0;
+				for (; i < R_MIN (4, bytes_read); i++) {
+					v += buf[i] == 0xff;
+				}
 				if (v > 1) {
 					// check if this is data, then just skip
 					eprintf ("Invalid instruction of %"PFMT64u" bytes at 0x%"PFMT64x"\n",
