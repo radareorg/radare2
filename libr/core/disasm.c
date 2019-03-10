@@ -4439,16 +4439,27 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		return;
 	}
 	RAnal *anal = ds->core->anal;
-	// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
-	RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
 	Sdb *TDB = anal->sdb_types;
 	char *name;
-	if (!fcn) {
+	char *full_name = NULL;
+	if (ds->analop.type == R_ANAL_OP_TYPE_CALL) {
+		// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
+		RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
+		if (fcn) {
+			full_name = fcn->name;
+		}
+	} else if (ds->analop.ptr != UT64_MAX) {
+		RFlagItem *flag = r_flag_get_i (ds->core->flags, ds->analop.ptr);
+		if (flag && r_str_startswith (flag->realname, "imp.")) {
+			full_name = flag->realname;
+		}
+	}
+	if (!full_name) {
 		return;
 	}
-	if (r_type_func_exist (TDB, fcn->name)) {
-		name = strdup (fcn->name);
-	} else if (!(name = r_type_func_guess (TDB, fcn->name))) {
+	if (r_type_func_exist (TDB, full_name)) {
+		name = strdup (full_name);
+	} else if (!(name = r_type_func_guess (TDB, full_name))) {
 		return;
 	}
 	ds_begin_comment (ds);
@@ -4554,7 +4565,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 	}
 	free (desc);
-	if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
+	if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
 		ds_print_calls_hints (ds);
 	}
 }
@@ -4969,7 +4980,7 @@ toro:
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 			}
-			if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
+			if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
 				ds_print_calls_hints (ds);
 			}
 			/* respect asm.describe */
