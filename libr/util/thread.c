@@ -57,6 +57,36 @@ R_API R_TH_TID r_th_self(void) {
 #endif
 }
 
+R_API bool r_th_setname(RThread *th, const char *name) {
+#if __WINDOWS__
+	if (FAILED (SetThreadDescription(th->tid, name))) {
+		eprintf ("Failed to set thread name\n");
+		return false;
+	}
+
+	return true;
+#elif __linux__
+	if (pthread_setname_np (th->tid, name) != 0) {
+		eprintf ("Failed to set thread name\n");
+		return false;
+	}	
+
+	return true;
+#elif __FreeBSD__ || __OpenBSD__ || __DragonFly__
+	pthread_set_name_np (th->tid, name);
+	return true;
+#elif __NetBSD__
+	if (pthread_setname_np (th->tid, "%s", (void *)name) != 0) {
+		eprintf ("Failed to set thread name\n");
+		return false;
+	}	
+
+	return true;
+#else
+#pragma message("warning r_th_setname not implemented")
+#endif
+}
+
 R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
 	if (th) {
