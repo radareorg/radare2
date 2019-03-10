@@ -1037,20 +1037,21 @@ repeat:
 		}
 		ut32 at_delta = addrbytes * idx;
 		ut64 at = addr + at_delta;
-		ret = read_ahead (anal, at, buf, sizeof (buf));
+		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
+		ret = read_ahead (anal, at, buf, bytes_read);
 
 		if (ret < 0) {
 			eprintf ("Failed to read\n");
 		}
-		if (isInvalidMemory (buf, sizeof (buf))) {
+		if (isInvalidMemory (buf, bytes_read)) {
 			FITFCNSZ ();
 			if (anal->verbose) {
-				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", at);
 			}
 			return R_ANAL_RET_ERROR;
 		}
 		r_anal_op_fini (&op);
-		if ((oplen = r_anal_op (anal, &op, at, buf, R_MIN (len - (addrbytes * idx), sizeof (buf)), R_ANAL_OP_MASK_ALL)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, at, buf, bytes_read, R_ANAL_OP_MASK_ALL)) < 1) {
 			RCore *core = anal->coreb.core;
 			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
 				ut8 v = 0;
@@ -1060,8 +1061,8 @@ repeat:
 				v += buf[3] == 0xff;
 				if (v > 1) {
 					// check if this is data, then just skip
-					eprintf ("Invalid instruction of %d bytes at 0x%"PFMT64x"\n",
-						(int)(anal->opt.bb_max_size - (addrbytes * idx)), addr + idx);
+					eprintf ("Invalid instruction of %"PFMT64u" bytes at 0x%"PFMT64x"\n",
+						bytes_read, at);
 				}
 			}
 			gotoBeach (R_ANAL_RET_END);
@@ -1078,13 +1079,13 @@ repeat:
 				}
 				overlapped = 1;
 				if (anal->verbose) {
-					eprintf ("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
 				}
 				// return R_ANAL_RET_END;
 			}
 		}
 		if (!overlapped) {
-			r_anal_bb_set_offset (bb, bb->ninstr++, addr + idx - bb->addr);
+			r_anal_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
 			bb->size += oplen;
 			fcn->ninstr++;
 			// FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
@@ -1098,7 +1099,7 @@ repeat:
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", addr + (addrbytes * idx) - oplen, bb->size);
+			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
 			delay.pending = 1; // we need this in case the actual idx is zero...
@@ -1111,7 +1112,7 @@ repeat:
 			// track of how many still to process.
 			delay.cnt--;
 			if (!delay.cnt) {
-				VERBOSE_DELAY eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+				VERBOSE_DELAY eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
 				delay.after = idx;
 				idx = delay.idx;
 				// At this point, we are still looking at the
@@ -1121,7 +1122,7 @@ repeat:
 				// the branch delay.
 			}
 		} else if (op.delay > 0 && delay.pending) {
-			VERBOSE_DELAY eprintf("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+			VERBOSE_DELAY eprintf("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
@@ -1129,7 +1130,7 @@ repeat:
 				bb->size -= oplen;
 				fcn->ninstr--;
 				VERBOSE_DELAY eprintf("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
-				addr + idx - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
+				at - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
 				FITFCNSZ ();
 			}
 			// Next time, we go to the opcode after the delay count
@@ -1229,7 +1230,7 @@ repeat:
 		// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
 			if (anal->opt.ijmp) {
-				if ((op.size + 4 < sizeof (buf)) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
+				if ((op.size + 4 <= bytes_read) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
 					bb->size -= oplen;
 					op.type = R_ANAL_OP_TYPE_RET;
 					gotoBeach (R_ANAL_RET_END);
@@ -1237,7 +1238,7 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_ILL:
-			if (anal->opt.nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
+			if (anal->opt.nopskip && bytes_read > 3 && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
