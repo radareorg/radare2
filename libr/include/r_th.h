@@ -18,6 +18,9 @@
 #define __GNU
 #include <semaphore.h>
 #include <pthread.h>
+#if __FreeBSD__ || __OpenBSD__ || __DragonFly__
+#include <pthread_np.h>
+#endif
 #define R_TH_TID pthread_t
 #define R_TH_LOCK_T pthread_mutex_t
 #define R_TH_COND_T pthread_cond_t
@@ -79,6 +82,7 @@ R_API bool r_th_kill(RThread *th, bool force);
 R_API bool r_th_pause(RThread *th, bool enable);
 R_API bool r_th_try_pause(RThread *th);
 R_API R_TH_TID r_th_self(void);
+R_API bool r_th_setname(RThread *th, const char *name);
 
 R_API RThreadSemaphore *r_th_sem_new(unsigned int initial);
 R_API void r_th_sem_free(RThreadSemaphore *sem);
