@@ -609,35 +609,9 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	}
 	// some names are in format module.dll_function_number, try to remove those
 	// also try module.dll_function and function_number
-	if ((first = strchr (str, '_'))) {
-		// check if the prefix is actually "dll_" otherwise don't try to
-		// interpret the name
-		const char *dll = "dll";
-		char *dll_ptr = first - strlen (dll);
-		if (dll_ptr < str || strncmp (dll_ptr, dll, strlen (dll))) {
-			goto out;
-		}
-
-		last = (char *)r_str_lchr (first, '_');
-		if (!last) {
-			goto out;
-		}
-		// middle + suffix or right half
-		if ((result = type_func_try_guess (TDB, first + 1))) {
-			goto out;
-		}
-		last[0] = 0;
-		// prefix + middle or left
-		if ((result = type_func_try_guess (TDB, str))) {
-			goto out;
-		}
-		if (last != first) {
-			// middle
-			if ((result = type_func_try_guess (TDB, first + 1))) {
-				goto out;
-			}
-		}
-		result = NULL;
+	if ((first = strstr (str, "dll_"))) {
+		result = type_func_try_guess (TDB, first + 4);
+		goto out;
 	}
 out:
 	free (str);

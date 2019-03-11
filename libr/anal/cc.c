@@ -10,7 +10,6 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, sdb_fmt ("%s", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.ret", name), 0);
 	sdb_unset (DB, sdb_fmt ("cc.%s.argn", name), 0);
-	sdb_unset (DB, sdb_fmt ("cc.%s.name", name), 0);
 	for (i = 0; i < 16; i++) {
 		sdb_unset (DB, sdb_fmt ("cc.%s.arg%d", name, i), 0);
 	}
@@ -33,7 +32,6 @@ R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
 			const char *name = r_list_get_n (retName, 1);
 			sdb_set (DB, name, "cc", 0);
 			sdb_set (DB, sdb_fmt ("cc.%s.ret"), ret, 0);
-			sdb_set (DB, sdb_fmt ("cc.%s.name"), name, 0); // XXX redundant
 			RListIter *iter;
 			const char *arg;
 			int n = 1;
@@ -138,10 +136,4 @@ R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
 	const char *query = sdb_fmt ("func.%s.cc", func_name);
 	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
 	return cc ? cc : r_anal_cc_default (anal);
-}
-
-R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention) {
-	r_return_val_if_fail (anal && convention, NULL);
-	char *query = sdb_fmt ("cc.%s.name", convention);
-	return sdb_const_get (DB, query, 0);
 }

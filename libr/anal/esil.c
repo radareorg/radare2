@@ -224,7 +224,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 }
 
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io && addr, 0);
+	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
@@ -2910,7 +2910,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 	}
 	if (esil->parse_stop) {
 		if (esil->parse_stop == 2) {
-			eprintf ("ESIL TODO: %s\n", *str + 1);
+			eprintf ("[esil at 0x%08"PFMT64x"] TODO: %s\n", esil->address, *str + 1);
 		}
 		return 1;
 	}

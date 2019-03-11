@@ -1,7 +1,6 @@
 default.cc=avr
 
 avr=cc
-cc.avr.name=avr
 cc.avr.arg1=r26
 cc.avr.arg2=r25
 cc.avr.arg3=r24

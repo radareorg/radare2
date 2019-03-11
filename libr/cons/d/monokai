@@ -4,7 +4,9 @@ ec b0xff rgb:eee
 ec other rgb:888
 ec bin rgb:FFE792
 ec btext rgb:a398e5
+ec ucall rgb:f1c40f
 ec call rgb:f1c40f
+ec ujmp rgb:A6df2E
 ec cjmp rgb:A6df2E
 ec jmp rgb:A6df2E
 ec cmp rgb:ef8d1a

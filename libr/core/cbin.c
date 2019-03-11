@@ -181,7 +181,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_cons_printf ("[");
 	}
 	if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("fs strings");
+		r_cons_println ("fs strings");
 	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_STRINGS);
@@ -565,7 +565,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *ptr = sdb_fmt ("%p", fcn->cc);
 		const char *cc = sdb_const_get (sdbs[0], ptr, 0);
 		if (cc) {
-			fcn->cc = r_anal_cc_to_constant (core->anal, (char *)cc);
+			fcn->cc = cc;
 		}
 		if (!fcn->cc) {
 			fcn->cc = r_anal_cc_default (core->anal);
@@ -1543,7 +1543,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 			free (name);
 			if (reloc->addend) {
-				if (reloc->import && reloc->addend > 0) {
+				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
 					r_cons_printf (" +");
 				}
 				if (reloc->addend < 0) {
@@ -2980,7 +2980,7 @@ static int bin_classes(RCore *r, int mode) {
 			}
 		} else {
 			int m = 0;
-			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] (sz %"PFMT64d") class %d %s",
+			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %6"PFMT64d" class %d %s",
 				c->addr, at_min, at_max, (at_max - at_min), c->index, c->name);
 			if (c->super) {
 				r_cons_printf (" super: %s\n", c->super);
@@ -3619,16 +3619,15 @@ static int bin_header(RCore *r, int mode) {
 }
 
 static int bin_hashes(RCore *r, int mode) {
-	ut64 lim = r_config_get_i (r->config, "cfg.hashlimit");
+	ut64 lim = r_config_get_i (r->config, "bin.hashlimit");
 	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
 	if (iod) {
 		// recompute again
 		r_bin_file_hash (r->bin, lim, iod->name);
-		char *hashes = r->bin->cur->o->info->hashes;
+		char *hashes = (r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info)? r->bin->cur->o->info->hashes: NULL;
 		if (IS_MODE_JSON (mode)) {
 			PJ *pj = pj_new ();
 			if (!pj) {
-				eprintf ("bin_hashes: pj_new failed\n");
 				return false;
 			}
 			pj_o (pj);
@@ -3641,7 +3640,6 @@ static int bin_hashes(RCore *r, int mode) {
 		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -3747,9 +3745,12 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			}
 		}
 	}
+#if 0
+	// only compute when requested
 	if ((action & R_CORE_BIN_ACC_HASHES)) {
 		ret &= bin_hashes (core, mode);
 	}
+#endif
 	return ret;
 }
 

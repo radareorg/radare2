@@ -25,7 +25,9 @@ ec pop rgb:da3192
 ec crypto rgb:d03080
 ec jmp rgb:5f8700
 ec cjmp rgb:5f8700
+ec ujmp rgb:5f8700
 ec call rgb:0693c9
+ec ucall rgb:0693c9
 ec nop rgb:005f87
 ec ret rgb:0693c9
 ec trap rgb:0693c9

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -1072,6 +1072,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BLR:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%s,pc,=", REG64 (0));
 		break;
+	case ARM64_INS_LDRH:
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDR:
 	case ARM64_INS_LDRSB:
@@ -1083,6 +1084,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		case ARM64_INS_LDRSB:
 		case ARM64_INS_LDRB:
 		    size = 1;
+		    break;
+		case ARM64_INS_LDRH:
+		    size = 2;
 		    break;
 		case ARM64_INS_LDRSW:
 		    size = 4;

@@ -10,7 +10,9 @@ ec cmp black
 ec nop blue
 ec jmp green
 ec cjmp green
+ec ujmp green
 ec call rgb:000 rgb:ff0
+ec ucall rgb:000 rgb:ff0
 ec input black
 ec fline green
 ec prompt black

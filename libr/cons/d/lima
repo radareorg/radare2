@@ -25,7 +25,9 @@ ec push rgb:ef0
 ec pop rgb:ef0
 ec jmp rgb:af2
 ec cjmp rgb:af2
+ec ujmp rgb:af2
 ec call rgb:af2 rgb:140
+ec ucall rgb:af2 rgb:140
 ec nop rgb:2da
 ec ret rgb:5d5
 ec trap rgb:a7a

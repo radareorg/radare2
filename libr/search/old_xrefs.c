@@ -252,6 +252,7 @@ int set_arch_settings()
 	return 0;
 }
 
+// WTF
 int main(int argc, char **argv)
 {
 	ut64 i, c, src;

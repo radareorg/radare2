@@ -5,7 +5,7 @@ version: git-{build}
 skip_tags: true
 
 # VM Template
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 # Clone depth
 clone_depth: 1
@@ -18,24 +18,18 @@ branches:
 # Environment variables
 environment:
   nodejs_version: "Stable"
+  NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
+  VSVARSALLPATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
 
   matrix:
-    # TODO Add missing build platforms
-    # MSVC CCCL 64
-    # - builder: msvc_cccl_64
-    # VS2015 64
-    - builder: vs2015_64
-      PYTHON: 'C:\\Python36-x64'
+    # VS2017 64
+    - builder: vs2017_64
+      PYTHON: 'C:\\Python37-x64'
       BUILD_DIR: build
-    # VS2015 32
-    - builder: vs2015_32
-      PYTHON: 'C:\\Python36'
+    # VS2017 64 (Dynamic linking)
+    - builder: vs2017_64_dyn
+      PYTHON: 'C:\\Python37'
       BUILD_DIR: build
-    # VS2015 64 (Dynamic linking)
-    - builder: vs2015_64_dyn
-      PYTHON: 'C:\\Python36'
-      BUILD_DIR: build
-      NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-win.zip
 
 # Init
 init:
@@ -55,13 +49,10 @@ install:
 # Build scripts
 build_script:
   - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
-  - if %builder% == msvc_cccl_64 ( sys\msvc.bat && make windist WINBITS=%builder% )
 
-  - cmd: if %builder% == vs2015_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && python sys\meson.py --backend vs2015 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2015_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86 && python sys\meson.py --backend vs2015 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
-
-  - cmd: if %builder% == vs2015_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 test_script:
   - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%;%PATH%

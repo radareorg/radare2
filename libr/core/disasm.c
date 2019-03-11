@@ -595,6 +595,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
@@ -934,6 +935,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	/* initialize */
 	core->parser->hint = ds->hint;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
 	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
