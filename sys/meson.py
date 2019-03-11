@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 BUILDDIR = 'build'
-BACKENDS = ['ninja', 'vs2015', 'vs2017']
+BACKENDS = ['ninja', 'vs2015', 'vs2017', 'vs2019']
 
 PATH_FMT = {}
 R2_PATH = {
