@@ -400,6 +400,7 @@ typedef struct r_bin_plugin_t {
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
+	bool (*check_buffer)(RBuffer *buf);
 	ut64 (*baddr)(RBinFile *arch);
 	ut64 (*boffset)(RBinFile *arch);
 	RBinAddr* (*binsym)(RBinFile *arch, int num);
