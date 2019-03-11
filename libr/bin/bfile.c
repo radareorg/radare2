@@ -314,17 +314,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 			return;
 		}
 	}
-	if (string_scan_range (list, bf, min, from, to, -1, raw) < 0) {
-		return;
-	}
-	if (bf->o) {
-		r_list_foreach (list, it, ptr) {
-			RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
-			if (s) {
-				ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
-			}
-		}
-	}
+	string_scan_range (list, bf, min, from, to, -1, raw);
 }
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
