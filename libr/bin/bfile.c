@@ -408,7 +408,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 sz = data->size;
 
 	RBinPlugin *plugin = get_plugin_with_buffer (bin, data->buf);
-	bf->buf = r_buf_new_with_bufref (data->buf);
+	bf->buf = r_buf_ref (data->buf);
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	if (!o) {
@@ -746,9 +746,9 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 	}
 #else
 	if (steal_ptr) {
-		r_buf_set_bytes_steal (bf->buf, bytes, sz);
+		bf->buf = r_buf_new_with_pointers (bytes, sz, true);
 	} else {
-		r_buf_set_bytes (bf->buf, bytes, sz);
+		bf->buf = r_buf_new_with_bytes (bytes, sz);
 	}
 #endif
 	return bf->buf != NULL;

@@ -23,7 +23,7 @@ static SBLHDR sb = {0};
 
 static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 	if (buf && bufsz >= sizeof (SBLHDR)) {
-		RBuffer *b = r_buf_new_with_pointers (buf, bufsz);
+		RBuffer *b = r_buf_new_with_pointers (buf, bufsz, false);
 		int ret = r_buf_fread_at (b, 0, (ut8*)&sb, "10i", 1);
 		r_buf_free (b);
 		if (!ret) {

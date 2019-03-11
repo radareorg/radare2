@@ -98,7 +98,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		}
 		return (mmo->fd != -1);
 	}
-	mmo->buf = r_buf_mmap (mmo->filename, mmo->perm);
+	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;

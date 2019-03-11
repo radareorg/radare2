@@ -4,12 +4,14 @@ struct buf_bytes_user {
 	const ut8 *data;
 	const ut8 *data_steal;
 	ut64 length;
+	bool steal;
 };
 
 struct buf_bytes_priv {
 	ut8 *buf;
 	ut64 length;
 	ut64 offset;
+	bool is_bufowner;
 };
 
 static inline struct buf_bytes_priv *get_priv_bytes(RBuffer *b) {
@@ -29,6 +31,7 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 	priv->length = u->length;
 	if (u->data_steal) {
 		priv->buf = (ut8 *)u->data_steal;
+		priv->is_bufowner = u->steal;
 	} else {
 		priv->buf = malloc (priv->length);
 		if (!priv->buf) {
@@ -36,6 +39,7 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 			return NULL;
 		}
 		memmove (priv->buf, u->data, priv->length);
+		priv->is_bufowner = true;
 	}
 	b->priv = priv;
 	return true;
@@ -43,7 +47,9 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 
 static bool buf_bytes_fini(RBuffer *b) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	free (priv->buf);
+	if (priv->is_bufowner) {
+		free (priv->buf);
+	}
 	R_FREE (b->priv);
 	return true;
 }

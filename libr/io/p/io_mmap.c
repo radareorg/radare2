@@ -43,7 +43,7 @@ static bool r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
 	}
-	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
+	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->flags);
 	if (mmo->buf) {
 		r_io_mmap_seek (io, mmo, cur, SEEK_SET);
 	}

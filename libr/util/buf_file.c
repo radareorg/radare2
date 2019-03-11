@@ -9,7 +9,7 @@ struct buf_file_user {
 
 struct buf_file_priv {
 	int fd;
-	ut8 tmp[sizeof (ut64) + 1];
+	ut8 *tmp;
 };
 
 static inline struct buf_file_priv *get_priv_file(RBuffer *b) {
@@ -36,6 +36,7 @@ static bool buf_file_init(RBuffer *b, const void *user) {
 
 static bool buf_file_fini(RBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file (b);
+	free (priv->tmp);
 	r_sandbox_close (priv->fd);
 	R_FREE (b->priv);
 	return true;
@@ -76,7 +77,19 @@ static bool buf_file_resize(RBuffer *b, ut64 newsize) {
 
 static ut8 *buf_file_get_at(RBuffer *b, ut64 addr, int *len) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	int r = r_buf_read_at (b, addr, priv->tmp, sizeof (priv->tmp));
+	ut64 sz = buf_file_get_size (b);
+	if (addr > sz) {
+		return NULL;
+	}
+
+	ut64 read_len = sz - addr;
+	free (priv->tmp);
+	priv->tmp = R_NEWS (ut8, read_len);
+	if (!priv->tmp) {
+		return NULL;
+	}
+
+	int r = r_buf_read_at (b, addr, priv->tmp, read_len);
 	if (r < 0) {
 		if (len) {
 			*len = 0;
