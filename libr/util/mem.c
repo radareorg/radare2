@@ -341,3 +341,18 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 #endif
 #endif
 }
+
+R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
+#if HAVE_MREMAP
+	void *res = mremap (m->buf, m->len, newsize, 0);
+	if (res == MAP_FAILED) {
+		return NULL;
+	}
+	m->len = newsize;
+	m->buf = res;
+	return m->buf;
+#else
+	R_LOG_WARN ("mem_mmap_resize not supported on this platform");
+	return NULL;
+#endif
+}

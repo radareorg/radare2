@@ -517,6 +517,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_close = r_io_fd_close;
 	bnd->fd_seek = r_io_fd_seek;
 	bnd->fd_size = r_io_fd_size;
+	bnd->fd_resize = r_io_fd_resize;
 	bnd->fd_read = r_io_fd_read;
 	bnd->fd_write = r_io_fd_write;
 	bnd->fd_read_at = r_io_fd_read_at;

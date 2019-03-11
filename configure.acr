@@ -72,6 +72,7 @@ CHKFNC c arc4random_uniform
 CHKFNC c explicit_bzero
 CHKFNC c explicit_memset
 CHKFNC c clock_nanosleep
+CHKFNC c mremap
 
 (( TODO must deprecate
 CHKLIB gmp

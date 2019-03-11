@@ -9,7 +9,7 @@ struct buf_file_user {
 
 struct buf_file_priv {
 	int fd;
-	ut8 *tmp;
+	ut8 tmp[8];
 };
 
 static inline struct buf_file_priv *get_priv_file(RBuffer *b) {
@@ -36,7 +36,6 @@ static bool buf_file_init(RBuffer *b, const void *user) {
 
 static bool buf_file_fini(RBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	free (priv->tmp);
 	r_sandbox_close (priv->fd);
 	R_FREE (b->priv);
 	return true;
@@ -75,38 +74,9 @@ static bool buf_file_resize(RBuffer *b, ut64 newsize) {
 	return r_sandbox_truncate (priv->fd, newsize) >= 0;
 }
 
-static ut8 *buf_file_get_at(RBuffer *b, ut64 addr, int *len) {
-	struct buf_file_priv *priv = get_priv_file (b);
-	ut64 sz = buf_file_get_size (b);
-	if (addr > sz) {
-		return NULL;
-	}
-
-	ut64 read_len = sz - addr;
-	free (priv->tmp);
-	priv->tmp = R_NEWS (ut8, read_len);
-	if (!priv->tmp) {
-		return NULL;
-	}
-
-	int r = r_buf_read_at (b, addr, priv->tmp, read_len);
-	if (r < 0) {
-		if (len) {
-			*len = 0;
-		}
-		return NULL;
-	}
-
-	if (len) {
-		*len = r;
-	}
-	return priv->tmp;
-}
-
 static const RBufferMethods buffer_file_methods = {
 	.init = buf_file_init,
 	.fini = buf_file_fini,
-	.get_at = buf_file_get_at,
 	.read = buf_file_read,
 	.write = buf_file_write,
 	.get_size = buf_file_get_size,

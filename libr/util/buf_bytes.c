@@ -54,6 +54,20 @@ static bool buf_bytes_fini(RBuffer *b) {
 	return true;
 }
 
+static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
+	struct buf_bytes_priv *priv = get_priv_bytes (b);
+	if (newsize > priv->length) {
+		ut8 *t = realloc (priv->buf, newsize);
+		if (!t) {
+			return false;
+		}
+		priv->buf = t;
+		memset (priv->buf + priv->length, 0, newsize - priv->length);
+	}
+	priv->length = newsize;
+	return true;
+}
+
 static int buf_bytes_read(RBuffer *b, ut8 *buf, size_t len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	ut64 real_len = priv->length < priv->offset? 0: R_MIN (priv->length - priv->offset, len);
@@ -65,13 +79,10 @@ static int buf_bytes_read(RBuffer *b, ut8 *buf, size_t len) {
 static int buf_bytes_write(RBuffer *b, const ut8 *buf, size_t len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (priv->offset > priv->length || priv->offset + len >= priv->length) {
-		ut8 *t = realloc (priv->buf, priv->offset + len);
-		if (!t) {
+		bool r = r_buf_resize (b, priv->offset + len);
+		if (!r) {
 			return -1;
 		}
-		priv->buf = t;
-		memset (priv->buf + priv->length, 0, priv->offset + len - priv->length);
-		priv->length = priv->offset + len;
 	}
 	memmove (priv->buf + priv->offset, buf, len);
 	priv->offset += len;
@@ -106,37 +117,9 @@ static int buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	return priv->offset;
 }
 
-static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
-	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	if (newsize > priv->length) {
-		ut8 *t = realloc (priv->buf, newsize);
-		if (!t) {
-			return false;
-		}
-		priv->buf = t;
-	}
-	priv->length = newsize;
-	return true;
-}
-
-static ut8 *buf_bytes_get_at(RBuffer *b, ut64 addr, int *len) {
-	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	if (addr < priv->length) {
-		if (len) {
-			*len = priv->length - addr;
-		}
-		return priv->buf + addr;
-	}
-	if (len) {
-		*len = 0;
-	}
-	return NULL;
-}
-
 static const RBufferMethods buffer_bytes_methods = {
 	.init = buf_bytes_init,
 	.fini = buf_bytes_fini,
-	.get_at = buf_bytes_get_at,
 	.read = buf_bytes_read,
 	.write = buf_bytes_write,
 	.get_size = buf_bytes_get_size,

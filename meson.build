@@ -333,10 +333,16 @@ foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>'],
     ['explicit_bzero', '#include <string.h>'],
     ['explicit_memset', '#include <string.h>'],
-    ['clock_nanosleep', '#include <time.h>']
+    ['clock_nanosleep', '#include <time.h>'],
+    ['mremap', '#include <sys/mman.h>', '-D_GNU_SOURCE']
   ]
   func = item[0]
-  ok = cc.has_function(func, prefix: item[1])
+  if item.length() > 2
+    args = item[2]
+  else
+    args = []
+  endif
+  ok = cc.has_function(func, prefix: item[1], args: args)
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
 endforeach
 

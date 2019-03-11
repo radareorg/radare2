@@ -8,12 +8,14 @@ typedef enum {
 	R_BUFFER_FILE,
 	R_BUFFER_IO,
 	R_BUFFER_BYTES,
+	R_BUFFER_MMAP,
 	R_BUFFER_SPARSE,
 } RBufferType;
 
 #include "buf_file.c"
 #include "buf_sparse.c"
 #include "buf_bytes.c"
+#include "buf_mmap.c"
 #include "buf_io.c"
 
 static bool buf_init(RBuffer *b, const void *user) {
@@ -44,10 +46,6 @@ static bool buf_resize(RBuffer *b, ut64 newsize) {
 	return b->methods->resize? b->methods->resize (b, newsize): false;
 }
 
-static ut8 *buf_get_at(RBuffer *b, ut64 addr, int *len) {
-	return b->methods->get_at? b->methods->get_at (b, addr, len): NULL;
-}
-
 static RBuffer *new_buffer(RBufferType type, const void *user) {
 	RBuffer *b = R_NEW0 (RBuffer);
 	if (!b) {
@@ -56,6 +54,9 @@ static RBuffer *new_buffer(RBufferType type, const void *user) {
 	switch (type) {
 	case R_BUFFER_BYTES:
 		b->methods = &buffer_bytes_methods;
+		break;
+	case R_BUFFER_MMAP:
+		b->methods = &buffer_mmap_methods;
 		break;
 	case R_BUFFER_SPARSE:
 		b->methods = &buffer_sparse_methods;
@@ -179,12 +180,11 @@ static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
 }
 
 R_API RBuffer *r_buf_new_with_io(void *iob, int fd) {
-	RBuffer *b = r_buf_new ();
-	if (b) {
-		b->iob = iob;
-		b->fd = fd;
-	}
-	return b;
+	r_return_val_if_fail (iob && fd >= 0, NULL);
+	struct buf_io_user u = { 0 };
+	u.iob = (RIOBind *)iob;
+	u.fd = fd;
+	return new_buffer (R_BUFFER_IO, &u);
 }
 
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal) {
@@ -266,24 +266,12 @@ R_API ut64 r_buf_size(RBuffer *b) {
 }
 
 // rename to new?
-R_API RBuffer *r_buf_new_mmap(const char *file, int perm) {
-	// TODO reimplement
-	int rw = perm & R_PERM_W? true: false;
-	RBuffer *b = r_buf_new ();
-	if (!b) {
-		return NULL;
-	}
-	b->mmap = r_file_mmap (file, rw, 0);
-	if (b->mmap) {
-		b->buf = b->mmap->buf;
-		b->length = b->mmap->len;
-		if (!b->length) {
-			b->empty = 1;
-		}
-		return b;
-	}
-	r_buf_free (b);
-	return NULL; /* we just freed b, don't return it */
+R_API RBuffer *r_buf_new_mmap(const char *filename, int perm) {
+	r_return_val_if_fail (filename, NULL);
+	struct buf_mmap_user u = { 0 };
+	u.filename = filename;
+	u.perm = perm;
+	return new_buffer (R_BUFFER_MMAP, &u);
 }
 
 R_API RBuffer *r_buf_new_file(const char *file, int perm, int mode) {
@@ -452,9 +440,14 @@ R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	return false;
 }
 
+// read a max of 8 bytes at addr, and set the read length in len
 R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len) {
 	r_return_val_if_fail (b, NULL);
-	return buf_get_at (b, addr, len);
+	int r = r_buf_read_at (b, addr, b->tmp, sizeof (b->tmp));
+	if (len) {
+		*len = R_MAX (r, 0);
+	}
+	return r >= 0? b->tmp: NULL;
 }
 
 R_API int r_buf_read(RBuffer *b, ut8 *buf, size_t len) {

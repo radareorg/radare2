@@ -85,9 +85,14 @@ if host_machine.system().startswith('freebsd')
   r_util_deps += [cc.find_library('execinfo')]
 endif
 
+r_util_cflags = library_cflags
+if cc.has_function('mremap', prefix: '#include <sys/mman.h>', args: '-D_GNU_SOURCE')
+  r_util_cflags += ['-D_GNU_SOURCE']
+endif
+
 r_util = library('r_util', r_util_sources,
   include_directories: platform_inc,
-  c_args: library_cflags,
+  c_args: r_util_cflags,
   dependencies: r_util_deps,
   install: true,
   implicit_include_directories: false,

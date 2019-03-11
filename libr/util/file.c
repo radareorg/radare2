@@ -849,7 +849,7 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 #endif
 
 // TODO: add rwx support?
-R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
+R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	RMmap *m = NULL;
 	int fd = -1;
 	if (!rw && !r_file_exists (file)) {
