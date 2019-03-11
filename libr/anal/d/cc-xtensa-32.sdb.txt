@@ -1,7 +1,6 @@
 default.cc=call0
 
 call0=cc
-cc.call0.name=call0
 cc.call0.arg1=a2
 cc.call0.arg2=a3
 cc.call0.arg3=a4

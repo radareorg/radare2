@@ -565,7 +565,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *ptr = sdb_fmt ("%p", fcn->cc);
 		const char *cc = sdb_const_get (sdbs[0], ptr, 0);
 		if (cc) {
-			fcn->cc = r_anal_cc_to_constant (core->anal, (char *)cc);
+			fcn->cc = cc;
 		}
 		if (!fcn->cc) {
 			fcn->cc = r_anal_cc_default (core->anal);
