@@ -252,6 +252,9 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 	int ret = -1;
 #if __WINDOWS__
 	mode |= O_BINARY;
+	if (!strcmp (path, "/dev/null")) {
+		path = "NUL";
+	}
 #endif
 	if (enabled) {
 		if ((mode & O_CREAT)
