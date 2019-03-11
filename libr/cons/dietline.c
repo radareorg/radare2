@@ -191,20 +191,19 @@ static ut8 *r_line_readchar_win(int *vch) { // this function handle the input in
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
-	ut8 *buf = malloc (2);
+	ut8 *buf = calloc (2, sizeof (ut8));
 	HANDLE h;
 	int i;
 	void *bed;
 
 	if (I.zerosep) {
 		*vch = 0;
-		buf[0] = 0;
 		bed = r_cons_sleep_begin ();
 		int rsz = read (0, buf, 1);
 		r_cons_sleep_end (bed);
 		if (rsz != 1)
 			return -1;
-		return buf[0];
+		return buf;
 	}
 
 	*buf = '\0';
@@ -969,6 +968,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 					clipText = GlobalLock (hClipBoard);
 					if (clipText) {
 						char *txt = r_sys_conv_utf16_to_utf8 (clipText);
+						if (!txt) {
+							R_LOG_ERROR ("Failed to allocate memory\n");
+							break;
+						}
 						I.buffer.length += strlen (txt);
 						if (I.buffer.length < R_LINE_BUFSIZE) {
 							I.buffer.index = I.buffer.length;
