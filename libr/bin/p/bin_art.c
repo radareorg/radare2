@@ -31,14 +31,16 @@ typedef struct __packed art_header_t {
 typedef struct {
 	Sdb *kv;
 	ARTHeader art;
+	RBuffer *buf;
 } ArtObj;
 
-static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
+static int art_header_load(ArtObj *ao, Sdb *db) {
 	/* TODO: handle read errors here */
-	if (r_buf_size (buf) < sizeof (ARTHeader)) {
+	if (r_buf_size (ao->buf) < sizeof (ARTHeader)) {
 		return false;
 	}
-	(void) r_buf_fread_at (buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
+	ARTHeader *art = &ao->art;
+	(void) r_buf_fread_at (ao->buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
 	sdb_set (db, "img.base", sdb_fmt ("0x%x", art->image_base), 0);
 	sdb_set (db, "img.size", sdb_fmt ("0x%x", art->image_size), 0);
 	sdb_set (db, "art.checksum", sdb_fmt ("0x%x", art->checksum), 0);
@@ -63,27 +65,27 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (!ao) {
-		return false;
+		return NULL;
 	}
 	ao->kv = sdb_new0 ();
 	if (!ao->kv) {
 		free (ao);
-		return false;
+		return NULL;
 	}
-	art_header_load (&ao->art, bf->buf, ao->kv);
+	ao->buf = r_buf_ref (buf);
+	art_header_load (ao, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
-	*bin_obj = ao;
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	return true;
+	return ao;
 }
 
 static int destroy(RBinFile *bf) {
+	ArtObj *obj = bf->o->bin_obj;
+	sdb_free (obj->kv);
+	r_buf_free (obj->buf);
+	free (obj);
 	return true;
 }
 
@@ -106,7 +108,6 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	// art_header_load (&art, bf->buf);
 	ao = bf->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
@@ -130,8 +131,17 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+static bool check_buffer(RBuffer *buf) {
+	char tmp[4];
+	int r = r_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
+	return r == 4 && !strncmp (tmp, "art\n", 4);
+}
+
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length > 3 && !strncmp ((const char *) buf, "art\n", 4));
+	RBuffer *b = r_buf_new_with_bytes (buf, length);
+	bool res = check_buffer (b);
+	r_buf_free (b);
+	return res;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -220,10 +230,10 @@ RBinPlugin r_bin_plugin_art = {
 	.desc = "Android Runtime",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,
