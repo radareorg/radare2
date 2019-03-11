@@ -1614,7 +1614,6 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name);
-R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention);
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 
 typedef struct r_anal_data_t {
