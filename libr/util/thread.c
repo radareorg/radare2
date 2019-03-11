@@ -58,14 +58,7 @@ R_API R_TH_TID r_th_self(void) {
 }
 
 R_API bool r_th_setname(RThread *th, const char *name) {
-#if __WINDOWS__
-	if (FAILED (SetThreadDescription(th->tid, name))) {
-		eprintf ("Failed to set thread name\n");
-		return false;
-	}
-
-	return true;
-#elif __linux__
+#if __linux__
 	if (pthread_setname_np (th->tid, name) != 0) {
 		eprintf ("Failed to set thread name\n");
 		return false;

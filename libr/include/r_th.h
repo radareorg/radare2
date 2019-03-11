@@ -6,7 +6,6 @@
 #define HAVE_PTHREAD 1
 
 #if __WINDOWS__
-#include <processthreadsapi.h>
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE
