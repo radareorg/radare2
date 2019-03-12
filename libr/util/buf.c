@@ -458,6 +458,12 @@ R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	return buf_write (b, buf, len);
 }
 
+R_API ut8 r_buf_read8_at (RBuffer *b, ut64 addr) {
+	ut8 res;
+	int r = r_buf_read_at (b, addr, &res, sizeof (res));
+	return r == sizeof (res) ? res : b->Oxff;
+}
+
 static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	int i, res = 0;
 	for (i = 0; i < n; ++i) {

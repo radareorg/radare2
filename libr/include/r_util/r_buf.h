@@ -105,13 +105,14 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
 R_API int r_buf_read(RBuffer *b, ut8 *buf, size_t len);
 R_API int r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
+R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr);
+R_API int r_buf_seek(RBuffer *b, st64 addr, int whence);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len);
 R_API int r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n);
 // TODO change all uses to use R_BUF_{SET,CUR,END}
-R_API int r_buf_seek(RBuffer *b, st64 addr, int whence);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
