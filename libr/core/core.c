@@ -2297,9 +2297,12 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "afcf", R_CORE_AUTOCMPLT_FCN, true);
 	/* evars */
 	r_core_autocomplete_add (core->autocomplete, "e", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "ee", R_CORE_AUTOCMPLT_EVAL, true);
 	r_core_autocomplete_add (core->autocomplete, "et", R_CORE_AUTOCMPLT_EVAL, true);
 	r_core_autocomplete_add (core->autocomplete, "e?", R_CORE_AUTOCMPLT_EVAL, true);
 	r_core_autocomplete_add (core->autocomplete, "e!", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "ev", R_CORE_AUTOCMPLT_EVAL, true);
+	r_core_autocomplete_add (core->autocomplete, "evj", R_CORE_AUTOCMPLT_EVAL, true);
 	/* cfg.editor */
 	r_core_autocomplete_add (core->autocomplete, "-", R_CORE_AUTOCMPLT_MINS, true);
 	/* breakpoints */
