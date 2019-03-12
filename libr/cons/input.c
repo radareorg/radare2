@@ -230,6 +230,19 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	return ch;
 }
 
+R_API char *r_cons_gets(int len) {
+	if (len < 0) {
+		return NULL;
+	}
+	if (len == 0) {
+		len = 1024; // default size
+	}
+	char *res = calloc (1, len);
+	if (res) {
+		r_cons_fgets (res, len, -1, NULL);
+	}
+	return res;
+}
 // XXX no control for max length here?!?!
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) { ret=x; goto beach; }
