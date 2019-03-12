@@ -80,6 +80,22 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 #endif
 }
 
+R_API bool r_th_getname(RThread *th, char *name, size_t len) {
+#if __linux__ || __NetBSD__
+	if (pthread_getname_np (th->tid, name, len) != 0) {
+		eprintf ("Failed to get thread name\n");
+		return false;
+	}
+
+	return true;
+#elif __FreeBSD__ || __DragonFly__ /* || __OpenBSD__ TODO after nxt rel. */
+	pthread_get_name_np (th->tid, name, len);
+	return true;
+#else
+#pragma message("warning r_th_getname not implemented")
+#endif
+}
+
 R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
 	if (th) {

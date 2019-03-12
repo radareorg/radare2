@@ -83,6 +83,7 @@ R_API bool r_th_pause(RThread *th, bool enable);
 R_API bool r_th_try_pause(RThread *th);
 R_API R_TH_TID r_th_self(void);
 R_API bool r_th_setname(RThread *th, const char *name);
+R_API bool r_th_getname(RThread *th, char *name, size_t len);
 
 R_API RThreadSemaphore *r_th_sem_new(unsigned int initial);
 R_API void r_th_sem_free(RThreadSemaphore *sem);
