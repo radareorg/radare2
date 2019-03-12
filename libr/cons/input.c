@@ -230,7 +230,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	return ch;
 }
 
-R_API char *r_cons_gets(int len) {
+R_API char *r_cons_gets(const char *prompt, int len) {
 	if (len < 0) {
 		return NULL;
 	}
@@ -239,7 +239,18 @@ R_API char *r_cons_gets(int len) {
 	}
 	char *res = calloc (1, len);
 	if (res) {
+		char *oprompt = NULL;
+		if (prompt) {
+			oprompt = r_line_get_prompt ();
+			if (!oprompt) {
+				return NULL;
+			}
+			r_line_set_prompt (prompt);
+		}
 		r_cons_fgets (res, len, -1, NULL);
+		if (oprompt) {
+			r_line_set_prompt (prompt);
+		}
 	}
 	return res;
 }
