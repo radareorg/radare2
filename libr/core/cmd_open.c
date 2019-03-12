@@ -799,7 +799,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				core->print->cb_printf ("%i\n", map->id);
 			}
 		} else {
-			if (input[2] == 'q') { // "omqq"
+			if (input[1] && input[2] == 'q') { // "omqq"
 				map_list (core->io, input[1], core->print, -2);
 			} else {
 				map_list (core->io, input[1], core->print, -1);
