@@ -80,7 +80,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 }
 
 static int string_scan_range(RList *list, RBinFile *bf, int min,
-			      const ut64 from, const ut64 to, int type, int raw) {
+			      const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -102,13 +102,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		free (buf);
 		return -1;
 	}
-	st64 vdelta = 0;
-	if (bf->o) {
-		RBinSection *s = r_bin_get_section_at (bf->o, from, false);
-		if (s) {
-			vdelta = s->vaddr - from;
-		}
-	}
+	st64 vdelta = 0, pdelta = 0;
+	RBinSection *s = NULL;
 	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
 	while (needle < to) {
@@ -251,8 +246,19 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				break;
 			}
+			if (!s) {
+				if (section) {
+					s = section;
+				} else if (bf->o) {
+					s = r_bin_get_section_at (bf->o, str_start, false);
+				}
+				if (s) {
+					vdelta = s->vaddr;
+					pdelta = s->paddr;
+				}
+			}
 			bs->paddr = str_start;
-			bs->vaddr = str_start + vdelta;
+			bs->vaddr = str_start - pdelta + vdelta;
 			bs->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
 				r_list_append (list, bs);
@@ -262,6 +268,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			} else {
 				print_string (bf, bs, raw);
 				r_bin_string_free (bs);
+			}
+			if (from == 0 && to == bf->size) {
+				/* force lookup section at the next one */
+				s = NULL;
 			}
 		}
 	}
@@ -277,7 +287,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 	return strstr (s->name, "_const") != NULL;
 }
 
-static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to) {
+static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to, RBinSection * section) {
 	r_return_if_fail (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -314,17 +324,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 			return;
 		}
 	}
-	if (string_scan_range (list, bf, min, from, to, -1, raw) < 0) {
-		return;
-	}
-	if (bf->o) {
-		r_list_foreach (list, it, ptr) {
-			RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
-			if (s) {
-				ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
-			}
-		}
-	}
+	string_scan_range (list, bf, min, from, to, -1, raw, section);
 }
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
@@ -780,7 +780,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				get_strings_range (a, ret, min, raw, section->paddr,
-						section->paddr + section->size);
+						section->paddr + section->size, section);
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
@@ -828,7 +828,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 			}
 		}
 	} else {
-		get_strings_range (a, ret, min, raw, 0, a->size);
+		get_strings_range (a, ret, min, raw, 0, a->size, NULL);
 	}
 	return ret;
 }
