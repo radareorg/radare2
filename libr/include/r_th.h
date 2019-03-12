@@ -18,6 +18,11 @@
 #define __GNU
 #include <semaphore.h>
 #include <pthread.h>
+#if __linux__ && __GLIBC_MINOR < 12
+#define HAVE_PTHREAD_NP 0
+#else
+#define HAVE_PTHREAD_NP 1
+#endif
 #if __FreeBSD__ || __OpenBSD__ || __DragonFly__
 #include <pthread_np.h>
 #endif
