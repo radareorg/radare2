@@ -219,8 +219,9 @@ R_API char *r_file_abspath(const char *file) {
 					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
 				} else if (!s) {
 					r_sys_perror ("r_file_abspath/GetFullPathName");
+				} else {
+					ret = r_sys_conv_utf16_to_utf8 (abspath);
 				}
-				ret = r_sys_conv_utf16_to_utf8 (abspath);
 				free (abspath);
 				free (f);
 			}
@@ -1061,6 +1062,12 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #elif __WINDOWS__
 	PTCHAR s = r_sys_conv_utf8_to_utf16 (src);
 	PTCHAR d = r_sys_conv_utf8_to_utf16 (dst);
+	if (!s || !d) {
+		R_LOG_ERROR ("r_file_copy: Failed to allocate memory\n");
+		free (s);
+		free (d);
+		return false;
+	}
 	bool ret = CopyFile (s, d, 0);
 	if (!ret) {
 		eprintf ("File not found\n");
