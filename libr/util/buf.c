@@ -743,6 +743,12 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *left) {
 	return b->buf + addr;
 }
 
+R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
+	ut8 res;
+	int r = r_buf_read_at (b, addr, &res, sizeof (res));
+	return r == sizeof (res)? res: b->Oxff;
+}
+
 //ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	RIOBind *iob = b->iob;

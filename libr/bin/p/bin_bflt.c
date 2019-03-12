@@ -7,25 +7,8 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	RBuffer *tbuf = r_buf_new ();
-	if (!tbuf) {
-		return false;
-	}
-	r_buf_set_bytes (tbuf, buf, sz);
-	struct r_bin_bflt_obj *res = r_bin_bflt_new_buf (tbuf);
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = r_buf_buffer (bf->buf);
-	ut64 sz = r_buf_size (bf->buf);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_bin_bflt_new_buf (buf);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -298,12 +281,21 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[4];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
+}
+
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	return length > 4 && !memcmp (buf, "bFLT", 4);
+	RBuffer *b = r_buf_new_with_bytes (buf, length);
+	bool res = check_buffer (b);
+	r_buf_free (b);
+	return res;
 }
 
 static int destroy(RBinFile *bf) {
-	r_bin_bflt_free ((struct r_bin_bflt_obj *) bf->o->bin_obj);
+	r_bin_bflt_free (bf->o->bin_obj);
 	return true;
 }
 
@@ -311,10 +303,10 @@ RBinPlugin r_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
 	.relocs = &relocs,
