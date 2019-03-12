@@ -56,12 +56,18 @@ typedef struct {
 typedef struct {
 	ut64 addr;
 	const char *name;
+	RAnalFunction *fcn;
 } RCoreVisualViewGraphItem;
 
-static char *print_item (void *_core, void *_item, bool selected) {
+static char *print_item(void *_core, void *_item, bool selected) {
 	RCoreVisualViewGraphItem *item = _item;
 	if (item->name && *item->name) {
-		return r_str_newf ("%c %s\n", selected?'>':' ', item->name);
+		if (false && item->fcn && item->addr > item->fcn->addr) {
+			st64 delta = item->addr - item->fcn->addr;
+			return r_str_newf ("%c %s+0x%"PFMT64x"\n", selected?'>':' ', item->name, delta);
+		} else {
+			return r_str_newf ("%c %s\n", selected?'>':' ', item->name);
+		}
 	}
 	return r_str_newf ("%c 0x%08"PFMT64x"\n", selected?'>':' ', item->addr);
 }
@@ -85,11 +91,12 @@ static RList *__xrefs(RCoreVisualViewGraph *status, ut64 addr, bool update) {
 		item->addr = ref->addr;
 		item->name = f? f->name: NULL;
 		RAnalFunction *rf = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+		item->fcn = rf;
 		if (rf) {
 			item->name = rf->name;
 		}
 		r_list_append (r, item);
-		if (update && r_list_length (r) == status->cur) {
+		if (update && r_list_length (r) < status->cur) {
 			fcn = r_anal_get_fcn_in (core->anal, item->addr, 0);
 			status->addr = item->addr;
 			status->faddr = item->addr;
@@ -117,6 +124,7 @@ static RList *__refs(RCoreVisualViewGraph *status, ut64 addr, bool update) {
 		RFlagItem *f = r_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
 		item->name = f? f->name: NULL;
+		item->fcn = fcn;
 		RAnalFunction *rf = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 		if (rf) {
 			item->name = rf->name;
@@ -145,6 +153,7 @@ static RList *__fcns(RCoreVisualViewGraph *status, ut64 addr, bool update) {
 		RCoreVisualViewGraphItem *item = R_NEW0 (RCoreVisualViewGraphItem);
 		item->addr = fcn->addr;
 		item->name = fcn->name;
+		item->fcn = fcn;
 		r_list_append (r, item);
 	}
 	return r; // core->anal->fcns;
@@ -169,9 +178,21 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 			ut64 oaddr = status->addr;
 			col1 = __xrefs (status, status->addr, true);
 			RCoreVisualViewGraphItem *item = r_list_get_n (col1, status->cur);
+			if (!item) {
+				int clen = r_list_length (col1);
+				if (clen > 0) {
+					status->cur = clen - 1;
+					item = r_list_get_n (col1, status->cur);
+				} else {
+					status->cur = 0;
+					item = NULL;
+				}
+			}
 			if (item) {
 				col0 = __xrefs (status, item->addr, false);
 				col2 = __refs (status, item->addr, false);
+			} else {
+				status->cur = 0;
 			}
 			status->addr = oaddr;
 		}
@@ -181,6 +202,16 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 			ut64 oaddr = status->addr;
 			col1 = __refs (status, status->addr, true);
 			RCoreVisualViewGraphItem *item = r_list_get_n (col1, status->cur);
+			if (!item) {
+				int clen = r_list_length (col1);
+				if (clen > 0) {
+					status->cur = clen - 1;
+					item = r_list_get_n (col1, status->cur);
+				} else {
+					status->cur = 0;
+					item = NULL;
+				}
+			}
 			if (item) {
 				col0 = __xrefs (status, item->addr, false);
 				col2 = __refs (status, item->addr, false);
@@ -195,8 +226,12 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 
 	status->canLeft = !r_list_empty (col0);
 	status->canRight = !r_list_empty (col2);
+	if (!status->canLeft && !status->canRight) {
+		status->pos = 0;
+	}
 
-	ut64 addr = status->pos ? status->faddr: status->addr;
+//	ut64 addr = (status->pos==1) ? status->faddr: status->addr;
+	ut64 addr = status->faddr;
 
 	char *title = r_str_newf ("[r2-visual-browser] 0x%08"PFMT64x" 0x%08"PFMT64x, status->addr, status->faddr);
 	if (title) {
@@ -251,7 +286,7 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			}
 			break;
 		case 'J':
-			status.cur+=10;
+			status.cur += 10;
 			break;
 		case 'K':
 			if (status.cur > 10) {
@@ -277,7 +312,27 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		case '_':
 			r_core_visual_hudstuff (core);
 			status.addr = core->offset;
+			status.faddr = core->offset;
 			status.fcn = r_anal_get_fcn_at (core->anal, status.addr, 0);
+			status.pos = 0;
+			{
+				int i;
+				RList * col1 = __fcns (&status, status.addr, true);
+				for (i = 0; ; i++) {
+					char *a = r_list_get_n (col1, i);
+					if (!a) {
+						break;
+					}
+					if (status.fcn && strstr (a, status.fcn->name)) {
+						status.cur = i;
+						break;
+					}
+				}
+				r_list_free (col1);
+			}
+			break;
+		case 'r':
+			// refresh
 			break;
 		case 'j':
 			status.cur++;
@@ -302,6 +357,23 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
+		case '/':
+			{
+				char cmd[1024];
+				r_cons_show_cursor (true);
+				r_cons_set_raw (0);
+				cmd[0]='\0';
+				r_line_set_prompt (":> ");
+				if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+					cmd[0] = '\0';
+				}
+				r_config_set (core->config, "scr.highlight", cmd);
+				//r_core_cmd_task_sync (core, cmd, 1);
+				r_cons_set_raw (1);
+				r_cons_show_cursor (false);
+				r_cons_clear ();
+			}
+			break;
 		case 'q':
 			return false;
 		case ':': // TODO: move this into a separate helper function
@@ -314,7 +386,8 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
-			r_core_cmd_task_sync (core, cmd, 1);
+			r_core_cmd0 (core, cmd);
+			//r_core_cmd_task_sync (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
