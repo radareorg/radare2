@@ -132,7 +132,6 @@ R_API bool r_core_visual_esil(RCore *core) {
 	int analopType;
 	char *word = NULL;
 	int x = 0;
-	RAnalEsil *esil;
 	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
@@ -142,7 +141,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 		return false;
 	}
 	memcpy (buf, core->block, sizeof (ut64));
-	esil = r_anal_esil_new (20, 0, addrsize);
+	RAnalEsil *esil = r_anal_esil_new (20, 0, addrsize);
 	esil->anal = core->anal;
 	r_anal_esil_set_pc (esil, core->offset);
 	for (;;) {
@@ -198,8 +197,8 @@ R_API bool r_core_visual_esil(RCore *core) {
 		showreg (esil, "$j", "jump");
 
 		r_cons_printf ("regs:\n");
-		{
-			char *r = r_core_cmd_str (core, "dr=");
+		char *r = r_core_cmd_str (core, "dr=");
+		if (r) {
 			r_cons_printf ("%s", r);
 			free (r);
 		}
@@ -249,7 +248,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 			char cmd[1024];
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0]='\0';
+			*cmd = 0;
 			r_line_set_prompt (":> ");
 			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
 				cmd[0] = '\0';
@@ -395,6 +394,11 @@ static bool edit_bits (RCore *core) {
 		switch (ch) {
 		case 'Q':
 		case 'q':
+			{
+				char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
+				r_core_cmdf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
+				free (res);
+			}
 			return false;
 		case 'H':
 			{
