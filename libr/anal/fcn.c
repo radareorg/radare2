@@ -1471,7 +1471,6 @@ repeat:
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				gotoBeach (R_ANAL_RET_END);
 			}
-			recurseAt (op.jump);
 #if CALL_IS_EOB
 			recurseAt (op.jump);
 			recurseAt (op.fail);
