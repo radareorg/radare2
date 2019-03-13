@@ -83,7 +83,6 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 
 static int destroy(RBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
-	sdb_free (obj->kv);
 	r_buf_free (obj->buf);
 	free (obj);
 	return true;
