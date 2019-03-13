@@ -1891,31 +1891,31 @@ R_API int r_str_utf8_charsize(const char *str) {
 	r_return_val_if_fail (str, 0);
 	int size = 0;
 	int length = strlen (str);
-	while (size < length) {
+	while (size < length && size < 5) {
 		size++;
 		if ((str[size] & 0xc0) != 0x80) {
 			break;
 		}
 	}
-	return size;
+	return size < 5 ? size : 0;
 }
 
 /**
- * Returns size in bytes of the previous utf8 char
+ * Returns size in bytes of the utf8 char previous to str
  * Returns 1 in case of ASCII
  * str - Pointer to leading utf8 char
- * len - Length in bytes of the buffer previous to str
+ * prev_len - Length in bytes of the buffer until str
  */
-R_API int r_str_utf8_charsize_reverse(const char *str, int len) {
+R_API int r_str_utf8_charsize_prev(const char *str, int prev_len) {
 	r_return_val_if_fail (str, 0);
 	int size = 0, pos = 0;
-	while (size < len) {
+	while (size < prev_len && size < 5) {
 		size++;
 		if ((str[--pos] & 0xc0) != 0x80) {
 			break;
 		}
 	}
-	return size;
+	return size < 5 ? size : 0;
 }
 
 /**
@@ -1923,10 +1923,10 @@ R_API int r_str_utf8_charsize_reverse(const char *str, int len) {
  * Returns 1 in case of ASCII
  * str - Pointer to buffer
  */
-R_API int r_str_utf8_lastcharsize(const char *str) {
+R_API int r_str_utf8_charsize_last(const char *str) {
 	r_return_val_if_fail (str, 0);
 	int len = strlen (str);
-	return r_str_utf8_charsize_reverse (str + len, len);
+	return r_str_utf8_charsize_prev (str + len, len);
 }
 
 R_API void r_str_filter_zeroline(char *str, int len) {

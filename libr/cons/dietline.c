@@ -225,17 +225,10 @@ do_it_again:
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
 				free (buf);
 #if UNICODE
-				buf = r_sys_conv_utf16_to_utf8 (&irInBuf.Event.KeyEvent.uChar.UnicodeChar);
+				buf = r_utf16_to_utf8_l (&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
 #else
-				buf = r_acp_to_utf8 (&irInBuf.Event.KeyEvent.uChar.AsciiChar);
+				buf = r_acp_to_utf8_l (&irInBuf.Event.KeyEvent.uChar.AsciiChar, 1);
 #endif
-				int len = strlen (buf);
-				if (len > 1) {
-					int size = r_str_utf8_charsize (buf);
-					if (size != len) {	// Somehow we read 2+ chars
-						buf[size] = 0;
-					}
-				}
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 			}
 			else {
@@ -763,6 +756,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			return NULL;
 		}
 		r_str_cpy (buf, ch);
+		free (ch);
 		if (I.echo) {
 			if (I.ansicon) {
 				printf ("\r%s", R_CONS_CLEAR_LINE);
@@ -774,7 +768,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		switch (vch) {
 		case 37:	// left arrow
 			I.buffer.index = I.buffer.index
-				? I.buffer.index - r_str_utf8_charsize_reverse (I.buffer.data + I.buffer.index, I.buffer.index)
+				? I.buffer.index - r_str_utf8_charsize_prev (I.buffer.data + I.buffer.index, I.buffer.index)
 				: 0;
 			break;
 		case 38:	// up arrow
@@ -1020,7 +1014,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 127:
 			if (I.buffer.index < I.buffer.length) {
 				if (I.buffer.index > 0) {
-					int len = r_str_utf8_charsize_reverse (I.buffer.data + I.buffer.index, I.buffer.index);
+					int len = r_str_utf8_charsize_prev (I.buffer.data + I.buffer.index, I.buffer.index);
 					// TODO: WIP
 					I.buffer.index -= len;
 					memmove (I.buffer.data + I.buffer.index,
@@ -1031,7 +1025,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				}
 			} else {
 // OK
-				I.buffer.length -= r_str_utf8_lastcharsize (I.buffer.data);
+				I.buffer.length -= r_str_utf8_charsize_last (I.buffer.data);
 				I.buffer.index = I.buffer.length;
 				if (I.buffer.length < 0) {
 					I.buffer.length = 0;
