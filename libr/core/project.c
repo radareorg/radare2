@@ -354,6 +354,13 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 	ps->rcPath = strdup (rcPath);
 	RThread *th = r_th_new (projectLoadBackground, ps, false);
 	r_th_start (th, true);
+	if (th) {
+		char thname[16] = {0};
+		size_t thlen = R_MIN (strlen(prjName), sizeof(thname) - 1);
+		strncpy (thname, thlen, prjName);
+		thname[15] = 0;
+		r_th_setname (th, thname);
+	}
 	return th;
 }
 
