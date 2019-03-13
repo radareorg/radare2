@@ -141,21 +141,12 @@ static void r_dyldcache_free(RDyldCache *cache) {
 		return;
 	}
 
-	if (cache->bins) {
-		r_list_free (cache->bins);
-		cache->bins = NULL;
-	}
-
-	if (cache->buf) {
-		r_buf_free (cache->buf);
-		cache->buf = NULL;
-	}
-
-	if (cache->rebase_info) {
-		rebase_info_free (cache->rebase_info);
-		cache->rebase_info = NULL;
-	}
-
+	r_list_free (cache->bins);
+	cache->bins = NULL;
+	r_buf_free (cache->buf);
+	cache->buf = NULL;
+	rebase_info_free (cache->rebase_info);
+	cache->rebase_info = NULL;
 	R_FREE (cache->hdr);
 	R_FREE (cache->maps);
 	R_FREE (cache->accel);
@@ -236,7 +227,7 @@ static int prot2perm(int x) {
 
 static ut32 dumb_ctzll(ut64 x) {
 	ut64 result = 0;
-	int i,j;
+	int i, j;
 	for (i = 0; i < 64; i += 8) {
 		ut8 byte = (x >> i) & 0xff;
 		if (!byte) {
@@ -565,22 +556,29 @@ beach:
 	return NULL;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	bool rc = false;
-	if (buf && length >= 32) {
-		char arch[9] = { 0 };
-		strncpy (arch, (const char *) buf + 9, R_MIN (length, sizeof (arch) - 1));
-		rc = !memcmp (buf, "dyld", 4);
-		if (rc) {
-			if (*arch) {
-				eprintf ("Arch: %s\n", arch);
-				if (!strstr (arch, "arm64")) {
-					return false;
-				}
-			}
-		}
+static bool check_buffer(RBuffer *buf) {
+	if (r_buf_size (buf) < 32) {
+		return false;
 	}
-	return rc;
+
+	ut8 hdr[4];
+	ut8 arch[9] = { 0 };
+	int rarch = r_buf_read_at (buf, 9, arch, sizeof (arch) - 1);
+	int rhdr = r_buf_read_at (buf, 0, hdr, sizeof (hdr));
+	if (rhdr != sizeof (hdr) || memcmp (hdr, "dyld", 4)) {
+		return false;
+	}
+	if (rarch > 0 && arch[0] && !strstr ((const char *)arch, "arm64")) {
+		return false;
+	}
+	return true;
+}
+
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
@@ -1099,36 +1097,28 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 }
 
 static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *fbuf = r_buf_new_with_io (&bf->rbin->iob, bf->fd);
-	ut8 bytes_to_check[32];
-	r_buf_read_at (fbuf, 0, (ut8*)bytes_to_check, 32);
-	if (!check_bytes (bytes_to_check, 32)) {
-		r_buf_free (fbuf);
-		return NULL;
-	}
-
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
-	cache->buf = fbuf;
-	cache->hdr = read_cache_header (fbuf);
+	cache->buf = r_buf_ref (buf);
+	cache->hdr = read_cache_header (cache->buf);
 	if (!cache->hdr) {
 		r_dyldcache_free (cache);
 		return NULL;
 	}
 
-	cache->maps = read_cache_maps (fbuf, cache->hdr);
+	cache->maps = read_cache_maps (cache->buf, cache->hdr);
 	if (!cache->maps) {
 		r_dyldcache_free (cache);
 		return NULL;
 	}
 
-	cache->accel = read_cache_accel (fbuf, cache->hdr, cache->maps);
+	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps);
 	if (!cache->accel) {
 		r_dyldcache_free (cache);
 		return NULL;
 	}
 
-	cache->bins = create_cache_bins (bf, fbuf, cache->hdr, cache->maps, cache->accel);
+	cache->bins = create_cache_bins (bf, cache->buf, cache->hdr, cache->maps, cache->accel);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
 		return NULL;
@@ -1144,17 +1134,6 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 		swizzle_io_read (cache, bf->rbin->iob.io);
 	}
 	return cache;
-}
-
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return check_bytes (buf, sz);
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
-	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -1590,14 +1569,13 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.name = "dyldcache",
 	.desc = "dyldcache bin plugin",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.destroy = &destroy,
 	.classes = &classes,
 	.header = &header,
