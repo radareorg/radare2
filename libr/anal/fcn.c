@@ -677,7 +677,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	/* check if jump table contains valid deltas */
 	read_ahead (anal, *jmptbl_addr, (ut8 *)&jmptbl, 64);
 	for (i = 0; i < 3; i++) {
-		dst = lea_ptr + r_read_le32 (jmptbl + i);
+		dst = lea_ptr + r_read_le32 (jmptbl);
 		if (!anal->iob.is_valid_offset (anal->iob.io, dst, 0)) {
 			return false;
 		}
