@@ -800,7 +800,6 @@ R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
 R_API void r_cons_rainbow_free(RConsContext *ctx);
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
-R_API char *r_cons_gets(const char *prompt, int len);
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API char *r_cons_hud(RList *list, const char *prompt);
 R_API char *r_cons_hud_path(const char *path, int dir);
