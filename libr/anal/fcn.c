@@ -65,10 +65,11 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 }
 
 #if READ_AHEAD
+static ut64 cache_addr = UT64_MAX;
+
 // TODO: move into io :?
 static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
 	static ut8 cache[1024];
-	static ut64 cache_addr = UT64_MAX;
 	const int cache_len = sizeof (cache);
 
 	if (len < 1) {
@@ -98,6 +99,12 @@ static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
 	return anal->iob.read_at (anal->iob.io, addr, buf, len);
 }
 #endif
+
+R_API void r_anal_fcn_invalidate_read_ahead_cache() {
+#if READ_AHEAD
+	cache_addr = UT64_MAX;
+#endif
+}
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
@@ -1707,6 +1714,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	r_list_free (refs);
 }
 
+/* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
 	int ret;
 	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
@@ -1967,6 +1975,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		if (bb) {
 			r_list_delete_data (fcn->bbs, bb);
 		}
+		r_anal_fcn_invalidate_read_ahead_cache ();
 		fcn_recurse (anal, fcn, addr, size, 1);
 		r_anal_fcn_update_tinyrange_bbs (fcn);
 		r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));

@@ -725,6 +725,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
+	r_anal_fcn_invalidate_read_ahead_cache ();
 	do {
 		RFlagItem *f;
 		int delta = r_anal_fcn_size (fcn);

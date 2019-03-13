@@ -1446,6 +1446,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn);
+R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
 
 
 /* locals */
