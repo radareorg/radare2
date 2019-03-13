@@ -132,11 +132,14 @@ static int parse(RParse *p, const char *data, char *str) {
 		w3[0]='\0';
 		w4[0]='\0';
 		ptr = strchr (buf, ' ');
-		if (!ptr)
+		if (!ptr) {
 			ptr = strchr (buf, '\t');
+		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr==' '; ptr++);
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
 			strncpy (w0, buf, WSZ - 1);
 			strncpy (w1, ptr, WSZ - 1);
 
@@ -144,14 +147,18 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr==' '; ptr++);
+				for (++ptr; *ptr == ' '; ptr++) {
+					;
+				}
 				strncpy (w1, optr, WSZ - 1);
 				strncpy (w2, ptr, WSZ - 1);
 				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr==' '; ptr++);
+					for (++ptr; *ptr == ' '; ptr++) {
+						;
+					}
 					strncpy (w2, optr, WSZ - 1);
 					strncpy (w3, ptr, WSZ - 1);
 					optr=ptr;
@@ -159,7 +166,9 @@ static int parse(RParse *p, const char *data, char *str) {
 					ptr = strchr (ptr, ',');
 					if (ptr) {
 						*ptr = '\0';
-						for (++ptr; *ptr==' '; ptr++);
+						for (++ptr; *ptr == ' '; ptr++) {
+							;
+						}
 						strncpy (w3, optr, WSZ - 1);
 						strncpy (w4, ptr, WSZ - 1);
 					}
@@ -194,7 +203,7 @@ RParsePlugin r_parse_plugin_m68k_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_m68k_pseudo,
 	.version = R2_VERSION

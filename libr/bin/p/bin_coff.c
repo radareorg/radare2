@@ -19,26 +19,8 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
-	}
-	RBuffer *tbuf = r_buf_new();
-	r_buf_set_bytes (tbuf, buf, sz);
-	void *res = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
-	r_buf_free (tbuf);
-	return res;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj ? true: false;
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_bin_coff_new_buf (buf, bf->rbin->verbose);
 }
 
 static int destroy(RBinFile *bf) {
@@ -56,7 +38,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 
 static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
-	char * coffname = NULL;
+	char *coffname = NULL;
 	struct coff_symbol *s = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
 		return false;
@@ -116,7 +98,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	char *tmp, *coffname = NULL;
+	char *tmp = NULL;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -128,7 +110,6 @@ static RList *sections(RBinFile *bf) {
 	}
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			free (coffname);
 			tmp = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
 			if (!tmp) {
 				r_list_free (ret);
@@ -136,14 +117,13 @@ static RList *sections(RBinFile *bf) {
 			}
 			//IO does not like sections with the same name append idx
 			//since it will update it
-			coffname = r_str_newf ("%s-%d", tmp, i);
-			free (tmp);
 			ptr = R_NEW0 (RBinSection);
 			if (!ptr) {
-				free (coffname);
+				free (tmp);
 				return ret;
 			}
-			strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
+			ptr->name = r_str_newf ("%s-%d", tmp, i);
+			free (tmp);
 			if (strstr (ptr->name, "data")) {
 				ptr->is_data = true;
 			}
@@ -151,20 +131,19 @@ static RList *sections(RBinFile *bf) {
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
 			ptr->add = true;
-			ptr->srwx = 0;
+			ptr->perm = 0;
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
-				ptr->srwx |= R_BIN_SCN_READABLE;
+				ptr->perm |= R_PERM_R;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
-				ptr->srwx |= R_BIN_SCN_WRITABLE;
+				ptr->perm |= R_PERM_W;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
+				ptr->perm |= R_PERM_X;
 			}
 			r_list_append (ret, ptr);
 		}
 	}
-	free (coffname);
 	return ret;
 }
 
@@ -338,7 +317,7 @@ static ut64 size(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
+static bool check_buffer(RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
 
@@ -350,10 +329,17 @@ ut32 NUMOFSYMS
 ut16 OPTHDRSIZE
 ut16 CHARACTERISTICS
 #endif
-	if (buf && length >= 20) {
-		return r_coff_supported_arch (buf);
-	}
-	return false;
+
+	ut8 tmp[20];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r >= 20 && r_coff_supported_arch (tmp);
+}
+
+static bool check_bytes(const ut8 *bytes, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 RBinPlugin r_bin_plugin_coff = {
@@ -361,10 +347,10 @@ RBinPlugin r_bin_plugin_coff = {
 	.desc = "COFF format r_bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
@@ -379,7 +365,7 @@ RBinPlugin r_bin_plugin_coff = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_coff,
 	.version = R2_VERSION

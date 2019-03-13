@@ -5,13 +5,13 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl izZXnrhv
+.Op Fl izZXnrhqv
 .Op Fl b Ar size
 .Op Fl f Ar from
 .Op Fl t Ar to
 .Op Fl [m|s|e] Ar str
 .Op Fl x Ar hex
-.Ar file
+.Ar file|dir
 .Sh DESCRIPTION
 rafind2 is a program to find byte patterns into files
 .Pp
@@ -49,6 +49,8 @@ Do not stop the search when a read error occurs
 Show output in radare commands
 .It Fl b Ar size
 Define block size
+.It Fl q
+Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
 .It Fl h
 Show help message
 .It Fl v

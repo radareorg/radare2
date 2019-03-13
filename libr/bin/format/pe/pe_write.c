@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 pancake, nibble */
+/* radare - LGPL - Copyright 2010-2018 pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -20,27 +20,26 @@ bool PE_(r_bin_pe_section_perms)(struct PE_(r_bin_pe_obj_t) *bin, const char *na
 			ut32 newperms_le;
 
 			/* Apply permission flags */
-			if (perms & R_BIN_SCN_EXECUTABLE) {
+			if (perms & R_PERM_X) {
 				newperms |=  PE_IMAGE_SCN_MEM_EXECUTE;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_EXECUTE;
 			}
-			if (perms & R_BIN_SCN_WRITABLE) {
+			if (perms & R_PERM_W) {
 				newperms |=  PE_IMAGE_SCN_MEM_WRITE;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_WRITE;
 			}
-			if (perms & R_BIN_SCN_READABLE) {
+			if (perms & R_PERM_R) {
 				newperms |=  PE_IMAGE_SCN_MEM_READ;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_READ;
 			}
-			if (perms & R_BIN_SCN_SHAREABLE) {
+			if (perms & R_PERM_SHAR) {
 				newperms |=  PE_IMAGE_SCN_MEM_SHARED;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_SHARED;
 			}
-
 
 			patchoff = bin->section_header_offset;
 			patchoff += i * sizeof (PE_(image_section_header));

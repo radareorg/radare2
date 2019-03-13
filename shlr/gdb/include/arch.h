@@ -23,6 +23,7 @@ extern gdb_reg_t gdb_regs_aarch64[];
 extern gdb_reg_t gdb_regs_lm32[];
 extern gdb_reg_t gdb_regs_mips[];
 extern gdb_reg_t gdb_regs_avr[];
+extern gdb_reg_t gdb_regs_v850[];
 
 
 #endif

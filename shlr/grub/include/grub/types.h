@@ -124,7 +124,7 @@ typedef grub_uint64_t	grub_disk_addr_t;
 __inline grub_uint16_t grub_swap_bytes16 (grub_uint16_t x)
 {
 	grub_uint16_t _x = (x);
-	(grub_uint16_t)((_x << 8) | (_x >> 8));
+	_x = (grub_uint16_t)((_x << 8) | (_x >> 8));
 	return _x;
 };
 #else
@@ -149,7 +149,7 @@ static inline grub_uint64_t grub_swap_bytes64(grub_uint64_t x)
 __inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
 {
    grub_uint32_t _x = (x); 
-   (grub_uint32_t) ((_x << 24) 
+   _x = (grub_uint32_t) ((_x << 24) 
                     | ((_x & (grub_uint32_t) 0xFF00UL) << 8) 
                     | ((_x & (grub_uint32_t) 0xFF0000UL) >> 8) 
                     | (_x >> 24)); 
@@ -159,7 +159,7 @@ __inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
 __inline grub_uint64_t  grub_swap_bytes64(grub_uint64_t x)	
 { 
    grub_uint64_t _x = (x); 
-   (grub_uint64_t) ((_x << 56) 
+   _x = (grub_uint64_t) ((_x << 56) 
                     | ((_x & (grub_uint64_t) 0xFF00ULL) << 40) 
                     | ((_x & (grub_uint64_t) 0xFF0000ULL) << 24) 
                     | ((_x & (grub_uint64_t) 0xFF000000ULL) << 8) 

@@ -27,10 +27,10 @@ static RList *backtrace_x86_32(RDebug *dbg, ut64 at) {
 		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
 
 		// TODO: arch_is_call() here and this fun will be portable
-		if (buf[(ebp2-5)%4]==0xe8) {
+		if (buf[(ebp2-5)%4] == 0xe8) {
 			RDebugFrame *frame = R_NEW0 (RDebugFrame);
 			frame->addr = ebp2;
-			frame->size = esp-_esp;
+			frame->size = esp - _esp;
 			r_list_append (list, frame);
 		}
 		esp += 4;

@@ -7,7 +7,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "../arch/arm/gnu/opcode-arm.h"
 
 #if 0
@@ -67,7 +67,7 @@ static const struct arm_arch_option_table arm_archs[] = {
 
 static int arm_mode = 0;
 static unsigned long Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
 static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,
@@ -91,38 +91,13 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	// --
 }
 
-static void print_address(bfd_vma address, struct disassemble_info *info) {
-	char tmp[32];
-	if (!buf_global) {
-		return;
-	}
-	sprintf (tmp, "0x%08"PFMT64x "", (ut64) address);
-	strcat (buf_global, tmp);
-}
-
-static int buf_fprintf(void *stream, const char *format, ...) {
-	va_list ap;
-	char *tmp;
-	if (!buf_global || !format) {
-		return false;
-	}
-	va_start (ap, format);
-	tmp = malloc (strlen (format) + strlen (buf_global) + 2);
-	if (!tmp) {
-		va_end (ap);
-		return false;
-	}
-	sprintf (tmp, "%s%s", buf_global, format);
-	vsprintf (buf_global, tmp, ap);
-	va_end (ap);
-	free (tmp);
-	return true;
-}
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static char *oldcpu = NULL;
-	// static int oldcpucode = 0;
-	int opsize, cpucode = 0;
+	static int oldcpucode = 0;
+	int opsize;
 	struct disassemble_info obj;
 	char *options = (a->bits == 16)? "force-thumb": "no-force-thumb";
 
@@ -134,7 +109,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->bits < 64 && len < (a->bits / 8)) {
 		return -1;
 	}
-	buf_global = op->buf_asm;
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 
 	/* prepare disassembler */
@@ -155,32 +130,60 @@ cpucode = 66471;
 #endif
 // printf ("fpu- = 0x%x\n", FPU_ARCH_VFP_V4D16);
 
-	//cpucode = oldcpucode;
+	struct {
+		const char name[32];
+		int cpucode;
+	} arm_cpucodes[] = {
+		{ "v2", bfd_mach_arm_2 },
+		{ "v2a", bfd_mach_arm_2a },
+		{ "v3M", bfd_mach_arm_3M },
+		{ "v4", bfd_mach_arm_4 },
+		{ "v4t", bfd_mach_arm_4T },
+		{ "v5", bfd_mach_arm_5 },
+		{ "v5t", bfd_mach_arm_5T },
+		{ "v5te", bfd_mach_arm_5TE },
+		{ "v5j", bfd_mach_arm_5TE },
+		{ "XScale", bfd_mach_arm_XScale },
+		{ "ep9312", bfd_mach_arm_ep9312 },
+		{ "iWMMXt", bfd_mach_arm_iWMMXt },
+		{ "iWMMXt2", bfd_mach_arm_iWMMXt2 },
+	};
+
 	/* select cpu */
-	if (a->cpu) {
-		if (oldcpu != a->cpu) {
+	if (oldcpu != a->cpu) {
+		int cpucode = 0;
+		if (a->cpu) {
+ 			int i;
 			cpucode = atoi (a->cpu);
-			if (!strcmp ("v5j", a->cpu)) {
-				cpucode = 9;
+			for (i = 0; i < (sizeof(arm_cpucodes) / sizeof(arm_cpucodes[0])); i++) {
+				if (!strcmp (arm_cpucodes[i].name, a->cpu)) {
+					cpucode = arm_cpucodes[i].cpucode;
+					break;
+				}
 			}
 		}
+		oldcpu = a->cpu;
+		oldcpucode = cpucode;
 	}
+
 	obj.arch = 0;
-	obj.mach = cpucode;
-	// oldcpucode = cpucode;
+	obj.mach = oldcpucode;
+
+	if (obj.mach)
+		obj.flags |= USER_SPECIFIED_MACHINE_TYPE;
 
 	obj.buffer = bytes;
 	obj.read_memory_func = &arm_buffer_read_memory;
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
-	obj.print_address_func = &print_address;
+	obj.print_address_func = &generic_print_address_func;
 	obj.endian = !a->big_endian;
-	obj.fprintf_func = &buf_fprintf;
+	obj.fprintf_func = &generic_fprintf_func;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
 		obj.bytes_per_line = (a->bits / 8);
 
-	op->buf_asm[0] = '\0';
+	r_strbuf_set (&op->buf_asm, "");
 	if (a->bits == 64) {
 		obj.disassembler_options = NULL;
 		memcpy (bytes, buf, 4);
@@ -193,11 +196,10 @@ cpucode = 66471;
 	}
 	opsize = op->size;
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		r_strbuf_set (&op->buf_asm, "(data)");
 		op->size = 4;
-	}
-	if (strstr (op->buf_asm, "UNDEF")) {
-		strcpy (op->buf_asm, "undefined");
+	} else if (strstr (r_strbuf_get (buf_global), "UNDEF")) {
+		r_strbuf_set (&op->buf_asm, "undefined");
 		op->size = 2;
 		opsize = 2;
 	}
@@ -207,6 +209,7 @@ cpucode = 66471;
 RAsmPlugin r_asm_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
+	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "Acorn RISC Machine CPU",
@@ -215,7 +218,7 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_gnu,
 	.version = R2_VERSION

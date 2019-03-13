@@ -147,6 +147,9 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		// Re-read the whole filename
 		b->cur -= dif;
 		r = ar_read (b, buffer, AR_FILENAME_LEN);
+		if (r != AR_FILENAME_LEN) {
+			goto fail;
+		}
 	}
 	free (curfile);
 	curfile = strdup (buffer);
@@ -195,7 +198,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 			return b->length;
 		}
 	}
-	r = ar_read (b, buffer, 1);
+	(void)ar_read (b, buffer, 1);
 
 	b->cur += filesize - 1;
 	free (curfile);
@@ -219,6 +222,9 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 	/* Read table size */
 	b->cur += 32;
 	r = ar_read (b, buffer, 10);
+	if (r != 10) {
+		return 0;
+	}
 	ut64 tablesize = strtoull (buffer, NULL, 10);
 
 	/* Header end */

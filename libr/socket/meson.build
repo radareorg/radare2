@@ -1,4 +1,4 @@
-files = [
+r_socket_sources = [
   'http.c',
   'http_server.c',
   'proc.c',
@@ -9,18 +9,25 @@ files = [
   'serial.c',
 ]
 
-r_socket = library('r_socket', files,
+dependencies = [utl, r_util_dep, platform_deps]
+
+if use_sys_openssl
+  dependencies += [sys_openssl]
+endif
+
+r_socket = library('r_socket', r_socket_sources,
   include_directories: [platform_inc],
-  dependencies: [utl, platform_deps],
-  link_with: [r_util],
-  c_args: ['-DCORELIB=1'],
+  dependencies: dependencies,
+  c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(
-  libraries: [r_socket],
+r_socket_dep = declare_dependency(link_with: r_socket,
+                                  include_directories: [platform_inc])
+
+pkgconfig_mod.generate(r_socket,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_socket',

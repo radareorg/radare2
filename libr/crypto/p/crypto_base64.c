@@ -28,11 +28,11 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		}
 		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
 	} else if (cry->dir == 1) {
-		olen = (len / 4) * 3;
+		olen = 4 + ((len / 4) * 3);
 		if (len > 0) {
 			olen -= (buf[len-1] == '=') ? ((buf[len-2] == '=') ? 2 : 1) : 0;
 		}
-		obuf = malloc (olen + 1);
+		obuf = malloc (olen + 4);
 		if (!obuf) {
 			return false;
 		}
@@ -59,7 +59,7 @@ RCryptoPlugin r_crypto_plugin_base64 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_base64,
 	.version = R2_VERSION

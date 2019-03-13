@@ -159,6 +159,10 @@ static RList * oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 	// XXX - how do we validate a valid nlib?
 	nlib = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
+	if (!res) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < nlib; i++) {
 		data = oneshot (bin, buf, size, i);
@@ -182,7 +186,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_dyldcache,
 	.version = R2_VERSION

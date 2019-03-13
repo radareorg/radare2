@@ -185,7 +185,7 @@ R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		return;
 	}
 	RBNode *t = NULL, *g = NULL, *p = NULL, *q = *root;
-	int d, dep = 0;
+	int d = 0, dep = 0;
 	bool done = false;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 	for (;;) {

@@ -30,13 +30,11 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 /* undo seekz */
 
 R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
-	RIOUndos *undo;
-	RIOSection *sec;
-
 	if (!io->undo.s_enable || !io->undo.undos) {
 		return NULL;
 	}
 
+	RIOUndos *undo;
 	/* No redos yet, store the current seek so we can redo to it. */
 	if (!io->undo.redos) {
 		undo = &io->undo.seek[io->undo.idx];
@@ -49,18 +47,18 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.redos++;
 
 	undo = &io->undo.seek[io->undo.idx];
-	sec = r_io_section_vget (io, undo->off);
-	if (!sec || (sec->paddr == sec->vaddr)) {
+	RIOMap *map = r_io_map_get (io, undo->off);
+	if (!map || (map->delta == map->itv.addr)) {
 		io->off = undo->off;
 	} else {
-		io->off = undo->off - sec->vaddr + sec->paddr;
+		io->off = undo->off - (map->itv.addr + map->delta);
 	}
 	return undo;
 }
 
 R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	RIOUndos *undo;
-	RIOSection *sec;
+	RIOMap *map;
 
 	if (!io->undo.s_enable || !io->undo.redos) {
 		return NULL;
@@ -71,11 +69,11 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	io->undo.redos--;
 
 	undo = &io->undo.seek[io->undo.idx];
-	sec = r_io_section_vget (io, undo->off);
-	if (!sec || (sec->paddr == sec->vaddr)) {
+	map = r_io_map_get (io, undo->off);
+	if (!map || (map->delta == map->itv.addr)) {
 		io->off = undo->off;
 	} else {
-		io->off = undo->off - sec->vaddr + sec->paddr;
+		io->off = undo->off - map->itv.addr + map->delta;
 	}
 	return undo;
 }
@@ -194,8 +192,9 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 	RIOUndoWrite *uw;
-	if (!io->undo.w_enable)
+	if (!io->undo.w_enable) {
 		return;
+	}
 	/* undo write changes */
 	uw = R_NEW0 (RIOUndoWrite);
 	if (!uw) {
@@ -237,17 +236,26 @@ R_API void r_io_wundo_list(RIO *io) {
 	RIOUndoWrite *u;
 	int i = 0, j, len;
 
-	if (io->undo.w_init)
-	r_list_foreach (io->undo.w_list, iter, u) {
-		io->cb_printf ("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
-		len = (u->len>BW)?BW:u->len;
-		for (j=0;j<len;j++) io->cb_printf ("%02x ", u->o[j]);
-		if (len == BW) io->cb_printf (".. ");
-		io->cb_printf ("=> ");
-		for (j=0;j<len;j++) io->cb_printf ("%02x ", u->n[j]);
-		if (len == BW) io->cb_printf (".. ");
-		io->cb_printf ("\n");
-		i++;
+	if (io->undo.w_init) {
+		r_list_foreach (io->undo.w_list, iter, u) {
+			io->cb_printf ("%02d %c %d %08" PFMT64x ": ", i, u->set ? '+' : '-', u->len, u->off);
+			len = (u->len > BW) ? BW : u->len;
+			for (j = 0; j < len; j++) {
+				io->cb_printf ("%02x ", u->o[j]);
+			}
+			if (len == BW) {
+				io->cb_printf (".. ");
+			}
+			io->cb_printf ("=> ");
+			for (j = 0; j < len; j++) {
+				io->cb_printf ("%02x ", u->n[j]);
+			}
+			if (len == BW) {
+				io->cb_printf (".. ");
+			}
+			io->cb_printf ("\n");
+			i++;
+		}
 	}
 }
 

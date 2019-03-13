@@ -4,8 +4,8 @@
   "description": "Express-based webserver for radare2",
   "author": "pancake <pancake@nopcode.org>",
   "dependencies": {
-    "express": "4.*",
+    "express": "*",
     "r2pipe": "*"
- },
- "license": "MIT"
+  },
+  "license": "MIT"
 }

@@ -10,7 +10,9 @@ ec cmp black
 ec nop blue
 ec jmp green
 ec cjmp green
+ec ujmp green
 ec call rgb:000 rgb:ff0
+ec ucall rgb:000 rgb:ff0
 ec input black
 ec fline green
 ec prompt black
@@ -42,3 +44,13 @@ ec graph.false red
 ec graph.trufae blue
 ec graph.current rgb:0ff
 ec graph.traced red
+
+ec func_var magenta
+ec func_var_type blue
+ec func_var_addr magenta
+
+ec ai.read magenta
+ec ai.write magenta
+ec ai.exec blue
+ec ai.seq black
+ec ai.ascii black

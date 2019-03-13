@@ -15,7 +15,7 @@ R_LIB_VERSION_HEADER (r_lib);
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
 
-#define R_LIB_ENV "LIBR_PLUGINS"
+#define R_LIB_ENV "R2_LIBR_PLUGINS"
 
 /* XXX : This must depend on HOST_OS */
 #if __WINDOWS__

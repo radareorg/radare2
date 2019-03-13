@@ -1,5 +1,9 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
+#if __linux__
+#include <time.h>
+#endif
+
 #include <r_userconf.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +15,7 @@
 #endif
 #if defined(__FreeBSD__)
 # include <sys/param.h>
+# include <sys/sysctl.h>
 # if __FreeBSD_version >= 1000000 
 #  define FREEBSD_WITH_BACKTRACE
 # endif
@@ -23,7 +28,7 @@
 static char** env = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-  defined(FREEBSD_WITH_BACKTRACE)
+  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__
 # include <execinfo.h>
 #endif
 #if __APPLE__
@@ -102,6 +107,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"i8080", R_SYS_ARCH_I8080},
     {"rar", R_SYS_ARCH_RAR},
     {"lm32", R_SYS_ARCH_LM32},
+    {"v850", R_SYS_ARCH_V850},
     {NULL, 0}
 };
 
@@ -137,10 +143,15 @@ R_API int r_sys_truncate(const char *file, int sz) {
 		return false;
 	}
 #ifdef _MSC_VER
-	_chsize (fd, sz);
+	int r = _chsize (fd, sz);
 #else
-	ftruncate (fd, sz);
+	int r = ftruncate (fd, sz);
 #endif
+	if (r != 0) {
+		eprintf ("Could not resize '%s' file\n", file);
+		close (fd);
+		return false;
+	}
 	close (fd);
 	return true;
 #else
@@ -154,10 +165,9 @@ R_API int r_sys_truncate(const char *file, int sz) {
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	HANDLE fh;
 	WIN32_FIND_DATAW entry;
 	char *cfname;
-	fh = r_sandbox_opendir (path, &entry);
+	HANDLE fh = r_sandbox_opendir (path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
@@ -207,7 +217,8 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 #endif
 
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
-  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE)
+  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
+  __DragonFly__
 #define HAVE_BACKTRACE 1
 #endif
 
@@ -244,7 +255,12 @@ R_API void r_sys_backtrace(void) {
 }
 
 R_API int r_sys_sleep(int secs) {
-#if __UNIX__
+#if HAS_CLOCK_NANOSLEEP
+	struct timespec rqtp;
+	rqtp.tv_sec = secs;
+	rqtp.tv_nsec = 0;
+	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
+#elif __UNIX__
 	return sleep (secs);
 #else
 	Sleep (secs * 1000); // W32
@@ -253,8 +269,12 @@ R_API int r_sys_sleep(int secs) {
 }
 
 R_API int r_sys_usleep(int usecs) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
-	// unix api uses microseconds
+#if HAS_CLOCK_NANOSLEEP
+	struct timespec rqtp;
+	rqtp.tv_sec = usecs / 1000000;
+	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
+	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
+#elif __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	return usleep (usecs);
 #else
 	// w32 api uses milliseconds
@@ -365,22 +385,17 @@ R_API int r_sys_crash_handler(const char *cmd) {
 	sigact.sa_handler = signal_handler;
 	sigemptyset (&sigact.sa_mask);
 	sigact.sa_flags = 0;
-	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
-
+	sigaddset (&sigact.sa_mask, SIGINT);
 	sigaddset (&sigact.sa_mask, SIGSEGV);
-	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
-
 	sigaddset (&sigact.sa_mask, SIGBUS);
-	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
-
 	sigaddset (&sigact.sa_mask, SIGQUIT);
-	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
-
 	sigaddset (&sigact.sa_mask, SIGHUP);
-	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
 
-	sigaddset (&sigact.sa_mask, SIGKILL);
-	sigaction (SIGKILL, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
 	return true;
 #else
 	return false;
@@ -390,7 +405,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
 	DWORD dwRet;
-	LPTSTR envbuf = NULL, key_ = NULL;
+	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
 	char *val = NULL;
 
 	if (!key) {
@@ -407,10 +422,11 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	} else if (TMP_BUFSIZE < dwRet) {
-		envbuf = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
-		if (!envbuf) {
+		tmp_ptr = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
+		if (!tmp_ptr) {
 			goto err_r_sys_get_env;
 		}
+		envbuf = tmp_ptr;
 		dwRet = GetEnvironmentVariable (key_, envbuf, dwRet);
 		if (!dwRet) {
 			goto err_r_sys_get_env;
@@ -441,6 +457,37 @@ R_API char *r_sys_getdir(void) {
 
 R_API int r_sys_chdir(const char *s) {
 	return r_sandbox_chdir (s)==0;
+}
+
+R_API bool r_sys_aslr(int val) {
+	bool ret = true;
+#if __linux__
+	const char *rva = "/proc/sys/kernel/randomize_va_space";
+	char buf[3] = {0};
+	snprintf(buf, sizeof (buf), "%d\n", val != 0 ? 2 : 0);
+	int fd = r_sandbox_open (rva, O_WRONLY, 0644);
+	if (fd != -1) {
+		if (r_sandbox_write (fd, (ut8 *)buf, sizeof (buf)) != sizeof (buf)) {
+			eprintf ("Failed to set RVA\n");
+			ret = false;
+		}
+		close (fd);
+	}
+#elif __FreeBSD__ && __FreeBSD_version >= 1300000
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("kern.elf32.aslr.enable", &val, &vlen, NULL, 0) == -1) {
+		eprintf ("Failed to set RVA 32 bits\n");
+		return false;
+	}
+
+#if __LP64__
+	if (sysctlbyname ("kern.elf64.aslr.enable", &val, &vlen, NULL, 0) == -1) {
+		eprintf ("Failed to set RVA 64 bits\n");
+		ret = false;
+	}
+#endif
+#endif
+	return ret;
 }
 
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
@@ -596,17 +643,15 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #elif __WINDOWS__
 // TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	char *result = r_sys_cmd_str_w32 (cmd);
+	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, sterr);
 	if (len) {
 		*len = 0;
+		if (output && result) {
+			*len = strlen (*output);
+		}
 	}
-	if (output) {
-		*output = result;
-	}
-	if (result) {
-		return true;
-	}
-	return false;
+
+	return result;
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
@@ -680,10 +725,11 @@ R_API int r_sys_cmd(const char *str) {
 }
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
-	char *output;
+	char *output = NULL;
 	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
 		return output;
 	}
+	free (output);
 	return NULL;
 }
 
@@ -961,17 +1007,23 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 #else
 	int ret;
-	char buf[128], pathbuf[1024];
 #if __FreeBSD__
-	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+	char pathbuf[PATH_MAX];
+	size_t pathbufl = sizeof (pathbuf);
+	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
+	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	if (ret != 0) {
+		return NULL;
+	}
 #else
+	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-#endif
 	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
 	if (ret < 1) {
 		return NULL;
 	}
 	pathbuf[ret] = 0;
+#endif
 	return strdup (pathbuf);
 #endif
 }
@@ -1018,6 +1070,7 @@ R_API int r_sys_getpid() {
 
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
+	r_return_val_if_fail (txt, false);
 	const char *says[] = {
 		"say", "termux-tts-speak", NULL
 	};
@@ -1034,14 +1087,13 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-static char prefix[128] = {0};
-
 R_API const char *r_sys_prefix(const char *pfx) {
+	static char prefix[1024] = {0};
 	if (!*prefix) {
 		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
 	}
 	if (pfx) {
-		if (strlen (pfx) >= sizeof (prefix) -1) {
+		if (strlen (pfx) >= sizeof (prefix) - 1) {
 			return NULL;
 		}
 		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);

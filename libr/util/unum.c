@@ -4,12 +4,14 @@
 #include <stdlib.h>
 #endif
 
+#include <math.h>  /* for ceill */
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
-void r_srand (int seed) {
+//  TODO: rename to r_num_srand()
+static void r_srand (int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -18,7 +20,7 @@ void r_srand (int seed) {
 #endif
 }
 
-int r_rand (int mod) {
+static int r_rand (int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	return (int)arc4random_uniform (mod);
 #else
@@ -30,11 +32,11 @@ R_API void r_num_irand() {
 	r_srand (r_sys_now ());
 }
 
-static int rand_initialized = 0;
 R_API int r_num_rand(int max) {
+	static bool rand_initialized = false;
 	if (!rand_initialized) {
 		r_num_irand ();
-		rand_initialized = 1;
+		rand_initialized = true;
 	}
 	if (!max) {
 		max = 1;
@@ -51,7 +53,7 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
 }
 
 R_API void r_num_minmax_swap_i(int *a, int *b) {
-	if (*a>*b) {
+	if (*a > *b) {
 		ut64 tmp = *a;
 		*a = *b;
 		*b = tmp;
@@ -74,32 +76,46 @@ R_API void r_num_free(RNum *num) {
 	R_FREE (num);
 }
 
-#define KB (1024)
-#define MB (1024*KB)
-#define GB (1024*MB)
-#define TB (1024*GB)
+#define KB (1ULL << 10)
+#define MB (1ULL << 20)
+#define GB (1ULL << 30)
+#define TB (1ULL << 40)
+#define PB (1ULL << 50)
+#define EB (1ULL << 60)
 
-R_API char *r_num_units(char *buf, ut64 num) {
+/**
+ * Convert size in bytes to human-readable string
+ *
+ * Result is stored in buf (buf should be at least 8 bytes in size).
+ * If buf is NULL, memory for the new string is obtained with malloc(3),
+ * and can be freed with free(3).
+ *
+ * On success, returns a pointer to buf. It returns NULL if
+ * insufficient memory was available.
+ */
+R_API char *r_num_units(char *buf, size_t len, ut64 num) {
+	long double fnum;
 	char unit;
-	int tnum;
-	double fnum = num;
+	const char *fmt_str;
 	if (!buf) {
-		buf = malloc (32);
+		buf = malloc (len + 1);
 		if (!buf) {
 			return NULL;
 		}
 	}
-	//if (num>=TB) { unit = 'T'; fnum = num/TB; } else
-	if (num>=GB) { unit = 'G'; fnum = fnum/GB; } else
-	if (num>=MB) { unit = 'M'; fnum = fnum/MB; } else
-	if (num>=KB) { unit = 'K'; fnum = fnum/KB; } else
-		{ unit = 0; fnum = (double)num; }
-	tnum = (int)((double)(fnum - (int)fnum)*10);
-	if (tnum) {
-		snprintf (buf, 31, "%.1f%c", fnum, unit);
-	} else {
-		snprintf (buf, 31, "%.0f%c", fnum, unit);
+	fnum = num;
+	if (num >= EB) { unit = 'E'; fnum /= EB; } else
+	if (num >= PB) { unit = 'P'; fnum /= PB; } else
+	if (num >= TB) { unit = 'T'; fnum /= TB; } else
+	if (num >= GB) { unit = 'G'; fnum /= GB; } else
+	if (num >= MB) { unit = 'M'; fnum /= MB; } else
+	if (num >= KB) { unit = 'K'; fnum /= KB; } else {
+		unit = '\0';
 	}
+	fmt_str = (ceill (fnum) == fnum)
+		? "%.0" LDBLFMT "%c"
+		: "%.1" LDBLFMT "%c";
+	snprintf (buf, len, fmt_str, fnum, unit);
 	return buf;
 }
 
@@ -146,6 +162,17 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (!*str) {
 		return 0;
 	}
+	if (!strncmp (str, "1u", 2)) { // '1' is captured by op :(
+		if (num && num->value == UT64_MAX) {
+			num->value = 0;
+		}
+		switch (atoi (str + 2)) {
+		case 64: return (ut64)UT64_MAX;
+		case 32: return (ut64)UT32_MAX;
+		case 16: return (ut64)UT16_MAX;
+		case 8: return (ut64)UT8_MAX;
+		}
+	}
 	/* resolve string with an external callback */
 	if (num && num->callback) {
 		ok = 0;
@@ -190,10 +217,10 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		ret = str[1] & 0xff;
 	// ugly as hell
 	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
-        	ret = r_num_tailff (num, str + 5);
+		ret = r_num_tailff (num, str + 6);
 	// ugly as hell
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
-        	ret = r_num_tailff (num, str + 5);
+		ret = r_num_tailff (num, str + 5);
 	} else if (str[0] == '0' && str[1] == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
@@ -369,13 +396,15 @@ R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	}
 	return r_num_op (op, ret, r_num_get (num, p));
 }
-#endif
+#endif /* !R_NUM_USE_CALC */
 
 R_API ut64 r_num_math(RNum *num, const char *str) {
 #if R_NUM_USE_CALC
 	ut64 ret;
 	const char *err = NULL;
-	if (!str) return 0LL;
+	if (!str || !*str) {
+		return 0LL;
+	}
 	//if (!str || !*str) return 0LL;
 	if (num) {
 		num->dbz = 0;
@@ -383,8 +412,6 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	ret = r_num_calc (num, str, &err);
 	if (err) {
 		eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
-	} else if (num) {
-		num->value = ret;
 	}
 	if (num) {
 		num->value = ret;
@@ -458,11 +485,17 @@ R_API double r_num_get_float(RNum *num, const char *str) {
 R_API int r_num_to_bits (char *out, ut64 num) {
 	int size = 64, i;
 
-	if (num>>32) size = 64;
-	else if (num&0xff000000) size = 32;
-	else if (num&0xff0000) size = 24;
-	else if (num&0xff00) size = 16;
-	else if (num&0xff) size = 8;
+	if (num >> 32) {
+		size = 64;
+	} else if (num & 0xff000000) {
+		size = 32;
+	} else if (num & 0xff0000) {
+		size = 24;
+	} else if (num & 0xff00) {
+		size = 16;
+	} else if (num & 0xff) {
+		size = 8;
+	}
 	if (out) {
 		int pos = 0;
 		int realsize = 0;
@@ -477,10 +510,10 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 				realsize = size-i;
 			}
 		}
-		if (realsize==0)
-		out[realsize++] = '0';
+		if (realsize == 0) {
+			out[realsize++] = '0';
+		}
 		out[realsize] = '\0'; //Maybe not nesesary?
-
 	}
 	return size;
 }
@@ -504,7 +537,9 @@ R_API int r_num_to_trits (char *out, ut64 num) {
 }
 
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
-	if (sectorsize<1) sectorsize = 512;
+	if (sectorsize < 1) {
+		sectorsize = 512;
+	}
 	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
 }
 
@@ -515,17 +550,23 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 	p = s;
 	do {
 		t = strchr (p, ',');
-		if (t) *t = 0;
+		if (t) {
+			*t = 0;
+		}
 		lgt = strchr (p, '<');
 		if (lgt) {
 			*lgt = 0;
 			a = r_num_math (num, p);
 			if (lgt[1]=='=') {
 				b = r_num_math (num, lgt+2);
-				if (a>b) goto fail;
+				if (a > b) {
+					goto fail;
+				}
 			} else {
 				b = r_num_math (num, lgt+1);
-				if (a>=b) goto fail;
+				if (a >= b) {
+					goto fail;
+				}
 			}
 		} else {
 			lgt = strchr (p, '>');
@@ -534,10 +575,14 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 				a = r_num_math (num, p);
 				if (lgt[1]=='=') {
 					b = r_num_math (num, lgt+2);
-					if (a<b) goto fail;
+					if (a < b) {
+						goto fail;
+					}
 				} else {
 					b = r_num_math (num, lgt+1);
-					if (a<=b) goto fail;
+					if (a <= b) {
+						goto fail;
+					}
 				}
 			} else {
 				lgt = strchr (p, '=');
@@ -547,14 +592,20 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 						r_str_replace_char (p, '!', ' ');
 						r_str_replace_char (p, '=', '-');
 						n = r_num_math (num, p);
-						if (!n) goto fail;
+						if (!n) {
+							goto fail;
+						}
 					}
 				}
 				lgt = strstr (p, "==");
-				if (lgt) *lgt = ' ';
+				if (lgt) {
+					*lgt = ' ';
+				}
 				r_str_replace_char (p, '=', '-');
 				n = r_num_math (num, p);
-				if (n) goto fail;
+				if (n) {
+					goto fail;
+				}
 			}
 		}
 		p = t+1;
@@ -608,8 +659,9 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 		} else if (!printable_only && (off = escape_char (str + stri, ch)) != 0) {
 			stri += off;
 		} else {
-			if (ch)
+			if (ch) {
 				return NULL;
+			}
 		}
 		ret |= (num & 0xff);
 		num >>= 8;
@@ -632,12 +684,32 @@ R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
 	return value;
 }
 
-static bool isHexDigit (const char _ch) {
-	const char ch = tolower (_ch);
-	if (IS_DIGIT (ch)) {
-		return true;
+static inline int get_nth_nibble (ut64 n, int i) {
+	int sz = (sizeof (n) << 1) - 1;
+	int s = (sz - i) * 4;
+	return (n >> s) & 0xf;
+}
+
+R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off) {
+	int i;
+	bool ready = false;
+	ut64 res = 0;
+	for (i = 0; i < 16; i++) {
+		ut64 o = get_nth_nibble (off, i);
+		if (!ready) {
+			bool iseq = get_nth_nibble (addr, i) == o;
+			if (i == 0 && !iseq) {
+				return UT64_MAX;
+			}
+			if (iseq) {
+				continue;
+			}
+		}
+		ready = true;
+		ut8 pos = (15 - i) * 4;
+		res |= (o << pos);
 	}
-	return (ch >= 'a' && ch <= 'f');
+	return res;
 }
 
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
@@ -654,10 +726,11 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p + 2, hex);
-		if (isHexDigit (hex[0])) {
+		if (isxdigit ((ut8)hex[0])) {
 			n = r_num_math (num, p);
 		} else {
 			eprintf ("Invalid argument\n");
+			free (p);
 			return addr;
 		}
 		free (p);
@@ -667,31 +740,29 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 }
 
 static ut64 r_num_tailff(RNum *num, const char *hex) {
-        ut64 mask = 0LL;
-        ut64 n = 0;
-        char *p;
-        int i;
+	ut64 n = 0;
+	char *p;
+	int i;
 
-        while (*hex && (*hex == ' ' || *hex=='.')) {
-                hex++;
-        }
-        i = strlen (hex) * 4;
-        p = malloc (strlen (hex) + 10);
-        if (p) {
-                strcpy (p, "0x");
-                strcpy (p + 2, hex);
-                if (isHexDigit (hex[0])) {
-                        n = r_num_math (num, p);
-                } else {
-                        eprintf ("Invalid argument\n");
+	while (*hex && (*hex == ' ' || *hex=='.')) {
+		hex++;
+	}
+	i = strlen (hex) * 4;
+	p = malloc (strlen (hex) + 10);
+	if (p) {
+		strcpy (p, "0x");
+		strcpy (p + 2, hex);
+		if (isxdigit ((ut8)hex[0])) {
+			n = r_num_get (num, p);
+		} else {
+			eprintf ("Invalid argument\n");
 			free (p);
-                        return UT64_MAX;
-                }
-                free (p);
-        }
-        mask = UT64_MAX << i;
+			return UT64_MAX;
+		}
+		free (p);
+	}
 	ut64 left = ((UT64_MAX >>i) << i);
-        return left | n;
+	return left | n;
 }
 
 R_API int r_num_between(RNum *num, const char *input_value) {
@@ -700,6 +771,11 @@ R_API int r_num_between(RNum *num, const char *input_value) {
 	char * const str = strdup (input_value);
 	RList *nums = r_num_str_split_list (str);
 	int len = r_list_length (nums);
+	if (len < 3) {
+		free (str);
+		r_list_free (nums);
+		return -1;
+	}
 	if (len > 3) {
 		len = 3;
 	}
@@ -771,10 +847,19 @@ R_API int r_num_str_split(char *str) {
 
 R_API RList *r_num_str_split_list(char *str) {
 	int i, count = r_num_str_split (str);
-	RList *list = r_list_newf (free);
+	RList *list = r_list_new ();
 	for (i = 0; i < count; i++) {
 		r_list_append (list, str);
 		str += strlen (str) + 1;
 	}
 	return list;
+}
+
+R_API void *r_num_dup(ut64 n) {
+	ut64 *hn = malloc (sizeof (ut64));
+	if (!hn) {
+		return NULL;
+	}
+	*hn = n;
+	return (void*)hn;
 }

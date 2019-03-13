@@ -46,7 +46,7 @@ int gdbr_check_vcont(libgdbr_t *g);
  * remote target's interpreter.
  * \returns 0 on success and -1 on failure
  */
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char *, ...));
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf);
 
 /*!
  * \brief attaches to a process
@@ -99,11 +99,16 @@ int test_command(libgdbr_t *g, const char *command);
  * \param conditions TODO: examine how this condition string should look like
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions);
-int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions);
-int gdbr_remove_bp(libgdbr_t *g, ut64 address);
-int gdbr_remove_hwbp(libgdbr_t *g, ut64 address);
-
+int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hww(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hwr(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hwa(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hww(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hwr(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp);
 /*!
  * File read from remote target (only one file open at a time for now)
  */

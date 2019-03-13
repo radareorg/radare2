@@ -39,6 +39,7 @@ static int lang_zig_file(RLang *lang, const char *file) {
 	if (r_sandbox_system (cmd, 1) != 0) {
 		free (name);
 		free (cmd);
+		free (cc);
 		return false;
 	}
 	free (cmd);

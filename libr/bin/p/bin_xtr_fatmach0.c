@@ -13,12 +13,12 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 static int free_xtr (void *xtr_obj) ;
 
-static bool checkHeader(const ut8 *h, int sz) {
+static bool checkHeader(const ut8 *h, ut64 sz) {
 	ut8 buf[4];
 	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		// XXX assuming BE
-		int off = r_read_at_be32 (h, 4 * sizeof (int));
-		if (off > 0 && off < sz) {
+		ut64 off = (ut64)r_read_at_be32 (h, 4 * sizeof (ut32));
+		if (off > 0 && off + 4 < sz) {
 			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
@@ -63,6 +63,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 	meta->libname = NULL;
+	meta->xtr_type = "fat";
 }
 
 static RBinXtrData * extract(RBin* bin, int idx) {
@@ -105,9 +106,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 	int narch;
 	struct MACH0_(mach_header) *hdr;
 
-	if (!bin || !bin->cur) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
@@ -152,8 +151,9 @@ static RList * extractall(RBin *bin) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	if (!res) {
-		return NULL;	
-	}	
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
 		data = extract (bin, i);
@@ -173,6 +173,10 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
+	if (!res) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
 		data = oneshot (bin, buf, size, i);
@@ -198,7 +202,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_fatmach0,
 	.version = R2_VERSION

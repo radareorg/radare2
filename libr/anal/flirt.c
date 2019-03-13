@@ -528,7 +528,7 @@ static void print_node(const RAnal *anal, const RFlirtNode *node, int indent) {
 	}
 }
 
-static int module_match_buffer(const RAnal *anal, const RFlirtModule *module,
+static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
                                ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
 	* Return false otherwise.
@@ -629,7 +629,7 @@ static int node_pattern_match(const RFlirtNode *node, ut8 *b, int buf_size) {
 	return true;
 }
 
-static int node_match_buffer(const RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, ut32 buf_size, ut32 buf_idx) {
+static int node_match_buffer(RAnal *anal, const RFlirtNode *node, ut8 *b, ut64 address, ut32 buf_size, ut32 buf_idx) {
 	RListIter *node_child_it, *module_it;
 	RFlirtNode *child;
 	RFlirtModule *module;
@@ -653,7 +653,7 @@ static int node_match_buffer(const RAnal *anal, const RFlirtNode *node, ut8 *b, 
 	return false;
 }
 
-static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) {
+static int node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	/* Tries to find matching functions between the signature infos in root_node
 	* and the analyzed functions in anal
 	* Returns false on error. */
@@ -794,7 +794,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 				goto err_exit;
 			}
 		}
-		if ((int) ref_function_name_length < 0) {
+		if ((int) ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
 			goto err_exit;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
@@ -1376,7 +1376,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 			goto exit;
 		}
 
-		free (buf); buf = NULL;
+		R_FREE (buf);
 		buf = decompressed_buf;
 		size = decompressed_size;
 	}
@@ -1457,7 +1457,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 	}
 }
 
-R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file) {
+R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
 	/*parses a flirt signature file and scan the currently opened file against it.*/
 	RBuffer *flirt_buf;
 	RFlirtNode *node;
@@ -1471,12 +1471,12 @@ R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			eprintf ("Error while scanning the file\n");
+			eprintf ("Error while scanning the file %s\n", flirt_file);
 		}
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		eprintf ("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
 		return;
 	}
 }

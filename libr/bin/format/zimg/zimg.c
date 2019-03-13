@@ -16,6 +16,9 @@ struct r_bin_zimg_obj_t* r_bin_zimg_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 
+	if (r_buf_size (bin->b) < sizeof (struct zimg_header_t)) {
+		goto fail;
+	}
 	bin->header = (*(struct zimg_header_t*)bin->b->buf);
 
 	return bin;

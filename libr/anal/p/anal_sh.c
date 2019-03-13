@@ -37,7 +37,7 @@
 #define IS_RTE(x)	x == 0x002b
 
 #define IS_STCSR1(x)	(((x) & 0xF0CF) == 0x0002)	//mask stc Rn,{SR,gbr,VBR,SSR}
-#define IS_BSRF(x)	(x & 0xf0ff) == 0x0003
+#define IS_BSRF(x)	((x) & 0xf0ff) == 0x0003
 #define IS_BRAF(x)	(((x) & 0xf0ff) == 0x0023)
 #define IS_MOVB_REG_TO_R0REL(x)	(((x) & 0xF00F) == 0x0004)
 #define IS_MOVW_REG_TO_R0REL(x)	(((x) & 0xF00F) == 0x0005)
@@ -173,8 +173,8 @@
 #define GET_BTF_OFFSET(x)	((x) & 0x00ff)
 
 /* Compute reg nr for BRAF,BSR,BSRF,JMP,JSR */
-#define GET_TARGET_REG(x)	((x >> 8) & 0x0f)
-#define GET_SOURCE_REG(x)	((x >> 4) & 0x0f)
+#define GET_TARGET_REG(x)	(((x) >> 8) & 0x0f)
+#define GET_SOURCE_REG(x)	(((x) >> 4) & 0x0f)
 
 /* index of PC reg in regs[] array*/
 #define PC_IDX 16
@@ -523,7 +523,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		op->src[1] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,==,sr,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&,r%d,r%d,^,!,|,sr,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPGE (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -877,7 +877,7 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", GET_SOURCE_REG (code), (code & 0xF) * 2);
 	} else if (IS_CMPIMM (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r0,==,sr,|=", code & 0xFF);
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r0,==,$z,sr,|=", code & 0xFF);
 	} else if (IS_MOVB_R0_REGDISP (code)) {
 		/* 10000000mmmmi4*1 mov.b R0,@(<disp>,<REG_M>)*/
 		op->type = R_ANAL_OP_TYPE_STORE;
@@ -986,7 +986,7 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[1]", code & 0xFF);
-	} else if (IS_MOVW_R0_GBRREF (code)) {	
+	} else if (IS_MOVW_R0_GBRREF (code)) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[2]", (code & 0xFF) * 2);
@@ -998,7 +998,7 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", (code & 0xFF));
-	} else if (IS_MOVW_GBRREF_R0 (code)) {	
+	} else if (IS_MOVW_GBRREF_R0 (code)) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", (code & 0xFF)*2);
@@ -1133,7 +1133,7 @@ RAnalPlugin r_anal_plugin_sh = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_sh,
 	.version = R2_VERSION

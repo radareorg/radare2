@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 2.7.0-git
+VERSION 3.4.0-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -25,11 +25,14 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT HAVE_FORK fork disable fork ;
+ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
-PKGCFG CAPSTONE_CFLAGS CAPSTONE_LDFLAGS capstone
+IF WITH_CAPSTONE {
+	PKGCFG CAPSTONE_CFLAGS CAPSTONE_LDFLAGS capstone
+}
 IFAND WITH_CAPSTONE HAVE_PKGCFG_CAPSTONE {
 	USE_CAPSTONE = 1 ;
 }{
@@ -52,11 +55,23 @@ IFAND HAVE_LIB_Z USE_ZIP {
 	LIBZIP = '' ; (( static linking to shlr/zip ))
 }
 
+CHKLIB xxhash
+ARG_WITH USE_XXHASH sysxxhash force to use system's xxhash ;
+IFAND HAVE_LIB_XXHASH USE_XXHASH {
+	USE_LIB_XXHASH = 1 ;
+	LIBXXHASH = -lxxhash ;
+}{
+	USE_LIB_XXHASH = 0 ;
+	LIBXXHASH = '' ;
+}
+
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 
 CHKDECL sys/personality.h ADDR_NO_RANDOMIZE
 CHKFNC c arc4random_uniform
 CHKFNC c explicit_bzero
+CHKFNC c explicit_memset
+CHKFNC c clock_nanosleep
 
 (( TODO must deprecate
 CHKLIB gmp
@@ -86,6 +101,22 @@ IFNULL SSL_LDFLAGS {
 	}
 }
 
+CHKVER libuv 1.0.0
+IF HAVE_LIBUV_VERSION_1_0_0 {
+	PKGCFG LIBUV_CFLAGS LIBUV_LDFLAGS libuv
+	IFNOTNULL LIBUV_LDFLAGS {
+		HAVE_LIBUV = 1 ;
+	}{
+		HAVE_LIBUV = 0 ;
+	}
+	ARG_WITHOUT WANT_LIBUV libuv disable libuv dependency ;
+	IFNOT WANT_LIBUV {
+		HAVE_LIBUV = 0 ;
+	}
+}{
+	HAVE_LIBUV = 0 ;
+}
+
 ARG_WITH USE_RPATH rpath use rpath to build ;
 
 (( rules for the compiler ))
@@ -100,6 +131,9 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS mingw32_nt ; {
 		USEROSTYPE = mingw32 ;
+	}{
+	IFEQ HOST_OS wsl ; {
+		USEROSTYPE =  wsl ;
 	}{
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
@@ -127,7 +161,7 @@ IFEQ USEROSTYPE auto ; {
 	}{
 	IFEQ HOST_OS darwin ; {
 		USEROSTYPE = darwin ;
-	} } } } } } } } } }
+	} } } } } } } } } } }
 }
 
 (( this hack is required for openbsd ports ))
@@ -138,9 +172,47 @@ IFEQ LIBVERSION xxx ; {
 	LIBVERSION = $VERSION ;
 }
 
-REPORT PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK
-	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM
-	HAVE_EXPLICIT_BZERO USEROSTYPE LIBVERSION BUILD HOST TARGET ;
+IFEQ USEROSTYPE gnulinux ; {
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 1 ;
+}{
+IFEQ USEROSTYPE wsl ; {
+	BUILD = ${SPLIT_CPU}-unknown-linux-gnu ;
+	HOST = $BUILD ;
+	TARGET = $HOST ;
+	USEROSTYPE = gnulinux ;
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
+IFEQ USEROSTYPE android ; {
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 1 ;
+}{
+IFEQ USEROSTYPE mingw32 ; {
+	HAVE_PTRACE = 0 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
+IFEQ USEROSTYPE solaris ; {
+	HAVE_PTRACE = 0 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
+	HAVE_PTRACE = 1 ;
+	USE_PTRACE_WRAP = 0 ;
+} } } } }
+
+IFNOT DEBUGGER {
+	HAVE_PTRACE = 0 ;
+}
+
+IFEQ WANT_PTRACE_WRAP 0 ; {
+	USE_PTRACE_WRAP = 0 ;
+}
+
+ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;
+
+REPORT R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK
+	VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM
+	HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET USEROSTYPE LIBVERSION BUILD HOST TARGET ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk

@@ -33,7 +33,6 @@ typedef struct r_buf_cache_t {
         ut64 to;
         int size;
         ut8 *data;
-        ut8 *odata;
         int written;
 } RBufferSparse;
 
@@ -44,6 +43,7 @@ R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_string (const char *msg);
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
+R_API RBuffer *r_buf_new_with_bufref(RBuffer *b);
 R_API RBuffer *r_buf_new_file(const char *file, bool newFile);
 R_API RBuffer *r_buf_new_slurp(const char *file);
 R_API RBuffer *r_buf_new_empty (ut64 len);
@@ -69,11 +69,13 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
 #define r_buf_read(a,b,c) r_buf_read_at(a,R_BUF_CUR,b,c)
 #define r_buf_write(a,b,c) r_buf_write_at(a,R_BUF_CUR,b,c)
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
+R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr);
 R_API int r_buf_seek(RBuffer *b, st64 addr, int whence);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API void r_buf_free(RBuffer *b);
+R_API bool r_buf_fini(RBuffer *b);
 R_API char *r_buf_free_to_string(RBuffer *b);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
 R_API ut64 r_buf_size(RBuffer *b);

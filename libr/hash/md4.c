@@ -22,6 +22,8 @@
 
 #include <r_hash.h>
 
+#if WITH_GPL
+
 static inline ut32 F(ut32 X, ut32 Y, ut32 Z) {
 	return (X & Y) | ((~X) & Z);
 }
@@ -138,7 +140,7 @@ static void copy4(ut8 *out, ut32 x) {
 	out[3] = (x >> 24) & 0xFF;
 }
 
-static void mdfour(ut8 *out, const ut8 *in, int n) {
+void MD4(const ut8 *in, int n, ut8 *out) {
 	ut8 buf[128];
 	ut32 M[16];
 	ut32 b = n * 8;
@@ -186,10 +188,8 @@ static void mdfour(ut8 *out, const ut8 *in, int n) {
 	A = B = C = D = 0;
 }
 
-R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
-	if (len >= 0) {
-		mdfour (ctx->digest, input, len);
-		return ctx->digest;
-	}
-	return NULL;
+#else
+void MD4(const ut8 *in, int n, ut8 *out) {
+	eprintf ("md4: only available on GPL builds.\n");
 }
+#endif

@@ -62,8 +62,9 @@ RRangeItem *r_range_item_get(RRange *rgs, ut64 addr) {
 	RRangeItem *r;
 	RListIter *iter;
 	r_list_foreach (rgs->ranges, iter, r) {
-		if (addr >= r->fr && addr < r->to)
+		if (addr >= r->fr && addr < r->to) {
 			return r;
+		}
 	}
 	return NULL;
 }
@@ -295,7 +296,6 @@ R_API void r_range_percent(RRange *rgs) {
 		} else {
 			step = dif / w;
 		}
-		seek = 0;
 	} else {
 		step = fr = to = 0;
 	}

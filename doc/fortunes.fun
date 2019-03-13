@@ -7,7 +7,7 @@ I'm in your source securing your bits.
 radare2 contributes to the One Byte Per Child foundation.
 3nl4r9e y0\/r r4d4r3
 I did it for the pwnz.
-If you send the program you are debugging to 15 friends before 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
+If you send the program you are debugging to 15 friends in 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
 To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
 Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
 radare2 is for lulzhats
@@ -15,12 +15,12 @@ Microloft Visual Radare.NET 2008. Now OOXML Powered!
 A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
 radare2 is like windows 7 but even better.
 We are surrounded by the enemy. - Excellent, we can attack in any direction!
-radare2 build farm beats the facebook one.
+radare2-built farm beats the facebook one.
 Thank you for using radare2. Have a nice night!
 Your r2 was built 20h ago. TOO OLD!
-Use radare2! lemons included!
+Use radare2! Lemons included!
 rax2 -s 20e296b20ae296b220e296b20a
-Connection lost with the license server, your r2 session will terminate soon.
+Connection lost with the license server, your r2 session will terminate in 30 minutes.
 This is amazing ...
 I love gradients.
 Wait a moment ...
@@ -31,9 +31,9 @@ Default scripting languages are NodeJS and Python.
 Press any key to continue ...
 Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
 radare2 for FideOS, now with extra potato
-Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 numbers of your private bitcoin key.
+Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 characters of your private bitcoin key.
 This computer has gone to sleep.
-Did you ever ordered a pizza using radare2?
+Have you ever ordered a pizza using radare2?
 I thought we were friends. :_
 Welcome back, lazy human!
 Yo dawg!
@@ -64,21 +64,21 @@ In soviet Afghanistan, you debug radare2!
 Wow, my cat knows radare2 hotkeys better than me!
 Documentation is for weak people.
 PEBCAK ERROR: Documentation not found.
-License server overloaded (ETOOMANYCASH)
+License server overloaded (ETOOMUCHCASH)
 Error: cannot yank negative sleep
 If you're not satisfied by our product, we'll be happy to refund you.
 Already up-to-date.
 How about a nice game of chess?
 THE ONLY WINNING MOVE IS NOT TO PLAY.
 SHALL WE PLAY A GAME?
-Sudo make me a pancake.
+sudo make me a pancake
 I nodejs so hard my exams. What a nodejs!
 Now featuring NoSQL!
 One does not simply write documentation.
 We are bleeding edge here. Can't you feel the razors?
 There's a branch for that.
 Everything up-to-date.
-Sharing your latest session in Facebook ...
+Sharing your latest session to Facebook ...
 This should be documented, since it's not that obvious.
 It's working! Look at the door!
 This is an unacceptable milion year dungeon.
@@ -119,7 +119,7 @@ bash: r3: command not found
 R2 loves everyone, even Java coders, but less than others
 It's not a bug, it's a work in progress
 Stop swearing!
-I didn't said that it was working, I said that it's implemented
+I didn't say that it was working, I said that it's implemented
 Wrong argument
 Remember that word: C H A I R
 what happens in #radare, stays in #radare
@@ -202,7 +202,7 @@ Quantum dissasemble: it's there as long as you don't observe it
 Ceci n'est pas une r2pipe
 Buy a mac
 (gdb) ^D
-((fn [f s n] (cat [(f f s n) "dare2"])) (fn [f s n] (pr s) (if (> n 0) (f f (cat [s "ra"]) (dec n)) s)) "" Infty)
+((fn [f s n] (str (f f s n) "dare2")) (fn [f s n] (pr s) (if (> n 0) (f f (str s "ra") (dec n)) s)) "" (/ 1.0 0))
 There's no way you could crash radare2. No. Way.
 When in doubt, try 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; pd;'
 .-. .- -.. .- .-. . ..---
@@ -242,3 +242,34 @@ Noot noot
 This is an unregistered copy.
 10 reasons you want to bt on all threads - you will be shocked by number 3!
 Place a cat on your keyboard while running r2, you'll not believe what will happen next
+This binary may contain traces of human
+Help subcommand will be eventually removed.
+Carpe noctum.
+Your mouse has moved. Radare2 NT must be restarted for the change to take effect. Reboot now? [ OK ]
+There is only one binary, and we are all just reversing pieces of it.
+Radare2 is like violence. If it doesn't solve your problem, you aren't using enough.
+Order pizza for $12.48? [Y/n]
+r2OS r2pad 0.1 SMP GENERIC r2_64 GNU/r2OS
+AHHHHH!!!! ASSEMBLY CODE!!!!!! HOLD ME I'M SCARED!!!!!!!!!!
+In radare we trust
+We don't make mistakes... just happy little segfaults.
+r2 is for the people
+Use headphones for best experience.
+Starting bitcoin miner in background...
+Downloading and verifying the blockchain...
+The anti-virus database has been updated.
+The motion picture contained in this videodisc is protected under the copyright laws.
+This software is sold for home use only and all other rights are expressly reversed by the copyleft owner.
+Any commercial use or duplication of this copylefted material without prior licensing is forbidden.
+Violators will be prosecuted.
+This shell has been seized by the Internet's Police.
+OpenBSD might pledge r2 but r2 unveils OpenBSD.
+Error: There's a missing space before the opening parenthesis '('
+WARNING: r_list_length: assertion 'list' failed (line 55)
+This accessory is not supported by this version of radare2.
+When can we have an official anime mascot for radare2?
+Iaito became Cutter the same way Iai-giri became Cut.
+Sorry, radare2 has experienced an internal error.
+Segmentation fault (core dumped)
+Use rabin2 to discover the real TRUTH
+==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -38,18 +38,23 @@ typedef struct {
 	// 0x100 -- start of data section
 }) DolHeader;
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 6) {
-		return false;
-	}
-	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[6];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	bool has_dol_extension = false;
-	DolHeader *dol;
-	char *lowername, *ext;
-	if (!bf || sz < sizeof (DolHeader)) {
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
+}
+
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	DolHeader *dol = NULL;
+	char *lowername = NULL, *ext;
+	if (r_buf_size (buf) < sizeof (DolHeader)) {
 		return NULL;
 	}
 	dol = R_NEW0 (DolHeader);
@@ -58,36 +63,22 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	}
 	lowername = strdup (bf->file);
 	if (!lowername) {
-		free (dol);
-		return NULL;
+		goto dol_err;
 	}
 	r_str_case (lowername, 0);
 	ext = strstr (lowername, ".dol");
-	if (ext && ext[4] == 0) {
-		has_dol_extension = true;
+	if (!ext || ext[4] != 0) {
+		goto lowername_err;
 	}
 	free (lowername);
-	if (has_dol_extension) {
-		r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
-		// r_buf_fread_at (bf->buf, 0, (void*)dol, "67i", 1);
-		if (bf && bf->o && bf->o->bin_obj) {
-			bf->o->bin_obj = dol;
-		}
-		return (void *) dol;
-	}
+	r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
+	return dol;
+
+lowername_err:
+	free (lowername);
+dol_err:
 	free (dol);
 	return NULL;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	if (!bf || !bf->o) {
-		return false;
-	}
-	bf->o->bin_obj = load_bytes (bf, bytes,
-		sz, bf->o->loadaddr, bf->sdb);
-	return check_bytes (bytes, sz);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -109,12 +100,12 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		s = R_NEW0 (RBinSection);
-		snprintf (s->name, sizeof (s->name), "text_%d", i);
+		s->name = r_str_newf ("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
-		s->srwx = r_str_rwx ("r-x");
+		s->perm = r_str_rwx ("r-x");
 		s->add = true;
 		r_list_append (ret, s);
 	}
@@ -124,23 +115,23 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		s = R_NEW0 (RBinSection);
-		snprintf (s->name, sizeof (s->name), "data_%d", i);
+		s->name = r_str_newf ("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
-		s->srwx = r_str_rwx ("r--");
+		s->perm = r_str_rwx ("r--");
 		s->add = true;
 		r_list_append (ret, s);
 	}
 	/* bss section */
 	s = R_NEW0 (RBinSection);
-	strcpy (s->name, "bss");
+	s->name = strdup ("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
 	s->size = dol->bss_size;
 	s->vsize = s->size;
-	s->srwx = r_str_rwx ("rw-");
+	s->perm = r_str_rwx ("rw-");
 	s->add = true;
 	r_list_append (ret, s);
 
@@ -193,16 +184,17 @@ RBinPlugin r_bin_plugin_dol = {
 	.name = "dol",
 	.desc = "Nintendo Dolphin binary format",
 	.license = "BSD",
-	.load = &load,
+	.load_buffer = &load_buffer,
 	.baddr = &baddr,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dol,
 	.version = R2_VERSION

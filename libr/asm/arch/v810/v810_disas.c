@@ -272,8 +272,9 @@ static int decode_bit_op(const ut16 instr, struct v810_cmd *cmd) {
 
 static int decode_extended(const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
 	ut8 subop = OPCODE(word2);
-	if (subop > 0xC)
+	if (subop > 0xC) {
 		return -1;
+	}
 
 	snprintf (cmd->instr, V810_INSTR_MAXLEN - 1, "%s",
 			ext_instrs[subop]);
@@ -310,8 +311,9 @@ int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd) {
 	ut16 word2 = 0;
 
 	word1 = r_read_le16 (instr);
-	if (len >= 4)
+	if (len >= 4) {
 		word2 = r_read_le16 (instr + 2);
+	}
 
 	switch (OPCODE(word1)) {
 	case V810_MOV:
@@ -389,8 +391,9 @@ int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd) {
 		}
 	}
 
-	if ((ret > 0) && (len < ret))
+	if ((ret > 0) && (len < ret)) {
 		ret = -1;
+	}
 
 	return ret;
 }

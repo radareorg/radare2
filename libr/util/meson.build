@@ -1,25 +1,23 @@
-# 'big-gmp.c',
-# 'big-ssl.c',
-# 'mixed.c',
-# 'iconv.c',
 
-files = [
+r_util_sources = [
   'ascii_table.c',
+  'assert.c',
+  'alloc.c',
+  'getopt.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
-  'big.c',
+  #'big.c',
   'binheap.c',
   'bitmap.c',
-  'btree.c',
   'buf.c',
   'cache.c',
   'calc.c',
   'chmod.c',
   'constr.c',
   'debruijn.c',
-  'des.c',
   'diff.c',
+  'event.c',
   'file.c',
   'flist.c',
   'graph.c',
@@ -35,7 +33,6 @@ files = [
   'format.c',
   'pie.c',
   'seven.c',
-  'pool.c',
   'print.c',
   'prof.c',
   'punycode.c',
@@ -52,7 +49,6 @@ files = [
   'sandbox.c',
   'signal.c',
   'skiplist.c',
-  'slist.c',
   'spaces.c',
   'stack.c',
   'str.c',
@@ -62,13 +58,13 @@ files = [
   'sys.c',
   'syscmd.c',
   'thread.c',
+  'thread_sem.c',
   'thread_lock.c',
   'thread_cond.c',
   'thread_pipe.c',
   'tinyrange.c',
   'tree.c',
-  'trie.c',
-  'r_json.c',
+  'pj.c',
   'ubase64.c',
   'uleb128.c',
   'unum.c',
@@ -83,22 +79,25 @@ files = [
   'regex/regerror.c'
 ]
 
-r_util = library('r_util', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/zip/include'
-    )
-  ],
-  dependencies: [ldl, mth, pth, utl],
-  link_with: [libr_shlr],
+r_util_deps = [ldl, mth, pth, utl, sdb_dep, zlib_dep]
+if host_machine.system().startswith('freebsd')
+  # backtrace_symbols_fd requires -lexecinfo
+  r_util_deps += [cc.find_library('execinfo')]
+endif
+
+r_util = library('r_util', r_util_sources,
+  include_directories: platform_inc,
+  c_args: library_cflags,
+  dependencies: r_util_deps,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(
-  libraries: [r_util],
+r_util_dep = declare_dependency(link_with: r_util,
+                                include_directories: platform_inc)
+
+pkgconfig_mod.generate(r_util,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_util',

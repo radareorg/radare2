@@ -67,8 +67,14 @@ static char *spp_run_str(char *buf, int *rv) {
 
 void lbuf_strcat(SppBuf *dst, char *src) {
 	int len = strlen (src);
+	char *nbuf;
 	if (!dst->lbuf || (len + dst->lbuf_n) > dst->lbuf_s) {
-		dst->lbuf = realloc (dst->lbuf, dst->lbuf_s << 1);
+		nbuf = realloc (dst->lbuf, dst->lbuf_s << 1);
+		if (!nbuf) {
+			fprintf (stderr, "Out of memory.\n");
+			return;
+		}
+		dst->lbuf = nbuf;
 	}
 	memcpy (dst->lbuf + dst->lbuf_n, src, len + 1);
 	dst->lbuf_n += len;
@@ -242,11 +248,11 @@ R_API void spp_io(FILE *in, Output *out) {
 	proc->buf.lbuf_s = 1024;
 	while (!feof (in)) {
 		buf[0] = '\0'; // ???
-		fgets (buf, 1023, in);
+		if (!fgets (buf, 1023, in)) break;
 		if (feof (in)) break;
 		lines = 1;
 		if (!memcmp (buf, "#!", 2)) {
-			fgets (buf, 1023, in);
+			if (!fgets (buf, 1023, in)) break;
 			if (feof (in)) break;
 			lines++;
 		}
@@ -255,7 +261,9 @@ R_API void spp_io(FILE *in, Output *out) {
 				char *eol = buf + strlen (buf) - strlen (proc->multiline);
 				if (!strcmp (eol, proc->multiline)) {
 					D fprintf (stderr, "Multiline detected!\n");
-					fgets (eol, 1023, in);
+					if (!fgets (eol, 1023, in)) {
+						break;
+					}
 					if (feof (in)) {
 						break;
 					}

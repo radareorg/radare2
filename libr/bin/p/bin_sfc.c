@@ -6,12 +6,14 @@
 #include <r_endian.h>
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	const ut8* buf_hdr = buf;
+	const ut8 *buf_hdr = buf;
 	ut16 cksum1, cksum2;
 
-	if ((length & 0x8000) == 0x200) {
-		buf_hdr += 0x200;
-	}
+	// FIXME: this was commented out because it always evaluates to false.
+	//        Need to be fixed by someone with SFC knowledge
+	// if ((length & 0x8000) == 0x200) {
+	// 	buf_hdr += 0x200;
+	// }
 	if (length < 0x8000) {
 		return false;
 	}
@@ -31,8 +33,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz) ? R_NOTNULL : NULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -86,11 +88,11 @@ static void addrom(RList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, 
 	if (!ptr) {
 		return;
 	}
-	snprintf (ptr->name, sizeof (ptr->name), "%s_%02x", name, i);
+	ptr->name = r_str_newf ("%s_%02x", name, i);
 	ptr->paddr = paddr;
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 }
@@ -286,7 +288,7 @@ RBinPlugin r_bin_plugin_sfc = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_sfc,
 	.version = R2_VERSION

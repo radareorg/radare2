@@ -1,12 +1,19 @@
 /* radare - LGPL - Copyright 2009-2017 pancake */
 
 #include <r_hash.h>
+
+#if HAVE_LIB_SSL
+#include <openssl/md4.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#else
+#include "md4.h"
+#include "md5.h"
 #include "sha1.h"
 #include "sha2.h"
+#endif
 
-R_API void mdfour(ut8 *out, const ut8 *in, int n);
-
-#define CHKFLAG(x) if (!flags || flags & x)
+#define CHKFLAG(x) if (!flags || flags & (x))
 
 R_API RHash *r_hash_new(bool rst, ut64 flags) {
 	RHash *ctx = R_NEW0 (RHash);
@@ -93,4 +100,35 @@ R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
 		SHA512_Final (ctx->digest, &ctx->sha512);
 	}
 	return ctx->digest;
+}
+
+R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
+	if (len < 0) {
+		if (len == -1) {
+			MD5_Init (&ctx->md5);
+		} else if (len == -2) {
+			MD5_Final (ctx->digest, &ctx->md5);
+		}
+		return NULL;
+	}
+	if (ctx->rst) {
+		MD5_Init (&ctx->md5);
+	}
+	if (len > 0) {
+		MD5_Update (&ctx->md5, input, len);
+	} else {
+		MD5_Update (&ctx->md5, (const ut8 *) "", 0);
+	}
+	if (ctx->rst) {
+		MD5_Final (ctx->digest, &ctx->md5);
+	}
+	return ctx->digest;
+}
+
+R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
+	if (len >= 0) {
+		MD4 (input, len, ctx->digest);
+		return ctx->digest;
+	}
+	return NULL;
 }

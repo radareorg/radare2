@@ -32,6 +32,11 @@ R_LIB_VERSION_HEADER(r_debug);
 #undef trapframe
 #undef rwindow
 
+#ifdef PTRACE_SYSCALL
+/* on freebsd does not have the same meaning */
+#undef PTRACE_SYSCALL
+#endif
+
 #define PTRACE_PEEKTEXT PT_READ_I
 #define PTRACE_POKETEXT PT_WRITE_I
 #define PTRACE_PEEKDATA PT_READ_D
@@ -313,6 +318,7 @@ typedef struct r_debug_t {
 	int _mode;
 	RNum *num;
 	REgg *egg;
+	bool verbose;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
@@ -597,6 +603,17 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file);
 R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API bool r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
+
+/* ptrace */
+#if HAVE_PTRACE
+static inline long r_debug_ptrace(RDebug *dbg, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data) {
+	return dbg->iob.ptrace (dbg->iob.io, request, pid, addr, data);
+}
+
+static inline void *r_debug_ptrace_func(RDebug *dbg, void *(*func)(void *), void *user) {
+	return dbg->iob.ptrace_func (dbg->iob.io, func, user);
+}
+#endif
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

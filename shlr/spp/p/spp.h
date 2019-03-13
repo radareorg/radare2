@@ -10,9 +10,11 @@ static int spp_var_set(const char *var, const char *val) {
 	return r_sys_setenv(var, val);
 }
 
+#if HAVE_SYSTEM
 /* Should be dynamic buffer */
 static char *cmd_to_str(const char *cmd) {
 	char *out = (char *)calloc (4096, 1);
+	char *tout;
 	int ret = 0, len = 0, outlen = 4096;
 	FILE *fd = popen (cmd, "r");
 	while (fd) {
@@ -24,12 +26,22 @@ static char *cmd_to_str(const char *cmd) {
 		}
 		if (ret + 1024 > outlen) {
 			outlen += 4096;
-			out = realloc (out, outlen);
+			tout = realloc (out, outlen);
+			if (!tout) {
+				if (fd) {
+					pclose (fd);
+					fd = NULL;
+				}
+				fprintf (stderr, "Out of memory.\n");
+				break;
+			}
+			out = tout;
 		}
 	}
 	out[len] = '\0';
 	return out;
 }
+#endif
 
 static TAG_CALLBACK(spp_set) {
 	char *eq, *val = "";
@@ -123,15 +135,10 @@ static TAG_CALLBACK(spp_sub) {
 	return ret;
 }
 
-// XXX This method needs some love
 static TAG_CALLBACK(spp_trace) {
-#if HAVE_SYSTEM
-	char b[1024];
 	if (state->echo[state->ifl]) {
-		snprintf (b, 1023, "echo '%s' >&2 ", buf);
-		system (b);
+		fprintf (stderr, "%.1000s\n", buf);
 	}
-#endif
 	return 0;
 }
 
@@ -164,9 +171,11 @@ static TAG_CALLBACK(spp_system) {
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}
+#if HAVE_SYSTEM
 	char *str = cmd_to_str (buf);
 	do_printf (out, "%s", str);
 	free(str);
+#endif
 	return 0;
 }
 
@@ -250,7 +259,9 @@ static TAG_CALLBACK(spp_grepline) {
 		line = atoi (ptr+1);
 		if (fd) {
 			while (!feof (fd) && line--) {
-				fgets(b, 1023, fd);
+				if (!fgets (b, 1023, fd)) {
+					break;
+				}
 			}
 			fclose (fd);
 			do_printf (out, "%s", b);
@@ -303,10 +314,14 @@ static TAG_CALLBACK(spp_default) {
 	return 0;
 }
 
+#if HAVE_SYSTEM
 static FILE *spp_pipe_fd = NULL;
+#endif
 
 static TAG_CALLBACK(spp_pipe) {
+#if HAVE_SYSTEM
 	spp_pipe_fd = popen (buf, "w");
+#endif
 	return 0;
 }
 
@@ -334,16 +349,23 @@ static TAG_CALLBACK(spp_endswitch) {
 }
 
 static TAG_CALLBACK(spp_endpipe) {
+#if HAVE_SYSTEM
 	/* TODO: Get output here */
 	int ret = 0, len = 0;
 	int outlen = 4096;
 	char *str = (char *)malloc (4096);
+	char *tstr;
 	do {
 		len += ret;
 		ret = fread (str + len, 1, 1023, spp_pipe_fd);
 		if (ret + 1024 > outlen) {
 			outlen += 4096;
-			str = realloc (str, outlen);
+			tstr = realloc (str, outlen);
+			if (!tstr) {
+				fprintf (stderr, "Out of memory.\n");
+				break;
+			}
+			str = tstr;
 		}
 	} while (ret > 0);
 	str[len] = '\0';
@@ -353,13 +375,17 @@ static TAG_CALLBACK(spp_endpipe) {
 	}
 	spp_pipe_fd = NULL;
 	free (str);
+#endif
 	return 0;
 }
 
 static PUT_CALLBACK(spp_fputs) {
+#if HAVE_SYSTEM
 	if (spp_pipe_fd) {
 		fprintf (spp_pipe_fd, "%s", buf);
-	} else {
+	} else
+#endif
+	{
 		do_printf (out, "%s", buf);
 	}
 	return 0;

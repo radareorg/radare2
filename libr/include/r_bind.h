@@ -9,6 +9,7 @@
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
 typedef int (*RCoreDebugBpHit)(void *core, void *bp);
+typedef void (*RCoreDebugSyscallHit)(void *core);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
 typedef char* (*RCoreCmdStrF)(void *core, const char *cmd, ...);
 typedef void (*RCorePuts)(const char *cmd);
@@ -28,6 +29,7 @@ typedef struct r_core_bind_t {
 	RCoreCmdStrF cmdstrf;
 	RCorePuts puts;
 	RCoreDebugBpHit bphit;
+	RCoreDebugSyscallHit syshit;
 	RCoreSetArchBits setab;
 	RCoreGetName getName;
 	RCoreGetNameDelta getNameDelta;

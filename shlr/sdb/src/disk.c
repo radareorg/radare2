@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2013-2016 - pancake */
+/* sdb - MIT - Copyright 2013-2018 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -12,49 +12,33 @@
 #if __SDB_WINDOWS__
 
 #if UNICODE
-static wchar_t* r_str_mb_to_wc_l(const char *buf, int len) {
-	wchar_t *res_buf = NULL;
-	size_t sz;
-	bool fail = true;
 
-	if (!buf || len <= 0) {
+static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
+	if (!cstring || !len || len < -1) {
 		return NULL;
 	}
-	sz = mbstowcs (NULL, buf, len);
-	if (sz == (size_t)-1) {
-		goto err_r_str_mb_to_wc;
+	wchar_t *rutf16 = NULL;
+	int wcsize;
+
+	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, len, NULL, 0))) {
+		wcsize += 1;
+		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+			MultiByteToWideChar (CP_UTF8, 0, cstring, len, rutf16, wcsize);
+			if (len != -1) {
+				rutf16[wcsize - 1] = L'\0';
+			}
+		}
 	}
-	res_buf = (wchar_t *)calloc (1, (sz + 1) * sizeof (wchar_t));  
-    	if (!res_buf) {
-		goto err_r_str_mb_to_wc;
-	}
-	sz = mbstowcs (res_buf, buf, sz + 1);
-	if (sz == (size_t)-1) {
-		goto err_r_str_mb_to_wc;
-	}
-	fail = false;
-err_r_str_mb_to_wc:
-	if (fail) {
-		free (res_buf);
-		res_buf = NULL;
-	}
-	return res_buf;
+	return rutf16;
 }
 
-static wchar_t* r_str_mb_to_wc(const char *buf) {
-	if (!buf) {
-		return NULL;
-	}
-	return r_str_mb_to_wc_l (buf, strlen (buf));
-}
+#define r_sys_conv_utf8_to_utf16(buf) r_utf8_to_utf16_l ((buf), -1)
 
-#define r_sys_conv_utf8_to_utf16(buf) r_str_mb_to_wc (buf)
-
-static bool r_sys_mkdir(char *path) {
+static bool r_sys_mkdir(const char *path) {
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
 	bool ret = CreateDirectory (path_, NULL);
 
-	free (path);
+	free (path_);
 	return ret;
 }
 #else
@@ -78,7 +62,7 @@ static inline int r_sys_mkdirp(char *dir) {
 	if (*ptr == slash) {
 		ptr++;
 	}
-#if __WINDOWS__
+#if __SDB_WINDOWS__
 	char *p = strstr (ptr, ":\\");
 	if (p) {
 		ptr = p + 2;
@@ -120,7 +104,17 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 	if (s->fdump != -1) {
 		close (s->fdump);
 	}
+#if __SDB_WINDOWS__ && UNICODE
+	wchar_t *wstr = r_sys_conv_utf8_to_utf16 (str);
+	if (wstr) {
+		s->fdump = _wopen (wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
+		free (wstr);
+	} else {
+		s->fdump = -1;
+	}
+#else
 	s->fdump = open (str, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
+#endif
 	if (s->fdump == -1) {
 		eprintf ("sdb: Cannot open '%s' for writing.\n", str);
 		free (str);

@@ -1,4 +1,4 @@
-files = [
+r_egg_sources = [
   'egg.c',
   'egg_Cfile.c',
   'egg_lang.c',
@@ -14,22 +14,24 @@ files = [
   'p/egg_xor.c'
 ]
 
-r_egg = library('r_egg', files,
+r_egg = library('r_egg', r_egg_sources,
   include_directories: [platform_inc],
-  c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_asm,
-    r_syscall,
-    libr_shlr
+  c_args: library_cflags,
+  dependencies: [
+    r_util_dep,
+    r_asm_dep,
+    r_syscall_dep,
+    sdb_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(
-  libraries: [r_egg],
+r_egg_dep = declare_dependency(link_with: r_egg,
+                               include_directories: [platform_inc])
+
+pkgconfig_mod.generate(r_egg,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_egg',

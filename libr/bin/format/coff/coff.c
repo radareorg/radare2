@@ -79,16 +79,18 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	 * or 'main' if present */
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if ((!strcmp (obj->symbols[i].n_name, "_start") || 
-				 !strcmp (obj->symbols[i].n_name, "start")) &&
-				 r_coff_rebase_sym (obj, addr, &obj->symbols[i]))
+			if ((!strcmp (obj->symbols[i].n_name, "_start") ||
+				    !strcmp (obj->symbols[i].n_name, "start")) &&
+				r_coff_rebase_sym (obj, addr, &obj->symbols[i])) {
 				return addr;
+			}
 		}
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if ((!strcmp (obj->symbols[i].n_name, "_main") || 
-				 !strcmp (obj->symbols[i].n_name, "main")) &&
-				 r_coff_rebase_sym (obj, addr, &obj->symbols[i]))
+			if ((!strcmp (obj->symbols[i].n_name, "_main") ||
+				    !strcmp (obj->symbols[i].n_name, "main")) &&
+				r_coff_rebase_sym (obj, addr, &obj->symbols[i])) {
 				return addr;
+			}
 		}
 	}
 	/* Still clueless ? Let's just use the address of .text */
@@ -182,13 +184,9 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 }
 
 static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbose) {
-	obj->b = r_buf_new ();
+	obj->b = r_buf_ref (buf);
 	obj->size = buf->length;
 	obj->verbose = verbose;
-	if (!r_buf_set_bytes (obj->b, buf->buf, obj->size)){
-		r_buf_free (obj->b);
-		return false;
-	}
 	if (!r_bin_coff_init_hdr (obj)) {
 		bprintf ("Warning: failed to init hdr\n");
 		return false;
@@ -208,6 +206,7 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 void r_bin_coff_free(struct r_bin_coff_obj *obj) {
 	free (obj->scn_hdrs);
 	free (obj->symbols);
+	r_buf_free (obj->b);
 	R_FREE (obj);
 }
 

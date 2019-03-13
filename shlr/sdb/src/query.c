@@ -327,16 +327,11 @@ next_quote:
 		} else
 		if (!strcmp (cmd, "*")) {
 			ForeachListUser user = { out, encode, NULL };
-#if INSERTORDER
-			SdbList *list = sdb_foreach_list (s, false);
-#else
 			SdbList *list = sdb_foreach_list (s, true);
-#endif
 			SdbListIter *iter;
 			SdbKv *kv;
 			ls_foreach (list, iter, kv) {
-				//eprintf ("(%s)(%s)\n", kv->key, kv->value);
-				foreach_list_cb (&user, kv->key, kv->value);
+				foreach_list_cb (&user, sdbkv_key (kv), sdbkv_value (kv));
 			}
 			ls_free (list);
 			goto fail;
@@ -363,20 +358,22 @@ next_quote:
 	// cmd is key and val is value
 	if (*cmd == '.') {
 		if (s->options & SDB_OPTION_FS) {
-			if (!sdb_query_file (s, cmd+1)) {
+			if (!sdb_query_file (s, cmd + 1)) {
 				eprintf ("sdb: cannot open '%s'\n", cmd+1);
 				goto fail;
 			}
 		} else {
 			eprintf ("sdb: filesystem access disabled in config\n");
 		}
-	} else if (*cmd == '~') {
-		if (cmd[1] == '~') {
+	} else if (*cmd == '~') { // delete
+		if (cmd[1] == '~') { // grep
 			SdbKv *kv;
 			SdbListIter *li;
 			SdbList *l = sdb_foreach_match (s, cmd + 2, false);
 			ls_foreach (l, li, kv) {
-				printf ("%s=%s\n", kv->key, kv->value);
+				strbuf_append (out, sdbkv_key (kv), 0);
+				strbuf_append (out, "=", 0);
+				strbuf_append (out, sdbkv_value (kv), 1);
 			}
 			fflush (stdout);
 			ls_free (l);

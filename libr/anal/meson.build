@@ -1,8 +1,9 @@
-files = [
+r_anal_sources = [
   'anal.c',
   'anal_ex.c',
   'bb.c',
   'cc.c',
+  'class.c',
   'cond.c',
   'cycles.c',
   'data.c',
@@ -11,6 +12,8 @@ files = [
   'esil2reil.c',
   'esil_stats.c',
   'esil_trace.c',
+  'esil_interrupt.c',
+  'esil_sources.c',
   'fcn.c',
   'flirt.c',
   'hint.c',
@@ -31,6 +34,7 @@ files = [
   'vtable.c',
   'xrefs.c',
   'p/anal_6502.c',
+  'p/anal_6502_cs.c',
   'p/anal_8051.c',
   'p/anal_arc.c',
   'p/anal_arm_cs.c',
@@ -49,7 +53,9 @@ files = [
   'p/anal_i8080.c',
   'p/anal_java.c',
   'p/anal_m68k_cs.c',
+  'p/anal_m680x_cs.c',
   'p/anal_malbolge.c',
+  'p/anal_mcore.c',
   'p/anal_mips_cs.c',
   'p/anal_mips_gnu.c',
   'p/anal_msp430.c',
@@ -68,7 +74,7 @@ files = [
   'p/anal_sysz.c',
   'p/anal_tms320.c',
   'p/anal_tms320_c55x_plus.c',
-  'p/anal_tms320c64x.c',
+  #'p/anal_tms320c64x.c',
   'p/anal_v810.c',
   'p/anal_v850.c',
   'p/anal_vax.c',
@@ -87,6 +93,7 @@ files = [
   '../asm/arch/h8300/h8300_disas.c',
   '../asm/arch/hexagon/hexagon.c',
   '../asm/arch/hexagon/hexagon_disas.c',
+  '../asm/arch/mcore/mcore.c',
   '../asm/arch/msp430/msp430_disas.c',
   '../asm/arch/pic/pic_midrange.c',
   '../asm/arch/ppc/libvle/vle.c',
@@ -108,47 +115,40 @@ files = [
   '../asm/arch/xtensa/gnu/xtensa-modules.c'
 ]
 
-r_anal = library('r_anal', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      'arch/gb',
-      'arch/hexagon',
-      '../asm/arch/8051',
-      '../asm/arch/cr16',
-      '../asm/arch/ebc',
-      '../asm/arch/h8300',
-      '../asm/arch/hexagon',
-      '../asm/arch/msp430',
-      '../asm/arch/propeller',
-      '../asm/arch/rsp',
-      '../asm/arch/tms320',
-      '../asm/arch/v810',
-      '../asm/arch/v850',
-      '../asm/arch/wasm',
-      '../asm/arch/include/',
-      '../../shlr/capstone/include',
-      '../../shlr'
-    )
-  ],
-  c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_reg,
-    r_asm,
-    r_syscall,
-    r_search,
-    r_cons,
-    r_flag,
-    libr_shlr
+r_anal_inc = [
+  platform_inc,
+  include_directories(
+    'arch/gb',
+    'arch/hexagon',
+  )
+]
+
+r_anal = library('r_anal', r_anal_sources,
+  include_directories: r_anal_inc,
+  c_args: library_cflags,
+  dependencies: [
+    r_util_dep,
+    r_reg_dep,
+    r_asm_dep,
+    r_crypto_dep,
+    r_search_dep,
+    r_cons_dep,
+    r_syscall_dep,
+    r_flag_dep,
+    r_hash_dep,
+    sdb_dep,
+    java_dep,
+    capstone_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(
-  libraries: [r_anal],
+r_anal_dep = declare_dependency(link_with: r_anal,
+                                include_directories: r_anal_inc)
+
+pkgconfig_mod.generate(r_anal,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_anal',
@@ -157,6 +157,7 @@ pkgconfig_mod.generate(
     'r_util',
     'r_reg',
     'r_asm',
+    'r_crypto',
     'r_syscall',
     'r_search',
     'r_cons',

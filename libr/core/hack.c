@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_core.h>
 
@@ -11,6 +11,7 @@ void r_core_hack_help(const RCore *core) {
 	const char* help_msg[] = {
 		"wao", " [op]", "performs a modification on current opcode",
 		"wao", " nop", "nop current opcode",
+		"wao", " jinf", "assemble an infinite loop",
 		"wao", " jz", "make current opcode conditional (zero)",
 		"wao", " jnz", "make current opcode conditional (not zero)",
 		"wao", " ret1", "make the current opcode return 1",
@@ -35,6 +36,8 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	} else if (!strcmp (op, "jz")) {
 		eprintf ("ARM jz hack not supported\n");
 		return false;
+	} else if (!strcmp (op, "jinf")) {
+		r_core_cmdf (core, "wx 00000014");
 	} else if (!strcmp (op, "jnz")) {
 		eprintf ("ARM jnz hack not supported\n");
 		return false;
@@ -82,6 +85,8 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		str[len*2] = '\0';
 		r_core_cmdf (core, "wx %s\n", str);
 		free (str);
+	} else if (!strcmp (op, "jinf")) {
+		r_core_cmdf (core, "wx %s\n", (bits==16)? "fee7": "feffffea");
 	} else if (!strcmp (op, "trap")) {
 		const char* trapcode = (bits==16)? "bebe": "fedeffe7";
 		r_core_cmdf (core, "wx %s\n", trapcode);
@@ -149,20 +154,23 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		eprintf ("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp (op, "ret1")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx 01207047 @@ $$+1\n"); // mov r0, 1; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx 0100b0e31eff2fe1 @@ $$+1\n"); // movs r0, 1; bx lr
+		}
 	} else if (!strcmp (op, "ret0")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx 00207047 @@ $$+1\n"); // mov r0, 0; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx 0000a0e31eff2fe1 @@ $$+1\n"); // movs r0, 0; bx lr
+		}
 	} else if (!strcmp (op, "retn")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx ff207047 @@ $$+1\n"); // mov r0, -1; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx ff00a0e31eff2fe1 @@ $$+1\n"); // movs r0, -1; bx lr
+		}
 	} else {
 		eprintf ("Invalid operation\n");
 		return false;
@@ -174,13 +182,16 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	const ut8 *b = core->block;
 	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
-		if (size * 2 + 1 < size) return false;
+		if (size * 2 + 1 < size) {
+			return false;
+		}
 		char *str = malloc (size * 2 + 1);
 		if (!str) {
 			return false;
 		}
-		for (i = 0; i < size; i++)
+		for (i = 0; i < size; i++) {
 			memcpy (str + (i * 2), "90", 2);
+		}
 		str[size*2] = '\0';
 		r_core_cmdf (core, "wx %s\n", str);
 		free (str);
@@ -193,6 +204,8 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("Current opcode is not conditional\n");
 			return false;
 		}
+	} else if (!strcmp (op, "jinf")) {
+		r_core_cmd0 (core, "wx ebfe\n");
 	} else if (!strcmp (op, "jnz")) {
 		if (b[0] == 0x74) {
 			r_core_cmd0 (core, "wx 75\n");

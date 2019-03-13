@@ -11,8 +11,8 @@
 
 #define ROR32(n, r) (((n) >> (r)) | ((n) << (32 - (r))))
 
-#define get_cond(ins)           tbl_cond[(ins >> 28) & 0x0f]
-#define get_nibble(ins, num)    ((ins >> (num * 4)) & 0x0f)
+#define get_cond(ins)           tbl_cond[(((ins)) >> 28) & 0x0f]
+#define get_nibble(ins, num)    ((((ins)) >> (((num)) * 4)) & 0x0f)
 
 static char const tbl_regs[][4] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
@@ -323,8 +323,11 @@ static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 			get_cond (inst), tbl_regs[get_nibble (inst, 4)], writeback ? "!" : "");
 	for (i=0;i<=15;i++) {
 		if ((inst>>i) & 1) {
-			if (i == last) arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s", tbl_regs[i]);
-			else arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, ", tbl_regs[i]);
+			if (i == last) {
+				arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s", tbl_regs[i]);
+			} else {
+				arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, ", tbl_regs[i]);
+			}
 		}
 	}
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "}%s", psr ? "^" : "");
@@ -378,12 +381,13 @@ static ut32 arm_disasm_coprocdatatrans(struct winedbg_arm_insn *arminsn, ut32 in
 	}
 
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s", load ? "ldc" : "stc", translen ? "l" : "", get_cond (inst));
-	if (indexing)
+	if (indexing) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s, #%d]%s", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
-				offset, writeback?"!":"");
-	else
+			offset, writeback ? "!" : "");
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s], #%d", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
-				offset);
+			offset);
+	}
 	return 0;
 }
 

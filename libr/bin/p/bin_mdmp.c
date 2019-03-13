@@ -1,7 +1,8 @@
-/* radare2 - LGPL - Copyright 2016-2017 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2018 - Davis, Alex Kornitzer */
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
@@ -108,7 +109,8 @@ static RBinInfo *info(RBinFile *bf) {
 			ret->bits = 64;
 			break;
 		default:
-			strncpy (ret->machine, "Unknown", R_BIN_SIZEOF_STRINGS);
+			ret->machine = strdup ("Unknown");
+			break;
 		}
 
 		switch (obj->streams.system_info->product_type) {
@@ -182,12 +184,12 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *tbuf;
 	struct r_bin_mdmp_obj *res;
 
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 
 	tbuf = r_buf_new ();
@@ -197,20 +199,33 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	}
 	r_buf_free (tbuf);
 
+	if (res) {
+		*bin_obj = res;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (buf, NULL);
+
+	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 	return res;
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf) : 0;
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
 
 	if (!bf || !bf->o) {
 		return false;
 	}
 
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-
-	return bf->o->bin_obj ? true : false;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -240,7 +255,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strncpy(ptr->name, "Memory_Section", 14);
+		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
 		ptr->vaddr = memory->start_of_memory_range;
@@ -248,7 +263,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 	}
@@ -259,7 +274,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strncpy(ptr->name, "Memory_Section", 14);
+		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
 		ptr->vaddr = memory64->start_of_memory_range;
@@ -267,7 +282,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 
@@ -276,12 +291,32 @@ static RList *sections(RBinFile *bf) {
 
 	// XXX: Never add here as they are covered above
 	r_list_foreach (obj->streams.modules, it, module) {
+		ut8 b[512];
+
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-
-		str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, R_BIN_SIZEOF_STRINGS, (const ut8 *)&(str->buffer), str->length, obj->endian);
+		if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (obj->b)) {
+			free (ptr);
+			continue;
+		}
+		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
+		str = (struct minidump_string *)b;
+		int ptr_name_len = (str->length + 2) * 4;
+		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
+			continue;
+		}
+		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
+			free (ptr);
+			break;
+		}
+		ptr->name = calloc (1, ptr_name_len);
+		if (!ptr->name) {
+			free (ptr);
+			continue;
+		}
+		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4,
+				(const ut8 *)(&str->buffer), str->length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
@@ -289,34 +324,37 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
-		ptr->srwx = 0;
+		ptr->perm = 0;
 
-		r_list_append (ret, ptr);
+		if (!r_list_append (ret, ptr)) {
+			free (ptr);
+			break;
+		}
 
 		/* Grab the pe sections */
 		r_list_foreach (obj->pe32_bins, it0, pe32_bin) {
 			if (pe32_bin->vaddr == module->base_of_image && pe32_bin->bin) {
 				pe_secs = Pe32_r_bin_mdmp_pe_get_sections(pe32_bin);
 				r_list_join (ret, pe_secs);
-				r_list_free(pe_secs);
+				r_list_free (pe_secs);
 			}
 		}
 		r_list_foreach (obj->pe64_bins, it0, pe64_bin) {
 			if (pe64_bin->vaddr == module->base_of_image && pe64_bin->bin) {
 				pe_secs = Pe64_r_bin_mdmp_pe_get_sections(pe64_bin);
 				r_list_join (ret, pe_secs);
-				r_list_free(pe_secs);
+				r_list_free (pe_secs);
 			}
 		}
 	}
-	eprintf("[INFO] Parsing data sections for large dumps can take time, "
+	eprintf ("[INFO] Parsing data sections for large dumps can take time, "
 		"please be patient (but if strings ain't your thing try with "
 		"-z)!\n");
 	return ret;
 }
 
-static RList *mem (RBinFile *bf) {
-	struct minidump_location_descriptor *location;
+static RList *mem(RBinFile *bf) {
+	struct minidump_location_descriptor *location = NULL;
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
 	struct minidump_memory_info *mem_info;
@@ -340,8 +378,8 @@ static RList *mem (RBinFile *bf) {
 			return ret;
 		}
 		ptr->addr = module->start_of_memory_range;
-		ptr->size = (location->data_size);
-		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->size = location? location->data_size: 0;
+		ptr->perms = r_bin_mdmp_get_perm (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -363,7 +401,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module64->start_of_memory_range;
 		ptr->size = module64->data_size;
-		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_perm (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -396,12 +434,12 @@ static RList* relocs(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
-		if (pe32_bin->bin) {
+		if (pe32_bin->bin && pe32_bin->bin->relocs) {
 			r_list_join (ret, pe32_bin->bin->relocs);
 		}
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
-		if (pe64_bin->bin) {
+		if (pe64_bin->bin && pe64_bin->bin->relocs) {
 			r_list_join (ret, pe64_bin->bin->relocs);
 		}
 	}
@@ -424,13 +462,17 @@ static RList* imports(RBinFile *bf) {
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_imports (pe32_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		if (list) {
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 	r_list_foreach (obj->pe64_bins, it, pe64_bin) {
 		list = Pe64_r_bin_mdmp_pe_get_imports (pe64_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		if (list) {
+			r_list_join (ret, list);
+			r_list_free (list);
+		}
 	}
 	return ret;
 }
@@ -480,6 +522,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.libs = &libs,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
@@ -487,7 +530,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mdmp,
 	.version = R2_VERSION

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # You can modify these variables
 PREFIX="/usr"
@@ -8,7 +8,7 @@ USE_SIMULATOR=0
 SIMULATOR_ARCHS="x86_64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=1
-CFLAGS="-O2"
+CFLAGS="-O2 -miphoneos-version-min=10.0"
 DOSH=0
 ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="armv7+arm64".
 MERGE_LIBS=1 # Will merge libs if you build for arm and simulator 
@@ -17,10 +17,12 @@ MERGE_LIBS=1 # Will merge libs if you build for arm and simulator
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
 export PATH=`pwd`/sys:${PATH}
 export CC=`pwd`/sys/ios-sdk-gcc
-export LD="xcrun --sdk iphoneos ld"
 export IOSVER=9.0
 export IOSINC=`pwd`/sys/ios-include
 export USE_IOS_STATIC=0
+
+echo "If xcrun --sdk iphoneos cant find the profile use this line:"
+echo " sudo xcode-select -switch /Applications/Xcode.app"
 
 PLUGINS_CFG=plugins.ios-store.cfg
 #PLUGINS_CFG=plugins.ios.cfg
@@ -33,17 +35,20 @@ fi
 iosConfigure() {
 	cp -f ${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
-		--without-fork --with-compiler=ios-sdk --target=arm-unknown-darwin
+		--disable-debugger --without-gpl \
+		--without-fork --without-libuv --with-compiler=ios-sdk \
+		--target=arm64-unknown-darwin
 	return $?
 }
 
 iosClean() {
 	make clean
-	rm -rf libr/.libr libr/libr.a libr/libr.dylib
+	rm -rf libr/.libr libr/.libr2 libr/libr.a libr/libr.dylib shlr/libr_shlr.a
+	rm -rf shlr/capstone
 }
 
 iosBuild() {
-	time make -j4 || exit 1
+	time make -j4 AR="xcrun --sdk ${SDK} ar" || exit 1
 	# Build and sign
 	( cd binr/radare2 ; make ios_sdk_sign )
 	make install DESTDIR="$INSTALL_DST"
@@ -135,38 +140,38 @@ fi
 
 while test $# -gt 0; do
 	case "$1" in 
-		-full|--full|-f)
-			shift
-			ARCHS="armv7s+arm64"
-			USE_SIMULATOR=1
-			;;
-		-shell|--shell|-s)
-			DOSH=1
-			shift
-			;;
-		-archs|-a|--archs)
-			shift
-			if test $# -gt 0; then
-				if [ "$1" == "all" ]; then
-					ARCHS="armv7+armv7s+arm64"
-				else
-					ARCHS=$1
-				fi
+	-full|--full|-f)
+		shift
+		ARCHS="armv7s+arm64"
+		USE_SIMULATOR=1
+		;;
+	-shell|--shell|-s)
+		DOSH=1
+		shift
+		;;
+	-archs|-a|--archs)
+		shift
+		if test $# -gt 0; then
+			if [ "$1" == "all" ]; then
+				ARCHS="armv7+armv7s+arm64"
+			else
+				ARCHS=$1
 			fi
-			shift
-			;;
-		-p|--package)
-			iosPackage
- 			exit 0
-		 	;;
-		-simulator)
-			USE_SIMULATOR=1
-			shift
-			;;
-		*|-h|--help)
-			showHelp
-			exit 0
-			;;
+		fi
+		shift
+		;;
+	-p|--package)
+		iosPackage
+		exit 0
+		;;
+	-simulator)
+		USE_SIMULATOR=1
+		shift
+		;;
+	*|-h|--help)
+		showHelp
+		exit 0
+		;;
 	esac
 done
 
@@ -198,6 +203,7 @@ for a in `IFS=+ echo ${CPU}` ; do
         CPUS="-arch $a ${CPUS}"
 done
 export CPUS="${CPUS}"
+export LD="xcrun --sdk ${SDK} ld"
 export ALFLAGS="${CPUS}"
 export LDFLAGS="${LDFLAGS} ${CPUS}"
 	export PS1="[ios-sdk-$CPU]> "
@@ -213,29 +219,34 @@ rm -rf "$INSTALL_DST"
 # Build radare2 for i386 and x86_64
 if [ "${USE_SIMULATOR}" = 1 ]; then
 	iosClean
-	iosConfigure
-	if [ $? = 0 ]; then
-		export CPU="$SIMULATOR_ARCHS"
-		export SDK=iphonesimulator
-		echo "Building for simulator($SIMULATOR_ARCHS)"
-		sleep 1
-		iosBuild
-		# backup lib folder of simulator
-		if [ "${#ARCHS}" -gt 0 ]; then
-			rm -rf "$INSTALL_DST/$PREFIX"/lib_simulator
-			mv "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
-		else
-			cp -r "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+	if [ 1 = 0 ]; then
+		iosConfigure
+		if [ $? = 0 ]; then
+			export CPU="$SIMULATOR_ARCHS"
+			export SDK=iphonesimulator
+			echo "Building for simulator($SIMULATOR_ARCHS)"
+			sleep 1
+			iosBuild
 		fi
+	else
+		sys/ios-simulator.sh
+	fi
+	# backup lib folder of simulator
+	if [ "${#ARCHS}" -gt 0 ]; then
+		rm -rf "$INSTALL_DST/$PREFIX"/lib_simulator
+		mv "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+	else
+		cp -r "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
 	fi
 fi
 
 # check if arm archs were selected and if so build radare2 for them
+# XXX this is a bashism
 if [ "${#ARCHS}" -gt 0 ]; then
 	iosClean
 	iosConfigure
 	if [ "$?" = 0 ]; then
-		export CPU=$ARCHS
+		export CPU="$ARCHS"
 		export SDK=iphoneos
 		echo "Building for $CPU"
 		sleep 1

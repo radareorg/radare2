@@ -275,7 +275,9 @@ ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
 		}
 	}
 
-	if (errors) return null_ptid;
+	if (errors) {
+		return null_ptid;
+	}
 
 	nto_send_init (g, DStMsg_load, DSMSG_LOAD_DEBUG, SET_CHANNEL_DEBUG);
 	p = g->tran.pkt.load.cmdline;
@@ -284,7 +286,7 @@ ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
 	g->tran.pkt.load.argc = 0;
 
 	if (file) {
-		strncpy (p, file, DS_DATA_MAX_SIZE);
+		strncpy (p, file, sizeof (g->tran.pkt.load.cmdline) - 8);
 		p += strlen (p);
 	}
 	*p++ = '\0';

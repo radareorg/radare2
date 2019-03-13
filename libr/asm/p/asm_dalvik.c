@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - earada, pancake */
+/* radare - LGPL - Copyright 2009-2018 - earada, pancake, h4ng3r */
 
 #include <stdio.h>
 #include <string.h>
@@ -17,20 +17,23 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
-	const char *flag_str; 
+	const char *flag_str;
 	a->dataalign = 2;
 
-	op->buf_asm[0] = 0;
+	const char *buf_asm = NULL;
 	if (buf[0] == 0x00) { /* nop */
+		if (len < 2) {
+			return -1;
+		}
 		switch (buf[1]) {
 		case 0x01: /* packed-switch-payload */
 			// ushort size
 			// int first_key
 			// int[size] = relative offsets
 			{
-				unsigned short array_size = buf[2] | (buf[3] << 8);
+				ut16 array_size = buf[2] | (buf[3] << 8);
 				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				snprintf (op->buf_asm, sizeof(op->buf_asm), "packed-switch-payload %d, %d", array_size, first_key);
+				buf_asm = sdb_fmt ("packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
 				len = 0;
@@ -41,10 +44,10 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			// int[size] keys
 			// int[size] relative offsets
 			{
-				unsigned short array_size = buf[2] | (buf[3] << 8);
-				snprintf (op->buf_asm, sizeof (op->buf_asm), "sparse-switch-payload %d", array_size);
+				ut16 array_size = buf[2] | (buf[3] << 8);
+				buf_asm = sdb_fmt ("sparse-switch-payload %d", array_size);
 				size = 4;
-				payload = 2 * (array_size*4);
+				payload = 2 * (array_size * 4);
 				len = 0;
 			}
 			break;
@@ -53,11 +56,9 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			// size = 4 bytes uint
 			// ([size*element_width+1)/2)+4
 			if (len > 7) {
-				unsigned short elem_width = buf[2] | (buf[3] << 8);
-				unsigned int array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				snprintf (op->buf_asm, sizeof (op->buf_asm),
-					"fill-array-data-payload %d, %d",
-					elem_width, array_size);
+				ut16 elem_width = buf[2] | (buf[3] << 8);
+				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
+				buf_asm = sdb_fmt ("fill-array-data-payload %d, %d", elem_width, array_size);
 				payload = array_size * elem_width;
 			}
 			size = 8;
@@ -68,10 +69,12 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		}
 	}
+	if (buf_asm) {
+		r_strbuf_set (&op->buf_asm, buf_asm);
+	}
 	strasm = NULL;
 	if (size <= len) {
-		strncpy (op->buf_asm, dalvik_opcodes[i].name, sizeof (op->buf_asm) - 1);
-		strasm = strdup (op->buf_asm);
+		strasm = strdup (dalvik_opcodes[i].name);
 		size = dalvik_opcodes[i].len;
 		switch (dalvik_opcodes[i].fmt) {
 		case fmtop: break;
@@ -135,12 +138,10 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case fmtopvAAcBBBBBBBBBBBBBBBB:
 			vA = (int) buf[1];
-			#define llint long long int
-			llint lB = (llint)buf[2] | ((llint)buf[3] << 8)|
-				((llint)buf[4] << 16) | ((llint)buf[5] << 24)|
-				((llint)buf[6] << 32) | ((llint)buf[7] << 40)|
-				((llint)buf[8] << 48) | ((llint)buf[9] << 56);
-			#undef llint
+			ut64 lB = (ut64)buf[2] | ((ut64)buf[3] << 8)|
+				((ut64)buf[4] << 16) | ((ut64)buf[5] << 24)|
+				((ut64)buf[6] << 32) | ((ut64)buf[7] << 40)|
+				((ut64)(buf[8]&0xff) << 48) | ((ut64)(buf[9]&0xff) << 56);
 			snprintf (str, sizeof (str), " v%i:v%i, 0x%"PFMT64x, vA, vA + 1, lB);
 			strasm = r_str_append (strasm, str);
 			break;
@@ -482,8 +483,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			flag_str = R_ASM_GET_NAME (a, 'm', vB);
 			if (flag_str) {
 				snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
-			}
-			else {
+			} else {
 				snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 			}
 			strasm = r_str_append (strasm, str);
@@ -491,8 +491,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			flag_str = R_ASM_GET_NAME (a, 'p', vH);
 			if (flag_str) {
 				snprintf (str, sizeof (str), ", %s", flag_str);
-			}
-			else {
+			} else {
 				snprintf (str, sizeof (str), ", proto+%i", vH);
 			}
 			strasm = r_str_append (strasm, str);
@@ -501,27 +500,32 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case fmtoptinvokeIR:
 		case fmt00:
 		default:
-			strcpy (op->buf_asm, "invalid ");
 			free (strasm);
 			strasm = NULL;
 			size = 2;
 		}
-		if (strasm) {
-			strncpy (op->buf_asm, strasm, sizeof (op->buf_asm) - 1);
-			op->buf_asm[sizeof (op->buf_asm) - 1] = 0;
-		} else {
-			//op->buf_asm[0] = 0;
-			strcpy (op->buf_asm , "invalid");
-		}
+		r_strbuf_set (&op->buf_asm, strasm? strasm: "invalid");
 	} else if (len > 0) {
-		strcpy (op->buf_asm, "invalid ");
+		r_strbuf_set (&op->buf_asm, "invalid");
 		op->size = len;
 		size = len;
 	}
-	op->payload = payload;
-	size += payload; // XXX
-	// align to 2
-	op->size = size;
+
+	if (payload < 0) {
+		op->payload = 0;
+	} else if (payload >= len) {
+		op->payload = len;
+	} else {
+		op->payload = payload;
+	}
+
+	if (size + op->payload < 0) {
+		op->size = 0;
+	} else if (size + op->payload >= len) {
+		op->size = len;
+	} else {
+		op->size = size + op->payload;
+	}
 	free (strasm);
 	return size;
 }
@@ -536,7 +540,9 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	// TODO: use a hashtable here
 	for (i = 0; i < 256; i++) {
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
-			r_write_ble32 (op->buf, i, a->big_endian);
+			ut8 buf[4];
+			r_write_ble32 (buf, i, a->big_endian);
+			r_strbuf_setbin (&op->buf, buf, sizeof (buf));
 			op->size = dalvik_opcodes[i].len;
 			return op->size;
 		}
@@ -556,7 +562,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_dalvik,
 	.version = R2_VERSION

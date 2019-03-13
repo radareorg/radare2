@@ -27,11 +27,6 @@ static DsoJsonInfo DSO_JSON_INFOS []= {
 	{DSO_JSON_END},//, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
 };
 
-// TODO: remove useless calloc wrapper
-static void * json_new0 (unsigned int sz) {
-	return calloc (sz, 1);
-}
-
 static RList * build_str_list_from_iterable (RList *the_list) {
 	RList * res = r_list_newf (free);
 	DsoJsonObj *json_obj;
@@ -40,6 +35,8 @@ static RList * build_str_list_from_iterable (RList *the_list) {
 		char *str = dso_json_obj_to_str (json_obj);
 		if (str && *str) {
 			r_list_append (res, str);
+		} else {
+			free (str);
 		}
 	}
 	return res;
@@ -55,7 +52,7 @@ static char * build_str_from_str_list_for_iterable (RList *the_list, int is_arra
 		len += strlen (str) + 1;
 	}
 
-	res = json_new0 (len);
+	res = calloc (len, 1);
 	// TODO: use [ if needed
 	if (res) {
 		strcpy (res, is_array? "[": "{");
@@ -149,8 +146,8 @@ static int cmpDsoStr_to_str (DsoJsonStr *dsoStr1, char *dsoStr2) {
 
 static void allocDsoStr (DsoJsonStr *dsoStr, unsigned int sz) {
 	free (dsoStr->data);
-	if (sz > 0) dsoStr->data = json_new0 (sz);
-	else dsoStr->data = json_new0 (10);
+	if (sz > 0) dsoStr->data = calloc (sz, 1);
+	else dsoStr->data = calloc (10, 1);
 	dsoStr->len = sz;
 }
 
@@ -185,7 +182,7 @@ static DsoJsonStr * dso_json_get_str (DsoJsonObj *dso_obj) {
 }
 
 DsoJsonObj * dso_json_null_new () {
-	DsoJsonObj *x = json_new0 (sizeof (DsoJsonObj));
+	DsoJsonObj *x = calloc (sizeof (DsoJsonObj), 1);
 	if (!x) return NULL;
 	x->info = get_type_info (DSO_JSON_NULL);
 	return x;
@@ -199,15 +196,14 @@ DsoJsonObj * dso_json_str_new () {
 	DsoJsonObj *x = dso_json_null_new ();
 	if (!x) return NULL;
 	x->info = get_type_info (DSO_JSON_STR);
-	x->val._str = json_new0  (sizeof (DsoJsonStr));
+	x->val._str = calloc (sizeof (DsoJsonStr), 1);
 	return x;
 }
 
 void dso_json_str_free (void *y) {
 	DsoJsonStr *x = (DsoJsonStr *)y;
 	if (x) {
-		free (x->data);
-		x->data = NULL;
+		R_FREE (x->data);
 		free (x);
 	}
 }
@@ -216,7 +212,7 @@ DsoJsonObj * dso_json_dict_entry_new () {
 	DsoJsonObj *x = dso_json_null_new ();
 	if (!x) return NULL;
 	x->info = get_type_info (DSO_JSON_DICT_ENTRY);
-	x->val._dict_entry = json_new0  (sizeof (DsoJsonDictEntry));
+	x->val._dict_entry = calloc (sizeof (DsoJsonDictEntry), 1);
 	if (!x->val._dict_entry) {
 		dso_json_null_free (x);
 		return NULL;
@@ -255,7 +251,7 @@ char * dso_json_dict_entry_to_str (DsoJsonDictEntry * entry) {
 		if (key) {
 			int len = 2 + 3 + strlen (key);
 			if (value) len += strlen (value);
-			res = json_new0 (len);
+			res = calloc (len, 1);
 			if (res) {
 				if (value) {
 					snprintf (res, len, "%s:%s", key, value);
@@ -424,7 +420,7 @@ DsoJsonObj * dso_json_list_new () {
 	DsoJsonObj *x = dso_json_null_new ();
 	if (x) {
 		x->info = get_type_info (DSO_JSON_LIST);
-		x->val._list = json_new0  (sizeof (DsoJsonList));
+		x->val._list = calloc (sizeof (DsoJsonList), 1);
 		if (x->val._list) {
 			x->val._list->json_list = r_list_newf ((RListFree)dso_json_obj_del);
 		} else {
@@ -482,7 +478,7 @@ DsoJsonObj * dso_json_dict_new () {
 	DsoJsonObj *x = dso_json_null_new ();
 	if (x) {
 		x->info = get_type_info (DSO_JSON_DICT);
-		x->val._dict = json_new0 (sizeof (DsoJsonObj));
+		x->val._dict = calloc (sizeof (DsoJsonDict), 1);
 		if (!x->val._dict) {
 			dso_json_null_free (x);
 			return NULL;
@@ -642,7 +638,7 @@ DsoJsonObj * dso_json_num_new () {
 	DsoJsonObj *x = dso_json_null_new ();
 	if (!x) return NULL;
 	x->info = get_type_info (DSO_JSON_NUM);
-	x->val._num = json_new0 (sizeof (DsoJsonNum));
+	x->val._num = calloc (sizeof (DsoJsonNum), 1);
 	return x;
 }
 

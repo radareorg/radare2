@@ -9,12 +9,8 @@
 
 #include "r_list.h"
 
-#ifndef container_of
-# ifdef _MSC_VER
-#  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
-# else
-#  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
-# endif
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 // max height <= 2 * floor(log2(n + 1))
@@ -89,5 +85,9 @@ R_API void r_rbtree_iter_prev(RBIter *it);
 
 #define r_rbtree_foreach_prev(root, it, data, struc, rb) \
 	for ((it) = r_rbtree_last (root); (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

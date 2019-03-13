@@ -3,11 +3,31 @@
 
 #include "r_version.h"
 
+#define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
 #define DEBUGGER @DEBUGGER@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
 #define HAVE_ARC4RANDOM_UNIFORM @HAVE_ARC4RANDOM_UNIFORM@
 #define HAVE_EXPLICIT_BZERO @HAVE_EXPLICIT_BZERO@
+#define HAVE_EXPLICIT_MEMSET @HAVE_EXPLICIT_MEMSET@
+#define HAVE_CLOCK_NANOSLEEP @HAVE_CLOCK_NANOSLEEP@
 
+#ifdef R_MESON_VERSION
+#define R2_PREFIX "@PREFIX@"
+#define R2_LIBDIR "@LIBDIR@"
+#define R2_INCDIR "@INCLUDEDIR@"
+#define R2_DATDIR "@DATADIR@"
+#define R2_WWWROOT "@WWWROOT@"
+#define R2_PLUGINS "@PLUGINS@"
+#define R2_EXTRAS "@EXTRAS@"
+#define R2_BINDINGS "@BINDINGS@"
+#define R2_DATDIR_R2 "@DATADIR_R2@"
+#define R2_SDB "@SDB@"
+#define R2_ZIGNS "@ZIGNS@"
+#define R2_THEMES "@THEMES@"
+#define R2_FORTUNES "@FORTUNES@"
+#define R2_FLAGS "@FLAGS@"
+#define R2_HUD "@HUD@"
+#else
 #if __WINDOWS__ || __CYGWIN__ || MINGW32 || _MSC_VER || CUTTER
 #define R2_PREFIX "."
 #define R2_LIBDIR "lib"
@@ -27,13 +47,14 @@
 #define R2_EXTRAS "lib/radare2-extras/" R2_VERSION
 #define R2_BINDINGS "lib/radare2-bindings/" R2_VERSION
 #endif
-
+#define R2_DATDIR_R2        R_JOIN_2_PATHS ("share", "radare2")
 #define R2_SDB              R_JOIN_3_PATHS ("share", "radare2", R2_VERSION)
 #define R2_ZIGNS            R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "zigns")
 #define R2_THEMES           R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "cons")
 #define R2_FLAGS            R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "flag")
 #define R2_FORTUNES         R_JOIN_3_PATHS ("share", "doc", "radare2")
 #define R2_HUD              R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "hud")
+#endif
 
 #define R2_SDB_FCNSIGN      R_JOIN_2_PATHS (R2_SDB, "fcnsign")
 #define R2_SDB_OPCODES      R_JOIN_2_PATHS (R2_SDB, "opcodes")
@@ -55,17 +76,25 @@
 #define R2_HOME_BINRC       R_JOIN_2_PATHS (R2_HOME_DATADIR, "rc.d")
 #define R2_HOME_BIN         R_JOIN_3_PATHS (R2_HOME_DATADIR, "prefix", "bin")
 
+#define R2_HOME_HISTORY     R_JOIN_2_PATHS (R2_HOME_CACHEDIR, "history")
+
 #define R2_HOME_RC          R_JOIN_2_PATHS (R2_HOME_CONFIGDIR, "radare2rc")
 #define R2_HOME_RC_DIR      R_JOIN_2_PATHS (R2_HOME_CONFIGDIR, "radare2rc.d")
-
-#define R2_HOME_HISTORY     R_JOIN_2_PATHS (R2_HOME_CACHEDIR, "history")
+#define R2_GLOBAL_RC        R_JOIN_2_PATHS (R2_DATDIR_R2, "radare2rc")
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@
+#define HAVE_LIB_XXHASH @HAVE_LIB_XXHASH@
+#define USE_LIB_XXHASH @USE_LIB_XXHASH@
+
 #ifndef HAVE_LIB_SSL
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
 #endif
 
+#define HAVE_LIBUV @HAVE_LIBUV@
+
+#define HAVE_PTRACE @HAVE_PTRACE@
+#define USE_PTRACE_WRAP @USE_PTRACE_WRAP@
 #define HAVE_FORK @HAVE_FORK@
 
 #define WITH_GPL @WITH_GPL@

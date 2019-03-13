@@ -1,4 +1,5 @@
 ec call rgb:ffff00
+ec ucall rgb:ffff00
 ec comment rgb:32302f
 ec usrcmt rgb:ffc5f3
 ec ret rgb:fb4934
@@ -26,6 +27,7 @@ ec pop rgb:87afaf
 ec crypto rgb:0000ff
 ec jmp rgb:ff5f87
 ec cjmp rgb:afaf00
+ec ujmp rgb:ff5f87
 ec nop rgb:5f8787
 ec trap rgb:ff0000
 ec swi rgb:ff0000
@@ -54,3 +56,13 @@ ec gui.dataoffset rgb:ffff00
 ec gui.background rgb:303030
 ec gui.alt_background rgb:ffffff
 ec gui.border rgb:5fd700
+
+ec func_var rgb:64604f
+ec func_var_type rgb:00afd7
+ec func_var_addr rgb:afafaf
+
+ec ai.read rgb:a55f00
+ec ai.write rgb:d75f00
+ec ai.exec rgb:ff5f87
+ec ai.seq rgb:9dd600
+ec ai.ascii rgb:d25032

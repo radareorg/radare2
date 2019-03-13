@@ -1,21 +1,23 @@
-files = [
+r_config_sources = [
   'callback.c',
   'config.c',
 ]
 
-r_config = library('r_config', files,
+r_config = library('r_config', r_config_sources,
   include_directories: [platform_inc],
-  link_with: [
-    r_util,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    sdb_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(
-  libraries: [r_config],
+r_config_dep = declare_dependency(link_with: r_config,
+                                  include_directories: [platform_inc])
+
+pkgconfig_mod.generate(r_config,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_config',

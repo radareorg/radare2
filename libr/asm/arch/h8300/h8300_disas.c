@@ -833,8 +833,11 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd)
 		break;
 	}
 
-	if (ret)
-		return ret;
+	if (ret) {
+		{
+			return ret;
+		}
+	}
 
 	switch (instr[0]) {
 	case H8300_ANDC:
@@ -904,7 +907,6 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd)
 		case 0x70:
 		case 0x71:
 		case 0x72:
-			ret = decode_imm2abs8(instr, cmd);
 			ret = decode_imm2abs8(instr, cmd);
 			break;
 		default:

@@ -1,8 +1,8 @@
 #ifndef R2_CR16_DISASM_H
 #define R2_CR16_DISASM_H
 
-#define CR16_INSTR_MAXLEN	24
-#define STOR_LOAD_MASK		0x181F
+#define CR16_INSTR_MAXLEN 24
+#define STOR_LOAD_MASK 0x181F
 
 enum cr16_cmd_types {
 	CR16_TYPE_MOV,
@@ -42,8 +42,8 @@ enum cr16_cmd_types {
 struct cr16_cmd {
 	st32 reladdr;
 	unsigned type;
-	char	instr[CR16_INSTR_MAXLEN];
-	char	operands[CR16_INSTR_MAXLEN];
+	char instr[CR16_INSTR_MAXLEN];
+	char operands[CR16_INSTR_MAXLEN];
 };
 
 int cr16_decode_command(const ut8 *instr, struct cr16_cmd *cmd);

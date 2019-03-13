@@ -7,7 +7,6 @@
 #if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
-#include <asm/ptrace.h>
 #include "linux_coredump.h"
 
 /* For compability */
@@ -175,19 +174,19 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		free (t);
 		return NULL;
 	}
-	while (!isdigit (*temp_p_sigpend++)) {
+	while (!isdigit ((ut8)*temp_p_sigpend++)) {
 		//empty body
 	}
 	p_sigpend = temp_p_sigpend - 1;
-	while (isdigit (*temp_p_sigpend++)) {
+	while (isdigit ((ut8)*temp_p_sigpend++)) {
 		//empty body
 	}
 	p_sigpend[temp_p_sigpend - p_sigpend - 1] = '\0';
-	while (!isdigit (*temp_p_sighold++)) {
+	while (!isdigit ((ut8)*temp_p_sighold++)) {
 		//empty body
 	}
 	p_sighold = temp_p_sighold - 1;
-	while (isdigit (*temp_p_sighold++)) {
+	while (isdigit ((ut8)*temp_p_sighold++)) {
 		//empty body
 	}
 	p_sighold[temp_p_sighold - p_sighold - 1] = '\0';
@@ -281,7 +280,7 @@ static bool getAnonymousValue(char *keyw) {
 	if (!keyw) {
 		return false;
 	}
-	while (*keyw && isspace (*keyw)) {
+	while (*keyw && isspace ((ut8)*keyw)) {
 		keyw ++;
 	}
 	return *keyw && *keyw != '0';
@@ -334,7 +333,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 		return false;
 	}
 	/* if the map doesn't have r/w quit right here */
-	if ((!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
+	if ((!(perms & R_PERM_R) && !(perms & R_PERM_W))) {
 		free (identity);
 		return false;
 	}
@@ -480,7 +479,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 	linux_map_entry_t *me_head = NULL, *me_tail = NULL;
 	RListIter *iter;
 	RDebugMap *map;
-	bool is_anonymous, is_deleted, ret;
+	bool is_anonymous = false, is_deleted = false, ret = 0;
 	char *file = NULL, *buff_maps= NULL, *buff_smaps = NULL;
 	int size_file = 0;
 
@@ -649,7 +648,7 @@ static int get_info_mappings(linux_map_entry_t *me_head, size_t *maps_size) {
 	int n_entries;
 	for (n_entries = 0, p = me_head; p; p = p->n) {
 		/* We don't count maps which does not have r/w perms */
-		if (((p->perms & R_IO_READ) || (p->perms & R_IO_WRITE)) && p->dumpeable) {
+		if (((p->perms & R_PERM_R) || (p->perms & R_PERM_W)) && p->dumpeable) {
 			*maps_size += p->end_addr - p->start_addr;
 			n_entries++;
 		}
@@ -723,7 +722,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset
 
 	/* write program headers */
 	for (me_p = maps; me_p; me_p = me_p->n) {
-		if ((!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) || !me_p->dumpeable) {
+		if ((!(me_p->perms & R_PERM_R) && !(me_p->perms & R_PERM_W)) || !me_p->dumpeable) {
 			continue;
 		}
 		phdr.p_type = PT_LOAD;
@@ -831,11 +830,11 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	temp_p_gid = strstr (buff, "Gid:");
 	/* Uid */
 	if (temp_p_uid) {
-		while (!isdigit (*temp_p_uid++))  {
+		while (!isdigit ((ut8)*temp_p_uid++))  {
 			//empty body
 		}
 		p_uid = temp_p_uid - 1;
-		while (isdigit (*temp_p_uid++)) {
+		while (isdigit ((ut8)*temp_p_uid++)) {
 			//empty body
 		}
 		p_uid[temp_p_uid - p_uid - 1] = '\0';
@@ -846,11 +845,11 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 
 	/* Gid */
 	if (temp_p_gid) {
-		while (!isdigit (*temp_p_gid++)) {
+		while (!isdigit ((ut8)*temp_p_gid++)) {
 			//empty body
 		}
 		p_gid = temp_p_gid - 1;
-		while (isdigit (*temp_p_gid++)) {
+		while (isdigit ((ut8)*temp_p_gid++)) {
 			//empty body
 		}
 		p_gid[temp_p_gid - p_gid - 1] = '\0';

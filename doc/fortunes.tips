@@ -39,7 +39,6 @@ Use hasher to calculate hashes of portion blocks of a file
 Use zoom.byte=entropy and press 'z' in visual mode to zoom out to see the entropy of the whole file
 Use 'zoom.byte=printable' in zoom mode ('z' in Visual mode) to find strings
 Add colors to your screen with 'e scr.color=X' where 1 is 16 colors, 2 is 256 colors and 3 is 16M colors
-Trace register changes while debugging with 'e trace.cmtregs=true'
 Move the comments to the right changing their margin with asm.cmt.margin
 Execute a command on the visual prompt with cmd.vprompt
 Reduce the delta where flag resolving by address is used with cfg.delta
@@ -77,7 +76,6 @@ Run your own r2 scripts in awk using the r2awk program.
 Use '-e bin.strings=false' to disable automatic string search when loading the binary.
 The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
-For a full list of commands see `strings /dev/urandom`
 Thanks for using radare2!
 give | and > a try piping and redirection
 Run .dmm* to load the flags of the symbols of all modules loaded in the debugger

@@ -5,10 +5,143 @@
 
 #include "rangstr.h"
 
+#define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
+#define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
+
 #ifdef _MSC_VER
-#pragma message ("TODO: json not implemented for this platform")
+#define GO_DOWN (1)
+#define GO_UP (1 << 1)
+#define GO_Q_DOWN (1 << 2)
+#define GO_Q_UP (1 << 3)
+#define GO_BARE (1 << 4)
+#define GO_UNBARE (1 << 5)
+#define GO_ESCAPE (1 << 6)
+#define GO_UNESCAPE (1 << 7)
+#define GO_UTF8 (1 << 8)
+#define GO_UTF8_CONTINUE (1 << 9)
 int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
-	return 1;
+	ut32 prev = 0;
+	const ut8 *cur, *end;
+	int depth = 0, utf8_remain = 0, what_did = 1;
+	for (cur = js, end = js + len; cur < end; cur++) {
+		if (what_did & GO_BARE) {
+			switch (*cur) {
+			case ' ':
+			case '\t':
+			case '\r':
+			case '\n':
+			case ',':
+			case ']':
+			case '}':
+				what_did = GO_UNBARE;
+				CAP (-1);
+				break;
+			default:
+				if (*cur >= 32 && *cur <= 126) {
+					continue;
+				}
+				return 1;
+			}
+			// Same *cur
+		}
+		if (what_did & GO_UTF8) {
+			if (*cur < 128 || (*cur >=192 && *cur <= 255)) {
+				return 1;
+			}
+			if (!--utf8_remain) {
+				what_did = GO_UTF8_CONTINUE;
+			}
+			continue;
+		}
+		if (what_did & GO_ESCAPE) {
+			switch (*cur) {
+			case '"':
+			case '\\':
+			case '/':
+			case 'b':
+			case 'f':
+			case 'n':
+			case 'r':
+			case 't':
+			case 'u':
+				what_did = GO_UNESCAPE;
+				break;
+			default:
+				return 1;
+			}
+			continue;
+		}
+		if (what_did & GO_Q_UP || what_did & GO_UTF8_CONTINUE || what_did & GO_UNESCAPE) {
+			switch (*cur) {
+			case '\\':
+				what_did = GO_ESCAPE;
+				break;
+			case '"':
+				what_did = GO_Q_DOWN;
+				CAP (-1);
+				break;
+			default:
+				if (*cur <= 31 || (*cur >= 127 && *cur <= 191) || (*cur >= 248 && *cur <= 255)) {
+					return 1;
+				}
+				if (*cur < 127) {
+					continue;
+				}
+				what_did = GO_UTF8;
+				if (*cur < 224) {
+					utf8_remain = 1;
+					continue;
+				}
+				if (*cur < 239) {
+					utf8_remain = 2;
+					continue;
+				}
+				utf8_remain = 3;
+				break;
+			}
+			continue;
+		}
+		switch (*cur) {
+			case '\t':
+			case ' ':
+			case '\r':
+			case '\n':
+			case ',':
+			case ':':
+				break;
+			case '"':
+				PUSH (1);
+				what_did = GO_Q_UP;
+				break;
+			case '[':
+			case '{':
+				PUSH (0);
+				++depth;
+				what_did = GO_UP;
+				break;
+			case ']':
+			case '}':
+				--depth;
+				CAP (0);
+				what_did = GO_DOWN;
+				break;
+			case '-':
+			case 't':
+			case 'f':
+			case 'n':
+				what_did = GO_BARE;
+				PUSH (0);
+				break;
+			default:
+				if (*cur >= 48 && *cur  <= 57) { // 0-9
+					what_did = GO_BARE;
+					PUSH (0);
+					break;
+				}
+				return 1;
+		}
+	}
+	return depth;
 }
 #else
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
@@ -17,11 +150,8 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Winitializer-overrides"
-#pragma GCC diagnostic ignored "-Woverride-init"
 
 #define HAVE_RAWSTR 0
-#define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
-#define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
 
 int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 	ut32 prev = 0;

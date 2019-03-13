@@ -12,9 +12,9 @@ typedef struct {
 	ut32 size;
 } RIOMalloc;
 
-#define RIOTCP_FD(x) (((RIOMalloc*)x->data)->fd)
-#define RIOTCP_SZ(x) (((RIOMalloc*)x->data)->size)
-#define RIOTCP_BUF(x) (((RIOMalloc*)x->data)->buf)
+#define RIOTCP_FD(x) (((RIOMalloc*)(x)->data)->fd)
+#define RIOTCP_SZ(x) (((RIOMalloc*)(x)->data)->size)
+#define RIOTCP_BUF(x) (((RIOMalloc*)(x)->data)->buf)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data) {
@@ -49,10 +49,8 @@ static int __close(RIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	free (riom->buf);
-	riom->buf = NULL;
-	free (fd->data);
-	fd->data = NULL;
+	R_FREE (riom->buf);
+	R_FREE (fd->data);
 	return 0;
 }
 
@@ -108,8 +106,7 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 			if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
 				ut8 *res = r_socket_slurp (s, len);
 				if (*len < 1) {
-					free (res);
-					res = NULL;
+					R_FREE (res);
 				} else {
 					*code = 200;
 				}
@@ -162,18 +159,19 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_tcp = {
 	.name = "tcp",
-        .desc = "load files via TCP (listen or connect)",
+	.desc = "Load files via TCP (listen or connect)",
+	.uris = "tcp://",
 	.license = "LGPL3",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .check = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_tcp,
 	.version = R2_VERSION

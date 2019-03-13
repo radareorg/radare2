@@ -4,7 +4,7 @@ Capstone
 Capstone Engine is the disassembler engine used by radare2 by default for 
 some architectures.
 
-Radare2 ships its own version of capstone based on the -next branch with
+Radare2 ships its own version of capstone based on the -master branch with
 some minor patches. The problem is that latest release have some compile
 time dependencies that make compilation with older releases a bit harder.
 

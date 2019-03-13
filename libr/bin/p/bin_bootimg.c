@@ -13,6 +13,9 @@ typedef struct boot_img_hdr BootImage;
 #define BOOT_ARGS_SIZE 512
 #define BOOT_EXTRA_ARGS_SIZE 1024
 
+#define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
+#define ROUND_DOWN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
+
 R_PACKED (
 struct boot_img_hdr {
 	ut8 magic[BOOT_MAGIC_SIZE];
@@ -41,16 +44,18 @@ struct boot_img_hdr {
 typedef struct {
 	Sdb *kv;
 	BootImage bi;
+	RBuffer *buf;
 } BootImageObj;
 
-static int bootimg_header_load(BootImage *bi, RBuffer *buf, Sdb *db) {
+static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	char *n;
 	int i;
-	if (r_buf_size (buf) < sizeof (BootImage)) {
+	if (r_buf_size (obj->buf) < sizeof (BootImage)) {
 		return false;
 	}
 	// TODO make it endian-safe (void)r_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
-	(void) r_buf_read_at (buf, 0, (ut8 *) bi, sizeof (BootImage));
+	BootImage *bi = &obj->bi;
+	(void) r_buf_read_at (obj->buf, 0, (ut8 *)bi, sizeof (BootImage));
 	if ((n = r_str_ndup ((char *) bi->name, BOOT_NAME_SIZE))) {
 		sdb_set (db, "name", n, 0);
 		free (n);
@@ -79,7 +84,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb) {
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (!bio) {
 		return NULL;
@@ -87,18 +92,21 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb
 	bio->kv = sdb_new0 ();
 	if (!bio->kv) {
 		free (bio);
-		return NULL;
+		return false;
 	}
-	bootimg_header_load (&bio->bi, bf->buf, bio->kv);
+	bio->buf = r_buf_ref (buf);
+	if (!bootimg_header_load (bio, bio->kv)) {
+		free (bio);
+		return false;
+	}
 	sdb_ns_set (sdb, "info", bio->kv);
 	return bio;
 }
 
-static bool load(RBinFile *bf) {
-	return true;
-}
-
 static int destroy(RBinFile *bf) {
+	BootImageObj *bio = bf->o->bin_obj;
+	r_buf_free (bio->buf);
+	R_FREE (bf->o->bin_obj);
 	return true;
 }
 
@@ -112,7 +120,6 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	// BootImageObj *bio;
 	RBinInfo *ret;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
@@ -131,19 +138,24 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
-	ret->bits = 16; // 32? 64?
+	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	ret->rclass = strdup ("image");
-#if 0
-	// bootimg_header_load (&art, bf->buf);
-	bio = bf->o->bin_obj;
-#endif
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length > 12 && !strncmp ((const char *) buf, "ANDROID!", 8));
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[13];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);
+}
+
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -168,7 +180,6 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	ut64 base;
 	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;
@@ -185,54 +196,53 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "header", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("header");
 	ptr->size = sizeof (BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	base = bi->page_size;
-	strncpy (ptr->name, "kernel", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("kernel");
 	ptr->size = bi->kernel_size;
-	ptr->vsize = ptr->size + (ptr->size % bi->page_size);
-	ptr->paddr = base;
+	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
+	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
-		base = ((bi->kernel_size + 2 * bi->page_size - 1) / bi->page_size) * bi->page_size;
+		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "ramdisk", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("ramdisk");
 		ptr->size = bi->ramdisk_size;
-		ptr->vsize = bi->ramdisk_size + (bi->ramdisk_size % bi->page_size);
-		ptr->paddr = base;
+		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
+		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+		ptr->perm = R_PERM_RX; // r-x
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 
 	if (bi->second_size > 0) {
-		base = ((bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1) / bi->page_size) * bi->page_size;
+		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "second", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("second");
 		ptr->size = bi->second_size;
-		ptr->vsize = bi->second_size + (bi->second_size % bi->page_size);
-		ptr->paddr = base;
+		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
+		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+		ptr->perm = R_PERM_RX; // r-x
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -245,10 +255,10 @@ RBinPlugin r_bin_plugin_bootimg = {
 	.desc = "Android Boot Image",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,
@@ -257,7 +267,7 @@ RBinPlugin r_bin_plugin_bootimg = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bootimg,
 	.version = R2_VERSION

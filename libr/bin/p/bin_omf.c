@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 - ampotos, pancake */
+/* radare - LGPL - Copyright 2015-2018 - ampotos, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,11 +6,12 @@
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
 	if (!buf || !size || size == UT64_MAX) {
-		return NULL;
+		return false;
 	}
-	return r_bin_internal_omf_load ((char *) buf, size);
+	*bin_obj = r_bin_internal_omf_load (buf, size);
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -19,8 +20,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, byte, size, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, byte, size, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -48,7 +48,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 			return false;
 		}
 	}
-	return r_bin_checksum_omf_ok ((char *) buf, length);
+	return r_bin_checksum_omf_ok (buf, length);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -77,6 +77,10 @@ static RList *entries(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret;
 	ut32 ct_omf_sect = 0;
+
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
 	r_bin_omf_obj *obj = bf->o->bin_obj;
 
 	if (!(ret = r_list_new ())) {
@@ -97,7 +101,9 @@ static RList *symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
-
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
@@ -164,7 +170,7 @@ RBinPlugin r_bin_plugin_omf = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_omf,
 	.version = R2_VERSION

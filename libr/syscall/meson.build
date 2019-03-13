@@ -1,20 +1,24 @@
-files = [
+r_syscall_sources = [
   'syscall.c',
   'ioports.c'
 ]
 
-r_syscall = library('r_syscall', files,
+r_syscall = library('r_syscall', r_syscall_sources,
   include_directories: [platform_inc],
-  link_with: [
-    r_util,
-    libr_shlr
+  c_args: library_cflags,
+  dependencies: [
+    r_util_dep,
+    sdb_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(libraries: [r_syscall],
+r_syscall_dep = declare_dependency(link_with: r_syscall,
+                                   include_directories: [platform_inc])
+
+pkgconfig_mod.generate(r_syscall,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_syscall',

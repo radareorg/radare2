@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -31,14 +31,16 @@ typedef struct __packed art_header_t {
 typedef struct {
 	Sdb *kv;
 	ARTHeader art;
+	RBuffer *buf;
 } ArtObj;
 
-static int art_header_load(ARTHeader *art, RBuffer *buf, Sdb *db) {
+static int art_header_load(ArtObj *ao, Sdb *db) {
 	/* TODO: handle read errors here */
-	if (r_buf_size (buf) < sizeof (ARTHeader)) {
+	if (r_buf_size (ao->buf) < sizeof (ARTHeader)) {
 		return false;
 	}
-	(void) r_buf_fread_at (buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
+	ARTHeader *art = &ao->art;
+	(void) r_buf_fread_at (ao->buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
 	sdb_set (db, "img.base", sdb_fmt ("0x%x", art->image_base), 0);
 	sdb_set (db, "img.size", sdb_fmt ("0x%x", art->image_size), 0);
 	sdb_set (db, "art.checksum", sdb_fmt ("0x%x", art->checksum), 0);
@@ -63,7 +65,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (!ao) {
 		return NULL;
@@ -73,16 +75,16 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb
 		free (ao);
 		return NULL;
 	}
-	art_header_load (&ao->art, bf->buf, ao->kv);
+	ao->buf = r_buf_ref (buf);
+	art_header_load (ao, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
 	return ao;
 }
 
-static bool load(RBinFile *bf) {
-	return true;
-}
-
 static int destroy(RBinFile *bf) {
+	ArtObj *obj = bf->o->bin_obj;
+	r_buf_free (obj->buf);
+	free (obj);
 	return true;
 }
 
@@ -105,7 +107,6 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	// art_header_load (&art, bf->buf);
 	ao = bf->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
@@ -129,8 +130,17 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+static bool check_buffer(RBuffer *buf) {
+	char tmp[4];
+	int r = r_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
+	return r == 4 && !strncmp (tmp, "art\n", 4);
+}
+
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length > 3 && !strncmp ((const char *) buf, "art\n", 4));
+	RBuffer *b = r_buf_new_with_bytes (buf, length);
+	bool res = check_buffer (b);
+	r_buf_free (b);
+	return res;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -166,48 +176,48 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "load", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("load");
 	ptr->size = bf->buf->length;
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "bitmap", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "oat", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("oat");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "oat_data", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("oat_data");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -219,10 +229,10 @@ RBinPlugin r_bin_plugin_art = {
 	.desc = "Android Runtime",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,
@@ -231,7 +241,7 @@ RBinPlugin r_bin_plugin_art = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_art,
 	.version = R2_VERSION

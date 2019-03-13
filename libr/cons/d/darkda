@@ -29,6 +29,8 @@ ec args rgb:ffd200
 ec help rgb:009d9d
 ec input rgb:888
 ec trap rgb:d66
+ec ucall rgb:ffd200
+ec ujmp rgb:9dd600
 ec swi rgb:df077e
 ec creg rgb:69d200
 ec flag rgb:00b1ab
@@ -44,3 +46,13 @@ ec graph.true rgb:009100
 ec graph.false rgb:bc0000
 ec graph.trufae rgb:0043cb
 ec graph.current rgb:fff
+
+ec func_var rgb:99a
+ec func_var_type rgb:df077e
+ec func_var_addr rgb:ababab
+
+ec ai.read rgb:be077e
+ec ai.write rgb:df077e
+ec ai.exec rgb:9dd600
+ec ai.seq rgb:9dd600
+ec ai.ascii rgb:d25032

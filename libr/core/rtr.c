@@ -1,9 +1,13 @@
-/* radare - Copyright 2009-2017 - pancake, nibble */
+/* radare - Copyright 2009-2018 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
 #include "gdb/include/libgdbr.h"
 #include "gdb/include/gdbserver/core.h"
+
+#if HAVE_LIBUV
+#include <uv.h>
+#endif
 
 #if 0
 SECURITY IMPLICATIONS
@@ -16,7 +20,6 @@ SECURITY IMPLICATIONS
 - follow symlinks
 #endif
 
-#define USE_THREADS 1
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
@@ -34,6 +37,7 @@ typedef struct {
 typedef struct {
 	RCore *core;
 	int launch;
+	int browse;
 	char *path;
 } HttpThread;
 
@@ -58,9 +62,11 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 		const char *http_log_file = r_config_get (core->config, "http.logfile");
 		if (http_log_file && *http_log_file) {
 			char * msg = calloc (4096, 1);
-			vsnprintf (msg, 4095, fmt, ap);
-			r_file_dump (http_log_file, (const ut8*)msg, -1, true);
-			free (msg);
+			if (msg) {
+				vsnprintf (msg, 4095, fmt, ap);
+				r_file_dump (http_log_file, (const ut8*)msg, -1, true);
+				free (msg);
+			}
 		} else {
 			vfprintf (stderr, fmt, ap);
 		}
@@ -156,8 +162,9 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		} else if (*buf=='/') {
 			eprintf ("Unknown command: %s\n", buf);
 		} else {
-			snprintf (msg, sizeof (msg) - 1, "T [%s] %s", me, buf);
-			free (rtrcmd (T, msg));
+			char *cmd = r_str_newf ("T [%s] %s", me, buf);
+			free (rtrcmd (T, cmd));
+			free (cmd);
 		}
 	}
 beach:
@@ -326,8 +333,16 @@ TODO:
 			case '*': free (rtrcmd (T, "b+16")); break;
 			case '-': free (rtrcmd (T, "b-1")); break;
 			case '/': free (rtrcmd (T, "b-16")); break;
-			case 'p': cmdidx++; if (!cmds[cmdidx]) cmdidx = 0; break;
-			case 'P': cmdidx--; if (cmdidx<0) cmdidx = 2; break;
+			case 'p': cmdidx++;
+				if (!cmds[cmdidx]) {
+					cmdidx = 0;
+				}
+				break;
+			case 'P': cmdidx--;
+				if (cmdidx < 0) {
+					cmdidx = 2;
+				}
+				break;
 			case 'q': return false;
 			}
 		}
@@ -365,7 +380,9 @@ static char *rtr_dir_files (const char *path) {
 	RList *files = r_sys_dir (path);
 	eprintf ("Listing directory %s\n", path);
 	r_list_foreach (files, iter, file) {
-		if (file[0] == '.') continue;
+		if (file[0] == '.') {
+			continue;
+		}
 		ptr = r_str_appendf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
 			path, file, file);
 	}
@@ -393,21 +410,24 @@ static void activateDieTime (RCore *core) {
 }
 
 // return 1 on error
-static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
+static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = R_EMPTY;
 	RSocketHTTPRequest *rs;
 	char buf[32];
 	int ret = 0;
 	RSocket *s;
+	RSocketHTTPOptions so;
 	char *dir;
-	int iport, timeout = r_config_get_i (core->config, "http.timeout");
+	int iport;
 	const char *host = r_config_get (core->config, "http.bind");
 	const char *root = r_config_get (core->config, "http.root");
 	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
 	const char *httpui = r_config_get (core->config, "http.ui");
+	const char *httpauthfile = r_config_get (core->config, "http.authfile");
+	char *pfile = NULL;
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
@@ -416,9 +436,16 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		}
 		return false;
 	}
-
+	if (!path) {
+		return false;
+	}
+	char *arg = strchr (path, ' ');
+	if (arg) {
+		path = arg + 1;
+	}
 	if (path && atoi (path)) {
 		port = path;
+		r_config_set (core->config, "http.port", port);
 		path = NULL;
 	} else {
 		if (core->file && (!path || !*path)) {
@@ -460,6 +487,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		} else {
 			s->local = true;
 		}
+		memset (&so, 0, sizeof (so));
 	}
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
@@ -467,10 +495,34 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		return 1;
 	}
 
-	if (launch=='H') {
+	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
 			browser, host, atoi (port), path? path:"");
+	}
+
+	so.httpauth = r_config_get_i (core->config, "http.auth");
+
+	if (so.httpauth) {
+		if (!httpauthfile) {
+			r_socket_free (s);
+			eprintf ("No user list set for HTTP Authentification\n");
+			return 1;
+		}
+
+		int sz;
+		pfile = r_file_slurp (httpauthfile, &sz);
+
+		if (pfile) {
+			so.authtokens = r_str_split_list (pfile, "\n");
+		} else {
+			r_socket_free (s);
+			eprintf ("Empty list of HTTP users\n");
+			return 1;
+		}
+
+		so.timeout = r_config_get_i (core->config, "http.timeout");
+		so.accept_timeout = 1;
 	}
 
 	origcfg = core->config;
@@ -501,6 +553,12 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	ut8 *newblk, *origblk = core->block;
 
 	newblk = malloc (core->blocksize);
+	if (!newblk) {
+		r_socket_free (s);
+		r_list_free (so.authtokens);
+		free (pfile);
+		return 1;
+	}
 	memcpy (newblk, core->block, core->blocksize);
 
 	core->block = newblk;
@@ -527,7 +585,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		/* this is blocking */
 		activateDieTime (core);
 
-		rs = r_socket_http_accept (s, 1, timeout);
+		void *bed = r_cons_sleep_begin ();
+		rs = r_socket_http_accept (s, &so);
+		r_cons_sleep_end (bed);
 
 		origoff = core->offset;
 		origblk = core->block;
@@ -543,9 +603,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
 
-
 		if (!rs) {
+			bed = r_cons_sleep_begin ();
 			r_sys_usleep (100);
+			r_cons_sleep_end (bed);
 			continue;
 		}
 		if (allow && *allow) {
@@ -580,6 +641,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 			continue;
 		}
 		dir = NULL;
+
+		if (!rs->auth) {
+			r_socket_http_response (rs, 401, "", 0, NULL);
+		}
 
 		if (r_config_get_i (core->config, "http.verbose")) {
 			char *peer = r_socket_to_string (rs->s);
@@ -631,86 +696,92 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 						free (path);
 					}
 				} else {
-					r_socket_http_response (rs, 403, "Permission denied\n", 0, NULL);
+					r_socket_http_response (rs, 403, "", 0, NULL);
 				}
 			} else if (!strncmp (rs->path, "/cmd/", 5)) {
-				char *cmd = rs->path + 5;
-				const char *httpcmd = r_config_get (core->config, "http.uri");
-				const char *httpref = r_config_get (core->config, "http.referer");
-				bool httpref_enabled;
-				char *refstr = NULL;
-				if (httpref && *httpref) {
-					httpref_enabled = true;
-					if (strstr (httpref, "http")) {
-						refstr = strdup (httpref);
-					} else {
-						refstr = r_str_newf ("http://localhost:%d/", atoi (port));
+				const bool colon = r_config_get_i (core->config, "http.colon");
+				if (colon && rs->path[5] != ':') {
+					r_socket_http_response (rs, 403, "Permission denied", 0, headers);
+				} else {
+					char *cmd = rs->path + 5;
+					const char *httpcmd = r_config_get (core->config, "http.uri");
+					const char *httpref = r_config_get (core->config, "http.referer");
+					const bool httpref_enabled = (httpref && *httpref);
+					char *refstr = NULL;
+					if (httpref_enabled) {
+						if (strstr (httpref, "http")) {
+							refstr = strdup (httpref);
+						} else {
+							refstr = r_str_newf ("http://localhost:%d/", atoi (port));
+						}
 					}
-				} else {
-					httpref_enabled = false;
-				}
 
-				while (*cmd == '/') {
-					cmd++;
-				}
-				if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
-					r_socket_http_response (rs, 503, "", 0, headers);
-				} else {
-					if (httpcmd && *httpcmd) {
-						int len; // do remote http query and proxy response
-						char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
-						res = r_socket_http_get (bar, NULL, &len);
-						if (res) {
-							res[len] = 0;
-							r_cons_println (res);
-						}
-						free (bar);
+					while (*cmd == '/') {
+						cmd++;
+					}
+					if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
+						r_socket_http_response (rs, 503, "", 0, headers);
 					} else {
-						char *out, *cmd = rs->path + 5;
-						r_str_uri_decode (cmd);
-						r_config_set (core->config, "scr.interactive", "false");
-
-						if (!r_sandbox_enable (0) &&
-						    (!strcmp (cmd, "=h*") ||
-						     !strcmp (cmd, "=h--"))) {
-							out = NULL;
-						} else if (*cmd == ':') {
-							/* commands in /cmd/: starting with : do not show any output */
-							r_core_cmd0 (core, cmd + 1);
-							out = NULL;
+						if (httpcmd && *httpcmd) {
+							int len; // do remote http query and proxy response
+							char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
+							bed = r_cons_sleep_begin ();
+							res = r_socket_http_get (bar, NULL, &len);
+							r_cons_sleep_end (bed);
+							if (res) {
+								res[len] = 0;
+								r_cons_println (res);
+							}
+							free (bar);
 						} else {
-							out = r_core_cmd_str_pipe (core, cmd);
-						}
+							char *out, *cmd = rs->path + 5;
+							r_str_uri_decode (cmd);
+							r_config_set (core->config, "scr.interactive", "false");
 
-						if (out) {
-							char *res = r_str_uri_encode (out);
-							char *newheaders = r_str_newf (
-								"Content-Type: text/plain\n%s", headers);
-							r_socket_http_response (rs, 200, out, 0, newheaders);
-							free (out);
-							free (newheaders);
-							free (res);
-						} else {
-							r_socket_http_response (rs, 200, "", 0, headers);
-						}
+							if (!r_sandbox_enable (0) &&
+									(!strcmp (cmd, "=h*") ||
+									 !strcmp (cmd, "=h--"))) {
+								out = NULL;
+							} else if (*cmd == ':') {
+								/* commands in /cmd/: starting with : do not show any output */
+								r_core_cmd0 (core, cmd + 1);
+								out = NULL;
+							} else {
+								out = r_core_cmd_str_pipe (core, cmd);
+							}
 
-						if (!r_sandbox_enable (0)) {
-							if (!strcmp (cmd, "=h*")) {
-								/* do stuff */
-								r_socket_http_close (rs);
-								free (dir);
-								free (refstr);
-								ret = -2;
-								goto the_end;
-							} else if (!strcmp (cmd, "=h--")) {
-								r_socket_http_close (rs);
-								ret = 0;
-								goto the_end;
+							if (out) {
+								char *res = r_str_uri_encode (out);
+								char *newheaders = r_str_newf (
+										"Content-Type: text/plain\n%s", headers);
+								r_socket_http_response (rs, 200, out, 0, newheaders);
+								free (out);
+								free (newheaders);
+								free (res);
+							} else {
+								r_socket_http_response (rs, 200, "", 0, headers);
+							}
+
+							if (!r_sandbox_enable (0)) {
+								if (!strcmp (cmd, "=h*")) {
+									/* do stuff */
+									r_socket_http_close (rs);
+									free (dir);
+									free (refstr);
+									ret = -2;
+									goto the_end;
+								} else if (!strcmp (cmd, "=h--")) {
+									r_socket_http_close (rs);
+									free (dir);
+									free (refstr);
+									ret = 0;
+									goto the_end;
+								}
 							}
 						}
 					}
+					free (refstr);
 				}
-				free (refstr);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				const char *homeroot = r_config_get (core->config, "http.homeroot");
@@ -831,6 +902,7 @@ the_end:
 	}
 	r_cons_break_pop ();
 	core->http_up = false;
+	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
 	if (restoreSandbox) {
@@ -843,7 +915,8 @@ the_end:
 	return ret;
 }
 
-static int r_core_rtr_http_thread (RThread *th) {
+#if 0
+static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -851,19 +924,21 @@ static int r_core_rtr_http_thread (RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	eprintf ("WARNING: Background webserver requires http.sandbox=false to run properly\n");
+	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
 	if (ret) {
 		int p = r_config_get_i (ht->core->config, "http.port");
 		r_config_set_i (ht->core->config, "http.port",  p + 1);
 		if (p >= r_config_get_i (ht->core->config, "http.maxport")) {
-			return false;
+			return R_TH_STOP;
 		}
 	}
-	return ret;
+	return ret ? R_TH_REPEAT : R_TH_STOP;
 }
+#endif
 
-R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
@@ -872,7 +947,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	if (launch == '-') {
 		if (httpthread) {
 			eprintf ("Press ^C to stop the webserver\n");
-			r_th_free (httpthread);
+			r_th_kill_free (httpthread);
 			httpthread = NULL;
 		} else {
 			eprintf ("No webserver running\n");
@@ -884,6 +959,10 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		return 1;
 	}
 	if (launch == '&') {
+		while (*path == '&') path++;
+		return r_core_cmdf (core, "& =h%s", path);
+	}
+#if 0
 		if (httpthread) {
 			eprintf ("HTTP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
@@ -895,15 +974,20 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			HttpThread *ht = calloc (sizeof (HttpThread), 1);
 			ht->core = core;
 			ht->launch = launch;
+			ht->browse = browse;
 			ht->path = strdup (tpath);
 			httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
+			if (httpthread) {
+				r_th_setname (httpthread, "httpthread");
+			}
 			r_th_start (httpthread, true);
 			eprintf ("Background http server started.\n");
 		}
 		return 0;
 	}
+#endif
 	do {
-		ret = r_core_rtr_http_run (core, launch, path);
+		ret = r_core_rtr_http_run (core, launch, browse, path);
 	} while (ret == -2);
 	return ret;
 }
@@ -1097,7 +1181,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		case 'r': // dr
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 			be = r_config_get_i (core->config, "cfg.bigendian");
-			if (isspace (cmd[2])) { // dr reg
+			if (isspace ((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
 				char new_cmd[128] = { 0 };
 				int off = 0;
@@ -1259,7 +1343,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!r_core_file_open (core, file, R_IO_READ, 0)) {
+	if (!r_core_file_open (core, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}
@@ -1337,8 +1421,8 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 		cmd = input;
 	}
 
-	if (!rtr_host[0].fd || !rtr_host[rtr_n].fd->fd) {
-		eprintf("Error: Unknown host\n");
+	if (!rtr_host[rtr_n].fd || !rtr_host[rtr_n].fd->fd) {
+		eprintf ("Error: Unknown host\n");
 		return;
 	}
 
@@ -1348,13 +1432,18 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	}
 
 	switch (rtr_host[rtr_n].proto) {
-	case RTR_PROT_RAP:
+	case RTR_PROTOCOL_RAP:
 		eprintf ("Error: Cannot use '=<' to a rap connection.\n");
 		break;
-	case RTR_PROT_TCP:
-	case RTR_PROT_UDP:
-	default:
+	case RTR_PROTOCOL_HTTP:
+		eprintf ("TODO\n");
+		break;
+	case RTR_PROTOCOL_TCP:
+	case RTR_PROTOCOL_UDP:
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
+		break;
+	default:
+		eprintf ("Unknown protocol\n");
 		break;
 	}
 	free (str);
@@ -1363,65 +1452,78 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 R_API void r_core_rtr_list(RCore *core) {
 	int i;
 	for (i = 0; i < RTR_MAX_HOSTS; i++) {
-		if (!rtr_host[i].fd)
+		if (!rtr_host[i].fd) {
 			continue;
-		r_cons_printf ("%i - ", rtr_host[i].fd->fd);
-		switch (rtr_host[i].proto) {
-		case RTR_PROT_HTTP: r_cons_printf ( "http://"); break;
-		case RTR_PROT_TCP: r_cons_printf ("tcp://"); break;
-		case RTR_PROT_UDP: r_cons_printf ("udp://"); break;
-		default: r_cons_printf ("rap://"); break;
 		}
-		r_cons_printf ("%s:%i/%s\n", rtr_host[i].host,
+		const char *proto = "rap";
+		switch (rtr_host[i].proto) {
+		case RTR_PROTOCOL_HTTP: proto = "http"; break;
+		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
+		case RTR_PROTOCOL_UDP: proto = "udp"; break;
+		}
+		r_cons_printf ("%i - %s://%s:%i/%s\n", 
+			rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
 }
 
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
-	char *port, input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
-	int proto, i, timeout, ret;
+	char *port, input[1024], *file = NULL, *ptr = NULL, buf[1024];
+	int i, timeout, ret;
 	RSocket *fd;
 
 	timeout = r_config_get_i (core->config, "http.timeout");
 	strncpy (input, _input, sizeof (input) - 4);
-	input[sizeof(input)-4] = '\0';
-	/* Parse uri */
-	if ((ptr = strstr (input, "tcp://"))) {
-		proto = RTR_PROT_TCP;
-		host = ptr + 6;
-	} else if ((ptr = strstr(input, "http://"))) {
-		proto = RTR_PROT_HTTP;
-		host = ptr + 7;
-	} else if ((ptr = strstr(input, "udp://"))) {
-		proto = RTR_PROT_UDP;
-		host = ptr + 6;
-	} else if ((ptr = strstr(input, "rap://"))) {
-		proto = RTR_PROT_RAP;
-		host = ptr + 6;
-	} else {
-		proto = RTR_PROT_RAP;
-		host = input;
-	}
-	while (*host && IS_WHITECHAR (*host))
-		host++;
+	input[sizeof (input)-4] = '\0';
 
-	if (!(ptr = strchr (host, ':'))) {
-		ptr = host;
-		port = "80";
+	int proto = RTR_PROTOCOL_RAP;
+	char *host = (char *)r_str_trim_ro (input);
+	char *pikaboo = strstr (host, "://");
+	if (pikaboo) {
+		struct {
+			const char *name;
+			int protocol;
+		} uris[5] = {
+			{"tcp", RTR_PROTOCOL_TCP},
+			{"udp", RTR_PROTOCOL_UDP},
+			{"rap", RTR_PROTOCOL_RAP},
+			{"http", RTR_PROTOCOL_HTTP},
+			{NULL, 0}
+		};
+		char *s = r_str_ndup (input, pikaboo - input);
+		//int nlen = pikaboo - input;
+		for (i = 0; uris[i].name; i++) {
+			if (r_str_endswith (s, uris[i].name)) {
+				proto = uris[i].protocol;
+				host = pikaboo + 3;
+				break;
+			}
+		}
+		free (s);
+	}
+	if (host) {
+		if (!(ptr = strchr (host, ':'))) {
+			ptr = host;
+			port = "80";
+		} else {
+			*ptr++ = '\0';
+			port = ptr;
+		}
+	}
+	file = strchr (ptr, '/');
+	if (file) {	
+		*file = 0;
+		file = (char *)r_str_trim_ro (file + 1);
 	} else {
-		*ptr++ = '\0';
-		port = ptr;
+		if (*host == ':' || strstr (host, "://:")) { // listen
+			// it's fine to listen without serving a file
+		} else {
+			eprintf ("Error: Missing '/'\n");
+			return;
+		}
 	}
 
-	if (!(file = strchr (ptr, '/'))) {
-		eprintf ("Error: Missing '/'\n");
-		return;
-	}
-	*file++ = 0;
 	port = r_str_trim (port);
-	while (*file == ' ') {
-		file++;
-	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return;
@@ -1433,7 +1535,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		return;
 	}
 	switch (proto) {
-	case RTR_PROT_HTTP:
+	case RTR_PROTOCOL_HTTP:
 		{
 			char prompt[64], prompt2[64], *str, *ptr;
 			int len, flen = strlen (file);
@@ -1455,8 +1557,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				for (;;) {
 					r_line_set_prompt (prompt);
 					res = r_line_readline ();
-					if (!res || !*res) break;
-					if (*res == 'q') break;
+					if (!res || !*res) {
+						break;
+					}
+					if (*res == 'q') {
+						break;
+					}
 					if (!strcmp (res, "!sh")) {
 						for (;;) {
 							r_line_set_prompt (prompt2);
@@ -1470,7 +1576,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 							if (str) {
 								str[len] = 0;
 								res = strstr (str, "\n\n");
-								if (res) res = strstr (res+1, "\n\n");
+								if (res) {
+									res = strstr (res + 1, "\n\n");
+								}
 								res = res? res + 2: str;
 								const char *tail = (res[strlen (res) - 1] == '\n')? "": "\n";
 								printf ("%s%s", res, tail);
@@ -1490,15 +1598,25 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						rtr_textlog_chat (core, T);
 					} else {
 						ptr = r_str_uri_encode (res);
-						if (ptr) res = ptr;
+						if (ptr) {
+							res = ptr;
+						}
 						char *uri = r_str_newf ("http://%s:%s/%s%s", host, port, file, res);
-						if (ptr == res) free (ptr);
+						if (ptr == res) {
+							free (ptr);
+						}
 						str = r_socket_http_get (uri, NULL, &len);
 						if (str && len > 0) {
 							str[len] = 0;
 							res = strstr (str, "\n\n");
-							if (res) res = strstr (res+1, "\n\n");
-							if (res) res += 2; else res = str;
+							if (res) {
+								res = strstr (res + 1, "\n\n");
+							}
+							if (res) {
+								res += 2;
+							} else {
+								res = str;
+							}
 							printf ("%s%s", res, (*res && res[strlen (res)-1] == '\n') ? "" : "\n");
 							r_line_hist_add (str);
 						}
@@ -1512,17 +1630,21 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				if (str) {
 					str[len] = 0;
 					res = strstr (str, "\n\n");
-					if (res) res = strstr (res + 1, "\n\n");
+					if (res) {
+						res = strstr (res + 1, "\n\n");
+					}
 					printf ("%s", res? res + 2: str);
 					free (str);
-				} else eprintf ("HTTP connection has failed\n");
+				} else {
+					eprintf ("HTTP connection has failed\n");
+				}
 				free (http_uri);
 			}
 			r_socket_free (fd);
 			return;
 		}
 		break;
-	case RTR_PROT_RAP:
+	case RTR_PROTOCOL_RAP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
@@ -1547,7 +1669,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		eprintf ("ok\n");
 		break;
-	case RTR_PROT_TCP:
+	case RTR_PROTOCOL_TCP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -1557,7 +1679,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		core->num->value = 0;
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
-	case RTR_PROT_UDP:
+	case RTR_PROTOCOL_UDP:
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -1591,15 +1713,17 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 
 	if (IS_DIGIT(input[0])) {
 		fd = r_num_math (core->num, input);
-		for (i = 0; i < RTR_MAX_HOSTS; i++)
+		for (i = 0; i < RTR_MAX_HOSTS; i++) {
 			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
 				r_socket_free (rtr_host[i].fd);
 				rtr_host[i].fd = NULL;
 				if (rtr_n == i) {
-					for (rtr_n = 0; !rtr_host[rtr_n].fd \
-						&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+					for (rtr_n = 0; !rtr_host[rtr_n].fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+						;
+					}
 				}
 				break;
+			}
 		}
 	} else {
 		for (i = 0; i < RTR_MAX_HOSTS; i++) {
@@ -1620,9 +1744,9 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	prompt[0] = 0;
 	if (IS_DIGIT (input[0])) {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd \
-			&& rtr_host[rtr_n].fd->fd != fd \
-			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd && rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+			;
+		}
 	}
 
 	while (!r_cons_is_breaked ()) {
@@ -1665,7 +1789,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	char *file = r_str_newf ("rap://%s", input);
-	int flags = R_IO_READ | R_IO_WRITE;
+	int flags = R_PERM_RW;
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
@@ -1681,7 +1805,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
-static int r_core_rtr_rap_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -1689,7 +1813,7 @@ static int r_core_rtr_rap_thread (RThread *th) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	return r_core_rtr_rap_run (rt->core, rt->input);
+	return r_core_rtr_rap_run (rt->core, rt->input) ? R_TH_REPEAT : R_TH_STOP;
 }
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
@@ -1700,21 +1824,25 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	// "=:"
 	if (*input == ':' && !strchr (input + 1, ':')) {
+		void *bed = r_cons_sleep_begin ();
 		r_core_rtr_rap_run (core, input);
+		r_cons_sleep_end (bed);
 		return;
 	}
 
-	if (*input == '&') { // "=h&"
+	if (*input == '&') { // "=h&" "=&:9090"
 		if (rapthread) {
 			eprintf ("RAP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
+			// TODO: use tasks
 			RapThread *RT = R_NEW0 (RapThread);
 			if (RT) {
 				RT->core = core;
 				RT->input = strdup (input + 1);
 				//RapThread rt = { core, strdup (input + 1) };
 				rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
+				r_th_setname (rapthread, "rapthread");
 				r_th_start (rapthread, true);
 				eprintf ("Background rap server started.\n");
 			}
@@ -1741,7 +1869,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (rtr_host[rtr_n].proto != RTR_PROT_RAP) {
+	if (rtr_host[rtr_n].proto != RTR_PROTOCOL_RAP) {
 		eprintf ("Error: Not a rap:// host\n");
 		return;
 	}
@@ -1825,7 +1953,9 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 		//r_socket_write (s, "px\n", 3);
 		for (;;) {
 			int ret = r_socket_read (s, buf, sizeof (buf));
-			if (ret < 1) break;
+			if (ret < 1) {
+				break;
+			}
 			buf[ret] = 0;
 			rbuf = r_str_append (rbuf, (const char *)buf);
 		}
@@ -1835,6 +1965,206 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	r_socket_free (s);
 	return rbuf;
 }
+
+
+
+#if HAVE_LIBUV
+
+typedef struct rtr_cmds_context_t {
+	uv_tcp_t server;
+	RPVector clients;
+	void *bed;
+} rtr_cmds_context;
+
+typedef struct rtr_cmds_client_context_t {
+	RCore *core;
+	char buf[4096];
+	char *res;
+	size_t len;
+	uv_tcp_t *client;
+} rtr_cmds_client_context;
+
+static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
+	uv_loop_t *loop = client->loop;
+	rtr_cmds_context *context = loop->data;
+	if (remove) {
+		size_t i;
+		for (i = 0; i < r_pvector_len (&context->clients); i++) {
+			if (r_pvector_at (&context->clients, i) == client) {
+				r_pvector_remove_at (&context->clients, i);
+				break;
+			}
+		}
+	}
+	rtr_cmds_client_context *client_context = client->data;
+	uv_close ((uv_handle_t *) client, (uv_close_cb) free);
+	free (client_context->res);
+	free (client_context);
+}
+
+static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+	rtr_cmds_client_context *context = handle->data;
+	buf->base = context->buf + context->len;
+	buf->len = sizeof (context->buf) - context->len - 1;
+}
+
+static void rtr_cmds_write(uv_write_t *req, int status) {
+	rtr_cmds_client_context *context = req->data;
+
+	if (status) {
+		eprintf ("Write error: %s\n", uv_strerror (status));
+	}
+
+	free (req);
+	rtr_cmds_client_close (context->client, true);
+}
+
+static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+	rtr_cmds_context *context = client->loop->data;
+	rtr_cmds_client_context *client_context = client->data;
+
+	if (nread < 0) {
+		if (nread != UV_EOF) {
+			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
+		}
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
+		return;
+	} else if (nread == 0) {
+		return;
+	}
+
+	buf->base[nread] = '\0';
+	char *end = strchr (buf->base, '\n');
+	if (!end) {
+		return;
+	}
+	*end = '\0';
+
+	r_cons_sleep_end (context->bed);
+	client_context->res = r_core_cmd_str (client_context->core, (const char *)client_context->buf);
+	context->bed = r_cons_sleep_begin ();
+
+	if (!client_context->res || !*client_context->res) {
+		free (client_context->res);
+		client_context->res = strdup ("\n");
+	}
+
+	if (!client_context->res || (!r_config_get_i (client_context->core->config, "scr.prompt") &&
+				 !strcmp ((char *)buf, "q!")) ||
+				 !strcmp ((char *)buf, ".--")) {
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
+		return;
+	}
+
+	uv_write_t *req = R_NEW (uv_write_t);
+	req->data = client_context;
+	uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
+	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
+	uv_read_stop (client);
+}
+
+static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
+	if (status < 0) {
+		eprintf ("New connection error: %s\n", uv_strerror (status));
+		return;
+	}
+
+	rtr_cmds_context *context = server->loop->data;
+
+	uv_tcp_t *client = R_NEW (uv_tcp_t);
+	if (!client) {
+		return;
+	}
+
+	uv_tcp_init (server->loop, client);
+	if (uv_accept (server, (uv_stream_t *)client) == 0) {
+		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
+		if (!client_context) {
+			uv_close ((uv_handle_t *)client, NULL);
+			return;
+		}
+
+		client_context->core = server->data;
+		client_context->len = 0;
+		client_context->buf[0] = '\0';
+		client_context->res = NULL;
+		client_context->client = client;
+		client->data = client_context;
+
+		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
+
+		r_pvector_push (&context->clients, client);
+	} else {
+		uv_close ((uv_handle_t *)client, NULL);
+	}
+}
+
+static void rtr_cmds_stop(uv_async_t *handle) {
+	uv_close ((uv_handle_t *) handle, NULL);
+
+	rtr_cmds_context *context = handle->loop->data;
+
+	uv_close ((uv_handle_t *) &context->server, NULL);
+
+	void **it;
+	r_pvector_foreach (&context->clients, it) {
+		uv_tcp_t *client = *it;
+		rtr_cmds_client_close (client, false);
+	}
+}
+
+static void rtr_cmds_break(uv_async_t *async) {
+	uv_async_send (async);
+}
+
+R_API int r_core_rtr_cmds(RCore *core, const char *port) {
+	if (!port || port[0] == '?') {
+		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		return 0;
+	}
+
+	uv_loop_t *loop = R_NEW (uv_loop_t);
+	if (!loop) {
+		return 0;
+	}
+	uv_loop_init (loop);
+
+	rtr_cmds_context context;
+	r_pvector_init (&context.clients, NULL);
+	loop->data = &context;
+
+	context.server.data = core;
+	uv_tcp_init (loop, &context.server);
+
+	struct sockaddr_in addr;
+	bool local = (bool) r_config_get_i(core->config, "tcp.islocal");
+	int porti = r_socket_port_by_name (port);
+	uv_ip4_addr (local ? "127.0.0.1" : "0.0.0.0", porti, &addr);
+
+	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
+	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
+	if (r) {
+		eprintf ("Failed to listen: %s\n", uv_strerror (r));
+		goto beach;
+	}
+
+	uv_async_t stop_async;
+	uv_async_init (loop, &stop_async, rtr_cmds_stop);
+
+	r_cons_break_push ((RConsBreak) rtr_cmds_break, &stop_async);
+	context.bed = r_cons_sleep_begin ();
+	uv_run (loop, UV_RUN_DEFAULT);
+	r_cons_sleep_end (context.bed);
+	r_cons_break_pop ();
+
+beach:
+	uv_loop_close (loop);
+	free (loop);
+	r_pvector_clear (&context.clients);
+	return 0;
+}
+
+#else
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	unsigned char buf[4097];
@@ -1864,9 +2194,11 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		void *bed = r_cons_sleep_begin ();
 		ch = r_socket_accept (s);
 		buf[0] = 0;
 		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
+		r_cons_sleep_end (bed);
 		if (ret > 0) {
 			buf[ret] = 0;
 			for (i = 0; buf[i]; i++) {
@@ -1881,11 +2213,13 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 				break;
 			}
 			str = r_core_cmd_str (core, (const char *)buf);
+			bed = r_cons_sleep_begin ();
 			if (str && *str)  {
 				r_socket_write (ch, str, strlen (str));
 			} else {
 				r_socket_write (ch, "\n", 1);
 			}
+			r_cons_sleep_end (bed);
 			free (str);
 		}
 		r_socket_close (ch);
@@ -1897,3 +2231,5 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	r_socket_free (ch);
 	return 0;
 }
+
+#endif

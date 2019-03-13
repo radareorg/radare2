@@ -6,7 +6,9 @@ ec b0xff rgb:960
 ec bin rgb:fec
 ec other rgb:ba6
 ec btext rgb:fec
+ec ucall rgb:fec rgb:320
 ec call rgb:fec rgb:320
+ec ujmp rgb:fec
 ec cjmp rgb:fec
 ec jmp rgb:fec
 ec cmp rgb:ca6
@@ -45,3 +47,13 @@ ec graph.box rgb:431
 ec graph.box2 rgb:ca6
 ec graph.box3 rgb:ca6
 ec graph.box4 rgb:ca6
+
+ec func_var rgb:fd9
+ec func_var_type rgb:850
+ec func_var_addr rgb:960
+
+ec ai.read rgb:cb7
+ec ai.write rgb:ca6
+ec ai.exec rgb:db7
+ec ai.seq rgb:960
+ec ai.ascii rgb:fec

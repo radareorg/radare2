@@ -373,7 +373,7 @@ RList *windbg_list_process(WindCtx *ctx) {
 
 RList *windbg_list_threads(WindCtx *ctx) {
 	RList *ret;
-	ut64 ptr, base, ptl;
+	ut64 ptr, base;
 
 	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
 		return NULL;

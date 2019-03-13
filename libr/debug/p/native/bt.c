@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2018 - pancake */
+
 #include <r_anal.h>
 
 #include "bt/generic-x86.c"
@@ -21,6 +23,23 @@ static void prepend_current_pc (RDebug *dbg, RList *list) {
 	}
 }
 
+
+#if HAVE_PTRACE
+struct frames_proxy_args {
+	RDebugFrameCallback cb;
+	RDebug *dbg;
+	ut64 at;
+};
+
+static void *backtrace_proxy(void *user) {
+	struct frames_proxy_args *args = user;
+	if (args->cb) {
+		return args->cb (args->dbg, args->at);
+	}
+	return NULL;
+}
+#endif
+
 static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 	RDebugFrameCallback cb = NULL;
 	if (dbg->btalgo) {
@@ -42,7 +61,18 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 		}
 	}
 
-	RList *list = (dbg->btalgo && !strcmp (dbg->btalgo, "trace")) ? r_list_clone (dbg->call_frames) : cb (dbg, at);
+	RList *list;
+	if (dbg->btalgo && !strcmp (dbg->btalgo, "trace")) {
+		list = r_list_clone (dbg->call_frames);
+	} else {
+#if HAVE_PTRACE
+		struct frames_proxy_args args = { cb, dbg, at };
+		list = r_debug_ptrace_func (dbg, backtrace_proxy, &args);
+#else
+		list = cb (dbg, at);
+#endif
+	}
+
 	prepend_current_pc (dbg, list);
 	return list;
 }

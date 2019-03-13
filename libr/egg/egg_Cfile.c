@@ -61,6 +61,11 @@ static inline bool r_egg_Cfile_check_cEnv(struct cEnv_t *cEnv) {
 		|| !cEnv->SHDR || !cEnv->TRIPLET);
 }
 
+static inline bool isXNU(const char *os) {
+	return (!strcmp (os, "darwin") || !strcmp (os, "macos")
+		|| !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
+}
+
 static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int bits) {
 	struct cEnv_t *cEnv = calloc (1, sizeof (struct cEnv_t));
 	bool use_clang;
@@ -92,22 +97,23 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 
 	cEnv->JMP = r_egg_Cfile_armOrMips (arch) ? "b" : "jmp";
 
-	if (!strcmp (os, "darwin")) {
+	// TODO: Missing -Os .. caused some rip-relative LEA to be MOVQ on PIE in CLANG.. so sad
+	if (isXNU (os)) {
 		cEnv->OBJCOPY = "gobjcopy";
 		cEnv->FMT = "mach0";
 		if (!strcmp (arch, "x86")) {
 			if (bits == 32) {
-				cEnv->CFLAGS = strdup ("-arch i386");
-				cEnv->LDFLAGS = strdup ("-arch i386 -shared -c");
+				cEnv->CFLAGS = strdup ("-arch i386 -fPIC -fPIE");
+				cEnv->LDFLAGS = strdup ("-arch i386 -shared -c -fPIC -fPIE -pie");
 			} else {
-				cEnv->CFLAGS = strdup ("-arch x86_64");
-				cEnv->LDFLAGS = strdup ("-arch x86_64 -shared -c");
+				cEnv->CFLAGS = strdup ("-arch x86_64 -fPIC -fPIE");
+				cEnv->LDFLAGS = strdup ("-arch x86_64 -shared -c -fPIC -fPIE -pie");
 			}
 		} else {
-			cEnv->LDFLAGS = strdup ("-shared -c");
+			cEnv->CFLAGS = strdup ("-shared -c -fPIC -pie -fPIE");
+			cEnv->LDFLAGS = strdup ("-shared -c -fPIC -pie -fPIE");
 		}
 		cEnv->SHDR = r_str_newf ("\n.text\n%s _main\n", cEnv->JMP);
-
 	} else {
 		cEnv->OBJCOPY = "objcopy";
 		cEnv->FMT = "elf";
@@ -132,7 +138,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	if (!strcmp (os, "windows")) {
 		cEnv->TEXT = ".text";
 		cEnv->FMT = "pe";
-	} else if (!strcmp (os, "darwin")) {
+	} else if (isXNU(os)) {
 		cEnv->TEXT = "0.__TEXT.__text";
 	} else {
 		cEnv->TEXT = ".text";
@@ -151,7 +157,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		cEnv->TEXT = "0.__TEXT.__text";
 	}
 
-	buffer = r_str_newf ("%s -nostdinc -include '%s'/'%s'/sflib.h",
+	buffer = r_str_newf ("%s -fno-stack-protector -nostdinc -include '%s'/'%s'/sflib.h",
 	  		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
 	if (!buffer) {
 		goto fail;
@@ -244,17 +250,14 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 
 	r_str_sanitize (cEnv->CC);
 
-	//printf ("==> Compile\n");
-	printf ("'%s' %s -o '%s.tmp' -S -Os '%s'\n", cEnv->CC, cEnv->CFLAGS, file, file);
-
-	output = r_sys_cmd_strf ("('%s' %s -o '%s.tmp' -S -Os '%s') 2>&1",
-	  			cEnv->CC, cEnv->CFLAGS, file, file);
-	if (output == NULL) {
-		eprintf ("Compilation failed!\n");
+	// Compile
+	char *cmd = r_str_newf ("'%s' %s -o '%s.tmp' -S '%s'\n", cEnv->CC, cEnv->CFLAGS, file, file);
+	eprintf ("%s\n", cmd);
+	int rc = r_sys_cmd (cmd);
+	free (cmd);
+	if (rc != 0) {
 		goto fail;
 	}
-	printf ("%s", output);
-
 	if (!(fileExt = r_str_newf ("%s.s", file))) {
 		goto fail;
 	}
@@ -267,23 +270,17 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	if (!r_egg_Cfile_parseCompiled (file)) {
 		goto fail;
 	}
-
-	//printf ("==> Assemble\n");
-	printf ("'%s' %s -Os -o '%s.o' '%s.s'\n", cEnv->CC, cEnv->LDFLAGS, file, file);
-
-	free (output);
-	output = r_sys_cmd_strf ("'%s' %s -Os -o '%s.o' '%s.s'",
-		   		cEnv->CC, cEnv->LDFLAGS, file, file);
-	if (!output) {
-		eprintf ("Assembly failed!\n");
+	// Assemble
+	cmd = r_str_newf ("'%s' %s -o '%s.o' '%s.s'", cEnv->CC, cEnv->LDFLAGS, file, file);
+	eprintf ("%s\n", cmd);
+	rc = r_sys_cmd (cmd);
+	free (cmd);
+	if (rc != 0) {
 		goto fail;
 	}
-	printf ("%s", output);
 
-	//printf ("==> Link\n");
+	// Link
 	printf ("rabin2 -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
-
-	free (output);
 	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o",
 		   		file, cEnv->TEXT, file);
 	if (!output) {
@@ -306,8 +303,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 	if (r_file_size (fileExt) == 0) {
-		printf ("FALLBACK: Using objcopy instead of rabin2");
-
+		eprintf ("FALLBACK: Using objcopy instead of rabin2");
 		free (output);
 		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'", 
 		  		cEnv->OBJCOPY, file, file);

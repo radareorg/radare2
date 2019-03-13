@@ -5,15 +5,12 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return R_NOTNULL;
-}
-
-static bool load(RBinFile *bf) {
-	return true;
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_buf_ref (buf);
 }
 
 static int destroy(RBinFile *bf) {
+	r_buf_free (bf->o->bin_obj);
 	return true;
 }
 
@@ -64,32 +61,43 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	int i, is_bf = 0;
-	if (buf && length > 0) {
-		int max = R_MIN (16, length);
-		const char *p = (const char *) buf;
-		is_bf = 1;
-		for (i = 0; i < max; i++) {
-			switch (p[i]) {
-			case '+':
-			case '-':
-			case '>':
-			case '<':
-			case '[':
-			case ']':
-			case ',':
-			case '.':
-			case ' ':
-			case '\n':
-			case '\r':
-				break;
-			default:
-				is_bf = 0;
-			}
+static bool check_buffer(RBuffer *buf) {
+	r_return_val_if_fail (buf, false);
+
+	ut8 tmp[16];
+	int read_length = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	if (read_length <= 0) {
+		return false;
+	}
+
+	const ut8 *p = (const ut8 *)tmp;
+	int i;
+	for (i = 0; i < read_length; i++) {
+		switch (p[i]) {
+		case '+':
+		case '-':
+		case '>':
+		case '<':
+		case '[':
+		case ']':
+		case ',':
+		case '.':
+		case ' ':
+		case '\n':
+		case '\r':
+			break;
+		default:
+			return false;
 		}
 	}
-	return is_bf;
+	return true;
+}
+
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -111,10 +119,10 @@ RBinPlugin r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
 	.strings = &strings,
@@ -122,7 +130,7 @@ RBinPlugin r_bin_plugin_bf = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bf,
 	.version = R2_VERSION

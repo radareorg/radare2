@@ -11,7 +11,7 @@ BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
 
 all: preload
-	@for BINARY in $(BINS) ; do $(MAKE) -C $${BINARY} all; done
+	@for BINARY in $(BINS) ; do $(MAKE) -C $${BINARY} all || exit 1; done
 ifeq ($(COMPILER),ios-sdk)
 	$(MAKE) ios-sign
 endif

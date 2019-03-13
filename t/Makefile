@@ -21,7 +21,7 @@ run tests:
 	$(MAKE) -C ../radare2-regressions radare2
 
 ../radare2-regressions:
-	cd .. ; git clone --depth 1 https://github.com/radare/radare2-regressions
+	cd .. ; git clone -q --depth 1 https://github.com/radare/radare2-regressions
 
 create overlay:
 	cd ../radare2-regressions ; $(SHELL) ./overlay.sh create

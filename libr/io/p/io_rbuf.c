@@ -47,7 +47,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_rbuf = {
 	.name = "rbuf",
-	.desc = "RBuffer IO plugin: rbuf://",
+	.desc = "RBuffer IO plugin",
+	.uris = "rbuf://",
 	.license = "LGPL",
 	.open = __open,
 	.close = __close,
@@ -58,7 +59,7 @@ RIOPlugin r_io_plugin_rbuf = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_rbuf,
 	.version = R2_VERSION

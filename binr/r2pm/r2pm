@@ -1,6 +1,6 @@
 #!/bin/sh
-# r2pm
 
+# r2pm
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
 [ -z "${WGET}" ] && WGET=wget
@@ -38,9 +38,9 @@ if [ -f ~/.r2pm.cache ]; then
 fi
 if [ "${R2PMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="`r2 -H LIBEXT`"
-	export R2CONFIGHOME="`r2 -H RCONFIGHOME`"
-	export R2DATAHOME="`r2 -H RDATAHOME`"
-	PREFIX="`r2 -H PREFIX`"
+	export R2CONFIGHOME="`r2 -H R2_RCONFIGHOME`"
+	export R2DATAHOME="`r2 -H R2_RDATAHOME`"
+	PREFIX="`r2 -H R2_PREFIX`"
 fi
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
@@ -59,8 +59,10 @@ export R2PM_SYSBINDIR="${BINDIR}"
 export R2PM_BINDIR
 
 # plugdir
+export R2PM_SYSPLUGIN_DIR=$(r2 -H R2_LIBR_PLUGINS)
+export R2PM_USRPLUGIN_DIR=$(r2 -H R2_USER_PLUGINS)
+[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2PM_USRPLUGIN_DIR}"
 [ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2DATAHOME}/plugins"
-export R2PM_PLUGDIR
 
 # www
 export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
@@ -75,7 +77,7 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
 
-export RHOMEDIR="`r2 -H RHOMEDIR`"
+export RHOMEDIR="`r2 -H R2_RCONFIGHOME`"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
@@ -239,14 +241,21 @@ R2PM_List() {
 }
 
 R2PM_Search() {
+	#helper for pretty printing tabbed lists
+	if ! type "column" > /dev/null; then
+		cols() { cat ; }
+	else
+		cols() { column -s `printf "\t"` -t; }
+	fi
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
 		[ -d "$a" ] || continue
 (
 		cd "${a}"
 		if [ -n "$1" ]; then
-			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | grep -i "$1"
+			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf " \t"`," -e 's,",,g' | \
+				grep -i "$1" | cols
 		else
-			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g'
+			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf " \t"`," -e 's,",,g' | cols
 		fi
 )
 	done
@@ -264,6 +273,10 @@ R2PM_TGZ() {
 		TARBALL="$3"
 	fi
 	cd "${R2PM_GITDIR}"
+	if [ "$ACTION" = clean ]; then
+		rm -f "${TARBALL}"
+		exit 0
+	fi
 	${WGET} -O ${TARBALL} -c "${URL}"
 	if [ -d "${DIR}" ]; then
 		echo "Already uncompressed."
@@ -274,6 +287,8 @@ R2PM_TGZ() {
 			tar xjvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
 			tar xJvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .txz -e tar`" ]; then
+			tar xvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .zip`" ]; then
 			unzip -o "${TARBALL}"
 		else
@@ -324,7 +339,7 @@ R2PM_SVN() {
 }
 
 R2PM_FAIL() {
-	echo "\033[31mERROR: \033[32m$@\033[0m"
+	printf "\033[31mERROR: \033[32m$@\033[0m\n"
 	exit 1
 }
 
@@ -450,7 +465,11 @@ case "$1" in
 			fi
 		done
 	else
-		r2pm_install "$@"
+		A1="$1"
+		while [ -n "$2" ] ; do
+			r2pm_install $A1 "$2"
+			shift
+		done
 	fi
 	;;
 -uu)
@@ -493,7 +512,8 @@ case "$1" in
 -gi|global-install)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
+	#R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
+	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
@@ -505,7 +525,8 @@ case "$1" in
 -gu|global-uninstall)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
+	#R2PM_PLUGDIR="${R2PM_SYSPREFIX}/lib/radare2/${R2VERSION}/"
+	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
@@ -523,13 +544,31 @@ case "$1" in
 	;;
 -c|clean)
 	if [ -n "$2" ]; then
-		if [ -d "${R2PM_GITDIR}/$2" ]; then
-			echo "Cleaning up ${R2PM_GITDIR}/$2..."
-			rm -rf "${R2PM_GITDIR}/$2"
-		else
-			echo "Cannot find $2 in ${R2PM_GITDIR}"
-			exit 1
-		fi
+		RC=0
+		while [ -n "$2" ]; do
+			echo "Cleaning $2..."
+			FILE="$(pkgFilePath "$2")"
+			if [ -f "${FILE}" ]; then
+				NAME="$2"
+				ACTION=clean
+				export PATH="${R2PM_HOMEBINDIR}:${PATH}"
+				. "${FILE}"
+				echo $FILE TGZ=$R2PM_TGZ
+			else
+				echo "Cannot find $FILE"
+				RC=1
+			fi
+
+			if [ -d "${R2PM_GITDIR}/$2" ]; then
+				echo "Cleaning up ${R2PM_GITDIR}/$2..."
+				rm -rf "${R2PM_GITDIR}/$2"
+			else
+				echo "Cannot find $2 in ${R2PM_GITDIR}"
+				RC=1
+			fi
+			shift
+		done
+		exit $RC
 	else
 		R2PM_List radare2 | grep radare2
 		if [ $? != 0 ]; then
@@ -630,8 +669,8 @@ cache)
 	if [ -z "$2" ]; then
 		printf "%s\n" \
 			"Usage: r2pm -H [VARNAME]" \
-			" $ r2pm -H LIBDIR   # show LIBDIR" \
-			" $ r2pm -H PREFIX   # show PREFIX"
+			" $ r2pm -H R2_LIBDIR   # show LIBDIR" \
+			" $ r2pm -H R2_PREFIX   # show PREFIX"
 		exit 1
 	fi
 	eval echo "\$$2"
@@ -670,11 +709,10 @@ Commands:
  cache                       cache contents of r2 -H to make r2pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
- R2PM_PLUGDIR=~/.local/share/radare2/plugins   # default value, home-install for plugins
- R2PM_BINDIR=~/.local/share/radare2/prefix/bin # bindir in r2's PATH
- R2PM_PLUGDIR=/usr/lib/radare2/last/           # for system-wide plugin installs
- R2PM_DBDIR=~/.local/share/radare2/r2pm/db     # location of the db
- R2PM_GITDIR=~/.local/share/radare2/r2pm/git   # cloned git repositories
+ R2PM_PLUGDIR=${R2PM_PLUGDIR}
+ R2PM_BINDIR=${R2PM_BINDIR}
+ R2PM_DBDIR=${R2PM_DBDIR}
+ R2PM_GITDIR=${R2PM_GITDIR}
 HELP
 	;;
 esac

@@ -1,16 +1,17 @@
-.Dd Sep 30, 2014
+.Dd Oct 30, 2018
 .Dt RASM2 1
 .Sh NAME
 .Nm rasm2
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl ABdDeEfCLvwrq
+.Op Fl ABdDeEfCLvwrqx
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
 .Op Fl F Ar in:out
 .Op Fl o Ar offset
+.Op Fl @ Ar offset
 .Op Fl O Ar ofile
 .Op Fl s Ar syntax
 .Op Fl i Ar int
@@ -56,6 +57,8 @@ Ignore/skip N bytes from the beginning of the input buffer
 List supported asm plugins
 .It Fl o Ar offset
 Offset of the opcode to assemble (default is 0)
+.It Fl @ Ar offset
+Alias for -o
 .It Fl O Ar ofile
 output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl r
@@ -64,6 +67,8 @@ Show output in r2 script
 Select syntax output (intel, att)
 .It Fl w
 Describe opcode (whats op)
+.It Fl x
+Use hex dwords instead of hexpairs in the assembler output
 .It Fl q
 Quiet output (handy for -L, -v, ...)
 .El

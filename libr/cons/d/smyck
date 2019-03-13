@@ -5,7 +5,9 @@ ec b0xff rgb:eee
 ec other rgb:888
 ec bin rgb:888
 ec btext white
+ec ucall rgb:9f4
 ec call rgb:9f4
+ec ujmp rgb:9c4
 ec cjmp rgb:9c4
 ec jmp rgb:9c4
 ec cmp rgb:888
@@ -37,6 +39,8 @@ ec linehl rgb:004
 ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec ai.exec rgb:6d6
+ec ai.seq rgb:fd6
+ec ai.ascii white
 ec graph.box rgb:9df
 ec graph.box2 rgb:9df
 ec graph.box3 rgb:9df
@@ -45,3 +49,7 @@ ec graph.true rgb:9c4
 ec graph.false rgb:d66
 ec graph.trufae rgb:9c4
 ec graph.current rgb:fff
+
+ec func_var rgb:9df
+ec func_var_type rgb:fd6
+ec func_var_addr rgb:bb5

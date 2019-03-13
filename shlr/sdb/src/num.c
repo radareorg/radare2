@@ -4,9 +4,9 @@
 #include "types.h"
 
 // check if key exists and if it's a number.. rename?
-SDB_API int sdb_num_exists (Sdb *s, const char *key) {
+SDB_API bool sdb_num_exists (Sdb *s, const char *key) {
 	const char *o = sdb_const_get (s, key, NULL);
-	return o ? (*o >= '0' && *o <= '9'): 0;
+	return o ? (*o >= '0' && *o <= '9'): false;
 }
 
 SDB_API ut64 sdb_num_get(Sdb *s, const char *key, ut32 *cas) {
