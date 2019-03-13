@@ -1656,6 +1656,11 @@ static int esil_sub(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if ((src && r_anal_esil_get_parm (esil, src, &s)) && (dst && r_anal_esil_get_parm (esil, dst, &d))) {
+		if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
+			esil->old = d;
+			esil->cur = d - s;
+			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+		}
 		r_anal_esil_pushnum (esil, d - s);
 		ret = true;
 	} else {
