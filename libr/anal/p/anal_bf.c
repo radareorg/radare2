@@ -9,8 +9,9 @@
 static int countChar (const ut8 *buf, int len, char ch) {
 	int i;
 	for (i = 0; i < len; i++) {
-		if (buf[i] != ch)
+		if (buf[i] != ch) {
 			break;
+		}
 	}
 	return i;
 }
@@ -45,8 +46,9 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			int lev = 0, i = 1;
 			len--;
 			while (i < len && *p) {
-				if (*p == '[')
+				if (*p == '[') {
 					lev++;
+				}
 				if (*p == ']') {
 					lev--;
 					if (lev==-1) {
@@ -155,7 +157,7 @@ RAnalPlugin r_anal_plugin_bf = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_bf,
 	.version = R2_VERSION

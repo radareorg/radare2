@@ -9,8 +9,8 @@
 #include <termios.h>
 #include <errno.h>
 
-#define   RD_EOF   -1
-#define   RD_EIO   -2
+#define   RD_EOF   (-1)
+#define   RD_EIO   (-2)
 
 /* select utf8 terminal detection method */
 #define UTF8_DETECT_ENV 1
@@ -88,8 +88,9 @@ int current_tty(void) {
 	do {
 		fd = open (dev, O_RDWR | O_NOCTTY);
 	} while (fd == -1 && errno == EINTR);
-	if (fd == -1)
+	if (fd == -1) {
 		return -1;
+	}
 	return fd;
 #endif
 }
@@ -217,8 +218,9 @@ R_API int r_cons_is_utf8() {
 	char *sval = r_sys_getenv ("LC_CTYPE");
 	if (sval) {
 		r_str_case (sval, 0);
-		if (!strcmp (sval, "utf-8"))
+		if (!strcmp (sval, "utf-8")) {
 			ret = 1;
+		}
 		free (sval);
 	}
 #endif

@@ -5,11 +5,11 @@
 
 #include "bflt.h"
 
-#define READ(x, i) r_read_be32 (x + i); i += 4;
+#define READ(x, i) r_read_be32 ((x) + (i)); (i) += 4;
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
         RBinAddr *addr = R_NEW0 (RBinAddr);
-        if (addr) {
+        if (addr && bin && bin->hdr) {
         	addr->paddr = bin->hdr->entry;
         }
         return addr;
@@ -60,20 +60,13 @@ fail:
 }
 
 static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
-	if (!(obj->b = r_buf_new ())) {
-		return false;
-	}
+	obj->b = r_buf_ref (buf);
 	obj->size = buf->length;
 	obj->endian = false;
 	obj->reloc_table = NULL;
 	obj->got_table = NULL;
 	obj->n_got = 0;
 	obj->hdr = NULL;
-
-	if(!r_buf_set_bytes (obj->b, buf->buf, obj->size)) {
-		r_buf_free (obj->b);
-		return false;
-	}
 	if (!bflt_init_hdr (obj)) {
 		return false;
 	}
@@ -87,12 +80,12 @@ struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf) {
 	}
 	r_bin_bflt_free (bin);
 	return NULL;
-}	
+}
 
 void r_bin_bflt_free(struct r_bin_bflt_obj *obj) {
 	if (obj) {
 		R_FREE (obj->hdr);
-		R_FREE (obj->b);
+		r_buf_free (obj->b);
 		R_FREE (obj);
 	}
 }

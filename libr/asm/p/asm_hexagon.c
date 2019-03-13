@@ -7,21 +7,18 @@
 #include "hexagon.h"
 #include "hexagon_insn.h"
 
-static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int l)
-{
-	HexInsn hi;
-	ut32 data = 0;
-	memset(&hi, 0, sizeof(hi));
-	data = r_read_le32(buf);
-	int size = hexagon_disasm_instruction(data, &hi);
-	op->size = size;
-	strcpy(op->buf_asm, hi.mnem);
-	return size;
+static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int l) {
+	HexInsn hi = {0};
+	ut32 data = r_read_le32 (buf);
+	op->size = hexagon_disasm_instruction (data, &hi);
+	r_strbuf_set (&op->buf_asm, hi.mnem);
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_hexagon = {
 	.name = "hexagon",
 	.arch = "hexagon",
+	.author = "xvilka",
 	.license = "LGPL3",
 	.bits = 32,
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
@@ -29,7 +26,7 @@ RAsmPlugin r_asm_plugin_hexagon = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_hexagon
 };

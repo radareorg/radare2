@@ -5,12 +5,12 @@ on the code base of radare2 project.
 
 ## Documentation
 There is support for Doxygen document generation in this repo.
-By running `doxygen` in the root of this repository it will autodetect the
+By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
 [doc/doxygen/html/index.html](./doc/doxygen/html/index.html)
 
-If you're contributing code or willing to update existing code you can use the
-doxygen C style comments to improve documentation and comments in code.
+If you're contributing code or willing to update existing code, you can use the
+doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](https://www.stack.nl/~dimitri/doxygen/manual/index.html)
 for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html)
 ```c
@@ -19,7 +19,7 @@ for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/d
  * \param maps RList of maps that will be searched through
  * \param min Pointer to a ut64 that the min will be stored in
  * \param max Pointer to a ut64 that the max will be stored in
- * \param skip How many maps to skip at the start of iteration
+ * \param skip How many maps to skip at the start of an iteration
  * \param width Divisor for the return value
  * \return (max-min)/width
  *
@@ -31,13 +31,21 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 
 ## Code style
 
-In order to contribute with patches or plugins we encourage you to
+### C
+
+In order to contribute with patches or plugins, we encourage you to
 use the same coding style as the rest of the code base.
+
+Please use `./sys/clang-format-diff.py` before submitting a PR to be sure you
+are following the coding style. If you find a bug in this script, please create
+an issue on GitHub. You can also install the pre-commit hook
+`./sys/pre-commit-indent.sh` by copying it in `.git/hooks/pre-commit` which
+will check the coding style of the modified lines before committing them.
 
 You may find some additional notes on this topic in doc/vim.
 
 * Tabs are used for indentation. In a switch statement, the
-  cases are indentend at the switch level.
+  cases are indented at the switch level.
 
 ```c
 switch(n) {
@@ -49,7 +57,7 @@ default:
 }
 ```
 
-* Lines should be at most 78 chars. A tab is considered as 4 chars.
+* Lines should be at most 78 chars. A tab is considered as 8 chars.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
@@ -84,20 +92,27 @@ if (a == b) {
 
 * In general, don't use goto. The goto statement only comes in handy when a
   function exits from multiple locations and some common work such as cleanup
-  has to be done.  If there is no cleanup needed then just return directly.
+  has to be done. If there is no cleanup needed, then just return directly.
 
   Choose label names which say what the goto does or why the goto exists.  An
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
-* Use early returns instead of if-else when you need to filter out some bad
-  value at the start of a function.
+* Use `r_return_*` functions to check preconditions that are caused by
+  programmers' errors. Please note the difference between conditions that should
+  never happen, and that are handled through `r_return_*` functions, and
+  conditions that can happen at runtime (e.g. malloc returns NULL, input coming
+  from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
 int check(RCore *c, int a, int b) {
-	if (!c) return false;
-	if (a < 0 || b < 1) return false;
+	r_return_val_if_fail (c, false);
+	r_return_val_if_fail (a >= 0, b >= 1, false);
 
+	if (a == 0) {
+		/* do something */
+		...
+	}
 	... /* do something else */
 }
 ```
@@ -145,9 +160,24 @@ a = (b << 3) * 5;
  }
 ```
 
+* Structure in the C files
+
+The structure of the C files in r2 must be like this:
+
+```c
+/* Copyright ... */        ## copyright
+#include <r_core.h>        ## includes
+static int globals         ## const, define, global variables
+static void helper() {}    ## static functions
+R_IPI void internal() {}   ## internal apis (used only inside the library
+R_API void public() {}     ## public apis starting with constructor/destructor
+
+```
+
+
 * Why return int vs enum
 
-The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed because it breaks the usage within a switch statement and also because swig cant handle that stuff.
+The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'
@@ -161,7 +191,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not leave trailing whitespaces at the end of line
 
-* Do not use asserts
+* Do not use assert.h, use r_util/r_assert.h instead.
 
 * Do not use C99 variable declaration
     - This way we reduce the number of local variables per function
@@ -184,19 +214,29 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 * If you *really* need to comment out some code, use #if 0 (...) #endif. In
   general, don't comment out code because it makes the code less readable.
 
-* Do not write ultra-large functions, split them into multiple or simplify
+* Do not write ultra-large functions: split them into multiple or simplify
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
 
+* See sys/indent.sh for indenting your code automatically
+
 * See doc/vim for vimrc
 
-* See doc/clang-format for work-in-progress support for automated indentation
+* See .clang-format for work-in-progress support for automated indentation
 
 * Use the r2 types instead of the ones in stdint, which are known to cause some
   portability issues. So, instead of uint8_t, use ut8, etc..
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
+  
+### Shell Scripts
+
+* Use `#!/bin/sh`
+
+* Do not use bashisms `[[`, `$'...'` etc.
+
+* Use our [shellcheck.sh](https://github.com/radare/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -293,10 +333,10 @@ into `.dir-locals.el`.
 
 The radare2 code base is modularized into different libraries that are
 found in libr/ directory. The binr/ directory contains the programs
-that use the libraries.
+which use the libraries.
 
 It is possible to generate PIC/nonPIC builds of the libraries and also
-to create a single static library, so you can use a single library
+to create a single static library so you can use a single library
 archive (.a) to link your programs and get your programs using radare
 framework libraries without depending on them. See doc/static for more info.
 
@@ -346,18 +386,18 @@ The source of radare2 can be found in the following github repository.
 ```sh
    git clone git://github.com/radare/radare2
 ```
-Other packages radare2 depends on, such as Capstone, are pull from
+Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.
 
-To get an up to date copy of the repository you should perform the
+To get an up-to-date copy of the repository, you should perform the
 following steps:
 ```sh
    git pull
 ```
 
-If you have conflicts in your local copy it's because you have modified
+If you have conflicts in your local copy, it's because you have modified
 files which are conflicting with the incoming patchsets. To get a clean
-source directory type the following command:
+source directory, type the following command:
 ```sh
    git clean -xdf
    git reset --hard
@@ -371,10 +411,10 @@ require human interaction to recompile the affected modules.
 This is a common issue and can end up having outdated libraries trying
 to use deprecated structures which may result into segfaults.
 
-You have to make clean on the affected modules or just, if you are not
-sure enough that everything is ok just make clean the whole project.
+You have to make clean on the affected modules. If you are not
+sure enough that everything is OK, just make clean the whole project.
 
-If you want to accelerate the build process after full make cleans
+If you want to accelerate the build process after full make cleans,
 you should use ccache in this way:
 ```
   export CC="ccache gcc"
@@ -384,7 +424,7 @@ you should use ccache in this way:
 
 Developers use to modify the code, type make and then try.
 
-radare2 have a specific makefile target that allows you to install
+radare2 has a specific makefile target that allows you to install
 system wide but using symlinks instead of hard copies.
 ```sh
 sudo make symstall
@@ -405,8 +445,8 @@ following github repository.
 
 See the `README.md` file in that repository for further information.
 
-The existing test coverage can always do with improvement, so if you can
-contribute additions tests that would be gratefully accepted.
+The existing test coverage can always do with improvement. So if you can
+contribute additions tests, that would be gratefully accepted.
 
 ## Reporting bugs
 
@@ -417,7 +457,7 @@ by this framework.
 You should report it into the github issues page.
    https://github.com/radare/radare2/issues
 
-Otherwise, if you are looking for some more feedback I will
+Otherwise, if you are looking for some more feedback, I will
 encourage you to send an email to any of the emails enumerated
 in the AUTHORS file.
 
@@ -426,7 +466,7 @@ in a public place: join the #radare channel on irc.freenode.net.
 
 The issues page of Github contains a list of all the bugs that
 have been reported classified with labels by difficulty, type,
-milestone, etc. it is a good place to start if you are looking
+milestone, etc. It is a good place to start if you are looking
 to contribute.
 
 ## Contributing with patches
@@ -456,6 +496,6 @@ I can get patches in unidiff format like this:
    - `make`
    - `make dist`
 
-  - Update the i[paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
+  - Update the [paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
 
 --pancake

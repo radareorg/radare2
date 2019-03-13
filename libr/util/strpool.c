@@ -8,7 +8,9 @@ R_API RStrpool* r_strpool_new (int sz) {
 		eprintf ("Malloc failed!\n");
 		return NULL;
 	}
-	if (sz < 1) sz = 1024;
+	if (sz < 1) {
+		sz = 1024;
+	}
 	p->str = malloc (sz);
 	if (!p->str) {
 		eprintf ("Malloc failed!\n");

@@ -145,11 +145,12 @@ static size_t consume_locals_r (RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
 		}
 		j++;
 	}
-	if (j != count) goto beach;
+	if (j != count) {
+		goto beach;
+	}
 	return j;
 beach:
-	free (out->locals);
-	out->locals = NULL;
+	R_FREE (out->locals);
 	return 0;
 }
 
@@ -275,7 +276,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 			goto beach;
 		}
 		ut32 count = ptr ? ptr->param_count : 0;
-		if (!(b->cur + (count * 3) <= max)) { // worst case 3 bytes
+		if (!(b->cur + count <= max)) {
 			goto beach;
 		}
 		if (count > 0) {
@@ -310,7 +311,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf ("err: beach type entries\n");
+	eprintf ("[wasm] error: beach type entries\n");
 	r_bin_wasm_free_types (ptr);
 	return ret;
 }
@@ -387,7 +388,7 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach import entries\n");
+	eprintf ("[wasm] error: beach import entries\n");
 	free (ptr);
 	return ret;
 }
@@ -431,7 +432,7 @@ static RList *r_bin_wasm_get_export_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach export entries\n");
+	eprintf ("[wasm] error: beach export entries\n");
 	free (ptr);
 	return ret;
 }
@@ -489,7 +490,7 @@ static RList *r_bin_wasm_get_code_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf("err: beach code entries\n");
+	eprintf ("[wasm] error: beach code entries\n");
 	r_bin_wasm_free_codes (ptr);
 	return ret;
 }
@@ -536,7 +537,52 @@ static RList *r_bin_wasm_get_data_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf("err: beach data entries\n");
+	eprintf ("[wasm] error: beach data entries\n");
+	free (ptr);
+	return ret;
+}
+
+static RList *r_bin_wasm_get_symtab_entries (RBinWasmObj *bin, RBinWasmSection *sec) {
+	RList *ret = NULL;
+	RBinWasmSymbol *ptr = NULL;
+	size_t read = 0;
+	if (!(ret = r_list_newf ((RListFree)free))) {
+		return NULL;
+	}
+	if (!sec) {
+		r_list_free (ret);
+		return NULL;
+	}
+	RBuffer *b = bin->buf;
+	r_buf_seek (b, sec->payload_data + 3, R_IO_SEEK_SET);
+	ut64 max = b->cur + sec->payload_len - 4;
+	if (!(max < b->length)) {
+		goto beach;
+	}
+	while (b->cur <= max) {
+		if (!(ptr = R_NEW0 (RBinWasmSymbol))) {
+			return ret;
+		}
+		ut32 tmp = 0;
+		read = consume_u32_r (b, max, &ptr->id);
+		consume_u32_r (b, max - read, &tmp);
+		if (tmp == R_BIN_WASM_STRING_LENGTH) {
+			tmp = R_BIN_WASM_STRING_LENGTH - 1;
+		}
+		ptr->name_len = tmp;
+		if (!(consume_str_r (b, max, tmp, ptr->name))) {
+			goto beach;
+		}
+		ptr->name[tmp] = 0;
+		if (!r_list_append (ret, ptr)) {
+			free (ptr);
+			// should it jump to beach?
+		}
+		ptr = NULL;
+	}
+	return ret;
+beach:
+	eprintf ("[wasm] error: beach symtab entries\n");
 	free (ptr);
 	return ret;
 }
@@ -559,7 +605,7 @@ static RBinWasmStartEntry *r_bin_wasm_get_start (RBinWasmObj *bin, RBinWasmSecti
 	}
 	return ptr;
 beach:
-	eprintf("err: beach start\n");
+	eprintf ("[wasm] error: beach start\n");
 	free (ptr);
 	return NULL;
 }
@@ -598,7 +644,7 @@ static RList *r_bin_wasm_get_memory_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach memory entries\n");
+	eprintf ("[wasm] error: beach memory entries\n");
 	free (ptr);
 	return ret;
 }
@@ -640,7 +686,7 @@ static RList *r_bin_wasm_get_table_entries (RBinWasmObj *bin, RBinWasmSection *s
 	}
 	return ret;
 beach:
-	eprintf("err: beach table entries\n");
+	eprintf ("[wasm] error: beach table entries\n");
 	free (ptr);
 	return ret;
 }
@@ -685,7 +731,7 @@ static RList *r_bin_wasm_get_global_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach global entries\n");
+	eprintf ("[wasm] error: beach global entries\n");
 	free (ptr);
 	return ret;
 }
@@ -737,7 +783,7 @@ static RList *r_bin_wasm_get_element_entries (RBinWasmObj *bin, RBinWasmSection 
 	}
 	return ret;
 beach:
-	eprintf("err: beach element entries\n");
+	eprintf ("[wasm] error: beach element entries\n");
 	free (ptr);
 	return ret;
 }
@@ -771,6 +817,7 @@ RBinWasmObj *r_bin_wasm_init (RBinFile *bf) {
 	bin->g_globals = r_bin_wasm_get_globals (bin);
 	bin->g_codes = r_bin_wasm_get_codes (bin);
 	bin->g_datas = r_bin_wasm_get_datas (bin);
+	bin->g_symtab = r_bin_wasm_get_symtab (bin);
 
 	// entrypoint from Start section
 	bin->entrypoint = r_bin_wasm_get_entrypoint (bin);
@@ -843,72 +890,72 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 		ptr->offset = b->cur;
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
-			eprintf("custom section: 0x%x, ", (ut32)b->cur);
+			// eprintf("custom section: 0x%x, ", (ut32)b->cur);
 			if (!(consume_u32_r (b, max, &ptr->name_len))) {
 				goto beach;
 			}
 			if (consume_str_r (b, max, ptr->name_len, ptr->name) < ptr->name_len) {
 				goto beach;
 			}
-			eprintf("name: %s\n", ptr->name);
+			// eprintf("name: %s\n", ptr->name);
 			break;
 		case R_BIN_WASM_SECTION_TYPE:
-			eprintf("section type: 0x%x, ", (ut32)b->cur);
+			// eprintf("section type: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "type");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_IMPORT:
-			eprintf("section import: 0x%x, ", (ut32)b->cur);
+			// eprintf("section import: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "import");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_FUNCTION:
-			eprintf("section function: 0x%x, ", (ut32)b->cur);
+			// eprintf("section function: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "function");
 			ptr->name_len = 8;
 			break;
 		case R_BIN_WASM_SECTION_TABLE:
-			eprintf("section table: 0x%x, ", (ut32)b->cur);
+			// eprintf("section table: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "table");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_MEMORY:
-			eprintf("section memory: 0x%x, ", (ut32)b->cur);
+			// eprintf("section memory: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "memory");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_GLOBAL:
-			eprintf("section global: 0x%x, ", (ut32)b->cur);
+			// eprintf("section global: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "global");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_EXPORT:
-			eprintf("section export: 0x%x, ", (ut32)b->cur);
+			// eprintf("section export: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "export");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_START:
-			eprintf("section start: 0x%x\n", (ut32)b->cur);
+			// eprintf("section start: 0x%x\n", (ut32)b->cur);
 			strcpy (ptr->name, "start");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_ELEMENT:
-			eprintf("section element: 0x%x, ", (ut32)b->cur);
+			// eprintf("section element: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "element");
 			ptr->name_len = 7;
 			break;
 		case R_BIN_WASM_SECTION_CODE:
-			eprintf("section code: 0x%x, ", (ut32)b->cur);
+			// eprintf("section code: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "code");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_DATA:
-			eprintf("section data: 0x%x, ", (ut32)b->cur);
+			// eprintf("section data: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "data");
 			ptr->name_len = 4;
 			break;
 		default:
-			eprintf("unkown section id: %d\n", ptr->id);
+			eprintf("[wasm] error: unkown section id: %d\n", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_IO_SEEK_CUR);
 			continue;
 		}
@@ -917,7 +964,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			if (!(consume_u32_r (b, max, &ptr->count))) {
 				goto beach;
 			}
-			eprintf("count %d\n", ptr->count);
+			// eprintf("count %d\n", ptr->count);
 		}
 		ptr->payload_data = b->cur;
 		ptr->payload_len = ptr->size - (ptr->payload_data - ptr->offset);
@@ -934,7 +981,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 	bin->g_sections = ret;
 	return ret;
 beach:
-	eprintf("err: beach sections\n");
+	eprintf("[wasm] error: beach sections\n");
 	free (ptr);
 	return ret;
 }
@@ -986,8 +1033,7 @@ RList *r_bin_wasm_get_imports (RBinWasmObj *bin) {
 	if (bin->g_imports) {
 		return bin->g_imports;
 	}
-	if (!(imports = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_IMPORT))) {
+	if (!(imports = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_IMPORT))) {
 		return r_list_new();
 	}
 	// support for multiple import sections against spec
@@ -1010,8 +1056,7 @@ RList *r_bin_wasm_get_exports (RBinWasmObj *bin) {
 	if (bin->g_exports) {
 		return bin->g_exports;
 	}
-	if (!(exports= r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_EXPORT))) {
+	if (!(exports= r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_EXPORT))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1034,8 +1079,7 @@ RList *r_bin_wasm_get_types (RBinWasmObj *bin) {
 	if (bin->g_types) {
 		return bin->g_types;
 	}
-	if (!(types = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_TYPE))) {
+	if (!(types = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_TYPE))) {
 		return r_list_new ();
 	}
 	// support for multiple export sections against spec
@@ -1058,8 +1102,7 @@ RList *r_bin_wasm_get_tables (RBinWasmObj *bin) {
 	if (bin->g_tables) {
 		return bin->g_tables;
 	}
-	if (!(tables = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_TABLE))) {
+	if (!(tables = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_TABLE))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1084,8 +1127,7 @@ RList *r_bin_wasm_get_memories (RBinWasmObj *bin) {
 		return bin->g_memories;
 	}
 
-	if (!(memories = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_MEMORY))) {
+	if (!(memories = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_MEMORY))) {
 		return r_list_new();
 	}
 
@@ -1110,8 +1152,7 @@ RList *r_bin_wasm_get_globals (RBinWasmObj *bin) {
 	if (bin->g_globals) {
 		return bin->g_globals;
 	}
-	if (!(globals = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_GLOBAL))) {
+	if (!(globals = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_GLOBAL))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1134,8 +1175,7 @@ RList *r_bin_wasm_get_elements (RBinWasmObj *bin) {
 	if (bin->g_elements) {
 		return bin->g_elements;
 	}
-	if (!(elements = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_ELEMENT))) {
+	if (!(elements = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_ELEMENT))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1158,8 +1198,7 @@ RList *r_bin_wasm_get_codes (RBinWasmObj *bin) {
 	if (bin->g_codes) {
 		return bin->g_codes;
 	}
-	if (!(codes = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_CODE))) {
+	if (!(codes = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_CODE))) {
 		return r_list_new ();
 	}
 	// support for multiple export sections against spec
@@ -1182,8 +1221,7 @@ RList *r_bin_wasm_get_datas (RBinWasmObj *bin) {
 	if (bin->g_datas) {
 		return bin->g_datas;
 	}
-	if (!(datas = r_bin_wasm_get_sections_by_id (bin->g_sections,
-						R_BIN_WASM_SECTION_DATA))) {
+	if (!(datas = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_DATA))) {
 		return r_list_new();
 	}
 	// support for multiple export sections against spec
@@ -1194,4 +1232,26 @@ RList *r_bin_wasm_get_datas (RBinWasmObj *bin) {
 	bin->g_datas = r_bin_wasm_get_data_entries (bin, data);
 	r_list_free (datas);
 	return bin->g_datas;
+}
+
+RList *r_bin_wasm_get_symtab (RBinWasmObj *bin) {
+	RBinWasmSection *cust = NULL;
+	RList *symtab = NULL;
+
+	r_return_val_if_fail (bin && bin->g_sections, NULL);
+
+	if (bin->g_symtab) {
+		return bin->g_symtab;
+	}
+	if (!(symtab = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_CUSTOM))) {
+		return r_list_new();
+	}
+	// support for multiple export sections against spec
+	if (!(cust = (RBinWasmSection*) r_list_first (symtab)) || strncmp (cust->name, "name", 5)) {
+		r_list_free (symtab);
+		return r_list_new();
+	}
+	bin->g_symtab = r_bin_wasm_get_symtab_entries (bin, cust);
+	r_list_free (symtab);
+	return bin->g_symtab;
 }

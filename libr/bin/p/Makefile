@@ -18,11 +18,11 @@ all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
-FORMATS+=bios.mk mach064.mk dyldcache.mk java.mk
+FORMATS+=bios.mk mach064.mk dyldcache.mk xnu_kernelcache.mk java.mk
 FORMATS+=dex.mk fs.mk ningb.mk coff.mk ningba.mk xbe.mk zimg.mk
 FORMATS+=omf.mk cgc.mk dol.mk nes.mk mbn.mk psxexe.mk spc700.mk
 FORMATS+=vsf.mk nin3ds.mk bflt.mk wasm.mk sfc.mk
-FORMATS+=mdmp.mk z64.mk
+FORMATS+=mdmp.mk z64.mk qnx.mk
 
 FORMATS+=xtr_dyldcache.mk
 FORMATS+=xtr_fatmach0.mk

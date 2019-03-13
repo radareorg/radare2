@@ -10,6 +10,7 @@ _r2() {
   local -a options=(
   '-\=[perform !=! command to run all commands remotely]'
   '-0[print \x00 after init and every command]'
+  '-2[close stderr (silent warnings)]'
   '-a+[set asm.arch]: :->arch'
   "-A[run 'aaa' command to analyze all referenced code]"
   '-b+[set asm.bits]:bits:(8 16 32 64)'
@@ -47,6 +48,7 @@ _r2() {
   '(-v -V)-v[show radare2 version]'
   '(-v -V)-V[show radare2 and lib versions)]'
   '-w[open file in write mode]'
+  '-x[open without exec-flag, see io.exec]'
   '(-z -zz)-z[do not load strings]'
   '(-z -zz)-zz[load strings from raw binary (even if unknown)]'
   )
@@ -55,7 +57,7 @@ _r2() {
 
   case $state in
     arch)
-      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -E 's/ (.*)/[\1]/')"})
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?')"})
       _values 'arch' $sub && ret=0
       ;;
     asm.os)
@@ -69,7 +71,7 @@ _r2() {
       _values 'dbg.backend' $(r2 '-D?') && ret=0
       ;;
     project)
-      _values 'project' $(r2 -p) && ret=0
+      _values 'project' "${(f)"$(r2 -p)"}" && ret=0
       ;;
   esac
   return ret

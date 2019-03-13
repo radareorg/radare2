@@ -43,6 +43,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
 R_API bool r_file_copy (const char *src, const char *dst);
+R_API RList* r_file_globsearch (const char *globbed_path, int maxdepth);
 
 #ifdef __cplusplus
 }

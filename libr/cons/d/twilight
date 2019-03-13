@@ -8,7 +8,9 @@ ec b0xff rgb:c64
 ec bin rgb:ffd
 ec other rgb:aaa
 ec btext rgb:bb7
+ec ucall rgb:9b7
 ec call rgb:9b7
+ec ujmp rgb:788
 ec cjmp rgb:788
 ec jmp rgb:788
 ec cmp rgb:ffd
@@ -47,3 +49,13 @@ ec graph.box rgb:9b7
 ec graph.box2 rgb:b97
 ec graph.box3 rgb:b97
 ec graph.box4 rgb:b97
+
+ec func_var rgb:c64
+ec func_var_type rgb:aa6
+ec func_var_addr rgb:788
+
+ec ai.read rgb:db7
+ec ai.write rgb:ca6
+ec ai.exec rgb:ffd
+ec ai.seq rgb:bb7
+ec ai.ascii rgb:bb7

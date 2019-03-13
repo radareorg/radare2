@@ -1,9 +1,9 @@
 diff --git a/SStream.c b/SStream.c
-index c90cf1a..1686d5d 100644
+index 90cef53..7ee9fd9 100644
 --- a/SStream.c
 +++ b/SStream.c
-@@ -28,6 +28,9 @@ void SStream_Init(SStream *ss)
- void SStream_concat0(SStream *ss, char *s)
+@@ -31,6 +31,9 @@ void SStream_Init(SStream *ss)
+ void SStream_concat0(SStream *ss, const char *s)
  {
  #ifndef CAPSTONE_DIET
 +	if (!ss || !s) {

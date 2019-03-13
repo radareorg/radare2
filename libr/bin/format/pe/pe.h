@@ -27,7 +27,7 @@ struct r_bin_pe_section_t {
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
-	ut64 flags;
+	ut64 perm;
 	int last;
 };
 
@@ -68,11 +68,11 @@ typedef struct _PE_RESOURCE {
 	char *timestr;
 	char *type;
 	char *language;
-	int name;
+	char *name;
 	Pe_image_resource_data_entry *data;
 } r_pe_resource;
 
-#define GUIDSTR_LEN 34
+#define GUIDSTR_LEN 41
 #define DBG_FILE_NAME_LEN 255
 
 typedef struct SDebugInfo {
@@ -99,6 +99,9 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_clr_header) * clr_hdr;
 	PE_(image_metadata_header) * metadata_header;
 	PE_(image_metadata_stream) * *streams;
+
+	/* store the section information for future use */
+	struct r_bin_pe_section_t *sections;
 
 	// these values define the real offset into the untouched binary
 	ut64 nt_header_offset;
@@ -138,7 +141,6 @@ char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin);

@@ -18,6 +18,19 @@ typedef struct r_interval_t {
 
 typedef RInterval r_itv_t;
 
+static inline RInterval *r_itv_new(ut64 addr, ut64 size) {
+	RInterval *itv = R_NEW (RInterval);
+	if (itv) {
+		itv->addr = addr;
+		itv->size = size;
+	}
+	return itv;
+}
+
+static inline void r_itv_free(RInterval *itv) {
+	free (itv);
+}
+
 static inline ut64 r_itv_begin(RInterval itv) {
 	return itv.addr;
 }

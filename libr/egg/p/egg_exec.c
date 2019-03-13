@@ -15,14 +15,14 @@ BINSH: (24 bytes) (x86-32/64):
 // XXX: must obfuscate to avoid antivirus
 // OSX
 static ut8 x86_osx_suid_binsh[] =
-        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17" 
+        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17"
 	/* suid */ "\x31\xff\x4c\x89\xc0\x0f\x05"
 	"\xeb\x12\x5f\x49\x83\xc0\x24\x4c\x89\xc0\x48\x31\xd2\x52"
         "\x57\x48\x89\xe6\x0f\x05\xe8\xe9\xff\xff\xff"
 	// CMD
 	"\x2f\x62\x69\x6e\x2f\x73\x68";
 static ut8 x86_osx_binsh[] =
-        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17" 
+        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17"
 	// SUIDSH "\x31\xff\x4c\x89\xc0\x0f\x05"
 	"\xeb\x12\x5f\x49\x83\xc0\x24\x4c\x89\xc0\x48\x31\xd2\x52"
         "\x57\x48\x89\xe6\x0f\x05\xe8\xe9\xff\xff\xff"
@@ -84,18 +84,20 @@ static RBuffer *build (REgg *egg) {
 		}
 		break;
 	case R_EGG_OS_LINUX:
-		if (suid) eprintf ("no suid for this platform\n");
+		if (suid) {
+			eprintf ("no suid for this platform\n");
+		}
 		suid = 0;
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
 			switch (egg->bits) {
-			case 32: 
-				sc = x86_linux_binsh; 
+			case 32:
+				sc = x86_linux_binsh;
 				break;
-			case 64: 
-				sc = x86_64_linux_binsh; 
+			case 64:
+				sc = x86_64_linux_binsh;
 				break;
-			default: 
+			default:
 				eprintf ("Unsupported arch %d bits\n", egg->bits);
 			}
 			break;
@@ -115,14 +117,17 @@ static RBuffer *build (REgg *egg) {
 		break;
 	default:
 		eprintf ("Unsupported os %x\n", egg->os);
-		break;		
+		break;
 	}
 
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 		if (shell && *shell) {
-			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
-			else eprintf ("Cannot set shell\n");
+			if (cd) {
+				r_buf_write_at (buf, cd, (const ut8 *)shell, strlen (shell) + 1);
+			} else {
+				eprintf ("Cannot set shell\n");
+			}
 		}
 	}
 	free (suid);
@@ -139,7 +144,7 @@ REggPlugin r_egg_plugin_exec = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_exec,
 	.version = R2_VERSION

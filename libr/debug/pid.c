@@ -76,7 +76,9 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid) {
 	}
 	if (dbg && dbg->h && dbg->h->threads) {
 		list = dbg->h->threads (dbg, pid);
-		if (!list) return false;
+		if (!list) {
+			return false;
+		}
 		if (pid == -'j') {
 			dbg->cb_printf ("[");
 			r_list_foreach (list, iter, p) {

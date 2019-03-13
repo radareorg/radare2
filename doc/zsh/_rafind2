@@ -12,6 +12,7 @@ _rafind2() {
   '-m[magic search, file-type carver]'
   '-M+[set a binary mask to be applied on keywords]:str'
   '-n[do not stop on read errors]'
+  '-q[quiet]'
   '-r[print using radare commands]'
   '*-s+[search for a specific string (can be used multiple times)]:str'
   '*-S+[search for a specific wide string (can be used multiple times)]:str'

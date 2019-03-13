@@ -1,4 +1,4 @@
-/* radare - LGPL - 2016 - a0rtega */
+/* radare - LGPL - 2018 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -17,7 +17,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, "FIRM", 4));
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof (struct n3ds_firm_hdr));
 }
 
@@ -27,7 +27,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 
@@ -55,9 +55,9 @@ static RList *sections(RBinFile *bf) {
 			sections[i] = R_NEW0 (RBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header.sections[i].type == 0x0) {
-				strncpy (sections[i]->name, "arm9", 4);
+				sections[i]->name = strdup ("arm9");
 			} else if (loaded_header.sections[i].type == 0x1) {
-				strncpy (sections[i]->name, "arm11", 5);
+				sections[i]->name = strdup ("arm11");
 			} else {
 				corrupt = true;
 				break;
@@ -66,7 +66,7 @@ static RList *sections(RBinFile *bf) {
 			sections[i]->vsize = loaded_header.sections[i].size;
 			sections[i]->paddr = loaded_header.sections[i].offset;
 			sections[i]->vaddr = loaded_header.sections[i].address;
-			sections[i]->srwx = r_str_rwx ("rwx");
+			sections[i]->perm = r_str_rwx ("rwx");
 			sections[i]->add = true;
 		}
 	}
@@ -154,7 +154,7 @@ RBinPlugin r_bin_plugin_nin3ds = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nin3ds,
 	.version = R2_VERSION

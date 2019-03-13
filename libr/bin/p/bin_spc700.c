@@ -12,9 +12,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -56,12 +55,12 @@ static RList* sections(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strcpy (ptr->name, "RAM");
+	ptr->name = strdup ("RAM");
 	ptr->paddr = RAM_START_ADDRESS;
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
@@ -94,7 +93,7 @@ RBinPlugin r_bin_plugin_spc700 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_spc700,
 	.version = R2_VERSION

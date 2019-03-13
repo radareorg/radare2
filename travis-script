@@ -1,20 +1,75 @@
 #!/bin/bash
-export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
+set -x
+
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
-export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
-git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
-ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
-./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null
-make -s -j2 > /dev/null
-make install > /dev/null
-#[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir -p /tmp/kcov && pushd /tmp/kcov
-#[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir ${TRAVIS_BUILD_DIR}/kcov
-#[ "$TRAVIS_OS_NAME" != "osx" ] && wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd
-#[ "$TRAVIS_OS_NAME" != "osx" ] && export KCOV="/tmp/kcov/kcov-master/tmp/usr/local/bin/kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"
-export NOOK=1
-export NOREPORT=1
-cd radare2-regressions
-git remote -v
-git branch
-git rev-parse HEAD
-VERBOSE=1 make -k all
+export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib/$(uname -m)-linux-gnu:${TRAVIS_BUILD_DIR}/install/lib:${TRAVIS_BUILD_DIR}/install/lib64:${LD_LIBRARY_PATH}
+git clone -q --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
+ls radare2-regressions >/dev/null 2>&1 || git clone -q --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
+
+if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
+    echo "Installing with meson + ninja"
+
+    OPTS=""
+    if [ "${R2_SYS_CAPSTONE}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_capstone=${R2_SYS_CAPSTONE}"
+    fi
+    if [ "${R2_SYS_MAGIC}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_magic=${R2_SYS_MAGIC}"
+    fi
+    if [ "${R2_SYS_ZLIB}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_zlib=${R2_SYS_ZLIB}"
+    fi
+    if [ "${R2_SYS_ZIP}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_zip=${R2_SYS_ZIP}"
+    fi
+    if [ "${R2_SYS_LZ4}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_lz4=${R2_SYS_LZ4}"
+    fi
+    if [ "${R2_SYS_OPENSSL}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_openssl=${R2_SYS_OPENSSL}"
+    fi
+    if [ "${COVERAGE}" == "1" ] ; then
+        OPTS="${OPTS} -Db_coverage=true"
+    fi
+    if [ "${ASAN}" == "1" ] ; then
+        # -Db_lundef=false required for issue with clang+meson (see https://github.com/mesonbuild/meson/issues/764)
+        OPTS="${OPTS} -Db_sanitize=address -Db_lundef=false"
+    fi
+
+    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
+    pushd build
+    ninja || exit 1
+    ninja install || exit 1
+    popd
+    export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
+else
+    echo "Installing with acr + make"
+    if [ "${R2_PLUGINS_FILE}" != "" ] ; then
+	cp "plugins.${R2_PLUGINS_FILE}.cfg" plugins.cfg
+    fi
+    if [ "${ASAN}" == "1" ] ; then
+        export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+        export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+    fi
+    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
+    make -s -j2 > /dev/null || exit 1
+    make install > /dev/null || exit 1
+    export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
+fi
+
+if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
+    export NOOK=1
+    export NOREPORT=1
+    cd radare2-regressions
+    git remote -v
+    git branch
+    git rev-parse HEAD
+    VERBOSE=1 make -k all || exit 1
+
+    if [ "${COVERAGE}" == "1" ] ; then
+        cd ../build
+        curl -s https://codecov.io/bash > ./codecov.sh
+        chmod +x ./codecov.sh
+        ./codecov.sh -K -v 2>/dev/null
+    fi
+fi

@@ -8,6 +8,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_crypto.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -199,8 +200,9 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 			}
 		}
 	}
-	if (cpu->inherit_cpu_p)
+	if (cpu->inherit_cpu_p) {
 		return const_by_name (cpu->inherit_cpu_p, type, c);
+	}
 	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
 	return NULL;
 }
@@ -226,8 +228,9 @@ static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 			}
 		}
 	}
-	if (cpu->inherit_cpu_p)
+	if (cpu->inherit_cpu_p) {
 		return const_by_value (cpu->inherit_cpu_p, type, v);
+	}
 	return NULL;
 }
 
@@ -365,10 +368,11 @@ static void __generic_sub_update_flags(RAnalOp *op, char t_d, ut64 v_d, char t_r
 		"|,vf,=,",
 		d, rk, d, rk);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	if (carry)
+	if (carry) {
 		ESIL_A ("0,RPICK,!,zf,&,zf,=,");		// Z
-	else
-		ESIL_A ("0,RPICK,!,zf,=,");			// Z
+	} else {
+		ESIL_A ("0,RPICK,!,zf,=,"); // Z
+	}
 	ESIL_A ("%s,0x80,&,!,"   "%s,0x80,&,!,!,"      "&,"	// C
 		"%s,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"%s,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
@@ -663,6 +667,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
+	op->fail = op->addr + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
@@ -681,7 +686,7 @@ INST_HANDLER (dec) {	// DEC Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("-1,r%d,+,", d);				// --Rd
 								// FLAGS:
-	ESIL_A ("0,RPICK,0x7f,==,vf,=,");			// V
+	ESIL_A ("0,RPICK,0x7f,==,$z,vf,=,");			// V
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("vf,nf,^,sf,=,");				// S
@@ -848,7 +853,7 @@ INST_HANDLER (inc) {	// INC Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("1,r%d,+,", d);					// ++Rd
 								// FLAGS:
-	ESIL_A ("0,RPICK,0x80,==,vf,=,");			// V
+	ESIL_A ("0,RPICK,0x80,==,$z,vf,=,");			// V
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("vf,nf,^,sf,=,");				// S
@@ -1448,6 +1453,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
+	op->fail = op->addr + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
@@ -2131,12 +2137,15 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 }
 
 static int archinfo(RAnal *anal, int q) {
-	if (q == R_ANAL_ARCHINFO_ALIGN)
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
 		return 2;
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE)
+	}
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE)
+	}
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
 		return 2;
+	}
 	return 2; // XXX
 }
 
@@ -2203,7 +2212,7 @@ RAnalPlugin r_anal_plugin_avr = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_avr,
 	.version = R2_VERSION

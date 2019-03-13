@@ -38,7 +38,7 @@ struct r_bp_plugin_t r_bp_plugin_arm = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BP,
 	.data = &r_bp_plugin_arm,
 	.version = R2_VERSION

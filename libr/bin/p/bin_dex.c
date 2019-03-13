@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2019 - pancake, h4ng3r */
 
 #include <r_cons.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../i/private.h"
 #include "dex/dex.h"
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
@@ -163,13 +164,12 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	const int maxSize = (count + 1) * (kLongest + 1);
 	char* str, *cp;
 	// produces a huge number????
+	if (count < 1 || (count * (kLongest+1)) < 1) {
+		return NULL;
+	}
 	cp = str = (char*) calloc (count + 1, (kLongest + 1));
 	if (!str) {
 		return NULL;
-	}
-	if (count == 0) {
-		*cp = '\0';
-		return cp;
 	}
 	for (i = 0; i < NUM_FLAGS; i++) {
 		if (flags & 0x01) {
@@ -179,6 +179,7 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 				*cp++ = ' ';
 			}
 			if (((cp - str) + len) >= maxSize) {
+				free (str);
 				return NULL;
 			}
 			memcpy (cp, accessStr, len);
@@ -200,7 +201,6 @@ static char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
 static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	ut32 params_off, type_id, list_size;
 	char *r = NULL, *return_type = NULL, *signature = NULL, *buff = NULL;
-	ut8 *bufptr;
 	ut16 type_idx;
 	int pos = 0, i, size = 1;
 
@@ -222,21 +222,28 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (!params_off) {
 		return r_str_newf ("()%s", return_type);;
 	}
-	bufptr = bin->b->buf;
+	ut8 params_buf[sizeof (ut32)];
+	if (!r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf))) {
+		return NULL;
+	}
 	// size of the list, in entries
-	list_size = r_read_le32 (bufptr + params_off);
+	list_size = r_read_le32 (params_buf);
 	if (list_size * sizeof (ut16) >= bin->size) {
 		return NULL;
 	}
 
 	for (i = 0; i < list_size; i++) {
 		int buff_len = 0;
-		if (params_off + 4 + (i * 2) >= bin->size) {
+		int off = params_off + 4 + (i * 2);
+		if (off >= bin->size) {
 			break;
 		}
-		type_idx = r_read_le16 (bufptr + params_off + 4 + (i * 2));
-		if (type_idx >=
-			    bin->header.types_size || type_idx >= bin->size) {
+		ut8 typeidx_buf[sizeof (ut16)];
+		if (!r_buf_read_at (bin->b, off, typeidx_buf, sizeof (typeidx_buf))) {
+			break;
+		}
+		type_idx = r_read_le16 (typeidx_buf);
+		if (type_idx >= bin->header.types_size || type_idx >= bin->size) {
 			break;
 		}
 		buff = getstr (bin, bin->types[type_idx].descriptor_id);
@@ -269,10 +276,20 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	return dex_get_proto (bin, bin->methods[method_idx].proto_id);
 }
 
+static ut32 read32(RBuffer* b, ut64 addr) {
+	ut32 n = 0;
+	r_buf_read_at (b, addr, (ut8*)&n, sizeof (n));
+	return r_read_le32 (&n);
+}
+
+static ut16 read16(RBuffer* b, ut64 addr) {
+	ut16 n = 0;
+	r_buf_read_at (b, addr, (ut8*)&n, sizeof (n));
+	return r_read_le16 (&n);
+}
+
 static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	ut32 proto_id, params_off, list_size;
-	char *buff = NULL;
-	ut8 *bufptr;
 	ut16 type_idx;
 	int i;
 
@@ -294,21 +311,17 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	if (!params_off) {
 		return params;
 	}
-	bufptr = bin->b->buf;
-	// size of the list, in entries
-	list_size = r_read_le32 (bufptr + params_off);
-	//XXX list_size tainted it may produce huge loop
+	list_size = read32 (bin->b, params_off);
 	for (i = 0; i < list_size; i++) {
 		ut64 of = params_off + 4 + (i * 2);
 		if (of >= bin->size || of < params_off) {
 			break;
 		}
-		type_idx = r_read_le16 (bufptr + of);
-		if (type_idx >= bin->header.types_size ||
-		    type_idx > bin->size) {
+		type_idx = read16 (bin->b, of);
+		if (type_idx >= bin->header.types_size || type_idx > bin->size) {
 			break;
 		}
-		buff = getstr (bin, bin->types[type_idx].descriptor_id);
+		char *buff = getstr (bin, bin->types[type_idx].descriptor_id);
 		if (!buff) {
 			break;
 		}
@@ -321,6 +334,7 @@ out_error:
 }
 
 // TODO: fix this, now has more registers that it should
+// XXX. this is using binfile->buf directly :(
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
 static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
@@ -329,8 +343,18 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 				  int debug_info_off) {
 	struct r_bin_t *rbin = binfile->rbin;
 	struct r_bin_dex_obj_t *dex = binfile->o->bin_obj;
-	const ut8 *p4 = r_buf_get_at (binfile->buf, debug_info_off, NULL);
-	const ut8 *p4_end = p4 + binfile->buf->length - debug_info_off;
+	// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xffffffffff0043fc
+	if (debug_info_off >= r_buf_size (binfile->buf)) {
+		return;
+	}
+	int buf_size = r_buf_size (binfile->buf) - debug_info_off;
+	ut8 *buf = malloc (buf_size);
+	if (!buf) {
+		return;
+	}
+	r_buf_read_at (binfile->buf, debug_info_off, buf, buf_size);
+	const ut8 *p4 = buf;
+	const ut8 *p4_end = buf + buf_size;
 	ut64 line_start;
 	ut64 parameters_size;
 	ut64 param_type_idx;
@@ -339,6 +363,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	RList *params, *debug_positions, *emitted_debug_locals = NULL;
 	bool keep = true;
 	if (argReg > regsz) {
+		free (buf);
 		return; // this return breaks tests
 	}
 	p4 = r_uleb128 (p4, p4_end - p4, &line_start);
@@ -348,10 +373,12 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	ut32 address = 0;
 	ut32 line = line_start;
 	if (!(debug_positions = r_list_newf ((RListFree)free))) {
+		free (buf);
 		return;
 	}
 	if (!(emitted_debug_locals = r_list_newf ((RListFree)free))) {
 		free (debug_positions);
+		free (buf);
 		return;
 	}
 
@@ -368,6 +395,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		free (debug_positions);
 		free (emitted_debug_locals);
 		free (debug_locals);
+		free (buf);
 		return;
 	}
 
@@ -382,6 +410,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			free (params);
 			free (debug_locals);
 			free (emitted_debug_locals);
+			free (buf);
 			return;
 		}
 		p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx); // read uleb128p1
@@ -407,15 +436,16 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		parameters_size--;
 	}
 
-	if (!p4) {
+	if (!p4 || p4 >= p4_end) {
 		free (debug_positions);
 		free (params);
 		free (debug_locals);
 		free (emitted_debug_locals);
+		free (buf);
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;
-	while (keep) {
+	while (keep && p4 + 1 < p4_end) {
 		switch (opcode) {
 		case 0x0: // DBG_END_SEQUENCE
 			keep = false;
@@ -555,6 +585,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			p4 = r_uleb128 (p4, p4_end - p4, &register_num);
 			if (register_num >= regsz) {
 				r_list_free (debug_positions);
+				free (buf);
 				free (params);
 				free (debug_locals);
 				return;
@@ -600,7 +631,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		binfile->sdb_addrinfo = sdb_new0 ();
 	}
 
-
 	RListIter *iter1;
 	struct dex_debug_position_t *pos;
 // Loading the debug info takes too much time and nobody uses this afaik
@@ -620,7 +650,8 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 #endif
 		RBinDwarfRow *rbindwardrow = R_NEW0 (RBinDwarfRow);
 		if (!rbindwardrow) {
-			return;
+			dexdump = false;
+			break;
 		}
 		if (line) {
 			rbindwardrow->file = strdup (line);
@@ -636,6 +667,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		free (emitted_debug_locals);
 		free (debug_locals);
 		free (params);
+		free (buf);
 		return;
 	}
 
@@ -694,6 +726,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	free (debug_locals);
 	free (emitted_debug_locals);
 	free (params);
+	free (buf);
 }
 
 static Sdb *get_sdb (RBinFile *bf) {
@@ -702,23 +735,22 @@ static Sdb *get_sdb (RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
-	return bin? bin->kv: NULL;
+	return bin->kv;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	tbuf = r_buf_new ();
 	if (!tbuf) {
-		return NULL;
+		return false;
 	}
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = r_bin_dex_new_buf (tbuf);
+	*bin_obj = r_bin_dex_new_buf (tbuf);
 	r_buf_free (tbuf);
-	return res;
+	return true;
 }
 
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -732,8 +764,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj ? true: false;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -868,6 +899,7 @@ static RList *strings(RBinFile *bf) {
 			ptr->string[len] = 0;
 			if ((ptr->string[0] == 'L' && strchr (ptr->string, '/')) || !strncmp (ptr->string, "[L", 2)) {
 				free (ptr->string);
+				free (ptr);
 				continue;
 			}
 			ptr->vaddr = ptr->paddr = bin->strings[i];
@@ -1063,7 +1095,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 			rbin->cb_printf ("      name          : '%s'\n", fieldName);
 			rbin->cb_printf ("      type          : '%s'\n", type_str);
 			rbin->cb_printf ("      access        : 0x%04x (%s)\n",
-					 (unsigned int)accessFlags, accessStr);
+					 (unsigned int)accessFlags, accessStr? accessStr: "");
 		}
 		r_list_append (bin->methods_list, sym);
 
@@ -1227,7 +1259,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						catchAll = false;
 					}
 
-					for (m = 0; m < size; m++) {
+					for (m = 0; m < size && p3 < p3_end; m++) {
 						p3 = r_uleb128 (p3, p3_end - p3, &handler_type);
 						p3 = r_uleb128 (p3, p3_end - p3, &handler_addr);
 
@@ -1281,7 +1313,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				sym->paddr = MC;// + 0x10;
 				sym->vaddr = MC;// + 0x10;
 			} else {
-				sym->type = r_str_const ("METH");
+				sym->type = r_str_const (R_BIN_TYPE_METH_STR);
 				sym->paddr = encoded_method_addr - binfile->buf->buf;
 				sym->vaddr = encoded_method_addr - binfile->buf->buf;
 			}
@@ -1484,13 +1516,20 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	    bin->header.data_offset < c->interfaces_offset &&
 	    c->interfaces_offset <
 		    bin->header.data_offset + bin->header.data_size) {
-		p = r_buf_get_at (binfile->buf, c->interfaces_offset, NULL);
+		int left;
+		p = r_buf_get_at (binfile->buf, c->interfaces_offset, &left);
+		if (left < 4) {
+			return;
+		}
 		int types_list_size = r_read_le32 (p);
 		if (types_list_size < 0 || types_list_size >= bin->header.types_size ) {
 			return;
 		}
 		for (z = 0; z < types_list_size; z++) {
-			int t = r_read_le16 (p + 4 + z * 2);
+			ut16 le16;
+			ut32 off = c->interfaces_offset + 4 + (z * 2);
+			r_buf_read_at (binfile->buf, off, (ut8*)&le16, sizeof (le16));
+			int t = r_read_le16 (&le16);
 			if (t > 0 && t < bin->header.types_size ) {
 				int tid = bin->types[t].descriptor_id;
 				if (dexdump) {
@@ -1520,7 +1559,8 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		}
 
 		p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
-		p_end = p + binfile->buf->length - c->class_data_offset;
+		// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xfffffffffffffd46
+		p_end = p + (binfile->buf->length - c->class_data_offset);
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
 			sizeof (struct dex_class_data_item_t));
@@ -1846,7 +1886,9 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 		break;
 	case 's': // strings
 		if (dex->header.strings_size > idx) {
-			if (dex->strings) return dex->strings[idx];
+			if (dex->strings) {
+				return dex->strings[idx];
+			}
 		}
 		break;
 	case 't': // type
@@ -1903,35 +1945,35 @@ static RList *sections(RBinFile *bf) {
 	ret->free = free;
 
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "header");
+		ptr->name = strdup ("header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
-		ptr->srwx = R_BIN_SCN_READABLE;
+		ptr->perm = R_PERM_R;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "constpool");
+		ptr->name = strdup ("constpool");
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->vsize = ptr->size;
-		ptr->srwx = R_BIN_SCN_READABLE;
+		ptr->perm = R_PERM_R;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "code");
+		ptr->name = strdup ("code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->vsize = ptr->size;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+		ptr->perm = R_PERM_RX;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
-		strcpy (ptr->name, "data");
+		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
 		if (ptr->vaddr > bf->buf->length) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
@@ -1941,7 +1983,7 @@ static RList *sections(RBinFile *bf) {
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->srwx = R_BIN_SCN_READABLE; //|2;
+		ptr->perm = R_PERM_R; //|2;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -2034,7 +2076,7 @@ RBinPlugin r_bin_plugin_dex = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dex,
 	.version = R2_VERSION

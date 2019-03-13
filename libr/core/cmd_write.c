@@ -13,7 +13,7 @@ static const char *help_msg_w[] = {
 	"w0"," [len]","write 'len' bytes with value 0x00",
 	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
-	"waf"," file","assemble file and write bytes",
+	"waf"," f.asm","assemble file and write bytes",
 	"wao","[?] op","modify opcode (change conditional of jump. nop, etc)",
 	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
 	"wb"," 010203","fill current block with cyclic hexpairs",
@@ -43,7 +43,7 @@ static const char *help_msg_wa[] = {
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
-	"waf", "foo.asm" , "assemble file and write bytes",
+	"waf", " f.asm" , "assemble file and write bytes",
 	"wao?", "", "show help for assembler operation on current opcode (hack)",
 	NULL
 };
@@ -65,7 +65,7 @@ static const char *help_msg_wc[] = {
 	"wc","","list all write changes",
 	"wcj","","list all write changes in JSON",
 	"wc-"," [from] [to]","remove write op at curseek or given addr",
-	"wc+"," [addr]","commit change from cache to io",
+	"wc+"," [from] [to]","commit change from cache to io",
 	"wc*","","\"\" in radare commands",
 	"wcr","","reset all write changes in cache",
 	"wci","","commit write cache",
@@ -537,9 +537,8 @@ static bool cmd_wff(RCore *core, const char *input) {
 		}
 	}
 	if ((buf = (ut8*) r_file_slurp (a, &size))) {
-		int u_size = size;
 		int u_offset = 0;
-		u_size = r_num_math (core->num, p);
+		int u_size = r_num_math (core->num, p);
 		if (u_size < 1) u_size = size;
 		if (p) {
 			*p++ = 0;
@@ -849,8 +848,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'e': // "we"
-		{
+	case 'e': { // "we"
 		ut64 addr = 0, len = 0, b_size = 0;
 		st64 dist = 0;
 		ut8* bytes = NULL;
@@ -880,7 +878,7 @@ static int cmd_write(void *data, const char *input) {
 				if (len > 0){
 					ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, addr, len);
-					cmd_suc = r_core_seek (core, cur_off, 1);
+					r_core_seek (core, cur_off, 1);
 					core->offset = addr;
 					r_core_block_read (core);
 				}
@@ -905,7 +903,35 @@ static int cmd_write(void *data, const char *input) {
 				free (bytes);
 			}
 			break;
-		case 'X':
+		case 's': // "wes"
+			input +=  3;
+			while (*input && *input == ' ') {
+				input++;
+			}
+			len = strlen (input);
+
+			// since the distance can be negative,
+			// the r_num_math will perform an unwanted operation
+			// the solution is to tokenize the string :/
+			if (len > 0) {
+				input_shadow = strdup (input);
+				p = strtok (input_shadow, " ");
+				addr = p && *p ? r_num_math (core->num, p) : 0;
+
+				p = strtok (NULL, " ");
+				dist = p && *p ? r_num_math (core->num, p) : 0;
+
+				p = strtok (NULL, " ");
+				b_size = p && *p ? r_num_math (core->num, p) : 0;
+				if (dist != 0){
+					r_core_shift_block (core, addr, b_size, dist);
+					r_core_seek (core, addr, 1);
+					cmd_suc = true;
+				}
+			}
+			free (input_shadow);
+			break;
+		case 'X': // "weX"
 			if (input[2] == ' ') {
 				addr = r_num_math (core->num, input+3);
 				input += 3;
@@ -926,34 +952,7 @@ static int cmd_write(void *data, const char *input) {
 				free (bytes);
 			}
 			break;
-		case 's':
-			input +=  3;
-			while (*input && *input == ' ') input++;
-			len = strlen (input);
-			input_shadow = len > 0? malloc (len+1): 0;
-
-			// since the distance can be negative,
-			// the r_num_math will perform an unwanted operation
-			// the solution is to tokenize the string :/
-			if (input_shadow) {
-				strncpy (input_shadow, input, len+1);
-				p = strtok (input_shadow, " ");
-				addr = p && *p ? r_num_math (core->num, p) : 0;
-
-				p = strtok (NULL, " ");
-				dist = p && *p ? r_num_math (core->num, p) : 0;
-
-				p = strtok (NULL, " ");
-				b_size = p && *p ? r_num_math (core->num, p) : 0;
-				if (dist != 0){
-					r_core_shift_block (core, addr, b_size, dist);
-					r_core_seek (core, addr, 1);
-					cmd_suc = true;
-				}
-			}
-			free (input_shadow);
-			break;
-		case '?':
+		case '?': // "we?"
 		default:
 			cmd_suc = false;
 			break;
@@ -963,7 +962,7 @@ static int cmd_write(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'p':
+	case 'p': // "wp"
 		if (input[1]=='-' || (input[1]==' ' && input[2]=='-')) {
 			char *out = r_core_editor (core, NULL, NULL);
 			if (out) {
@@ -982,7 +981,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'u':
+	case 'u': // "wu"
 		// TODO: implement it in an API RCore.write_unified_hexpatch() is ETOOLONG
 		if (input[1]==' ') {
 			char *data = r_file_slurp (input+2, NULL);
@@ -1036,7 +1035,7 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
 		}
 		break;
-	case 'r': //wr
+	case 'r': // "wr"
 		off = r_num_math (core->num, input+1);
 		len = (int)off;
 		if (len > 0) {
@@ -1051,7 +1050,7 @@ static int cmd_write(void *data, const char *input) {
 			} else eprintf ("Cannot allocate %d byte(s)\n", len);
 		}
 		break;
-	case 'A':
+	case 'A': // "wA"
 		switch (input[1]) {
 		case ' ':
 			if (input[2] && input[3]==' ') {
@@ -1072,25 +1071,24 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'c':
+	case 'c': // "wc"
 		switch (input[1]) {
-		case 'i':
-			r_io_cache_commit (core->io, 0, UT64_MAX);
-			r_core_block_read (core);
+		case '\0': // "wc"
+			//if (!r_config_get_i (core->config, "io.cache"))
+			//	eprintf ("[warning] e io.cache must be true\n");
+			r_io_cache_list (core->io, 0);
 			break;
-		case 'r':
-			r_io_cache_reset (core->io, true);
-			/* Before loading the core block we have to make sure that if
-			 * the cache wrote past the original EOF these changes are no
-			 * longer displayed. */
-			memset (core->block, 0xff, core->blocksize);
-			r_core_block_read (core);
+		case '?': // "wc?"
+			r_core_cmd_help (core, help_msg_wc);
 			break;
-		case '+':
-			if (input[2]=='*') {
+		case '*': // "wc*"
+			r_io_cache_list (core->io, 1);
+			break;
+		case '+': // "wc+"
+			if (input[2]=='*') { // "wc+*"
 				//r_io_cache_reset (core->io, true);
 				eprintf ("TODO\n");
-			} else if (input[2]==' ') {
+			} else if (input[2]==' ') { // "wc+ "
 				char *p = strchr (input+3, ' ');
 				ut64 to, from;
 				from = r_num_math (core->num, input+3);
@@ -1110,17 +1108,19 @@ static int cmd_write(void *data, const char *input) {
 				r_io_cache_commit (core->io, core->offset, core->offset+1);
 			}
 			break;
-		case '-':
-			if (input[2]=='*') {
+		case '-': { // "wc-"
+			if (input[2]=='*') { // "wc-*"
 				r_io_cache_reset (core->io, true);
-			} else if (input[2]==' ') {
+				break;
+			}
+			ut64 from, to;
+			if (input[2]==' ') { // "wc- "
 				char *p = strchr (input+3, ' ');
-				ut64 to, from;
 				if (p) {
 					*p = 0;
 					from = r_num_math (core->num, input+3);
-					to = r_num_math (core->num, input+3);
-					if (to<from) {
+					to = r_num_math (core->num, p+1);
+					if (to < from) {
 						eprintf ("Invalid range (from>to)\n");
 						return 0;
 					}
@@ -1128,31 +1128,33 @@ static int cmd_write(void *data, const char *input) {
 					from = r_num_math (core->num, input+3);
 					to = from + core->blocksize;
 				}
-				r_io_cache_invalidate (core->io, from, to);
 			} else {
 				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
-				r_io_cache_invalidate (core->io, core->offset, core->offset+core->blocksize);
+				from = core->offset;
+				to = core->offset + core->blocksize;
 			}
-			/* See 'r' above. */
-			memset (core->block, 0xff, core->blocksize);
+			eprintf("invalidated %d cache(s)\n",
+				r_io_cache_invalidate (core->io, from, to));
 			r_core_block_read (core);
 			break;
-		case 'p':
-			cmd_write_pcache (core, &input[2]);
+		}
+		case 'i': // "wci"
+			r_io_cache_commit (core->io, 0, UT64_MAX);
+			r_core_block_read (core);
 			break;
-		case '?':
-			r_core_cmd_help (core, help_msg_wc);
-			break;
-		case '*':
-			r_io_cache_list (core->io, 1);
-			break;
-		case 'j':
+		case 'j': // "wcj"
 			r_io_cache_list (core->io, 2);
 			break;
-		case '\0':
-			//if (!r_config_get_i (core->config, "io.cache"))
-			//	eprintf ("[warning] e io.cache must be true\n");
-			r_io_cache_list (core->io, 0);
+		case 'p': // "wcp"
+			cmd_write_pcache (core, &input[2]);
+			break;
+		case 'r': // "wcr"
+			r_io_cache_reset (core->io, true);
+			/* Before loading the core block we have to make sure that if
+			 * the cache wrote past the original EOF these changes are no
+			 * longer displayed. */
+			memset (core->block, 0xff, core->blocksize);
+			r_core_block_read (core);
 			break;
 		}
 		break;
@@ -1243,13 +1245,21 @@ static int cmd_write(void *data, const char *input) {
 					return 0;
 				}
 				if (*str == '!') {
-					RIOSection *s = r_io_section_vget (core->io, poff);
+					if (str[1] == '?') {
+						r_core_cmd_help (core, help_msg_wt);
+						return 0;
+					}
+					RIOMap *map = r_io_map_get (core->io, poff);
 					toend = true;
 					//use physical address
-					poff =  s ? poff - s->vaddr + s->paddr : poff;
+					poff = map ? poff - map->itv.addr + map->delta : poff;
 					str++;
 				}
 				if (*str == 'f') {
+					if (str[1] == '?') {
+						r_core_cmd_help (core, help_msg_wt);
+						return 0;
+					}
 					const char *prefix = r_str_trim_ro (str + 1);
 					if (!*prefix) {
 						prefix = "dump";
@@ -1257,7 +1267,11 @@ static int cmd_write(void *data, const char *input) {
 					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
 					if (*str) {
-						filename = str + ((*str == ' ')? 1: 0);
+						if (str[1] == '?') {
+							r_core_cmd_help (core, help_msg_wt);
+							return 0;
+						}
+						filename = r_str_trim_ro (str);
 					} else {
 						filename = "";
 					}
@@ -1325,7 +1339,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'f': // "wf"
 		cmd_wf (core, input);
 		break;
-	case 'w':
+	case 'w': // "ww"
 		str++;
 		len = (len - 1) << 1;
 		tmp = (len > 0) ? malloc (len + 1) : NULL;
@@ -1335,7 +1349,9 @@ static int cmd_write(void *data, const char *input) {
 				else tmp[i] = str[i>>1];
 			}
 			str = tmp;
-			r_io_use_fd (core->io, core->file->fd);
+			if (core->file) {
+				r_io_use_fd (core->io, core->file->fd);
+			}
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core);
@@ -1346,6 +1362,9 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'x': // "wx"
 		switch (input[1]) {
+		case ' ': // "wx "
+			cmd_write_hexpair (core, input + 1);
+			break;
 		case 'f': // "wxf"
 			arg = (const char *)(input + ((input[2]==' ')? 3: 2));
 			if (!strcmp (arg, "-")) {
@@ -1393,9 +1412,6 @@ static int cmd_write(void *data, const char *input) {
 				}
 			}
 			break;
-		case ' ': // "wx ..."
-			cmd_write_hexpair (core, input + 1);
-			break;
 		default:
 			r_core_cmd_help (core, help_msg_wx);
 			break;
@@ -1406,21 +1422,23 @@ static int cmd_write(void *data, const char *input) {
 		case 'o': // "wao"
 			if (input[2] == ' ') {
 				char *op = r_str_trim (strdup (input + 3));
-				r_core_hack (core, op);
-				free (op);
+				if (op) {
+					r_core_hack (core, op);
+					free (op);
+				}
 			} else {
 				r_core_hack_help (core);
 			}
 			break;
 		case ' ':
 		case '*': {
-			const char *file = input[1]=='*'? input+2: input+1;
+			const char *file = input[1]=='*'? input + 2: input + 1;
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);
 			if (acode) {
-				if (input[1]=='*') {
-					cmd_write_hexpair(core, acode->buf_hex);
+				if (input[1] == '*') {
+					cmd_write_hexpair (core, acode->buf_hex);
 				} else {
 					if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
 						cmd_write_fail ();
@@ -1437,14 +1455,13 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		case 'f': // "waf"
-			if ((input[2]==' '||input[2]=='*')) {
-				const char *file = input[2]=='*'? input+4: input+3;
-				RAsmCode *acode;
+			if ((input[2] == ' ' || input[2] == '*')) {
+				const char *file = input + ((input[2] == '*')? 4: 3);
 				r_asm_set_pc (core->assembler, core->offset);
-				acode = r_asm_assemble_file (core->assembler, file);
+				RAsmCode *acode = r_asm_assemble_file (core->assembler, file);
 				if (acode) {
-					if (input[2]=='*') {
-						cmd_write_hexpair(core, acode->buf_hex);
+					if (input[2] == '*') {
+						cmd_write_hexpair (core, acode->buf_hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
 							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
@@ -1457,8 +1474,12 @@ static int cmd_write(void *data, const char *input) {
 						r_core_block_read (core);
 					}
 					r_asm_code_free (acode);
-				} else eprintf ("Cannot assemble file\n");
-			} else eprintf ("Wrong argument\n");
+				} else {
+					eprintf ("Cannot assemble file\n");
+				}
+			} else {
+				eprintf ("Wrong argument\n");
+			}
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_wa);
@@ -1483,7 +1504,7 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Cannot malloc %d\n", len+1);
 		break;
 	}
-	case 'm':
+	case 'm': // "wm"
 		size = r_hex_str2bin (input+1, (ut8*)str);
 		switch (input[1]) {
 		case '\0':
@@ -1509,13 +1530,13 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'v':
+	case 'v': // "wv"
 		cmd_write_value (core, input);
 		break;
-	case 'o':
+	case 'o': // "wo"
 		cmd_write_op (core, input);
 		break;
-	case 'd':
+	case 'd': // "wd"
 		if (input[1] && input[1]==' ') {
 			char *arg, *inp = strdup (input+2);
 			arg = strchr (inp, ' ');
@@ -1531,7 +1552,7 @@ static int cmd_write(void *data, const char *input) {
 			free (inp);
 		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
 		break;
-	case 's':
+	case 's': // "ws"
 		if (str && *str && str[1]) {
 			len = r_str_unescape (str+1);
 			if (len>255) {
@@ -1549,7 +1570,7 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Too short.\n");
 		break;
 	default:
-	case '?':
+	case '?': // "w?"
 		if (core->oobi) {
 			eprintf ("Writing oobi buffer!\n");
 			r_io_use_fd (core->io, core->file->fd);

@@ -1,26 +1,19 @@
-/* radare - LGPL - Copyright 2015 - inisider */
+/* radare - LGPL - Copyright 2015-2018 - inisider */
 
 #include <r_bin.h>
+#include "./demangler.h"
 
-static bool is_cxx_symbol (const char *name) {
-	return (*name == '?');
-}
+R_API char *r_bin_demangle_msvc(const char *str) {
+	char *out = NULL;
+	SDemangler *mangler = 0;
 
-R_API bool r_bin_lang_msvc(RBinFile *binfile) {
-	RBinObject *o = binfile ? binfile->o : NULL;
-	RBinInfo *info = o ? o->info : NULL;
-	RBinSymbol *sym;
-	RListIter *iter;
-	bool hascxx = false;
-	if (info) {
-		r_list_foreach (o->symbols, iter, sym) {
-			if (is_cxx_symbol (sym->name)) {
-				hascxx = true;
-				break;
-			}
-		}
-		if (hascxx)
-			info->lang = "msvc";
+	create_demangler (&mangler);
+	if (!mangler) {
+		return NULL;
 	}
-	return hascxx;
+	if (init_demangler (mangler, (char *)str) == eDemanglerErrOK) {
+		mangler->demangle (mangler, &out/*demangled_name*/);
+	}
+	free_demangler (mangler);
+	return out;
 }

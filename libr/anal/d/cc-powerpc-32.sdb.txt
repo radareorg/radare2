@@ -1,7 +1,6 @@
 default.cc=powerpc-32
 
 powerpc-32=cc
-cc.powerpc-32.name=powerpc-32
 cc.powerpc-32.arg1=r3
 cc.powerpc-32.arg2=r4
 cc.powerpc-32.arg3=r5

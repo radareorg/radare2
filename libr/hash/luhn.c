@@ -1,4 +1,4 @@
-/* Copyright (C) radare2 - 2016-2017 - moritz */
+/* radare2 - LGPL - 2016-2018 - Copyright (C) moritz */
 
 #include <r_hash.h>
 

@@ -168,7 +168,7 @@ int xnu_wait(RDebug *dbg, int pid) {
 
 bool xnu_step(RDebug *dbg) {
 #if XNU_USE_PTRACE
-	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
+	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
 	if (!ret) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
@@ -199,7 +199,11 @@ bool xnu_step(RDebug *dbg) {
 
 int xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-	if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+#if PT_ATTACHEXC
+	if (r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
+#else
+	if (r_debug_ptrace (dbg, PT_ATTACH, pid, 0, 0) == -1) {
+#endif
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
 	}
@@ -217,7 +221,7 @@ int xnu_attach(RDebug *dbg, int pid) {
 
 int xnu_detach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-	return ptrace (PT_DETACH, pid, NULL, 0);
+	return r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
 #else
 	kern_return_t kr;
 	//do the cleanup necessary
@@ -294,7 +298,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if XNU_USE_PTRACE
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	task_resume (pid_to_task (pid));
-	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
+	return r_debug_ptrace (dbg, PT_CONTINUE, pid, (void*)(size_t)1,
 			(int)(size_t)data) == 0;
 #else
 	task_t task = pid_to_task (pid);
@@ -1170,7 +1174,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	ut64 info_array_address;
 	void *info_array = NULL;
 	//void *header_data = NULL;
-	char file_path[MAXPATHLEN];
+	char file_path[MAXPATHLEN] = {0};
 	count = TASK_DYLD_INFO_COUNT;
 	task_t task = pid_to_task (dbg->tid);
 	ut64 addr, file_path_address;
@@ -1232,8 +1236,9 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 			addr = info->image_load_address;
 			file_path_address = info->image_file_path;
 		}
+		memset (file_path, 0, MAXPATHLEN);
 		dbg->iob.read_at (dbg->iob.io, file_path_address,
-				(ut8*)file_path, MAXPATHLEN);
+				(ut8*)file_path, MAXPATHLEN - 1);
 		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 0);

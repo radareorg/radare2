@@ -16,12 +16,12 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct r_bin_te_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 
 	if (!buf || sz == 0 || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
@@ -30,7 +30,8 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -40,7 +41,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return bf->o->bin_obj? true: false;
 }
 
@@ -105,31 +106,24 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		if (sections[i].name[sizeof (sections[i].name) - 1]) {
-			memcpy (ptr->name, sections[i].name,
-				sizeof (sections[i].name));
-			ptr->name[sizeof (sections[i].name)] = 0;
-		} else {
-			strncpy (ptr->name, (char *) sections[i].name,
-				R_BIN_SIZEOF_STRINGS);
-		}
+		ptr->name = strdup ((char*)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
-		ptr->srwx = 0;
+		ptr->perm = 0;
 		ptr->add = true;
 		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
+			ptr->perm |= R_PERM_X;
 		}
 		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_WRITABLE;
+			ptr->perm |= R_PERM_W;
 		}
 		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_READABLE;
+			ptr->perm |= R_PERM_R;
 		}
 		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+			ptr->perm |= R_PERM_SHAR;
 		}
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
@@ -187,7 +181,7 @@ RBinPlugin r_bin_plugin_te = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_te,
 	.version = R2_VERSION

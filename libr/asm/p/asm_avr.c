@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake, dark_k3y */
+/* radare - LGPL - Copyright 2010-2018 - pancake, dark_k3y */
 /* AVR assembler realization by Alexander Bolshev aka @dark_k3y, LGPL -- 2015,
    heavily based (and using!) on disassemble module */
 
@@ -14,11 +14,13 @@
 #include "../arch/avr/disasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int ret = op->size = avrdis (op->buf_asm, a->pc, buf, len);
-	if (op->buf_asm[0] == '.') {
-		op->buf_asm[0] = 0;
+	char buf_asm[32] = {0};
+	op->size = avrdis (buf_asm, a->pc, buf, len);
+	if (*buf_asm == '.') {
+		*buf_asm = 0;
 	}
-	return ret;
+	r_strbuf_set (&op->buf_asm, buf_asm);
+	return op->size;
 }
 
 extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
@@ -58,16 +60,18 @@ static int parse_specialreg(const char *reg) {
 		/* radare tolower instruction in rasm, so we use 'y' instead of 'Y'
 		and so on for other registers */
 		if (found == -1 && reg[1] == '+') {
-			if (reg[0] == 'y' && len > 2)
+			if (reg[0] == 'y' && len > 2) {
 				found = OPERAND_YPQ;
-			else if (reg[0] == 'z' && len > 2)
+			} else if (reg[0] == 'z' && len > 2) {
 				found = OPERAND_ZPQ;
+			}
 		}
 		if (found == -1 && reg[2] == '+') {
-			if (reg[0] == 'y' && len > 2)
+			if (reg[0] == 'y' && len > 2) {
 				found = OPERAND_YPQ;
-			else if (reg[0] == 'z' && len > 2)
+			} else if (reg[0] == 'z' && len > 2) {
 				found = OPERAND_ZPQ;
+			}
 		}
 	}
 	return found;
@@ -76,8 +80,12 @@ static int parse_specialreg(const char *reg) {
 /* gets the number from string
    duplicate from asm_x86_nz.c -- may be create a generic function? */
 static int getnum(RAsm *a, const char *s) {
-	if (!s) return 0;
-	if (*s=='$') s++;
+	if (!s) {
+		return 0;
+	}
+	if (*s == '$') {
+		s++;
+	}
 	return r_num_math (a->num, s);
 }
 
@@ -100,42 +108,47 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 				// handling (e)lpm instruction with 2 args
 				if (instructionSet[i].opcodeMask >= 0x9004 &&
 					instructionSet[i].opcodeMask <= 0x9007) {
-					if (instructionSet[i].operandTypes[1] == parse_specialreg(instr[2]))
+					if (instructionSet[i].operandTypes[1] == parse_specialreg (instr[2])) {
 						return i;
-				// handling ld & ldd instruction with 2 args
+					}
+					// handling ld & ldd instruction with 2 args
 				} else if (instructionSet[i].mnemonic[0] == 'l'
 					&& instructionSet[i].mnemonic[1] == 'd'
 					&& (instructionSet[i].mnemonic[2] == 'd' || instructionSet[i].mnemonic[2] == '\0')) {
-					if (instructionSet[i].operandTypes[1] == parse_specialreg(instr[2]))
+					if (instructionSet[i].operandTypes[1] == parse_specialreg (instr[2])) {
 						return i;
-				// handling lds command, distinguishing long from 16-bit version
+					}
+					// handling lds command, distinguishing long from 16-bit version
 				} else if (instructionSet[i].mnemonic[0] == 'l'
 					&& instructionSet[i].mnemonic[1] == 'd'
 					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// ineffective, but needed for lds/sts and other cases
 					if (strlen(instr[2]) > 0) {
-						op2 = getnum(a, instr[2]);
-						if (op2 > 127)
+						op2 = getnum (a, instr[2]);
+						if (op2 > 127) {
 							return i;
+						}
 					}
 				// handling st & std instruction with 2 args
 				} else if (instructionSet[i].mnemonic[0] == 's'
 					&& instructionSet[i].mnemonic[1] == 't'
 					&& (instructionSet[i].mnemonic[2] == 'd' || instructionSet[i].mnemonic[2] == '\0')) {
 
-					if (instructionSet[i].operandTypes[0] == parse_specialreg(instr[1]))
+					if (instructionSet[i].operandTypes[0] == parse_specialreg (instr[1])) {
 						return i;
-				// handling sts long command
+					}
+					// handling sts long command
 				} else if (instructionSet[i].mnemonic[0] == 's'
 					&& instructionSet[i].mnemonic[1] == 't'
 					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// same for 1st operand of sts
 					if (strlen(instr[1]) > 0) {
-						op1 = getnum(a, instr[1]);
-						if (op1 > 127)
+						op1 = getnum (a, instr[1]);
+						if (op1 > 127) {
 							return i;
+						}
 					}
 				} else {
 					return i; // it's not st/ld/lpm-like instruction with 2 args
@@ -252,8 +265,9 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 			temp -= a->pc + 2;
 		}
 		temp /= 2; // in WORDs
-		if(temp >= -64 && temp <= 63)
+		if (temp >= -64 && temp <= 63) {
 			ret = 0;
+		}
 		*res = temp;
 		break;
 	case OPERAND_IO_REGISTER:
@@ -296,8 +310,9 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 		if (strlen(operand) > 1) {
 			// returns register number (r__)
 			*res = getnum(a, operand + 1);
-			if (*res <=32)
+			if (*res <= 32) {
 				ret = 0;
+			}
 		}
 		break;
 	case OPERAND_REGISTER_STARTR16:
@@ -404,7 +419,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 	// copying result to radare struct
 	if (len > 0) {
-		memcpy (ao->buf, &coded, len);
+		r_strbuf_setbin (&ao->buf, (const ut8*)&coded, len);
 	}
 	return len;
 }
@@ -435,7 +450,7 @@ RAsmPlugin r_asm_plugin_avr = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_avr,
 	.version = R2_VERSION

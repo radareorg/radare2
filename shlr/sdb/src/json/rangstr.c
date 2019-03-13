@@ -56,7 +56,7 @@ SDB_IPI int rangstr_int (Rangstr *s) {
 	}
 	if (s->p[s->f]=='-') {
 		mul = -1;
-		i += s->f+1;
+		i += s->f + 1;
 	} else {
 		i += s->f;
 	}
@@ -71,13 +71,11 @@ SDB_IPI int rangstr_int (Rangstr *s) {
 }
 
 SDB_IPI char *rangstr_dup (Rangstr *rs) {
-	int len;
-	char *p;
 	if (!rs->p) {
 		return NULL;
 	}
-	len = rangstr_length (rs);
-	p = malloc (len + 1);
+	int len = rangstr_length (rs);
+	char *p = malloc (len + 1);
 	if (p) {
 		memcpy (p, rs->p + rs->f, len);
 		p[len] = 0;

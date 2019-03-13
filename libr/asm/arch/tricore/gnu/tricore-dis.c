@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #include "ansidecl.h"
 #include "sysdep.h"
 #include "opcode/tricore.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #ifndef _MSC_VER
 #include "libiberty.h"
 #else
@@ -47,7 +47,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #define MAX_OPS 5
 #define MATCHES_ISA(isa) \
 	  (((isa) == TRICORE_GENERIC) \
-	   || ((isa & bfd_mach_rider_mask) & current_isa))
+	   || (((isa) & bfd_mach_rider_mask) & current_isa))
 
 /* Some handy shortcuts.  */
 
@@ -205,17 +205,17 @@ decode_abs ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_ABS_OFF18:
-        dec_insn.cexp[i] = extract_off18 ();
-        break;
-      
-      case FMT_ABS_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf00) >> 8;
-	break;
-      }
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_ABS_OFF18:
+		  dec_insn.cexp[i] = extract_off18 ();
+		  break;
+
+	  case FMT_ABS_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -223,21 +223,21 @@ decode_absb ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_ABSB_OFF18:
-        dec_insn.cexp[i] = extract_off18 ();
-        break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_ABSB_OFF18:
+		  dec_insn.cexp[i] = extract_off18 ();
+		  break;
 
-      case FMT_ABSB_B:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x800) >> 11;
-	break;
+	  case FMT_ABSB_B:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x800) >> 11;
+		  break;
 
-      case FMT_ABSB_BPOS3:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x700) >> 8;
-	break;
-      }
+	  case FMT_ABSB_BPOS3:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x700) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -245,16 +245,16 @@ decode_b ()
 {
   int i;
   unsigned long o1, o2;
-      
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_B_DISP24:
-        o1 = (dec_insn.opcode & 0xffff0000) >> 16;
-	o2 = (dec_insn.opcode & 0x0000ff00) << 8;
-	dec_insn.cexp[i] = o1 | o2;
-	break;
-      }
+
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_B_DISP24:
+		  o1 = (dec_insn.opcode & 0xffff0000) >> 16;
+		  o2 = (dec_insn.opcode & 0x0000ff00) << 8;
+		  dec_insn.cexp[i] = o1 | o2;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -262,29 +262,29 @@ decode_bit ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_BIT_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_BIT_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_BIT_P2:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
-	break;
+	  case FMT_BIT_P2:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
+		  break;
 
-      case FMT_BIT_P1:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
-        break;
+	  case FMT_BIT_P1:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
+		  break;
 
-      case FMT_BIT_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_BIT_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_BIT_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_BIT_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -293,23 +293,23 @@ decode_bo ()
   int i;
   unsigned long o1, o2;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_BO_OFF10:
-        o1 = (dec_insn.opcode & 0x003f0000) >> 16;
-	o2 = (dec_insn.opcode & 0xf0000000) >> 22;
-	dec_insn.cexp[i] = o1 | o2;
-        break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_BO_OFF10:
+		  o1 = (dec_insn.opcode & 0x003f0000) >> 16;
+		  o2 = (dec_insn.opcode & 0xf0000000) >> 22;
+		  dec_insn.cexp[i] = o1 | o2;
+		  break;
 
-      case FMT_BO_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_BO_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_BO_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_BO_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -318,24 +318,24 @@ decode_bol ()
   int i;
   unsigned long o1, o2, o3;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_BOL_OFF16:
-        o1 = (dec_insn.opcode & 0x003f0000) >> 16;
-	o2 = (dec_insn.opcode & 0xf0000000) >> 22;
-	o3 = (dec_insn.opcode & 0x0fc00000) >> 12;
-	dec_insn.cexp[i] = o1 | o2 | o3;
-        break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_BOL_OFF16:
+		  o1 = (dec_insn.opcode & 0x003f0000) >> 16;
+		  o2 = (dec_insn.opcode & 0xf0000000) >> 22;
+		  o3 = (dec_insn.opcode & 0x0fc00000) >> 12;
+		  dec_insn.cexp[i] = o1 | o2 | o3;
+		  break;
 
-      case FMT_BOL_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_BOL_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_BOL_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_BOL_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -343,21 +343,21 @@ decode_brc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_BRC_DISP15:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_BRC_DISP15:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
+		  break;
 
-      case FMT_BRC_CONST4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_BRC_CONST4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_BRC_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_BRC_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -365,22 +365,22 @@ decode_brn ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_BRN_DISP15:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_BRN_DISP15:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
+		  break;
 
-      case FMT_BRN_N:
-        dec_insn.cexp[i] =  (dec_insn.opcode & 0x0000f000) >> 12;
-	dec_insn.cexp[i] |= (dec_insn.opcode & 0x00000080) >> 3;
-	break;
+	  case FMT_BRN_N:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  dec_insn.cexp[i] |= (dec_insn.opcode & 0x00000080) >> 3;
+		  break;
 
-      case FMT_BRN_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_BRN_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -388,21 +388,21 @@ decode_brr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_BRR_DISP15:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_BRR_DISP15:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
+		  break;
 
-      case FMT_BRR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_BRR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_BRR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_BRR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -410,20 +410,20 @@ decode_rc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RC_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RC_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RC_CONST9:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001ff000) >> 12;
-	break;
+	  case FMT_RC_CONST9:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001ff000) >> 12;
+		  break;
 
-      case FMT_RC_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-      }
+	  case FMT_RC_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+	  }
+  }
 }
 
 static void
@@ -431,29 +431,29 @@ decode_rcpw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RCPW_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RCPW_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RCPW_P:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
-	break;
+	  case FMT_RCPW_P:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
+		  break;
 
-      case FMT_RCPW_W:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
-	break;
+	  case FMT_RCPW_W:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
+		  break;
 
-      case FMT_RCPW_CONST4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RCPW_CONST4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RCPW_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RCPW_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -461,25 +461,25 @@ decode_rcr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RCR_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RCR_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RCR_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RCR_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RCR_CONST9:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001ff000) >> 12;
-	break;
+	  case FMT_RCR_CONST9:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001ff000) >> 12;
+		  break;
 
-      case FMT_RCR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RCR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -487,25 +487,25 @@ decode_rcrr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RCRR_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RCRR_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RCRR_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RCRR_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RCRR_CONST4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RCRR_CONST4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RCRR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RCRR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -513,29 +513,29 @@ decode_rcrw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RCRW_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RCRW_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RCRW_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RCRW_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RCRW_W:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
-	break;
+	  case FMT_RCRW_W:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
+		  break;
 
-      case FMT_RCRW_CONST4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RCRW_CONST4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RCRW_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RCRW_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -543,21 +543,21 @@ decode_rlc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RLC_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RLC_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RLC_CONST16:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0ffff000) >> 12;
-	break;
+	  case FMT_RLC_CONST16:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0ffff000) >> 12;
+		  break;
 
-      case FMT_RLC_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RLC_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -565,25 +565,25 @@ decode_rr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RR_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RR_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RR_N:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
-	break;
+	  case FMT_RR_N:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
+		  break;
 
-      case FMT_RR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -591,25 +591,25 @@ decode_rr1 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RR1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RR1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RR1_N:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
-	break;
+	  case FMT_RR1_N:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
+		  break;
 
-      case FMT_RR1_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RR1_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RR1_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RR1_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -617,21 +617,21 @@ decode_rr2 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RR2_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RR2_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RR2_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RR2_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RR2_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RR2_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -639,29 +639,29 @@ decode_rrpw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RRPW_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RRPW_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RRPW_P:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
-	break;
+	  case FMT_RRPW_P:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
+		  break;
 
-      case FMT_RRPW_W:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
-	break;
+	  case FMT_RRPW_W:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
+		  break;
 
-      case FMT_RRPW_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RRPW_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RRPW_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RRPW_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -669,29 +669,29 @@ decode_rrr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RRR_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RRR_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RRR_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RRR_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RRR_N:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
-	break;
+	  case FMT_RRR_N:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
+		  break;
 
-      case FMT_RRR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RRR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RRR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RRR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -699,29 +699,29 @@ decode_rrr1 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RRR1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RRR1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RRR1_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RRR1_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RRR1_N:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
-	break;
+	  case FMT_RRR1_N:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
+		  break;
 
-      case FMT_RRR1_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RRR1_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RRR1_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RRR1_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -729,25 +729,25 @@ decode_rrr2 ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RRR2_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RRR2_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RRR2_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RRR2_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RRR2_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RRR2_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RRR2_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RRR2_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -755,25 +755,25 @@ decode_rrrr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RRRR_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RRRR_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RRRR_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RRRR_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RRRR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RRRR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RRRR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RRRR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -781,29 +781,29 @@ decode_rrrw ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_RRRW_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_RRRW_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
+		  break;
 
-      case FMT_RRRW_S3:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
-	break;
+	  case FMT_RRRW_S3:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
+		  break;
 
-      case FMT_RRRW_W:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
-	break;
+	  case FMT_RRRW_W:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
+		  break;
 
-      case FMT_RRRW_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
-	break;
+	  case FMT_RRRW_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
+		  break;
 
-      case FMT_RRRW_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+	  case FMT_RRRW_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -811,13 +811,13 @@ decode_sys ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SYS_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
-	break;
-      }
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SYS_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -825,13 +825,13 @@ decode_sb ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SB_DISP8:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0xff00) >> 8;
-	break;
-      }
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SB_DISP8:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0xff00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -839,19 +839,20 @@ decode_sbc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SBC_CONST4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SBC_CONST4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SBC_DISP4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
-        if (dec_insn.code->args[i] == 'x')
-          dec_insn.cexp[i] += 0x10;
-	break;
-      }
+	  case FMT_SBC_DISP4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  if (dec_insn.code->args[i] == 'x') {
+			  dec_insn.cexp[i] += 0x10;
+		  }
+		  break;
+	  }
+  }
 }
 
 static void
@@ -859,19 +860,20 @@ decode_sbr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SBR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SBR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SBR_DISP4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
-        if (dec_insn.code->args[i] == 'x')
-          dec_insn.cexp[i] += 0x10;
-	break;
-      }
+	  case FMT_SBR_DISP4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  if (dec_insn.code->args[i] == 'x') {
+			  dec_insn.cexp[i] += 0x10;
+		  }
+		  break;
+	  }
+  }
 }
 
 static void
@@ -879,23 +881,22 @@ decode_sbrn ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SBRN_N:
-	if (dec_insn.code->args[i] == '5')
-	  {
-            dec_insn.cexp[i] =  (dec_insn.opcode & 0xf000) >> 12;
-	    dec_insn.cexp[i] |= (dec_insn.opcode & 0x0080) >> 3;
-	  }
-	else  
-          dec_insn.cexp[i] =  (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SBRN_N:
+		  if (dec_insn.code->args[i] == '5') {
+			  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
+			  dec_insn.cexp[i] |= (dec_insn.opcode & 0x0080) >> 3;
+		  } else {
+			  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  }
+		  break;
 
-      case FMT_SBRN_DISP4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SBRN_DISP4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -903,13 +904,13 @@ decode_sc ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SC_CONST8:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0xff00) >> 8;
-	break;
-      }
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SC_CONST8:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0xff00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -917,17 +918,17 @@ decode_slr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SLR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SLR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SLR_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SLR_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -935,17 +936,17 @@ decode_slro ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SLRO_OFF4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SLRO_OFF4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SLRO_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SLRO_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -953,13 +954,13 @@ decode_sr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SR_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SR_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -967,17 +968,17 @@ decode_src ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SRC_CONST4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SRC_CONST4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SRC_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SRC_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -985,17 +986,17 @@ decode_sro ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SRO_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SRO_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SRO_OFF4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SRO_OFF4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -1003,17 +1004,17 @@ decode_srr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SRR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SRR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SRR_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SRR_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -1021,21 +1022,21 @@ decode_srrs ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SRRS_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SRRS_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SRRS_S1_D:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
+	  case FMT_SRRS_S1_D:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
 
-      case FMT_SRRS_N:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0x00c0) >> 6;
-	break;
-      }
+	  case FMT_SRRS_N:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00c0) >> 6;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -1043,17 +1044,17 @@ decode_ssr ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SSR_S2:
-        dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SSR_S2:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SSR_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SSR_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 static void
@@ -1061,17 +1062,17 @@ decode_ssro ()
 {
   int i;
 
-  for (i = 0; i < dec_insn.code->nr_operands; ++i)
-    switch (dec_insn.code->fields[i])
-      {
-      case FMT_SSRO_OFF4:
-        dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
-	break;
+  for (i = 0; i < dec_insn.code->nr_operands; ++i) {
+	  switch (dec_insn.code->fields[i]) {
+	  case FMT_SSRO_OFF4:
+		  dec_insn.cexp[i] = (dec_insn.opcode & 0xf000) >> 12;
+		  break;
 
-      case FMT_SSRO_S1:
-        dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
-	break;
-      }
+	  case FMT_SSRO_S1:
+		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f00) >> 8;
+		  break;
+	  }
+  }
 }
 
 /* Initialize the hash tables for instructions and SFRs.  */
@@ -1096,35 +1097,40 @@ init_hash_tables ()
 
   for (i = 0, pop = tricore_opcodes; i < NUMOPCS; ++i, ++pop)
     {
-      if (!MATCHES_ISA (pop->isa))
-        continue;
+	  if (!MATCHES_ISA (pop->isa)) {
+		  continue;
+	  }
 
-      idx = pop->opcode & 0x3f;
-      if (insns[idx])
-	insnlink[i].next = insns[idx];
-      insns[idx] = &insnlink[i];
-      insnlink[i].code = pop;
+	  idx = pop->opcode & 0x3f;
+	  if (insns[idx]) {
+		  insnlink[i].next = insns[idx];
+	  }
+	  insns[idx] = &insnlink[i];
+	  insnlink[i].code = pop;
     }
 
   for (i = 0, ppop = pcp_opcodes; i < NUMPCPOPCS; ++i, ++ppop)
     {
       idx = (ppop->opcode >> 11) & 0x1f;
-      if (pcpinsns[idx])
-        pcplink[i].next = pcpinsns[idx];
+      if (pcpinsns[idx]) {
+	      pcplink[i].next = pcpinsns[idx];
+      }
       pcpinsns[idx] = &pcplink[i];
       pcplink[i].code = ppop;
     }
 
   for (i = 0, psfr = tricore_sfrs; i < NUMSFRS; ++i, ++psfr)
     {
-      if (!MATCHES_ISA (psfr->isa))
-        continue;
+	  if (!MATCHES_ISA (psfr->isa)) {
+		  continue;
+	  }
 
-      idx = psfr->addr & 0xff;
-      if (sfrs[idx])
-        sfrlink[i].next = sfrs[idx];
-      sfrs[idx] = &sfrlink[i];
-      sfrlink[i].sfr = psfr;
+	  idx = psfr->addr & 0xff;
+	  if (sfrs[idx]) {
+		  sfrlink[i].next = sfrs[idx];
+	  }
+	  sfrs[idx] = &sfrlink[i];
+	  sfrlink[i].sfr = psfr;
     }
 }
 
@@ -1137,9 +1143,11 @@ find_core_reg (addr)
   struct sfrlist *psfr;
   int idx = addr & 0xff;
 
-  for (psfr = sfrs[idx]; psfr != NULL; psfr = psfr->next)
-    if ((psfr->sfr->addr == addr) && MATCHES_ISA (psfr->sfr->isa))
-      return psfr->sfr->name;
+  for (psfr = sfrs[idx]; psfr != NULL; psfr = psfr->next) {
+	  if ((psfr->sfr->addr == addr) && MATCHES_ISA (psfr->sfr->isa)) {
+		  return psfr->sfr->name;
+	  }
+  }
 
   return (char *) 0;
 }
@@ -1175,9 +1183,9 @@ print_decoded_insn (memaddr, info)
     {
       DPRINT (DFILE, "not "REGPREFIX"d%d", dec_insn.regs[0]);
       return;
-    }
-  else
-    DPRINT (DFILE, "%s ", insn->name);
+  } else {
+	  DPRINT (DFILE, "%s ", insn->name);
+  }
 
   /* Being a child of the RISC generation, a TriCore-based CPU generally
      must load a 32-bit wide address in two steps, usually by executing
@@ -1193,8 +1201,9 @@ print_decoded_insn (memaddr, info)
      if we can be reasonably sure that it is part of the load sequence
      described above.  Note that "lea" is used here as a generic insn;
      it actually may also be any load or store instruction.  */
-  if (memaddr != next_addr)
-    expect_lea = print_symbolic_address = false;
+  if (memaddr != next_addr) {
+	  expect_lea = print_symbolic_address = false;
+  }
   next_addr = memaddr + (insn->len32 ? 4 : 2);
 
   if (!strcmp (insn->name, "movh.a"))
@@ -1229,39 +1238,36 @@ print_decoded_insn (memaddr, info)
 	      print_symbolic_address = true;
 	    }
 	}
+    } else {
+	    print_symbolic_address = false;
     }
-  else
-    print_symbolic_address = false;
 
-  if (!strncmp(insn->name,"ld.a",4))
-		load_areg[dec_insn.regs[0]] = false;
-  else
-  if (!strncmp(insn->name,"add.a",5) 
-	|| !strncmp(insn->name,"sub.a",5)
-	|| !strcmp(insn->name,"mov.a")
-	|| !strncmp(insn->name,"addsc.a",7))
-		load_areg[dec_insn.regs[0]] = false;
-  else
-  if (!strcmp(insn->name,"mov.aa"))
-	load_areg[dec_insn.regs[0]] = load_areg[dec_insn.regs[1]];
-  else
-  if (!strncmp(insn->name,"call",4)) {
-	int i = 0;
-	for (i = 2; i < 8; i++)
-		load_areg[i] = false;
+    if (!strncmp (insn->name, "ld.a", 4)) {
+	    load_areg[dec_insn.regs[0]] = false;
+    } else if (!strncmp (insn->name, "add.a", 5) || !strncmp (insn->name, "sub.a", 5) || !strcmp (insn->name, "mov.a") || !strncmp (insn->name, "addsc.a", 7)) {
+	    load_areg[dec_insn.regs[0]] = false;
+    } else if (!strcmp (insn->name, "mov.aa")) {
+	    load_areg[dec_insn.regs[0]] = load_areg[dec_insn.regs[1]];
+    } else if (!strncmp (insn->name, "call", 4)) {
+	    int i = 0;
+	    for (i = 2; i < 8; i++) {
+		    load_areg[i] = false;
+	    }
   }
   else
   if (!strncmp(insn->name,"ret",3)) {
 	int i = 0;
-	for (i = 2; i < 8; i++)
+	for (i = 2; i < 8; i++) {
 		load_areg[i] = false;
-	for (i = 10; i < 16; i++)
+	}
+	for (i = 10; i < 16; i++) {
 		load_areg[i] = false;
+	}
   }
 
-
-  if (!strcmp (insn->name, "mfcr") || !strcmp (insn->name, "mtcr"))
-    needs_creg = 1;
+  if (!strcmp (insn->name, "mfcr") || !strcmp (insn->name, "mtcr")) {
+	  needs_creg = 1;
+  }
 
   for (i = 0; i < insn->nr_operands; ++i)
     {
@@ -1308,9 +1314,9 @@ print_decoded_insn (memaddr, info)
 	case 'A':
 	  if (dec_insn.regs[i] == 10) {
 	    DPRINT (DFILE, ""REGPREFIX"sp");
- 	  }
-	  else
-	    DPRINT (DFILE, ""REGPREFIX"a%d", dec_insn.regs[i]);
+	  } else {
+		  DPRINT (DFILE, "" REGPREFIX "a%d", dec_insn.regs[i]);
+	  }
 	  break;
 
 	case 'I':
@@ -1340,44 +1346,47 @@ print_decoded_insn (memaddr, info)
 	  break;
 
 	case '4':
-	  if (dec_insn.cexp[i] & 0x8)
-	    dec_insn.cexp[i] |= ~0xf;
-	  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
-	  break;
+		if (dec_insn.cexp[i] & 0x8) {
+			dec_insn.cexp[i] |= ~0xf;
+		}
+		DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		break;
 
 	case 'F':
-	  if (dec_insn.cexp[i] & 0x10)
-	    dec_insn.cexp[i] |= ~0x1f;
-	  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
-	  break;
+		if (dec_insn.cexp[i] & 0x10) {
+			dec_insn.cexp[i] |= ~0x1f;
+		}
+		DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		break;
 
 	case '9':
-	  if (dec_insn.cexp[i] & 0x100)
-	    dec_insn.cexp[i] |= ~0x1ff;
-	  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
-	  break;
+		if (dec_insn.cexp[i] & 0x100) {
+			dec_insn.cexp[i] |= ~0x1ff;
+		}
+		DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		break;
 
 	case '0':
-	  if (dec_insn.cexp[i] & 0x200)
-	    dec_insn.cexp[i] |= ~0x3ff;
-	  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
-	  if (print_symbolic_address)
-	    {
-	      DPRINT (DFILE, " <");
-	      (*info->print_address_func) (load_addr, info);
-	      DPRINT (DFILE, ">");
+		if (dec_insn.cexp[i] & 0x200) {
+			dec_insn.cexp[i] |= ~0x3ff;
+		}
+		DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		if (print_symbolic_address) {
+			DPRINT (DFILE, " <");
+			(*info->print_address_func) (load_addr, info);
+			DPRINT (DFILE, ">");
 	    }
 	  break;
 
 	case 'w':
-	  if (dec_insn.cexp[i] & 0x8000)
-	    dec_insn.cexp[i] |= ~0xffff;
-	  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
-	  if (print_symbolic_address)
-	    {
-	      DPRINT (DFILE, " <");
-	      (*info->print_address_func) (load_addr, info);
-	      DPRINT (DFILE, ">");
+		if (dec_insn.cexp[i] & 0x8000) {
+			dec_insn.cexp[i] |= ~0xffff;
+		}
+		DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+		if (print_symbolic_address) {
+			DPRINT (DFILE, " <");
+			(*info->print_address_func) (load_addr, info);
+			DPRINT (DFILE, ">");
 	    }
 	  break;
 
@@ -1394,25 +1403,28 @@ print_decoded_insn (memaddr, info)
 	  break;
 
 	case 'o':
-	  if (dec_insn.cexp[i] & 0x4000)
-	    dec_insn.cexp[i] |= ~0x7fff;
-	  abs = (dec_insn.cexp[i] << 1) + memaddr;
-	  (*info->print_address_func) (abs, info);
-	  break;
+		if (dec_insn.cexp[i] & 0x4000) {
+			dec_insn.cexp[i] |= ~0x7fff;
+		}
+		abs = (dec_insn.cexp[i] << 1) + memaddr;
+		(*info->print_address_func) (abs, info);
+		break;
 
 	case 'O':
-	  if (dec_insn.cexp[i] & 0x800000)
-	    dec_insn.cexp[i] |= ~0xffffff;
-	  abs = (dec_insn.cexp[i] << 1) + memaddr;
-	  (*info->print_address_func) (abs, info);
-	  break;
+		if (dec_insn.cexp[i] & 0x800000) {
+			dec_insn.cexp[i] |= ~0xffffff;
+		}
+		abs = (dec_insn.cexp[i] << 1) + memaddr;
+		(*info->print_address_func) (abs, info);
+		break;
 
 	case 'R':
-	  if (dec_insn.cexp[i] & 0x80)
-	    dec_insn.cexp[i] |= ~0xff;
-	  abs = (dec_insn.cexp[i] << 1) + memaddr;
-	  (*info->print_address_func) (abs, info);
-	  break;
+		if (dec_insn.cexp[i] & 0x80) {
+			dec_insn.cexp[i] |= ~0xff;
+		}
+		abs = (dec_insn.cexp[i] << 1) + memaddr;
+		(*info->print_address_func) (abs, info);
+		break;
 
 	case 'r':
 	  dec_insn.cexp[i] |= ~0xf;
@@ -1430,75 +1442,82 @@ print_decoded_insn (memaddr, info)
 	  if (needs_creg)
 	    {
 	      creg = find_core_reg (dec_insn.cexp[i]);
-	      if (creg)
-	        DPRINT (DFILE, "%s", creg);
-	      else
-	        DPRINT (DFILE, "$0x%04lx (unknown SFR)", dec_insn.cexp[i]);
-	    }
-	  else
-	    DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+	      if (creg) {
+		      DPRINT (DFILE, "%s", creg);
+	      } else {
+		      DPRINT (DFILE, "$0x%04lx (unknown SFR)", dec_insn.cexp[i]);
+	      }
+	  } else {
+		  DPRINT (DFILE, "%ld", dec_insn.cexp[i]);
+	  }
 	  break;
 
 	case '&':
 	  dec_insn.regs[i] = 10;
 	  /* Fall through. */ 
 	case '@':
-	  if (dec_insn.regs[i] == 10)
-	    DPRINT (DFILE, "["REGPREFIX"sp]");
-	  else
-	    DPRINT (DFILE, "["REGPREFIX"a%d]", dec_insn.regs[i]);
-	  if (need_comma)
-	    {
-	      if ((insn->args[i+1] == 'a') || (insn->args[i+1] == 'd'))
-	        need_comma = 1;
-	      else
-	        need_comma = 0;
+		if (dec_insn.regs[i] == 10) {
+			DPRINT (DFILE, "[" REGPREFIX "sp]");
+		} else {
+			DPRINT (DFILE, "[" REGPREFIX "a%d]", dec_insn.regs[i]);
+		}
+		if (need_comma) {
+			if ((insn->args[i + 1] == 'a') || (insn->args[i + 1] == 'd')) {
+				need_comma = 1;
+			} else {
+				need_comma = 0;
+			}
 	    }
 	  break;
 
 	case '<':
-	  if (dec_insn.regs[i] == 10)
-	    DPRINT (DFILE, "[+"REGPREFIX"sp]");
-	  else
-	    DPRINT (DFILE, "[+"REGPREFIX"a%d]", dec_insn.regs[i]);
-	  need_comma = 0;
-	  break;
+		if (dec_insn.regs[i] == 10) {
+			DPRINT (DFILE, "[+" REGPREFIX "sp]");
+		} else {
+			DPRINT (DFILE, "[+" REGPREFIX "a%d]", dec_insn.regs[i]);
+		}
+		need_comma = 0;
+		break;
 
 	case '>':
-	  if (dec_insn.regs[i] == 10)
-	    DPRINT (DFILE, "["REGPREFIX"sp+]");
-	  else
-	    DPRINT (DFILE, "["REGPREFIX"a%d+]", dec_insn.regs[i]);
-	  if (need_comma)
-	    {
-	      if ((insn->args[i+1] == 'a') || (insn->args[i+1] == 'd'))
-	        need_comma = 1;
-	      else
-	        need_comma = 0;
+		if (dec_insn.regs[i] == 10) {
+			DPRINT (DFILE, "[" REGPREFIX "sp+]");
+		} else {
+			DPRINT (DFILE, "[" REGPREFIX "a%d+]", dec_insn.regs[i]);
+		}
+		if (need_comma) {
+			if ((insn->args[i + 1] == 'a') || (insn->args[i + 1] == 'd')) {
+				need_comma = 1;
+			} else {
+				need_comma = 0;
+			}
 	    }
 	  break;
 
 	case '*':
-	  if (dec_insn.regs[i] == 10)
-	    DPRINT (DFILE, "["REGPREFIX"sp+c]");
-	  else
-	    DPRINT (DFILE, "["REGPREFIX"a%d+c]", dec_insn.regs[i]);
-	  need_comma = 0;
-	  break;
+		if (dec_insn.regs[i] == 10) {
+			DPRINT (DFILE, "[" REGPREFIX "sp+c]");
+		} else {
+			DPRINT (DFILE, "[" REGPREFIX "a%d+c]", dec_insn.regs[i]);
+		}
+		need_comma = 0;
+		break;
 
 	case '#':
-	  if (dec_insn.regs[i] == 10)
-	    DPRINT (DFILE, "["REGPREFIX"sp+r]");
-	  else
-	    DPRINT (DFILE, "["REGPREFIX"a%d+r]", dec_insn.regs[i]);
-	  break;
+		if (dec_insn.regs[i] == 10) {
+			DPRINT (DFILE, "[" REGPREFIX "sp+r]");
+		} else {
+			DPRINT (DFILE, "[" REGPREFIX "a%d+r]", dec_insn.regs[i]);
+		}
+		break;
 
 	case '?':
-	  if (dec_insn.regs[i] == 10)
-	    DPRINT (DFILE, "["REGPREFIX"sp+i]");
-	  else
-	    DPRINT (DFILE, "["REGPREFIX"a%d+i]", dec_insn.regs[i]);
-	  break;
+		if (dec_insn.regs[i] == 10) {
+			DPRINT (DFILE, "[" REGPREFIX "sp+i]");
+		} else {
+			DPRINT (DFILE, "[" REGPREFIX "a%d+i]", dec_insn.regs[i]);
+		}
+		break;
 
 	case 'S':
 	  DPRINT (DFILE, "["REGPREFIX"a15]"); 
@@ -1506,8 +1525,9 @@ print_decoded_insn (memaddr, info)
 	  break;
 	}
 
-      if (need_comma)
-        DPRINT (DFILE, ", ");
+	if (need_comma) {
+		DPRINT (DFILE, ", ");
+	}
     }
 
 #undef DPRINT
@@ -1534,21 +1554,22 @@ decode_tricore_insn (memaddr, insn, len32, info)
   /* Try to find the instruction matching the given opcode.  */
   for (pinsn = insns[idx]; pinsn != NULL; pinsn = pinsn->next)
     {
-      if ((pinsn->code->len32 != len32)
-          || (insn & pinsn->code->lose))
-        continue;
+	  if ((pinsn->code->len32 != len32) || (insn & pinsn->code->lose)) {
+		  continue;
+	  }
 
-      fmt = pinsn->code->format;
-      mask = tricore_opmask[fmt];
-      if ((insn & mask) != pinsn->code->opcode)
-        continue;
+	  fmt = pinsn->code->format;
+	  mask = tricore_opmask[fmt];
+	  if ((insn & mask) != pinsn->code->opcode) {
+		  continue;
+	  }
 
-      /* A valid instruction was found.  Go print it. */
-      dec_insn.code = pinsn->code;
-      dec_insn.opcode = insn;
-      decode[fmt] ();
-      print_decoded_insn (memaddr, info);
-      return len32 ? 4 : 2;
+	  /* A valid instruction was found.  Go print it. */
+	  dec_insn.code = pinsn->code;
+	  dec_insn.opcode = insn;
+	  decode[fmt]();
+	  print_decoded_insn (memaddr, info);
+	  return len32 ? 4 : 2;
     }
 
   /* Oops -- this isn't a valid TriCore insn!  Since we know that
@@ -1590,22 +1611,20 @@ decode_pcp_insn (memaddr, buffer, info)
   idx = (insn >> 11) & 0x1f;
   for (pinsn = pcpinsns[idx]; pinsn != NULL; pinsn = pinsn->next)
     {
-      if (((insn & pinsn->code->opcode) != pinsn->code->opcode)
-          || (insn & pinsn->code->lose))
-        continue;
+	  if (((insn & pinsn->code->opcode) != pinsn->code->opcode) || (insn & pinsn->code->lose)) {
+		  continue;
+	  }
 
-      /* A valid instruction was found.  */
-      pop = pinsn->code;
-      if (pop->len32)
-        {
-	  /* This is a 32-bit insn; try to read 2 more bytes.  */
-          fail = (*info->read_memory_func) (memaddr + 2, &buffer[2], 2, info);
-          if (fail)
-            {
-              DPRINT (DFILE, ".hword 0x%04lx", insn);
-	      return 2;
-	    }
-	  insn2 = bfd_getl16 (buffer + 2);
+	  /* A valid instruction was found.  */
+	  pop = pinsn->code;
+	  if (pop->len32) {
+		  /* This is a 32-bit insn; try to read 2 more bytes.  */
+		  fail = (*info->read_memory_func) (memaddr + 2, &buffer[2], 2, info);
+		  if (fail) {
+			  DPRINT (DFILE, ".hword 0x%04lx", insn);
+			  return 2;
+		  }
+		  insn2 = bfd_getl16 (buffer + 2);
 	}
 
       break;
@@ -1630,26 +1649,28 @@ decode_pcp_insn (memaddr, buffer, info)
 	    {
 	    case 'd':
 	      val = (insn >> 9) & 0x3;
-	      if (val == 0)
-	        DPRINT (DFILE, "dst");
-	      else if (val == 1)
-	        DPRINT (DFILE, "dst+");
-	      else if (val == 2)
-	        DPRINT (DFILE, "dst-");
-	      else
-	        DPRINT (DFILE, "dst *ILLEGAL*");
+	      if (val == 0) {
+		      DPRINT (DFILE, "dst");
+	      } else if (val == 1) {
+		      DPRINT (DFILE, "dst+");
+	      } else if (val == 2) {
+		      DPRINT (DFILE, "dst-");
+	      } else {
+		      DPRINT (DFILE, "dst *ILLEGAL*");
+	      }
 	      break;
 
 	    case 's':
 	      val = (insn >> 7) & 0x3;
-	      if (val == 0)
-	        DPRINT (DFILE, "src");
-	      else if (val == 1)
-	        DPRINT (DFILE, "src+");
-	      else if (val == 2)
-	        DPRINT (DFILE, "src-");
-	      else
-	        DPRINT (DFILE, "src *ILLEGAL*");
+	      if (val == 0) {
+		      DPRINT (DFILE, "src");
+	      } else if (val == 1) {
+		      DPRINT (DFILE, "src+");
+	      } else if (val == 2) {
+		      DPRINT (DFILE, "src-");
+	      } else {
+		      DPRINT (DFILE, "src *ILLEGAL*");
+	      }
 	      break;
 
 	    case 'c':
@@ -1658,15 +1679,15 @@ decode_pcp_insn (memaddr, buffer, info)
 	      break;
 
 	    case 'n':
-	      if (!strcmp (pop->name, "copy"))
-		val = ((insn >> 2) & 0x7) + 1;
-	      else
-	        {
-		  val = (insn >> 2) & 0x3;
-		  if (val == 0)
-		    val = 8;
-		  else if (val == 3)
-		    val = 4;
+		    if (!strcmp (pop->name, "copy")) {
+			    val = ((insn >> 2) & 0x7) + 1;
+		    } else {
+			    val = (insn >> 2) & 0x3;
+			    if (val == 0) {
+				    val = 8;
+			    } else if (val == 3) {
+				    val = 4;
+			    }
 		}
 	      DPRINT (DFILE, "cnt0=%lu", val);
 	      break;
@@ -1706,9 +1727,10 @@ decode_pcp_insn (memaddr, buffer, info)
 	      DPRINT (DFILE, "***UNKNOWN OPERAND `%c'***", pop->args[idx]);
 	      break;
 	    }
-          if (idx < (pop->nr_operands - 1))
-	    DPRINT (DFILE, ", ");
-        }
+	    if (idx < (pop->nr_operands - 1)) {
+		    DPRINT (DFILE, ", ");
+	    }
+	}
       break;
 
     case 1:
@@ -1728,44 +1750,47 @@ decode_pcp_insn (memaddr, buffer, info)
       rb = (insn >> 6) & 0x7;
       ra = (insn >> 3) & 0x7;
       val = insn & 0x7;
-      if (!strcmp (pop->name, "ld.p") || !strcmp (pop->name, "st.p"))
-        DPRINT (DFILE, "cc_%s, r%d, [r%d]", pcp_ccodes[val], rb, ra);
-      else
-        DPRINT (DFILE, "cc_%s, r%d, r%d", pcp_ccodes[val], rb, ra);
+      if (!strcmp (pop->name, "ld.p") || !strcmp (pop->name, "st.p")) {
+	      DPRINT (DFILE, "cc_%s, r%d, [r%d]", pcp_ccodes[val], rb, ra);
+      } else {
+	      DPRINT (DFILE, "cc_%s, r%d, r%d", pcp_ccodes[val], rb, ra);
+      }
       break;
 
     case 4:
       ra = (insn >> 6) & 0x7;
       val = insn & 0x3f;
-      if (!strcmp (pop->name, "chkb"))
-        DPRINT (DFILE, "r%d, %lu, %s", ra, val & 0x1f,
-		(val & 0x20) ? "set" : "clr");
-      else if (!strcmp (pop->name, "ldl.il"))
-        DPRINT (DFILE, "r%d, 0x....%04lx", ra, insn2);
-      else if (!strcmp (pop->name, "ldl.iu"))
-        DPRINT (DFILE, "r%d, 0x%04lx....", ra, insn2);
-      else
-        DPRINT (DFILE, "r%d, %lu", ra, val);
+      if (!strcmp (pop->name, "chkb")) {
+	      DPRINT (DFILE, "r%d, %lu, %s", ra, val & 0x1f,
+		      (val & 0x20) ? "set" : "clr");
+      } else if (!strcmp (pop->name, "ldl.il")) {
+	      DPRINT (DFILE, "r%d, 0x....%04lx", ra, insn2);
+      } else if (!strcmp (pop->name, "ldl.iu")) {
+	      DPRINT (DFILE, "r%d, 0x%04lx....", ra, insn2);
+      } else {
+	      DPRINT (DFILE, "r%d, %lu", ra, val);
+      }
       break;
 
     case 5:
       ra = (insn >> 6) & 0x7;
       val = 8 << (((insn >> 5) & 0x1) | ((insn >> 8) & 0x2));
-      if ((!strcmp (pop->name, "set.f") || !strcmp (pop->name, "clr.f"))
-          && ((insn & 0x1f) >= val))
-        DPRINT (DFILE, "[r%d], %lu ***ILLEGAL VALUE***, size=%lu", ra,
-		insn & 0x1f, val);
-      else
-        DPRINT (DFILE, "[r%d], %lu, size=%lu", ra, insn & 0x1f, val);
+      if ((!strcmp (pop->name, "set.f") || !strcmp (pop->name, "clr.f")) && ((insn & 0x1f) >= val)) {
+	      DPRINT (DFILE, "[r%d], %lu ***ILLEGAL VALUE***, size=%lu", ra,
+		      insn & 0x1f, val);
+      } else {
+	      DPRINT (DFILE, "[r%d], %lu, size=%lu", ra, insn & 0x1f, val);
+      }
       break;
 
     case 6:
       rb = (insn >> 6) & 0x7;
       ra = (insn >> 3) & 0x7;
-      if ((rb == 0) || (ra == 0) || (rb == 7) || (ra == 7) || (rb == ra))
-        DPRINT (DFILE, "r%d, r%d ***ILLEGAL REGISTER USE***", rb, ra);
-      else
-        DPRINT (DFILE, "r%d, r%d", rb, ra);
+      if ((rb == 0) || (ra == 0) || (rb == 7) || (ra == 7) || (rb == ra)) {
+	      DPRINT (DFILE, "r%d, r%d ***ILLEGAL REGISTER USE***", rb, ra);
+      } else {
+	      DPRINT (DFILE, "r%d, r%d", rb, ra);
+      }
       break;
 
     case 7:
@@ -1803,31 +1828,33 @@ decode_pcp_insn (memaddr, buffer, info)
 	      if (!strcmp (pop->name, "jl"))
 	        {
 		  val = insn & 0x3ff;
-		  if (val & 0x200)
-		    val |= ~0x3ff;
-	          (*info->print_address_func) (memaddr + 2 + (val << 1), info);
+		  if (val & 0x200) {
+			  val |= ~0x3ff;
+		  }
+		  (*info->print_address_func) (memaddr + 2 + (val << 1), info);
 		}
 	      else if (!strcmp (pop->name, "jc"))
 	        {
 		  val = insn & 0x3f;
-		  if (val & 0x20)
-		    val |= ~0x3f;
-	          (*info->print_address_func) (memaddr + 2 + (val << 1), info);
+		  if (val & 0x20) {
+			  val |= ~0x3f;
+		  }
+		  (*info->print_address_func) (memaddr + 2 + (val << 1), info);
+		} else if (!strcmp (pop->name, "jc.a")) {
+			/* FIXME: address should be PCODE_BASE + (insn2 << 1).  */
+			(*info->print_address_func) ((memaddr & 0xffff0000) + (insn2 << 1), info);
+		} else {
+			DPRINT (DFILE, "***ILLEGAL expr FOR %s***", pop->name);
 		}
-	      else if (!strcmp (pop->name, "jc.a"))
-	        /* FIXME: address should be PCODE_BASE + (insn2 << 1).  */
-	        (*info->print_address_func)
-		 ((memaddr & 0xffff0000) + (insn2 << 1), info);
-	      else
-	        DPRINT (DFILE, "***ILLEGAL expr FOR %s***", pop->name);
-	      break;
+		break;
 
 	    default:
 	      DPRINT (DFILE, "***UNKNOWN OPERAND `%c'***", pop->args[idx]);
 	      break;
 	    }
-          if (idx < (pop->nr_operands - 1))
-	    DPRINT (DFILE, ", ");
+	    if (idx < (pop->nr_operands - 1)) {
+		    DPRINT (DFILE, ", ");
+	    }
 	}
       break;
 
@@ -1902,30 +1929,30 @@ print_insn_tricore (memaddr, info)
     }
 
   /* Check if we're disassembling .pcp{text,data} sections.  */
-  if (info->section && (info->section->flags & SEC_ARCH_BIT_0))
-    return decode_pcp_insn (memaddr, buffer, info);
-
-  /* Handle TriCore sections.  */
-  if (buffer[0] & 1)
-    {
-      /* Looks like this is a 32-bit insn; try to read 2 more bytes.  */
-      failure = (*info->read_memory_func) (memaddr + 2, &buffer[2], 2, info);
-      if (failure)
-        {
-          insn = bfd_getl16 (buffer);
-          (*info->fprintf_func) (info->stream, ".hword 0x%04lx", insn);
-	  return 2;
-	}
-      else
-        len32 = 1;
+    if (info->section && (info->section->flags & SEC_ARCH_BIT_0)) {
+	    return decode_pcp_insn (memaddr, buffer, info);
     }
 
-  if (len32)
-    insn = bfd_getl32 (buffer);
-  else
-    insn = bfd_getl16 (buffer);
+    /* Handle TriCore sections.  */
+    if (buffer[0] & 1) {
+	    /* Looks like this is a 32-bit insn; try to read 2 more bytes.  */
+	    failure = (*info->read_memory_func) (memaddr + 2, &buffer[2], 2, info);
+	    if (failure) {
+		    insn = bfd_getl16 (buffer);
+		    (*info->fprintf_func) (info->stream, ".hword 0x%04lx", insn);
+		    return 2;
+	    } else {
+		    len32 = 1;
+	    }
+    }
 
-  return decode_tricore_insn (memaddr, insn, len32, info);
+    if (len32) {
+	    insn = bfd_getl32 (buffer);
+    } else {
+	    insn = bfd_getl16 (buffer);
+    }
+
+    return decode_tricore_insn (memaddr, insn, len32, info);
 }
 
 /* End of tricore-dis.c.  */

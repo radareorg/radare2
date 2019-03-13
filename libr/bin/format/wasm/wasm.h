@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2018 - cgvwzq */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -61,6 +61,12 @@ struct r_bin_wasm_resizable_limits_t {
 	ut32 initial;
 	ut32 maximum;
 };
+
+typedef struct r_bin_wasm_symbol_t {
+	ut32 id;
+	ut32 name_len;
+	char name[R_BIN_WASM_STRING_LENGTH];
+} RBinWasmSymbol;
 
 typedef struct r_bin_wasm_section_t {
 	ut8 id;
@@ -198,24 +204,26 @@ typedef struct r_bin_wasm_obj_t {
 	RList *g_elements;
 	RList *g_codes;
 	RList *g_datas;
+	RList *g_symtab;
 	RBinWasmStartEntry *g_start;
 	// etc...
 
 } RBinWasmObj;
 
-RBinWasmObj *r_bin_wasm_init (RBinFile *bf);
-void r_bin_wasm_destroy (RBinFile *bf);
-RList *r_bin_wasm_get_sections (RBinWasmObj *bin);
-RList *r_bin_wasm_get_types (RBinWasmObj *bin);
-RList *r_bin_wasm_get_imports (RBinWasmObj *bin);
-RList *r_bin_wasm_get_exports (RBinWasmObj *bin);
-RList *r_bin_wasm_get_tables (RBinWasmObj *bin);
-RList *r_bin_wasm_get_memories (RBinWasmObj *bin);
-RList *r_bin_wasm_get_globals (RBinWasmObj *bin);
-RList *r_bin_wasm_get_elements (RBinWasmObj *bin);
-RList *r_bin_wasm_get_codes (RBinWasmObj *bin);
-RList *r_bin_wasm_get_datas (RBinWasmObj *bin);
-ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin);
-const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type);
+RBinWasmObj *r_bin_wasm_init(RBinFile *bf);
+void r_bin_wasm_destroy(RBinFile *bf);
+RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
+RList *r_bin_wasm_get_types(RBinWasmObj *bin);
+RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
+RList *r_bin_wasm_get_tables(RBinWasmObj *bin);
+RList *r_bin_wasm_get_memories(RBinWasmObj *bin);
+RList *r_bin_wasm_get_globals(RBinWasmObj *bin);
+RList *r_bin_wasm_get_elements(RBinWasmObj *bin);
+RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
+RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
+RList *r_bin_wasm_get_symtab(RBinWasmObj *bin);
+ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
+const char *r_bin_wasm_valuetype_to_string(r_bin_wasm_value_type_t type);
 
 #endif

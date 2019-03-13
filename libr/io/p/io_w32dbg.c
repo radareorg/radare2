@@ -149,7 +149,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
-				file, rw | R_IO_EXEC, mode, dbg);
+				file, rw | R_PERM_X, mode, dbg);
 		ret->name = pidpath;
 		return ret;
 	}
@@ -224,8 +224,9 @@ static bool __getbase (RIODesc *fd, ut64 *base) {
 
 RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
-	.desc = "w32dbg io",
+	.desc = "w32 debugger io plugin",
 	.license = "LGPL3",
+	.uris = "w32dbg://,attach://",
 	.open = __open,
 	.close = __close,
 	.read = __read,
@@ -245,7 +246,7 @@ RIOPlugin r_io_plugin_w32dbg = {
 #endif
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_w32dbg,
 	.version = R2_VERSION

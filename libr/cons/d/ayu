@@ -43,4 +43,10 @@ ec reg rgb:e6e1cf               # register names
 ec ret rgb:d66                  # ret opcode
 ec swi rgb:d66
 ec trap rgb:d66                 
+ec ucall rgb:5ccfe6
+ec ujmp rgb:c2d94c
 ec usrcmt rgb:fa6e32           # user comment
+
+ec func_var rgb:95e6cb
+ec func_var_type rgb:ffd580
+ec func_var_addr rgb:f28779

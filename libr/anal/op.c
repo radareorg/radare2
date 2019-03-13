@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2019 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -13,15 +13,8 @@ struct VarUsedType {
 };
 
 R_API RAnalOp *r_anal_op_new () {
-	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (op) {
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->val = UT64_MAX;
-		r_strbuf_init (&op->esil);
-	}
+	RAnalOp *op = R_NEW (RAnalOp);
+	r_anal_op_init (op);
 	return op;
 }
 
@@ -31,6 +24,17 @@ R_API RList *r_anal_op_list_new() {
 		list->free = &r_anal_op_free;
 	}
 	return list;
+}
+
+R_API void r_anal_op_init(RAnalOp *op) {
+	if (op) {
+		memset (op, 0, sizeof (*op));
+		op->addr = UT64_MAX;
+		op->jump = UT64_MAX;
+		op->fail = UT64_MAX;
+		op->ptr = UT64_MAX;
+		op->val = UT64_MAX;
+	}
 }
 
 R_API bool r_anal_op_fini(RAnalOp *op) {
@@ -64,6 +68,29 @@ R_API void r_anal_op_free(void *_op) {
 	free (_op);
 }
 
+R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
+	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
+			faddr, 1, var->delta, "reads");
+	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
+	ut64 addr = r_num_math (NULL, xss);
+	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+
+	if (!var_def) {
+		free (inst_key);
+		return NULL;
+	}
+	struct VarUsedType vut;
+	RAnalVar *res = NULL;
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	}
+	free (inst_key);
+	free (var_def);
+	return res;
+}
+
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
 	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
@@ -78,32 +105,53 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	return res;
 }
 
+static int defaultCycles(RAnalOp *op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_PUSH:
+	case R_ANAL_OP_TYPE_POP:
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		return 2;
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_NOP:
+		return 1;
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_SWI:
+		return 4;
+	case R_ANAL_OP_TYPE_SYNC:
+		return 4;
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		return 4;
+	default:
+		return 1;
+	}
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
-	//len will end up in memcmp so check for negative
-	if (!anal || len < 0) {
+	r_anal_op_init (op);
+	r_return_val_if_fail (anal && op && len > 0, -1);
+
+	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
+	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
+	if (anal->pcalign && addr % anal->pcalign) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->addr = addr;
+		// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
+		op->size = 1;
 		return -1;
 	}
-
-	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
-	anal->fillval = mask & R_ANAL_OP_MASK_VAL ? true : false;
-
-	if (anal->pcalign) {
-		if (addr % anal->pcalign) {
-			memset (op, 0, sizeof (RAnalOp));
-			op->type = R_ANAL_OP_TYPE_ILL;
-			op->addr = addr;
-			op->size = 1;
-			return -1;
-		}
-	}
-	memset (op, 0, sizeof (RAnalOp));
+	int ret = R_MIN (2, len);
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		int ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -112,20 +160,30 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (op->nopcode < 1) {
 			op->nopcode = 1;
 		}
-		//free the previous var in op->var
-		RAnalVar *tmp = get_used_var (anal, op);
-		if (tmp) {
-			r_anal_var_free (op->var);
-			op->var = tmp;
+		if (mask & R_ANAL_OP_MASK_VAL) {
+			//free the previous var in op->var
+			RAnalVar *tmp = get_used_var (anal, op);
+			if (tmp) {
+				r_anal_var_free (op->var);
+				op->var = tmp;
+			}
 		}
-		return ret;
-	}
-	if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
+	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		return R_MIN (2, len); // HACK
+	} else {
+		op->type = R_ANAL_OP_TYPE_MOV;
+		if (op->cycles == 0) {
+			op->cycles = defaultCycles (op);
+		}
 	}
-	op->type = R_ANAL_OP_TYPE_MOV;
-	return R_MIN (2, len); // HACK
+	if (mask & R_ANAL_OP_MASK_HINT) {
+		RAnalHint *hint = r_anal_hint_get (anal, addr);
+		if (hint) {
+			r_anal_op_hint (op, hint);
+			r_anal_hint_free (hint);
+		}
+	}
+	return ret;
 }
 
 R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
@@ -187,8 +245,10 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 			if (div == 0) {
 				eprintf ("r_anal_op_execute: division by zero\n");
 				eprintf ("TODO: throw RAnalException\n");
-			} else r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0])/div);
+			} else {
+				r_anal_value_set_ut64 (anal, op->dst,
+					r_anal_value_to_ut64 (anal, op->src[0]) / div);
+			}
 			}
 			break;
 		case R_ANAL_OP_TYPE_MUL:
@@ -220,6 +280,7 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 }
 
 R_API bool r_anal_op_nonlinear(int t) {
+	t &= R_ANAL_OP_TYPE_MASK;
 	switch (t) {
 	//call
 	case R_ANAL_OP_TYPE_CALL:
@@ -241,6 +302,8 @@ R_API bool r_anal_op_nonlinear(int t) {
 	case R_ANAL_OP_TYPE_TRAP:
 	case R_ANAL_OP_TYPE_ILL:
 	case R_ANAL_OP_TYPE_UNK:
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_RET:
 		return true;
 	default:
 		return false;
@@ -248,6 +311,7 @@ R_API bool r_anal_op_nonlinear(int t) {
 }
 
 R_API bool r_anal_op_ismemref(int t) {
+	t &= R_ANAL_OP_TYPE_MASK;
 	switch (t) {
 	case R_ANAL_OP_TYPE_LOAD:
 	case R_ANAL_OP_TYPE_MOV:
@@ -260,8 +324,94 @@ R_API bool r_anal_op_ismemref(int t) {
 	}
 }
 
+static struct optype {
+	int type;
+	const char *name;
+} optypes[] = {
+	{ R_ANAL_OP_TYPE_IO, "io" },
+	{ R_ANAL_OP_TYPE_ACMP, "acmp" },
+	{ R_ANAL_OP_TYPE_ADD, "add" },
+	{ R_ANAL_OP_TYPE_SYNC, "sync" },
+	{ R_ANAL_OP_TYPE_AND, "and" },
+	{ R_ANAL_OP_TYPE_CALL, "call" },
+	{ R_ANAL_OP_TYPE_CCALL, "ccall" },
+	{ R_ANAL_OP_TYPE_CJMP, "cjmp" },
+	{ R_ANAL_OP_TYPE_MJMP, "mjmp" },
+	{ R_ANAL_OP_TYPE_CMP, "cmp" },
+	{ R_ANAL_OP_TYPE_IO, "cret" },
+	{ R_ANAL_OP_TYPE_ILL, "ill" },
+	{ R_ANAL_OP_TYPE_JMP, "jmp" },
+	{ R_ANAL_OP_TYPE_LEA, "lea" },
+	{ R_ANAL_OP_TYPE_LEAVE, "leave" },
+	{ R_ANAL_OP_TYPE_LOAD, "load" },
+	{ R_ANAL_OP_TYPE_NEW, "new" },
+	{ R_ANAL_OP_TYPE_MOD, "mod" },
+	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
+	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_MUL, "mul" },
+	{ R_ANAL_OP_TYPE_DIV, "div" },
+	{ R_ANAL_OP_TYPE_NOP, "nop" },
+	{ R_ANAL_OP_TYPE_NOT, "not" },
+	{ R_ANAL_OP_TYPE_NULL  , "null" },
+	{ R_ANAL_OP_TYPE_OR    , "or" },
+	{ R_ANAL_OP_TYPE_POP   , "pop" },
+	{ R_ANAL_OP_TYPE_PUSH  , "push" },
+	{ R_ANAL_OP_TYPE_REP   , "rep" },
+	{ R_ANAL_OP_TYPE_RET   , "ret" },
+	{ R_ANAL_OP_TYPE_ROL   , "rol" },
+	{ R_ANAL_OP_TYPE_ROR   , "ror" },
+	{ R_ANAL_OP_TYPE_SAL   , "sal" },
+	{ R_ANAL_OP_TYPE_SAR   , "sar" },
+	{ R_ANAL_OP_TYPE_SHL   , "shl" },
+	{ R_ANAL_OP_TYPE_SHR   , "shr" },
+	{ R_ANAL_OP_TYPE_STORE , "store" },
+	{ R_ANAL_OP_TYPE_SUB   , "sub" },
+	{ R_ANAL_OP_TYPE_SWI   , "swi" },
+	{ R_ANAL_OP_TYPE_CSWI  , "cswi" },
+	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
+	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
+	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
+	{ R_ANAL_OP_TYPE_RCALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
+	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
+	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
+	{ R_ANAL_OP_TYPE_RJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
+	{ R_ANAL_OP_TYPE_UNK   , "unk" },
+	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
+	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
+	{ R_ANAL_OP_TYPE_XOR   , "xor" },
+	{ R_ANAL_OP_TYPE_CASE  , "case" },
+	{ R_ANAL_OP_TYPE_CPL   , "cpl" },
+	{ R_ANAL_OP_TYPE_CRYPTO, "crypto" },
+	{0,NULL}
+};
+
+R_API int r_anal_optype_from_string(const char *type) {
+	int i;
+	for  (i = 0; optypes[i].name;i++) {
+		if (!strcmp (optypes[i].name, type)) {
+			return optypes[i].type;
+		}
+	}
+	return -1;
+}
+
 R_API const char *r_anal_optype_to_string(int t) {
 	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
+#if 0
+	int i;
+	// this is slower than a switch table :(
+	for  (i = 0; optypes[i].name;i++) {
+		if (optypes[i].type == t) {
+			return optypes[i].name;
+		}
+	}
+#endif
+	// TODO: delete
 	switch (t) {
 	case R_ANAL_OP_TYPE_IO    : return "io";
 	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
@@ -302,6 +452,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_STORE : return "store";
 	case R_ANAL_OP_TYPE_SUB   : return "sub";
 	case R_ANAL_OP_TYPE_SWI   : return "swi";
+	case R_ANAL_OP_TYPE_CSWI  : return "cswi";
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
@@ -337,9 +488,15 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
-	if (!r0) r0 = strdup ("?");
-	if (!a0) a0 = strdup ("?");
-	if (!a1) a1 = strdup ("?");
+	if (!r0) {
+		r0 = strdup ("?");
+	}
+	if (!a0) {
+		a0 = strdup ("?");
+	}
+	if (!a1) {
+		a1 = strdup ("?");
+	}
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -388,12 +545,18 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
 			cstr = r_anal_cond_to_string (bb->cond);
-			if (f) snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
-			else snprintf (ret, sizeof (ret), "if (%s) 0x%"PFMT64x"()", cstr, op->jump);
+			if (f) {
+				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
+			} else {
+				snprintf (ret, sizeof (ret), "if (%s) 0x%" PFMT64x "()", cstr, op->jump);
+			}
 			free (cstr);
 		} else {
-			if (f) snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
-			else snprintf (ret, sizeof (ret), "if (unk) 0x%"PFMT64x"()", op->jump);
+			if (f) {
+				snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
+			} else {
+				snprintf (ret, sizeof (ret), "if (unk) 0x%" PFMT64x "()", op->jump);
+			}
 		}
 		break;
 	case R_ANAL_OP_TYPE_ADD:
@@ -420,22 +583,30 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_DIV:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s /= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_AND:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s &= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_OR:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s |= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_XOR:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s ^= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		snprintf (ret, sizeof (ret), "%s -> %s", r0, a0);
@@ -515,7 +686,6 @@ R_API const char *r_anal_stackop_tostring(int s) {
 }
 
 R_API const char *r_anal_op_family_to_string(int n) {
-	static char num[32];
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
@@ -523,22 +693,37 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_SSE: return "sse";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
+	case R_ANAL_OP_FAMILY_THREAD: return "thrd";
+	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
+	case R_ANAL_OP_FAMILY_IO: return "io";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
-	default:
-		snprintf (num, sizeof (num), "%d", n);
-		break;
 	}
-	return num;
+	return NULL;
 }
 
 R_API int r_anal_op_family_from_string(const char *f) {
-	// TODO: use array of strings or so ..
-	if (!strcmp (f, "cpu")) return R_ANAL_OP_FAMILY_CPU;
-	if (!strcmp (f, "fpu")) return R_ANAL_OP_FAMILY_FPU;
-	if (!strcmp (f, "mmx")) return R_ANAL_OP_FAMILY_MMX;
-	if (!strcmp (f, "sse")) return R_ANAL_OP_FAMILY_SSE;
-	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
-	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
+	struct op_family {
+		const char *name;
+		int id;
+	};
+	static const struct op_family of[] = {
+		{"cpu", R_ANAL_OP_FAMILY_CPU},
+		{"fpu", R_ANAL_OP_FAMILY_FPU},
+		{"mmx", R_ANAL_OP_FAMILY_MMX},
+		{"sse", R_ANAL_OP_FAMILY_SSE},
+		{"priv", R_ANAL_OP_FAMILY_PRIV},
+		{"virt", R_ANAL_OP_FAMILY_VIRT},
+		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
+		{"io", R_ANAL_OP_FAMILY_IO},
+		{"thread", R_ANAL_OP_FAMILY_THREAD},
+	};
+
+	int i;
+	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
+		if (!strcmp (f, of[i].name)) {
+			return of[i].id;
+		}
+	}
 	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
 
@@ -546,27 +731,31 @@ R_API int r_anal_op_family_from_string(const char *f) {
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 	int changes = 0;
 	if (hint) {
-		if (hint->jump != UT64_MAX) {
+		if (hint->type > 0) {
+			op->type = hint->type;
 			changes++;
+		}
+		if (hint->jump != UT64_MAX) {
 			op->jump = hint->jump;
+			changes++;
 		}
 		if (hint->fail != UT64_MAX) {
-			changes++;
 			op->fail = hint->fail;
+			changes++;
 		}
 		if (hint->opcode) {
-			changes++;
 			/* XXX: this is not correct */
 			free (op->mnemonic);
 			op->mnemonic = strdup (hint->opcode);
+			changes++;
 		}
 		if (hint->esil) {
-			changes++;
 			r_strbuf_set (&op->esil, hint->esil);
+			changes++;
 		}
 		if (hint->size) {
-			changes++;
 			op->size = hint->size;
+			changes++;
 		}
 	}
 	return changes;

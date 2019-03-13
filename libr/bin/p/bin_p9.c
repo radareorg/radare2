@@ -13,15 +13,15 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void *) (size_t) check_bytes (buf, sz);
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
 	ut64 sz = bf? r_buf_size (bf->buf): 0;
 	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
-	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL);
+	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static int destroy(RBinFile *bf) {
@@ -73,12 +73,12 @@ static RList *sections(RBinFile *bf) {
 		r_list_free (ret);
 		return NULL;
 	}
-	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("text");
 	ptr->size = textsize;
 	ptr->vsize = textsize + (textsize % 4096);
 	ptr->paddr = 8 * 4;
 	ptr->vaddr = ptr->paddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	// add data segment
@@ -87,12 +87,12 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "data", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("data");
 		ptr->size = datasize;
 		ptr->vsize = datasize + (datasize % 4096);
 		ptr->paddr = textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE; // rw-
+		ptr->perm = R_PERM_RW;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -103,12 +103,12 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "syms", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("syms");
 		ptr->size = symssize;
 		ptr->vsize = symssize + (symssize % 4096);
 		ptr->paddr = datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -118,12 +118,12 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "spsz", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("spsz");
 		ptr->size = spszsize;
 		ptr->vsize = spszsize + (spszsize % 4096);
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -133,12 +133,12 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "pcsz", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("pcsz");
 		ptr->size = pcszsize;
 		ptr->vsize = pcszsize + (pcszsize % 4096);
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -205,9 +205,9 @@ static ut64 size(RBinFile *bf) {
 #if !R_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
-#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) x, y)
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)
 #define D(x) r_buf_append_ut32 (buf, x)
 	D (I_MAGIC); // i386 only atm
 	D (codelen);
@@ -245,7 +245,7 @@ RBinPlugin r_bin_plugin_p9 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_p9,
 	.version = R2_VERSION

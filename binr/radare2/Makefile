@@ -1,7 +1,7 @@
 BIN=radare2
 BINDEPS=r_core r_parse r_search r_cons r_config
 BINDEPS+=r_bin r_debug r_anal r_reg r_bp r_io r_fs
-BINDEPS+=r_lang r_asm r_syscall r_hash
+BINDEPS+=r_lang r_asm r_syscall r_hash r_main
 BINDEPS+=r_magic r_socket r_flag r_egg r_crypto r_util
 
 include ../../config-user.mk
@@ -11,7 +11,7 @@ CERTID?=org.radare.radare2
 BUNDLE=org.radare.radare2
 MACSDK=macosx10.10
 ENTITL=radare2.xcent
-#ENTITL=radare2.xml
+#ENTITL=radare2_ios.xml
 #CFLAGS+=-flto
 #LDFLAGS+=-flto
 
@@ -20,6 +20,10 @@ ifeq (${COMPILER},emscripten)
 # -s INLINING_LIMIT=1
 # --memory-init-file 0
 CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_new", "_r2_asmjs_cmd", "_r2_asmjs_free", "_r2_asmjs_openurl"]'
+CFLAGS+=-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap", "addOnInit"]'
+CFLAGS+=-s TOTAL_MEMORY=33554432
+CFLAGS+=-s ALLOW_MEMORY_GROWTH=1
+CFLAGS+=-s ABORTING_MALLOC=0
 #CFLAGS+=-Oz --memory-init-file 0
 endif
 
@@ -38,20 +42,20 @@ ios:
 
 ios-sign iossign sign:
 	xcrun --sdk iphoneos codesign \
-		-s- --entitlements radare2.xml radare2
-	# -f -s "$$IOS_CERTID" --entitlements radare2.xml radare2
-	#ldid -Sradare2.xml radare2
+		-s- --entitlements radare2_ios.xml radare2
+	# -f -s "$$IOS_CERTID" --entitlements radare2_ios.xml radare2
+	#ldid -Sradare2_ios.xml radare2
 
 ios_sdk_sign:
-	-codesign -s- --entitlements radare2.xml radare2
+	-codesign -s- --entitlements radare2_ios.xml radare2
 
 macos-sign macossign:
 	rm -f radare2
-	${CC} radare2.c ${CFLAGS} ${LDFLAGS} -o radare2 \
+	${CC} radare2.c ${CFLAGS} ${LDFLAGS} ${LINK} -o radare2 \
 		-sectcreate __TEXT __info_plist Info.plist \
 		-framework Security -framework CoreFoundation
-	#xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
-	codesign -dvvv --deep -f -s ${CERTID} -i ${BUNDLE} radare2
+	#xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} --entitlements radare2_macos.xml radare2
+	codesign -dvvv --deep -f -s ${CERTID} -i ${BUNDLE} --entitlements radare2_macos.xml radare2
 	#sudo chown root:_developer radare2
 #	sudo chown root:procmod radare2
 	#sudo chmod g+s radare2
@@ -74,6 +78,7 @@ endif
 
 include ../../libr/socket/deps.mk
 include ../../libr/magic/deps.mk
+include ../../libr/main/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk

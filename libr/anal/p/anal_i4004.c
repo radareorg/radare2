@@ -7,7 +7,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define	AVR_SOFTCAST(x,y)	(x+(y*0x100))
+#define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p =
@@ -91,8 +91,9 @@ static const char *i4004_f[16] = {
 static int i4004_get_ins_len (ut8 hex) {
 	ut8 high = (hex & 0xf0)>>4;
 	int ret = i4004_ins_len[high];
-	if (ret == 3)
+	if (ret == 3) {
 		ret = (hex & 1) ? 1 : 2;
+	}
 	return ret;
 }
 
@@ -100,13 +101,17 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	char basm[128];
 	const size_t basz = sizeof (basm)-1;
 	int rlen = i4004_get_ins_len (*buf);
-	if (!op) return 2;
+	if (!op) {
+		return 2;
+	}
 	r_strbuf_init (&op->esil);
 	ut8 high = (*buf & 0xf0)>>4;
 	ut8 low = (*buf & 0xf);
 	basm[0] = 0;
 
-	if (rlen > len)	return op->size = 0;
+	if (rlen > len) {
+		return op->size = 0;
+	}
 	switch (high) {
 	case 0:
 		if (low) {
@@ -121,11 +126,13 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->fail = addr + rlen;
 		break;
 	case 2:
-		if (rlen == 1)
+		if (rlen == 1) {
 			snprintf (basm, basz, "scr r%d", (low & 0xe));
-		else	snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
+		} else {
+			snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
+		}
 		break;
-	case 3: 
+	case 3:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		snprintf (basm, basz, "fin r%d", (low & 0xe));
 		break;
@@ -198,7 +205,7 @@ RAnalPlugin r_anal_plugin_i4004 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_i4004,
 	.version = R2_VERSION

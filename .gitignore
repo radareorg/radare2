@@ -1,5 +1,4 @@
 clang-log/
-.clang-format
 .clang_complete
 .tmp-format
 .#*
@@ -56,6 +55,7 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
@@ -69,7 +69,6 @@ shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/spp/config.h
 sys/travis/*.txt
-shlr/capstone/
 sys/.mark_python-deps
 sys/.mark_swig
 sys/_work
@@ -103,6 +102,8 @@ compile_commands.json
 libr/flag/d/tags.r2
 # CLion
 .idea/
+# VSCode
+.vscode/
 CMakeLists.txt
 *.cmake
 cmake-build-*
@@ -114,3 +115,7 @@ cmake-build-*
 /*.snap
 # doxygen autogen
 doc/doxygen/html
+# Python
+__pycache__
+# Dynamic docker building folder to minimize docker context
+.docker_alpine

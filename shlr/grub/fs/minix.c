@@ -327,11 +327,7 @@ grub_minix_lookup_symlink (struct grub_minix_data *data, int ino)
 static grub_err_t
 grub_minix_find_file (struct grub_minix_data *data, const char *path)
 {
-#ifndef _MSC_VER
-  char fpath[grub_strlen (path) + 1];
-#else
   char * fpath = grub_malloc(grub_strlen (path) + 1);
-#endif
   char *name = fpath;
   char *next;
   unsigned int pos = 0;
@@ -344,7 +340,10 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
     {
       name++;
       if (!*name)
-	return 0;
+      {
+        grub_free (fpath);
+        return 0;
+      }
     }
 
   /* Extract the actual part from the pathname.  */
@@ -358,20 +357,28 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
   do
     {
       grub_uint16_t ino;
-#ifndef _MSC_VER
-	  char filename[data->filename_size + 1];
-#else
-	  char * filename = grub_malloc(data->filename_size + 1);
-#endif
+      char * filename = grub_malloc(data->filename_size + 1);
       if (grub_strlen (name) == 0)
-	return GRUB_ERR_NONE;
+        {
+          grub_free (fpath);
+          grub_free (filename);
+          return GRUB_ERR_NONE;
+        }
 
       if (grub_minix_read_file (data, 0, 0, pos, sizeof (ino),
 				(char *) &ino) < 0)
-	return grub_errno;
+        {
+          grub_free (fpath);
+          grub_free (filename);
+          return grub_errno;
+        }
       if (grub_minix_read_file (data, 0, 0, pos + sizeof (ino),
 				data->filename_size, (char *) filename)< 0)
-	return grub_errno;
+        {
+          grub_free (fpath);
+          grub_free (filename);
+          return grub_errno;
+        }
 
       filename[data->filename_size] = '\0';
 
@@ -388,11 +395,19 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
 	    {
 	      grub_minix_lookup_symlink (data, dirino);
 	      if (grub_errno)
-		return grub_errno;
+                {
+                  grub_free (fpath);
+                  grub_free (filename);
+                  return grub_errno;
+                }
 	    }
 
 	  if (!next)
-	    return 0;
+            {
+              grub_free (fpath);
+              grub_free (filename);
+              return 0;
+            }
 
 	  pos = 0;
 
@@ -406,14 +421,19 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
 
      	  if ((GRUB_MINIX_INODE_MODE (data)
 	       & GRUB_MINIX_IFDIR) != GRUB_MINIX_IFDIR)
-	    return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
-
+            {
+              grub_free (fpath);
+              grub_free (filename);
+              return grub_error (GRUB_ERR_BAD_FILE_TYPE, "not a directory");
+            }
+          grub_free (filename);
 	  continue;
 	}
 
       pos += sizeof (ino) + data->filename_size;
     } while (pos < GRUB_MINIX_INODE_SIZE (data));
 
+  grub_free (fpath);
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
   return grub_errno;
 }

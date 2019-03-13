@@ -6,30 +6,6 @@
 #include <r_core.h>
 #include <spp/spp.h>
 
-#if 0
-static void __section_list_for_projects (RIO *io, RPrint *print) {
-	int i = 0;
-	SdbListIter *iter;
-	RIOSection *s;
-
-	if (!io || !io->sections || !print || !print->cb_printf) {
-		return;
-	}
-	ls_foreach (io->sections, iter, s) {
-		print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
-			" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-			i, s->paddr, r_str_rwx_i (s->flags), s->vaddr,
-			s->size, s->vsize, s->name);
-		if (s->arch && s->bits) {
-			print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
-				s->bits);
-		}
-		print->cb_printf ("\n");
-		i++;
-	}
-}
-#endif
-
 static bool is_valid_project_name(const char *name) {
 	int i;
 	if (r_str_endswith (name, ".zip")) {
@@ -128,9 +104,9 @@ R_API int r_core_project_cat(RCore *core, const char *name) {
 }
 
 R_API int r_core_project_list(RCore *core, int mode) {
+	PJ *pj = NULL;
 	RListIter *iter;
 	RList *list;
-	bool isfirst = true;
 
 	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	if (!path) {
@@ -139,16 +115,20 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
-		r_cons_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			break;
+		}
+		pj_a (pj);
 		r_list_foreach (list, iter, foo) {
 			// todo. escape string
 			if (r_core_is_project (core, foo)) {
-				r_cons_printf ("%s\"%s\"",
-					isfirst? "": ",", foo);
-				isfirst = false;
+				pj_s (pj, foo);
 			}
 		}
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		break;
 	default:
 		r_list_foreach (list, iter, foo) {
@@ -358,13 +338,13 @@ typedef struct {
 	char *rcPath;
 } ProjectState;
 
-static int projectLoadBackground(RThread *th) {
+static RThreadFunctionRet projectLoadBackground(RThread *th) {
 	ProjectState *ps = th->user;
 	r_core_project_load (ps->core, ps->prjName, ps->rcPath);
 	free (ps->prjName);
 	free (ps->rcPath);
 	free (ps);
-	return 0;
+	return R_TH_STOP;
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {
@@ -380,12 +360,16 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 /*** ^^^ thready ***/
 
 R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
-	int askuser = 1;
+	bool askuser = true;
 	int ret, close_current_session = 1;
 	char *oldbin;
 	const char *newbin;
 	ut64 mapaddr = 0;
 	if (!prjfile || !*prjfile) {
+		return false;
+	}
+	if (thready) {
+		eprintf ("Loading projects in a thread has been deprecated. Use tasks\n");
 		return false;
 	}
 	char *prj = projectScriptPath (core, prjfile);
@@ -423,7 +407,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	oldbin = strdup (file_path);
 	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
 		// eprintf ("Reloading project\n");
-		askuser = 0;
+		askuser = false;
 #if 0
 		free (prj);
 		free (filepath);
@@ -431,7 +415,7 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 #endif
 	}
 	if (askuser) {
-		if (r_config_get_i (core->config, "scr.interactive")) {
+		if (r_cons_is_interactive ()) {
 			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
 		}
 	}
@@ -493,7 +477,9 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	fd = r_sandbox_fopen (prj, "r");
 	if (fd) {
 		for (;;) {
-			fgets (buf, sizeof (buf), fd);
+			if (!fgets (buf, sizeof (buf), fd)) {
+				break;
+			}
 			if (feof (fd)) {
 				break;
 			}
@@ -535,11 +521,11 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	RListIter *iter;
 	RIOMap *map;
 	if (desc) {
-		r_cons_printf ("ofs %s %s\n", desc->uri, r_str_rwx_i (desc->flags));
+		r_cons_printf ("\"ofs \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_for_fd (core->io, id))) {
 			r_list_foreach (maps, iter, map) {
 				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
-					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->flags),
+					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i (map->perm),
 					map->name ? " " : "", map->name ? map->name : "");
 			}
 			r_list_free (maps);
@@ -572,7 +558,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
-	r_cons_singleton ()->is_interactive = false;
+	r_cons_singleton ()->context->is_interactive = false; // NOES must use api
 
 	r_str_write (fd, "# r2 rdb project file\n");
 
@@ -609,7 +595,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 	}
 
 	r_cons_singleton ()->fdout = fdold;
-	r_cons_singleton ()->is_interactive = true;
+	r_cons_singleton ()->context->is_interactive = true;
 
 	if (ohl) {
 		r_cons_highlight (ohl);
@@ -624,7 +610,7 @@ static bool simpleProjectSaveScript(RCore *core, const char *file, int opts) {
 
 static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	int fd, fdold, tmp;
+	int fd, fdold;
 
 	if (!file || *file == '\0') {
 		return false;
@@ -645,16 +631,15 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 
 	fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
-	r_cons_singleton ()->is_interactive = false;
+	r_cons_singleton ()->context->is_interactive = false;
 
 	r_str_write (fd, "# r2 rdb project file\n");
 
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_str_write (fd, "# flags\n");
-		tmp = core->flags->space_idx;
-		core->flags->space_idx = -1;
+		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
-		core->flags->space_idx = tmp;
+		r_flag_space_pop (core->flags);
 		r_cons_flush ();
 	}
 	// Set file.path and file.lastpath to empty string to signal
@@ -674,12 +659,6 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	{
 		r_core_cmd (core, "fz*", 0);
 		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_SECTIONS) {
-		r_str_write (fd, "# sections\n");
-		r_core_cmd (core, "S*", 0);
-		// __section_list_for_projects (core->io, core->print);
-		// r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");
@@ -725,7 +704,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	}
 
 	r_cons_singleton ()->fdout = fdold;
-	r_cons_singleton ()->is_interactive = true;
+	r_cons_singleton ()->context->is_interactive = true;
 
 	if (ohl) {
 		r_cons_highlight (ohl);
@@ -901,7 +880,7 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prjName) {
 
 R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcpath) {
 	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
-	const bool scr_interactive = r_config_get_i (core->config, "scr.interactive");
+	const bool scr_interactive = r_cons_is_interactive ();
 	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
 	(void) projectLoadRop (core, prjName);
 	bool ret = r_core_cmd_file (core, rcpath);

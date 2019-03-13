@@ -7,7 +7,9 @@ ec b0x7f rgb:577
 ec b0xff rgb:8cf
 ec bin rgb:fff
 ec btext rgb:fff
+ec ucall rgb:2fa
 ec call rgb:f2a
+ec ujmp rgb:4cf
 ec cjmp rgb:4cf
 ec jmp rgb:4cf
 ec cmp rgb:fff
@@ -47,3 +49,13 @@ ec graph.false rgb:d41
 ec graph.trufae rgb:4cf
 ec graph.current rgb:af2
 ec graph.traced rgb:090
+
+ec func_var rgb:fcc
+ec func_var_type rgb:f2a
+ec func_var_addr white
+
+ec ai.read rgb:fcc
+ec ai.write rgb:f2a
+ec ai.exec rgb:f2a
+ec ai.seq rgb:f0f
+ec ai.ascii rgb:fff

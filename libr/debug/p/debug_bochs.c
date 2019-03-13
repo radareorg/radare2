@@ -17,6 +17,17 @@ typedef struct {
 
 static libbochs_t *desc = NULL;
 
+static bool isBochs(RDebug *dbg) {
+	RIODesc *d = dbg->iob.io->desc;
+	if (d && d->plugin && d->plugin->name) {
+		if (!strcmp ("bochs", d->plugin->name)) {
+			return true;
+		}
+	}
+	eprintf ("error: the iodesc data is not bochs friendly\n");
+	return false;
+}
+
 static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	char cmd[64];
 	char num[4];
@@ -80,6 +91,9 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	char strLimit[19];
 	int i = 0, pos = 0, lenRec = 0;
 	ut64 val = 0, valRIP = 0; //, posRIP = 0;
+	if (!isBochs (dbg)) {
+		return 0;
+	}
 
 	//eprintf ("bochs_reg_read\n");
 	if (bCapturaRegs == true) {
@@ -110,7 +124,9 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				}
 				pos+= 8;
 
-			} else i++;
+			} else {
+				i++;
+			}
 		}
 
 		bochs_send_cmd (desc, "info cpu", true);
@@ -123,8 +139,10 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		} else if (strstr (desc->data,"PC_64")) {
 			bAjusta = false;
 			//eprintf("[modo PC_64]\n");
-		} else eprintf ("[unknown mode]\n%s\n",desc->data);
-		  /*
+		} else {
+			eprintf ("[unknown mode]\n%s\n", desc->data);
+		}
+		/*
 		   es:0x0000, dh=0x00009300, dl=0x0000ffff, valid=7
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
 		   cs:0xf000, dh=0xff0093ff, dl=0x0000ffff, valid=7
@@ -202,10 +220,15 @@ void map_free(RDebugMap *map) {
 }
 
 static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
+	if (!isBochs (dbg)) {
+		return NULL;
+	}
 	//eprintf("bochs_map_getdebug:\n");
 	RDebugMap *mr;
 	RList *list = r_list_newf ((RListFree)map_free);
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	mr = R_NEW0 (RDebugMap);
 	if (!mr) {
 		r_list_free (list);
@@ -222,6 +245,9 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 }
 
 static int r_debug_bochs_step(RDebug *dbg) {
+	if (!isBochs (dbg)) {
+		return false;
+	}
 	//eprintf ("bochs_step\n");
 	bochs_send_cmd (desc,"s",true);
 	bCapturaRegs = true;
@@ -244,6 +270,9 @@ static void bochs_debug_break(void *u) {
 }
 
 static int r_debug_bochs_wait(RDebug *dbg, int pid) {
+	if (!isBochs (dbg)) {
+		return false;
+	}
 	char strIP[19];
 	int i = 0;
 	const char *x;
@@ -278,7 +307,6 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 		r_cons_break_pop ();
 	}
 	//eprintf ("bochs_wait: loop done\n");
-	i = 0;
 	// Next at t=394241428
 	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6
 	ripStop = 0;
@@ -528,14 +556,14 @@ RDebugPlugin r_debug_plugin_bochs = {
 	.stop = &r_debug_bochs_stop,
 	.wait = &r_debug_bochs_wait,
 	.map_get = r_debug_bochs_map_get,
-	.breakpoint = (RBreakpointCallback)&r_debug_bochs_breakpoint,
+	.breakpoint = r_debug_bochs_breakpoint,
 	.reg_read = &r_debug_bochs_reg_read,
 	.reg_write = &r_debug_bochs_reg_write,
 	.reg_profile = (void *)r_debug_bochs_reg_profile,
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bochs,
 	.version = R2_VERSION

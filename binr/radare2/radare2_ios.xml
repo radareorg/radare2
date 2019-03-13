@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+ <dict>
+  <key>com.apple.springboard.debugapplications</key>
+  <true/>
+
+  <key>platform-application</key>
+  <true/>
+
+  <key>com.apple.private.skip-library-validation</key>
+  <true/>
+
+  <key>app-identifier</key>
+  <true/>
+
+  <key>get-task-allow</key>
+  <true/>
+
+  <key>task_for_pid-allow</key>
+  <true/>
+
+  <key>run-unsigned-code</key>
+  <true/>
+
+  <key>com.apple.springboard.launchapplications</key>
+  <true/>
+ </dict>
+</plist>
+
+<!--
+  This file must be used to 'sign' the 'radare' binary
+  after compiling to permit debugging on the iphone-os
+    $ ldid -Sradare2.xml radare2
+-->

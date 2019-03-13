@@ -236,7 +236,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("pid : show current process id\n");
 	} else if (!strncmp (cmd, "dr8", 3)) {
 		struct winedbg_x86_32 r = regState ();
-		ut8 *arena = (ut8*)calloc (sizeof (struct winedbg_x86_32), 3);
+		ut8 *arena = (ut8*)calloc (3, sizeof (struct winedbg_x86_32));
 		if (arena) {
 			r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
 			return (char *)arena;
@@ -339,8 +339,10 @@ const char *msg =
 				}
 				char *row = r_str_newf ("0x%08"PFMT64x" - 0x%08" PFMT64x" %s %s\n", from, to, perm, "");
 				ptr = nl;
-				res = r_str_append (res, row);
-				free (row);
+				if (row) {
+					res = r_str_append (res, row);
+					free (row);
+				}
 			}
 			free (wineDbgMaps);
 			return res;
@@ -355,12 +357,13 @@ const char *msg =
 
 RIOPlugin r_io_plugin_winedbg = {
 	.name = "winedbg",
-        .desc = "Wine-dbg io and debug.io plugin for r2",
+	.desc = "Wine-dbg io and debug.io plugin",
+	.uris = "winedbg://",
 	.license = "MIT",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .check = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.system = __system,
@@ -368,7 +371,7 @@ RIOPlugin r_io_plugin_winedbg = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_winedbg,
 	.version = R2_VERSION

@@ -10,7 +10,7 @@ pkg install gcc-3 gmake
 To compile it:
 --------------
 ```
-./configure --without-debugger --without-gmp
+./configure --disable-debugger --without-gmp
 gmake
 gmake install
 ```

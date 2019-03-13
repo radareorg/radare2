@@ -25,7 +25,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
@@ -33,7 +32,9 @@
 
 static int getc_nospace(FILE *f) {
 	int c;
-	while (isspace (c = getc (f)));
+	while (isspace (c = getc (f))) {
+		;
+	}
 	return c;
 }
 

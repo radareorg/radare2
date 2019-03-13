@@ -39,8 +39,8 @@ static struct r_syscall_regs_t fastcall_x86_64 [R_SYSCALL_ARGS] = {
 	{{ "rax", "rdi", NULL }},
 	{{ "rax", "rdi", "rsi", NULL }},
 	{{ "rax", "rdi", "rsi", "rdx", NULL }},
-	{{ "rax", "rdi", "rsi", "rdx", "rdx", NULL }},
-	{{ "rax", "rdi", "rsi", "rdx", "rdx", "r8", NULL }},
+	{{ "rax", "rdi", "rsi", "rdx", "rcx", NULL }},
+	{{ "rax", "rdi", "rsi", "rdx", "rcx", "r8", NULL }},
 	{{ NULL }}
 };
 

@@ -8,18 +8,19 @@
 #include "../arch/pic/pic_midrange.h"
 
 static int asm_pic_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
+	int res = -1;
+	char opbuf[128];
+	const char *opstr = opbuf;
+	strcpy (opbuf, "invalid");
 	if (a->cpu && strcasecmp (a->cpu, "baseline") == 0) {
-		return pic_baseline_disassemble (a, op, b, l);
+		res = pic_baseline_disassemble (op, opbuf, b, l);
+	} else if (a->cpu && strcasecmp (a->cpu, "midrange") == 0) {
+		res = pic_midrange_disassemble (op, opbuf, b, l);
+	} else if (a->cpu && strcasecmp (a->cpu, "pic18") == 0) {
+		res = pic_pic18_disassemble (op, opbuf, b, l);
 	}
-	if (a->cpu && strcasecmp (a->cpu, "midrange") == 0) {
-		return pic_midrange_disassemble (a, op, b, l);
-	}
-	if (a->cpu && strcasecmp (a->cpu, "pic18") == 0) {
-		return pic_pic18_disassemble (a, op, b, l);
-	}
-
-	snprintf (op->buf_asm, R_ASM_BUFSIZE - 1, "Unknown asm.cpu");
-	return op->size = -1;
+	r_asm_op_set_asm (op, opstr);
+	return op->size = res;
 }
 
 RAsmPlugin r_asm_plugin_pic = {
@@ -33,7 +34,7 @@ RAsmPlugin r_asm_plugin_pic = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_pic
 };

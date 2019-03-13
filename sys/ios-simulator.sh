@@ -64,7 +64,7 @@ export USE_SIMULATOR=1
 export RANLIB="xcrun --sdk iphoneos ranlib"
 
 if [ "$1" = "-s" ]; then
-	exec sys/ios-shell.sh
+sh
 	exit $?
 fi
 
@@ -72,12 +72,12 @@ if true; then
 make mrproper
 cp -f ${PLGCFG} plugins.cfg
 ./configure --prefix=${PREFIX} --with-ostype=darwin --with-libr \
-	--without-fork --disable-debugger --with-compiler=ios-sdk \
-	--target=arm-unknown-darwin
+	--without-fork --without-libuv --disable-debugger --with-compiler=ios-sdk \
+	--target=arm-unknown-darwin || exit 1
 fi
 
 if [ $? = 0 ]; then
-	time make -j4
+	time make -j4 || exit 1
 	( cd libr ; make libr.dylib )
 	if [ $? = 0 ]; then
 		( cd binr/radare2 ; make ios_sdk_sign )

@@ -57,6 +57,8 @@ int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits) {
 		g->registers = gdb_regs_lm32;
 	} else if (!strcmp (arch, "avr")) {
 		g->registers = gdb_regs_avr;
+	} else if (!strcmp (arch, "v850")) {
+		g->registers = gdb_regs_v850;
 	} else if (!strcmp (arch, "x86")) {
 		if (bits == 32) {
 			g->registers = gdb_regs_x86_32;

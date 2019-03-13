@@ -1,5 +1,5 @@
 /* aarch64-opc.h -- Header file for aarch64-opc.c and aarch64-opc-2.c.
-   Copyright 2012  Free Software Foundation, Inc.
+   Copyright (C) 2012-2018 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
 
    This file is part of the GNU opcodes library.
@@ -22,6 +22,7 @@
 #define OPCODES_AARCH64_OPC_H
 
 #include <string.h>
+#include <assert.h>
 #include "aarch64.h"
 
 /* Instruction fields.
@@ -67,7 +68,9 @@ enum aarch64_field_kind
   FLD_type,
   FLD_ldst_size,
   FLD_imm6,
+  FLD_imm6_2,
   FLD_imm4,
+  FLD_imm4_2,
   FLD_imm5,
   FLD_imm7,
   FLD_imm8,
@@ -80,16 +83,70 @@ enum aarch64_field_kind
   FLD_immr,
   FLD_immb,
   FLD_immh,
+  FLD_S_imm10,
   FLD_N,
   FLD_index,
   FLD_index2,
   FLD_sf,
+  FLD_lse_sz,
   FLD_H,
   FLD_L,
   FLD_M,
   FLD_b5,
   FLD_b40,
   FLD_scale,
+  FLD_SVE_M_4,
+  FLD_SVE_M_14,
+  FLD_SVE_M_16,
+  FLD_SVE_N,
+  FLD_SVE_Pd,
+  FLD_SVE_Pg3,
+  FLD_SVE_Pg4_5,
+  FLD_SVE_Pg4_10,
+  FLD_SVE_Pg4_16,
+  FLD_SVE_Pm,
+  FLD_SVE_Pn,
+  FLD_SVE_Pt,
+  FLD_SVE_Rm,
+  FLD_SVE_Rn,
+  FLD_SVE_Vd,
+  FLD_SVE_Vm,
+  FLD_SVE_Vn,
+  FLD_SVE_Za_5,
+  FLD_SVE_Za_16,
+  FLD_SVE_Zd,
+  FLD_SVE_Zm_5,
+  FLD_SVE_Zm_16,
+  FLD_SVE_Zn,
+  FLD_SVE_Zt,
+  FLD_SVE_i1,
+  FLD_SVE_i3h,
+  FLD_SVE_imm3,
+  FLD_SVE_imm4,
+  FLD_SVE_imm5,
+  FLD_SVE_imm5b,
+  FLD_SVE_imm6,
+  FLD_SVE_imm7,
+  FLD_SVE_imm8,
+  FLD_SVE_imm9,
+  FLD_SVE_immr,
+  FLD_SVE_imms,
+  FLD_SVE_msz,
+  FLD_SVE_pattern,
+  FLD_SVE_prfop,
+  FLD_SVE_rot1,
+  FLD_SVE_rot2,
+  FLD_SVE_sz,
+  FLD_SVE_tsz,
+  FLD_SVE_tszh,
+  FLD_SVE_tszl_8,
+  FLD_SVE_tszl_19,
+  FLD_SVE_xs_14,
+  FLD_SVE_xs_22,
+  FLD_rotate1,
+  FLD_rotate2,
+  FLD_rotate3,
+  FLD_SM3_imm2
 };
 
 /* Field description.  */
@@ -101,7 +158,7 @@ struct aarch64_field
 
 typedef struct aarch64_field aarch64_field;
 
-extern const aarch64_field aarch64_fields[];
+extern const aarch64_field fields[];
 
 /* Operand description.  */
 
@@ -136,6 +193,29 @@ extern const aarch64_operand aarch64_operands[];
 						   value by 2 to get the value
 						   of an immediate operand.  */
 #define OPD_F_MAYBE_SP		0x00000010	/* May potentially be SP.  */
+#define OPD_F_OD_MASK		0x000000e0	/* Operand-dependent data.  */
+#define OPD_F_OD_LSB		5
+#define OPD_F_NO_ZR		0x00000100	/* ZR index not allowed.  */
+
+/* Register flags.  */
+
+#undef F_DEPRECATED
+#define F_DEPRECATED	(1 << 0)  /* Deprecated system register.  */
+
+#undef F_ARCHEXT
+#define F_ARCHEXT	(1 << 1)  /* Architecture dependent system register.  */
+
+#undef F_HASXT
+#define F_HASXT		(1 << 2)  /* System instruction register <Xt>
+				     operand.  */
+
+#undef F_REG_READ
+#define F_REG_READ	(1 << 3)  /* Register can only be used to read values
+				     out of.  */
+
+#undef F_REG_WRITE
+#define F_REG_WRITE	(1 << 4)  /* Register can only be written to but not
+				     read from.  */
 
 static inline bfd_boolean
 operand_has_inserter (const aarch64_operand *operand)
@@ -167,6 +247,21 @@ operand_maybe_stack_pointer (const aarch64_operand *operand)
   return (operand->flags & OPD_F_MAYBE_SP) ? TRUE : FALSE;
 }
 
+/* Return the value of the operand-specific data field (OPD_F_OD_MASK).  */
+static inline unsigned int
+get_operand_specific_data (const aarch64_operand *operand)
+{
+  return (operand->flags & OPD_F_OD_MASK) >> OPD_F_OD_LSB;
+}
+
+/* Return the width of field number N of operand *OPERAND.  */
+static inline unsigned
+get_operand_field_width (const aarch64_operand *operand, unsigned n)
+{
+  assert (operand->fields[n] != FLD_NIL);
+  return fields[operand->fields[n]].width;
+}
+
 /* Return the total width of the operand *OPERAND.  */
 static inline unsigned
 get_operand_fields_width (const aarch64_operand *operand)
@@ -174,12 +269,9 @@ get_operand_fields_width (const aarch64_operand *operand)
   int i = 0;
   unsigned width = 0;
   while (operand->fields[i] != FLD_NIL)
-    width += aarch64_fields[operand->fields[i++]].width;
-  // assert (width > 0 && width < 32);
-  if (width > 0 && width < 32) {
-    return width;
-  }
-  return 0;
+    width += fields[operand->fields[i++]].width;
+  assert (width > 0 && width < 32);
+  return width;
 }
 
 static inline const aarch64_operand *
@@ -222,7 +314,7 @@ gen_mask (int width)
 static inline int
 gen_sub_field (enum aarch64_field_kind kind, int lsb_rel, int width, aarch64_field *ret)
 {
-  const aarch64_field *field = &aarch64_fields[kind];
+  const aarch64_field *field = &fields[kind];
   if (lsb_rel < 0 || width <= 0 || lsb_rel + width > field->width)
     return 0;
   ret->lsb = field->lsb + lsb_rel;
@@ -268,7 +360,7 @@ static inline void
 insert_field (enum aarch64_field_kind kind, aarch64_insn *code,
 	      aarch64_insn value, aarch64_insn mask)
 {
-  insert_field_2 (&aarch64_fields[kind], code, value, mask);
+  insert_field_2 (&fields[kind], code, value, mask);
 }
 
 /* Extract field KIND of CODE and return the value.  MASK can be zero or the
@@ -278,8 +370,11 @@ static inline aarch64_insn
 extract_field (enum aarch64_field_kind kind, aarch64_insn code,
 	       aarch64_insn mask)
 {
-  return extract_field_2 (&aarch64_fields[kind], code, mask);
+  return extract_field_2 (&fields[kind], code, mask);
 }
+
+extern aarch64_insn
+extract_fields (aarch64_insn code, aarch64_insn mask, ...);
 
 /* Inline functions selecting operand to do the encoding/decoding for a
    certain instruction bit-field.  */

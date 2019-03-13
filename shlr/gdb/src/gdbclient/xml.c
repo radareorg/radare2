@@ -1,4 +1,4 @@
-/* libgdbr - LGPL - Copyright 2017 - srimanta.barua1 */
+/* libgdbr - LGPL - Copyright 2017-2018 - srimanta.barua1 */
 
 #include "gdbclient/xml.h"
 #include "gdbclient/core.h"
@@ -7,29 +7,11 @@
 #include "packet.h"
 #include <r_util.h>
 
-static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len);
-static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len);
-
-// If xml target description is supported, read it
-int gdbr_read_target_xml(libgdbr_t *g) {
-	if (!g->stub_features.qXfer_features_read) {
-		return -1;
-	}
-	char *data;
-	ut64 len;
-	if (!(data = gdbr_read_feature (g, "target.xml", &len))) {
-		return -1;
-	}
-	gdbr_parse_target_xml (g, data, len);
-	free (data);
-	return 0;
-}
-
 static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	ut64 retlen = 0, retmax = 0, off = 0, len = g->stub_features.pkt_sz - 2,
-	     blksz = g->data_max, subret_space = 0, subret_len = 0;
+		blksz = g->data_max, subret_space = 0, subret_len = 0;
 	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = { 0 },
-	     status, tmpchar;
+		status, tmpchar;
 	while (1) {
 		snprintf (msg, sizeof (msg), "qXfer:features:read:%s:%"PFMT64x
 			",%"PFMT64x, file, off, len);
@@ -228,8 +210,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		switch (g->target.bits) {
 		case 32:
 			if (!(profile = r_str_prefix (profile,
-							"=PC	r15\n"
-							"=SP	r14\n" // XXX
+							"=PC	pc\n"
+							"=SP	sp\n" // XXX
 							"=A0	r0\n"
 							"=A1	r1\n"
 							"=A2	r2\n"
@@ -256,7 +238,6 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				goto exit_err;
 			}
 		}
-		break;
 		break;
 	case R_SYS_ARCH_X86:
 		switch (g->target.bits) {
@@ -315,6 +296,21 @@ exit_err:
 	free (profile);
 	free (arch_regs);
 	return -1;
+}
+
+// If xml target description is supported, read it
+int gdbr_read_target_xml(libgdbr_t *g) {
+	if (!g->stub_features.qXfer_features_read) {
+		return -1;
+	}
+	char *data;
+	ut64 len;
+	if (!(data = gdbr_read_feature (g, "target.xml", &len))) {
+		return -1;
+	}
+	gdbr_parse_target_xml (g, data, len);
+	free (data);
+	return 0;
 }
 
 // sizeof (buf) needs to be atleast flags->num_bits + 1
@@ -376,6 +372,9 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			// openocd mips?
 			g->target.arch = R_SYS_ARCH_MIPS;
 			g->target.bits = 32;
+		} else if (strstr(xml_data, "com.apple.debugserver.x86_64")) {
+			g->target.arch = R_SYS_ARCH_X86;
+			g->target.bits = 64;
 		} else {
 			eprintf ("Unknown architecture parsing XML (%s)\n", xml_data);
 		}

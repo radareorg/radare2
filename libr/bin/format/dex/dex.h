@@ -6,7 +6,7 @@
 #define R_BIN_DEX_MAXSTR 256
 #define DEX_CLASS_SIZE (32)
 
-#pragma pack(4)
+R_PACKED(
 typedef struct dex_header_t {
 	ut8 magic[8];
 	ut32 checksum;
@@ -31,14 +31,14 @@ typedef struct dex_header_t {
 	ut32 class_offset;
 	ut32 data_size;
 	ut32 data_offset;
-} DexHeader;
+}) DexHeader;
 
-#pragma pack(4)
+R_PACKED(
 typedef struct dex_proto_t {
 	ut32 shorty_id;
 	ut32 return_type_id;
 	ut32 parameters_off;
-} DexProto;
+}) DexProto;
 
 typedef struct dex_type_t {
 	ut32 descriptor_id;
@@ -51,14 +51,14 @@ typedef struct dex_field_t {
 	ut32 name_id;
 } DexField;
 
-#pragma pack(1)
+R_PACKED(
 typedef struct dex_method_t {
 	ut16 class_id;
 	ut16 proto_id;
 	ut32 name_id;
-} RBinDexMethod;
+}) RBinDexMethod;
 
-#pragma pack(1)
+R_PACKED(
 typedef struct dex_class_t {
 	ut32 class_id; // index into typeids
 	ut32 access_flags;
@@ -69,15 +69,15 @@ typedef struct dex_class_t {
 	ut32 class_data_offset;
 	ut32 static_values_offset;
 	struct dex_class_data_item_t *class_data;
-} RBinDexClass;
+}) RBinDexClass;
 
-#pragma pack(1)
+R_PACKED(
 typedef struct dex_class_data_item_t {
 	ut64 static_fields_size;
 	ut64 instance_fields_size;
 	ut64 direct_methods_size;
 	ut64 virtual_methods_size;
-} RBinDexClassData;
+}) RBinDexClassData;
 
 typedef struct r_bin_dex_obj_t {
 	int size;

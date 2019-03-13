@@ -846,6 +846,11 @@ ST_DATA int tcc_ext;
 /* XXX: get rid of this ASAP */
 ST_DATA struct TCCState *tcc_state;
 
+static inline int tcc_nerr() {
+	return tcc_state->nb_errors;
+}
+
+
 #ifdef MEM_DEBUG
 ST_DATA int mem_cur_size;
 ST_DATA int mem_max_size;
@@ -870,6 +875,7 @@ PUB_FUNC void tcc_memstats(void);
 PUB_FUNC void tcc_error_noabort(const char *fmt, ...);
 PUB_FUNC void tcc_error(const char *fmt, ...);
 PUB_FUNC void tcc_warning(const char *fmt, ...);
+PUB_FUNC void strcat_printf(char *buf, int buf_size, const char *fmt, ...);
 
 /* other utilities */
 ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data);

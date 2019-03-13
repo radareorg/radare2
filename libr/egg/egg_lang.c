@@ -37,7 +37,9 @@ static inline int is_op(char x) {
 }
 
 static inline int get_op(char **pos){
-	while (**pos && !(is_op (**pos) && !is_var (*pos))) (*pos)++;
+	while (**pos && !(is_op (**pos) && !is_var (*pos))) {
+		(*pos)++;
+	}
 	return (**pos)? ((is_op (**pos)) + 1): 0;
 }
 
@@ -165,8 +167,7 @@ R_API void r_egg_lang_include_init(REgg *egg) {
 }
 
 static void rcc_set_callname(REgg *egg, const char *s) {
-	free (egg->lang.callname);
-	egg->lang.callname = NULL;
+	R_FREE (egg->lang.callname);
 	egg->lang.nargs = 0;
 	egg->lang.callname = trim (strdup (skipspaces (s)));
 	egg->lang.pushargs = !((!strcmp (s, "goto")) || (!strcmp (s, "break")));
@@ -223,7 +224,9 @@ static const char *find_alias(REgg *egg, const char *str) {
 		return strdup (str);
 	}
 	// strings could not means aliases
-	while (*p && !is_space (*p)) p++;
+	while (*p && !is_space (*p)) {
+		p++;
+	}
 	*p = '\x00';
 	for (i = 0; i < egg->lang.nalias; i++) {
 		if (!strcmp (str, egg->lang.aliases[i].name)) {
@@ -243,7 +246,9 @@ static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
 		*q = '\x00';
 	}
 	REggEmit *e = egg->remit;
-	while (*p && is_space (*p)) p++;
+	while (*p && is_space (*p)) {
+		p++;
+	}
 	if (is_var (p)) {
 		p = r_egg_mkvar (egg, buf, p, 0);
 		if (egg->lang.varxs == '*') {
@@ -281,7 +286,9 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 	int op_ret = level;
 	char op, *next_pos;
 
-	while (**pos && is_space (**pos)) (*pos)++;
+	while (**pos && is_space (**pos)) {
+		(*pos)++;
+	}
 	next_pos = *pos + 1;
 
 	do {
@@ -495,7 +502,6 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 					dotrim = 3;
 					break;
 				default:
-					dotrim = 0;
 					break;
 				}
 				if (dotrim) {
@@ -510,8 +516,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 	len = strlen (str);
 	j = (len - len % e->size) + e->size;
 	e->set_string (egg, egg->lang.dstvar, str, j);
-	free (egg->lang.dstvar);
-	egg->lang.dstvar = NULL;
+	R_FREE (egg->lang.dstvar);
 }
 
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
@@ -664,7 +669,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 			} else if (strstr (ptr, "alias")) {
 				egg->lang.mode = ALIAS;
 				ptr2 = egg->lang.dstvar = strdup (skipspaces (str));
-				while (*ptr2 && !is_space (*ptr2)) ptr2++;
+				while (*ptr2 && !is_space (*ptr2)) {
+					ptr2++;
+				}
 				*ptr2 = '\x00';
 				// for aliases must be valid and accurate strings
 			} else if (strstr (ptr, "data")) {
@@ -735,8 +742,7 @@ static void set_nested(REgg *egg, const char *s) {
 	/** clear inner levels **/
 	for (i = 1; i < 10; i++) {
 		// egg->lang.nestedi[context+i] = 0;
-		free (egg->lang.nested[CTX + i]);
-		egg->lang.nested[CTX + i] = NULL;
+		R_FREE (egg->lang.nested[CTX + i]);
 	}
 }
 
@@ -905,7 +911,9 @@ static int parsedatachar(REgg *egg, char c) {
 			}
 		}
 	}
-	egg->lang.dstval[egg->lang.ndstval++] = c;
+	if (egg->lang.dstval) {
+		egg->lang.dstval[egg->lang.ndstval++] = c;
+	}
 	return 0;
 }
 
@@ -973,9 +981,8 @@ static void rcc_next(REgg *egg) {
 			eprintf ("Cannot find include file '%s'\n", egg->lang.elem);
 			return;
 		}
-		free (egg->lang.includefile);
-		free (egg->lang.includedir);
-		egg->lang.includefile = egg->lang.includedir = NULL;
+		R_FREE (egg->lang.includefile);
+		R_FREE (egg->lang.includedir);
 		rcc_reset_callname (egg);
 		p = q = r_file_slurp (path, NULL);
 		if (p) {
@@ -1185,8 +1192,7 @@ static void rcc_next(REgg *egg) {
 				        if (egg->lang.varxs=='&')
 				            e->load_ptr (egg, eq);
 				        if (eq) {
-				            free (eq);
-				            eq = NULL;
+				            R_FREE (eq);
 				        }
 				        type = ' ';
 				    } else type = '$';
@@ -1397,7 +1403,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			if (egg->lang.elem_n) {
 				ptr = egg->lang.elem;
 				egg->lang.elem[egg->lang.elem_n] = '\0';
-				while (is_space (*ptr)) ptr++;
+				while (is_space (*ptr)) {
+					ptr++;
+				}
 				rcc_fun (egg, ptr);
 			}
 			egg->lang.elem_n = 0;

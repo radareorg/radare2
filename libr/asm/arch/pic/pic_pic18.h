@@ -5,6 +5,6 @@
 
 #include <r_asm.h>
 
-int pic_pic18_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l);
+int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l);
 
 #endif //PIC_PIC18_H

@@ -6,7 +6,18 @@ extern "C" {
 #endif
 
 #include <r_types.h>
-#include <r_util.h>
+#include <r_util/pj.h>
+#include <r_util/r_graph.h>
+#include <r_util/r_hex.h>
+#include <r_util/r_log.h>
+#include <r_util/r_num.h>
+#include <r_util/r_panels.h>
+#include <r_util/r_sandbox.h>
+#include <r_util/r_signal.h>
+#include <r_util/r_stack.h>
+#include <r_util/r_str.h>
+#include <r_util/r_sys.h>
+#include <r_util/r_file.h>
 #include <sdb.h>
 
 #include <stdio.h>
@@ -139,8 +150,6 @@ enum {
 };
 #endif
 
-enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M };
-
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
 enum { R_CONS_ATTR_BOLD = 1 << 1 };
 
@@ -195,6 +204,8 @@ typedef struct r_cons_palette_t {
 	RColor ret;
 	RColor swi;
 	RColor trap;
+	RColor ucall;
+	RColor ujmp;
 	RColor ai_read;
 	RColor ai_write;
 	RColor ai_exec;
@@ -207,6 +218,11 @@ typedef struct r_cons_palette_t {
 	RColor gui_border;
 	RColor wordhl;
 	RColor linehl;
+	RColor func_var;
+	RColor func_var_type;
+	RColor func_var_addr;
+	RColor widget_bg;
+	RColor widget_sel;
 
 	/* Graph colors */
 	RColor graph_box;
@@ -259,6 +275,8 @@ typedef struct r_cons_printable_palette_t {
 	char *ret;
 	char *swi;
 	char *trap;
+	char *ucall;
+	char *ujmp;
 	char *ai_read;
 	char *ai_write;
 	char *ai_exec;
@@ -272,6 +290,11 @@ typedef struct r_cons_printable_palette_t {
 	char *gui_border;
 	char *wordhl;
 	char *linehl;
+	char *func_var;
+	char *func_var_type;
+	char *func_var_addr;
+	char *widget_bg;
+	char *widget_sel;
 
 	/* graph colors */
 	char *graph_box;
@@ -287,13 +310,9 @@ typedef struct r_cons_printable_palette_t {
 	int rainbow_sz; // size of rainbow
 } RConsPrintablePalette;
 
-R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
-R_API void r_cons_rainbow_free(void);
-R_API void r_cons_rainbow_new(int sz);
-
 typedef void (*RConsEvent)(void *);
 
-#define CONS_MAX_ATTR_SZ 15
+#define CONS_MAX_ATTR_SZ 16
 typedef struct r_cons_canvas_attr_t {
 	//TODO add support for 256 colors.
 	int loc;
@@ -371,6 +390,9 @@ typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
+typedef void (*RConsQueueTaskOneshot)(void *core, void *task, void *user);
+
+typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M } RConsColorMode;
 
 typedef struct r_cons_context_t {
 	RConsGrep grep;
@@ -383,13 +405,26 @@ typedef struct r_cons_context_t {
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+
+	// Used for per-task logging redirection
+	RLogCallback log_callback; // TODO: RList of callbacks
+
+	char *lastOutput;
+	int lastLength;
+	bool lastMode;
+	bool lastEnabled;
+	bool is_interactive;
+	bool pageable;
+
+	RConsColorMode color;
+	RConsPalette cpal;
+	RConsPrintablePalette pal;
 } RConsContext;
 
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
 	int is_html;
-	int is_interactive;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime
@@ -414,6 +449,7 @@ typedef struct r_cons_t {
 	RConsSleepBeginCallback cb_sleep_begin;
 	RConsSleepEndCallback cb_sleep_end;
 	RConsClickCallback cb_click;
+	RConsQueueTaskOneshot cb_task_oneshot;
 
 	void *user; // Used by <RCore*>
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
@@ -426,13 +462,10 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int color; // 0 = none, 1 = ansi (16), 2 = palette (256), 3 = truecolor (16M)
 	char *highlight;
 	int null; // if set, does not show anything
 	int mouse;
 	int is_wine;
-	RConsPalette cpal;
-	RConsPrintablePalette pal;
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
@@ -443,15 +476,18 @@ typedef struct r_cons_t {
 	bool flush;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
+	bool dotted_lines;
 	int linesleep;
 	int pagesize;
 	char *break_word;
 	int break_word_len;
 	ut64 timeout;
 	bool grep_color;
+	bool grep_highlight;
 	bool use_tts;
 	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
+	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -479,6 +515,12 @@ typedef struct r_cons_t {
 #define R_CONS_KEY_F12 0xfc
 
 #define R_CONS_KEY_ESC 0x1b
+
+#define R_CONS_CLEAR_LINE "\x1b[2K\r"
+#define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
+
+#define R_CONS_CURSOR_SAVE "\x1b[s"
+#define R_CONS_CURSOR_RESTORE "\x1b[u"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
@@ -580,9 +622,14 @@ enum {
 	LINE_NOSYM_HORIZ
 };
 
+#define DOT_STYLE_NORMAL 0
+#define DOT_STYLE_CONDITIONAL 1
+#define DOT_STYLE_BACKEDGE 2
+
 typedef struct r_cons_canvas_line_style_t {
 	int color;
 	int symbol;
+	int dot_style;
 } RCanvasLineStyle;
 
 // UTF-8 symbols indexes
@@ -641,6 +688,7 @@ R_API char *r_cons_lastline_utf8_ansi_len(int *len);
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked(void);
+R_API bool r_cons_is_interactive(void);
 R_API void r_cons_break_timeout(int timeout);
 R_API void r_cons_breakword(const char *s);
 R_API void *r_cons_sleep_begin(void);
@@ -656,13 +704,16 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 
 R_API void r_cons_push(void);
 R_API void r_cons_pop(void);
-R_API RConsContext *r_cons_context_new(void);
+R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent);
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
-R_API void r_cons_context_reset();
-R_API bool r_cons_context_is_main();
+R_API void r_cons_context_reset(void);
+R_API bool r_cons_context_is_main(void);
+R_API void r_cons_context_break(RConsContext *context);
+R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig);
+R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
+R_API void r_cons_break_push(RConsBreak cb, void *user);
 R_API void r_cons_break_pop(void);
-R_API void r_cons_break_push(RConsBreak cb, void*user);
 R_API void r_cons_break_clear(void);
 
 /* control */
@@ -673,6 +724,7 @@ R_API void r_cons_print_clear(void);
 R_API void r_cons_zero(void);
 R_API void r_cons_highlight(const char *word);
 R_API void r_cons_clear(void);
+R_API void r_cons_clear_buffer(void);
 R_API void r_cons_clear00(void);
 R_API void r_cons_clear_line(int err);
 R_API void r_cons_fill_line(void);
@@ -688,16 +740,19 @@ R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
 
 /* output */
-R_API void r_cons_printf(const char *format, ...);
+R_API int r_cons_printf(const char *format, ...);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
+R_API void r_cons_strcat_at(const char *str, int x, char y, int w, int h);
 #define r_cons_print(x) r_cons_strcat (x)
 R_API void r_cons_println(const char* str);
+
 R_API void r_cons_strcat_justify(const char *str, int j, char c);
 R_API int r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
 R_API void r_cons_less(void);
 R_API void r_cons_2048(bool color);
@@ -706,13 +761,15 @@ R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API int r_cons_is_utf8(void);
 R_API void r_cons_cmd_help(const char * help[], bool use_color);
+R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
+ unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...);
+
 
 /* input */
-//R_API int  r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API int r_cons_controlz(int ch);
 R_API int r_cons_readchar(void);
 R_API bool r_cons_readpush(const char *str, int len);
-R_API void r_cons_readflush();
+R_API void r_cons_readflush(void);
 R_API void r_cons_switchbuf(bool active);
 R_API int r_cons_readchar_timeout(ut32 usec);
 R_API int r_cons_any_key(const char *msg);
@@ -721,14 +778,15 @@ R_API int r_cons_eof(void);
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set(const char *key, const char *val);
 R_API void r_cons_pal_update_event(void);
-R_API void r_cons_pal_free(void);
-R_API void r_cons_pal_init();
+R_API void r_cons_pal_free(RConsContext *ctx);
+R_API void r_cons_pal_init(RConsContext *ctx);
+R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src);
 R_API char *r_cons_pal_parse(const char *str, RColor *outcol);
 R_API void r_cons_pal_random(void);
 R_API RColor r_cons_pal_get(const char *key);
 R_API RColor r_cons_pal_get_i(int index);
 R_API const char *r_cons_pal_get_name(int index);
-R_API const int r_cons_pal_len();
+R_API int r_cons_pal_len(void);
 R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(int rad, const char *arg);
@@ -738,8 +796,11 @@ R_API bool r_cons_isatty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API char *r_cons_html_filter(const char *ptr, int *newlen);
+R_API char *r_cons_rainbow_get(int idx, int last, bool bg);
+R_API void r_cons_rainbow_free(RConsContext *ctx);
+R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
-// TODO: use gets() .. MUST BE DEPRECATED
+R_API char *r_cons_gets(const char *prompt, int len);
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API char *r_cons_hud(RList *list, const char *prompt);
 R_API char *r_cons_hud_path(const char *path, int dir);
@@ -747,23 +808,27 @@ R_API char *r_cons_hud_string(const char *s);
 R_API char *r_cons_hud_file(const char *f);
 
 R_API const char *r_cons_get_buffer(void);
+R_API int r_cons_get_buffer_len();
 R_API void r_cons_grep_help(void);
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
 R_API char * r_cons_grep_strip(char *cmd, const char *quotestr);
 R_API void r_cons_grep_process(char * grep);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
-R_API int r_cons_grepbuf(char *buf, int len);
+R_API void r_cons_grepbuf();
 
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init(void);
+R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor);
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
 R_API void r_cons_color(int fg, int r, int g, int b);
+
 R_API RColor r_cons_color_random(ut8 alpha);
 R_API void r_cons_invert(int set, int color);
-R_API int r_cons_yesno(int def, const char *fmt, ...);
+R_API bool r_cons_yesno(int def, const char *fmt, ...);
 R_API char *r_cons_input(const char *msg);
+R_API char *r_cons_password(const char *msg);
 R_API void r_cons_set_cup(int enable);
 R_API void r_cons_column(int c);
 R_API int r_cons_get_column(void);
@@ -779,6 +844,18 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 #define R_LINE_HISTSIZE 256
 
 #define R_EDGES_X_INC 4
+
+#define R_SELWIDGET_MAXH 15
+#define R_SELWIDGET_MAXW 30
+
+typedef struct r_selection_widget_t {
+	const char **options;
+	int options_len;
+	int selection;
+	int w, h;
+	int scroll;
+	bool complete_common;
+} RSelWidget;
 
 typedef struct r_line_hist_t {
 	char **data;
@@ -799,6 +876,7 @@ typedef struct r_line_t RLine; // forward declaration
 typedef int (*RLineCallback)(RLine *line);
 
 typedef struct r_line_comp_t {
+	bool opt;
 	int argc;
 	const char **argv;
 	RLineCallback run;
@@ -812,6 +890,7 @@ struct r_line_t {
 	RLineCompletion completion;
 	RLineBuffer buffer;
 	RLineHistory history;
+	RSelWidget *sel_widget;
 	/* callbacks */
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;
@@ -828,7 +907,14 @@ struct r_line_t {
 	char *contents;
 	bool zerosep;
 	bool offset_prompt;
-	int offset_index;
+	int offset_hist_index;
+	bool file_prompt;
+	int file_hist_index;
+	RList *sdbshell_hist;
+	RListIter *sdbshell_hist_iter;
+#if __WINDOWS__ && !__CYGWIN__
+	bool ansicon;
+#endif
 }; /* RLine */
 
 #ifdef R_API
@@ -888,7 +974,8 @@ typedef struct r_ascii_node_t {
 #define R_AGRAPH_MODE_MINI 2
 #define R_AGRAPH_MODE_TINY 3
 #define R_AGRAPH_MODE_SUMMARY 4
-#define R_AGRAPH_MODE_MAX 5
+#define R_AGRAPH_MODE_COMMENTS 5
+#define R_AGRAPH_MODE_MAX 6
 
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);
@@ -906,12 +993,12 @@ typedef struct r_ascii_graph_t {
 	bool is_tiny;
 	bool is_dis;
 	int edgemode;
-	bool altedgepos;
 	int mode;
 	bool is_callgraph;
 	bool is_interactive;
 	int zoom;
 	int movspeed;
+	bool hints;
 
 	RANode *update_seek_on;
 	bool need_reload_nodes;
@@ -948,25 +1035,68 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth);
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_print(RAGraph *g);
-R_API void r_agraph_print_json(RAGraph *g);
+R_API void r_agraph_print_json(RAGraph *g, PJ *pj);
 R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
+typedef int (*RPanelsMenuCallback)(void *user);
+typedef struct r_panels_menu_item {
+	int n_sub, selectedIndex;
+	const char *name;
+	struct r_panels_menu_item **sub;
+	RPanelsMenuCallback cb;
+	RPanel *p;
+} RPanelsMenuItem;
+
+typedef struct r_panels_menu_t {
+	RPanelsMenuItem *root;
+	RPanelsMenuItem **history;
+	int depth;
+	int n_refresh;
+	RPanel **refreshPanels;
+} RPanelsMenu;
+
+typedef enum {
+	PANEL_MODE_DEFAULT,
+	PANEL_MODE_MENU,
+	PANEL_MODE_ZOOM,
+	PANEL_MODE_WINDOW,
+	PANEL_MODE_HELP
+} RPanelsMode;
+
+typedef enum {
+	PANEL_FUN_SNOW,
+	PANEL_FUN_NOFUN
+} RPanelsFun;
+
+typedef enum {
+	PANEL_LAYOUT_DEFAULT_STATIC = 0,
+	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
+} RPanelsLayout;
+
+typedef struct {
+	int x;
+	int y;
+} RPanelsSnow;
+
 typedef struct r_panels_t {
 	RConsCanvas *can;
 	RPanel *panel;
 	int n_panels;
 	int columnWidth;
-	int layout;
-	int menu_pos;
-	int menu_x;
-	int menu_y;
-	int callgraph;
 	int curnode;
 	bool isResizing;
+	RPanelsMenu *panelsMenu;
+	Sdb *db;
+	HtPP *mht;
+	RPanelsMode mode;
+	RPanelsFun fun;
+	RPanelsMode prevMode;
+	RPanelsLayout layout;
+	RList *snows;
 } RPanels;
 
 #ifdef __cplusplus

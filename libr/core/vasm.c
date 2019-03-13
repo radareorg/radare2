@@ -1,11 +1,13 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h>
 
+#define R_VISUAL_ASM_BUFSIZE 1024
+
 typedef struct {
 	RCore *core;
-	char blockbuf[1024];
-	char codebuf[1024];
+	char blockbuf[R_VISUAL_ASM_BUFSIZE];
+	char codebuf[R_VISUAL_ASM_BUFSIZE];
 	int oplen;
 	ut8 buf[128];
 	RAsmCode *acode;
@@ -15,6 +17,7 @@ typedef struct {
 
 static int readline_callback(void *_a, const char *str) {
 	RCoreVisualAsm *a = _a;
+	RCore *core = a->core;
 	int xlen;
 	r_cons_clear00 ();
 	r_cons_printf ("Write some %s-%d assembly...\n\n",
@@ -30,21 +33,27 @@ static int readline_callback(void *_a, const char *str) {
 		r_asm_code_free (a->acode);
 		r_asm_set_pc (a->core->assembler, a->off);
 		a->acode = r_asm_massemble (a->core->assembler, str);
-		r_cons_printf ("%d> %s\n", a->acode? a->acode->len: 0, str);
+		r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
 		if (a->acode && a->acode->len) {
 			r_cons_printf ("* %s\n\n", a->acode->buf_hex);
 		} else {
 			r_cons_print ("\n\n");
 		}
 		if (a->acode) {
-			xlen = strlen (a->acode->buf_hex);
+			xlen = R_MIN (strlen (a->acode->buf_hex), R_VISUAL_ASM_BUFSIZE - 2);
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, a->acode->buf_hex, xlen);
+			if (xlen >= strlen (a->blockbuf)) {
+				a->codebuf[xlen] = '\0';
+			}
 		}
 		{
 			int rows = 0;
 			int cols = r_cons_get_size (&rows);
-			char *cmd = r_str_newf ("pd %d @x:%s @0x%"PFMT64x, rows - 10, a->codebuf, a->off);
+			core->print->cur_enabled = 1;
+			core->print->ocur = 0;
+			core->print->cur = (a->acode && a->acode->len) ? a->acode->len - 1: 0;
+			char *cmd = r_str_newf ("pd %d @x:%s @0x%"PFMT64x, rows - 11, a->codebuf, a->off);
 			char *res = r_core_cmd_str (a->core, cmd);
 			char *msg = r_str_ansi_crop (res, 0,0, cols - 2, rows - 5);
 			r_cons_printf ("%s\n", msg);
@@ -69,9 +78,15 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 
 	if (cva.acode && cva.acode->len > 0) {
 		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {
-			r_core_cmdf (core, "wx %s @ 0x%"PFMT64x,
-				cva.acode->buf_hex, off);
+			if (!r_io_write_at (core->io, off, cva.acode->buf, cva.acode->len)) {
+				eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
+				r_cons_any_key (NULL);
+			}
+			// r_core_cmdf (core, "wx %s @ 0x%"PFMT64x, cva.acode->buf_hex, off);
 		}
+	} else if (!cva.acode || cva.acode->len == 0) {
+		eprintf ("ERROR: Cannot assemble those instructions\n");
+		r_cons_any_key (NULL);
 	}
 	r_asm_code_free (cva.acode);
 }

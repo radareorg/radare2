@@ -2,7 +2,6 @@
 #define R_NUM_H
 
 #define R_NUMCALC_STRSZ 1024
-#define r_num_abs(x) x>0?x:-x
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,12 +48,9 @@ typedef struct r_num_t {
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
 typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 
-void r_srand(int seed);
-int r_rand(int mod);
-
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
-R_API char *r_num_units(char *buf, ut64 num);
+R_API char *r_num_units(char *buf, size_t len, ut64 number);
 R_API int r_num_conditional(RNum *num, const char *str);
 R_API ut64 r_num_calc(RNum *num, const char *str, const char **err);
 R_API const char *r_num_calc_index(RNum *num, const char *p);
@@ -64,6 +60,7 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API const char *r_num_get_name(RNum *num, ut64 n);
 R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
+R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off);
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(RNum *num, const char *str);
@@ -80,6 +77,11 @@ R_API bool r_num_is_op(const char c);
 R_API int r_num_str_len(const char *str);
 R_API int r_num_str_split(char *str);
 R_API RList *r_num_str_split_list(char *str);
+R_API void *r_num_dup(ut64 n);
+
+static inline st64 r_num_abs(st64 num) {
+	return num < 0 ? -num : num;
+}
 
 #ifdef __cplusplus
 }

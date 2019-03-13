@@ -1,10 +1,10 @@
-/* radare2 - LGPL - Copyright 2013-2017 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
-#define R_IPI static
-#include "../arch/mips/mipsasm.c"
+
+R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 static csh cd = 0;
 #include "cs_mnemonics.c"
@@ -47,21 +47,21 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
-		strcpy (op->buf_asm, "invalid");
+		r_asm_op_set_asm (op, "invalid");
 		op->size = 4;
 		goto beach;
-	} else {
-		ret = 4;
 	}
 	if (insn->size < 1) {
 		goto beach;
 	}
 	op->size = insn->size;
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str);
-	// remove the '$'<registername> in the string
-	r_str_replace_char (op->buf_asm, '$', 0);
+	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	if (str) {
+		r_str_replace_char (str, '$', 0);
+		// remove the '$'<registername> in the string
+		r_asm_op_set_asm (op, str);
+		free (str);
+	}
 	cs_free (insn, n);
 beach:
 	// cs_close (&cd);
@@ -70,14 +70,16 @@ fin:
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	int ret = mips_assemble (str, a->pc, op->buf);
+	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+	int ret = mips_assemble (str, a->pc, opbuf);
 	if (a->big_endian) {
-		ut8 tmp = op->buf[0];
-		op->buf[0] = op->buf[3];
-		op->buf[3] = tmp;
-		tmp = op->buf[1];
-		op->buf[1] = op->buf[2];
-		op->buf[2] = tmp;
+		ut8 *buf = opbuf;
+		ut8 tmp = buf[0];
+		buf[0] = buf[3];
+		buf[3] = tmp;
+		tmp = buf[1];
+		buf[1] = buf[2];
+		buf[2] = tmp;
 	}
 	return ret;
 }
@@ -96,7 +98,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_mips_cs,
 	.version = R2_VERSION

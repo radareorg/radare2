@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
+#include <r_getopt.h>
 
 #include "r_userconf.h"
 #include "r_sign.h"
@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
 			json = 1;
 			break;
 		case 'V':
-			printf ("rasign2 v"R2_VERSION"\n");
-			return 0;
+			return blob_version ("rasign2");
 		default:
 			return rasign_show_help ();
 		}

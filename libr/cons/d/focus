@@ -3,8 +3,10 @@ ec label rgb:0cf rgb:000
 ec math rgb:ccc
 ec bin rgb:f90
 ec call rgb:000 rgb:ff0
+ec ucall rgb:000 rgb:ff0
 ec jmp rgb:ff3
 ec cjmp rgb:ff0
+ec ujmp rgb:ff3
 ec ret rgb:f00
 ec trap rgb:000 rgb:f00
 ec offset rgb:fff
@@ -19,7 +21,6 @@ ec b0x00 green
 ec b0x7f cyan 
 ec b0xff red 
 ec btext yellow 
-ec text rgb:666
 ec other rgb:666
 ec num rgb:888
 ec reg rgb:6f0 rgb:000
@@ -45,3 +46,13 @@ ec graph.false red
 ec graph.trufae blue
 ec graph.current blue
 ec graph.traced red
+
+ec func_var cyan
+ec func_var_type rgb:f3f
+ec func_var_addr white
+
+ec ai.read rgb:8f0
+ec ai.write rgb:6f0
+ec ai.exec rgb:f3f
+ec ai.seq white
+ec ai.ascii yellow

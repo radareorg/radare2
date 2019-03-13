@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_bind.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,8 @@ typedef struct r_cmd_macro_t {
 	ut64 *brk_value;
 	ut64 _brk_value;
 	int brk;
-	int (*cmd)(void *user, const char *cmd);
+// 	int (*cmd)(void *user, const char *cmd);
+	RCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
 	RNum *num;
@@ -114,6 +116,8 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input);
 R_API char **r_cmd_args(RCmd *cmd, int *argc);
 
 /* r_cmd_macro */
+R_API RCmdMacroItem *r_cmd_macro_item_new();
+R_API void r_cmd_macro_item_free(RCmdMacroItem *item);
 R_API void r_cmd_macro_init(RCmdMacro *mac);
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name);
@@ -127,7 +131,7 @@ R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote);
 R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote);
 R_API void r_cmd_alias_free (RCmd *cmd);
-R_API void r_cmd_macro_free (RCmdMacro *mac);
+R_API void r_cmd_macro_fini(RCmdMacro *mac);
 
 #ifdef __cplusplus
 }

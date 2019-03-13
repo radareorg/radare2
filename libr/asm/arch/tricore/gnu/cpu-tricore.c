@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA */
 
 //#include "bfd.h"
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 //#include "libbfd.h"
 #include "opcode/tricore.h"
 
@@ -85,19 +85,23 @@ bfd_default_compatible (a, b)
      const bfd_arch_info_type *a;
      const bfd_arch_info_type *b;
 {
-  if (a->arch != b->arch)
-    return NULL;
+	if (a->arch != b->arch) {
+		return NULL;
+	}
 
-  if (a->bits_per_word != b->bits_per_word)
-    return NULL;
+	if (a->bits_per_word != b->bits_per_word) {
+		return NULL;
+	}
 
-  if (a->mach > b->mach)
-    return a;
+	if (a->mach > b->mach) {
+		return a;
+	}
 
-  if (b->mach > a->mach)
-    return b;
+	if (b->mach > a->mach) {
+		return b;
+	}
 
-  return a;
+	return a;
 }
 
 void tricore_init_arch_vars PARAMS ((unsigned long));
@@ -251,10 +255,11 @@ tricore_init_arch_vars (mach)
       tricore_mask_rrr2 = 0x00ff00ff;
       tricore_mask_rrrr = 0x00e000ff;
       tricore_mask_rrrw = 0x00e000ff;
-      if ((mach & bfd_mach_rider_mask) == bfd_mach_rider_2)
-        tricore_mask_sys =  0x0fc000ff;
-      else	
-        tricore_mask_sys =  0x07c000ff;
+      if ((mach & bfd_mach_rider_mask) == bfd_mach_rider_2) {
+	      tricore_mask_sys = 0x0fc000ff;
+      } else {
+	      tricore_mask_sys = 0x07c000ff;
+      }
       tricore_mask_sb =       0x00ff;
       tricore_mask_sbc =      0x00ff;
       tricore_mask_sbr =      0x00ff;

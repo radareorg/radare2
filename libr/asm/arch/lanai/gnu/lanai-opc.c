@@ -126,7 +126,7 @@ const char *architecture_pname[] = {
 	L3_PUNT )
 
 #define SBR_PAIR(cond,op,r) GENERIC_PAIR(L3_SBR_MASK,			\
-	L3_SBR|L3_SBR_COND(cond)|L3_SBR_OP(op)|(r?L3_SBR_R:0))
+	L3_SBR|L3_SBR_COND(cond)|L3_SBR_OP(op)|((r)?L3_SBR_R:0))
 
 #define PCREL_SBR_PAIR(cond) GENERIC_PAIR(L3_SBR_MASK|L3_RS1(0x1f)| \
 	L3_SBR_OP(7),							 \

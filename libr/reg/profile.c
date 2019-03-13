@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -8,7 +8,8 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
 		int role = r_reg_get_name_idx (tok[0] + 1);
 		return r_reg_set_name (reg, role, tok[1])
-			? NULL : "Invalid alias";
+			? NULL
+			: "Invalid alias";
 	}
 	return "Invalid syntax";
 }
@@ -31,14 +32,13 @@ static ut64 parse_size(char *s, char **end) {
 }
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
-	RRegItem *item;
-	char *end, *p;
+	char *end;
 	int type, type2;
 
 	if (n != 5 && n != 6) {
 		return "Invalid syntax: Wrong number of columns";
 	}
-	p = strchr (tok[0], '@');
+	char *p = strchr (tok[0], '@');
 	if (p) {
 		char *tok0 = strdup (tok[0]);
 		char *at = tok0 + (p - tok[0]);
@@ -57,10 +57,12 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return "Invalid register type";
 	}
 	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
-		return "Duplicate register definition";
+		eprintf ("Ignoring duplicated register definition '%s'\n", tok[1]);
+		return NULL;
+		//return "Duplicate register definition";
 	}
 
-	item = R_NEW0 (RRegItem);
+	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
 		return "Unable to allocate memory";
 	}
@@ -73,7 +75,11 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		r_reg_item_free (item);
 		return "Invalid size";
 	}
-	item->offset = parse_size (tok[3], &end);
+	if (!strcmp (tok[3], "?")) {
+		item->offset = -1;
+	} else {
+		item->offset = parse_size (tok[3], &end);
+	}
 	if (*end != '\0') {
 		r_reg_item_free (item);
 		return "Invalid offset";
@@ -93,6 +99,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->arena = type2;
+	if (!reg->regset[type2].regs) {
+		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
+	}
 	r_list_append (reg->regset[type2].regs, item);
 
 	// Update the overall profile size
@@ -204,7 +213,6 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		RRegSet *rs = &reg->regset[i];
 		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		reg->size += rs->arena->size;
-
 	}
 	// Align to byte boundary if needed
 	//if (reg->size & 7) {
@@ -244,13 +252,13 @@ static int gdb_to_r2_profile(char *gdb) {
 	char *ptr = gdb, *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
-		sse = 32, vector = 64, system = 128, mmx = 256;
+		  sse = 32, vector = 64, system = 128, mmx = 256;
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
 
 	// Skip whitespace at beginning of line and empty lines
-	while (isspace (*ptr)) {
+	while (isspace ((ut8)*ptr)) {
 		ptr++;
 	}
 	// It's possible someone includes the heading line too. Skip it
@@ -260,9 +268,9 @@ static int gdb_to_r2_profile(char *gdb) {
 		}
 		ptr++;
 	}
-	while (1) {
+	for (;;) {
 		// Skip whitespace at beginning of line and empty lines
-		while (isspace (*ptr)) {
+		while (isspace ((ut8)*ptr)) {
 			ptr++;
 		}
 		if (!*ptr) {
@@ -272,7 +280,7 @@ static int gdb_to_r2_profile(char *gdb) {
 			*ptr1 = '\0';
 		}
 		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
-			      &offset, &size, type, groups);
+			&offset, &size, type, groups);
 		// Groups is optional, others not
 		if (ret < 6) {
 			eprintf ("Could not parse line: %s\n", ptr);
@@ -343,10 +351,9 @@ static int gdb_to_r2_profile(char *gdb) {
 		}
 		// Print line
 		eprintf ("%s\t%s\t.%d\t%d\t0\n",
-			 // Ref: Comment above about more register type mappings
-			 ((type_bits & mmx) || (type_bits & float_)
-			  || (type_bits & sse)) ? "fpu" : "gpr",
-			 name, size * 8, offset);
+			// Ref: Comment above about more register type mappings
+			((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr",
+			name, size * 8, offset);
 		// Go to next line
 		if (!ptr1) {
 			return true;
@@ -358,11 +365,11 @@ static int gdb_to_r2_profile(char *gdb) {
 }
 
 R_API int r_reg_parse_gdb_profile(const char *profile_file) {
-	int ret;
-	char *base, *file, *str;
+	char *base, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {
-			if ((file = r_str_append (base, profile_file))) {
+			char *file = r_str_append (base, profile_file);
+			if (file) {
 				str = r_file_slurp (file, NULL);
 				free (file);
 			}
@@ -372,7 +379,7 @@ R_API int r_reg_parse_gdb_profile(const char *profile_file) {
 		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
 		return false;
 	}
-	ret = gdb_to_r2_profile (str);
+	int ret = gdb_to_r2_profile (str);
 	free (str);
 	return ret;
 }

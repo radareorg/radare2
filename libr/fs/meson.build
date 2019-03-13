@@ -1,4 +1,4 @@
-files = [
+r_fs_sources = [
   'file.c',
   'fs.c',
   'shell.c',
@@ -23,28 +23,25 @@ files = [
   'p/fs_ufs.c',
   'p/fs_ufs2.c',
   'p/fs_xfs.c',
-  'p/part_dos.c'
+  #'p/part_dos.c'
 ]
 
-r_fs = library('r_fs', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/grub/include'
-    )
-  ],
-  c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    libr_shlr
+r_fs = library('r_fs', r_fs_sources,
+  include_directories: platform_inc,
+  c_args: library_cflags,
+  dependencies: [
+    r_util_dep,
+    grub_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
 
-pkgconfig_mod.generate(
-  libraries: [r_fs],
+r_fs_dep = declare_dependency(link_with: r_fs,
+                              include_directories: platform_inc)
+
+pkgconfig_mod.generate(r_fs,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_fs',

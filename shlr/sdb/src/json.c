@@ -13,7 +13,13 @@ SDB_API char *sdb_json_get_str (const char *json, const char *path) {
 	return rangstr_dup (&rs);
 }
 
-SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
+SDB_API bool sdb_json_get_bool(const char *json, const char *path) {
+	Rangstr rs = json_get (json, path);
+	const char *p = rs.p + rs.f;
+	return (rangstr_length (&rs) == 4 && !strncmp (p, "true", 4));
+}
+
+SDB_API char *sdb_json_get(Sdb *s, const char *k, const char *p, ut32 *cas) {
 	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);
 	if (!v) {
@@ -49,7 +55,9 @@ SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	char *v = sdb_get (s, k, cas);
 	if (v) {
 		Rangstr rs = json_get (v, p);
-		return rangstr_int (&rs);
+		int ret = rangstr_int (&rs);
+		free (v);
+		return ret;
 	}
 	return 0;
 }

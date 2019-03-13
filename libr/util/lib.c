@@ -61,15 +61,26 @@ R_API void *r_lib_dl_open(const char *libname) {
 		return dlopen (NULL, RTLD_NOW);
 	}
 #endif
-	if (!libname || !*libname) {
-		return NULL;
-	}
 #if __WINDOWS__
 	LPTSTR libname_;
 
-	libname_ = r_sys_conv_utf8_to_utf16 (libname);
+	if (!libname || !*libname) {
+		libname_ = calloc (MAX_PATH, sizeof (char));
+		if (!libname_) {
+			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
+			return NULL;
+		}
+		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {
+			libname_[0] = '\0';
+		}
+	} else {
+		libname_ = r_sys_conv_utf8_to_utf16 (libname);
+	}
 	ret = DLOPEN (libname_);
 #else
+	if (!libname || !*libname) {
+		return NULL;
+	}
 	ret = DLOPEN (libname);
 #endif
 	if (__has_debug && !ret) {
@@ -113,11 +124,15 @@ R_API char *r_lib_path(const char *libname) {
 	char *env = strdup (".:../../../../../../../windows/system32");
 	const char *ext = ".dll";
 #endif
-	if (!env) env = strdup (".");
+	if (!env) {
+		env = strdup (".");
+	}
 	path0 = env;
 	do {
 		next = strchr (path0, ':');
-		if (next) *next = 0;
+		if (next) {
+			*next = 0;
+		}
 		snprintf (libpath, sizeof (libpath), "%s/%s%s", path0, libname, ext);
 		//eprintf ("--> %s\n", libpath);
 		if (r_file_exists (libpath)) {
@@ -167,7 +182,7 @@ R_API int r_lib_dl_check_filename(const char *file) {
 R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol) {
 	RLibHandler *h = plugin->handler;
 	if (h && h->constructor) {
-		IFDBG eprintf ("PLUGIN OK %p fcn %p\n", h, h->constructor);
+		IFDBG eprintf ("PLUGIN LOADED %p fcn %p\n", h, h->constructor);
 		return h->constructor (plugin, h->user, symbol->data);
 	}
 	IFDBG eprintf ("Cannot find plugin constructor\n");
@@ -178,8 +193,9 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 	RLibHandler *h;
 	RListIter *iter;
 	r_list_foreach (lib->handlers, iter, h) {
-		if (h->type == type)
+		if (h->type == type) {
 			return h;
+		}
 	}
 	return NULL;
 }
@@ -323,7 +339,9 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);
-	} else r_list_append (lib->plugins, p);
+	} else {
+		r_list_append (lib->plugins, p);
+	}
 
 	return ret;
 }
@@ -341,9 +359,9 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	struct dirent *de;
 	DIR *dh;
 #endif
-#ifdef LIBR_PLUGINS
+#ifdef R2_LIBR_PLUGINS
 	if (!path) {
-		path = LIBR_PLUGINS;
+		path = R2_LIBR_PLUGINS;
 	}
 #endif
 	if (!path) {
@@ -358,7 +376,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __MINGW32__
 	swprintf (directory, L"%ls\\*.*", wcpath);
 #else
-	swprintf (directory, sizeof (directory), L"%ls\\*.*", wcpath);
+	swprintf (directory, _countof (directory), L"%ls\\*.*", wcpath);
 #endif
 	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
@@ -370,7 +388,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 #if __MINGW32__
 		swprintf (file, L"%ls/%ls", wcpath, dir.cFileName);
 #else
-		swprintf (file, sizeof (file), L"%ls/%ls", wcpath, dir.cFileName);
+		swprintf (file, _countof (file), L"%ls/%ls", wcpath, dir.cFileName);
 #endif
 		wctocbuff = r_utf16_to_utf8 (file);
 		if (wctocbuff) {
@@ -426,8 +444,9 @@ R_API bool r_lib_add_handler(RLib *lib,
 	}
 	if (!handler) {
 		handler = R_NEW (RLibHandler);
-		if (!handler)
+		if (!handler) {
 			return false;
+		}
 		handler->type = type;
 		r_list_append (lib->handlers, handler);
 	}

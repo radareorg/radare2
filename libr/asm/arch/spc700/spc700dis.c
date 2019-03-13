@@ -21,21 +21,24 @@ static int spc700OpLength(int spcoptype){
 
 static int spc700Disass(RAsmOp *op, const ut8 *buf, int len) {
 	int foo = spc700OpLength (spc_op_table[buf[0]].type);
-	if (len < foo)
+	if (len < foo) {
 		return 0;
+	}
+	const char *buf_asm = "invalid";
 	switch (spc_op_table[buf[0]].type) {
 	case SPC_OP:
-		sprintf (op->buf_asm, "%s", spc_op_table[buf[0]].name);
+		buf_asm = spc_op_table[buf[0]].name;
 		break;
 	case SPC_ARG8_1:
-		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1]);
+		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]);
 		break;
 	case SPC_ARG8_2:
-		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1], buf[2]);
+		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1], buf[2]);
 		break;
 	case SPC_ARG16:
-		sprintf (op->buf_asm, spc_op_table[buf[0]].name, buf[1]+0x100*buf[2]);
+		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]+0x100*buf[2]);
 		break;
 	}
+	r_asm_op_set_asm (op, buf_asm);
 	return foo;
 }

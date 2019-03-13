@@ -69,9 +69,7 @@ static int __io_wait(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int curPid = -1;
 static int __io_attach(RDebug *dbg, int pid) {
-	curPid = pid;
 	return true;
 }
 
@@ -163,7 +161,7 @@ RDebugPlugin r_debug_plugin_io = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_io,
 	.version = R2_VERSION

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -14,10 +14,6 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER(r_asm);
-
-// XXX too big!
-// the 256th character is left for the null terminator
-#define R_ASM_BUFSIZE 255
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
@@ -66,21 +62,25 @@ enum {
 };
 
 typedef struct r_asm_op_t {
-	int size; // instruction size
-	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes)
+	int size; // instruction size (must be deprecated. just use buf.len
+	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes) // wtf why dupe this field? :D
 	int payload; // size of payload (opsize = (size-payload))
 	// But this is pretty slow..so maybe we should add some accessors
-	ut8  buf[R_ASM_BUFSIZE + 1];
-	char buf_asm[R_ASM_BUFSIZE + 1];
-	char buf_hex[R_ASM_BUFSIZE + 1];
-	RBuffer *buf_inc;
+	RStrBuf buf;
+	RStrBuf buf_asm;
+	RStrBuf buf_hex;
+	RBuffer *buf_inc; // must die
 } RAsmOp;
 
 typedef struct r_asm_code_t {
+#if 1
 	int len;
 	ut8 *buf;
 	char *buf_hex;
 	char *buf_asm;
+#else
+	RAsmOp op; // we have those fields already inside RAsmOp
+#endif
 	RList *equs; // TODO: must be a hash
 	ut64 code_offset;
 	ut64 data_offset;
@@ -116,11 +116,11 @@ typedef struct r_asm_t {
 	int dataalign;
 	int bitshift;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
-	SdbHash *flags;
+	HtPP *flags;
 	int seggrn;
 } RAsm;
 
-typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
+typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 
 typedef struct r_asm_plugin_t {
 	const char *name;
@@ -138,7 +138,6 @@ typedef struct r_asm_plugin_t {
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RAsm *a, RAsmOp *op, const char *buf);
 	RAsmModifyCallback modify;
-	int (*set_subarch)(RAsm *a, const char *buf);
 	char *(*mnemonics)(RAsm *a, int id, bool json);
 	const char *features;
 } RAsmPlugin;
@@ -146,16 +145,15 @@ typedef struct r_asm_plugin_t {
 #ifdef R_API
 /* asm.c */
 R_API RAsm *r_asm_new(void);
-#define r_asm_op_free free
-R_API RAsm *r_asm_free(RAsm *a);
-R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
+R_API void r_asm_free(RAsm *a);
+R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo);
-R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
+R_API bool r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
 R_API int r_asm_is_valid(RAsm *a, const char *name);
-R_API int r_asm_use(RAsm *a, const char *name);
+R_API bool r_asm_use(RAsm *a, const char *name);
 R_API bool r_asm_use_assembler(RAsm *a, const char *name);
 R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
@@ -187,77 +185,86 @@ R_API void r_asm_equ_item_free(RAsmEqu *equ);
 R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 
-// accessors, to make bindings happy
+/* op.c */
+R_API RAsmOp *r_asm_op_new(void);
+R_API void r_asm_op_free(RAsmOp *op);
+R_API void r_asm_op_init(RAsmOp *op);
+R_API void r_asm_op_fini(RAsmOp *op);
 R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
 R_API int r_asm_op_get_size(RAsmOp *op);
+R_API void r_asm_op_set_asm(RAsmOp *op, const char *str);
+R_API int r_asm_op_set_hex(RAsmOp *op, const char *str);
+R_API int r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
+R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
+R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
-extern RAsmPlugin r_asm_plugin_bf;
-extern RAsmPlugin r_asm_plugin_java;
-extern RAsmPlugin r_asm_plugin_mips_gnu;
-extern RAsmPlugin r_asm_plugin_mips_cs;
-extern RAsmPlugin r_asm_plugin_x86_udis;
-extern RAsmPlugin r_asm_plugin_x86_as;
-extern RAsmPlugin r_asm_plugin_x86_nz;
-extern RAsmPlugin r_asm_plugin_x86_nasm;
-extern RAsmPlugin r_asm_plugin_x86_cs;
-extern RAsmPlugin r_asm_plugin_arm_gnu;
-extern RAsmPlugin r_asm_plugin_arm_cs;
-extern RAsmPlugin r_asm_plugin_arm_as;
-extern RAsmPlugin r_asm_plugin_armthumb;
-extern RAsmPlugin r_asm_plugin_arm_winedbg;
-extern RAsmPlugin r_asm_plugin_xap;
-extern RAsmPlugin r_asm_plugin_ppc_gnu;
-extern RAsmPlugin r_asm_plugin_ppc_cs;
-extern RAsmPlugin r_asm_plugin_sparc_gnu;
-extern RAsmPlugin r_asm_plugin_avr;
-extern RAsmPlugin r_asm_plugin_dalvik;
-extern RAsmPlugin r_asm_plugin_sh;
-extern RAsmPlugin r_asm_plugin_z80;
-extern RAsmPlugin r_asm_plugin_i8080;
-extern RAsmPlugin r_asm_plugin_m68k;
-extern RAsmPlugin r_asm_plugin_m68k_cs;
-extern RAsmPlugin r_asm_plugin_arc;
-extern RAsmPlugin r_asm_plugin_dcpu16;
-extern RAsmPlugin r_asm_plugin_8051;
-extern RAsmPlugin r_asm_plugin_tms320;
-extern RAsmPlugin r_asm_plugin_gb;
-extern RAsmPlugin r_asm_plugin_snes;
-extern RAsmPlugin r_asm_plugin_ebc;
-extern RAsmPlugin r_asm_plugin_nios2;
-extern RAsmPlugin r_asm_plugin_malbolge;
-extern RAsmPlugin r_asm_plugin_ws;
 extern RAsmPlugin r_asm_plugin_6502;
-extern RAsmPlugin r_asm_plugin_h8300;
+extern RAsmPlugin r_asm_plugin_6502_cs;
+extern RAsmPlugin r_asm_plugin_8051;
+extern RAsmPlugin r_asm_plugin_arc;
+extern RAsmPlugin r_asm_plugin_arm_as;
+extern RAsmPlugin r_asm_plugin_arm_cs;
+extern RAsmPlugin r_asm_plugin_arm_gnu;
+extern RAsmPlugin r_asm_plugin_arm_winedbg;
+extern RAsmPlugin r_asm_plugin_avr;
+extern RAsmPlugin r_asm_plugin_bf;
+extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_chip8;
 extern RAsmPlugin r_asm_plugin_cr16;
-extern RAsmPlugin r_asm_plugin_v850;
-extern RAsmPlugin r_asm_plugin_sysz;
-extern RAsmPlugin r_asm_plugin_sparc_cs;
-extern RAsmPlugin r_asm_plugin_xcore_cs;
-extern RAsmPlugin r_asm_plugin_spc700;
-extern RAsmPlugin r_asm_plugin_propeller;
-extern RAsmPlugin r_asm_plugin_msp430;
-extern RAsmPlugin r_asm_plugin_i4004;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
-extern RAsmPlugin r_asm_plugin_lh5801;
-extern RAsmPlugin r_asm_plugin_hppa_gnu;
-extern RAsmPlugin r_asm_plugin_v810;
-extern RAsmPlugin r_asm_plugin_mcs96;
-extern RAsmPlugin r_asm_plugin_lm32;
-extern RAsmPlugin r_asm_plugin_riscv;
-extern RAsmPlugin r_asm_plugin_vax;
-extern RAsmPlugin r_asm_plugin_lanai_gnu;
-extern RAsmPlugin r_asm_plugin_xtensa;
-extern RAsmPlugin r_asm_plugin_tricore;
-extern RAsmPlugin r_asm_plugin_pic;
-extern RAsmPlugin r_asm_plugin_rsp;
+extern RAsmPlugin r_asm_plugin_dalvik;
+extern RAsmPlugin r_asm_plugin_dcpu16;
+extern RAsmPlugin r_asm_plugin_ebc;
+extern RAsmPlugin r_asm_plugin_gb;
+extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_hexagon;
 extern RAsmPlugin r_asm_plugin_hexagon_gnu;
-extern RAsmPlugin r_asm_plugin_wasm;
+extern RAsmPlugin r_asm_plugin_hppa_gnu;
+extern RAsmPlugin r_asm_plugin_i4004;
+extern RAsmPlugin r_asm_plugin_i8080;
+extern RAsmPlugin r_asm_plugin_java;
+extern RAsmPlugin r_asm_plugin_lanai_gnu;
+extern RAsmPlugin r_asm_plugin_lh5801;
+extern RAsmPlugin r_asm_plugin_lm32;
+extern RAsmPlugin r_asm_plugin_m68k_cs;
+extern RAsmPlugin r_asm_plugin_m680x_cs;
+extern RAsmPlugin r_asm_plugin_malbolge;
+extern RAsmPlugin r_asm_plugin_mcore;
+extern RAsmPlugin r_asm_plugin_mcs96;
+extern RAsmPlugin r_asm_plugin_mips_cs;
+extern RAsmPlugin r_asm_plugin_mips_gnu;
+extern RAsmPlugin r_asm_plugin_msp430;
+extern RAsmPlugin r_asm_plugin_nios2;
+extern RAsmPlugin r_asm_plugin_pic;
+extern RAsmPlugin r_asm_plugin_ppc_cs;
+extern RAsmPlugin r_asm_plugin_ppc_gnu;
+extern RAsmPlugin r_asm_plugin_propeller;
+extern RAsmPlugin r_asm_plugin_riscv;
+extern RAsmPlugin r_asm_plugin_rsp;
+extern RAsmPlugin r_asm_plugin_sh;
+extern RAsmPlugin r_asm_plugin_snes;
+extern RAsmPlugin r_asm_plugin_sparc_cs;
+extern RAsmPlugin r_asm_plugin_sparc_gnu;
+extern RAsmPlugin r_asm_plugin_spc700;
+extern RAsmPlugin r_asm_plugin_sysz;
+extern RAsmPlugin r_asm_plugin_tms320;
 extern RAsmPlugin r_asm_plugin_tms320c64x;
-extern RAsmPlugin r_asm_plugin_evm;
+extern RAsmPlugin r_asm_plugin_tricore;
+extern RAsmPlugin r_asm_plugin_v810;
+extern RAsmPlugin r_asm_plugin_v850;
+extern RAsmPlugin r_asm_plugin_vax;
+extern RAsmPlugin r_asm_plugin_wasm;
+extern RAsmPlugin r_asm_plugin_ws;
+extern RAsmPlugin r_asm_plugin_x86_as;
+extern RAsmPlugin r_asm_plugin_x86_cs;
+extern RAsmPlugin r_asm_plugin_x86_nasm;
+extern RAsmPlugin r_asm_plugin_x86_nz;
+extern RAsmPlugin r_asm_plugin_xap;
+extern RAsmPlugin r_asm_plugin_xcore_cs;
+extern RAsmPlugin r_asm_plugin_xtensa;
+extern RAsmPlugin r_asm_plugin_z80;
 
 #endif
 

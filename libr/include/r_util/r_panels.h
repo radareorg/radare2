@@ -5,26 +5,42 @@
 extern "C" {
 #endif
 
-typedef enum {
-	PANEL_TYPE_FRAME = 0,
-	PANEL_TYPE_MENU = 1
-} PanelType;
+typedef void (*RPanelDirectionCallback)(void *user, int direction);
 
-typedef struct r_panel_t {
+typedef enum {
+	PANEL_TYPE_DEFAULT = 0,
+	PANEL_TYPE_MENU = 1
+} RPanelType;
+
+typedef struct r_panel_pos_t {
 	int x;
 	int y;
 	int w;
 	int h;
-	int depth;
+} RPanelPos;
+
+typedef enum {
+	PANEL_EDGE_NONE,
+	PANEL_EDGE_RIGHT,
+	PANEL_EDGE_BOTTOM
+} RPanelEdge;
+
+typedef struct r_panel_t {
+	RPanelPos pos;
+	RPanelPos prevPos;
+	RPanelDirectionCallback directionCb;
 	int sx; // scroll-x
 	int sy; // scroll-y
 	int curpos;
 	char *cmd;
 	char *title;
 	bool refresh;
-	PanelType type;
+	RPanelType type;
 	ut64 baseAddr;
 	ut64 addr;
+	bool caching;
+	char *cmdStrCache;
+	int edgeflag;
 } RPanel;
 
 #ifdef __cplusplus

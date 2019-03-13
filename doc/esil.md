@@ -3,7 +3,7 @@ ESIL
 
 # source https://github.com/radare/radare2/wiki/ESIL
 
-ESIL stands for 'Evaluable Strings Intermedate Language'. It aims to describe a
+ESIL stands for 'Evaluable Strings Intermediate Language'. It aims to describe a
 Forth-like representation for every opcode. Those representations can be
 evaluated in order to emulate code. Each element of an esil expression is
 separated by a comma. The VM can be described as this:
@@ -191,7 +191,7 @@ Usage example:
 rep cmpsb
 ---------
 
-	cx,!,?{,BREAK,},esi,[1],edi,[1],==,?{,BREAK,},esi,++,edi,++,cx,--,LOOP
+	cx,!,?{,BREAK,},esi,[1],edi,[1],^,!,?{,BREAK,},esi,++,edi,++,cx,--,LOOP
 
 
 Unimplemented/unhandled instructions

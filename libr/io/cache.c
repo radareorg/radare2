@@ -34,6 +34,15 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 
 R_API void r_io_cache_init(RIO *io) {
 	io->cache = r_list_newf ((RListFree)cache_item_free);
+	io->buffer = r_cache_new ();
+	io->cached = 0;
+}
+
+R_API void r_io_cache_fini (RIO *io) {
+	r_list_free (io->cache);
+	r_cache_free (io->buffer);
+	io->cache = NULL;
+	io->buffer = NULL;
 	io->cached = 0;
 }
 
@@ -63,28 +72,22 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 }
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
-	RListIter *iter;
+	int invalidated = 0;
+	RListIter *iter, *tmp;
 	RIOCache *c;
-	int done = false;
-
-	if (from < to) {
-		RInterval range = (RInterval){from, to - from};
-		r_list_foreach_prev (io->cache, iter, c) {
-			if (r_itv_overlap (c->itv, range)) {
-				int cached = io->cached;
-				io->cached = 0;
-				r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
-				io->cached = cached;
-				if (!c->written) {
-					r_list_delete (io->cache, iter);
-				}
-				c->written = false;
-				done = true;
-				break;
-			}
+	RInterval range = (RInterval){from, to - from};
+	r_list_foreach_prev_safe (io->cache, iter, tmp, c) {
+		if (r_itv_overlap (c->itv, range)) {
+			int cached = io->cached;
+			io->cached = 0;
+			r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
+			io->cached = cached;
+			c->written = false;
+			r_list_delete (io->cache, iter);
+			invalidated++;
 		}
 	}
-	return done;
+	return invalidated;
 }
 
 R_API int r_io_cache_list(RIO *io, int rad) {

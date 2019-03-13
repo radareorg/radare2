@@ -91,6 +91,10 @@ typedef struct gen_vect {
 	};
 } SMD_Vectors;
 
+static ut64 baddr(RBinFile *bf) {
+	return 0;
+}
+
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (length > 0x190 && !memcmp (buf + 0x100, "SEGA", 4)) {
 		return true;
@@ -98,9 +102,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -116,6 +119,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("m68k");
 	ret->bits = 16;
 	ret->has_va = 1;
+	ret->big_endian = 1;
 	return ret;
 }
 
@@ -138,31 +142,34 @@ static void showstr(const char *str, const ut8 *s, int len) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	ut32 *vtable = (ut32 *) bf->buf->buf;
 	RList *ret = NULL;
-	const char *name;
-	SMD_Header *hdr;
+	const char *name = NULL;
 	int i;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
+	SMD_Header hdr;
+	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
+	if (left < sizeof (SMD_Header)) {
+		return NULL;
+	}
 	// TODO: store all this stuff in SDB
-	hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-	addsym (ret, "rom_start", r_read_be32 (&hdr->RomStart));
-	addsym (ret, "rom_end", r_read_be32 (&hdr->RomEnd));
-	addsym (ret, "ram_start", r_read_be32 (&hdr->RamStart));
-	addsym (ret, "ram_end", r_read_be32 (&hdr->RamEnd));
-	showstr ("Copyright", hdr->CopyRights, 32);
-	showstr ("DomesticName", hdr->DomesticName, 48);
-	showstr ("OverseasName", hdr->OverseasName, 48);
-	showstr ("ProductCode", hdr->ProductCode, 14);
-	eprintf ("Checksum: 0x%04x\n", (ut32) hdr->CheckSum);
-	showstr ("Peripherials", hdr->Peripherials, 16);
-	showstr ("SramCode", hdr->CountryCode, 12);
-	showstr ("ModemCode", hdr->CountryCode, 12);
-	showstr ("CountryCode", hdr->CountryCode, 16);
+	addsym (ret, "rom_start", r_read_be32 (&hdr.RomStart));
+	addsym (ret, "rom_end", r_read_be32 (&hdr.RomEnd));
+	addsym (ret, "ram_start", r_read_be32 (&hdr.RamStart));
+	addsym (ret, "ram_end", r_read_be32 (&hdr.RamEnd));
+	showstr ("Copyright", hdr.CopyRights, 32);
+	showstr ("DomesticName", hdr.DomesticName, 48);
+	showstr ("OverseasName", hdr.OverseasName, 48);
+	showstr ("ProductCode", hdr.ProductCode, 14);
+	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
+	showstr ("Peripherials", hdr.Peripherials, 16);
+	showstr ("SramCode", hdr.SramCode, 12);
+	showstr ("ModemCode", hdr.ModemCode, 12);
+	showstr ("CountryCode", hdr.CountryCode, 16);
+	ut32 vtable[64];
+	r_buf_read_at (bf->buf, 0, (ut8*)&vtable, sizeof (ut32) * 64);
 	/* parse vtable */
 	for (i = 0; i < 64; i++) {
 		switch (i) {
@@ -249,35 +256,36 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "vtable");
+	ptr->name = strdup ("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "header");
+	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "text");
+	ptr->name = strdup ("text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
-		SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-		ut64 baddr = hdr->RomStart;
+		SMD_Header hdr = {{0}};
+		r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
+		ut64 baddr = r_read_be32 (&hdr.RomStart);
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
@@ -292,10 +300,16 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-	ut64 baddr = hdr->RomStart;
-	ptr->paddr = ptr->vaddr = baddr + 0x100 + sizeof (SMD_Header); // vtable[1];
-	r_list_append (ret, ptr);
+	if (bf->size < sizeof (SMD_Vectors)) {
+		eprintf ("ERR: binfile too small!\n");
+		ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
+		r_list_append (ret, ptr);
+	} else {
+		SMD_Vectors vectors;
+		r_buf_read_at (bf->buf, 0, (ut8*)&vectors, sizeof (vectors));
+		ptr->paddr = ptr->vaddr = r_read_be32 (&vectors.Reset);
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
@@ -305,6 +319,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
 	.check_bytes = &check_bytes,
+	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
@@ -314,7 +329,7 @@ RBinPlugin r_bin_plugin_smd = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_smd,
 	.version = R2_VERSION

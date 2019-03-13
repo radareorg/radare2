@@ -2,7 +2,8 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_print.h>
+#include <r_util.h>
+#include <r_util/r_print.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -23,10 +24,14 @@
 #include <tchar.h>
 #include <windows.h>
 #else
-#if !__linux__ && !__APPLE__ && !__OpenBSD__ && !__FreeBSD__
+
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__
+#include <sys/ioctl.h>
+#include <termios.h>
+#else
 #include <stropts.h>
 #endif
-#include <termios.h>
+
 #endif
 
 #define GPROBE_SIZE (1LL << 32)
@@ -80,8 +85,9 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 	ut8 res = initial;
 	unsigned int k;
 
-	for (k = 0; k < size; ++k)
+	for (k = 0; k < size; ++k) {
 		res ^= p[k];
+	}
 
 	return res;
 }
@@ -89,12 +95,11 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 static void gprobe_frame_i2c (RBuffer *frame) {
 	ut8 size = r_buf_size (frame) + 1;
 	ut8 header[] = {0x51, 0x80 + size + 3, 0xc2, 0x00, 0x00};
-	ut8 checksum;
 
 	r_buf_prepend_bytes (frame, &size, 1);
 	r_buf_prepend_bytes (frame, header, sizeof (header));
 
-	checksum = gprobe_checksum_i2c (r_buf_buffer (frame), r_buf_size (frame), GPROBE_I2C_ADDR);
+	ut8 checksum = gprobe_checksum_i2c (r_buf_buffer (frame), r_buf_size (frame), GPROBE_I2C_ADDR);
 
 	r_buf_append_bytes (frame, &checksum, 1);
 }
@@ -711,6 +716,8 @@ static int gprobe_read (struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	int res;
 
 	if (!request || !reply) {
+		r_buf_free (request);
+		r_buf_free (reply);
 		return -1;
 	}
 
@@ -754,6 +761,8 @@ static int gprobe_write (struct gport *port, ut32 addr, const ut8 *buf, ut32 cou
 	ut8 count_be[4];
 
 	if (!request || !reply) {
+		r_buf_free (request);
+		r_buf_free (reply);
 		return -1;
 	}
 
@@ -1084,16 +1093,13 @@ static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 			return gprobe->offset = GPROBE_SIZE - 1;
 		}
 		return gprobe->offset = offset;
-		break;
 	case SEEK_CUR:
 		if ((gprobe->offset + offset) >= GPROBE_SIZE) {
 			return gprobe->offset = GPROBE_SIZE - 1;
 		}
 		return gprobe->offset += offset;
-		break;
 	case SEEK_END:
 		return gprobe->offset = GPROBE_SIZE - 1;
-		break;
 	}
 	return offset;
 }
@@ -1213,8 +1219,9 @@ static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_gprobe = {
 	.name = "gprobe",
-	.desc = "open gprobe connection using gprobe://",
+	.desc = "Open gprobe connection",
 	.license = "LGPL3",
+	.uris = "gprobe://",
 	.open = __open,
 	.close = __close,
 	.read = __read,
@@ -1225,7 +1232,7 @@ RIOPlugin r_io_plugin_gprobe = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gprobe,
 	.version = R2_VERSION};

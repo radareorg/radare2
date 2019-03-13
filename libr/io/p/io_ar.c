@@ -92,8 +92,9 @@ static int r_io_ar_close(RIODesc *fd) {
 
 RIOPlugin r_io_plugin_ar = {
 	.name = "ar",
-	.desc = "Open ar/lib files [ar|lib]://[file//path]",
+	.desc = "Open ar/lib files",
 	.license = "LGPL3",
+	.uris = "ar://,lib://",
 	.open = r_io_ar_open,
 	.open_many = r_io_ar_open_many,
 	.write = r_io_ar_write,
@@ -104,7 +105,7 @@ RIOPlugin r_io_plugin_ar = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_ar,
 	.version = R2_VERSION

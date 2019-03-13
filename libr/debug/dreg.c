@@ -91,7 +91,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RRegItem *item;
 	RList *head;
 	ut64 diff;
-	char strvalue[128];
+	char strvalue[256];
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
@@ -175,10 +175,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				diff = r_reg_get_value (dbg->reg, item);
 				r_reg_arena_swap (dbg->reg, false);
 				delta = value-diff;
-				if (tolower (rad) == 'j') {
-					snprintf (strvalue, sizeof (strvalue),"%"PFMT64d, value);
+				if (tolower ((ut8)rad) == 'j') {
+					snprintf (strvalue, sizeof (strvalue),"%"PFMT64u, value);
 				} else {
-					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
+					if (pr && pr->wide_offsets && dbg->bits & R_SYS_BITS_64) {
+						snprintf (strvalue, sizeof (strvalue),"0x%016"PFMT64x, value);
+					} else {
+						snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
+					}
 				}
 			} else {
 				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
@@ -219,7 +223,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case 2:
 				{
 					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
-					char *str, whites[32], content[128];
+					char *str, whites[32], content[300];
 					const char *a = "", *b = "";
 					if (highlight) {
 						a = Color_INVERT;
@@ -242,7 +246,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 						snprintf (content, sizeof (content),
 							fmt2, "", item->name, "", strvalue, "");
 						len = colwidth - strlen (content);
-						if (len < 0) len = 0;
+						if (len < 0) {
+							len = 0;
+						}
 						memset (whites, ' ', sizeof (whites));
 						whites[len] = 0;
 						dbg->cb_printf (fmt2, a, item->name, b, strvalue,
@@ -314,9 +320,13 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	ut64 ret = 0LL;
 	int role = r_reg_get_name_idx (name);
 	const char *pname = name;
-	if (err) *err = 0;
+	if (err) {
+		*err = 0;
+	}
 	if (!dbg || !dbg->reg) {
-		if (err) *err = 1;
+		if (err) {
+			*err = 1;
+		}
 		return UT64_MAX;
 	}
 	if (role != -1) {

@@ -17,11 +17,19 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	}
 	memcpy (ninlogohead, buf + 0xc0, 6);
 	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
-	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true: false;
+	if (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6)){
+		return true;
+	/* begin of Homebrew magic */
+	} else if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)){
+		return true;
+	} else {
+		return false;
+	}
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = memcpy (&loaded_header, buf, sizeof(struct nds_hdr));
+	return (*bin_obj != NULL);
 }
 
 static bool load(RBinFile *bf) {
@@ -30,7 +38,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 
@@ -65,21 +73,21 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 
-	strcpy (ptr9->name, "arm9");
+	ptr9->name = strdup ("arm9");
 	ptr9->size = loaded_header.arm9_size;
 	ptr9->vsize = loaded_header.arm9_size;
 	ptr9->paddr = loaded_header.arm9_rom_offset;
 	ptr9->vaddr = loaded_header.arm9_ram_address;
-	ptr9->srwx = r_str_rwx ("rwx");
+	ptr9->perm = r_str_rwx ("rwx");
 	ptr9->add = true;
 	r_list_append (ret, ptr9);
 
-	strcpy (ptr7->name, "arm7");
+	ptr7->name = strdup ("arm7");
 	ptr7->size = loaded_header.arm7_size;
 	ptr7->vsize = loaded_header.arm7_size;
 	ptr7->paddr = loaded_header.arm7_rom_offset;
 	ptr7->vaddr = loaded_header.arm7_ram_address;
-	ptr7->srwx = r_str_rwx ("rwx");
+	ptr7->perm = r_str_rwx ("rwx");
 	ptr7->add = true;
 	r_list_append (ret, ptr7);
 
@@ -156,7 +164,7 @@ RBinPlugin r_bin_plugin_ninds = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ninds,
 	.version = R2_VERSION

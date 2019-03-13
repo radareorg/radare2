@@ -5,8 +5,8 @@ Before reporting an issue with GitHub, be sure that:
 * you are using a clean installation
 * the issue was not already reported
 
-When the above conditions are satisfied, feel free to submit an issue,
-trying to be as precise as possible. If you can, provide the problematic
+When the above conditions are satisfied, feel free to submit an issue
+while trying to be as precise as possible. If you can, provide the problematic
 binary, the steps to reproduce the error and a backtrace in case of SEGFAULTs.
 Any information will help to fix the problem.
 
@@ -21,7 +21,7 @@ try to keep the codebase consistent and clean.
 * Fork the repository on GitHub.
 * Create a topic branch from master. Please avoid working directly on the ```master``` branch.
 * Make commits of logical units.
-* Check for unnecessary whitespace with ```git diff --check``` and be sure to follow the CODINGSTYLE (more on this in the next section).
+* Check for coding style issues with ```git diff master..mybranch | ./sys/clang-format-diff.py -p1``` and be sure to follow the CODINGSTYLE (more on this in [DEVELOPERS.md](https://github.com/radare/radare2/blob/master/DEVELOPERS.md)).
 * Submit the Pull Request(PR) on Github.
 * When relevant, write a test for
   [radare2-regressions](https://github.com/radare/radare2-regressions) and

@@ -306,7 +306,7 @@ static int __desc_cache_commit_cb(void *user, const char *k, const char *v) {
 
 R_API bool r_io_desc_cache_commit(RIODesc *desc) {
 	RIODesc *current;
-	if (!desc || !(desc->flags & R_IO_WRITE) || !desc->io || !desc->io->files || !desc->io->p_cache) {
+	if (!desc || !(desc->perm & R_PERM_W) || !desc->io || !desc->io->files || !desc->io->p_cache) {
 		return false;
 	}
 	if (!desc->cache) {

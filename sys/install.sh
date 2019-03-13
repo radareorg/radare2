@@ -4,6 +4,17 @@ MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
+# if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
+
+if [ "${UID}" = 0 ]; then
+	echo "[XX] Do not run this script as root!"
+	if [ -n "${SUDO_USER}" ]; then
+		echo "[--] Downgrading credentials to ${SUDO_USER}"
+		exec sudo -u "${SUDO_USER}" sys/install.sh $*
+	fi
+	exit 1
+fi
+
 ${MAKE} --help 2>&1 | grep -q gnu
 if [ $? != 0 ]; then
 	echo "You need GNU Make to build me"
@@ -46,6 +57,10 @@ if [ "$(id -u)" = 0 ]; then
 	SUDO=""
 else
 	[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
+fi
+
+if [ "${USE_SU}" = 1 ]; then
+	SUDO="/bin/su -m root -c"
 fi
 
 if [ "${M32}" = 1 ]; then

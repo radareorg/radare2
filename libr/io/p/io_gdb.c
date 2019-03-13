@@ -70,7 +70,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= R_IO_WRITE;
+	rw |= R_PERM_W;
 	if (isdev) {
 		port = strchr (host, '@');
 		if (port) {
@@ -127,7 +127,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_IO_RWX, mode, riog);
+		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_PERM_RWX, mode, riog);
 	}
 	// Get name
 	if (riogdb) {
@@ -229,7 +229,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "pktsz")) {
 		const char *ptr = r_str_trim_ro (cmd + 5);
-		if (!isdigit (*ptr)) {
+		if (!isdigit ((ut8)*ptr)) {
 			io->cb_printf ("packet size: %u bytes\n",
 				       desc->stub_features.pkt_sz);
 			return NULL;
@@ -244,7 +244,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "detach")) {
 		int res;
-		if (!isspace (cmd[6]) || !desc->stub_features.multiprocess) {
+		if (!isspace ((ut8)cmd[6]) || !desc->stub_features.multiprocess) {
 			res = gdbr_detach (desc) >= 0;
 		} else {
 			int pid = 0;
@@ -280,7 +280,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "monitor")) {
 		const char *qrcmd = cmd + 8;
-		if (!isspace (cmd[7])) {
+		if (!isspace ((ut8)cmd[7])) {
 			qrcmd = "help";
 		}
 		if (gdbr_send_qRcmd (desc, qrcmd, io->cb_printf) < 0) {
@@ -296,13 +296,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (r_str_startswith (cmd, "exec_file")) {
 		const char *ptr = cmd + strlen ("exec_file");
 		char *file;
-		if (!isspace (*ptr)) {
+		if (!isspace ((ut8)*ptr)) {
 			file = gdbr_exec_file_read (desc, 0);
 		} else {
-			while (isspace (*ptr)) {
+			while (isspace ((ut8)*ptr)) {
 				ptr++;
 			}
-			if (isdigit (*ptr)) {
+			if (isdigit ((ut8)*ptr)) {
 				int pid = atoi (ptr);
 				file = gdbr_exec_file_read (desc, pid);
 			} else {
@@ -318,7 +318,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	// These are internal, not available to user directly
 	if (r_str_startswith (cmd, "retries")) {
 		int num_retries;
-		if (isspace (cmd[7]) && isdigit (cmd[8])) {
+		if (isspace ((ut8)cmd[7]) && isdigit ((ut8)cmd[8])) {
 			if ((num_retries = atoi (cmd + 8)) >= 1) {
 				desc->num_retries = num_retries;
 			}
@@ -329,7 +329,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "page_size")) {
 		int page_size;
-		if (isspace (cmd[9]) && isdigit (cmd[10])) {
+		if (isspace ((ut8)cmd[9]) && isdigit ((ut8)cmd[10])) {
 			if ((page_size = atoi (cmd + 10)) >= 64) {
 				desc->page_size = page_size;
 			}
@@ -351,7 +351,8 @@ RIOPlugin r_io_plugin_gdb = {
 	//void *plugin;
 	.name = "gdb",
 	.license = "LGPL3",
-	.desc = "Attach to gdbserver, 'qemu -s', gdb://localhost:1234",
+	.desc = "Attach to gdbserver instance",
+	.uris = "gdb://",
 	.open = __open,
 	.close = __close,
 	.read = __read,
@@ -365,7 +366,7 @@ RIOPlugin r_io_plugin_gdb = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gdb,
 	.version = R2_VERSION
