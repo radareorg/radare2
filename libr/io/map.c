@@ -65,7 +65,7 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 }
 
 // Store map parts that are not covered by others into io->map_skyline
-void io_map_calculate_skyline(RIO *io) {
+static void _io_map_calculate_skyline(RIO *io) {
 	SdbListIter *iter;
 	RIOMap *map;
 	RPVector events;
@@ -187,6 +187,12 @@ void io_map_calculate_skyline(RIO *io) {
 out:
 	r_pvector_clear (&events);
 	free (deleted);
+}
+
+static void io_map_calculate_skyline(RIO *io) {
+	// skyline is buggy, this is a workaround
+	_io_map_calculate_skyline (io);
+	_io_map_calculate_skyline (io);
 }
 
 RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
@@ -421,6 +427,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		if (map->id == id) {
 			ls_split_iter (io->maps, iter);
 			ls_append (io->maps, map);
+			// TODO call twice to fix a bug
 			io_map_calculate_skyline (io);
 			free (iter);
 			return true;
