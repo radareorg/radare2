@@ -357,7 +357,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 	if (th) {
 		char thname[16] = {0};
 		size_t thlen = R_MIN (strlen(prjName), sizeof(thname) - 1);
-		strncpy (thname, thlen, prjName);
+		strncpy (thname, prjName, thlen);
 		thname[15] = 0;
 		r_th_setname (th, thname);
 	}

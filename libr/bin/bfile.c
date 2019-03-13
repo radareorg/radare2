@@ -291,8 +291,6 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	r_return_if_fail (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
-	RBinString *ptr;
-	RListIter *it;
 
 	if (!raw && (!plugin || !plugin->info)) {
 		return;
