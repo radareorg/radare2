@@ -1967,12 +1967,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		if (bb) {
 			r_list_delete_data (fcn->bbs, bb);
 		}
-#if USE_FCN_RECURSE
 		fcn_recurse (anal, fcn, addr, size, 1);
-#else
-		int ret, depth = 1;
-		recurseAt (addr);
-#endif
 		r_anal_fcn_update_tinyrange_bbs (fcn);
 		r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));
 		bb = r_anal_fcn_bbget_at (fcn, addr);
