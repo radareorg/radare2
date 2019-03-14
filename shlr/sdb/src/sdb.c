@@ -428,6 +428,10 @@ SDB_API int sdb_open(Sdb *s, const char *file) {
 SDB_API void sdb_close(Sdb *s) {
 	if (s) {
 		if (s->fd != -1) {
+			if (s->db.fd != -1 && s->db.fd == s->fd) {
+				/* close db fd as well */
+				s->db.fd = -1;
+			}
 			close (s->fd);
 			s->fd = -1;
 		}
