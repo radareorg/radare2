@@ -526,22 +526,36 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			RAnalVar *var = aop.var;
 			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
-			if (aop.type == R_ANAL_OP_TYPE_CALL) {
-				RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
-				if (fcn_call) {
-					if (r_type_func_exist (TDB, fcn_call->name)) {
-						fcn_name = strdup (fcn_call->name);
+			if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type & R_ANAL_OP_TYPE_UCALL) {
+				char *full_name = NULL;
+				ut64 callee_addr;
+				if (aop.type == R_ANAL_OP_TYPE_CALL) {
+					RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
+					if (fcn_call) {
+						full_name = fcn_call->name;
+						callee_addr = fcn_call->addr;
+					}
+				} else if (aop.ptr != UT64_MAX) {
+					RFlagItem *flag = r_flag_get_i (core->flags, aop.ptr);
+					if (flag && r_str_startswith (flag->realname, "imp.")) {
+						full_name = flag->realname;
+						callee_addr = aop.ptr;
+					}
+				}
+				if (full_name) {
+					if (r_type_func_exist (TDB, full_name)) {
+						fcn_name = strdup (full_name);
 					} else {
-						fcn_name = r_type_func_guess (TDB, fcn_call->name);
+						fcn_name = r_type_func_guess (TDB, full_name);
 					}
 					if (!fcn_name) {
-						fcn_name = strdup (fcn_call->name);
+						fcn_name = strdup (full_name);
 						userfnc = true;
 					}
 					const char* cc = r_anal_cc_func (anal, fcn_name);
 					if (cc && r_anal_cc_exist (anal, cc)) {
 						type_match (core, addr, fcn_name, bb->addr, cc, prev_idx,
-								userfnc, fcn_call->addr);
+								userfnc, callee_addr);
 						prev_idx = cur_idx;
 						ret_type = (char *) r_type_func_ret (TDB, fcn_name);
 						ret_reg = r_anal_cc_ret (anal, cc);

@@ -165,10 +165,9 @@ R_API int r_sys_truncate(const char *file, int sz) {
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
 #if __WINDOWS__ && !defined(__CYGWIN__)
-	HANDLE fh;
 	WIN32_FIND_DATAW entry;
 	char *cfname;
-	fh = r_sandbox_opendir (path, &entry);
+	HANDLE fh = r_sandbox_opendir (path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;

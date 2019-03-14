@@ -738,68 +738,52 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	RBuffer *tbuf = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new ();
-	if (!tbuf) {
-		return false;
-	}
-	r_buf_set_bytes (tbuf, buf, sz);
-	*bin_obj = r_bin_dex_new_buf (tbuf);
-	r_buf_free (tbuf);
-	return true;
-}
-
-static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return r_bin_dex_new_buf (buf);
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 8) {
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[8];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	if (r < sizeof (tmp)) {
 		return false;
 	}
 	// Non-extended opcode dex file
-	if (!memcmp (buf, "dex\n035\0", 8)) {
+	if (!memcmp (tmp, "dex\n035\0", 8)) {
 		return true;
 	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
-	if (!memcmp (buf, "dex\n036\0", 8)) {
+	if (!memcmp (tmp, "dex\n036\0", 8)) {
 		return true;
 	}
 	// Two new opcodes: invoke-polymorphic and invoke-custom (sdk level 26+)
-	if (!memcmp (buf, "dex\n038\0", 8)) {
+	if (!memcmp (tmp, "dex\n038\0", 8)) {
 		return true;
 	}
 	// M3 (Nov-Dec 07)
-	if (!memcmp (buf, "dex\n009\0", 8)) {
+	if (!memcmp (tmp, "dex\n009\0", 8)) {
 		return true;
 	}
 	// M5 (Feb-Mar 08)
-	if (!memcmp (buf, "dex\n009\0", 8)) {
+	if (!memcmp (tmp, "dex\n009\0", 8)) {
 		return true;
 	}
 	// Default fall through, should still be a dex file
-	if (!memcmp (buf, "dex\n", 4)) {
+	if (!memcmp (tmp, "dex\n", 4)) {
 		return true;
 	}
 	return false;
+}
+
+static bool check_bytes(const ut8 *bytes, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -2055,10 +2039,9 @@ RBinPlugin r_bin_plugin_dex = {
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = load_bytes,
 	.load_buffer = &load_buffer,
 	.check_bytes = check_bytes,
+	.check_buffer = check_buffer,
 	.baddr = baddr,
 	.entries = entries,
 	.classes = classes,
