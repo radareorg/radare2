@@ -1889,7 +1889,7 @@ static int cb_scrhighlight(void *user, void *data) {
 	return true;
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static int scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->ansicon = node->i_value;
@@ -2906,7 +2906,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	r_config_set (cfg, "cfg.editor", p? p: "notepad");
 #else
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
@@ -3219,7 +3219,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* TODO: rename to asm.color.ops ? */
 	SETPREF ("scr.zoneflags", "true", "Show zoneflags in visual mode before the title (see fz?)");
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
 		&scr_ansicon, "Use ANSICON mode or not on Windows");
 #endif

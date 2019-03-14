@@ -2,7 +2,7 @@
 
 #include <r_th.h>
 
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
 static void *_r_th_launcher(void *_th) {
@@ -118,7 +118,7 @@ R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 		pthread_cond_init (&th->_cond, NULL);
 		pthread_mutex_init (&th->_mutex, NULL);
 		pthread_create (&th->tid, NULL, _r_th_launcher, th);
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
 	}
@@ -142,7 +142,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 #else
 	pthread_cancel (th->tid);
 #endif
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	TerminateThread (th->tid, -1);
 #endif
 	return 0;
@@ -217,7 +217,7 @@ R_API int r_th_wait(struct r_th_t *th) {
 	if (th) {
 #if HAVE_PTHREAD
 		ret = pthread_join (th->tid, &thret);
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 		ret = WaitForSingleObject (th->tid, INFINITE);
 #endif
 		th->running = false;
@@ -233,7 +233,7 @@ R_API void *r_th_free(struct r_th_t *th) {
 	if (!th) {
 		return NULL;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	CloseHandle (th->tid);
 #endif
 	r_th_lock_free (th->lock);

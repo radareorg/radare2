@@ -24,13 +24,13 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 #include <windows.h>
 #include <wincon.h>
 #endif
@@ -452,7 +452,7 @@ typedef struct r_cons_t {
 	RConsQueueTaskOneshot cb_task_oneshot;
 
 	void *user; // Used by <RCore*>
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	DWORD term_raw, term_buf;
@@ -470,7 +470,7 @@ typedef struct r_cons_t {
 	const char **vline;
 	int refcnt;
 	bool newline;
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	bool ansicon;
 #endif
 	bool flush;
@@ -911,7 +911,7 @@ struct r_line_t {
 	int file_hist_index;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	bool ansicon;
 #endif
 }; /* RLine */

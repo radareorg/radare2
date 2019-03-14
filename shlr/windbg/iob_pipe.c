@@ -6,7 +6,7 @@
 #include <r_util.h>
 #include "transport.h"
 
-#if __WINDOWS__ || __CYGWIN__ || MINGW32
+#if __WINDOWS__
 #include <windows.h>
 
 static void *iob_pipe_open(const char *path) {

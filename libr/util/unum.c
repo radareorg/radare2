@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2007-2018 - pancake */
 
-#if __WINDOWS__ && MINGW32 && !__CYGWIN__
+#if __WINDOWS__
 #include <stdlib.h>
 #endif
 
@@ -349,7 +349,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 #if 0
 			//sscanf (str, "%"PFMT64d"%n", &ret, &chars_read);
 // 32bit chop
-#if __WINDOWS__ && MINGW32 && !__CYGWIN__
+#if __WINDOWS__
 			ret = _strtoui64 (str, &endptr, 10);
 #endif
 #endif

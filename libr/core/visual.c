@@ -1515,7 +1515,7 @@ repeat:
 	return ret;
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 void SetWindow(int Width, int Height) {
 	COORD coord;
 	coord.X = Width;
@@ -2154,7 +2154,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 	} else {
 		switch (ch) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		case 0xf5:
 			SetWindow (81, 25);
 			break;

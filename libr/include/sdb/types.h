@@ -36,13 +36,13 @@
 #include <windows.h>
 #define DIRSEP '\\'
 #else
-// CYGWIN AND UNIX
+// UNIX
 #define __SDB_WINDOWS__ 0
 #define DIRSEP '/'
 #endif
 
 #include <inttypes.h>
-#if __SDB_WINDOWS__ && !__CYGWIN__
+#if __SDB_WINDOWS__
 #define HAVE_MMAN 0
 #define ULLFMT "I64"
 #else
