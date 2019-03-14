@@ -29,9 +29,12 @@ static int _cmp_map_event(const void *a_, const void *b_) {
 		return addr0 < addr1? -1: 1;
 	}
 	if (a->is_to != b->is_to) {
-		return a->is_to - b->is_to;
+		return !a->is_to? -1: 1;
 	}
-	return a->id - b->id;
+	if (a->id != b->id) {
+		return a->id < b->id? -1: 1;
+	}
+	return 0;
 }
 
 static int _cmp_map_event_by_id(const void *a_, const void *b_) {
