@@ -509,6 +509,10 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	return r_file_dump (file, r_buf_get_at (b, 0, NULL), r_buf_size (b), 0);
 }
 
+R_API ut64 r_buf_tell(RBuffer *b) {
+	return r_buf_get_cur (b);
+}
+
 R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
 	ut64 min = 0LL, max = 0LL;
 	ut64 pa = addr - b->base + b->offset;

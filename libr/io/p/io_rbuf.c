@@ -12,7 +12,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	RBuffer *b = fd->data;
-	return r_buf_write_at (b, r_buf_seek(b, 0, 1), buf, count);
+	return r_buf_write_at (b, r_buf_tell (b), buf, count);
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {

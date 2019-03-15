@@ -863,7 +863,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 #if DEBUG
 				// XXX investigate
 				eprintf ("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte,
-					r_buf_seek (b, 0, 1) + header_size);
+					r_buf_tell (b) + header_size);
 #endif
 			}
 			current_byte = read_byte (b);
@@ -923,7 +923,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
 			eprintf ("WARNING non zero crc of zero length @ %04X\n",
-				r_buf_seek (b, 0, 1) + header_size);
+				r_buf_tell (b) + header_size);
 		}
 		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
 #endif
@@ -1356,10 +1356,10 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	// anal->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
 	print_header (header);
-	header_size = r_buf_seek (flirt_buf, 0, 1);
+	header_size = r_buf_tell (flirt_buf);
 #endif
 
-	size = r_buf_size (flirt_buf) - r_buf_seek (flirt_buf, 0, 1);
+	size = r_buf_size (flirt_buf) - r_buf_tell (flirt_buf);
 	buf = malloc (size);
 	if (r_buf_read (flirt_buf, buf, size) != size) {
 		goto exit;

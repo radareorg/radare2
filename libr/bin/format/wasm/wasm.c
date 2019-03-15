@@ -11,10 +11,10 @@
 static size_t consume_u32_r(RBuffer *b, ut64 max, ut32 *out) {
 	size_t n;
 	ut32 tmp;
-	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_seek(b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_tell (b) > max) {
 		return 0;
 	}
-	if (!(n = read_u32_leb128 (&b->buf[r_buf_seek(b, 0, 1)], &b->buf[max + 1], &tmp))) {
+	if (!(n = read_u32_leb128 (&b->buf[r_buf_tell (b)], &b->buf[max + 1], &tmp))) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -45,10 +45,10 @@ static size_t consume_s32_r(RBuffer *b, ut64 max, st32 *out) {
 static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp;
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_seek (b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
-	if (!(n = read_u32_leb128 (&b->buf[r_buf_seek (b, 0, 1)], &b->buf[max + 1], &tmp))) {
+	if (!(n = read_u32_leb128 (&b->buf[r_buf_tell (b)], &b->buf[max + 1], &tmp))) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -61,10 +61,10 @@ static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
 static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
 	size_t n;
 	ut32 tmp = 0;
-	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_seek(b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_tell (b) > max) {
 		return 0;
 	}
-	if (!(n = read_i32_leb128 (&b->buf[r_buf_seek (b, 0, 1)], (ut8 *)&b->buf[max + 1], (int *)&tmp)) || n > 2) {
+	if (!(n = read_i32_leb128 (&b->buf[r_buf_tell (b)], (ut8 *)&b->buf[max + 1], (int *)&tmp)) || n > 2) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -77,10 +77,10 @@ static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
 static size_t consume_u1_r(RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp;
-	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_seek(b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_tell (b) > max) {
 		return 0;
 	}
-	if (!(n = read_u32_leb128 (&b->buf[r_buf_seek (b, 0, 1)], &b->buf[max + 1], &tmp)) || n > 1) {
+	if (!(n = read_u32_leb128 (&b->buf[r_buf_tell (b)], &b->buf[max + 1], &tmp)) || n > 1) {
 		return 0;
 	}
 	r_buf_seek (b, n, R_IO_SEEK_CUR);
@@ -91,14 +91,14 @@ static size_t consume_u1_r(RBuffer *b, ut64 max, ut8 *out) {
 }
 
 static size_t consume_str_r(RBuffer *b, ut64 max, size_t sz, char *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_seek (b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
-	if (!(r_buf_seek(b, 0, 1) + sz - 1 <= max)) {
+	if (!(r_buf_tell (b) + sz - 1 <= max)) {
 		return 0;
 	}
 	if (sz > 0) {
-		strncpy (out, (char *)&b->buf[r_buf_seek (b, 0, 1)],
+		strncpy (out, (char *)&b->buf[r_buf_tell (b)],
 			R_MIN (R_BIN_WASM_STRING_LENGTH - 1, sz));
 	} else {
 		*out = 0;
@@ -108,15 +108,15 @@ static size_t consume_str_r(RBuffer *b, ut64 max, size_t sz, char *out) {
 }
 
 static size_t consume_init_expr_r(RBuffer *b, ut64 max, ut8 eoc, void *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_seek (b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
 	ut32 i = 0;
-	while (r_buf_seek (b, 0, 1) + i <= max && b->buf[r_buf_seek (b, 0, 1) + i] != eoc) {
+	while (r_buf_tell (b) + i <= max && b->buf[r_buf_tell (b) + i] != eoc) {
 		// TODO: calc the expresion with the bytcode (ESIL?)
 		i++;
 	}
-	if (*(ut8 *)(&b->buf[r_buf_seek (b, 0, 1) + i]) != eoc) {
+	if (*(ut8 *)(&b->buf[r_buf_tell (b) + i]) != eoc) {
 		return 0;
 	}
 	r_buf_seek (b, i + 1, R_IO_SEEK_CUR);
@@ -124,11 +124,11 @@ static size_t consume_init_expr_r(RBuffer *b, ut64 max, ut8 eoc, void *out) {
 }
 
 static size_t consume_locals_r(RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_seek (b, 0, 1) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
 	ut32 count = out? out->local_count: 0;
-	if (!(r_buf_seek (b, 0, 1) + (count * 7) <= max)) { // worst case 7 bytes
+	if (!(r_buf_tell (b) + (count * 7) <= max)) { // worst case 7 bytes
 		return 0;
 	}
 	if (count > 0) {
@@ -137,7 +137,7 @@ static size_t consume_locals_r(RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
 		}
 	}
 	ut32 j = 0;
-	while (r_buf_seek (b, 0, 1) <= max && j < count) {
+	while (r_buf_tell (b) <= max && j < count) {
 		if (!(consume_u32_r (b, max, (out? &out->locals[j].count: NULL)))) {
 			goto beach;
 		}
@@ -156,10 +156,10 @@ beach:
 }
 
 static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable_limits_t *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_seek (b, 0, 1) > max || !out) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max || !out) {
 		return 0;
 	}
-	ut32 i = r_buf_seek (b, 0, 1);
+	ut32 i = r_buf_tell (b);
 	if (!(consume_u7_r (b, max, &out->flags))) {
 		return 0;
 	}
@@ -169,7 +169,7 @@ static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable
 	if (out->flags && (!(consume_u32_r (b, max, &out->maximum)))) {
 		return 0;
 	}
-	return (size_t)R_ABS (r_buf_seek (b, 0, 1) - i);
+	return (size_t)R_ABS (r_buf_tell (b) - i);
 }
 
 // Utils
@@ -261,11 +261,11 @@ static RList *r_bin_wasm_get_type_entries(RBinWasmObj *bin, RBinWasmSection *sec
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
 	ut32 r = 0;
-	ut64 max = r_buf_seek (b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
-	while (r_buf_seek (b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmTypeEntry))) {
 			return ret;
 		}
@@ -277,7 +277,7 @@ static RList *r_bin_wasm_get_type_entries(RBinWasmObj *bin, RBinWasmSection *sec
 			goto beach;
 		}
 		ut32 count = ptr? ptr->param_count: 0;
-		if (!(r_buf_seek (b, 0, 1) + count <= max)) {
+		if (!(r_buf_tell (b) + count <= max)) {
 			goto beach;
 		}
 		if (count > 0) {
@@ -330,12 +330,12 @@ static RList *r_bin_wasm_get_import_entries(RBinWasmObj *bin, RBinWasmSection *s
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek(b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek (b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmImportEntry))) {
 			return ret;
 		}
@@ -407,12 +407,12 @@ static RList *r_bin_wasm_get_export_entries(RBinWasmObj *bin, RBinWasmSection *s
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek (b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek(b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmExportEntry))) {
 			return ret;
 		}
@@ -451,20 +451,20 @@ static RList *r_bin_wasm_get_code_entries(RBinWasmObj *bin, RBinWasmSection *sec
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek (b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek(b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmCodeEntry))) {
 			return ret;
 		}
 		if (!(consume_u32_r (b, max, &ptr->body_size))) {
 			goto beach;
 		}
-		ut32 j = r_buf_seek (b, 0, 1);
-		if (!(r_buf_seek (b, 0, 1) + ptr->body_size - 1 <= max)) {
+		ut32 j = r_buf_tell (b);
+		if (!(r_buf_tell (b) + ptr->body_size - 1 <= max)) {
 			goto beach;
 		}
 		if (!(consume_u32_r (b, max, &ptr->local_count))) {
@@ -473,7 +473,7 @@ static RList *r_bin_wasm_get_code_entries(RBinWasmObj *bin, RBinWasmSection *sec
 		if (consume_locals_r (b, max, ptr) < ptr->local_count) {
 			goto beach;
 		}
-		ptr->code = r_buf_seek (b, 0, 1);
+		ptr->code = r_buf_tell (b);
 		ptr->len = ptr->body_size - ptr->code + j;
 		r_buf_seek (b, ptr->len - 1, R_IO_SEEK_CUR); // consume bytecode
 		r_buf_read (b, &ptr->byte, 1);
@@ -509,12 +509,12 @@ static RList *r_bin_wasm_get_data_entries(RBinWasmObj *bin, RBinWasmSection *sec
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek(b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek (b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmDataEntry))) {
 			return ret;
 		}
@@ -527,7 +527,7 @@ static RList *r_bin_wasm_get_data_entries(RBinWasmObj *bin, RBinWasmSection *sec
 		if (!(consume_u32_r (b, max, &ptr->size))) {
 			goto beach;
 		}
-		ptr->data = r_buf_seek(b, 0, 1);
+		ptr->data = r_buf_tell (b);
 		r_buf_seek (b, ptr->size, R_IO_SEEK_CUR);
 		if (!r_list_append (ret, ptr)) {
 			free (ptr);
@@ -556,11 +556,11 @@ static RList *r_bin_wasm_get_symtab_entries(RBinWasmObj *bin, RBinWasmSection *s
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data + 3, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek(b, 0, 1) + sec->payload_len - 4;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 4;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
-	while (r_buf_seek (b, 0, 1) <= max) {
+	while (r_buf_tell (b) <= max) {
 		if (!(ptr = R_NEW0 (RBinWasmSymbol))) {
 			return ret;
 		}
@@ -597,7 +597,7 @@ static RBinWasmStartEntry *r_bin_wasm_get_start(RBinWasmObj *bin, RBinWasmSectio
 
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek (b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
@@ -624,12 +624,12 @@ static RList *r_bin_wasm_get_memory_entries(RBinWasmObj *bin, RBinWasmSection *s
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max =  r_buf_seek(b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek(b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmMemoryEntry))) {
 			return ret;
 		}
@@ -663,12 +663,12 @@ static RList *r_bin_wasm_get_table_entries(RBinWasmObj *bin, RBinWasmSection *se
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek(b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek (b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmTableEntry))) {
 			return ret;
 		}
@@ -705,12 +705,12 @@ static RList *r_bin_wasm_get_global_entries(RBinWasmObj *bin, RBinWasmSection *s
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek(b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek(b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmGlobalEntry))) {
 			return ret;
 		}
@@ -750,12 +750,12 @@ static RList *r_bin_wasm_get_element_entries(RBinWasmObj *bin, RBinWasmSection *
 	}
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
-	ut64 max = r_buf_seek (b, 0, 1) + sec->payload_len - 1;
+	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
 	}
 	ut32 r = 0;
-	while (r_buf_seek(b, 0, 1) <= max && r < sec->count) {
+	while (r_buf_tell (b) <= max && r < sec->count) {
 		if (!(ptr = R_NEW0 (RBinWasmElementEntry))) {
 			return ret;
 		}
@@ -769,7 +769,7 @@ static RList *r_bin_wasm_get_element_entries(RBinWasmObj *bin, RBinWasmSection *
 			goto beach;
 		}
 		ut32 j = 0;
-		while (r_buf_seek(b, 0, 1) <= max && j < ptr->num_elem) {
+		while (r_buf_tell (b) <= max && j < ptr->num_elem) {
 			// TODO: allocate space and fill entry
 			if (!(consume_u32_r (b, max, NULL))) {
 				goto beach;
@@ -868,7 +868,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 	RBuffer *b = bin->buf;
 	ut64 max = r_buf_size(b) - 1;
 	r_buf_seek (b, 8, R_IO_SEEK_SET);
-	while (r_buf_seek(b, 0, 1) <= max) {
+	while (r_buf_tell (b) <= max) {
 		if (!(ptr = R_NEW0 (RBinWasmSection))) {
 			return ret;
 		}
@@ -884,11 +884,11 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			// free (ptr);
 			// continue;
 		}
-		if (!(r_buf_seek(b, 0, 1) + (ut64)ptr->size - 1 <= max)) {
+		if (!(r_buf_tell (b) + (ut64)ptr->size - 1 <= max)) {
 			goto beach;
 		}
 		ptr->count = 0;
-		ptr->offset = r_buf_seek(b, 0, 1);
+		ptr->offset = r_buf_tell (b);
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
 			// eprintf("custom section: 0x%x, ", (ut32)b->cur);
@@ -967,7 +967,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			}
 			// eprintf("count %d\n", ptr->count);
 		}
-		ptr->payload_data = r_buf_seek(b, 0, 1);
+		ptr->payload_data = r_buf_tell (b);
 		ptr->payload_len = ptr->size - (ptr->payload_data - ptr->offset);
 		if (ptr->payload_len > ptr->size) {
 			goto beach;

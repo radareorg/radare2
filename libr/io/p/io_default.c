@@ -58,14 +58,14 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 		return UT64_MAX;
 	}
 
-	seek_val = r_buf_seek(mmo->buf, 0, 1);
+	seek_val = r_buf_tell (mmo->buf);
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = R_MIN (r_buf_size(mmo->buf), offset);
 		break;
 	case SEEK_CUR:
 		seek_val = R_MIN (r_buf_size (mmo->buf),
-			(offset + r_buf_seek (mmo->buf, 0, 1)));
+			(offset + r_buf_tell (mmo->buf)));
 		break;
 	case SEEK_END:
 		seek_val = r_buf_size(mmo->buf);
@@ -79,7 +79,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
 	ut64 cur;
 	if (mmo->buf) {
-		cur = r_buf_seek(mmo->buf, 0, 1);
+		cur = r_buf_tell (mmo->buf);
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
 	} else {

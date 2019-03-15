@@ -42,7 +42,7 @@ static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	}
 
 	b = fd->data;
-	seek_val = r_buf_seek(b, 0, 1);
+	seek_val = r_buf_tell (b);
 
 	switch (whence) {
 	case SEEK_SET:
