@@ -1072,6 +1072,7 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 	if (!cache) {
 		cache = R_NEW0 (RAnalFcnVarsCache);
 		if (!cache) {
+			type_fcn_name = NULL;
 			goto beach;
 		}
 		r_anal_fcn_vars_cache_init (anal, cache, fcn);
