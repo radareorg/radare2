@@ -362,7 +362,7 @@ static ut8 read_byte(RBuffer *b) {
 	if (buf_eof || buf_err) {
 		return 0;
 	}
-	if ((length = r_buf_read_at (b, r_buf_seek(b, 0, 1), &r, 1)) != 1) {
+	if ((length = r_buf_read(b, &r, 1)) != 1) {
 		if (length == -1) {
 			buf_err = true;
 		}
@@ -1348,8 +1348,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 		goto exit;
 	}
 
-	if (r_buf_read_at (flirt_buf, r_buf_seek(flirt_buf, 0, 1), name, header->library_name_len)
-	    != header->library_name_len) {
+	if (r_buf_read (flirt_buf, name, header->library_name_len) != header->library_name_len) {
 		goto exit;
 	}
 
@@ -1358,12 +1357,12 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	// anal->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
 	print_header (header);
-	header_size = r_buf_seek(flirt_buf, 0, 1);
+	header_size = r_buf_seek (flirt_buf, 0, 1);
 #endif
 
 	size = r_buf_size (flirt_buf) - r_buf_seek(flirt_buf, 0, 1);
 	buf = malloc (size);
-	if (r_buf_read_at (flirt_buf, r_buf_seek(flirt_buf, 0, 1), buf, size) != size) {
+	if (r_buf_read (flirt_buf, buf, size) != size) {
 		goto exit;
 	}
 
