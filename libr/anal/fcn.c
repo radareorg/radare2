@@ -619,9 +619,8 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 }
 
 static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
-	if (!anal || !op || !anal->flb.get_at) {
- 		return false;
-	}
+	r_return_val_if_fail (anal && op && anal->flb.get_at, false);
+
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
 	return (fi && fi->name && (strstr (fi->name, "imp.") || strstr (fi->name, "sym.")
 			|| strstr (fi->name, "entry") || strstr (fi->name, "main")));
@@ -699,7 +698,8 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 }
 
 static bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case) {
-	bool isValid = false, foundCmp = false;
+	bool isValid = false;
+	bool foundCmp = false;
 	int i;
 
 	RAnalOp tmp_aop = {0};
@@ -753,10 +753,7 @@ static bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 		foundCmp = true;
 	}
 	free (buf);
-	if (!isValid) {
-		return false;
-	}
-	return true;
+	return isValid;
 }
 
 static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case) {
@@ -1789,13 +1786,13 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int type, RAnalDiff *diff) {
-	int append = 0;
+	bool append = false;
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (!fcn) {
 		if (!(fcn = r_anal_fcn_new ())) {
 			return false;
 		}
-		append = 1;
+		append = true;
 	}
 	fcn->addr = addr;
 	fcn->cc = r_str_const (r_anal_cc_default (a));
