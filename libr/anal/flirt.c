@@ -1384,9 +1384,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	if (!(node = R_NEW0 (RFlirtNode))) {
 		goto exit;
 	}
-	r_buf = r_buf_new ();
-	r_buf->buf = buf;
-	r_buf_resize(r_buf, size);
+	r_buf = r_buf_new_with_pointers (buf, size);
 #if DEBUG
 	r_file_dump ("sig_dump", r_buf->buf, r_buf_size(r_buf));
 #endif
@@ -1397,9 +1395,6 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	}
 exit:
 	free (buf);
-	if (r_buf && buf == r_buf->buf) {
-		r_buf->buf = NULL;
-	}
 	r_buf_free (r_buf);
 	free (header);
 	free (v6_v7);
