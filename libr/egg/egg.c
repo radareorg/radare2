@@ -14,7 +14,18 @@ extern REggEmit emit_trace;
 static REggPlugin *egg_static_plugins[] =
 	{ R_EGG_STATIC_PLUGINS };
 
-R_API REgg *r_egg_new () {
+struct egg_patch_t {
+	RBuffer *b;
+	int off;
+};
+
+void egg_patch_free (void *p) {
+	struct egg_patch_t *ep = (struct egg_patch_t *)p;
+	r_buf_free (ep->b);
+	free (ep);
+}
+
+R_API REgg *r_egg_new() {
 	int i;
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {
@@ -47,11 +58,10 @@ R_API REgg *r_egg_new () {
 	if (!egg->db) {
 		goto beach;
 	}
-	egg->patches = r_list_new ();
+	egg->patches = r_list_newf (egg_patch_free);
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->patches->free = (RListFree)r_buf_free;
 	egg->plugins = r_list_new ();
 	for (i=0; egg_static_plugins[i]; i++) {
 		r_egg_add (egg, egg_static_plugins[i]);
@@ -63,7 +73,7 @@ beach:
 	return NULL;
 }
 
-R_API int r_egg_add (REgg *a, REggPlugin *foo) {
+R_API int r_egg_add(REgg *a, REggPlugin *foo) {
 	RListIter *iter;
 	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
@@ -79,11 +89,11 @@ R_API int r_egg_add (REgg *a, REggPlugin *foo) {
 	return true;
 }
 
-R_API char *r_egg_to_string (REgg *egg) {
+R_API char *r_egg_to_string(REgg *egg) {
 	return strdup ((const char *)egg->buf->buf);
 }
 
-R_API void r_egg_free (REgg *egg) {
+R_API void r_egg_free(REgg *egg) {
 	if (egg) {
 		r_buf_free (egg->src);
 		r_buf_free (egg->buf);
@@ -99,7 +109,7 @@ R_API void r_egg_free (REgg *egg) {
 	}
 }
 
-R_API void r_egg_reset (REgg *egg) {
+R_API void r_egg_reset(REgg *egg) {
 	r_egg_lang_include_init (egg);
 	// TODO: use r_list_purge instead of free/new here
 	r_buf_free (egg->src);
@@ -116,7 +126,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 	egg->remit = NULL;
 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
-//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
+	//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
 	// TODO: setup egg->arch for all archs
 	if (!strcmp (arch, "x86")) {
 		egg->arch = R_SYS_ARCH_X86;
@@ -132,8 +142,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 			egg->bits = bits;
 			break;
 		}
-	} else
-	if (!strcmp (arch, "arm")) {
+	} else if (!strcmp (arch, "arm")) {
 		egg->arch = R_SYS_ARCH_ARM;
 		switch (bits) {
 		case 16:
@@ -144,8 +153,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 			egg->endian = endian;
 			break;
 		}
-	} else
-	if (!strcmp (arch, "trace")) {
+	} else if (!strcmp (arch, "trace")) {
 		//r_syscall_setup (egg->syscall, arch, os, bits);
 		egg->remit = &emit_trace;
 		egg->bits = bits;
@@ -156,7 +164,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 
 R_API int r_egg_include(REgg *egg, const char *file, int format) {
 	int sz;
-	const ut8 *foo = (const ut8*)r_file_slurp (file, &sz);
+	const ut8 *foo = (const ut8 *)r_file_slurp (file, &sz);
 	if (!foo) {
 		return 0;
 	}
@@ -178,10 +186,10 @@ R_API int r_egg_include(REgg *egg, const char *file, int format) {
 R_API void r_egg_load(REgg *egg, const char *code, int format) {
 	switch (format) {
 	case 'a': // assembly
-		r_buf_append_bytes (egg->buf, (const ut8*)code, strlen (code));
+		r_buf_append_bytes (egg->buf, (const ut8 *)code, strlen (code));
 		break;
 	default:
-		r_buf_append_bytes (egg->src, (const ut8*)code, strlen (code));
+		r_buf_append_bytes (egg->src, (const ut8 *)code, strlen (code));
 		break;
 	}
 }
@@ -206,7 +214,7 @@ R_API void r_egg_label(REgg *egg, const char *name) {
 	r_egg_printf (egg, "%s:\n", name);
 }
 
-R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const char *sr
+R_API void r_egg_math(REgg *egg) { //, char eq, const char *vs, char type, const char *sr
 	// TODO
 	//e->mathop (egg, op, type, eq, p);
 }
@@ -218,9 +226,9 @@ R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 		return false;
 	}
 	(void)r_hex_bin2str (b, len, out);
-	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
-	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
-	r_buf_append_bytes (egg->buf, (const ut8*)"\n", 1);
+	r_buf_append_bytes (egg->buf, (const ut8 *)".hex ", 5);
+	r_buf_append_bytes (egg->buf, (const ut8 *)out, outlen);
+	r_buf_append_bytes (egg->buf, (const ut8 *)"\n", 1);
 	free (out);
 	return true;
 }
@@ -232,9 +240,9 @@ static int r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
 		return false;
 	}
 	r_hex_bin2str (b, len, out);
-	r_buf_prepend_bytes (egg->buf, (const ut8*)"\n", 1);
-	r_buf_prepend_bytes (egg->buf, (const ut8*)out, outlen);
-	r_buf_prepend_bytes (egg->buf, (const ut8*)".hex ", 5);
+	r_buf_prepend_bytes (egg->buf, (const ut8 *)"\n", 1);
+	r_buf_prepend_bytes (egg->buf, (const ut8 *)out, outlen);
+	r_buf_prepend_bytes (egg->buf, (const ut8 *)".hex ", 5);
 	free (out);
 	return true;
 }
@@ -263,7 +271,7 @@ static int r_egg_append_bytes(REgg *egg, const ut8 *b, int len) {
 
 // r_egg_block (egg, FRAME | IF | ELSE | ENDIF | FOR | WHILE, sz)
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v) {
-//	egg->depth++;
+	//	egg->depth++;
 }
 
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
@@ -272,7 +280,7 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 	char buf[1024];
 	va_start (ap, fmt);
 	len = vsnprintf (buf, sizeof (buf), fmt, ap);
-	r_buf_append_bytes (egg->buf, (const ut8*)buf, len);
+	r_buf_append_bytes (egg->buf, (const ut8 *)buf, len);
 	va_end (ap);
 }
 
@@ -284,7 +292,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 	if (asm_list) {
 		char **asm_;
 
-		for (asm_ = asm_list; *asm_; asm_+= 2) {
+		for (asm_ = asm_list; *asm_; asm_ += 2) {
 			if (!strcmp (egg->remit->arch, asm_[0])) {
 				asm_name = asm_[1];
 				break;
@@ -492,37 +500,40 @@ R_API int r_egg_encode(REgg *egg, const char *name) {
 }
 
 R_API int r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
-	RBuffer *b = r_buf_new ();
-	if (!b) {
+	struct egg_patch_t *ep = R_NEW (struct egg_patch_t);
+	if (!ep) {
 		return false;
 	}
-	if (!r_buf_set_bytes (b, buf, len)) {
-		r_buf_free (b);
+	ep->b = r_buf_new_with_bytes (buf, len);
+	if (!ep->b) {
+		egg_patch_free (ep);
 		return false;
 	}
-	r_buf_seek(b, off, 0);
-	r_list_append (egg->patches, b);
+	ep->off = off;
+	r_list_append (egg->patches, ep);
 	return true;
 }
 
 R_API void r_egg_finalize(REgg *egg) {
-	RBuffer *b;
+	struct egg_patch_t *ep;
 	RListIter *iter;
 	if (!egg->bin->buf) {
 		r_buf_free (egg->bin);
 		egg->bin = r_buf_new ();
 	}
-	r_list_foreach (egg->patches, iter, b) {
-		if (r_buf_seek(b, 0, 1) < 0) {
-			r_egg_append_bytes (egg, b->buf, r_buf_size(b));
+	r_list_foreach (egg->patches, iter, ep) {
+		if (ep->off < 0) {
+			ut64 sz = r_buf_size (ep->b);
+			const ut8 *buf = r_buf_buffer (ep->b);
+			r_egg_append_bytes (egg, buf, sz);
 		} else {
-			// TODO: use r_buf_cpy_buf or what
-			if (r_buf_size(b) + r_buf_seek(b, 0, 1) > r_buf_size (egg->bin)) {
-				eprintf ("Cannot patch outside\n");
+			ut64 sz = r_buf_size (ep->b);
+			const ut8 *buf = r_buf_buffer (ep->b);
+			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
+			if (r < sz) {
+				eprintf ("Cannot patch\n");
 				return;
 			}
-			memcpy (egg->bin->buf + r_buf_seek(b, 0, 1), b->buf,
-				r_buf_size(b));
 		}
 	}
 }
