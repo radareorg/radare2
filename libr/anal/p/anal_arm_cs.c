@@ -1079,21 +1079,21 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDRSW:
 		{
-		int size = REGSIZE64(0);
-		switch (insn->id) {
-		case ARM64_INS_LDRSB:
-		case ARM64_INS_LDRB:
-		    size = 1;
-		    break;
-		case ARM64_INS_LDRH:
-		    size = 2;
-		    break;
-		case ARM64_INS_LDRSW:
-		    size = 4;
-		    break;
-		default:
-		    break;
-		}
+			int size = REGSIZE64 (0);
+			switch (insn->id) {
+			case ARM64_INS_LDRSB:
+			case ARM64_INS_LDRB:
+				size = 1;
+				break;
+			case ARM64_INS_LDRH:
+				size = 2;
+				break;
+			case ARM64_INS_LDRSW:
+				size = 4;
+				break;
+			default:
+				break;
+			}
 		if (ISMEM64(1)) {
 			if (HASMEMINDEX64(1)) {
 				if (LSHIFT2_64(1)) {
@@ -2816,6 +2816,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
+		}
+		switch (insn->id) {
+		case ARM_INS_LDRB:
+			op->ptrsize = 1;
+			break;
+		case ARM_INS_LDRH:
+		case ARM_INS_LDRHT:
+			op->ptrsize = 2;
+			break;
 		}
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_GET;

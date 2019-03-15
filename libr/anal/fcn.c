@@ -343,13 +343,15 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 		return false;
 	}
 	r_anal_fcn_set_size (anal, fcn, newsize);
-	eof = fcn->addr + r_anal_fcn_size (fcn);
+	eof = UT64_MAX; // fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
+#if 0
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
 			r_list_delete (fcn->bbs, iter);
 			continue;
 		}
+#endif
 		if (bb->addr + bb->size >= eof) {
 			bb->size = eof - bb->addr;
 		}
@@ -462,10 +464,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	r_anal_fcn_set_size (anal, fcn, r_anal_fcn_size (fcn));\
 }
 
-static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+static void queue_case(RAnal *anal, ut64 switch_addr, int offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf ("** queue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
-		"Cd 4 @ 0x%08"PFMT64x"\n", case_addr_loc);
+		"Cd %d @ 0x%08"PFMT64x"\n", offset_sz, case_addr_loc);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
 		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		(ut64)case_addr, (ut64)switch_addr);
@@ -513,7 +515,7 @@ static int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dep
 
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
 		jmpptr = jmptbl_loc + offs;
-		queue_case (anal, ip, jmpptr, offs / sz, jmptbl_loc + offs);
+		queue_case (anal, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
 		recurseAt (jmpptr);
 	}
 
@@ -546,6 +548,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	if (!jmptbl) {
 		return 0;
 	}
+		bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
@@ -573,8 +576,9 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
 		}
-
-		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+		if (sz == 2 && is_arm) {
+			jmpptr = ip +  4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
+		} else if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
 			jmpptr = jmptbl_off + jmpdelta;
@@ -587,7 +591,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 				break;
 			}
 		}
-		queue_case (anal, ip, jmpptr, offs / sz, jmptbl_loc + offs);
+		queue_case (anal, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
 		recurseAt (jmpptr);
 	}
 
@@ -951,7 +955,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int overlapped = 0;
 	RAnalOp op = {0};
 	int oplen, idx = 0;
-	ut64 cmpval = UT64_MAX;
+	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	bool varset = false;
 	struct {
 		int cnt;
@@ -1359,6 +1363,7 @@ repeat:
 		case R_ANAL_OP_TYPE_CMP:
 			if (op.ptr) {
 				cmpval = op.ptr;
+eprintf ("0x%08llx SET CMP %d\n", op.addr, cmpval);
 			}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
@@ -1372,7 +1377,7 @@ repeat:
 				bb->jump = op.jump;
 				bb->fail = op.fail;
 			}
-
+eprintf ("0x%08llx UCJMP?\n", op.addr);
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
 					ut64 table_size, default_case;
@@ -1391,6 +1396,7 @@ repeat:
 						} else if (op.fail == op.ptr) {
 							op.fail = UT64_MAX;
 						}
+eprintf ("reset cmpval at 0x%llx\n", op.addr);
 						cmpval = UT64_MAX;
 					}
 				}
@@ -1519,6 +1525,21 @@ repeat:
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 					movptr = UT64_MAX;
+				} else if (is_arm) {
+					if (op.ptrsize == 2) { // LDRH on thumb/arm
+						eprintf ("CMPVAL %d\n", cmpval);
+						int i, tablesize = cmpval + 16;
+						ut8 *jmpdata = (ut8 *)calloc (tablesize, sizeof (short));
+						anal->iob.read_at (anal->iob.io, op.addr + 4, jmpdata , tablesize * sizeof (short));
+						for (i = 0; i < tablesize; i++) {
+							ut16 delta = r_read_le16 (jmpdata + (i * sizeof (short)));
+							eprintf ("DST: 0x%08"PFMT64x"\n", op.addr + delta);
+						}
+						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.addr + op.size,
+							op.addr + 4, 2, tablesize / 2, UT64_MAX, ret);
+					}
+					// TODO: add support for ptrsize==1
+eprintf ("JMP TBL AT 0x%08"PFMT64x"\n", op.addr);
 				}
 			}
 #if 0
