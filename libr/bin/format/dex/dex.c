@@ -25,7 +25,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (!bin) {
 		goto fail;
 	}
-	bin->size = buf->length;
+	bin->size = r_buf_size(buf);
 	bin->b = r_buf_ref (buf);
 	/* header */
 	if (bin->size < sizeof (struct dex_header_t)) {

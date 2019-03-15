@@ -1121,7 +1121,7 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		ut64 map_addr;
 
 		r_reg_arena_push (dbg->reg);
-		map_addr = r_debug_execute (dbg, buf->buf, buf->length, 1);
+		map_addr = r_debug_execute (dbg, buf->buf, r_buf_size(buf), 1);
 		r_reg_arena_pop (dbg->reg);
 		if (map_addr != (ut64)-1) {
 			r_debug_map_sync (dbg);
@@ -1160,7 +1160,7 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		ret = r_debug_execute (dbg, buf->buf, buf->length, 1) == 0;
+		ret = r_debug_execute (dbg, buf->buf, r_buf_size(buf), 1) == 0;
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_dealloc:
@@ -2007,7 +2007,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		r_debug_execute (dbg, buf->buf, buf->length , 1);
+		r_debug_execute (dbg, buf->buf, r_buf_size(buf), 1);
 		r_reg_arena_pop (dbg->reg);
 		return true;
 	}

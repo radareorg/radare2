@@ -10,7 +10,7 @@ extern "C" {
 
 typedef struct r_buf_t {
 	ut8 *buf;
-	ut64 length;
+	ut64 length_priv;
 	st64 cur;
 	ut64 base;
 	RMmap *mmap;
@@ -25,7 +25,7 @@ typedef struct r_buf_t {
 	void *iob;
 	ut64 offset;
 	ut64 limit;
-	struct r_buf_t * parent;
+	struct r_buf_t *parent;
 } RBuffer;
 
 typedef struct r_buf_cache_t {

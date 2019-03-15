@@ -269,7 +269,7 @@ static int init_phdr(ELFOBJ *bin) {
 	bool linux_kern_hack = false;
 	/* Enable this hack only for the X86 64bit ELFs */
 	const int _128K = 1024 * 128;
-	if (bin->b->length > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
+	if (r_buf_size(bin->b) > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
 		linux_kern_hack = true;
 	}
 	if (!read_phdr (bin, linux_kern_hack)) {
@@ -2345,8 +2345,8 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
 	const ut8 *p = bin->b->buf;
-	if (bin->b->length > 64)  {
-		p += bin->b->length - 64;
+	if (r_buf_size(bin->b) > 64)  {
+		p += r_buf_size(bin->b) - 64;
 	} else {
 		return 0;
 	}
@@ -3421,7 +3421,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				{
 					int rest = ELF_STRING_LENGTH - 1;
 					int st_name = sym[k].st_name;
-					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
+					int maxsize = R_MIN (r_buf_size (bin->b), strtab_section->sh_size);
 					if (is_section_local_sym (bin, &sym[k])) {
 						const char *shname = &bin->shstrtab[bin->shdr[sym[k].st_shndx].sh_name];
 						r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH);
@@ -3628,7 +3628,7 @@ ELFOBJ* Elf_(r_bin_elf_new)(const char* file, bool verbose) {
 ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
 	bin->kv = sdb_new0 ();
-	bin->size = (ut32)buf->length;
+	bin->size = (ut32)r_buf_size (buf);
 	bin->verbose = verbose;
 	bin->b = r_buf_ref (buf);
 	if (!elf_init (bin)) {

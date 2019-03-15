@@ -15,7 +15,7 @@ static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
 	return true;
 }
 
-static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 offset) {
+static int r_bin_dyldcache_apply_patch (RBuffer* buf, ut32 data, ut64 offset) {
 	return r_buf_write_at (buf, offset, (ut8*)&data, sizeof (data));
 }
 
@@ -144,10 +144,11 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 				return NULL;
 			}
 			r_buf_append_bytes (dbuf, bin->b->buf+seg->fileoff, t);
-			r_bin_dyldcache_apply_patch (dbuf, dbuf->length, (ut64)((size_t)&seg->fileoff - (size_t)data));
+			r_bin_dyldcache_apply_patch (dbuf, r_buf_size(dbuf),
+						     (ut64)((size_t)&seg->fileoff - (size_t)data));
 			/* Patch section offsets */
 			int sect_offset = seg->fileoff - libsz;
-			libsz = dbuf->length;
+			libsz = r_buf_size(dbuf);
 			if (!strcmp (seg->segname, "__LINKEDIT")) {
 				linkedit_offset = sect_offset;
 			}

@@ -98,8 +98,8 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	if (strcmp (off, "+")) {
 		*noff = r_num_math (core->num, off);
 	}
-	r_core_write_at (core, *noff, b->buf, b->length);
-	*noff += b->length;
+	r_core_write_at (core, *noff, b->buf, r_buf_size(b));
+	*noff += r_buf_size(b);
 	free (off);
 	return 1;
 }

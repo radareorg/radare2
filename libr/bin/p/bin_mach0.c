@@ -635,7 +635,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 #define D(x) r_buf_append_ut32(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
 #define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=buf->length;Z(x);W(p_tmp,y,strlen(y))
+#define WZ(x,y) p_tmp=r_buf_size(buf);Z(x);W(p_tmp,y,strlen(y))
 
 	/* MACH0 HEADER */
 	B ("\xce\xfa\xed\xfe", 4); // header
@@ -673,11 +673,11 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 
 	/* COMMANDS */
 	D (ncmds); // ncmds
-	p_cmdsize = buf->length;
+	p_cmdsize = r_buf_size(buf);
 	D (-1); // cmdsize
 	D (0); // flags
 	// D (0x01200085); // alternative flags found in some a.out..
-	magiclen = buf->length;
+	magiclen = r_buf_size(buf);
 
 	if (use_pagezero) {
 		/* PAGEZERO */
@@ -701,7 +701,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	D (baddr); // vmaddr
 	D (0x1000); // vmsize XXX
 	D (0); // fileoff
-	p_codefsz = buf->length;
+	p_codefsz = r_buf_size(buf);
 	D (-1); // filesize
 	D (7); // maxprot
 	D (5); // initprot
@@ -709,11 +709,11 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	D (0); // flags
 	WZ (16, "__text");
 	WZ (16, "__TEXT");
-	p_codeva = buf->length; // virtual address
+	p_codeva = r_buf_size(buf); // virtual address
 	D (-1);
-	p_codesz = buf->length; // size of code (end-start)
+	p_codesz = r_buf_size(buf); // size of code (end-start)
 	D (-1);
-	p_codepa = buf->length; // code - baddr
+	p_codepa = r_buf_size(buf); // code - baddr
 	D (-1); //_start-0x1000);
 	D (0); // align // should be 2 for 64bit
 	D (0); // reloff
@@ -726,13 +726,13 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 		/* DATA SEGMENT */
 		D (1);   // cmd.LC_SEGMENT
 		D (124); // sizeof (cmd)
-		p_tmp = buf->length;
+		p_tmp = r_buf_size(buf);
 		Z (16);
 		W (p_tmp, "__TEXT", 6); // segment name
 		D (0x2000); // vmaddr
 		D (0x1000); // vmsize
 		D (0); // fileoff
-		p_datafsz = buf->length;
+		p_datafsz = r_buf_size(buf);
 		D (-1); // filesize
 		D (6); // maxprot
 		D (6); // initprot
@@ -742,11 +742,11 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 		WZ (16, "__data");
 		WZ (16, "__DATA");
 
-		p_datava = buf->length;
+		p_datava = r_buf_size(buf);
 		D (-1);
-		p_datasz = buf->length;
+		p_datasz = r_buf_size(buf);
 		D (-1);
-		p_datapa = buf->length;
+		p_datapa = r_buf_size(buf);
 		D (-1); //_start-0x1000);
 		D (2); // align
 		D (0); // reloff
@@ -822,25 +822,25 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 			/* arm */
 			D (1); // i386-thread-state
 			D (17); // thread-state-count
-			p_entry = buf->length + (16 * sizeof (ut32));
+			p_entry = r_buf_size(buf) + (16 * sizeof (ut32));
 			Z (17 * sizeof (ut32));
 			// mach0-arm has one byte more
 		} else {
 			/* x86-32 */
 			D (1); // i386-thread-state
 			D (16); // thread-state-count
-			p_entry = buf->length + (10 * sizeof (ut32));
+			p_entry = r_buf_size(buf) + (10 * sizeof (ut32));
 			Z (16 * sizeof (ut32));
 		}
 	}
 
 	/* padding to make mach_loader checks happy */
 	/* binaries must be at least of 4KB :( not tiny anymore */
-	WZ (4096 - buf->length, "");
+	WZ (4096 - r_buf_size(buf), "");
 
-	cmdsize = buf->length - magiclen;
-	codeva = buf->length + baddr;
-	datava = buf->length + clen + baddr;
+	cmdsize = r_buf_size(buf) - magiclen;
+	codeva = r_buf_size(buf) + baddr;
+	datava = r_buf_size(buf) + clen + baddr;
 	if (p_entry != 0) {
 		W (p_entry, &codeva, 4); // set PC
 	}

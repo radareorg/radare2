@@ -3111,7 +3111,7 @@ R_API RBinJavaObj *r_bin_java_new_buf(RBuffer *buf, ut64 loadaddr, Sdb *kv) {
 	if (!bin) {
 		return NULL;
 	}
-	if (!r_bin_java_new_bin (bin, loadaddr, kv, buf->buf, buf->length)) {
+	if (!r_bin_java_new_bin (bin, loadaddr, kv, buf->buf, r_buf_size(buf))) {
 		return r_bin_java_free (bin);
 	}
 	return bin;

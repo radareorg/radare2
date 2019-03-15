@@ -757,7 +757,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 					break;
 				}
 				ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
-				if (off + sizeof (struct blob_t) + len < bin->b->length) {
+				if (off + sizeof (struct blob_t) + len < r_buf_size (bin->b)) {
 					memcpy (bin->signature, src, len);
 					bin->signature[len] = '\0';
 				} else {

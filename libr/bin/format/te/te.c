@@ -435,14 +435,14 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 	return bin;
 }
 
-struct r_bin_te_obj_t* r_bin_te_new_buf(struct r_buf_t *buf) {
+struct r_bin_te_obj_t* r_bin_te_new_buf(RBuffer *buf) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
 	if (!bin) {
 		return NULL;
 	}
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
-	bin->size = buf->length;
+	bin->size = r_buf_size(buf);
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
 		return r_bin_te_free (bin);
 	}

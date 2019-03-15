@@ -55,15 +55,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	H (2); // e_type = ET_EXEC
 	H (62); // e_machine = EM_X86_64
 	D (1); // e_version = EV_CURRENT
-	p_start = buf->length;
+	p_start = r_buf_size(buf);
 	Q (-1); // e_entry = 0xFFFFFFFF
-	p_phoff = buf->length;
+	p_phoff = r_buf_size(buf);
 	Q (-1); // e_phoff = 0xFFFFFFFF
 	Q (0);  // e_shoff = 0xFFFFFFFF
 	D (0);  // e_flags
-	p_ehdrsz = buf->length;
+	p_ehdrsz = r_buf_size(buf);
 	H (-1); // e_ehsize = 0xFFFFFFFF
-	p_phdrsz = buf->length;
+	p_phdrsz = r_buf_size(buf);
 	H (-1); // e_phentsize = 0xFFFFFFFF
 	H (1);  // e_phnum
 	H (0);  // e_shentsize
@@ -71,24 +71,24 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	H (0);  // e_shstrndx
 
 	/* Phdr */
-	p_phdr = buf->length;
+	p_phdr = r_buf_size(buf);
 	D (1);  // p_type
 	D (5);  // p_flags = PF_R | PF_X
 	Q (0);  // p_offset
-	p_vaddr = buf->length;
+	p_vaddr = r_buf_size(buf);
 	Q (-1); // p_vaddr = 0xFFFFFFFF
-	p_paddr = buf->length;
+	p_paddr = r_buf_size(buf);
 	Q (-1); // p_paddr = 0xFFFFFFFF
-	p_fs = buf->length;
+	p_fs = r_buf_size(buf);
 	Q (-1); // p_filesz
-	p_fs2 = buf->length;
+	p_fs2 = r_buf_size(buf);
 	Q (-1); // p_memsz
 	Q (0x200000); // p_align
 
 	/* Calc fields */
 	ehdrsz = p_phdr;
-	phdrsz = buf->length - p_phdr;
-	code_pa = buf->length;
+	phdrsz = r_buf_size(buf) - p_phdr;
+	code_pa = r_buf_size(buf);
 	code_va = code_pa + baddr;
 	phoff = p_phdr;
 	filesize = code_pa + codelen + datalen;

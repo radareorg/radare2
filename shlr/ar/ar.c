@@ -192,10 +192,10 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	if (!lookup && filename) {
 		/* Check filename */
 		if (index == index_filename || !strcmp (curfile, filename)) {
-			b->length = filesize;
+			r_buf_resize(b, filesize);
 			b->base = b->cur;
 			free (curfile);
-			return b->length;
+			return r_buf_size(b);
 		}
 	}
 	(void)ar_read (b, buffer, 1);

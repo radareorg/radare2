@@ -1386,9 +1386,9 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	}
 	r_buf = r_buf_new ();
 	r_buf->buf = buf;
-	r_buf->length = size;
+	r_buf_resize(r_buf, size);
 #if DEBUG
-	r_file_dump ("sig_dump", r_buf->buf, r_buf->length);
+	r_file_dump ("sig_dump", r_buf->buf, r_buf_size(r_buf));
 #endif
 	if (parse_tree (anal, r_buf, node)) {
 		ret = node;

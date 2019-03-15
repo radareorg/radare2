@@ -373,7 +373,7 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
-	return r_sys_run (egg->bin->buf, egg->bin->length);
+	return r_sys_run (egg->bin->buf, r_buf_size (egg->bin));
 }
 
 #define R_EGG_FILL_TYPE_TRAP
@@ -465,7 +465,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 				eprintf ("%s Shellcode has failed\n", p->name);
 				return false;
 			}
-			r_egg_raw (egg, b->buf, b->length);
+			r_egg_raw (egg, b->buf, r_buf_size(b));
 			r_buf_free (b);
 			return true;
 		}
@@ -514,14 +514,14 @@ R_API void r_egg_finalize(REgg *egg) {
 	}
 	r_list_foreach (egg->patches, iter, b) {
 		if (b->cur < 0) {
-			r_egg_append_bytes (egg, b->buf, b->length);
+			r_egg_append_bytes (egg, b->buf, r_buf_size(b));
 		} else {
 			// TODO: use r_buf_cpy_buf or what
-			if (b->length + b->cur > egg->bin->length) {
+			if (r_buf_size(b) + b->cur > r_buf_size (egg->bin)) {
 				eprintf ("Cannot patch outside\n");
 				return;
 			}
-			memcpy (egg->bin->buf + b->cur, b->buf, b->length);
+			memcpy (egg->bin->buf + b->cur, b->buf, r_buf_size(b));
 		}
 	}
 }

@@ -307,8 +307,8 @@ static int rabin_dump_sections(char *scnname) {
 				free (buf);
 				return false;
 			}
-			if (section->paddr > bin->cur->buf->length ||
-			  section->paddr + section->size > bin->cur->buf->length) {
+			if (section->paddr > r_buf_size (bin->cur->buf) ||
+			    section->paddr + section->size > r_buf_size (bin->cur->buf)) {
 				free (buf);
 				free (ret);
 				return false;
@@ -907,8 +907,9 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_bin_arch_options_init (&opts, arch, bits);
 		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
-			if (r_file_dump (file, b->buf, b->length, 0)) {
-				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
+			if (r_file_dump (file, b->buf, r_buf_size(b), 0)) {
+				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n",
+					 r_buf_size(b), file);
 				r_file_chmod (file, "+x", 0);
 			} else {
 				eprintf ("Error dumping into a.out\n");

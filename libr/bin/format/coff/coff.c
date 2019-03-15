@@ -185,7 +185,7 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 
 static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbose) {
 	obj->b = r_buf_ref (buf);
-	obj->size = buf->length;
+	obj->size = r_buf_size(buf);
 	obj->verbose = verbose;
 	if (!r_bin_coff_init_hdr (obj)) {
 		bprintf ("Warning: failed to init hdr\n");
