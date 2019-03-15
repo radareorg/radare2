@@ -164,7 +164,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 		}
 		return real_len;
 	}
-	addr = (addr == R_BUF_CUR) ? b->cur : start;
+	addr = (addr == R_BUF_CUR) ? b->cur_priv : start;
 	if (len < 1 || !dst || addr - b->offset > effective_size) {
 		return -1;
 	}
@@ -174,7 +174,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 		src += addr;
 	}
 	memmove (dst, src, real_len);
-	b->cur = addr + real_len;
+	b->cur_priv = addr + real_len;
 	return real_len;
 }
 
@@ -190,7 +190,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	}
 	ut64 vaddr;
 	if (addr == R_BUF_CUR) {
-		vaddr = addr = b->cur;
+		vaddr = addr = b->cur_priv;
 	} else {
 		vaddr = addr;
 		addr = addr - b->base + b->offset;
@@ -298,7 +298,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		m = 1;
 		}
 	}
-	b->cur = vaddr + len;
+	b->cur_priv = vaddr + len;
 	return len;
 }
 
@@ -504,33 +504,33 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 	} else if (b->sparse) {
 		sparse_limits (b->sparse, &min, &max);
 		switch (whence) {
-		case R_IO_SEEK_SET: b->cur = pa; break;
-		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
+		case R_IO_SEEK_SET: b->cur_priv = pa; break;
+		case R_IO_SEEK_CUR: b->cur_priv = b->cur_priv + addr; break;
 		case R_IO_SEEK_END:
 			    if (sparse_limits (b->sparse, NULL, &max)) {
 				    return max; // -min
 			    }
-			    b->cur = max + addr; break; //b->base + b->length + addr; break;
+			    b->cur_priv = max + addr; break; //b->base + b->length + addr; break;
 		}
 	} else {
 		ut64 effective_size = r_buf_size (b);
 		min = b->base;
 		max = b->base + effective_size;
 		switch (whence) {
-		//case 0: b->cur = b->base + addr; break;
-		case R_IO_SEEK_SET: b->cur = pa; break;
-		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
-		case R_IO_SEEK_END: b->cur = max + addr; break;
+		//case 0: b->cur_priv = b->base + addr; break;
+		case R_IO_SEEK_SET: b->cur_priv = pa; break;
+		case R_IO_SEEK_CUR: b->cur_priv = b->cur_priv + addr; break;
+		case R_IO_SEEK_END: b->cur_priv = max + addr; break;
 		}
 	}
 	/* avoid out-of-bounds */
-	if (b->cur < min) {
-		b->cur = min;
+	if (b->cur_priv < min) {
+		b->cur_priv = min;
 	}
-	if (b->cur >= max) {
-		b->cur = max;
+	if (b->cur_priv >= max) {
+		b->cur_priv = max;
 	}
-	return (int)b->cur;
+	return (int)b->cur_priv;
 }
 
 R_API bool r_buf_set_bits(RBuffer *b, ut64 at, const ut8* buf, int bitoff, int count) {
@@ -730,7 +730,7 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *left) {
 		return buf;
 	}
 	if (addr == R_BUF_CUR) {
-		addr = b->cur;
+		addr = b->cur_priv;
 	} else {
 		addr = addr - b->base + b->offset;
 	}
@@ -763,7 +763,7 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 #error R_BUF_CUR must be UT64_MAX
 #endif
 	if (addr == R_BUF_CUR) {
-		addr = b->cur;
+		addr = b->cur_priv;
 	}
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);

@@ -524,22 +524,22 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	}
 
 	zfo = fd->data;
-	seek_val = zfo->b->cur;
+	seek_val = r_buf_seek(zfo->b, 0, 1);
 
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = (r_buf_size(zfo->b) < offset) ?
 			r_buf_size(zfo->b) : offset;
-		zfo->b->cur = io->off = seek_val;
+		r_buf_seek(zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_CUR:
-		seek_val = (r_buf_size(zfo->b) < (offset + zfo->b->cur)) ?
-			r_buf_size(zfo->b) : offset + zfo->b->cur;
-		zfo->b->cur = io->off = seek_val;
+		seek_val = (r_buf_size(zfo->b) < (offset + r_buf_seek(zfo->b, 0, 1))) ?
+			r_buf_size(zfo->b) : offset + r_buf_seek(zfo->b, 0, 1);
+		r_buf_seek(zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_END:
 		seek_val = r_buf_size(zfo->b);
-		zfo->b->cur = io->off = seek_val;
+		r_buf_seek(zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	}
 	return seek_val;
@@ -559,20 +559,20 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count) {
 	int res = false;
-	if (count >= 0 && zfo->b->cur + count > r_buf_size(zfo->b)) {
+	if (count >= 0 && r_buf_seek(zfo->b, 0, 1) + count > r_buf_size(zfo->b)) {
 		RBuffer *buffer = r_buf_new ();
 		if (!buffer) {
 			return false;
 		}
-		buffer->buf = malloc (zfo->b->cur + count );
+		buffer->buf = malloc (r_buf_seek(zfo->b, 0, 1) + count );
 		if (!buffer->buf) {
 			r_buf_free (buffer);
 			return false;
 		}
-		r_buf_resize(buffer, zfo->b->cur + count);
+		r_buf_resize(buffer, r_buf_seek(zfo->b, 0, 1) + count);
 		memcpy (buffer->buf, zfo->b->buf, r_buf_size(zfo->b));
 		memset (buffer->buf + r_buf_size(zfo->b), 0, count);
-		buffer->cur = zfo->b->cur;
+		r_buf_seek(buffer, r_buf_seek(zfo->b, 0, 1), 0);
 		r_buf_free (zfo->b);
 		zfo->b = buffer;
 		res = true;
@@ -624,7 +624,7 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!(zfo->perm & R_PERM_W)) {
 		return -1;
 	}
-	if (zfo->b->cur + count >= r_buf_size(zfo->b)) {
+	if (r_buf_seek(zfo->b, 0, 1) + count >= r_buf_size(zfo->b)) {
 		r_io_zip_realloc_buf (zfo, count);
 	}
 	if (r_buf_size(zfo->b) < io->off) {

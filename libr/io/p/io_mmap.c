@@ -16,21 +16,22 @@ typedef struct r_io_mmo_t {
 } RIOMMapFileObj;
 
 static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
-	ut64 seek_val = mmo->buf->cur;
+	ut64 seek_val = r_buf_seek(mmo->buf, 0, 1);
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = (r_buf_size(mmo->buf) < offset) ?
 			r_buf_size(mmo->buf) : offset;
-		mmo->buf->cur = io->off = seek_val;
+		r_buf_seek(mmo->buf, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_CUR:
-		seek_val = (r_buf_size(mmo->buf) < (offset + mmo->buf->cur)) ?
-			r_buf_size(mmo->buf) : offset + mmo->buf->cur;
-		mmo->buf->cur = io->off = seek_val;
+		seek_val = (r_buf_size(mmo->buf) < (offset + r_buf_seek(mmo->buf, 0, 1))) ?
+			r_buf_size(mmo->buf) : offset + r_buf_seek(mmo->buf,
+								   0, 1);
+		r_buf_seek(mmo->buf, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_END:
 		seek_val = r_buf_size(mmo->buf);
-		mmo->buf->cur = io->off = seek_val;
+		r_buf_seek(mmo->buf, io->off = seek_val, 0);
 		return seek_val;
 	}
 	return seek_val;
@@ -38,7 +39,7 @@ static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence
 
 static bool r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
-	ut64 cur = mmo->buf ? mmo->buf->cur : 0;
+	ut64 cur = mmo->buf ? r_buf_seek(mmo->buf, 0, 1) : 0;
 	if (mmo->buf) {
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;

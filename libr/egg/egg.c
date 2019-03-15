@@ -500,7 +500,7 @@ R_API int r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
 		r_buf_free (b);
 		return false;
 	}
-	b->cur = off;
+	r_buf_seek(b, off, 0);
 	r_list_append (egg->patches, b);
 	return true;
 }
@@ -513,15 +513,16 @@ R_API void r_egg_finalize(REgg *egg) {
 		egg->bin = r_buf_new ();
 	}
 	r_list_foreach (egg->patches, iter, b) {
-		if (b->cur < 0) {
+		if (r_buf_seek(b, 0, 1) < 0) {
 			r_egg_append_bytes (egg, b->buf, r_buf_size(b));
 		} else {
 			// TODO: use r_buf_cpy_buf or what
-			if (r_buf_size(b) + b->cur > r_buf_size (egg->bin)) {
+			if (r_buf_size(b) + r_buf_seek(b, 0, 1) > r_buf_size (egg->bin)) {
 				eprintf ("Cannot patch outside\n");
 				return;
 			}
-			memcpy (egg->bin->buf + b->cur, b->buf, r_buf_size(b));
+			memcpy (egg->bin->buf + r_buf_seek(b, 0, 1), b->buf,
+				r_buf_size(b));
 		}
 	}
 }

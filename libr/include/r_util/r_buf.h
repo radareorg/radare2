@@ -11,7 +11,7 @@ extern "C" {
 typedef struct r_buf_t {
 	ut8 *buf;
 	ut64 length_priv;
-	st64 cur;
+	st64 cur_priv;
 	ut64 base;
 	RMmap *mmap;
 	bool empty;
