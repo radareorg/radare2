@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -637,10 +637,43 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
 	case R_ANAL_OP_TYPE_MOV:
-		SET_SRC_DST_2_REGS (op);
+		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_DIV:
-		SET_SRC_DST_3_REGS (op);
+	case R_ANAL_OP_TYPE_DIV: // UDIV
+#if 0
+capstone bug
+------------
+	$ r2 -a mips -e cfg.bigendian=1 -c "wx 0083001b" -
+	// should be 3 regs, right?
+	[0x00000000]> aoj~{}
+	[
+	  {
+	    "opcode": "divu zero, a0, v1",
+	    "disasm": "divu zero, a0, v1",
+	    "mnemonic": "divu",
+	    "sign": false,
+	    "prefix": 0,
+	    "id": 192,
+	    "opex": {
+	      "operands": [
+		{
+		  "type": "reg",
+		  "value": "a0"
+		},
+		{
+		  "type": "reg",
+		  "value": "v1"
+		}
+	      ]
+	    },
+#endif
+		if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG && OPERAND(2).type == MIPS_OP_REG) {
+			SET_SRC_DST_3_REGS (op);
+		} else if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
+			SET_SRC_DST_2_REGS (op);
+		} else {
+			eprintf ("Unknown div at 0x%08"PFMT64x"\n", op->addr);
+		}
 		break;
 	}
 	if (insn && (insn->id == MIPS_INS_SLTI || insn->id == MIPS_INS_SLTIU)) {
@@ -701,6 +734,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_ILL;
+	op->addr = addr;
 	if (len < 4) {
 		return -1;
 	}
@@ -1022,6 +1056,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC    pc\n"
 		"=SP    sp\n"
 		"=BP    fp\n"
+		"=SN    v0\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"
@@ -1073,6 +1108,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=A1    a1\n"
 		"=A2    a2\n"
 		"=A3    a3\n"
+		"=SN    v0\n"
 		"=R0    v0\n"
 		"=R1    v1\n"
 		"gpr	zero	.64	?	0\n"
