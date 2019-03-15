@@ -300,6 +300,7 @@ parse_plugins = [
   'arm_pseudo',
   'att2intel',
   'avr_pseudo',
+  'chip8_pseudo',
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
