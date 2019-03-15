@@ -800,7 +800,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (bf->buf->buf, r_buf_size(bf->buf), (const ut8*)kw, strlen (kw))) {
+	if (r_mem_mem (bf->buf->buf, r_buf_size (bf->buf), (const ut8*)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
@@ -811,14 +811,14 @@ static RBinInfo *info(RBinFile *bf) {
 	h->len = 20;
 	h->addr = 12;
 	h->from = 12;
-	h->to = r_buf_size(bf->buf)-32;
+	h->to = r_buf_size (bf->buf)-32;
 	memcpy (h->buf, bf->buf->buf + 12, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
 	h->addr = 0x8;
 	h->from = 12;
-	h->to = r_buf_size(bf->buf)-h->from;
+	h->to = r_buf_size (bf->buf)-h->from;
 	h = &ret->sum[2];
 	h->type = 0;
 	memcpy (h->buf, bf->buf->buf + 8, 4);
@@ -1233,7 +1233,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					}
 					// TODO: catch left instead of null
 					const ut8 *p3 = r_buf_get_at (binfile->buf, off, NULL);
-					const ut8 *p3_end = p3 + r_buf_size(binfile->buf) - off;
+					const ut8 *p3_end = p3 + r_buf_size (binfile->buf) - off;
 					st64 size = r_sleb128 (&p3, p3_end);
 
 					if (size <= 0) {
@@ -1545,7 +1545,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 
 		p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
 		// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xfffffffffffffd46
-		p_end = p + (r_buf_size(binfile->buf) - c->class_data_offset);
+		p_end = p + (r_buf_size (binfile->buf) - c->class_data_offset);
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
 			sizeof (struct dex_class_data_item_t));
@@ -1914,7 +1914,7 @@ static RList *sections(RBinFile *bf) {
 			fsym = m->paddr;
 		}
 		ns = m->paddr + m->size;
-		if (ns > r_buf_size(bf->buf)) {
+		if (ns > r_buf_size (bf->buf)) {
 			continue;
 		}
 		if (ns > fsymsz) {
@@ -1960,11 +1960,11 @@ static RList *sections(RBinFile *bf) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
 		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
-		if (ptr->vaddr > r_buf_size(bf->buf)) {
+		if (ptr->vaddr > r_buf_size (bf->buf)) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
-			ptr->size = ptr->vsize = r_buf_size(bf->buf) - ptr->vaddr;
+			ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->vaddr;
 		} else {
-			ptr->size = ptr->vsize = r_buf_size(bf->buf) - ptr->vaddr;
+			ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->vaddr;
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
