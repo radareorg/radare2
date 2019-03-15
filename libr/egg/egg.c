@@ -533,7 +533,7 @@ R_API void r_egg_finalize(REgg *egg) {
 			const ut8 *buf = r_buf_buffer (ep->b);
 			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
 			if (r < sz) {
-				eprintf ("Cannot patch\n");
+				eprintf ("Cannot patch outside\n");
 				return;
 			}
 		}
