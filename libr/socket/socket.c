@@ -798,9 +798,6 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 	if (!s) {
 		return -1;
 	}
-	if (r_socket_ready (s, 2, 0) <= 0) {
-		return -1;
-	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		if (s->bio) {
