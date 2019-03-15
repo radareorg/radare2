@@ -1096,6 +1096,12 @@ static void ds_begin_line(RDisasmState *ds) {
 	if (ds->pj) {
 		pj_o (ds->pj);
 		pj_kn (ds->pj, "offset", ds->vat);
+		if (ds->analop.jump != UT64_MAX ) {
+			pj_kN (ds->pj, "jump", ds->analop.jump);
+			if (ds->analop.fail != UT64_MAX) {
+				pj_kn (ds->pj, "fail", ds->analop.fail);
+			}
+		}
 		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
