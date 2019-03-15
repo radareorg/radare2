@@ -406,14 +406,25 @@ R_API RBuffer *r_buf_new() {
 	return b;
 }
 
-R_API const ut8 *r_buf_buffer (RBuffer *b) {
+R_API const ut8 *r_buf_buffer(RBuffer *b) {
 	if (b && !b->sparse && b->fd == -1 && !b->mmap) {
 		return b->buf;
 	}
 	r_return_val_if_fail (false, NULL);
 }
 
-R_API ut64 r_buf_size (RBuffer *b) {
+R_API ut8 *r_buf_reserve(RBuffer *b, ut64 addr, ut64 len) {
+	if (b && !b->sparse && b->fd == -1 && !b->mmap) {
+		if (addr + len > r_buf_size (b)) {
+			r_buf_resize (b, addr + len);
+		}
+
+		return b->buf + addr - b->base;
+	}
+	r_return_val_if_fail (false, NULL);
+}
+
+R_API ut64 r_buf_size(RBuffer *b) {
 	r_return_val_if_fail (b, 0);
 	if (b->iob) {
 		RIOBind *iob = b->iob;

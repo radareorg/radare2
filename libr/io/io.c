@@ -113,17 +113,13 @@ R_API RIO* r_io_init(RIO* io) {
 }
 
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
-	RBuffer *b = R_NEW0 (RBuffer);
+	RBuffer *b = r_buf_new ();
 	if (!b) {
 		return NULL;
 	}
-	b->buf = malloc (len);
-	if (!b->buf) {
-		free (b);
-		return NULL;
-	}
-	len = r_io_read_at (io, addr, b->buf, len);
-	r_buf_resize(b, (len < 0) ? 0 : len);
+	ut8 *buftmp = r_buf_reserve (b, addr, len);
+	len = r_io_read_at (io, addr, buftmp, len);
+	r_buf_resize (b, len);
 	return b;
 }
 

@@ -558,46 +558,11 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count) {
-	int res = false;
-	if (count >= 0 && r_buf_seek(zfo->b, 0, 1) + count > r_buf_size(zfo->b)) {
-		RBuffer *buffer = r_buf_new ();
-		if (!buffer) {
-			return false;
-		}
-		buffer->buf = malloc (r_buf_seek(zfo->b, 0, 1) + count );
-		if (!buffer->buf) {
-			r_buf_free (buffer);
-			return false;
-		}
-		r_buf_resize(buffer, r_buf_seek(zfo->b, 0, 1) + count);
-		memcpy (buffer->buf, zfo->b->buf, r_buf_size(zfo->b));
-		memset (buffer->buf + r_buf_size(zfo->b), 0, count);
-		r_buf_seek(buffer, r_buf_seek(zfo->b, 0, 1), 0);
-		r_buf_free (zfo->b);
-		zfo->b = buffer;
-		res = true;
-	}
-	return res;
+	return r_buf_resize (zfo->b, r_buf_seek (zfo->b, 0, 1) + count);
 }
 
 static bool r_io_zip_truncate_buf(RIOZipFileObj *zfo, int size) {
-	if (r_buf_size(zfo->b) < size) {
-		return r_io_zip_realloc_buf (zfo, size - r_buf_size(zfo->b));
-	}
-	if (size > 0) {
-		ut8 *buf = malloc (size);
-		if (!buf) {
-			return false;
-		}
-		memcpy (buf, zfo->b->buf, size);
-		free (zfo->b->buf);
-		zfo->b->buf = buf;
-		r_buf_resize(zfo->b, size);
-	} else {
-		memset (zfo->b->buf, 0, r_buf_size(zfo->b));
-		r_buf_resize(zfo->b, 0);
-	}
-	return true;
+	return r_buf_resize (zfo->b, size);
 }
 
 static bool r_io_zip_resize(RIO *io, RIODesc *fd, ut64 size) {

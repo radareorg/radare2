@@ -78,6 +78,7 @@ R_API void r_buf_free(RBuffer *b);
 R_API bool r_buf_fini(RBuffer *b);
 R_API char *r_buf_free_to_string(RBuffer *b);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
+R_API ut8 *r_buf_reserve(RBuffer *b, ut64 addr, ut64 len);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
 
