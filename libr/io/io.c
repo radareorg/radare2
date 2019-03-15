@@ -112,21 +112,6 @@ R_API RIO* r_io_init(RIO* io) {
 	return io;
 }
 
-R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
-	RBuffer *b = r_buf_new ();
-	if (!b) {
-		return NULL;
-	}
-	ut8 *buftmp = r_buf_reserve (b, addr, len);
-	len = r_io_read_at (io, addr, buftmp, len);
-	r_buf_resize (b, len);
-	return b;
-}
-
-R_API int r_io_write_buf(RIO *io, RBuffer *b) {
-	return r_io_write_at (io, b->base, b->buf, r_buf_size (b));
-}
-
 R_API void r_io_free(RIO *io) {
 	if (!io) {
 		return;

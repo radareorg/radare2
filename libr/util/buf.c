@@ -419,17 +419,6 @@ R_API const ut8 *r_buf_buffer(RBuffer *b) {
 	r_return_val_if_fail (false, NULL);
 }
 
-R_API ut8 *r_buf_reserve(RBuffer *b, ut64 addr, ut64 len) {
-	if (b && !b->sparse && b->fd == -1 && !b->mmap) {
-		if (addr + len > r_buf_size (b)) {
-			r_buf_resize (b, addr + len);
-		}
-
-		return b->buf + addr - b->base;
-	}
-	r_return_val_if_fail (false, NULL);
-}
-
 R_API ut64 r_buf_size(RBuffer *b) {
 	r_return_val_if_fail (b, 0);
 	if (b->iob) {
@@ -510,7 +499,7 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 }
 
 R_API ut64 r_buf_tell(RBuffer *b) {
-	return r_buf_get_cur (b);
+	return r_buf_seek (b, 0, 1);
 }
 
 R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
