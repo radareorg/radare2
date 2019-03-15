@@ -71,7 +71,7 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 		seek_val = r_buf_size (mmo->buf);
 		break;
 	}
-	r_buf_seek(mmo->buf, io->off = seek_val, 0);
+	r_buf_seek (mmo->buf, io->off = seek_val, 0);
 	return seek_val;
 }
 

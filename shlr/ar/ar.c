@@ -84,7 +84,7 @@ int ar_read(RBuffer *b, void *dest, int len) {
 	if (!r) {
 		return 0;
 	}
-	r_buf_seek(b, r, 1);
+	r_buf_seek (b, r, 1);
 	return r;
 }
 
@@ -129,7 +129,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		/* Fix padding issues */
 		if (*buffer == '\n') {
 			buffer[0] = buffer[1];
-			r_buf_seek(b, -1, 1);
+			r_buf_seek (b, -1, 1);
 			ar_read (b, buffer, 2);
 		}
 		ar_read (b, buffer + 2, AR_FILENAME_LEN - 2);
@@ -145,7 +145,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		int dif = (int) (tmp - buffer);
 		dif = 31 - dif;
 		// Re-read the whole filename
-		r_buf_seek(b, -dif, 1);
+		r_buf_seek (b, -dif, 1);
 		r = ar_read (b, buffer, AR_FILENAME_LEN);
 		if (r != AR_FILENAME_LEN) {
 			goto fail;
@@ -200,7 +200,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	}
 	(void)ar_read (b, buffer, 1);
 
-	r_buf_seek(b, filesize - 1, 1);
+	r_buf_seek (b, filesize - 1, 1);
 	free (curfile);
 	return filesize;
 fail:
@@ -215,12 +215,12 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 	}
 	if (strncmp (buffer, "//", 2)) {
 		// What we read was not a filename table, just go back
-		r_buf_seek(b, -AR_FILENAME_LEN, 1);
+		r_buf_seek (b, -AR_FILENAME_LEN, 1);
 		return 0;
 	}
 
 	/* Read table size */
-	r_buf_seek(b, 32, 1);
+	r_buf_seek (b, 32, 1);
 	r = ar_read (b, buffer, 10);
 	if (r != 10) {
 		return 0;
@@ -248,7 +248,7 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 		/* End slash plus separation character ("/\n") */
 		len += r + 2;
 		/* Separation character (not always '\n') */
-		r_buf_seek(b, 1, 1);
+		r_buf_seek (b, 1, 1);
 		index++;
 	}
 	return len;
