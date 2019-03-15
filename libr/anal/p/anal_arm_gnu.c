@@ -407,7 +407,7 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 	return op->size;
 }
 
-static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	if (anal->bits == 64) {
 		return arm_op64 (anal, op, addr, data, len);
 	}

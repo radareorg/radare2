@@ -57,7 +57,7 @@ static void ebc_anal_call(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret;
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;

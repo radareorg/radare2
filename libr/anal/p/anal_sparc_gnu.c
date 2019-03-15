@@ -369,7 +369,7 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 }
 
 // TODO: this implementation is just a fast hack. needs to be rewritten and completed
-static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = 4;
 	ut32 insn;
 
