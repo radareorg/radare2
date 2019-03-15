@@ -323,38 +323,6 @@ static int r_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
-// TODO: move somewhere else
-R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
-	int delta;
-	ut8 buf[128];
-	static RBuffer *b = NULL; // XXX: never freed and non-thread safe. move to RCore
-	RAsmOp *op;
-	if (!b) {
-		b = r_buf_new ();
-		if (!b || !r_io_read_at (core->io, addr, buf, sizeof (buf))) {
-			return NULL;
-		}
-		b->base = addr;
-		r_buf_set_bytes (b, buf, sizeof (buf));
-	} else {
-		if ((addr < b->base) || addr > (b->base + r_buf_size (b) - 32)) {
-			if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
-				return NULL;
-			}
-			b->base = addr;
-			r_buf_set_bytes (b, buf, sizeof (buf));
-		}
-	}
-	delta = addr - b->base;
-	op = R_NEW0 (RAsmOp);
-	r_asm_set_pc (core->assembler, addr);
-	if (r_asm_disassemble (core->assembler, op, b->buf + delta, r_buf_size (b)) < 1) {
-		free (op);
-		return NULL;
-	}
-	return op;
-}
-
 static int cmd_uname(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {

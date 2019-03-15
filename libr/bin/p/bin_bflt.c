@@ -110,7 +110,7 @@ static RList *patch_relocs(RBin *b) {
 		}
 		R_FREE (bin->reloc_table);
 	}
-	b->iob.write_at (b->iob.io, bin->b->base, bin->b->buf, r_buf_size (bin->b));
+	b->iob.write_at (b->iob.io, 0, bin->b->buf, r_buf_size (bin->b));
 	return list;
 }
 

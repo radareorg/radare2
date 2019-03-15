@@ -1159,7 +1159,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				R_FREE (signature);
 				continue;
 			}
-			const ut8 *ff2 = r_buf_get_at (binfile->buf, binfile->buf->base + MC, &left);
+			const ut8 *ff2 = r_buf_get_at (binfile->buf, MC, &left);
 			if (!ff2 || left < 16) {
 				//R_FREE (method_name);
 				R_FREE (flag_name);
@@ -1210,7 +1210,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						R_FREE (signature);
 						break;
 					}
-					const ut8 *ptr = r_buf_get_at (binfile->buf, binfile->buf->base + offset, &left);
+					const ut8 *ptr = r_buf_get_at (binfile->buf, offset, &left);
 					if (!ptr || left < 8) {
 						R_FREE (signature);
 						break;
@@ -1312,7 +1312,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
-				const ut8 *ff2 = r_buf_get_at (binfile->buf, binfile->buf->base + MC, &left);
+				const ut8 *ff2 = r_buf_get_at (binfile->buf, MC, &left);
 				if (!ff2 || left < 16) {
 				// if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
 					R_FREE (sym);
@@ -1734,7 +1734,7 @@ static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
 				sym->bind = r_str_const ("NONE");
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = bin->b->base + bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (bin->methods_list, sym);
 				sdb_num_set (mdb, sdb_fmt ("method.%d", i), sym->paddr, 0);
