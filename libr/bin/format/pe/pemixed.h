@@ -15,7 +15,7 @@ struct r_bin_pemixed_obj_t {
 	struct PE_(r_bin_pe_obj_t)* sub_bin_native;
 	struct PE_(r_bin_pe_obj_t)* sub_bin_net;
 	
-	struct r_buf_t* b;
+	RBuffer* b;
 };
 
 // static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, struct PE_(r_bin_pe_obj_t)* pe_bin);

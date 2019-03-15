@@ -58,19 +58,20 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 		return UT64_MAX;
 	}
 
-	seek_val = mmo->buf->cur;
+	seek_val = r_buf_tell (mmo->buf);
 	switch (whence) {
 	case SEEK_SET:
-		seek_val = R_MIN (mmo->buf->length, offset);
+		seek_val = R_MIN (r_buf_size (mmo->buf), offset);
 		break;
 	case SEEK_CUR:
-		seek_val = R_MIN (mmo->buf->length, (offset + mmo->buf->cur));
+		seek_val = R_MIN (r_buf_size (mmo->buf),
+			(offset + r_buf_tell (mmo->buf)));
 		break;
 	case SEEK_END:
-		seek_val = mmo->buf->length;
+		seek_val = r_buf_size (mmo->buf);
 		break;
 	}
-	mmo->buf->cur = io->off = seek_val;
+	r_buf_seek (mmo->buf, io->off = seek_val, 0);
 	return seek_val;
 }
 
@@ -78,7 +79,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
 	ut64 cur;
 	if (mmo->buf) {
-		cur = mmo->buf->cur;
+		cur = r_buf_tell (mmo->buf);
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
 	} else {
@@ -232,8 +233,8 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 		return read (mmo->fd, buf, count);
 	}
-	if (mmo->buf->length < io->off) {
-		io->off = mmo->buf->length;
+	if (r_buf_size (mmo->buf) < io->off) {
+		io->off = r_buf_size (mmo->buf);
 	}
 	return r_buf_read_at (mmo->buf, io->off, buf, count);
 }
@@ -295,7 +296,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 		if (!(mmo->perm & R_PERM_W)) {
 			return -1;
 		}
-		if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
+		if ( (count + addr > r_buf_size (mmo->buf)) || mmo->buf->empty) {
 			ut64 sz = count + addr;
 			r_file_truncate (mmo->filename, sz);
 		}

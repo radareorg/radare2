@@ -337,7 +337,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 		b->base = addr;
 		r_buf_set_bytes (b, buf, sizeof (buf));
 	} else {
-		if ((addr < b->base) || addr > (b->base + b->length - 32)) {
+		if ((addr < b->base) || addr > (b->base + r_buf_size (b) - 32)) {
 			if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
 				return NULL;
 			}
@@ -348,7 +348,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	delta = addr - b->base;
 	op = R_NEW0 (RAsmOp);
 	r_asm_set_pc (core->assembler, addr);
-	if (r_asm_disassemble (core->assembler, op, b->buf + delta, b->length) < 1) {
+	if (r_asm_disassemble (core->assembler, op, b->buf + delta, r_buf_size (b)) < 1) {
 		free (op);
 		return NULL;
 	}
@@ -629,7 +629,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
 		break;
 	case 'l': // "yl"
-		core->num->value = core->yank_buf->length;
+		core->num->value = r_buf_size (core->yank_buf);
 		break;
 	case 'y': // "yy"
 		while (input[1] == ' ') {
@@ -678,7 +678,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 't': // "wt"
 		if (input[1] == 'f') { // "wtf"
 			const char *file = r_str_trim_ro (input + 2);
-			if (!r_file_dump (file, core->yank_buf->buf, core->yank_buf->length, false)) {
+			if (!r_file_dump (file, core->yank_buf->buf, r_buf_size (core->yank_buf), false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}
 		} else if (input[1] == ' ') {

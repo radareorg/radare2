@@ -49,7 +49,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
 		return NULL;
 	}
-	bin->b->buf[bin->b->length - 1] = 0;
+	bin->b->buf[r_buf_size (bin->b) - 1] = 0;
 	uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
 	if (!uleblen || uleblen >= bin->size) {
 		return NULL;
@@ -86,77 +86,77 @@ static int countOnes(ut32 val) {
 }
 
 typedef enum {
-	kAccessForClass  = 0,
+	kAccessForClass = 0,
 	kAccessForMethod = 1,
-	kAccessForField  = 2,
+	kAccessForField = 2,
 	kAccessForMAX
 } AccessFor;
 
 static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	#define NUM_FLAGS 18
-	static const char* kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
+	static const char *kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
 		{
 			/* class, inner class */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"?",                /* 0x0020 */
-			"?",                /* 0x0040 */
-			"?",                /* 0x0080 */
-			"?",                /* 0x0100 */
-			"INTERFACE",        /* 0x0200 */
-			"ABSTRACT",         /* 0x0400 */
-			"?",                /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"ANNOTATION",       /* 0x2000 */
-			"ENUM",             /* 0x4000 */
-			"?",                /* 0x8000 */
-			"VERIFIED",         /* 0x10000 */
-			"OPTIMIZED",        /* 0x20000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"?", /* 0x0020 */
+			"?", /* 0x0040 */
+			"?", /* 0x0080 */
+			"?", /* 0x0100 */
+			"INTERFACE", /* 0x0200 */
+			"ABSTRACT", /* 0x0400 */
+			"?", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"ANNOTATION", /* 0x2000 */
+			"ENUM", /* 0x4000 */
+			"?", /* 0x8000 */
+			"VERIFIED", /* 0x10000 */
+			"OPTIMIZED", /* 0x20000 */
 		},
 		{
 			/* method */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"SYNCHRONIZED",     /* 0x0020 */
-			"BRIDGE",           /* 0x0040 */
-			"VARARGS",          /* 0x0080 */
-			"NATIVE",           /* 0x0100 */
-			"?",                /* 0x0200 */
-			"ABSTRACT",         /* 0x0400 */
-			"STRICT",           /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"?",                /* 0x2000 */
-			"?",                /* 0x4000 */
-			"MIRANDA",          /* 0x8000 */
-			"CONSTRUCTOR",      /* 0x10000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"SYNCHRONIZED", /* 0x0020 */
+			"BRIDGE", /* 0x0040 */
+			"VARARGS", /* 0x0080 */
+			"NATIVE", /* 0x0100 */
+			"?", /* 0x0200 */
+			"ABSTRACT", /* 0x0400 */
+			"STRICT", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"?", /* 0x2000 */
+			"?", /* 0x4000 */
+			"MIRANDA", /* 0x8000 */
+			"CONSTRUCTOR", /* 0x10000 */
 			"DECLARED_SYNCHRONIZED", /* 0x20000 */
 		},
 		{
 			/* field */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"?",                /* 0x0020 */
-			"VOLATILE",         /* 0x0040 */
-			"TRANSIENT",        /* 0x0080 */
-			"?",                /* 0x0100 */
-			"?",                /* 0x0200 */
-			"?",                /* 0x0400 */
-			"?",                /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"?",                /* 0x2000 */
-			"ENUM",             /* 0x4000 */
-			"?",                /* 0x8000 */
-			"?",                /* 0x10000 */
-			"?",                /* 0x20000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"?", /* 0x0020 */
+			"VOLATILE", /* 0x0040 */
+			"TRANSIENT", /* 0x0080 */
+			"?", /* 0x0100 */
+			"?", /* 0x0200 */
+			"?", /* 0x0400 */
+			"?", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"?", /* 0x2000 */
+			"ENUM", /* 0x4000 */
+			"?", /* 0x8000 */
+			"?", /* 0x10000 */
+			"?", /* 0x20000 */
 		},
 	};
 	int i, count = countOnes (flags);
@@ -800,7 +800,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (bf->buf->buf, bf->buf->length, (const ut8*)kw, strlen (kw))) {
+	if (r_mem_mem (bf->buf->buf, r_buf_size (bf->buf), (const ut8*)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
@@ -811,20 +811,21 @@ static RBinInfo *info(RBinFile *bf) {
 	h->len = 20;
 	h->addr = 12;
 	h->from = 12;
-	h->to = bf->buf->length-32;
+	h->to = r_buf_size (bf->buf)-32;
 	memcpy (h->buf, bf->buf->buf + 12, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
 	h->addr = 0x8;
 	h->from = 12;
-	h->to = bf->buf->length-h->from;
+	h->to = r_buf_size (bf->buf)-h->from;
 	h = &ret->sum[2];
 	h->type = 0;
 	memcpy (h->buf, bf->buf->buf + 8, 4);
 	{
 		ut32 *fc = (ut32 *)(bf->buf->buf + 8);
-		ut32  cc = __adler32 (bf->buf->buf + 12, bf->buf->length - 12);
+		ut32 cc = __adler32 (bf->buf->buf + 12,
+			r_buf_size (bf->buf) - 12);
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
@@ -1232,7 +1233,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					}
 					// TODO: catch left instead of null
 					const ut8 *p3 = r_buf_get_at (binfile->buf, off, NULL);
-					const ut8 *p3_end = p3 + binfile->buf->length - off;
+					const ut8 *p3_end = p3 + r_buf_size (binfile->buf) - off;
 					st64 size = r_sleb128 (&p3, p3_end);
 
 					if (size <= 0) {
@@ -1544,7 +1545,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 
 		p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
 		// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xfffffffffffffd46
-		p_end = p + (binfile->buf->length - c->class_data_offset);
+		p_end = p + (r_buf_size (binfile->buf) - c->class_data_offset);
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
 			sizeof (struct dex_class_data_item_t));
@@ -1913,7 +1914,7 @@ static RList *sections(RBinFile *bf) {
 			fsym = m->paddr;
 		}
 		ns = m->paddr + m->size;
-		if (ns > bf->buf->length) {
+		if (ns > r_buf_size (bf->buf)) {
 			continue;
 		}
 		if (ns > fsymsz) {
@@ -1959,11 +1960,11 @@ static RList *sections(RBinFile *bf) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
 		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
-		if (ptr->vaddr > bf->buf->length) {
+		if (ptr->vaddr > r_buf_size (bf->buf)) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
-			ptr->size = ptr->vsize = bf->buf->length - ptr->vaddr;
+			ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->vaddr;
 		} else {
-			ptr->size = ptr->vsize = bf->buf->length - ptr->vaddr;
+			ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->vaddr;
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}

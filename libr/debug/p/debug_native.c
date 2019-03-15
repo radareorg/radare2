@@ -1121,7 +1121,7 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		ut64 map_addr;
 
 		r_reg_arena_push (dbg->reg);
-		map_addr = r_debug_execute (dbg, buf->buf, buf->length, 1);
+		map_addr = r_debug_execute (dbg, buf->buf, r_buf_size (buf), 1);
 		r_reg_arena_pop (dbg->reg);
 		if (map_addr != (ut64)-1) {
 			r_debug_map_sync (dbg);
@@ -1132,14 +1132,15 @@ err_linux_map_alloc:
 	return map;
 }
 
-static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
+static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RBuffer *buf = NULL;
 	char code[1024];
 	int ret = 0;
 	char *asm_list[] = {
-			"x86", "x86.as",
-			"x64", "x86.as",
-			NULL};
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
 	int num = r_syscall_get_num (dbg->anal->syscall, "munmap");
 
 	snprintf (code, sizeof (code),
@@ -1160,14 +1161,14 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		ret = r_debug_execute (dbg, buf->buf, buf->length, 1) == 0;
+		ret = r_debug_execute (dbg, buf->buf, r_buf_size (buf), 1) == 0;
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_dealloc:
 	return ret;
 }
 #elif __WINDOWS__
-static int io_perms_to_prot (int io_perms) {
+static int io_perms_to_prot(int io_perms) {
 	int prot_perms;
 
 	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {
@@ -2007,7 +2008,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		r_debug_execute (dbg, buf->buf, buf->length , 1);
+		r_debug_execute (dbg, buf->buf, r_buf_size (buf), 1);
 		r_reg_arena_pop (dbg->reg);
 		return true;
 	}

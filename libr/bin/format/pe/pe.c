@@ -1152,14 +1152,14 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 
 	indx = 0;
-	if (bin->b->length > 0) {
-		if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32) bin->b->length)) {
+	if (r_buf_size (bin->b) > 0) {
+		if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32)r_buf_size (bin->b))) {
 			ut64 off;
 			bin->delay_import_directory_offset = delay_import_dir_offset;
 			do {
 				indx++;
 				off = indx * delay_import_size;
-				if (off >= bin->b->length) {
+				if (off >= r_buf_size (bin->b)) {
 					bprintf ("Warning: Cannot find end of import symbols\n");
 					break;
 				}
@@ -1173,7 +1173,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 				delay_import_dir = new_delay_import_dir;
 				curr_delay_import_dir = delay_import_dir + (indx - 1);
 				rr = r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
-					(ut8*) (curr_delay_import_dir), dir_size);
+					(ut8 *)(curr_delay_import_dir), dir_size);
 				if (rr != dir_size) {
 					bprintf ("Warning: read (delay import directory)\n");
 					goto fail;
@@ -2880,16 +2880,16 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t)* bin, SDebugInfo* re
 	if ((int) dbg_dir_offset < 0 || dbg_dir_offset >= bin->size) {
 		return false;
 	}
-	if (dbg_dir_offset >= bin->b->length) {
+	if (dbg_dir_offset >= r_buf_size (bin->b)) {
 		return false;
 	}
 	img_dbg_dir_entry = (PE_(image_debug_directory_entry)*)(bin->b->buf + dbg_dir_offset);
-	if ((bin->b->length - dbg_dir_offset) < sizeof (PE_(image_debug_directory_entry))) {
+	if ((r_buf_size (bin->b) - dbg_dir_offset) < sizeof (PE_(image_debug_directory_entry))) {
 		return false;
 	}
 	if (img_dbg_dir_entry) {
-		ut32 dbg_data_poff = R_MIN (img_dbg_dir_entry->PointerToRawData, bin->b->length);
-		int dbg_data_len = R_MIN (img_dbg_dir_entry->SizeOfData, bin->b->length - dbg_data_poff);
+		ut32 dbg_data_poff = R_MIN (img_dbg_dir_entry->PointerToRawData, r_buf_size (bin->b));
+		int dbg_data_len = R_MIN (img_dbg_dir_entry->SizeOfData, r_buf_size (bin->b) - dbg_data_poff);
 		if (dbg_data_len < 1) {
 			return false;
 		}
@@ -3571,7 +3571,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(RBuffer * buf, bool verbose) {
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
 	bin->verbose = verbose;
-	bin->size = buf->length;
+	bin->size = r_buf_size (buf);
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
 		return PE_(r_bin_pe_free)(bin);
 	}

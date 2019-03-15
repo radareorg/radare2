@@ -18,7 +18,7 @@ struct r_bin_coff_obj {
 
 	ut16 target_id; /* TI COFF specific */
 
-	struct r_buf_t *b;
+	RBuffer *b;
 	size_t size;
 	ut8 endian;
 	Sdb *kv;

@@ -52,7 +52,7 @@ struct r_bin_bflt_obj {
 #define VALID_GOT_ENTRY(x)	(x != 0xFFFFFFFF)
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin);
-struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf);
-void r_bin_bflt_free(struct r_bin_bflt_obj *obj);
+struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf);
+void r_bin_bflt_free (struct r_bin_bflt_obj *obj);
 
 #endif

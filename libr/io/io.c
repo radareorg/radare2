@@ -112,25 +112,6 @@ R_API RIO* r_io_init(RIO* io) {
 	return io;
 }
 
-R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
-	RBuffer *b = R_NEW0 (RBuffer);
-	if (!b) {
-		return NULL;
-	}
-	b->buf = malloc (len);
-	if (!b->buf) {
-		free (b);
-		return NULL;
-	}
-	len = r_io_read_at (io, addr, b->buf, len);
-	b->length = (len < 0)? 0: len;
-	return b;
-}
-
-R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
-	return r_io_write_at (io, b->base, b->buf, b->length);
-}
-
 R_API void r_io_free(RIO *io) {
 	if (!io) {
 		return;
