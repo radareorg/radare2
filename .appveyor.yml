@@ -30,6 +30,10 @@ environment:
     - builder: vs2017_64_dyn
       PYTHON: 'C:\\Python37'
       BUILD_DIR: build
+    # Clang-cl 64 (Dynamic linking)
+    - builder: clang_cl_64_dyn
+      PYTHON: 'C:\\Python37'
+      BUILD_DIR: build
 
 # Init
 init:
@@ -53,6 +57,8 @@ build_script:
   - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --backend vs2017 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
   - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+
+  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH%" x64 && set CC=clang-cl && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 test_script:
   - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\msys64\mingw64\bin;%PATH%

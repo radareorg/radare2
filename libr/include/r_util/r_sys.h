@@ -99,7 +99,6 @@ R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
 #if __WINDOWS__
-#include <intrin.h>
 #  define r_sys_breakpoint() { __debugbreak  (); }
 #else
 #if __GNUC__

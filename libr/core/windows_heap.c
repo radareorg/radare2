@@ -18,7 +18,7 @@
 *
 *	References:
 *	Windows NT(2000) Native API Reference (Book)
-*	Papers: 
+*	Papers:
 *	http://illmatics.com/Understanding_the_LFH.pdf
 *	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
 *	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
@@ -158,9 +158,9 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 			PHeapBlockExtraInfo extra = (PHeapBlockExtraInfo)(block[index].extra & ~EXTRA_FLAG);
 			hb->dwSize -= extra->unusedBytes;
 			hb->extraInfo = extra;
-			(WPARAM)hb->dwAddress += extra->granularity;
+			hb->dwAddress = (WPARAM)hb->dwAddress + extra->granularity;
 		} else {
-			(WPARAM)hb->dwAddress += heapInfo->Granularity;
+			hb->dwAddress = (WPARAM)hb->dwAddress + heapInfo->Granularity;
 			hb->extraInfo = NULL;
 		}
 		index++;
@@ -206,7 +206,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 			hb->dwAddress = (void *)(block[index].address + extra->granularity);
 		} else {
 			hb->extraInfo = NULL;
-			(WPARAM)hb->dwAddress += hb->dwSize;
+			hb->dwAddress = (WPARAM)hb->dwAddress + hb->dwSize;
 		}
 		hb->index++;
 	}
@@ -273,11 +273,11 @@ static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
 static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 	r_return_val_if_fail (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
-		(WPARAM)entry += dbg->bits;
+		entry = (WPARAM)entry + dbg->bits;
 	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
 		if (dbg->bits == R_SYS_BITS_64) {
-			(WPARAM)heap += dbg->bits;
+			heap = (WPARAM)heap + dbg->bits;
 		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
 	}
@@ -287,7 +287,7 @@ static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
 	r_return_val_if_fail (heap && entry, false);
 	if (dbg->bits == R_SYS_BITS_64) {
-		(WPARAM)entry += dbg->bits;
+		entry = (WPARAM)entry + dbg->bits;
 	}
 
 	if (heap->EncodeFlagMask) {
