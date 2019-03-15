@@ -312,7 +312,7 @@ static ut64 size(RBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return 0;
 	}
-	return r_buf_size(bf->buf);
+	return r_buf_size (bf->buf);
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */

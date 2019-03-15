@@ -370,7 +370,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
-	if ((ut64)entry->location.rva + entry->location.data_size > r_buf_size(obj->b)) {
+	if ((ut64)entry->location.rva + entry->location.data_size > r_buf_size (obj->b)) {
 		eprintf ("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
 		return false;
 	}
@@ -911,7 +911,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 	}
 	obj->kv = sdb_new0 ();
 	obj->b = r_buf_new ();
-	obj->size = (ut32) r_buf_size(buf);
+	obj->size = (ut32) r_buf_size (buf);
 
 	fail |= (!(obj->streams.ex_threads = r_list_new ()));
 	fail |= (!(obj->streams.memories = r_list_new ()));
@@ -932,7 +932,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 		return NULL;
 	}
 
-	if (!r_buf_set_bytes (obj->b, buf->buf, r_buf_size(buf))) {
+	if (!r_buf_set_bytes (obj->b, buf->buf, r_buf_size (buf))) {
 		r_bin_mdmp_free (obj);
 		return NULL;
 	}

@@ -61,7 +61,7 @@ fail:
 
 static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
 	obj->b = r_buf_ref (buf);
-	obj->size = r_buf_size(buf);
+	obj->size = r_buf_size (buf);
 	obj->endian = false;
 	obj->reloc_table = NULL;
 	obj->got_table = NULL;

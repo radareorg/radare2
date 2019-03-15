@@ -309,7 +309,7 @@ struct r_bin_mz_obj_t *r_bin_mz_new_buf (const RBuffer *buf) {
 		return NULL;
 	}
 	bin->b = r_buf_new ();
-	bin->size = r_buf_size(buf);
+	bin->size = r_buf_size (buf);
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
 		return r_bin_mz_free (bin);
 	}

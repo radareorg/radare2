@@ -10,7 +10,7 @@ struct r_bin_zimg_obj_t* r_bin_zimg_new_buf(RBuffer *buf) {
 	if (!bin) {
 		goto fail;
 	}
-	bin->size = r_buf_size(buf);
+	bin->size = r_buf_size (buf);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
 		goto fail;

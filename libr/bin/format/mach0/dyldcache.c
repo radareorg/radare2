@@ -148,7 +148,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 				(ut64) ((size_t)&seg->fileoff - (size_t)data));
 			/* Patch section offsets */
 			int sect_offset = seg->fileoff - libsz;
-			libsz = r_buf_size(dbuf);
+			libsz = r_buf_size (dbuf);
 			if (!strcmp (seg->segname, "__LINKEDIT")) {
 				linkedit_offset = sect_offset;
 			}

@@ -27,7 +27,7 @@ static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence
 		r_buf_seek (mmo->buf, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_END:
-		seek_val = r_buf_size(mmo->buf);
+		seek_val = r_buf_size (mmo->buf);
 		r_buf_seek (mmo->buf, io->off = seek_val, 0);
 		return seek_val;
 	}
@@ -36,7 +36,7 @@ static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence
 
 static bool r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
-	ut64 cur = mmo->buf? r_buf_tell (mmo->buf) : 0;
+	ut64 cur = mmo->buf? r_buf_tell (mmo->buf): 0;
 	if (mmo->buf) {
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
@@ -95,7 +95,7 @@ static int r_io_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	mmo = fd->data;
-	if (r_buf_size(mmo->buf) < io->off) {
+	if (r_buf_size (mmo->buf) < io->off) {
 		io->off = r_buf_size (mmo->buf);
 	}
 	return r_buf_read_at (mmo->buf, io->off, buf, count);
@@ -114,7 +114,7 @@ static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if ( !(mmo->flags & R_PERM_W)) {
 		return -1;
 	}
-	if ( (count + addr > r_buf_size(mmo->buf)) || mmo->buf->empty) {
+	if ( (count + addr > r_buf_size (mmo->buf)) || mmo->buf->empty) {
 		ut64 sz = count + addr;
 		r_file_truncate (mmo->filename, sz);
 	}

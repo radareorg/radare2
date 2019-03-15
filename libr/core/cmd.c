@@ -337,7 +337,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 		b->base = addr;
 		r_buf_set_bytes (b, buf, sizeof (buf));
 	} else {
-		if ((addr < b->base) || addr > (b->base + r_buf_size(b) - 32)) {
+		if ((addr < b->base) || addr > (b->base + r_buf_size (b) - 32)) {
 			if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
 				return NULL;
 			}
@@ -348,7 +348,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	delta = addr - b->base;
 	op = R_NEW0 (RAsmOp);
 	r_asm_set_pc (core->assembler, addr);
-	if (r_asm_disassemble (core->assembler, op, b->buf + delta, r_buf_size(b)) < 1) {
+	if (r_asm_disassemble (core->assembler, op, b->buf + delta, r_buf_size (b)) < 1) {
 		free (op);
 		return NULL;
 	}

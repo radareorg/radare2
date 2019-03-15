@@ -284,7 +284,7 @@ static RList *sections(RBinFile *bf) {
 		ut64 baddr = r_read_be32 (&hdr.RomStart);
 		ptr->vaddr += baddr;
 	}
-	ptr->size = ptr->vsize = r_buf_size(bf->buf) - ptr->paddr;
+	ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->paddr;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);

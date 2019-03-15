@@ -11,7 +11,7 @@
 static size_t consume_u32_r(RBuffer *b, ut64 max, ut32 *out) {
 	size_t n;
 	ut32 tmp;
-	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_tell (b) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
 	if (!(n = read_u32_leb128 (&b->buf[r_buf_tell (b)], &b->buf[max + 1], &tmp))) {
@@ -61,7 +61,7 @@ static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
 static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
 	size_t n;
 	ut32 tmp = 0;
-	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_tell (b) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
 	if (!(n = read_i32_leb128 (&b->buf[r_buf_tell (b)], (ut8 *)&b->buf[max + 1], (int *)&tmp)) || n > 2) {
@@ -77,7 +77,7 @@ static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
 static size_t consume_u1_r(RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp;
-	if (!b || !b->buf || max >= r_buf_size(b) || r_buf_tell (b) > max) {
+	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
 	if (!(n = read_u32_leb128 (&b->buf[r_buf_tell (b)], &b->buf[max + 1], &tmp)) || n > 1) {
@@ -799,7 +799,7 @@ RBinWasmObj *r_bin_wasm_init (RBinFile *bf) {
 		free (bin);
 		return NULL;
 	}
-	bin->size = (ut32) r_buf_size(bf->buf);
+	bin->size = (ut32) r_buf_size (bf->buf);
 	if (!r_buf_set_bytes (bin->buf, bf->buf->buf, bin->size)) {
 		r_bin_wasm_destroy (bf);
 		free (bin);
@@ -866,7 +866,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 		return NULL;
 	}
 	RBuffer *b = bin->buf;
-	ut64 max = r_buf_size(b) - 1;
+	ut64 max = r_buf_size (b) - 1;
 	r_buf_seek (b, 8, R_IO_SEEK_SET);
 	while (r_buf_tell (b) <= max) {
 		if (!(ptr = R_NEW0 (RBinWasmSection))) {

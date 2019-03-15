@@ -72,7 +72,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	r_bin_arch_options_init (&opts, arch, bits);
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
-		size_t blen = r_buf_size(b);
+		size_t blen = r_buf_size (b);
 		if (write (1, b->buf, blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
@@ -525,7 +525,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
-			size_t blen = r_buf_size(b);
+			size_t blen = r_buf_size (b);
 			if (write (1, b->buf, blen) != blen) {
 				eprintf ("Failed to write buffer\n");
 				goto fail;
@@ -548,12 +548,12 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			case 'r':
 				if (show_str) {
 					printf ("\"");
-					for (i = 0; i < r_buf_size(b); i++) {
+					for (i = 0; i < r_buf_size (b); i++) {
 						printf ("\\x%02x", b->buf[i]);
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
-					for (i = 0; i < r_buf_size(b); i++) {
+					for (i = 0; i < r_buf_size (b); i++) {
 						printf ("%02x", b->buf[i]);
 					}
 					printf ("\n");

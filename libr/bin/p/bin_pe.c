@@ -39,7 +39,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 #define D(x) r_buf_append_ut32(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
 #define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=r_buf_size(buf);Z(x);W(p_tmp,y,strlen(y))
+#define WZ(x,y) p_tmp=r_buf_size (buf);Z(x);W(p_tmp,y,strlen(y))
 
 	B ("MZ\x00\x00", 4); // MZ Header
 	B ("PE\x00\x00", 4); // PE Signature

@@ -536,7 +536,7 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		r_buf_seek (zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_END:
-		seek_val = r_buf_size(zfo->b);
+		seek_val = r_buf_size (zfo->b);
 		r_buf_seek (zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	}
@@ -587,10 +587,10 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!(zfo->perm & R_PERM_W)) {
 		return -1;
 	}
-	if (r_buf_tell (zfo->b) + count >= r_buf_size(zfo->b)) {
+	if (r_buf_tell (zfo->b) + count >= r_buf_size (zfo->b)) {
 		r_io_zip_realloc_buf (zfo, count);
 	}
-	if (r_buf_size(zfo->b) < io->off) {
+	if (r_buf_size (zfo->b) < io->off) {
 		io->off = r_buf_size (zfo->b);
 	}
 	zfo->modified = 1;

@@ -475,7 +475,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 				eprintf ("%s Shellcode has failed\n", p->name);
 				return false;
 			}
-			r_egg_raw (egg, b->buf, r_buf_size(b));
+			r_egg_raw (egg, b->buf, r_buf_size (b));
 			r_buf_free (b);
 			return true;
 		}

@@ -269,7 +269,7 @@ static int init_phdr(ELFOBJ *bin) {
 	bool linux_kern_hack = false;
 	/* Enable this hack only for the X86 64bit ELFs */
 	const int _128K = 1024 * 128;
-	if (r_buf_size(bin->b) > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
+	if (r_buf_size (bin->b) > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
 		linux_kern_hack = true;
 	}
 	if (!read_phdr (bin, linux_kern_hack)) {
@@ -2345,7 +2345,7 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
 	const ut8 *p = bin->b->buf;
-	if (r_buf_size(bin->b) > 64)  {
+	if (r_buf_size (bin->b) > 64)  {
 		p += r_buf_size (bin->b) - 64;
 	} else {
 		return 0;

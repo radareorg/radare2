@@ -51,7 +51,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 #define Q(x) r_buf_append_ut64(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
 #define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
-#define WZ(x,y) p_tmp=r_buf_size(buf);Z(x);W(p_tmp,y,strlen(y))
+#define WZ(x,y) p_tmp=r_buf_size (buf);Z(x);W(p_tmp,y,strlen(y))
 
 	/* MACH0 HEADER */
 	// 32bit B ("\xce\xfa\xed\xfe", 4); // header
@@ -77,12 +77,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	/* COMMANDS */
 	D (ncmds); // ncmds
-	p_cmdsize = r_buf_size(buf);
+	p_cmdsize = r_buf_size (buf);
 	D (-1); // headsize // cmdsize?
 	D (0);//0x85); // flags
 	D (0); // reserved -- only found in x86-64
 
-	magiclen = r_buf_size(buf);
+	magiclen = r_buf_size (buf);
 
 	if (use_pagezero) {
 		/* PAGEZERO */
@@ -108,7 +108,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	Q (0x1000); // vmsize XXX
 
 	Q (0); // fileoff
-	p_codefsz = r_buf_size(buf);
+	p_codefsz = r_buf_size (buf);
 	Q (-1); // filesize
 	D (7); // maxprot
 	D (5); // initprot
@@ -135,7 +135,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		/* DATA SEGMENT */
 		D (0x19);   // cmd.LC_SEGMENT_64
 		D (124+28); // sizeof (cmd)
-		p_tmp = r_buf_size(buf);
+		p_tmp = r_buf_size (buf);
 		Z (16);
 		W (p_tmp, "__TEXT", 6); // segment name
 		//XXX must be vmaddr+baddr
@@ -153,9 +153,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		WZ (16, "__data");
 		WZ (16, "__DATA");
 
-		p_datava = r_buf_size(buf);
+		p_datava = r_buf_size (buf);
 		Q (-1);
-		p_datasz = r_buf_size(buf);
+		p_datasz = r_buf_size (buf);
 		Q (-1);
 		p_datapa = r_buf_size (buf);
 		D (-1); //_start-0x1000);
@@ -232,14 +232,14 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		D (184); // sizeof (cmd)
 		D (4); // 1=i386, 4=x86_64
 		D (42); // thread-state-count
-		p_entry = r_buf_size(buf) + (16*sizeof (ut64));
+		p_entry = r_buf_size (buf) + (16*sizeof (ut64));
 		Z (STATESIZE);
 	}
 
-	WZ (4096 - r_buf_size(buf), "");
+	WZ (4096 - r_buf_size (buf), "");
 	headerlen = r_buf_size (buf) - magiclen;
 
-	codeva = r_buf_size(buf) + baddr;
+	codeva = r_buf_size (buf) + baddr;
 	datava = r_buf_size (buf) + codelen + baddr;
 
 	if (p_entry != 0) {
