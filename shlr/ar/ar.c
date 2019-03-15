@@ -80,7 +80,7 @@ R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
 }
 
 int ar_read(RBuffer *b, void *dest, int len) {
-	int r = r_buf_read(b, dest, len);
+	int r = r_buf_read (b, dest, len);
 	if (!r) {
 		return 0;
 	}

@@ -17,7 +17,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RBuffer *b = fd->data;
-	return r_buf_read(b, buf, count);
+	return r_buf_read (b, buf, count);
 }
 
 static int __close(RIODesc *fd) {
