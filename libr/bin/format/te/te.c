@@ -443,7 +443,7 @@ struct r_bin_te_obj_t* r_bin_te_new_buf(RBuffer *buf) {
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
 	bin->size = r_buf_size(buf);
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
+	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
 		return r_bin_te_free (bin);
 	}
 	if (!r_bin_te_init (bin)) {

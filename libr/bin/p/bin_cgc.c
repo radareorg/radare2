@@ -72,7 +72,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	ehdrsz = p_phdr;
 	phdrsz = r_buf_size(buf) - p_phdr;
-	code_pa = r_buf_size(buf);
+	code_pa = r_buf_size (buf);
 	code_va = code_pa + baddr;
 	phoff = 0x34;//p_phdr ;
 	filesize = code_pa + codelen + datalen;

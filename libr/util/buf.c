@@ -164,7 +164,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 		}
 		return real_len;
 	}
-	addr = (addr == R_BUF_CUR) ? b->cur_priv : start;
+	addr = (addr == R_BUF_CUR)? b->cur_priv: start;
 	if (len < 1 || !dst || addr - b->offset > effective_size) {
 		return -1;
 	}
@@ -178,7 +178,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	return real_len;
 }
 
-static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
+static int r_buf_fcpy_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
 	ut64 len, check_len;
 	int i, j, k, tsize = 2, m = 1;
 	bool bigendian = true;
@@ -205,17 +205,23 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		#ifdef _MSC_VER
 		case'0':case'1':case'2':case'3':case'4':case'5':case'6':case'7':case'8':case'9':
 		#else
-		case '0'...'9':
-		#endif
+			case '0' ... '9':
+#endif
 			if (m == 1) {
 				m = r_num_get (NULL, &fmt[j]);
 			}
 			continue;
 		case 's': tsize = 2; bigendian = false; break;
 		case 'S': tsize = 2; bigendian = true; break;
-		case 'i': tsize = 4; bigendian = false; break;
+		case 'i':
+			tsize = 4;
+			bigendian = false;
+			break;
 		case 'I': tsize = 4; bigendian = true; break;
-		case 'l': tsize = 8; bigendian = false; break;
+		case 'l':
+			tsize = 8;
+			bigendian = false;
+			break;
 		case 'L': tsize = 8; bigendian = true; break;
 		case 'c': tsize = 1; bigendian = false; break;
 		default: return -1;
@@ -236,12 +242,12 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		}
 
 		for (k = 0; k < m; k++) {
-			ut8 _dest1[sizeof (ut64)] = {0};
-			ut8 _dest2[sizeof (ut64)] = {0};
+			ut8 _dest1[sizeof (ut64)] = { 0 };
+			ut8 _dest2[sizeof (ut64)] = { 0 };
 			int left1, left2;
 			ut64 addr1 = len + (k * tsize);
 			ut64 addr2 = vaddr + addr1;
-			ut8 *src1=NULL, *src2=NULL;
+			ut8 *src1 = NULL, *src2 = NULL;
 			if (b->fd == -1) {
 				src1 = r_buf_get_at (b, addr1, &left1);
 				src2 = r_buf_get_at (b, addr2, &left2);
@@ -252,11 +258,11 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 				src1 = _dest1;
 				src2 = _dest2;
 			}
-			void* dest1 = buf + addr + addr1; // shouldn't this be an address in b ?
-			void* dest2 = buf + addr1;
-			ut8* dest1_8 = (ut8*)dest1;
-			ut16* dest1_16 = (ut16*)dest1;
-			ut32* dest1_32 = (ut32*)dest1;
+			void *dest1 = buf + addr + addr1; // shouldn't this be an address in b ?
+			void *dest2 = buf + addr1;
+			ut8 *dest1_8 = (ut8 *)dest1;
+			ut16 *dest1_16 = (ut16 *)dest1;
+			ut32 *dest1_32 = (ut32 *)dest1;
 			ut64* dest1_64 = (ut64*)dest1;
 			ut8* dest2_8 = (ut8*)dest2;
 			ut16* dest2_16 = (ut16*)dest2;
@@ -311,7 +317,7 @@ R_API RBuffer *r_buf_new_with_io(void *iob, int fd) {
 	return b;
 }
 
-R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
+R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
 	if (b && bytes && len > 0 && len != UT64_MAX) {
 		b->buf = (ut8*)bytes;
@@ -322,7 +328,7 @@ R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 	return b;
 }
 
-R_API RBuffer *r_buf_new_empty (ut64 len) {
+R_API RBuffer *r_buf_new_empty(ut64 len) {
 	RBuffer *b = r_buf_new ();
 	if (!b) {
 		return NULL;
@@ -336,7 +342,7 @@ R_API RBuffer *r_buf_new_empty (ut64 len) {
 	return b;
 }
 
-R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
+R_API RBuffer *r_buf_new_with_bytes(const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
 	if (b && bytes && (len > 0 && len != UT64_MAX)) {
 		r_buf_set_bytes (b, bytes, len);
@@ -344,8 +350,8 @@ R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	return b;
 }
 
-R_API RBuffer *r_buf_new_with_string (const char *msg) {
-	return r_buf_new_with_bytes ((const ut8*)msg, (ut64) strlen (msg));
+R_API RBuffer *r_buf_new_with_string(const char *msg) {
+	return r_buf_new_with_bytes ((const ut8 *)msg, (ut64)strlen (msg));
 }
 
 R_API RBuffer *r_buf_new_with_bufref(RBuffer *b) {
@@ -441,13 +447,12 @@ R_API ut64 r_buf_size(RBuffer *b) {
 		}
 		return 0LL;
 	}
-	return b->empty? 0: remainingBytes (b->limit, b->length_priv,
-					    b->offset);
+	return b->empty? 0: remainingBytes (b->limit, b->length_priv, b->offset);
 }
 
 // rename to new?
-R_API RBuffer *r_buf_mmap (const char *file, int perm) {
-	int rw = perm & R_PERM_W? true : false;
+R_API RBuffer *r_buf_mmap(const char *file, int perm) {
+	int rw = perm & R_PERM_W? true: false;
 	RBuffer *b = r_buf_new ();
 	if (!b) {
 		return NULL;
@@ -467,7 +472,7 @@ R_API RBuffer *r_buf_mmap (const char *file, int perm) {
 
 R_API RBuffer *r_buf_new_file(const char *file, bool newFile) {
 	const int mode = 0644;
-	const int perm = newFile? O_RDWR|O_CREAT: O_RDWR;
+	const int perm = newFile? O_RDWR | O_CREAT: O_RDWR;
 	int fd = r_sandbox_open (file, perm, mode);
 	if (fd != -1) {
 		RBuffer *b = r_buf_new ();
@@ -488,7 +493,7 @@ R_API RBuffer *r_buf_new_slurp(const char *file) {
 	if (!b) {
 		return NULL;
 	}
-	b->buf = (ut8*)r_file_slurp (file, &len);
+	b->buf = (ut8 *)r_file_slurp (file, &len);
 	b->length_priv = len;
 	if (b->buf) {
 		return b;
@@ -504,7 +509,7 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	return r_file_dump (file, r_buf_get_at (b, 0, NULL), r_buf_size (b), 0);
 }
 
-R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
+R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
 	ut64 min = 0LL, max = 0LL;
 	ut64 pa = addr - b->base + b->offset;
 	if (b->fd != -1) {
@@ -518,10 +523,11 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 		case R_IO_SEEK_SET: b->cur_priv = pa; break;
 		case R_IO_SEEK_CUR: b->cur_priv = b->cur_priv + addr; break;
 		case R_IO_SEEK_END:
-			    if (sparse_limits (b->sparse, NULL, &max)) {
-				    return max; // -min
-			    }
-			    b->cur_priv = max + addr; break; //b->base + b->length + addr; break;
+			if (sparse_limits (b->sparse, NULL, &max)) {
+				return max; // -min
+			}
+			b->cur_priv = max + addr;
+			break; //b->base + b->length + addr; break;
 		}
 	} else {
 		ut64 effective_size = r_buf_size (b);
@@ -544,7 +550,7 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 	return (int)b->cur_priv;
 }
 
-R_API bool r_buf_set_bits(RBuffer *b, ut64 at, const ut8* buf, int bitoff, int count) {
+R_API bool r_buf_set_bits(RBuffer *b, ut64 at, const ut8 *buf, int bitoff, int count) {
 	r_mem_copybits_delta (b->buf, at * 8, buf, bitoff, count);
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
@@ -578,8 +584,8 @@ R_API int r_buf_set_bytes_steal(RBuffer *b, const ut8 *buf, ut64 length) {
 }
 
 R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if ((b->buf = realloc (b->buf, b->length_priv+length))) {
-		memmove (b->buf+length, b->buf, b->length_priv);
+	if ((b->buf = realloc (b->buf, b->length_priv + length))) {
+		memmove (b->buf + length, b->buf, b->length_priv);
 		memmove (b->buf, buf, length);
 		b->length_priv += length;
 		b->empty = 0;
@@ -619,8 +625,8 @@ R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
 	if (!(b->buf = realloc (b->buf, 1 + b->length_priv + length))) {
 		return false;
 	}
-	memmove (b->buf+b->length_priv, buf, length);
-	b->buf[b->length_priv+length] = 0;
+	memmove (b->buf + b->length_priv, buf, length);
+	b->buf[b->length_priv + length] = 0;
 	b->length_priv += length;
 	return true;
 }
@@ -645,7 +651,7 @@ R_API bool r_buf_append_nbytes(RBuffer *b, int length) {
 	if (!(b->buf = realloc (b->buf, b->length_priv + length))) {
 		return false;
 	}
-	memset (b->buf+b->length_priv, 0, length);
+	memset (b->buf + b->length_priv, 0, length);
 	b->length_priv += length;
 	return true;
 }
@@ -655,7 +661,7 @@ R_API bool r_buf_append_ut16(RBuffer *b, ut16 n) {
 		return false;
 	}
 	if (b->fd != -1) {
-		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
+		return r_buf_append_bytes (b, (const ut8 *)&n, sizeof (n));
 	}
 	if (b->empty) {
 		b->length_priv = b->empty = 0;
@@ -663,7 +669,7 @@ R_API bool r_buf_append_ut16(RBuffer *b, ut16 n) {
 	if (!(b->buf = realloc (b->buf, b->length_priv + sizeof (n)))) {
 		return false;
 	}
-	memmove (b->buf+b->length_priv, &n, sizeof (n));
+	memmove (b->buf + b->length_priv, &n, sizeof (n));
 	b->length_priv += sizeof (n);
 	return true;
 }
@@ -676,9 +682,9 @@ R_API bool r_buf_append_ut32(RBuffer *b, ut32 n) {
 		b->length_priv = b->empty = 0;
 	}
 	if (b->fd != -1) {
-		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
+		return r_buf_append_bytes (b, (const ut8 *)&n, sizeof (n));
 	}
-	if (!(b->buf = realloc (b->buf, b->length_priv+sizeof (n)))) {
+	if (!(b->buf = realloc (b->buf, b->length_priv + sizeof (n)))) {
 		return false;
 	}
 	memmove (b->buf + b->length_priv, &n, sizeof (n));
@@ -691,7 +697,7 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 		return false;
 	}
 	if (b->fd != -1) {
-		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
+		return r_buf_append_bytes (b, (const ut8 *)&n, sizeof (n));
 	}
 	if (b->empty) {
 		b->length_priv = b->empty = 0;
@@ -699,7 +705,7 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 	if (!(b->buf = realloc (b->buf, b->length_priv + sizeof (n)))) {
 		return false;
 	}
-	memmove (b->buf+b->length_priv, &n, sizeof (n));
+	memmove (b->buf + b->length_priv, &n, sizeof (n));
 	b->length_priv += sizeof (n);
 	return true;
 }
@@ -717,7 +723,7 @@ R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 		b->empty = 0;
 	}
 	if ((b->buf = realloc (b->buf, b->length_priv + a->length_priv))) {
-		memmove (b->buf+b->length_priv, a->buf, a->length_priv);
+		memmove (b->buf + b->length_priv, a->buf, a->length_priv);
 		b->length_priv += a->length_priv;
 		return true;
 	}
@@ -857,7 +863,7 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		return r_sandbox_write (b->fd, buf, len);
 	}
 	if (b->sparse) {
-		return (sparse_write (b->sparse, addr, buf, len) < 0) ? -1 : len;
+		return (sparse_write (b->sparse, addr, buf, len) < 0)? -1: len;
 	}
 	if (b->empty) {
 		if (b->ro) {
@@ -870,7 +876,7 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 	return r_buf_cpy (b, addr, b->buf, buf, len, true);
 }
 
-R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
+R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	return r_buf_fcpy_at (b, addr, buf, fmt, n, true);
 }
 
@@ -915,7 +921,7 @@ R_API void r_buf_free(RBuffer *b) {
 	}
 }
 
-R_API int r_buf_append_string (RBuffer *b, const char *str) {
+R_API int r_buf_append_string(RBuffer *b, const char *str) {
 	return r_buf_append_bytes (b, (const ut8*)str, strlen (str));
 }
 
@@ -937,7 +943,7 @@ R_API char *r_buf_free_to_string(RBuffer *b) {
 	return p;
 }
 
-R_API bool r_buf_resize (RBuffer *b, ut64 newsize) {
+R_API bool r_buf_resize(RBuffer *b, ut64 newsize) {
 	if (!b || b->ro) {
 		return false;
 	}

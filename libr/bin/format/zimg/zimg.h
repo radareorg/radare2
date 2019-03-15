@@ -35,4 +35,4 @@ struct r_bin_zimg_str_t {
 };
 
 struct r_bin_zimg_obj_t *r_bin_zimg_new_buf(RBuffer *buf);
-struct r_bin_zimg_str_t *r_bin_zimg_get_strings (struct r_bin_zimg_obj_t* bin);
+struct r_bin_zimg_str_t *r_bin_zimg_get_strings (struct r_bin_zimg_obj_t *bin);

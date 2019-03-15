@@ -111,7 +111,6 @@ static int openfile(const char *f, int x) {
 }
 #define ISEXEC (fmt!='r')
 
-
 R_API int r_main_ragg2(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
@@ -539,12 +538,12 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			RPrint *p = r_print_new ();
 			switch (*format) {
 			case 'c':
-				r_print_code (p, 0, b->buf, r_buf_size(b),
-					      'c');
+				r_print_code (p, 0, b->buf, r_buf_size (b),
+					'c');
 				break;
 			case 'j': // JavaScript
-				r_print_code (p, 0, b->buf, r_buf_size(b),
-					      'j');
+				r_print_code (p, 0, b->buf, r_buf_size (b),
+					'j');
 				break;
 			case 'r':
 				if (show_str) {
@@ -563,13 +562,13 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			case 'p': // PE
 				if (strlen(format) >= 2 && format[1] == 'y') { // Python
 					r_print_code (p, 0, b->buf,
-						      r_buf_size(b), 'p');
+						r_buf_size (b), 'p');
 				}
 				break;
 			case 'e': // ELF
 			case 'm': // MACH0
 				create (format, arch, bits, b->buf,
-					r_buf_size(b));
+					r_buf_size (b));
 				break;
 			default:
 				eprintf ("unknown executable format (%s)\n", format);

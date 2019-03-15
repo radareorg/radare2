@@ -37,7 +37,7 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, i
 		}
 		r_buf_seek(stream_file->buf, page_offset, 0);
 		r_buf_read_at (stream_file->buf, page_offset,
-			(ut8*)res, stream_file->page_size);
+			(ut8 *)res, stream_file->page_size);
 		res += stream_file->page_size;
 	}
 }

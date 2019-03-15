@@ -279,8 +279,9 @@ static int init_phdr(ELFOBJ *bin) {
 	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
 	sdb_num_set (bin->kv, "elf_phdr.size", sizeof (Elf_(Phdr)), 0);
 	sdb_set (bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
-			"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
-			"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};", 0);
+		"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
+		"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};",
+		0);
 	sdb_set (bin->kv, "elf_p_flags.cparse", "enum elf_p_flags {PF_None=0,PF_Exec=1,"
 			"PF_Write=2,PF_Write_Exec=3,PF_Read=4,PF_Read_Exec=5,PF_Read_Write=6,"
 			"PF_Read_Write_Exec=7};", 0);
@@ -296,7 +297,6 @@ static int init_phdr(ELFOBJ *bin) {
 	// > td `k bin/cur/info/elf_p_type.cparse`; td `k bin/cur/info/elf_p_flags.cparse`
 	// > pf `k bin/cur/info/elf_phdr.format` @ `k bin/cur/info/elf_phdr.offset`
 }
-
 
 static int init_shdr(ELFOBJ *bin) {
 	ut32 shdr_size;
@@ -2346,7 +2346,7 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 static inline int noodle(ELFOBJ *bin, const char *s) {
 	const ut8 *p = bin->b->buf;
 	if (r_buf_size(bin->b) > 64)  {
-		p += r_buf_size(bin->b) - 64;
+		p += r_buf_size (bin->b) - 64;
 	} else {
 		return 0;
 	}

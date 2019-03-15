@@ -48,17 +48,17 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // Timestamp (Unused)
 	D (0); // PointerToSymbolTable (Unused)
 	D (0); // NumberOfSymbols (Unused)
-	p_lsrlc = r_buf_size(buf);
+	p_lsrlc = r_buf_size (buf);
 	H (-1); // SizeOfOptionalHeader
 	H (0x103); // Characteristics
 
 	/* Optional Header */
-	p_opthdr = r_buf_size(buf);
+	p_opthdr = r_buf_size (buf);
 	H (0x10b); // Magic
 	B ("\x08\x00", 2); // (Major/Minor)LinkerVersion (Unused)
 
-	p_sections = r_buf_size(buf);
-	n = p_sections-p_opthdr;
+	p_sections = r_buf_size (buf);
+	n = p_sections - p_opthdr;
 	W (p_lsrlc, &n, 2); // Fix SizeOfOptionalHeader
 
 	/* Sections */

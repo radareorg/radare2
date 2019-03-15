@@ -709,7 +709,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	D (0); // flags
 	WZ (16, "__text");
 	WZ (16, "__TEXT");
-	p_codeva = r_buf_size(buf); // virtual address
+	p_codeva = r_buf_size (buf); // virtual address
 	D (-1);
 	p_codesz = r_buf_size(buf); // size of code (end-start)
 	D (-1);
@@ -724,7 +724,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 
 	if (data && dlen > 0) {
 		/* DATA SEGMENT */
-		D (1);   // cmd.LC_SEGMENT
+		D (1); // cmd.LC_SEGMENT
 		D (124); // sizeof (cmd)
 		p_tmp = r_buf_size(buf);
 		Z (16);
@@ -732,7 +732,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 		D (0x2000); // vmaddr
 		D (0x1000); // vmsize
 		D (0); // fileoff
-		p_datafsz = r_buf_size(buf);
+		p_datafsz = r_buf_size (buf);
 		D (-1); // filesize
 		D (6); // maxprot
 		D (6); // initprot
@@ -746,7 +746,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 		D (-1);
 		p_datasz = r_buf_size(buf);
 		D (-1);
-		p_datapa = r_buf_size(buf);
+		p_datapa = r_buf_size (buf);
 		D (-1); //_start-0x1000);
 		D (2); // align
 		D (0); // reloff
@@ -839,8 +839,8 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	WZ (4096 - r_buf_size(buf), "");
 
 	cmdsize = r_buf_size(buf) - magiclen;
-	codeva = r_buf_size(buf) + baddr;
-	datava = r_buf_size(buf) + clen + baddr;
+	codeva = r_buf_size (buf) + baddr;
+	datava = r_buf_size (buf) + clen + baddr;
 	if (p_entry != 0) {
 		W (p_entry, &codeva, 4); // set PC
 	}

@@ -61,7 +61,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	p_phoff = r_buf_size(buf);
 	D (-1); // phoff -- program headers offset
 	D (0);  // shoff -- section headers offset
-	D (0);  // flags
+	D (0); // flags
 	p_ehdrsz = r_buf_size(buf);
 	H (-1); // ehdrsz
 	p_phdrsz = r_buf_size(buf);
@@ -71,7 +71,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	H (0);
 	H (0);
 	// phdr:
-	p_phdr = r_buf_size(buf);
+	p_phdr = r_buf_size (buf);
 	D (1);
 	D (0);
 	p_vaddr = r_buf_size(buf);
@@ -87,7 +87,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	ehdrsz = p_phdr;
 	phdrsz = r_buf_size(buf) - p_phdr;
-	code_pa = r_buf_size(buf);
+	code_pa = r_buf_size (buf);
 	code_va = code_pa + baddr;
 	phoff = 0x34;//p_phdr ;
 	filesize = code_pa + codelen + datalen;

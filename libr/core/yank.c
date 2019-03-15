@@ -189,7 +189,7 @@ R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
 		return false;
 	}
 	if (len == 0 || len >= r_buf_size(core->yank_buf)) {
-		len = r_buf_size(core->yank_buf);
+		len = r_buf_size (core->yank_buf);
 	}
 	r_core_write_at (core, addr, core->yank_buf->buf, len);
 	return true;
@@ -236,7 +236,7 @@ R_API int r_core_yank_dump(RCore *core, ut64 pos) {
 			r_cons_printf ("0x%08"PFMT64x " %d ",
 				core->yank_buf->base + pos,
 				r_buf_size(core->yank_buf) - pos);
-			for (i = pos; i < r_buf_size(core->yank_buf); i++) {
+			for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 				r_cons_printf ("%02x",
 					core->yank_buf->buf[i]);
 			}
@@ -253,7 +253,7 @@ R_API int r_core_yank_dump(RCore *core, ut64 pos) {
 
 R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
 	int res = false;
-	int ybl = r_buf_size(core->yank_buf);
+	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
 			r_print_hexdump (core->print, pos,
@@ -273,8 +273,8 @@ R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 	int ybl = r_buf_size(core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
-			r_cons_memcat ((const char *) core->yank_buf->buf + pos,
-				r_buf_size(core->yank_buf) - pos);
+			r_cons_memcat ((const char *)core->yank_buf->buf + pos,
+				r_buf_size (core->yank_buf) - pos);
 			r_cons_newline ();
 			return true;
 		}

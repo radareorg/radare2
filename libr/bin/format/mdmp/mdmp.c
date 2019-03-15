@@ -460,8 +460,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			ut64 start_offset = (ut64)entry->location.rva
 			                + r_offsetof (struct minidump_memory_list, memory_ranges);
 			ut64 needed_space = (i + 1) * sizeof (memories[0]);
-			if (start_offset + needed_space > r_buf_size(obj->b)
-			    || start_offset + needed_space < start_offset) {
+			if (start_offset + needed_space > r_buf_size (obj->b) || start_offset + needed_space < start_offset) {
 				break;
 			}
 			r_list_append (obj->streams.memories, &(memories[i]));
@@ -475,17 +474,19 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 
 		sdb_set (obj->kv, "mdmp_exception.format", "[4]E[4]Eqqdd[15]q "
-			"(mdmp_exception_code)ExceptionCode "
-			"(mdmp_exception_flags)ExceptionFlags "
-			"ExceptionRecord ExceptionAddress "
-			"NumberParameters __UnusedAlignment "
-			"ExceptionInformation", 0);
+							   "(mdmp_exception_code)ExceptionCode "
+							   "(mdmp_exception_flags)ExceptionFlags "
+							   "ExceptionRecord ExceptionAddress "
+							   "NumberParameters __UnusedAlignment "
+							   "ExceptionInformation",
+			0);
 		sdb_num_set (obj->kv, "mdmp_exception_stream.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_exception_stream.format", "dd?? "
-			"ThreadId __Alignment "
-			"(mdmp_exception)ExceptionRecord "
-			"(mdmp_location_descriptor)ThreadContext", 0);
+								  "ThreadId __Alignment "
+								  "(mdmp_exception)ExceptionRecord "
+								  "(mdmp_location_descriptor)ThreadContext",
+			0);
 
 		break;
 	case SYSTEM_INFO_STREAM:

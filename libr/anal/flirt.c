@@ -389,8 +389,8 @@ static ut32 read_word(RBuffer *b) {
 static ut16 read_max_2_bytes(RBuffer *b) {
 	ut16 r = read_byte (b);
 	return (r & 0x80)
-	? ((r & 0x7f) << 8) + read_byte (b)
-	: r;
+		? ((r & 0x7f) << 8) + read_byte (b)
+		: r;
 }
 
 static ut32 read_multiple_bytes(RBuffer *b) {
@@ -435,7 +435,7 @@ static void node_free(RFlirtNode *node) {
 	free (node->variant_bool_array);
 	free (node->pattern_bytes);
 	if (node->module_list) {
-		node->module_list->free = (RListFree) module_free;
+		node->module_list->free = (RListFree)module_free;
 		r_list_free (node->module_list);
 	}
 	if (node->child_list) {
@@ -863,7 +863,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 #if DEBUG
 				// XXX investigate
 				eprintf ("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte,
-					 r_buf_seek(b, 0, 1) + header_size);
+					r_buf_seek (b, 0, 1) + header_size);
 #endif
 			}
 			current_byte = read_byte (b);
@@ -923,7 +923,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
 			eprintf ("WARNING non zero crc of zero length @ %04X\n",
-				 r_buf_seek(b, 0, 1) + header_size);
+				r_buf_seek (b, 0, 1) + header_size);
 		}
 		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
 #endif
@@ -1005,8 +1005,7 @@ static ut8 read_node_variant_mask(RFlirtNode *node, RBuffer *b) {
 			return false;
 		}
 	} else if (node->length <= 0x40) { // it shouldn't be more than 64 bytes
-		node->variant_mask = ((ut64) read_multiple_bytes (b) << 32)
-		+ read_multiple_bytes (b);
+		node->variant_mask = ((ut64)read_multiple_bytes (b) << 32) + read_multiple_bytes (b);
 		if (buf_eof || buf_err) {
 			return false;
 		}
@@ -1360,7 +1359,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	header_size = r_buf_seek (flirt_buf, 0, 1);
 #endif
 
-	size = r_buf_size (flirt_buf) - r_buf_seek(flirt_buf, 0, 1);
+	size = r_buf_size (flirt_buf) - r_buf_seek (flirt_buf, 0, 1);
 	buf = malloc (size);
 	if (r_buf_read (flirt_buf, buf, size) != size) {
 		goto exit;

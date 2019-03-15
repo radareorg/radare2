@@ -77,7 +77,7 @@ static RBuffer *build (REgg *egg) {
 		r_buf_append_bytes (buf, stub, STUBLEN);
 
 		for (i = 0; i<r_buf_size(sc); i++) {
-//			 eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
+			//			 eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 			sc->buf[i]^=nkey;
 		}
 		r_buf_append_buf (buf, sc);

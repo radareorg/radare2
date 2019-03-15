@@ -400,14 +400,14 @@ static inline char *eon(char *n) {
 /* padding looks like:
   ([snatSNAT][0-9]+)*
 */
-R_API int r_egg_padding (REgg *egg, const char *pad) {
+R_API int r_egg_padding(REgg *egg, const char *pad) {
 	int number;
-	ut8* buf, padding_byte;
+	ut8 *buf, padding_byte;
 	char *p, *o = strdup (pad);
 
 	for (p = o; *p; ) { // parse pad string
 		const char f = *p++;
-		number = strtol(p, NULL, 10);
+		number = strtol (p, NULL, 10);
 
 		if (number < 1) {
 			eprintf ("Invalid padding length at %d\n", number);
@@ -419,8 +419,10 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		switch (f) {
 		case 's': case 'S': padding_byte = 0; break;
 		case 'n': case 'N': padding_byte = 0x90; break;
-		case 'a': case 'A': padding_byte = 'A'; break;
-		case 't': case 'T': padding_byte = 0xcc; break;
+		case 'a':
+		case 'A': padding_byte = 'A'; break;
+		case 't':
+		case 'T': padding_byte = 0xcc; break;
 		default:
 			eprintf ("Invalid padding format (%c)\n", *p);
 			eprintf ("Valid ones are:\n");

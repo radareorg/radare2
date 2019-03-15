@@ -1153,7 +1153,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 
 	indx = 0;
 	if (r_buf_size (bin->b) > 0) {
-		if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32) r_buf_size (bin->b))) {
+		if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32)r_buf_size (bin->b))) {
 			ut64 off;
 			bin->delay_import_directory_offset = delay_import_dir_offset;
 			do {
@@ -1173,7 +1173,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 				delay_import_dir = new_delay_import_dir;
 				curr_delay_import_dir = delay_import_dir + (indx - 1);
 				rr = r_buf_read_at (bin->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
-					(ut8*) (curr_delay_import_dir), dir_size);
+					(ut8 *)(curr_delay_import_dir), dir_size);
 				if (rr != dir_size) {
 					bprintf ("Warning: read (delay import directory)\n");
 					goto fail;

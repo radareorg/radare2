@@ -117,11 +117,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	// define section
 	WZ (16, "__text");
 	WZ (16, "__TEXT");
-	p_codeva = r_buf_size(buf); // virtual address
+	p_codeva = r_buf_size (buf); // virtual address
 	Q (-1);
-	p_codesz = r_buf_size(buf); // size of code (end-start)
+	p_codesz = r_buf_size (buf); // size of code (end-start)
 	Q (-1);
-	p_codepa = r_buf_size(buf); // code - baddr
+	p_codepa = r_buf_size (buf); // code - baddr
 	D (-1); // offset, _start-0x1000);
 	D (2); // align
 	D (0); // reloff
@@ -131,19 +131,19 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // reserved2
 	D (0); // reserved3
 
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		/* DATA SEGMENT */
 		D (0x19);   // cmd.LC_SEGMENT_64
 		D (124+28); // sizeof (cmd)
 		p_tmp = r_buf_size(buf);
 		Z (16);
 		W (p_tmp, "__TEXT", 6); // segment name
-//XXX must be vmaddr+baddr
+		//XXX must be vmaddr+baddr
 		Q (0x2000); // vmaddr
-//XXX must be vmaddr+baddr
+		//XXX must be vmaddr+baddr
 		Q (0x1000); // vmsize
 		Q (0); // fileoff
-		p_datafsz = r_buf_size(buf);
+		p_datafsz = r_buf_size (buf);
 		Q (-1); // filesize
 		D (6); // maxprot
 		D (6); // initprot
@@ -157,7 +157,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		Q (-1);
 		p_datasz = r_buf_size(buf);
 		Q (-1);
-		p_datapa = r_buf_size(buf);
+		p_datapa = r_buf_size (buf);
 		D (-1); //_start-0x1000);
 		D (2); // align
 		D (0); // reloff
@@ -171,7 +171,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	if (use_dylinker) {
 		if (use_linkedit) {
 			/* LINKEDIT */
-			D (0x19);   // cmd.LC_SEGMENT
+			D (0x19); // cmd.LC_SEGMENT
 			D (72); // sizeof (cmd)
 			WZ (16, "__LINKEDIT");
 			Q (0x3000); // vmaddr
@@ -237,10 +237,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	}
 
 	WZ (4096 - r_buf_size(buf), "");
-	headerlen = r_buf_size(buf) - magiclen;
+	headerlen = r_buf_size (buf) - magiclen;
 
 	codeva = r_buf_size(buf) + baddr;
-	datava = r_buf_size(buf) + codelen + baddr;
+	datava = r_buf_size (buf) + codelen + baddr;
 
 	if (p_entry != 0) {
 		W (p_entry, &codeva, 8); // set PC

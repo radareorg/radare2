@@ -53,6 +53,6 @@ struct r_bin_bflt_obj {
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin);
 struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf);
-void r_bin_bflt_free(struct r_bin_bflt_obj *obj);
+void r_bin_bflt_free (struct r_bin_bflt_obj *obj);
 
 #endif

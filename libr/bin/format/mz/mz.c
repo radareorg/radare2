@@ -314,7 +314,7 @@ struct r_bin_mz_obj_t *r_bin_mz_new_buf (const RBuffer *buf) {
 		return r_bin_mz_free (bin);
 	}
 
-	return r_bin_mz_init (bin) ? bin : r_bin_mz_free (bin);
+	return r_bin_mz_init (bin)? bin: r_bin_mz_free (bin);
 }
 
 RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin) {

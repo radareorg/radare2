@@ -64,8 +64,8 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 		seek_val = R_MIN (r_buf_size(mmo->buf), offset);
 		break;
 	case SEEK_CUR:
-		seek_val = R_MIN (r_buf_size(mmo->buf),
-				  (offset + r_buf_seek(mmo->buf, 0, 1)));
+		seek_val = R_MIN (r_buf_size (mmo->buf),
+			(offset + r_buf_seek (mmo->buf, 0, 1)));
 		break;
 	case SEEK_END:
 		seek_val = r_buf_size(mmo->buf);
@@ -234,7 +234,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return read (mmo->fd, buf, count);
 	}
 	if (r_buf_size(mmo->buf) < io->off) {
-		io->off = r_buf_size(mmo->buf);
+		io->off = r_buf_size (mmo->buf);
 	}
 	return r_buf_read_at (mmo->buf, io->off, buf, count);
 }

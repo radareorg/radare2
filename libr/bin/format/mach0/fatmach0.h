@@ -18,7 +18,7 @@ struct r_bin_fatmach0_obj_t {
 struct r_bin_fatmach0_arch_t {
 	int size;
 	int offset;
-	RBuffer *b; 
+	RBuffer *b;
 	int last;
 };
 

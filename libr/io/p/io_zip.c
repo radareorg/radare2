@@ -197,7 +197,7 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	}
 
 	struct zip_source *s = zip_source_buffer (zipArch, zfo->b->buf,
-						  r_buf_size(zfo->b), 0);
+		r_buf_size (zfo->b), 0);
 	if (s && zfo->entry != -1) {
 		if (zip_replace(zipArch, zfo->entry, s) == 0) {
 			res = true;
@@ -229,13 +229,13 @@ static void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 	free (zfo);
 }
 
-RIOZipFileObj *r_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 perm, int mode, int rw) {
+RIOZipFileObj *r_io_zip_create_new_file (const char *archivename, const char *filename, struct zip_stat *sb, ut32 perm, int mode, int rw) {
 	RIOZipFileObj *zfo = R_NEW0 (RIOZipFileObj);
 	if (zfo) {
 		zfo->b = r_buf_new ();
 		zfo->archivename = strdup (archivename);
 		zfo->name = strdup (sb? sb->name: filename);
-		zfo->entry = !sb ? -1 : sb->index;
+		zfo->entry = !sb? -1: sb->index;
 		zfo->fd = r_num_rand (0xFFFF); // XXX: Use r_io_fd api
 		zfo->perm = perm;
 		zfo->mode = mode;
@@ -528,18 +528,16 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 	switch (whence) {
 	case SEEK_SET:
-		seek_val = (r_buf_size(zfo->b) < offset) ?
-			r_buf_size(zfo->b) : offset;
-		r_buf_seek(zfo->b, io->off = seek_val, 0);
+		seek_val = (r_buf_size (zfo->b) < offset)? r_buf_size (zfo->b): offset;
+		r_buf_seek (zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_CUR:
-		seek_val = (r_buf_size(zfo->b) < (offset + r_buf_seek(zfo->b, 0, 1))) ?
-			r_buf_size(zfo->b) : offset + r_buf_seek(zfo->b, 0, 1);
-		r_buf_seek(zfo->b, io->off = seek_val, 0);
+		seek_val = (r_buf_size (zfo->b) < (offset + r_buf_seek (zfo->b, 0, 1)))? r_buf_size (zfo->b): offset + r_buf_seek (zfo->b, 0, 1);
+		r_buf_seek (zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	case SEEK_END:
 		seek_val = r_buf_size(zfo->b);
-		r_buf_seek(zfo->b, io->off = seek_val, 0);
+		r_buf_seek (zfo->b, io->off = seek_val, 0);
 		return seek_val;
 	}
 	return seek_val;
@@ -552,7 +550,7 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	zfo = fd->data;
 	if (r_buf_size(zfo->b) < io->off) {
-		io->off = r_buf_size(zfo->b);
+		io->off = r_buf_size (zfo->b);
 	}
 	return r_buf_read_at (zfo->b, io->off, buf, count);
 }
@@ -593,7 +591,7 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		r_io_zip_realloc_buf (zfo, count);
 	}
 	if (r_buf_size(zfo->b) < io->off) {
-		io->off = r_buf_size(zfo->b);
+		io->off = r_buf_size (zfo->b);
 	}
 	zfo->modified = 1;
 	ret = r_buf_write_at (zfo->b, io->off, buf, count);

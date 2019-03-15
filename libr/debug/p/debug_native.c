@@ -1132,14 +1132,15 @@ err_linux_map_alloc:
 	return map;
 }
 
-static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
+static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RBuffer *buf = NULL;
 	char code[1024];
 	int ret = 0;
 	char *asm_list[] = {
-			"x86", "x86.as",
-			"x64", "x86.as",
-			NULL};
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
 	int num = r_syscall_get_num (dbg->anal->syscall, "munmap");
 
 	snprintf (code, sizeof (code),
@@ -1167,7 +1168,7 @@ err_linux_map_dealloc:
 	return ret;
 }
 #elif __WINDOWS__
-static int io_perms_to_prot (int io_perms) {
+static int io_perms_to_prot(int io_perms) {
 	int prot_perms;
 
 	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {

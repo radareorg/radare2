@@ -86,77 +86,77 @@ static int countOnes(ut32 val) {
 }
 
 typedef enum {
-	kAccessForClass  = 0,
+	kAccessForClass = 0,
 	kAccessForMethod = 1,
-	kAccessForField  = 2,
+	kAccessForField = 2,
 	kAccessForMAX
 } AccessFor;
 
 static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	#define NUM_FLAGS 18
-	static const char* kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
+	static const char *kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
 		{
 			/* class, inner class */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"?",                /* 0x0020 */
-			"?",                /* 0x0040 */
-			"?",                /* 0x0080 */
-			"?",                /* 0x0100 */
-			"INTERFACE",        /* 0x0200 */
-			"ABSTRACT",         /* 0x0400 */
-			"?",                /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"ANNOTATION",       /* 0x2000 */
-			"ENUM",             /* 0x4000 */
-			"?",                /* 0x8000 */
-			"VERIFIED",         /* 0x10000 */
-			"OPTIMIZED",        /* 0x20000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"?", /* 0x0020 */
+			"?", /* 0x0040 */
+			"?", /* 0x0080 */
+			"?", /* 0x0100 */
+			"INTERFACE", /* 0x0200 */
+			"ABSTRACT", /* 0x0400 */
+			"?", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"ANNOTATION", /* 0x2000 */
+			"ENUM", /* 0x4000 */
+			"?", /* 0x8000 */
+			"VERIFIED", /* 0x10000 */
+			"OPTIMIZED", /* 0x20000 */
 		},
 		{
 			/* method */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"SYNCHRONIZED",     /* 0x0020 */
-			"BRIDGE",           /* 0x0040 */
-			"VARARGS",          /* 0x0080 */
-			"NATIVE",           /* 0x0100 */
-			"?",                /* 0x0200 */
-			"ABSTRACT",         /* 0x0400 */
-			"STRICT",           /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"?",                /* 0x2000 */
-			"?",                /* 0x4000 */
-			"MIRANDA",          /* 0x8000 */
-			"CONSTRUCTOR",      /* 0x10000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"SYNCHRONIZED", /* 0x0020 */
+			"BRIDGE", /* 0x0040 */
+			"VARARGS", /* 0x0080 */
+			"NATIVE", /* 0x0100 */
+			"?", /* 0x0200 */
+			"ABSTRACT", /* 0x0400 */
+			"STRICT", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"?", /* 0x2000 */
+			"?", /* 0x4000 */
+			"MIRANDA", /* 0x8000 */
+			"CONSTRUCTOR", /* 0x10000 */
 			"DECLARED_SYNCHRONIZED", /* 0x20000 */
 		},
 		{
 			/* field */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"?",                /* 0x0020 */
-			"VOLATILE",         /* 0x0040 */
-			"TRANSIENT",        /* 0x0080 */
-			"?",                /* 0x0100 */
-			"?",                /* 0x0200 */
-			"?",                /* 0x0400 */
-			"?",                /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"?",                /* 0x2000 */
-			"ENUM",             /* 0x4000 */
-			"?",                /* 0x8000 */
-			"?",                /* 0x10000 */
-			"?",                /* 0x20000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"?", /* 0x0020 */
+			"VOLATILE", /* 0x0040 */
+			"TRANSIENT", /* 0x0080 */
+			"?", /* 0x0100 */
+			"?", /* 0x0200 */
+			"?", /* 0x0400 */
+			"?", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"?", /* 0x2000 */
+			"ENUM", /* 0x4000 */
+			"?", /* 0x8000 */
+			"?", /* 0x10000 */
+			"?", /* 0x20000 */
 		},
 	};
 	int i, count = countOnes (flags);
@@ -824,8 +824,8 @@ static RBinInfo *info(RBinFile *bf) {
 	memcpy (h->buf, bf->buf->buf + 8, 4);
 	{
 		ut32 *fc = (ut32 *)(bf->buf->buf + 8);
-		ut32  cc = __adler32 (bf->buf->buf + 12,
-				      r_buf_size(bf->buf) - 12);
+		ut32 cc = __adler32 (bf->buf->buf + 12,
+			r_buf_size (bf->buf) - 12);
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
