@@ -17,7 +17,7 @@
 #include <termios.h>
 #endif
 
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 #include <signal.h>
 #endif
 
@@ -870,7 +870,7 @@ int test_command(libgdbr_t *g, const char *command) {
 
 static bool _isbreaked = false;
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static HANDLE h;
 static BOOL __w32_signal(DWORD type) {
 	if (type == CTRL_C_EVENT) {
@@ -883,7 +883,7 @@ static BOOL __w32_signal(DWORD type) {
 #define SET_SIGINT_HANDLER(g,x)
 #define UNSET_SIGINT_HANDLER()
 
-#elif __UNIX__ || __CYGWIN__
+#elif __UNIX__
 static void _sigint_handler(int signo) {
 	_isbreaked = true;
 }

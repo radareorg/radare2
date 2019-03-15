@@ -4,9 +4,7 @@
 #if __WINDOWS__
 #include <windows.h>
 #include <stdio.h>
-#ifndef __CYGWIN__
 #include <tchar.h>
-#endif
 
 #define BUFSIZE 1024
 void r_sys_perror_str(const char *fun);

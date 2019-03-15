@@ -231,7 +231,7 @@ static int __close(RIODesc *fd) {
 }
 
 static void got_alarm(int sig) {
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 	// !!! may die if not running from r2preload !!! //
 	kill (getpid (), SIGUSR1);
 #endif
@@ -242,7 +242,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return r_str_newf ("%d", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		/* do nothing here */
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "kill", 4)) {
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
@@ -342,7 +342,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
 		free (argv);
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
 		signal (SIGALRM, got_alarm);
 		// TODO: use setitimer
@@ -386,7 +386,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("| =!pid               show getpid()\n");
 		eprintf ("| =!maps              show map regions\n");
 		eprintf ("| =!kill              commit suicide\n");
-#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
+#if !defined(__WINDOWS__)
 		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
 #endif
 		eprintf ("| =!dlsym [sym]       dlopen\n");

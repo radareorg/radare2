@@ -83,7 +83,7 @@ static int parseMouseEvent() {
 }
 
 R_API int r_cons_arrow_to_hjkl(int ch) {
-#if __WINDOWS_ && !__CYGWIN__
+#if __WINDOWS__
 	return ch;
 #endif
 	I->mouse_event = 0;
@@ -293,7 +293,7 @@ R_API int r_cons_any_key(const char *msg) {
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static int readchar_win(ut32 usec) {
 	int ch = 0;
 	BOOL ret;
@@ -473,7 +473,7 @@ R_API void r_cons_switchbuf(bool active) {
 	bufactive = active;
 }
 
-#if !(__WINDOWS__ && !__CYGWIN__)
+#if !__WINDOWS__
 extern volatile sig_atomic_t sigwinchFlag;
 extern void resizeWin(void);
 #endif
@@ -488,7 +488,7 @@ R_API int r_cons_readchar() {
 		memmove (readbuffer, readbuffer + 1, readbuffer_length);
 		return ch;
 	}
-#if __WINDOWS__ && !__CYGWIN__ //&& !MINGW32
+#if __WINDOWS__
 	#if 1   // if something goes wrong set this to 0. skuater.....
 	return readchar_win(0);
 	#endif

@@ -347,7 +347,7 @@ R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct
 }
 
 R_API int r_lib_opendir(RLib *lib, const char *path) {
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	wchar_t file[1024];
 	WIN32_FIND_DATAW dir;
 	HANDLE fh;
@@ -367,10 +367,10 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	if (!path) {
 		return false;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	wcpath = r_utf8_to_utf16 (path);
 	if (!wcpath) {
-		return false;	
+		return false;
 
 	}
 #if __MINGW32__
