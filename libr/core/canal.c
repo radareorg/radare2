@@ -2928,7 +2928,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ALL);
+			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
 			if (!op) {
 				//eprintf ("Cannot get op\n");
 				break;
@@ -4428,7 +4428,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->assembler, cur);
-		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ALL)) {
+		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}
 		// if (op.type & 0x80000000 || op.type == 0) {
