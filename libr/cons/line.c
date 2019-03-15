@@ -14,7 +14,7 @@ R_API RLine *r_line_new() {
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
 	I.contents = NULL;
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	I.ansicon = r_sys_getenv ("ANSICON");
 #endif
 	if (!r_line_dietline_init ()) {

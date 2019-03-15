@@ -1,7 +1,6 @@
 default.cc=rvg
 
 rvg=cc
-cc.rvg.name=rvg
 cc.rvg.arg1=a0
 cc.rvg.arg2=a1
 cc.rvg.arg3=a2

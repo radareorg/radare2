@@ -3,7 +3,7 @@
 
 #include <r_list.h>
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 #define R_SYS_DEVNULL "nul"
 #else
 #define R_SYS_DEVNULL "/dev/null"
@@ -36,7 +36,7 @@ R_API int r_sys_arch_id(const char *arch);
 R_API bool r_sys_arch_match(const char *archstr, const char *arch);
 R_API RList *r_sys_dir(const char *path);
 R_API void r_sys_perror_str(const char *fun);
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 #define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
 #else
 #define r_sys_mkdir_failed() (errno != EEXIST)

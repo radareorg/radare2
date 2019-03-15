@@ -224,7 +224,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 }
 
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io && addr, 0);
+	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
@@ -1583,11 +1583,9 @@ static int esil_add(RAnalEsil *esil) {
 	ut64 s, d;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
-			r_anal_esil_pushnum (esil, s + d);
-			ret = true;
-		}
+	if ((src && r_anal_esil_get_parm (esil, src, &s)) && (dst && r_anal_esil_get_parm (esil, dst, &d))) {
+		r_anal_esil_pushnum (esil, s + d);
+		ret = true;
 	} else {
 		ERR ("esil_add: invalid parameters");
 	}
@@ -1653,34 +1651,24 @@ static int esil_inceq(RAnalEsil *esil) {
 }
 
 static int esil_sub(RAnalEsil *esil) {
-	ut64 s = 0, d = 0;
-	char * dst = r_anal_esil_pop (esil);
-	if (!dst) {
-		goto dst_broken;
-	}
-	if (r_anal_esil_reg_read (esil, dst, &d, NULL)) {
-		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-	} else {
-		if (!isnum (esil, dst, &d)) {
-			free (dst);
-			goto dst_broken;
+	int ret = 0;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if ((src && r_anal_esil_get_parm (esil, src, &s)) && (dst && r_anal_esil_get_parm (esil, dst, &d))) {
+		if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_INTERNAL) {
+			esil->old = d;
+			esil->cur = d - s;
+			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
 		}
-		esil->lastsz = 64;
+		r_anal_esil_pushnum (esil, d - s);
+		ret = true;
+	} else {
+		ERR ("esil_sub: invalid parameters");
 	}
+	free (src);
 	free (dst);
-
-	if (!popRN (esil, &s)) {
-		ERR ("esil_sub: src is broken");
-		return false;
-	}
-	esil->old = d;
-	esil->cur = d - s;
-	r_anal_esil_pushnum (esil, esil->cur);
-	return true;
-
-dst_broken:
-	ERR ("esil_sub: dst is broken");
-	return false;
+	return ret;
 }
 
 static int esil_subeq(RAnalEsil *esil) {
@@ -2910,7 +2898,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 	}
 	if (esil->parse_stop) {
 		if (esil->parse_stop == 2) {
-			eprintf ("ESIL TODO: %s\n", *str + 1);
+			eprintf ("[esil at 0x%08"PFMT64x"] TODO: %s\n", esil->address, *str + 1);
 		}
 		return 1;
 	}

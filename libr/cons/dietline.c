@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 #include <windows.h>
 #define USE_UTF8 0
 #else
@@ -186,7 +186,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 }
 #endif
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static int r_line_readchar_win(int *vch) { // this function handle the input in console mode
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
@@ -694,7 +694,7 @@ R_API const char *r_line_readline() {
 	return r_line_readline_cb (NULL, NULL);
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	int columns = r_cons_get_size (NULL) - 2;
 	const char *gcomp_line = "";
@@ -1126,7 +1126,7 @@ _end:
 #endif
 
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	// new implementation for read input at windows by skuater. If something fail set this to 0
 	return r_line_readline_cb_win (cb, user);
 #endif
@@ -1200,7 +1200,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (columns < 1) {
 			columns = 40;
 		}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		if (I.echo) {
 			printf ("\r%*c\r", columns, ' ');
 		}

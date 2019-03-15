@@ -255,7 +255,7 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	if (mprotect (ptr, size, p) == -1) {
 		return false;
 	}
-#elif __WINDOWS__ || __CYGWIN__
+#elif __WINDOWS__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;

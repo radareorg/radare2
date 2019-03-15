@@ -6,8 +6,17 @@
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return buf && length > 4 && !memcmp (buf, CGCMAG, SCGCMAG) && buf[4] != 2;
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[SCGCMAG + 1];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r > SCGCMAG && !memcmp (tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;
+}
+
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
@@ -96,11 +105,10 @@ RBinPlugin r_bin_plugin_cgc = {
 	.desc = "CGC format r_bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
-	.load_buffer= load_buffer,
+	.load_buffer = load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,

@@ -70,7 +70,7 @@ sdb_inc = [
   include_directories(['.', 'src'])
 ]
 
-libsdb = both_libraries('sdb', libsdb_sources,
+libsdb = both_libraries('libsdb', libsdb_sources,
   include_directories: sdb_inc,
   implicit_include_directories: false,
   soversion: sdb_libversion,
@@ -128,10 +128,16 @@ pkgconfig_mod.generate(
   url: 'https://github.com/radare/sdb'
 )
 
-make_test_executable = find_program('make')
-test('run tests', make_test_executable,
-  args: 'test',
-  env: ['BASEDIR=' + meson.current_build_dir()],
-  workdir: join_paths(meson.current_build_dir(), '..'),
-  depends: [sdb_exe, libsdb]
-)
+if not meson.is_subproject()
+  make_exe = find_program('make', required: false)
+  if make_exe.found()
+    test('run tests', make_exe,
+      args: 'test',
+      env: ['BASEDIR=' + meson.current_build_dir()],
+      workdir: join_paths(meson.current_build_dir(), '..'),
+      depends: [sdb_exe, libsdb]
+    )
+  endif
+
+  subdir('test/bench')
+endif

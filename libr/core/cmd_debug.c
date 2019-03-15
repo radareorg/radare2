@@ -109,7 +109,7 @@ static const char *help_msg_dc[] = {
 	"dcb", "", "Continue back until breakpoint",
 	"dcc", "", "Continue until call (use step into)",
 	"dccu", "", "Continue until unknown call (call reg)",
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	"dce", "", "Continue execution (pass exception to program)",
 #endif
 	"dcf", "", "Continue until fork (TODO)",
@@ -4108,7 +4108,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			}
 			break;
 		}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	case 'e': // "dce"
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_continue_pass_exception (core->dbg);

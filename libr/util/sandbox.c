@@ -252,6 +252,9 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 	int ret = -1;
 #if __WINDOWS__
 	mode |= O_BINARY;
+	if (!strcmp (path, "/dev/null")) {
+		path = "NUL";
+	}
 #endif
 	if (enabled) {
 		if ((mode & O_CREAT)
@@ -345,7 +348,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 #endif
 	return -1;
 }
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;

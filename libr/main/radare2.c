@@ -111,7 +111,9 @@ static RThreadFunctionRet loading_thread(RThread *th) {
 
 static void loading_start() {
 	thread = r_th_new (loading_thread, NULL, 1);
-	r_th_start (thread, true);
+	if (r_th_start (thread, true)) {
+		r_th_setname (thread, "r2_th");
+	}
 }
 
 static void loading_stop() {
@@ -1238,6 +1240,9 @@ R_API int r_main_radare2(int argc, char **argv) {
 			/* TODO: only load data if no project is used */
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
+			if (rabin_th) {
+				r_th_setname (rabin_th, "rabin_th");
+			}
 			// rabin_delegate (NULL);
 		} // else eprintf ("Metadata loaded from 'prj.name'\n");
 #endif

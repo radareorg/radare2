@@ -19,25 +19,8 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	RBuffer *tbuf = r_buf_new();
-	r_buf_set_bytes (tbuf, buf, sz);
-	*bin_obj = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
-	r_buf_free (tbuf);
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_bin_coff_new_buf (buf, bf->rbin->verbose);
 }
 
 static int destroy(RBinFile *bf) {
@@ -55,7 +38,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 
 static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
-	char * coffname = NULL;
+	char *coffname = NULL;
 	struct coff_symbol *s = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
 		return false;
@@ -334,7 +317,7 @@ static ut64 size(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
+static bool check_buffer(RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
 
@@ -346,10 +329,17 @@ ut32 NUMOFSYMS
 ut16 OPTHDRSIZE
 ut16 CHARACTERISTICS
 #endif
-	if (buf && length >= 20) {
-		return r_coff_supported_arch (buf);
-	}
-	return false;
+
+	ut8 tmp[20];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r >= 20 && r_coff_supported_arch (tmp);
+}
+
+static bool check_bytes(const ut8 *bytes, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 RBinPlugin r_bin_plugin_coff = {
@@ -357,10 +347,10 @@ RBinPlugin r_bin_plugin_coff = {
 	.desc = "COFF format r_bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

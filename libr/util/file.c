@@ -201,21 +201,29 @@ R_API char *r_file_abspath(const char *file) {
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file + 2);
 	} else {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 		if (cwd && *file != '/') {
 			ret = r_str_newf ("%s" R_SYS_DIR "%s", cwd, file);
 		}
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 		// Network path
 		if (!strncmp (file, "\\\\", 2)) {
 			return strdup (file);
 		}
 		if (!strchr (file, ':')) {
-			char *abspath = malloc (MAX_PATH);
+			PTCHAR abspath = malloc (MAX_PATH * sizeof (TCHAR));
 			if (abspath) {
-				GetFullPathName (file, MAX_PATH, abspath, NULL);
-				ret = strdup (abspath);
+				PTCHAR f = r_sys_conv_utf8_to_utf16 (file);
+				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
+				if (s > MAX_PATH) {
+					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+				} else if (!s) {
+					r_sys_perror ("r_file_abspath/GetFullPathName");
+				} else {
+					ret = r_sys_conv_utf16_to_utf8 (abspath);
+				}
 				free (abspath);
+				free (f);
 			}
 		}
 #endif
@@ -1052,8 +1060,14 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	char *s = r_file_abspath (src);
-	char *d = r_file_abspath (dst);
+	PTCHAR s = r_sys_conv_utf8_to_utf16 (src);
+	PTCHAR d = r_sys_conv_utf8_to_utf16 (dst);
+	if (!s || !d) {
+		R_LOG_ERROR ("r_file_copy: Failed to allocate memory\n");
+		free (s);
+		free (d);
+		return false;
+	}
 	bool ret = CopyFile (s, d, 0);
 	if (!ret) {
 		eprintf ("File not found\n");
