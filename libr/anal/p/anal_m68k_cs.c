@@ -124,7 +124,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
 	static int omode = -1;
@@ -675,7 +675,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->stackptr = 0;
 		break;
 	}
-	if (a->fillval) {
+	if (mask & R_ANAL_OP_MASK_VAL) {
 		op_fillval (op, handle, insn);
 	}
 beach:

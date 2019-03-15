@@ -80,7 +80,7 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	return op->size;
 }
 
-int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len) {
+int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len, RAnalOpMask mask) {
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
 	if (anal->cpu && r_str_casecmp(anal->cpu, "c64x") == 0) {

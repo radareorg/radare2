@@ -703,7 +703,7 @@ static void set_opdir(RAnalOp *op) {
         }
 }
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
 	static int omode = -1;
@@ -1034,12 +1034,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 beach:
 	set_opdir (op);
-	if (anal->decode) {
+	if (mask & R_ANAL_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (anal->fillval) {
+	if (mask & R_ANAL_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);

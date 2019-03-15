@@ -11,7 +11,7 @@
 // hack
 #include "../../asm/arch/i8080/i8080dis.c"
 
-static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char out[32];
 	int ilen = i8080_disasm (data, out, len);
 	memset (op, '\0', sizeof (RAnalOp));

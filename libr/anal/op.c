@@ -131,12 +131,10 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
-	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
 	if (anal->pcalign && addr % anal->pcalign) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
@@ -151,7 +149,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}

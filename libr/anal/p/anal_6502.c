@@ -305,7 +305,7 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
 	r_strbuf_setf (&op->esil, "%d,%c,=", enabled, flag);
 }
 
-static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char addrbuf[64];
 	const int buffsize = sizeof (addrbuf) - 1;
 	if (len < 1) {

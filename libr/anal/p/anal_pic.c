@@ -1153,7 +1153,7 @@ static int anal_pic_pic18_set_reg_profile(RAnal *esil) {
 }
 
 
-static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
 		// TODO: implement
 		return -1;

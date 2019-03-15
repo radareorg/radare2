@@ -3023,7 +3023,7 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
@@ -3074,17 +3074,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->id = insn->id;
 		if (a->bits == 64) {
 			anop64 (handle, op, insn);
-			if (a->decode) {
+			if (mask & R_ANAL_OP_MASK_ESIL) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
-			if (a->decode) {
+			if (mask & R_ANAL_OP_MASK_ESIL) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
 		}
 		set_opdir (op);
-		if (a->fillval) {
+		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (op, handle, insn, a->bits);
 		}
 		cs_free (insn, n);
@@ -3439,7 +3439,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 			free (hint);
 		}
 
-		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx)) < 1) {
+		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {

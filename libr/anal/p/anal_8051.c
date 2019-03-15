@@ -875,7 +875,7 @@ static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
 	}
 }
 
-static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	set_cpu_model (anal, false);
 
 	op->delay = 0;
@@ -1035,7 +1035,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->refptr = 1;
 	}
 
-	if (anal->decode) {
+	if (mask & R_ANAL_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (anal, op, addr, copy);

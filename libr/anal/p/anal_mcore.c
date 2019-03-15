@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include "../../asm/arch/mcore/mcore.h"
 
-static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	mcore_handle handle = {0};
 	mcore_t* instr = NULL;
 

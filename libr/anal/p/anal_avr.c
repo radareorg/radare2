@@ -1772,7 +1772,7 @@ INVALID_OP:
 	return NULL;
 }
 
-static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	CPU_MODEL *cpu;
 	ut64 offset;
 

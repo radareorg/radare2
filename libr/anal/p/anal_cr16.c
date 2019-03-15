@@ -11,7 +11,7 @@
 #include <cr16_disas.h>
 
 static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len)
+		const ut8 *buf, int len, RAnalOpMask mask)
 {
 	int ret;
 	struct cr16_cmd cmd;
