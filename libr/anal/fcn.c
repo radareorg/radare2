@@ -1369,7 +1369,6 @@ repeat:
 		case R_ANAL_OP_TYPE_CMP:
 			if (op.ptr) {
 				cmpval = op.ptr;
-// eprintf ("0x%08llx SET CMP %d\n", op.addr, cmpval);
 			}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
@@ -1383,7 +1382,6 @@ repeat:
 				bb->jump = op.jump;
 				bb->fail = op.fail;
 			}
-// eprintf ("0x%08llx UCJMP?\n", op.addr);
 			if (anal->opt.jmptbl) {
 				if (op.ptr != UT64_MAX) {
 					ut64 table_size, default_case;
@@ -1402,7 +1400,6 @@ repeat:
 						} else if (op.fail == op.ptr) {
 							op.fail = UT64_MAX;
 						}
-// eprintf ("reset cmpval at 0x%llx\n", op.addr);
 						cmpval = UT64_MAX;
 					}
 				}
