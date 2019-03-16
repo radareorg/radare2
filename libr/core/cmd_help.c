@@ -62,7 +62,7 @@ static const char *help_msg_exclamation[] = {
 	"!!!", "cmd [args|$type]", "adds the autocomplete value",
 	"!!!-", "cmd [args]", "removes the autocomplete value",
 	".!", "rabin2 -rpsei ${FILE}", "run each output line as a r2 cmd",
-	"!", "echo $SIZE", "display file size",
+	"!", "echo $R2_SIZE", "display file size",
 	"!-", "", "clear history in current session",
 	"!-*", "", "clear and save empty history log",
 	"!=!", "", "enable remotecmd mode",
