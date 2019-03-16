@@ -221,7 +221,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 		b->info.dwFlags |=  STARTF_USESTDHANDLES;
 		snprintf (commandline, sizeof (commandline), "\"%s\" -f \"%s\" -q ", pathBochs, pathConfig);
 		lprintf ("*** Creating process: %s\n", commandline);
-		commandline_ = r_sys_conv_utf8_to_utf16 (commandline);
+		commandline_ = r_sys_conv_utf8_to_win (commandline);
 		if (CreateProcess (NULL, commandline_, NULL, NULL, TRUE, CREATE_NEW_CONSOLE,
 				NULL, NULL, &b->info, &b->processInfo)) {
 			lprintf ("Process created\n");

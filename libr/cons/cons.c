@@ -470,8 +470,19 @@ R_API RCons *r_cons_new() {
 #if __WINDOWS__
 	I.ansicon = r_sys_getenv ("ANSICON");
 #if UNICODE
-	SetConsoleOutputCP (CP_UTF8);
-	SetConsoleCP (CP_UTF8);
+	if (IsValidCodePage (CP_UTF8)) {
+		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
+			r_sys_perror ("r_cons_new");
+		}
+	} else {
+		R_LOG_WARN ("UTF-8 Codepage not installed.\n");
+	}
+#else
+	UINT CP_IN = GetACP ();
+	UINT CP_OUT = IsValidCodePage (CP_UTF8) ? CP_UTF8 : CP_IN;
+	if (!SetConsoleOutputCP (CP_OUT) || !SetConsoleCP (CP_IN)) {
+		r_sys_perror ("r_cons_new");
+	}
 #endif
 #endif
 #if EMSCRIPTEN

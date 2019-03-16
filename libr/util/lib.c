@@ -74,7 +74,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 			libname_[0] = '\0';
 		}
 	} else {
-		libname_ = r_sys_conv_utf8_to_utf16 (libname);
+		libname_ = r_sys_conv_utf8_to_win (libname);
 	}
 	ret = DLOPEN (libname_);
 #else

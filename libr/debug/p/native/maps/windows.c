@@ -95,11 +95,11 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 		char *mod_name;
 		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
 
-		mod_name = r_sys_conv_utf16_to_utf8 (me32.szModule);
+		mod_name = r_sys_conv_win_to_utf8 (me32.szModule);
 		mr = r_debug_map_new (mod_name, baddr, baddr + me32.modBaseSize, 0, 0);
 		free (mod_name);
 		if (mr) {
-			mr->file = r_sys_conv_utf16_to_utf8 (me32.szExePath);
+			mr->file = r_sys_conv_win_to_utf8 (me32.szExePath);
 			if (mr->file) {
 				r_list_append (list, mr);
 			}
@@ -227,7 +227,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 
 	DWORD len = w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
-		char *f_name_ = r_sys_conv_utf16_to_utf8 (f_name);
+		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
 		add_map_reg (map_list, f_name_, mbi);
 		free (f_name_);
 	} else {

@@ -1787,7 +1787,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	while (*_shell_cmd && isspace ((ut8)*_shell_cmd)) {
 		_shell_cmd++;
 	}
-	_shell_cmd_ = r_sys_conv_utf8_to_utf16 (_shell_cmd);
+	_shell_cmd_ = r_sys_conv_utf8_to_win (_shell_cmd);
 	// exec windows process
 	if (!CreateProcess (NULL, _shell_cmd_, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");

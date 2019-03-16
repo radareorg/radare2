@@ -11,7 +11,7 @@
 
 static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;
-	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
+	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
 
 	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	free (path_);

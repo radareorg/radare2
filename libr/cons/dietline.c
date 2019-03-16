@@ -224,14 +224,9 @@ do_it_again:
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
 				free (buf);
-#if UNICODE
-				buf = r_utf16_to_utf8_l (&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
-#else
-				buf = r_acp_to_utf8_l (&irInBuf.Event.KeyEvent.uChar.AsciiChar, 1);
-#endif
+				buf = r_sys_conv_win_to_utf8_l (&irInBuf.Event.KeyEvent.uChar, 1);
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
-			}
-			else {
+			} else {
 				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 				case VK_DOWN: *vch = bCtrl ? 140 : 40; break;
 				case VK_UP: *vch = bCtrl ? 138 : 38; break;
@@ -961,7 +956,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				if (hClipBoard) {
 					clipText = GlobalLock (hClipBoard);
 					if (clipText) {
-						char *txt = r_sys_conv_utf16_to_utf8 (clipText);
+						char *txt = r_sys_conv_win_to_utf8 (clipText);
 						if (!txt) {
 							R_LOG_ERROR ("Failed to allocate memory\n");
 							break;
