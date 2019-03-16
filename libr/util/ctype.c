@@ -554,7 +554,7 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	int offset = 0;
 	char *str = func_name;
 	char *result = NULL;
-	char *first, *last;
+	char *first;
 	r_return_val_if_fail (TDB, false);
 	r_return_val_if_fail (func_name, false);
 
