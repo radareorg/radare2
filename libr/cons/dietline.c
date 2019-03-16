@@ -961,12 +961,13 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 							R_LOG_ERROR ("Failed to allocate memory\n");
 							break;
 						}
-						I.buffer.length += strlen (txt);
+						int len = strlen (txt);
+						I.buffer.length += len;
 						if (I.buffer.length < R_LINE_BUFSIZE) {
 							I.buffer.index = I.buffer.length;
 							strcat (I.buffer.data, txt);
 						} else {
-							I.buffer.length -= strlen (I.clipboard);
+							I.buffer.length -= len;
 						}
 						free (txt);
 					}
@@ -1055,26 +1056,27 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			if (gcomp) {
 				gcomp++;
 			}
+			int size = r_str_utf8_charsize (buf);
+			if (I.buffer.length + size > (R_LINE_BUFSIZE - 1)) {
+				break;
+			}
 			if (I.buffer.index < I.buffer.length) {
-				int size = r_str_utf8_charsize (buf);
 				I.buffer.length += size;
 				for (i = I.buffer.length; i - size + 1 > I.buffer.index; i--) {
 					I.buffer.data[i] = I.buffer.data[i - size];
 				}
-				while (size) {
-					I.buffer.data[i--] = buf[--size];
+				int sz = size;
+				while (sz) {
+					I.buffer.data[i--] = buf[--sz];
 				}
 			} else {
-				for (i = 0; i < R_LINE_BUFSIZE - 1 && buf[i]; i++) {
+				for (i = 0; I.buffer.length + i <= R_LINE_BUFSIZE - 1 && buf[i]; i++) {
 					I.buffer.data[I.buffer.length + i] = buf[i];
 				}
-				I.buffer.length += strlen (buf);
-				if (I.buffer.length > (R_LINE_BUFSIZE - 1)) {
-					I.buffer.length--;
-				}
+				I.buffer.length += i;
 				I.buffer.data[I.buffer.length] = '\0';
 			}
-			I.buffer.index += strlen (buf);
+			I.buffer.index += size;
 			break;
 		}
 		if (I.sel_widget && I.buffer.length != prev_buflen) {
