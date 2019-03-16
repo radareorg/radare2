@@ -525,7 +525,7 @@ static int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dep
 		anal->cmdtail = r_str_appendf (anal->cmdtail,
 			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
 			ip, ip);
-		if (default_case != 0 && default_case != UT64_MAX) {
+		if (default_case != 0 && default_case != UT64_MAX && default_case != UT32_MAX) {
 			anal->cmdtail = r_str_appendf (anal->cmdtail,
 				"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
 				default_case, default_case);
@@ -570,7 +570,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		// if we don't check for 0 here, the next check with ptr+jmpptr
 		// will obviously be a good offset since it will be the start
 		// of the table, which is not what we want
-		if (jmpptr == 0) {
+		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
 		}
 
