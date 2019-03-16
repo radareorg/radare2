@@ -345,15 +345,19 @@ R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
 	}
 	r_anal_fcn_set_size (anal, fcn, newsize);
 
+	// XXX this is something we should probably do for all the archs
+	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+	if (is_arm) {
+		return true;
+	}
+
 	ut64 eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
-#if 1
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
-//			r_list_delete (fcn->bbs, iter);
+			r_list_delete (fcn->bbs, iter);
 			continue;
 		}
-#endif
 		if (bb->addr + bb->size >= eof) {
 			bb->size = eof - bb->addr;
 		}
@@ -1529,21 +1533,12 @@ repeat:
 					movptr = UT64_MAX;
 				} else if (is_arm) {
 					if (op.ptrsize == 2) { // LDRH on thumb/arm
-						eprintf ("CMPVAL %d\n", cmpval);
-						int i, tablesize = cmpval + 16;
-						ut8 *jmpdata = (ut8 *)calloc (tablesize, sizeof (short));
-						anal->iob.read_at (anal->iob.io, op.addr + 4, jmpdata , tablesize * sizeof (short));
-						for (i = 0; i < tablesize; i++) {
-							ut16 delta = r_read_le16 (jmpdata + (i * sizeof (short)));
-							eprintf ("DST: 0x%08"PFMT64x"\n", op.addr + delta);
-						}
+						int tablesize = cmpval + 15;
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.addr + op.size,
 							op.addr + 4, 2, tablesize / 2, UT64_MAX, ret);
+						// skip inlined jumptable
+						idx += (tablesize * 2);
 					}
-					// TODO: add support for ptrsize==1
-// oplen += 48 - 4;
-idx += 48 -4 ;
-// eprintf ("JMP TBL AT 0x%08"PFMT64x"\n", op.addr);
 				}
 			}
 #if 0
@@ -1781,7 +1776,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		}
 #if !JAYRO_04
 		// fcn is not yet in anal => pass NULL
-		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
+		r_anal_fcn_resize (anal, fcn, endaddr - fcn->addr);
 #endif
 		r_anal_trim_jmprefs (anal, fcn);
 	}
