@@ -1332,8 +1332,7 @@ repeat:
 				if (must_eob) {
 					FITFCNSZ ();
 					op.jump = UT64_MAX;
-					gotoBeachRet ();
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 #if FIX_JMP_FWD
