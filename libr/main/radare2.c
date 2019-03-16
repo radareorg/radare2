@@ -1119,6 +1119,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 								if (r.file && iod && (iod->fd == r.file->fd) && iod->name) {
 									filepath = iod->name;
 								}
+								// XXX if using file:// iod->uri and iod->name are swapped :(
 								/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 								/* the baddr should be set manually here */
 								(void)r_core_bin_load (&r, filepath, baddr);

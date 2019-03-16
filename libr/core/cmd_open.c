@@ -869,15 +869,13 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = NULL;
 	RIODesc *desc;
-	char *binpath = NULL;
 	if (!ofile || !(desc = r_io_desc_get (core->io, ofile->fd)) || !desc->uri) {
 		eprintf ("No file open?\n");
 		return;
 	}
-	bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
-	binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
+	RBinFile *bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
+	char *binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	if (!binpath) {
 		if (r_file_exists (desc->name)) {
 			binpath = strdup (desc->name);
@@ -887,6 +885,13 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		/* fallback to oo */
 		(void)r_core_cmd0 (core, "oo");
 		return;
+	}
+	bool is_file_uri = r_str_startswith (binpath, "file://");
+	if (is_file_uri) {
+		eprintf ("Trimming down the 'file://' URI handler.\n");
+		char *nouripath = strdup (binpath + strlen ("file://"));
+		free (binpath);
+		binpath = nouripath;
 	}
 	int bits = core->assembler->bits;
 	char *bin_abspath = r_file_abspath (binpath);
