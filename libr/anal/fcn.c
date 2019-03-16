@@ -1326,8 +1326,7 @@ repeat:
 					if (op.fail != UT64_MAX) {
 						// recurseAt (op.fail);
 					}
-					gotoBeachRet ();
-					return R_ANAL_RET_END;
+					gotoBeach (R_ANAL_RET_END);
 				}
 			}
 #if FIX_JMP_FWD
