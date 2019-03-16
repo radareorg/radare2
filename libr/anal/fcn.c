@@ -611,7 +611,6 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 }
 
 #define gotoBeach(x) ret = x; goto beach;
-#define gotoBeachRet() goto beach;
 
 static bool isInvalidMemory(const ut8 *buf, int len) {
 	// can be wrong
@@ -1347,7 +1346,8 @@ repeat:
 			}
 			recurseAt (op.jump);
 			FITFCNSZ ();
-			gotoBeachRet ();
+
+			goto beach;
 #endif
 			break;
 		case R_ANAL_OP_TYPE_SUB:
@@ -1451,7 +1451,7 @@ repeat:
 			// without which the analysis is really slow,
 			// presumably because each opcode would get revisited
 			// (and already covered by a bb) many times
-			gotoBeachRet ();
+			goto beach;
 			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
@@ -1579,7 +1579,7 @@ analopfinish:
 				op.jump = last_push_addr;
 				bb->jump = op.jump;
 				recurseAt (op.jump);
-				gotoBeachRet ();
+				goto beach;
 			} else {
 				if (!op.cond) {
 					if (anal->verbose) {
@@ -1605,7 +1605,7 @@ beach:
 	return ret;
 }
 
-static int check_preludes(ut8 *buf, ut16 bufsz) {
+static bool check_preludes(ut8 *buf, ut16 bufsz) {
 	if (bufsz < 10) {
 		return false;
 	}
@@ -1715,9 +1715,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	int ret;
 	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	/* defines fcn. or loc. prefix */
-	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE)
-	? R_ANAL_FCN_TYPE_LOC
-		: R_ANAL_FCN_TYPE_FCN;
+	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}
