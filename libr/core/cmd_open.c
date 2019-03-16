@@ -886,13 +886,6 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		(void)r_core_cmd0 (core, "oo");
 		return;
 	}
-	bool is_file_uri = r_str_startswith (binpath, "file://");
-	if (is_file_uri) {
-		eprintf ("Trimming down the 'file://' URI handler.\n");
-		char *nouripath = strdup (binpath + strlen ("file://"));
-		free (binpath);
-		binpath = nouripath;
-	}
 	int bits = core->assembler->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	char *escaped_path = r_str_arg_escape (bin_abspath);
