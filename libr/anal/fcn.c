@@ -1103,7 +1103,7 @@ repeat:
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
+			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
 			delay.pending = 1; // we need this in case the actual idx is zero...
@@ -1116,7 +1116,7 @@ repeat:
 			// track of how many still to process.
 			delay.cnt--;
 			if (!delay.cnt) {
-				VERBOSE_DELAY eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
+				VERBOSE_DELAY eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
 				delay.after = idx;
 				idx = delay.idx;
 				// At this point, we are still looking at the
@@ -1126,7 +1126,7 @@ repeat:
 				// the branch delay.
 			}
 		} else if (op.delay > 0 && delay.pending) {
-			VERBOSE_DELAY eprintf("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", at - oplen, bb->size);
+			VERBOSE_DELAY eprintf("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
@@ -1134,7 +1134,7 @@ repeat:
 				bb->size -= oplen;
 				fcn->ninstr--;
 				VERBOSE_DELAY eprintf("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
-				at - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
+				addr + idx - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
 				FITFCNSZ ();
 			}
 			// Next time, we go to the opcode after the delay count
