@@ -869,15 +869,13 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = NULL;
 	RIODesc *desc;
-	char *binpath = NULL;
 	if (!ofile || !(desc = r_io_desc_get (core->io, ofile->fd)) || !desc->uri) {
 		eprintf ("No file open?\n");
 		return;
 	}
-	bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
-	binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
+	RBinFile *bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
+	char *binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	if (!binpath) {
 		if (r_file_exists (desc->name)) {
 			binpath = strdup (desc->name);
