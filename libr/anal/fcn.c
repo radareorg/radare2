@@ -335,20 +335,22 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 }
 
 R_API int r_anal_fcn_resize(RAnal *anal, RAnalFunction *fcn, int newsize) {
-	ut64 eof; /* end of function */
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
+
 	r_return_val_if_fail (fcn, false);
+
 	if (newsize < 1) {
 		return false;
 	}
 	r_anal_fcn_set_size (anal, fcn, newsize);
-	eof = UT64_MAX; // fcn->addr + r_anal_fcn_size (fcn);
+
+	ut64 eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
-#if 0
+#if 1
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
-			r_list_delete (fcn->bbs, iter);
+//			r_list_delete (fcn->bbs, iter);
 			continue;
 		}
 #endif
@@ -544,11 +546,11 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		jmptbl_size = JMPTBLSZ;
 	}
 	ut64 jmpptr, offs;
-	ut8 *jmptbl = malloc (jmptbl_size * sz);
+	ut8 *jmptbl = calloc (jmptbl_size, sz);
 	if (!jmptbl) {
 		return 0;
 	}
-		bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
@@ -1539,7 +1541,9 @@ repeat:
 							op.addr + 4, 2, tablesize / 2, UT64_MAX, ret);
 					}
 					// TODO: add support for ptrsize==1
-eprintf ("JMP TBL AT 0x%08"PFMT64x"\n", op.addr);
+// oplen += 48 - 4;
+idx += 48 -4 ;
+// eprintf ("JMP TBL AT 0x%08"PFMT64x"\n", op.addr);
 				}
 			}
 #if 0
