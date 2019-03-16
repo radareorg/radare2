@@ -318,7 +318,15 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 	if (!mmo) {
 		return NULL;
 	}
-	return r_io_desc_new (io, &r_io_plugin_default, mmo->filename, perm, mode, mmo);
+	RIODesc *d = r_io_desc_new (io, &r_io_plugin_default, mmo->filename, perm, mode, mmo);
+	if (!d->name) {
+		d->name = strdup (file);
+	}
+	if (r_str_startswith (d->name, "file://")) {
+		free (d->name);
+		d->name = strdup (d->name + strlen ("file://"));
+	}
+	return d;
 }
 
 
@@ -345,9 +353,6 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 
 // default open should permit opening
 static RIODesc *__open_default(RIO *io, const char *file, int perm, int mode) {
-	if (r_str_startswith (file, "file://")) {
-		file += strlen ("file://");
-	}
 	if (r_io_def_mmap_check_default (file)) {
 		return r_io_def_mmap_open (io, file, perm, mode);
 	}

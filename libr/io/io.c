@@ -113,12 +113,11 @@ R_API RIO* r_io_init(RIO* io) {
 }
 
 R_API void r_io_free(RIO *io) {
-	if (!io) {
-		return;
+	if (io) {
+		r_io_fini (io);
+		r_cache_free (io->buffer);
+		free (io);
 	}
-	r_io_fini (io);
-	r_cache_free (io->buffer);
-	free (io);
 }
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
@@ -132,9 +131,7 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
-	if (!io || !uri) {
-		return NULL;
-	}
+	r_return_val_if_fail (io && uri, NULL);
 	RIODesc *desc = r_io_desc_open (io, uri, perm, mode);
 	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
@@ -147,23 +144,21 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
 R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
 	r_return_val_if_fail (io && io->maps, NULL);
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
-	if (!desc) {
-		return NULL;
+	if (desc) {
+		r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
 	}
-	r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
 	return desc;
 }
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
 R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 at) {
-	r_return_val_if_fail (io && io->maps, NULL);
-	RIODesc* desc;
-	ut64 size;
-	desc = r_io_open_nomap (io, uri, perm, mode);
+	r_return_val_if_fail (io && io->maps && uri, NULL);
+
+	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (!desc) {
 		return NULL;
 	}
-	size = r_io_desc_size (desc);
+	ut64 size = r_io_desc_size (desc);
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow

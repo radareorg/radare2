@@ -95,9 +95,7 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 }
 
 R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
-	if (!io || !io->files || !uri) {
-		return NULL;
-	}
+	r_return_val_if_fail (io && io->files && uri, NULL);
 	RIOPlugin *plugin = r_io_plugin_resolve (io, uri, 0);
 	if (!plugin || !plugin->open) {
 		return NULL;
@@ -107,14 +105,14 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 		return NULL;
 	}
 	// for none static callbacks, those that cannot use r_io_desc_new
-	if (!desc->plugin) {
-		desc->plugin = plugin;
+	if (!desc->name) {
+		desc->name = strdup (uri);
 	}
 	if (!desc->uri) {
 		desc->uri = strdup (uri);
 	}
-	if (!desc->name) {
-		desc->name = strdup (uri);
+	if (!desc->plugin) {
+		desc->plugin = plugin;
 	}
 	r_io_desc_add (io, desc);
 	return desc;

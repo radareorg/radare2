@@ -415,12 +415,8 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	return true;
 }
 
-static int try_loadlib(RCore *core, const char *lib, ut64 addr) {
-	RCoreFile *cf = r_core_file_open (core, lib, 0, addr);
-	if (!cf) {
-		return false;
-	}
-	return true;
+static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
+	return r_core_file_open (core, lib, 0, addr) != NULL;
 }
 
 R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
