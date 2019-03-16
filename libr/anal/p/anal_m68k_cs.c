@@ -190,7 +190,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	op->delay = 0;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
-	opex (&op->opex, handle, insn);
+	if (mask & R_ANAL_OP_MASK_OPEX) {
+		opex (&op->opex, handle, insn);
+	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
 		op->type  = R_ANAL_OP_TYPE_ILL;

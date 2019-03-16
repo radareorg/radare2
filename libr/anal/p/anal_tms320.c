@@ -85,7 +85,7 @@ int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len, R
 
 	if (anal->cpu && r_str_casecmp(anal->cpu, "c64x") == 0) {
 #ifdef CAPSTONE_TMS320C64X_H
-		return tms320c64x_analop (anal, op, addr, buf, len);
+		return tms320c64x_analop (anal, op, addr, buf, len, mask);
 #else
 		return -1;
 #endif
