@@ -182,7 +182,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	r_strbuf_set (&op->esil, "");
 
 	if (insn) {
-		opex (&op->opex, *handle, insn);
 		// caching operands
 		for (i = 0; i < insn->detail->mips.op_count && i < 8; i++) {
 			*str[i] = 0;
@@ -1034,6 +1033,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	}
 beach:
 	set_opdir (op);
+	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+		opex (&op->opex, hndl, insn);
+	}
 	if (mask & R_ANAL_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);

@@ -882,7 +882,6 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 
 	const char *postfix = NULL;
-	opex64 (&op->opex, *handle, insn);
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -1514,8 +1513,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int msr_flags;
 	int pcdelta = (thumb ? 4 : 8);
 	ut32 mask = UT32_MAX;
-
-	opex (&op->opex, *handle, insn);
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -3083,11 +3080,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->id = insn->id;
 		if (a->bits == 64) {
 			anop64 (handle, op, insn);
+			if (mask & R_ANAL_OP_MASK_OPEX) {
+				opex64 (&op->opex, handle, insn);
+			}
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
+			if (mask & R_ANAL_OP_MASK_OPEX) {
+				opex (&op->opex, handle, insn);
+			}
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
