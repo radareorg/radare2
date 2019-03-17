@@ -3859,3 +3859,36 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 
 	return maps;
 }
+
+char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
+	RBinElfSection *section = get_section_by_name (bin, ".comment");
+	if (!section) {
+		return NULL;
+	}
+
+	ut64 off = section->offset;
+	ut64 sz = section->size;
+	char *buf = malloc (sz + 1);
+	if (!buf) {
+		return NULL;
+	}
+	if (r_buf_read_at (bin->b, off, (ut8*)buf, sz) < 1) {
+		free (buf);
+		return NULL;
+	}
+
+	char *ptr = buf;
+
+	do {
+		char *p = strchr (ptr, '\0');
+		size_t psz = (p - ptr);
+		ptr = p;
+		sz -= psz + 1;
+		if (sz > 1) {
+			*ptr = '/';
+			ptr++;
+		}
+	} while (sz > 0);
+
+	return buf;
+}
