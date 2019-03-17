@@ -2000,7 +2000,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 						fcn->addr, addr);
 			}
 			return false;
-		} else if (bb->size != size && (r_cons_is_interactive () || anal->verbose)) {
+		} else if (bb->size != size && anal->verbose) {
 			int diff = (int)size - bb->size;
 			eprintf ("Warning: Basic block truncated by %d byte%s starting from 0x%"PFMT64x"\n",
 			         diff, diff == 1 ? "" : "s", bb->addr + bb->size);
