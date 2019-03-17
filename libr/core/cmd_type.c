@@ -864,6 +864,12 @@ beach:
 	free (buf);
 }
 
+static int typecmp(const void *a, const void *b) {
+	char *type1 = (char *) a;
+	char *type2 = (char *) b;
+	return strcmp (type1 , type2);
+}
+
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
@@ -1292,6 +1298,27 @@ static int cmd_type(void *data, const char *input) {
 			eprintf ("Invalid use of td. See td? for help\n");
 		}
 		break;
+	case 'x': { // "tx"
+		RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+		if(fcn) {
+			RListIter *iter;
+			RAnalVar *var;
+			char *type;
+			RList *list = r_anal_var_all_list (core->anal, fcn);
+			RList *type_used = r_list_new ();
+                        r_list_foreach (list, iter, var) {
+				r_list_append (type_used , var->type);
+			}
+			RList *uniq = r_list_uniq (type_used , typecmp);
+			r_list_foreach (uniq , iter , type) {
+				r_cons_println (type);
+			}
+			r_list_free (uniq);
+			r_list_free (type_used);
+		} else {
+			eprintf ("cannot find function at 0x%08"PFMT64x"\n", core->offset);
+		}
+	} break;
 	// ta - link immediate type offset to an address
 	case 'a': // "ta"
 		switch (input[1]) {
