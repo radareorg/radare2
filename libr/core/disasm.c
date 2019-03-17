@@ -2368,42 +2368,7 @@ static void ds_print_cycles(RDisasmState *ds) {
 	}
 }
 
-static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
-	//ds->stackptr = ds->core->anal->stackptr;
-	ds->ostackptr = ds->stackptr;
-	switch (op->stackop) {
-	case R_ANAL_STACK_RESET:
-		ds->stackptr = 0;
-		break;
-	case R_ANAL_STACK_SET:
-		ds->stackptr = op->stackptr;
-		break;
-	case R_ANAL_STACK_INC:
-		ds->stackptr += op->stackptr;
-		break;
-	default:
-		/* nothing to do here */
-		break;
-	}
-	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-	 * Use RAnalFunction->RAnalOp->stackptr? */
-	if (op->type == R_ANAL_OP_TYPE_RET) {
-		ds->stackptr = 0;
-	}
-//	ds->ostackptr = ds->stackptr;
-	//ds->core->anal->stackptr = ds->stackptr;
-}
-
-static void ds_print_stackptr(RDisasmState *ds) {
-	if (ds->show_stackptr) {
-		r_cons_printf ("%5d%s", ds->stackptr,
-			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
-			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
-			ds->stackptr > ds->ostackptr? "+":
-			ds->stackptr < ds->ostackptr? "-": " ");
-		ds_update_stackptr (ds, &ds->analop);
-	}
-}
+#include "disasm_stackptr.inc"
 
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
