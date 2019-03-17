@@ -2349,12 +2349,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_panels (core, NULL);
 			break;
 		case 'g':
-		{
 			r_core_visual_showcursor (core, true);
 			r_core_visual_offset (core);
 			r_core_visual_showcursor (core, false);
-		}
-		break;
+			break;
+		case 'G':
+			__core_visual_gogo (core, 'G');
+			break;
 		case 'A':
 		{
 			int oce = core->print->cur_enabled;
@@ -2620,6 +2621,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				  RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				  if (fcn) {
 					  r_core_seek (core, fcn->addr, 0);
+				  } else {
+					  __core_visual_gogo (core, 'g');
 				  }
 			  }
 			  break;
