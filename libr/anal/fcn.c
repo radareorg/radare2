@@ -2000,10 +2000,10 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 						fcn->addr, addr);
 			}
 			return false;
-		} else if (bb->size != size) {
-			// TODO: Fix err msg to not assume single insn
-			eprintf ("Truncated instruction of %d bytes at 0x%"PFMT64x"\n",
-			         (int)size - bb->size, bb->addr + bb->size);
+		} else if (bb->size != size && (r_cons_is_interactive () || anal->verbose)) {
+			int diff = (int)size - bb->size;
+			eprintf ("Warning: Basic block truncated by %d byte%s at 0x%"PFMT64x"\n",
+			         diff, diff == 1 ? "" : "s", bb->addr + bb->size);
 		}
 	} else {
 		if (!bb) {
