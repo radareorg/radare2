@@ -960,6 +960,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	r_print_set_screenbounds (p, addr);
 	int rows = 0;
 	int bytes = 0;
+	bool printValue = true;
+	bool oPrintValue = true;
+	bool isPxr = (base == 32 || base == 64);
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
@@ -992,13 +995,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				last_sparse = 0;
 			}
 		}
-		if (use_offset) {
+		if (use_offset && !isPxr) {
 			r_print_addr (p, addr + j * zoomsz);
 		}
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;
 		if (use_hexa) {
-			if (!compact) {
+			if (!isPxr && !compact) {
 				printfmt ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
@@ -1067,14 +1070,32 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					} else {
 						a = b = "";
 					}
-					if (base == 64) {
-						printfmt ("%s0x%016" PFMT64x "%s  ", a, (ut64) n, b);
-					} else if (step == 2) {
-						printfmt ("%s0x%04x%s ", a, (ut16) n, b);
-					} else {
-						printfmt ("%s0x%08x%s ", a, (ut32) n, b);
+					printValue = true;
+					if (p && p->flags & R_PRINT_FLAGS_REFS) {
+						if (n == 0) {
+							if (oPrintValue) {
+								if (use_offset) {
+									r_print_addr (p, addr + j * zoomsz);
+								}
+								printfmt ("... (null) ...\n");
+							}
+							printValue = false;
+						}
 					}
-					r_print_cursor (p, j, sz_n, 0);
+					if (printValue) {
+						if (use_offset) {
+							r_print_addr (p, addr + j * zoomsz);
+						}
+						if (base == 64) {
+							printfmt ("%s0x%016" PFMT64x "%s  ", a, (ut64) n, b);
+						} else if (step == 2) {
+							printfmt ("%s0x%04x%s ", a, (ut16) n, b);
+						} else {
+							printfmt ("%s0x%08x%s ", a, (ut32) n, b);
+						}
+						r_print_cursor (p, j, sz_n, 0);
+					}
+					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
 					long long w = r_read_ble64 (buf + j, p && p->big_endian);
@@ -1141,97 +1162,99 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				bytes++;
 			}
 		}
-		if (compact) {
-			if (col == 0) {
-				printfmt (" ");
-			} else if (col == 1) {
-				//printfmt (" ");
+		if (printValue) {
+			if (compact) {
+				if (col == 0) {
+					printfmt (" ");
+				} else if (col == 1) {
+					//printfmt (" ");
+				} else {
+					printfmt ((col == 2)? "|": "");
+				}
 			} else {
-				printfmt ((col == 2)? "|": "");
+				printfmt ((col == 2)? "|": " ");
 			}
-		} else {
-			printfmt ((col == 2)? "|": " ");
-		}
-		if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
-			bytes = 0;
-			for (j = i; j < i + inc; j++) {
-				if (j!=i && use_align  && bytes >= rowbytes) {
-					int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
-					if (sz >= 0) {
-						printfmt (" ");
+			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+				bytes = 0;
+				for (j = i; j < i + inc; j++) {
+					if (j!=i && use_align  && bytes >= rowbytes) {
+						int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
+						if (sz >= 0) {
+							printfmt (" ");
+							break;
+						}
+					}
+					if (j >= len || (use_align && bytes >= rowbytes)) {
 						break;
 					}
+					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
+						? ' ' : buf[j];
+					r_print_byte (p, "%c", j, ch);
+					bytes++;
 				}
-				if (j >= len || (use_align && bytes >= rowbytes)) {
-					break;
-				}
-				ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
-				                ? ' ' : buf[j];
-				r_print_byte (p, "%c", j, ch);
-				bytes++;
 			}
-		}
-		/* ascii column */
-		if (col == 2) {
-			printfmt ("|");
-		}
-		bool eol = false;
-		if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
-			ut64 *foo = (ut64 *) (buf + i);
-			ut64 off = *foo;
-			if (base == 32) {
-				off &= UT32_MAX;
+			/* ascii column */
+			if (col == 2) {
+				printfmt ("|");
 			}
-			if (p->hasrefs) {
-				char *rstr = p->hasrefs (p->user, addr + i, false);
-				if (rstr && *rstr) {
-					printfmt (" @%s", rstr);
+			bool eol = false;
+			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
+				ut64 *foo = (ut64 *) (buf + i);
+				ut64 off = *foo;
+				if (base == 32) {
+					off &= UT32_MAX;
 				}
-				free (rstr);
-				rstr = p->hasrefs (p->user, off, true);
-				if (rstr && *rstr) {
-					printfmt ("%s", rstr);
-				}
-				free (rstr);
-			}
-		}
-		if (!eol && p && p->use_comments) {
-			for (; j < i + inc; j++) {
-				printfmt (" ");
-			}
-			for (j = i; j < i + inc; j++) {
-				if (use_align && (j-i) >= rowbytes) {
-					break;
-				}
-				if (p && p->offname) {
-					a = p->offname (p->user, addr + j);
-					if (p->colorfor && a && *a) {
-						const char *color = p->colorfor (p->user, addr + j, true);
-						printfmt ("%s  ; %s%s", color ? color: "", a,
-						          color ? Color_RESET : "");
+				if (p->hasrefs) {
+					char *rstr = p->hasrefs (p->user, addr + i, false);
+					if (rstr && *rstr) {
+						printfmt (" @%s", rstr);
 					}
+					free (rstr);
+					rstr = p->hasrefs (p->user, off, true);
+					if (rstr && *rstr) {
+						printfmt ("%s", rstr);
+					}
+					free (rstr);
 				}
-				char *comment = p->get_comments (p->user, addr + j);
-				if (comment) {
-					if (p && p->colorfor) {
-						a = p->colorfor (p->user, addr + j, true);
-						if (a && *a) {
-							b = Color_RESET;
+			}
+			if (!eol && p && p->use_comments) {
+				for (; j < i + inc; j++) {
+					printfmt (" ");
+				}
+				for (j = i; j < i + inc; j++) {
+					if (use_align && (j-i) >= rowbytes) {
+						break;
+					}
+					if (p && p->offname) {
+						a = p->offname (p->user, addr + j);
+						if (p->colorfor && a && *a) {
+							const char *color = p->colorfor (p->user, addr + j, true);
+							printfmt ("%s  ; %s%s", color ? color: "", a,
+									color ? Color_RESET : "");
+						}
+					}
+					char *comment = p->get_comments (p->user, addr + j);
+					if (comment) {
+						if (p && p->colorfor) {
+							a = p->colorfor (p->user, addr + j, true);
+							if (a && *a) {
+								b = Color_RESET;
+							} else {
+								a = b = "";
+							}
 						} else {
 							a = b = "";
 						}
-					} else {
-						a = b = "";
+						printfmt ("%s  ; %s", a, comment);
+						free (comment);
 					}
-					printfmt ("%s  ; %s", a, comment);
-					free (comment);
 				}
 			}
+			if (use_align && rowbytes < inc && bytes >= rowbytes) {
+				i -= (inc - bytes);
+			}
+			printfmt ("\n");
 		}
-		if (use_align && rowbytes < inc && bytes >= rowbytes) {
-			i -= (inc - bytes);
-		}
-		printfmt ("\n");
 		rows++;
 		bytes = 0;
 
