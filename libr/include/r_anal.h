@@ -892,6 +892,7 @@ typedef struct r_anal_bb_t {
 	ut8 *parent_reg_arena;
 	int stackptr;
 	int parent_stackptr;
+	bool folded;
 #undef RAnalBlock
 } RAnalBlock;
 

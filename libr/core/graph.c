@@ -3959,6 +3959,21 @@ static void rotateColor(RCore *core) {
 	r_config_set_i (core->config, "scr.color", color);
 }
 
+// dupe in visual.c
+static bool toggle_bb(RCore *core, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, addr);
+		if (bb) {
+			bb->folded = !bb->folded;
+		} else {
+			r_warn_if_reached ();
+		}
+		return true;
+	}
+	return false;
+}
+
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_cons_is_interactive ();
@@ -4177,8 +4192,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'Z':
-			if (okey == 27) {
+			if (okey == 27) { // shift-tab
 				agraph_prev_node (g);
+			} else {
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					ut64 addr = r_num_get (NULL, n->title);
+					toggle_bb (core, addr);
+					g->need_reload_nodes = true;
+				}
 			}
 			break;
 		case 's':
