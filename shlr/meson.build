@@ -183,9 +183,6 @@ sdb_dep = declare_dependency(
 )
 
 sdb_platform_inc = []
-if host_machine.system() == 'windows'
-  sdb_platform_inc = include_directories('sdb/msvc')
-endif
 
 # Create sdb_version.h
 sdb_version = '1.2.0'
