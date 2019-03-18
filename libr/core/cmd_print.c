@@ -2809,18 +2809,27 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			break;
 		case 'e':
 			blockptr = malloc (ate - at);
-			r_io_read_at (core->io, at, blockptr, (ate -at));
+			if (!blockptr) {
+				eprintf ("Error: failed to malloc memory");
+				return 0;
+			}
+			if (!r_io_read_at (core->io, at, blockptr, (ate - at))) {
+				eprintf ("Error: failed to read block");
+				free (blockptr);
+				return 0;
+			}
 			entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
 			entropy = 9 * entropy / 200; // normalize entropy from 0 to 10
 			if (use_color) {
-				if (entropy >= 7)
+				if (entropy >= 7) {
 					r_cons_print (Color_BGRED);
-				else if (entropy >= 4)
+				} else if (entropy >= 4) {
 					r_cons_print (Color_BGGREEN);
-				else
+				} else {
 					r_cons_print (Color_BGBLUE);
+				}
 			}
-			r_cons_printf("%d", entropy);
+			r_cons_printf ("%d", entropy);
 			free (blockptr);
 			break;
 		default:
