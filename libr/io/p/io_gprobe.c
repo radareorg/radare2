@@ -250,7 +250,7 @@ static int sp_open (struct gport *port) {
 	}
 	sprintf (escaped_port_name, "\\\\.\\%s", port->name);
 
-	filename_ = r_sys_conv_utf8_to_utf16 (escaped_port_name);
+	filename_ = r_sys_conv_utf8_to_win (escaped_port_name);
 
 	port->hdl = CreateFile (filename_, GENERIC_READ | GENERIC_WRITE, 0, 0,
 				OPEN_EXISTING,
