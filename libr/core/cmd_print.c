@@ -2745,7 +2745,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	int len = 0;
 	int i;
 	ut8 *blockptr;
-	float entropy = 0;
+	ut8 entropy = 0;
 	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to - from) / piece); i++) {
 		ut64 at = from + (piece * i);
@@ -2809,24 +2809,17 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		case 'e':
 			blockptr = malloc (ate - at);
 			r_io_read_at (core->io, at, blockptr, (ate -at));
-			entropy = (r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
-			r_cons_printf("%.3f ", entropy);
-			if (off >= at && off < ate) {
-				r_cons_memcat ("^", 1);
-			} else {
-				RIOMap *s = r_io_map_get (core->io, at);
-				if (use_color) {
-					if (s) {
-						if (s->perm & R_PERM_X) {
-							r_cons_print (Color_BGBLUE);
-						} else {
-							r_cons_print (Color_BGGREEN);
-						}
-					} else {
-						r_cons_print (Color_BGRED);
-					}
-				}
+			entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
+			entropy = 9 * entropy / 200; // normalize entropy from 0 to 10
+			if (use_color) {
+				if (entropy >= 7)
+					r_cons_print (Color_BGRED);
+				else if (entropy >= 4)
+					r_cons_print (Color_BGGREEN);
+				else
+					r_cons_print (Color_BGBLUE);
 			}
+			r_cons_printf("%d", entropy);
 			free (blockptr);
 			break;
 		default:
