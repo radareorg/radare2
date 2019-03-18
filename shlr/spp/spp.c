@@ -1,7 +1,7 @@
-/* MIT (C) pancake (at) nopcode (dot) org - 2009-2017 */
+/* MIT (C) pancake (at) nopcode (dot) org - 2009-2019 */
 
 #include "spp.h"
-#include "s_api.h"
+#include "r_api.h"
 #include "config.h"
 
 S_API int spp_run(char *buf, Output *out) {
@@ -56,10 +56,10 @@ static char *spp_run_str(char *buf, int *rv) {
 	char *b;
 	Output tmp;
 	tmp.fout = NULL;
-	tmp.cout = s_strbuf_new ("");
+	tmp.cout = r_strbuf_new ("");
 	int rc = spp_run (buf, &tmp);
-	b = strdup (s_strbuf_get (tmp.cout));
-	s_strbuf_free (tmp.cout);
+	b = strdup (r_strbuf_get (tmp.cout));
+	r_strbuf_free (tmp.cout);
 	if (rv) {
 		*rv = rc;
 	}
@@ -321,4 +321,18 @@ S_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
 		//args = (struct Arg*)proc->args;
 		tags = (struct Tag*)proc->tags;
 	}
+}
+
+void out_printf(Output *out, char *str, ...) {
+	va_list ap;
+	va_start (ap, str);
+	if (out->fout) {
+		vfprintf (out->fout, str, ap);
+	} else {
+		char tmp[4096];
+		vsnprintf (tmp, sizeof (tmp), str, ap);
+		tmp[sizeof (tmp) - 1] = 0;
+		r_strbuf_append (out->cout, tmp);
+	}
+	va_end (ap);
 }

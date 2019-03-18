@@ -1,23 +1,23 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include "spp.h"
-#include "s_api.h"
+#include "r_api.h"
 
-SStrBuf *s_strbuf_new(const char *str) {
+SStrBuf *r_strbuf_new(const char *str) {
 	SStrBuf *s = R_NEW0 (SStrBuf);
-	if (str) s_strbuf_set (s, str);
+	if (str) r_strbuf_set (s, str);
 	return s;
 }
 
-void s_strbuf_init(SStrBuf *sb) {
+void r_strbuf_init(SStrBuf *sb) {
 	memset (sb, 0, sizeof (SStrBuf));
 }
 
-bool s_strbuf_set(SStrBuf *sb, const char *s) {
+bool r_strbuf_set(SStrBuf *sb, const char *s) {
 	int l;
 	if (!sb) return false;
 	if (!s) {
-		s_strbuf_init (sb);
+		r_strbuf_init (sb);
 		return true;
 	}
 	l = strlen (s);
@@ -38,7 +38,7 @@ bool s_strbuf_set(SStrBuf *sb, const char *s) {
 	return true;
 }
 
-int s_strbuf_append(SStrBuf *sb, const char *s) {
+int r_strbuf_append(SStrBuf *sb, const char *s) {
 	int l = strlen (s);
 	if (l < 1) {
 		return false;
@@ -71,22 +71,22 @@ int s_strbuf_append(SStrBuf *sb, const char *s) {
 	return true;
 }
 
-char *s_strbuf_get(SStrBuf *sb) {
+char *r_strbuf_get(SStrBuf *sb) {
 	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
 }
 
-void s_strbuf_free(SStrBuf *sb) {
-	s_strbuf_fini (sb);
+void r_strbuf_free(SStrBuf *sb) {
+	r_strbuf_fini (sb);
 	free (sb);
 }
 
-void s_strbuf_fini(SStrBuf *sb) {
+void r_strbuf_fini(SStrBuf *sb) {
 	if (sb && sb->ptr)
 		R_FREE (sb->ptr);
 }
 
 /* --------- */
-int s_sys_setenv(const char *key, const char *value) {
+int r_sys_setenv(const char *key, const char *value) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) {
 		return 0;
@@ -103,18 +103,4 @@ int s_sys_setenv(const char *key, const char *value) {
 #warning s_sys_setenv : unimplemented for this platform
 	return 0;
 #endif
-}
-
-void do_printf(Output *out, char *str, ...) {
-	va_list ap;
-	va_start (ap, str);
-	if (out->fout) {
-		vfprintf (out->fout, str, ap);
-	} else {
-		char tmp[4096];
-		vsnprintf (tmp, sizeof (tmp), str, ap);
-		tmp[sizeof (tmp) - 1] = 0;
-		s_strbuf_append (out->cout, tmp);
-	}
-	va_end (ap);
 }

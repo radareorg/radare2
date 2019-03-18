@@ -61,7 +61,7 @@ static PUT_CALLBACK(sh_fputs) {
 		}
 #endif
 	} else {
-		do_printf (out, "%s", buf);
+		out_printf (out, "%s", buf);
 	}
 	return 0;
 }

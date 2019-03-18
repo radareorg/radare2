@@ -1,7 +1,7 @@
 /* MIT (C) pancake (at) nopcode (dot) org */
 
 #include "spp.h"
-#include "s_api.h"
+#include "r_api.h"
 
 extern struct Proc *procs[];
 extern struct Proc *proc;
@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
 				if (arg != NULL) {
 					if (!strcmp (arg, "buff")) {
 						out.fout = NULL;
-						out.cout = s_strbuf_new ("");
-						s_strbuf_init (out.cout);
+						out.cout = r_strbuf_new ("");
+						r_strbuf_init (out.cout);
 					} else {
 						out.cout = NULL;
 						out.fout = fopen (arg, "w");
@@ -119,8 +119,8 @@ int main(int argc, char **argv) {
 					dostdin = 0;
 
 					if (!out.fout) {
-						D printf ("%s\n", s_strbuf_get (out.cout));
-						s_strbuf_free (out.cout);
+						D printf ("%s\n", r_strbuf_get (out.cout));
+						r_strbuf_free (out.cout);
 					}
 				}
 			}

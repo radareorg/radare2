@@ -1,7 +1,6 @@
 SPPPATH=../../shlr/spp/
 CFLAGS+=-DHAVE_FORK=$(HAVE_FORK)
 SPP_OBJS=spp.o
-SPP_OBJS+=s_api.o
 SPPOBJS=$(addprefix ${SPPPATH},${SPP_OBJS})
 OBJS+=$(SPPOBJS)
 
