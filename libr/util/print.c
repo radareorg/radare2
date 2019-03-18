@@ -1002,7 +1002,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;
 		if (use_hexa) {
-			if (!isPxr && !compact) {
+			if (!compact && !isPxr) {
 				printfmt ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
@@ -1072,19 +1072,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						a = b = "";
 					}
 					printValue = true;
-					if (p && p->flags & R_PRINT_FLAGS_REFS) {
+					bool hasNull = false;
+					if (isPxr) {
 						if (n == 0) {
 							if (oPrintValue) {
-								if (use_offset) {
-									r_print_addr (p, addr + j * zoomsz);
-								}
-								printfmt ("... (null) ...\n");
+								hasNull = true;
 							}
 							printValue = false;
 						}
 					}
 					if (printValue) {
-						if (use_offset) {
+						if (use_offset && !hasNull && isPxr) {
 							r_print_addr (p, addr + j * zoomsz);
 						}
 						if (base == 64) {
@@ -1094,8 +1092,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						} else {
 							printfmt ("%s0x%08x%s ", a, (ut32) n, b);
 						}
-						r_print_cursor (p, j, sz_n, 0);
+					} else {
+						if (hasNull) {
+							r_print_addr (p, addr + j * zoomsz);
+							printfmt ("... (null) ...\n");
+						}
 					}
+					r_print_cursor (p, j, sz_n, 0);
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
