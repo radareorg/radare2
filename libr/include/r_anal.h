@@ -893,6 +893,8 @@ typedef struct r_anal_bb_t {
 	int stackptr;
 	int parent_stackptr;
 	bool folded;
+	ut64 cmpval;
+	const char *cmpreg;
 #undef RAnalBlock
 } RAnalBlock;
 

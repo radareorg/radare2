@@ -19,14 +19,14 @@
 #define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
 #define INSOP(x) insn->detail->arm.operands[x]
-#define MEMBASE(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
-#define MEMBASE64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
+#define MEMBASE(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.base))
+#define MEMBASE64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.base))
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 // s/index/base|reg/
-#define MEMINDEX(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
+#define MEMINDEX(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
-#define MEMINDEX64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
+#define MEMINDEX64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
@@ -2632,11 +2632,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 2;
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_TBB: // byte jump table
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 1;
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
@@ -2758,6 +2760,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISIMM(1)) {
 			op->ptr = IMM(1);
 		}
+		op->reg = r_str_get (cs_reg_name (handle, INSOP (0).reg));
 		break;
 	case ARM_INS_ROR:
 	case ARM_INS_ORN:
@@ -2835,7 +2838,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
-				op->ireg = r_str_get (cs_reg_name(handle, INSOP (1).mem.index));
+				op->ireg = r_str_get (cs_reg_name (handle, INSOP (1).mem.index));
 				break;
 			}
 		}
@@ -3022,9 +3025,9 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 		break;
 	}
 	if ((bits == 64) && HASMEMINDEX64 (1)) {
-		op->ireg = r_str_get (cs_reg_name(handle, INSOP64 (1).mem.index));
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP64 (1).mem.index));
 	} else if (HASMEMINDEX (1)) {
-		op->ireg = r_str_get (cs_reg_name(handle, INSOP (1).mem.index));
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP (1).mem.index));
 		op->scale = INSOP (1).mem.scale;
 	}
 }
