@@ -3877,6 +3877,7 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 		return NULL;
 	}
 
+	buf[sz] = 0;
 	char *ptr = buf;
 
 	do {
