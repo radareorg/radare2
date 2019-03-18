@@ -5453,9 +5453,18 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'x': // "prx"
+#if 0
 			if (l != 0) {
 				printraw (core, len, 2);
 			}
+#else
+			{
+				int a = r_config_get_i (core->config, "hex.bytes");
+				r_config_set_i (core->config, "hex.bytes", false);
+				r_core_cmdf (core, "px%s", input + 1);
+				r_config_set_i (core->config, "hex.bytes", a);
+			}
+#endif
 			break;
 		case 'z': // "prz"
 			if (l != 0) {
