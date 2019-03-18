@@ -1,24 +1,23 @@
 /* radare - LGPL - Copyright 2013-2016 - pancake */
 
-#if !HAVE_R_UTIL
+#include "spp.h"
+#include "s_api.h"
 
-#include "r_api.h"
-
-RStrBuf *r_strbuf_new(const char *str) {
-	RStrBuf *s = R_NEW0 (RStrBuf);
-	if (str) r_strbuf_set (s, str);
+SStrBuf *s_strbuf_new(const char *str) {
+	SStrBuf *s = R_NEW0 (SStrBuf);
+	if (str) s_strbuf_set (s, str);
 	return s;
 }
 
-void r_strbuf_init(RStrBuf *sb) {
-	memset (sb, 0, sizeof (RStrBuf));
+void s_strbuf_init(SStrBuf *sb) {
+	memset (sb, 0, sizeof (SStrBuf));
 }
 
-bool r_strbuf_set(RStrBuf *sb, const char *s) {
+bool s_strbuf_set(SStrBuf *sb, const char *s) {
 	int l;
 	if (!sb) return false;
 	if (!s) {
-		r_strbuf_init (sb);
+		s_strbuf_init (sb);
 		return true;
 	}
 	l = strlen (s);
@@ -39,7 +38,7 @@ bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	return true;
 }
 
-int r_strbuf_append(RStrBuf *sb, const char *s) {
+int s_strbuf_append(SStrBuf *sb, const char *s) {
 	int l = strlen (s);
 	if (l < 1) {
 		return false;
@@ -72,22 +71,22 @@ int r_strbuf_append(RStrBuf *sb, const char *s) {
 	return true;
 }
 
-char *r_strbuf_get(RStrBuf *sb) {
+char *s_strbuf_get(SStrBuf *sb) {
 	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
 }
 
-void r_strbuf_free(RStrBuf *sb) {
-	r_strbuf_fini (sb);
+void s_strbuf_free(SStrBuf *sb) {
+	s_strbuf_fini (sb);
 	free (sb);
 }
 
-void r_strbuf_fini(RStrBuf *sb) {
+void s_strbuf_fini(SStrBuf *sb) {
 	if (sb && sb->ptr)
 		R_FREE (sb->ptr);
 }
 
 /* --------- */
-int r_sys_setenv(const char *key, const char *value) {
+int s_sys_setenv(const char *key, const char *value) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) {
 		return 0;
@@ -101,9 +100,21 @@ int r_sys_setenv(const char *key, const char *value) {
 	SetEnvironmentVariable (key, (LPSTR)value);
 	return 0; // TODO. get ret
 #else
-#warning r_sys_setenv : unimplemented for this platform
+#warning s_sys_setenv : unimplemented for this platform
 	return 0;
 #endif
 }
 
-#endif // NO_UTIL
+void do_printf(Output *out, char *str, ...) {
+	va_list ap;
+	va_start (ap, str);
+	if (out->fout) {
+		vfprintf (out->fout, str, ap);
+	} else {
+		char tmp[4096];
+		vsnprintf (tmp, sizeof (tmp), str, ap);
+		tmp[sizeof (tmp) - 1] = 0;
+		s_strbuf_append (out->cout, tmp);
+	}
+	va_end (ap);
+}

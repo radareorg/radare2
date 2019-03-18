@@ -33,8 +33,9 @@ extern "C" {
 #if __WINDOWS__
 #include <windows.h>
 #include <wincon.h>
-#endif
+#else
 #include <unistd.h>
+#endif
 
 /* constants */
 #define CONS_MAX_USER 102400

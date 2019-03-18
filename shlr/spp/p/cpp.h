@@ -105,8 +105,8 @@ static TAG_CALLBACK(cpp_define) {
 			cpp_macro_add(buf,macro,ptr+1);
 			/* TODO: Name is "BUF(". for funny strstr */
 		}
-		r_sys_setenv (buf, ptr);
-	} else r_sys_setenv (buf, "");
+		s_sys_setenv (buf, ptr);
+	} else s_sys_setenv (buf, "");
 	return 0;
 }
 
@@ -143,12 +143,12 @@ static ARG_CALLBACK(cpp_arg_i) {
 }
 
 static ARG_CALLBACK(cpp_arg_d) {
-	// TODO: handle r_sys_setenv==-1
+	// TODO: handle s_sys_setenv==-1
 	char *eq = strchr(arg, '=');
 	if (eq) {
 		*eq = '\0';
-		r_sys_setenv (arg, eq + 1);
-	} else r_sys_setenv (arg, "");
+		s_sys_setenv (arg, eq + 1);
+	} else s_sys_setenv (arg, "");
 	return 0;
 }
 
