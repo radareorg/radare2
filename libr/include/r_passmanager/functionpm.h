@@ -7,7 +7,7 @@
 #undef TYPE
 #undef PMFN_
 
-#define TYPE_NAME Function
+#define TYPE_NAME RFunc
 #define TYPE RAnalFunction
 #define PMFN_(name) fpm_##name
 

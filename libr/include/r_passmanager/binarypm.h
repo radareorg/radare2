@@ -7,7 +7,7 @@
 #undef TYPE
 #undef PMFN_
 
-#define TYPE_NAME Bin
+#define TYPE_NAME RBin
 #define TYPE RBin
 #define PMFN_(name) bpm_##name
 

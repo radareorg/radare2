@@ -36,7 +36,7 @@ r_anal_sources = [
   'xrefs.c',
   'passmanager/functionpm.c',
   'passmanager/binarypm.c',
-  'passmanager/bbpm.c'
+  'passmanager/bbpm.c',
   'p/anal_6502.c',
   'p/anal_6502_cs.c',
   'p/anal_8051.c',

@@ -7,7 +7,7 @@
 #undef TYPE
 #undef PMFN_
 
-#define TYPE_NAME BasicBlock
+#define TYPE_NAME RBasicBlock
 #define TYPE RAnalBlock
 #define PMFN_(name) bbpm_##name
 

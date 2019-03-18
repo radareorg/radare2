@@ -1,9 +1,23 @@
+typedef struct Pr_(TYPE_NAME) {
+        PASS_(TYPE_NAME) *p;
+        HtPP *passResults; /*<void *object, void *result>*/
+        PM_(TYPE_NAME) *parent;
+} PR_(TYPE_NAME);
+
+/*
+ * passes: <char *Pass->name, PassRunner>
+ * running: <TYPE *object,HtPP<char *passName, NULL>>. Mainly used
+ * to detect circular dependencies
+ */
+typedef struct Pm_(TYPE_NAME) {
+	HtPP *passes;
+	HtPP *running;
+	RAnal *parent;
+} PM_(TYPE_NAME);
 
 static PR_(TYPE_NAME) *PMFN_(passrunner_new)(PASS_(TYPE_NAME) *p) {
 	PR_(TYPE_NAME) *pr = R_NEW0 (PR_(TYPE_NAME));
-	if (!pr) {
-		return NULL;
-	}
+	r_return_val_if_fail(pr, NULL);
 	pr->p = p;
 
 	//FIXME create better tuned hash table
@@ -13,13 +27,9 @@ static PR_(TYPE_NAME) *PMFN_(passrunner_new)(PASS_(TYPE_NAME) *p) {
 }
 
 static bool PMFN_(invalidatecb) (TYPE *object, const char *passname, const PR_(TYPE_NAME) *pr) {
-	void *x = NULL;
+	r_return_val_if_fail(pr && pr->p, false);
 
-	if (!pr || !pr->p) {
-		return false;
-	}
-
-	x = pr->p->invalidate (pr->parent, pr->p, object);
+	void *x = pr->p->invalidate (pr->parent, pr->p, object);
 	if (x) {
 		ht_pp_insert (pr->passResults, object, x);
 	} else {
@@ -62,9 +72,7 @@ static bool PMFN_(running_free) (void *user, TYPE *object, HtPP *objects_running
 
 R_API PM_(TYPE_NAME) *PMFN_(new) () {
 	PM_(TYPE_NAME) *pm = R_NEW0 (PM_(TYPE_NAME));
-	if (!pm) {
-		return NULL;
-	}
+	r_return_val_if_fail(pm, NULL);
 	pm->passes = ht_pp_new0 ();
 	//FIXME create better tuned hash table
 	HtPPOptions opt = { 0 };
@@ -73,14 +81,12 @@ R_API PM_(TYPE_NAME) *PMFN_(new) () {
 }
 
 R_API void PMFN_(set_anal)(PM_(TYPE_NAME) *pm, RAnal *anal) {
-	if (!pm)
-		return;
+	r_return_if_fail (pm);
 	pm->parent = anal;
 }
 
 R_API RAnal *PMFN_(get_anal)(PM_(TYPE_NAME) *pm) {
-	if (!pm)
-		return NULL;
+	r_return_val_if_fail (pm, NULL);
 	return pm->parent;
 }
 
@@ -94,12 +100,8 @@ R_API void PMFN_(free)(PM_(TYPE_NAME) *pm) {
 
 R_API bool PMFN_(register_pass)(PM_(TYPE_NAME) *pm, PASS_(TYPE_NAME) *pass) {
 	bool pass_exist;
-	if (!pass || !pm) {
-		return false;
-	}
-	if (!pass->run || !pass->invalidate) {
-		return false;
-	}
+	r_return_val_if_fail (pass && pm, false);
+	r_return_val_if_fail (pass->run && pass->invalidate, false);
 	ht_pp_find (pm->passes, pass->name, &pass_exist);
 	if (pass_exist) {
 		return true;

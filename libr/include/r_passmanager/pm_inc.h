@@ -11,34 +11,24 @@
 #error TYPE_NAME, TYPE and PFMN_ should be defined before including this header
 #endif
 
-#define concat(first, second) first##second
-#define _concat(first, second) _##first##second
+#define PM_concat(first, second) first##second
+#define _PM_concat(first, second) _##first##second
 
-#define Pass_(name) _concat(name, _pass)
-#define Pm_(name) _concat(name, _pm)
-#define Pr_(name) _concat(name, _pr)
-#define PM_(name) concat(name, PassManager)
-#define PASS_(name) concat(name, Pass)
-#define PR_(name) concat(name, PassRunner)
+#define Pass_(name) _PM_concat(name, _pass)
+#define Pm_(name) _PM_concat(name, _pm)
+#define Pr_(name) _PM_concat(name, _pr)
+#define PM_(name) PM_concat(name, PassMan)
+#define PASS_(name) PM_concat(name, Pass)
+#define PR_(name) PM_concat(name, PassRunner)
 
 
 /*
- * They are all defined the same, but, different PassManager types
+ * They are all defined the same, but, different PassMan types
  * accepts different PassRunners types which in turn wraps different
  * passes, these different passes finally operates on one of bunch of
  * types as Function, Module, basicBlock...etc
- *
- * passes: <char *Pass->name, PassRunner>
- * running: <TYPE *object,HtPP<char *passName, NULL>>. In addition, can
- *	    be used to detect circular dependencies
  */
-
-typedef struct Pm_(TYPE_NAME) {
-	HtPP *passes;
-	HtPP *running;
-	RAnal *parent;
-} PM_(TYPE_NAME);
-
+typedef struct Pm_(TYPE_NAME) PM_(TYPE_NAME);
 
 /*
  * Always add elements to this structure at the bottom not at the begining,
@@ -62,13 +52,6 @@ typedef struct Pass_(TYPE_NAME) {
 	void *customDataStructure;
 	/*TODO  passes can come with their own set of commands*/
 } PASS_(TYPE_NAME);
-
-typedef struct Pr_(TYPE_NAME) {
-	PASS_(TYPE_NAME) *p;
-	HtPP *passResults; /*<void *object, void *result>*/
-	PM_(TYPE_NAME) *parent;
-} PR_(TYPE_NAME);
-
 
 R_API PM_(TYPE_NAME) *PMFN_(new)();
 R_API RAnal *PMFN_(get_anal)(PM_(TYPE_NAME) *pm);
