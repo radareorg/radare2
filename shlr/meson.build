@@ -182,15 +182,12 @@ sdb_dep = declare_dependency(
   include_directories: sdb_inc
 )
 
-sdb_platform_inc = []
-
 # Create sdb_version.h
 sdb_version = '1.2.0'
 run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
 sdb_exe = executable('sdb', 'sdb/src/main.c',
   include_directories: [
-    sdb_platform_inc,
     include_directories(['sdb/src'])
   ],
   link_with: [libr2sdb],
