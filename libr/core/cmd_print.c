@@ -2744,6 +2744,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int len = 0;
 	int i;
+	ut8 *blockptr;
+	float entropy = 0;
 	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to - from) / piece); i++) {
 		ut64 at = from + (piece * i);
@@ -2804,6 +2806,29 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						as->block[p].strings);
 			}
 			break;
+		case 'e':
+			blockptr = malloc (ate - at);
+			r_io_read_at (core->io, at, blockptr, (ate -at));
+			entropy = (r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
+			r_cons_printf("%.3f ", entropy);
+			if (off >= at && off < ate) {
+				r_cons_memcat ("^", 1);
+			} else {
+				RIOMap *s = r_io_map_get (core->io, at);
+				if (use_color) {
+					if (s) {
+						if (s->perm & R_PERM_X) {
+							r_cons_print (Color_BGBLUE);
+						} else {
+							r_cons_print (Color_BGGREEN);
+						}
+					} else {
+						r_cons_print (Color_BGRED);
+					}
+				}
+			}
+			free (blockptr);
+			break;
 		default:
 			if (off >= at && off < ate) {
 				r_cons_memcat ("^", 1);
@@ -2853,6 +2878,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						   total.flags, total.functions, total.comments, total.symbols, total.strings);
 			r_cons_printf ("`-------------'----------------------------'\n");
 			break;
+		case 'e':
 		default:
 			if (use_color) {
 				r_cons_print (Color_RESET);
