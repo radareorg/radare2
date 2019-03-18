@@ -1335,7 +1335,7 @@ static int cmd_type(void *data, const char *input) {
 						r_cons_printf ("%s: ", fcn->name);
 					}
 					r_list_foreach (uniq , iter2, type) {
-						r_cons_printf ("%s%s", type, iter2->n ? " ,":"\n");
+						r_cons_printf ("%s%s", type, iter2->n ? ",":"\n");
 					}
 				}
 			}
