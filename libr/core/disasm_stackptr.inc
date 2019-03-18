@@ -1,5 +1,7 @@
+/* radare - LGPL - Copyright 2019 - pancake */
 
 #define USE_BB_STACKPTR 0
+#define USE_BB_LINEAR 1
 
 static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
 	if (!ds->show_stackptr) {
@@ -54,12 +56,13 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 	return stackptr;
 }
 static int ds_ostackptr_atfcn(RDisasmState *ds, int *ostackptr) {
-	int stackptr = 0;
-#if 1
+#if USE_BB_LINEAR
 	if (ds->at >= ds->fcn->addr) {
 		return _stackptr_range (ds, ds->fcn->addr, ds->at, 0, ostackptr);
 	}
-#endif
+	return ds->stackptr;
+#else
+	int stackptr = 0;
 	// SLOW, recursive emulation is more correct, but slow to find paths
 	// return stackptr;
 	ut64 addr = ds->at;
@@ -81,6 +84,7 @@ static int ds_ostackptr_atfcn(RDisasmState *ds, int *ostackptr) {
 		r_list_free (paths);
 	}
 	return stackptr;
+#endif
 }
 
 static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
