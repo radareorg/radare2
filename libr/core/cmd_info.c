@@ -212,27 +212,10 @@ static void r_core_file_info(RCore *core, int mode) {
 			dbg = R_PERM_WX;
 		}
 		if (desc) {
-			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
-		}
-		pair ("block", sdb_fmt ("0x%x", core->blocksize));
-		if (desc) {
 			pair ("fd", sdb_fmt ("%d", desc->fd));
 		}
 		if (fn || (desc && desc->uri)) {
 			pair ("file", fn? fn: desc->uri);
-		}
-		if (plugin) {
-			pair ("format", plugin->name);
-		}
-		if (desc) {
-			pair ("iorw", r_str_bool (io_cache || desc->perm & R_PERM_W));
-			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
-		}
-		if (binfile && binfile->curxtr) {
-			pair ("packet", binfile->curxtr->name);
-		}
-		if (desc && desc->referer && *desc->referer) {
-			pair ("referer", desc->referer);
 		}
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
@@ -243,6 +226,27 @@ static void r_core_file_info(RCore *core, int mode) {
 				pair ("humansz", humansz);
 			}
 		}
+		if (desc) {
+			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
+		}
+		if (plugin) {
+			pair ("format", plugin->name);
+		}
+		if (desc) {
+			pair ("iorw", r_str_bool (io_cache || desc->perm & R_PERM_W));
+		}
+		if (desc) {
+			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
+		}
+		pair ("block", sdb_fmt ("0x%x", core->blocksize));
+		
+		if (binfile && binfile->curxtr) {
+			pair ("packet", binfile->curxtr->name);
+		}
+		if (desc && desc->referer && *desc->referer) {
+			pair ("referer", desc->referer);
+		}
+		
 		if (info) {
 			pair ("type", info->type);
 		}
