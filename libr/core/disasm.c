@@ -4978,20 +4978,6 @@ toro:
 		}
 
 		f = fcnIn (ds, ds->addr, 0);
-		RAnalFunction *fcn = f;
-		if (fcn) {
-			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
-			if (bb) {
-				if (bb->folded) {
-					// r_cons_printf ("0x%08"PFMT64x" .. 0x%08"PFMT64x"  (folded-bb)\n", ds->at, ds->at + bb->size);
-					r_cons_printf ("(folded bb from 0x%08"PFMT64x" to 0x%08"PFMT64x")\n", ds->at, ds->at + bb->size);
-					inc = bb->size;
-					continue;
-				}
-			} else {
-				r_warn_if_reached ();
-			}
-		}
 		ds_begin_line (ds);
 		ds_print_labels (ds, f);
 		ds_setup_print_pre (ds, false, false);
@@ -4999,6 +4985,21 @@ toro:
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
+		////
+		RAnalFunction *fcn = f;
+		if (fcn) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+			if (bb) {
+				if (bb->folded) {
+					r_cons_printf ("[+] Folded BB [0x%08"PFMT64x"..0x%08"PFMT64x"]\n", ds->at, ds->at + bb->size);
+					inc = bb->size;
+					continue;
+				}
+			} else {
+				r_warn_if_reached ();
+			}
+		}
+		////
 		if (ds->asm_hint_pos == 0) {
 			ds_print_core_vmode (ds, ds->asm_hint_pos);
 		}
