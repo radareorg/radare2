@@ -2158,7 +2158,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	}
 
 	int result = E - N + (2 * P);
-	if (result < 1) {
+	if (result < 1 && anal->verbose) {
 		eprintf ("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x"\n", E, N, P, fcn->addr);
 	}
 	// r_return_val_if_fail (result > 0, 0);
