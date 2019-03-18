@@ -1328,8 +1328,14 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
-			char f[128];
+			char f[256];
 			snprintf (f, sizeof (f), "%s.r2", pfile);
+			if(strncmp(f, "dbg://", 6) == 0) {
+				// cut out the uri handler part of the path
+				char tmp[256];
+				strncpy (tmp, f + 6, 250);
+				strncpy (f, tmp, 250);
+			}
 			if (r_file_exists (f)) {
 				// TODO: should 'q' unset the interactive bit?
 				bool isInteractive = r_cons_is_interactive ();
