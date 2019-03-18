@@ -255,8 +255,8 @@ R_API int r_cons_is_utf8() {
 }
 #else
 R_API int r_cons_is_utf8() {
-#if UNICODE && __WINDOWS__
-	return 1;
+#if __WINDOWS__
+	return GetConsoleOutputCP () == CP_UTF8;
 #else
 	return 0;
 #endif
