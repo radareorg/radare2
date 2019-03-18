@@ -1074,8 +1074,7 @@ repeat:
 				}
 				if (v > 1) {
 					// check if this is data, then just skip
-					eprintf ("Invalid instruction of %"PFMT64u" bytes at 0x%"PFMT64x"\n",
-						bytes_read, at);
+					eprintf ("Invalid instruction at 0x%"PFMT64x"\n", at);
 				}
 			}
 			gotoBeach (R_ANAL_RET_END);
