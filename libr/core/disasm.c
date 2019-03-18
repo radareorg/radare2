@@ -625,7 +625,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_offdec = r_config_get_i (core->config, "asm.decoff");
-	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
+	ds->show_bbline = r_config_get_i (core->config, "asm.bb.line");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
 	ds->show_section_perm = r_config_get_i (core->config, "asm.section.perm");
