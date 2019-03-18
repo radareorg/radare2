@@ -937,8 +937,10 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 						eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
 					}
 				} else if (!strncmp (ptr, ".org ", 5)) {
-					ret = r_asm_pseudo_org (a, ptr+5);
+					ret = r_asm_pseudo_org (a, ptr + 5);
 					off = a->pc;
+				} else if (r_str_startswith (ptr, ".offset ")) {
+					eprintf ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'.\n");
 				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
