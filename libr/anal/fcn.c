@@ -3,7 +3,6 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
-#include <r_core.h>
 
 #define USE_FCN_RECURSE 1
 #define USE_SDB_CACHE 0
@@ -1079,18 +1078,8 @@ repeat:
 		}
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, at, buf, bytes_read, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) < 1) {
-			RCore *core = anal->coreb.core;
-			if (!core || !core->bin || !core->bin->is_debugger) { // HACK
-				ut8 v = 0;
-				int i = 0;
-				for (; i < R_MIN (4, bytes_read); i++) {
-					v += buf[i] == 0xff;
-				}
-				if (v > 1) {
-					// check if this is data, then just skip
-					eprintf ("Invalid instruction of %"PFMT64u" bytes at 0x%"PFMT64x"\n",
-						bytes_read, at);
-				}
+			if (anal->verbose) {
+				eprintf ("Invalid instruction at 0x%"PFMT64x"\n", at);
 			}
 			gotoBeach (R_ANAL_RET_END);
 		}
