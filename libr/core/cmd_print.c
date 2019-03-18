@@ -923,6 +923,28 @@ static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	pj_free (pj);
 }
 
+static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
+	ut8 *blockptr = malloc (ate - at);
+	if (!blockptr) {
+		return;
+	}
+	if (!r_io_read_at (core->io, at, blockptr, (ate - at))) {
+		eprintf ("Error: failed to read block");
+	} else {
+		ut8 entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
+		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
+		if (r_config_get_i (core->config, "scr.color")) {
+			const char *color =
+				(entropy > 6) ? Color_BGRED :
+				(entropy > 3) ? Color_BGGREEN :
+				Color_BGBLUE;
+			r_cons_printf (Color_RESET"%s", color);
+		}
+		r_cons_printf ("%d", entropy);
+	}
+	free (blockptr);
+}
+
 static void helpCmdTasks(RCore *core) {
 	// TODO: integrate with =h& and bg anal/string/searchs/..
 	r_core_cmd_help (core, help_msg_amper);
@@ -2745,8 +2767,6 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int len = 0;
 	int i;
-	ut8 *blockptr;
-	ut8 entropy = 0;
 	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to - from) / piece); i++) {
 		ut64 at = from + (piece * i);
@@ -2807,30 +2827,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						as->block[p].strings);
 			}
 			break;
-		case 'e':
-			blockptr = malloc (ate - at);
-			if (!blockptr) {
-				eprintf ("Error: failed to malloc memory");
-				return 0;
-			}
-			if (!r_io_read_at (core->io, at, blockptr, (ate - at))) {
-				eprintf ("Error: failed to read block");
-				free (blockptr);
-				return 0;
-			}
-			entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
-			entropy = 9 * entropy / 200; // normalize entropy from 0 to 10
-			if (use_color) {
-				if (entropy >= 7) {
-					r_cons_print (Color_BGRED);
-				} else if (entropy >= 4) {
-					r_cons_print (Color_BGGREEN);
-				} else {
-					r_cons_print (Color_BGBLUE);
-				}
-			}
-			r_cons_printf ("%d", entropy);
-			free (blockptr);
+		case 'e': // p-e
+			cmd_p_minus_e (core, at, ate);
 			break;
 		default:
 			if (off >= at && off < ate) {
