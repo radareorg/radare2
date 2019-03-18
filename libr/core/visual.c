@@ -2115,14 +2115,29 @@ static bool canWrite(RCore *core, ut64 addr) {
 	return (map && (map->perm & R_PERM_W));
 }
 
+static bool toggle_bb(RCore *core, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, addr);
+		if (bb) {
+			bb->folded = !bb->folded;
+		} else {
+			r_warn_if_reached ();
+		}
+		return true;
+	}
+	return false;
+}
+
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
-	ut8 ch = arg[0];
+	ut8 och = arg[0];
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
 	const char *key_s;
 	int i, cols = core->print->cols;
 	int wheelspeed;
+	ut8 ch = och;
 	if ((ut8)ch == KEY_ALTQ) {
 		r_cons_readchar ();
 		ch = 'q';
@@ -3251,47 +3266,52 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case 'Z': // shift-tab SHIFT-TAB
-		if (core->print->cur_enabled && core->printidx == R_CORE_VISUAL_MODE_DB) {
-			core->print->cur = 0;
-			core->seltab--;
-			if (core->seltab < 0) {
-				core->seltab = 2;
+			if (och == 27) { // shift-tab
+				if (core->print->cur_enabled && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					core->print->cur = 0;
+					core->seltab--;
+					if (core->seltab < 0) {
+						core->seltab = 2;
+					}
+				} else {
+	#if 0
+					//  we need to improve visual zoom, not deleted because we need more brainstorming here
+					if (zoom && core->print->cur) {
+						ut64 from = r_config_get_i (core->config, "zoom.from");
+						ut64 to = r_config_get_i (core->config, "zoom.to");
+						r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
+					}
+					zoom = !zoom;
+	#endif
+					switch (core->printidx) {
+						case R_CORE_VISUAL_MODE_PX: // 0 // xc
+							applyHexMode (core, --hexMode);
+							printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
+							break;
+						case R_CORE_VISUAL_MODE_PD: // pd
+							printfmtSingle[1] = rotateAsmemu (core);
+							applyDisMode (core, --disMode);
+							break;
+						case R_CORE_VISUAL_MODE_DB: // debugger
+							//printfmtSingle[1] = rotateAsmemu (core);
+							current3format = current3format - 1;
+							printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+							applyDisMode (core, --disMode);
+							break;
+						case R_CORE_VISUAL_MODE_OV: // overview
+							current4format = current4format-1;
+							printfmtSingle[3] = print4Formats[R_ABS(current4format)% PRINT_4_FORMATS];
+							break;
+						case R_CORE_VISUAL_MODE_CD: // code
+							current5format = current5format-1;
+							printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+							break;
+					}
+				}
+			} else { // "Z"
+				ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
+				toggle_bb (core, addr);
 			}
-		} else {
-#if 0
-			//  we need to improve visual zoom, not deleted because we need more brainstorming here
-			if (zoom && core->print->cur) {
-				ut64 from = r_config_get_i (core->config, "zoom.from");
-				ut64 to = r_config_get_i (core->config, "zoom.to");
-				r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
-			}
-			zoom = !zoom;
-#endif
-			switch (core->printidx) {
-			case R_CORE_VISUAL_MODE_PX: // 0 // xc
-				applyHexMode (core, --hexMode);
-				printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
-				break;
-			case R_CORE_VISUAL_MODE_PD: // pd
-				printfmtSingle[1] = rotateAsmemu (core);
-				applyDisMode (core, --disMode);
-				break;
-			case R_CORE_VISUAL_MODE_DB: // debugger
-				//printfmtSingle[1] = rotateAsmemu (core);
-				current3format = current3format - 1;
-				printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
-				applyDisMode (core, --disMode);
-				break;
-			case R_CORE_VISUAL_MODE_OV: // overview
-				current4format = current4format-1;
-				printfmtSingle[3] = print4Formats[R_ABS(current4format)% PRINT_4_FORMATS];
-				break;
-			case R_CORE_VISUAL_MODE_CD: // code
-				current5format = current5format-1;
-				printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
-				break;
-			}
-		}
 			break;
 		case '?':
 			if (visual_help () == '?') {

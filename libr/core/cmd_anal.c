@@ -268,6 +268,7 @@ static const char *help_msg_af[] = {
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
+	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
@@ -2824,6 +2825,24 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		case 'e': // "afbe"
 			anal_bb_edge (core, input + 3);
+			break;
+		case 'F': // "afbF"
+			{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+			if (fcn) {
+				RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, core->offset);
+				if (bb) {
+					if (input[3]) {
+						int n = atoi (input + 3);
+						bb->folded = n;
+					} else {
+						bb->folded = !bb->folded;
+					}
+				} else {
+					r_warn_if_reached ();
+				}
+			}
+			}
 			break;
 		case 0:
 		case ' ': // "afb "
@@ -8602,7 +8621,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'b':
+	case 'b': // "ab"
 		if (input[1] == 'b') { // "abb"
 			core_anal_bbs (core, input + 2);
 		} else if (input[1] == 'r') { // "abr"
