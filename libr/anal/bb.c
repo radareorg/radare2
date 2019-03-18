@@ -26,6 +26,8 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->parent_reg_arena = NULL;
 	bb->stackptr = 0;
 	bb->parent_stackptr = INT_MAX;
+	bb->cmpval = UT64_MAX;
+	bb->cmpreg = NULL;
 	return bb;
 }
 

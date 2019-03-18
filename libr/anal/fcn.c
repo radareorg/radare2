@@ -765,6 +765,20 @@ static bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_
 	return isValid;
 }
 
+static ut64 try_get_cmpval_from_parents(RAnal * anal, RAnalFunction *fcn, RAnalBlock *my_bb, const char * cmp_reg) {
+	r_return_val_if_fail (fcn && fcn->bbs && cmp_reg, UT64_MAX);
+	RListIter *iter;
+	RAnalBlock *tmp_bb;
+	r_list_foreach (fcn->bbs, iter, tmp_bb) {
+		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
+			if (tmp_bb->cmpreg == cmp_reg) {
+				return tmp_bb->cmpval;
+			}
+		}
+	}
+	return UT64_MAX;
+}
+
 static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case) {
 	bool isValid = false;
 	int i;
@@ -1369,6 +1383,8 @@ repeat:
 		case R_ANAL_OP_TYPE_CMP:
 			if (op.ptr) {
 				cmpval = op.ptr;
+				bb->cmpval = cmpval;
+				bb->cmpreg = op.reg;
 			}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
@@ -1530,9 +1546,15 @@ repeat:
 					movptr = UT64_MAX;
 				} else if (is_arm) {
 					if (op.ptrsize == 2) { // LDRH on thumb/arm
-						int tablesize = cmpval + 15;
+						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
+						int tablesize = 1;
+						if (pred_cmpval != UT64_MAX) {
+							tablesize += pred_cmpval;
+						} else {
+							tablesize += cmpval;
+						}
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.addr + op.size,
-							op.addr + 4, 2, tablesize / 2, UT64_MAX, ret);
+							op.addr + 4, 2, tablesize, UT64_MAX, ret);
 						// skip inlined jumptable
 						idx += (tablesize * 2);
 					}

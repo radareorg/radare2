@@ -2632,11 +2632,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 2;
+		op->ireg = r_str_get (cs_reg_name(handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_TBB: // byte jump table
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 1;
+		op->ireg = r_str_get (cs_reg_name(handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
@@ -2758,6 +2760,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISIMM(1)) {
 			op->ptr = IMM(1);
 		}
+		op->reg = r_str_get (cs_reg_name (handle, INSOP (0).reg));
 		break;
 	case ARM_INS_ROR:
 	case ARM_INS_ORN:
