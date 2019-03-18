@@ -268,6 +268,7 @@ static const char *help_msg_af[] = {
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
+	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
