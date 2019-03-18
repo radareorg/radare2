@@ -26,6 +26,41 @@
 #define MEMINDEX(x) insn->detail->m68k.operands[x].mem.index
 #define MEMDISP(x) insn->detail->m68k.operands[x].mem.disp
 
+inline ut64 make_64bits_address(ut64 address)
+{
+	return UT32_MAX & address;
+}
+
+inline void handle_branch_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index)
+{
+	#if CS_API_MAJOR >= 4
+		if (m68k->operands[index].type == M68K_OP_BR_DISP) {
+			op->type = type;
+			// TODO: disp_size is ignored
+			op->jump = make_64bits_address(addr + m68k->operands[index].br_disp.disp + 2);
+			op->fail = make_64bits_address(addr + op->size);
+		}
+#else
+		op->type = type;
+		// TODO: disp_size is ignored
+		op->jump = make_64bits_address(addr + m68k->operands[index].br_disp.disp + 2);
+		op->fail = make_64bits_address(addr + op->size);
+#endif
+}
+
+inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type)
+{
+	op->type = type;
+
+	// Handle PC relative mode jump
+	if (m68k->operands[0].address_mode == M68K_AM_PCI_DISP)
+		op->jump = make_64bits_address(addr + m68k->operands[0].mem.disp + 2);
+	else
+		op->jump = make_64bits_address(m68k->operands[0].imm);
+
+	op->fail = make_64bits_address(addr + op->size);
+}
+
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	r_strbuf_init (buf);
@@ -232,28 +267,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_BLT:
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
-#if CS_API_MAJOR >= 4
-		if (m68k->operands[0].type == M68K_OP_BR_DISP) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
-			// TODO: disp_size is ignored
-			op->jump = addr + m68k->operands[0].br_disp.disp + 2;
-			op->fail = addr + insn->size;
-		}
-#else
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		// TODO: disp_size is ignored
-		op->jump = addr + m68k->operands[0].br_disp.disp + 2;
-		op->fail = addr + insn->size;
-#endif
+		handle_branch_instruction(op, addr, m68k, R_ANAL_OP_TYPE_CJMP, 0);
 		break;
 	case M68K_INS_BRA:
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
+		handle_branch_instruction(op, addr, m68k, R_ANAL_OP_TYPE_JMP, 0);
 		break;
 	case M68K_INS_BSR:
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0);
-		op->fail = addr + 2;
+		handle_branch_instruction(op, addr, m68k, R_ANAL_OP_TYPE_CALL, 0);
 		break;
 	case M68K_INS_BCHG:
 	case M68K_INS_BCLR:
@@ -291,6 +311,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_CPUSHL:
 	case M68K_INS_CPUSHP:
 	case M68K_INS_CPUSHA:
+		break;
 	case M68K_INS_DBT:
 	case M68K_INS_DBF:
 	case M68K_INS_DBHI:
@@ -308,6 +329,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_DBGT:
 	case M68K_INS_DBLE:
 	case M68K_INS_DBRA:
+		handle_branch_instruction(op, addr, m68k, R_ANAL_OP_TYPE_CJMP, 1);
 		break;
 	case M68K_INS_DIVS:
 	case M68K_INS_DIVSL:
@@ -522,12 +544,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_ILL;
 		break;
 	case M68K_INS_JMP:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		handle_jump_instruction(op, addr, m68k, R_ANAL_OP_TYPE_JMP);
 		break;
 	case M68K_INS_JSR:
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = UT32_MAX & (ut64)IMM(0);
-		op->fail = addr + op->size;
+		handle_jump_instruction(op, addr, m68k, R_ANAL_OP_TYPE_CALL);
 		break;
 	case M68K_INS_LPSTOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
