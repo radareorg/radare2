@@ -240,6 +240,7 @@ static const char *help_msg_pj[] = {
 static const char *help_msg_p_minus[] = {
 	"Usage:", "p-[hj] [nblocks] ", "bar|json|histogram blocks",
 	"p-", "", "show ascii-art bar of metadata in file boundaries",
+	"p-e", "", "show ascii-art bar of entropy per block",
 	"p-h", "", "show histogram analysis of metadata per block",
 	"p-j", "", "show json format",
 	NULL
