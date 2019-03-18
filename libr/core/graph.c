@@ -2036,7 +2036,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	}
 	r_config_hold_i (hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
-		"asm.comments", "asm.cmt.right", NULL);
+		"asm.comments", "asm.cmt.right", "asm.bb.line", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
 	const bool o_bytes = r_config_get_i (core->config, "graph.bytes");
@@ -2056,6 +2056,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
+	r_config_set_i (core->config, "asm.bb.line", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
 	r_config_set_i (core->config, "asm.marks", false);
