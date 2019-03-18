@@ -4991,7 +4991,7 @@ toro:
 			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
 			if (bb) {
 				if (bb->folded) {
-					r_cons_printf ("[+] Folded BB [0x%08"PFMT64x"..0x%08"PFMT64x"]\n", ds->at, ds->at + bb->size);
+					r_cons_printf ("[+] Folded BB [..0x%08"PFMT64x"]\n", ds->at + bb->size);
 					inc = bb->size;
 					continue;
 				}
