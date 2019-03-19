@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
-//#include <err.h>
 #include <string.h>
 #define assert(x) if (!(x)) { eprintf("assert ##x##\n"); return; }
 #include <stdarg.h>

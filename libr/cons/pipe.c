@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_cons.h>
-#include <unistd.h>
 #include <limits.h>
 
 //TODO: cons_pipe should be using a stack pipe_push, pipe_pop

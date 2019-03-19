@@ -56,7 +56,6 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
-# include <unistd.h>
 extern char **environ;
 
 #ifdef __HAIKU__

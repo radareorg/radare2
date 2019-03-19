@@ -94,11 +94,6 @@ R_API int r_magic_errno(RMagic* m) {
 
 #else
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
 #ifndef _MSC_VER
 #include <sys/param.h> /* for MAXPATHLEN */
 #endif
@@ -113,10 +108,6 @@ R_LIB_VERSION (r_magic);
 #include <sys/mman.h>
 #endif
 #include <limits.h>	/* for PIPE_BUF */
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>	/* for read() */
-#endif
 
 #if __UNIX__
 #include <netinet/in.h>		/* for byte swapping */

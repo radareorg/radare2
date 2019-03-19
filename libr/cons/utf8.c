@@ -2,9 +2,9 @@
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
+
 #if __UNIX__
 #include <stdio.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <errno.h>

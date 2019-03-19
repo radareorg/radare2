@@ -5,14 +5,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #if EMSCRIPTEN
 #define NETWORK_DISABLED 1

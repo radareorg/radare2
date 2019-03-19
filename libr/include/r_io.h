@@ -17,7 +17,6 @@
 #if HAVE_PTRACE
 
 #if __sun
-#include <unistd.h>
 #include <sys/types.h>
 #else
 #if DEBUGGER && HAVE_PTRACE

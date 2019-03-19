@@ -7,7 +7,6 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <r_lib.h>
 #if __UNIX__
