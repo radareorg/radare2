@@ -53,7 +53,7 @@ static const char *help_msg_i[] = {
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
 	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
-	"iz-", " [addr]", "Purge string via bin.strpurge",
+	"iz-", " [addr]", "Purge string via bin.str.purge",
 	"iZ", "", "Guess size of binary program",
 	NULL
 };
@@ -756,7 +756,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 				}
 				core->tmpseek = false;
-				r_core_cmdf (core, "e bin.strpurge=%s%s0x%" PFMT64x,
+				r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
 				             strpurge ? strpurge : "",
 				             strpurge && *strpurge ? "," : "",
 				             addr);

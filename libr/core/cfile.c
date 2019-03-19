@@ -544,7 +544,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		char msg[2];
 		msg[0] = r->bin->cur->curplugin->strfilter;
 		msg[1] = 0;
-		r_config_set (r->config, "bin.strfilter", msg);
+		r_config_set (r->config, "bin.str.filter", msg);
 	}
 	//r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
