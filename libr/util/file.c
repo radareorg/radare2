@@ -3,13 +3,13 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
-#include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <r_lib.h>
 #if __UNIX__
+#include <sys/time.h>
 #include <sys/mman.h>
 #include <limits.h>
 #endif
