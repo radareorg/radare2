@@ -894,7 +894,7 @@ static int cb_strfilter(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_cons_printf ("Valid values for bin.strfilter:\n"
+			r_cons_printf ("Valid values for bin.str.filter:\n"
 				"a  only alphanumeric printable\n"
 				"8  only strings with utf8 chars\n"
 				"p  file/directory paths\n"
@@ -2864,7 +2864,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
-	n = NODECB ("bin.strfilter", "", &cb_strfilter);
+	n = NODECB ("bin.str.filter", "", &cb_strfilter);
 	SETDESC (n, "Filter strings");
 	SETOPTIONS (n, "a", "8", "p", "e", "u", "i", "U", "f", NULL);
 	SETCB ("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
