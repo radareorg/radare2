@@ -1,28 +1,28 @@
 /* CPP */
 
 static TAG_CALLBACK(pod_default) {
-	do_printf (out, "DEFAULT: (%s)\n", buf);
+	out_printf (out, "DEFAULT: (%s)\n", buf);
 	return 0;
 }
 
 static TAG_CALLBACK(pod_cut) {
-	do_printf (out, "\n");
+	out_printf (out, "\n");
 	state->echo[state->ifl] = 0;
 	return 0;
 }
 
 static TAG_CALLBACK(pod_head1) {
 	state->echo[state->ifl] = 1;
-	do_printf (out, "\n");
+	out_printf (out, "\n");
 	if (!buf) {
 		return 0;
 	}
-	do_printf (out, "%s\n", buf);
+	out_printf (out, "%s\n", buf);
 	int i, len = strlen (buf);
 	for (i = 0; i < len; i++) {
-		do_printf (out, "%c", '=');
+		out_printf (out, "%c", '=');
 	}
-	do_printf (out, "\n");
+	out_printf (out, "\n");
 	return 0;
 }
 

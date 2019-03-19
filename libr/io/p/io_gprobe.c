@@ -5,9 +5,10 @@
 #include <r_util.h>
 #include <r_util/r_print.h>
 
+#if __UNIX__
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
+#endif
 
 #define USE_OWNTIMER 1
 #if USE_OWNTIMER

@@ -1,6 +1,8 @@
 /* Mini MCMS :: renamed to 'spp'? */
 
+#if __UNIX__
 #include <unistd.h>
+#endif
 
 static char *spp_var_get(char *var) {
 	return getenv(var);
@@ -74,7 +76,7 @@ static TAG_CALLBACK(spp_get) {
 	}
 	var = spp_var_get (buf);
 	if (var) {
-		do_printf (out, "%s", var);
+		out_printf (out, "%s", var);
 	}
 	return 0;
 }
@@ -90,7 +92,7 @@ static TAG_CALLBACK(spp_getrandom) {
 	if (max > 0) {
 		max = (int)(rand () % max);
 	}
-	do_printf (out, "%d", max);
+	out_printf (out, "%d", max);
 	return 0;
 }
 
@@ -145,7 +147,7 @@ static TAG_CALLBACK(spp_trace) {
 /* TODO: deprecate */
 static TAG_CALLBACK(spp_echo) {
 	if (state->echo[state->ifl]) {
-		do_printf (out, "%s", buf);
+		out_printf (out, "%s", buf);
 	}
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;
@@ -173,7 +175,7 @@ static TAG_CALLBACK(spp_system) {
 	}
 #if HAVE_SYSTEM
 	char *str = cmd_to_str (buf);
-	do_printf (out, "%s", str);
+	out_printf (out, "%s", str);
 	free(str);
 #endif
 	return 0;
@@ -237,7 +239,7 @@ static TAG_CALLBACK(spp_hex) {
 			b = buf[i + 2];
 			buf[i + 2] = '\0';
 			sscanf(buf + i, "%02x", &ch);
-			do_printf (out, "%c", ch);
+			out_printf (out, "%c", ch);
 			buf[i + 2] = b;
 			buf = buf + 2;
 		}
@@ -264,7 +266,7 @@ static TAG_CALLBACK(spp_grepline) {
 				}
 			}
 			fclose (fd);
-			do_printf (out, "%s", b);
+			out_printf (out, "%s", b);
 		} else {
 			fprintf(stderr, "Unable to open '%s'\n", buf);
 		}
@@ -369,7 +371,7 @@ static TAG_CALLBACK(spp_endpipe) {
 		}
 	} while (ret > 0);
 	str[len] = '\0';
-	do_printf (out, "%s", str);
+	out_printf (out, "%s", str);
 	if (spp_pipe_fd) {
 		pclose (spp_pipe_fd);
 	}
@@ -386,7 +388,7 @@ static PUT_CALLBACK(spp_fputs) {
 	} else
 #endif
 	{
-		do_printf (out, "%s", buf);
+		out_printf (out, "%s", buf);
 	}
 	return 0;
 }

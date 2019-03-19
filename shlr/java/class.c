@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <unistd.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_bin.h>

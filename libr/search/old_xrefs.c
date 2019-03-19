@@ -87,7 +87,6 @@ match value ffffffad (ffffad) at offset 0x454
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
 #include <getopt.h>
