@@ -93,7 +93,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter    # r2 -qe bin.strfilter=? -c '' --\n"
-		" RABIN2_STRPURGE:  e bin.strpurge     # try to purge false positives\n"
+		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
@@ -611,7 +611,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_STRPURGE"))) {
-		r_config_set (core.config, "bin.strpurge", tmp);
+		r_config_set (core.config, "bin.str.purge", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DEBASE64"))) {

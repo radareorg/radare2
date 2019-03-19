@@ -867,10 +867,10 @@ static int cb_strpurge(void *user, void *data) {
 		    "Neither !true nor !false is supported.\n"
 		    "\n"
 		    "Examples:\n"
-		    "  e bin.strpurge=true,0-0xff,!0x1a\n"
+		    "  e bin.str.purge=true,0-0xff,!0x1a\n"
 		    "    -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
 		    "       with addresses in the range 0-0xff, but not the string at 0x1a.\n"
-		    "  e bin.strpurge=all,!0x1000-0x1fff\n"
+		    "  e bin.str.purge=all,!0x1000-0x1fff\n"
 		    "    -- purge all strings except the strings with addresses in the range 0x1000-0x1fff.\n");
 		return false;
 	}
@@ -2861,7 +2861,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
-	SETCB ("bin.strpurge", "", &cb_strpurge, "Purge strings (e bin.strpurge=? provides more detail)");
+	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.strfilter", "", &cb_strfilter);
