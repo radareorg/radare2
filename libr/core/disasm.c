@@ -230,6 +230,7 @@ typedef struct {
 
 	ut64 esil_old_pc;
 	ut8* esil_regstate;
+	int esil_regstate_size;
 	bool esil_likely;
 
 	int l;
@@ -505,7 +506,10 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 		RCore* core = ds->core;
 		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+		RRegSet *regset = r_reg_regset_get (ds->core->anal->reg, R_REG_TYPE_GPR);
+		if (ds->esil_regstate_size  == regset->arena->size) {
+			r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+		}
 		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
 		R_FREE (ds->esil_regstate);
 	}
@@ -4085,6 +4089,10 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
 	}
 	ds->esil_regstate = r_reg_arena_peek (core->anal->reg);
+	RRegSet *regset = r_reg_regset_get (core->anal->reg, R_REG_TYPE_GPR);
+	if (ds->esil_regstate && regset) {
+		ds->esil_regstate_size = regset->arena->size;
+	}
 
 	// TODO: emulate N instructions BEFORE the current offset to get proper full function emulation
 	ds_pre_emulation (ds);
@@ -4989,14 +4997,18 @@ toro:
 		RAnalFunction *fcn = f;
 		if (fcn) {
 			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+			if (!bb) {
+				fcn = r_anal_get_fcn_at (core->anal, ds->at, 0);
+				if (fcn) {
+					bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+				}
+			}
 			if (bb) {
 				if (bb->folded) {
 					r_cons_printf ("[+] Folded BB [..0x%08"PFMT64x"]\n", ds->at + bb->size);
 					inc = bb->size;
 					continue;
 				}
-			} else {
-				r_warn_if_reached ();
 			}
 		}
 		////
