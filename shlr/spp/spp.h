@@ -37,7 +37,7 @@
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ || MINGW32 && !__CYGWIN__
+#if __WIN32__ || MINGW32 && !__CYGWIN__ || _MSC_VER
   #ifndef _MSC_VER
     #include <winsock.h>
   #endif
