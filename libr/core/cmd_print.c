@@ -938,9 +938,10 @@ static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
 				(entropy > 6) ? Color_BGRED :
 				(entropy > 3) ? Color_BGGREEN :
 				Color_BGBLUE;
-			r_cons_printf (Color_RESET"%s", color);
+			r_cons_printf ("%s%d"Color_RESET, color, entropy);
+		} else {
+			r_cons_printf ("%d", entropy);
 		}
-		r_cons_printf ("%d", entropy);
 	}
 	free (blockptr);
 }
@@ -2760,8 +2761,9 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
 		r_cons_printf ("|-------------)----------------------------|\n");
 		break;
+	case 'e':
 	default:
-		r_cons_printf ("0x%"PFMT64x " [", from);
+		r_cons_printf ("0x%08"PFMT64x " [", from);
 	}
 
 	bool use_color = r_config_get_i (core->config, "scr.color");
@@ -2884,7 +2886,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			if (use_color) {
 				r_cons_print (Color_RESET);
 			}
-			r_cons_printf ("] 0x%"PFMT64x "\n", to);
+			r_cons_printf ("] 0x%08"PFMT64x "\n", to);
 	}
 	r_core_anal_stats_free (as);
 	return len;
