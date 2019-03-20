@@ -12,10 +12,12 @@ typedef void *(*ParseEntryFcn)(RBuffer *b, ut64 max);
 
 // RBuffer consume functions
 static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
+	r_return_val_if_fail (b && n_out && consume_fcn, 0);
+
 	size_t n;
 	ut32 tmp;
 	ut64 cur = r_buf_tell (b);
-	if (!b || max >= r_buf_size (b) || cur > max) {
+	if (max >= r_buf_size (b) || cur > max) {
 		return 0;
 	}
 	// 16 bytes are enough to store 128bits values
