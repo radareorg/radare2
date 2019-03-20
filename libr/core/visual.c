@@ -262,7 +262,7 @@ static const char *help_msg_visual[] = {
 	"/*+-[]", "change block size, [] = resize hex.cols",
 	"<,>", "seek aligned to block size (in cursor slurp or dump files)",
 	"a/A", "(a)ssemble code, visual (A)ssembler",
-	"b", "browse evals, symbols, flags, configurations, classes, ...",
+	"b", "browse evals, symbols, flags, mountpoints, evals, classes, ...",
 	"B", "toggle breakpoint",
 	"c/C", "toggle (c)ursor and (C)olors",
 	"d[f?]", "define function, data, code, ..",
@@ -272,7 +272,6 @@ static const char *help_msg_visual[] = {
 	"i", "insert hex or string (in hexdump) use tab to toggle",
 	"I", "insert hexpair block ",
 	"mK/'K", "mark/go to Key (any key)",
-	"M", "walk the mounted filesystems",
 	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
 	"g", "go/seek to given offset (o[g/G]<enter> to seek begin/end of file)",
 	"O", "toggle asm.pseudo and asm.esil",
@@ -1960,6 +1959,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" i  imports\n"
 		" l  chat logs (previously VT)\n"
 		" m  maps\n"
+		" M  mountpoints\n"
 		" p  pids/threads\n"
 		" q  quit\n"
 		" r  ROP gadgets\n"
@@ -1985,6 +1985,11 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
+		case 'M':
+			if (!r_list_empty (core->fs->roots)) {
+				r_core_visual_mounts (core);
+			}
+			break;
 		case 'z': // "vbz"
 			if (r_core_visual_view_zigns (core)) {
 				return;
@@ -2643,11 +2648,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			  break;
 		case 'E':
 			r_core_visual_colors (core);
-			break;
-		case 'M':
-			if (!r_list_empty (core->fs->roots)) {
-				r_core_visual_mounts (core);
-			}
 			break;
 		case 'x':
 			r_core_visual_refs (core, true, false);
