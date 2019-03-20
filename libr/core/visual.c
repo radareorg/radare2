@@ -3560,7 +3560,7 @@ static int visual_responsive(RCore *core) {
 			r_config_set_i (core->config, "asm.cmt.right", 1);
 		}
 		if (w < 68) {
-			r_config_set_i (core->config, "hex.cols", w / 5.2);
+			r_config_set_i (core->config, "hex.cols", (int)(w / 5.2));
 		} else {
 			r_config_set_i (core->config, "hex.cols", 16);
 		}
@@ -3571,8 +3571,8 @@ static int visual_responsive(RCore *core) {
 		}
 		if (w > 80) {
 			r_config_set_i (core->config, "asm.lines.width", 14);
-			r_config_set_i (core->config, "asm.lines.width", w - (w / 1.2));
-			r_config_set_i (core->config, "asm.cmt.col", w - (w / 2.5));
+			r_config_set_i (core->config, "asm.lines.width", w - (int)(w / 1.2));
+			r_config_set_i (core->config, "asm.cmt.col", w - (int)(w / 2.5));
 		} else {
 			r_config_set_i (core->config, "asm.lines.width", 7);
 		}
