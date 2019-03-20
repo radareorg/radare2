@@ -36,6 +36,10 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, QNX_MAGIC, 6));
 }
 
+static bool check_buffer(RBuffer *buf) {
+	return check_bytes(buf, r_buf_size (buf));
+}
+
 // Frees the bin_obj of the binary file
 static int destroy(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
@@ -147,15 +151,20 @@ beach:
 	return ret;
 }
 
-// XXX this is wrong, do not copy the data this way
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	ut64 size = bf? r_buf_size (bf->buf): 0;
-	ut8 *buf = malloc (size);
-	r_buf_read_at (bf->buf, 0, buf, size);
-	bool rc = load_bytes (bf, &bf->o->bin_obj, buf, size, bf->o->loadaddr, bf->sdb); 
-	free (buf);
-	return rc;
+
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (bf && buf, NULL);
+	const ut64 sz = r_buf_size (buf);
+	ut8 *bytes = malloc (sz);
+	if (!bytes) {
+		return NULL;
+	}
+	r_buf_read_at (buf, 0, bytes, sz);
+	void *ptr = NULL;
+	const ut64 la = bf->loadaddr;
+	(void)load_bytes (bf, &ptr, bytes, sz, la, bf->sdb);
+	free (bytes);
+	return ptr;
 }
 
 /*
@@ -289,13 +298,13 @@ RBinPlugin r_bin_plugin_qnx = {
 	.name = "qnx",
 	.desc = "QNX executable file support",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.relocs = &relocs,
 	.baddr = &baddr,
 	.author = "deepakchethan",
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
+	.check_bytes  = &check_bytes,
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,
