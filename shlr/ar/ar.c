@@ -39,7 +39,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	ar_read_filename_table (b, buffer, files, filename);
 
 	/* If b->base is set, then we found the file root in the archive */
-	while (r) {
+	while (r && !b->base_priv) {
 		r = ar_read_file (b, buffer, false, files, filename);
 	}
 
@@ -72,11 +72,11 @@ R_API int ar_close(RBuffer *b) {
 }
 
 R_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_read_at (b, off, buf, count);
+	return r_buf_read_at (b, off + b->base_priv, buf, count);
 }
 
 R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_write_at (b, off, buf, count);
+	return r_buf_write_at (b, off + b->base_priv, buf, count);
 }
 
 int ar_read(RBuffer *b, void *dest, int len) {
