@@ -472,21 +472,39 @@ static int cmd_info(void *data, const char *input) {
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					fileName = desc? desc->name: NULL;
 				}
-				if (!info || !info->hashes) {
-					(void)r_bin_file_hash (core->bin, limit, fileName);
+				if (!info || r_list_empty(info->file_hashes)) {
+					(void)r_bin_file_hash (core->bin, limit, fileName, NULL);
 				} else {
 				// TODO: compare
-					char *old = strdup (info->hashes);
-					(void)r_bin_file_hash (core->bin, limit, fileName);
-					if (strcmp (info->hashes, old)) {
-						eprintf ("File has been modified.\n");
-						char *s = r_str_prefix_all (old, "- ");
-						r_cons_printf ("%s\n", s);
-						free (s);
-						s = r_str_prefix_all (info->hashes, "+ ");
-						r_cons_printf ("%s\n", s);
-						free (s);
-						break;
+					RList *old_file_hashes = NULL;
+					(void)r_bin_file_hash (core->bin, limit, fileName, &old_file_hashes);
+					bool differs = false;
+					if (!r_list_empty (old_file_hashes) && !r_list_empty (info->file_hashes)) {
+						RBinFileHash *fh_old, *fh_new;
+						RListIter *hiter_old, *hiter_new;
+						r_list_foreach (info->file_hashes, hiter_new, fh_new) {
+							r_list_foreach (old_file_hashes, hiter_old, fh_old) {
+								if (strcmp (fh_new->type, fh_old->type)) {
+									continue;
+								}
+								differs = !!strcmp (fh_new->hex, fh_old->hex);
+								if (differs) {
+									eprintf ("File has been modified.\n");
+									eprintf ("- %s\n", fh_old->hex);
+									eprintf ("+ %s\n", fh_new->hex);
+									break;
+								}
+							}
+							if (differs) {
+								break;
+							}
+						}
+					}
+					if (!r_list_empty (old_file_hashes)) {
+						r_list_free (old_file_hashes);
+					}
+					if (differs || r_list_empty (info->file_hashes)) {
+						break; // TODO: do we have to break here in case `itj` is called?
 					}
 				}
 				if (input[1] == 'j') { // "itj"
@@ -496,12 +514,20 @@ static int cmd_info(void *data, const char *input) {
 						return 0;
 					}
 					pj_o (pj);
-					pj_ks (pj, "values", info->hashes);
+					RBinFileHash *fh;
+					RListIter *hiter;
+					r_list_foreach (info->file_hashes, hiter, fh) {
+						pj_ks (pj, fh->type ? fh->type : "", fh->hex ? fh->hex : "");
+					}
 					pj_end (pj);
 					r_cons_printf ("%s", pj_string (pj));
 					pj_free (pj);
 				} else {
-					r_cons_printf ("%s\n", (info && info->hashes)? info->hashes: "");
+					RBinFileHash *fh;
+					RListIter *hiter;
+					r_list_foreach (info->file_hashes, hiter, fh) {
+						r_cons_printf ("%s %s\n", fh->type ? fh->type : "", fh->hex ? fh->hex : "");
+					}
 				}
 			}
 			break;

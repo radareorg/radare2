@@ -3335,7 +3335,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETCB ("file.path", "", &cb_filepath, "Path of current file");
 	SETPREF ("file.lastpath", "", "Path of current file");
-	SETPREF ("file.sha1", "", "SHA1 hash of current file");
 	SETPREF ("file.type", "", "Type of current file");
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
 	SETI ("file.openmany", 1, "Maximum number of files opened at once");
