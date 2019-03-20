@@ -109,8 +109,10 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 	// free (core->yank_buf);
 	if (buf && len) {
+		// FIXME: direct access to base should be avoided (use _sparse
+		// when you need buffer that starts at given addr)
 		r_buf_set_bytes (core->yank_buf, buf, len);
-		core->yank_buf->base = addr;
+		core->yank_buf->base_priv = addr;
 		return true;
 	}
 	return false;
@@ -234,7 +236,7 @@ R_API int r_core_yank_dump(RCore *core, ut64 pos) {
 	if (ybl > 0) {
 		if (pos < ybl) {
 			r_cons_printf ("0x%08"PFMT64x " %d ",
-				core->yank_buf->base + pos,
+				core->yank_buf->base_priv + pos,
 				r_buf_size (core->yank_buf) - pos);
 			for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 				r_cons_printf ("%02x",

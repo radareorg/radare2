@@ -12,20 +12,21 @@ typedef struct r_buf_t {
 	ut8 *buf;
 	ut64 length_priv;
 	st64 cur_priv;
-	ut64 base;
-	RMmap *mmap;
-	bool empty;
-	bool ro; // read-only
-	int fd;
-	int Oxff;
-	RList *sparse;
+	// FIXME: some direct accesses to base_priv still exist unfortunately
+	ut64 base_priv;
+	RMmap *mmap_priv;
+	bool empty_priv;
+	bool ro_priv; // read-only
+	int fd_priv;
+	int Oxff_priv;
+	RList *sparse_priv;
 	int refctr;
 	// RIOBind *iob;
 	// forward declaration
 	void *iob;
-	ut64 offset;
-	ut64 limit;
-	struct r_buf_t *parent;
+	ut64 offset_priv;
+	ut64 limit_priv;
+	struct r_buf_t *parent_priv;
 } RBuffer;
 
 typedef struct r_buf_cache_t {
@@ -81,6 +82,7 @@ R_API char *r_buf_free_to_string(RBuffer *b);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
+R_API RList *r_buf_nonempty_list(RBuffer *b);
 
 #ifdef __cplusplus
 }
