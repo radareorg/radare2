@@ -479,6 +479,11 @@ static int cmd_info(void *data, const char *input) {
 					RList *old_file_hashes = NULL;
 					(void)r_bin_file_hash (core->bin, limit, fileName, &old_file_hashes);
 					bool differs = false;
+					RStrBuf *sdiff = r_strbuf_new ("");
+					if (!sdiff) {
+						eprintf ("Cannot allocate string");
+						return 0;
+					}
 					if (!r_list_empty (old_file_hashes) && !r_list_empty (info->file_hashes)) {
 						RBinFileHash *fh_old, *fh_new;
 						RListIter *hiter_old, *hiter_new;
@@ -487,24 +492,27 @@ static int cmd_info(void *data, const char *input) {
 								if (strcmp (fh_new->type, fh_old->type)) {
 									continue;
 								}
-								differs = !!strcmp (fh_new->hex, fh_old->hex);
+								differs |= !!strcmp (fh_new->hex, fh_old->hex);
 								if (differs) {
-									eprintf ("File has been modified.\n");
-									eprintf ("- %s\n", fh_old->hex);
-									eprintf ("+ %s\n", fh_new->hex);
+									if (!r_strbuf_length (sdiff)) {
+										r_strbuf_append (sdiff, "File has been modified.\n");
+									}
+									r_strbuf_appendf (sdiff, "- %s %s\n", fh_old->type, fh_old->hex);
+									r_strbuf_appendf (sdiff, "+ %s %s\n", fh_new->type, fh_new->hex);
 									break;
 								}
 							}
-							if (differs) {
-								break;
-							}
 						}
 					}
+					if (r_strbuf_length (sdiff)) {
+						eprintf ("%s", r_strbuf_get (sdiff));
+					}
+					r_strbuf_free (sdiff);
 					if (!r_list_empty (old_file_hashes)) {
 						r_list_free (old_file_hashes);
 					}
-					if (differs || r_list_empty (info->file_hashes)) {
-						break; // TODO: do we have to break here in case `itj` is called?
+					if (r_list_empty (info->file_hashes)) {
+						break;
 					}
 				}
 				if (input[1] == 'j') { // "itj"
