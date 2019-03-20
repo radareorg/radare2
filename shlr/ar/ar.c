@@ -193,6 +193,8 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		/* Check filename */
 		if (index == index_filename || !strcmp (curfile, filename)) {
 			r_buf_resize(b, filesize);
+			// FIXME: direct access to base should be avoided (use _sparse
+			// when you need buffer that starts at given addr)
 			b->base_priv = r_buf_tell (b);
 			free (curfile);
 			return r_buf_size (b);
