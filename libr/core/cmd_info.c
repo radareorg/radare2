@@ -511,7 +511,7 @@ static int cmd_info(void *data, const char *input) {
 					if (!r_list_empty (old_file_hashes)) {
 						r_list_free (old_file_hashes);
 					}
-					if (r_list_empty (info->file_hashes)) {
+					if (differs || r_list_empty (info->file_hashes)) {
 						break;
 					}
 				}
