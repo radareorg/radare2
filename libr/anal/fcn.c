@@ -583,6 +583,8 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		}
 		if (sz == 2 && is_arm) {
 			jmpptr = ip +  4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
+		} else if (sz == 1 && is_arm) {
+			jmpptr = ip +  4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
 		} else if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
@@ -1534,6 +1536,19 @@ repeat:
 					}
 					movptr = UT64_MAX;
 				} else if (is_arm) {
+					if (op.ptrsize == 1) { // TBB
+						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
+						int tablesize = 0;
+						if (pred_cmpval != UT64_MAX) {
+							tablesize += pred_cmpval;
+						} else {
+							tablesize += cmpval;
+						}
+						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.addr + op.size,
+							op.addr + 4, 1, tablesize, UT64_MAX, ret);
+						// skip inlined jumptable
+						idx += (tablesize);
+					}
 					if (op.ptrsize == 2) { // LDRH on thumb/arm
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op.ireg);
 						int tablesize = 1;
