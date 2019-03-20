@@ -39,7 +39,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	ar_read_filename_table (b, buffer, files, filename);
 
 	/* If b->base is set, then we found the file root in the archive */
-	while (r && !b->base) {
+	while (r && !b->base_priv) {
 		r = ar_read_file (b, buffer, false, files, filename);
 	}
 
@@ -72,19 +72,19 @@ R_API int ar_close(RBuffer *b) {
 }
 
 R_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_read_at (b, off + b->base, buf, count);
+	return r_buf_read_at (b, off + b->base_priv, buf, count);
 }
 
 R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_write_at (b, off + b->base, buf, count);
+	return r_buf_write_at (b, off + b->base_priv, buf, count);
 }
 
 int ar_read(RBuffer *b, void *dest, int len) {
-	int r = r_buf_read_at (b, R_BUF_CUR, dest, len);
+	int r = r_buf_read (b, dest, len);
 	if (!r) {
 		return 0;
 	}
-	b->cur += r;
+	r_buf_seek (b, r, 1);
 	return r;
 }
 
@@ -129,7 +129,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		/* Fix padding issues */
 		if (*buffer == '\n') {
 			buffer[0] = buffer[1];
-			b->cur--;
+			r_buf_seek (b, -1, 1);
 			ar_read (b, buffer, 2);
 		}
 		ar_read (b, buffer + 2, AR_FILENAME_LEN - 2);
@@ -145,7 +145,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		int dif = (int) (tmp - buffer);
 		dif = 31 - dif;
 		// Re-read the whole filename
-		b->cur -= dif;
+		r_buf_seek (b, -dif, 1);
 		r = ar_read (b, buffer, AR_FILENAME_LEN);
 		if (r != AR_FILENAME_LEN) {
 			goto fail;
@@ -192,15 +192,17 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	if (!lookup && filename) {
 		/* Check filename */
 		if (index == index_filename || !strcmp (curfile, filename)) {
-			b->length = filesize;
-			b->base = b->cur;
+			r_buf_resize(b, filesize);
+			// FIXME: direct access to base should be avoided (use _sparse
+			// when you need buffer that starts at given addr)
+			b->base_priv = r_buf_tell (b);
 			free (curfile);
-			return b->length;
+			return r_buf_size (b);
 		}
 	}
 	(void)ar_read (b, buffer, 1);
 
-	b->cur += filesize - 1;
+	r_buf_seek (b, filesize - 1, 1);
 	free (curfile);
 	return filesize;
 fail:
@@ -215,12 +217,12 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 	}
 	if (strncmp (buffer, "//", 2)) {
 		// What we read was not a filename table, just go back
-		b->cur -= AR_FILENAME_LEN;
+		r_buf_seek (b, -AR_FILENAME_LEN, 1);
 		return 0;
 	}
 
 	/* Read table size */
-	b->cur += 32;
+	r_buf_seek (b, 32, 1);
 	r = ar_read (b, buffer, 10);
 	if (r != 10) {
 		return 0;
@@ -248,7 +250,7 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 		/* End slash plus separation character ("/\n") */
 		len += r + 2;
 		/* Separation character (not always '\n') */
-		b->cur += 1;
+		r_buf_seek (b, 1, 1);
 		index++;
 	}
 	return len;

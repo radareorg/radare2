@@ -131,12 +131,10 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
-	anal->decode = (bool)(mask & R_ANAL_OP_MASK_ESIL);
-	anal->fillval = (bool)(mask & R_ANAL_OP_MASK_VAL);
 	if (anal->pcalign && addr % anal->pcalign) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->addr = addr;
@@ -151,7 +149,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		ret = anal->cur->op (anal, op, addr, data, len);
+		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
@@ -759,4 +757,21 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
 		}
 	}
 	return changes;
+}
+
+// returns the '33' in 'rax + 33'
+// returns value for the given register name in specific address / range
+// imho this should not iterate, should be just a helper to get that value
+R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
+	ut8 buf[32];
+	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
+	RAnalOp op = { 0 };
+	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
+		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
+			if (op.src[0]) {
+				return op.src[0]->delta;
+			}
+		}
+	}
+	return 0;
 }

@@ -20,7 +20,9 @@ R_API int *r_utf_block_list (const ut8 *str, int len);
 #define r_utf8_to_utf16(cstring) r_utf8_to_utf16_l ((cstring), -1)
 #if __WINDOWS__
 R_API const char *r_acp_to_utf8_l (const ut8 *str, int len);
+R_API char *r_utf8_to_acp_l(const ut8 *str, int len);
 #define r_acp_to_utf8(str) r_acp_to_utf8_l ((str), -1)
+#define r_utf8_to_acp(cstring) r_utf8_to_acp_l ((cstring), -1)
 #endif // __WINDOWS__
 
 #endif //  R_UTF8_H

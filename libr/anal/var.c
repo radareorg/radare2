@@ -68,14 +68,14 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 	return true;
 }
 
-R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_IFNULL("int") const char *type, int size, bool isarg, R_NONNULL const char *name) {
+R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_IFNULL("int32_t") const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (a, false);
 	r_return_val_if_fail (name, false);
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
 	if (!type) {
-		type = "int";
+		type = "int32_t";
 	}
 	switch (kind) {
 	case R_ANAL_VAR_KIND_BPV: // base pointer var/args
@@ -1072,6 +1072,7 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 	if (!cache) {
 		cache = R_NEW0 (RAnalFcnVarsCache);
 		if (!cache) {
+			type_fcn_name = NULL;
 			goto beach;
 		}
 		r_anal_fcn_vars_cache_init (anal, cache, fcn);

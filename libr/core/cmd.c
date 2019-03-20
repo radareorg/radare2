@@ -323,38 +323,6 @@ static int r_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
-// TODO: move somewhere else
-R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
-	int delta;
-	ut8 buf[128];
-	static RBuffer *b = NULL; // XXX: never freed and non-thread safe. move to RCore
-	RAsmOp *op;
-	if (!b) {
-		b = r_buf_new ();
-		if (!b || !r_io_read_at (core->io, addr, buf, sizeof (buf))) {
-			return NULL;
-		}
-		b->base = addr;
-		r_buf_set_bytes (b, buf, sizeof (buf));
-	} else {
-		if ((addr < b->base) || addr > (b->base + b->length - 32)) {
-			if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
-				return NULL;
-			}
-			b->base = addr;
-			r_buf_set_bytes (b, buf, sizeof (buf));
-		}
-	}
-	delta = addr - b->base;
-	op = R_NEW0 (RAsmOp);
-	r_asm_set_pc (core->assembler, addr);
-	if (r_asm_disassemble (core->assembler, op, b->buf + delta, b->length) < 1) {
-		free (op);
-		return NULL;
-	}
-	return op;
-}
-
 static int cmd_uname(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -629,7 +597,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
 		break;
 	case 'l': // "yl"
-		core->num->value = core->yank_buf->length;
+		core->num->value = r_buf_size (core->yank_buf);
 		break;
 	case 'y': // "yy"
 		while (input[1] == ' ') {
@@ -678,7 +646,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 't': // "wt"
 		if (input[1] == 'f') { // "wtf"
 			const char *file = r_str_trim_ro (input + 2);
-			if (!r_file_dump (file, core->yank_buf->buf, core->yank_buf->length, false)) {
+			if (!r_file_dump (file, core->yank_buf->buf, r_buf_size (core->yank_buf), false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}
 		} else if (input[1] == ' ') {
@@ -1757,7 +1725,7 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	STARTUPINFO si = {0};
 	PROCESS_INFORMATION pi = {0};
@@ -1787,7 +1755,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	while (*_shell_cmd && isspace ((ut8)*_shell_cmd)) {
 		_shell_cmd++;
 	}
-	_shell_cmd_ = r_sys_conv_utf8_to_utf16 (_shell_cmd);
+	_shell_cmd_ = r_sys_conv_utf8_to_win (_shell_cmd);
 	// exec windows process
 	if (!CreateProcess (NULL, _shell_cmd_, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");
@@ -1832,7 +1800,7 @@ err_r_w32_cmd_pipe:
 #endif
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	int stdout_fd, fds[2];
 	int child;
 #endif
@@ -1861,7 +1829,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		free (out);
 		ret = 0;
 	}
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 

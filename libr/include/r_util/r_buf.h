@@ -10,26 +10,27 @@ extern "C" {
 
 typedef struct r_buf_t {
 	ut8 *buf;
-	ut64 length;
-	st64 cur;
-	ut64 base;
-	RMmap *mmap;
-	bool empty;
-	bool ro; // read-only
-	int fd;
-	int Oxff;
-	RList *sparse;
+	ut64 length_priv;
+	st64 cur_priv;
+	// FIXME: some direct accesses to base_priv still exist unfortunately
+	ut64 base_priv;
+	RMmap *mmap_priv;
+	bool empty_priv;
+	bool ro_priv; // read-only
+	int fd_priv;
+	int Oxff_priv;
+	RList *sparse_priv;
 	int refctr;
 	// RIOBind *iob;
 	// forward declaration
 	void *iob;
-	ut64 offset;
-	ut64 limit;
-	struct r_buf_t * parent;
+	ut64 offset_priv;
+	ut64 limit_priv;
+	struct r_buf_t *parent_priv;
 } RBuffer;
 
 typedef struct r_buf_cache_t {
-        ut64 from;
+	ut64 from;
         ut64 to;
         int size;
         ut8 *data;
@@ -40,7 +41,7 @@ typedef struct r_buf_cache_t {
 R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_io(void *iob, int fd);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
-R_API RBuffer *r_buf_new_with_string (const char *msg);
+R_API RBuffer *r_buf_new_with_string(const char *msg);
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
 R_API RBuffer *r_buf_new_with_bufref(RBuffer *b);
@@ -70,6 +71,7 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
 #define r_buf_write(a,b,c) r_buf_write_at(a,R_BUF_CUR,b,c)
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr);
+R_API ut64 r_buf_tell(RBuffer *b);
 R_API int r_buf_seek(RBuffer *b, st64 addr, int whence);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
@@ -80,6 +82,7 @@ R_API char *r_buf_free_to_string(RBuffer *b);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
+R_API RList *r_buf_nonempty_list(RBuffer *b);
 
 #ifdef __cplusplus
 }

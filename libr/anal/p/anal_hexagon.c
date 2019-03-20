@@ -9,7 +9,7 @@
 #include "hexagon_insn.h"
 #include "hexagon_anal.h"
 
-static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	HexInsn hi = {0};;
 	ut32 data = 0;
 	memset (op, 0, sizeof (RAnalOp));

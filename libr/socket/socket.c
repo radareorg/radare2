@@ -5,14 +5,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #if EMSCRIPTEN
 #define NETWORK_DISABLED 1
@@ -111,7 +103,7 @@ WSACleanup: closes all network connections
 #define BUFFER_SIZE 4096
 
 R_API bool r_socket_is_connected(RSocket *s) {
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 	char buf[2];
 	r_socket_block_time (s, 0, 0);
 #ifdef _MSC_VER
@@ -128,7 +120,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 #endif
 }
 
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 static int r_socket_unix_connect(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
@@ -266,7 +258,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 }
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 	struct sockaddr_in sa;
 	struct hostent *he;
 	WSADATA wsadata;
@@ -332,7 +324,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		return true;
 	}
 	return false;
-#elif __UNIX__ || defined(__CYGWIN__)
+#elif __UNIX__
 	int ret;
 	struct addrinfo hints = {0};
 	struct addrinfo *res, *rp;
@@ -447,10 +439,10 @@ R_API int r_socket_close(RSocket *s) {
 		return false;
 	}
 	if (s->fd != -1) {
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
 		shutdown (s->fd, SD_SEND);
 		if (r_socket_ready (s, 0, 250)) {
@@ -503,7 +495,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
 		eprintf ("Error creating socket.");
@@ -549,7 +541,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #endif
 		return false;
 	}
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	if (listen (s->fd, 32) < 0) {
@@ -650,13 +642,13 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 }
 
 R_API int r_socket_block_time(RSocket *s, int block, int sec) {
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	int ret, flags;
 #endif
 	if (!s) {
 		return false;
 	}
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	flags = fcntl (s->fd, F_GETFL, 0);
 	if (flags < 0) {
 		return false;
@@ -667,7 +659,7 @@ R_API int r_socket_block_time(RSocket *s, int block, int sec) {
 	if (ret < 0) {
 		return false;
 	}
-#elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#elif __WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0) {
@@ -695,7 +687,7 @@ R_API int r_socket_flush(RSocket *s) {
 /* waits secs until new data is received.	  */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	//int msecs = (1000 * secs) + (usecs / 1000);
 	int msecs = (usecs / 1000);
 	struct pollfd fds[1];
@@ -703,7 +695,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	fds[0].events = POLLIN | POLLPRI;
 	fds[0].revents = POLLNVAL | POLLHUP | POLLERR;
 	return poll ((struct pollfd *)&fds, 1, msecs);
-#elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#elif __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
 	if (s->fd == -1) {
@@ -720,9 +712,9 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 }
 
 R_API char *r_socket_to_string(RSocket *s) {
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 	return r_str_newf ("fd%d", (int)(size_t)s->fd);
-#elif __UNIX__ || defined(__CYGWIN__)
+#elif __UNIX__
 	char *str = NULL;
 	struct sockaddr sa;
 	socklen_t sl = sizeof (sa);
@@ -746,7 +738,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
@@ -798,9 +790,6 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 	if (!s) {
 		return -1;
 	}
-	if (r_socket_ready (s, 2, 0) <= 0) {
-		return -1;
-	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		if (s->bio) {
@@ -809,7 +798,7 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 		return SSL_read (s->sfd, buf, len);
 	}
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
+#if __WINDOWS__
 rep:
 	{
 	int ret = recv (s->fd, (void *)buf, len, 0);

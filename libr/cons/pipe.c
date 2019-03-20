@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_cons.h>
-#include <unistd.h>
 #include <limits.h>
 
 //TODO: cons_pipe should be using a stack pipe_push, pipe_pop
@@ -34,7 +33,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 		close (backup_fd);
 	}
 	backup_fdn = fdn;
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	backup_fd = 2002-(fd-2); // windows xp has 2048 as limit fd
 	if (_dup2 (fdn, backup_fd) == -1) {
 #else

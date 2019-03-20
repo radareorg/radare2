@@ -5,6 +5,7 @@ r_parse_sources = [
   'p/parse_arm_pseudo.c',
   'p/parse_att2intel.c',
   'p/parse_avr_pseudo.c',
+  'p/parse_chip8_pseudo.c',
   'p/parse_dalvik_pseudo.c',
   'p/parse_m68k_pseudo.c',
   'p/parse_mips_pseudo.c',

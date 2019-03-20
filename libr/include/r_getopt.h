@@ -8,7 +8,6 @@ of getopt to work on any operating system independently of the libc
 Duplicated code in here:
 
 * libr/util/getopt.c
-* libr/include/msvc/getopt.h
 
 */
 

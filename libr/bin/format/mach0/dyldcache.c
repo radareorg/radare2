@@ -15,20 +15,20 @@ static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
 	return true;
 }
 
-static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 offset) {
-	return r_buf_write_at (buf, offset, (ut8*)&data, sizeof (data));
+static int r_bin_dyldcache_apply_patch(RBuffer* buf, ut32 data, ut64 offset) {
+	return r_buf_write_at (buf, offset, (ut8 *)&data, sizeof (data));
 }
 
 #define NZ_OFFSET(x) if((x) > 0) r_bin_dyldcache_apply_patch (dbuf, (x) - linkedit_offset, (ut64)((size_t)&(x) - (size_t)data))
 
 // make it public in util/buf.c ?
-static ut64 r_buf_read64le (RBuffer *buf, ut64 off) {
+static ut64 r_buf_read64le(RBuffer *buf, ut64 off) {
 	ut8 data[8] = {0};
 	r_buf_read_at (buf, off, data, 8);
 	return r_read_le64 (data);
 }
 
-static char *r_buf_read_string (RBuffer *buf, ut64 addr, int len) {
+static char *r_buf_read_string(RBuffer *buf, ut64 addr, int len) {
 	ut8 *data = malloc (len);
 	if (data) {
 		r_buf_read_at (buf, addr, data, len);
@@ -144,10 +144,11 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 				return NULL;
 			}
 			r_buf_append_bytes (dbuf, bin->b->buf+seg->fileoff, t);
-			r_bin_dyldcache_apply_patch (dbuf, dbuf->length, (ut64)((size_t)&seg->fileoff - (size_t)data));
+			r_bin_dyldcache_apply_patch (dbuf, r_buf_size (dbuf),
+				(ut64) ((size_t)&seg->fileoff - (size_t)data));
 			/* Patch section offsets */
 			int sect_offset = seg->fileoff - libsz;
-			libsz = dbuf->length;
+			libsz = r_buf_size (dbuf);
 			if (!strcmp (seg->segname, "__LINKEDIT")) {
 				linkedit_offset = sect_offset;
 			}

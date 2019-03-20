@@ -3,7 +3,6 @@
 #define PACKET_H
 
 #include <stdint.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include "libqnxr.h"
@@ -13,6 +12,8 @@
 #if !__CYGWIN__ && !defined(MSC_VER)
 #include <winsock.h>
 #endif
+#else
+#include <unistd.h>
 #endif
 
 int qnxr_send_nak (libqnxr_t *instance);

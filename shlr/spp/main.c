@@ -1,6 +1,7 @@
 /* MIT (C) pancake (at) nopcode (dot) org */
 
 #include "spp.h"
+#include "r_api.h"
 
 extern struct Proc *procs[];
 extern struct Proc *proc;

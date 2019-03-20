@@ -92,8 +92,8 @@ static int rabin_show_help(int v) {
 		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		" RABIN2_STRFILTER: e bin.strfilter    # r2 -qe bin.strfilter=? -c '' --\n"
-		" RABIN2_STRPURGE:  e bin.strpurge     # try to purge false positives\n"
+		" RABIN2_STRFILTER: e bin.str.filter   # r2 -qe bin.str.filter=? -c '' --\n"
+		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
@@ -307,8 +307,8 @@ static int rabin_dump_sections(char *scnname) {
 				free (buf);
 				return false;
 			}
-			if (section->paddr > bin->cur->buf->length ||
-			  section->paddr + section->size > bin->cur->buf->length) {
+			if (section->paddr > r_buf_size (bin->cur->buf) ||
+				section->paddr + section->size > r_buf_size (bin->cur->buf)) {
 				free (buf);
 				free (ret);
 				return false;
@@ -607,11 +607,11 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_STRFILTER"))) {
-		r_config_set (core.config, "bin.strfilter", tmp);
+		r_config_set (core.config, "bin.str.filter", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_STRPURGE"))) {
-		r_config_set (core.config, "bin.strpurge", tmp);
+		r_config_set (core.config, "bin.str.purge", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DEBASE64"))) {
@@ -907,8 +907,9 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_bin_arch_options_init (&opts, arch, bits);
 		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
-			if (r_file_dump (file, b->buf, b->length, 0)) {
-				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
+			if (r_file_dump (file, b->buf, r_buf_size (b), 0)) {
+				eprintf ("Dumped %" PFMT64d " bytes in '%s'\n",
+					r_buf_size (b), file);
 				r_file_chmod (file, "+x", 0);
 			} else {
 				eprintf ("Error dumping into a.out\n");

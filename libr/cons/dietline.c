@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 #include <windows.h>
 #define USE_UTF8 0
 #else
@@ -186,25 +186,24 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 }
 #endif
 
-#if __WINDOWS__ && !__CYGWIN__
-static int r_line_readchar_win(int *vch) { // this function handle the input in console mode
+#if __WINDOWS__
+static ut8 *r_line_readchar_win(int *vch) { // this function handle the input in console mode
 	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
-	ut8 buf[2];
+	ut8 *buf = calloc (2, sizeof (ut8));
 	HANDLE h;
 	int i;
 	void *bed;
 
 	if (I.zerosep) {
 		*vch = 0;
-		buf[0] = 0;
 		bed = r_cons_sleep_begin ();
 		int rsz = read (0, buf, 1);
 		r_cons_sleep_end (bed);
 		if (rsz != 1)
 			return -1;
-		return buf[0];
+		return buf;
 	}
 
 	*buf = '\0';
@@ -218,15 +217,16 @@ do_it_again:
 	ret = ReadConsoleInput (h, &irInBuf, 1, &out);
 	r_cons_sleep_end (bed);
 	if (ret < 1) {
+		free (buf);
 		return 0;
 	}
 	if (irInBuf.EventType == KEY_EVENT) {
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
-			if (irInBuf.Event.KeyEvent.uChar.AsciiChar) {
-				*buf = irInBuf.Event.KeyEvent.uChar.AsciiChar;
+			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
+				free (buf);
+				buf = r_sys_conv_win_to_utf8_l (&irInBuf.Event.KeyEvent.uChar, 1);
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
-			}
-			else {
+			} else {
 				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 				case VK_DOWN: *vch = bCtrl ? 140 : 40; break;
 				case VK_UP: *vch = bCtrl ? 138 : 38; break;
@@ -244,7 +244,7 @@ do_it_again:
 		goto do_it_again;
 	}
 	SetConsoleMode (h, mode);
-	return buf[0];
+	return buf;
 }
 #endif
 
@@ -694,18 +694,19 @@ R_API const char *r_line_readline() {
 	return r_line_readline_cb (NULL, NULL);
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	int columns = r_cons_get_size (NULL) - 2;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
 	signed char buf[10];
-	int ch, i = 0;	/* grep completion */
+	ut8 *ch;
+	int i = 0;	/* grep completion */
 	int vch = 0;
 	char *tmp_ed_cmd, prev = 0;
 	HANDLE hClipBoard;
-	char *clipText;
+	PTCHAR clipText;
 	int prev_buflen = 0;
 
 	I.buffer.index = I.buffer.length = 0;
@@ -749,7 +750,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			r_cons_break_pop ();
 			return NULL;
 		}
-		buf[0] = ch;
+		r_str_cpy (buf, ch);
+		free (ch);
 		if (I.echo) {
 			if (I.ansicon) {
 				printf ("\r%s", R_CONS_CLEAR_LINE);
@@ -760,7 +762,9 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		/* process special at vch codes first*/
 		switch (vch) {
 		case 37:	// left arrow
-			I.buffer.index = I.buffer.index? I.buffer.index - 1: 0;
+			I.buffer.index = I.buffer.index
+				? I.buffer.index - r_str_utf8_charsize_prev (I.buffer.data + I.buffer.index, I.buffer.index)
+				: 0;
 			break;
 		case 38:	// up arrow
 			if (I.sel_widget) {
@@ -774,8 +778,9 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 39:// right arrow
-			I.buffer.index = I.buffer.index < I.buffer.length?
-					 I.buffer.index + 1: I.buffer.length;
+			I.buffer.index = I.buffer.index < I.buffer.length
+				? I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index)
+				: I.buffer.length;
 			break;
 		case 40:// down arrow
 			if (I.sel_widget) {
@@ -836,13 +841,14 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 46:// supr
 			if (I.buffer.index < I.buffer.length) {
 				memmove (I.buffer.data + I.buffer.index,
-					I.buffer.data + I.buffer.index + 1,
+					I.buffer.data + I.buffer.index + r_str_utf8_charsize (I.buffer.data + I.buffer.index),
 					strlen (I.buffer.data + I.buffer.index + 1) + 1);
 			}
 			if (buf[1] == -1) {
 				r_cons_break_pop ();
 				return NULL;
 			}
+			I.buffer.length = strlen (I.buffer.data);
 			break;
 
 		default:
@@ -942,17 +948,28 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 22:// ^V - Paste from windows clipboard
 			if (OpenClipboard (NULL)) {
+#if UNICODE
+				hClipBoard = GetClipboardData (CF_UNICODETEXT);
+#else
 				hClipBoard = GetClipboardData (CF_TEXT);
+#endif
 				if (hClipBoard) {
 					clipText = GlobalLock (hClipBoard);
 					if (clipText) {
-						I.buffer.length += strlen (clipText);
+						char *txt = r_sys_conv_win_to_utf8 (clipText);
+						if (!txt) {
+							R_LOG_ERROR ("Failed to allocate memory\n");
+							break;
+						}
+						int len = strlen (txt);
+						I.buffer.length += len;
 						if (I.buffer.length < R_LINE_BUFSIZE) {
 							I.buffer.index = I.buffer.length;
-							strcat (I.buffer.data, clipText);
+							strcat (I.buffer.data, txt);
 						} else {
-							I.buffer.length -= strlen (I.clipboard);
+							I.buffer.length -= len;
 						}
+						free (txt);
 					}
 					GlobalUnlock (hClipBoard);
 				}
@@ -993,10 +1010,9 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 127:
 			if (I.buffer.index < I.buffer.length) {
 				if (I.buffer.index > 0) {
-					int len = 0;
+					int len = r_str_utf8_charsize_prev (I.buffer.data + I.buffer.index, I.buffer.index);
 					// TODO: WIP
-					len = 1;
-					I.buffer.index--;
+					I.buffer.index -= len;
 					memmove (I.buffer.data + I.buffer.index,
 						I.buffer.data + I.buffer.index + len,
 						strlen (I.buffer.data + I.buffer.index));
@@ -1005,7 +1021,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				}
 			} else {
 // OK
-				I.buffer.index = --I.buffer.length;
+				I.buffer.length -= r_str_utf8_charsize_last (I.buffer.data);
+				I.buffer.index = I.buffer.length;
 				if (I.buffer.length < 0) {
 					I.buffer.length = 0;
 				}
@@ -1039,20 +1056,27 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			if (gcomp) {
 				gcomp++;
 			}
+			int size = r_str_utf8_charsize (buf);
+			if (I.buffer.length + size > (R_LINE_BUFSIZE - 1)) {
+				break;
+			}
 			if (I.buffer.index < I.buffer.length) {
-				for (i = ++I.buffer.length; i > I.buffer.index; i--) {
-					I.buffer.data[i] = I.buffer.data[i - 1];
+				I.buffer.length += size;
+				for (i = I.buffer.length; i - size + 1 > I.buffer.index; i--) {
+					I.buffer.data[i] = I.buffer.data[i - size];
 				}
-				I.buffer.data[I.buffer.index] = buf[0];
+				int sz = size;
+				while (sz) {
+					I.buffer.data[i--] = buf[--sz];
+				}
 			} else {
-				I.buffer.data[I.buffer.length] = buf[0];
-				I.buffer.length++;
-				if (I.buffer.length > (R_LINE_BUFSIZE - 1)) {
-					I.buffer.length--;
+				for (i = 0; I.buffer.length + i <= R_LINE_BUFSIZE - 1 && buf[i]; i++) {
+					I.buffer.data[I.buffer.length + i] = buf[i];
 				}
+				I.buffer.length += i;
 				I.buffer.data[I.buffer.length] = '\0';
 			}
-			I.buffer.index++;
+			I.buffer.index += size;
 			break;
 		}
 		if (I.sel_widget && I.buffer.length != prev_buflen) {
@@ -1126,7 +1150,7 @@ _end:
 #endif
 
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	// new implementation for read input at windows by skuater. If something fail set this to 0
 	return r_line_readline_cb_win (cb, user);
 #endif
@@ -1200,7 +1224,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (columns < 1) {
 			columns = 40;
 		}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		if (I.echo) {
 			printf ("\r%*c\r", columns, ' ');
 		}

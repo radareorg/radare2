@@ -12,13 +12,13 @@ struct r_bin_fatmach0_obj_t {
 	int nfat_arch;
 	struct fat_header hdr;
 	struct fat_arch *archs;
-	struct r_buf_t* b;
+	RBuffer* b;
 };
 
 struct r_bin_fatmach0_arch_t {
 	int size;
 	int offset;
-	struct r_buf_t *b; 
+	RBuffer *b;
 	int last;
 };
 

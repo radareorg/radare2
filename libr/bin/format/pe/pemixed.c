@@ -62,7 +62,7 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)
 	struct PE_(r_bin_pe_obj_t)* sub_bin_native = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	memcpy (sub_bin_native, pe_bin, sizeof(struct PE_(r_bin_pe_obj_t)));
 
-	b_size = pe_bin->b->length;
+	b_size = r_buf_size (pe_bin->b);
 
 	//copy pe_bin->b and assign to sub_bin_native
 
