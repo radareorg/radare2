@@ -97,7 +97,7 @@ static int i4004_get_ins_len (ut8 hex) {
 	return ret;
 }
 
-static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	char basm[128];
 	const size_t basz = sizeof (basm)-1;
 	int rlen = i4004_get_ins_len (*buf);

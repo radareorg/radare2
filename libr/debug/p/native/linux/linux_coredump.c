@@ -7,6 +7,7 @@
 #if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
+#include <asm/ptrace.h>
 #include "linux_coredump.h"
 
 /* For compability */

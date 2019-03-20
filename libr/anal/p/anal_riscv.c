@@ -50,7 +50,7 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
 }
 
-static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const int no_alias = 1;
 	struct riscv_opcode *o = NULL;
 	ut64 word = 0;

@@ -867,10 +867,10 @@ static int cb_strpurge(void *user, void *data) {
 		    "Neither !true nor !false is supported.\n"
 		    "\n"
 		    "Examples:\n"
-		    "  e bin.strpurge=true,0-0xff,!0x1a\n"
+		    "  e bin.str.purge=true,0-0xff,!0x1a\n"
 		    "    -- purge strings using the false_positive() classifier in cbin.c and also strings \n"
 		    "       with addresses in the range 0-0xff, but not the string at 0x1a.\n"
-		    "  e bin.strpurge=all,!0x1000-0x1fff\n"
+		    "  e bin.str.purge=all,!0x1000-0x1fff\n"
 		    "    -- purge all strings except the strings with addresses in the range 0x1000-0x1fff.\n");
 		return false;
 	}
@@ -894,7 +894,7 @@ static int cb_strfilter(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			r_cons_printf ("Valid values for bin.strfilter:\n"
+			r_cons_printf ("Valid values for bin.str.filter:\n"
 				"a  only alphanumeric printable\n"
 				"8  only strings with utf8 chars\n"
 				"p  file/directory paths\n"
@@ -2667,7 +2667,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.mid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
-	SETCB ("anal.bb.maxsize", "1M", &cb_anal_bb_max_size, "Maximum basic block size");
+	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);
@@ -2723,7 +2723,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
 	// maybe rename to asm.cmt.calls
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
-	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
 	SETPREF ("asm.jmpsub", "false", "Always substitute jump, call and branch targets in disassembly");
@@ -2770,6 +2769,7 @@ R_API int r_core_config_init(RCore *core) {
 		"3 = realign at middle flag if sym.*", NULL);
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETCB ("asm.flags.real", "false", &cb_flag_realnames, "Show flags unfiltered realnames instead of names");
+	SETPREF ("asm.bb.line", "false", "Show empty line after every basic block");
 	SETPREF ("asm.bb.middle", "true", "Realign disassembly if a basic block starts in the middle of an instruction");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
@@ -2861,10 +2861,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
 	SETCB ("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
-	SETCB ("bin.strpurge", "", &cb_strpurge, "Purge strings (e bin.strpurge=? provides more detail)");
+	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
-	n = NODECB ("bin.strfilter", "", &cb_strfilter);
+	n = NODECB ("bin.str.filter", "", &cb_strfilter);
 	SETDESC (n, "Filter strings");
 	SETOPTIONS (n, "a", "8", "p", "e", "u", "i", "U", "f", NULL);
 	SETCB ("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");

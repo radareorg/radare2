@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_crypto.h"
 #include "r_config.h"
@@ -1452,9 +1452,50 @@ static int cmd_write(void *data, const char *input) {
 				}
 				r_asm_code_free (acode);
 			}
-			break;
 		}
+			break;
 		case 'f': // "waf"
+			if ((input[2] == ' ' || input[2] == '*')) {
+				const char *file = input + ((input[2] == '*')? 4: 3);
+				r_asm_set_pc (core->assembler, core->offset);
+
+				char *src = r_file_slurp (file, NULL);
+				if (src) {
+					ut64 nextaddr, addr = core->offset;
+					char *a, *b = src;
+					do {
+						a = strstr (b, ".offset ");
+						if (a) {
+							*a = 0;
+							a += strlen (".offset ");
+							nextaddr = r_num_math (core->num, a);
+							char *nl = strchr (a, '\n');
+							if (nl) {
+								*nl = 0;
+								a = nl + 1;
+							} else {
+								break;
+							}
+						}
+						if (*b) {
+							RAsmCode *ac = r_asm_massemble (core->assembler, b);
+							if (ac && *ac->buf_hex) {
+								r_cons_printf ("wx %s @ 0x%08"PFMT64x"\n",  ac->buf_hex, addr);
+							}
+							r_asm_code_free (ac);
+						}
+						b = a;
+						addr = nextaddr;
+					} while (a);
+					free (src);
+				} else {
+					eprintf ("Cannot open '%s'\n", file);
+				}
+			} else {
+				eprintf ("Wrong argument\n");
+			}
+			break;
+		case 'F': // "waF"
 			if ((input[2] == ' ' || input[2] == '*')) {
 				const char *file = input + ((input[2] == '*')? 4: 3);
 				r_asm_set_pc (core->assembler, core->offset);

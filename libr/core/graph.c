@@ -2036,7 +2036,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	}
 	r_config_hold_i (hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
-		"asm.comments", "asm.cmt.right", NULL);
+		"asm.comments", "asm.cmt.right", "asm.bb.line", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
 	const bool o_bytes = r_config_get_i (core->config, "graph.bytes");
@@ -2056,6 +2056,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
+	r_config_set_i (core->config, "asm.bb.line", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
 	r_config_set_i (core->config, "asm.marks", false);
@@ -3959,6 +3960,21 @@ static void rotateColor(RCore *core) {
 	r_config_set_i (core->config, "scr.color", color);
 }
 
+// dupe in visual.c
+static bool toggle_bb(RCore *core, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (fcn) {
+		RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, addr);
+		if (bb) {
+			bb->folded = !bb->folded;
+		} else {
+			r_warn_if_reached ();
+		}
+		return true;
+	}
+	return false;
+}
+
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_cons_is_interactive ();
@@ -4177,8 +4193,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'Z':
-			if (okey == 27) {
+			if (okey == 27) { // shift-tab
 				agraph_prev_node (g);
+			} else {
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					ut64 addr = r_num_get (NULL, n->title);
+					toggle_bb (core, addr);
+					g->need_reload_nodes = true;
+				}
 			}
 			break;
 		case 's':
@@ -4246,16 +4269,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" e            - rotate graph.edges (show/hide edges)\n"
 				" E            - rotate graph.linemode (square/diagonal lines)\n"
 				" F            - enter flag selector\n"
-				" g([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[oa])\n"
+				" g            - go/seek to given offset\n"
 				" G            - debug trace callgraph (generated with dtc)\n"
 				" hjkl/HJKL    - scroll canvas or node depending on graph cursor (uppercase for faster)\n"
 				" m/M          - change mouse modes\n"
 				" n/N          - next/previous scr.nkey (function/flag..)\n"
-				" o            - go/seek to given offset\n"
+				" o([A-Za-z]*) - follow jmp/call identified by shortcut (like ;[oa])\n"
 				" O            - toggle asm.pseudo and asm.esil\n"
 				" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
 				" q            - back to Visual mode\n"
-				" r            - refresh graph\n"
+				" r            - toggle jmphints/leahints\n"
 				" R            - randomize colors\n"
 				" s/S          - step / step over\n"
 				" tab          - select next node\n"

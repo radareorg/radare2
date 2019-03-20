@@ -22,9 +22,6 @@ IFS=${_IFS}
 
 # Use /FS to allow cl.exe to write to the same .pdb file
 CFLAGS="-FS"
-# Include msvc directory to provide unistd.h and sys/time.h
-INC_DIR=$(cygpath -aw $(pwd)/libr/include/msvc)
-CFLAGS="${CFLAGS} -I\"${INC_DIR}\""
 
 # export CCCL_OPTIONS="--cccl-verbose"
 export CFLAGS="${CFLAGS}"

@@ -4,7 +4,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 
-static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	memset (op, '\0', sizeof(RAnalOp));
 	/* This should better follow the disassembler */
 	return op->size = 1;

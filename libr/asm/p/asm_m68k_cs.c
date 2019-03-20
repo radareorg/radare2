@@ -17,6 +17,9 @@
 
 #if CAPSTONE_HAS_M68K
 
+// Size of the longest instruction in bytes
+#define M68K_LONGEST_INSTRUCTION 10
+
 static bool check_features(RAsm *a, cs_insn *insn);
 static csh cd = 0;
 #include "cs_mnemonics.c"
@@ -72,9 +75,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
-	ut8 mybuf[8] = {0};
-	int mylen = R_MIN (8, len);
-	memcpy (mybuf, buf, R_MIN (8, len));
+
+	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = {0};
+	int mylen = R_MIN (M68K_LONGEST_INSTRUCTION, len);
+	memcpy (mybuf, buf, mylen);
+
 	n = cs_disasm (cd, mybuf, mylen, a->pc, 1, &insn);
 	if (n < 1) {
 		ret = -1;

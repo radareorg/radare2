@@ -74,6 +74,7 @@ extern RParsePlugin r_parse_plugin_6502_pseudo;
 extern RParsePlugin r_parse_plugin_arm_pseudo;
 extern RParsePlugin r_parse_plugin_att2intel;
 extern RParsePlugin r_parse_plugin_avr_pseudo;
+extern RParsePlugin r_parse_plugin_chip8_pseudo;
 extern RParsePlugin r_parse_plugin_dalvik_pseudo;
 extern RParsePlugin r_parse_plugin_dummy;
 extern RParsePlugin r_parse_plugin_m68k_pseudo;

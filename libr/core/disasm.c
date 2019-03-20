@@ -230,6 +230,7 @@ typedef struct {
 
 	ut64 esil_old_pc;
 	ut8* esil_regstate;
+	int esil_regstate_size;
 	bool esil_likely;
 
 	int l;
@@ -505,7 +506,10 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 		RCore* core = ds->core;
 		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+		RRegSet *regset = r_reg_regset_get (ds->core->anal->reg, R_REG_TYPE_GPR);
+		if (ds->esil_regstate_size  == regset->arena->size) {
+			r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+		}
 		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
 		R_FREE (ds->esil_regstate);
 	}
@@ -625,7 +629,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_offdec = r_config_get_i (core->config, "asm.decoff");
-	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
+	ds->show_bbline = r_config_get_i (core->config, "asm.bb.line");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
 	ds->show_section_perm = r_config_get_i (core->config, "asm.section.perm");
@@ -2368,42 +2372,7 @@ static void ds_print_cycles(RDisasmState *ds) {
 	}
 }
 
-static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
-	//ds->stackptr = ds->core->anal->stackptr;
-	ds->ostackptr = ds->stackptr;
-	switch (op->stackop) {
-	case R_ANAL_STACK_RESET:
-		ds->stackptr = 0;
-		break;
-	case R_ANAL_STACK_SET:
-		ds->stackptr = op->stackptr;
-		break;
-	case R_ANAL_STACK_INC:
-		ds->stackptr += op->stackptr;
-		break;
-	default:
-		/* nothing to do here */
-		break;
-	}
-	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-	 * Use RAnalFunction->RAnalOp->stackptr? */
-	if (op->type == R_ANAL_OP_TYPE_RET) {
-		ds->stackptr = 0;
-	}
-//	ds->ostackptr = ds->stackptr;
-	//ds->core->anal->stackptr = ds->stackptr;
-}
-
-static void ds_print_stackptr(RDisasmState *ds) {
-	if (ds->show_stackptr) {
-		r_cons_printf ("%5d%s", ds->stackptr,
-			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
-			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
-			ds->stackptr > ds->ostackptr? "+":
-			ds->stackptr < ds->ostackptr? "-": " ");
-		ds_update_stackptr (ds, &ds->analop);
-	}
-}
+#include "disasm_stackptr.inc"
 
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
@@ -4120,6 +4089,10 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
 	}
 	ds->esil_regstate = r_reg_arena_peek (core->anal->reg);
+	RRegSet *regset = r_reg_regset_get (core->anal->reg, R_REG_TYPE_GPR);
+	if (ds->esil_regstate && regset) {
+		ds->esil_regstate_size = regset->arena->size;
+	}
 
 	// TODO: emulate N instructions BEFORE the current offset to get proper full function emulation
 	ds_pre_emulation (ds);
@@ -5012,14 +4985,33 @@ toro:
 			}
 		}
 
-		ds_begin_line (ds);
 		f = fcnIn (ds, ds->addr, 0);
+		ds_begin_line (ds);
 		ds_print_labels (ds, f);
 		ds_setup_print_pre (ds, false, false);
 		ds_print_lines_left (ds);
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
+		////
+		RAnalFunction *fcn = f;
+		if (fcn) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+			if (!bb) {
+				fcn = r_anal_get_fcn_at (core->anal, ds->at, 0);
+				if (fcn) {
+					bb = r_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+				}
+			}
+			if (bb) {
+				if (bb->folded) {
+					r_cons_printf ("[+] Folded BB [..0x%08"PFMT64x"]\n", ds->at + bb->size);
+					inc = bb->size;
+					continue;
+				}
+			}
+		}
+		////
 		if (ds->asm_hint_pos == 0) {
 			ds_print_core_vmode (ds, ds->asm_hint_pos);
 		}

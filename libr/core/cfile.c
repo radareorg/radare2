@@ -415,12 +415,8 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	return true;
 }
 
-static int try_loadlib(RCore *core, const char *lib, ut64 addr) {
-	RCoreFile *cf = r_core_file_open (core, lib, 0, addr);
-	if (!cf) {
-		return false;
-	}
-	return true;
+static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
+	return r_core_file_open (core, lib, 0, addr) != NULL;
 }
 
 R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
@@ -548,7 +544,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		char msg[2];
 		msg[0] = r->bin->cur->curplugin->strfilter;
 		msg[1] = 0;
-		r_config_set (r->config, "bin.strfilter", msg);
+		r_config_set (r->config, "bin.str.filter", msg);
 	}
 	//r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);

@@ -713,7 +713,7 @@ static int gb_custom_daa (RAnalEsil *esil) {
 	return true;
 }
 
-static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len){
+static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int ilen = gbOpLength (gb_op[data[0]].type);
 	if (ilen > len) {
 		ilen = 0;

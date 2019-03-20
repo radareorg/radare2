@@ -5,7 +5,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include "sdb.h"
 
 typedef struct {

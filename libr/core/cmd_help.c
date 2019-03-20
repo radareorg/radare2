@@ -62,7 +62,7 @@ static const char *help_msg_exclamation[] = {
 	"!!!", "cmd [args|$type]", "adds the autocomplete value",
 	"!!!-", "cmd [args]", "removes the autocomplete value",
 	".!", "rabin2 -rpsei ${FILE}", "run each output line as a r2 cmd",
-	"!", "echo $SIZE", "display file size",
+	"!", "echo $R2_SIZE", "display file size",
 	"!-", "", "clear history in current session",
 	"!-*", "", "clear and save empty history log",
 	"!=!", "", "enable remotecmd mode",
@@ -542,22 +542,24 @@ static int cmd_help(void *data, const char *input) {
 				a = n & 0x0fff;
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
+					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
+					pj_ks (pj, "int64", sdb_fmt ("%"PFMT64d, (st64)n));
 					pj_ks (pj, "hex", sdb_fmt ("0x%08"PFMT64x, n));
 					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
 					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
-					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
-					pj_ks (pj, "int64", sdb_fmt ("%"PFMT64d, (st64)n));
+					
 				} else {
-					r_cons_printf ("hex     0x%"PFMT64x"\n", n);
-					r_cons_printf ("octal   0%"PFMT64o"\n", n);
-					r_cons_printf ("unit    %s\n", unit);
-					r_cons_printf ("segment %04x:%04x\n", s, a);
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
 					} else {
 						r_cons_printf ("int32   %d\n", (st32)n);
 					}
+					r_cons_printf ("hex     0x%"PFMT64x"\n", n);
+					r_cons_printf ("octal   0%"PFMT64o"\n", n);
+					r_cons_printf ("unit    %s\n", unit);
+					r_cons_printf ("segment %04x:%04x\n", s, a);
+					
 					if (asnum) {
 						r_cons_printf ("string  \"%s\"\n", asnum);
 						free (asnum);
@@ -576,17 +578,17 @@ static int cmd_help(void *data, const char *input) {
 					d = -d;
 				}
 				if (*input ==  'j') {
-					pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
 					pj_ks (pj, "fvalue", sdb_fmt ("%.1lf", core->num->fvalue));
 					pj_ks (pj, "float", sdb_fmt ("%ff", f));
 					pj_ks (pj, "double", sdb_fmt ("%lf", d));
+					pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
 					r_num_to_trits (out, n);
 					pj_ks (pj, "trits", sdb_fmt ("0t%s", out));
 				} else {
-					r_cons_printf ("binary  0b%s\n", out);
 					r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
 					r_cons_printf ("float:  %ff\n", f);
 					r_cons_printf ("double: %lf\n", d);
+					r_cons_printf ("binary  0b%s\n", out);
 
 					/* ternary */
 					r_num_to_trits (out, n);

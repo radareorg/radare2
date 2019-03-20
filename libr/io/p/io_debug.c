@@ -156,8 +156,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	cmdline[cmd_i] = '\0';
 
-	LPTSTR appname_ = r_sys_conv_utf8_to_utf16 (argv[0]);
-	LPTSTR cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
+	LPTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
+	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	if (!CreateProcess (appname_, cmdline_, NULL, NULL, FALSE,
 						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 						 NULL, NULL, &si, &pi)) {

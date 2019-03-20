@@ -5,14 +5,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #if EMSCRIPTEN
 #define NETWORK_DISABLED 1
@@ -796,9 +788,6 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 
 R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 	if (!s) {
-		return -1;
-	}
-	if (r_socket_ready (s, 2, 0) <= 0) {
 		return -1;
 	}
 #if HAVE_LIB_SSL

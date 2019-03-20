@@ -19,7 +19,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 				int i;
 				for (i = 0; i < 4; i++) {
 					const ut8 *needle = (const ut8 *) features[i];
-					if (!r_mem_mem (buf, 4096, needle, strlen (needle))) {
+					if (!r_mem_mem (buf, 4096, needle, strlen ((char *)needle))) {
 						break;
 					}
 				}

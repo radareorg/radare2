@@ -1,20 +1,19 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
-#if !HAVE_R_UTIL
-
+#include "spp.h"
 #include "r_api.h"
 
-RStrBuf *r_strbuf_new(const char *str) {
-	RStrBuf *s = R_NEW0 (RStrBuf);
+SStrBuf *r_strbuf_new(const char *str) {
+	SStrBuf *s = R_NEW0 (SStrBuf);
 	if (str) r_strbuf_set (s, str);
 	return s;
 }
 
-void r_strbuf_init(RStrBuf *sb) {
-	memset (sb, 0, sizeof (RStrBuf));
+void r_strbuf_init(SStrBuf *sb) {
+	memset (sb, 0, sizeof (SStrBuf));
 }
 
-bool r_strbuf_set(RStrBuf *sb, const char *s) {
+bool r_strbuf_set(SStrBuf *sb, const char *s) {
 	int l;
 	if (!sb) return false;
 	if (!s) {
@@ -39,7 +38,7 @@ bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	return true;
 }
 
-int r_strbuf_append(RStrBuf *sb, const char *s) {
+int r_strbuf_append(SStrBuf *sb, const char *s) {
 	int l = strlen (s);
 	if (l < 1) {
 		return false;
@@ -72,16 +71,16 @@ int r_strbuf_append(RStrBuf *sb, const char *s) {
 	return true;
 }
 
-char *r_strbuf_get(RStrBuf *sb) {
+char *r_strbuf_get(SStrBuf *sb) {
 	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
 }
 
-void r_strbuf_free(RStrBuf *sb) {
+void r_strbuf_free(SStrBuf *sb) {
 	r_strbuf_fini (sb);
 	free (sb);
 }
 
-void r_strbuf_fini(RStrBuf *sb) {
+void r_strbuf_fini(SStrBuf *sb) {
 	if (sb && sb->ptr)
 		R_FREE (sb->ptr);
 }
@@ -101,9 +100,7 @@ int r_sys_setenv(const char *key, const char *value) {
 	SetEnvironmentVariable (key, (LPSTR)value);
 	return 0; // TODO. get ret
 #else
-#warning r_sys_setenv : unimplemented for this platform
+#warning s_sys_setenv : unimplemented for this platform
 	return 0;
 #endif
 }
-
-#endif // NO_UTIL

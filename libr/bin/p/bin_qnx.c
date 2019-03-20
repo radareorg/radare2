@@ -57,21 +57,22 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut64 offset = QNX_RECORD_SIZE;
 	RList *sections = NULL;
 	RList *fixups = NULL;
+	int ret = false;
 	
 	if (!qo) {
-		return false;
+		goto beach;
 	}
 	if (!(sections = r_list_new ()) || !(fixups = r_list_new ())) {
-		return false;
+		goto beach;
 	}
 	qo->kv = sdb_new0 ();
 	if (!qo->kv) {
 		free (qo);
-		return false;
+		goto beach;
 	}
 	// Read the first record
 	if (r_buf_fread_at (bf->buf, 0, (ut8 *) lrec, "iiii", 1) < QNX_RECORD_SIZE) {
-		return false;
+		goto beach;
 	}
 	// Load the header
 	lmf_header_load (&qo->lmfh, bf->buf, qo->kv);
@@ -79,7 +80,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	
 	for( ;; ) {
 		if (r_buf_fread_at (bf->buf, offset, (ut8 *) lrec, "iiii", 1) < QNX_RECORD_SIZE) {
-			return false;
+			goto beach;
 		}
 		offset += sizeof (lmf_record);
 		
@@ -88,10 +89,10 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		} else if (lrec->rec_type == LMF_RESOURCE_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *) lres, "iccc", 1) < sizeof (lmf_resource)) {
-				return false;
+				goto beach;
 			}
 			if (!ptr) {
-				return false;
+				goto beach;
 			}
 			ptr->name = strdup ("LMF_RESOURCE");
 			ptr->paddr = offset;
@@ -102,10 +103,10 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		} else if (lrec->rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
+				goto beach;
 			}
 			if (!ptr) {
-				return false;
+				goto beach;
 			}
 			ptr->name = strdup ("LMF_LOAD");
 			ptr->paddr = offset;
@@ -117,7 +118,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		} else if (lrec->rec_type == LMF_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
+				goto beach;
 			}
 			ptr->vaddr = ptr->paddr = ldata->offset;
 			ptr->type = 'f'; // "LMF_FIXUP";
@@ -125,7 +126,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		} else if (lrec->rec_type == LMF_8087_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
+				goto beach;
 			}
 			ptr->vaddr = ptr->paddr = ldata->offset;
 			ptr->type = 'F'; // "LMF_8087_FIXUP";
@@ -139,10 +140,11 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	qo->sections = sections;
 	qo->fixups = fixups;
 	*bin_obj = qo;
+beach:
 	free (lrec);
 	free (lres);
 	free (ldata);
-	return true;
+	return ret;
 }
 
 // XXX this is wrong, do not copy the data this way

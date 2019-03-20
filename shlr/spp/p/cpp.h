@@ -1,23 +1,23 @@
 /* CPP */
 
 static TAG_CALLBACK(cpp_default) {
-	do_printf (out, "DEFAULT: (%s)\n", buf);
+	out_printf (out, "DEFAULT: (%s)\n", buf);
 	return 0;
 }
 
 static TAG_CALLBACK(cpp_error) {
-	do_printf (out, "\n");
+	out_printf (out, "\n");
 	if (state->echo[state->ifl] && buf) {
-		do_printf (out, "ERROR: %s (line=%d)\n", buf, state->lineno);
+		out_printf (out, "ERROR: %s (line=%d)\n", buf, state->lineno);
 		return -1;
 	}
 	return 0;
 }
 
 static TAG_CALLBACK(cpp_warning) {
-	do_printf (out,"\n");
+	out_printf (out,"\n");
 	if (state->echo[state->ifl] && buf != NULL) {
-		do_printf (out, "WARNING: line %d: %s\n", state->lineno, buf);
+		out_printf (out, "WARNING: line %d: %s\n", state->lineno, buf);
 	}
 	return 0;
 }
@@ -80,7 +80,7 @@ static PUT_CALLBACK(cpp_fputs) {
 				cpp_macros[i].name);
 		}
 	}
-	do_printf (out, "%s", buf);
+	out_printf (out, "%s", buf);
 	return 0;
 }
 
@@ -148,7 +148,9 @@ static ARG_CALLBACK(cpp_arg_d) {
 	if (eq) {
 		*eq = '\0';
 		r_sys_setenv (arg, eq + 1);
-	} else r_sys_setenv (arg, "");
+	} else {
+		r_sys_setenv (arg, "");
+	}
 	return 0;
 }
 

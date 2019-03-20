@@ -23,7 +23,7 @@ static int getid (char ch) {
 }
 
 #define BUFSIZE_INC 32
-static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;

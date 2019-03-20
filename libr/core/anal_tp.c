@@ -87,7 +87,9 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		return;
 	}
 	const char *expand = var->type;
-	if (!strcmp(var->type, "uint32_t")) {
+	if (!strcmp(var->type, "int32_t")) {
+		expand = "int";
+	} else if (!strcmp(var->type, "uint32_t")) {
 		expand = "unsigned int";
 	} else if (!strcmp(var->type, "uint64_t")) {
 		expand = "unsigned long long";
@@ -132,6 +134,8 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		r_strbuf_set (sb, "uint64_t");
 	} else if (r_str_startswith (tmp1, "unsigned")) {
 		r_strbuf_set (sb, "uint32_t");
+	} else if (r_str_startswith (tmp1, "int")) {
+		r_strbuf_set (sb, "int32_t");
 	}
 	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
 	r_strbuf_free (sb);

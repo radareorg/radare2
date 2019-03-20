@@ -1061,7 +1061,7 @@ static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
 /* This is the basic operation analysis. Just initialize and jump to
  * routines defined in first_nibble_decode table
  */
-static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	ut8 op_MSB, op_LSB;
 	int ret;
 	if (!data || len < 2) {

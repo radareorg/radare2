@@ -56,7 +56,6 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
-# include <unistd.h>
 extern char **environ;
 
 #ifdef __HAIKU__
@@ -328,8 +327,8 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = r_sys_conv_utf8_to_utf16 (key);
-	LPTSTR value_ = r_sys_conv_utf8_to_utf16 (value);
+	LPTSTR key_ = r_sys_conv_utf8_to_win (key);
+	LPTSTR value_ = r_sys_conv_utf8_to_win (value);
 
 	SetEnvironmentVariable (key_, value_);
 	free (key_);
@@ -415,7 +414,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!envbuf) {
 		goto err_r_sys_get_env;
 	}
-	key_ = r_sys_conv_utf8_to_utf16 (key);
+	key_ = r_sys_conv_utf8_to_win (key);
 	dwRet = GetEnvironmentVariable (key_, envbuf, TMP_BUFSIZE);
 	if (dwRet == 0) {
 		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
@@ -432,7 +431,7 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	}
-	val = r_sys_conv_utf16_to_utf8_l (envbuf, (int)dwRet);
+	val = r_sys_conv_win_to_utf8_l (envbuf, (int)dwRet);
 err_r_sys_get_env:
 	free (key_);
 	free (envbuf);
@@ -740,7 +739,7 @@ R_API bool r_sys_mkdir(const char *dir) {
 		return false;
 	}
 #if __WINDOWS__
-	LPTSTR dir_ = r_sys_conv_utf8_to_utf16 (dir);
+	LPTSTR dir_ = r_sys_conv_utf8_to_win (dir);
 
 	ret = CreateDirectory (dir_, NULL) != 0;
 	free (dir_);
@@ -972,7 +971,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 		CloseHandle (handle);
-		return r_sys_conv_utf16_to_utf8 (filename);
+		return r_sys_conv_win_to_utf8 (filename);
 	}
 	return NULL;
 #else
