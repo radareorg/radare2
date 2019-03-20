@@ -194,11 +194,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
-		ut64 paddr, vaddr, addr;
+		ut64 paddr, vaddr;
 		paddr = string->paddr;
-		vaddr = string->vaddr; // r_bin_get_vaddr (bin, paddr, string->vaddr);
-		addr = va? string->vaddr: string->paddr;
-		if (!r_bin_string_filter (bin, string->string, addr)) {
+		vaddr = rva (r->bin, paddr, string->vaddr, va);
+		if (!r_bin_string_filter (bin, string->string, vaddr)) {
 			continue;
 		}
 		if (string->length < minstr) {
@@ -227,7 +226,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr + string->size, string->string);
+			r_meta_add (r->anal, R_META_TYPE_STRING, vaddr, vaddr + string->size, string->string);
 			f_name = strdup (string->string);
 			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
@@ -237,13 +236,13 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				str = r_str_newf ("str.%s", f_name);
 				f_realname = r_str_newf ("\"%s\"", string->string);
 			}
-			RFlagItem *flag = r_flag_set (r->flags, str, addr, string->size);
+			RFlagItem *flag = r_flag_set (r->flags, str, vaddr, string->size);
 			r_flag_item_set_realname (flag, f_realname);
 			free (str);
 			free (f_name);
 			free (f_realname);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
+			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
@@ -292,8 +291,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				: r_str_newf ("str.%s", f_name);
 			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"\n"
 				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-				str, string->size, addr,
-				string->size, addr);
+				str, string->size, vaddr,
+				string->size, vaddr);
 			free (str);
 			free (f_name);
 		} else {
