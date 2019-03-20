@@ -176,6 +176,7 @@ static RList *relocs(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	return r_list_clone (qo->fixups);
 }
+
 static void header(RBinFile *bf) {
 	r_return_if_fail (bf && bf->o && bf->rbin);
 	QnxObj *bin = bf->o->bin_obj;
