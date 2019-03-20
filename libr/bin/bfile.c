@@ -886,7 +886,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 		*old_file_hashes = NULL;
 	}
 	if (!r_list_empty (o->info->file_hashes)) {
-		if (old_file_hashes) {
+		if (old_file_hashes && o->info->file_hashes) {
 			*old_file_hashes = o->info->file_hashes;
 		} else {
 			r_list_free (o->info->file_hashes);
@@ -914,7 +914,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	}
 	r_hash_do_end (ctx, R_HASH_MD5);
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, hash);
-	
+
 	o->info->file_hashes = r_list_newf (r_bin_file_hash_free);
 	RBinFileHash *md5h = R_NEW0 (RBinFileHash);
 	if (md5h) {
@@ -924,7 +924,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	}
 	r_hash_do_end (ctx, R_HASH_SHA1);
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, hash);
-	
+
 	RBinFileHash *sha1h = R_NEW0 (RBinFileHash);
 	if (sha1h) {
 		sha1h->type = strdup ("sha1");

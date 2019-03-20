@@ -311,6 +311,29 @@ static void playMsg(RCore *core, const char *n, int len) {
 	}
 }
 
+static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool *equal) {
+	r_return_val_if_fail (lfile_hashes, false);
+	r_return_val_if_fail (rfile_hashes, false);
+	r_return_val_if_fail (equal, false);
+
+	*equal = true;
+	RBinFileHash *fh_l, *fh_r;
+	RListIter *hiter_l, *hiter_r;
+	bool differs = false;
+	r_list_foreach (lfile_hashes, hiter_l, fh_l) {
+		r_list_foreach (rfile_hashes, hiter_r, fh_r) {
+			if (strcmp (fh_l->type, fh_r->type)) {
+				continue;
+			}
+			if (!!strcmp (fh_l->hex, fh_r->hex)) {
+				*equal = false;
+				return true;
+			}
+		}
+	}
+	return true;
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	bool newline = r_cons_is_interactive ();
@@ -472,70 +495,94 @@ static int cmd_info(void *data, const char *input) {
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					fileName = desc? desc->name: NULL;
 				}
-				if (!info || r_list_empty(info->file_hashes)) {
-					(void)r_bin_file_hash (core->bin, limit, fileName, NULL);
-				} else {
-				// TODO: compare
-					RList *old_file_hashes = NULL;
-					(void)r_bin_file_hash (core->bin, limit, fileName, &old_file_hashes);
-					bool differs = false;
-					RStrBuf *sdiff = r_strbuf_new ("");
-					if (!sdiff) {
-						eprintf ("Cannot allocate string");
+				const bool is_json = input[1] == 'j'; // "itj"
+				RList *old_file_hashes = NULL;
+				if (!r_bin_file_hash (core->bin, limit, fileName, &old_file_hashes)) {
+					eprintf ("r_bin_file_hash: Cannot get file hashes");
+					r_list_free (old_file_hashes);
+					return 0;
+				}
+
+				if (old_file_hashes && r_list_empty (old_file_hashes)) {
+					// clean the old hashes list to reduce comparison operations in case it is allocated but empty
+					r_list_free (old_file_hashes);
+					old_file_hashes = NULL;
+				}
+				if (!info) {
+					info = r_bin_get_info (core->bin);
+				}
+				if (!info) {
+					eprintf ("r_bin_get_info: Cannot get bin info");
+					r_list_free (old_file_hashes);
+					return 0;
+				}
+
+				bool equal = true;
+				// check are hashes changed
+				if (!r_list_empty (old_file_hashes) && !r_list_empty (info->file_hashes)) {
+					if (!is_equal_file_hashes (old_file_hashes, info->file_hashes, &equal)) {
+						eprintf ("is_equal_file_hashes: Cannot compare file hashes");
+						r_list_free (old_file_hashes);
 						return 0;
 					}
-					if (!r_list_empty (old_file_hashes) && !r_list_empty (info->file_hashes)) {
-						RBinFileHash *fh_old, *fh_new;
-						RListIter *hiter_old, *hiter_new;
-						r_list_foreach (info->file_hashes, hiter_new, fh_new) {
-							r_list_foreach (old_file_hashes, hiter_old, fh_old) {
-								if (strcmp (fh_new->type, fh_old->type)) {
-									continue;
-								}
-								differs |= !!strcmp (fh_new->hex, fh_old->hex);
-								if (differs) {
-									if (!r_strbuf_length (sdiff)) {
-										r_strbuf_append (sdiff, "File has been modified.\n");
-									}
-									r_strbuf_appendf (sdiff, "- %s %s\n", fh_old->type, fh_old->hex);
-									r_strbuf_appendf (sdiff, "+ %s %s\n", fh_new->type, fh_new->hex);
-									break;
-								}
-							}
-						}
-					}
-					if (r_strbuf_length (sdiff)) {
-						eprintf ("%s", r_strbuf_get (sdiff));
-					}
-					r_strbuf_free (sdiff);
-					if (!r_list_empty (old_file_hashes)) {
-						r_list_free (old_file_hashes);
-					}
-					if (differs || r_list_empty (info->file_hashes)) {
-						break;
-					}
 				}
-				if (input[1] == 'j') { // "itj"
+
+				RBinFileHash *fh_old, *fh_new;
+				RListIter *hiter_old, *hiter_new;
+
+				if (is_json) { // "itj"
 					PJ *pj = pj_new ();
 					if (!pj) {
 						eprintf ("JSON mode failed\n");
+						r_list_free (old_file_hashes);
 						return 0;
 					}
 					pj_o (pj);
-					RBinFileHash *fh;
-					RListIter *hiter;
-					r_list_foreach (info->file_hashes, hiter, fh) {
-						pj_ks (pj, fh->type ? fh->type : "", fh->hex ? fh->hex : "");
+					r_list_foreach (info->file_hashes, hiter_new, fh_new) {
+						pj_ks (pj, fh_new->type ? fh_new->type : "", fh_new->hex ? fh_new->hex : "");
+					}
+					if (!equal) {
+						// print old hashes prefixed with `o` character like `omd5` and `osha1`
+						r_list_foreach (old_file_hashes, hiter_old, fh_old) {
+							char *key = r_str_newf ("o%s", fh_old->type ? fh_old->type : "");
+							pj_ks (pj, key, fh_old->hex ? fh_old->hex : "");
+							free (key);
+						}
 					}
 					pj_end (pj);
 					r_cons_printf ("%s", pj_string (pj));
 					pj_free (pj);
-				} else {
-					RBinFileHash *fh;
-					RListIter *hiter;
-					r_list_foreach (info->file_hashes, hiter, fh) {
-						r_cons_printf ("%s %s\n", fh->type ? fh->type : "", fh->hex ? fh->hex : "");
+				} else { // "it"
+					if (!equal) {
+						eprintf ("File has been modified.\n");
+						hiter_new = r_list_iterator (info->file_hashes);
+						hiter_old = r_list_iterator (old_file_hashes);
+						while (r_list_iter_next(hiter_new) && r_list_iter_next (hiter_old)) {
+							fh_new = (RBinFileHash*)r_list_iter_get (hiter_new);
+							fh_old = (RBinFileHash*)r_list_iter_get (hiter_old);
+							if (strcmp (fh_new->type, fh_old->type)) {
+								eprintf ("Wrong file hashes structure");
+								break;
+							}
+							if (!strcmp (fh_new->hex, fh_old->hex)) {
+								eprintf ("= %s %s\n", fh_new->type, fh_new->hex);  // output one line because hash remains same `= hashtype hashval`
+							} else {
+								// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
+								eprintf ("- %s %s\n"
+									"+ %s %s\n",
+									fh_old->type, fh_old->hex,
+									fh_new->type, fh_new->hex);
+							}
+						}
+					} else { // hashes are equal
+						r_list_foreach (info->file_hashes, hiter_new, fh_new) {
+							r_cons_printf ("%s %s\n", fh_new->type ? fh_new->type : "", fh_new->hex ? fh_new->hex : "");
+						}
 					}
+				}
+
+				if (!r_list_empty (old_file_hashes)) {
+					r_list_free (old_file_hashes);
 				}
 			}
 			break;
