@@ -37,7 +37,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool check_buffer(RBuffer *buf) {
-	return check_bytes(buf, r_buf_size (buf));
+	return check_bytes (buf, r_buf_size (buf));
 }
 
 // Frees the bin_obj of the binary file
