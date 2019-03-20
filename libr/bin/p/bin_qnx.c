@@ -50,10 +50,7 @@ static int destroy(RBinFile *bf) {
 	return true;
 }
 
-/*
- * Method that loads the binary file into bin_obj
- */  
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = R_NEW0 (QnxObj);
 	lmf_record *lrec = R_NEW0 (lmf_record);
 	lmf_resource *lres = R_NEW0 (lmf_resource);
@@ -61,7 +58,6 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut64 offset = QNX_RECORD_SIZE;
 	RList *sections = NULL;
 	RList *fixups = NULL;
-	int ret = false;
 	
 	if (!qo) {
 		goto beach;
@@ -143,28 +139,12 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	sdb_ns_set (sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
-	*bin_obj = qo;
+	return qo;
 beach:
 	free (lrec);
 	free (lres);
 	free (ldata);
-	return ret;
-}
-
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && buf, NULL);
-	const ut64 sz = r_buf_size (buf);
-	ut8 *bytes = malloc (sz);
-	if (!bytes) {
-		return NULL;
-	}
-	r_buf_read_at (buf, 0, bytes, sz);
-	void *ptr = NULL;
-	const ut64 la = bf->loadaddr;
-	(void)load_bytes (bf, &ptr, bytes, sz, la, bf->sdb);
-	free (bytes);
-	return ptr;
+	return NULL;
 }
 
 /*
