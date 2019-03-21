@@ -36,6 +36,10 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, QNX_MAGIC, 6));
 }
 
+static bool check_buffer(RBuffer *buf) {
+	return check_bytes (buf, r_buf_size (buf));
+}
+
 // Frees the bin_obj of the binary file
 static int destroy(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
@@ -46,10 +50,7 @@ static int destroy(RBinFile *bf) {
 	return true;
 }
 
-/*
- * Method that loads the binary file into bin_obj
- */  
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = R_NEW0 (QnxObj);
 	lmf_record *lrec = R_NEW0 (lmf_record);
 	lmf_resource *lres = R_NEW0 (lmf_resource);
@@ -57,7 +58,6 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut64 offset = QNX_RECORD_SIZE;
 	RList *sections = NULL;
 	RList *fixups = NULL;
-	int ret = false;
 	
 	if (!qo) {
 		goto beach;
@@ -139,23 +139,12 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	sdb_ns_set (sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
-	*bin_obj = qo;
+	return qo;
 beach:
 	free (lrec);
 	free (lres);
 	free (ldata);
-	return ret;
-}
-
-// XXX this is wrong, do not copy the data this way
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	ut64 size = bf? r_buf_size (bf->buf): 0;
-	ut8 *buf = malloc (size);
-	r_buf_read_at (bf->buf, 0, buf, size);
-	bool rc = load_bytes (bf, &bf->o->bin_obj, buf, size, bf->o->loadaddr, bf->sdb); 
-	free (buf);
-	return rc;
+	return NULL;
 }
 
 /*
@@ -187,6 +176,7 @@ static RList *relocs(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	return r_list_clone (qo->fixups);
 }
+
 static void header(RBinFile *bf) {
 	r_return_if_fail (bf && bf->o && bf->rbin);
 	QnxObj *bin = bf->o->bin_obj;
@@ -289,13 +279,13 @@ RBinPlugin r_bin_plugin_qnx = {
 	.name = "qnx",
 	.desc = "QNX executable file support",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.relocs = &relocs,
 	.baddr = &baddr,
 	.author = "deepakchethan",
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
+	.check_bytes  = &check_bytes,
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,

@@ -145,6 +145,7 @@ bin_plugins = [
   'nro',
   'nso',
   'omf',
+  'qnx',
   'p9',
   'pe',
   'pe64',
