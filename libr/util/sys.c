@@ -640,10 +640,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	return false;
 }
 #elif __WINDOWS__
-// TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
-	return result;
+	return r_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
