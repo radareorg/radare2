@@ -850,7 +850,7 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBinFileHash>*/ **old_file_hashes) {
 	r_return_val_if_fail (bin, false);
 
-	char hash[128], *p;
+	char hash[128];
 	RHash *ctx;
 	ut64 buf_len = 0, r = 0;
 	RBinFile *bf = bin->cur;
@@ -915,7 +915,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	r_hash_do_end (ctx, R_HASH_MD5);
 	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, hash);
 
-	o->info->file_hashes = r_list_newf (r_bin_file_hash_free);
+	o->info->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
 	RBinFileHash *md5h = R_NEW0 (RBinFileHash);
 	if (md5h) {
 		md5h->type = strdup ("md5");
