@@ -766,6 +766,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);
 		pair_str ("subsys", info->subsystem, mode, false);
 		pair_bool ("va", info->has_va, mode, true);
+		pair_str ("compiler", info->compiler, mode, false);
 		if (IS_MODE_JSON (mode)) {
 			r_cons_printf (",\"checksums\":{");
 			for (i = 0; info->sum[i].type; i++) {

@@ -222,6 +222,7 @@ typedef struct r_bin_info_t {
 	RBinHash sum[3];
 	ut64 baddr;
 	char *intrp;
+	char *compiler;
 } RBinInfo;
 
 typedef struct r_bin_object_t {
