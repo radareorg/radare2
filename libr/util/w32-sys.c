@@ -184,6 +184,9 @@ char *ReadFromPipe(HANDLE fh, int *outlen) {
 	int strl = 0;
 	int strsz = BUFSIZE+1;
 
+	if (outlen) {
+		*outlen = 0;
+	}
 	str = malloc (strsz);
 	if (!str) {
 		return NULL;
