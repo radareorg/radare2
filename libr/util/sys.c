@@ -642,14 +642,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #elif __WINDOWS__
 // TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, sterr);
-	if (len) {
-		*len = 0;
-		if (output && result) {
-			*len = strlen (*output);
-		}
-	}
-
+	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
 	return result;
 }
 #else
