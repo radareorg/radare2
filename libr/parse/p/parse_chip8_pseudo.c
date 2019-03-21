@@ -48,10 +48,10 @@ static int replace(int argc, char *argv[], char *newstr, size_t len) {
 		{ "shl",  (char*[]){ argv[1], " <<= 1", NULL } },
 		{ "shr",  (char*[]){ argv[1], " >>= 1", NULL } },
 		{ "sknp", (char*[]){ "skip_next_instr if !key_pressed(", argv[1], ")", NULL } },
-		{ "skp",  (char*[]){ "skip_next_instr if key_pressed(", argv[1], "))", NULL } },
+		{ "skp",  (char*[]){ "skip_next_instr if key_pressed(", argv[1], ")", NULL } },
 		{ "sne",  (char*[]){ "skip_next_instr if ", argv[1], " != ", argv[2], NULL } },
 		{ "sub",  (char*[]){ argv[1], " -= ", argv[2], NULL } },
-		{ "subn", (char*[]){ argv[1], " = ", argv[1], " - ", argv[2], NULL } },
+		{ "subn", (char*[]){ argv[1], " = ", argv[2], " - ", argv[1], NULL } },
 		{ "xor",  (char*[]){ argv[1], " ^= ", argv[2], NULL } },
 		{ NULL }
 	};
