@@ -319,7 +319,6 @@ static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool 
 	*equal = true;
 	RBinFileHash *fh_l, *fh_r;
 	RListIter *hiter_l, *hiter_r;
-	bool differs = false;
 	r_list_foreach (lfile_hashes, hiter_l, fh_l) {
 		r_list_foreach (rfile_hashes, hiter_r, fh_r) {
 			if (strcmp (fh_l->type, fh_r->type)) {
