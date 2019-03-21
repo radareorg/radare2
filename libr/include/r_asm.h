@@ -165,7 +165,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
-R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
+R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file);

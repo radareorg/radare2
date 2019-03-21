@@ -4371,7 +4371,8 @@ static int cmd_print(void *data, const char *input) {
 			case ' ': // "pad"
 			{
 				r_asm_set_pc (core->assembler, core->offset);
-				RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, arg);
+				bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
+				RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
 				if (c) {
 					r_cons_print (c->buf_asm);
 					r_asm_code_free (c);
