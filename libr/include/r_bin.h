@@ -184,6 +184,11 @@ typedef struct r_bin_hash_t {
 	const char *cmd;
 } RBinHash;
 
+typedef struct r_bin_file_hash_t {
+	const char *type;
+	const char *hex;
+} RBinFileHash;
+
 typedef struct r_bin_info_t {
 	char *file;
 	char *type;
@@ -198,7 +203,7 @@ typedef struct r_bin_info_t {
 	char *guid;
 	char *debug_file_name;
 	const char *lang;
-	char *hashes;
+	RList/*<RBinFileHash>*/ *file_hashes;
 	int bits;
 	int has_va;
 	int has_pi; // pic/pie
@@ -346,6 +351,7 @@ typedef struct r_bin_xtr_extract_t {
 
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata);
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data);
+R_API void r_bin_file_hash_free(RBinFileHash *fhash);
 R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(void *_imp);
 R_API void r_bin_symbol_free(void *_sym);
@@ -703,7 +709,7 @@ R_API bool r_bin_file_set_cur_by_name(RBin *bin, const char *name);
 R_API bool r_bin_file_close(RBin *bin, int bd);
 R_API int r_bin_file_delete_all(RBin *bin);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
-R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file);
+R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBinFileHash>*/ **old_file_hashes);
 
 // binobject functions
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
