@@ -3803,13 +3803,13 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 				op, core->block, 32);
 		if (midflags || midbb) {
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags) {
+			if (midflags >= R_MIDFLAGS_REALIGN) {
 				skip_bytes_flag = r_core_flag_in_middle (core, core->offset, *cols, &midflags);
 			}
 			if (midbb) {
 				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->offset, *cols);
 			}
-			if (skip_bytes_flag && midflags >= R_MIDFLAGS_REALIGN) {
+			if (skip_bytes_flag) {
 				*cols = skip_bytes_flag;
 			}
 			if (skip_bytes_bb && skip_bytes_bb < *cols) {
