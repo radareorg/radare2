@@ -2271,7 +2271,7 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "?v", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "ad", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "bf", R_CORE_AUTOCMPLT_FLAG, true);
-	r_core_autocomplete_add (core->autocomplete, "ag", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "c1", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "db", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "dbw", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "f-", R_CORE_AUTOCMPLT_FLAG, true);
@@ -2346,6 +2346,10 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "#!python", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "aeli", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "arp", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "cf", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "dg", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "dmd", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "drp", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "o", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "idp", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "idpi", R_CORE_AUTOCMPLT_FILE, true);
