@@ -704,6 +704,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			pair_str ("cmp.csum", info->actual_checksum, mode, false);
 		}
 		pair_str ("compiled", compiled, mode, false);
+		pair_str ("compiler", info->compiler, mode, false);
 		pair_bool ("crypto", info->has_crypto, mode, false);
 		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
@@ -765,7 +766,6 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		}
 		pair_bool ("stripped", R_BIN_DBG_STRIPPED & info->dbg_info, mode, false);
 		pair_str ("subsys", info->subsystem, mode, false);
-		pair_str ("compiler", info->compiler, mode, false);
 		pair_bool ("va", info->has_va, mode, true);
 		if (IS_MODE_JSON (mode)) {
 			r_cons_printf (",\"checksums\":{");
