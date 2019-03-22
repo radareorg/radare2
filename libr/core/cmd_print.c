@@ -740,7 +740,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 		case 1:
 			(void) r_cons_canvas_gotoxy (c, 28, 0);
 			// cmd = r_str_newf ("pxw 128@r:SP;pd@r:PC");
-			cmd = r_str_newf ("pxq 128@r:SP;pd@ 0x%"PFMT64x, osek);
+			cmd = r_str_newf ("%s 128@r:SP;pd@ 0x%"PFMT64x, core->stkcmd, osek);
 			break;
 		}
 		char *dis = r_core_cmd_str (core, cmd);
