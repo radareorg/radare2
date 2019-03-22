@@ -277,6 +277,7 @@ typedef struct r_core_t {
 	int http_up;
 	int gdbserver_up;
 	int printidx;
+	char *stkcmd;
 	int vseek;
 	bool in_search;
 	RList *watchers;

@@ -2591,6 +2591,7 @@ R_API bool r_core_init(RCore *core) {
 	core->oobi_len = 0;
 	core->printidx = 0;
 	core->lastcmd = NULL;
+	core->stkcmd = NULL;
 	core->panels_tmpcfg = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
@@ -2775,6 +2776,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	R_FREE (c->panels_tmpcfg);
 	R_FREE (c->cmdqueue);
 	R_FREE (c->lastcmd);
+	R_FREE (c->stkcmd);
 	r_list_free (c->visual.tabs);
 	R_FREE (c->block);
 	r_core_autocomplete_free (c->autocomplete);
