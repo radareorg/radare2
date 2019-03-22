@@ -74,8 +74,8 @@ typedef struct r_asm_op_t {
 typedef struct r_asm_code_t {
 #if 1
 	int len;
-	ut8 *buf;
-	char *buf_asm;
+	ut8 *bytes;
+	char *assembly;
 #else
 	RAsmOp op; // we have those fields already inside RAsmOp
 #endif

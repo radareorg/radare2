@@ -490,14 +490,14 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 			break;
 		}
 		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
-		if (strstr (c->buf_asm, "invalid") || strstr (c->buf_asm, ".byte")) {
+		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
 			r_asm_code_free(c);
 			continue;
 		}
 		numinstr = 0;
-		asmlen = strlen (c->buf_asm);
+		asmlen = strlen (c->assembly);
 		for(ii = 0; ii < asmlen; ++ii) {
-			if (c->buf_asm[ii] == '\n') {
+			if (c->assembly[ii] == '\n') {
 				++numinstr;
 			}
 		}

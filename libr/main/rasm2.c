@@ -373,10 +373,10 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 			goto beach;
 		}
 		if (as->oneliner) {
-			r_str_replace_char (acode->buf_asm, '\n', ';');
-			printf ("%s\"\n", acode->buf_asm);
+			r_str_replace_char (acode->assembly, '\n', ';');
+			printf ("%s\"\n", acode->assembly);
 		} else {
-			printf ("%s", acode->buf_asm);
+			printf ("%s", acode->assembly);
 		}
 		ret = acode->len;
 		r_asm_code_free (acode);
@@ -423,7 +423,7 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 	if (acode->len) {
 		ret = acode->len;
 		if (bin) {
-			if ((ret = write (1, acode->buf, acode->len)) != acode->len) {
+			if ((ret = write (1, acode->bytes, acode->len)) != acode->len) {
 				eprintf ("Failed to write buffer\n");
 				r_asm_code_free (acode);
 				return 0;
@@ -434,7 +434,7 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 				int bytes = (b / 8) + 1;
 				for (i = 0; i < bytes; i++) {
 					for (j = 0; j < 8 && b--; j++) {
-						printf ("%c", (acode->buf[i] & (1 << j))? '1': '0');
+						printf ("%c", (acode->bytes[i] & (1 << j))? '1': '0');
 					}
 				}
 				printf ("\n");
@@ -442,7 +442,7 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 				if (hexwords) {
 					size_t i = 0;
 					for (i = 0; i < acode->len; i += sizeof (ut32)) {
-						ut32 dword = r_read_ble32 (acode->buf + i, R_SYS_ENDIAN);
+						ut32 dword = r_read_ble32 (acode->bytes + i, R_SYS_ENDIAN);
 						printf ("0x%08x ", dword);
 						if ((i/4) == 7) {
 							printf ("\n");

@@ -1441,7 +1441,7 @@ static int cmd_write(void *data, const char *input) {
 				if (input[1] == '*') {
 					cmd_write_hexpair (core, hex);
 				} else {
-					if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
+					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 						cmd_write_fail ();
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
@@ -1512,7 +1512,7 @@ static int cmd_write(void *data, const char *input) {
 						if (r_config_get_i (core->config, "scr.prompt")) {
 							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
 						}
-						if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
+						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 							cmd_write_fail ();
 						} else {
 							WSEEK (core, acode->len);

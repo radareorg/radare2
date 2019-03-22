@@ -10,8 +10,8 @@ R_API RAsmCode *r_asm_code_new(void) {
 R_API void* r_asm_code_free(RAsmCode *acode) {
 	if (acode) {
 		r_list_free (acode->equs);
-		free (acode->buf);
-		free (acode->buf_asm);
+		free (acode->bytes);
+		free (acode->assembly);
 		free (acode);
 	}
 	return NULL;
@@ -70,7 +70,7 @@ R_API char* r_asm_code_get_hex(RAsmCode *acode) {
 	}
 	char* str = calloc (acode->len, 2);
 	if (str) {
-		r_hex_bin2str (acode->buf, acode->len, str);
+		r_hex_bin2str (acode->bytes, acode->len, str);
 	}
 	return str;
 }
