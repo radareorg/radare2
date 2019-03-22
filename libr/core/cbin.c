@@ -698,7 +698,6 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);
 		}
-		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_str ("class", info->bclass, mode, false);
 		if (info->actual_checksum) {
 			/* computed checksum */
@@ -756,6 +755,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			//this should be moved if added to mach0 (or others)
 			pair_bool ("signed", info->signature, mode, false);
 		}
+		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
 		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
 			v = sdb_num_get (binfile->sdb, "mdmp.streams", 0);
