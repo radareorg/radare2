@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2019 - nibble, pancake, alvaro_fe */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3867,7 +3867,10 @@ char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
 	}
 
 	ut64 off = section->offset;
-	ut64 sz = section->size;
+	int sz = section->size;
+	if (sz < 1) {
+		return NULL;
+	}
 	char *buf = malloc (sz + 1);
 	if (!buf) {
 		return NULL;
