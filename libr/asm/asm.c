@@ -37,7 +37,6 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 		input++;
 	}
 	len = r_str_unescape (input) + zero;
-	r_hex_bin2str ((ut8*)input, len, r_strbuf_get (&op->buf_hex));
 	r_strbuf_set (&op->buf, input); // uh?
 	return len;
 }
@@ -89,7 +88,6 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	} else {
 		return 0;
 	}
-	r_hex_bin2str (buf, n, r_strbuf_get (&op->buf_hex));
 	return n;
 }
 
@@ -413,9 +411,6 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (mod) {
 			op->size = a->pcalign - mod;
 			r_strbuf_set (&op->buf_asm, "unaligned");
-			r_strbuf_set (&op->buf_hex, "");
-			// assume op->size after pcalign-mod will be small enough to not need checks here
-			r_hex_bin2str (buf, op->size, r_strbuf_get (&op->buf_hex));
 			return -1;
 		}
 	}
@@ -588,11 +583,8 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (op && ret > 0) {
 		op->size = ret; // XXX shouldnt be necessary
 		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isnt?
-		ut8 *ophex = (ut8*)r_strbuf_get (&op->buf_hex);
-		if (!*ophex) {
-			ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
-			r_asm_op_set_buf (op, opbuf, ret);
-		}
+		ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+		r_asm_op_set_buf (op, opbuf, ret);
 	}
 	free (b);
 	return ret;
@@ -617,10 +609,6 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		return r_asm_code_free (acode);
 	}
 	memcpy (acode->buf, buf, len);
-	if (!(acode->buf_hex = calloc (2, len + 1))) {
-		return r_asm_code_free (acode);
-	}
-	r_hex_bin2str (buf, len, acode->buf_hex);
 	if (!(buf_asm = r_strbuf_new (NULL))) {
 		return r_asm_code_free (acode);
 	}
@@ -704,10 +692,6 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	}
 	r_str_ncpy (acode->buf_asm, buf, sizeof (acode->buf_asm) - 1);
-	if (!(acode->buf_hex = malloc (64))) {
-		return r_asm_code_free (acode);
-	}
-	*acode->buf_hex = 0;
 	if (!(acode->buf = calloc (1, 64))) {
 		return r_asm_code_free (acode);
 	}
@@ -786,7 +770,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 		}
 		inComment = false;
 		r_asm_set_pc (a, pc);
-		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0'; i <= ctr; i++, idx += ret) {
+		for (idx = ret = i = j = 0, off = a->pc; i <= ctr; i++, idx += ret) {
 			buf_token = tokens[i];
 			if (!buf_token) {
 				continue;
@@ -997,37 +981,10 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 					return r_asm_code_free (acode);
 				}
 				acode->buf = (ut8*)newbuf;
-
-				const int buf_inc_size = op.buf_inc ? r_buf_size (op.buf_inc): 0;
-				int newlen = strlen (acode->buf_hex) + r_strbuf_length (&op.buf_hex)
-					+ buf_inc_size + 128;
-				newbuf = realloc (acode->buf_hex, newlen);
-				if (!newbuf) {
-					free (lbuf);
-					return r_asm_code_free (acode);
-				}
-				acode->buf_hex = newbuf;
-				acode->buf = malloc (4095);
-				if (acode->buf) {
-					memcpy (acode->buf + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf)); // ret);
-				}
-				// XXX slow. use strbuf pls
-				strcat (acode->buf_hex, r_strbuf_get (&op.buf_hex));
-				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
-					if (*acode->buf_hex) {
-						strcat (acode->buf_hex, "\n");
-					}
-					char *s = r_buf_free_to_string (op.buf_inc);
-					if (s) {
-						strcat (acode->buf_hex, s);
-						free (s);
-					}
-				}
 			}
 		}
 	}
 	free (lbuf);
-	r_hex_str2bin (acode->buf_hex, acode->buf);
 	free (tokens);
 	return acode;
 }

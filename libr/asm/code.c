@@ -11,7 +11,6 @@ R_API void* r_asm_code_free(RAsmCode *acode) {
 	if (acode) {
 		r_list_free (acode->equs);
 		free (acode->buf);
-		free (acode->buf_hex);
 		free (acode->buf_asm);
 		free (acode);
 	}
@@ -61,6 +60,17 @@ R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
 	RListIter *iter;
 	r_list_foreach (code->equs, iter, equ) {
 		str = r_str_replace (str, equ->key, equ->value, true);
+	}
+	return str;
+}
+
+R_API char* r_asm_code_get_hex(RAsmCode *acode) {
+	if (!acode) {
+		return NULL;
+	}
+	char* str = calloc (acode->len, 2);
+	if (str) {
+		r_hex_bin2str (acode->buf, acode->len, str);
 	}
 	return str;
 }

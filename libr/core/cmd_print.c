@@ -4337,8 +4337,8 @@ static int cmd_print(void *data, const char *input) {
 				RAnalOp aop = {0};
 				r_asm_set_pc (core->assembler, core->offset);
 				RAsmCode *acode = r_asm_massemble (core->assembler, input + 2);
-				if (acode && *acode->buf_hex) {
-					bufsz = strlen (acode->buf_hex) >> 1;
+				if (acode) {
+					bufsz = acode->len;
 					while (printed < bufsz) {
 						aop.size = 0;
 						if (r_anal_op (core->anal, &aop, core->offset,
@@ -4424,8 +4424,8 @@ static int cmd_print(void *data, const char *input) {
 			int bytes;
 			r_asm_set_pc (core->assembler, core->offset);
 			RAsmCode *acode = r_asm_massemble (core->assembler, input + 1);
-			if (acode && *acode->buf_hex) {
-				bytes = strlen (acode->buf_hex) >> 1;
+			if (acode) {
+				bytes = acode->len;
 				for (i = 0; i < bytes; i++) {
 					ut8 b = acode->buf[i]; // core->print->big_endian? (bytes - 1 - i): i ];
 					r_cons_printf ("%02x", b);

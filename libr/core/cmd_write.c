@@ -1437,19 +1437,21 @@ static int cmd_write(void *data, const char *input) {
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);
 			if (acode) {
+				char* hex = r_asm_code_get_hex (acode);
 				if (input[1] == '*') {
-					cmd_write_hexpair (core, acode->buf_hex);
+					cmd_write_hexpair (core, hex);
 				} else {
 					if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
 						cmd_write_fail ();
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
+							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
 						}
 						WSEEK (core, acode->len);
 					}
 					r_core_block_read (core);
 				}
+				free (hex);
 				r_asm_code_free (acode);
 			}
 		}
@@ -1479,9 +1481,11 @@ static int cmd_write(void *data, const char *input) {
 						}
 						if (*b) {
 							RAsmCode *ac = r_asm_massemble (core->assembler, b);
-							if (ac && *ac->buf_hex) {
-								r_cons_printf ("wx %s @ 0x%08"PFMT64x"\n",  ac->buf_hex, addr);
+							char* hex = r_asm_code_get_hex (ac);
+							if (hex) {
+								r_cons_printf ("wx %s @ 0x%08"PFMT64x"\n",  hex, addr);
 							}
+							free (hex);
 							r_asm_code_free (ac);
 						}
 						b = a;
@@ -1501,11 +1505,12 @@ static int cmd_write(void *data, const char *input) {
 				r_asm_set_pc (core->assembler, core->offset);
 				RAsmCode *acode = r_asm_assemble_file (core->assembler, file);
 				if (acode) {
-					if (input[2] == '*') {
-						cmd_write_hexpair (core, acode->buf_hex);
+					char* hex = r_asm_code_get_hex (acode);
+					if (input[2] == '*' && hex) {
+						cmd_write_hexpair (core, hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
 						}
 						if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
 							cmd_write_fail ();
@@ -1514,6 +1519,7 @@ static int cmd_write(void *data, const char *input) {
 						}
 						r_core_block_read (core);
 					}
+					free (hex);
 					r_asm_code_free (acode);
 				} else {
 					eprintf ("Cannot assemble file\n");

@@ -57,7 +57,7 @@ R_API char* r_core_asm_search(RCore *core, const char *input) {
 	if (!(acode = r_asm_massemble (core->assembler, input))) {
 		return NULL;
 	}
-	ret = strdup (acode->buf_hex);
+	ret = r_asm_code_get_hex (acode);
 	r_asm_code_free (acode);
 	return ret;
 }

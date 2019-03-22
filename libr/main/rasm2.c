@@ -360,7 +360,6 @@ static int rasm_disasm(RAsmState *as, char *buf, ut64 offset, int len, int bits,
 			if (dr == -1 || op.size < 1) {
 				op.size = 1;
 				r_asm_op_set_asm (&op, "invalid");
-				r_strbuf_set (&op.buf_hex, sdb_fmt ("%02x", data[ret]));
 			}
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
 				as->a->pc, op.size, r_asm_op_get_hex (&op),
@@ -391,6 +390,9 @@ beach:
 
 static void print_buf(RAsmState *as, char *str) {
 	int i;
+	if (!str) {
+		return;
+	}
 	if (as->coutput) {
 		printf ("\"");
 		for (i = 1; *str; str += 2, i += 2) {
@@ -448,7 +450,9 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 					}
 					printf ("\n");
 				} else {
-					print_buf (as, acode->buf_hex);
+					char* str = r_asm_code_get_hex (acode);
+					print_buf (as, str);
+					free (str);
 				}
 			}
 		}

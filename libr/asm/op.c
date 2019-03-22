@@ -22,13 +22,14 @@ R_API void r_asm_op_init(RAsmOp *op) {
 R_API void r_asm_op_fini(RAsmOp *op) {
 	r_strbuf_fini (&op->buf);
 	r_strbuf_fini (&op->buf_asm);
-	r_strbuf_fini (&op->buf_hex);
 	r_buf_fini (op->buf_inc);
 }
 
 // accessors
 R_API char *r_asm_op_get_hex(RAsmOp *op) {
-	return r_strbuf_get (&op->buf_hex);
+	char* str = calloc (op->size, 2);
+	r_hex_bin2str (r_strbuf_get (&op->buf), op->size, str);
+	return str;
 }
 
 R_API char *r_asm_op_get_asm(RAsmOp *op) {
@@ -52,7 +53,6 @@ R_API void r_asm_op_set_asm(RAsmOp *op, const char *str) {
 }
 
 R_API int r_asm_op_set_hex(RAsmOp *op, const char *str) {
-	r_strbuf_set (&op->buf_hex, str);
 	ut8 *bin = (ut8*)strdup (str);
 	if (bin) {
 		int len = r_hex_str2bin (str, bin);
@@ -75,7 +75,6 @@ R_API int r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
 		return olen;
 	}
 	return 0;
-	// TODO: update the op->buf too?
 }
 
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *buf, int len) {
