@@ -1108,6 +1108,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		}
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	target = addr;
 	base = target > OPDELTA ? target - OPDELTA : 0;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
@@ -1120,6 +1121,13 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 				len = 1;
 			}
 			r_anal_op_fini (&op); // XXX
+			if (midflags >= R_MIDFLAGS_REALIGN) {
+				int skip_bytes = r_core_flag_in_middle (core, base + i, len, &midflags);
+				if (skip_bytes && base + i + skip_bytes < target) {
+					i += skip_bytes - 1;
+					continue;
+				}
+			}
 		} else {
 			len = 1;
 		}
