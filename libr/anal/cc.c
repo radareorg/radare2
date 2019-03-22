@@ -34,7 +34,7 @@ R_API void r_anal_cc_set(RAnal *anal, const char *expr) {
 			sdb_set (DB, sdb_fmt ("cc.%s.ret"), ret, 0);
 			RListIter *iter;
 			const char *arg;
-			int n = 1;
+			int n = 0;
 			r_list_foreach (ccArgs, iter, arg) {
 				if (!strcmp (arg, "stack")) {
 					sdb_set (DB, sdb_fmt ("cc.%s.argn", name), arg, 0);
@@ -65,9 +65,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 	RStrBuf *sb = r_strbuf_new (NULL);
 	r_strbuf_appendf (sb, "%s %s (", ret, name);
-	// XXX wtf are we starting with arg1 and not arg0
 	bool isFirst = true;
-	for (i = 1; i < 16; i++) {
+	for (i = 0; i < 16; i++) {
 		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
 		const char *arg = sdb_const_get (DB, k, 0);
 		if (!arg) {
@@ -93,7 +92,7 @@ R_API bool r_anal_cc_exist (RAnal *anal, const char *convention) {
 
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 	r_return_val_if_fail (anal && convention, NULL);
-	if (n < 1) {
+	if (n < 0) {
 		return NULL;
 	}
 	const char *query = sdb_fmt ("cc.%s.arg%d", convention, n);
