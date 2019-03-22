@@ -708,7 +708,8 @@ fin:
 static int set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC    pc\n"
-		"=SP    sp\n"
+		"=SP    a7\n"
+		"=BP    a6\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"
@@ -769,7 +770,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 	.esil = false,
 	.arch = "m68k",
 	.set_reg_profile = &set_reg_profile,
-	.bits = 16 | 32,
+	.bits = 32,
 	.op = &analop,
 };
 #else
