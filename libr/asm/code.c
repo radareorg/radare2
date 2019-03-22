@@ -65,10 +65,8 @@ R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
 }
 
 R_API char* r_asm_code_get_hex(RAsmCode *acode) {
-	if (!acode) {
-		return NULL;
-	}
-	char* str = calloc (acode->len, 2);
+	r_return_val_if_fail (acode, NULL);
+	char* str = calloc (acode->len + 1, 2);
 	if (str) {
 		r_hex_bin2str (acode->bytes, acode->len, str);
 	}

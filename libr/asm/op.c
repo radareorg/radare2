@@ -27,12 +27,17 @@ R_API void r_asm_op_fini(RAsmOp *op) {
 
 // accessors
 R_API char *r_asm_op_get_hex(RAsmOp *op) {
+	r_return_val_if_fail (op, NULL);
+
 	char* str = calloc (op->size, 2);
-	r_hex_bin2str (r_strbuf_get (&op->buf), op->size, str);
+	r_return_val_if_fail (str, NULL);
+
+	r_hex_bin2str ((const ut8*) r_strbuf_get (&op->buf), op->size, str);
 	return str;
 }
 
 R_API char *r_asm_op_get_asm(RAsmOp *op) {
+	r_return_val_if_fail (op, NULL);
 	return r_strbuf_get (&op->buf_asm);
 }
 
