@@ -124,22 +124,22 @@ static void set_meta_min_if_needed(RAnalFunction *x) {
 	if (x->meta.min == UT64_MAX) {
 		if (r_list_length (x->bbs) == 0) {
 			x->meta.min = x->addr;
-		} else {
-			ut64 min = UT64_MAX;
-			ut64 max = UT64_MIN;
-			RListIter *bbs_iter;
-			RAnalBlock *bbi;
-			r_list_foreach (x->bbs, bbs_iter, bbi) {
-				if (min > bbi->addr) {
-					min = bbi->addr;
-				}
-				if (max < bbi->addr + bbi->size) {
-					max = bbi->addr + bbi->size;
-				}
-			}
-			x->meta.min = min;
-			x->_size = max - min; // HACK TODO Fix af size calculation
+			return;
 		}
+		ut64 min = UT64_MAX;
+		ut64 max = UT64_MIN;
+		RListIter *bbs_iter;
+		RAnalBlock *bbi;
+		r_list_foreach (x->bbs, bbs_iter, bbi) {
+			if (min > bbi->addr) {
+				min = bbi->addr;
+			}
+			if (max < bbi->addr + bbi->size) {
+				max = bbi->addr + bbi->size;
+			}
+		}
+		x->meta.min = min;
+		x->_size = max - min; // HACK TODO Fix af size calculation
 	}
 }
 
