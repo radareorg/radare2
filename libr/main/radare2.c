@@ -1328,13 +1328,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
-			char* f = r_str_newf("%s.r2", pfile);
-			int f_len = strlen (f);
-			const char* prefix = "dbg://";
-			int prefix_len = strlen (prefix);
+			char* f = r_str_newf ("%s.r2", pfile);
+			const int f_len = strlen (f);
+			const char *prefix = "dbg://";
+			const int prefix_len = strlen (prefix);
 			if (r_str_startswith (f, prefix)) {
-				memmove (f, f + prefix_len, f_len - prefix_len);
-				f[f_len - prefix_len] = '\0';
+				memmove (f, f + prefix_len, f_len - prefix_len + 1);
 			}
 			if (r_file_exists (f)) {
 				// TODO: should 'q' unset the interactive bit?
@@ -1343,6 +1342,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 					r_core_cmd_file (&r, f);
 				}
 			}
+			free(f);
 		}
 	} else {
 		r_core_block_read (&r);
