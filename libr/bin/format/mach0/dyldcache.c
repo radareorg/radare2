@@ -19,7 +19,7 @@ static int r_bin_dyldcache_apply_patch(RBuffer* buf, ut32 data, ut64 offset) {
 	return r_buf_write_at (buf, offset, (ut8 *)&data, sizeof (data));
 }
 
-#define NZ_OFFSET(x) if((x) > 0) r_bin_dyldcache_apply_patch (dbuf, (x) - linkedit_offset, (ut64)((size_t)&(x) - (size_t)data))
+#define NZ_OFFSET(x, y, z) if((x) > 0) r_bin_dyldcache_apply_patch (dbuf, (x) - linkedit_offset, addend + r_offsetof (y, z))
 
 // make it public in util/buf.c ?
 static ut64 r_buf_read64le(RBuffer *buf, ut64 off) {
@@ -45,8 +45,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	ut32 addend = 0;
 	struct r_bin_dyldcache_lib_t *ret = NULL;
 	struct dyld_cache_image_info* image_infos = NULL;
-	struct mach_header *mh = NULL;
-	ut8 *data;
+	struct mach_header mh;
 	ut64 cmdptr;
 	int cmd, libsz = 0;
 	RBuffer* dbuf = NULL;
@@ -96,34 +95,30 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	libname = r_buf_read_string (bin->b, pfo, 64);
 	/* Locate lib hdr in cache */
-	mh = R_NEW (struct mach_header);
-	if (!mh) {
+	int r = r_buf_read_at (bin->b, liboff, (ut8 *)&mh, sizeof (mh));
+	if (r != sizeof (mh)) {
 		goto ret_err;
 	}
-	int r = r_buf_read_at (bin->b, liboff, (ut8 *)mh, sizeof (*mh));
-	if (r != sizeof (*mh)) {
-		goto mh_err;
-	}
 	/* Check it is mach-o */
-	if (mh->magic != MH_MAGIC && mh->magic != MH_MAGIC_64) {
-		if (mh->magic == 0xbebafeca) { //FAT binary
+	if (mh.magic != MH_MAGIC && mh.magic != MH_MAGIC_64) {
+		if (mh.magic == 0xbebafeca) { //FAT binary
 			eprintf ("FAT Binary\n");
 		}
 		eprintf ("Not mach-o\n");
-		goto mh_err;
+		goto ret_err;
 	}
-	addend = mh->magic == MH_MAGIC? sizeof (struct mach_header) : sizeof (struct mach_header_64);
+	addend = mh.magic == MH_MAGIC? sizeof (struct mach_header) : sizeof (struct mach_header_64);
 	/* Write mach-o hdr */
 	if (!(dbuf = r_buf_new ())) {
 		eprintf ("new (dbuf)\n");
-		goto mh_err;
+		goto ret_err;
 	}
 	if (!r_buf_append_buf_slice (dbuf, bin->b, liboff, addend)) {
 		goto dbuf_err;
 	}
 	cmdptr = liboff + addend;
 	/* Write load commands */
-	for (cmd = 0; cmd < mh->ncmds; cmd++) {
+	for (cmd = 0; cmd < mh.ncmds; cmd++) {
 		struct load_command lc;
 		int r = r_buf_read_at (bin->b, cmdptr, (ut8 *)&lc, sizeof (lc));
 		if (r != sizeof (lc)) {
@@ -134,7 +129,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	cmdptr = liboff + addend;
 	/* Write segments */
-	for (cmd = linkedit_offset = 0; cmd < mh->ncmds; cmd++) {
+	for (cmd = linkedit_offset = 0; cmd < mh.ncmds; cmd++) {
 		struct load_command lc;
 		int r = r_buf_read_at (bin->b, cmdptr, (ut8 *)&lc, sizeof (lc));
 		if (r != sizeof (lc)) {
@@ -157,7 +152,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			}
 			r_buf_append_buf_slice (dbuf, bin->b, seg.fileoff, t);
 			r_bin_dyldcache_apply_patch (dbuf, r_buf_size (dbuf),
-				(ut64) ((size_t)&seg.fileoff - (size_t)data));
+				addend + r_offsetof (struct segment_command, fileoff));
 			/* Patch section offsets */
 			int sect_offset = seg.fileoff - libsz;
 			libsz = r_buf_size (dbuf);
@@ -174,7 +169,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 					}
 					if (sect.offset > libsz) {
 						r_bin_dyldcache_apply_patch (dbuf, sect.offset - sect_offset,
-							(ut64)((size_t)&sect.offset - (size_t)data));
+							addend + r_offsetof (struct section, offset));
 					}
 				}
 			}
@@ -187,8 +182,8 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			if (r != sizeof (st)) {
 				goto dbuf_err;
 			}
-			NZ_OFFSET (st.symoff);
-			NZ_OFFSET (st.stroff);
+			NZ_OFFSET (st.symoff, struct symtab_command, symoff);
+			NZ_OFFSET (st.stroff, struct symtab_command, stroff);
 			}
 			break;
 		case LC_DYSYMTAB:
@@ -198,12 +193,12 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			if (r != sizeof (st)) {
 				goto dbuf_err;
 			}
-			NZ_OFFSET (st.tocoff);
-			NZ_OFFSET (st.modtaboff);
-			NZ_OFFSET (st.extrefsymoff);
-			NZ_OFFSET (st.indirectsymoff);
-			NZ_OFFSET (st.extreloff);
-			NZ_OFFSET (st.locreloff);
+			NZ_OFFSET (st.tocoff, struct dysymtab_command, tocoff);
+			NZ_OFFSET (st.modtaboff, struct dysymtab_command, modtaboff);
+			NZ_OFFSET (st.extrefsymoff, struct dysymtab_command, extrefsymoff);
+			NZ_OFFSET (st.indirectsymoff, struct dysymtab_command, indirectsymoff);
+			NZ_OFFSET (st.extreloff, struct dysymtab_command, extreloff);
+			NZ_OFFSET (st.locreloff, struct dysymtab_command, locreloff);
 			}
 			break;
 		case LC_DYLD_INFO:
@@ -214,11 +209,11 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			if (r != sizeof (st)) {
 				goto dbuf_err;
 			}
-			NZ_OFFSET (st.rebase_off);
-			NZ_OFFSET (st.bind_off);
-			NZ_OFFSET (st.weak_bind_off);
-			NZ_OFFSET (st.lazy_bind_off);
-			NZ_OFFSET (st.export_off);
+			NZ_OFFSET (st.rebase_off, struct dyld_info_command, rebase_off);
+			NZ_OFFSET (st.bind_off, struct dyld_info_command, bind_off);
+			NZ_OFFSET (st.weak_bind_off, struct dyld_info_command, weak_bind_off);
+			NZ_OFFSET (st.lazy_bind_off, struct dyld_info_command, lazy_bind_off);
+			NZ_OFFSET (st.export_off, struct dyld_info_command, export_off);
 			}
 			break;
 		}
@@ -231,8 +226,6 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 
 dbuf_err:
 	r_buf_free (dbuf);
-mh_err:
-	free (mh);
 ret_err:
 	free (ret);
 	return NULL;
