@@ -1328,13 +1328,13 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
-			char f[256];
-			snprintf (f, sizeof (f), "%s.r2", pfile);
-			if(strncmp(f, "dbg://", 6) == 0) {
-				// cut out the uri handler part of the path
-				char tmp[256];
-				strncpy (tmp, f + 6, 250);
-				strncpy (f, tmp, 250);
+			char* f = r_str_newf("%s.r2", pfile);
+			int f_len = strlen (f);
+			const char* prefix = "dbg://";
+			int prefix_len = strlen (prefix);
+			if (r_str_startswith (f, prefix)) {
+				memmove (f, f + prefix_len, f_len - prefix_len);
+				f[f_len - prefix_len] = '\0';
 			}
 			if (r_file_exists (f)) {
 				// TODO: should 'q' unset the interactive bit?
