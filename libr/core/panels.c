@@ -127,6 +127,7 @@ static const char *help_msg_panels[] = {
 	"hjkl",     "move around (left-down-up-right)",
 	"J",        "scroll panels down by page",
 	"K",        "scroll panels up by page",
+	"L",        "refresh all the panels",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
 	"nN",       "create new panel with given command",
@@ -2555,11 +2556,6 @@ R_API void r_core_panels_refresh(RCore *core) {
 	i = -can->sx + w - strlen (title);
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, title);
-
-	sprintf (str, "Press L to refresh all the panels   ");
-	i -= strlen (str);
-	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
-	r_cons_canvas_write (can, str);
 
 	if (panels->fun == PANEL_FUN_SNOW) {
 		printSnow (panels);
