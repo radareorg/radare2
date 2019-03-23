@@ -24,20 +24,17 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-/*
- * Verifies the magic of the binary file
- * @param buffer and length of signature
- * @return bool outcome of the verification
- */ 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 6) {
-		return false;
-	}
-	return (!memcmp (buf, QNX_MAGIC, 6));
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[6];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
 }
 
-static bool check_buffer(RBuffer *buf) {
-	return check_bytes (buf, r_buf_size (buf));
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	RBuffer *b = r_buf_new_with_bytes (buf, length);
+	bool res = check_buffer (b);
+	r_buf_free (b);
+	return res;
 }
 
 // Frees the bin_obj of the binary file

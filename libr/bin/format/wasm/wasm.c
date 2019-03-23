@@ -81,37 +81,34 @@ static size_t consume_str_r(RBuffer *b, ut64 max, size_t sz, char *out) {
 		return 0;
 	}
 	if (sz > 0) {
-		strncpy (out, (char *)&b->buf[cur],
-			R_MIN (R_BIN_WASM_STRING_LENGTH - 1, sz));
+		r_buf_read (b, (ut8 *)out, R_MIN (R_BIN_WASM_STRING_LENGTH - 1, sz));
 	} else {
 		*out = 0;
 	}
-	r_buf_seek (b, sz, R_IO_SEEK_CUR);
 	return sz;
 }
 
 static size_t consume_init_expr_r(RBuffer *b, ut64 max, ut8 eoc, void *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
+	if (!b || max >= r_buf_size (b) || r_buf_tell (b) > max) {
 		return 0;
 	}
-	ut32 i = 0;
-	while (r_buf_tell (b) + i <= max && b->buf[r_buf_tell (b) + i] != eoc) {
-		// TODO: calc the expresion with the bytcode (ESIL?)
-		i++;
+	size_t res = 0;
+	while (r_buf_tell (b) <= max && r_buf_read8 (b) != eoc) {
+		res++;
 	}
-	if (*(ut8 *)(&b->buf[r_buf_tell (b) + i]) != eoc) {
+	if (r_buf_read8 (b) != eoc) {
 		return 0;
 	}
-	r_buf_seek (b, i + 1, R_IO_SEEK_CUR);
-	return i + 1;
+	return res + 1;
 }
 
 static size_t consume_locals_r(RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max) {
+	ut64 cur = r_buf_tell (b);
+	if (!b || max >= r_buf_size (b) || cur > max) {
 		return 0;
 	}
 	ut32 count = out? out->local_count: 0;
-	if (!(r_buf_tell (b) + (count * 7) <= max)) { // worst case 7 bytes
+	if (!(cur + (count * 7) <= max)) { // worst case 7 bytes
 		return 0;
 	}
 	if (count > 0) {
@@ -139,7 +136,7 @@ beach:
 }
 
 static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable_limits_t *out) {
-	if (!b || !b->buf || max >= r_buf_size (b) || r_buf_tell (b) > max || !out) {
+	if (!b || max >= r_buf_size (b) || r_buf_tell (b) > max || !out) {
 		return 0;
 	}
 	ut32 i = r_buf_tell (b);
@@ -610,22 +607,13 @@ static RList *r_bin_wasm_get_element_entries(RBinWasmObj *bin, RBinWasmSection *
 }
 
 // Public functions
-RBinWasmObj *r_bin_wasm_init (RBinFile *bf) {
+RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 	RBinWasmObj *bin = R_NEW0 (RBinWasmObj);
 	if (!bin) {
 		return NULL;
 	}
-	if (!(bin->buf = r_buf_new ())) {
-		free (bin);
-		return NULL;
-	}
+	bin->buf = r_buf_ref (buf);
 	bin->size = (ut32) r_buf_size (bf->buf);
-	if (!r_buf_set_bytes (bin->buf, bf->buf->buf, bin->size)) {
-		r_bin_wasm_destroy (bf);
-		free (bin);
-		return NULL;
-	}
-
 	bin->g_sections = r_bin_wasm_get_sections (bin);
 	// TODO: recursive invocation more natural with streamed parsing
 	// but dependency problems when sections are disordered (against spec)

@@ -713,9 +713,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		bin->signature = (ut8 *)strdup ("Malformed entitlement");
 		return true;
 	}
-	super.blob.magic = r_read_ble32 (bin->b->buf + data, mach0_endian);
-	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, mach0_endian);
-	super.count = r_read_ble32 (bin->b->buf + data + 8, mach0_endian);
+	super.blob.magic = r_buf_read_ble32_at (bin->b, data, mach0_endian);
+	super.blob.length = r_buf_read_ble32_at (bin->b, data + 4, mach0_endian);
+	super.count = r_buf_read_ble32_at (bin->b, data + 8, mach0_endian);
 	char *verbose = r_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
 	bool isVerbose = false;
 	if (verbose) {
@@ -728,7 +728,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	// $ openssl asn1parse -inform der -in a|less
 	// $ openssl pkcs7 -inform DER -print_certs -text -in a
 	for (i = 0; i < super.count; i++) {
-		if ((ut8 *)(bin->b->buf + data + i) > (ut8 *)(bin->b->buf + bin->size)) {
+		if (data + i > bin->size) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
@@ -748,18 +748,19 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				break;
 			}
 			struct blob_t entitlements = {0};
-			entitlements.magic = r_read_ble32 (bin->b->buf + off, mach0_endian);
-			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, mach0_endian);
+			entitlements.magic = r_buf_read_ble32_at (bin->b, off, mach0_endian);
+			entitlements.length = r_buf_read_ble32_at (bin->b, off + 4, mach0_endian);
 			len = entitlements.length - sizeof (struct blob_t);
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
 				if (!bin->signature) {
 					break;
 				}
-				ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
 				if (off + sizeof (struct blob_t) + len < r_buf_size (bin->b)) {
-					memcpy (bin->signature, src, len);
-					bin->signature[len] = '\0';
+					r_buf_read_at (bin->b, off + sizeof (struct blob_t), (ut8 *)bin->signature, len);
+					if (len >= 0) {
+						bin->signature[len] = '\0';
+					}
 				} else {
 					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				}

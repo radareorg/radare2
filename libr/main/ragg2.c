@@ -73,7 +73,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
 		size_t blen = r_buf_size (b);
-		if (write (1, b->buf, blen) != blen) {
+		if (write (1, r_buf_buffer (b), blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
 		r_buf_free (b);
@@ -526,7 +526,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
 			size_t blen = r_buf_size (b);
-			if (write (1, b->buf, blen) != blen) {
+			if (write (1, r_buf_buffer (b), blen) != blen) {
 				eprintf ("Failed to write buffer\n");
 				goto fail;
 			}
@@ -538,36 +538,36 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			RPrint *p = r_print_new ();
 			switch (*format) {
 			case 'c':
-				r_print_code (p, 0, b->buf, r_buf_size (b),
-					'c');
+				r_print_code (p, 0, (ut8 *)r_buf_buffer (b), r_buf_size (b), 'c');
 				break;
 			case 'j': // JavaScript
-				r_print_code (p, 0, b->buf, r_buf_size (b),
-					'j');
+				r_print_code (p, 0, (ut8 *)r_buf_buffer (b), r_buf_size (b), 'j');
 				break;
 			case 'r':
 				if (show_str) {
 					printf ("\"");
+					r_buf_seek (b, 0, 0);
 					for (i = 0; i < r_buf_size (b); i++) {
-						printf ("\\x%02x", b->buf[i]);
+						printf ("\\x%02x", r_buf_read8 (b));
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
+					r_buf_seek (b, 0, 0);
 					for (i = 0; i < r_buf_size (b); i++) {
-						printf ("%02x", b->buf[i]);
+						printf ("%02x", r_buf_read8 (b));
 					}
 					printf ("\n");
 				} // else show_raw is_above()
 				break;
 			case 'p': // PE
 				if (strlen(format) >= 2 && format[1] == 'y') { // Python
-					r_print_code (p, 0, b->buf,
+					r_print_code (p, 0, (ut8 *)r_buf_buffer (b),
 						r_buf_size (b), 'p');
 				}
 				break;
 			case 'e': // ELF
 			case 'm': // MACH0
-				create (format, arch, bits, b->buf,
+				create (format, arch, bits, r_buf_buffer (b),
 					r_buf_size (b));
 				break;
 			default:

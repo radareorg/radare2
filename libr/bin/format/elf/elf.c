@@ -2344,13 +2344,12 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
-	const ut8 *p = bin->b->buf;
-	if (r_buf_size (bin->b) > 64)  {
-		p += r_buf_size (bin->b) - 64;
-	} else {
+	if (r_buf_size (bin->b) <= 64)  {
 		return 0;
 	}
-	return r_mem_mem (p, 64, (const ut8 *)s, strlen (s)) != NULL;
+	ut8 tmp[64];
+	r_buf_read_at (bin->b, r_buf_size (bin->b) - 64, tmp, 64);
+	return r_mem_mem (tmp, 64, (const ut8 *)s, strlen (s)) != NULL;
 }
 
 static inline int needle(ELFOBJ *bin, const char *s) {
