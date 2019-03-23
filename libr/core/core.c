@@ -930,7 +930,7 @@ static const char *radare_argv[] = {
 	"L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo",
 	"m?", "m", "m*", "ml", "m-", "md", "mf?", "mf", "mg", "mo", "mi", "mp", "ms", "my",
 	"o?", "o", "o-", "o--", "o+", "oa", "oa-", "oq", "o*", "o.", "o=",
-	"ob?", "ob", "ob*", "obo", "obb", "oba", "obf", "obj", "obr", "ob-", "ob-*",
+	"ob?", "ob", "ob*", "obo", "obb", "oba", "obj", "obr", "ob-", "ob-*",
 	"oc", "of", "oi", "oj", "oL", "om", "on",
 	"oo?", "oo", "oo+", "oob", "ood", "oom", "oon", "oon+", "oonn", "oonn+",
 	"op",  "ox",
@@ -2354,7 +2354,6 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "idp", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "idpi", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "L", R_CORE_AUTOCMPLT_FILE, true);
-	r_core_autocomplete_add (core->autocomplete, "obf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "o+", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "oc", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "r2", R_CORE_AUTOCMPLT_FILE, true);

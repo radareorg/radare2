@@ -69,7 +69,6 @@ static const char *help_msg_ob[] = {
 
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
-	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
 	"ob-", "[objid]", "Delete binfile by binobjid",
@@ -375,14 +374,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case 'r': // "obr"
 		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 		r_core_cmd0 (core, ".is*");
-		break;
-	case 'f':
-		if (input[2] == ' ') {
-			r_core_cmdf (core, "oba 0 %s", input + 3);
-		} else {
-			r_core_bin_load (core, NULL, UT64_MAX);
-			value = input[2] ? input + 2 : NULL;
-		}
 		break;
 	case 'o': // "obo"
 		value = input[2] ? input + 2 : NULL;
