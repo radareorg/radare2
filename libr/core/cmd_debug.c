@@ -33,7 +33,7 @@ static const char *help_msg_d[] = {
 	"dp", "[?]", "List, attach to process or thread id",
 	"dr", "[?]", "Cpu registers",
 	"ds", "[?]", "Step, over, source line",
-	"dt", "[?]", "Display instruction traces (dtr=reset)",
+	"dt", "[?]", "Display instruction traces",
 	"dw", " <pid>", "Block prompt until pid dies",
 	"dx", "[?]", "Inject and run code on target process (See gs)",
 	NULL
@@ -419,15 +419,13 @@ static const char *help_msg_dt[] = {
 	"dt*", "", "List all traced opcode offsets",
 	"dt+"," [addr] [times]", "Add trace for address N times",
 	"dt-", "", "Reset traces (instruction/calls)",
-	"dtD", "", "Show dwarf trace (at*|rsc dwarf-traces $FILE)",
 	"dta", " 0x804020 ...", "Only trace given addresses",
 	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-	"dtd", "", "List all traced disassembled",
+	"dtd", " [delta]", "List all traced disassembled",
 	"dte", "[?]", "Show esil trace logs",
 	"dtg", "", "Graph call/ret trace",
 	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "Interactive debug trace",
-	"dtr", "", "Show traces as range commands (ar+)",
 	"dts", "[?]", "Trace sessions",
 	"dtt", " [tag]", "Select trace tag (no arg unsets)",
 	NULL
@@ -4173,8 +4171,8 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			RIOMap *s;
 			ut64 pc;
 			int n = 0;
-			int t = core->dbg->trace->enabled;
-			core->dbg->trace->enabled = 0;
+			bool t = core->dbg->trace->enabled;
+			core->dbg->trace->enabled = false;
 			r_cons_break_push (static_debug_stop, core->dbg);
 			do {
 				r_debug_step (core->dbg, 1);
@@ -4244,6 +4242,8 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			// sync registers for BSD PT_STEP/PT_CONT
 			// XXX(jjd): is this necessary?
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+			ut64 pc = r_debug_reg_get (core->dbg, "PC");
+			r_debug_trace_pc (core->dbg, addr);
 			if (!r_debug_step (core->dbg, times)) {
 				eprintf ("Step failed\n");
 				core->break_loop = true;
@@ -4440,6 +4440,9 @@ static int cmd_debug(void *data, const char *input) {
 		case '\0': // "dt"
 			r_debug_trace_list (core->dbg, 0);
 			break;
+		case 'q': // "dtq"
+			r_debug_trace_list (core->dbg, 'q');
+			break;
 		case '*': // "dt*"
 			r_debug_trace_list (core->dbg, 1);
 			break;
@@ -4466,13 +4469,23 @@ static int cmd_debug(void *data, const char *input) {
 				debug_trace_calls (core, input + 2);
 			}
 			break;
-		case 'r': // "dtr"
-			eprintf ("TODO\n");
-			//trace_show(-1, trace_tag_get());
-			break;
 		case 'd': // "dtd"
-			// TODO: reimplement using the api
-			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
+			if (input[2] == ' ') {
+				int min = r_num_math (core->num, input + 2);
+				RListIter *iter;
+				RDebugTracepoint *trace;
+				int n = 0;
+				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					// if (trace->count >= min) {
+					if (n >= min) {
+						r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, trace->addr);
+					}
+					n++;
+				}
+			} else {
+				// TODO: reimplement using the api
+				r_core_cmd0 (core, "pd 1 @@= `dtq`");
+			}
 			break;
 		case 'g': // "dtg"
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
@@ -4515,10 +4528,6 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'D': // "dtD"
-			// XXX: not yet tested..and rsc dwarf-traces comes from r1
-			r_core_cmd (core, "dt*|rsc dwarf-traces $FILE", 0);
-			break;
 		case 'e': // "dte"
 			if (!core->anal->esil) {
 				int stacksize = r_config_get_i (core->config, "esil.stack.depth");
@@ -4530,20 +4539,18 @@ static int cmd_debug(void *data, const char *input) {
 				if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 					return 0;
 				}
-				r_anal_esil_setup (core->anal->esil,
-						core->anal, romem, stats, nonull);
+				r_anal_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
 			}
 			switch (input[2]) {
 			case 0: // "dte"
 				r_anal_esil_trace_list (core->anal->esil);
 				break;
 			case 'i': { // "dtei"
-				RAnalOp *op;
 				ut64 addr = r_num_math (core->num, input + 3);
 				if (!addr) {
 					addr = core->offset;
 				}
-				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+				RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
 				if (op) {
 					r_anal_esil_trace (core->anal->esil, op);
 				}
@@ -4630,9 +4637,9 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'd': // "dtd"
+	case 'd': // "ddd"
 		switch (input[1]) {
-		case '\0': // "dtd"
+		case '\0': // "ddd"
 			r_debug_desc_list (core->dbg, 0);
 			break;
 		case '*': // "dtd*"

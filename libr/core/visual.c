@@ -1961,6 +1961,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" b  blocks\n"
 		" c  classes\n"
 		" C  comments\n"
+		" d  debug traces\n"
 		" e  eval var configurations\n"
 		" f  flags\n"
 		" F  functions\n"
@@ -2019,6 +2020,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		case 'F': // "vbF"
 			r_core_visual_anal (core, NULL);
 			// r_core_cmd0 (core, "s $(afl~...)");
+			break;
+		case 'd': // "vbd"
+			r_core_visual_debugtraces (core, NULL);
 			break;
 		case 'v': // "vbv"
 			r_core_visual_anal (core, "v");
