@@ -122,10 +122,6 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 
 static void set_meta_min_if_needed(RAnalFunction *x) {
 	if (x->meta.min == UT64_MAX) {
-		if (r_list_length (x->bbs) == 0) {
-			x->meta.min = x->addr;
-			return;
-		}
 		ut64 min = UT64_MAX;
 		ut64 max = UT64_MIN;
 		RListIter *bbs_iter;
@@ -1834,7 +1830,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		}
 		append = true;
 	}
-	fcn->addr = addr;
+	fcn->addr = fcn->meta.min = addr;
 	fcn->cc = r_str_const (r_anal_cc_default (a));
 	fcn->bits = a->bits;
 	r_anal_fcn_set_size (append ? NULL : a, fcn, size);
