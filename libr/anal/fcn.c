@@ -538,11 +538,17 @@ static int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dep
 	return ret;
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, int ret0) {
 	int ret = ret0;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBLSZ;
+	}
+	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
+		if (anal->verbose) {
+			eprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);
+		}
+		return 0;
 	}
 	ut64 jmpptr, offs;
 	ut8 *jmptbl = calloc (jmptbl_size, sz);
