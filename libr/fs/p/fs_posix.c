@@ -42,7 +42,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	RList *list;
 	char fullpath[4096];
 	struct stat st;
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	WIN32_FIND_DATAW entry;
 	HANDLE fh;
 	wchar_t *wcpath;
@@ -56,7 +56,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	if (!list) {
 		return NULL;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	wcpath = r_utf8_to_utf16 (path);
 	if (!wcpath) {
 		return NULL;

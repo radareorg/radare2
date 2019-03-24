@@ -6,11 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if !defined(MINGW32)
-#include <unistd.h>
-#endif
-
 #include <r_util.h>
 
 #define SZ 1024

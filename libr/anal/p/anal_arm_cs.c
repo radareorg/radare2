@@ -19,14 +19,14 @@
 #define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
 #define INSOP(x) insn->detail->arm.operands[x]
-#define MEMBASE(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
-#define MEMBASE64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
+#define MEMBASE(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.base))
+#define MEMBASE64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.base))
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 // s/index/base|reg/
-#define MEMINDEX(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
+#define MEMINDEX(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
-#define MEMINDEX64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
+#define MEMINDEX64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
@@ -882,7 +882,6 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 
 	const char *postfix = NULL;
-	opex64 (&op->opex, *handle, insn);
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -1079,21 +1078,21 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDRSW:
 		{
-		int size = REGSIZE64(0);
-		switch (insn->id) {
-		case ARM64_INS_LDRSB:
-		case ARM64_INS_LDRB:
-		    size = 1;
-		    break;
-		case ARM64_INS_LDRH:
-		    size = 2;
-		    break;
-		case ARM64_INS_LDRSW:
-		    size = 4;
-		    break;
-		default:
-		    break;
-		}
+			int size = REGSIZE64 (0);
+			switch (insn->id) {
+			case ARM64_INS_LDRSB:
+			case ARM64_INS_LDRB:
+				size = 1;
+				break;
+			case ARM64_INS_LDRH:
+				size = 2;
+				break;
+			case ARM64_INS_LDRSW:
+				size = 4;
+				break;
+			default:
+				break;
+			}
 		if (ISMEM64(1)) {
 			if (HASMEMINDEX64(1)) {
 				if (LSHIFT2_64(1)) {
@@ -1514,8 +1513,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int msr_flags;
 	int pcdelta = (thumb ? 4 : 8);
 	ut32 mask = UT32_MAX;
-
-	opex (&op->opex, *handle, insn);
 
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
@@ -2635,11 +2632,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 2;
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_TBB: // byte jump table
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 1;
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
@@ -2761,6 +2760,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISIMM(1)) {
 			op->ptr = IMM(1);
 		}
+		op->reg = r_str_get (cs_reg_name (handle, INSOP (0).reg));
 		break;
 	case ARM_INS_ROR:
 	case ARM_INS_ORN:
@@ -2817,6 +2817,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		}
+		switch (insn->id) {
+		case ARM_INS_LDRB:
+			op->ptrsize = 1;
+			break;
+		case ARM_INS_LDRH:
+		case ARM_INS_LDRHT:
+			op->ptrsize = 2;
+			break;
+		}
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
@@ -2829,7 +2838,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
-				op->ireg = r_str_get (cs_reg_name(handle, INSOP (1).mem.index));
+				op->ireg = r_str_get (cs_reg_name (handle, INSOP (1).mem.index));
 				break;
 			}
 		}
@@ -3016,14 +3025,14 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 		break;
 	}
 	if ((bits == 64) && HASMEMINDEX64 (1)) {
-		op->ireg = r_str_get (cs_reg_name(handle, INSOP64 (1).mem.index));
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP64 (1).mem.index));
 	} else if (HASMEMINDEX (1)) {
-		op->ireg = r_str_get (cs_reg_name(handle, INSOP (1).mem.index));
+		op->ireg = r_str_get (cs_reg_name (handle, INSOP (1).mem.index));
 		op->scale = INSOP (1).mem.scale;
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
@@ -3074,17 +3083,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->id = insn->id;
 		if (a->bits == 64) {
 			anop64 (handle, op, insn);
-			if (a->decode) {
+			if (mask & R_ANAL_OP_MASK_OPEX) {
+				opex64 (&op->opex, handle, insn);
+			}
+			if (mask & R_ANAL_OP_MASK_ESIL) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
-			if (a->decode) {
+			if (mask & R_ANAL_OP_MASK_OPEX) {
+				opex (&op->opex, handle, insn);
+			}
+			if (mask & R_ANAL_OP_MASK_ESIL) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
 		}
 		set_opdir (op);
-		if (a->fillval) {
+		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (op, handle, insn, a->bits);
 		}
 		cs_free (insn, n);
@@ -3439,7 +3454,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 			free (hint);
 		}
 
-		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx)) < 1) {
+		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {

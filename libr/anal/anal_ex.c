@@ -125,7 +125,7 @@ R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	}
 }
 
-R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
+R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr, RAnalOpMask mask) {
 	RAnalOp *current_op = state->current_op;
 	const ut8 * data;
 	// current_op set in a prior stage
@@ -145,7 +145,7 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 		current_op = anal->cur->op_from_buffer (anal, addr, data,  r_anal_state_get_len (state, addr));
 	} else {
 		current_op = r_anal_op_new();
-		anal->cur->op (anal, current_op, addr, data,  r_anal_state_get_len (state, addr));
+		anal->cur->op (anal, current_op, addr, data,  r_anal_state_get_len (state, addr), mask);
 	}
 	state->current_op = current_op;
 	return current_op;
@@ -159,7 +159,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 		return current_bb;
 	}
 	if (r_anal_state_addr_is_valid (state, addr) && !op) {
-		op = r_anal_ex_get_op (anal, state, addr);
+		op = r_anal_ex_get_op (anal, state, addr, R_ANAL_OP_MASK_ALL);
 	}
 	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
@@ -255,7 +255,7 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		if (state->done) {
 			break;
 		}
-	   	r_anal_ex_get_op (anal, state, state->current_addr);
+	   	r_anal_ex_get_op (anal, state, state->current_addr, R_ANAL_OP_MASK_ALL);
 		r_anal_ex_perform_post_anal_op_cb (anal, state, state->current_addr);
 		if (state->done) {
 			break;

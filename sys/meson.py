@@ -194,7 +194,6 @@ def win_dist_libr2(**path_fmt):
     copy(r'{ROOT}\libr\include\sdb\*.h', r'{DIST}\{R2_INCDIR}\sdb')
     copy(r'{ROOT}\libr\include\r_util\*.h', r'{DIST}\{R2_INCDIR}\r_util')
     copy(r'{ROOT}\libr\include\r_crypto\*.h', r'{DIST}\{R2_INCDIR}\r_crypto')
-    copytree(r'{ROOT}\libr\include\msvc', r'{DIST}\{R2_INCDIR}\msvc')
     makedirs(r'{DIST}\{R2_FORTUNES}')
     copy(r'{ROOT}\doc\fortunes.*', r'{DIST}\{R2_FORTUNES}')
     copytree(r'{ROOT}\libr\bin\d', r'{DIST}\{R2_SDB}\format',

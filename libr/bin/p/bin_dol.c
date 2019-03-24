@@ -38,57 +38,47 @@ typedef struct {
 	// 0x100 -- start of data section
 }) DolHeader;
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 6) {
-		return false;
-	}
-	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[6];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	bool has_dol_extension = false;
-	DolHeader *dol;
-	char *lowername, *ext;
-	if (!bf || sz < sizeof (DolHeader)) {
-		return false;
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
+}
+
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	DolHeader *dol = NULL;
+	char *lowername = NULL, *ext;
+	if (r_buf_size (buf) < sizeof (DolHeader)) {
+		return NULL;
 	}
 	dol = R_NEW0 (DolHeader);
 	if (!dol) {
-		return false;
+		return NULL;
 	}
 	lowername = strdup (bf->file);
 	if (!lowername) {
-		free (dol);
-		return false;
+		goto dol_err;
 	}
 	r_str_case (lowername, 0);
 	ext = strstr (lowername, ".dol");
-	if (ext && ext[4] == 0) {
-		has_dol_extension = true;
+	if (!ext || ext[4] != 0) {
+		goto lowername_err;
 	}
 	free (lowername);
-	if (has_dol_extension) {
-		r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
-		// r_buf_fread_at (bf->buf, 0, (void*)dol, "67i", 1);
-		if (bf && bf->o && bf->o->bin_obj) {
-			*bin_obj = bf->o->bin_obj = dol;
-		}
-		free (dol);
-		return true;
-	}
-	free (dol);
-	return false;
-}
+	r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
+	return dol;
 
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
-	if (!bf || !bf->o) {
-		return false;
-	}
-	load_bytes (bf, &bf->o->bin_obj, bytes,
-		sz, bf->o->loadaddr, bf->sdb);
-	return check_bytes (bytes, sz);
+lowername_err:
+	free (lowername);
+dol_err:
+	free (dol);
+	return NULL;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -194,9 +184,10 @@ RBinPlugin r_bin_plugin_dol = {
 	.name = "dol",
 	.desc = "Nintendo Dolphin binary format",
 	.license = "BSD",
-	.load = &load,
+	.load_buffer = &load_buffer,
 	.baddr = &baddr,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

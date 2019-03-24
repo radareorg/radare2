@@ -37,9 +37,6 @@
 #include <r_magic.h>
 #include "file.h"
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <stdlib.h>
 #include <sys/stat.h>
 /* Since major is a function on SVR4, we cannot use `ifndef major'.  */

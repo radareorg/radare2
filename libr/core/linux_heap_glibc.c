@@ -341,9 +341,9 @@ void GH(print_heap_chunk)(RCore *core) {
 	PRINT_GA (",\n  size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 	PRINT_GA(",\n  flags: |N:");
-	PRINTF_BA("%1d", cnk->size & NON_MAIN_ARENA);
+	PRINTF_BA("%1d", (cnk->size & NON_MAIN_ARENA ) >> 2);
 	PRINT_GA(" |M:");
-	PRINTF_BA("%1d", cnk->size & IS_MMAPPED);
+	PRINTF_BA("%1d", (cnk->size & IS_MMAPPED) >> 1);
 	PRINT_GA(" |P:");
 	PRINTF_BA("%1d", cnk->size & PREV_INUSE);
 

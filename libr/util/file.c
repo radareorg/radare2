@@ -3,14 +3,13 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
-#include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <r_lib.h>
 #if __UNIX__
+#include <sys/time.h>
 #include <sys/mman.h>
 #include <limits.h>
 #endif
@@ -201,21 +200,29 @@ R_API char *r_file_abspath(const char *file) {
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
 		ret = r_str_home (file + 2);
 	} else {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 		if (cwd && *file != '/') {
 			ret = r_str_newf ("%s" R_SYS_DIR "%s", cwd, file);
 		}
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 		// Network path
 		if (!strncmp (file, "\\\\", 2)) {
 			return strdup (file);
 		}
 		if (!strchr (file, ':')) {
-			char *abspath = malloc (MAX_PATH);
+			PTCHAR abspath = malloc (MAX_PATH * sizeof (TCHAR));
 			if (abspath) {
-				GetFullPathName (file, MAX_PATH, abspath, NULL);
-				ret = strdup (abspath);
+				PTCHAR f = r_sys_conv_utf8_to_win (file);
+				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
+				if (s > MAX_PATH) {
+					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+				} else if (!s) {
+					r_sys_perror ("r_file_abspath/GetFullPathName");
+				} else {
+					ret = r_sys_conv_win_to_utf8 (abspath);
+				}
 				free (abspath);
+				free (f);
 			}
 		}
 #endif
@@ -641,7 +648,7 @@ R_API bool r_file_rm(const char *file) {
 	}
 	if (r_file_is_directory (file)) {
 #if __WINDOWS__
-		LPTSTR file_ = r_sys_conv_utf8_to_utf16 (file);
+		LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 		bool ret = RemoveDirectory (file_);
 
 		free (file_);
@@ -651,7 +658,7 @@ R_API bool r_file_rm(const char *file) {
 #endif
 	} else {
 #if __WINDOWS__
-		LPTSTR file_ = r_sys_conv_utf8_to_utf16 (file);
+		LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 		bool ret = DeleteFile (file_);
 
 		free (file_);
@@ -691,7 +698,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	if (r_sandbox_enable (0)) {
 		return -1;
 	}
-	file_ = r_sys_conv_utf8_to_utf16 (file);
+	file_ = r_sys_conv_utf8_to_win (file);
 	fh = CreateFile (file_, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -744,7 +751,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	if (r_sandbox_enable (0)) {
 		return -1;
 	}
-	file_ = r_sys_conv_utf8_to_utf16 (file);
+	file_ = r_sys_conv_utf8_to_win (file);
 	fh = CreateFile (file_, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("r_file_mmap_read/CreateFile");
@@ -802,7 +809,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 }
 #elif __WINDOWS__
 static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
-	LPTSTR file_ = r_sys_conv_utf8_to_utf16 (file);
+	LPTSTR file_ = r_sys_conv_utf8_to_win (file);
 	bool success = false;
 
 	m->fh = CreateFile (file_, GENERIC_READ | (m->rw?GENERIC_WRITE:0),
@@ -941,15 +948,15 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	}
 #if __WINDOWS__
 	LPTSTR name = NULL;
-	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
-	LPTSTR prefix_ = r_sys_conv_utf8_to_utf16 (prefix);
+	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
+	LPTSTR prefix_ = r_sys_conv_utf8_to_win (prefix);
 
 	name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
 	if (!name) {
 		goto err_r_file_mkstemp;
 	}
 	if (GetTempFileName (path_, prefix_, 0, name)) {
-		char *name_ = r_sys_conv_utf16_to_utf8 (name);
+		char *name_ = r_sys_conv_win_to_utf8 (name);
 		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
@@ -1017,7 +1024,7 @@ R_API char *r_file_tmpdir() {
 			// Windows XP sometimes returns short path name
 			glpn (tmpdir, tmpdir, MAX_PATH + 1);
 		}
-		path = r_sys_conv_utf16_to_utf8 (tmpdir);
+		path = r_sys_conv_win_to_utf8 (tmpdir);
 	}
 	free (tmpdir);
 	// Windows 7, stat() function fail if tmpdir ends with '\\'
@@ -1052,11 +1059,17 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	char *s = r_file_abspath (src);
-	char *d = r_file_abspath (dst);
+	PTCHAR s = r_sys_conv_utf8_to_win (src);
+	PTCHAR d = r_sys_conv_utf8_to_win (dst);
+	if (!s || !d) {
+		R_LOG_ERROR ("r_file_copy: Failed to allocate memory\n");
+		free (s);
+		free (d);
+		return false;
+	}
 	bool ret = CopyFile (s, d, 0);
 	if (!ret) {
-		eprintf ("File not found\n");
+		r_sys_perror ("r_file_copy");
 	}
 	free (s);
 	free (d);

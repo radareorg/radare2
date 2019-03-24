@@ -72,7 +72,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	r_bin_arch_options_init (&opts, arch, bits);
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
-		size_t blen = b->length;
+		size_t blen = r_buf_size (b);
 		if (write (1, b->buf, blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
@@ -110,7 +110,6 @@ static int openfile(const char *f, int x) {
 	return fd;
 }
 #define ISEXEC (fmt!='r')
-
 
 R_API int r_main_ragg2(int argc, char **argv) {
 	const char *file = NULL;
@@ -526,7 +525,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
-			size_t blen = b->length;
+			size_t blen = r_buf_size (b);
 			if (write (1, b->buf, blen) != blen) {
 				eprintf ("Failed to write buffer\n");
 				goto fail;
@@ -539,20 +538,22 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			RPrint *p = r_print_new ();
 			switch (*format) {
 			case 'c':
-				r_print_code (p, 0, b->buf, b->length, 'c');
+				r_print_code (p, 0, b->buf, r_buf_size (b),
+					'c');
 				break;
 			case 'j': // JavaScript
-				r_print_code (p, 0, b->buf, b->length, 'j');
+				r_print_code (p, 0, b->buf, r_buf_size (b),
+					'j');
 				break;
 			case 'r':
 				if (show_str) {
 					printf ("\"");
-					for (i = 0; i < b->length; i++) {
+					for (i = 0; i < r_buf_size (b); i++) {
 						printf ("\\x%02x", b->buf[i]);
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
-					for (i = 0; i < b->length; i++) {
+					for (i = 0; i < r_buf_size (b); i++) {
 						printf ("%02x", b->buf[i]);
 					}
 					printf ("\n");
@@ -560,12 +561,14 @@ R_API int r_main_ragg2(int argc, char **argv) {
 				break;
 			case 'p': // PE
 				if (strlen(format) >= 2 && format[1] == 'y') { // Python
-					r_print_code (p, 0, b->buf, b->length, 'p');
+					r_print_code (p, 0, b->buf,
+						r_buf_size (b), 'p');
 				}
 				break;
 			case 'e': // ELF
 			case 'm': // MACH0
-				create (format, arch, bits, b->buf, b->length);
+				create (format, arch, bits, b->buf,
+					r_buf_size (b));
 				break;
 			default:
 				eprintf ("unknown executable format (%s)\n", format);

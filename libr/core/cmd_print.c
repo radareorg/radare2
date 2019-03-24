@@ -240,6 +240,7 @@ static const char *help_msg_pj[] = {
 static const char *help_msg_p_minus[] = {
 	"Usage:", "p-[hj] [nblocks] ", "bar|json|histogram blocks",
 	"p-", "", "show ascii-art bar of metadata in file boundaries",
+	"p-e", "", "show ascii-art bar of entropy per block",
 	"p-h", "", "show histogram analysis of metadata per block",
 	"p-j", "", "show json format",
 	NULL
@@ -920,6 +921,29 @@ static void cmd_pdj(RCore *core, const char *arg, ut8* block) {
 	pj_end (pj);
 	r_cons_printf ("%s\n", pj_string (pj));
 	pj_free (pj);
+}
+
+static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
+	ut8 *blockptr = malloc (ate - at);
+	if (!blockptr) {
+		return;
+	}
+	if (!r_io_read_at (core->io, at, blockptr, (ate - at))) {
+		eprintf ("Error: failed to read block");
+	} else {
+		ut8 entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
+		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
+		if (r_config_get_i (core->config, "scr.color")) {
+			const char *color =
+				(entropy > 6) ? Color_BGRED :
+				(entropy > 3) ? Color_BGGREEN :
+				Color_BGBLUE;
+			r_cons_printf ("%s%d"Color_RESET, color, entropy);
+		} else {
+			r_cons_printf ("%d", entropy);
+		}
+	}
+	free (blockptr);
 }
 
 static void helpCmdTasks(RCore *core) {
@@ -2737,8 +2761,9 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
 		r_cons_printf ("|-------------)----------------------------|\n");
 		break;
+	case 'e':
 	default:
-		r_cons_printf ("0x%"PFMT64x " [", from);
+		r_cons_printf ("0x%08"PFMT64x " [", from);
 	}
 
 	bool use_color = r_config_get_i (core->config, "scr.color");
@@ -2804,6 +2829,9 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						as->block[p].strings);
 			}
 			break;
+		case 'e': // p-e
+			cmd_p_minus_e (core, at, ate);
+			break;
 		default:
 			if (off >= at && off < ate) {
 				r_cons_memcat ("^", 1);
@@ -2853,11 +2881,12 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						   total.flags, total.functions, total.comments, total.symbols, total.strings);
 			r_cons_printf ("`-------------'----------------------------'\n");
 			break;
+		case 'e':
 		default:
 			if (use_color) {
 				r_cons_print (Color_RESET);
 			}
-			r_cons_printf ("] 0x%"PFMT64x "\n", to);
+			r_cons_printf ("] 0x%08"PFMT64x "\n", to);
 	}
 	r_core_anal_stats_free (as);
 	return len;
@@ -5453,9 +5482,18 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'x': // "prx"
+#if 0
 			if (l != 0) {
 				printraw (core, len, 2);
 			}
+#else
+			{
+				int a = r_config_get_i (core->config, "hex.bytes");
+				r_config_set_i (core->config, "hex.bytes", false);
+				r_core_cmdf (core, "px%s", input + 1);
+				r_config_set_i (core->config, "hex.bytes", a);
+			}
+#endif
 			break;
 		case 'z': // "prz"
 			if (l != 0) {

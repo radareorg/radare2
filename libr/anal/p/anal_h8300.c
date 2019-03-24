@@ -538,7 +538,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 }
 
 static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len)
+		const ut8 *buf, int len, RAnalOpMask mask)
 {
 	int ret;
 	ut8 opcode = buf[0];
@@ -678,7 +678,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	};
-	if (anal->decode) {
+	if (mask & R_ANAL_OP_MASK_ESIL) {
 		analop_esil(anal, op, addr, buf);
 	}
 	return ret;

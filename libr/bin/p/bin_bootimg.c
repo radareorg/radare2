@@ -44,16 +44,18 @@ struct boot_img_hdr {
 typedef struct {
 	Sdb *kv;
 	BootImage bi;
+	RBuffer *buf;
 } BootImageObj;
 
-static int bootimg_header_load(BootImage *bi, RBuffer *buf, Sdb *db) {
+static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	char *n;
 	int i;
-	if (r_buf_size (buf) < sizeof (BootImage)) {
+	if (r_buf_size (obj->buf) < sizeof (BootImage)) {
 		return false;
 	}
 	// TODO make it endian-safe (void)r_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
-	(void) r_buf_read_at (buf, 0, (ut8 *) bi, sizeof (BootImage));
+	BootImage *bi = &obj->bi;
+	(void) r_buf_read_at (obj->buf, 0, (ut8 *)bi, sizeof (BootImage));
 	if ((n = r_str_ndup ((char *) bi->name, BOOT_NAME_SIZE))) {
 		sdb_set (db, "name", n, 0);
 		free (n);
@@ -82,30 +84,29 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb) {
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (!bio) {
-		return false;
+		return NULL;
 	}
 	bio->kv = sdb_new0 ();
 	if (!bio->kv) {
 		free (bio);
 		return false;
 	}
-	if (!bootimg_header_load (&bio->bi, bf->buf, bio->kv)) {
-		free(bio);
+	bio->buf = r_buf_ref (buf);
+	if (!bootimg_header_load (bio, bio->kv)) {
+		free (bio);
 		return false;
 	}
 	sdb_ns_set (sdb, "info", bio->kv);
-	*bin_obj = bio;
-	return true;
-}
-
-static bool load(RBinFile *bf) {
-	return true;
+	return bio;
 }
 
 static int destroy(RBinFile *bf) {
+	BootImageObj *bio = bf->o->bin_obj;
+	r_buf_free (bio->buf);
+	R_FREE (bf->o->bin_obj);
 	return true;
 }
 
@@ -144,8 +145,17 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length > 12 && !strncmp ((const char *) buf, "ANDROID!", 8));
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[13];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);
+}
+
+static bool check_bytes(const ut8 *b, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (b, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -245,10 +255,10 @@ RBinPlugin r_bin_plugin_bootimg = {
 	.desc = "Android Boot Image",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,

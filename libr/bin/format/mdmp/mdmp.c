@@ -370,7 +370,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
-	if ((ut64)entry->location.rva + entry->location.data_size > obj->b->length) {
+	if ((ut64)entry->location.rva + entry->location.data_size > r_buf_size (obj->b)) {
 		eprintf ("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
 		return false;
 	}
@@ -460,8 +460,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			ut64 start_offset = (ut64)entry->location.rva
 			                + r_offsetof (struct minidump_memory_list, memory_ranges);
 			ut64 needed_space = (i + 1) * sizeof (memories[0]);
-			if (start_offset + needed_space > obj->b->length
-			    || start_offset + needed_space < start_offset) {
+			if (start_offset + needed_space > r_buf_size (obj->b) || start_offset + needed_space < start_offset) {
 				break;
 			}
 			r_list_append (obj->streams.memories, &(memories[i]));
@@ -475,17 +474,19 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 
 		sdb_set (obj->kv, "mdmp_exception.format", "[4]E[4]Eqqdd[15]q "
-			"(mdmp_exception_code)ExceptionCode "
-			"(mdmp_exception_flags)ExceptionFlags "
-			"ExceptionRecord ExceptionAddress "
-			"NumberParameters __UnusedAlignment "
-			"ExceptionInformation", 0);
+							   "(mdmp_exception_code)ExceptionCode "
+							   "(mdmp_exception_flags)ExceptionFlags "
+							   "ExceptionRecord ExceptionAddress "
+							   "NumberParameters __UnusedAlignment "
+							   "ExceptionInformation",
+			0);
 		sdb_num_set (obj->kv, "mdmp_exception_stream.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_exception_stream.format", "dd?? "
-			"ThreadId __Alignment "
-			"(mdmp_exception)ExceptionRecord "
-			"(mdmp_location_descriptor)ThreadContext", 0);
+								  "ThreadId __Alignment "
+								  "(mdmp_exception)ExceptionRecord "
+								  "(mdmp_location_descriptor)ThreadContext",
+			0);
 
 		break;
 	case SYSTEM_INFO_STREAM:
@@ -902,7 +903,7 @@ static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
 	return true;
 }
 
-struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(struct r_buf_t *buf) {
+struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 	bool fail = false;
 	struct r_bin_mdmp_obj *obj = R_NEW0 (struct r_bin_mdmp_obj);
 	if (!obj) {
@@ -910,7 +911,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(struct r_buf_t *buf) {
 	}
 	obj->kv = sdb_new0 ();
 	obj->b = r_buf_new ();
-	obj->size = (ut32)buf->length;
+	obj->size = (ut32) r_buf_size (buf);
 
 	fail |= (!(obj->streams.ex_threads = r_list_new ()));
 	fail |= (!(obj->streams.memories = r_list_new ()));
@@ -931,7 +932,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(struct r_buf_t *buf) {
 		return NULL;
 	}
 
-	if (!r_buf_set_bytes (obj->b, buf->buf, buf->length)) {
+	if (!r_buf_set_bytes (obj->b, buf->buf, r_buf_size (buf))) {
 		r_bin_mdmp_free (obj);
 		return NULL;
 	}

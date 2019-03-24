@@ -71,7 +71,7 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 }
 
 // analyzes the wasm opcode.
-static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
 	memset (op, '\0', sizeof (RAnalOp));

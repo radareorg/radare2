@@ -6,7 +6,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	if (!op) {
 		return 1;
 	}

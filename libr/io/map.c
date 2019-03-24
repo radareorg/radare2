@@ -26,9 +26,15 @@ static int _cmp_map_event(const void *a_, const void *b_) {
 	struct map_event_t *a = (void *)a_, *b = (void *)b_;
 	ut64 addr0 = a->addr - a->is_to, addr1 = b->addr - b->is_to;
 	if (addr0 != addr1) {
-		return addr0 < addr1 ? -1 : 1;
+		return addr0 < addr1? -1: 1;
 	}
-	return a->is_to - b->is_to;
+	if (a->is_to != b->is_to) {
+		return !a->is_to? -1: 1;
+	}
+	if (a->id != b->id) {
+		return a->id < b->id? -1: 1;
+	}
+	return 0;
 }
 
 static int _cmp_map_event_by_id(const void *a_, const void *b_) {

@@ -83,7 +83,6 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 
 static int destroy(RBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
-	sdb_free (obj->kv);
 	r_buf_free (obj->buf);
 	free (obj);
 	return true;
@@ -178,7 +177,7 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("load");
-	ptr->size = bf->buf->length;
+	ptr->size = r_buf_size (bf->buf);
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;

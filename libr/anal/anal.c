@@ -160,7 +160,6 @@ R_API RAnal *r_anal_new() {
 	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
-	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
 	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;

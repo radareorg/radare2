@@ -13,7 +13,7 @@
 #include <r_anal.h>
 #include "rsp_idec.h"
 
-static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	int i;
 	typedef struct {
 		RAnalValue* value;

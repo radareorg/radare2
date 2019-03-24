@@ -49,7 +49,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
 		return NULL;
 	}
-	bin->b->buf[bin->b->length - 1] = 0;
+	bin->b->buf[r_buf_size (bin->b) - 1] = 0;
 	uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
 	if (!uleblen || uleblen >= bin->size) {
 		return NULL;
@@ -86,77 +86,77 @@ static int countOnes(ut32 val) {
 }
 
 typedef enum {
-	kAccessForClass  = 0,
+	kAccessForClass = 0,
 	kAccessForMethod = 1,
-	kAccessForField  = 2,
+	kAccessForField = 2,
 	kAccessForMAX
 } AccessFor;
 
 static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	#define NUM_FLAGS 18
-	static const char* kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
+	static const char *kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
 		{
 			/* class, inner class */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"?",                /* 0x0020 */
-			"?",                /* 0x0040 */
-			"?",                /* 0x0080 */
-			"?",                /* 0x0100 */
-			"INTERFACE",        /* 0x0200 */
-			"ABSTRACT",         /* 0x0400 */
-			"?",                /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"ANNOTATION",       /* 0x2000 */
-			"ENUM",             /* 0x4000 */
-			"?",                /* 0x8000 */
-			"VERIFIED",         /* 0x10000 */
-			"OPTIMIZED",        /* 0x20000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"?", /* 0x0020 */
+			"?", /* 0x0040 */
+			"?", /* 0x0080 */
+			"?", /* 0x0100 */
+			"INTERFACE", /* 0x0200 */
+			"ABSTRACT", /* 0x0400 */
+			"?", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"ANNOTATION", /* 0x2000 */
+			"ENUM", /* 0x4000 */
+			"?", /* 0x8000 */
+			"VERIFIED", /* 0x10000 */
+			"OPTIMIZED", /* 0x20000 */
 		},
 		{
 			/* method */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"SYNCHRONIZED",     /* 0x0020 */
-			"BRIDGE",           /* 0x0040 */
-			"VARARGS",          /* 0x0080 */
-			"NATIVE",           /* 0x0100 */
-			"?",                /* 0x0200 */
-			"ABSTRACT",         /* 0x0400 */
-			"STRICT",           /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"?",                /* 0x2000 */
-			"?",                /* 0x4000 */
-			"MIRANDA",          /* 0x8000 */
-			"CONSTRUCTOR",      /* 0x10000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"SYNCHRONIZED", /* 0x0020 */
+			"BRIDGE", /* 0x0040 */
+			"VARARGS", /* 0x0080 */
+			"NATIVE", /* 0x0100 */
+			"?", /* 0x0200 */
+			"ABSTRACT", /* 0x0400 */
+			"STRICT", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"?", /* 0x2000 */
+			"?", /* 0x4000 */
+			"MIRANDA", /* 0x8000 */
+			"CONSTRUCTOR", /* 0x10000 */
 			"DECLARED_SYNCHRONIZED", /* 0x20000 */
 		},
 		{
 			/* field */
-			"PUBLIC",           /* 0x0001 */
-			"PRIVATE",          /* 0x0002 */
-			"PROTECTED",        /* 0x0004 */
-			"STATIC",           /* 0x0008 */
-			"FINAL",            /* 0x0010 */
-			"?",                /* 0x0020 */
-			"VOLATILE",         /* 0x0040 */
-			"TRANSIENT",        /* 0x0080 */
-			"?",                /* 0x0100 */
-			"?",                /* 0x0200 */
-			"?",                /* 0x0400 */
-			"?",                /* 0x0800 */
-			"SYNTHETIC",        /* 0x1000 */
-			"?",                /* 0x2000 */
-			"ENUM",             /* 0x4000 */
-			"?",                /* 0x8000 */
-			"?",                /* 0x10000 */
-			"?",                /* 0x20000 */
+			"PUBLIC", /* 0x0001 */
+			"PRIVATE", /* 0x0002 */
+			"PROTECTED", /* 0x0004 */
+			"STATIC", /* 0x0008 */
+			"FINAL", /* 0x0010 */
+			"?", /* 0x0020 */
+			"VOLATILE", /* 0x0040 */
+			"TRANSIENT", /* 0x0080 */
+			"?", /* 0x0100 */
+			"?", /* 0x0200 */
+			"?", /* 0x0400 */
+			"?", /* 0x0800 */
+			"SYNTHETIC", /* 0x1000 */
+			"?", /* 0x2000 */
+			"ENUM", /* 0x4000 */
+			"?", /* 0x8000 */
+			"?", /* 0x10000 */
+			"?", /* 0x20000 */
 		},
 	};
 	int i, count = countOnes (flags);
@@ -738,68 +738,52 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	RBuffer *tbuf = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new ();
-	if (!tbuf) {
-		return false;
-	}
-	r_buf_set_bytes (tbuf, buf, sz);
-	*bin_obj = r_bin_dex_new_buf (tbuf);
-	r_buf_free (tbuf);
-	return true;
-}
-
-static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return r_bin_dex_new_buf (buf);
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 8) {
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[8];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	if (r < sizeof (tmp)) {
 		return false;
 	}
 	// Non-extended opcode dex file
-	if (!memcmp (buf, "dex\n035\0", 8)) {
+	if (!memcmp (tmp, "dex\n035\0", 8)) {
 		return true;
 	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
-	if (!memcmp (buf, "dex\n036\0", 8)) {
+	if (!memcmp (tmp, "dex\n036\0", 8)) {
 		return true;
 	}
 	// Two new opcodes: invoke-polymorphic and invoke-custom (sdk level 26+)
-	if (!memcmp (buf, "dex\n038\0", 8)) {
+	if (!memcmp (tmp, "dex\n038\0", 8)) {
 		return true;
 	}
 	// M3 (Nov-Dec 07)
-	if (!memcmp (buf, "dex\n009\0", 8)) {
+	if (!memcmp (tmp, "dex\n009\0", 8)) {
 		return true;
 	}
 	// M5 (Feb-Mar 08)
-	if (!memcmp (buf, "dex\n009\0", 8)) {
+	if (!memcmp (tmp, "dex\n009\0", 8)) {
 		return true;
 	}
 	// Default fall through, should still be a dex file
-	if (!memcmp (buf, "dex\n", 4)) {
+	if (!memcmp (tmp, "dex\n", 4)) {
 		return true;
 	}
 	return false;
+}
+
+static bool check_bytes(const ut8 *bytes, ut64 length) {
+	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
+	bool res = check_buffer (buf);
+	r_buf_free (buf);
+	return res;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -816,7 +800,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (bf->buf->buf, bf->buf->length, (const ut8*)kw, strlen (kw))) {
+	if (r_mem_mem (bf->buf->buf, r_buf_size (bf->buf), (const ut8*)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
@@ -827,20 +811,21 @@ static RBinInfo *info(RBinFile *bf) {
 	h->len = 20;
 	h->addr = 12;
 	h->from = 12;
-	h->to = bf->buf->length-32;
+	h->to = r_buf_size (bf->buf)-32;
 	memcpy (h->buf, bf->buf->buf + 12, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
 	h->addr = 0x8;
 	h->from = 12;
-	h->to = bf->buf->length-h->from;
+	h->to = r_buf_size (bf->buf)-h->from;
 	h = &ret->sum[2];
 	h->type = 0;
 	memcpy (h->buf, bf->buf->buf + 8, 4);
 	{
 		ut32 *fc = (ut32 *)(bf->buf->buf + 8);
-		ut32  cc = __adler32 (bf->buf->buf + 12, bf->buf->length - 12);
+		ut32 cc = __adler32 (bf->buf->buf + 12,
+			r_buf_size (bf->buf) - 12);
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
@@ -1174,7 +1159,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				R_FREE (signature);
 				continue;
 			}
-			const ut8 *ff2 = r_buf_get_at (binfile->buf, binfile->buf->base + MC, &left);
+			const ut8 *ff2 = r_buf_get_at (binfile->buf, MC, &left);
 			if (!ff2 || left < 16) {
 				//R_FREE (method_name);
 				R_FREE (flag_name);
@@ -1225,7 +1210,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						R_FREE (signature);
 						break;
 					}
-					const ut8 *ptr = r_buf_get_at (binfile->buf, binfile->buf->base + offset, &left);
+					const ut8 *ptr = r_buf_get_at (binfile->buf, offset, &left);
 					if (!ptr || left < 8) {
 						R_FREE (signature);
 						break;
@@ -1248,7 +1233,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					}
 					// TODO: catch left instead of null
 					const ut8 *p3 = r_buf_get_at (binfile->buf, off, NULL);
-					const ut8 *p3_end = p3 + binfile->buf->length - off;
+					const ut8 *p3_end = p3 + r_buf_size (binfile->buf) - off;
 					st64 size = r_sleb128 (&p3, p3_end);
 
 					if (size <= 0) {
@@ -1327,7 +1312,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
-				const ut8 *ff2 = r_buf_get_at (binfile->buf, binfile->buf->base + MC, &left);
+				const ut8 *ff2 = r_buf_get_at (binfile->buf, MC, &left);
 				if (!ff2 || left < 16) {
 				// if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
 					R_FREE (sym);
@@ -1560,7 +1545,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 
 		p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
 		// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xfffffffffffffd46
-		p_end = p + (binfile->buf->length - c->class_data_offset);
+		p_end = p + (r_buf_size (binfile->buf) - c->class_data_offset);
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
 			sizeof (struct dex_class_data_item_t));
@@ -1749,7 +1734,7 @@ static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
 				sym->bind = r_str_const ("NONE");
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = bin->b->base + bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (bin->methods_list, sym);
 				sdb_num_set (mdb, sdb_fmt ("method.%d", i), sym->paddr, 0);
@@ -1929,7 +1914,7 @@ static RList *sections(RBinFile *bf) {
 			fsym = m->paddr;
 		}
 		ns = m->paddr + m->size;
-		if (ns > bf->buf->length) {
+		if (ns > r_buf_size (bf->buf)) {
 			continue;
 		}
 		if (ns > fsymsz) {
@@ -1975,11 +1960,11 @@ static RList *sections(RBinFile *bf) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
 		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
-		if (ptr->vaddr > bf->buf->length) {
+		if (ptr->vaddr > r_buf_size (bf->buf)) {
 			ptr->paddr = ptr->vaddr = bin->code_to;
-			ptr->size = ptr->vsize = bf->buf->length - ptr->vaddr;
+			ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->vaddr;
 		} else {
-			ptr->size = ptr->vsize = bf->buf->length - ptr->vaddr;
+			ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->vaddr;
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
@@ -2055,10 +2040,9 @@ RBinPlugin r_bin_plugin_dex = {
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = load_bytes,
 	.load_buffer = &load_buffer,
 	.check_bytes = check_bytes,
+	.check_buffer = check_buffer,
 	.baddr = baddr,
 	.entries = entries,
 	.classes = classes,

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_hash.h>
@@ -291,8 +291,6 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	r_return_if_fail (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
-	RBinString *ptr;
-	RListIter *it;
 
 	if (!raw && (!plugin || !plugin->info)) {
 		return;
@@ -307,7 +305,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	if (min < 0) {
 		return;
 	}
-	if (!to || to > bf->buf->length) {
+	if (!to || to > r_buf_size (bf->buf)) {
 		to = r_buf_size (bf->buf);
 	}
 	if (!to) {

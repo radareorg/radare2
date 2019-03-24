@@ -446,10 +446,10 @@ static int cmd_cp(void *data, const char *input) {
 		if (files[0] && files[1]) {
 			bool rc = r_file_copy (files[0], files[1]);
 			free (cmd);
-			free (files);
+			r_str_argv_free (files);
 			return rc;
 		}
-		free (files);
+		r_str_argv_free (files);
 	}
 	eprintf ("Usage: cp src dst\n");
 	return false;
