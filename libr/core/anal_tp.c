@@ -651,7 +651,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					RAnalBlock *jmpbb = r_anal_fcn_bbget_in (anal, fcn, jmp_addr);
 
 					// Check exit status of jmp branch
-					for (i = 0; i < MAX_INSTR ; i++) {
+					if (jmp_op) {
+						for (i = 0; i < MAX_INSTR ; i++) {
 						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_bb_is_in_offset (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
@@ -664,6 +665,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					}
 					int cond = jmp? cond_invert (next_op->cond): next_op->cond;
 					var_add_range (anal, var, cond, aop.val);
+					}
 				}
 			}
 			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? true: false;
