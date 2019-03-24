@@ -4224,7 +4224,7 @@ static char *get_corefile_name (const char *raw_name, int pid) {
 }
 
 static int cmd_debug_step (RCore *core, const char *input) {
-	ut64 addr;
+	ut64 addr = core->offset;;
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
@@ -4243,7 +4243,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			// XXX(jjd): is this necessary?
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			r_debug_trace_pc (core->dbg, addr);
+			r_debug_trace_pc (core->dbg, pc);
 			if (!r_debug_step (core->dbg, times)) {
 				eprintf ("Step failed\n");
 				core->break_loop = true;
@@ -4470,8 +4470,21 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'd': // "dtd"
-			if (input[2] == ' ') {
-				int min = r_num_math (core->num, input + 2);
+			if (input[2] == 'q') {
+				int min = r_num_math (core->num, input + 3);
+				RListIter *iter;
+				RDebugTracepoint *trace;
+				int n = 0;
+				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					// if (trace->count >= min) {
+					if (n >= min) {
+						r_cons_printf ("0x%08"PFMT64x"\n", trace->addr);
+						break;
+					}
+					n++;
+				}
+			} else{ if (input[2] == ' ') {
+				int min = r_num_math (core->num, input + 3);
 				RListIter *iter;
 				RDebugTracepoint *trace;
 				int n = 0;
@@ -4485,6 +4498,7 @@ static int cmd_debug(void *data, const char *input) {
 			} else {
 				// TODO: reimplement using the api
 				r_core_cmd0 (core, "pd 1 @@= `dtq`");
+			}
 			}
 			break;
 		case 'g': // "dtg"
