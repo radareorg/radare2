@@ -7906,6 +7906,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				oldstr = r_print_rowlog (core->print, "Check for objc references");
 				r_print_rowlog_done (core->print, oldstr);
 				cmd_anal_objc (core, input + 1, true);
+				oldstr = r_print_rowlog (core->print, "Check for vtables");
+				r_core_cmd0 (core, "avrr");
+				r_print_rowlog_done (core->print, oldstr);
 				r_config_set_i (core->config, "anal.calls", c);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
