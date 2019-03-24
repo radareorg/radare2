@@ -105,6 +105,9 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			switch (mode) {
+			case 'q':
+				dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
+				break;
 			case 1:
 			case '*':
 				dbg->cb_printf ("dt+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);

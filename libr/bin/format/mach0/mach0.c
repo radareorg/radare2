@@ -1516,6 +1516,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->func_start);
 	free (mo->signature);
 	free (mo->intrp);
+	free (mo->compiler);
 	r_buf_free (mo->b);
 	free (mo);
 	return NULL;

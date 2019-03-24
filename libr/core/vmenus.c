@@ -2771,6 +2771,98 @@ static void r_core_visual_anal_refresh_oneshot (RCore *core) {
 	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
 }
 
+static void r_core_visual_debugtraces_help(RCore *core) {
+	r_cons_clear00 ();
+	r_cons_printf (
+			"vbd: Visual Browse Debugtraces:\n\n"
+			" q     - quit the bit editor\n"
+			" Q     - Quit (jump into the disasm view)\n"
+			" j/k   - Select next/previous trace\n"
+			" :     - enter command\n");
+	r_cons_flush ();
+	r_cons_any_key (NULL);
+}
+
+R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
+	int i, delta = 0;
+	for (;;) {
+		char *trace_addr_str = r_core_cmd_strf (core, "dtdq %d", delta);
+		ut64 trace_addr = r_num_get (NULL, trace_addr_str);
+		free (trace_addr_str);
+		r_cons_printf ("[0x%08"PFMT64x"]> %d dbg.trace\n", trace_addr, delta);
+		for (i = 0; i < delta; i++) {
+			r_core_cmdf (core, ".dte %d", i);
+		}
+		r_core_cmd0 (core, "x 64@r:SP");
+		r_core_cmd0 (core, "dri");
+		// limit by rows here
+		//int rows = r_cons_get_size (NULL);
+		r_core_cmdf (core, "dtd %d", delta);
+		r_cons_visual_flush ();
+		char ch ;
+		if (input && *input) {
+			ch = *input;
+			input++;
+		} else {
+			ch = r_cons_readchar ();
+		}
+		if (ch == 4 || ch == -1) {
+			if (level == 0) {
+				goto beach;
+			}
+			level--;
+			continue;
+		}
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'Q': // tab
+			{
+				ut64 oseek = core->offset;
+				core->vmode = false;
+				r_core_seek (core, trace_addr, true);
+				r_core_visual (core, "");
+				r_core_seek (core, oseek, true);
+			}
+			break;
+		case 'q':
+			goto beach;
+			break;
+		case ']':
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+			break;
+		case '[':
+			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+			break;
+		case 'J':
+			delta += 10;
+			break;
+		case 'K':
+			delta -= 10;
+			if (delta < 0) {
+				delta = 0;
+			}
+		case 'j':
+			delta++;
+			break;
+		case 'k':
+			delta--;
+			if (delta < 0) {
+				delta = 0;
+			}
+			break;
+		case ':':
+			r_core_visual_prompt (core);
+			r_cons_any_key (NULL);
+			break;
+		case '?':
+			r_core_visual_debugtraces_help (core);
+			break;
+		}
+	}
+beach:
+	;
+}
+
 /* Like emenu but for real */
 R_API void r_core_visual_anal(RCore *core, const char *input) {
 	char old[218];

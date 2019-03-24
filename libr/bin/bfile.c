@@ -847,10 +847,10 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
-R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
+R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBinFileHash>*/ **old_file_hashes) {
 	r_return_val_if_fail (bin, false);
 
-	char hash[128], *p;
+	char hash[128];
 	RHash *ctx;
 	ut64 buf_len = 0, r = 0;
 	RBinFile *bf = bin->cur;
@@ -882,6 +882,17 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		eprintf ("Cannot allocate computation buffer\n");
 		return false;
 	}
+	if (old_file_hashes) {
+		*old_file_hashes = NULL;
+	}
+	if (!r_list_empty (o->info->file_hashes)) {
+		if (old_file_hashes && o->info->file_hashes) {
+			*old_file_hashes = o->info->file_hashes;
+		} else {
+			r_list_free (o->info->file_hashes);
+		}
+		o->info->file_hashes = NULL;
+	}
 	ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1);
 	while (r + blocksize < buf_len) {
 		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
@@ -902,18 +913,26 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file) {
 		}
 	}
 	r_hash_do_end (ctx, R_HASH_MD5);
-	p = hash;
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, p);
-	RStrBuf *sbuf = r_strbuf_new ("");
-	r_strbuf_appendf (sbuf, "md5 %s", hash);
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, hash);
 
+	o->info->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	RBinFileHash *md5h = R_NEW0 (RBinFileHash);
+	if (md5h) {
+		md5h->type = strdup ("md5");
+		md5h->hex = strdup (hash);
+		r_list_push (o->info->file_hashes, md5h);
+	}
 	r_hash_do_end (ctx, R_HASH_SHA1);
-	p = hash;
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, p);
-	r_strbuf_appendf (sbuf, "\nsha1 %s", hash);
+	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, hash);
+
+	RBinFileHash *sha1h = R_NEW0 (RBinFileHash);
+	if (sha1h) {
+		sha1h->type = strdup ("sha1");
+		sha1h->hex = strdup (hash);
+		r_list_push (o->info->file_hashes, sha1h);
+	}
 	// TODO: add here more rows
 
-	o->info->hashes = r_strbuf_drain (sbuf);
 	free (buf);
 	r_hash_free (ctx);
 	return true;

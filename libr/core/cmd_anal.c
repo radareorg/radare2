@@ -7903,6 +7903,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				run_pending_anal (core);
+				oldstr = r_print_rowlog (core->print, "Check for objc references");
+				r_print_rowlog_done (core->print, oldstr);
+				cmd_anal_objc (core, input + 1, true);
 				r_config_set_i (core->config, "anal.calls", c);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
@@ -7981,7 +7984,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_aftertraps (core, input + 1);
 		break;
 	case 'o': // "aao"
-		cmd_anal_objc (core, input + 1);
+		cmd_anal_objc (core, input + 1, false);
 		break;
 	case 'e': // "aae"
 		if (input[1]) {

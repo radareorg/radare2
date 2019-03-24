@@ -71,7 +71,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #define r_sys_conv_win_to_utf8_l(buf, len) r_acp_to_utf8_l (buf, len)
 #endif
 R_API int r_sys_get_src_dir_w32(char *buf);
-R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, char **sterr);
+R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
 R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 #endif
 R_API int r_sys_truncate(const char *file, int sz);

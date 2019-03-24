@@ -49,7 +49,8 @@ static ut64 readQword (RCoreObjc *objc, ut64 addr) {
 }
 
 static void objc_analyze(RCore *core) {
-	eprintf ("[+] Analyzing searching references to selref\n");
+	static const char *oldstr = NULL;
+	oldstr = r_print_rowlog (core->print, "Analyzing searching references to selref");
 	r_core_cmd0 (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
 		bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
@@ -57,6 +58,7 @@ static void objc_analyze(RCore *core) {
 		r_core_cmd0 (core, "aae");
 		r_config_set_i (core->config, "emu.lazy", emu_lazy);
 	}
+	r_print_rowlog_done (core->print, oldstr);
 }
 
 static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
@@ -123,6 +125,8 @@ static bool objc_build_refs(RCoreObjc *objc) {
 }
 
 static bool objc_find_refs(RCore *core) {
+	static const char *oldstr = NULL;
+
 	RCoreObjc objc = {0};
 
 	const int objc2ClassSize = 0x28;
@@ -138,7 +142,7 @@ static bool objc_find_refs(RCore *core) {
 	if (!sections) {
 		return false;
 	}
-	eprintf ("[+] Parsing metadata in ObjC to find hidden xrefs\n");
+	
 	RBinSection *s;
 	RListIter *iter;
 	r_list_foreach (sections, iter, s) {
@@ -154,11 +158,15 @@ static bool objc_find_refs(RCore *core) {
 		}
 	}
 	if (!objc._const) {
-        	eprintf ("Could not find necessary objc_const section\n");
+		if (core->anal->verbose) {
+			eprintf ("Could not find necessary objc_const section\n");
+		}
 		return false;
 	}
 	if ((objc._selrefs || objc._msgrefs) && !(objc._data && objc._const)) {
-        	eprintf ("Could not find necessary Objective-C sections...\n");
+		if (core->anal->verbose) {
+			eprintf ("Could not find necessary Objective-C sections...\n");
+		}
 		return false;
 	}
 
@@ -166,6 +174,8 @@ static bool objc_find_refs(RCore *core) {
 	if (!objc_build_refs (&objc)) {
 		return false;
 	}
+	oldstr = r_print_rowlog (core->print, "Parsing metadata in ObjC to find hidden xrefs");
+	r_print_rowlog_done (core->print, oldstr);
 
 	int total = 0;
 	ut64 off;
@@ -207,7 +217,8 @@ static bool objc_find_refs(RCore *core) {
 
 	}
 	sdb_free (objc.db);
-	eprintf ("[+] A total of %d xref were found\n", total);
+	oldstr = r_print_rowlog (core->print, sdb_fmt ("A total of %d xref were found", total));
+	r_print_rowlog_done (core->print, oldstr);
 
 	ut64 from = objc._selrefs->vaddr;
 	ut64 to = from + objc._selrefs->vsize;
@@ -217,12 +228,15 @@ static bool objc_find_refs(RCore *core) {
 		r_meta_add (core->anal, R_META_TYPE_DATA, a, a + 8, NULL);
 		total ++;
 	}
-	eprintf ("[+] Set %d dwords at 0x%08"PFMT64x"\n", total, from);
+	oldstr = r_print_rowlog (core->print, sdb_fmt ("Set %d dwords at 0x%08"PFMT64x, total, from));
+	r_print_rowlog_done (core->print, oldstr);
 	return true;
 }
 
-R_API int cmd_anal_objc (RCore *core, const char *input) {
-	objc_analyze (core);
+R_API int cmd_anal_objc (RCore *core, const char *input, bool auto_anal) {
+	if (!auto_anal) {
+		objc_analyze (core);
+	}
 	objc_find_refs (core);
 	return 0;
 }
