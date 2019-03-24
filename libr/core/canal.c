@@ -2592,7 +2592,9 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	pj_a (pj);
 	r_list_foreach (fcns, iter, fcn) {
 		if (quiet) {
-			r_cons_printf ("%d", fcn->addr);
+			char addrStr[11];
+			snprintf (addrStr, 11, "0x%08"PFMT64x"", fcn->addr);
+			pj_s (pj, addrStr);
 		} else {
 			fcn_print_json (core, fcn, pj);
 		}
