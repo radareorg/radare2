@@ -110,7 +110,7 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	const char *query, *res;
 	r_return_val_if_fail (anal && cc, 0);
 	do {
-		query = sdb_fmt ("cc.%s.arg%d", cc, ret + 1);
+		query = sdb_fmt ("cc.%s.arg%d", cc, ret);
 		res = sdb_const_get (DB, query, 0);
 		if (res) {
 			ret++;
