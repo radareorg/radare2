@@ -205,10 +205,12 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 			r_num_units (humansz, sizeof (humansz), map->size); // Convert map size to human readable string
 			if (colors) {
 				color_suffix = Color_RESET;
-				if (map->perm & 2) { // Writable maps are red
-					color_prefix = Color_RED;
-				} else if (map->perm & 1) { // Executable maps are green
-					color_prefix = Color_GREEN;
+				if ((map->perm & 2) && (map->perm & 1)) { // Writable & Executable
+					color_prefix = r_cons_singleton()->context->pal.widget_sel;
+				} else if (map->perm & 2) { // Writable
+					color_prefix = r_cons_singleton()->context->pal.graph_false;
+				} else if (map->perm & 1) { // Executable
+					color_prefix = r_cons_singleton()->context->pal.graph_true;
 				} else {
 					color_prefix = "";
 					color_suffix = "";
