@@ -443,10 +443,11 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 
 #define FITFCNSZ() {\
 	st64 n;\
-	if (bb->addr >= fcn->addr) {\
-		n = bb->addr + bb->size - fcn->addr;\
+	if (bb->addr >= fcn->meta.min) {\
+		n = bb->addr + bb->size - fcn->meta.min;\
 	} else {\
-		n = fcn->addr + fcn->_size - bb->addr;\
+		n = fcn->meta.min + fcn->_size - bb->addr;\
+		fcn->meta.min = bb->addr;\
 	}\
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {\
 		r_anal_fcn_set_size (NULL, fcn, n); }\
@@ -1756,7 +1757,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	/* defines fcn. or loc. prefix */
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
-		fcn->addr = addr;
+		fcn->addr = fcn->meta.min = addr;
 	}
 	if (anal->cur && anal->cur->fcn) {
 		int result = anal->cur->fcn (anal, fcn, addr, reftype);
@@ -2051,10 +2052,11 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		}
 	}
 	r_anal_fcn_update_tinyrange_bbs (fcn);
-	if (bb->addr >= fcn->addr) {
-		n = bb->addr + bb->size - fcn->addr;
+	if (bb->addr >= fcn->meta.min) {
+		n = bb->addr + bb->size - fcn->meta.min;
 	} else {
-		n = fcn->addr + fcn->_size - bb->addr;
+		n = fcn->meta.min + fcn->_size - bb->addr;
+		fcn->meta.min = bb->addr;
 	}
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
 		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.

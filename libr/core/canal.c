@@ -718,7 +718,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	} else {
 		fcn->bits = core->anal->bits;
 	}
-	fcn->addr = at;
+	fcn->addr = fcn->meta.min = at;
 	r_anal_fcn_set_size (NULL, fcn, 0);
 	fcn->name = getFunctionName (core, at);
 
