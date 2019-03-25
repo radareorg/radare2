@@ -917,22 +917,24 @@ static void resizePanelLeft(RPanels *panels) {
 			}
 			goto beach;
 		}
-		if (tx1 == cx0 && ((ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0))) {
+		bool y_included =  (ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0);
+		bool y_connected =  (ty1 == cy0) || (ty0 == cy1);
+		if (tx1 == cx0 && y_included) {
 			if (tx1 - PANEL_CONFIG_RESIZE_W > tx0) {
 				targets1[cur1++] = p;
 			}
 		}
-		if (tx0 == cx1 && ((ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0))) {
+		if (tx0 == cx1 && y_included) {
 			if (tx0 - PANEL_CONFIG_RESIZE_W > 0) {
 				targets3[cur3++] = p;
 			}
 		}
-		if (tx0 == cx0 && ((ty1 == cy0) || (ty0 == cy1))) {
+		if (tx0 == cx0 && y_connected) {
 			if (tx0 - PANEL_CONFIG_RESIZE_W > 0) {
 				targets2[cur2++] = p;
 			}
 		}
-		if (tx1 == cx1 && ((ty0 == cy1) || (ty1 == cy0))) {
+		if (tx1 == cx1 && y_connected) {
 			if (tx1 + PANEL_CONFIG_RESIZE_W < panels->can->w) {
 				targets4[cur4++] = p;
 			}
