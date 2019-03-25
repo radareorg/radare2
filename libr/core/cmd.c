@@ -921,11 +921,15 @@ static int cmd_interpret(void *data, const char *input) {
 	case ' ': // ". "
 		{
 			const char *script_file = r_str_trim_ro (input + 1);
-			if (!r_core_run_script (core, script_file)) {
-				eprintf ("Cannot find script '%s'\n", script_file);
-				core->num->value = 1;
+			if (*script_file == '$') {
+				r_core_cmd0 (core, script_file);
 			} else {
-				core->num->value = 0;
+				if (!r_core_run_script (core, script_file)) {
+					eprintf ("Cannot find script '%s'\n", script_file);
+					core->num->value = 1;
+				} else {
+					core->num->value = 0;
+				}
 			}
 		}
 		break;
