@@ -264,6 +264,7 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		}
 	}
 	if (len > 1) {
+		r_cons_gotoxy (x, y + rows);
 		r_cons_memcat (str + o, len);
 	}
 	r_cons_strcat (Color_RESET);
