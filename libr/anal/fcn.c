@@ -127,6 +127,7 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 	}
 	// Somewhat hackish
 	fcn->meta.min = min;
+	fcn->meta.max = max;
 	fcn->_size = max - min;
 }
 
@@ -376,6 +377,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->has_changed = true;
 	r_tinyrange_init (&fcn->bbr);
 	fcn->meta.min = UT64_MAX;
+	fcn->meta.max = 0;
 	return fcn;
 }
 
@@ -440,7 +442,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {\
 		r_anal_fcn_set_size (NULL, fcn, n); }\
 	}\
-	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) {\
+	if (fcn->meta.max && fcn->meta.max - fcn->addr > MAX_FCN_SIZE) {\
 		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */\
 		r_anal_fcn_set_size (NULL, fcn, 0);\
 		return R_ANAL_RET_ERROR;\
