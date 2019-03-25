@@ -112,38 +112,28 @@ static int cmpaddr(const void *_a, const void *_b) {
 R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
+	ut64 min = UT64_MAX;
+	ut64 max = UT64_MIN;
 	r_list_sort (fcn->bbs, &cmpaddr);
 	r_tinyrange_fini (&fcn->bbr);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		r_tinyrange_add (&fcn->bbr, bb->addr, bb->addr + bb->size);
-	}
-}
-
-static void set_meta_min_if_needed(RAnalFunction *x) {
-	if (x->meta.min == UT64_MAX) {
-		ut64 min = UT64_MAX;
-		ut64 max = UT64_MIN;
-		RListIter *bbs_iter;
-		RAnalBlock *bbi;
-		r_list_foreach (x->bbs, bbs_iter, bbi) {
-			if (min > bbi->addr) {
-				min = bbi->addr;
-			}
-			if (max < bbi->addr + bbi->size) {
-				max = bbi->addr + bbi->size;
-			}
+		if (min > bb->addr) {
+			min = bb->addr;
 		}
-		x->meta.min = min;
-		x->_size = max - min; // HACK TODO Fix af size calculation
+		if (max < bb->addr + bb->size) {
+			max = bb->addr + bb->size;
+		}
 	}
+	// Somewhat hackish
+	fcn->meta.min = min;
+	fcn->_size = max - min;
 }
 
 // _fcn_tree_{cmp,calc_max_addr,free,probe} are used by interval tree.
 static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
 	const RAnalFunction *a = (const RAnalFunction *)a_;
 	const RAnalFunction *b = FCN_CONTAINER (b_);
-	set_meta_min_if_needed ((RAnalFunction *)a);
-	set_meta_min_if_needed ((RAnalFunction *)b);
 	ut64 from0 = a->meta.min, to0 = a->meta.min + a->_size,
 		from1 = b->meta.min, to1 = b->meta.min + b->_size;
 	if (from0 != from1) {
@@ -168,7 +158,6 @@ static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_) {
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (node);
-	set_meta_min_if_needed (fcn);
 	fcn->rb_max_addr = fcn->meta.min + (fcn->_size == 0 ? 0 : fcn->_size - 1);
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
