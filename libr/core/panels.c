@@ -882,13 +882,20 @@ static bool handleCursorMode(RCore *core, const int key) {
 
 static void resizePanelLeft(RPanels *panels) {
 	RPanel *cur = getCurPanel (panels);
-	int i, cx0, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	int i, cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	cx0 = cur->pos.x;
+	cx1 = cur->pos.x + cur->pos.w - 1;
 	cy0 = cur->pos.y;
 	cy1 = cur->pos.y + cur->pos.h - 1;
+	//left
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
+	//down-left
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
-	if (!targets1 || !targets2) {
+	//right
+	RPanel **targets3 = malloc (sizeof (RPanel *) * panels->n_panels);
+	//down-right
+	RPanel **targets4 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
 	for (i = 0; i < panels->n_panels; i++) {
@@ -910,17 +917,25 @@ static void resizePanelLeft(RPanels *panels) {
 			}
 			goto beach;
 		}
-		if (tx1 == cx0) {
-			if (tx1 - PANEL_CONFIG_RESIZE_W <= tx0) {
-				goto beach;
+		if (tx1 == cx0 && ((ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0))) {
+			if (tx1 - PANEL_CONFIG_RESIZE_W > tx0) {
+				targets1[cur1++] = p;
 			}
-			targets1[cur1++] = p;
 		}
-		if (tx0 == cx0) {
-			if (tx0 - PANEL_CONFIG_RESIZE_W <= 0) {
-				goto beach;
+		if (tx0 == cx1 && ((ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0))) {
+			if (tx0 - PANEL_CONFIG_RESIZE_W > 0) {
+				targets3[cur3++] = p;
 			}
-			targets2[cur2++] = p;
+		}
+		if (tx0 == cx0 && ((ty1 == cy0) || (ty0 == cy1))) {
+			if (tx0 - PANEL_CONFIG_RESIZE_W > 0) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (tx1 == cx1 && ((ty0 == cy1) || (ty1 == cy0))) {
+			if (tx1 + PANEL_CONFIG_RESIZE_W < panels->can->w) {
+				targets4[cur4++] = p;
+			}
 		}
 	}
 	if (cur1 > 0) {
@@ -936,10 +951,24 @@ static void resizePanelLeft(RPanels *panels) {
 		cur->pos.x -= PANEL_CONFIG_RESIZE_W;
 		cur->pos.w += PANEL_CONFIG_RESIZE_W;
 		cur->refresh = true;
+	} else if (cur3 > 0) {
+		for (i = 0; i < cur3; i++) {
+			targets3[i]->pos.w += PANEL_CONFIG_RESIZE_W;
+			targets3[i]->pos.x -= PANEL_CONFIG_RESIZE_W;
+			targets3[i]->refresh = true;
+		}
+		for (i = 0; i < cur4; i++) {
+			targets4[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
+			targets4[i]->refresh = true;
+		}
+		cur->pos.w -= PANEL_CONFIG_RESIZE_W;
+		cur->refresh = true;
 	}
 beach:
 	free (targets1);
 	free (targets2);
+	free (targets3);
+	free (targets4);
 }
 
 static void resizePanelRight(RPanels *panels) {
