@@ -1564,8 +1564,18 @@ static int __str_ansi_length (char const *str) {
 }
 
 /* ansi helpers */
-R_API int r_str_ansi_len(const char *str) {
+R_API int r_str_ansi_nlen(const char *str, int slen) {
 	int i = 0, len = 0;
+	if (slen > 0) {
+		while (str[i] && i < slen) {
+			int chlen = __str_ansi_length (str + i);
+			if (chlen == 1) {
+				len ++;
+			}
+			i += chlen;
+		}
+		return len > 0 ? len: 1;
+	}
 	while (str[i]) {
 		int chlen = __str_ansi_length (str + i);
 		if (chlen == 1) {
@@ -1573,7 +1583,11 @@ R_API int r_str_ansi_len(const char *str) {
 		}
 		i += chlen;
 	}
-	return len;
+	return len > 0 ? len: 1;
+}
+
+R_API int r_str_ansi_len(const char *str) {
+	return r_str_ansi_nlen (str, 0);
 }
 
 R_API int r_str_nlen(const char *str, int n) {
@@ -2812,48 +2826,22 @@ R_API const char *r_str_closer_chr(const char *b, const char *s) {
 	return NULL;
 }
 
-
-#if 0
-R_API int r_str_bounds(const char *str, int *h) {
-        int W = 0, H = 0;
-        int cw = 0;
-       if (!str)
-               return W;
-       while (*str) {
-               if (*str=='\n') {
-                       H++;
-                       if (cw>W)
-                               W = cw;
-                       cw = 0;
-                }
-               str++;
-               cw++;
-        }
-       if (*str == '\n') // skip last newline
-               H--;
-       if (h) *h = H;
-        return W;
-}
-
-#else
 R_API int r_str_bounds(const char *_str, int *h) {
 	char *ostr, *str, *ptr;
 	int W = 0, H = 0;
 	int cw = 0;
 
 	if (_str) {
-		ptr = str = ostr = strdup (_str);
+		ptr = str = ostr = _str;
 		while (*str) {
-			if (*str=='\n') {
+			if (*str == '\n') {
 				H++;
-				*str = 0;
-				cw = r_str_ansi_len (ptr);
+				cw = r_str_ansi_nlen (ptr, (size_t)(str - ptr));
 				if (cw > W) {
 					W = cw;
 				}
-				*str = '\n';
 				cw = 0;
-				ptr = str;
+				ptr = str + 1;
 			}
 			str++;
 			cw++;
@@ -2864,11 +2852,9 @@ R_API int r_str_bounds(const char *_str, int *h) {
 		if (h) {
 			*h = H;
 		}
-		free (ostr);
 	}
 	return W;
 }
-#endif
 
 /* crop a string like it is in a rectangle with the upper-left corner at (x, y)
  * coordinates and the bottom-right corner at (x2, y2) coordinates. The result
