@@ -575,6 +575,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->lang = bin->lang;
 	}
 	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(bf->o->bin_obj));
+	ret->compiler = r_str_dup (NULL, "");
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(bf->o->bin_obj));
 	ret->subsystem = strdup ("darwin");

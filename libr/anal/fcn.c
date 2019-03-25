@@ -23,7 +23,6 @@
 #define FIX_JMP_FWD 0
 #define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 64
-#define CALL_IS_EOB 0
 
 // 64KB max size
 // 256KB max function size
@@ -122,24 +121,20 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 
 static void set_meta_min_if_needed(RAnalFunction *x) {
 	if (x->meta.min == UT64_MAX) {
-		if (r_list_length (x->bbs) == 0) {
-			x->meta.min = x->addr;
-		} else {
-			ut64 min = UT64_MAX;
-			ut64 max = UT64_MIN;
-			RListIter *bbs_iter;
-			RAnalBlock *bbi;
-			r_list_foreach (x->bbs, bbs_iter, bbi) {
-				if (min > bbi->addr) {
-					min = bbi->addr;
-				}
-				if (max < bbi->addr + bbi->size) {
-					max = bbi->addr + bbi->size;
-				}
+		ut64 min = UT64_MAX;
+		ut64 max = UT64_MIN;
+		RListIter *bbs_iter;
+		RAnalBlock *bbi;
+		r_list_foreach (x->bbs, bbs_iter, bbi) {
+			if (min > bbi->addr) {
+				min = bbi->addr;
 			}
-			x->meta.min = min;
-			x->_size = max - min; // HACK TODO Fix af size calculation
+			if (max < bbi->addr + bbi->size) {
+				max = bbi->addr + bbi->size;
+			}
 		}
+		x->meta.min = min;
+		x->_size = max - min; // HACK TODO Fix af size calculation
 	}
 }
 
@@ -542,11 +537,17 @@ static int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dep
 	return ret;
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, int jmptbl_size, ut64 default_case, int ret0) {
 	int ret = ret0;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBLSZ;
+	}
+	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
+		if (anal->verbose) {
+			eprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);
+		}
+		return 0;
 	}
 	ut64 jmpptr, offs;
 	ut8 *jmptbl = calloc (jmptbl_size, sz);
@@ -1490,11 +1491,6 @@ repeat:
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				gotoBeach (R_ANAL_RET_END);
 			}
-#if CALL_IS_EOB
-			recurseAt (op.jump);
-			recurseAt (op.fail);
-			gotoBeach (R_ANAL_RET_NEW);
-#endif
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
@@ -1834,7 +1830,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		}
 		append = true;
 	}
-	fcn->addr = addr;
+	fcn->addr = fcn->meta.min = addr;
 	fcn->cc = r_str_const (r_anal_cc_default (a));
 	fcn->bits = a->bits;
 	r_anal_fcn_set_size (append ? NULL : a, fcn, size);

@@ -3053,6 +3053,8 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 // Splits the string <str> by string <c> and returns the result in a list.
 R_API RList *r_str_split_list(char *str, const char *c)  {
 	RList *lst = r_list_new ();
+	r_return_val_if_fail (str && c, lst);
+
 	char *aux;
 	bool first_loop = true;
 

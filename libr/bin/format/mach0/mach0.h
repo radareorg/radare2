@@ -109,6 +109,7 @@ struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command) *segs;
 	char *intrp;
+	char *compiler;
 	int nsegs;
 	struct MACH0_(section) *sects;
 	int nsects;

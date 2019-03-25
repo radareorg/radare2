@@ -120,11 +120,22 @@ R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int b
 	opt->bits = bits? bits: R_SYS_BITS;
 }
 
+R_API void r_bin_file_hash_free(RBinFileHash *fhash) {
+	if (!fhash) {
+		return;
+	}
+
+	R_FREE (fhash->type);
+	R_FREE (fhash->hex);
+	free (fhash);
+}
+
 R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
 	}
-	free (rb->hashes);
+
+	r_list_free (rb->file_hashes);
 	free (rb->intrp);
 	free (rb->file);
 	free (rb->type);
@@ -140,6 +151,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->debug_file_name);
 	free (rb->actual_checksum);
 	free (rb->claimed_checksum);
+	free (rb->compiler);
 	free (rb);
 }
 

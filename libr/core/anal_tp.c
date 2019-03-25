@@ -304,7 +304,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 		return;
 	}
 	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
-	const char *place = r_anal_cc_arg (anal, cc, 1);
+	const char *place = r_anal_cc_arg (anal, cc, 0);
 	r_cons_break_push (NULL, NULL);
 
 	if (!strcmp (place, "stack_rev")) {
@@ -318,7 +318,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 	}
 	if (!max) {
 		if (!in_stack) {
-			max = r_anal_cc_max_arg(anal, cc);
+			max = r_anal_cc_max_arg (anal, cc);
 		} else {
 			max = DEFAULT_MAX;
 		}
@@ -341,7 +341,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 		}
 		if (!in_stack) {
 			//XXX: param arg_num must be fixed to support floating point register
-			place = r_anal_cc_arg (anal, cc, arg_num + 1);
+			place = r_anal_cc_arg (anal, cc, arg_num);
 		}
 		char regname[REG_SZ] = {0};
 		ut64 xaddr = UT64_MAX;
@@ -747,7 +747,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_list_free (list);
 	// Type propgation from caller to callee function for stack based arguments
 	if (fcn->cc) {
-		const char *place = r_anal_cc_arg (anal, fcn->cc, 1);
+		const char *place = r_anal_cc_arg (anal, fcn->cc, 0);
+		eprintf ("[-] place: %s \n" ,place);
 		if (place && !strncmp (place, "stack", 5)) {
 			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 			r_list_foreach (list2, iter2, bp_var) {
