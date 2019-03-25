@@ -205,7 +205,7 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	char *output = r_core_cmd_strf (core, "pd %d @e:asm.flags=0@ 0x%08"PFMT64x"; pds 256 @ 0x%08"PFMT64x"\n",
 		32, status->addr);
 	int disy = colh + 2;
-	r_cons_strcat_at (output, 10, disy, w, h-disy);
+	r_cons_strcat_at (output, 0, disy, w, h - disy);
 	free (output);
 	r_cons_flush();
 
