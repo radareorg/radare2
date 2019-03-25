@@ -7483,28 +7483,45 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	r_list_free (list);
 }
 
-bool archIsMips(RCore *core) {
+#if 0
+static bool archIsMips(RCore *core) {
 	RAsm *as = core ? core->assembler : NULL;
 	if (as && as->cur && as->cur->name) {
 		return strstr (as->cur->name, "mips");
 	}
 	return false;
 }
+#endif
 
-void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
-	bool ismips = archIsMips (core);
+static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
+#if 1
+	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int align = arch_align; // core->search->align;
+	if (core->assembler->bits >= 32) {
+		if (align > 1) {
+			if (from % align || to % align) {
+				eprintf ("False positive\n");
+				return;
+			}
+		}
+	}
+#else
 	if (ismips) {
 		if (from % 4 || to % 4) {
 			eprintf ("False positive\n");
 			return;
 		}
 	}
+#endif
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, from, -1);
+	if (fcn) {
+		return;
+	}
 	if (asterisk) {
 		r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", to, from);
 		r_cons_printf ("Cd %d @ 0x%"PFMT64x "\n", vsize, from);
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
-#if 1
 		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
 		r_meta_add (core->anal, 'd', from, from + vsize, NULL);
 		if (!r_flag_get_at (core->flags, to, false)) {
@@ -7512,17 +7529,13 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 			r_flag_set (core->flags, name, to, vsize);
 			free (name);
 		}
-#else
-		r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, to, from);
-		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
-		r_core_cmdf (core, "f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
-#endif
 	}
 }
 
 static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
+	r_return_if_fail (*input == 'v');
 	ut64 o_align = geti ("search.align");
 	const char *analin =  r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
