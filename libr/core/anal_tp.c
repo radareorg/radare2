@@ -653,6 +653,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
 						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
+						if (!jmp_op) {
+							break;
+						}
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_bb_is_in_offset (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
