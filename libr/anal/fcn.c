@@ -122,19 +122,14 @@ R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn) {
 static void set_meta_min_if_needed(RAnalFunction *x) {
 	if (x->meta.min == UT64_MAX) {
 		ut64 min = UT64_MAX;
-		ut64 max = UT64_MIN;
 		RListIter *bbs_iter;
 		RAnalBlock *bbi;
 		r_list_foreach (x->bbs, bbs_iter, bbi) {
 			if (min > bbi->addr) {
 				min = bbi->addr;
 			}
-			if (max < bbi->addr + bbi->size) {
-				max = bbi->addr + bbi->size;
-			}
 		}
 		x->meta.min = min;
-		x->_size = max - min; // HACK TODO Fix af size calculation
 	}
 }
 
@@ -447,7 +442,12 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 }
 
 #define FITFCNSZ() {\
-	st64 n = bb->addr + bb->size - fcn->addr;\
+	st64 n;\
+	if (bb->addr >= fcn->addr) {\
+		n = bb->addr + bb->size - fcn->addr;\
+	} else {\
+		n = fcn->addr + fcn->_size - bb->addr;\
+	}\
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {\
 		r_anal_fcn_set_size (NULL, fcn, n); }\
 	}\
@@ -2051,7 +2051,11 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 si
 		}
 	}
 	r_anal_fcn_update_tinyrange_bbs (fcn);
-	n = bb->addr + bb->size - fcn->addr;
+	if (bb->addr >= fcn->addr) {
+		n = bb->addr + bb->size - fcn->addr;
+	} else {
+		n = fcn->addr + fcn->_size - bb->addr;
+	}
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
 		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.
 		r_anal_fcn_set_size (anal, fcn, n);
