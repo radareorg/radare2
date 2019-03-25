@@ -882,13 +882,16 @@ static bool handleCursorMode(RCore *core, const int key) {
 
 static void resizePanelLeft(RPanels *panels) {
 	RPanel *cur = getCurPanel (panels);
-	int i, cx0, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	int i, cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	cx0 = cur->pos.x;
+	cx1 = cur->pos.x + cur->pos.w - 1;
 	cy0 = cur->pos.y;
 	cy1 = cur->pos.y + cur->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
-	if (!targets1 || !targets2) {
+	RPanel **targets3 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets4 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
 	for (i = 0; i < panels->n_panels; i++) {
@@ -900,27 +903,35 @@ static void resizePanelLeft(RPanels *panels) {
 		tx1 = p->pos.x + p->pos.w - 1;
 		ty0 = p->pos.y;
 		ty1 = p->pos.y + p->pos.h - 1;
-		if (ty0 == cy0 && ty1 == cy1 && tx1 == cx0) {
-			if (tx1 - PANEL_CONFIG_RESIZE_W > tx0) {
-				p->pos.w -= PANEL_CONFIG_RESIZE_W;
-				cur->pos.x -= PANEL_CONFIG_RESIZE_W;
-				cur->pos.w += PANEL_CONFIG_RESIZE_W;
-				p->refresh = true;
-				cur->refresh = true;
-			}
+		if (ty0 == cy0 && ty1 == cy1 && tx1 == cx0 && tx1 - PANEL_CONFIG_RESIZE_W > tx0) {
+			p->pos.w -= PANEL_CONFIG_RESIZE_W;
+			cur->pos.x -= PANEL_CONFIG_RESIZE_W;
+			cur->pos.w += PANEL_CONFIG_RESIZE_W;
+			p->refresh = true;
+			cur->refresh = true;
 			goto beach;
 		}
-		if (tx1 == cx0) {
-			if (tx1 - PANEL_CONFIG_RESIZE_W <= tx0) {
-				goto beach;
+		bool y_included =  (ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0);
+		bool y_connected =  (ty1 == cy0) || (ty0 == cy1);
+		if (tx1 == cx0 && y_included) {
+			if (tx1 - PANEL_CONFIG_RESIZE_W > tx0) {
+				targets1[cur1++] = p;
 			}
-			targets1[cur1++] = p;
 		}
-		if (tx0 == cx0) {
-			if (tx0 - PANEL_CONFIG_RESIZE_W <= 0) {
-				goto beach;
+		if (tx0 == cx1 && y_included) {
+			if (tx0 - PANEL_CONFIG_RESIZE_W > cx0) {
+				targets3[cur3++] = p;
 			}
-			targets2[cur2++] = p;
+		}
+		if (tx0 == cx0 && y_connected) {
+			if (tx0 - PANEL_CONFIG_RESIZE_W > 0) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (tx1 == cx1 && y_connected) {
+			if (tx1 + PANEL_CONFIG_RESIZE_W < panels->can->w) {
+				targets4[cur4++] = p;
+			}
 		}
 	}
 	if (cur1 > 0) {
@@ -936,83 +947,38 @@ static void resizePanelLeft(RPanels *panels) {
 		cur->pos.x -= PANEL_CONFIG_RESIZE_W;
 		cur->pos.w += PANEL_CONFIG_RESIZE_W;
 		cur->refresh = true;
-	}
-beach:
-	free (targets1);
-	free (targets2);
-}
-
-static void resizePanelRight(RPanels *panels) {
-	RPanel *cur = getCurPanel (panels);
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
-	int cx1 = cur->pos.x + cur->pos.w - 1;
-	int cy0 = cur->pos.y;
-	int cy1 = cur->pos.y + cur->pos.h - 1;
-	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
-	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
-	if (!targets1 || !targets2) {
-		goto beach;
-	}
-	for (i = 0; i < panels->n_panels; i++) {
-		if (i == panels->curnode) {
-			continue;
+	} else if (cur3 > 0) {
+		for (i = 0; i < cur3; i++) {
+			targets3[i]->pos.w += PANEL_CONFIG_RESIZE_W;
+			targets3[i]->pos.x -= PANEL_CONFIG_RESIZE_W;
+			targets3[i]->refresh = true;
 		}
-		RPanel *p = getPanel (panels, i);
-		tx0 = p->pos.x;
-		tx1 = p->pos.x + p->pos.w - 1;
-		ty0 = p->pos.y;
-		ty1 = p->pos.y + p->pos.h - 1;
-		if (ty0 == cy0 && ty1 == cy1 && tx0 == cx1) {
-			if (cx1 + PANEL_CONFIG_RESIZE_W < tx1) {
-				p->pos.x += PANEL_CONFIG_RESIZE_W;
-				p->pos.w -= PANEL_CONFIG_RESIZE_W;
-				cur->pos.w += PANEL_CONFIG_RESIZE_W;
-				p->refresh = true;
-				cur->refresh = true;
-			}
-			goto beach;
+		for (i = 0; i < cur4; i++) {
+			targets4[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
+			targets4[i]->refresh = true;
 		}
-		if (tx0 == cx1) {
-			if (tx0 + PANEL_CONFIG_RESIZE_W >= tx1) {
-				goto beach;
-			}
-			targets1[cur1++] = p;
-			continue;
-		}
-		if (tx1 == cx1) {
-			if (tx1 + PANEL_CONFIG_RESIZE_W >= panels->can->w) {
-				goto beach;
-			}
-			targets2[cur2++] = p;
-		}
-	}
-	if (cur1 > 0) {
-		for (i = 0; i < cur1; i++) {
-			targets1[i]->pos.x += PANEL_CONFIG_RESIZE_W;
-			targets1[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
-			targets1[i]->refresh = true;
-		}
-		for (i = 0; i < cur2; i++) {
-			targets2[i]->pos.w += PANEL_CONFIG_RESIZE_W;
-			targets2[i]->refresh = true;
-		}
-		cur->pos.w += PANEL_CONFIG_RESIZE_W;
+		cur->pos.w -= PANEL_CONFIG_RESIZE_W;
 		cur->refresh = true;
 	}
 beach:
 	free (targets1);
 	free (targets2);
+	free (targets3);
+	free (targets4);
 }
 
-static void resizePanelUp(RPanels *panels) {
+static void resizePanelRight(RPanels *panels) {
 	RPanel *cur = getCurPanel (panels);
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	int cx0 = cur->pos.x;
 	int cx1 = cur->pos.x + cur->pos.w - 1;
 	int cy0 = cur->pos.y;
+	int cy1 = cur->pos.y + cur->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
-	if (!targets1 || !targets2) {
+	RPanel **targets3 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets4 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
 	for (i = 0; i < panels->n_panels; i++) {
@@ -1024,30 +990,125 @@ static void resizePanelUp(RPanels *panels) {
 		tx1 = p->pos.x + p->pos.w - 1;
 		ty0 = p->pos.y;
 		ty1 = p->pos.y + p->pos.h - 1;
-		if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0) {
-			if (ty1 - PANEL_CONFIG_RESIZE_H > ty0) {
-				p->pos.h -= PANEL_CONFIG_RESIZE_H;
-				cur->pos.y -= PANEL_CONFIG_RESIZE_H;
-				cur->pos.h += PANEL_CONFIG_RESIZE_H;
-				p->refresh = true;
-				cur->refresh = true;
-			}
+		if (ty0 == cy0 && ty1 == cy1 && tx0 == cx1 && tx0 + PANEL_CONFIG_RESIZE_W < tx1) {
+			p->pos.x += PANEL_CONFIG_RESIZE_W;
+			p->pos.w -= PANEL_CONFIG_RESIZE_W;
+			cur->pos.w += PANEL_CONFIG_RESIZE_W;
+			p->refresh = true;
+			cur->refresh = true;
 			goto beach;
 		}
-		if (ty1 == cy0) {
-			if (ty1 - PANEL_CONFIG_RESIZE_H <= ty0) {
-				goto beach;
+		bool y_included =  (ty1 >= cy0 && cy1 >= ty1) || (ty0 >= cy0 && cy1 >= ty0);
+		bool y_connected =  (ty1 == cy0) || (ty0 == cy1);
+		if (tx1 == cx0 && y_included) {
+			if (tx1 + PANEL_CONFIG_RESIZE_W < cx1) {
+				targets1[cur1++] = p;
 			}
-			targets1[cur1++] = p;
 		}
-		if (ty0 == cy0) {
-			if (ty0 - PANEL_CONFIG_RESIZE_H <= 0) {
-				goto beach;
+		if (tx0 == cx1 && y_included) {
+			if (tx0 + PANEL_CONFIG_RESIZE_W < tx1) {
+				targets3[cur3++] = p;
 			}
-			targets2[cur2++] = p;
+		}
+		if (tx0 == cx0 && y_connected) {
+			if (tx0 + PANEL_CONFIG_RESIZE_W < tx1) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (tx1 == cx1 && y_connected) {
+			if (tx1 + PANEL_CONFIG_RESIZE_W < panels->can->w) {
+				targets4[cur4++] = p;
+			}
 		}
 	}
-	if (cur1) {
+	if (cur3 > 0) {
+		for (i = 0; i < cur3; i++) {
+			targets3[i]->pos.x += PANEL_CONFIG_RESIZE_W;
+			targets3[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
+			targets3[i]->refresh = true;
+		}
+		for (i = 0; i < cur4; i++) {
+			targets4[i]->pos.w += PANEL_CONFIG_RESIZE_W;
+			targets4[i]->refresh = true;
+		}
+		cur->pos.w += PANEL_CONFIG_RESIZE_W;
+		cur->refresh = true;
+	} else if (cur1 > 0) {
+		for (i = 0; i < cur1; i++) {
+			targets1[i]->pos.w += PANEL_CONFIG_RESIZE_W;
+			targets1[i]->refresh = true;
+		}
+		for (i = 0; i < cur2; i++) {
+			targets2[i]->pos.x += PANEL_CONFIG_RESIZE_W;
+			targets2[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
+			targets2[i]->refresh = true;
+		}
+		cur->pos.x += PANEL_CONFIG_RESIZE_W;
+		cur->pos.w -= PANEL_CONFIG_RESIZE_W;
+		cur->refresh = true;
+	}
+beach:
+	free (targets1);
+	free (targets2);
+	free (targets3);
+	free (targets4);
+}
+
+static void resizePanelUp(RPanels *panels) {
+	RPanel *cur = getCurPanel (panels);
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;;
+	int cx0 = cur->pos.x;
+	int cx1 = cur->pos.x + cur->pos.w - 1;
+	int cy0 = cur->pos.y;
+	int cy1 = cur->pos.y + cur->pos.h - 1;
+	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets3 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets4 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2 || !targets3 || !targets4) {
+		goto beach;
+	}
+	for (i = 0; i < panels->n_panels; i++) {
+		if (i == panels->curnode) {
+			continue;
+		}
+		RPanel *p = getPanel (panels, i);
+		tx0 = p->pos.x;
+		tx1 = p->pos.x + p->pos.w - 1;
+		ty0 = p->pos.y;
+		ty1 = p->pos.y + p->pos.h - 1;
+		if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0 && ty1 - PANEL_CONFIG_RESIZE_H > ty0) {
+			p->pos.h -= PANEL_CONFIG_RESIZE_H;
+			cur->pos.y -= PANEL_CONFIG_RESIZE_H;
+			cur->pos.h += PANEL_CONFIG_RESIZE_H;
+			p->refresh = true;
+			cur->refresh = true;
+			goto beach;
+		}
+		bool x_included =  (tx1 >= cx0 && cx1 >= tx1) || (tx0 >= cx0 && cx1 >= tx0);
+		bool x_connected =  (tx1 == cx0) || (tx0 == cx1);
+		if (ty1 == cy0 && x_included) {
+			if (ty1 - PANEL_CONFIG_RESIZE_H > ty0) {
+				targets1[cur1++] = p;
+			}
+		}
+		if (ty0 == cy1 && x_included) {
+			if (ty0 - PANEL_CONFIG_RESIZE_H > cy0) {
+				targets3[cur3++] = p;
+			}
+		}
+		if (ty0 == cy0 && x_connected) {
+			if (ty0 - PANEL_CONFIG_RESIZE_H > 0) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (ty1 == cy1 && x_connected) {
+			if (ty1 - PANEL_CONFIG_RESIZE_H > ty0) {
+				targets4[cur4++] = p;
+			}
+		}
+	}
+	if (cur1 > 0) {
 		for (i = 0; i < cur1; i++) {
 			targets1[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
 			targets1[i]->refresh = true;
@@ -1057,24 +1118,41 @@ static void resizePanelUp(RPanels *panels) {
 			targets2[i]->pos.h += PANEL_CONFIG_RESIZE_H;
 			targets2[i]->refresh = true;
 		}
-		cur->refresh = true;
 		cur->pos.y -= PANEL_CONFIG_RESIZE_H;
 		cur->pos.h += PANEL_CONFIG_RESIZE_H;
+		cur->refresh = true;
+	} else if (cur3 > 0) {
+		for (i = 0; i < cur3; i++) {
+			targets3[i]->pos.h += PANEL_CONFIG_RESIZE_H;
+			targets3[i]->pos.y -= PANEL_CONFIG_RESIZE_H;
+			targets3[i]->refresh = true;
+		}
+		for (i = 0; i < cur4; i++) {
+			targets4[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
+			targets4[i]->refresh = true;
+		}
+		cur->pos.h -= PANEL_CONFIG_RESIZE_H;
+		cur->refresh = true;
 	}
 beach:
 	free (targets1);
 	free (targets2);
+	free (targets3);
+	free (targets4);
 }
 
 static void resizePanelDown(RPanels *panels) {
 	RPanel *cur = getCurPanel (panels);
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
 	int cx0 = cur->pos.x;
 	int cx1 = cur->pos.x + cur->pos.w - 1;
+	int cy0 = cur->pos.y;
 	int cy1 = cur->pos.y + cur->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
-	if (!targets1 || !targets2) {
+	RPanel **targets3 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets4 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2 || !targets3 || !targets4) {
 		goto beach;
 	}
 	for (i = 0; i < panels->n_panels; i++) {
@@ -1086,45 +1164,68 @@ static void resizePanelDown(RPanels *panels) {
 		tx1 = p->pos.x + p->pos.w - 1;
 		ty0 = p->pos.y;
 		ty1 = p->pos.y + p->pos.h - 1;
-		if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1) {
-			if (ty0 + PANEL_CONFIG_RESIZE_H < ty1) {
-				p->pos.y += PANEL_CONFIG_RESIZE_H;
-				p->pos.h -= PANEL_CONFIG_RESIZE_H;
-				cur->pos.h += PANEL_CONFIG_RESIZE_H;
-				p->refresh = true;
-				cur->refresh = true;
-			}
+		if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1 && ty0 + PANEL_CONFIG_RESIZE_H < ty1) {
+			p->pos.y += PANEL_CONFIG_RESIZE_H;
+			p->pos.h -= PANEL_CONFIG_RESIZE_H;
+			cur->pos.h += PANEL_CONFIG_RESIZE_H;
+			p->refresh = true;
+			cur->refresh = true;
 			goto beach;
 		}
-		if (ty0 == cy1) {
-			if (ty0 + PANEL_CONFIG_RESIZE_H >= ty1) {
-				goto beach;
+		bool x_included =  (tx1 >= cx0 && cx1 >= tx1) || (tx0 >= cx0 && cx1 >= tx0);
+		bool x_connected =  (tx1 == cx0) || (tx0 == cx1);
+		if (ty1 == cy0 && x_included) {
+			if (ty1 + PANEL_CONFIG_RESIZE_H < cy1) {
+				targets1[cur1++] = p;
 			}
-			targets1[cur1++] = p;
 		}
-		if (ty1 == cy1) {
-			if (ty1 + PANEL_CONFIG_RESIZE_H >= panels->can->h) {
-				goto beach;
+		if (ty0 == cy1 && x_included) {
+			if (ty0 + PANEL_CONFIG_RESIZE_H < ty1) {
+				targets3[cur3++] = p;
 			}
-			targets2[cur2++] = p;
+		}
+		if (ty0 == cy0 && x_connected) {
+			if (ty0 + PANEL_CONFIG_RESIZE_H < ty1) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (ty1 == cy1 && x_connected) {
+			if (ty1 + PANEL_CONFIG_RESIZE_H < panels->can->h) {
+				targets4[cur4++] = p;
+			}
 		}
 	}
-	if (cur1 > 0) {
+	if (cur3 > 0) {
+		for (i = 0; i < cur3; i++) {
+			targets3[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
+			targets3[i]->pos.y += PANEL_CONFIG_RESIZE_H;
+			targets3[i]->refresh = true;
+		}
+		for (i = 0; i < cur4; i++) {
+			targets4[i]->pos.h += PANEL_CONFIG_RESIZE_H;
+			targets4[i]->refresh = true;
+		}
+		cur->pos.h += PANEL_CONFIG_RESIZE_H;
+		cur->refresh = true;
+	} else if (cur1 > 0) {
 		for (i = 0; i < cur1; i++) {
-			targets1[i]->pos.y += PANEL_CONFIG_RESIZE_H;
-			targets1[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
+			targets1[i]->pos.h += PANEL_CONFIG_RESIZE_H;
 			targets1[i]->refresh = true;
 		}
 		for (i = 0; i < cur2; i++) {
-			targets2[i]->pos.h += PANEL_CONFIG_RESIZE_H;
+			targets2[i]->pos.y += PANEL_CONFIG_RESIZE_H;
+			targets2[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
 			targets2[i]->refresh = true;
 		}
-		cur->pos.h += PANEL_CONFIG_RESIZE_H;
+		cur->pos.y += PANEL_CONFIG_RESIZE_H;
+		cur->pos.h -= PANEL_CONFIG_RESIZE_H;
 		cur->refresh = true;
 	}
 beach:
 	free (targets1);
 	free (targets2);
+	free (targets3);
+	free (targets4);
 }
 
 static void checkEdge(RPanels *panels) {
