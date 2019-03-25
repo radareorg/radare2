@@ -25,8 +25,8 @@
 #define JMP_IS_EOB_RANGE 64
 
 // 64KB max size
-// 1.5MB max function size
-#define MAX_FCN_SIZE (1024 * 1536)
+// 256KB max function size
+#define MAX_FCN_SIZE (1024 * 256)
 
 #define DB a->sdb_fcns
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
