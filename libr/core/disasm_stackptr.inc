@@ -55,7 +55,11 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 	} 
 	return stackptr;
 }
+
 static int ds_ostackptr_atfcn(RDisasmState *ds, int *ostackptr) {
+	if (!ds->show_stackptr) {
+		return 0;
+	}
 #if USE_BB_LINEAR
 	if (ds->at >= ds->fcn->addr) {
 		return _stackptr_range (ds, ds->fcn->addr, ds->at, 0, ostackptr);
