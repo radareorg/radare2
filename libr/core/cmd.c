@@ -1942,7 +1942,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
-	const char *cmdrep = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
 
@@ -1956,7 +1955,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
-		if (r_config_get_i (core->config, "cmd.repeat")) {
+		if (core->cmdrepeat > 0) {
 			r_core_cmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
 		}
@@ -2004,10 +2003,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	// TODO: store in core->cmdtimes to speedup ?
-	cmdrep = r_config_get (core->config, "cmd.times");
-	if (!cmdrep) {
-		cmdrep = "";
-	}
+	const char *cmdrep = core->cmdtimes ? core->cmdtimes: "";
 	orep = rep;
 
 	int ocur_enabled = core->print && core->print->cur_enabled;
