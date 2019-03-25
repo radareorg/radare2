@@ -704,7 +704,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_MOVDQA:
 	case X86_INS_MOVDQ2Q:
 		{
-			op->type = R_ANAL_OP_TYPE_MOV;
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
 			if (op->prefix & R_ANAL_OP_PREFIX_REP) {
@@ -747,8 +746,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					// turns into 'r** = X' (first one will keep higher bytes,
 					// second one will overwrite them with zeros).
 					esilprintf (op, "%s,%s,=", src, dst64);
-				}
-				else {
+				} else {
 					esilprintf (op, "%s,%s,=", src, dst);
 				}
 			}
