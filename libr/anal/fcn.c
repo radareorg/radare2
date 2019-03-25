@@ -23,7 +23,6 @@
 #define FIX_JMP_FWD 0
 #define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 64
-#define CALL_IS_EOB 0
 
 // 64KB max size
 // 256KB max function size
@@ -1492,11 +1491,6 @@ repeat:
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				gotoBeach (R_ANAL_RET_END);
 			}
-#if CALL_IS_EOB
-			recurseAt (op.jump);
-			recurseAt (op.fail);
-			gotoBeach (R_ANAL_RET_NEW);
-#endif
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
