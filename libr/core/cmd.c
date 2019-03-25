@@ -99,10 +99,14 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands",
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
-	"$*", "", "same as above, but using r2 commands",
-	"$", "dis='af;pdf'", "create command - analyze to show function",
+	"$*", "", "list all the aliases as r2 commands in base64",
+	"$**", "", "same as above, but using plain text",
+	"$", "dis=base64:AAA==", "alias this base64 encoded text to be printed when $dis is called",
+	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
+	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
+	"$", "dis=af;pdf", "create command - analyze to show function",
 	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
 	"$", "dis", "execute the previously defined alias",
@@ -401,7 +405,7 @@ static int cmd_alias(void *data, const char *input) {
 	if (!buf) {
 		return 0;
 	}
-	*buf = '$'; // prefix aliases with a dash
+	*buf = '$'; // prefix aliases with a dollar
 	memcpy (buf + 1, input, i + 1);
 	char *q = strchr (buf, ' ');
 	char *def = strchr (buf, '=');
@@ -418,7 +422,16 @@ static int cmd_alias(void *data, const char *input) {
 		}
 		if (!q || (q && q > def)) {
 			if (*def) {
-				r_cmd_alias_set (core->rcmd, buf, def, 0);
+				if (!strcmp (def, "-")) {
+					char *v = r_cmd_alias_get (core->rcmd, buf, 0);
+					char *n = r_cons_editor (NULL, v);
+					if (n) {
+						r_cmd_alias_set (core->rcmd, buf, n, 0);
+						free (n);
+					}
+				} else {
+					r_cmd_alias_set (core->rcmd, buf, def, 0);
+				}
 			} else {
 				r_cmd_alias_del (core->rcmd, buf);
 			}
@@ -439,8 +452,14 @@ static int cmd_alias(void *data, const char *input) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i = 0; i < count; i++) {
-			const char *v = r_cmd_alias_get (core->rcmd, keys[i], 0);
-			r_cons_printf ("%s=%s\n", keys[i], v);
+			char *v = r_cmd_alias_get (core->rcmd, keys[i], 0);
+			char *q = r_base64_encode_dyn (v, -1);
+			if (buf[2] == '*') {
+				r_cons_printf ("%s=%s\n", keys[i], v);
+			} else {
+				r_cons_printf ("%s=base64:%s\n", keys[i], q);
+			}
+			free (q);
 		}
 	} else if (!buf[1]) {
 		int i, count = 0;
@@ -455,18 +474,13 @@ static int cmd_alias(void *data, const char *input) {
 		}
 		char *v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
-			if (q) {
-				char *out, *args = q + 1;
-				out = malloc (strlen (v) + strlen (args) + 2);
-				if (out) { //XXX slow
-					strcpy (out, v);
-					strcat (out, " ");
-					strcat (out, args);
-					r_core_cmd0 (core, out);
-					free (out);
-				} else {
-					eprintf ("Cannot malloc\n");
-				}
+			if (*v == '$') {
+				r_cons_strcat (v + 1);
+				r_cons_newline ();
+			} else if (q) {
+				char *out = r_str_newf ("%s %s", v, q + 1);
+				r_core_cmd0 (core, out);
+				free (out);
 			} else {
 				r_core_cmd0 (core, v);
 			}
@@ -487,6 +501,7 @@ static int getArg(char ch, int def) {
 	return def;
 }
 
+// wtf dupe for local vs remote?
 static void aliascmd(RCore *core, const char *str) {
 	switch (str[0]) {
 	case '\0': // "=$"
@@ -531,6 +546,7 @@ static int cmd_rap(void *data, const char *input) {
 		}
 		break;
 	case '$': // "=$"
+		// XXX deprecate?
 		aliascmd (core, input + 1);
 		break;
 	case '+': // "=+"
@@ -905,11 +921,15 @@ static int cmd_interpret(void *data, const char *input) {
 	case ' ': // ". "
 		{
 			const char *script_file = r_str_trim_ro (input + 1);
-			if (!r_core_run_script (core, script_file)) {
-				eprintf ("Cannot find script '%s'\n", script_file);
-				core->num->value = 1;
+			if (*script_file == '$') {
+				r_core_cmd0 (core, script_file);
 			} else {
-				core->num->value = 0;
+				if (!r_core_run_script (core, script_file)) {
+					eprintf ("Cannot find script '%s'\n", script_file);
+					core->num->value = 1;
+				} else {
+					core->num->value = 0;
+				}
 			}
 		}
 		break;
@@ -1922,9 +1942,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
-	const char *cmdrep = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
+
 	/* must store a local orig_offset because there can be
 	 * nested call of this function */
 	ut64 orig_offset = core->offset;
@@ -1935,7 +1955,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
-		if (r_config_get_i (core->config, "cmd.repeat")) {
+		if (core->cmdrepeat > 0) {
 			r_core_cmd_repeat (core, true);
 			ret = r_core_cmd_nullcallback (core);
 		}
@@ -1983,10 +2003,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	// TODO: store in core->cmdtimes to speedup ?
-	cmdrep = r_config_get (core->config, "cmd.times");
-	if (!cmdrep) {
-		cmdrep = "";
-	}
+	const char *cmdrep = core->cmdtimes ? core->cmdtimes: "";
 	orep = rep;
 
 	int ocur_enabled = core->print && core->print->cur_enabled;
@@ -2190,11 +2207,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					while (*str == '>') {
 						str++;
 					}
-					while (IS_WHITESPACE (*str)) {
-						str++;
-					}
+					str = (char *)r_str_trim_ro (str);
 					r_cons_flush ();
-					pipefd = r_cons_pipe_open (str, 1, p[2] == '>');
+					const bool append = p[2] == '>';
+					pipefd = r_cons_pipe_open (str, 1, append);
 				}
 			}
 			line = strdup (cmd);
@@ -2506,8 +2522,34 @@ next:
 			str = r_file_temp ("dumpedit");
 			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		}
-		if (fdn > 0) {
-			pipefd = r_cons_pipe_open (str, fdn, ptr[1] == '>');
+		const bool appendResult = (ptr[1] == '>');
+		if (*str == '$') {
+			// pipe to alias variable
+			// register output of command as an alias
+			char *o = r_core_cmd_str (core, cmd);
+			if (appendResult) {
+				char *oldText = r_cmd_alias_get (core->rcmd, str, 1);
+				if (oldText) {
+					char *two = r_str_newf ("%s%s", oldText, o);
+					if (two) {
+						r_cmd_alias_set (core->rcmd, str, two, 1);
+						free (two);
+					}
+				} else {
+					char *n = r_str_newf ("$%s", o);
+					r_cmd_alias_set (core->rcmd, str, n, 1);
+					free (n);
+				}
+			} else {
+				char *n = r_str_newf ("$%s", o);
+				r_cmd_alias_set (core->rcmd, str, n, 1);
+				free (n);
+			}
+			ret = 0;
+			free (o);
+		} else if (fdn > 0) {
+			// pipe to file (or append)
+			pipefd = r_cons_pipe_open (str, fdn, appendResult);
 			if (pipefd != -1) {
 				if (!pipecolor) {
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -2848,9 +2890,7 @@ repeat_arroba:
 			goto next_arroba; //ignore; //return ret;
 		}
 ignore:
-		ptr = r_str_trim_head (ptr + 1);
-		ptr--;
-
+		ptr = r_str_trim_head (ptr + 1) - 1;
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
@@ -4090,7 +4130,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	struct {
 		const char *cmd;
 		const char *description;
-		r_cmd_callback(cb);
+		r_cmd_callback (cb);
 		void (*descriptor_init)(RCore *core);
 	} cmds[] = {
 		{"!",        "run system command", cmd_system},

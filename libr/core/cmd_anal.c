@@ -2721,17 +2721,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// if json_str initialize to NULL, it's possible for afcrj to output a (NULL)
 			// subvec_str and json_str should be valid until exiting this code block
 			bool json = input[3] == 'j'? true: false;
-			for (i = 0; i <= 11; i++) {
-				if (i == 0) {
+			for (i = -1; i <= 10; i++) {
+				if (i == -1) {
 					cmd = r_str_newf ("cc.%s.ret", fcn->cc);
 				} else {
 					cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
 				}
-				if (i < 7) {
-					regname = r_str_new (cmd);
-				} else {
-					regname = r_str_newf ("cc.%s.float_arg%d", fcn->cc, i - 6);
-				}
+				regname = r_str_new (cmd);
 				out = sdb_querys (core->anal->sdb_cc, NULL, 0, cmd);
 				free (cmd);
 				if (out) {
@@ -2750,19 +2746,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					continue;
 				}
 				switch (i) {
-				case 0: {
+				case -1: {
 					tmp = json_str;
 					json_str = r_str_newf ("%s,\"ret\":%s", json_str, subvec_str + 1);
 					free (tmp);
 				} break;
-				case 6: {
+				case 10: {
 					tmp = json_str;
 					json_str = r_str_newf ("%s,\"args\":[%s]", json_str, subvec_str + 1);
-					free (tmp);
-				} break;
-				case 11: {
-					tmp = json_str;
-					json_str = r_str_newf ("%s,\"float_args\":[%s]", json_str, subvec_str + 1);
 					free (tmp);
 				} break;
 				default:
@@ -2781,7 +2772,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
 			int i;
 			char *cc = r_str_trim (r_core_cmd_str (core, "k anal/cc/default.cc"));
-			for (i = 0; i < 8; i++) {
+			for (i = 0; i < 6; i++) {
 				char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
 				r_str_trim_nc (res);
 				if (*res) {
@@ -7903,6 +7894,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				run_pending_anal (core);
+				oldstr = r_print_rowlog (core->print, "Check for objc references");
+				r_print_rowlog_done (core->print, oldstr);
+				cmd_anal_objc (core, input + 1, true);
+				oldstr = r_print_rowlog (core->print, "Check for vtables");
+				r_core_cmd0 (core, "avrr");
+				r_print_rowlog_done (core->print, oldstr);
 				r_config_set_i (core->config, "anal.calls", c);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
@@ -7981,7 +7978,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_aftertraps (core, input + 1);
 		break;
 	case 'o': // "aao"
-		cmd_anal_objc (core, input + 1);
+		cmd_anal_objc (core, input + 1, false);
 		break;
 	case 'e': // "aae"
 		if (input[1]) {

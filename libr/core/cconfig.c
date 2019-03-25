@@ -1089,6 +1089,13 @@ static int cb_cmdlog(void *user, void *data) {
 	return true;
 }
 
+static int cb_cmdtimes(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cmdtimes = node->value;
+	return true;
+}
+
 static int cb_cmdrepeat(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2592,7 +2599,7 @@ R_API int r_core_config_init(RCore *core) {
 		}
 	}
 #endif
-	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
+        SETCB ("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
@@ -3335,7 +3342,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETCB ("file.path", "", &cb_filepath, "Path of current file");
 	SETPREF ("file.lastpath", "", "Path of current file");
-	SETPREF ("file.sha1", "", "SHA1 hash of current file");
 	SETPREF ("file.type", "", "Type of current file");
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
 	SETI ("file.openmany", 1, "Maximum number of files opened at once");

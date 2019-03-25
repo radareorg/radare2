@@ -187,6 +187,8 @@ static const char *__core_visual_print_command (RCore *core) {
 		}
 	}
 	if (r_config_get_i (core->config, "scr.dumpcols")) {
+		free (core->stkcmd);
+		core->stkcmd = r_str_newf (stackPrintCommand (core));
 		return printfmtColumns[PIDX];
 	}
 	return printfmtSingle[PIDX];
@@ -1108,6 +1110,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		}
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	target = addr;
 	base = target > OPDELTA ? target - OPDELTA : 0;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
@@ -1120,6 +1123,13 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 				len = 1;
 			}
 			r_anal_op_fini (&op); // XXX
+			if (midflags >= R_MIDFLAGS_REALIGN) {
+				int skip_bytes = r_core_flag_in_middle (core, base + i, len, &midflags);
+				if (skip_bytes && base + i + skip_bytes < target) {
+					i += skip_bytes - 1;
+					continue;
+				}
+			}
 		} else {
 			len = 1;
 		}
@@ -1951,6 +1961,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" b  blocks\n"
 		" c  classes\n"
 		" C  comments\n"
+		" d  debug traces\n"
 		" e  eval var configurations\n"
 		" f  flags\n"
 		" F  functions\n"
@@ -2009,6 +2020,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		case 'F': // "vbF"
 			r_core_visual_anal (core, NULL);
 			// r_core_cmd0 (core, "s $(afl~...)");
+			break;
+		case 'd': // "vbd"
+			r_core_visual_debugtraces (core, NULL);
 			break;
 		case 'v': // "vbv"
 			r_core_visual_anal (core, "v");
@@ -3803,13 +3817,13 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 				op, core->block, 32);
 		if (midflags || midbb) {
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags) {
+			if (midflags >= R_MIDFLAGS_REALIGN) {
 				skip_bytes_flag = r_core_flag_in_middle (core, core->offset, *cols, &midflags);
 			}
 			if (midbb) {
 				skip_bytes_bb = r_core_bb_starts_in_middle (core, core->offset, *cols);
 			}
-			if (skip_bytes_flag && midflags >= R_MIDFLAGS_REALIGN) {
+			if (skip_bytes_flag) {
 				*cols = skip_bytes_flag;
 			}
 			if (skip_bytes_bb && skip_bytes_bb < *cols) {

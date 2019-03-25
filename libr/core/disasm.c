@@ -4658,7 +4658,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
-	int ret, i, inc, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
+	int ret, i, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
 
@@ -4844,7 +4844,10 @@ toro:
 			if (fmt) {
 				r_cons_printf ("(%s)\n", link_type);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
-				inc += r_type_get_bitsize (core->anal->sdb_types, link_type) / 8;
+				const ut32 type_bitsize = r_type_get_bitsize (core->anal->sdb_types, link_type);
+				// always round up when calculating byte_size from bit_size of types
+				// could be struct with a bitfield entry
+				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
 				free (fmt);
 				r_anal_op_fini (&ds->analop);
 				continue;

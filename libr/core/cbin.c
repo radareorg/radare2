@@ -703,13 +703,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);
 		}
-		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_str ("class", info->bclass, mode, false);
 		if (info->actual_checksum) {
 			/* computed checksum */
 			pair_str ("cmp.csum", info->actual_checksum, mode, false);
 		}
 		pair_str ("compiled", compiled, mode, false);
+		pair_str ("compiler", info->compiler, mode, false);
 		pair_bool ("crypto", info->has_crypto, mode, false);
 		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
@@ -761,6 +761,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			//this should be moved if added to mach0 (or others)
 			pair_bool ("signed", info->signature, mode, false);
 		}
+		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
 		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
 			v = sdb_num_get (binfile->sdb, "mdmp.streams", 0);
@@ -3632,31 +3633,6 @@ static int bin_header(RCore *r, int mode) {
 	return false;
 }
 
-static int bin_hashes(RCore *r, int mode) {
-	ut64 lim = r_config_get_i (r->config, "bin.hashlimit");
-	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
-	if (iod) {
-		// recompute again
-		r_bin_file_hash (r->bin, lim, iod->name);
-		char *hashes = (r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info)? r->bin->cur->o->info->hashes: NULL;
-		if (IS_MODE_JSON (mode)) {
-			PJ *pj = pj_new ();
-			if (!pj) {
-				return false;
-			}
-			pj_o (pj);
-			pj_ks (pj, "values", hashes);
-			pj_end (pj);
-			r_cons_printf ("%s", pj_string (pj));
-			pj_free (pj);
-		} else {
-			r_cons_printf ("%s\n", hashes);
-		}
-		return true;
-	}
-	return false;
-}
-
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
@@ -3759,12 +3735,6 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			}
 		}
 	}
-#if 0
-	// only compute when requested
-	if ((action & R_CORE_BIN_ACC_HASHES)) {
-		ret &= bin_hashes (core, mode);
-	}
-#endif
 	return ret;
 }
 

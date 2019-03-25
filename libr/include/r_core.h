@@ -262,6 +262,7 @@ typedef struct r_core_t {
 	char *cmdlog;
 	bool cfglog;
 	int cmdrepeat;
+	const char *cmdtimes;
 	ut64 inc;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
@@ -277,6 +278,7 @@ typedef struct r_core_t {
 	int http_up;
 	int gdbserver_up;
 	int printidx;
+	char *stkcmd;
 	int vseek;
 	bool in_search;
 	RList *watchers;
@@ -419,7 +421,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
 R_API void r_core_anal_inflags (RCore *core, const char *glob);
-R_API int cmd_anal_objc (RCore *core, const char *input);
+R_API int cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
 R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 
@@ -704,6 +706,7 @@ R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 R_API void r_core_visual_config(RCore *core);
 R_API void r_core_visual_mounts(RCore *core);
 R_API void r_core_visual_anal(RCore *core, const char *input);
+R_API void r_core_visual_debugtraces(RCore *core, const char *input);
 R_API void r_core_seek_next(RCore *core, const char *type);
 R_API void r_core_seek_previous(RCore *core, const char *type);
 R_API void r_core_visual_define(RCore *core, const char *arg, int distance);

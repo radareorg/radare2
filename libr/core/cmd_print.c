@@ -740,7 +740,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 		case 1:
 			(void) r_cons_canvas_gotoxy (c, 28, 0);
 			// cmd = r_str_newf ("pxw 128@r:SP;pd@r:PC");
-			cmd = r_str_newf ("pxq 128@r:SP;pd@ 0x%"PFMT64x, osek);
+			cmd = r_str_newf ("%s 128@r:SP;pd@ 0x%"PFMT64x, core->stkcmd, osek);
 			break;
 		}
 		char *dis = r_core_cmd_str (core, cmd);
@@ -4400,7 +4400,8 @@ static int cmd_print(void *data, const char *input) {
 			case ' ': // "pad"
 			{
 				r_asm_set_pc (core->assembler, core->offset);
-				RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, arg);
+				bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
+				RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
 				if (c) {
 					r_cons_print (c->buf_asm);
 					r_asm_code_free (c);

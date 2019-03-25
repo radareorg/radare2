@@ -1086,7 +1086,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '+': // "wc+"
 			if (input[2]=='*') { // "wc+*"
-				//r_io_cache_reset (core->io, true);
+				//r_io_cache_reset (core->io, core->io->cached);
 				eprintf ("TODO\n");
 			} else if (input[2]==' ') { // "wc+ "
 				char *p = strchr (input+3, ' ');
@@ -1110,7 +1110,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '-': { // "wc-"
 			if (input[2]=='*') { // "wc-*"
-				r_io_cache_reset (core->io, true);
+				r_io_cache_reset (core->io, core->io->cached);
 				break;
 			}
 			ut64 from, to;
@@ -1149,7 +1149,7 @@ static int cmd_write(void *data, const char *input) {
 			cmd_write_pcache (core, &input[2]);
 			break;
 		case 'r': // "wcr"
-			r_io_cache_reset (core->io, true);
+			r_io_cache_reset (core->io, core->io->cached);
 			/* Before loading the core block we have to make sure that if
 			 * the cache wrote past the original EOF these changes are no
 			 * longer displayed. */
