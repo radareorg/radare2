@@ -937,7 +937,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
 		goto err_op;
 	}
-	if (mask & R_ANAL_OP_MAKS_DISASM) {
+	if (mask & R_ANAL_OP_MASK_DISASM) {
 		// i dont think this is used anywhere
 		// decode instruction here
 		r_asm_set_pc (core->assembler, addr);
