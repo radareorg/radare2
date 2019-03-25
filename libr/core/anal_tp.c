@@ -748,7 +748,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	// Type propgation from caller to callee function for stack based arguments
 	if (fcn->cc) {
 		const char *place = r_anal_cc_arg (anal, fcn->cc, 0);
-		eprintf ("[-] place: %s \n" ,place);
+		if (anal->verbose) {
+			eprintf ("[-] place: %s\n", place);
+		}
 		if (place && !strncmp (place, "stack", 5)) {
 			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 			r_list_foreach (list2, iter2, bp_var) {
