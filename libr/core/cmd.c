@@ -105,6 +105,7 @@ static const char *help_msg_dollar[] = {
 	"$**", "", "same as above, but using plain text",
 	"$", "dis=base64:AAA==", "alias this base64 encoded text to be printed when $dis is called",
 	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
+	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
 	"$", "dis=af;pdf", "create command - analyze to show function",
 	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
@@ -421,7 +422,16 @@ static int cmd_alias(void *data, const char *input) {
 		}
 		if (!q || (q && q > def)) {
 			if (*def) {
-				r_cmd_alias_set (core->rcmd, buf, def, 0);
+				if (!strcmp (def, "-")) {
+					char *v = r_cmd_alias_get (core->rcmd, buf, 0);
+					char *n = r_cons_editor (NULL, v);
+					if (n) {
+						r_cmd_alias_set (core->rcmd, buf, n, 0);
+						free (n);
+					}
+				} else {
+					r_cmd_alias_set (core->rcmd, buf, def, 0);
+				}
 			} else {
 				r_cmd_alias_del (core->rcmd, buf);
 			}
@@ -491,6 +501,7 @@ static int getArg(char ch, int def) {
 	return def;
 }
 
+// wtf dupe for local vs remote?
 static void aliascmd(RCore *core, const char *str) {
 	switch (str[0]) {
 	case '\0': // "=$"
@@ -535,6 +546,7 @@ static int cmd_rap(void *data, const char *input) {
 		}
 		break;
 	case '$': // "=$"
+		// XXX deprecate?
 		aliascmd (core, input + 1);
 		break;
 	case '+': // "=+"
