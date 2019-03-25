@@ -7494,25 +7494,16 @@ static bool archIsMips(RCore *core) {
 #endif
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
-#if 1
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	int align = arch_align; // core->search->align;
-	if (core->assembler->bits >= 32) {
-		if (align > 1) {
-			if (from % align || to % align) {
-				eprintf ("False positive\n");
-				return;
+	if (align > 1) {
+		if (from % align || to % align) {
+			if (core->anal->verbose) {
+				eprintf ("Warning: aav: false positive in 0x%08"PFMT64x"\n", from);
 			}
-		}
-	}
-#else
-	if (ismips) {
-		if (from % 4 || to % 4) {
-			eprintf ("False positive\n");
 			return;
 		}
 	}
-#endif
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, from, -1);
 	if (fcn) {
 		return;
@@ -7523,7 +7514,8 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool aster
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
-		r_meta_add (core->anal, 'd', from, from + vsize, NULL);
+		// r_meta_add (core->anal, 'd', from, from + vsize, NULL);
+		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x "\n", vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
 			r_flag_set (core->flags, name, to, vsize);
@@ -7868,21 +7860,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
-				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
-					r_core_cmd0 (core, "aav");
-					bool ioCache = r_config_get_i (core->config, "io.pcache");
-					r_config_set_i (core->config, "io.pcache", 1);
-					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae $SS @ $S");
-					r_print_rowlog_done (core->print, oldstr);
-					if (!ioCache) {
-						r_core_cmd0 (core, "wc-*");
-					}
-					r_config_set_i (core->config, "io.pcache", ioCache);
-					if (r_cons_is_breaked ()) {
-						goto jacuzzi;
-					}
-				}
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
 				if (r_cons_is_breaked ()) {
@@ -7915,6 +7892,21 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_config_set_i (core->config, "anal.calls", c);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
+				}
+				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+					r_core_cmd0 (core, "aav");
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
+					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
+					r_core_cmd0 (core, "aae $SS @ $S");
+					r_print_rowlog_done (core->print, oldstr);
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
+					}
+					r_config_set_i (core->config, "io.pcache", ioCache);
+					if (r_cons_is_breaked ()) {
+						goto jacuzzi;
+					}
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
 					oldstr = r_print_rowlog (core->print, "Speculatively constructing a function name "
