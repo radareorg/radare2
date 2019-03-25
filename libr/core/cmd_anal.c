@@ -223,7 +223,6 @@ static const char *help_msg_aea[] = {
 	"@R", "", "memreads",
 	"@W", "", "memwrites",
 	"NOTE:", "", "mem{reads,writes} with PIC only fetch the offset",
-
 	NULL
 };
 

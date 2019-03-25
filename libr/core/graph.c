@@ -4158,6 +4158,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				get_bbupdate (g, core, fcn);
 			}
 			break;
+		case 'b':
+			r_core_visual_browse (core, "");
+			break;
 		case 'E':
 			{
 				int e = r_config_get_i (core->config, "graph.linemode");
