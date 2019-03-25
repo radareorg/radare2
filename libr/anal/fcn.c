@@ -24,10 +24,6 @@
 #define JMP_IS_EOB 1
 #define JMP_IS_EOB_RANGE 64
 
-// 64KB max size
-// 256KB max function size
-#define MAX_FCN_SIZE (1024 * 256)
-
 #define DB a->sdb_fcns
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
@@ -439,11 +435,6 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 	st64 n = bb->addr + bb->size - fcn->addr;\
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {\
 		r_anal_fcn_set_size (NULL, fcn, n); }\
-	}\
-	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) {\
-		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */\
-		r_anal_fcn_set_size (NULL, fcn, 0);\
-		return R_ANAL_RET_ERROR;\
 	}
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth);
