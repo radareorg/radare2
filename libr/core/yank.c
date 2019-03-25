@@ -112,7 +112,7 @@ R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 		// FIXME: direct access to base should be avoided (use _sparse
 		// when you need buffer that starts at given addr)
 		r_buf_set_bytes (core->yank_buf, buf, len);
-		core->yank_buf->base_priv = addr;
+		core->yank_addr = addr;
 		return true;
 	}
 	return false;
@@ -121,7 +121,7 @@ R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 // Call set and then null terminate the bytes.
 R_API int r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len) {
 	// free (core->yank_buf);
-	int res = r_core_yank_set (core, addr, (ut8 *) str, len);
+	int res = r_core_yank_set (core, addr, (ut8 *)str, len);
 	if (res == true) {
 		ut8 zero = 0;
 		r_buf_write_at (core->yank_buf, len - 1, &zero, sizeof (zero));
@@ -241,12 +241,11 @@ R_API int r_core_yank_dump(RCore *core, ut64 pos) {
 	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
-			r_cons_printf ("0x%08"PFMT64x " %d ",
-				core->yank_buf->base_priv + pos,
+			r_cons_printf ("0x%08" PFMT64x " %d ",
+				core->yank_addr + pos,
 				r_buf_size (core->yank_buf) - pos);
-			r_buf_seek (core->yank_buf, 0, 0);
 			for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-				r_cons_printf ("%02x", r_buf_read8 (core->yank_buf));
+				r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
 			}
 			r_cons_newline ();
 			res = true;
@@ -285,7 +284,7 @@ R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 	int ybl = r_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
-			ut64 sz = r_buf_size (core->yank_buf) - pos;
+			ut64 sz = ybl - pos;
 			char *buf = R_NEWS (char, sz);
 			if (!buf) {
 				return false;
