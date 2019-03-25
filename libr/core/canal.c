@@ -2592,7 +2592,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	pj_a (pj);
 	r_list_foreach (fcns, iter, fcn) {
 		if (quiet) {
-			pj_i (pj, fcn->addr);
+			pj_n (pj, fcn->addr);
 		} else {
 			fcn_print_json (core, fcn, pj);
 		}
