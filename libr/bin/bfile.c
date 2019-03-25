@@ -948,7 +948,7 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr) {
 		r_list_foreach (sections, iter, s) {
 			ut64 from = s->vaddr;
 			ut64 to = from + s->vsize;
-			if (R_BETWEEN (from, addr, to)) {
+			if (R_BETWEEN (from, addr, to - 1)) {
 				bin->cur = obf;
 				return bf;
 			}
