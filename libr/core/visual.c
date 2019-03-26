@@ -57,7 +57,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "pCA", "pxx", "p=e $r-2", "pq 64", "pk 64"
+	"prc", "pxA", "pxx", "p=e $r-2", "pq 64", "pk 64"
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
