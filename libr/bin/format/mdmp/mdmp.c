@@ -110,6 +110,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->pe64_bins);
 
 	r_buf_free (obj->b);
+	free (obj->hdr);
 	obj->b = NULL;
 	free (obj);
 
@@ -787,17 +788,13 @@ static bool r_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
 
 	/* Patch RawData in headers */
 	ut64 sect_hdrs_off = dos_hdr.e_lfanew + 4 + sizeof (Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader;
-	Pe64_image_section_header *section_hdr = R_NEW (Pe64_image_section_header);
-	if (!section_hdr) {
-		return false;
-	}
+	Pe64_image_section_header section_hdr;
 	for (i = 0; i < nt_hdr.file_header.NumberOfSections; i++) {
-		r_buf_read_at (pe_buf, sect_hdrs_off + i * sizeof (*section_hdr), (ut8 *)section_hdr, sizeof (*section_hdr));
-		section_hdr->PointerToRawData = section_hdr->VirtualAddress;
-		r_buf_write_at (pe_buf, sect_hdrs_off + i * sizeof (*section_hdr), (const ut8 *)section_hdr, sizeof (*section_hdr));
+		r_buf_read_at (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), (ut8 *)&section_hdr, sizeof (section_hdr));
+		section_hdr.PointerToRawData = section_hdr.VirtualAddress;
+		r_buf_write_at (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), (const ut8 *)&section_hdr, sizeof (section_hdr));
 	}
 
-	free (section_hdr);
 	return true;
 }
 

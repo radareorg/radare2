@@ -2929,7 +2929,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		int r = r_buf_read_at (bin->b, bin->import_directory_offset + idi * sizeof (curr_import_dir),
 			(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
-		if (r != sizeof (curr_import_dir)) {
+		if (r < 0) {
 			return NULL;
 		}
 
@@ -2942,7 +2942,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
 		last = bin->import_directory_offset + bin->import_directory_size;
-		while (bin->import_directory_offset + (idi + 1) * sizeof (curr_import_dir) <= last && (
+		while (r == sizeof (curr_import_dir) && bin->import_directory_offset + (idi + 1) * sizeof (curr_import_dir) <= last && (
 			curr_import_dir.FirstThunk != 0 || curr_import_dir.Name != 0 ||
 			curr_import_dir.TimeDateStamp != 0 || curr_import_dir.Characteristics != 0 ||
 			curr_import_dir.ForwarderChain != 0)) {
@@ -2973,8 +2973,8 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			idi++;
 			r = r_buf_read_at (bin->b, bin->import_directory_offset + idi * sizeof (curr_import_dir),
 				(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
-			if (r != sizeof (curr_import_dir)) {
-				goto beach;
+			if (r < 0) {
+				return NULL;
 			}
 		}
 	}
@@ -3069,11 +3069,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 		}
 		int r = r_buf_read_at (bin->b, off + iidi * sizeof (curr_import_dir),
 			(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
-		if (r != sizeof (curr_import_dir)) {
-			goto out_error;
-		}
 		last = off + bin->import_directory_size;
-		while (off + (iidi + 1) * sizeof (curr_import_dir) <= last && (
+		while (r == sizeof (curr_import_dir) && off + (iidi + 1) * sizeof (curr_import_dir) <= last && (
 			curr_import_dir.FirstThunk || curr_import_dir.Name ||
 			curr_import_dir.TimeDateStamp || curr_import_dir.Characteristics ||
 			curr_import_dir.ForwarderChain)) {
@@ -3106,9 +3103,6 @@ next:
 			iidi++;
 			r = r_buf_read_at (bin->b, off + iidi * sizeof (curr_import_dir),
 				(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
-			if (r != sizeof (curr_import_dir)) {
-				goto out_error;
-			}
 		}
 	}
 	off = bin->delay_import_directory_offset;
