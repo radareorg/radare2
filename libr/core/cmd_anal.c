@@ -7501,7 +7501,15 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool aster
 			if (core->anal->verbose) {
 				eprintf ("Warning: aav: false positive in 0x%08"PFMT64x"\n", from);
 			}
-			return;
+			bool itsFine = false;
+			if (core->assembler->bits == 16) {
+				if ((from & 1) || (to & 1)) {
+					itsFine = true;
+				}
+			}
+			if (!itsFine) {
+				return;
+			}
 		}
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, from, -1);
