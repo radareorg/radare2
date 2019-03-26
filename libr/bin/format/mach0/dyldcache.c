@@ -135,7 +135,6 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		if (r != sizeof (lc)) {
 			goto dbuf_err;
 		}
-		cmdptr += lc.cmdsize;
 		switch (lc.cmd) {
 		case LC_SEGMENT:
 			{
@@ -165,7 +164,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 					struct section sect;
 					r = r_buf_read_at (bin->b, cmdptr + nsect * sizeof (struct segment_command), (ut8 *)&sect, sizeof (sect));
 					if (r != sizeof (sect)) {
-						goto dbuf_err;
+						break;
 					}
 					if (sect.offset > libsz) {
 						r_bin_dyldcache_apply_patch (dbuf, sect.offset - sect_offset,
@@ -217,6 +216,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			}
 			break;
 		}
+		cmdptr += lc.cmdsize;
 	}
 	/* Fill r_bin_dyldcache_lib_t ret */
 	ret->b = dbuf;
