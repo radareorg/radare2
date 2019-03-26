@@ -2627,14 +2627,10 @@ R_API void r_core_panels_refresh(RCore *core) {
 		RPanelsMenuItem *parent = panels->panelsMenu->root;
 		for (i = 0; i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
-			if (panels->mode == PANEL_MODE_MENU) {
-				if (i == parent->selectedIndex) {
-					snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, item->name);
-				} else {
-					snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, item->name);
-				}
+			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
+				snprintf (str, sizeof (title) - 1, "%s[%s] "Color_RESET, color, item->name);
 			} else {
-				snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, item->name);
+				snprintf (str, sizeof (title) - 1, "%s  ", item->name);
 			}
 			strcat (title, str);
 		}
