@@ -12,6 +12,7 @@
 
 #include "../format/xnu/r_cf_dict.h"
 #include "../format/xnu/mig_index.h"
+#include "../format/mach0/mach064_is_kernelcache.c"
 
 typedef bool (*ROnRebaseFunc) (ut64 offset, ut64 decorated_addr, void *user_data);
 
@@ -905,26 +906,10 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 4) {
-		if (memcmp (buf, "\xfe\xed\xfa\xcf", 4) &&
-			memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+		if (memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
 			return false;
 		}
-		if (length >= 4096) {
-			const char *features[] = {
-				"__PRELINK_INFO",
-				"__PRELINK_DATA",
-				"__PRELINK_TEXT",
-				"__KLD"
-			};
-			int i;
-			for (i = 0; i < 4; i++) {
-				const ut8 *needle = (const ut8 *) features[i];
-				if (!r_mem_mem (buf, 4096, needle, strlen ((const char *)needle))) {
-					break;
-				}
-			}
-			return i == 4;
-		}
+		return is_kernelcache (buf, length);
 	}
 	return false;
 }
