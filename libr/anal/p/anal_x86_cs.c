@@ -2093,7 +2093,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_PCMPGTQ:
 	case X86_INS_PCMPISTRI:
 	case X86_INS_PCMPISTRM:
+#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPB:
+#endif
 	case X86_INS_VPCMPD:
 	case X86_INS_VPCMPEQB:
 	case X86_INS_VPCMPEQD:
@@ -2108,11 +2110,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_VPCMPISTRI:
 	case X86_INS_VPCMPISTRM:
 	case X86_INS_VPCMPQ:
+#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPUB:
+#endif
 	case X86_INS_VPCMPUD:
 	case X86_INS_VPCMPUQ:
+#if CS_API_MAJOR >= 4
 	case X86_INS_VPCMPUW:
 	case X86_INS_VPCMPW:
+#endif
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_SSE;
 		break;
