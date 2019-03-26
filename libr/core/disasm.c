@@ -1097,7 +1097,7 @@ static void ds_begin_line(RDisasmState *ds) {
 		pj_o (ds->pj);
 		pj_kn (ds->pj, "offset", ds->vat);
 		if (ds->analop.jump != UT64_MAX ) {
-			pj_kN (ds->pj, "jump", ds->analop.jump);
+			pj_kn (ds->pj, "jump", ds->analop.jump);
 			if (ds->analop.fail != UT64_MAX) {
 				pj_kn (ds->pj, "fail", ds->analop.fail);
 			}
