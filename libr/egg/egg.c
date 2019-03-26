@@ -315,7 +315,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {
 			if (asmcode->len > 0) {
-				r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
+				r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
 			}
 			// LEAK r_asm_code_free (asmcode);
 		} else {

@@ -4337,12 +4337,12 @@ static int cmd_print(void *data, const char *input) {
 				RAnalOp aop = {0};
 				r_asm_set_pc (core->assembler, core->offset);
 				RAsmCode *acode = r_asm_massemble (core->assembler, input + 2);
-				if (acode && *acode->buf_hex) {
-					bufsz = strlen (acode->buf_hex) >> 1;
+				if (acode) {
+					bufsz = acode->len;
 					while (printed < bufsz) {
 						aop.size = 0;
 						if (r_anal_op (core->anal, &aop, core->offset,
-							    (const ut8 *)acode->buf + printed, bufsz - printed, R_ANAL_OP_MASK_ESIL) > 0) {
+							    (const ut8 *)acode->bytes + printed, bufsz - printed, R_ANAL_OP_MASK_ESIL) > 0) {
 							const char *str = R_STRBUF_SAFEGET (&aop.esil);
 							r_cons_println (str);
 						} else {
@@ -4401,10 +4401,10 @@ static int cmd_print(void *data, const char *input) {
 			{
 				r_asm_set_pc (core->assembler, core->offset);
 				bool is_pseudo = r_config_get_i (core->config, "asm.pseudo");
-				RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
-				if (c) {
-					r_cons_print (c->buf_asm);
-					r_asm_code_free (c);
+				RAsmCode *acode = r_asm_mdisassemble_hexstr (core->assembler, is_pseudo ? core->parser : NULL, arg);
+				if (acode) {
+					r_cons_print (acode->assembly);
+					r_asm_code_free (acode);
 				} else {
 					eprintf ("Invalid hexstr\n");
 				}
@@ -4424,10 +4424,10 @@ static int cmd_print(void *data, const char *input) {
 			int bytes;
 			r_asm_set_pc (core->assembler, core->offset);
 			RAsmCode *acode = r_asm_massemble (core->assembler, input + 1);
-			if (acode && *acode->buf_hex) {
-				bytes = strlen (acode->buf_hex) >> 1;
+			if (acode) {
+				bytes = acode->len;
 				for (i = 0; i < bytes; i++) {
-					ut8 b = acode->buf[i]; // core->print->big_endian? (bytes - 1 - i): i ];
+					ut8 b = acode->bytes[i]; // core->print->big_endian? (bytes - 1 - i): i ];
 					r_cons_printf ("%02x", b);
 				}
 				r_cons_newline ();

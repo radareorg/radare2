@@ -4992,10 +4992,9 @@ static int cmd_debug(void *data, const char *input) {
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, input + 2);
-			if (acode && *acode->buf_hex) {
+			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->buf,
-						acode->len, 0);
+				r_debug_execute (core->dbg, acode->bytes, acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
