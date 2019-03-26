@@ -4522,23 +4522,25 @@ static int cmd_debug(void *data, const char *input) {
 				r_list_free (args);
 				free (s);
 			} else {
-				ptr = input + 3;
+				ptr = input + 2;
 				addr = r_num_math (core->num, ptr);
 				ptr = strchr (ptr, ' ');
+				int count = 1;
 				if (ptr) {
-					RAnalOp *op = r_core_op_anal (core, addr);
-					if (op) {
-						RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-						if (!tp) {
-							r_anal_op_free (op);
-							break;
-						}
-						tp->count = r_num_math (core->num, ptr + 1);
-						r_anal_trace_bb (core->anal, addr);
+					count = r_num_math (core->num, ptr + 1);
+				}
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op) {
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+					if (!tp) {
 						r_anal_op_free (op);
-					} else {
-						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+						break;
 					}
+					tp->count = count;
+					r_anal_trace_bb (core->anal, addr);
+					r_anal_op_free (op);
+				} else {
+					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 				}
 			}
 			break;
