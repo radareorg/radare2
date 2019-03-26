@@ -41,7 +41,7 @@ static RBuffer *build (REgg *egg) {
 
 	for (i = 0; i<r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((sc->buf[i]^nkey)==0) {
+		if ((r_buf_read8_at (sc, i) ^ nkey)==0) {
 			eprintf ("This xor key generates null bytes. Try again.\n");
 			free (key);
 			return NULL;
@@ -77,8 +77,8 @@ static RBuffer *build (REgg *egg) {
 		r_buf_append_bytes (buf, stub, STUBLEN);
 
 		for (i = 0; i<r_buf_size (sc); i++) {
-			//			 eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-			sc->buf[i]^=nkey;
+			ut8 v = r_buf_read8_at (sc, i) ^ nkey;
+			r_buf_write_at (sc, i, &v, sizeof (v));
 		}
 		r_buf_append_buf (buf, sc);
 	}

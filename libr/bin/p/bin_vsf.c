@@ -52,14 +52,18 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 			free (res);
 			return false;
 		}
-		const unsigned char* machine = bf->buf->buf + offset;
+		char machine[20];
+		int l = r_buf_read_at (bf->buf, offset, (ut8 *)machine, sizeof (machine));
+		if (l < 0) {
+			free (res);
+			return false;
+		}
 		for (; i < MACHINES_MAX; i++) {
 			if (offset + strlen (_machines[i].name) > bf->size) {
 				free (res);
 				return false;
 			}
-			if (!strncmp ((const char *)machine, _machines[i].name,
-				      strlen (_machines[i].name))) {
+			if (!strncmp (machine, _machines[i].name, strlen (_machines[i].name))) {
 				res->machine_idx = i;
 				break;
 			}
@@ -81,15 +85,16 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
 			if (!CMP_MODULE (VICE_C64MEM) && !module.major) {
-				res->mem = &bf->buf->buf[offset + read];
+				res->mem = offset + read;
 			} else if (!CMP_MODULE (VICE_C64ROM) && !module.major) {
-				res->rom = &bf->buf->buf[offset + read];
+				res->rom = offset + read;
 			} else if (!CMP_MODULE (VICE_C128MEM) && !module.major) {
-				res->mem = &bf->buf->buf[offset + read];
+				res->mem = offset + read;
 			} else if (!CMP_MODULE (VICE_C128ROM) && !module.major) {
-				res->rom = &bf->buf->buf[offset + read];
+				res->rom = offset + read;
 			} else if (!CMP_MODULE (VICE_MAINCPU) && module.major == 1) {
-				res->maincpu = (struct vsf_maincpu*)&bf->buf->buf[offset + read];
+				res->maincpu = R_NEW (struct vsf_maincpu);
+				r_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
 			}
 #undef CMP_MODULE
 			offset += module.length;
@@ -155,9 +160,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("BASIC");
-			ptr->paddr = ((char *)vsf_obj->rom +
-				      r_offsetof (struct vsf_c64rom, basic)) -
-				     (char *)bf->buf->buf;
+			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c64rom, basic);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8;	// BASIC size (8k)
@@ -170,9 +173,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("KERNAL");
-			ptr->paddr = ((char *)vsf_obj->rom +
-				      r_offsetof (struct vsf_c64rom, kernal)) -
-				     (char *)bf->buf->buf;
+			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c64rom, kernal);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
@@ -188,9 +189,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("BASIC");
-			ptr->paddr = ((char *)vsf_obj->rom +
-				      r_offsetof (struct vsf_c128rom, basic)) -
-				     (char *)bf->buf->buf;
+			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, basic);
 			ptr->size = 1024 * 28; // (28k)
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28;	// BASIC size (28k)
@@ -204,9 +203,7 @@ static RList* sections(RBinFile* bf) {
 			}
 			ptr->name = strdup ("MONITOR");
 			// skip first 28kb  since "BASIC" and "MONITOR" share the same section in VSF
-			ptr->paddr = ((char *)vsf_obj->rom +
-				      r_offsetof (struct vsf_c128rom, basic)) +
-				     1024 * 28 - (char *)bf->buf->buf;
+			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, basic) + 1024 * 28;
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
@@ -219,9 +216,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("EDITOR");
-			ptr->paddr = ((char *)vsf_obj->rom +
-				      r_offsetof (struct vsf_c128rom, editor)) -
-				     (char *)bf->buf->buf;
+			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, editor);
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
@@ -234,9 +229,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("KERNAL");
-			ptr->paddr = ((char *)vsf_obj->rom +
-				      r_offsetof (struct vsf_c128rom, kernal)) -
-				     (char *)bf->buf->buf;
+			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, kernal);
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
@@ -257,7 +250,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM");
-			ptr->paddr = ((char *)vsf_obj->mem + offset) - (char*) bf->buf->buf;
+			ptr->paddr = vsf_obj->mem + offset;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
@@ -274,7 +267,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM BANK 0");
-			ptr->paddr = ((char *)vsf_obj->mem + offset) - (char*) bf->buf->buf;
+			ptr->paddr = vsf_obj->mem + offset;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
@@ -286,7 +279,7 @@ static RList* sections(RBinFile* bf) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM BANK 1");
-			ptr->paddr = ((char *)vsf_obj->mem + offset) + size - (char*) bf->buf->buf;
+			ptr->paddr = vsf_obj->mem + offset + size;
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
@@ -503,8 +496,7 @@ static RList* symbols(RBinFile *bf) {
 		strncpy (ptr->name, _symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
-		ptr->paddr = ((char *)vsf_obj->mem + offset) - (char *)bf->buf->buf +
-			     _symbols[i].address;
+		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}
@@ -513,7 +505,9 @@ static RList* symbols(RBinFile *bf) {
 }
 
 static int destroy(RBinFile *bf) {
-	free(bf->o->bin_obj);
+	struct r_bin_vsf_obj *obj = (struct r_bin_vsf_obj *)bf->o->bin_obj;
+	free (obj->maincpu);
+	free (obj);
 	return true;
 }
 
@@ -534,7 +528,7 @@ static RList* entries(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	ptr->paddr = ((char *)vsf_obj->mem + offset) - (char*) bf->buf->buf;
+	ptr->paddr = vsf_obj->mem + offset;
 	ptr->vaddr = vsf_obj->maincpu ? vsf_obj->maincpu->pc : 0;
 	r_list_append (ret, ptr);
 

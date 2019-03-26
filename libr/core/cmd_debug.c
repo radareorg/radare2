@@ -4408,8 +4408,9 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 		r_cons_printf ("%s", cmd);
 	}
 	int i;
+	r_buf_seek (buf, 0, 0);
 	for (i = 0; i < r_buf_size (buf); i++) {
-		r_cons_printf ("%02x", buf->buf[i]);
+		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}
 	r_cons_printf ("\n");
 }
@@ -5013,7 +5014,7 @@ static int cmd_debug(void *data, const char *input) {
 			b = r_egg_get_bin (egg);
 			r_asm_set_pc (core->assembler, core->offset);
 			r_reg_arena_push (core->dbg->reg);
-			r_debug_execute (core->dbg, b->buf, r_buf_size (b), 0);
+			r_debug_execute (core->dbg, r_buf_buffer (b), r_buf_size (b), 0);
 			r_reg_arena_pop (core->dbg->reg);
 			break;
 		}

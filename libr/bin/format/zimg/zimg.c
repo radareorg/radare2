@@ -11,16 +11,11 @@ struct r_bin_zimg_obj_t* r_bin_zimg_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 	bin->size = r_buf_size (buf);
-	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
-		goto fail;
-	}
-
+	bin->b = r_buf_ref (buf);
 	if (r_buf_size (bin->b) < sizeof (struct zimg_header_t)) {
 		goto fail;
 	}
-	bin->header = (*(struct zimg_header_t*)bin->b->buf);
-
+	r_buf_read_at (bin->b, 0, (ut8 *)&bin->header, sizeof (bin->header));
 	return bin;
 
 fail:

@@ -107,7 +107,7 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 }
 
 static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
-	ut16 magic = *(ut16 *)obj->b->buf;
+	ut16 magic = r_buf_read_ble16_at (obj->b, 0, obj->endian);;
 	obj->endian = (magic == COFF_FILE_MACHINE_H8300)? 1 : 0;
 	int ret = 0;
 	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S3I2S": "2s3i2s", 1);

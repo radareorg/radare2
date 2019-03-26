@@ -49,7 +49,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
 		return NULL;
 	}
-	bin->b->buf[r_buf_size (bin->b) - 1] = 0;
+	r_buf_write_at (bin->b, r_buf_size (bin->b) - 1, (ut8 *)"\x00", 1);
 	uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
 	if (!uleblen || uleblen >= bin->size) {
 		return NULL;
@@ -800,7 +800,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (bf->buf->buf, r_buf_size (bf->buf), (const ut8*)kw, strlen (kw))) {
+	if (r_mem_mem (r_buf_buffer (bf->buf), r_buf_size (bf->buf), (const ut8*)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
@@ -812,7 +812,7 @@ static RBinInfo *info(RBinFile *bf) {
 	h->addr = 12;
 	h->from = 12;
 	h->to = r_buf_size (bf->buf)-32;
-	memcpy (h->buf, bf->buf->buf + 12, 20);
+	r_buf_read_at (bf->buf, 12, h->buf, 20);
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
@@ -821,12 +821,11 @@ static RBinInfo *info(RBinFile *bf) {
 	h->to = r_buf_size (bf->buf)-h->from;
 	h = &ret->sum[2];
 	h->type = 0;
-	memcpy (h->buf, bf->buf->buf + 8, 4);
+	r_buf_read_at (bf->buf, 8, h->buf, 4);
 	{
-		ut32 *fc = (ut32 *)(bf->buf->buf + 8);
-		ut32 cc = __adler32 (bf->buf->buf + 12,
-			r_buf_size (bf->buf) - 12);
-		if (*fc != cc) {
+		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
+		ut32 cc = __adler32 (r_buf_buffer (bf->buf) + 12, r_buf_size (bf->buf) - 12);
+		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
 		}
@@ -1104,7 +1103,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 		RBinDexClass *c, RBinClass *cls,
 		const ut8 *p, const ut8 *p_end,
 		int *sym_count, ut64 DM, int *methods,
-		bool is_direct) {
+		bool is_direct, const ut8 *bufbuf) {
 	struct r_bin_t *rbin = binfile->rbin;
 	bool bin_dbginfo = rbin->want_dbginfo;
 	int i, left;
@@ -1299,8 +1298,8 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				sym->vaddr = MC;// + 0x10;
 			} else {
 				sym->type = r_str_const (R_BIN_TYPE_METH_STR);
-				sym->paddr = encoded_method_addr - binfile->buf->buf;
-				sym->vaddr = encoded_method_addr - binfile->buf->buf;
+				sym->paddr = encoded_method_addr - bufbuf;
+				sym->vaddr = encoded_method_addr - bufbuf;
 			}
 			if ((MA & 0x1) == 0x1) {
 				sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
@@ -1543,7 +1542,8 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 			return;
 		}
 
-		p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
+		const ut8 *bufbuf = r_buf_buffer (binfile->buf);
+		p = bufbuf + c->class_data_offset;
 		// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xfffffffffffffd46
 		p_end = p + (r_buf_size (binfile->buf) - c->class_data_offset);
 		//XXX check for NULL!!
@@ -1573,14 +1573,14 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		}
 		p = parse_dex_class_method (
 			binfile, bin, c, cls, p, p_end, sym_count,
-			c->class_data->direct_methods_size, methods, true);
+			c->class_data->direct_methods_size, methods, true, bufbuf);
 
 		if (dexdump) {
 			rbin->cb_printf ("  Virtual methods   -\n");
 		}
 		parse_dex_class_method (
 			binfile, bin, c, cls, p, p_end, sym_count,
-			c->class_data->virtual_methods_size, methods, false);
+			c->class_data->virtual_methods_size, methods, false, bufbuf);
 	}
 
 	if (dexdump) {

@@ -907,7 +907,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_bin_arch_options_init (&opts, arch, bits);
 		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
-			if (r_file_dump (file, b->buf, r_buf_size (b), 0)) {
+			if (r_file_dump (file, r_buf_buffer (b), r_buf_size (b), 0)) {
 				eprintf ("Dumped %" PFMT64d " bytes in '%s'\n",
 					r_buf_size (b), file);
 				r_file_chmod (file, "+x", 0);

@@ -369,7 +369,12 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
-		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+		ut8 *tmp = R_NEWS (ut8, bf->size);
+		if (!tmp) {
+			return false;
+		}
+		r_io_read_at (r->io, 0, tmp, bf->size);
+		r_buf_write_at (bf->buf, 0, tmp, bf->size);
 	}
 	if (!r->file) {
 		eprintf ("Core file not open\n");
@@ -773,8 +778,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (true, hash);
-				int len = r_hash_calculate (rh, hash, (const ut8*)
-						binfile->buf->buf+h->from, h->to);
+				ut8 *tmp = R_NEWS (ut8, h->to);
+				if (!tmp) {
+					return false;
+				}
+				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				int len = r_hash_calculate (rh, hash, tmp, h->to);
+				free (tmp);
 				if (len < 1) {
 					eprintf ("Invaild checksum length\n");
 				}
@@ -792,8 +802,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (true, hash);
-				int len = r_hash_calculate (rh, hash, (const ut8*)
-						binfile->buf->buf+h->from, h->to);
+				ut8 *tmp = R_NEWS (ut8, h->to);
+				if (!tmp) {
+					return false;
+				}
+				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				int len = r_hash_calculate (rh, hash, tmp, h->to);
+				free (tmp);
 				if (len < 1) {
 					eprintf ("Invalid wtf\n");
 				}
