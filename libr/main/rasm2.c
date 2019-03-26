@@ -390,9 +390,6 @@ beach:
 
 static void print_buf(RAsmState *as, char *str) {
 	int i;
-	if (!str) {
-		return;
-	}
 	if (as->coutput) {
 		printf ("\"");
 		for (i = 1; *str; str += 2, i += 2) {
@@ -451,8 +448,10 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 					printf ("\n");
 				} else {
 					char* str = r_asm_code_get_hex (acode);
-					print_buf (as, str);
-					free (str);
+					if (str) {
+						print_buf (as, str);
+						free (str);
+					}
 				}
 			}
 		}

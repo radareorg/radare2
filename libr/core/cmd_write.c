@@ -183,6 +183,7 @@ static void cmd_write_fail() {
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
+	r_return_val_if_fail (core && pairs, 0);
 	ut8 *buf = malloc (strlen (pairs) + 1);
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
@@ -1484,8 +1485,8 @@ static int cmd_write(void *data, const char *input) {
 							char* hex = r_asm_code_get_hex (ac);
 							if (hex) {
 								r_cons_printf ("wx %s @ 0x%08"PFMT64x"\n",  hex, addr);
+								free (hex);
 							}
-							free (hex);
 							r_asm_code_free (ac);
 						}
 						b = a;
@@ -1506,7 +1507,7 @@ static int cmd_write(void *data, const char *input) {
 				RAsmCode *acode = r_asm_assemble_file (core->assembler, file);
 				if (acode) {
 					char* hex = r_asm_code_get_hex (acode);
-					if (input[2] == '*' && hex) {
+					if (input[2] == '*') {
 						cmd_write_hexpair (core, hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
