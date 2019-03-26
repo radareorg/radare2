@@ -3115,7 +3115,8 @@ next:
 		if (r != sizeof (curr_delay_import_dir)) {
 			goto out_error;
 		}
-		while (curr_delay_import_dir.Name != 0 && curr_delay_import_dir.DelayImportNameTable != 0) {
+		while (r == sizeof (curr_delay_import_dir) &&
+			curr_delay_import_dir.Name != 0 && curr_delay_import_dir.DelayImportNameTable != 0) {
 			name_off = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
 			if (name_off > bin->size || name_off + PE_STRING_LENGTH > bin->size) {
 				goto out_error;
@@ -3144,9 +3145,6 @@ next:
 			did++;
 			r = r_buf_read_at (bin->b, off + did * sizeof (curr_delay_import_dir),
 				(ut8 *)&curr_delay_import_dir, sizeof (curr_delay_import_dir));
-			if (r != sizeof (curr_delay_import_dir)) {
-				goto out_error;
-			}
 		}
 	}
 	sdb_ht_free (lib_map);
