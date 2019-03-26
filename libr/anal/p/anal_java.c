@@ -746,6 +746,8 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	/* get opcode size */
 	//ut8 op_byte = data[0];
 	ut8 op_byte = data[0];
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
 	int sz = JAVA_OPS[op_byte].size;
 	if (!op) {
 		return sz;
