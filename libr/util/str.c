@@ -2832,7 +2832,7 @@ R_API int r_str_bounds(const char *_str, int *h) {
 	int cw = 0;
 
 	if (_str) {
-		ptr = str = ostr = _str;
+		ptr = str = ostr = (char *)_str;
 		while (*str) {
 			if (*str == '\n') {
 				H++;

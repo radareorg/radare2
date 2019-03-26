@@ -6,10 +6,10 @@ extern "C" {
 #endif
 
 typedef struct {
-	char buf[32];
 	int len;
 	char *ptr;
 	int ptrlen;
+	char buf[64];
 } RStrBuf;
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")

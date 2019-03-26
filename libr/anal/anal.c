@@ -629,14 +629,6 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	return true;
 }
 
-static int is_func(void *p, const char *k, const char *v) {
-	if (!strstr (k, "noreturn")) {
-		return 0;
-	}
-	// eprintf ("FILTER (%s) %s\n", k, v);
-	return !strcmp (v, "func") || !strcmp (v, "addr");
-}
-
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
 	expr = r_str_trim_ro (expr);

@@ -489,17 +489,6 @@ static int printkey_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-static int printkey_json_cb(void *user, const char *k, const char *v) {
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return 0;
-	}
-	pj_s (pj, k);
-	r_cons_printf ("%s", pj_string (pj));
-	pj_free (pj);
-	return 1;
-}
-
 static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
 	PJ *pj = pj_new ();
