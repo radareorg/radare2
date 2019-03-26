@@ -1329,20 +1329,16 @@ R_API int r_main_radare2(int argc, char **argv) {
 		/* load <file>.r2 */
 		{
 			char* f = r_str_newf ("%s.r2", pfile);
-			const int f_len = strlen (f);
-			const char *prefix = "dbg://";
-			const int prefix_len = strlen (prefix);
-			if (r_str_startswith (f, prefix)) {
-				memmove (f, f + prefix_len, f_len - prefix_len + 1);
-			}
-			if (r_file_exists (f)) {
+			const char *uri_splitter = strstr (f, "://");
+			const char *path = uri_splitter? uri_splitter + 3: f;
+			if (r_file_exists (path)) {
 				// TODO: should 'q' unset the interactive bit?
 				bool isInteractive = r_cons_is_interactive ();
-				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", f)) {
-					r_core_cmd_file (&r, f);
+				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", path)) {
+					r_core_cmd_file (&r, path);
 				}
 			}
-			free(f);
+			free (f);
 		}
 	} else {
 		r_core_block_read (&r);
