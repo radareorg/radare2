@@ -263,8 +263,8 @@ static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RCore *core);
 static bool initPanels(RCore *core, RPanels *panels);
-static RStrBuf *drawMenu(RPanelsMenuItem *item);
-static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent);
+static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item);
+static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void freeSinglePanel(RPanel *panel);
 static void freeAllPanels(RPanels *panels);
 static void panelBreakpoint(RCore *core);
@@ -332,7 +332,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h) {
 	(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
-	char *text = r_str_ansi_crop (panel->title, x, y, w, h);
+	char *text = r_str_crop (panel->title, x, y, w, h);
 	if (text) {
 		r_cons_canvas_write (can, text);
 		free (text);
@@ -2257,7 +2257,7 @@ static int openMenuCb (void *user) {
 		child->p->pos.x = parent2->p->pos.x + parent2->p->pos.w - 1;
 		child->p->pos.y = menu->depth == 2 ? parent2->p->pos.y + parent2->selectedIndex : parent2->p->pos.y;
 	}
-	RStrBuf *buf = drawMenu (child);
+	RStrBuf *buf = drawMenu (core, child);
 	if (!buf) {
 		return 0;
 	}
@@ -2317,7 +2317,7 @@ static void removeMenu(RPanels *panels) {
 	setRefreshAll (panels, false);
 }
 
-static RStrBuf *drawMenu(RPanelsMenuItem *item) {
+static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
 		return NULL;
@@ -2325,19 +2325,19 @@ static RStrBuf *drawMenu(RPanelsMenuItem *item) {
 	int i;
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
-			r_strbuf_append (buf, "> ");
+			r_strbuf_appendf (buf, "> %s %s"Color_RESET,
+					core->cons->context->pal.graph_box, item->sub[i]->name);
 		} else {
-			r_strbuf_append (buf, "  ");
+			r_strbuf_appendf (buf, "   %s", item->sub[i]->name);
 		}
-		r_strbuf_append (buf, item->sub[i]->name);
 		r_strbuf_append (buf, "          \n");
 	}
 	return buf;
 }
 
-static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent) {
+static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	RPanel *p = parent->p;
-	RStrBuf *buf = drawMenu (parent);
+	RStrBuf *buf = drawMenu (core, parent);
 	if (!buf) {
 		return;
 	}
@@ -2861,7 +2861,7 @@ static bool handleMenu(RCore *core, const int key) {
 			} else {
 				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 				parent->selectedIndex = R_MIN (parent->n_sub - 1, parent->selectedIndex + 1);
-				moveMenuCursor (menu, parent);
+				moveMenuCursor (core, menu, parent);
 			}
 		}
 		break;
@@ -2873,7 +2873,7 @@ static bool handleMenu(RCore *core, const int key) {
 			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 			if (parent->selectedIndex > 0) {
 				parent->selectedIndex--;
-				moveMenuCursor (menu, parent);
+				moveMenuCursor (core, menu, parent);
 			} else if (menu->depth == 2) {
 				menu->depth--;
 				setRefreshAll (panels, false);
