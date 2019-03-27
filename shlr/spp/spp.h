@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include "r_util.h"
+
 #ifdef S_API
 #undef S_API
 #endif
@@ -83,15 +85,8 @@ struct Tag *tags = (struct Tag *)&x##_tags; \
 struct Arg *args = (struct Arg *)&x##_args; \
 struct Proc *proc = &x##_proc;
 
-typedef struct s_strbuf_t {
-	int len;
-	char *ptr;
-	int ptrlen;
-	char buf[64];
-} SStrBuf;
-
 typedef struct {
-	SStrBuf *cout;
+	RStrBuf *cout;
 	FILE *fout;
 	int size;
 } Output;

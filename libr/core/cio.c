@@ -139,7 +139,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				eprintf ("Clipboard is empty and no value argument(s) given\n");
 				goto beach;
 			}
-			str = r_mem_dup (r_buf_buffer (core->yank_buf), len);
+			str = r_mem_dup ((ut8*)r_buf_buffer (core->yank_buf), len);
 			if (!str) {
 				goto beach;
 			}
