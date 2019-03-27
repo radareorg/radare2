@@ -585,8 +585,8 @@ R_API int r_utf8_strlen(const ut8 *str) {
 }
 
 R_API int r_isprint(const RRune c) {
-	//RRunes are most commonly single byte... We can early out with this common case.
-	if(c < 0x34F){
+	// RRunes are most commonly single byte... We can early out with this common case.
+	if (c < 0x34F){
 		/*
 		manually copied from top, please update if this ever changes
 		{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
@@ -594,8 +594,6 @@ R_API int r_isprint(const RRune c) {
 		*/
 		return !( c <= 0x1F || ( c >= 0x7F && c <= 0x9F) );
 	}
-
-
 
 	const int last = nonprintable_ranges_count;
 
