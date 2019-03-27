@@ -187,7 +187,7 @@ static const char *help_msg_p[] = {
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
-	"pq", "[?][iz] [len]", "print QR code with the first Nbytes",
+	"pq", "[?][is] [len]", "print QR code with the first Nbytes",
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
@@ -409,6 +409,7 @@ static const char *help_msg_ps[] = {
 	"psb", "", "print strings in current block",
 	"psi", "", "print string inside curseek",
 	"psj", "", "print string in JSON format",
+	"psq", "", "alias for pqs",
 	"psp", "", "print pascal string",
 	"pss", "", "print string in screen (wrap width)",
 	"psu", "", "print utf16 unicode (json)",
@@ -5298,6 +5299,9 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
+		case 'q': // "psq"
+			r_core_cmd0 (core, "pqs");
+			break;
 		case 's': // "pss"
 			if (l > 0) {
 				int h, w = r_cons_get_size (&h);
@@ -6234,25 +6238,31 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'q': // "pq"
-		if (input[1] == '?') {
-			eprintf ("Usage: pq[z] [len]\n");
+		switch (input[1]) {
+		case '?':
+			eprintf ("Usage: pq[s] [len]\n");
+			len = 0;
 			break;
-		}
-		if (input[1] == 'z') { // "pqz"
+		case 's': // "pqs"
+		case 'z': // for backward compat
 			len = r_str_nlen ((const char *)block, core->blocksize);
-		} else {
+			break;
+		default:
 			if (len < 1) {
 				len = 0;
 			}
 			if (len > core->blocksize) {
 				len = core->blocksize;
 			}
+			break;
 		}
-		bool inverted = (input[1] == 'i'); // pqi -- inverted colors
-		char *res = r_qrcode_gen (block, len, r_config_get_i (core->config, "scr.utf8"), inverted);
-		if (res) {
-			r_cons_printf ("%s\n", res);
-			free (res);
+		if (len > 0) {
+			bool inverted = (input[1] == 'i'); // pqi -- inverted colors
+			char *res = r_qrcode_gen (block, len, r_config_get_i (core->config, "scr.utf8"), inverted);
+			if (res) {
+				r_cons_printf ("%s\n", res);
+				free (res);
+			}
 		}
 		break;
 	case 'z': // "pz"
