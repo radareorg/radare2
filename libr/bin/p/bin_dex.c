@@ -1528,9 +1528,10 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	if (!c || !c->class_data_offset) {
 		if (dexdump) {
 			rbin->cb_printf (
-				"  Static fields     -\n  Instance fields   "
-				"-\n  Direct methods    -\n  Virtual methods   "
-				"-\n");
+				"  Static fields     -\n"
+				"  Instance fields   -\n"
+				"  Direct methods    -\n"
+				"  Virtual methods   -\n");
 		}
 	} else {
 		// TODO: move to func, def or inline
@@ -1553,23 +1554,31 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
 			sizeof (struct dex_class_data_item_t));
+		if (!p->class_data) {
+			return;
+		}
 		if (p >= p_end) {
+			free (c->class_data);
 			return;
 		}
 		p = r_uleb128 (p, p_end - p, &c->class_data->static_fields_size);
 		if (p >= p_end) {
+			free (c->class_data);
 			return;
 		}
 		p = r_uleb128 (p, p_end - p, &c->class_data->instance_fields_size);
 		if (p >= p_end) {
+			free (c->class_data);
 			return;
 		}
 		p = r_uleb128 (p, p_end - p, &c->class_data->direct_methods_size);
 		if (p >= p_end) {
+			free (c->class_data);
 			return;
 		}
 		p = r_uleb128 (p, p_end - p, &c->class_data->virtual_methods_size);
 		if (p >= p_end) {
+			free (c->class_data);
 			return;
 		}
 
@@ -1613,8 +1622,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 					 c->source_file, source_file);
 		}
 	}
-	// TODO:!!!!
-	// FIX: FREE BEFORE ALLOCATE!!!
+	// TODO: fix memleaks
 	//free (class_name);
 }
 
