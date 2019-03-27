@@ -323,7 +323,7 @@ static int cmd_mount(void *data, const char *_input) {
 		file = r_fs_open (core->fs, input);
 		if (file) {
 			char *localFile = strdup (input);
-			char *slash = r_str_rchr (localFile, NULL, '/');
+			char *slash = (char *)r_str_rchr (localFile, NULL, '/');
 			if (slash) {
 				memmove (localFile, slash + 1, strlen (slash));
 			}
