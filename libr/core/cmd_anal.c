@@ -7483,15 +7483,6 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	r_list_free (list);
 }
 
-#if 0
-static bool archIsMips(RCore *core) {
-	RAsm *as = core ? core->assembler : NULL;
-	if (as && as->cur && as->cur->name) {
-		return strstr (as->cur->name, "mips");
-	}
-	return false;
-}
-#endif
 static bool archIsThumbable(RCore *core) {
 	RAsm *as = core ? core->assembler : NULL;
 	if (as && as->cur && as->bits <= 32 && as->cur->name) {
