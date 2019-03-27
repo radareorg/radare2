@@ -1322,15 +1322,17 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
-			char f[128];
-			snprintf (f, sizeof (f), "%s.r2", pfile);
-			if (r_file_exists (f)) {
+			char* f = r_str_newf ("%s.r2", pfile);
+			const char *uri_splitter = strstr (f, "://");
+			const char *path = uri_splitter? uri_splitter + 3: f;
+			if (r_file_exists (path)) {
 				// TODO: should 'q' unset the interactive bit?
 				bool isInteractive = r_cons_is_interactive ();
-				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", f)) {
-					r_core_cmd_file (&r, f);
+				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", path)) {
+					r_core_cmd_file (&r, path);
 				}
 			}
+			free (f);
 		}
 	} else {
 		r_core_block_read (&r);
