@@ -4,28 +4,15 @@
 #include "bin_mach0.c"
 
 #include "objc/mach064_classes.h"
+#include "../format/mach0/mach064_is_kernelcache.c"
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 4) {
-		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-			!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			if (length >= 4096) {
-				const char *features[] = {
-					"__PRELINK_INFO",
-					"__PRELINK_DATA",
-					"__PRELINK_TEXT",
-					"__KLD"
-				};
-				int i;
-				for (i = 0; i < 4; i++) {
-					const ut8 *needle = (const ut8 *) features[i];
-					if (!r_mem_mem (buf, 4096, needle, strlen ((char *)needle))) {
-						break;
-					}
-				}
-				return i == 0;
-			}
+		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4)) {
 			return true;
+		}
+		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+			return !is_kernelcache (buf, length);
 		}
 	}
 	return false;
