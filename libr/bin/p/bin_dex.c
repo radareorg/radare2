@@ -1554,7 +1554,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
 			sizeof (struct dex_class_data_item_t));
-		if (!p->class_data) {
+		if (!c->class_data) {
 			return;
 		}
 		if (p >= p_end) {
