@@ -24,7 +24,7 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 		  break;
 	case ':':
 		  r_core_cmdf (core, "s %s", str);
-		  r_core_cmdf (core, "wa %s", p);
+		  r_core_cmdf (core, "\"wa %s\"", p);
 		  break;
 	case 'v':
 		q = strchr (p + 1,' ');
