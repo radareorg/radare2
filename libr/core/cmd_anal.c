@@ -6249,9 +6249,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				eprintf ("Cannot find any function\n");
 			}
 		} else { // "axf"
-			ut8 buf[12];
 			RAsmOp asmop;
-			char *buf_asm = NULL;
 			RList *list, *list_ = NULL;
 			RAnalRef *ref;
 			RListIter *iter;
@@ -6284,9 +6282,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					pj_a (pj);
 					r_list_foreach (list, iter, ref) {
-						r_io_read_at (core->io, ref->at, buf, 12);
-						r_asm_set_pc (core->assembler, ref->at);
-						r_asm_disassemble (core->assembler, &asmop, buf, 12);
+						ut8 buf[16];
+						r_io_read_at (core->io, ref->addr, buf, sizeof(buf));
+						r_asm_set_pc (core->assembler, ref->addr);
+						r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
 						pj_o (pj);
 						pj_kn (pj, "from", ref->at);
 						pj_kn (pj, "to", ref->addr);
@@ -6307,29 +6306,37 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char str[512];
 					int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 					r_list_foreach (list, iter, ref) {
-						r_io_read_at (core->io, ref->at, buf, 12);
-						r_asm_set_pc (core->assembler, ref->at);
-						r_asm_disassemble (core->assembler, &asmop, buf, 12);
-						r_parse_filter (core->parser, ref->at, core->flags, r_asm_op_get_asm (&asmop),
-								str, sizeof (str), core->print->big_endian);
-						if (has_color) {
-							buf_asm = r_print_colorize_opcode (core->print, str,
-									core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
+						ut8 buf[16];
+						char *desc;
+						char *desc_to_free = NULL;
+						RFlagItem *flag = r_flag_get_at (core->flags, ref->addr, false);
+						if (flag) {
+							desc = flag->name;
 						} else {
-							buf_asm = r_str_new (str);
+							r_io_read_at (core->io, ref->addr, buf, sizeof(buf));
+							r_asm_set_pc (core->assembler, ref->addr);
+							r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
+							r_parse_filter (core->parser, ref->addr, core->flags, r_asm_op_get_asm (&asmop),
+									str, sizeof (str), core->print->big_endian);
+							if (has_color) {
+								desc = desc_to_free = r_print_colorize_opcode (core->print, str,
+										core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
+							} else {
+								desc = str;
+							}
 						}
 						r_cons_printf ("%c 0x%" PFMT64x " %s",
-								ref->type, ref->at, buf_asm);
+								ref->type ? ref->type : ' ', ref->addr, desc);
 
 						if (ref->type == R_ANAL_REF_TYPE_CALL) {
 							RAnalOp aop;
-							r_anal_op (core->anal, &aop, ref->at, buf, 12, R_ANAL_OP_MASK_BASIC);
+							r_anal_op (core->anal, &aop, ref->addr, buf, sizeof(buf), R_ANAL_OP_MASK_BASIC);
 							if (aop.type == R_ANAL_OP_TYPE_UCALL) {
 								cmd_anal_ucall_ref (core, ref->addr);
 							}
 						}
 						r_cons_newline ();
-						free (buf_asm);
+						free (desc_to_free);
 					}
 				}
 			} else {
