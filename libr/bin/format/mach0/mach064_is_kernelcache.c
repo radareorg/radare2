@@ -1,5 +1,7 @@
 static bool is_kernelcache(const ut8 *buf, ut64 length) {
-	r_return_val_if_fail (length >= sizeof (struct MACH0_(mach_header)), false);
+	if (length < sizeof (struct MACH0_(mach_header))) {
+		return false;
+	}
 
 	const ut8 *end = buf + length;
 	const ut8 *cursor = buf + sizeof (struct MACH0_(mach_header));
