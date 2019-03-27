@@ -7492,17 +7492,22 @@ static bool archIsMips(RCore *core) {
 	return false;
 }
 #endif
+static bool archIsThumbable(RCore *core) {
+	RAsm *as = core ? core->assembler : NULL;
+	if (as && as->cur && as->bits <= 32 && as->cur->name) {
+		return strstr (as->cur->name, "arm");
+	}
+	return false;
+}
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	int align = arch_align; // core->search->align;
+	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	if (align > 1) {
-		if (from % align || to % align) {
-			if (core->anal->verbose) {
-				eprintf ("Warning: aav: false positive in 0x%08"PFMT64x"\n", from);
-			}
+		if ((from % align) || (to % align)) {
 			bool itsFine = false;
-			if (core->assembler->bits == 16) {
+			if (archIsThumbable (core)) {
 				if ((from & 1) || (to & 1)) {
 					itsFine = true;
 				}
@@ -7510,11 +7515,16 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool aster
 			if (!itsFine) {
 				return;
 			}
+			if (core->anal->verbose) {
+				eprintf ("Warning: aav: false positive in 0x%08"PFMT64x"\n", from);
+			}
 		}
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, from, -1);
-	if (fcn) {
-		return;
+	if (!vinfun) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, from, -1);
+		if (fcn) {
+			return;
+		}
 	}
 	if (asterisk) {
 		r_cons_printf ("ax 0x%"PFMT64x " 0x%"PFMT64x "\n", to, from);
