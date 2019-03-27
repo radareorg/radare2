@@ -4610,16 +4610,17 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		name = fcn->name;
 	} else if (f) {
 		flag = r_core_flag_get_by_spaces (f, addr);
-		if (flag) {
-			name = flag->name;
-		} else {
-			RBinReloc *rel = getreloc (ds->core, addr, ds->analop.size);
+		RBinReloc *rel = getreloc (ds->core, addr, ds->analop.size);
+		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = rel->import->name;
+			} else if (rel && rel->symbol && rel->symbol->name) {
+				name = rel->symbol->name;
 			}
+		} else if (flag) {
+			name = flag->name;
 		}
-	}
-	if (name) {
+	} if (name) {
 		char *nptr, *ptr;
 		ut64 numval;
 		ptr = str;
