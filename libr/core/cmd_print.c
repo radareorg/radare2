@@ -1361,7 +1361,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		while (*fmt && IS_WHITECHAR (*fmt)) {
 			fmt++;
 		}
-		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
+		int times = atoi (fmt);
+		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0) * times;
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
 		if (!buf) {
