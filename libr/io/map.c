@@ -14,6 +14,9 @@
 #define CMP_END_GT(addr, itv) \
 	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) > r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
 
+#define CMP_END_GTE(addr, itv) \
+	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : 1)
+
 struct map_event_t {
 	RIOMap *map;
 	ut64 addr;
@@ -362,7 +365,7 @@ R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, false);
 	const RPVector *shadow = &io->map_skyline_shadow;
 	size_t i, len = r_pvector_len (shadow);
-	r_pvector_lower_bound (shadow, addr, i, CMP_END_GT);
+	r_pvector_lower_bound (shadow, addr, i, CMP_END_GTE);
 	if (i == len) {
 		return false;
 	}
