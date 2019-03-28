@@ -779,13 +779,6 @@ static bool check_buffer(RBuffer *buf) {
 	return false;
 }
 
-static bool check_bytes(const ut8 *bytes, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 static RBinInfo *info(RBinFile *bf) {
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -2002,7 +1995,8 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+// iH
+static void dex_header(RBinFile *bf) {
 	struct r_bin_dex_obj_t *bin = bf->o->bin_obj;
 	struct r_bin_t *rbin = bf->rbin;
 
@@ -2062,13 +2056,48 @@ static RList *lines(RBinFile *bf) {
 	// return r_list_clone (dex->lines_list);
 }
 
+// iH*
+static RList *dex_fields(RBinFile *bf) {
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	ret->free = free;
+	ut64 addr = 0;
+
+#define ROW(nam,siz,val,fmt) \
+	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt)); \
+	addr += siz;
+
+	r_buf_seek (bf->buf, 0, 0);
+	ut64 magic = r_buf_read_le64 (bf->buf);
+	ROW ("dex_magic", 8, magic, "[8]c");
+	ut32 checksum = r_buf_read_le32 (bf->buf);
+	ROW ("dex_checksum", 4, checksum, "x");
+	ut8 signature[20];
+	ROW ("dex_signature", 8, signature, "[20]c");
+	ut32 size = r_buf_read_le32 (bf->buf);
+	ROW ("dex_size", 4, size, "x");
+	ut32 header_size = r_buf_read_le32 (bf->buf);
+	ROW ("dex_header_size", 4, header_size, "x");
+	ut32 endian = r_buf_read_le32 (bf->buf);
+	ROW ("dex_endian", 4, endian, "x");
+/*
+	ROW ("hdr.cputype", 4, mh->cputype, "x");
+	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");
+	ROW ("hdr.filetype", 4, mh->filetype, "x");
+	ROW ("hdr.nbcmds", 4, mh->ncmds, "x");
+	ROW ("hdr.sizeofcmds", 4, mh->sizeofcmds, "x");
+*/
+	return ret;
+}
+
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
-	.check_bytes = check_bytes,
 	.check_buffer = check_buffer,
 	.baddr = baddr,
 	.entries = entries,
@@ -2078,7 +2107,8 @@ RBinPlugin r_bin_plugin_dex = {
 	.imports = imports,
 	.strings = strings,
 	.info = &info,
-	.header = &header,
+	.header = dex_header,
+	.fields = dex_fields,
 	.size = &size,
 	.get_offset = &getoffset,
 	.get_name = &getname,

@@ -2761,6 +2761,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
 			if (field->comment && *field->comment) {
 				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", field->comment, addr);
+				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
 			}
 			if (field->format && *field->format) {
 				r_cons_printf ("pf.%s %s\n", field->name, field->format);

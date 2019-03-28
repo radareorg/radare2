@@ -23,7 +23,7 @@ clean:
 
 .PHONY: all clean install install-symlink symstall
 
-FORMATS=elf32 elf64 elf_enums pe32 trx mz zip
+FORMATS=dex macho elf32 elf64 elf_enums pe32 trx mz zip
 
 install: ${F_SDB}
 	@echo "[i] Installing bin format files"

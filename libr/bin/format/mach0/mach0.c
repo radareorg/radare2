@@ -2805,12 +2805,12 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt)); \
 	addr += 4;
-	ROW ("hdr.magic", 4, mh->magic, "x");
-	ROW ("hdr.cputype", 4, mh->cputype, "x");
-	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");
-	ROW ("hdr.filetype", 4, mh->filetype, "x");
-	ROW ("hdr.nbcmds", 4, mh->ncmds, "x");
-	ROW ("hdr.sizeofcmds", 4, mh->sizeofcmds, "x");
+	ROW ("macho_magic", 4, mh->magic, "x");
+	ROW ("macho_cputype", 4, mh->cputype, "x");
+	ROW ("macho_cpusubtype", 4, mh->cpusubtype, "x");
+	ROW ("macho_filetype", 4, mh->filetype, "x");
+	ROW ("macho_nbcmds", 4, mh->ncmds, "x");
+	ROW ("macho_sizeofcmds", 4, mh->sizeofcmds, "x");
 	free (mh);
 	return ret;
 }
