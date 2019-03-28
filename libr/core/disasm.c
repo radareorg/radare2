@@ -1685,6 +1685,17 @@ static void ds_show_functions(RDisasmState *ds) {
 	ds->stackptr = core->anal->stackptr;
 	RAnalFcnVarsCache vars_cache;
 	r_anal_fcn_vars_cache_init (core->anal, &vars_cache, f);
+
+	int o_varsum = ds->show_varsum;
+	if (!ds->show_varsum) {
+		int numvars = vars_cache.bvars->length + vars_cache.rvars->length + vars_cache.svars->length;
+		if (numvars > ds->l) {
+			ds->show_varsum = 1;
+		} else {
+			ds->show_varsum = 0;
+		}
+	}
+
 	if (ds->show_vars && ds->show_varsum) {
 		RList *all_vars = vars_cache.bvars;
 		r_list_join (all_vars, vars_cache.svars);
@@ -1762,6 +1773,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_newline (ds);
 		}
 	}
+	ds->show_varsum = o_varsum;
 	r_anal_fcn_vars_cache_fini (&vars_cache);
 	if (fcn_name_alloc) {
 		free (fcn_name);
