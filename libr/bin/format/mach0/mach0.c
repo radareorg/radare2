@@ -2772,7 +2772,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			{
 				ut8 i, name[17] = {0};
 				r_buf_read_at (buf, addr, name, sizeof (name) - 1);
-				cb_printf ("0x%08"PFMT64x"  name        %s\n", addr- 8, name);
+				cb_printf ("0x%08"PFMT64x"  name        %s\n", addr, name);
 			}
 			break;
 		case LC_LOAD_DYLIB:
