@@ -2,6 +2,10 @@ static bool is_kernelcache(const ut8 *buf, ut64 length) {
 	if (length < sizeof (struct MACH0_(mach_header))) {
 		return false;
 	}
+	ut32 cputype = r_read_le32 (buf + 4);
+	if (cputype != CPU_TYPE_ARM64) {
+		return false;
+	}
 
 	const ut8 *end = buf + length;
 	const ut8 *cursor = buf + sizeof (struct MACH0_(mach_header));
