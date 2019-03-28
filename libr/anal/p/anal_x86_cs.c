@@ -908,7 +908,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		} else {
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			esilprintf (op,  "%s,%s,==,$z,zf,:=,$b%d,cf,=,$p,pf,=,$s,sf,=,$o,of,=",
+			esilprintf (op,  "%s,%s,==,$z,zf,:=,%d,$b,cf,:=,$p,pf,=,$s,sf,=,$o,of,=",
 				src, dst, (INSOP(0).size*8));
 		}
 		break;
@@ -1382,7 +1382,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// Set OF, SF, ZF, AF, PF, and CF flags.
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
-			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,:=,$p,pf,=,$b%d,cf,=",
+			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,:=,$p,pf,=,%d,$b,cf,:=",
 				src, dst, (size*8));
 		}
 		break;
@@ -1392,7 +1392,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			ut64 size = INSOP(0).size;
-			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,:=,$p,pf,=,$b%d,cf,=", src, dst, (size*8));
+			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,:=,$p,pf,=,%d,$b,cf,:=", src, dst, (size*8));
 		}
 		break;
 	case X86_INS_LIDT:
@@ -1679,7 +1679,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		src = getarg (&gop, 1, 0, NULL, SRC_AR);
 		dst = getarg (&gop, 0, 1, "+", DST_AR);
 		int carry_out_bit = (INSOP(0).size * 8) - 1;
-		esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,:=,$c%d,cf,=,$p,pf,=", src, dst, carry_out_bit);
+		esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,:=,%d,$c,cf,:=,$p,pf,=", src, dst, carry_out_bit);
 		}
 		break;
 	case X86_INS_ADC:
@@ -1693,7 +1693,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// to the operation of adding dst += src rather than the one
 			// that adds carry (as esil only keeps track of the last
 			// addition to set the flags).
-			esilprintf (op, "cf,%s,+,%s,$o,of,=,$s,sf,=,$z,zf,:=,$c%d,cf,=,$p,pf,=", src, dst, carry_out_bit);
+			esilprintf (op, "cf,%s,+,%s,$o,of,=,$s,sf,=,$z,zf,:=,%d,$c,cf,:=,$p,pf,=", src, dst, carry_out_bit);
 		}
 		break;
 		/* Direction flag */

@@ -213,13 +213,13 @@ static RI8051Reg registers[] = {
 #define e(frag) r_strbuf_append(&op->esil, frag)
 #define ef(frag, ...) r_strbuf_appendf(&op->esil, frag, __VA_ARGS__)
 
-#define flag_c "$c7,c,=,"
-#define flag_b "$b8,c,=,"
-#define flag_ac "$c3,ac,=,"
-#define flag_ab "$b3,ac,=,"
-#define flag_ov "$c6,ov,=,"
-#define flag_ob "$b7,$b6,^,ov,=,"
-#define flag_p "0xff,a,&=,$p,!,p,=,"
+#define flag_c "7,$c,c,:=,"
+#define flag_b "8,$b,c,:=,"
+#define flag_ac "3,$c,ac,:=,"
+#define flag_ab "3,$b,ac,:=,"
+#define flag_ov "6,$c,ov,:=,"
+#define flag_ob "7,$b,6,$b,^,ov,:=,"
+#define flag_p "0xff,a,&=,$p,!,p,:=,"
 
 #define ev_a 0
 #define ev_bit bitindex[buf[1]>>3]
@@ -516,7 +516,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		break;
 	template_alu4 (0x20, "+", flag_c flag_ac flag_ov flag_p) /* 0x24..0x2f add a,.. */
 	case 0x33: /* rlc a */
-		e ("c,1,&,a,a,+=,$c7,c,=,a,+=," flag_p);
+		e ("c,1,&,a,a,+=,7,$c,c,:=,a,+=," flag_p);
 		break;
 	template_alu4_c (0x30, "+", flag_c flag_ac flag_ov flag_p) /* 0x34..0x3f addc a,.. */
 	template_alu2 (0x40, "|") /* 0x42..0x43 orl direct,.. */
@@ -654,7 +654,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		// if (lower nibble > 9) or (AC == 1) add 6
 		// if (higher nibble > 9) or (C == 1) add 0x60
 		// carry |= carry caused by this operation
-		e ("a,0x0f,&,9,==,$b4,ac,|,?{,6,a,+=,$c7,c,|=,},a,0xf0,&,0x90,==,$b8,c,|,?{,0x60,a,+=,$c7,c,|=,}," flag_p);
+		e ("a,0x0f,&,9,==,4,$b,ac,|,?{,6,a,+=,7,$c,c,|,c,:=,},a,0xf0,&,0x90,==,8,$b,c,|,?{,0x60,a,+=,7,$c,c,|,c,:=,}," flag_p);
 		break;
 	case 0xD5: /* djnz direct, offset */
 		xi (dir1, "--"); xr (dir1); e ("0,==,$z,!,"); cjmp;

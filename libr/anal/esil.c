@@ -409,9 +409,9 @@ static int esil_internal_carry_check(RAnalEsil *esil, ut8 bit) {
 static int esil_internal_parity_check(RAnalEsil *esil) {
 	// Set if the number of set bits in the least significant _byte_ is a multiple of 2.
 	//   - Taken from: https://graphics.stanford.edu/~seander/bithacks.html#ParityWith64Bits
-	ut64 c1 = 0x0101010101010101ULL;
-	ut64 c2 = 0x8040201008040201ULL;
-	ut64 c3 = 0x1FF;
+	const ut64 c1 = 0x0101010101010101ULL;
+	const ut64 c2 = 0x8040201008040201ULL;
+	const ut64 c3 = 0x1FF;
 	// Take only the least significant byte.
 	ut64 lsb = esil->cur & 0xff;
 	return !((((lsb * c1) & c2) % c3) & 1);
@@ -501,7 +501,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 			*num = (((ut64) esil->cur & m) == 0);
 		}
 		break;
-*/	case 'b': //borrow
+	case 'b': //borrow
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_borrow_check (esil, bit);
 		break;
@@ -509,6 +509,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_carry_check (esil, bit);
 		break;
+*/
 	case 'o': //overflow
 		*num = esil_internal_overflow_check (esil);
 		break;
@@ -682,7 +683,55 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 }
 
 static int esil_zf(RAnalEsil *esil) {
-	return r_anal_esil_pushnum(esil, !(esil->cur & genmask (esil->lastsz - 1)));
+	return r_anal_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
+}
+
+static int esil_cf(RAnalEsil *esil) {
+	char *src = r_anal_esil_pop (esil);
+
+	if (!src) {
+		return 0;
+	}
+
+	if (!r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
+		//I'd wish we could enforce consts here
+		//I can't say why, but I feel like "al,$c" would be cancer af
+		//	- condret
+		free (src);
+		return 0;
+	}
+	ut64 bit;
+	r_anal_esil_get_parm (esil, src, &bit);
+	free (src);
+	//carry from bit <src>
+	//range of src goes from 0 to 63
+	//
+	//implements bit mod 64
+	const ut64 mask = genmask (bit & 0x3f);
+	return r_anal_esil_pushnum (esil, (esil->cur & mask) < (esil->old & mask));
+}
+
+static int esil_bf(RAnalEsil *esil) {
+	char *src = r_anal_esil_pop (esil);
+
+	if (!src) {
+		return 0;
+	}
+
+	if (!r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
+		free (src);
+		return 0;
+	}
+	ut64 bit;
+	r_anal_esil_get_parm (esil, src, &bit);
+	free (src);
+	//borrow from bit <src>
+	//range of src goes from 1 to 64
+	//	you cannot borrow from bit 0, bc bit -1 cannot not exist
+	//
+	//implements (bit - 1) mod 64
+	const ut64 mask = genmask ((bit + 0x3f) & 0x3f);
+	return r_anal_esil_pushnum (esil, (esil->old & mask) < (esil->cur & mask));
 }
 
 static int esil_weak_eq(RAnalEsil *esil) {
@@ -3086,6 +3135,8 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 #define OP(x, y) r_anal_esil_set_op (esil, x, y)
 	OP ("$", esil_interrupt);
 	OP ("$z", esil_zf);
+	OP ("$c", esil_cf);
+	OP ("$b", esil_bf);
 	OP ("==", esil_cmp);
 	OP ("<", esil_smaller);
 	OP (">", esil_bigger);

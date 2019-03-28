@@ -498,7 +498,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,+=,$c31,sr,|=,r%d,r%d,+=,$c31,sr,|=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,+=,31,$c,sr,|,sr,:=,r%d,r%d,+=,31,$c,sr,|,sr,:=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_ADDV (code)) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -513,7 +513,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "sr,1,&," CLR_T ",r%d,-=,$b31,sr,|=,r%d,r%d,-=,$b31,sr,|=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "sr,1,&," CLR_T ",r%d,-=,31,$b,sr,|,sr,:=,r%d,r%d,-=,31,$b,sr,|,sr,:=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_SUBV (code)) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -713,7 +713,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,[1],!,?{,0x80,r%d,=[1],1,sr,|=,}", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_UNK;
 	} else if (IS_DT (code)) {
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|=", GET_TARGET_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_UNK;
 	} else if (IS_MACW(code)){
 		r_strbuf_setf (&op->esil,
@@ -816,7 +816,7 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_NEGC (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "1,sr,&,0xFFFFFFFE,sr,&=,r%d,+,0,-,$b31,sr,|=,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,sr,&,0xFFFFFFFE,sr,&=,r%d,+,0,-,31,$b,sr,|,sr,=,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_NOT (code)) {
@@ -877,7 +877,7 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", GET_SOURCE_REG (code), (code & 0xF) * 2);
 	} else if (IS_CMPIMM (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r0,==,$z,sr,|=", code & 0xFF);
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r0,==,$z,sr,|,sr,:=", code & 0xFF);
 	} else if (IS_MOVB_R0_REGDISP (code)) {
 		/* 10000000mmmmi4*1 mov.b R0,@(<disp>,<REG_M>)*/
 		op->type = R_ANAL_OP_TYPE_STORE;

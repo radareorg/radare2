@@ -15,14 +15,14 @@
 #define setZ r_strbuf_appendf(&op->esil, ",$z,Z,:=") //zero flag
 #define setN r_strbuf_appendf(&op->esil, ",$s,N,=") //negative(sign) flag
 #define setV(val) r_strbuf_appendf(&op->esil, ",%s,V,=", val) //overflow flag
-#define setC_B r_strbuf_appendf(&op->esil, ",$c7,C,=") //carry flag for byte op
-#define setC_W r_strbuf_appendf(&op->esil, ",$c15,C,=") //carryflag for word op
-#define setCb_B r_strbuf_appendf(&op->esil, ",$b7,C,=") //borrow flag for byte
-#define setCb_W r_strbuf_appendf(&op->esil, ",$b15,C,=") //borrow flag for word
-#define setH_B r_strbuf_appendf(&op->esil, ",$c3,H,=") //half carry(byte)-bcd
-#define setH_W r_strbuf_appendf(&op->esil, ",$c11,H,=") //half carry(word)-bcd
-#define setHb_B r_strbuf_appendf(&op->esil, ",$b3,H,=") //half borrow(byte)-bcd
-#define setHb_W r_strbuf_appendf(&op->esil, ",$b11,H,=") //halfborrow(word)-bcd
+#define setC_B r_strbuf_appendf(&op->esil, ",7,$c,C,:=") //carry flag for byte op
+#define setC_W r_strbuf_appendf(&op->esil, ",15,$c,C,:=") //carryflag for word op
+#define setCb_B r_strbuf_appendf(&op->esil, ",7,$b,C,:=") //borrow flag for byte
+#define setCb_W r_strbuf_appendf(&op->esil, ",15,$b,C,:=") //borrow flag for word
+#define setH_B r_strbuf_appendf(&op->esil, ",3,$c,H,:=") //half carry(byte)-bcd
+#define setH_W r_strbuf_appendf(&op->esil, ",11,$c,H,:=") //half carry(word)-bcd
+#define setHb_B r_strbuf_appendf(&op->esil, ",3,$b,H,:=") //half borrow(byte)-bcd
+#define setHb_W r_strbuf_appendf(&op->esil, ",11,$b,H,:=") //halfborrow(word)-bcd
 
 //get reg. from opcodes
 #define rs() (buf[1]&0x70)>>4 //upper nibble used as source generally
