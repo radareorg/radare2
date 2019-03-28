@@ -332,7 +332,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h) {
 	(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
-	char *text = r_str_crop (panel->title, x, y, w, h);
+	char *text = r_str_ansi_crop (panel->title, x, y, w, h);
 	if (text) {
 		r_cons_canvas_write (can, text);
 		free (text);
