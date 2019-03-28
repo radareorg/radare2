@@ -35,7 +35,7 @@ static void _6502_anal_update_flags(RAnalOp *op, int flags) {
 		r_strbuf_append (&op->esil, ",$c7,C,=");
 	}
 	if (flags & _6502_FLAGS_Z) {
-		r_strbuf_append (&op->esil, ",$z,Z,=");
+		r_strbuf_append (&op->esil, ",$z,Z,:=");
 	}
 	if (flags & _6502_FLAGS_N) {
 		r_strbuf_append (&op->esil, ",$s,N,=");
@@ -482,7 +482,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		// fix Z
-		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=");
+		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,:=");
 		break;
 	// SBC
 	case 0xe9: // sbc #$ff
@@ -504,7 +504,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		_6502_anal_update_flags (op, _6502_FLAGS_BNZ);
 		// fix Z and revert C
-		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=,C,!=");
+		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,:=,C,!=");
 		break;
 	// ORA
 	case 0x09: // ora #$ff

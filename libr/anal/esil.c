@@ -495,13 +495,13 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	case '$':
 		*num = esil->address;
 		break;
-	case 'z': //zero-flag
+/*	case 'z': //zero-flag
 		{
 			ut64 m = genmask (esil->lastsz - 1);
 			*num = (((ut64) esil->cur & m) == 0);
 		}
 		break;
-	case 'b': //borrow
+*/	case 'b': //borrow
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_borrow_check (esil, bit);
 		break;
@@ -679,6 +679,33 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 		ret = esil->cb.reg_read (esil, regname, num, size);
 	}
 	return ret;
+}
+
+static int esil_zf(RAnalEsil *esil) {
+	return r_anal_esil_pushnum(esil, !(esil->cur & genmask (esil->lastsz - 1)));
+}
+
+static int esil_weak_eq(RAnalEsil *esil) {
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+
+	if (!(dst && src && (r_anal_esil_get_parm_type(esil, dst) == R_ANAL_ESIL_PARM_REG))) {
+		free (dst);
+		free (src);
+		return 0;
+	}
+
+	ut64 src_num;
+	if (r_anal_esil_get_parm(esil, src, &src_num)) {
+		const int ret = r_anal_esil_reg_write (esil, dst, src_num);
+		free (src);
+		free (dst);
+		return 1;
+	}
+
+	free (src);
+	free (dst);
+	return 0;
 }
 
 static int esil_eq(RAnalEsil *esil) {
@@ -3058,6 +3085,7 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 #define OP(x, y) r_anal_esil_set_op (esil, x, y)
 	OP ("$", esil_interrupt);
+	OP ("$z", esil_zf);
 	OP ("==", esil_cmp);
 	OP ("<", esil_smaller);
 	OP (">", esil_bigger);
@@ -3080,6 +3108,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("!", esil_neg);
 	OP ("!=", esil_negeq);
 	OP ("=", esil_eq);
+	OP (":=", esil_weak_eq);
 	OP ("*", esil_mul);
 	OP ("*=", esil_muleq);
 	OP ("^", esil_xor);

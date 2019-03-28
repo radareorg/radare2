@@ -12,7 +12,7 @@
 #define emit(frag) r_strbuf_appendf(&op->esil, frag)
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 //setting the appropriate flags, NOTE: semicolon included
-#define setZ r_strbuf_appendf(&op->esil, ",$z,Z,=") //zero flag
+#define setZ r_strbuf_appendf(&op->esil, ",$z,Z,:=") //zero flag
 #define setN r_strbuf_appendf(&op->esil, ",$s,N,=") //negative(sign) flag
 #define setV(val) r_strbuf_appendf(&op->esil, ",%s,V,=", val) //overflow flag
 #define setC_B r_strbuf_appendf(&op->esil, ",$c7,C,=") //carry flag for byte op

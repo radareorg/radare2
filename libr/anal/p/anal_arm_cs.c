@@ -1104,10 +1104,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
 		if (ISIMM64(1)) {
-			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,-,$z,zf,=,$s,nf,=,$b%d,!,cf,=,$o,vf,=", IMM64(1), REG64(0), arm64_reg_width(REGID64(0)));
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,-,$z,zf,:=,$s,nf,=,$b%d,!,cf,=,$o,vf,=", IMM64(1), REG64(0), arm64_reg_width(REGID64(0)));
 		} else {
 			// cmp w10, w11
-			r_strbuf_setf (&op->esil, "%s,%s,-,$z,zf,=,$s,nf,=,$b%d,!,cf,=,$o,vf,=", REG64(1), REG64(0), arm64_reg_width(REGID64(0)));
+			r_strbuf_setf (&op->esil, "%s,%s,-,$z,zf,:=,$s,nf,=,$b%d,!,cf,=,$o,vf,=", REG64(1), REG64(0), arm64_reg_width(REGID64(0)));
 		}
 		break;
 	case ARM64_INS_FCSEL:
@@ -1451,7 +1451,7 @@ static void arm32mathaddsub(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	if (noflags) {
 		return;
 	}
-	r_strbuf_appendf (&op->esil, ",$z,zf,=,%s,cf,=,vf,=,0,nf,=",
+	r_strbuf_appendf (&op->esil, ",$z,zf,:=,%s,cf,=,vf,=,0,nf,=",
 			(!strcmp (opchar, "+") ? "$c30,$c31,^,$c31" : "$c30,$c31,^,$b32"));
 }
 
@@ -1589,7 +1589,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_CMP:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=,$s,nf,=,$b32,!,cf,=,$o,vf,=", ARG(1), ARG(0));
+		op->type = R_ANAL_OP_TYPE_CMP;
+		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,:=,$s,nf,=,$b32,!,cf,=,$o,vf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_CMN:
 		r_strbuf_appendf (&op->esil, "%s,%s,^,!,!,zf,=", ARG(1), ARG(0));
@@ -1952,7 +1953,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_TST:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,:=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
@@ -2192,7 +2193,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		case ARM_INS_CMN:
 			break;
 		default:
-		        r_strbuf_appendf (&op->esil, ",$z,zf,=");
+		        r_strbuf_appendf (&op->esil, ",$z,zf,:=");
 		}
 	}
 

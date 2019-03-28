@@ -552,7 +552,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		break;
 	case 0x84: /* div ab */
 		// note: escape % if this becomes a format string
-		e ("b,0,==,$z,ov,=,b,a,%,b,a,/=,b,=,0,c,=," flag_p);
+		e ("b,0,==,$z,ov,:=,b,a,%,b,a,/=,b,=,0,c,=," flag_p);
 		break;
 	case 0x85: /* mov direct, direct */
 		xr (dir1); xw (dir2);
@@ -584,7 +584,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		xi (dp, "++");
 		break;
 	case 0xA4: /* mul ab */
-		e ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,$z,!,ov,=,0,c,=," flag_p);
+		e ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,$z,!,ov,:=,0,c,=," flag_p);
 		break;
 	case 0xA5: /* "reserved" */
 		e ("0,trap");
