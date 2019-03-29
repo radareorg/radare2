@@ -384,6 +384,14 @@ R_API int r_egg_run(REgg *egg) {
 	return res;
 }
 
+R_API int r_egg_run_rop(REgg *egg) {
+	return r_sys_run_rop (egg->bin->buf, r_buf_size (egg->bin));
+}
+
+R_API int r_egg_run_rop(REgg *egg) {
+	return r_sys_run_rop (r_buf_buffer (egg->bin), r_buf_size (egg->bin));
+}
+
 #define R_EGG_FILL_TYPE_TRAP
 #define R_EGG_FILL_TYPE_NOP
 #define R_EGG_FILL_TYPE_CHAR

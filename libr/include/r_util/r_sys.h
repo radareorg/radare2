@@ -29,6 +29,7 @@ R_API int r_sys_fork(void);
 R_API bool r_sys_stop(void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
+R_API int r_sys_run_rop(const ut8 *buf, int len);
 R_API int r_sys_getpid(void);
 R_API int r_sys_crash_handler(const char *cmd);
 R_API const char *r_sys_arch_str(int arch);
