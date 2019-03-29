@@ -19,6 +19,17 @@ static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
 }
 #endif
 
+static RFlagZoneItem *r_flag_zone_get_inrange (RFlag *f, ut64 from, ut64 to) {
+	RListIter *iter;
+	RFlagZoneItem *zi;
+	r_list_foreach (DB, iter, zi) {
+		if (R_BETWEEN (from, zi->from, to)) {
+			return zi;
+		}
+	}
+	return NULL;
+}
+
 R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 	r_return_val_if_fail (f && name && *name, false);
 #if R_FLAG_ZONE_USE_SDB
@@ -228,6 +239,21 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 		}
 	}
 	return true;
+}
+
+R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows) {
+	RList *list = r_list_newf (NULL);
+	int i;
+	for (i = 0; i < rows; i++) {
+		RFlagZoneItem *zi = r_flag_zone_get_inrange (f, from, from + bsize);
+		if (zi) {
+			r_list_append (list, zi->name);
+		} else {
+			r_list_append (list, "");
+		}
+		from += bsize;
+	}
+	return list;
 }
 
 R_API bool r_flag_zone_list(RFlag *f, int mode) {

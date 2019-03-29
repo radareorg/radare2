@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -719,7 +719,7 @@ rep:
 		} else eprintf ("Missing arguments\n");
 		break;
 #endif
-	case 'z':
+	case 'z': // "fz"
 		cmd_fz (core, input + 1);
 		break;
 	case 'x':

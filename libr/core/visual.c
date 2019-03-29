@@ -3606,6 +3606,7 @@ static int visual_responsive(RCore *core) {
 	return w;
 }
 
+// TODO: use colors
 static void scrollbar(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
 
@@ -3624,16 +3625,22 @@ static void scrollbar(RCore *core) {
 		to = r_num_math (core->num, "$s");
 	}
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
-	r_cons_gotoxy (w - strlen (s) + 1, 1);
+	r_cons_gotoxy (w - strlen (s) + 1, 2);
 	r_cons_strcat (s);
 	free (s);
 
 	ut64 block = (to - from) / h;
+
+	RList *words = r_flag_zone_barlist (core->flags, from, block, h);
+
 	bool hadMatch = false;
 	for (i = 0; i < h ; i++) {
-		// TODO: show short comment introduced by user in there
-		// TODO: use colors
-		r_cons_gotoxy (w, i + 2);
+		const char *word = r_list_pop_head (words);
+		if (word && *word) {
+			r_cons_gotoxy (w - strlen (word) - 1, i + 3);
+			r_cons_printf ("%s>", word);
+		}
+		r_cons_gotoxy (w, i + 3);
 		if (hadMatch) {
 			r_cons_printf ("|");
 		} else {
@@ -3653,6 +3660,7 @@ static void scrollbar(RCore *core) {
 		r_cons_strcat (s);
 		free (s);
 	}
+	r_list_free (words);
 	r_cons_flush ();
 }
 
