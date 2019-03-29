@@ -170,7 +170,7 @@ static const char *help_msg_panels_zoom[] = {
 };
 
 static void layoutDefault(RPanels *panels);
-static void adjustSidePanels (RCore *core);
+static void adjustSidePanels(RCore *core);
 static int addCmdPanel(void *user);
 static int addCmdfPanel(RCore *core, char *input, char *str);
 static void changePanelNum(RPanels *panels, int now, int after);
@@ -486,7 +486,7 @@ static void layoutDefault(RPanels *panels) {
 	}
 }
 
-static void adjustSidePanels (RCore *core) {
+static void adjustSidePanels(RCore *core) {
 	int i, h;
 	(void)r_cons_get_size (&h);
 	RPanels *panels = core->panels;
