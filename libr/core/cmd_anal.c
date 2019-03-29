@@ -7745,6 +7745,10 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 	}
 }
 
+static bool is_unknown_file(RCore *core) {
+	return (r_list_empty (core->bin->cur->o->sections));
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -7892,7 +7896,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
-				if (strlen (r_config_get (core->config, "file.type")) == 0) {
+				if (is_unknown_file (core)) {
 					oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
 					r_print_rowlog_done (core->print, oldstr);
