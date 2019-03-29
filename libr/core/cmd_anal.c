@@ -7745,6 +7745,10 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 	}
 }
 
+static bool is_unknown_file(RCore *core) {
+	return (r_list_empty (core->bin->cur->o->sections));
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -7824,7 +7828,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			// TODO: accept parameters for ranges
 			eprintf ("Usage: /aap   ; find in memory for function preludes");
 		} else {
-			r_core_search_preludes (core);
+			r_core_search_preludes (core, true);
 		}
 		break;
 	case '\0': // "aa"
@@ -7892,6 +7896,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
+				if (is_unknown_file (core)) {
+					oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
+					(void)r_core_search_preludes (core, false); // "aap"
+					r_print_rowlog_done (core->print, oldstr);
+					if (r_cons_is_breaked ()) {
+						goto jacuzzi;
+					}
+				}
+				
 				oldstr = r_print_rowlog (core->print, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				r_print_rowlog_done (core->print, oldstr);
