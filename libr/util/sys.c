@@ -1002,6 +1002,11 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 #endif
 	// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *bufptr, *p = malloc ((sz + len) << 1);
+	if (p == 0) {
+		eprintf ("r_sys_run_rop: Cannot allocate buffer\n");
+		return false;
+	}
+
 	bufptr = p;
 	pdelta = ((size_t)(p)) & (4096 - 1);
 	if (pdelta) {
@@ -1021,15 +1026,14 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 #endif
 	if (pid < 0) {
 		R_SYS_ASM_START_ROP ();
-	}
-	if (!pid) {
+	} else {
 		R_SYS_ASM_START_ROP ()
 		exit (0);
 	}
 	st = 0;
 	waitpid (pid, &st, 0);
 	if (WIFSIGNALED (st)) {
-		int num = WTERMSIG(st);
+		int num = WTERMSIG (st);
 		eprintf ("Got signal %d\n", num);
 		ret = num;
 	} else {

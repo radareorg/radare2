@@ -123,8 +123,8 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	const char *arch = R_SYS_ARCH;
 	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
-	int show_execute = 0;
-	int show_execute_rop = 0;
+	bool show_execute = false;
+	bool show_execute_rop = false;
 	int show_hex = 1;
 	int show_asm = 0;
 	int show_raw = 0;
@@ -287,7 +287,12 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			break;
 		case 'x':
 			// execute
-			show_execute = 1;
+			show_execute = true;
+			break;
+		case 'X':
+			// execute rop chain
+			show_execute = true;
+			show_execute_rop = true;
 			break;
 		case 'X':
 			// execute rop chain
