@@ -693,7 +693,7 @@ static int esil_cf(RAnalEsil *esil) {
 		return 0;
 	}
 
-	if (!r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
 		//I'd wish we could enforce consts here
 		//I can't say why, but I feel like "al,$c" would be cancer af
 		//	- condret
@@ -718,7 +718,7 @@ static int esil_bf(RAnalEsil *esil) {
 		return 0;
 	}
 
-	if (!r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
 		free (src);
 		return 0;
 	}
