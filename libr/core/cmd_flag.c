@@ -560,15 +560,19 @@ rep:
 	case '+': // "f+'
 	case ' ': {
 		const char *cstr = r_str_trim_ro (str);
-		char* eq = strchr (cstr, '=');
 		char* s = strchr (cstr, ' ');
-		char* s2 = NULL;
+		char* s2 = NULL, *s3 = NULL;
+		char* comment = NULL;
+		bool comment_needs_free = false;
 		ut32 bsze = 1; //core->blocksize;
-		if (eq) {
-			// TODO: add support for '=' char in flag comments
-			*eq = 0;
-			off = r_num_math (core->num, eq + 1);
+
+		// Get outta here as fast as we can so we can make sure that the comment
+		// buffer used on later code can be freed properly if necessary.
+		if (*cstr == '.') {
+			input++;
+			goto rep;
 		}
+
 		if (s) {
 			*s = '\0';
 			s2 = strchr (s + 1, ' ');
@@ -577,21 +581,34 @@ rep:
 				if (s2[1] && s2[2]) {
 					off = r_num_math (core->num, s2 + 1);
 				}
-			}
-			bsze = r_num_math (core->num, s + 1);
-		}
-		if (*cstr == '.') {
-			input++;
-			goto rep;
-		} else {
-			bool addFlag = true;
-			if (input[0] == '+') {
-				if (r_flag_get_at (core->flags, off, false)) {
-					addFlag = false;
+				s3 = strchr (s2 + 1, ' ');
+				if (s3) {
+					*s3 = '\0';
+					if (!strncmp (s3+1, "base64:", 7)) {
+						comment = (char *) sdb_decode (s3+8, NULL);
+						comment_needs_free = true;
+					} else if (s3[1]) {
+						comment = s3 + 1;
+					}
 				}
 			}
-			if (addFlag) {
-				r_flag_set (core->flags, cstr, off, bsze);
+
+			bsze = s[1] == '=' ? 1 : r_num_math (core->num, s + 1);
+		}
+
+		bool addFlag = true;
+		if (input[0] == '+') {
+			if ((item = r_flag_get_at (core->flags, off, false))) {
+				addFlag = false;
+			}
+		}
+		if (addFlag) {
+			item = r_flag_set (core->flags, cstr, off, bsze);
+		}
+		if (item && comment) {
+			r_flag_item_set_comment (item, comment);
+			if (comment_needs_free) {
+				free(comment);
 			}
 		}
 		}
