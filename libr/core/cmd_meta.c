@@ -734,11 +734,11 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (!rep) {
 				rep = strchr (input + len, ' ');
 			}
-#if 0
-			if (rep) {
-				repeat = r_num_math (core->num, rep + 1);
+			if (*input == 'd') {
+				if (rep) {
+					repeat = r_num_math (core->num, rep + 1);
+				}
 			}
-#endif
 		}
 		int repcnt = 0;
 		if (repeat < 1) {
