@@ -447,10 +447,15 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 	if (!xtr_data->metadata || !xtr_data->metadata->arch) {
 		return false;
 	}
-
-	char *iter_arch = xtr_data->metadata->arch;
+	const char *iter_arch = xtr_data->metadata->arch;
 	int iter_bits = xtr_data->metadata->bits;
 	return bits == iter_bits && !strcmp (iter_arch, arch) && !xtr_data->loaded;
+}
+
+R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
+	ut64 sz;
+	const ut8 *bytes = r_buf_data (buf, &sz);
+	return r_bin_file_new_from_bytes (bin, file, bytes, sz, file_sz, rawstr, baseaddr, loadaddr, fd, pluginname, offset);
 }
 
 R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
@@ -694,6 +699,12 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 		r_id_pool_kick_id (a->rbin->ids->pool, a->id);
 	}
 	free (a);
+}
+
+R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
+	ut64 sz;
+	const ut8 *bytes = r_buf_data (buf, &sz);
+	return r_bin_file_xtr_load_bytes (bin, xtr, filename, bytes, sz, file_sz, baseaddr, loadaddr, idx, fd, rawstr);
 }
 
 // This function populate RBinFile->xtr_data, that information is enough to

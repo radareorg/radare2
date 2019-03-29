@@ -325,7 +325,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	RBinXtrPlugin *xtr;
 	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	int tfd = -1;
+	int tfd = opt->fd;
 
 	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
 	const char *fname = iob->fd_get_name (io, opt->fd);
@@ -349,6 +349,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	if (opt->sz >= UT32_MAX) {
 		opt->sz = 1024 * 32;
 	}
+	RBuffer *buf = r_buf_new_with_io (&bin->iob, tfd);
 
 	bin->file = fname;
 	opt->sz = R_MIN (file_sz, opt->sz);
@@ -374,6 +375,8 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			return false;
 		}
 		ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
+		r_buf_seek (buf, seekaddr, R_BUF_CUR);
+		// buf->base_priv = seekaddr;
 		if (!iob->fd_read_at (io, opt->fd, seekaddr, buf_bytes, asz)) {
 			opt->sz = 0LL;
 		}
@@ -383,27 +386,26 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr->check_bytes (buf_bytes, opt->sz)) {
+			if (!xtr->check_buffer) {
+				eprintf ("Missing check_buffer callback for '%s'\n", xtr->name);
+				continue;
+			}
+			if (xtr->check_buffer (buf)) {
 				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					if (is_debugger && opt->sz != file_sz) {
-						R_FREE (buf_bytes);
 						if (tfd < 0) {
 							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
 						}
 						opt->sz = iob->fd_size (io, tfd);
 						if (opt->sz != UT64_MAX) {
-							buf_bytes = calloc (1, opt->sz + 1);
-							if (buf_bytes) {
-								(void)iob->fd_read_at (io, tfd, 0, buf_bytes, opt->sz);
-							}
+							r_buf_seek (buf, 0, R_BUF_SET);
+							//buf->base_priv = 0;
 						}
 						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
 						tfd = -1; // marking it closed
-					} else if (opt->sz != file_sz) {
-						(void)iob->read_at (io, 0LL, buf_bytes, opt->sz);
 					}
-					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
-						fname, buf_bytes, opt->sz, file_sz,
+					binfile = r_bin_file_xtr_load_buffer (bin, xtr,
+						fname, buf, file_sz,
 						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
 						opt->fd, bin->rawstr);
 				}
@@ -411,11 +413,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		}
 	}
 	if (!binfile) {
-		binfile = r_bin_file_new_from_bytes (
-			bin, fname, buf_bytes, opt->sz, file_sz, bin->rawstr,
+		binfile = r_bin_file_new_from_buffer (
+			bin, fname, buf, file_sz, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
-	} else {
-		free (buf_bytes);
 	}
 
 	if (!binfile || !r_bin_file_set_cur_binfile (bin, binfile)) {

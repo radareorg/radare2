@@ -478,9 +478,7 @@ static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 				ut16 d2;
 				ut32 d3;
 				ut64 d4;
-				int r;
-
-				r = r_buf_read (src, tmp, tsize);
+				int r = r_buf_read (src, tmp, tsize);
 				if (r < tsize) {
 					return -1;
 				}
