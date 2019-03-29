@@ -1362,7 +1362,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			fmt++;
 		}
 		int times = atoi (fmt);
-		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0) * times;
+		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0);
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
 		if (!buf) {

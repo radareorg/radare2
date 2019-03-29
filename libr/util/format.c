@@ -1468,7 +1468,7 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
 int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	char *end, *args, *fmt;
-	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0;
+	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
 	if (!f) {
 		return -1;
@@ -1501,6 +1501,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 
 	i = 0;
 	if (IS_DIGIT (fmt[i])) {
+		times = atoi (fmt);
 		while (IS_DIGIT(fmt[i])) {
 			i++;
 		}
@@ -1708,6 +1709,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			size = 0;
 		}
 	}
+	size *= times;
 	free (o);
 	free (args);
 	return (mode & R_PRINT_UNIONMODE)? biggest : size;
