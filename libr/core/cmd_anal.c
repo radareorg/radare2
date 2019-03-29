@@ -7892,13 +7892,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
-				oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
-				(void)r_core_search_preludes (core, false); // "aap"
-				r_print_rowlog_done (core->print, oldstr);
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
+				if (strlen (r_config_get (core->config, "file.type")) == 0) {
+					oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
+					(void)r_core_search_preludes (core, false); // "aap"
+					r_print_rowlog_done (core->print, oldstr);
+					if (r_cons_is_breaked ()) {
+						goto jacuzzi;
+					}
 				}
-
+				
 				oldstr = r_print_rowlog (core->print, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				r_print_rowlog_done (core->print, oldstr);
