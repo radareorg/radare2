@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "r_cons.h"
 #include "r_core.h"
+#include "sdb/sdb.h"
 
 static const char *help_msg_f[] = {
 	"Usage: f","[?] [flagname]", " # Manage offset-name flags",
@@ -834,13 +835,23 @@ rep:
 	case 'C':
 		if (input[1] == ' ') {
 			RFlagItem *item;
-			char *q, *p = strdup (input + 2);
+			char *q, *p = strdup (input + 2), *dec = NULL;
 			q = strchr (p, ' ');
 			if (q) {
 				*q = 0;
 				item = r_flag_get (core->flags, p);
 				if (item) {
-					r_flag_item_set_comment (item, q+1);
+					if (!strncmp (q+1, "base64:", 7)) {
+						dec = (char *) sdb_decode (q+8, NULL);
+						if (dec) {
+							r_flag_item_set_comment (item, dec);
+							free (dec);
+						} else {
+							eprintf ("Failed to decode base64-encoded string\n");
+						}
+					} else {
+						r_flag_item_set_comment (item, q+1);
+					}
 				} else {
 					eprintf ("Cannot find flag with name '%s'\n", p);
 				}
