@@ -1687,8 +1687,9 @@ static void ds_show_functions(RDisasmState *ds) {
 	r_anal_fcn_vars_cache_init (core->anal, &vars_cache, f);
 
 	int o_varsum = ds->show_varsum;
-	if (!ds->show_varsum) {
-		int numvars = vars_cache.bvars->length + vars_cache.rvars->length + vars_cache.svars->length;
+	if (ds->interactive && !o_varsum) {
+		int padding = 10;
+		int numvars = vars_cache.bvars->length + vars_cache.rvars->length + vars_cache.svars->length + padding;
 		if (numvars > ds->l) {
 			ds->show_varsum = 1;
 		} else {
