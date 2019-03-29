@@ -2172,6 +2172,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		wheelspeed = 1;
 	}
 
+	if (ch == 'l' && och == 6) {
+		ch = 'J';
+	} else if (ch == 'h' && och == 2) {
+		ch = 'K';
+	}
+
 	// do we need hotkeys for data references? not only calls?
 	// '0' is handled to seek at the beginning of the function
 	// unless the cursor is set, then, the 0 is captured here
