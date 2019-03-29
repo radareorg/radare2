@@ -3,7 +3,6 @@
 #include <stddef.h>
 #include "r_cons.h"
 #include "r_core.h"
-#include "sdb/sdb.h"
 
 static const char *help_msg_f[] = {
 	"Usage: f","[?] [flagname]", " # Manage offset-name flags",
@@ -585,7 +584,7 @@ rep:
 				if (s3) {
 					*s3 = '\0';
 					if (!strncmp (s3+1, "base64:", 7)) {
-						comment = (char *) sdb_decode (s3+8, NULL);
+						comment = (char *) r_base64_decode_dyn (s3+8, -1);
 						comment_needs_free = true;
 					} else if (s3[1]) {
 						comment = s3 + 1;
@@ -859,7 +858,7 @@ rep:
 				item = r_flag_get (core->flags, p);
 				if (item) {
 					if (!strncmp (q+1, "base64:", 7)) {
-						dec = (char *) sdb_decode (q+8, NULL);
+						dec = (char *) r_base64_decode_dyn (q+8, -1);
 						if (dec) {
 							r_flag_item_set_comment (item, dec);
 							free (dec);
