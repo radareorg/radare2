@@ -32,7 +32,7 @@
 
 #define E_MASK_X    0x03FFF800
 #define E_MASK_XL   0x03FFF801
-#define E_MASK_D    0x01FFFFFF
+#define E_MASK_D    0x03FFFFFF
 #define E_MASK_D8   0x03FF00FF
 #define E_MASK_I16A 0x03FF07FF
 #define E_MASK_SCI8 0x03FF07FF
@@ -426,7 +426,6 @@ const se_vle_t se_ops[] = {
 	{ "se_subi."  , 0x2600, 0x27FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 };
 
-
 static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 	if (!v) {
 		return;
@@ -611,8 +610,8 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 		{
 			v->n = 1;
 			v->fields[0].value = data & 0x3FFFFFE;
-			if (v->fields[0].value & 0x3000000) {
-				v->fields[0].value |= 0xFC000000;
+			if (v->fields[0].value & 0x1000000) {
+				v->fields[0].value |= 0xFE000000;
 			}
 			v->fields[0].type = p->types[0];
 		}
