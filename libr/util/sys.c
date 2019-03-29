@@ -75,6 +75,36 @@ extern char **environ;
 
 R_LIB_VERSION(r_util);
 
+#ifdef __x86_64__
+# ifdef _MSC_VER
+#  define R_SYS_ASM_START_ROP() \
+	 eprintf ("r_sys_run_rop: Unsupported arch\n");
+# else
+#  define R_SYS_ASM_START_ROP() \
+	 __asm__ __volatile__ ("leaq %0, %%rsp; ret" \
+				: \
+				: "m" (*bufptr) \
+				:);
+# endif
+#elif __i386__
+# ifdef _MSC_VER
+#  define R_SYS_ASM_START_ROP() \
+	__asm { \
+		lea esp, bufptr \
+		ret \
+	}
+# else
+#  define R_SYS_ASM_START_ROP() \
+	__asm__ __volatile__ ("leal %0, %%esp; ret" \
+				: \
+				: "m" (*bufptr) \
+				:);
+# endif
+#else
+# define R_SYS_ASM_START_ROP() \
+	eprintf ("r_sys_run_rop: Unsupported arch\n");
+#endif
+
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"x86", R_SYS_ARCH_X86},
     {"arm", R_SYS_ARCH_ARM},
@@ -962,6 +992,59 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 #endif
 	free (p);
 	return ret;
+}
+
+R_API int r_sys_run_rop(const ut8 *buf, int len) {
+	const int sz = 4096;
+	int pdelta;
+#if USE_FORK
+	int st, pid;
+#endif
+	// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
+	ut8 *bufptr, *p = malloc ((sz + len) << 1);
+	if (p == 0) {
+		eprintf ("r_sys_run_rop: Cannot allocate buffer\n");
+		return false;
+	}
+
+	bufptr = p;
+	pdelta = ((size_t)(p)) & (4096 - 1);
+	if (pdelta) {
+		bufptr += (4096 - pdelta);
+	}
+	if (!bufptr || !buf) {
+		eprintf ("r_sys_run_rop: Cannot execute empty rop chain\n");
+		free (p);
+		return false;
+	}
+	memcpy (bufptr, buf, len);
+#if USE_FORK
+#if __UNIX__
+	pid = r_sys_fork ();
+#else
+	pid = -1;
+#endif
+	if (pid < 0) {
+		R_SYS_ASM_START_ROP ();
+	} else {
+		R_SYS_ASM_START_ROP ()
+		exit (0);
+	}
+	st = 0;
+	waitpid (pid, &st, 0);
+	if (WIFSIGNALED (st)) {
+		int num = WTERMSIG (st);
+		eprintf ("Got signal %d\n", num);
+		ret = num;
+	} else {
+		ret = WEXITSTATUS (st);
+	}
+
+#else
+	R_SYS_ASM_START_ROP ();
+#endif
+	free (p);
+	return 0;
 }
 
 R_API bool r_is_heap (void *p) {
