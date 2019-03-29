@@ -1296,7 +1296,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			{
 			struct uuid_command uc = {0};
 			if (off + sizeof (struct uuid_command) > bin->size) {
-				bprintf ("UUID out of obunds\n");
+				bprintf ("UUID out of bounds\n");
 				return false;
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
@@ -1375,7 +1375,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "main", 0);
 
 			if (!is_first_thread) {
-				bprintf("Error: LC_MAIN with other threads\n");
+				bprintf ("Error: LC_MAIN with other threads\n");
 				return false;
 			}
 			if (off + 8 > bin->size || off + sizeof (ep) > bin->size) {
@@ -2764,6 +2764,15 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 					cb_printf ("%02x", uuid[i]);
 				}
 				cb_printf ("\n");
+			}
+			break;
+		case LC_SEGMENT:
+		case LC_SEGMENT_64:
+			cb_printf ("pf.mach0_segment @ 0x%08"PFMT64x"\n", addr - 8);
+			{
+				ut8 i, name[17] = {0};
+				r_buf_read_at (buf, addr, name, sizeof (name) - 1);
+				cb_printf ("0x%08"PFMT64x"  name        %s\n", addr, name);
 			}
 			break;
 		case LC_LOAD_DYLIB:
