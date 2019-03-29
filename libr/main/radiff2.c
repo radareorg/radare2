@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -53,7 +53,6 @@ static RCore *opencore(const char *f) {
 	}
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
-	r_config_set_i (c->config, "anal.split", true);
 	r_config_set_i (c->config, "scr.interactive", false);
 	r_list_foreach (evals, iter, e) {
 		r_config_eval (c->config, e);
@@ -66,8 +65,13 @@ static RCore *opencore(const char *f) {
 			r_core_free (c);
 			return NULL;
 		}
-		r_core_bin_load (c, NULL, baddr);
+		(void)r_core_bin_load (c, NULL, baddr);
 		(void) r_core_bin_update_arch_bits (c);
+
+		// force PA mode when working with raw bins
+		if (r_list_empty (r_bin_get_sections (c->bin))) {
+			r_config_set_i (c->config, "io.va", false);
+		}
 
 		if (anal_all) {
 			const char *cmd = "aac";
