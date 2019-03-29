@@ -1203,9 +1203,21 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			free (tmp);
 			tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), _input + 3);
 			char *path = r_str_r2_prefix (tmp);
-			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
-				if (!r_core_cmd_file (core, _input + 3)) {
-					eprintf ("pfo: cannot open format file at '%s'\n", path);
+			if (r_str_endswith (_input, ".h")) {
+				char *error_msg = NULL;
+				char *out = r_parse_c_file (core->anal, path, &error_msg);
+				if (out) {
+					r_core_save_parsed_type (core, out);
+					r_core_cmd0 (core, ".ts*");
+					free (out);
+				} else {
+					eprintf ("Parse error: %s\n", error_msg);
+				}
+			} else {
+				if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
+					if (!r_core_cmd_file (core, _input + 3)) {
+						eprintf ("pfo: cannot open format file at '%s'\n", path);
+					}
 				}
 			}
 			free (home);
