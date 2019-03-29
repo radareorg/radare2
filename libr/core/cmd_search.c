@@ -334,7 +334,7 @@ static int count_functions(RCore *core) {
 	return r_list_length (core->anal->fcns);
 }
 
-R_API int r_core_search_preludes(RCore *core) {
+R_API int r_core_search_preludes(RCore *core, bool log) {
 	int ret = -1;
 	const char *prelude = r_config_get (core->config, "anal.prelude");
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -353,11 +353,13 @@ R_API int r_core_search_preludes(RCore *core) {
 
 	int fc0 = count_functions (core);
 	r_list_foreach (list, iter, p) {
-		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
-			r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv));
-		if (!(p->perm & R_PERM_X)) {
-			eprintf ("skip\n");
-			continue;
+		if (log) {
+			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
+				r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv));
+			if (!(p->perm & R_PERM_X)) {
+				eprintf ("skip\n");
+				continue;
+			}
 		}
 		from = p->itv.addr;
 		to = r_itv_end (p->itv);
@@ -387,7 +389,9 @@ R_API int r_core_search_preludes(RCore *core) {
 				r_core_search_prelude (core, from, to, (const ut8 *) "\xf0\x00\x00\xa9", 4, (const ut8*)"\xf0\x00\x00\xff", 4);
 				break;
 			default:
-				eprintf ("ap: Unsupported bits: %d\n", bits);
+				if (log) {
+					eprintf ("ap: Unsupported bits: %d\n", bits);
+				}
 			}
 		} else if (strstr (arch, "mips")) {
 			ret = r_core_search_prelude (core, from, to,
@@ -409,18 +413,26 @@ R_API int r_core_search_preludes(RCore *core) {
 					(const ut8 *) "\x55\x48\x8b\xec", 4, NULL, 0);
 				break;
 			default:
-				eprintf ("ap: Unsupported bits: %d\n", bits);
+				if (log) {
+					eprintf ("ap: Unsupported bits: %d\n", bits);
+				}
 			}
 		} else {
-			eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+			if (log) {
+				eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+			}
 		}
-		eprintf ("done\n");
+		if (log) {
+			eprintf ("done\n");
+		}
 	}
 	int fc1 = count_functions (core);
-	if (list) {
-		eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
-	} else {
-		eprintf ("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
+	if (log) {
+		if (list) {
+			eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
+		} else {
+			eprintf ("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
+		}
 	}
 	r_list_free (list);
 	return ret;

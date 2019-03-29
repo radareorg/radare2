@@ -7824,7 +7824,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			// TODO: accept parameters for ranges
 			eprintf ("Usage: /aap   ; find in memory for function preludes");
 		} else {
-			r_core_search_preludes (core);
+			r_core_search_preludes (core, true);
 		}
 		break;
 	case '\0': // "aa"
@@ -7887,6 +7887,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_seek (core, curseek, 1);
 				// oldstr = r_print_rowlog (core->print, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
+				r_print_rowlog_done (core->print, oldstr);
+				if (r_cons_is_breaked ()) {
+					goto jacuzzi;
+				}
+
+				oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
+				(void)r_core_search_preludes (core, false); // "aap"
 				r_print_rowlog_done (core->print, oldstr);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
