@@ -170,7 +170,9 @@ static const char *help_msg_panels_zoom[] = {
 };
 
 static void layoutDefault(RPanels *panels);
-static int layoutSidePanel(void *user);
+static void adjustSidePanels(RCore *core);
+static int addCmdPanel(void *user);
+static int addCmdfPanel(RCore *core, char *input, char *str);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
@@ -484,7 +486,22 @@ static void layoutDefault(RPanels *panels) {
 	}
 }
 
-static int layoutSidePanel(void *user) {
+static void adjustSidePanels(RCore *core) {
+	int i, h;
+	(void)r_cons_get_size (&h);
+	RPanels *panels = core->panels;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = getPanel (panels, i);
+		if (p->pos.x == 0) {
+			if (p->pos.w >= PANEL_CONFIG_SIDEPANEL_W) {
+				p->pos.x += PANEL_CONFIG_SIDEPANEL_W - 1;
+				p->pos.w -= PANEL_CONFIG_SIDEPANEL_W - 1;
+			}
+		}
+	}
+}
+
+static int addCmdPanel(void *user) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
 	if (!checkPanelNum (panels)) {
@@ -497,18 +514,10 @@ static int layoutSidePanel(void *user) {
 	if (!cmd) {
 		return 0;
 	}
-	int i, h;
+	int h;
 	(void)r_cons_get_size (&h);
-	for (i = 0; i < panels->n_panels; i++) {
-		RPanel *p = getPanel (panels, i);
-		if (p->pos.x == 0) {
-			if (p->pos.w >= PANEL_CONFIG_SIDEPANEL_W) {
-				p->pos.x += PANEL_CONFIG_SIDEPANEL_W - 1;
-				p->pos.w -= PANEL_CONFIG_SIDEPANEL_W - 1;
-			}
-		}
-	}
 	bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+	adjustSidePanels (core);
 	addPanelFrame (core, child->name, cmd, caching);
 	changePanelNum (panels, panels->n_panels - 1, 0);
 	RPanel *p0 = getPanel (panels, 0);
@@ -516,6 +525,40 @@ static int layoutSidePanel(void *user) {
 	p0->pos.y = 1;
 	p0->pos.w = PANEL_CONFIG_SIDEPANEL_W;
 	p0->pos.h = h - 1;
+	panels->curnode = 0;
+	setRefreshAll (panels, false);
+	return 0;
+}
+
+static char *loadCmdf(RCore *core, char *input, char *str) {
+	char *ret = NULL;
+	char *res = r_cons_input (input);
+	if (res) {
+		ret = r_core_cmd_strf (core, str, res);
+		free (res);
+	}
+	return ret;
+}
+
+static int addCmdfPanel(RCore *core, char *input, char *str) {
+	RPanels *panels = core->panels;
+	if (!checkPanelNum (panels)) {
+		return 0;
+	}
+	int h;
+	(void)r_cons_get_size (&h);
+	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	adjustSidePanels (core);
+	addPanelFrame (core, child->name, "", true);
+	changePanelNum (panels, panels->n_panels - 1, 0);
+	RPanel *p0 = getPanel (panels, 0);
+	p0->pos.x = 0;
+	p0->pos.y = 1;
+	p0->pos.w = PANEL_CONFIG_SIDEPANEL_W;
+	p0->pos.h = h - 1;
+	p0->cmdStrCache = loadCmdf (core, input, str);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
 	return 0;
@@ -1542,10 +1585,14 @@ static void addPanelFrame(RCore *core, const char *title, const char *cmd, const
 	RPanel *p = getPanel (panels, panels->n_panels);
 	if (title) {
 		p->title = strdup (title);
-		p->cmd = r_str_newf (cmd);
+		if (cmd) {
+			p->cmd = r_str_newf (cmd);
+		} else {
+			p->cmd = "";
+		}
 	} else {
 		p->title = r_core_cmd_str (core, cmd);
-		p->cmd = NULL;
+		p->cmd = "";
 	}
 	p->type = PANEL_TYPE_DEFAULT;
 	p->refresh = true;
@@ -1579,13 +1626,7 @@ static int openFileCb(void *user) {
 	RCore *core = (RCore *)user;
 	core->cons->line->file_prompt = true;
 	r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
-	char *res = r_cons_input ("open file: ");
-	if (res) {
-		if (*res) {
-			r_core_cmdf (core, "o %s", res);
-		}
-		free (res);
-	}
+	addCmdfPanel (core, "open file: ", "o %s");
 	core->cons->line->file_prompt = false;
 	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 	return 0;
@@ -1640,11 +1681,7 @@ static int saveLayoutCb(void *user) {
 
 static int copyCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("How many bytes? ");
-	if (res) {
-		r_core_cmdf (core, "\"y %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "How many bytes? ", "\"y %s\"");
 	return 0;
 }
 
@@ -1656,21 +1693,13 @@ static int pasteCb(void *user) {
 
 static int writeStrCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("insert string: ");
-	if (res) {
-		r_core_cmdf (core, "\"w %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "insert string: ", "\"w %s\"");
 	return 0;
 }
 
 static int writeHexCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("insert hexpairs: ");
-	if (res) {
-		r_core_cmdf (core, "\"wx %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "insert hexpairs: ", "\"wx %s\"");
 	return 0;
 }
 
@@ -1682,9 +1711,7 @@ static int assembleCb(void *user) {
 
 static int fillCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *s = r_cons_input ("Fill with: ");
-	r_core_cmdf (core, "wow %s", s);
-	free (s);
+	addCmdfPanel (core, "Fill with: ", "wow %s");
 	return 0;
 }
 
@@ -1732,41 +1759,25 @@ static int systemShellCb(void *user) {
 
 static int stringCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("search string: ");
-	if (res) {
-		r_core_cmdf (core, "\"/ %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "search string: ", "\"/ %s\"");
 	return 0;
 }
 
 static int ropCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("rop grep: ");
-	if (res) {
-		r_core_cmdf (core, "\"/R %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "rop grep: ", "\"/R %s\"");
 	return 0;
 }
 
 static int codeCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("search code: ");
-	if (res) {
-		r_core_cmdf (core, "\"/c %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "search code: ", "\"/c %s\"");
 	return 0;
 }
 
 static int hexpairsCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("search hexpairs: ");
-	if (res) {
-		r_core_cmdf (core, "\"/x %s\"", res);
-		free (res);
-	}
+	addCmdfPanel (core, "search hexpairs: ", "\"/x %s\"");
 	return 0;
 }
 
@@ -2380,7 +2391,7 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_File[i], "Quit")) {
 			addMenu (core, parent, menus_File[i], quitCb);
 		} else {
-			addMenu (core, parent, menus_File[i], layoutSidePanel);
+			addMenu (core, parent, menus_File[i], addCmdPanel);
 		}
 		i++;
 	}
@@ -2405,7 +2416,7 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Edit[i], "io.cache")) {
 			addMenu (core, parent, menus_Edit[i], iocacheCb);
 		} else {
-			addMenu (core, parent, menus_Edit[i], layoutSidePanel);
+			addMenu (core, parent, menus_Edit[i], addCmdPanel);
 		}
 		i++;
 	}
@@ -2416,7 +2427,7 @@ static bool initPanelsMenu(RCore *core) {
 		if (!strcmp (menus_View[i], "Colors")) {
 			addMenu (core, parent, menus_View[i], colorsCb);
 		} else {
-			addMenu (core, parent, menus_View[i], layoutSidePanel);
+			addMenu (core, parent, menus_View[i], addCmdPanel);
 		}
 		i++;
 	}
@@ -2465,7 +2476,7 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Debug[i], "Reload")) {
 			addMenu (core, parent, menus_Debug[i], reloadCb);
 		} else {
-			addMenu (core, parent, menus_Debug[i], layoutSidePanel);
+			addMenu (core, parent, menus_Debug[i], addCmdPanel);
 		}
 		i++;
 	}
