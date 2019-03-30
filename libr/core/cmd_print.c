@@ -1362,12 +1362,16 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			fmt++;
 		}
 		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0);
-		ut8 *buf = calloc (1, struct_sz);
+		int size = R_MAX (core->blocksize, struct_sz);
+		ut8 *buf = calloc (1, size);
 		if (!buf) {
-			eprintf ("cannot allocate %d byte(s)\n", struct_sz);
+			eprintf ("cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
-		memcpy (buf, core->block, struct_sz);
+		if ((struct_sz > core->blocksize) && !core->fixedblock) {
+			r_core_block_size (core, struct_sz);
+		}
+		memcpy (buf, core->block, core->blocksize);
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		bool syntax_ok = true;
 		char *args = strdup (fmt);
@@ -1384,7 +1388,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		free (args);
 		if (syntax_ok) {
 			r_print_format (core->print, core->offset,
-				buf, struct_sz, fmt, mode, NULL, NULL);
+				buf, size, fmt, mode, NULL, NULL);
 		}
 		free (buf);
 	}
