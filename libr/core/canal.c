@@ -4418,6 +4418,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	if (!sn) {
+		eprintf ("Warning: No SN reg alias for current architecture.\n");
+	}
 	r_reg_arena_push (core->anal->reg);
 	for (i = 0; i < iend; i++) {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
@@ -4481,7 +4484,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				continue;
 			}
 		}
-		if (op.type == R_ANAL_OP_TYPE_SWI) {
+		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
 			int snv = canal_isThumb (core)? op.val: (int)r_reg_getv (core->anal->reg, sn);
 			RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
