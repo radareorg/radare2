@@ -491,6 +491,14 @@ static inline void *r_new_copy(int size, void *data) {
 /* we should default to wasm when ready */
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS R_SYS_BITS_32
+#elif __riscv__ || __riscv
+# define R_SYS_ARCH "riscv"
+# define R_SYS_ENDIAN 0
+# if __riscv_xlen == 32
+#  define R_SYS_BITS R_SYS_BITS_32
+# else
+#  define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+# endif
 #else
 #ifdef _MSC_VER
 #ifdef _WIN64
