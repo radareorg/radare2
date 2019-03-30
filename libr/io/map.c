@@ -11,9 +11,6 @@
 
 #define MAP_USE_HALF_CLOSED 0
 
-#define CMP_END_GT(addr, itv) \
-	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) > r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
-
 #define CMP_END_GTE(addr, itv) \
 	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : 1)
 
