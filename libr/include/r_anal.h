@@ -698,7 +698,6 @@ typedef struct r_anal_t {
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
-	RList *reflines2;
 	//RList *noreturn;
 	RBNode *rb_hints_ranges; // <RAnalRange>
 	bool merge_hints;

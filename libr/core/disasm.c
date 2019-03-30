@@ -787,9 +787,7 @@ static ut64 lastaddr = UT64_MAX;
 static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	r_list_free (anal->reflines);
-	r_list_free (anal->reflines2);
 	anal->reflines = NULL;
-	anal->reflines2 = NULL;
 	R_FREE (ds->refline);
 	R_FREE (ds->refline2);
 }
@@ -804,33 +802,11 @@ static void ds_reflines_init(RDisasmState *ds) {
 		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_lines_call);
-		anal->reflines2 = r_anal_reflines_get (anal,
-			ds->addr, ds->buf, ds->len, ds->l,
-			ds->linesout, 1);
 	} else {
 		r_list_free (anal->reflines);
-		r_list_free (anal->reflines2);
-		anal->reflines = anal->reflines2 = NULL;
+		anal->reflines = NULL;
 	}
 }
-
-#if 0
-static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
-	RCore *core = ds->core;
-	RAnal *anal = core->anal;
-	if (ds->show_lines_bb) {
-		// TODO: make anal->reflines implicit
-		free (anal->reflines); // TODO: leak
-		anal->reflines = r_anal_reflines_fcn_get (anal, fcn, -1, ds->linesout, ds->show_lines_call);
-		free (anal->reflines2); // TODO: leak
-		anal->reflines2 = r_anal_reflines_fcn_get (anal, fcn, -1, ds->linesout, 1);
-	} else {
-		r_list_free (anal->reflines);
-		r_list_free (anal->reflines2);
-		anal->reflines = anal->reflines2 = NULL;
-	}
-}
-#endif
 
 static void ds_free(RDisasmState *ds) {
 	if (!ds) {
