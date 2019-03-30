@@ -2827,12 +2827,12 @@ R_API const char *r_str_closer_chr(const char *b, const char *s) {
 }
 
 R_API int r_str_bounds(const char *_str, int *h) {
-	char *ostr, *str, *ptr;
+	const char *str, *ptr;
 	int W = 0, H = 0;
 	int cw = 0;
 
 	if (_str) {
-		ptr = str = ostr = _str;
+		ptr = str = _str;
 		while (*str) {
 			if (*str == '\n') {
 				H++;

@@ -131,7 +131,6 @@ static bool r_parse_pointer(RParsedPointer *ptr, ut64 decorated_addr, RKernelCac
 static bool on_rebase_pointer (ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx);
 static void rebase_buffer(RKernelCacheObj *obj, RIO *io, RIODesc *fd, ut8 *buf, int count);
 
-static RPrelinkRange *get_prelink_info_range(const ut8 *header_bytes, ut64 length);
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0);
 static RList *filter_kexts(RKernelCacheObj *obj);
 static RList *carve_kexts(RKernelCacheObj *obj);
@@ -270,58 +269,6 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 	}
 
 	return prelink_range;
-}
-
-static RPrelinkRange *get_prelink_info_range(const ut8 *header_bytes, ut64 length) {
-	struct MACH0_(mach_header)  *h64 = (struct MACH0_(mach_header)*) header_bytes;
-	struct load_command *cmd = (struct load_command*) (header_bytes + sizeof (struct MACH0_(mach_header)));
-	struct load_command *end = (struct load_command*)((const ut8*)cmd + h64->sizeofcmds);
-	if ((ut8*) end > (header_bytes + length)) {
-		return NULL;
-	}
-
-	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
-	if (!prelink_range) {
-		return NULL;
-	}
-
-	int incomplete = 3;
-	for (; cmd < end; cmd = (void *)((const ut8*)cmd + cmd->cmdsize)) {
-		if (cmd->cmd != LC_SEGMENT_64) {
-			continue;
-		}
-		struct segment_command_64 *segment = (struct segment_command_64*) cmd;
-		if (!strncmp (segment->segname, "__PRELINK_INFO", 16)) {
-			prelink_range->range.offset = segment->fileoff;
-			prelink_range->range.size = segment->filesize;
-			if (!--incomplete) {
-				return prelink_range;
-			}
-		}
-
-		if (!strncmp (segment->segname, "__PRELINK_TEXT", 16)) {
-			prelink_range->pa2va_exec = segment->vmaddr - segment->fileoff;
-			if (!--incomplete) {
-				return prelink_range;
-			}
-		}
-
-		if (!strncmp (segment->segname, "__PRELINK_DATA", 16)) {
-			prelink_range->pa2va_data = segment->vmaddr - segment->fileoff;
-			if (!--incomplete) {
-				return prelink_range;
-			}
-		}
-
-		if ((int)cmd->cmdsize < 1) {
-			eprintf ("CMD Size FAIL %d\n", cmd->cmdsize);
-			break;
-		}
-	}
-
-	R_FREE (prelink_range);
-
-	return NULL;
 }
 
 static RList *filter_kexts(RKernelCacheObj *obj) {
