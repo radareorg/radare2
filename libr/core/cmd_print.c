@@ -1207,7 +1207,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				char *error_msg = NULL;
 				char *out = r_parse_c_file (core->anal, path, &error_msg);
 				if (out) {
-					r_core_save_parsed_type (core, out);
+					r_anal_save_parsed_type (core->anal, out);
 					r_core_cmd0 (core, ".ts*");
 					free (out);
 				} else {

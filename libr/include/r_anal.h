@@ -1521,6 +1521,10 @@ R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
 R_API RList* r_anal_get_fcns (RAnal *anal);
 
+/* type.c */
+R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
+R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
+
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int index, int xs_type, ut64 xs_addr);
