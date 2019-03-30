@@ -555,6 +555,7 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
+	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1) {
 		cols = 1;
 	}
@@ -581,6 +582,19 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 				} else {
 					const int idx = ((float)block[j] / 255) * (strlen (chars) - 1);
 					ch = chars[idx];
+				}
+			}
+			if (show_unalloc &&
+			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
+				if (show_color) {
+					free (color);
+					color = strdup (Color_RESET);
+					ch = core->print->io_unalloc_ch;
+					if (ch == ' ') {
+						ch = '.';
+					}
+				} else {
+					ch = '?'; // deliberately ignores io.unalloc.ch
 				}
 			}
 			if (square) {
