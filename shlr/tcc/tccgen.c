@@ -280,6 +280,12 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c) {
 	/* don't record fields or anonymous symbols */
 	/* XXX: simplify */
 	if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
+		int i = (v & ~SYM_STRUCT);
+		if (i < TOK_IDENT) {
+			eprintf ("Not found\n");
+			return NULL;
+		}
+		ts = table_ident[i - TOK_IDENT];
 		/* record symbol in token array */
 		ts = table_ident[(v & ~SYM_STRUCT) - TOK_IDENT];
 		if (v & SYM_STRUCT) {
@@ -299,11 +305,17 @@ ST_FUNC Sym *global_identifier_push(int v, int t, long long c) {
 	s = sym_push2 (&global_stack, v, t, c);
 	/* don't record anonymous symbol */
 	if (s && v < SYM_FIRST_ANOM) {
-		ps = &table_ident[v - TOK_IDENT]->sym_identifier;
+		int i = (v & ~SYM_STRUCT);
+		if (i < TOK_IDENT) {
+			eprintf ("Not found\n");
+			return NULL;
+		}
+		ps = &table_ident[i - TOK_IDENT]->sym_identifier;
 		/* modify the top most local identifier, so that
 		   sym_identifier will point to 's' when popped */
-		while (*ps != NULL)
+		while (*ps) {
 			ps = &(*ps)->prev_tok;
+		}
 		s->prev_tok = NULL;
 		*ps = s;
 	}
@@ -323,7 +335,12 @@ ST_FUNC void sym_pop(Sym **ptop, Sym *b) {
 		/* remove symbol in token array */
 		/* XXX: simplify */
 		if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
-			ts = table_ident[(v & ~SYM_STRUCT) - TOK_IDENT];
+			int i = (v & ~SYM_STRUCT);
+			if (i < TOK_IDENT) {
+				eprintf ("Not found\n");
+				return;
+			}
+			ts = table_ident[i - TOK_IDENT]; //(v & ~SYM_STRUCT) - TOK_IDENT];
 			if (v & SYM_STRUCT) {
 				ps = &ts->sym_struct;
 			} else {
