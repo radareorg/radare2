@@ -1588,11 +1588,14 @@ static void addPanelFrame(RCore *core, const char *title, const char *cmd, const
 		if (cmd) {
 			p->cmd = r_str_newf (cmd);
 		} else {
-			p->cmd = "";
+			p->cmd = r_str_newf ("");
 		}
-	} else {
+	} else if (cmd) {
 		p->title = r_core_cmd_str (core, cmd);
-		p->cmd = "";
+		p->cmd = r_str_newf (cmd);
+	} else {
+		p->title = r_str_newf ("");
+		p->cmd = r_str_newf ("");
 	}
 	p->type = PANEL_TYPE_DEFAULT;
 	p->refresh = true;
