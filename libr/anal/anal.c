@@ -155,7 +155,7 @@ R_API RAnal *r_anal_new() {
 		return NULL;
 	}
 	anal->os = strdup (R_SYS_OS);
-	anal->reflines = anal->reflines2 = NULL;
+	anal->reflines = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
