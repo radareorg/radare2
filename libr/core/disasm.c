@@ -2512,9 +2512,8 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	case 8: type = isSigned? ".int64": ".qword"; break;
 	default: return false;
 	}
-	if (!ds->hinted_line) {
-		r_cons_printf ("  ");
-	}
+	// adjust alignment
+	r_cons_printf ("  ");
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
 	{
 		int q = core->print->cur_enabled &&
