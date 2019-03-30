@@ -2742,6 +2742,7 @@ R_API bool r_core_init(RCore *core) {
 			free (a);
 		}
 	}
+	r_core_anal_type_init (core);
 	init_autocomplete (core);
 	return 0;
 }
