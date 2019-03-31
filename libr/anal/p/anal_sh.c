@@ -518,7 +518,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,$o,sr,|=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,$o,sr,|,sr,:=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
 	} else if (IS_CMPEQ (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));

@@ -406,6 +406,7 @@ static int esil_internal_carry_check(RAnalEsil *esil, ut8 bit) {
 	return (esil->cur & mask) < (esil->old & mask);
 }
 
+#if 0
 static int esil_internal_parity_check(RAnalEsil *esil) {
 	// Set if the number of set bits in the least significant _byte_ is a multiple of 2.
 	//   - Taken from: https://graphics.stanford.edu/~seander/bithacks.html#ParityWith64Bits
@@ -416,6 +417,7 @@ static int esil_internal_parity_check(RAnalEsil *esil) {
 	ut64 lsb = esil->cur & 0xff;
 	return !((((lsb * c1) & c2) % c3) & 1);
 }
+#endif
 
 static bool esil_internal_sign_check(RAnalEsil *esil) {
 	if (!esil || !esil->lastsz) {
@@ -509,11 +511,10 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 		bit = (ut8) r_num_get (NULL, &str[2]);
 		*num = esil_internal_carry_check (esil, bit);
 		break;
-*/
 	case 'o': //overflow
 		*num = esil_internal_overflow_check (esil);
 		break;
-/*	case 'p': //parity
+	case 'p': //parity
 		*num = esil_internal_parity_check (esil);
 		break;
 */
@@ -744,6 +745,15 @@ static int esil_pf(RAnalEsil *esil) {
 	// Take only the least significant byte.
 	ut64 lsb = esil->cur & 0xff;
 	return r_anal_esil_pushnum (esil, !((((lsb * c1) & c2) % c3) & 1));
+}
+
+static int esil_of(RAnalEsil *esil) {
+	if (esil->lastsz < 2) {
+		return 0;
+	}
+	const ut64 m[2] = {genmask (esil->lastsz - 1), genmask (esil->lastsz - 2)};
+	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
+	return r_anal_esil_pushnum (esil, result);
 }
 
 static int esil_weak_eq(RAnalEsil *esil) {
@@ -3150,6 +3160,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$c", esil_cf);
 	OP ("$b", esil_bf);
 	OP ("$p", esil_pf);
+	OP ("$o", esil_of);
 	OP ("==", esil_cmp);
 	OP ("<", esil_smaller);
 	OP (">", esil_bigger);
