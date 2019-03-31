@@ -2690,9 +2690,10 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					ds->mi_found = true;
 					break;
 				case R_META_TYPE_FORMAT:
-					r_cons_printf ("format %s {\n", mi->str);
-					r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
-					r_cons_printf ("} %d", mi->size);
+					r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
+					r_print_format (core->print, ds->at, buf + idx,
+						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
+					// r_cons_printf ("} %d", mi->size);
 					ds->oplen = ds->asmop.size = ret = (int)mi->size;
 					R_FREE (ds->line);
 					R_FREE (ds->refline);
@@ -5011,7 +5012,9 @@ toro:
 		ds_print_cycles (ds);
 		ds_print_family (ds);
 		ds_print_stackptr (ds);
-		ret = ds_print_meta_infos (ds, buf, len, idx);
+		if (ds_print_meta_infos (ds, buf, len, idx)) {
+			goto next;
+		}
 		if (ds->mi_found) {
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
@@ -5102,6 +5105,7 @@ toro:
 			R_FREE (ds->refline);
 			R_FREE (ds->refline2);
 		}
+next:
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
 
