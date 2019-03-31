@@ -746,7 +746,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		while (repcnt < repeat) {
 			char *arg = strchr (input, ' ');
-			int off = (arg)? arg - input : 1;
+			int off = (arg)? arg - input + 1 : 1;
 			t = strdup (r_str_trim_ro (input + off));
 			p = NULL;
 			n = 0;
