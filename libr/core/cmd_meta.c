@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -745,7 +745,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			repeat = 1;
 		}
 		while (repcnt < repeat) {
-			int off = (!input[1] || input[1] == ' ') ? 1 : 2;
+			char *arg = strchr (input, ' ');
+			int off = (arg)? arg - input : 1;
 			t = strdup (r_str_trim_ro (input + off));
 			p = NULL;
 			n = 0;
