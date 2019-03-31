@@ -631,6 +631,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				r_config_set_i (r->config, "asm.pcalign", v);
 			}
 		}
+		r_core_anal_type_init (r);
 		r_core_anal_cc_init (r);
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
