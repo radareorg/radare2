@@ -645,7 +645,7 @@ static int cb_asmbits(void *user, void *data) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
 #if __WINDOWS__
-#if !defined(__MINGW64__) && !defined(_WIN64)
+#if !defined(_WIN64)
 				core->dbg->bits = R_SYS_BITS_32;
 #else
 				core->dbg->bits = R_SYS_BITS_64;

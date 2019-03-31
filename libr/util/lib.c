@@ -373,11 +373,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		return false;
 
 	}
-#if __MINGW32__
-	swprintf (directory, L"%ls\\*.*", wcpath);
-#else
 	swprintf (directory, _countof (directory), L"%ls\\*.*", wcpath);
-#endif
 	fh = FindFirstFileW (directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
 		IFDBG eprintf ("Cannot open directory %ls\n", wcpath);
@@ -385,11 +381,7 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		return false;
 	}
 	do {
-#if __MINGW32__
-		swprintf (file, L"%ls/%ls", wcpath, dir.cFileName);
-#else
 		swprintf (file, _countof (file), L"%ls/%ls", wcpath, dir.cFileName);
-#endif
 		wctocbuff = r_utf16_to_utf8 (file);
 		if (wctocbuff) {
 			if (r_lib_dl_check_filename (wctocbuff)) {

@@ -120,11 +120,6 @@
 #define __KFBSD__ 0
 #endif
 
-#if __MINGW32__ || __MINGW64__
-#undef MINGW32
-#define MINGW32 1
-#endif
-
 #ifdef _MSC_VER
   #define restrict
   #define strcasecmp stricmp

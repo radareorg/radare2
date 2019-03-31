@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2017 - pancake */
 
 #include <r_socket.h>
-#if __UNIX__ && !defined(__MINGW32__)
+#if __UNIX__
 
 #include <errno.h>
 #include <string.h>
