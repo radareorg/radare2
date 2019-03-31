@@ -77,10 +77,7 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
 	RList *list = r_list_new ();
-	DWORD flags = TH32CS_SNAPMODULE;
-#ifndef __MINGW32__
-	flags |= TH32CS_SNAPMODULE32;
-#endif
+	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
 	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (flags, dbg->pid);
 
 	if (!h_mod_snap) {
@@ -171,7 +168,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 				mod->map = map;
 				set_mod_inf (h_proc, map, mod);
 				break;
-			}	
+			}
 		}
 	}
 	if (mod->map && mod->sect_hdr && mod->sect_count > 0) {
@@ -253,7 +250,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	/* get process modules list */
 	mod_list = w32_dbg_modules (dbg);
 	/* process memory map */
-	while (cur_addr < si.lpMaximumApplicationAddress && 
+	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
 		if (mbi.State != MEM_FREE) {
 			switch (mbi.Type) {
@@ -271,6 +268,6 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	}
 err_w32_dbg_maps:
 	free (mod_inf.sect_hdr);
-	r_list_free (mod_list);		
+	r_list_free (mod_list);
 	return map_list;
 }

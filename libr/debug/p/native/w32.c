@@ -182,9 +182,6 @@ static HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)(DWORD, DWORD) = NULL;
 #define XSTATE_LEGACY_SSE 1
 #endif
 
-#if defined(XSTATE_MASK_GSSE) && defined (MINGW32)
-#undef XSTATE_MASK_GSSE
-#endif
 #if !defined(XSTATE_MASK_GSSE)
 #define XSTATE_MASK_GSSE (1LLU << (XSTATE_GSSE))
 #endif
@@ -712,14 +709,14 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
-#if __MINGW64__ || _WIN64
+#if _WIN64
 			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
 #endif
 			case EXCEPTION_BREAKPOINT:
 				ret = R_DEBUG_REASON_BREAKPOINT;
 				next_event = 0;
 				break;
-#if __MINGW64__ || _WIN64
+#if _WIN64
 			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP */
 #endif
 			case EXCEPTION_SINGLE_STEP:
@@ -998,7 +995,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	ut64 mm[8];
 	ut16 top = 0;
 	int x = 0, nxmm = 0, nymm = 0;
-#if __MINGW64__ || _WIN64
+#if _WIN64
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
 	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
