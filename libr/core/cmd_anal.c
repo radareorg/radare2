@@ -6254,13 +6254,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			RAnalRef *ref;
 			RListIter *iter;
 			char *space = strchr (input, ' ');
-			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-
 			if (space) {
 				addr = r_num_math (core->num, space + 1);
 			} else {
 				addr = core->offset;
 			}
+			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (input[1] == '.') { // "axf."
 				list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 				if (!list) {
@@ -6282,10 +6281,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					pj_a (pj);
 					r_list_foreach (list, iter, ref) {
+						// TODO: Use r_core_anal_op(DISASM) instead of all those 4 lines
 						ut8 buf[16];
-						r_io_read_at (core->io, ref->addr, buf, sizeof(buf));
+						r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 						r_asm_set_pc (core->assembler, ref->addr);
-						r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
+						r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
 						pj_o (pj);
 						pj_kn (pj, "from", ref->at);
 						pj_kn (pj, "to", ref->addr);
@@ -6313,7 +6313,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						if (flag) {
 							desc = flag->name;
 						} else {
-							r_io_read_at (core->io, ref->addr, buf, sizeof(buf));
+							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 							r_asm_set_pc (core->assembler, ref->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
 							r_parse_filter (core->parser, ref->addr, core->flags, r_asm_op_get_asm (&asmop),
