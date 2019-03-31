@@ -490,21 +490,21 @@ const char *help_msg_pz[] = {
 
 const char *help_msg_pxA[] = {
 	"Usage: pxA [len]", "", "show op analysis color map",
-	"$$", "", "int/swi/trap/new\n", 
-	"+-*/", "", "math ops\n", 
-	"->", "", "push\n", 
-	"..", "", "nop\n", 
-	"<-", "", "pop\n", 
-	"<<>>", "", "shift ops\n", 
-	"==", "", "cmp/test\n", 
-	"XX", "", "invalid\n", 
-	"_C", "", "call\n", 
-	"_J", "", "jump\n", 
-	"_R", "", "ret\n", 
-	"cJ", "", "conditional jump\n", 
-	"io", "", "in/out ops\n", 
-	"mv", "", "move,lea,li\n", 
-	"|&^", "", "bin ops\n", 
+	"$$", "", "int/swi/trap/new\n",
+	"+-*/", "", "math ops\n",
+	"->", "", "push\n",
+	"..", "", "nop\n",
+	"<-", "", "pop\n",
+	"<<>>", "", "shift ops\n",
+	"==", "", "cmp/test\n",
+	"XX", "", "invalid\n",
+	"_C", "", "call\n",
+	"_J", "", "jump\n",
+	"_R", "", "ret\n",
+	"cJ", "", "conditional jump\n",
+	"io", "", "in/out ops\n",
+	"mv", "", "move,lea,li\n",
+	"|&^", "", "bin ops\n",
 	NULL
 };
 
@@ -546,7 +546,7 @@ static void cmd_print_init(RCore *core) {
 }
 
 // colordump
-static void cmd_prc (RCore *core, const ut8* block, int len) {
+static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = true; //false;
 	int i, j;
@@ -1031,7 +1031,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	}
 }
 
-R_API void r_core_gadget_free (RCoreGadget *g) {
+R_API void r_core_gadget_free(RCoreGadget *g) {
 	free (g->cmd);
 	free (g);
 }
@@ -1350,8 +1350,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				int len = delim - name;
 				if (len > 0) {
 					name[len] = '\0';
- 				}
- 			}
+				}
+			}
 
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
@@ -4614,7 +4614,7 @@ static int cmd_print(void *data, const char *input) {
 					// get function in current offset
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-					
+
 					// validate that a function was found in the given address
 					if (!f) {
 						// print empty json object
