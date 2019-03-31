@@ -5012,9 +5012,7 @@ toro:
 		ds_print_cycles (ds);
 		ds_print_family (ds);
 		ds_print_stackptr (ds);
-		if (ds_print_meta_infos (ds, buf, len, idx)) {
-			goto next;
-		}
+		bool haveMeta = ds_print_meta_infos (ds, buf, len, idx);
 		if (ds->mi_found) {
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
@@ -5028,13 +5026,15 @@ toro:
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			if (ds->asm_hint_pos > 0) {
-				ds_print_core_vmode (ds, ds->asm_hint_pos);
-			}
-			ds_end_line_highlight (ds);
-			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
-				ds_print_color_reset (ds);
-				ds_print_comments_right (ds);
+			if (!haveMeta) {
+				if (ds->asm_hint_pos > 0) {
+					ds_print_core_vmode (ds, ds->asm_hint_pos);
+				}
+				ds_end_line_highlight (ds);
+				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
+					ds_print_color_reset (ds);
+					ds_print_comments_right (ds);
+				}
 			}
 		} else {
 			ds->mi_found = false;
@@ -5075,7 +5075,9 @@ toro:
 			}
 		}
 		core->print->resetbg = true;
-		ds_newline (ds);
+		if (!haveMeta) {
+			ds_newline (ds);
+		}
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_MJMP:
