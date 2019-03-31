@@ -331,6 +331,7 @@ static bool print_flag_json(RFlagItem *flag, void *user) {
 
 static bool print_flag_rad(RFlagItem *flag, void *user) {
 	struct print_flag_t *u = (struct print_flag_t *)user;
+	char *comment_b64 = NULL, *tmp = NULL;
 	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
 		return true;
 	}
@@ -338,18 +339,29 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		u->fs = flag->space;
 		u->f->cb_printf ("fs %s\n", u->fs? u->fs->name: "*");
 	}
+	if (flag->comment && *flag->comment) {
+		comment_b64 = r_base64_encode_dyn (flag->comment, -1);
+		// prefix the armored string with "base64:"
+		if (comment_b64) {
+			tmp = r_str_newf ("base64:%s", comment_b64);
+			free (comment_b64);
+			comment_b64 = tmp;
+		}
+	}
 	if (flag->alias) {
 		u->f->cb_printf ("fa %s %s\n", flag->name, flag->alias);
-		if (flag->comment && *flag->comment) {
+		if (comment_b64) {
 			u->f->cb_printf ("\"fC %s %s\"\n",
-				flag->name, flag->comment);
+				flag->name, comment_b64? comment_b64: "");
 		}
 	} else {
 		u->f->cb_printf ("f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
 			flag->name, flag->size, flag->offset,
 			u->pfx? "+": "", u->pfx? u->pfx: "",
-			flag->comment? flag->comment: "");
+			comment_b64? comment_b64: "");
 	}
+
+	free (comment_b64);
 	return true;
 }
 
