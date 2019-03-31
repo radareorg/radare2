@@ -2,12 +2,21 @@
 
 #include <r_config.h>
 
+static void r_config_hold_char_free(RConfigHoldChar *hc) {
+	free (hc->value);
+	free (hc);
+}
+
+static void r_config_hold_num_free(RConfigHoldNum *hc) {
+	free (hc);
+}
+
 R_API bool r_config_hold_s(RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	va_start (ap, h);
 	if (!h->list_char) {
-		h->list_char = r_list_newf ((RListFree) free);
+		h->list_char = r_list_newf ((RListFree)r_config_hold_char_free);
 		if (!h->list_char) {
 			va_end (ap);
 			return false;
@@ -32,7 +41,7 @@ R_API bool r_config_hold_i(RConfigHold *h, ...) {
 		return false;
 	}
 	if (!h->list_num) {
-		h->list_num = r_list_newf ((RListFree) free);
+		h->list_num = r_list_newf ((RListFree)r_config_hold_num_free);
 		if (!h->list_num) {
 			return false;
 		}
