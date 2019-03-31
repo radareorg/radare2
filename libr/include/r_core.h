@@ -598,6 +598,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_print_disasm_all (RCore *core, ut64 addr, int l, int len, int mode);
 R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt);
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes);
+R_API int r_core_get_prc_cols(RCore *core);
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx);
