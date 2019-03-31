@@ -311,7 +311,6 @@ static void ds_print_offset(RDisasmState *ds);
 static void ds_print_op_size(RDisasmState *ds);
 static void ds_print_trace(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
-static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx );
 static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
@@ -2622,6 +2621,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 			int hexlen;
 			int delta;
 			if (mi) {
+				ret = mi->type;
 				switch (mi->type) {
 				case R_META_TYPE_STRING:
 				{
@@ -2683,7 +2683,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					}
 					core->inc = 16; // ds->oplen; //
 					core->print->flags |= R_PRINT_FLAGS_HEADER;
-					ds->asmop.size = ret = (int)mi->size; //-delta;
+					ds->asmop.size = (int)mi->size;
 					R_FREE (ds->line);
 					R_FREE (ds->refline);
 					R_FREE (ds->refline2);
@@ -2693,8 +2693,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
 					r_print_format (core->print, ds->at, buf + idx,
 						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
-					// r_cons_printf ("} %d", mi->size);
-					ds->oplen = ds->asmop.size = ret = (int)mi->size;
+					ds->oplen = ds->asmop.size = (int)mi->size;
 					R_FREE (ds->line);
 					R_FREE (ds->refline);
 					R_FREE (ds->refline2);
@@ -5012,7 +5011,7 @@ toro:
 		ds_print_cycles (ds);
 		ds_print_family (ds);
 		ds_print_stackptr (ds);
-		bool haveMeta = ds_print_meta_infos (ds, buf, len, idx);
+		int miType = ds_print_meta_infos (ds, buf, len, idx);
 		if (ds->mi_found) {
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
@@ -5026,10 +5025,17 @@ toro:
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			if (!haveMeta) {
+			if (miType == R_META_TYPE_FORMAT) {
+				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
+			//		haveMeta = false;
+				}
+			}
+			if (miType != R_META_TYPE_FORMAT) {
 				if (ds->asm_hint_pos > 0) {
 					ds_print_core_vmode (ds, ds->asm_hint_pos);
 				}
+			}
+			{
 				ds_end_line_highlight (ds);
 				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 					ds_print_color_reset (ds);
@@ -5075,7 +5081,7 @@ toro:
 			}
 		}
 		core->print->resetbg = true;
-		if (!haveMeta) {
+		if (miType != R_META_TYPE_FORMAT) {
 			ds_newline (ds);
 		}
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
@@ -5107,7 +5113,6 @@ toro:
 			R_FREE (ds->refline);
 			R_FREE (ds->refline2);
 		}
-next:
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
 
