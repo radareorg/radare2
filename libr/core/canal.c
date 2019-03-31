@@ -4539,6 +4539,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					ut64 dst = ESIL->cur;
 					if ((target && dst == ntarget) || !target) {
 						if (CHECKREF (dst)) {
+							if ((dst & 1) && (core->anal->bits == 16)) {
+								dst &= ~1;
+							}
 							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 						}
 					}
