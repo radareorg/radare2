@@ -525,7 +525,6 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	case 's': //sign
 		*num = esil_internal_sign_check (esil);
 		break;
-*/
 	case 'd': //delay slot state
 		switch (str[2]) {
 		case 's':
@@ -547,6 +546,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 			return false;
 		}
 		break;
+*/
 	default:
 		{
 			// Handle the case of "internal set", i.e. set a register without
@@ -726,9 +726,30 @@ static int esil_of(RAnalEsil *esil) {
 
 static int esil_sf(RAnalEsil *esil) {
 	if (!esil || !esil->lastsz) {
-		return false;
+		return 0;
 	}
 	return ((esil->cur >> (esil->lastsz - 1)) & 1);
+}
+
+static int esil_ds(RAnalEsil *esil) {
+	if (!esil) {
+		return 0;
+	}
+	return r_anal_esil_pushnum (esil, esil->delay);
+}
+
+static int esil_jt(RAnalEsil *esil) {
+	if (!esil) {
+		return 0;
+	}
+	return r_anal_esil_pushnum (esil, esil->jump_target);
+}
+
+static int esil_js(RAnalEsil *esil) {
+	if (!esil) {
+		return 0;
+	}
+	return r_anal_esil_pushnum (esil, esil->jump_target_set);
 }
 
 static int esil_weak_eq(RAnalEsil *esil) {
@@ -3182,6 +3203,9 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$b", esil_bf);
 	OP ("$p", esil_pf);
 	OP ("$o", esil_of);
+	OP ("$ds", esil_ds);
+	OP ("$jt", esil_jt);
+	OP ("$js", esil_js);
 	OP ("==", esil_cmp);
 	OP ("<", esil_smaller);
 	OP (">", esil_bigger);
