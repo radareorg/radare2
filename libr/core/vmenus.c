@@ -2947,8 +2947,13 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case ':':
-			r_core_visual_prompt (core);
-			r_cons_any_key (NULL);
+			{
+				ut64 orig = core->offset;
+				r_core_seek (core, addr, 0);
+				r_core_visual_prompt (core);
+				r_cons_any_key (NULL);
+				r_core_seek (core, orig, 0);
+			}
 			continue;
 		case 'a':
 			switch (level) {
@@ -3095,7 +3100,13 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case '!':
-			r_core_cmd0 (core, "afls");
+			// TODO: use aflsn/aflsb/aflss/...
+			{
+			static int sortMode = 0;
+			const char *sortModes[4] = { "aflsa", "aflss", "aflsb", "aflsn" };
+			r_core_cmd0 (core, sortModes[sortMode%4]);
+			sortMode++;
+			}
 			break;
 		case 'k':
 			if (selectPanel) {

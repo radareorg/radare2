@@ -2812,7 +2812,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		addr = r_num_math (core->num, name);
 	}
 
-	RList *fcns = r_list_new ();
+	RList *fcns = r_list_newf (NULL);
 	if (!fcns) {
 		return -1;
 	}
@@ -2824,7 +2824,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		}
 	}
 
-	r_list_sort (fcns, &cmpfcn);
+	// r_list_sort (fcns, &cmpfcn);
 	if (!rad) {
 		fcn_list_default (core, fcns, false);
 		r_list_free (fcns);
