@@ -92,7 +92,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		" RABIN2_STRFILTER: e bin.str.filter   # r2 -qe bin.str.filter=? -c '' --\n"
+		" RABIN2_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=??' -\n"
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
