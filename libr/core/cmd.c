@@ -1308,7 +1308,12 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	case 'm': // "rm"
 		if (input[1] == ' ') {
-			r_file_rm (input + 2);
+			const char *file = r_str_trim_ro (input + 2);
+			if (*file == '$') {
+				r_cmd_alias_del (core->rcmd, file);
+			} else {
+				r_file_rm (file);
+			}
 		} else {
 			eprintf ("Usage: rm [file]   # removes a file\n");
 		}

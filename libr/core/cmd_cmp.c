@@ -513,13 +513,20 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'a': // "cat"
 		if (input[1] == 't') {
 			const char *path = r_str_trim_ro (input + 2);
-			if (r_fs_check (core->fs, path)) {
-				r_core_cmdf (core, "mg %s", path);
+			if (*path == '$') {
+				const char *oldText = r_cmd_alias_get (core->rcmd, path, 1);
+				if (oldText) {
+					r_cons_printf ("%s\n", oldText + 1);
+				}
 			} else {
-				char *res = r_syscmd_cat (path);
-				if (res) {
-					r_cons_print (res);
-					free (res);
+				if (r_fs_check (core->fs, path)) {
+					r_core_cmdf (core, "mg %s", path);
+				} else {
+					char *res = r_syscmd_cat (path);
+					if (res) {
+						r_cons_print (res);
+						free (res);
+					}
 				}
 			}
 		}
