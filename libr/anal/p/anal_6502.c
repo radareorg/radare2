@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - condret, riq */
+/* radare - LGPL - Copyright 2019 - condret, riq */
 
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
@@ -38,7 +38,7 @@ static void _6502_anal_update_flags(RAnalOp *op, int flags) {
 		r_strbuf_append (&op->esil, ",$z,Z,:=");
 	}
 	if (flags & _6502_FLAGS_N) {
-		r_strbuf_append (&op->esil, ",$s,N,=");
+		r_strbuf_append (&op->esil, ",$s,N,:=");
 	}
 }
 

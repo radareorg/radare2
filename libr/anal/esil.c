@@ -521,9 +521,11 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	case 'r': //regsize in 8-bit-bytes
 		*num = esil->anal->bits / 8;
 		break;
+/*
 	case 's': //sign
 		*num = esil_internal_sign_check (esil);
 		break;
+*/
 	case 'd': //delay slot state
 		switch (str[2]) {
 		case 's':
@@ -748,12 +750,19 @@ static int esil_pf(RAnalEsil *esil) {
 }
 
 static int esil_of(RAnalEsil *esil) {
-	if (esil->lastsz < 2) {
+	if (!esil || esil->lastsz < 2) {
 		return 0;
 	}
 	const ut64 m[2] = {genmask (esil->lastsz - 1), genmask (esil->lastsz - 2)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
 	return r_anal_esil_pushnum (esil, result);
+}
+
+static int esil_sf(RAnalEsil *esil) {
+	if (!esil || !esil->lastsz) {
+		return false;
+	}
+	return ((esil->cur >> (esil->lastsz - 1)) & 1);
 }
 
 static int esil_weak_eq(RAnalEsil *esil) {

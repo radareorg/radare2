@@ -142,7 +142,7 @@ static void update_flags(RAnalOp *op, int flags) {
 		r_strbuf_append (&op->esil, ",$o,ov,:=");
 	}
 	if (flags & V850_FLAG_S) {
-		r_strbuf_append (&op->esil, ",$s,s,=");
+		r_strbuf_append (&op->esil, ",$s,s,:=");
 	}
 	if (flags & V850_FLAG_Z) {
 		r_strbuf_append (&op->esil, ",$z,z,:=");
