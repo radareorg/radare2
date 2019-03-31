@@ -758,10 +758,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						if (n < 1) {
 							n = r_print_format_struct_size (p + 1, core->print, 0, 0);
 							if (n < 1) {
-								eprintf ("Cannot resolve struct size\n");
+								eprintf ("Warning: Cannot resolve struct size for '%s'\n", p + 1);
 								n = 32; //
 							}
-							p = t;
 						}
 						//make sure we do not overflow on r_print_format
 						if (n > core->blocksize) {
