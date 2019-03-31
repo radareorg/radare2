@@ -340,19 +340,12 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 		u->f->cb_printf ("fs %s\n", u->fs? u->fs->name: "*");
 	}
 	if (flag->comment && *flag->comment) {
-		comment_b64 = r_base64_encode_dyn(flag->comment, -1);
+		comment_b64 = r_base64_encode_dyn (flag->comment, -1);
 		// prefix the armored string with "base64:"
 		if (comment_b64) {
-			tmp = malloc(strlen(comment_b64) + 8);
-			if (tmp) {
-				memcpy(tmp, "base64:", 7);
-				strcpy(tmp+7, comment_b64);
-				free(comment_b64);
-				comment_b64 = tmp;
-			} else {
-				free(comment_b64);
-				comment_b64 = NULL;
-			}
+			tmp = r_str_newf ("base64:%s", comment_b64);
+			free (comment_b64);
+			comment_b64 = tmp;
 		}
 	}
 	if (flag->alias) {
@@ -367,9 +360,8 @@ static bool print_flag_rad(RFlagItem *flag, void *user) {
 			u->pfx? "+": "", u->pfx? u->pfx: "",
 			comment_b64? comment_b64: "");
 	}
-	if (comment_b64) {
-		free(comment_b64);
-	}
+
+	free (comment_b64);
 	return true;
 }
 

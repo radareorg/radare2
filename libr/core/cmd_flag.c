@@ -590,8 +590,8 @@ rep:
 				s3 = strchr (s2 + 1, ' ');
 				if (s3) {
 					*s3 = '\0';
-					if (!strncmp (s3+1, "base64:", 7)) {
-						comment = (char *) r_base64_decode_dyn (s3+8, -1);
+					if (!strncmp (s3 + 1, "base64:", 7)) {
+						comment = (char *) r_base64_decode_dyn (s3 + 8, -1);
 						comment_needs_free = true;
 					} else if (s3[1]) {
 						comment = s3 + 1;
@@ -614,7 +614,7 @@ rep:
 		if (item && comment) {
 			r_flag_item_set_comment (item, comment);
 			if (comment_needs_free) {
-				free(comment);
+				free (comment);
 			}
 		}
 		}
@@ -864,8 +864,8 @@ rep:
 				*q = 0;
 				item = r_flag_get (core->flags, p);
 				if (item) {
-					if (!strncmp (q+1, "base64:", 7)) {
-						dec = (char *) r_base64_decode_dyn (q+8, -1);
+					if (!strncmp (q + 1, "base64:", 7)) {
+						dec = (char *) r_base64_decode_dyn (q + 8, -1);
 						if (dec) {
 							r_flag_item_set_comment (item, dec);
 							free (dec);
@@ -873,7 +873,7 @@ rep:
 							eprintf ("Failed to decode base64-encoded string\n");
 						}
 					} else {
-						r_flag_item_set_comment (item, q+1);
+						r_flag_item_set_comment (item, q + 1);
 					}
 				} else {
 					eprintf ("Cannot find flag with name '%s'\n", p);
