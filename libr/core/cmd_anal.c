@@ -60,6 +60,15 @@ static const char *help_msg_aa[] = {
 	NULL
 };
 
+static const char *help_msg_afls[] = {
+	"Usage:", "afls", "[afls] # sort function list",
+	"afls", "", "same as aflsa",
+	"aflsa", "", "sort by address (same as afls)",
+	"aflss", "", "sort by size",
+	"aflsn", "", "sort by name",
+	"aflsb", "", "sort by number of basic blocks",
+	NULL
+};
 static const char *help_msg_aar[] = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
 	"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
@@ -351,7 +360,7 @@ static const char *help_msg_afl[] = {
 	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
-	"afls", "", "sort function list by address",
+	"afls", "[?asn]", "sort function list by address, size or name",
 	NULL
 };
 
@@ -683,9 +692,28 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, ax);
 }
 
+static int cmpname (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	return (int)strcmp (a->name, b->name);
+}
+
+static int cmpsize (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int sa = (int)r_anal_fcn_size (a);
+	int sb = (int)r_anal_fcn_size (b);
+	return (sa > sb)? -1: (sa < sb)? 1 : 0;
+}
+
+static int cmpbbs (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	int la = (int)r_list_length (a->bbs);
+	int lb = (int)r_list_length (b->bbs);
+	return (la > lb)? -1: (la < lb)? 1 : 0;
+}
+
 static int cmpaddr (const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
-	return a->addr - b->addr;
+	return (a->addr > b->addr)? 1: (a->addr <b->addr)? -1: 0;
 }
 
 static int listOpDescriptions(void *_core, const char *k, const char *v) {
@@ -2570,7 +2598,31 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_afl);
 			break;
 		case 's': // "afls"
-			r_list_sort (core->anal->fcns, cmpaddr);
+			switch (input[3]) {
+			case '?':
+				r_core_cmd_help (core, help_msg_afls);
+				break;
+			case 'a': // "aflsa"
+				core->anal->fcns->sorted = false;
+				r_list_sort (core->anal->fcns, cmpaddr);
+				break;
+			case 'b': // "aflsb"
+				core->anal->fcns->sorted = false;
+				r_list_sort (core->anal->fcns, cmpbbs);
+				break;
+			case 's': // "aflss"
+				core->anal->fcns->sorted = false;
+				r_list_sort (core->anal->fcns, cmpsize);
+				break;
+			case 'n': // "aflsn"
+				core->anal->fcns->sorted = false;
+				r_list_sort (core->anal->fcns, cmpname);
+				break;
+			default:
+				core->anal->fcns->sorted = false;
+				r_list_sort (core->anal->fcns, cmpaddr);
+				break;
+			}
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
