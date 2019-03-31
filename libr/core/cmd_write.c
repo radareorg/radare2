@@ -41,6 +41,7 @@ static const char *help_msg_w[] = {
 static const char *help_msg_wa[] = {
 	"Usage:", "wa[of*] [arg]", "",
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
+	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
@@ -1432,12 +1433,28 @@ static int cmd_write(void *data, const char *input) {
 			}
 			break;
 		case ' ':
+		case 'i':
 		case '*': {
-			const char *file = input[1]=='*'? input + 2: input + 1;
+			const char *file = r_str_trim_ro (input + 2);
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);
 			if (acode) {
+				if (input[1] == 'i') { // "wai"
+					RAnalOp analop;
+					if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+						eprintf ("Invalid instruction?\n");
+						break;
+					}
+					if (analop.size < acode->len) {
+						eprintf ("Doesnt fit\n");
+						r_anal_op_fini (&analop);
+						r_asm_code_free (acode);
+						break;
+					}
+					r_anal_op_fini (&analop);
+					r_core_cmd0 (core, "wao nop");
+				}
 				char* hex = r_asm_code_get_hex (acode);
 				if (input[1] == '*') {
 					cmd_write_hexpair (core, hex);
