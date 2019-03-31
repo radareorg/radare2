@@ -1475,8 +1475,8 @@ static void dismantlePanel(RPanels *panels) {
 static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const bool caching) {
 	RPanel *cur = getCurPanel (panels);
 	freeSinglePanel (cur);
-	cur->title = strdup (title);
-	cur->cmd = r_str_newf (cmd);
+	cur->title = r_str_new (title);
+	cur->cmd = r_str_new (cmd);
 	cur->caching = caching;
 	cur->cmdStrCache = NULL;
 	setRefreshAll (panels, false);
@@ -1584,15 +1584,18 @@ static void addPanelFrame(RCore *core, const char *title, const char *cmd, const
 	RPanels *panels = core->panels;
 	RPanel *p = getPanel (panels, panels->n_panels);
 	if (title) {
-		p->title = strdup (title);
+		p->title = r_str_new (title);
 		if (cmd) {
-			p->cmd = r_str_newf (cmd);
+			p->cmd = r_str_new (cmd);
 		} else {
-			p->cmd = "";
+			p->cmd = r_str_new ("");
 		}
+	} else if (cmd) {
+		p->title = r_str_new (cmd);
+		p->cmd = r_str_new (cmd);
 	} else {
-		p->title = r_core_cmd_str (core, cmd);
-		p->cmd = "";
+		p->title = r_str_new ("");
+		p->cmd = r_str_new ("");
 	}
 	p->type = PANEL_TYPE_DEFAULT;
 	p->refresh = true;
@@ -2298,7 +2301,7 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
-	item->name = name ? strdup (name) : NULL;
+	item->name = name ? r_str_new (name) : NULL;
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
@@ -3025,7 +3028,7 @@ static void restorePanelPos(RPanel* panel) {
 }
 
 static char *getPanelsConfigPath() {
-	char *configPath = r_str_newf (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
+	char *configPath = r_str_new (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
 	if (!configPath) {
 		return NULL;
 	}
@@ -3062,7 +3065,7 @@ static void savePanelsLayout(RCore* core, bool temp) {
 			fclose (panelsConfig);
 		}
 	} else {
-		core->panels_tmpcfg = strdup (pj_string (pj));
+		core->panels_tmpcfg = r_str_new (pj_string (pj));
 	}
 	pj_free (pj);
 }
@@ -3072,7 +3075,7 @@ static char *parsePanelsConfig(const char *cfg, int len) {
 		eprintf ("Not valid config!\n");
 		return NULL;
 	}
-	char *tmp = strdup (cfg + 1);
+	char *tmp = r_str_new (cfg + 1);
 	int i = 0;
 	for (; i < len; i++) {
 		if (tmp[i] == '}' && i + 1 < len) {
