@@ -2325,7 +2325,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size==-1)? 1: size;
 					break;
 				case 'r':
-					r_print_format_register (p, mode, fmtname, setval);
+					if (fmtname) {
+						r_print_format_register (p, mode, fmtname, setval);
+					} else {
+						eprintf ("Unknown register\n");
+					}
 					break;
 				case '?':
 					{
