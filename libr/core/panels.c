@@ -172,6 +172,7 @@ static const char *help_msg_panels_zoom[] = {
 static void layoutDefault(RPanels *panels);
 static void adjustSidePanels(RCore *core);
 static int addCmdPanel(void *user);
+static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str);
 static int addCmdfPanel(RCore *core, char *input, char *str);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
@@ -530,11 +531,12 @@ static int addCmdPanel(void *user) {
 	return 0;
 }
 
-static char *loadCmdf(RCore *core, char *input, char *str) {
+static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str) {
 	char *ret = NULL;
 	char *res = r_cons_input (input);
 	if (res) {
-		ret = r_core_cmd_strf (core, str, res);
+		p->cmd = r_str_newf (str, res);
+		ret = r_core_cmd_str (core, p->cmd);
 		free (res);
 	}
 	return ret;
@@ -558,7 +560,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	p0->pos.y = 1;
 	p0->pos.w = PANEL_CONFIG_SIDEPANEL_W;
 	p0->pos.h = h - 1;
-	p0->cmdStrCache = loadCmdf (core, input, str);
+	p0->cmdStrCache = loadCmdf (core, p0, input, str);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
 	return 0;
@@ -1684,7 +1686,7 @@ static int saveLayoutCb(void *user) {
 
 static int copyCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "How many bytes? ", "\"y %s\"");
+	addCmdfPanel (core, "How many bytes? ", "y %s");
 	return 0;
 }
 
@@ -1696,13 +1698,13 @@ static int pasteCb(void *user) {
 
 static int writeStrCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "insert string: ", "\"w %s\"");
+	addCmdfPanel (core, "insert string: ", "w %s");
 	return 0;
 }
 
 static int writeHexCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "insert hexpairs: ", "\"wx %s\"");
+	addCmdfPanel (core, "insert hexpairs: ", "wx %s");
 	return 0;
 }
 
@@ -1762,25 +1764,25 @@ static int systemShellCb(void *user) {
 
 static int stringCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search string: ", "\"/ %s\"");
+	addCmdfPanel (core, "search string: ", "/ %s");
 	return 0;
 }
 
 static int ropCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "rop grep: ", "\"/R %s\"");
+	addCmdfPanel (core, "rop grep: ", "/R %s");
 	return 0;
 }
 
 static int codeCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search code: ", "\"/c %s\"");
+	addCmdfPanel (core, "search code: ", "/c %s");
 	return 0;
 }
 
 static int hexpairsCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search hexpairs: ", "\"/x %s\"");
+	addCmdfPanel (core, "search hexpairs: ", "/x %s");
 	return 0;
 }
 
