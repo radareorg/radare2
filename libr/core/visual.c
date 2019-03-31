@@ -2784,6 +2784,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
+							} else if (!strcmp (__core_visual_print_command (core),
+							                    "prc")) {
+								cols = r_core_get_prc_cols (core);
 							}
 							r_core_seek (core, core->offset + cols, 1);
 						}
@@ -2851,6 +2854,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					while (times--) {
 						if (isDisasmPrint (core->printidx)) {
 							r_core_visual_disasm_up (core, &cols);
+						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
+							cols = r_core_get_prc_cols (core);
 						}
 						r_core_seek_delta (core, -cols);
 					}

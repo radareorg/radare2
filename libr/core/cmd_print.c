@@ -545,21 +545,26 @@ static void cmd_print_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, pz);
 }
 
+R_API int r_core_get_prc_cols(RCore *core) {
+	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
+	cols /= 2;
+	if (cols < 1) {
+		cols = 1;
+	}
+	return cols;
+}
+
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = true; //false;
 	int i, j;
 	char ch, ch2, *color;
-	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
+	int cols = r_core_get_prc_cols (core);
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
-	if (cols < 1) {
-		cols = 1;
-	}
-	cols /= 2;
 	for (i = 0; i < len; i += cols) {
 		r_print_addr (core->print, core->offset + i);
 		for (j = i; j < i + cols; j ++) {
