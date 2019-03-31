@@ -588,6 +588,9 @@ repeat:
 			" df -> define function\n"
 			" du -> undefine function\n"
 			" dc -> define as code\n"
+			" dw -> define as dword (32bit)\n"
+			" dw -> define as qword (64bit)\n"
+			" dd -> define current block or selected bytes as data\n"
 			" V  -> view graph (same as press the 'space' key)\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
