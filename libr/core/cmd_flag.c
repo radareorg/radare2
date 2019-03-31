@@ -559,6 +559,8 @@ rep:
 	case '+': // "f+'
 	case ' ': {
 		const char *cstr = r_str_trim_ro (str);
+		char* eq = strchr (cstr, '=');
+		char* b64 = strstr (cstr, "base64:");
 		char* s = strchr (cstr, ' ');
 		char* s2 = NULL, *s3 = NULL;
 		char* comment = NULL;
@@ -571,7 +573,12 @@ rep:
 			input++;
 			goto rep;
 		}
-
+		// Check base64 padding
+		if (eq && !(b64 && eq > b64 && (eq[1] == '\0' || (eq[1] == '=' && eq[2] == '\0')))) {
+			// TODO: add support for '=' char in non-base64 flag comments
+			*eq = 0;
+			off = r_num_math (core->num, eq + 1);
+		}
 		if (s) {
 			*s = '\0';
 			s2 = strchr (s + 1, ' ');
