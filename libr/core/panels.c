@@ -297,6 +297,7 @@ static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
 static void callVisualGraph(RCore *core);
 static char *parsePanelsConfig(const char *cfg, int len);
+static void rotatePanels(RPanels *panels, bool rev);
 static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
@@ -3347,6 +3348,66 @@ static void createDefaultPanels(RCore *core) {
 	panels->curnode = 0;
 }
 
+static void rotatePanels(RPanels *panels, bool rev) {
+	RPanel *first = getPanel (panels, 0);
+	RPanel *last = getPanel (panels, panels->n_panels - 1);
+	int i;
+	char *tmp_cmd, *tmp_title, *tmp_cmdStrCache;
+	if (!rev) {
+		tmp_cmd = first->cmd;
+		tmp_title = first->title;
+		tmp_cmdStrCache = first->cmdStrCache;
+		for (i = 0; i < panels->n_panels - 1; i++) {
+			RPanel *p0 = getPanel (panels, i);
+			RPanel *p1 = getPanel (panels, i + 1);
+			p0->cmd = p1->cmd;
+			p0->title = p1->title;
+			p0->directionCb = p1->directionCb;
+			p0->refresh = true;
+			p0->type = p1->type;
+			p0->baseAddr = p1->baseAddr;
+			p0->addr = p1->addr;
+			p0->caching = p1->caching;
+			p0->cmdStrCache = p1->cmdStrCache;
+		}
+		last->cmd = tmp_cmd;
+		last->title = tmp_title;
+		last->directionCb = first->directionCb;
+		last->refresh = true;
+		last->type = first->type;
+		last->baseAddr = first->baseAddr;
+		last->addr = first->addr;
+		last->caching = first->caching;
+		last->cmdStrCache = tmp_cmdStrCache;
+	} else {
+		tmp_cmd = last->cmd;
+		tmp_title = last->title;
+		tmp_cmdStrCache = last->cmdStrCache;
+		for (i = panels->n_panels - 1; i > 0; i--) {
+			RPanel *p0 = getPanel (panels, i);
+			RPanel *p1 = getPanel (panels, i - 1);
+			p0->cmd = p1->cmd;
+			p0->title = p1->title;
+			p0->directionCb = p1->directionCb;
+			p0->refresh = true;
+			p0->type = p1->type;
+			p0->baseAddr = p1->baseAddr;
+			p0->addr = p1->addr;
+			p0->caching = p1->caching;
+			p0->cmdStrCache = p1->cmdStrCache;
+		}
+		first->cmd = tmp_cmd;
+		first->title = tmp_title;
+		first->directionCb = last->directionCb;
+		first->refresh = true;
+		first->type = last->type;
+		first->baseAddr = last->baseAddr;
+		first->addr = last->addr;
+		first->caching = last->caching;
+		first->cmdStrCache = tmp_cmdStrCache;
+	}
+}
+
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int i, okey, key;
 
@@ -3460,10 +3521,10 @@ repeat:
 		}
 		break;
 	case 'p':
-		r_core_cmd0 (core, "sp");
+		rotatePanels (panels, false);
 		break;
 	case 'P':
-		r_core_cmd0 (core, "sn");
+		rotatePanels (panels, true);
 		break;
 	case '.':
 		if (!strcmp (cur->cmd, PANEL_CMD_DISASSEMBLY)) {
