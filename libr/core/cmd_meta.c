@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -755,10 +755,11 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
 					if (p) {
+						p = r_str_trim_ro (p);
 						if (n < 1) {
-							n = r_print_format_struct_size (p + 1, core->print, 0, 0);
+							n = r_print_format_struct_size (p, core->print, 0, 0);
 							if (n < 1) {
-								eprintf ("Warning: Cannot resolve struct size for '%s'\n", p + 1);
+								eprintf ("Warning: Cannot resolve struct size for '%s'\n", p);
 								n = 32; //
 							}
 						}
@@ -818,12 +819,15 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					RFlagItem *fi;
 					p = strchr (t, ' ');
 					if (p) {
-						*p = '\0';
-						strncpy (name, p + 1, sizeof (name)-1);
+						*p++ = '\0';
+						p = r_str_trim_ro (p);
+						strncpy (name, p, sizeof (name)-1);
 					} else {
 						if (type != 's') {
 							fi = r_flag_get_i (core->flags, addr);
-							if (fi) strncpy (name, fi->name, sizeof (name)-1);
+							if (fi) {
+								strncpy (name, fi->name, sizeof (name)-1);
+							}
 						}
 					}
 				}
