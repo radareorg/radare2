@@ -1686,7 +1686,7 @@ static int saveLayoutCb(void *user) {
 
 static int copyCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "How many bytes? ", "y %s");
+	addCmdfPanel (core, "How many bytes? ", "\"y %s\"");
 	return 0;
 }
 
@@ -1698,13 +1698,13 @@ static int pasteCb(void *user) {
 
 static int writeStrCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "insert string: ", "w %s");
+	addCmdfPanel (core, "insert string: ", "\"w %s\"");
 	return 0;
 }
 
 static int writeHexCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "insert hexpairs: ", "wx %s");
+	addCmdfPanel (core, "insert hexpairs: ", "\"wx %s\"");
 	return 0;
 }
 
@@ -1764,25 +1764,25 @@ static int systemShellCb(void *user) {
 
 static int stringCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search string: ", "/ %s");
+	addCmdfPanel (core, "search string: ", "\"/ %s\"");
 	return 0;
 }
 
 static int ropCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "rop grep: ", "/R %s");
+	addCmdfPanel (core, "rop grep: ", "\"/R %s\"");
 	return 0;
 }
 
 static int codeCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search code: ", "/c %s");
+	addCmdfPanel (core, "search code: ", "\"/c %s\"");
 	return 0;
 }
 
 static int hexpairsCb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search hexpairs: ", "/x %s");
+	addCmdfPanel (core, "search hexpairs: ", "\"/x %s\"");
 	return 0;
 }
 
@@ -3126,6 +3126,7 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 	for (i = 1; i < count; i++) {
 		title = sdb_json_get_str (cfg, "Title");
 		cmd = sdb_json_get_str (cfg, "Cmd");
+		(void)r_str_arg_unescape (cmd);
 		x = sdb_json_get_str (cfg, "x");
 		y = sdb_json_get_str (cfg, "y");
 		w = sdb_json_get_str (cfg, "w");
