@@ -37,6 +37,6 @@ int vle_init(vle_handle* handle, const ut8* buffer, const ut32 size);
 vle_t* vle_next(vle_handle* handle);
 int vle_option(vle_handle* handle, ut32 option);
 void vle_free(vle_t* instr);
-void vle_snprint(char* str, int size, ut64 addr, vle_t* instr);
+void vle_snprint(char* str, int size, ut32 addr, vle_t* instr);
 
 #endif
