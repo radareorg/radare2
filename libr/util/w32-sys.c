@@ -87,8 +87,8 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 		if (!CreatePipe (&fi, &in, &saAttr, 0)) {
 			ErrorExit ("StdInRd CreatePipe");
 		}
-		LPDWORD nBytesWritten;
-		WriteFile (in, input, strlen(input) + 1, &nBytesWritten, NULL);
+		DWORD nBytesWritten;
+		WriteFile (in, input, strlen (input) + 1, &nBytesWritten, NULL);
 		if (!SetHandleInformation (in, HANDLE_FLAG_INHERIT, 0)) {
 			ErrorExit ("StdIn SetHandleInformation");
 		}
