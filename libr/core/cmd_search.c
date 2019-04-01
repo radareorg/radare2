@@ -329,7 +329,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	// r_search_reset might also benifet from having an if(s->data) R_FREE(s->data), but im not sure.
 	//add a commit that puts it in there to this PR if it wouldnt break anything. (dont have to worry about this happening again, since all searches start by resetting core->search)
 	//For now we will just use r_search_kw_reset
-	r_search_kw_reset(core->search);
+	r_search_kw_reset (core->search);
 	free (b);
 	return preludecnt;
 }
