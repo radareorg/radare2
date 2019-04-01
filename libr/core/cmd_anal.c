@@ -3745,14 +3745,9 @@ repeat:
 			}
 		}
 	}
-	int lencode = r_io_nread_at (core->io, addr, code, sizeof (code));
-	if (lencode < 0) {
-		return_tail (1);
-	} else if (lencode == 0) {
-		return_tail (0);
-	}
+	(void) r_io_read_at_mapped (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
-	ret = r_anal_op (core->anal, &op, addr, code, lencode, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
@@ -3802,7 +3797,7 @@ repeat:
 			core->dbg->reg = core->anal->reg;
 			r_debug_trace_pc (core->dbg, addr);
 			core->dbg->reg = reg;
-		} else {
+		} else if (R_STR_ISNOTEMPTY (R_STRBUF_SAFEGET (&op.esil))) {
 			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
