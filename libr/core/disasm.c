@@ -4575,7 +4575,6 @@ static char *_find_next_number(char *op) {
 static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	RAnal *anal = ds->core->anal;
 	RFlag *f = ds->core->flags;
-	RFlagItem *flag;
 	const char *name = NULL;
 
 	if (!ds->jmpsub || !anal) {
@@ -4591,13 +4590,17 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
-		flag = r_core_flag_get_by_spaces (f, addr);
-		if (flag) {
-			name = flag->name;
-		} else {
-			RBinReloc *rel = getreloc (ds->core, addr, ds->analop.size);
+		RBinReloc *rel = getreloc (ds->core, addr, ds->analop.size);
+		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = rel->import->name;
+			} else if (rel && rel->symbol && rel->symbol->name) {
+				name = rel->symbol->name;
+			}
+		} else {
+			RFlagItem *flag = r_core_flag_get_by_spaces (f, addr);
+			if (flag) {
+				name = flag->name;
 			}
 		}
 	}
