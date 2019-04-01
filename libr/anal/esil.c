@@ -493,11 +493,12 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 			return true;
 		}
 	}
+/*
 	switch (str[1]) {
 	case '$':
 		*num = esil->address;
 		break;
-/*	case 'z': //zero-flag
+	case 'z': //zero-flag
 		{
 			ut64 m = genmask (esil->lastsz - 1);
 			*num = (((ut64) esil->cur & m) == 0);
@@ -517,11 +518,9 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 	case 'p': //parity
 		*num = esil_internal_parity_check (esil);
 		break;
-*/
 	case 'r': //regsize in 8-bit-bytes
 		*num = esil->anal->bits / 8;
 		break;
-/*
 	case 's': //sign
 		*num = esil_internal_sign_check (esil);
 		break;
@@ -546,7 +545,6 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 			return false;
 		}
 		break;
-*/
 	default:
 		{
 			// Handle the case of "internal set", i.e. set a register without
@@ -562,6 +560,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 			*num = imm;
 		}
 	}
+*/
 	return true;
 }
 
@@ -750,6 +749,27 @@ static int esil_js(RAnalEsil *esil) {
 		return 0;
 	}
 	return r_anal_esil_pushnum (esil, esil->jump_target_set);
+}
+
+//regsize
+//can we please deprecate this, it's neither accurate, nor needed
+//plugins should know regsize, and since this is a const even users should know this: ?´e anal.bits´/8
+//	- condret
+static int esil_rs(RAnalEsil *esil) {
+	if (!esil || !esil->anal) {
+		return 0;
+	}
+	r_anal_esil_pushnum (esil, esil->anal->bits >> 3);
+}
+
+//can we please deprecate this, plugins should know their current address
+//even if they don't know it, $$ should be equal to PC register at the begin of each expression
+//	- condret
+static int esil_address(RAnalEsil *esil) {
+	if (!esil) {
+		return 0;
+	}
+	r_anal_esil_pushnum (esil, esil->address);
 }
 
 static int esil_weak_eq(RAnalEsil *esil) {
@@ -3206,6 +3226,8 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$ds", esil_ds);
 	OP ("$jt", esil_jt);
 	OP ("$js", esil_js);
+	OP ("$r", esil_rs);
+	OP ("$$", esil_address);
 	OP ("==", esil_cmp);
 	OP ("<", esil_smaller);
 	OP (">", esil_bigger);
