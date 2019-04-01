@@ -115,15 +115,15 @@ static const char *help_msg_tt[] = {
 };
 
 static const char *help_msg_tl[] = {
-	"Usage:", "", "",
-	"tl", "", "list all links in readable format",
-	"tl", "[typename]", "link a type to current address.",
-	"tl", "[typename] = [address]", "link type to given address.",
-	"tls", "[address]", "show link at given address",
+	"Usage: tl[...]", "[typename] [[=] address]", "# Type link commands",
+	"tl", "", "list all links.",
+	"tll", "", "list all links in readable format.",
+	"tl", " [typename]", "link a type to current address.",
+	"tl", " [typename] = [address]", "link type to given address.",
+	"tls", " [address]", "show link at given address.",
 	"tl-*", "", "delete all links.",
-	"tl-", "[address]", "delete link at given address.",
-	"tl*", "", "list all links in radare2 command format",
-	"tl?", "", "print this help.",
+	"tl-", " [address]", "delete link at given address.",
+	"tl*", "", "list all links in radare2 command format.",
 	NULL
 };
 
@@ -475,6 +475,11 @@ static int stdiflink(void *p, const char *k, const char *v) {
 }
 
 static int print_link_cb(void *p, const char *k, const char *v) {
+	r_cons_printf ("0x%s = %s\n", k + strlen ("link."), v);
+	return 1;
+}
+
+static int print_link_r_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
 	return 1;
 }
@@ -1448,10 +1453,13 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case '*':
-			print_keys (TDB, core, stdiflink, print_link_cb, false);
+			print_keys (TDB, core, stdiflink, print_link_r_cb, false);
+			break;
+		case 'l':
+			print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
 			break;
 		case '\0':
-			print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
+			print_keys (TDB, core, stdiflink, print_link_cb, false);
 			break;
 		}
 		break;
