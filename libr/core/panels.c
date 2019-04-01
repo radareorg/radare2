@@ -172,6 +172,7 @@ static const char *help_msg_panels_zoom[] = {
 static void layoutDefault(RPanels *panels);
 static void adjustSidePanels(RCore *core);
 static int addCmdPanel(void *user);
+static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str);
 static int addCmdfPanel(RCore *core, char *input, char *str);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
@@ -530,11 +531,12 @@ static int addCmdPanel(void *user) {
 	return 0;
 }
 
-static char *loadCmdf(RCore *core, char *input, char *str) {
+static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str) {
 	char *ret = NULL;
 	char *res = r_cons_input (input);
 	if (res) {
-		ret = r_core_cmd_strf (core, str, res);
+		p->cmd = r_str_newf (str, res);
+		ret = r_core_cmd_str (core, p->cmd);
 		free (res);
 	}
 	return ret;
@@ -558,7 +560,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	p0->pos.y = 1;
 	p0->pos.w = PANEL_CONFIG_SIDEPANEL_W;
 	p0->pos.h = h - 1;
-	p0->cmdStrCache = loadCmdf (core, input, str);
+	p0->cmdStrCache = loadCmdf (core, p0, input, str);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
 	return 0;
@@ -3124,6 +3126,7 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 	for (i = 1; i < count; i++) {
 		title = sdb_json_get_str (cfg, "Title");
 		cmd = sdb_json_get_str (cfg, "Cmd");
+		(void)r_str_arg_unescape (cmd);
 		x = sdb_json_get_str (cfg, "x");
 		y = sdb_json_get_str (cfg, "y");
 		w = sdb_json_get_str (cfg, "w");
