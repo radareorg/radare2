@@ -179,6 +179,7 @@ static const char *help_msg_di[] = {
 	"di*", "", "Same as above, but in r2 commands",
 	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
+	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
 	NULL
 };
 
@@ -4397,6 +4398,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	return 1;
 }
 
+static ut8*getFileData(RCore *core, const char *arg) {
+	if (*arg == '$') {
+		return (ut8*) r_cmd_alias_get (core->rcmd, arg, 1);
+	}
+	return (ut8*)r_file_slurp (arg, NULL);
+}
+
 static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 	if (!buf) {
 		if (errmsg) {
@@ -4850,6 +4858,36 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				if (stop != -1) {
 					P ("stopreason=%d\n", stop);
+				}
+				break;
+			case 'f': // "dif"
+				if (input[1] == '?') {
+					eprintf ("Usage: dif $a $b  # diff two alias files\n");
+				} else {
+					char *arg = strchr (input, ' ');
+					if (arg) {
+						arg = strdup (r_str_trim_ro (arg + 1));
+						char *arg2 = strchr (arg, ' ');
+						if (arg2) {
+							*arg2++ = 0;
+							ut8 *a = getFileData (core, arg);
+							ut8 *b = getFileData (core, arg2);
+							if (a && b) {
+								int al = strlen ((const char*)a);
+								int bl = strlen ((const char*)b);
+								RDiff *d = r_diff_new ();
+								char *uni = r_diff_buffers_to_string (d, a, al, b, bl);
+								r_cons_printf ("%s\n", uni);
+								r_diff_free (d);
+								free (uni);
+							} else {
+								eprintf ("Cannot open those alias files\n");
+							}
+						}
+						free (arg);
+					} else {
+						eprintf ("Usage: dif $a $b  # diff two alias files\n");
+					}
 				}
 				break;
 			case '*': // "di*"
