@@ -3745,10 +3745,15 @@ repeat:
 			}
 		}
 	}
-	(void)r_io_read_at (core->io, addr, code, sizeof (code));
+	int lencode = r_io_nread_at (core->io, addr, code, sizeof (code));
+	if (lencode < 0) {
+		return_tail (1);
+	} else if (lencode == 0) {
+		return_tail (0);
+	}
 	// TODO: sometimes this is dupe
-	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
-// if type is JMP then we execute the next N instructions
+	ret = r_anal_op (core->anal, &op, addr, code, lencode, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
 	if (op.size < 1 || ret < 0) {
