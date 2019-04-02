@@ -612,7 +612,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			address += (adjusted_opcode / 15);
 			line += -4 + (adjusted_opcode % 15);
 			struct dex_debug_position_t *position =
-				malloc (sizeof (struct dex_debug_position_t));
+				R_NEW0 (struct dex_debug_position_t);
 			if (!position) {
 				keep = false;
 				break;
@@ -622,6 +622,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			position->line = line;
 			r_list_append (debug_positions, position);
 			}
+			break;
+		}
+		if (p4 + 1 >= p4_end) {
 			break;
 		}
 		opcode = *(p4++) & 0xff;
