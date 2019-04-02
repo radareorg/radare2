@@ -21,6 +21,7 @@ endif
 CFLAGS+=-I../../libr/include/
 CFLAGS+=-I$(SHLR)/spp
 
+LDFLAGS+=-L../../libr/main -lr_main
 LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bp -lr_bp
 LDFLAGS+=-L../../libr/socket -lr_socket

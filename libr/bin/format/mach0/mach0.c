@@ -2770,7 +2770,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		case LC_SEGMENT_64:
 			cb_printf ("pf.mach0_segment @ 0x%08"PFMT64x"\n", addr - 8);
 			{
-				ut8 i, name[17] = {0};
+				ut8 name[17] = {0};
 				r_buf_read_at (buf, addr, name, sizeof (name) - 1);
 				cb_printf ("0x%08"PFMT64x"  name        %s\n", addr, name);
 			}
