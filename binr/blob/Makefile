@@ -60,18 +60,14 @@ symlinks: build
 
 clean:
 	mv main.c main.k
-	mv version.c version.k
 	rm -f *.[ch]
 	mv main.k main.c
-	mv version.k version.c
 	rm -f ${BINS2} r2
 
 build:
 	mv main.c main.k
-	mv version.c version.k
 	rm -f *.[ch]
 	mv main.k main.c
-	mv version.k version.c
 	for FILE in ${BINS2} ; do cp ../$$FILE/*.[ch] . ; done
 	rm -f rwx.c xorhex.c rsc2.c
 	for FILE in ${BINS2} ; do \
@@ -82,10 +78,8 @@ build:
 	rm -f _*
 	${CC} -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
 	mv main.c main.k
-	mv version.c version.k
 	rm -f *.[ch]
 	mv main.k main.c
-	mv version.k version.c
 
 install:
 	mkdir -p "${DESTDIR}${BINDIR}"
