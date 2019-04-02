@@ -46,6 +46,7 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 
 int main(int argc, char **argv) {
 	bool ignore = true;
+	bool this = true;
 	return r_main_radare2 (argc, argv);
 }
 
