@@ -194,11 +194,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
-		ut64 paddr, vaddr, addr;
+		ut64 paddr, vaddr;
 		paddr = string->paddr;
-		vaddr = string->vaddr; // r_bin_get_vaddr (bin, paddr, string->vaddr);
-		addr = va? string->vaddr: string->paddr;
-		if (!r_bin_string_filter (bin, string->string, addr)) {
+		vaddr = rva (r->bin, paddr, string->vaddr, va);
+		if (!r_bin_string_filter (bin, string->string, vaddr)) {
 			continue;
 		}
 		if (string->length < minstr) {
@@ -227,7 +226,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr + string->size, string->string);
+			r_meta_add (r->anal, R_META_TYPE_STRING, vaddr, vaddr + string->size, string->string);
 			f_name = strdup (string->string);
 			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
@@ -237,13 +236,13 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				str = r_str_newf ("str.%s", f_name);
 				f_realname = r_str_newf ("\"%s\"", string->string);
 			}
-			RFlagItem *flag = r_flag_set (r->flags, str, addr, string->size);
+			RFlagItem *flag = r_flag_set (r->flags, str, vaddr, string->size);
 			r_flag_item_set_realname (flag, f_realname);
 			free (str);
 			free (f_name);
 			free (f_realname);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
+			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
@@ -292,8 +291,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 				: r_str_newf ("str.%s", f_name);
 			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"\n"
 				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-				str, string->size, addr,
-				string->size, addr);
+				str, string->size, vaddr,
+				string->size, vaddr);
 			free (str);
 			free (f_name);
 		} else {
@@ -370,7 +369,12 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
-		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+		ut8 *tmp = R_NEWS (ut8, bf->size);
+		if (!tmp) {
+			return false;
+		}
+		r_io_read_at (r->io, 0, tmp, bf->size);
+		r_buf_write_at (bf->buf, 0, tmp, bf->size);
 	}
 	if (!r->file) {
 		eprintf ("Core file not open\n");
@@ -699,13 +703,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);
 		}
-		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_str ("class", info->bclass, mode, false);
 		if (info->actual_checksum) {
 			/* computed checksum */
 			pair_str ("cmp.csum", info->actual_checksum, mode, false);
 		}
 		pair_str ("compiled", compiled, mode, false);
+		pair_str ("compiler", info->compiler, mode, false);
 		pair_bool ("crypto", info->has_crypto, mode, false);
 		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
@@ -757,6 +761,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 			//this should be moved if added to mach0 (or others)
 			pair_bool ("signed", info->signature, mode, false);
 		}
+		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
 		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
 			v = sdb_num_get (binfile->sdb, "mdmp.streams", 0);
@@ -773,8 +778,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (true, hash);
-				int len = r_hash_calculate (rh, hash, (const ut8*)
-						binfile->buf->buf+h->from, h->to);
+				ut8 *tmp = R_NEWS (ut8, h->to);
+				if (!tmp) {
+					return false;
+				}
+				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				int len = r_hash_calculate (rh, hash, tmp, h->to);
+				free (tmp);
 				if (len < 1) {
 					eprintf ("Invaild checksum length\n");
 				}
@@ -792,8 +802,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (true, hash);
-				int len = r_hash_calculate (rh, hash, (const ut8*)
-						binfile->buf->buf+h->from, h->to);
+				ut8 *tmp = R_NEWS (ut8, h->to);
+				if (!tmp) {
+					return false;
+				}
+				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				int len = r_hash_calculate (rh, hash, tmp, h->to);
+				free (tmp);
 				if (len < 1) {
 					eprintf ("Invalid wtf\n");
 				}
@@ -2746,6 +2761,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
 			if (field->comment && *field->comment) {
 				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", field->comment, addr);
+				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
 			}
 			if (field->format && *field->format) {
 				r_cons_printf ("pf.%s %s\n", field->name, field->format);
@@ -3618,31 +3634,6 @@ static int bin_header(RCore *r, int mode) {
 	return false;
 }
 
-static int bin_hashes(RCore *r, int mode) {
-	ut64 lim = r_config_get_i (r->config, "bin.hashlimit");
-	RIODesc *iod = r_io_desc_get (r->io, r->file->fd);
-	if (iod) {
-		// recompute again
-		r_bin_file_hash (r->bin, lim, iod->name);
-		char *hashes = (r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info)? r->bin->cur->o->info->hashes: NULL;
-		if (IS_MODE_JSON (mode)) {
-			PJ *pj = pj_new ();
-			if (!pj) {
-				return false;
-			}
-			pj_o (pj);
-			pj_ks (pj, "values", hashes);
-			pj_end (pj);
-			r_cons_printf ("%s", pj_string (pj));
-			pj_free (pj);
-		} else {
-			r_cons_printf ("%s\n", hashes);
-		}
-		return true;
-	}
-	return false;
-}
-
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
@@ -3745,12 +3736,6 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 			}
 		}
 	}
-#if 0
-	// only compute when requested
-	if ((action & R_CORE_BIN_ACC_HASHES)) {
-		ret &= bin_hashes (core, mode);
-	}
-#endif
 	return ret;
 }
 

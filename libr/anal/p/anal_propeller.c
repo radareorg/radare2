@@ -10,7 +10,7 @@
 
 #include <propeller_disas.h>
 
-static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret;
 	struct propeller_cmd cmd;
 

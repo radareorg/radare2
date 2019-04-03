@@ -21,11 +21,6 @@ endif
 message('SDB version = ' + sdb_version)
 sdb_libversion = host_machine.system() == 'windows' ? '' : sdb_version
 
-sdb_platform_inc = []
-if host_machine.system() == 'windows'
-  sdb_platform_inc = include_directories('msvc')
-endif
-
 # Create sdb_version.h
 conf_data = configuration_data()
 conf_data.set_quoted('SDB_VERSION', sdb_version, description : 'From config.mk')
@@ -65,10 +60,7 @@ libsdb_sources = [
   'src/util.c',
 ]
 
-sdb_inc = [
-  sdb_platform_inc,
-  include_directories(['.', 'src'])
-]
+sdb_inc = include_directories(['.', 'src'])
 
 libsdb = both_libraries('libsdb', libsdb_sources,
   include_directories: sdb_inc,

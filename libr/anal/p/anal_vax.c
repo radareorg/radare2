@@ -11,7 +11,7 @@
 // XXX: do not hardcode size/type here, use proper decoding table
 // http://hotkosc.ru:8080/method-vax.doc
 
-static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	op->size = 1;
 	if (len < 1) {
 		return -1;

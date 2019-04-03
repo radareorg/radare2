@@ -189,6 +189,7 @@ R_API bool r_flag_zone_del(RFlag *fz, const char *name);
 R_API bool r_flag_zone_around(RFlag *fz, ut64 addr, const char **prev, const char **next);
 R_API bool r_flag_zone_list(RFlag *fz, int mode);
 R_API bool r_flag_zone_reset(RFlag *f);
+R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows);
 
 #endif
 

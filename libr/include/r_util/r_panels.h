@@ -25,22 +25,30 @@ typedef enum {
 	PANEL_EDGE_BOTTOM
 } RPanelEdge;
 
-typedef struct r_panel_t {
-	RPanelPos pos;
-	RPanelPos prevPos;
+typedef struct r_panel_model_t {
 	RPanelDirectionCallback directionCb;
-	int sx; // scroll-x
-	int sy; // scroll-y
-	int curpos;
+	RPanelType type;
 	char *cmd;
 	char *title;
-	bool refresh;
-	RPanelType type;
 	ut64 baseAddr;
 	ut64 addr;
 	bool caching;
 	char *cmdStrCache;
+} RPanelModel;
+
+typedef struct r_panel_view_t {
+	RPanelPos pos;
+	RPanelPos prevPos;
+	int sx;
+	int sy;
+	int curpos;
+	bool refresh;
 	int edgeflag;
+} RPanelView;
+
+typedef struct r_panel_t {
+    RPanelModel *model;
+    RPanelView *view;
 } RPanel;
 
 #ifdef __cplusplus

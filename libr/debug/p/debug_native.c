@@ -21,9 +21,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #include "native/bt.c"
 
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 # include <errno.h>
-# if !defined (__HAIKU__) && !defined (__CYGWIN__) && !defined (__sun)
+# if !defined (__HAIKU__) && !defined (__sun)
 #  include <sys/ptrace.h>
 # endif
 # include <sys/wait.h>
@@ -127,7 +127,7 @@ static char *r_debug_native_reg_profile (RDebug *dbg) {
 #include "native/reg.c" // x86 specific
 
 #endif
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static int windows_step (RDebug *dbg) {
 	/* set TRAP flag */
 #if _MSC_VER
@@ -144,7 +144,7 @@ static int windows_step (RDebug *dbg) {
 }
 #endif
 static int r_debug_native_step (RDebug *dbg) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return windows_step (dbg);
 #elif __APPLE__
 	return xnu_step (dbg);
@@ -155,9 +155,6 @@ static int r_debug_native_step (RDebug *dbg) {
 		return false;
 	}
 	return true;
-#elif __CYGWIN__
-	#warning "r_debug_native_step not supported on this platform"
-	return false;
 #else // linux
 	return linux_step (dbg);
 #endif
@@ -171,7 +168,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 #endif
 #if __linux__ || __ANDROID__
 	return linux_attach (dbg, pid);
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 	int ret;
 	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (process != (HANDLE)NULL && DebugActiveProcess (pid)) {
@@ -183,9 +180,6 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	ret = w32_first_thread (pid);
 	CloseHandle (process);
 	return ret;
-#elif __CYGWIN__
-	#warning "r_debug_native_attach not supported on this platform"
-	return -1;
 #elif __APPLE__
 	return xnu_attach (dbg, pid);
 #elif __KFBSD__
@@ -204,11 +198,8 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 }
 
 static int r_debug_native_detach (RDebug *dbg, int pid) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return w32_DebugActiveProcessStop (pid)? 0 : -1;
-#elif __CYGWIN__
-	#warning "r_debug_native_detach not supported on this platform"
-	return -1;
 #elif __APPLE__
 	return xnu_detach (dbg, pid);
 #elif __BSD__
@@ -233,7 +224,7 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #endif
 }
 
-#if !__WINDOWS__ && !__CYGWIN__ && !__APPLE__ && !__BSD__
+#if !__WINDOWS__ && !__APPLE__ && !__BSD__
 /* Callback to trigger SIGINT signal */
 static void r_debug_native_stop(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
@@ -244,7 +235,7 @@ static void r_debug_native_stop(RDebug *dbg) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	/* Honor the Windows-specific signal that instructs threads to process exceptions */
 	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
@@ -264,9 +255,6 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
-#elif __CYGWIN__
-	#warning "r_debug_native_continue not supported on this platform"
-	return -1;
 #else
 	int contsig = dbg->reason.signum;
 
@@ -392,7 +380,7 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 #endif
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 	const char *needle = NULL;
 	int tmp = 0;
@@ -422,7 +410,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
@@ -665,7 +653,7 @@ reason:
 	}
 #endif // __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 #endif // __APPLE__
-#endif // __WINDOWS__ && !__CYGWIN__
+#endif // __WINDOWS__
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
 	return reason;
@@ -685,7 +673,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	if (!list) {
 		return NULL;
 	}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return w32_pids (pid, list);
 #elif __APPLE__
 	if (pid) {
@@ -852,7 +840,7 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 		eprintf ("No list?\n");
 		return NULL;
 	}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return w32_thread_list (pid, list);
 #elif __APPLE__
 	return xnu_thread_list (dbg, pid, list);
@@ -933,7 +921,7 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1) {
 		return false;
 	}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return w32_reg_read (dbg, type, buf, size);
 #elif __APPLE__
 	return xnu_reg_read (dbg, type, buf, size);
@@ -960,7 +948,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 		return xnu_reg_write (dbg, type, buf, size);
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		return w32_reg_write (dbg, type, buf, size);
 #endif
 		return false;
@@ -969,7 +957,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 		return false;
 #endif
 	} else if (type == R_REG_TYPE_GPR) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		return w32_reg_write(dbg, type, buf, size);
 #elif __linux__
 		return linux_reg_write (dbg, type, buf, size);
@@ -1133,7 +1121,7 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		ut64 map_addr;
 
 		r_reg_arena_push (dbg->reg);
-		map_addr = r_debug_execute (dbg, buf->buf, buf->length, 1);
+		map_addr = r_debug_execute (dbg, r_buf_buffer (buf), r_buf_size (buf), 1);
 		r_reg_arena_pop (dbg->reg);
 		if (map_addr != (ut64)-1) {
 			r_debug_map_sync (dbg);
@@ -1144,14 +1132,15 @@ err_linux_map_alloc:
 	return map;
 }
 
-static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
+static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RBuffer *buf = NULL;
 	char code[1024];
 	int ret = 0;
 	char *asm_list[] = {
-			"x86", "x86.as",
-			"x64", "x86.as",
-			NULL};
+		"x86", "x86.as",
+		"x64", "x86.as",
+		NULL
+	};
 	int num = r_syscall_get_num (dbg->anal->syscall, "munmap");
 
 	snprintf (code, sizeof (code),
@@ -1172,14 +1161,14 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		ret = r_debug_execute (dbg, buf->buf, buf->length, 1) == 0;
+		ret = r_debug_execute (dbg, r_buf_buffer (buf), r_buf_size (buf), 1) == 0;
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_dealloc:
 	return ret;
 }
-#elif __WINDOWS__ && !__CYGWIN__
-static int io_perms_to_prot (int io_perms) {
+#elif __WINDOWS__
+static int io_perms_to_prot(int io_perms) {
 	int prot_perms;
 
 	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {
@@ -1209,7 +1198,7 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 
 	return xnu_map_alloc (dbg, addr, size);
 
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 	RDebugMap *map = NULL;
 	LPVOID base = NULL;
 	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
@@ -1239,7 +1228,7 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 
 	return xnu_map_dealloc (dbg, addr, size);
 
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->tid);
 	if (process == INVALID_HANDLE_VALUE) {
 		return false;
@@ -1279,7 +1268,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #endif
 #if __APPLE__
 	list = xnu_dbg_maps (dbg, 0);
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 	list = w32_dbg_maps (dbg); // TODO: moar?
 #else
 #if __sun
@@ -1475,7 +1464,7 @@ static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 	if (pid == 0) {
 		pid = dbg->pid;
 	}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	if (sig==0)
 		ret = true;
 	else
@@ -1510,7 +1499,7 @@ static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
 static int r_debug_native_init (RDebug *dbg) {
 	dbg->h->desc = r_debug_desc_plugin_native;
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return w32_dbg_init ();
 #else
 	return true;
@@ -1980,7 +1969,7 @@ static RList *r_debug_desc_native_list (int pid) {
 }
 
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	DWORD old;
 	BOOL ret = FALSE;
 	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
@@ -2019,7 +2008,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		r_debug_execute (dbg, buf->buf, buf->length , 1);
+		r_debug_execute (dbg, r_buf_buffer (buf), r_buf_size (buf), 1);
 		r_reg_arena_pop (dbg->reg);
 		return true;
 	}

@@ -192,8 +192,11 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		return false;
 	}
 
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
+	tbuf = r_buf_new_with_bytes (buf, sz);
+	if (!tbuf) {
+		return false;
+	}
+
 	if ((res = r_bin_mdmp_new_buf (tbuf))) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}

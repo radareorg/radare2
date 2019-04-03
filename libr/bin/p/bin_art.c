@@ -177,7 +177,7 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("load");
-	ptr->size = bf->buf->length;
+	ptr->size = r_buf_size (bf->buf);
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;

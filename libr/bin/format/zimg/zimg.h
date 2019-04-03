@@ -16,7 +16,7 @@ struct zimg_header_t {
 typedef struct r_bin_zimg_obj_t {
 	int size;
 	const char *file;
-	struct r_buf_t *b;
+	RBuffer *b;
 	struct zimg_header_t header;
 	ut32 *strings;
 	RList *methods_list;
@@ -34,5 +34,5 @@ struct r_bin_zimg_str_t {
 	int last;
 };
 
-struct r_bin_zimg_obj_t *r_bin_zimg_new_buf(struct r_buf_t *buf);
-struct r_bin_zimg_str_t *r_bin_zimg_get_strings (struct r_bin_zimg_obj_t* bin);
+struct r_bin_zimg_obj_t *r_bin_zimg_new_buf(RBuffer *buf);
+struct r_bin_zimg_str_t *r_bin_zimg_get_strings (struct r_bin_zimg_obj_t *bin);

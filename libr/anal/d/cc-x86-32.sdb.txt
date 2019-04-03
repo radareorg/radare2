@@ -5,9 +5,9 @@ cc.cdecl.argn=stack
 cc.cdecl.ret=eax
 
 optlink=cc
-cc.optlink.arg1=eax
-cc.optlink.arg2=edx
-cc.optlink.arg3=ecx
+cc.optlink.arg0=eax
+cc.optlink.arg1=edx
+cc.optlink.arg2=ecx
 cc.optlink.argn=stack
 cc.optlink.ret=eax
 
@@ -16,22 +16,22 @@ cc.stdcall.argn=stack_rev
 cc.stdcall.ret=eax
 
 fastcall=cc
-cc.fastcall.arg1=ecx
-cc.fastcall.arg2=edx
+cc.fastcall.arg0=ecx
+cc.fastcall.arg1=edx
 cc.fastcall.argn=stack
 cc.fastcall.ret=eax
 
 borland=cc
-cc.borland.arg1=eax
-cc.borland.arg2=edx
-cc.borland.arg3=ecx
+cc.borland.arg0=eax
+cc.borland.arg1=edx
+cc.borland.arg2=ecx
 cc.borland.argn=stack_rev
 
 watcom=cc
-cc.watcom.arg1=eax
-cc.watcom.arg2=edx
-cc.watcom.arg3=ebx
-cc.watcom.arg4=ecx
+cc.watcom.arg0=eax
+cc.watcom.arg1=edx
+cc.watcom.arg2=ebx
+cc.watcom.arg3=ecx
 cc.watcom.argn=stack
 
 pascal=cc

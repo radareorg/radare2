@@ -124,7 +124,7 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	text->name = strdup ("text");
-	text->size = bf->buf->length - N64_ROM_START;
+	text->size = r_buf_size (bf->buf) - N64_ROM_START;
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
 	text->vaddr = baddr (bf);

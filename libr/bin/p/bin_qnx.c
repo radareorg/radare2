@@ -1,6 +1,7 @@
 /* radare2 - LGPL3 - 2015-2019 - deepakchethan */
 
 #include "qnx/qnx.h"
+#include "../i/private.h"
 
 static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	if (r_buf_size (buf) < sizeof (lmf_header)) {
@@ -24,16 +25,17 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-/*
- * Verifies the magic of the binary file
- * @param buffer and length of signature
- * @return bool outcome of the verification
- */ 
+static bool check_buffer(RBuffer *buf) {
+	ut8 tmp[6];
+	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
+	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
+}
+
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 6) {
-		return false;
-	}
-	return (!memcmp (buf, QNX_MAGIC, 6));
+	RBuffer *b = r_buf_new_with_bytes (buf, length);
+	bool res = check_buffer (b);
+	r_buf_free (b);
+	return res;
 }
 
 // Frees the bin_obj of the binary file
@@ -46,114 +48,98 @@ static int destroy(RBinFile *bf) {
 	return true;
 }
 
-/*
- * Method that loads the binary file into bin_obj
- */  
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = R_NEW0 (QnxObj);
-	lmf_record *lrec = R_NEW0 (lmf_record);
-	lmf_resource *lres = R_NEW0 (lmf_resource);
-	lmf_data *ldata = R_NEW0 (lmf_data);
+	lmf_record lrec;
+	lmf_resource lres;
+	lmf_data ldata;
 	ut64 offset = QNX_RECORD_SIZE;
 	RList *sections = NULL;
 	RList *fixups = NULL;
-	
+
 	if (!qo) {
-		return false;
+		goto beach;
 	}
-	if (!(sections = r_list_new ()) || !(fixups = r_list_new ())) {
-		return false;
+	if (!(sections = r_list_newf ((RListFree)r_bin_section_free)) || !(fixups = r_list_new ())) {
+		goto beach;
 	}
 	qo->kv = sdb_new0 ();
 	if (!qo->kv) {
 		free (qo);
-		return false;
+		goto beach;
 	}
 	// Read the first record
-	if (r_buf_fread_at (bf->buf, 0, (ut8 *) lrec, "iiii", 1) < QNX_RECORD_SIZE) {
-		return false;
+	if (r_buf_fread_at (bf->buf, 0, (ut8 *)&lrec, "ccss", 1) < QNX_RECORD_SIZE) {
+		goto beach;
 	}
 	// Load the header
 	lmf_header_load (&qo->lmfh, bf->buf, qo->kv);
-	offset += lrec->data_nbytes;
-	
-	for( ;; ) {
-		if (r_buf_fread_at (bf->buf, offset, (ut8 *) lrec, "iiii", 1) < QNX_RECORD_SIZE) {
-			return false;
+	offset += lrec.data_nbytes;
+
+	for (;;) {
+		if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lrec, "ccss", 1) < QNX_RECORD_SIZE) {
+			goto beach;
 		}
 		offset += sizeof (lmf_record);
-		
-		if (lrec->rec_type == LMF_IMAGE_END_REC) {
-            		break;
-		} else if (lrec->rec_type == LMF_RESOURCE_REC) {
+
+		if (lrec.rec_type == LMF_IMAGE_END_REC) {
+			break;
+		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *) lres, "iccc", 1) < sizeof (lmf_resource)) {
-				return false;
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof (lmf_resource)) {
+				goto beach;
 			}
 			if (!ptr) {
-				return false;
+				goto beach;
 			}
 			ptr->name = strdup ("LMF_RESOURCE");
 			ptr->paddr = offset;
-			ptr->vsize = lrec->data_nbytes - sizeof (lmf_resource);
+			ptr->vsize = lrec.data_nbytes - sizeof (lmf_resource);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
 		 	r_list_append (sections, ptr);
-		} else if (lrec->rec_type == LMF_LOAD_REC) {
+		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
-			if (r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
+				goto beach;
 			}
 			if (!ptr) {
-				return false;
+				goto beach;
 			}
 			ptr->name = strdup ("LMF_LOAD");
 			ptr->paddr = offset;
-			ptr->vaddr = ldata->offset;
-			ptr->vsize = lrec->data_nbytes - sizeof (lmf_data);
+			ptr->vaddr = ldata.offset;
+			ptr->vsize = lrec.data_nbytes - sizeof (lmf_data);
 			ptr->size = ptr->vsize;
 			ptr->add = true;
 		 	r_list_append (sections, ptr);
-		} else if (lrec->rec_type == LMF_FIXUP_REC) {
+		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
-			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
+			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
+				goto beach;
 			}
-			ptr->vaddr = ptr->paddr = ldata->offset;
+			ptr->vaddr = ptr->paddr = ldata.offset;
 			ptr->type = 'f'; // "LMF_FIXUP";
 			r_list_append (fixups, ptr);
-		} else if (lrec->rec_type == LMF_8087_FIXUP_REC) {
+		} else if (lrec.rec_type == LMF_8087_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
-			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *) ldata, "ii", 1) < sizeof (lmf_data)) {
-				return false;
+			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
+				goto beach;
 			}
-			ptr->vaddr = ptr->paddr = ldata->offset;
+			ptr->vaddr = ptr->paddr = ldata.offset;
 			ptr->type = 'F'; // "LMF_8087_FIXUP";
 			r_list_append (fixups, ptr);
-		} else if (lrec->rec_type == LMF_RW_END_REC) {
-			r_buf_fread_at (bf->buf, offset, (ut8 *) &qo->rwend, "ii", 1);
+		} else if (lrec.rec_type == LMF_RW_END_REC) {
+			r_buf_fread_at (bf->buf, offset, (ut8 *)&qo->rwend, "si", 1);
 		}
-		offset += lrec->data_nbytes;
-    	}
+		offset += lrec.data_nbytes;
+	}
 	sdb_ns_set (sdb, "info", qo->kv);
 	qo->sections = sections;
 	qo->fixups = fixups;
-	*bin_obj = qo;
-	free (lrec);
-	free (lres);
-	free (ldata);
-	return true;
-}
-
-// XXX this is wrong, do not copy the data this way
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	ut64 size = bf? r_buf_size (bf->buf): 0;
-	ut8 *buf = malloc (size);
-	r_buf_read_at (bf->buf, 0, buf, size);
-	bool rc = load_bytes (bf, &bf->o->bin_obj, buf, size, bf->o->loadaddr, bf->sdb); 
-	free (buf);
-	return rc;
+	return qo;
+beach:
+	return NULL;
 }
 
 /*
@@ -175,7 +161,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("x86");
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("any");
-	ret->lang = strdup ("C/C++");
+	ret->lang = "C/C++";
 	ret->signature = true;
 	return ret;
 }
@@ -185,6 +171,7 @@ static RList *relocs(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	return r_list_clone (qo->fixups);
 }
+
 static void header(RBinFile *bf) {
 	r_return_if_fail (bf && bf->o && bf->rbin);
 	QnxObj *bin = bf->o->bin_obj;
@@ -287,13 +274,13 @@ RBinPlugin r_bin_plugin_qnx = {
 	.name = "qnx",
 	.desc = "QNX executable file support",
 	.license = "LGPL3",
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.relocs = &relocs,
 	.baddr = &baddr,
 	.author = "deepakchethan",
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
+	.check_bytes  = &check_bytes,
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,

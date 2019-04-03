@@ -29,13 +29,13 @@ static bool find_export(const ut32 *p, const RBinWasmExportEntry* q) {
 	return q->index != (*p);
 }
 
-static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, NULL);
 
 	if (!check_bytes_buf (buf)) {
 		return NULL;
 	}
-	return r_bin_wasm_init (bf);
+	return r_bin_wasm_init (bf, buf);
 }
 
 static bool load(RBinFile *bf) {
@@ -312,7 +312,7 @@ static ut64 size(RBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return 0;
 	}
-	return bf->buf->length;
+	return r_buf_size (bf->buf);
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */

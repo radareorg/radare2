@@ -33,7 +33,7 @@ static const char *help_msg_d[] = {
 	"dp", "[?]", "List, attach to process or thread id",
 	"dr", "[?]", "Cpu registers",
 	"ds", "[?]", "Step, over, source line",
-	"dt", "[?]", "Display instruction traces (dtr=reset)",
+	"dt", "[?]", "Display instruction traces",
 	"dw", " <pid>", "Block prompt until pid dies",
 	"dx", "[?]", "Inject and run code on target process (See gs)",
 	NULL
@@ -109,7 +109,7 @@ static const char *help_msg_dc[] = {
 	"dcb", "", "Continue back until breakpoint",
 	"dcc", "", "Continue until call (use step into)",
 	"dccu", "", "Continue until unknown call (call reg)",
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	"dce", "", "Continue execution (pass exception to program)",
 #endif
 	"dcf", "", "Continue until fork (TODO)",
@@ -179,6 +179,7 @@ static const char *help_msg_di[] = {
 	"di*", "", "Same as above, but in r2 commands",
 	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
+	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
 	NULL
 };
 
@@ -419,15 +420,13 @@ static const char *help_msg_dt[] = {
 	"dt*", "", "List all traced opcode offsets",
 	"dt+"," [addr] [times]", "Add trace for address N times",
 	"dt-", "", "Reset traces (instruction/calls)",
-	"dtD", "", "Show dwarf trace (at*|rsc dwarf-traces $FILE)",
 	"dta", " 0x804020 ...", "Only trace given addresses",
 	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-	"dtd", "", "List all traced disassembled",
+	"dtd", " [delta]", "List all traced disassembled",
 	"dte", "[?]", "Show esil trace logs",
 	"dtg", "", "Graph call/ret trace",
 	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
 	"dtgi", "", "Interactive debug trace",
-	"dtr", "", "Show traces as range commands (ar+)",
 	"dts", "[?]", "Trace sessions",
 	"dtt", " [tag]", "Select trace tag (no arg unsets)",
 	NULL
@@ -4108,7 +4107,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			}
 			break;
 		}
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	case 'e': // "dce"
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_continue_pass_exception (core->dbg);
@@ -4173,8 +4172,8 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			RIOMap *s;
 			ut64 pc;
 			int n = 0;
-			int t = core->dbg->trace->enabled;
-			core->dbg->trace->enabled = 0;
+			bool t = core->dbg->trace->enabled;
+			core->dbg->trace->enabled = false;
 			r_cons_break_push (static_debug_stop, core->dbg);
 			do {
 				r_debug_step (core->dbg, 1);
@@ -4226,7 +4225,7 @@ static char *get_corefile_name (const char *raw_name, int pid) {
 }
 
 static int cmd_debug_step (RCore *core, const char *input) {
-	ut64 addr;
+	ut64 addr = core->offset;;
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
@@ -4244,6 +4243,8 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			// sync registers for BSD PT_STEP/PT_CONT
 			// XXX(jjd): is this necessary?
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+			ut64 pc = r_debug_reg_get (core->dbg, "PC");
+			r_debug_trace_pc (core->dbg, pc);
 			if (!r_debug_step (core->dbg, times)) {
 				eprintf ("Step failed\n");
 				core->break_loop = true;
@@ -4397,6 +4398,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	return 1;
 }
 
+static ut8*getFileData(RCore *core, const char *arg) {
+	if (*arg == '$') {
+		return (ut8*) r_cmd_alias_get (core->rcmd, arg, 1);
+	}
+	return (ut8*)r_file_slurp (arg, NULL);
+}
+
 static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 	if (!buf) {
 		if (errmsg) {
@@ -4408,8 +4416,9 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 		r_cons_printf ("%s", cmd);
 	}
 	int i;
-	for (i = 0; i < buf->length; i++) {
-		r_cons_printf ("%02x", buf->buf[i]);
+	r_buf_seek (buf, 0, 0);
+	for (i = 0; i < r_buf_size (buf); i++) {
+		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}
 	r_cons_printf ("\n");
 }
@@ -4440,6 +4449,9 @@ static int cmd_debug(void *data, const char *input) {
 		case '\0': // "dt"
 			r_debug_trace_list (core->dbg, 0);
 			break;
+		case 'q': // "dtq"
+			r_debug_trace_list (core->dbg, 'q');
+			break;
 		case '*': // "dt*"
 			r_debug_trace_list (core->dbg, 1);
 			break;
@@ -4466,13 +4478,37 @@ static int cmd_debug(void *data, const char *input) {
 				debug_trace_calls (core, input + 2);
 			}
 			break;
-		case 'r': // "dtr"
-			eprintf ("TODO\n");
-			//trace_show(-1, trace_tag_get());
-			break;
 		case 'd': // "dtd"
-			// TODO: reimplement using the api
-			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
+			if (input[2] == 'q') {
+				int min = r_num_math (core->num, input + 3);
+				RListIter *iter;
+				RDebugTracepoint *trace;
+				int n = 0;
+				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					// if (trace->count >= min) {
+					if (n >= min) {
+						r_cons_printf ("0x%08"PFMT64x"\n", trace->addr);
+						break;
+					}
+					n++;
+				}
+			} else{ if (input[2] == ' ') {
+				int min = r_num_math (core->num, input + 3);
+				RListIter *iter;
+				RDebugTracepoint *trace;
+				int n = 0;
+				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					// if (trace->count >= min) {
+					if (n >= min) {
+						r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, trace->addr);
+					}
+					n++;
+				}
+			} else {
+				// TODO: reimplement using the api
+				r_core_cmd0 (core, "pd 1 @@= `dtq`");
+			}
+			}
 			break;
 		case 'g': // "dtg"
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
@@ -4495,29 +4531,27 @@ static int cmd_debug(void *data, const char *input) {
 				r_list_free (args);
 				free (s);
 			} else {
-				ptr = input + 3;
+				ptr = input + 2;
 				addr = r_num_math (core->num, ptr);
 				ptr = strchr (ptr, ' ');
+				int count = 1;
 				if (ptr) {
-					RAnalOp *op = r_core_op_anal (core, addr);
-					if (op) {
-						RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-						if (!tp) {
-							r_anal_op_free (op);
-							break;
-						}
-						tp->count = r_num_math (core->num, ptr + 1);
-						r_anal_trace_bb (core->anal, addr);
+					count = r_num_math (core->num, ptr + 1);
+				}
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op) {
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+					if (!tp) {
 						r_anal_op_free (op);
-					} else {
-						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+						break;
 					}
+					tp->count = count;
+					r_anal_trace_bb (core->anal, addr);
+					r_anal_op_free (op);
+				} else {
+					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 				}
 			}
-			break;
-		case 'D': // "dtD"
-			// XXX: not yet tested..and rsc dwarf-traces comes from r1
-			r_core_cmd (core, "dt*|rsc dwarf-traces $FILE", 0);
 			break;
 		case 'e': // "dte"
 			if (!core->anal->esil) {
@@ -4530,20 +4564,18 @@ static int cmd_debug(void *data, const char *input) {
 				if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 					return 0;
 				}
-				r_anal_esil_setup (core->anal->esil,
-						core->anal, romem, stats, nonull);
+				r_anal_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
 			}
 			switch (input[2]) {
 			case 0: // "dte"
 				r_anal_esil_trace_list (core->anal->esil);
 				break;
 			case 'i': { // "dtei"
-				RAnalOp *op;
 				ut64 addr = r_num_math (core->num, input + 3);
 				if (!addr) {
 					addr = core->offset;
 				}
-				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+				RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
 				if (op) {
 					r_anal_esil_trace (core->anal->esil, op);
 				}
@@ -4630,9 +4662,9 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'd': // "dtd"
+	case 'd': // "ddd"
 		switch (input[1]) {
-		case '\0': // "dtd"
+		case '\0': // "ddd"
 			r_debug_desc_list (core->dbg, 0);
 			break;
 		case '*': // "dtd*"
@@ -4828,6 +4860,36 @@ static int cmd_debug(void *data, const char *input) {
 					P ("stopreason=%d\n", stop);
 				}
 				break;
+			case 'f': // "dif"
+				if (input[1] == '?') {
+					eprintf ("Usage: dif $a $b  # diff two alias files\n");
+				} else {
+					char *arg = strchr (input, ' ');
+					if (arg) {
+						arg = strdup (r_str_trim_ro (arg + 1));
+						char *arg2 = strchr (arg, ' ');
+						if (arg2) {
+							*arg2++ = 0;
+							ut8 *a = getFileData (core, arg);
+							ut8 *b = getFileData (core, arg2);
+							if (a && b) {
+								int al = strlen ((const char*)a);
+								int bl = strlen ((const char*)b);
+								RDiff *d = r_diff_new ();
+								char *uni = r_diff_buffers_to_string (d, a, al, b, bl);
+								r_cons_printf ("%s\n", uni);
+								r_diff_free (d);
+								free (uni);
+							} else {
+								eprintf ("Cannot open those alias files\n");
+							}
+						}
+						free (arg);
+					} else {
+						eprintf ("Usage: dif $a $b  # diff two alias files\n");
+					}
+				}
+				break;
 			case '*': // "di*"
 				if (rdi) {
 					r_cons_printf ("f dbg.signal = %d\n", core->dbg->reason.signum);
@@ -4969,10 +5031,9 @@ static int cmd_debug(void *data, const char *input) {
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, input + 2);
-			if (acode && *acode->buf_hex) {
+			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->buf,
-						acode->len, 0);
+				r_debug_execute (core->dbg, acode->bytes, acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
@@ -4991,7 +5052,7 @@ static int cmd_debug(void *data, const char *input) {
 			b = r_egg_get_bin (egg);
 			r_asm_set_pc (core->assembler, core->offset);
 			r_reg_arena_push (core->dbg->reg);
-			r_debug_execute (core->dbg, b->buf, b->length, 0);
+			r_debug_execute (core->dbg, r_buf_buffer (b), r_buf_size (b), 0);
 			r_reg_arena_pop (core->dbg->reg);
 			break;
 		}

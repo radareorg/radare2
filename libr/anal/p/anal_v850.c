@@ -164,7 +164,7 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret = 0;
 	ut8 opcode = 0;
 	const char *reg1 = NULL;

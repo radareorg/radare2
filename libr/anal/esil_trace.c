@@ -90,6 +90,9 @@ static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 }
 
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
+	if (!esil || !op) {
+		return;
+	}
 	const char *expr = r_strbuf_get (&op->esil);
 	if (R_STR_ISEMPTY (expr)) {
 		// do nothing
@@ -149,7 +152,7 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 	if (!str2) {
 		return;
 	}
-	p ("dr pc = %s\n", str2);
+	p ("ar PC = %s\n", str2);
 	/* registers */
 	str = sdb_const_get (DB, KEY ("reg.read"), 0);
 	if (str) {
@@ -163,7 +166,7 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 					memcpy (regname, ptr, len);
 					regname[len] = 0;
 					str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
-					p ("dr %s = %s\n", regname, str2);
+					p ("ar %s = %s\n", regname, str2);
 				} else {
 					eprintf ("Invalid entry in reg.read\n");
 				}

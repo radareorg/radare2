@@ -7,7 +7,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#if __UNIX__
 #include <unistd.h>
+#endif
 #include <stdio.h>
 
 #include "libqnxr.h"

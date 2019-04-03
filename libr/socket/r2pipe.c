@@ -45,7 +45,7 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 	}
 	memcpy (cmd, str, len - 1);
 	strcpy (cmd + len - 2, "\n");
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	DWORD dwWritten = -1;
 	WriteFile (r2pipe->pipe, cmd, len, &dwWritten, NULL);
 	ret = (dwWritten == len);
@@ -68,7 +68,7 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 	if (!buf) {
 		return NULL;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;
 	// TODO: handle > 4096 buffers here
@@ -110,7 +110,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 	if (!r2pipe) {
 		return 0;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	if (r2pipe->pipe) {
 		CloseHandle (r2pipe->pipe);
 		r2pipe->pipe = NULL;
@@ -142,7 +142,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 	return 0;
 }
 
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 	CHAR buf[1024];
 	r2pipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
@@ -160,7 +160,7 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 #endif
 
 static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
@@ -189,7 +189,7 @@ static R2Pipe* r2pipe_open_spawn(R2Pipe* r2pipe) {
 static R2Pipe *r2pipe_new() {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);
 	if (r2pipe) {
-#if __UNIX__ || defined(__CYGWIN__)
+#if __UNIX__
 		r2pipe->input[0] = r2pipe->input[1] = -1;
 		r2pipe->output[0] = r2pipe->output[1] = -1;
 #endif
@@ -215,7 +215,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 		r2pipe->child = -1;
 		return r2pipe_open_spawn (r2pipe);
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	w32_createPipe (r2pipe, cmd);
 	r2pipe->child = (int)(r2pipe->pipe);
 #else

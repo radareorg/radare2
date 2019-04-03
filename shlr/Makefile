@@ -35,7 +35,7 @@ CS_UPD=20190213
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 #CS_BRA=next
 #CS_TIP=38607453f3de85733f9604dffc27778db3b53766
-CS_TIP=0f1674223452827493357dd7258145fe9f51cd05
+CS_TIP=472845db9c2666ab66b3f517dda21f2b026a06c1
 CS_BRA=master
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
@@ -147,7 +147,7 @@ endif
 	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
-SDB_F=README.md config.mk src Makefile meson.build msvc
+SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
 

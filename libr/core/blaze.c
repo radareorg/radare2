@@ -252,7 +252,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 
 		if (op->mnemonic[0] == '?') {
 			eprintf ("? Bad op at: 0x%08"PFMT64x"\n", cur + start);
-			eprintf ("Cannot analyze opcode at %"PFMT64x"\n", start + cur);
+			eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", start + cur);
 			block_score -= 10;
 			cur++;
 			continue;

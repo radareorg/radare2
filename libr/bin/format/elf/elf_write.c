@@ -179,7 +179,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
 	printf ("Shifted %d byte(s)\n", (int)delta);
 	free (buf);
-	bin->size = bin->b->length;
+	bin->size = r_buf_size (bin->b);
 
 	return delta;
 }

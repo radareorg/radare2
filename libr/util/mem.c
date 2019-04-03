@@ -255,7 +255,7 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	if (mprotect (ptr, size, p) == -1) {
 		return false;
 	}
-#elif __WINDOWS__ || __CYGWIN__
+#elif __WINDOWS__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
@@ -280,7 +280,7 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	return true;
 }
 
-R_API void *r_mem_dup(void *s, int l) {
+R_API void *r_mem_dup(const void *s, int l) {
 	void *d = malloc (l);
 	if (!d) {
 		return NULL;

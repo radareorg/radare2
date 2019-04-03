@@ -702,6 +702,8 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
 		r_str_write (fd, "# macros\n");
 		r_core_cmd (core, "(*", 0);
+		r_str_write (fd, "# aliases\n");
+		r_core_cmd (core, "$*", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {

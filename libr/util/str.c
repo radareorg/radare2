@@ -1564,8 +1564,18 @@ static int __str_ansi_length (char const *str) {
 }
 
 /* ansi helpers */
-R_API int r_str_ansi_len(const char *str) {
+R_API int r_str_ansi_nlen(const char *str, int slen) {
 	int i = 0, len = 0;
+	if (slen > 0) {
+		while (str[i] && i < slen) {
+			int chlen = __str_ansi_length (str + i);
+			if (chlen == 1) {
+				len ++;
+			}
+			i += chlen;
+		}
+		return len > 0 ? len: 1;
+	}
 	while (str[i]) {
 		int chlen = __str_ansi_length (str + i);
 		if (chlen == 1) {
@@ -1573,7 +1583,11 @@ R_API int r_str_ansi_len(const char *str) {
 		}
 		i += chlen;
 	}
-	return len;
+	return len > 0 ? len: 1;
+}
+
+R_API int r_str_ansi_len(const char *str) {
+	return r_str_ansi_nlen (str, 0);
 }
 
 R_API int r_str_nlen(const char *str, int n) {
@@ -1880,6 +1894,53 @@ R_API bool r_str_char_fullwidth (const char* s, int left) {
 		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
 		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
 
+}
+
+/**
+ * Returns size in bytes of the utf8 char
+ * Returns 1 in case of ASCII
+ * str - Pointer to buffer
+ */
+R_API int r_str_utf8_charsize(const char *str) {
+	r_return_val_if_fail (str, 0);
+	int size = 0;
+	int length = strlen (str);
+	while (size < length && size < 5) {
+		size++;
+		if ((str[size] & 0xc0) != 0x80) {
+			break;
+		}
+	}
+	return size < 5 ? size : 0;
+}
+
+/**
+ * Returns size in bytes of the utf8 char previous to str
+ * Returns 1 in case of ASCII
+ * str - Pointer to leading utf8 char
+ * prev_len - Length in bytes of the buffer until str
+ */
+R_API int r_str_utf8_charsize_prev(const char *str, int prev_len) {
+	r_return_val_if_fail (str, 0);
+	int size = 0, pos = 0;
+	while (size < prev_len && size < 5) {
+		size++;
+		if ((str[--pos] & 0xc0) != 0x80) {
+			break;
+		}
+	}
+	return size < 5 ? size : 0;
+}
+
+/**
+ * Returns size in bytes of the last utf8 char of the string
+ * Returns 1 in case of ASCII
+ * str - Pointer to buffer
+ */
+R_API int r_str_utf8_charsize_last(const char *str) {
+	r_return_val_if_fail (str, 0);
+	int len = strlen (str);
+	return r_str_utf8_charsize_prev (str + len, len);
 }
 
 R_API void r_str_filter_zeroline(char *str, int len) {
@@ -2765,48 +2826,22 @@ R_API const char *r_str_closer_chr(const char *b, const char *s) {
 	return NULL;
 }
 
-
-#if 0
-R_API int r_str_bounds(const char *str, int *h) {
-        int W = 0, H = 0;
-        int cw = 0;
-       if (!str)
-               return W;
-       while (*str) {
-               if (*str=='\n') {
-                       H++;
-                       if (cw>W)
-                               W = cw;
-                       cw = 0;
-                }
-               str++;
-               cw++;
-        }
-       if (*str == '\n') // skip last newline
-               H--;
-       if (h) *h = H;
-        return W;
-}
-
-#else
 R_API int r_str_bounds(const char *_str, int *h) {
-	char *ostr, *str, *ptr;
+	const char *str, *ptr;
 	int W = 0, H = 0;
 	int cw = 0;
 
 	if (_str) {
-		ptr = str = ostr = strdup (_str);
+		ptr = str = _str;
 		while (*str) {
-			if (*str=='\n') {
+			if (*str == '\n') {
 				H++;
-				*str = 0;
-				cw = r_str_ansi_len (ptr);
+				cw = r_str_ansi_nlen (ptr, (size_t)(str - ptr));
 				if (cw > W) {
 					W = cw;
 				}
-				*str = '\n';
 				cw = 0;
-				ptr = str;
+				ptr = str + 1;
 			}
 			str++;
 			cw++;
@@ -2817,11 +2852,9 @@ R_API int r_str_bounds(const char *_str, int *h) {
 		if (h) {
 			*h = H;
 		}
-		free (ostr);
 	}
 	return W;
 }
-#endif
 
 /* crop a string like it is in a rectangle with the upper-left corner at (x, y)
  * coordinates and the bottom-right corner at (x2, y2) coordinates. The result
@@ -3006,6 +3039,8 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 // Splits the string <str> by string <c> and returns the result in a list.
 R_API RList *r_str_split_list(char *str, const char *c)  {
 	RList *lst = r_list_new ();
+	r_return_val_if_fail (str && c, lst);
+
 	char *aux;
 	bool first_loop = true;
 

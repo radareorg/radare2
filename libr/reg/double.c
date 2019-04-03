@@ -3,7 +3,7 @@
 #include <r_reg.h>
 #include <r_util.h>
 
-#if __SDB_WINDOWS__ && !__CYGWIN__
+#if __SDB_WINDOWS__
 #define CASTLDBL (double)
 #else
 #define CASTLDBL

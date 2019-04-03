@@ -20,8 +20,10 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, 
 	if (!buf || size == 0 || size == UT64_MAX) {
 		return false;
 	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, size);
+	tbuf = r_buf_new_with_bytes (buf, size);
+	if (!tbuf) {
+		return false;
+	}
 	res = r_bin_zimg_new_buf (tbuf);
 	r_buf_free (tbuf);
 	*bin_obj = res;

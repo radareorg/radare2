@@ -4,15 +4,13 @@
 #if __WINDOWS__
 #include <windows.h>
 #include <stdio.h>
-#ifndef __CYGWIN__
 #include <tchar.h>
-#endif
 
 #define BUFSIZE 1024
 void r_sys_perror_str(const char *fun);
 
 #define ErrorExit(x) { r_sys_perror(x); return NULL; }
-char *ReadFromPipe(HANDLE fh);
+char *ReadFromPipe(HANDLE fh, int *outlen);
 
 // HACKY
 static char *getexe(const char *str) {
@@ -39,7 +37,7 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
 		return false;
 	}
-	path = r_sys_conv_utf16_to_utf8 (shortpath);
+	path = r_sys_conv_win_to_utf8 (shortpath);
 	memcpy (buf, path, strlen(path) + 1);
 	free (path);
 	i = strlen (buf);
@@ -53,7 +51,7 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 	return true;
 }
 
-R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, char **sterr) {
+R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
 	HANDLE in = NULL;
 	HANDLE out = NULL;
 	HANDLE err = NULL;
@@ -89,8 +87,8 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 		if (!CreatePipe (&fi, &in, &saAttr, 0)) {
 			ErrorExit ("StdInRd CreatePipe");
 		}
-		LPDWORD nBytesWritten;
-		WriteFile (in, input, strlen(input) + 1, &nBytesWritten, NULL);
+		DWORD nBytesWritten;
+		WriteFile (in, input, strlen (input) + 1, &nBytesWritten, NULL);
 		if (!SetHandleInformation (in, HANDLE_FLAG_INHERIT, 0)) {
 			ErrorExit ("StdIn SetHandleInformation");
 		}
@@ -115,11 +113,11 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 	}
 
 	if (output) {
-		*output = ReadFromPipe (fo);
+		*output = ReadFromPipe (fo, outlen);
 	}
 
 	if (sterr) {
-		*sterr = ReadFromPipe (fe);
+		*sterr = ReadFromPipe (fe, NULL);
 	}
 	
 	if (fi && !CloseHandle (fi)) {
@@ -155,7 +153,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	si.hStdOutput = out;
 	si.hStdInput = in;
 	si.dwFlags |= STARTF_USESTDHANDLES;
-	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
+	cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	ExpandEnvironmentStrings (cmdline_, _cmdline_, max_length - 1);
 	if ((ret = CreateProcess (NULL,
 			_cmdline_,     // command line
@@ -178,7 +176,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	return ret;
 }
 
-char *ReadFromPipe(HANDLE fh) {
+char *ReadFromPipe(HANDLE fh, int *outlen) {
 	DWORD dwRead;
 	CHAR chBuf[BUFSIZE];
 	BOOL bSuccess = FALSE;
@@ -186,6 +184,9 @@ char *ReadFromPipe(HANDLE fh) {
 	int strl = 0;
 	int strsz = BUFSIZE+1;
 
+	if (outlen) {
+		*outlen = 0;
+	}
 	str = malloc (strsz);
 	if (!str) {
 		return NULL;
@@ -208,6 +209,9 @@ char *ReadFromPipe(HANDLE fh) {
 		strl += dwRead;
 	}
 	str[strl] = 0;
+	if (outlen) {
+		*outlen = strl;
+	}
 	return str;
 }
 #endif

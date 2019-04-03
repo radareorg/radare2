@@ -68,16 +68,14 @@ typedef struct r_asm_op_t {
 	// But this is pretty slow..so maybe we should add some accessors
 	RStrBuf buf;
 	RStrBuf buf_asm;
-	RStrBuf buf_hex;
 	RBuffer *buf_inc; // must die
 } RAsmOp;
 
 typedef struct r_asm_code_t {
 #if 1
 	int len;
-	ut8 *buf;
-	char *buf_hex;
-	char *buf_asm;
+	ut8 *bytes;
+	char *assembly;
 #else
 	RAsmOp op; // we have those fields already inside RAsmOp
 #endif
@@ -165,7 +163,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
-R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
+R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
 R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file);
@@ -182,8 +180,9 @@ R_API void r_asm_list_directives(void);
 R_API RAsmCode *r_asm_code_new(void);
 R_API void* r_asm_code_free(RAsmCode *acode);
 R_API void r_asm_equ_item_free(RAsmEqu *equ);
-R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
-R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
+R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
+R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
+R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
 /* op.c */
 R_API RAsmOp *r_asm_op_new(void);

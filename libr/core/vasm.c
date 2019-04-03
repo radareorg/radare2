@@ -33,16 +33,17 @@ static int readline_callback(void *_a, const char *str) {
 		r_asm_code_free (a->acode);
 		r_asm_set_pc (a->core->assembler, a->off);
 		a->acode = r_asm_massemble (a->core->assembler, str);
+		char* hex = r_asm_code_get_hex (a->acode);
 		r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
 		if (a->acode && a->acode->len) {
-			r_cons_printf ("* %s\n\n", a->acode->buf_hex);
+			r_cons_printf ("* %s\n\n", hex);
 		} else {
 			r_cons_print ("\n\n");
 		}
 		if (a->acode) {
-			xlen = R_MIN (strlen (a->acode->buf_hex), R_VISUAL_ASM_BUFSIZE - 2);
+			xlen = R_MIN (strlen (hex), R_VISUAL_ASM_BUFSIZE - 2);
 			strcpy (a->codebuf, a->blockbuf);
-			memcpy (a->codebuf, a->acode->buf_hex, xlen);
+			memcpy (a->codebuf, hex, xlen);
 			if (xlen >= strlen (a->blockbuf)) {
 				a->codebuf[xlen] = '\0';
 			}
@@ -61,6 +62,7 @@ static int readline_callback(void *_a, const char *str) {
 			free (res);
 			free (cmd);
 		}
+		free (hex);
 	}
 	r_cons_flush ();
 	return 1;
@@ -78,7 +80,7 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 
 	if (cva.acode && cva.acode->len > 0) {
 		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {
-			if (!r_io_write_at (core->io, off, cva.acode->buf, cva.acode->len)) {
+			if (!r_io_write_at (core->io, off, cva.acode->bytes, cva.acode->len)) {
 				eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
 				r_cons_any_key (NULL);
 			}

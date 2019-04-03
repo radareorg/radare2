@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 #include <signal.h>
 #endif
 
@@ -134,7 +134,7 @@ static void break_signal(int sig) {
 }
 
 static inline void __cons_write(const char *buf, int len) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	if (I.ansicon) {
 		(void) write (I.fdout, buf, len);
 	} else {
@@ -264,6 +264,7 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		}
 	}
 	if (len > 1) {
+		r_cons_gotoxy (x, y + rows);
 		r_cons_memcat (str + o, len);
 	}
 	r_cons_strcat (Color_RESET);
@@ -290,7 +291,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 		return;
 	}
 	if (r_stack_is_empty (context->break_stack)) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 		if (sig && r_cons_context_is_main ()) {
 			signal (SIGINT, break_signal);
 		}
@@ -319,7 +320,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		break_stack_free (b);
 	} else {
 		//there is not more elements in the stack
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 		if (sig && r_cons_context_is_main ()) {
 			signal (SIGINT, SIG_IGN);
 		}
@@ -369,7 +370,7 @@ R_API void r_cons_break_timeout(int timeout) {
 R_API void r_cons_break_end() {
 	I.context->breaked = false;
 	I.timeout = 0;
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	signal (SIGINT, SIG_IGN);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
@@ -396,7 +397,7 @@ R_API void r_cons_sleep_end(void *user) {
 	I.cb_sleep_end (I.user, user);
 }
 
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
@@ -406,27 +407,41 @@ static BOOL __w32_control(DWORD type) {
 	}
 	return false;
 }
-#elif __UNIX__ || __CYGWIN__
+#elif __UNIX__
 volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
 	sigwinchFlag = 1;
 }
-
+#endif
 void resizeWin(void) {
 	if (I.event_resize) {
 		I.event_resize (I.event_data);
 	}
 }
-#endif
 
 R_API bool r_cons_enable_mouse(const bool enable) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	const char *code = enable
 		? "\x1b[?1001s" "\x1b[?1000h"
 		: "\x1b[?1001r" "\x1b[?1000l";
 	bool enabled = I.mouse;
 	I.mouse = enable;
 	write (2, code, 16);
+	return enabled;
+#elif __WINDOWS__
+	DWORD mode, mouse;
+	HANDLE h;
+	bool enabled = I.mouse;
+	if (enabled == enable) {
+		return enabled;
+	}
+	h = GetStdHandle (STD_INPUT_HANDLE);
+	GetConsoleMode (h, &mode);
+	mouse = (ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS);
+	mode = enable ? (mode | mouse) & ~ENABLE_QUICK_EDIT_MODE : (mode & ~mouse) | ENABLE_QUICK_EDIT_MODE;
+	if (SetConsoleMode (h, mode)) {
+		I.mouse = enable;
+	}
 	return enabled;
 #else
 	return false;
@@ -467,12 +482,27 @@ R_API RCons *r_cons_new() {
 	r_cons_get_size (&I.pagesize);
 	I.num = NULL;
 	I.null = 0;
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	I.ansicon = r_sys_getenv ("ANSICON");
+#if UNICODE
+	if (IsValidCodePage (CP_UTF8)) {
+		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
+			r_sys_perror ("r_cons_new");
+		}
+	} else {
+		R_LOG_WARN ("UTF-8 Codepage not installed.\n");
+	}
+#else
+	UINT CP_IN = GetACP ();
+	UINT CP_OUT = IsValidCodePage (CP_UTF8) ? CP_UTF8 : CP_IN;
+	if (!SetConsoleOutputCP (CP_OUT) || !SetConsoleCP (CP_IN)) {
+		r_sys_perror ("r_cons_new");
+	}
+#endif
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
-#elif __UNIX__ || __CYGWIN__
+#elif __UNIX__
 	tcgetattr (0, &I.term_buf);
 	memcpy (&I.term_raw, &I.term_buf, sizeof (I.term_raw));
 	I.term_raw.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
@@ -891,7 +921,7 @@ R_API void r_cons_visual_flush() {
 	r_cons_highlight (I.highlight);
 	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 		if (I.ansicon) {
 			r_cons_visual_write (I.context->buffer);
 		} else {
@@ -1157,7 +1187,7 @@ R_API int r_cons_get_cursor(int *rows) {
 }
 
 R_API bool r_cons_isatty() {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	struct winsize win = { 0 };
 	const char *tty;
 	struct stat sb;
@@ -1186,7 +1216,7 @@ R_API bool r_cons_isatty() {
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 R_API int r_cons_get_size(int *rows) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &csbi);
 	I.columns = (csbi.srWindow.Right - csbi.srWindow.Left) - 1;
@@ -1199,7 +1229,7 @@ R_API int r_cons_get_size(int *rows) {
 #elif EMSCRIPTEN
 	I.columns = 80;
 	I.rows = 23;
-#elif __UNIX__ || __CYGWIN__
+#elif __UNIX__
 	struct winsize win = { 0 };
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
@@ -1266,7 +1296,7 @@ R_API int r_cons_get_size(int *rows) {
 }
 
 R_API void r_cons_show_cursor(int cursor) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	// TODO
 #else
 	if (cursor) {
@@ -1298,7 +1328,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 	}
 #if EMSCRIPTEN
 	/* do nothing here */
-#elif __UNIX__ || __CYGWIN__
+#elif __UNIX__
 	// enforce echo off
 	if (is_raw) {
 		I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
@@ -1330,13 +1360,13 @@ R_API void r_cons_invert(int set, int color) {
   rmcup: enable terminal scrolling (normal mode)
 */
 R_API void r_cons_set_cup(int enable) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	const char *code = enable
 		? "\x1b[?1049h" "\x1b" "7\x1b[?47h"
 		: "\x1b[?1049l" "\x1b[?47l" "\x1b" "8";
 	write (2, code, strlen (code));
 	fflush (stdout);
-#elif __WINDOWS__ && !__CYGWIN__
+#elif __WINDOWS__
 	if (I.ansicon) {
 		if (enable) {
 			const char *code =
@@ -1620,7 +1650,7 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 }
 
 R_API void r_cons_clear_buffer(void) {
-#if __UNIX__ || __CYGWIN__
+#if __UNIX__
 	write (1, "\x1b" "c\x1b[3J",  6);
 #endif
 }

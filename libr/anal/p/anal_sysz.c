@@ -50,7 +50,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "]}");
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh handle;
 	cs_insn *insn;
 	int mode, n, ret;
@@ -67,7 +67,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		if (n < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		} else {
-			opex (&op->opex, handle, insn);
+			if (mask & R_ANAL_OP_MASK_OPEX) {
+				opex (&op->opex, handle, insn);
+			}
 			op->size = insn->size;
 			switch (insn->id) {
 			case SYSZ_INS_BRCL:

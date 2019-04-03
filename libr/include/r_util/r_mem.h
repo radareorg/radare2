@@ -34,7 +34,7 @@ R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool);
 R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
 R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
-R_API void *r_mem_dup(void *s, int l);
+R_API void *r_mem_dup(const void *s, int l);
 R_API void *r_mem_alloc(int sz);
 R_API void r_mem_free(void *);
 R_API void r_mem_memzero(void *, size_t);

@@ -12,6 +12,7 @@
 
 #include "../format/xnu/r_cf_dict.h"
 #include "../format/xnu/mig_index.h"
+#include "../format/mach0/mach064_is_kernelcache.c"
 
 typedef bool (*ROnRebaseFunc) (ut64 offset, ut64 decorated_addr, void *user_data);
 
@@ -130,7 +131,6 @@ static bool r_parse_pointer(RParsedPointer *ptr, ut64 decorated_addr, RKernelCac
 static bool on_rebase_pointer (ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx);
 static void rebase_buffer(RKernelCacheObj *obj, RIO *io, RIODesc *fd, ut8 *buf, int count);
 
-static RPrelinkRange *get_prelink_info_range(const ut8 *header_bytes, ut64 length);
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0);
 static RList *filter_kexts(RKernelCacheObj *obj);
 static RList *carve_kexts(RKernelCacheObj *obj);
@@ -269,58 +269,6 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *ma
 	}
 
 	return prelink_range;
-}
-
-static RPrelinkRange *get_prelink_info_range(const ut8 *header_bytes, ut64 length) {
-	struct MACH0_(mach_header)  *h64 = (struct MACH0_(mach_header)*) header_bytes;
-	struct load_command *cmd = (struct load_command*) (header_bytes + sizeof (struct MACH0_(mach_header)));
-	struct load_command *end = (struct load_command*)((const ut8*)cmd + h64->sizeofcmds);
-	if ((ut8*) end > (header_bytes + length)) {
-		return NULL;
-	}
-
-	RPrelinkRange *prelink_range = R_NEW0 (RPrelinkRange);
-	if (!prelink_range) {
-		return NULL;
-	}
-
-	int incomplete = 3;
-	for (; cmd < end; cmd = (void *)((const ut8*)cmd + cmd->cmdsize)) {
-		if (cmd->cmd != LC_SEGMENT_64) {
-			continue;
-		}
-		struct segment_command_64 *segment = (struct segment_command_64*) cmd;
-		if (!strncmp (segment->segname, "__PRELINK_INFO", 16)) {
-			prelink_range->range.offset = segment->fileoff;
-			prelink_range->range.size = segment->filesize;
-			if (!--incomplete) {
-				return prelink_range;
-			}
-		}
-
-		if (!strncmp (segment->segname, "__PRELINK_TEXT", 16)) {
-			prelink_range->pa2va_exec = segment->vmaddr - segment->fileoff;
-			if (!--incomplete) {
-				return prelink_range;
-			}
-		}
-
-		if (!strncmp (segment->segname, "__PRELINK_DATA", 16)) {
-			prelink_range->pa2va_data = segment->vmaddr - segment->fileoff;
-			if (!--incomplete) {
-				return prelink_range;
-			}
-		}
-
-		if ((int)cmd->cmdsize < 1) {
-			eprintf ("CMD Size FAIL %d\n", cmd->cmdsize);
-			break;
-		}
-	}
-
-	R_FREE (prelink_range);
-
-	return NULL;
 }
 
 static RList *filter_kexts(RKernelCacheObj *obj) {
@@ -722,6 +670,15 @@ static RList *entries(RBinFile *bf) {
 	}
 
 	RKernelCacheObj *kobj = (RKernelCacheObj*) obj->bin_obj;
+	ut64 entry_vaddr = kobj->mach0->entry;
+	if (kobj->pa2va_exec <= entry_vaddr) {
+		ut64 entry_paddr = entry_vaddr - kobj->pa2va_exec;
+		RBinAddr *ba = newEntry (entry_paddr, entry_vaddr, 0);
+		if (ba) {
+			r_list_append (ret, ba);
+		}
+	}
+
 	process_constructors (kobj, kobj->mach0, ret, 0, true, R_K_CONSTRUCTOR_TO_ENTRY, NULL);
 
 	return ret;
@@ -905,26 +862,10 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 4) {
-		if (memcmp (buf, "\xfe\xed\xfa\xcf", 4) &&
-			memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+		if (memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
 			return false;
 		}
-		if (length >= 4096) {
-			const char *features[] = {
-				"__PRELINK_INFO",
-				"__PRELINK_DATA",
-				"__PRELINK_TEXT",
-				"__KLD"
-			};
-			int i;
-			for (i = 0; i < 4; i++) {
-				const ut8 *needle = (const ut8 *) features[i];
-				if (!r_mem_mem (buf, 4096, needle, strlen ((const char *)needle))) {
-					break;
-				}
-			}
-			return i == 4;
-		}
+		return is_kernelcache (buf, length);
 	}
 	return false;
 }

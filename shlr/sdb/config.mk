@@ -52,7 +52,7 @@ HAVE_VALA=#$(shell valac --version 2> /dev/null)
 # This is hacky
 HOST_CC?=gcc
 RANLIB?=ranlib
-OS?=$(shell uname)
+OS=$(shell uname)
 OSTYPE?=$(shell uname -s)
 ARCH?=$(shell uname -m)
 

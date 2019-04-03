@@ -585,6 +585,16 @@ R_API int r_utf8_strlen(const ut8 *str) {
 }
 
 R_API int r_isprint(const RRune c) {
+	// RRunes are most commonly single byte... We can early out with this common case.
+	if (c < 0x34F) {
+		/*
+		manually copied from top, please update if this ever changes
+		{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
+		could do a linear search, but thats a lot slower than a few compare
+		*/
+		return !( c <= 0x1F || ( c >= 0x7F && c <= 0x9F));
+	}
+
 	const int last = nonprintable_ranges_count;
 
 	int low = 0;
@@ -643,6 +653,35 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 		}
 	}
 	return rutf16;
+}
+
+R_API char *r_utf8_to_acp_l(const ut8 *str, int len) {
+	if (!str || !len || len < -1) {
+		return NULL;
+	}
+	char *acp = NULL;
+	int wcsize, csize;
+	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, str, len, NULL, 0))) {
+		wchar_t *rutf16;
+		++wcsize;
+		if ((rutf16 = (wchar_t *)calloc (wcsize, sizeof (wchar_t)))) {
+			MultiByteToWideChar (CP_UTF8, 0, str, len, rutf16, wcsize);
+			if (len != -1) {
+				rutf16[wcsize - 1] = L'\0';
+			}
+			if ((csize = WideCharToMultiByte (CP_ACP, 0, rutf16, wcsize, NULL, 0, NULL, NULL))) {
+				++csize;
+				if ((acp = malloc (csize))) {
+					WideCharToMultiByte (CP_ACP, 0, rutf16, wcsize, acp, csize, NULL, NULL);
+					if (len != -1) {
+						acp[csize - 1] = '\0';
+					}
+				}
+			}
+			free (rutf16);
+		}
+	}
+	return acp;
 }
 
 R_API const char *r_acp_to_utf8_l(const ut8 *str, int len) {

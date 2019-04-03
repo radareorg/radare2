@@ -62,7 +62,7 @@ static int analyze_from_code_buffer (RAnal *anal, RAnalFunction *fcn, ut64 addr,
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr);
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state);
 
-static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len);
+static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 //static int java_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype);
 //static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype);
 
@@ -742,10 +742,12 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 	return op->size;
 }
 
-static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	/* get opcode size */
 	//ut8 op_byte = data[0];
 	ut8 op_byte = data[0];
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
 	int sz = JAVA_OPS[op_byte].size;
 	if (!op) {
 		return sz;

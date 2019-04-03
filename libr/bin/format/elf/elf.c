@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2019 - nibble, pancake, alvaro_fe */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -269,7 +269,7 @@ static int init_phdr(ELFOBJ *bin) {
 	bool linux_kern_hack = false;
 	/* Enable this hack only for the X86 64bit ELFs */
 	const int _128K = 1024 * 128;
-	if (bin->b->length > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
+	if (r_buf_size (bin->b) > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
 		linux_kern_hack = true;
 	}
 	if (!read_phdr (bin, linux_kern_hack)) {
@@ -279,8 +279,9 @@ static int init_phdr(ELFOBJ *bin) {
 	sdb_num_set (bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
 	sdb_num_set (bin->kv, "elf_phdr.size", sizeof (Elf_(Phdr)), 0);
 	sdb_set (bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
-			"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
-			"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};", 0);
+		"PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
+		"PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};",
+		0);
 	sdb_set (bin->kv, "elf_p_flags.cparse", "enum elf_p_flags {PF_None=0,PF_Exec=1,"
 			"PF_Write=2,PF_Write_Exec=3,PF_Read=4,PF_Read_Exec=5,PF_Read_Write=6,"
 			"PF_Read_Write_Exec=7};", 0);
@@ -296,7 +297,6 @@ static int init_phdr(ELFOBJ *bin) {
 	// > td `k bin/cur/info/elf_p_type.cparse`; td `k bin/cur/info/elf_p_flags.cparse`
 	// > pf `k bin/cur/info/elf_phdr.format` @ `k bin/cur/info/elf_phdr.offset`
 }
-
 
 static int init_shdr(ELFOBJ *bin) {
 	ut32 shdr_size;
@@ -2344,13 +2344,12 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
-	const ut8 *p = bin->b->buf;
-	if (bin->b->length > 64)  {
-		p += bin->b->length - 64;
-	} else {
+	if (r_buf_size (bin->b) <= 64)  {
 		return 0;
 	}
-	return r_mem_mem (p, 64, (const ut8 *)s, strlen (s)) != NULL;
+	ut8 tmp[64];
+	r_buf_read_at (bin->b, r_buf_size (bin->b) - 64, tmp, 64);
+	return r_mem_mem (tmp, 64, (const ut8 *)s, strlen (s)) != NULL;
 }
 
 static inline int needle(ELFOBJ *bin, const char *s) {
@@ -3421,7 +3420,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				{
 					int rest = ELF_STRING_LENGTH - 1;
 					int st_name = sym[k].st_name;
-					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
+					int maxsize = R_MIN (r_buf_size (bin->b), strtab_section->sh_size);
 					if (is_section_local_sym (bin, &sym[k])) {
 						const char *shname = &bin->shstrtab[bin->shdr[sym[k].st_shndx].sh_name];
 						r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH);
@@ -3628,7 +3627,7 @@ ELFOBJ* Elf_(r_bin_elf_new)(const char* file, bool verbose) {
 ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
 	bin->kv = sdb_new0 ();
-	bin->size = (ut32)buf->length;
+	bin->size = (ut32)r_buf_size (buf);
 	bin->verbose = verbose;
 	bin->b = r_buf_ref (buf);
 	if (!elf_init (bin)) {
@@ -3858,4 +3857,41 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 	}
 
 	return maps;
+}
+
+char *Elf_(r_bin_elf_compiler)(ELFOBJ *bin) {
+	RBinElfSection *section = get_section_by_name (bin, ".comment");
+	if (!section) {
+		return NULL;
+	}
+
+	ut64 off = section->offset;
+	int sz = section->size;
+	if (sz < 1) {
+		return NULL;
+	}
+	char *buf = malloc (sz + 1);
+	if (!buf) {
+		return NULL;
+	}
+	if (r_buf_read_at (bin->b, off, (ut8*)buf, sz) < 1) {
+		free (buf);
+		return NULL;
+	}
+
+	buf[sz] = 0;
+	char *ptr = buf;
+
+	do {
+		char *p = strchr (ptr, '\0');
+		size_t psz = (p - ptr);
+		ptr = p;
+		sz -= psz + 1;
+		if (sz > 1) {
+			*ptr = '/';
+			ptr++;
+		}
+	} while (sz > 0);
+
+	return buf;
 }

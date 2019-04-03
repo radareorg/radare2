@@ -11,8 +11,8 @@
 
 #define MAP_USE_HALF_CLOSED 0
 
-#define CMP_END_GT(addr, itv) \
-	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : (((addr) > r_itv_end (*(RInterval *)(itv))) ? 1 : 0))
+#define CMP_END_GTE(addr, itv) \
+	(((addr) < r_itv_end (*(RInterval *)(itv))) ? -1 : 1)
 
 struct map_event_t {
 	RIOMap *map;
@@ -26,9 +26,15 @@ static int _cmp_map_event(const void *a_, const void *b_) {
 	struct map_event_t *a = (void *)a_, *b = (void *)b_;
 	ut64 addr0 = a->addr - a->is_to, addr1 = b->addr - b->is_to;
 	if (addr0 != addr1) {
-		return addr0 < addr1 ? -1 : 1;
+		return addr0 < addr1? -1: 1;
 	}
-	return a->is_to - b->is_to;
+	if (a->is_to != b->is_to) {
+		return !a->is_to? -1: 1;
+	}
+	if (a->id != b->id) {
+		return a->id < b->id? -1: 1;
+	}
+	return 0;
 }
 
 static int _cmp_map_event_by_id(const void *a_, const void *b_) {
@@ -356,7 +362,7 @@ R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, false);
 	const RPVector *shadow = &io->map_skyline_shadow;
 	size_t i, len = r_pvector_len (shadow);
-	r_pvector_lower_bound (shadow, addr, i, CMP_END_GT);
+	r_pvector_lower_bound (shadow, addr, i, CMP_END_GTE);
 	if (i == len) {
 		return false;
 	}

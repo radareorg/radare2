@@ -110,6 +110,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->pe64_bins);
 
 	r_buf_free (obj->b);
+	free (obj->hdr);
 	obj->b = NULL;
 	free (obj);
 
@@ -314,7 +315,11 @@ static void r_bin_mdmp_init_parsing(struct r_bin_mdmp_obj *obj) {
 }
 
 static bool r_bin_mdmp_init_hdr(struct r_bin_mdmp_obj *obj) {
-	obj->hdr = (struct minidump_header *)obj->b->buf;
+	obj->hdr = R_NEW (struct minidump_header);
+	if (!obj->hdr) {
+		return false;
+	}
+	r_buf_read_at (obj->b, 0, (ut8 *)obj->hdr, sizeof (*obj->hdr));
 
 	if (obj->hdr->number_of_streams == 0) {
 		eprintf ("[WARN] No streams present!\n");
@@ -370,7 +375,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
-	if ((ut64)entry->location.rva + entry->location.data_size > obj->b->length) {
+	if ((ut64)entry->location.rva + entry->location.data_size > r_buf_size (obj->b)) {
 		eprintf ("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
 		return false;
 	}
@@ -460,8 +465,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			ut64 start_offset = (ut64)entry->location.rva
 			                + r_offsetof (struct minidump_memory_list, memory_ranges);
 			ut64 needed_space = (i + 1) * sizeof (memories[0]);
-			if (start_offset + needed_space > obj->b->length
-			    || start_offset + needed_space < start_offset) {
+			if (start_offset + needed_space > r_buf_size (obj->b) || start_offset + needed_space < start_offset) {
 				break;
 			}
 			r_list_append (obj->streams.memories, &(memories[i]));
@@ -475,17 +479,19 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 
 		sdb_set (obj->kv, "mdmp_exception.format", "[4]E[4]Eqqdd[15]q "
-			"(mdmp_exception_code)ExceptionCode "
-			"(mdmp_exception_flags)ExceptionFlags "
-			"ExceptionRecord ExceptionAddress "
-			"NumberParameters __UnusedAlignment "
-			"ExceptionInformation", 0);
+							   "(mdmp_exception_code)ExceptionCode "
+							   "(mdmp_exception_flags)ExceptionFlags "
+							   "ExceptionRecord ExceptionAddress "
+							   "NumberParameters __UnusedAlignment "
+							   "ExceptionInformation",
+			0);
 		sdb_num_set (obj->kv, "mdmp_exception_stream.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_exception_stream.format", "dd?? "
-			"ThreadId __Alignment "
-			"(mdmp_exception)ExceptionRecord "
-			"(mdmp_location_descriptor)ThreadContext", 0);
+								  "ThreadId __Alignment "
+								  "(mdmp_exception)ExceptionRecord "
+								  "(mdmp_location_descriptor)ThreadContext",
+			0);
 
 		break;
 	case SYSTEM_INFO_STREAM:
@@ -776,42 +782,52 @@ static bool r_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
 	int i;
 	Pe64_image_dos_header dos_hdr;
 	Pe64_image_nt_headers nt_hdr;
-	Pe64_image_section_header *section_hdrs;
 
 	r_buf_read_at (pe_buf, 0, (ut8 *)&dos_hdr, sizeof (Pe64_image_dos_header));
 	r_buf_read_at (pe_buf, dos_hdr.e_lfanew, (ut8 *)&nt_hdr, sizeof (Pe64_image_nt_headers));
 
 	/* Patch RawData in headers */
-	section_hdrs = (Pe64_image_section_header *)(pe_buf->buf + dos_hdr.e_lfanew + 4 + sizeof (Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader);
+	ut64 sect_hdrs_off = dos_hdr.e_lfanew + 4 + sizeof (Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader;
+	Pe64_image_section_header section_hdr;
 	for (i = 0; i < nt_hdr.file_header.NumberOfSections; i++) {
-		section_hdrs[i].PointerToRawData = section_hdrs[i].VirtualAddress;
+		r_buf_read_at (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), (ut8 *)&section_hdr, sizeof (section_hdr));
+		section_hdr.PointerToRawData = section_hdr.VirtualAddress;
+		r_buf_write_at (pe_buf, sect_hdrs_off + i * sizeof (section_hdr), (const ut8 *)&section_hdr, sizeof (section_hdr));
 	}
 
 	return true;
 }
 
-static int check_pe32_bytes(const ut8 *buf, ut64 length) {
+static int check_pe32_buf(RBuffer *buf, ut64 length) {
 	unsigned int idx;
 	if (!buf || length <= 0x3d) {
 		return false;
 	}
-	idx = (buf[0x3c] | (buf[0x3d]<<8));
+	idx = (r_buf_read8_at (buf, 0x3c) | (r_buf_read8_at (buf, 0x3d)<<8));
 	if (length > idx + 0x18 + 2) {
-		if (!memcmp (buf, "MZ", 2) && !memcmp (buf+idx, "PE", 2) && !memcmp (buf+idx+0x18, "\x0b\x01", 2)) {
+		ut8 tmp1[2], tmp2[2], tmp3[2];
+		r_buf_read_at (buf, 0, tmp1, 2);
+		r_buf_read_at (buf, idx, tmp2, 2);
+		r_buf_read_at (buf, idx + 0x18, tmp3, 2);
+		if (!memcmp (tmp1, "MZ", 2) && !memcmp (tmp2, "PE", 2) && !memcmp (tmp3, "\x0b\x01", 2)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static int check_pe64_bytes(const ut8 *buf, ut64 length) {
+static int check_pe64_buf(RBuffer *buf, ut64 length) {
 	int idx, ret = false;
 	if (!buf || length <= 0x3d) {
 		return false;
 	}
-	idx = buf[0x3c] | (buf[0x3d]<<8);
+	idx = r_buf_read8_at (buf, 0x3c) | (r_buf_read8_at (buf, 0x3d)<<8);
 	if (length >= idx + 0x20) {
-		if (!memcmp (buf, "MZ", 2) && !memcmp (buf+idx, "PE", 2) && !memcmp (buf+idx+0x18, "\x0b\x02", 2)) {
+		ut8 tmp1[2], tmp2[2], tmp3[2];
+		r_buf_read_at (buf, 0, tmp1, 2);
+		r_buf_read_at (buf, idx, tmp2, 2);
+		r_buf_read_at (buf, idx + 0x18, tmp3, 2);
+		if (!memcmp (tmp1, "MZ", 2) && !memcmp (tmp2, "PE", 2) && !memcmp (tmp3, "\x0b\x02", 2)) {
 			ret = true;
 		}
 	}
@@ -837,7 +853,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 		const ut8 *b = r_buf_get_at (obj->b, paddr, &left);
 		buf = r_buf_new_with_bytes (b, R_MIN (left, module->size_of_image));
 		dup = false;
-		if (check_pe32_bytes (buf->buf, module->size_of_image)) {
+		if (check_pe32_buf (buf, module->size_of_image)) {
 			r_list_foreach(obj->pe32_bins, it_dup, pe32_dup) {
 				if (pe32_dup->vaddr == module->base_of_image) {
 					dup = true;
@@ -856,7 +872,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
 
 			r_list_append (obj->pe32_bins, pe32_bin);
-		} else if (check_pe64_bytes (buf->buf, module->size_of_image)) {
+		} else if (check_pe64_buf (buf, module->size_of_image)) {
 			r_list_foreach(obj->pe64_bins, it_dup, pe64_dup) {
 				if (pe64_dup->vaddr == module->base_of_image) {
 					dup = true;
@@ -902,15 +918,14 @@ static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
 	return true;
 }
 
-struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(struct r_buf_t *buf) {
+struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 	bool fail = false;
 	struct r_bin_mdmp_obj *obj = R_NEW0 (struct r_bin_mdmp_obj);
 	if (!obj) {
 		return NULL;
 	}
 	obj->kv = sdb_new0 ();
-	obj->b = r_buf_new ();
-	obj->size = (ut32)buf->length;
+	obj->size = (ut32) r_buf_size (buf);
 
 	fail |= (!(obj->streams.ex_threads = r_list_new ()));
 	fail |= (!(obj->streams.memories = r_list_new ()));
@@ -931,11 +946,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(struct r_buf_t *buf) {
 		return NULL;
 	}
 
-	if (!r_buf_set_bytes (obj->b, buf->buf, buf->length)) {
-		r_bin_mdmp_free (obj);
-		return NULL;
-	}
-
+	obj->b = r_buf_ref (buf);
 	if (!r_bin_mdmp_init (obj)) {
 		r_bin_mdmp_free (obj);
 		return NULL;

@@ -28,8 +28,6 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdarg.h>
-//#include <getopt.h>
-#include <unistd.h>
 
 /* defines which are not function-specific */
 #ifndef BUFLEN

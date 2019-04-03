@@ -16,7 +16,7 @@
 #if defined(__FreeBSD__)
 # include <sys/param.h>
 # include <sys/sysctl.h>
-# if __FreeBSD_version >= 1000000 
+# if __FreeBSD_version >= 1000000
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
@@ -51,19 +51,18 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 //#  include <libproc.h>
 # endif
 #endif
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 # include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
-# include <unistd.h>
 extern char **environ;
 
 #ifdef __HAIKU__
 # define Sleep sleep
 #endif
 #endif
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 # include <io.h>
 # include <winbase.h>
 #define TMP_BUFSIZE	4096
@@ -113,7 +112,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 
 R_API int r_sys_fork() {
 #if HAVE_FORK
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return -1;
 #else
 	return fork ();
@@ -137,7 +136,7 @@ R_API ut64 r_sys_now(void) {
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
 	if (fd == -1) {
 		return false;
@@ -164,7 +163,7 @@ R_API int r_sys_truncate(const char *file, int sz) {
 
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	WIN32_FIND_DATAW entry;
 	char *cfname;
 	HANDLE fh = r_sandbox_opendir (path, &entry);
@@ -274,7 +273,7 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_sec = usecs / 1000000;
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
-#elif __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#elif __UNIX__
 	return usleep (usecs);
 #else
 	// w32 api uses milliseconds
@@ -285,7 +284,7 @@ R_API int r_sys_usleep(int usecs) {
 }
 
 R_API int r_sys_clearenv(void) {
-#if __UNIX__ || (__CYGWIN__ && !defined(MINGW32))
+#if __UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
@@ -318,7 +317,7 @@ R_API int r_sys_clearenv(void) {
 }
 
 R_API int r_sys_setenv(const char *key, const char *value) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 	if (!key) {
 		return 0;
 	}
@@ -328,8 +327,8 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = r_sys_conv_utf8_to_utf16 (key);
-	LPTSTR value_ = r_sys_conv_utf8_to_utf16 (value);
+	LPTSTR key_ = r_sys_conv_utf8_to_win (key);
+	LPTSTR value_ = r_sys_conv_utf8_to_win (value);
 
 	SetEnvironmentVariable (key_, value_);
 	free (key_);
@@ -403,7 +402,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 }
 
 R_API char *r_sys_getenv(const char *key) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	DWORD dwRet;
 	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
 	char *val = NULL;
@@ -415,7 +414,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!envbuf) {
 		goto err_r_sys_get_env;
 	}
-	key_ = r_sys_conv_utf8_to_utf16 (key);
+	key_ = r_sys_conv_utf8_to_win (key);
 	dwRet = GetEnvironmentVariable (key_, envbuf, TMP_BUFSIZE);
 	if (dwRet == 0) {
 		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
@@ -432,7 +431,7 @@ R_API char *r_sys_getenv(const char *key) {
 			goto err_r_sys_get_env;
 		}
 	}
-	val = r_sys_conv_utf16_to_utf8_l (envbuf, (int)dwRet);
+	val = r_sys_conv_win_to_utf8_l (envbuf, (int)dwRet);
 err_r_sys_get_env:
 	free (key_);
 	free (envbuf);
@@ -448,7 +447,7 @@ err_r_sys_get_env:
 }
 
 R_API char *r_sys_getdir(void) {
-#if __WINDOWS__ && !__CYGWIN__
+#if __WINDOWS__
 	return _getcwd (NULL, 0);
 #else
 	return getcwd (NULL, 0);
@@ -490,7 +489,7 @@ R_API bool r_sys_aslr(int val) {
 	return ret;
 }
 
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char *mysterr = NULL;
 	if (!sterr) {
@@ -641,17 +640,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	return false;
 }
 #elif __WINDOWS__
-// TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	bool result = r_sys_cmd_str_full_w32 (cmd, input, output, sterr);
-	if (len) {
-		*len = 0;
-		if (output && result) {
-			*len = strlen (*output);
-		}
-	}
-
-	return result;
+	return r_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
@@ -672,7 +662,7 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 }
 
 R_API int r_sys_cmdbg (const char *str) {
-#if __UNIX__ || __CYGWIN && !defined(MINGW32)
+#if __UNIX__
 	int ret, pid = r_sys_fork ();
 	if (pid == -1) {
 		return -1;
@@ -739,8 +729,8 @@ R_API bool r_sys_mkdir(const char *dir) {
 	if (r_sandbox_enable (0)) {
 		return false;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
-	LPTSTR dir_ = r_sys_conv_utf8_to_utf16 (dir);
+#if __WINDOWS__
+	LPTSTR dir_ = r_sys_conv_utf8_to_win (dir);
 
 	ret = CreateDirectory (dir_, NULL) != 0;
 	free (dir_);
@@ -761,7 +751,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	if (*ptr == slash) {
 		ptr++;
 	}
-#if __WINDOWS__ && !defined(__CYGWIN__)
+#if __WINDOWS__
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
@@ -797,7 +787,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 }
 
 R_API void r_sys_perror_str(const char *fun) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 #pragma push_macro("perror")
 #undef perror
 	perror (fun);
@@ -886,7 +876,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __UNIX__
 	pid = r_sys_fork ();
 #else
 	pid = -1;
@@ -972,7 +962,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 		CloseHandle (handle);
-		return r_sys_conv_utf16_to_utf8 (filename);
+		return r_sys_conv_win_to_utf8 (filename);
 	}
 	return NULL;
 #else
@@ -1060,7 +1050,7 @@ R_API char *r_sys_whoami (char *buf) {
 R_API int r_sys_getpid() {
 #if __UNIX__
 	return getpid ();
-#elif __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__
 	return GetCurrentProcessId();
 #else
 #warning r_sys_getpid not implemented for this platform

@@ -104,7 +104,6 @@ platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')]
-  platform_inc += ['libr/include/msvc']
 endif
 platform_inc = include_directories(platform_inc)
 

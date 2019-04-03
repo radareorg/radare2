@@ -228,6 +228,16 @@ R_API RBuffer *r_buf_new_with_string(const char *msg) {
 	return r_buf_new_with_bytes ((const ut8 *)msg, (ut64)strlen (msg));
 }
 
+R_API RBuffer *r_buf_new_with_bufref(RBuffer *b) {
+	RBuffer *buf = r_buf_new_with_pointers (b->buf_priv, b->length_priv);
+	r_buf_ref (buf);
+	return buf;
+}
+
+R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
+	return r_buf_new_with_bytes (b->buf_priv, b->length_priv);
+}
+
 static void buffer_sparse_free(void *a) {
 	RBufferSparse *s = (RBufferSparse *)a;
 	free (s->data);
@@ -240,8 +250,8 @@ R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 	if (!b) {
 		return NULL;
 	}
-	b->Oxff = Oxff;
-	b->sparse = r_list_newf (buffer_sparse_free);
+	b->Oxff_priv = Oxff;
+	b->sparse_priv = r_list_newf (buffer_sparse_free);
 	return b;
 }
 
@@ -308,6 +318,10 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
 	r_return_val_if_fail (b, -1);
 	return buf_seek (b, addr, whence);
+}
+
+R_API ut64 r_buf_tell(RBuffer *b) {
+	return r_buf_seek (b, 0, 1);
 }
 
 R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
@@ -424,13 +438,13 @@ R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	if (!b || b->ro) {
 		return false;
 	}
-	if (b->fd != -1) {
-		r_buf_append_bytes (b, a->buf, a->length);
+	if (b->fd_priv != -1) {
+		r_buf_append_bytes (b, a->buf_priv, a->length_priv);
 		return true;
 	}
-	if (b->empty) {
-		b->length = 0;
-		b->empty = 0;
+	if (b->empty_priv) {
+		b->length_priv = 0;
+		b->empty_priv = 0;
 	}
 	if ((b->buf = realloc (b->buf, b->length + a->length))) {
 		memmove (b->buf + b->length, a->buf, a->length);
@@ -632,4 +646,11 @@ R_API RBuffer *r_buf_ref(RBuffer *b) {
 		b->refctr++;
 	}
 	return b;
+}
+
+R_API RList *r_buf_nonempty_list(RBuffer *b) {
+	if (!b->sparse_priv) {
+		return NULL;
+	}
+	return r_list_clone (b->sparse_priv);
 }

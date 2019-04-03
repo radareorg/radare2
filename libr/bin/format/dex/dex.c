@@ -20,50 +20,48 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	}
 	RBinDexObj *bin = R_NEW0 (RBinDexObj);
 	int i;
-	ut8 *bufptr;
 	struct dex_header_t *dexhdr;
 	if (!bin) {
 		goto fail;
 	}
-	bin->size = buf->length;
+	bin->size = r_buf_size (buf);
 	bin->b = r_buf_ref (buf);
 	/* header */
 	if (bin->size < sizeof (struct dex_header_t)) {
 		goto fail;
 	}
-	bufptr = bin->b->buf;
 	dexhdr = &bin->header;
 
-	//check boundaries of bufptr
 	if (bin->size < 112) {
 		goto fail;
 	}
 
-	memcpy (&dexhdr->magic, bufptr, 8);
-	dexhdr->checksum = r_read_le32 (bufptr + 8);
-	memcpy (&dexhdr->signature, bufptr + 12, 20);
-	dexhdr->size = r_read_le32 (bufptr + 32);
-	dexhdr->header_size = r_read_le32 (bufptr + 36);
-	dexhdr->endian = r_read_le32 (bufptr + 40);
+	r_buf_seek (bin->b, 0, 0);
+	r_buf_read (bin->b, (ut8 *)&dexhdr->magic, 8);
+	dexhdr->checksum = r_buf_read_le32 (bin->b);
+	r_buf_read (bin->b, (ut8 *)&dexhdr->signature, 20);
+	dexhdr->size = r_buf_read_le32 (bin->b);
+	dexhdr->header_size = r_buf_read_le32 (bin->b);
+	dexhdr->endian = r_buf_read_le32 (bin->b);
 	// TODO: this offsets and size will be used for checking,
 	// so they should be checked. Check overlap, < 0, > bin.size
-	dexhdr->linksection_size = r_read_le32 (bufptr + 44);
-	dexhdr->linksection_offset = r_read_le32 (bufptr + 48);
-	dexhdr->map_offset = r_read_le32 (bufptr + 52);
-	dexhdr->strings_size = r_read_le32 (bufptr + 56);
-	dexhdr->strings_offset = r_read_le32 (bufptr + 60);
-	dexhdr->types_size = r_read_le32 (bufptr + 64);
-	dexhdr->types_offset = r_read_le32 (bufptr + 68);
-	dexhdr->prototypes_size = r_read_le32 (bufptr + 72);
-	dexhdr->prototypes_offset = r_read_le32 (bufptr + 76);
-	dexhdr->fields_size = r_read_le32 (bufptr + 80);
-	dexhdr->fields_offset = r_read_le32 (bufptr + 84);
-	dexhdr->method_size = r_read_le32 (bufptr + 88);
-	dexhdr->method_offset = r_read_le32 (bufptr + 92);
-	dexhdr->class_size = r_read_le32 (bufptr + 96);
-	dexhdr->class_offset = r_read_le32 (bufptr + 100);
-	dexhdr->data_size = r_read_le32 (bufptr + 104);
-	dexhdr->data_offset = r_read_le32 (bufptr + 108);
+	dexhdr->linksection_size = r_buf_read_le32 (bin->b);
+	dexhdr->linksection_offset = r_buf_read_le32 (bin->b);
+	dexhdr->map_offset = r_buf_read_le32 (bin->b);
+	dexhdr->strings_size = r_buf_read_le32 (bin->b);
+	dexhdr->strings_offset = r_buf_read_le32 (bin->b);
+	dexhdr->types_size = r_buf_read_le32 (bin->b);
+	dexhdr->types_offset = r_buf_read_le32 (bin->b);
+	dexhdr->prototypes_size = r_buf_read_le32 (bin->b);
+	dexhdr->prototypes_offset = r_buf_read_le32 (bin->b);
+	dexhdr->fields_size = r_buf_read_le32 (bin->b);
+	dexhdr->fields_offset = r_buf_read_le32 (bin->b);
+	dexhdr->method_size = r_buf_read_le32 (bin->b);
+	dexhdr->method_offset = r_buf_read_le32 (bin->b);
+	dexhdr->class_size = r_buf_read_le32 (bin->b);
+	dexhdr->class_offset = r_buf_read_le32 (bin->b);
+	dexhdr->data_size = r_buf_read_le32 (bin->b);
+	dexhdr->data_offset = r_buf_read_le32 (bin->b);
 
 	/* strings */
 	#define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof (ut32))
@@ -77,12 +75,11 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	}
 	for (i = 0; i < dexhdr->strings_size; i++) {
 		ut64 offset = dexhdr->strings_offset + i * sizeof (ut32);
-		//make sure we can read from bufptr without oob
 		if (offset + 4 > bin->size) {
 			free (bin->strings);
 			goto fail;
 		}
-		bin->strings[i] = r_read_le32 (bufptr + offset);
+		bin->strings[i] = r_buf_read_le32_at (bin->b, offset);
 	}
 	/* classes */
 	// TODO: not sure about if that is needed
@@ -103,14 +100,15 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->classes);
 			goto fail;
 		}
-		bin->classes[i].class_id = r_read_le32 (bufptr + offset + 0);
-		bin->classes[i].access_flags = r_read_le32 (bufptr + offset + 4);
-		bin->classes[i].super_class = r_read_le32 (bufptr + offset + 8);
-		bin->classes[i].interfaces_offset = r_read_le32 (bufptr + offset + 12);
-		bin->classes[i].source_file = r_read_le32 (bufptr + offset + 16);
-		bin->classes[i].anotations_offset = r_read_le32 (bufptr + offset + 20);
-		bin->classes[i].class_data_offset = r_read_le32 (bufptr + offset + 24);
-		bin->classes[i].static_values_offset = r_read_le32 (bufptr + offset + 28);
+		r_buf_seek (bin->b, offset, 0);
+		bin->classes[i].class_id = r_buf_read_le32 (bin->b);
+		bin->classes[i].access_flags = r_buf_read_le32 (bin->b);
+		bin->classes[i].super_class = r_buf_read_le32 (bin->b);
+		bin->classes[i].interfaces_offset = r_buf_read_le32 (bin->b);
+		bin->classes[i].source_file = r_buf_read_le32 (bin->b);
+		bin->classes[i].anotations_offset = r_buf_read_le32 (bin->b);
+		bin->classes[i].class_data_offset = r_buf_read_le32 (bin->b);
+		bin->classes[i].static_values_offset = r_buf_read_le32 (bin->b);
 	}
 
 	/* methods */
@@ -131,9 +129,10 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->methods);
 			goto fail;
 		}
-		bin->methods[i].class_id = r_read_le16 (bufptr + offset + 0);
-		bin->methods[i].proto_id = r_read_le16 (bufptr + offset + 2);
-		bin->methods[i].name_id = r_read_le32 (bufptr + offset + 4);
+		r_buf_seek (bin->b, offset, 0);
+		bin->methods[i].class_id = r_buf_read_le16 (bin->b);
+		bin->methods[i].proto_id = r_buf_read_le16 (bin->b);
+		bin->methods[i].name_id = r_buf_read_le32 (bin->b);
 	}
 
 	/* types */
@@ -155,7 +154,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->types);
 			goto fail;
 		}
-		bin->types[i].descriptor_id = r_read_le32 (bufptr + offset);
+		bin->types[i].descriptor_id = r_buf_read_le32_at (bin->b, offset);
 	}
 
 	/* fields */
@@ -178,9 +177,10 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->fields);
 			goto fail;
 		}
-		bin->fields[i].class_id = r_read_le16 (bufptr + offset + 0);
-		bin->fields[i].type_id = r_read_le16 (bufptr + offset + 2);
-		bin->fields[i].name_id = r_read_le32 (bufptr + offset + 4);
+		r_buf_seek (bin->b, offset, 0);
+		bin->fields[i].class_id = r_buf_read_le16 (bin->b);
+		bin->fields[i].type_id = r_buf_read_le16 (bin->b);
+		bin->fields[i].name_id = r_buf_read_le32 (bin->b);
 	}
 
 	/* proto */
@@ -205,13 +205,14 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->protos);
 			goto fail;
 		}
-		bin->protos[i].shorty_id = r_read_le32 (bufptr + offset + 0);
-		bin->protos[i].return_type_id = r_read_le32 (bufptr + offset + 4);
-		bin->protos[i].parameters_off = r_read_le32 (bufptr + offset + 8);
+		r_buf_seek (bin->b, offset, 0);
+		bin->protos[i].shorty_id = r_buf_read_le32 (bin->b);
+		bin->protos[i].return_type_id = r_buf_read_le32 (bin->b);
+		bin->protos[i].parameters_off = r_buf_read_le32 (bin->b);
 	}
 
 	return bin;
-	
+
 fail:
 	if (bin) {
 		r_buf_free (bin->b);

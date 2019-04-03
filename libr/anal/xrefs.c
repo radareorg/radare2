@@ -263,7 +263,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	}
 	if (rad == 'j') {
 		pj_end (pj);
-		anal->cb_printf ("%s", pj_string (pj));
+		anal->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
 	r_list_free (list);

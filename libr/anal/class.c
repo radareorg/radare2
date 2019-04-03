@@ -1042,6 +1042,7 @@ static void r_anal_class_json(RAnal *anal, PJ *j, const char *class_name) {
 			pj_ks (j, "id", vtable->id);
 			pj_kn (j, "addr", vtable->addr);
 			pj_kn (j, "offset", vtable->offset);
+			pj_end (j);
 		}
 	}
 	pj_end (j);
@@ -1091,6 +1092,7 @@ static void r_anal_class_list_json(RAnal *anal) {
 	r_anal_class_foreach (anal, r_anal_class_list_json_cb, &ctx);
 
 	pj_end (j);
+	r_cons_printf ("%s\n", pj_string (j));
 	pj_free (j);
 }
 

@@ -16,7 +16,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 }
 
 static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	if (!check_bytes (r_buf_get_at (buf, 0, NULL), buf->length)) {
+	if (!check_bytes (r_buf_get_at (buf, 0, NULL), r_buf_size (buf))) {
 		return NULL;
 	}
 	return r_buf_new ();

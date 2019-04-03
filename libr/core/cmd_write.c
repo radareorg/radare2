@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include "r_crypto.h"
 #include "r_config.h"
@@ -41,6 +41,7 @@ static const char *help_msg_w[] = {
 static const char *help_msg_wa[] = {
 	"Usage:", "wa[of*] [arg]", "",
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
+	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
@@ -183,6 +184,7 @@ static void cmd_write_fail() {
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
+	r_return_val_if_fail (core && pairs, 0);
 	ut8 *buf = malloc (strlen (pairs) + 1);
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
@@ -1086,7 +1088,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '+': // "wc+"
 			if (input[2]=='*') { // "wc+*"
-				//r_io_cache_reset (core->io, true);
+				//r_io_cache_reset (core->io, core->io->cached);
 				eprintf ("TODO\n");
 			} else if (input[2]==' ') { // "wc+ "
 				char *p = strchr (input+3, ' ');
@@ -1110,7 +1112,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '-': { // "wc-"
 			if (input[2]=='*') { // "wc-*"
-				r_io_cache_reset (core->io, true);
+				r_io_cache_reset (core->io, core->io->cached);
 				break;
 			}
 			ut64 from, to;
@@ -1149,7 +1151,7 @@ static int cmd_write(void *data, const char *input) {
 			cmd_write_pcache (core, &input[2]);
 			break;
 		case 'r': // "wcr"
-			r_io_cache_reset (core->io, true);
+			r_io_cache_reset (core->io, core->io->cached);
 			/* Before loading the core block we have to make sure that if
 			 * the cache wrote past the original EOF these changes are no
 			 * longer displayed. */
@@ -1431,48 +1433,111 @@ static int cmd_write(void *data, const char *input) {
 			}
 			break;
 		case ' ':
+		case 'i':
 		case '*': {
-			const char *file = input[1]=='*'? input + 2: input + 1;
+			const char *file = r_str_trim_ro (input + 2);
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);
 			if (acode) {
+				if (input[1] == 'i') { // "wai"
+					RAnalOp analop;
+					if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+						eprintf ("Invalid instruction?\n");
+						break;
+					}
+					if (analop.size < acode->len) {
+						eprintf ("Doesnt fit\n");
+						r_anal_op_fini (&analop);
+						r_asm_code_free (acode);
+						break;
+					}
+					r_anal_op_fini (&analop);
+					r_core_cmd0 (core, "wao nop");
+				}
+				char* hex = r_asm_code_get_hex (acode);
 				if (input[1] == '*') {
-					cmd_write_hexpair (core, acode->buf_hex);
+					cmd_write_hexpair (core, hex);
 				} else {
-					if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
+					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 						cmd_write_fail ();
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
+							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
 						}
 						WSEEK (core, acode->len);
 					}
 					r_core_block_read (core);
 				}
+				free (hex);
 				r_asm_code_free (acode);
 			}
-			break;
 		}
+			break;
 		case 'f': // "waf"
+			if ((input[2] == ' ' || input[2] == '*')) {
+				const char *file = input + ((input[2] == '*')? 4: 3);
+				r_asm_set_pc (core->assembler, core->offset);
+
+				char *src = r_file_slurp (file, NULL);
+				if (src) {
+					ut64 nextaddr, addr = core->offset;
+					char *a, *b = src;
+					do {
+						a = strstr (b, ".offset ");
+						if (a) {
+							*a = 0;
+							a += strlen (".offset ");
+							nextaddr = r_num_math (core->num, a);
+							char *nl = strchr (a, '\n');
+							if (nl) {
+								*nl = 0;
+								a = nl + 1;
+							} else {
+								break;
+							}
+						}
+						if (*b) {
+							RAsmCode *ac = r_asm_massemble (core->assembler, b);
+							char* hex = r_asm_code_get_hex (ac);
+							if (hex) {
+								r_cons_printf ("wx %s @ 0x%08"PFMT64x"\n",  hex, addr);
+								free (hex);
+							}
+							r_asm_code_free (ac);
+						}
+						b = a;
+						addr = nextaddr;
+					} while (a);
+					free (src);
+				} else {
+					eprintf ("Cannot open '%s'\n", file);
+				}
+			} else {
+				eprintf ("Wrong argument\n");
+			}
+			break;
+		case 'F': // "waF"
 			if ((input[2] == ' ' || input[2] == '*')) {
 				const char *file = input + ((input[2] == '*')? 4: 3);
 				r_asm_set_pc (core->assembler, core->offset);
 				RAsmCode *acode = r_asm_assemble_file (core->assembler, file);
 				if (acode) {
+					char* hex = r_asm_code_get_hex (acode);
 					if (input[2] == '*') {
-						cmd_write_hexpair (core, acode->buf_hex);
+						cmd_write_hexpair (core, hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, hex);
 						}
-						if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
+						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 							cmd_write_fail ();
 						} else {
 							WSEEK (core, acode->len);
 						}
 						r_core_block_read (core);
 					}
+					free (hex);
 					r_asm_code_free (acode);
 				} else {
 					eprintf ("Cannot assemble file\n");

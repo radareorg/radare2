@@ -303,18 +303,17 @@ struct r_bin_mz_obj_t *r_bin_mz_new (const char *file) {
 	return bin;
 }
 
-struct r_bin_mz_obj_t *r_bin_mz_new_buf (const struct r_buf_t *buf) {
+struct r_bin_mz_obj_t *r_bin_mz_new_buf(RBuffer *buf) {
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
 	if (!bin) {
 		return NULL;
 	}
-	bin->b = r_buf_new ();
-	bin->size = buf->length;
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
+	bin->b = r_buf_new_with_buf (buf);
+	if (!bin->b) {
 		return r_bin_mz_free (bin);
 	}
-
-	return r_bin_mz_init (bin) ? bin : r_bin_mz_free (bin);
+	bin->size = r_buf_size (buf);
+	return r_bin_mz_init (bin)? bin: r_bin_mz_free (bin);
 }
 
 RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin) {
