@@ -4,6 +4,7 @@ F+= types
 F+= types-16
 F+= types-32
 F+= types-64
+F+= types-android
 F+= types-darwin
 F+= types-windows
 F+= types-x86-windows-32
