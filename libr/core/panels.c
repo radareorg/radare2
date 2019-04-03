@@ -298,6 +298,7 @@ static void checkEdge(RPanels *panels);
 static void callVisualGraph(RCore *core);
 static char *parsePanelsConfig(const char *cfg, int len);
 static void rotatePanels(RPanels *panels, bool rev);
+static void rotateAsmemu(RCore *core);
 static void registerdcb(RPanel *p);
 static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
@@ -3407,6 +3408,21 @@ static void rotatePanels(RPanels *panels, bool rev) {
 	setRefreshAll (panels, false);
 }
 
+static void rotateAsmemu(RCore *core) {
+	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
+	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	if (isEmu) {
+		if (isEmuStr) {
+			r_config_set (core->config, "emu.str", "false");
+		} else {
+			r_config_set (core->config, "asm.emu", "false");
+		}
+	} else {
+		r_config_set (core->config, "emu.str", "true");
+	}
+	setRefreshAll (core->panels, false);
+}
+
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int i, okey, key;
 
@@ -3749,6 +3765,9 @@ repeat:
 			panels->fun = PANEL_FUN_NOFUN;
 			resetSnow (panels);
 		}
+		break;
+	case ')':
+		rotateAsmemu (core);
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
