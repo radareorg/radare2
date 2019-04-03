@@ -2262,7 +2262,7 @@ static void printSnow(RPanels *panels) {
 		}
 		if (r_cons_canvas_gotoxy (panels->can, snow->x, snow->y)) {
 			if (panels->fun == PANEL_FUN_SAKURA) {
-				r_cons_canvas_write (panels->can, Color_BMAGENTA"*"Color_RESET);
+				r_cons_canvas_write (panels->can, Color_BMAGENTA","Color_RESET);
 			} else {
 				r_cons_canvas_write (panels->can, "*");
 			}
