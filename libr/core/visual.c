@@ -3615,7 +3615,8 @@ static int visual_responsive(RCore *core) {
 }
 
 // TODO: use colors
-static void scrollbar(RCore *core) {
+// TODO: find better name
+R_API void r_core_print_scrollbar(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
 
 	if (w < 10 || h < 3) {
@@ -3805,7 +3806,7 @@ static void visual_refresh(RCore *core) {
 		printSnow (core);
 	}
 	if (r_config_get_i (core->config, "scr.scrollbar")) {
-		scrollbar (core);
+		r_core_print_scrollbar (core);
 	}
 }
 

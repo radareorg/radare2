@@ -3492,7 +3492,13 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		}
 	}
 
-	return agraph_print (g, grd->fs, core, *fcn);
+	int res = agraph_print (g, grd->fs, core, *fcn);
+
+	if (r_config_get_i (core->config, "scr.scrollbar")) {
+		r_core_print_scrollbar (core);
+	}
+	
+	return res;
 }
 
 static void agraph_refresh_oneshot(struct agraph_refresh_data *grd) {
