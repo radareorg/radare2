@@ -1713,6 +1713,14 @@ func.memchr.arg.1=int,c
 func.memchr.arg.2=size_t,n
 func.memchr.ret=void *
 
+memmem=func
+func.memmem.args=4
+func.memmem.arg.0=const void *,big
+func.memmem.arg.1=int,big_len
+func.memmem.arg.2=const void *,little
+func.memmem.arg.3=int,little_len
+func.memmem.ret=void *
+
 memchr=func
 func.memchr.args=3
 func.memchr.arg.0=void *,s
