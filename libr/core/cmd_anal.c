@@ -7746,7 +7746,10 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 }
 
 static bool is_unknown_file(RCore *core) {
-	return (r_list_empty (core->bin->cur->o->sections));
+	if (core->bin->cur && core->bin->cur->o) {
+		return (r_list_empty (core->bin->cur->o->sections));
+	}
+	return false;
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
