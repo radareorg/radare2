@@ -240,6 +240,11 @@ func.sleep.args=1
 func.sleep.arg.0=int,s
 func.sleep.ret=int
 
+usleep=func
+func.usleep.args=1
+func.usleep.arg.0=int,s
+func.usleep.ret=int
+
 close=func
 func.close.args=1
 func.close.arg.0=int,fildes
@@ -268,6 +273,13 @@ func.open.args=2
 func.open.arg.0=const char *,path
 func.open.arg.1=int,oflag
 func.open.ret=int
+
+openat=func
+func.openat.args=3
+func.openat.arg.0=int,fd
+func.openat.arg.1=const char *,path
+func.openat.arg.2=int,oflag
+func.openat.ret=int
 
 read=func
 func.read.args=3
@@ -2602,12 +2614,38 @@ func.signal.arg.0=int,sig
 func.signal.arg.1=void *,func
 func.signal.ret=void
 
+send=func
+func.send.args=4
+func.send.arg.0=int,socket
+func.send.arg.1=void *,buffer
+func.send.arg.2=size_t,length
+func.send.arg.3=int,flags
+func.send.ret=ssize_t
+
 write=func
 func.write.args=3
 func.write.arg.0=int,fd
-func.write.arg.1=void *,ptr
+func.write.arg.1=const char *,ptr
 func.write.arg.2=size_t,nbytes
 func.write.ret=ssize_t
+
+inet_aton=func
+func.inet_aton.args=2
+func.inet_aton.arg.0=const char *,cp
+func.inet_aton.arg.1=void *,pin
+func.inet_aton.ret=int
+
+inet_ntoa=func
+func.inet_ntoa.args=1
+func.inet_ntoa.arg.0=void *,in
+func.inet_ntoa.ret=char *
+
+connect=func
+func.connect.args=3
+func.connect.arg.0=int,socket
+func.connect.arg.1=void *,addr
+func.connect.arg.2=size_t,addrlen
+func.connect.ret=ssize_t
 
 getpid=func
 func.getpid.args=0
