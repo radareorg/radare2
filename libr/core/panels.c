@@ -850,7 +850,7 @@ static bool handleWindowMode(RCore *core, const int key) {
 		if (moveToDirection (panels, LEFT)) {
 			setRefreshAll (panels, false);
 		}
-		if (panels->fun == PANEL_FUN_SNOW) {
+		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 			resetSnow (panels);
 		}
 		break;
@@ -858,7 +858,7 @@ static bool handleWindowMode(RCore *core, const int key) {
 		if (moveToDirection (panels, DOWN)) {
 			setRefreshAll (panels, false);
 		}
-		if (panels->fun == PANEL_FUN_SNOW) {
+		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 			resetSnow (panels);
 		}
 		break;
@@ -866,7 +866,7 @@ static bool handleWindowMode(RCore *core, const int key) {
 		if (moveToDirection (panels, UP)) {
 			setRefreshAll (panels, false);
 		}
-		if (panels->fun == PANEL_FUN_SNOW) {
+		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 			resetSnow (panels);
 		}
 		break;
@@ -874,7 +874,7 @@ static bool handleWindowMode(RCore *core, const int key) {
 		if (moveToDirection (panels, RIGHT)) {
 			setRefreshAll (panels, false);
 		}
-		if (panels->fun == PANEL_FUN_SNOW) {
+		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 			resetSnow (panels);
 		}
 		break;
@@ -2262,7 +2262,11 @@ static void printSnow(RPanels *panels) {
 			continue;
 		}
 		if (r_cons_canvas_gotoxy (panels->can, snow->x, snow->y)) {
-			r_cons_canvas_write (panels->can, "*");
+			if (panels->fun == PANEL_FUN_SAKURA) {
+				r_cons_canvas_write (panels->can, Color_BMAGENTA","Color_RESET);
+			} else {
+				r_cons_canvas_write (panels->can, "*");
+			}
 		}
 	}
 }
@@ -2702,7 +2706,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, title);
 
-	if (panels->fun == PANEL_FUN_SNOW) {
+	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		printSnow (panels);
 	}
 
@@ -3046,7 +3050,7 @@ static void handleTabKey(RCore *core, bool shift) {
 		return;
 	}
 	cur->view->refresh = true;
-	if (panels->fun == PANEL_FUN_SNOW) {
+	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		resetSnow (panels);
 	}
 }
@@ -3205,7 +3209,7 @@ static void toggleZoomMode(RPanels *panels) {
 		panels->prevMode = PANEL_MODE_DEFAULT;
 		restorePanelPos (cur);
 		setRefreshAll (panels, false);
-		if (panels->fun == PANEL_FUN_SNOW) {
+		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 			resetSnow (panels);
 		}
 	}
@@ -3466,10 +3470,17 @@ repeat:
 	core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
 	r_core_panels_layout_refresh (core);
 	RPanel *cur = getCurPanel (panels);
-	if (panels->mode != PANEL_MODE_MENU && panels->fun == PANEL_FUN_SNOW) {
-		okey = r_cons_readchar_timeout (300);
-		if (okey == -1) {
-			cur->view->refresh = true;
+	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
+		if (panels->mode != PANEL_MODE_MENU) {
+			okey = r_cons_readchar_timeout (300);
+			if (okey == -1) {
+				cur->view->refresh = true;
+				goto repeat;
+			}
+		} else {
+			panels->fun = PANEL_FUN_NOFUN;
+			resetSnow (panels);
+			setRefreshAll (panels, false);
 			goto repeat;
 		}
 	} else {
@@ -3759,8 +3770,10 @@ repeat:
 		}
 		break;
 	case '(':
-		if (panels->fun != PANEL_FUN_SNOW) {
-			panels->fun = PANEL_FUN_SNOW;
+		if (panels->fun != PANEL_FUN_SNOW && panels->fun != PANEL_FUN_SAKURA) {
+			//TODO: Refactoring the FUN if bored af
+			//panels->fun = PANEL_FUN_SNOW;
+			panels->fun = PANEL_FUN_SAKURA;
 		} else {
 			panels->fun = PANEL_FUN_NOFUN;
 			resetSnow (panels);

@@ -1069,6 +1069,7 @@ typedef enum {
 
 typedef enum {
 	PANEL_FUN_SNOW,
+	PANEL_FUN_SAKURA,
 	PANEL_FUN_NOFUN
 } RPanelsFun;
 
