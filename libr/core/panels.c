@@ -3365,12 +3365,15 @@ static bool moveToDirection(RPanels *panels, Direction direction) {
 }
 
 static void createDefaultPanels(RCore *core) {
+	const char *msg = "Activate decompiler? It might take some time.(Y/n)";
+	bool decompiler_on = r_cons_yesno ('y', msg);
+
 	RPanels *panels = core->panels;
 	panels->n_panels = 0;
 	addPanelFrame (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY, 0);
 
 	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-	if (fun && !r_list_empty (fun->bbs)) {
+	if (decompiler_on && fun && !r_list_empty (fun->bbs)) {
 		addPanelFrame (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
 	}
 
