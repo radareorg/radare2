@@ -174,7 +174,7 @@ static void adjustSidePanels(RCore *core);
 static int addCmdPanel(void *user);
 static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str);
 static int addCmdfPanel(RCore *core, char *input, char *str);
-static void changePanelNum(RPanels *panels, int now, int after);
+static void changeLastPanelNum(RPanels *panels, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
@@ -304,7 +304,7 @@ static RPanel *getCurPanel(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static RPanel *getPanel(RPanels *panels, int i) {
-	return &panels->panel[i];
+	return panels->panel[i];
 }
 
 static RPanel *getCurPanel(RPanels *panels) {
@@ -522,7 +522,7 @@ static int addCmdPanel(void *user) {
 	bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 	adjustSidePanels (core);
 	addPanelFrame (core, child->name, cmd, caching);
-	changePanelNum (panels, panels->n_panels - 1, 0);
+	changeLastPanelNum (panels, 0);
 	RPanel *p0 = getPanel (panels, 0);
 	p0->view->pos.x = 0;
 	p0->view->pos.y = 1;
@@ -556,7 +556,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	adjustSidePanels (core);
 	addPanelFrame (core, child->name, "", true);
-	changePanelNum (panels, panels->n_panels - 1, 0);
+	changeLastPanelNum (panels, 0);
 	RPanel *p0 = getPanel (panels, 0);
 	p0->view->pos.x = 0;
 	p0->view->pos.y = 1;
@@ -574,13 +574,10 @@ static void splitPanelVertical(RCore *core) {
 		return;
 	}
 	RPanel *cur = getCurPanel (panels);
+	addPanelFrame (core, cur->model->title, cur->model->cmd, cur->model->caching);
+	changeLastPanelNum (panels, panels->curnode + 1);
 	RPanel *next = getPanel (panels, panels->curnode + 1);
 	const int owidth = cur->view->pos.w;
-
-	addPanelFrame (core, cur->model->title, cur->model->cmd, cur->model->caching);
-
-	changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
-
 	cur->view->pos.w = owidth / 2 + 1;
 	next->view->pos.x = cur->view->pos.x + cur->view->pos.w - 1;
 	next->view->pos.y = cur->view->pos.y;
@@ -595,14 +592,11 @@ static void splitPanelHorizontal(RCore *core) {
 		return;
 	}
 	RPanel *cur = getCurPanel (panels);
+	addPanelFrame (core, cur->model->title, cur->model->cmd, cur->model->caching);
+	changeLastPanelNum (panels, panels->curnode + 1);
 	RPanel *next = getPanel (panels, panels->curnode + 1);
 	const int oheight = cur->view->pos.h;
-
 	cur->view->curpos = 0;
-	addPanelFrame (core, cur->model->title, cur->model->cmd, cur->model->caching);
-
-	changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
-
 	cur->view->pos.h = oheight / 2 + 1;
 	next->view->pos.x = cur->view->pos.x;
 	next->view->pos.y = cur->view->pos.y + cur->view->pos.h - 1;
@@ -619,15 +613,15 @@ R_API void r_core_panels_layout_refresh(RCore *core) {
 	r_core_panels_refresh (core);
 }
 
-static void changePanelNum(RPanels *panels, int now, int after) {
-	RPanel *panel = panels->panel;
-	const int n_panels = panels->n_panels;
+static void changeLastPanelNum(RPanels *panels, int after) {
+	RPanel **panel = panels->panel;
+	const int last = panels->n_panels - 1;
 	int i;
-	RPanel tmpPanel = panel[now];
-	for (i = n_panels - 1; i > after; i--) {
+	RPanel *tmp = getPanel (panels, last);
+	for (i = last; i > after; i--) {
 		panel[i] = panel[i - 1];
 	}
-	panel[after] = tmpPanel;
+	panel[after] = tmp;
 }
 
 static void setCursor(RCore *core, bool cur) {
@@ -819,15 +813,15 @@ static bool handleZoomMode(RCore *core, const int key) {
 		toggleZoomMode (panels);
 		break;
 	case 9:
-		restorePanelPos (&panels->panel[panels->curnode]);
+		restorePanelPos (panels->panel[panels->curnode]);
 		handleTabKey (core, false);
-		savePanelPos (&panels->panel[panels->curnode]);
+		savePanelPos (panels->panel[panels->curnode]);
 		maximizePanelSize (panels);
 		break;
 	case 'Z':
-		restorePanelPos (&panels->panel[panels->curnode]);
+		restorePanelPos (panels->panel[panels->curnode]);
 		handleTabKey (core, true);
-		savePanelPos (&panels->panel[panels->curnode]);
+		savePanelPos (panels->panel[panels->curnode]);
 		maximizePanelSize (panels);
 		break;
 	}
@@ -1323,10 +1317,11 @@ static void fitToCanvas(RPanels *panels) {
 static void delPanel(RPanels *panels, int delPanelNum) {
 	//TODO use getPanel
 	int i;
+	RPanel *tmp = getPanel (panels, delPanelNum);
 	for (i = delPanelNum; i < (panels->n_panels - 1); i++) {
 		panels->panel[i] = panels->panel[i + 1];
 	}
-	panels->panel[i].model->title = 0;
+	panels->panel[panels->n_panels - 1] = tmp;
 	panels->n_panels--;
 	if (panels->curnode >= panels->n_panels) {
 		panels->curnode = panels->n_panels - 1;
@@ -1561,7 +1556,7 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 static void createNewPanel(RCore *core, char *name, char *cmd, bool caching) {
 	RPanels *panels = core->panels;
 	addPanelFrame (core, name, cmd, caching);
-	changePanelNum (panels, panels->n_panels - 1, 0);
+	changeLastPanelNum (panels, 0);
 	r_core_panels_layout (panels);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
@@ -2222,7 +2217,7 @@ static void hudstuff(RCore *core) {
 	} else {
 		int i;
 		for (i = 0; i < panels->n_panels; i++) {
-			RPanel *panel = &panels->panel[i];
+			RPanel *panel = getPanel (panels, i);
 			if (!strcmp (panel->model->cmd, PANEL_CMD_DISASSEMBLY)) {
 				panel->model->addr = core->offset;
 				break;
@@ -2578,16 +2573,16 @@ static bool initPanelsMenu(RCore *core) {
 }
 
 static bool initPanels(RCore *core, RPanels *panels) {
-	panels->panel = calloc (sizeof (RPanel), PANEL_NUM_LIMIT);
+	panels->panel = calloc (sizeof (RPanel *), PANEL_NUM_LIMIT);
 	if (!panels->panel) {
 		return false;
 	}
 	int i;
 	for (i = 0; i < PANEL_NUM_LIMIT; i++) {
-		RPanel *p = getPanel (panels, i);
-		p->model = R_NEW0 (RPanelModel);
-		p->view = R_NEW0 (RPanelView);
-		if (!p->model || !p->view) {
+		panels->panel[i] = R_NEW0 (RPanel);
+		panels->panel[i]->model = R_NEW0 (RPanelModel);
+		panels->panel[i]->view = R_NEW0 (RPanelView);
+		if (!panels->panel[i]->model || !panels->panel[i]->view) {
 			return false;
 		}
 	}
@@ -2625,10 +2620,6 @@ R_API void r_core_panels_refresh(RCore *core) {
 	if (!panels) {
 		return;
 	}
-	RPanel *panel = panels->panel;
-	if (!panel) {
-		return;
-	}
 	RConsCanvas *can = panels->can;
 	if (!can) {
 		return;
@@ -2649,13 +2640,13 @@ R_API void r_core_panels_refresh(RCore *core) {
 	//TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
-			panelPrint (core, can, &panel[i], 0);
+			panelPrint (core, can, getPanel (panels, i), 0);
 		}
 	}
 	if (panels->mode == PANEL_MODE_MENU) {
-		panelPrint (core, can, &panel[panels->curnode], 0);
+		panelPrint (core, can, getCurPanel (panels), 0);
 	} else {
-		panelPrint (core, can, &panel[panels->curnode], 1);
+		panelPrint (core, can, getCurPanel (panels), 1);
 	}
 	for (i = 0; i < panels->panelsMenu->n_refresh; i++) {
 		panelPrint (core, can, panels->panelsMenu->refreshPanels[i], 1);

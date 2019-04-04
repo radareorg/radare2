@@ -1084,7 +1084,7 @@ typedef struct {
 
 typedef struct r_panels_t {
 	RConsCanvas *can;
-	RPanel *panel;
+	RPanel **panel;
 	int n_panels;
 	int columnWidth;
 	int curnode;
