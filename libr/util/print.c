@@ -1264,7 +1264,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
-				int i=0;
+				int i = 0;
 				printfmt (" _________");
 				if (!compact) {
 					printfmt ("_");

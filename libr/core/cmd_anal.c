@@ -1214,9 +1214,11 @@ static int var_cmd(RCore *core, const char *str) {
 				r_anal_var_delete (core->anal, fcn->addr,
 						type, 1, (int)r_num_math (core->num, str + 1));
 			} else {
-				char *name = r_str_trim ( strdup (str + 2));
-				r_anal_var_delete_byname (core->anal, fcn, type, name);
-				free (name);
+				char *name = r_str_trim (strdup (str + 2));
+				if (name) {
+					r_anal_var_delete_byname (core->anal, fcn, type, name);
+					free (name);
+				}
 			}
 		}
 		break;
@@ -7605,7 +7607,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps");
-	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in = 'io.maps");
+	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in=io.maps");
 	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword

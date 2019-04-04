@@ -5663,6 +5663,24 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				free (b64comment);
 			}
 		}
+		/* add refs */
+		{
+			RAnalRef *ref;
+			RListIter *iter;
+			RList *refs = r_anal_refs_get (core->anal, at);
+			if (refs && !r_list_empty (refs)) {
+				pj_k (pj, "refs");
+				pj_a (pj);
+				r_list_foreach (refs, iter, ref) {
+					pj_o (pj);
+					pj_kn (pj, "addr", ref->addr);
+					pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					pj_end (pj);
+				}
+				pj_end (pj);
+			}
+			r_list_free (refs);
+		}
 		/* add xrefs */
 		{
 			RAnalRef *ref;

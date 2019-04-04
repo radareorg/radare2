@@ -1150,6 +1150,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	char *pal_box4 = palColorFor ("graph.box4");
 	const char *font = r_config_get (core->config, "graph.font");
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
+	if (!fcn || !fcn->bbs) {
+		eprintf ("No fcn\n");
+		return -1;
+	}
 
 	if (is_keva) {
 		char ns[64];
