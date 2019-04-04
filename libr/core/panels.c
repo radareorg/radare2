@@ -268,6 +268,8 @@ static bool initPanelsMenu(RCore *core);
 static bool initPanels(RCore *core, RPanels *panels);
 static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item);
 static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
+static void freePanelModel(RPanel *panel);
+static void freePanelView(RPanel *panel);
 static void freeSinglePanel(RPanel *panel);
 static void freeAllPanels(RPanels *panels);
 static void panelBreakpoint(RCore *core);
@@ -281,7 +283,7 @@ static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RCore* core, bool temp);
 static int loadSavedPanelsLayout(RCore *core, bool temp);
-static void replaceCmd(RPanels *panels, const char *title, const char *cmd, const bool caching);
+static void replaceCmd(RCore *core, const char *title, const char *cmd, const bool caching);
 static void swapPanels(RPanels *panels, int p0, int p1);
 static bool handleMenu(RCore *core, const int key);
 static void toggleZoomMode(RPanels *panels);
@@ -1473,15 +1475,17 @@ static void dismantlePanel(RPanels *panels) {
 	}
 }
 
-static void replaceCmd(RPanels* panels, const char *title, const char *cmd, const bool caching) {
+static void replaceCmd(RCore *core, const char *title, const char *cmd, const bool caching) {
+	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
-	free (cur->model->title);
-	free (cur->model->cmd);
-	free (cur->model->cmdStrCache);
+	freePanelModel (cur);
+	cur->model = R_NEW0 (RPanelModel);
 	cur->model->title = r_str_new (title);
 	cur->model->cmd = r_str_new (cmd);
 	cur->model->caching = caching;
 	cur->model->cmdStrCache = NULL;
+	cur->model->addr = core->offset;
+	cur->model->type = PANEL_TYPE_DEFAULT;
 	registerdcb (cur);
 	setRefreshAll (panels, false);
 }
@@ -1489,26 +1493,10 @@ static void replaceCmd(RPanels* panels, const char *title, const char *cmd, cons
 static void swapPanels(RPanels *panels, int p0, int p1) {
 	RPanel *panel0 = getPanel (panels, p0);
 	RPanel *panel1 = getPanel (panels, p1);
-	char *t = panel0->model->title;
-	char *c = panel0->model->cmd;
-	char *cc = panel0->model->cmdStrCache;
-	int cur = panel0->view->curpos;
-	ut64 ba = panel0->model->baseAddr;
-	ut64 a = panel0->model->addr;
+	RPanelModel *tmp = panel0->model;
 
-	panel0->model->title = panel1->model->title;
-	panel0->model->cmd = panel1->model->cmd;
-	panel0->model->cmdStrCache = panel1->model->cmdStrCache;
-	panel0->view->curpos = panel1->view->curpos;
-	panel0->model->baseAddr = panel1->model->baseAddr;
-	panel0->model->addr = panel1->model->addr;
-
-	panel1->model->title = t;
-	panel1->model->cmd = c;
-	panel1->model->cmdStrCache = cc;
-	panel1->view->curpos = cur;
-	panel1->model->baseAddr = ba;
-	panel1->model->addr = a;
+	panel0->model = panel1->model;
+	panel1->model = tmp;
 }
 
 static void callVisualGraph(RCore *core) {
@@ -2594,13 +2582,20 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-static void freeSinglePanel(RPanel *panel) {
-	//TODO freeModel ();
+static void freePanelModel(RPanel *panel) {
 	free (panel->model->title);
 	free (panel->model->cmd);
 	free (panel->model->cmdStrCache);
 	free (panel->model);
+}
+
+static void freePanelView(RPanel *panel) {
 	free (panel->view);
+}
+
+static void freeSinglePanel(RPanel *panel) {
+	freePanelModel (panel);
+	freePanelView (panel);
 }
 
 static void freeAllPanels(RPanels *panels) {
@@ -3630,7 +3625,7 @@ repeat:
 		setRefreshAll (panels, false);
 		break;
 	case 'D':
-		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY, 0);
+		replaceCmd (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY, 0);
 		break;
 	case 'j':
 		r_cons_switchbuf (false);
@@ -3691,7 +3686,7 @@ repeat:
 		char *new_cmd = r_cons_input ("New command: ");
 		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (new_name && *new_name && new_cmd && *new_cmd) {
-			replaceCmd (panels, new_name, new_cmd, caching);
+			replaceCmd (core, new_name, new_cmd, caching);
 		}
 		free (new_name);
 		free (new_cmd);
@@ -3702,7 +3697,7 @@ repeat:
 		break;
 	case 'g':
 		if (checkFunc (core)) {
-			replaceCmd (panels, PANEL_TITLE_GRAPH, PANEL_CMD_GRAPH, 1);
+			replaceCmd (core, PANEL_TITLE_GRAPH, PANEL_CMD_GRAPH, 1);
 		}
 		break;
 	case 'h':
@@ -3757,7 +3752,7 @@ repeat:
 			r_cons_canvas_free (can);
 			panels->can = NULL;
 
-			replaceCmd (panels, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
+			replaceCmd (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
 
 			int h, w = r_cons_get_size (&h);
 			panels->can = createNewCanvas (core, w, h);
