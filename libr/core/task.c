@@ -374,7 +374,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	free (task->res);
 	task->res = res_str;
 
-	if (task != core->main_task) {
+	if (task != core->main_task && r_cons_default_context_is_interactive ()) {
 		eprintf ("\nTask %d finished\n", task->id);
 	}
 

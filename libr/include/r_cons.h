@@ -690,6 +690,7 @@ typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked(void);
 R_API bool r_cons_is_interactive(void);
+R_API bool r_cons_default_context_is_interactive(void);
 R_API void r_cons_break_timeout(int timeout);
 R_API void r_cons_breakword(const char *s);
 R_API void *r_cons_sleep_begin(void);
