@@ -1019,8 +1019,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_B:
 		/* capstone precompute resulting address, using PC + IMM */
 		r_strbuf_appendf (&op->esil, "%"PFMT64d",pc,=", IMM64 (0));
-		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM64_INS_BL:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
@@ -1113,17 +1111,21 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_FCSEL:
-	case ARM64_INS_CSEL: // CSEL w8, w13, w14, eq
-		r_strbuf_appendf (&op->esil, "%s,%s,=,BREAK", REG64(1), REG64(0));
-		r_strbuf_appendf (&op->esil, "%s,%s,%s,=", postfix, REG64(2), REG64(0));
+	case ARM64_INS_CSEL: // csel Wd, Wn, Wm --> Wd := (cond) ? Wn : Wm
+		r_strbuf_appendf (&op->esil, "%s,}{,%s,},%s,=", REG64(1), REG64(2), REG64(0));
+		postfix = "";
 		break;
-	case ARM64_INS_CSET: // cset w8, eq
-		r_strbuf_appendf (&op->esil, "1,%s,=,BREAK", REG64(0));
-		r_strbuf_appendf (&op->esil, "%s,0,%s,=", postfix, REG64(0));
+	case ARM64_INS_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
+		r_strbuf_appendf (&op->esil, "1,}{,0,},%s,=", REG64(0));
+		postfix = "";
 		break;
-	case ARM64_INS_CINC: // cinc w10, w20, eq
-		r_strbuf_appendf (&op->esil, "1,%s,+,%s,=,BREAK", REG64(1), REG64(0));
-		r_strbuf_appendf (&op->esil, "%s,%s,%s,=", postfix, REG64(1), REG64(0));
+	case ARM64_INS_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
+		r_strbuf_appendf (&op->esil, "1,%s,+,}{,%s,},%s,=", REG64(1), REG64(1), REG64(0));
+		postfix = "";
+		break;
+	case ARM64_INS_CSINC: // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
+		r_strbuf_appendf (&op->esil, "%s,}{,1,%s,+,},%s,=", REG64(1), REG64(2), REG64(0));
+		postfix = "";
 		break;
 	case ARM64_INS_STXRB:
 	case ARM64_INS_STXRH:
@@ -1385,6 +1387,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%u,$", IMM64 (0));
 		break;
 	}
+
+	r_strbuf_append (&op->esil, postfix);
+
 	return 0;
 }
 
@@ -1464,7 +1469,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (insn->id) {
 	case ARM_INS_IT:
-		r_strbuf_appendf (&op->esil, "%d,pc,+=%s", op->fail, postfix);
+		r_strbuf_appendf (&op->esil, "%d,pc,+=", op->fail);
 		break;
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
@@ -1588,7 +1593,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%s,^,!,!,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_B:
-		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), postfix);
+		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -1727,8 +1732,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				}
 			}
 		}
-		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM_INS_STRHT:
 	case ARM_INS_STRH:
@@ -1841,8 +1844,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				}
 			}
 		}
-		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM_INS_STRBT:
 	case ARM_INS_STRB:
@@ -1954,8 +1955,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				}
 			}
 		}
-		// Account for conditionals
-		r_strbuf_appendf (&op->esil, "%s", postfix);
 		break;
 	case ARM_INS_TST:
 		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=", ARG(1), ARG(0));
@@ -2201,6 +2200,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		        r_strbuf_appendf (&op->esil, ",$z,zf,=");
 		}
 	}
+
+	r_strbuf_append (&op->esil, postfix);
 
 	return 0;
 }
