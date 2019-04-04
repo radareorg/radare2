@@ -3404,3 +3404,18 @@ R_API char *r_str_list_join(RList *str, const char *sep) {
 	}
 	return r_strbuf_drain (sb);
 }
+
+/* return the number of arguments expected as extra arguments */
+R_API int r_str_fmtargs(const char *fmt) {
+	int n = 0;
+	while (*fmt) {
+		if (*fmt == '%') {
+			if (fmt[1] == '*') {
+				n++;
+			}
+			n++;
+		}
+		fmt++;
+	}
+	return n;
+}

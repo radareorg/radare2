@@ -1830,6 +1830,37 @@ func.strerror.args=1
 func.strerror.arg.0=int,errnum
 func.strerror.ret=char *
 
+fts_open_INODE64=func
+func.fts_open_INODE64.args=4
+func.fts_open_INODE64.arg.0=const char *,path_argv
+func.fts_open_INODE64.arg.1=int,options
+func.fts_open_INODE64.arg.2=void *,compar
+func.fts_open_INODE64.arg.3=void *,ftsen$INODE64t
+func.fts_open_INODE64.ret=void *
+
+fts_read_INODE64=func
+func.fts_read_INODE64.args=1
+func.fts_read_INODE64.arg.0=void*,ftsp
+func.fts_read_INODE64.ret=void *
+
+fts_close_INODE64=func
+func.fts_close_INODE64.args=1
+func.fts_close_INODE64.arg.0=void*,ftsp
+func.fts_close_INODE64.ret=int
+
+fts_set_INODE64=func
+func.fts_set_INODE64.args=3
+func.fts_set_INODE64.arg.0=void*,ftsp
+func.fts_set_INODE64.arg.1=void*,f
+func.fts_set_INODE64.arg.2=int,options
+func.fts_set_INODE64.ret=int
+
+fts_children_INODE64=func
+func.fts_children_INODE64.args=2
+func.fts_children_INODE64.arg.0=void*,ftsp
+func.fts_children_INODE64.arg.1=int,opotions
+func.fts_children_INODE64.ret=void *
+
 strlen=func
 func.strlen.args=1
 func.strlen.arg.0=const char *,s
@@ -2478,6 +2509,17 @@ warn=func
 func.warn.args=1
 func.warn.arg.0=const char *,format
 func.warn.ret=void
+
+warnx=func
+func.warnx.args=1
+func.warnx.arg.0=const char *,format
+func.warnx.ret=void
+
+warnc=func
+func.warnc.args=2
+func.warnc.arg.1=int,opt
+func.warnc.arg.0=const char *,format
+func.warnc.ret=void
 
 lstat=func
 func.lstat.args=2

@@ -2396,7 +2396,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
-		if (!input[2] || !strcmp (input + 2, "*")) {
+		if (!input[2]) {
+			cmd_anal_fcn (core, "f-$$");
+		} else if (!strcmp (input + 2, "*")) {
 			RAnalFunction *f;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, f) {
