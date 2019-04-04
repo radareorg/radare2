@@ -84,6 +84,31 @@ arc4random=func
 func.arc4random.args=0
 func.arc4random.ret=uint32_t
 
+random=func
+func.random.args=0
+func.random.ret=uint32_t
+
+srandomdev=func
+func.srandomdev.args=0
+func.srandomdev.ret=void
+
+initstate=func
+func.initstate.args=3
+func.initstate.arg.0=uint32_t,state
+func.initstate.arg.1=char *,state
+func.initstate.arg.2=size_t,size
+func.initstate.ret=char *
+
+setstate=func
+func.setstate.args=1
+func.setstate.arg.0=const char *,state
+func.setstate.ret=const char *
+
+srandom=func
+func.srandom.args=1
+func.srandom.arg.0=uint32_t,seed
+func.srandom.ret=uint32_t
+
 calloc=func
 func.calloc.args=2
 func.calloc.arg.0=size_t,nmeb
@@ -194,6 +219,12 @@ func.strcpy.arg.0=char *,dest
 func.strcpy.arg.1=const char *,src
 func.strcpy.ret=char *
 
+strcpy_chk=func
+func.strcpy_chk.args=2
+func.strcpy_chk.arg.0=char *,dest
+func.strcpy_chk.arg.1=const char *,src
+func.strcpy_chk.ret=char *
+
 compat_mode=func
 func.compat_mode.args=2
 func.compat_mode.arg.0=const char *,function
@@ -254,6 +285,11 @@ fclose=func
 func.fclose.args=1
 func.fclose.arg.0=FILE *,stream
 func.fclose.ret=int
+
+pclose=func
+func.pclose.args=1
+func.pclose.arg.0=FILE *,stream
+func.pclose.ret=int
 
 fileno=func
 func.fileno.args=1
@@ -2392,6 +2428,12 @@ func.fopen.arg.0=const char *,filename
 func.fopen.arg.1=const char *,mode
 func.fopen.ret=file*
 
+popen=func
+func.popen.args=2
+func.popen.arg.0=const char *,filename
+func.popen.arg.1=const char *,mode
+func.popen.ret=file*
+
 freopen=func
 func.freopen.args=3
 func.freopen.arg.0=const char *,filename
@@ -2462,6 +2504,13 @@ func.sprintf.arg.0=char *,s
 func.sprintf.arg.1=const char *,format
 func.sprintf.arg.2=,...
 func.sprintf.ret=int
+
+sprintf_chk=func
+func.sprintf_chk.args=3
+func.sprintf_chk.arg.0=char *,s
+func.sprintf_chk.arg.1=const char *,format
+func.sprintf_chk.arg.2=,...
+func.sprintf_chk.ret=int
 
 sscanf=func
 func.sscanf.args=3
