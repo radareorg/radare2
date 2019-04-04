@@ -1230,7 +1230,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 			char esc_str[5] = { 0 };
 			char *ptr = esc_str;
 			r_print_byte_escape (p, (char *)&buf[j], &ptr, false);
-			p->cb_printf (esc_str);
+			p->cb_printf ("%s", esc_str);
 		}
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
