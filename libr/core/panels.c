@@ -2596,6 +2596,7 @@ static void freePanelView(RPanel *panel) {
 static void freeSinglePanel(RPanel *panel) {
 	freePanelModel (panel);
 	freePanelView (panel);
+	free (panel);
 }
 
 static void freeAllPanels(RPanels *panels) {
