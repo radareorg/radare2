@@ -2341,7 +2341,9 @@ r_cons_pop();
 		if (asm_flags) {
 			str = strstr (line, ";-- ");
 			if (str) {
-				r_cons_printf ("%s\n", str);
+				if (!(strstr (line, "case") || strstr (line, "switch"))) {
+					r_cons_printf ("%s\n", str);
+				}
 			}
 		}
 #define USE_PREFIXES 1
@@ -2431,10 +2433,12 @@ r_cons_pop();
 			if (show_comments) {
 				char *comment = r_core_anal_get_comments (core, addr);
 				if (comment) {
-					if (show_offset) {
-						r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
+					if (!strstr (comment, "switch table")) {
+						if (show_offset) {
+							r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
+						}
+						r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					}
-					r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					R_FREE (comment);
 				}
 			}
