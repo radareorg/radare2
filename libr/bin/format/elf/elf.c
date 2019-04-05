@@ -1895,26 +1895,23 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 
 	// TODO: Use arch to identify arch before memcmp's
-	// ARM
-	ut64 text = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
-	ut64 text_end = text + bin->size;
 
-	// ARM-Thumb-Linux
-	if (entry & 1 && !memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00", 6)) {
-		ut32 * ptr = (ut32*)(buf+40-1);
-		if (*ptr &1) {
-			return Elf_(r_bin_elf_v2p) (bin, *ptr -1);
+	// ARM Glibc
+	if (entry & 1) {
+		/* thumb entry points */
+		if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x02\xbc\x6a\x46", 11)) {
+			/* newer versions of gcc use push/pop */
+			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x28-1]) & ~1);
+		} else if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x5d\xf8\x04\x1b", 11)) {
+			/* older versions of gcc (4.5.x) use ldr/str */
+			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30-1]) & ~1);
 		}
-	}
-	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-		ut32 vaddr = r_read_le32 (&buf[0x34]);
-		ut32 paddr = Elf_(r_bin_elf_v2p) (bin, vaddr);
-		/*
-		   0x00012000    00b0a0e3     mov fp, 0
-		   0x00012004    00e0a0e3     mov lr, 0
-		*/
-		if (paddr >= text && paddr < text_end) {
-			return paddr;
+	} else {
+		/* non-thumb entry points */
+		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
+			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
+		} else if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
+			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30]) & ~1);
 		}
 	}
 
@@ -1948,11 +1945,6 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		}
 
 		return 0;
-	}
-	// ARM
-	if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
-		ut64 addr = r_read_le32 (&buf[48]);
-		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	// X86-CGC
 	if (buf[0] == 0xe8 && !memcmp (buf + 5, "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53", 12)) {
