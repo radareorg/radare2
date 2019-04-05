@@ -23,6 +23,7 @@ enum {
 	MODE_COLS
 };
 
+static bool zignatures = false;
 static char *file = NULL;
 static char *file2 = NULL;
 static ut32 count = 0;
@@ -65,7 +66,7 @@ static RCore *opencore(const char *f) {
 			r_core_free (c);
 			return NULL;
 		}
-		(void)r_core_bin_load (c, NULL, baddr);
+		(void) r_core_bin_load (c, NULL, baddr);
 		(void) r_core_bin_update_arch_bits (c);
 
 		// force PA mode when working with raw bins
@@ -84,6 +85,11 @@ static RCore *opencore(const char *f) {
 		if (runcmd) {
 			r_core_cmd0 (c, runcmd);
 		}
+		// generate zignaturez?
+		if (zignatures) {
+			r_core_cmd0 (c, "zg");
+		}
+		r_cons_flush ();
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
@@ -703,7 +709,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 
 	evals = r_list_newf (NULL);
 
-	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zq")) != -1) {
+	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zqZ")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = r_optarg;
@@ -801,6 +807,9 @@ R_API int r_main_radiff2(int argc, char **argv) {
 		case 'z':
 			mode = MODE_DIFF_STRS;
 			break;
+		case 'Z':
+			zignatures = true;
+			break;
 		default:
 			return show_help (0);
 		}
@@ -888,8 +897,14 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			}
 			free (words);
 		} else if (mode == MODE_CODE) {
-			r_core_gdiff (c, c2);
-			r_core_diff_show (c, c2);
+			if (zignatures) {
+				r_core_cmd0 (c, "z~?");
+				r_core_cmd0 (c2, "z~?");
+				r_core_zdiff (c, c2);
+			} else {
+				r_core_gdiff (c, c2);
+				r_core_diff_show (c, c2);
+			}
 		} else if (mode == MODE_DIFF_IMPORTS) {
 			bufa = get_imports (c, &sza);
 			bufb = get_imports (c2, &szb);
