@@ -412,6 +412,43 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	return 1;
 }
 
+static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter) {
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	ls_foreach (l, iter, kv) {
+		if (name && !strcmp (sdbkv_value (kv), name)) {
+			continue;
+		}
+		free (name);
+		int n;
+		name = strdup (sdbkv_key (kv));
+		r_cons_printf ("%s %s {\n", sdbkv_value (kv), name);
+		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
+		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+			char *var2 = r_str_newf ("%s.%s", var, p);
+			if (var2) {
+				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				if (val) {
+					r_cons_printf ("\t%s", val);
+					if (p && p[0] != '\0') {
+						r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
+					}
+				}
+				r_cons_println (";");
+				free (val);
+			}
+			free (var2);
+			free (p);
+		}
+		free (var);
+		r_cons_println ("};");
+	}
+	free (name);
+	ls_free (l);
+}
+
 static int printkey_cb(void *user, const char *k, const char *v) {
 	r_cons_println (k);
 	return 1;
@@ -869,39 +906,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 'c':{
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list_filter (TDB, stdifunion, true);
-			const char *space = "";
-			ls_foreach (l, iter, kv) {
-				if (name && !strcmp (sdbkv_value (kv), name)) {
-					continue;
-				}
-				free (name);
-				int n;
-				name = strdup (sdbkv_key (kv));
-				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
-				for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-					char *var2 = r_str_newf ("%s.%s", var, p);
-					if (var2) {
-						char *val = sdb_array_get (TDB, var2, 0, NULL);
-						if (val) {
-							r_cons_printf ("%s%s %s;", space, val, p);
-							space = " ";
-						}
-						free (val);
-					}
-					free (var2);
-					free (p);
-				}
-				free (var);
-				r_cons_println ("};");
-				space = "";
-			}
-			free (name);
-			ls_free (l);
+			print_struct_union_in_c_format (TDB, stdifunion);
 			break;
 		}
 		case ' ':
@@ -971,39 +976,7 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
 		case 'c':{
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
-			const char *space = "";
-			ls_foreach (l, iter, kv) {
-				if (name && !strcmp (sdbkv_value (kv), name)) {
-					continue;
-				}
-				free (name);
-				int n;
-				name = strdup (sdbkv_key (kv));
-				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
-				for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-					char *var2 = r_str_newf ("%s.%s", var, p);
-					if (var2) {
-						char *val = sdb_array_get (TDB, var2, 0, NULL);
-						if (val) {
-							r_cons_printf  ("%s%s %s;", space, val, p);
-							space = " ";
-						}
-						free (val);
-					}
-					free (var2);
-					free (p);
-				}
-				free (var);
-				r_cons_println ("};");
-				space = "";
-			}
-			free (name);
-			ls_free (l);
+			print_struct_union_in_c_format (TDB, stdifstruct);
 			break;
 		}
 		case 'j': // "tsj"
@@ -1104,28 +1077,27 @@ static int cmd_type(void *data, const char *input) {
 			SdbKv *kv;
 			SdbListIter *iter;
 			SdbList *l = sdb_foreach_list (TDB, true);
-			const char *comma = "";
+			const char *separator = "";
 			ls_foreach (l, iter, kv) {
 				if (!strcmp (sdbkv_value (kv), "enum")) {
 					if (!name || strcmp (sdbkv_value (kv), name)) {
 						free (name);
 						name = strdup (sdbkv_key (kv));
-						r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-						//r_cons_printf ("%s\"%s\"", comma, name);
+						r_cons_printf ("%s %s {\n", sdbkv_value (kv), name);
 						{
 							RList *list = r_type_get_enum (TDB, name);
 							if (list && !r_list_empty (list)) {
 								RListIter *iter;
 								RTypeEnum *member;
-								comma = "";
+								separator = "\t";
 								r_list_foreach (list, iter, member) {
-									r_cons_printf ("%s%s = %d", comma, member->name, r_num_math (NULL, member->val));
-									comma = ", ";
+									r_cons_printf ("%s%s = %d", separator, member->name, r_num_math (NULL, member->val));
+									separator = ",\n\t";
 								}
 							}
 							r_list_free (list);
 						}
-						r_cons_println ("};");
+						r_cons_println ("\n};");
 					}
 				}
 			}
