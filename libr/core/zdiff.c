@@ -78,13 +78,13 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 	// do the sign diff here
 	r_list_foreach (la, itr, si) {
 		//eprintf ("-- %s\n", si->name);
-if (strstr (si->name, "imp.")) {
-continue;
-}
+		if (strstr (si->name, "imp.")) {
+			continue;
+		}
 		r_list_foreach (lb, itr2, si2) {
-if (strstr (si2->name, "imp.")) {
-continue;
-}
+			if (strstr (si2->name, "imp.")) {
+				continue;
+			}
 			if (matchBytes (si, si2)) {
 				eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
 			}
