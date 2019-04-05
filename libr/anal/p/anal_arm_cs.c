@@ -1474,17 +1474,19 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
 		break;
+	case ARM_INS_BL:
+	case ARM_INS_BLX:
+		r_strbuf_append (&op->esil, "pc,lr,=,");
+		/* fallthrough */
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
-		{
-		const char *op1 = ARG (0);
-		if (!strcmp (op1, "pc")) {
-			r_strbuf_setf (&op->esil, "%d,$$,+,pc,=", pcdelta);
+	case ARM_INS_B:
+		if (ISREG(0) && REGID(0) == ARM_REG_PC) {
+			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,=", (addr & ~3LL) + pcdelta);
 		} else {
-			r_strbuf_setf (&op->esil, "%s,pc,=", ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
 		}
 		break;
-		}
 	case ARM_INS_UDF:
 		r_strbuf_setf (&op->esil, "%s,TRAP", ARG(0));
 		break;
@@ -1591,13 +1593,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_CMN:
 		r_strbuf_appendf (&op->esil, "%s,%s,^,!,!,zf,=", ARG(1), ARG(0));
-		break;
-	case ARM_INS_B:
-		r_strbuf_appendf (&op->esil, "%s,pc,=", ARG(0));
-		break;
-	case ARM_INS_BL:
-	case ARM_INS_BLX:
-		r_strbuf_appendf (&op->esil, "pc,lr,=,%s,pc,=", ARG(0));
 		break;
 	case ARM_INS_MOVT:
 		r_strbuf_appendf (&op->esil, "16,%s,<<,%s,|=", ARG(1), REG(0));
@@ -2892,8 +2887,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BLX:
 		op->cycles = 4;
 		if (ISREG(0)) {
+			/* blx reg */
 			op->type = R_ANAL_OP_TYPE_RCALL;
 		} else {
+			/* blx label */
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
@@ -2903,14 +2900,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_BL:
-		if (ISREG (0)) {
-			op->type = R_ANAL_OP_TYPE_RCALL;
-		} else {
-			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = IMM(0) & UT32_MAX;
-			op->fail = addr + op->size;
-			op->hint.new_bits = a->bits;
-		}
+		/* bl label */
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = IMM(0) & UT32_MAX;
+		op->fail = addr + op->size;
+		op->hint.new_bits = a->bits;
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
@@ -2924,6 +2919,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_B:
+		/* b.cc label */
 		op->cycles = 4;
 		if (insn->detail->arm.cc == ARM_CC_INVALID) {
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -2941,31 +2937,25 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
-		// BX LR == RET
+		/* bx reg */
 		op->cycles = 4;
-		if (ISREG (0)) {
-			switch (REGID(0)) {
-			case ARM_REG_LR:
-				op->type = R_ANAL_OP_TYPE_RET;
-				break;
-			case ARM_REG_IP:
-				op->type = R_ANAL_OP_TYPE_UJMP;
-				break;
-			case ARM_REG_PC:
-				// bx pc is well known without ESIL
-				op->type = R_ANAL_OP_TYPE_UJMP;
-				op->jump = op->addr + pcdelta;
-				op->hint.new_bits = (a->bits == 32)? 16 : 32;
-				break;
-			default:
-				op->type = R_ANAL_OP_TYPE_UJMP;
-				op->eob = true;
-				break;
-			}
-		} else {
-			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = IMM(0);
-			op->fail = addr + op->size;
+		switch (REGID(0)) {
+		case ARM_REG_LR:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case ARM_REG_IP:
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			break;
+		case ARM_REG_PC:
+			// bx pc is well known without ESIL
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->jump = (addr & ~3LL) + pcdelta;
+			op->hint.new_bits = 32;
+			break;
+		default:
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->eob = true;
+			break;
 		}
 		break;
 	case ARM_INS_ADR:
