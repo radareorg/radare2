@@ -2786,10 +2786,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.lines.out", "true", "Show out of block lines");
 	SETPREF ("asm.lines.right", "false", "Show lines before opcode instead of offset");
 	SETPREF ("asm.lines.wide", "false", "Put a space between lines");
+	SETPREF ("asm.fcnsig", "true", "Show function signature in disasm");
 	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETI ("asm.maxflags", 0, "Maximum number of flags to show in a single offset");
 	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
-	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
+	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "replace addresses with prefix .. syntax");
+	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");

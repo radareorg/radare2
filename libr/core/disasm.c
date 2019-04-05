@@ -179,6 +179,7 @@ typedef struct {
 	int oplen;
 	bool show_varaccess;
 	bool show_vars;
+	bool show_fcnsig;
 	bool hinted_line;
 	int show_varsum;
 	int midflags;
@@ -601,6 +602,7 @@ static RDisasmState * ds_init(RCore *core) {
 	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
+	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
@@ -1666,6 +1668,19 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 
+	if (call && ds->show_fcnsig) {
+		ds_begin_line (ds);
+		r_cons_print (COLOR (ds, color_fline));
+		ds_print_pre (ds);
+		r_cons_printf ("%s  ", COLOR_RESET (ds));
+		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
+		if (sig) {
+			r_cons_print (sig);
+			free (sig);
+		}
+		ds_newline (ds);
+	}
+
 	if (ds->show_vars && ds->show_varsum) {
 		RList *all_vars = vars_cache.bvars;
 		r_list_join (all_vars, vars_cache.svars);
@@ -1675,18 +1690,6 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		if (call) {
-			ds_begin_line (ds);
-			r_cons_print (COLOR (ds, color_fline));
-			ds_print_pre (ds);
-			r_cons_printf ("%s  ", COLOR_RESET (ds));
-			char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
-			if (sig) {
-				r_cons_print (sig);
-				free (sig);
-			}
-			ds_newline (ds);
-		}
 		RList *all_vars = vars_cache.bvars;
 		r_list_join (all_vars, vars_cache.svars);
 		r_list_join (all_vars, vars_cache.rvars);
