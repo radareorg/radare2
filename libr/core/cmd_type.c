@@ -33,15 +33,15 @@ static const char *help_msg_t[] = {
 	NULL
 };
 
-static const char *help_msg_tfc[] = {
+static const char *help_msg_tcc[] = {
 	"Usage: tfc", "[-name]", "# type function calling conventions",
-	"tfc", "", "List all calling convcentions",
-	"tfc", " r0 pascal(r0,r1,r2)", "Show signature for the 'pascal' calling convention",
-	"tfc", "-pascal", "Remove the pascal cc",
-	"tfck", "", "List calling conventions in k=v",
-	"tfcl", "", "List the cc signatures",
-	"tfcj", "", "List them in JSON",
-	"tfc*", "", "List them as r2 commands",
+	"tcc", "", "List all calling convcentions",
+	"tcc", " r0 pascal(r0,r1,r2)", "Show signature for the 'pascal' calling convention",
+	"tcc", "-pascal", "Remove the pascal cc",
+	"tcck", "", "List calling conventions in k=v",
+	"tccl", "", "List the cc signatures",
+	"tccj", "", "List them in JSON",
+	"tcc*", "", "List them as r2 commands",
 	NULL
 };
 
@@ -63,7 +63,7 @@ static const char *help_msg_tf[] = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "List all function definitions loaded",
 	"tf", " <name>", "Show function signature",
-	"tfc", " <name>", "Show function calling conventions",
+	"tfc", " <name>", "Show function signature in C syntax",
 	"tfcj", " <name>", "Same as above but in JSON",
 	"tfj", "", "List all function definitions in json",
 	"tfj", " <name>", "Show function signature in json",
@@ -81,6 +81,7 @@ static const char *help_msg_to[] = {
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
 	"tc", "", "List all loaded types in C output format",
+	"tcc", "?", "Manage calling conventions types",
 	"tc?", "", "show this help",
 	NULL
 };
@@ -181,10 +182,10 @@ static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
 }
 
-static void __core_cmd_tfc(RCore *core, const char *input) {
+static void __core_cmd_tcc(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_tfc);
+		r_core_cmd_help (core, help_msg_tcc);
 		break;
 	case '-':
 		r_anal_cc_del (core->anal, r_str_trim_ro (input + 1));
@@ -251,8 +252,10 @@ static void __core_cmd_tfc(RCore *core, const char *input) {
 			r_anal_cc_set (core->anal, input + 1);
 		} else {
 			char *cc = r_anal_cc_get (core->anal, input + 1);
-			r_cons_printf ("%s\n", cc);
-			free (cc);
+			if (cc) {
+				r_cons_printf ("%s\n", cc);
+				free (cc);
+			}
 		}
 		break;
 	}
@@ -414,6 +417,27 @@ static int printkey_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
+// maybe dupe?. should return char *instead of print for reusability
+static void printFunctionTypeC(RCore *core, const char *input) {
+	Sdb *TDB = core->anal->sdb_types;
+	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
+	const char *name = r_str_trim_ro (input);
+	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
+	const char *ret = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
+
+	r_cons_printf ("%s %s (", ret, name);
+	for (i = 0; i < args; i++) {
+		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		char *name = strchr (type, ',');
+		if (name) {
+			*name++ = 0;
+		}
+		r_cons_printf ("%s%s %s", i==0? "": ", ", type, name);
+	}
+	r_cons_printf (");\n");
+	free (res);
+}
+
 static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
 	PJ *pj = pj_new ();
@@ -425,6 +449,7 @@ static void printFunctionType(RCore *core, const char *input) {
 	const char *name = r_str_trim_ro (input);
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
+	pj_ks (pj, "ret", sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0));
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
@@ -894,12 +919,15 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'c': // "tc"
 		switch (input[1]) {
+		case 'c': // "tcc" -- calling conventions
+			__core_cmd_tcc (core, input + 2);
+			break;
 		case '?': //"tc?"
 			r_core_cmd_help (core, help_msg_tc);
 			break;
 		case ' ':
 		case 0:
-			r_core_cmd0 (core, "tuc;tsc;ttc;tec");
+			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_tc);
@@ -1519,8 +1547,8 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdiffunc, printkey_cb, false);
 			break;
-		case 'c':
-			__core_cmd_tfc (core, input + 2);
+		case 'c': // "tfc"
+			printFunctionTypeC (core, input + 2);
 			break;
 		case 'j':
 			if (input[2] == ' ') {

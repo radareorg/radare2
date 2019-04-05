@@ -13,7 +13,8 @@ static char* is_type(char *type) {
 		(name = strstr (type, "=typedef")) ||
 		(name = strstr (type, "=func"))) {
 		return name;
-	} else return NULL;
+	}
+	return NULL;
 }
 
 /*!
