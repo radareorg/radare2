@@ -436,7 +436,8 @@ static int show_help(int v) {
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
 			"  -V         be verbose (current only for -s)\n"
-			"  -z         diff on extracted strings\n");
+			"  -z         diff on extracted strings\n"
+			"  -Z         diff code comparing zignatures\n");
 	}
 	return 1;
 }
