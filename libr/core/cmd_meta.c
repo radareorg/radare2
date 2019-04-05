@@ -755,7 +755,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
 					if (p) {
-						p = r_str_trim_ro (p);
+						p = (char *)r_str_trim_ro (p);
 						if (n < 1) {
 							n = r_print_format_struct_size (p, core->print, 0, 0);
 							if (n < 1) {
@@ -820,7 +820,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						*p++ = '\0';
-						p = r_str_trim_ro (p);
+						p = (char *)r_str_trim_ro (p);
 						strncpy (name, p, sizeof (name)-1);
 					} else {
 						if (type != 's') {

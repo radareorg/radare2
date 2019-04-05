@@ -1473,6 +1473,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		nb_cols = 16;
 	}
 	nb_cols -= (nb_cols % 2); // nb_cols should be even
+	if (nb_cols < 1) {
+		return;
+	}
 
 	nb_cons_cols = 12 + nb_cols * 2 + (nb_cols / 2);
 	nb_cons_cols += 17;
