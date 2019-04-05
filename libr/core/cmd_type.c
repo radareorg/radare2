@@ -424,6 +424,10 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	const char *name = r_str_trim_ro (input);
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	const char *ret = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
+	if (!ret || !name) {
+		// missing function name specified
+		return;
+	}
 
 	r_cons_printf ("%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
