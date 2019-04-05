@@ -1936,6 +1936,11 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 't': // "/at"
 		case ' ':
 			type = *input;
+			if (!input[1]) {
+				// /at without args runs /atl
+				char cmd[3] = { *input, 'l', 0 };
+				return do_anal_search(core, param, cmd);
+			}
 			break;
 		case 0:
 		case '?':
