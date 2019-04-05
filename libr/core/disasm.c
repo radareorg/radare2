@@ -179,6 +179,7 @@ typedef struct {
 	int oplen;
 	bool show_varaccess;
 	bool show_vars;
+	bool show_fcnsig;
 	bool hinted_line;
 	int show_varsum;
 	int midflags;
@@ -601,6 +602,7 @@ static RDisasmState * ds_init(RCore *core) {
 	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
+	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
@@ -1666,7 +1668,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 
-	if (call) {
+	if (call && ds->show_fcnsig) {
 		ds_begin_line (ds);
 		r_cons_print (COLOR (ds, color_fline));
 		ds_print_pre (ds);
