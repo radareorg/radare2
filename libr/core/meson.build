@@ -40,6 +40,7 @@ r_core_sources = [
   'cfile.c',
   'fortune.c',
   'gdiff.c',
+  'zdiff.c',
   'graph.c',
   'hack.c',
   'libs.c',

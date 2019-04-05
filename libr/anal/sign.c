@@ -90,7 +90,7 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-static bool deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
+R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v) {
 	char *refs = NULL;
 	char *vars = NULL;
 	const char *token = NULL;
@@ -376,7 +376,7 @@ static bool addItem(RAnal *a, RSignItem *it) {
 	serialize (a, it, key, val);
 	curval = sdb_const_get (a->sdb_zigns, key, 0);
 	if (curval) {
-		if (!deserialize (a, curit, key, curval)) {
+		if (!r_sign_deserialize (a, curit, key, curval)) {
 			eprintf ("error: cannot deserialize zign\n");
 			retval = false;
 			goto out;
@@ -839,7 +839,7 @@ static int listCB(void *user, const char *k, const char *v) {
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 
-	if (!deserialize (a, it, k, v)) {
+	if (!r_sign_deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
 		goto out;
 	}
@@ -952,7 +952,7 @@ static int listGetCB(void *user, const char *key, const char *val) {
 	if (!item) {
 		return false;
 	}
-	if (!deserialize (ctx->anal, item, key, val)) {
+	if (!r_sign_deserialize (ctx->anal, item, key, val)) {
 		r_sign_item_free (item);
 		return false;
 	}
@@ -1016,7 +1016,7 @@ static int countForCB(void *user, const char *k, const char *v) {
 	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
 	RSignItem *it = r_sign_item_new ();
 
-	if (!deserialize (ctx->anal, it, k, v)) {
+	if (!r_sign_deserialize (ctx->anal, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
 		goto out;
 	}
@@ -1055,7 +1055,7 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 	Sdb *db = ctx->anal->sdb_zigns;
 	RAnal *a = ctx->anal;
 
-	if (!deserialize (a, it, k, v)) {
+	if (!r_sign_deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
 		goto out;
 	}
@@ -1136,7 +1136,7 @@ static int foreachCB(void *user, const char *k, const char *v) {
 	RAnal *a = ctx->anal;
 	int retval = 1;
 
-	if (!deserialize (a, it, k, v)) {
+	if (!r_sign_deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
 		goto out;
 	}
@@ -1569,7 +1569,7 @@ static int loadCB(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = r_sign_item_new ();
-	if (it && deserialize (a, it, k, v)) {
+	if (it && r_sign_deserialize (a, it, k, v)) {
 		serialize (a, it, nk, nv);
 		sdb_set (a->sdb_zigns, nk, nv, 0);
 	} else {
