@@ -2235,7 +2235,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	const char *linecolor = NULL;
 	char *ox, *qo, *string = NULL;
 	char *line, *s, *str, *string2 = NULL;
-	char *switchcmp = malloc (core->blocksize); 
+	char *switchcmp = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
@@ -2342,7 +2342,7 @@ r_cons_pop();
 		if (asm_flags) {
 			str = strstr (line, ";-- ");
 			if (str) {
-				if (strncmp(str + 4, "case", 4)) {
+				if (!r_str_startswith (str + 4, "case")) {
 					r_cons_printf ("%s\n", str);
 				}
 			}
@@ -2434,13 +2434,21 @@ r_cons_pop();
 			if (show_comments) {
 				char *comment = r_core_anal_get_comments (core, addr);
 				if (comment) {
-					if (strcmp(comment, switchcmp)) {
+					if (switchcmp) {
+						if (strcmp (comment, switchcmp)) {
+							if (show_offset) {
+								r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
+							}
+							r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
+						}
+					}
+					else {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
 						}
 						r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					}
-					if (!strncmp (comment, "switch table", 12)) {
+					if (r_str_startswith (comment, "switch table")) {
 						switchcmp = strdup (comment);
 					}
 					R_FREE (comment);
@@ -2534,6 +2542,7 @@ r_cons_pop();
 	free (string);
 	free (s);
 	free (str);
+	free (switchcmp);
 restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
