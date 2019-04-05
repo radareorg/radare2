@@ -1666,6 +1666,19 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 
+	if (call) {
+		ds_begin_line (ds);
+		r_cons_print (COLOR (ds, color_fline));
+		ds_print_pre (ds);
+		r_cons_printf ("%s  ", COLOR_RESET (ds));
+		char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
+		if (sig) {
+			r_cons_print (sig);
+			free (sig);
+		}
+		ds_newline (ds);
+	}
+
 	if (ds->show_vars && ds->show_varsum) {
 		RList *all_vars = vars_cache.bvars;
 		r_list_join (all_vars, vars_cache.svars);
@@ -1675,18 +1688,6 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		if (call) {
-			ds_begin_line (ds);
-			r_cons_print (COLOR (ds, color_fline));
-			ds_print_pre (ds);
-			r_cons_printf ("%s  ", COLOR_RESET (ds));
-			char *sig = r_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
-			if (sig) {
-				r_cons_print (sig);
-				free (sig);
-			}
-			ds_newline (ds);
-		}
 		RList *all_vars = vars_cache.bvars;
 		r_list_join (all_vars, vars_cache.svars);
 		r_list_join (all_vars, vars_cache.rvars);
