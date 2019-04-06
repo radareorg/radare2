@@ -208,6 +208,8 @@ static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void fitToCanvas(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
+static void undoSeek(RCore *core);
+static void redoSeek(RCore *core);
 static int openMenuCb(void *user);
 static int openFileCb(void *user);
 static int rwCb(void *user);
@@ -3402,6 +3404,38 @@ static void rotatePanels(RPanels *panels, bool rev) {
 	setRefreshAll (panels, false);
 }
 
+static void undoSeek(RCore *core) {
+	RPanel *cur = getCurPanel (core->panels);
+	if (strcmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY)) {
+		return;
+	}
+	RIOUndos *undo = r_io_sundo (core->io, core->offset);
+	if (undo) {
+		r_core_visual_seek_animation (core, undo->off);
+		cur->model->addr = core->offset;
+		cur->view->refresh = true;
+	} else {
+		const char *msg = "Cannot undo seek.";
+		(void)r_cons_yesno ('y', msg);
+	}
+}
+
+static void redoSeek(RCore *core) {
+	RPanel *cur = getCurPanel (core->panels);
+	if (strcmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY)) {
+		return;
+	}
+	RIOUndos *undo = r_io_sundo_redo (core->io);
+	if (undo) {
+		r_core_visual_seek_animation (core, undo->off);
+		cur->model->addr = core->offset;
+		cur->view->refresh = true;
+	} else {
+		const char *msg = "Cannot redo seek.";
+		(void)r_cons_yesno ('y', msg);
+	}
+}
+
 static void rotateAsmemu(RCore *core) {
 	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
 	const bool isEmu = r_config_get_i (core->config, "asm.emu");
@@ -3517,10 +3551,10 @@ repeat:
 	RConsCanvas *can = panels->can;
 	switch (key) {
 	case 'u':
-		r_core_cmd0 (core, "s-");
+		undoSeek (core);
 		break;
 	case 'U':
-		r_core_cmd0 (core, "s+");
+		redoSeek (core);
 		break;
 	case 'n':
 	case 'N':
