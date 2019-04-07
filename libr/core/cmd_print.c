@@ -5154,14 +5154,11 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					int bs1 = l * 16;
 					int bsmax = R_MAX (bs, bs1);
-					block1 = malloc (bsmax + 1);
-					if (block1) {
-						ut8 *buf = calloc (1, bsmax);
-						r_io_read_at (core->io, addr, buf, bs1);
-						core->num->value = r_core_print_disasm (core->print,
-								core, addr, buf, bsmax, l, 0, 0, formatted_json, NULL, NULL);
-						free (buf);
-					}
+					ut8 *buf = calloc (1, bsmax);
+					r_io_read_at (core->io, addr, buf, bs1);
+					core->num->value = r_core_print_disasm (core->print,
+							core, addr, buf, bsmax, l, 0, 0, formatted_json, NULL, NULL);
+					free (buf);
 				}
 			}
 			free (block1);
