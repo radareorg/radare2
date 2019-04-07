@@ -117,7 +117,7 @@ r_core_dep = declare_dependency(link_with: r_core,
                                 include_directories: r_core_inc)
 
 pkgconfig_mod.generate(
-  libraries: [r_core],
+  r_core,
   subdirs: 'libr',
   version: r2_version,
   name: 'r_core',
