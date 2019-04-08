@@ -184,7 +184,8 @@ static void panelAllClear(RPanels *panels);
 static bool checkPanelNum(RPanels *panels);
 static void addPanelFrame(RCore *core, const char *title, const char *cmd, const bool caching);
 static bool checkFunc(RCore *core);
-static char *handleCacheCmdStr(RCore *core, RPanel* panel);
+static bool findCacheCmdStr(RCore *core, RPanel *panel, char **str);
+static char *handleCacheCmdStr(RCore *core, RPanel *panel);
 static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
@@ -367,27 +368,33 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
 	if (panel->model->cmd) {
 		if (!strcmp (panel->model->cmd, PANEL_CMD_DISASSEMBLY)) {
-			ut64 o_offset = core->offset;
-			core->offset = panel->model->addr;
-			r_core_seek (core, panel->model->addr, 1);
-			r_core_block_read (core);
-			cmdStr = handleCacheCmdStr (core, panel);
-			core->offset = o_offset;
+			if (!findCacheCmdStr (core, panel, &cmdStr)) {
+				ut64 o_offset = core->offset;
+				core->offset = panel->model->addr;
+				r_core_seek (core, panel->model->addr, 1);
+				r_core_block_read (core);
+				cmdStr = handleCacheCmdStr (core, panel);
+				core->offset = o_offset;
+			}
 		} else if (!strcmp (panel->model->cmd, PANEL_CMD_STACK)) {
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const char sign = (delta < 0)? '+': '-';
 			const int absdelta = R_ABS (delta);
 			cmdStr = r_core_cmd_strf (core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
 		} else if (!strcmp (panel->model->cmd, PANEL_CMD_HEXDUMP)) {
-			ut64 o_offset = core->offset;
-			if (!panel->model->caching) {
-				core->offset = panel->model->addr;
-				r_core_seek (core, core->offset, 1);
+			if (!findCacheCmdStr (core, panel, &cmdStr)) {
+				ut64 o_offset = core->offset;
+				if (!panel->model->caching) {
+					core->offset = panel->model->addr;
+					r_core_seek (core, core->offset, 1);
+				}
+				cmdStr = handleCacheCmdStr (core, panel);
+				core->offset = o_offset;
 			}
-			cmdStr = handleCacheCmdStr (core, panel);
-			core->offset = o_offset;
 		} else {
-			cmdStr = handleCacheCmdStr (core, panel);
+			if (!findCacheCmdStr (core, panel, &cmdStr)) {
+				cmdStr = handleCacheCmdStr (core, panel);
+			}
 			if (!strcmp (panel->model->cmd, PANEL_CMD_GRAPH)) {
 				graph_pad = 1;
 				core->cons->event_resize = NULL; // avoid running old event with new data
@@ -423,17 +430,21 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	}
 }
 
-char *handleCacheCmdStr(RCore *core, RPanel* panel) {
+bool findCacheCmdStr(RCore *core, RPanel* panel, char **str) {
 	if (panel->model->cmdStrCache) {
-		return panel->model->cmdStrCache;
-	} else {
-		char *ret;
-		ret = r_core_cmd_str (core, panel->model->cmd);
-		if (panel->model->caching) {
-			panel->model->cmdStrCache = ret;
-		}
-		return ret;
+		*str = panel->model->cmdStrCache;
+		return true;
 	}
+	return false;
+}
+
+char *handleCacheCmdStr(RCore *core, RPanel *panel) {
+	char *ret;
+	ret = r_core_cmd_str (core, panel->model->cmd);
+	if (panel->model->caching && R_STR_ISNOTEMPTY (ret)) {
+		panel->model->cmdStrCache = ret;
+	}
+	return ret;
 }
 
 static void panelAllClear(RPanels *panels) {
