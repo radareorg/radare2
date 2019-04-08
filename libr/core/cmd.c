@@ -2859,6 +2859,7 @@ repeat_arroba:
 							if (tmpdesc) {
 								r_io_desc_close (tmpdesc);
 							}
+							r_core_block_size (core, len);
 							tmpdesc = d;
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}

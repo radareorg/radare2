@@ -5136,11 +5136,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					block1 = malloc (addrbytes * l);
 					if (block1) {
-						if (addrbytes * l > core->blocksize) {
-							r_io_read_at (core->io, addr, block1, addrbytes * l); // core->blocksize);
-						} else {
-							memcpy (block1, block, addrbytes * l);
-						}
+						r_io_read_at (core->io, addr, block1, addrbytes * l);
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
@@ -5150,10 +5146,12 @@ static int cmd_print(void *data, const char *input) {
 					int bs1 = l * 16;
 					int bsmax = R_MAX (bs, bs1);
 					ut8 *buf = calloc (1, bsmax);
-					r_io_read_at (core->io, addr, buf, bs1);
-					core->num->value = r_core_print_disasm (core->print,
-							core, addr, buf, bsmax, l, 0, 0, formatted_json, NULL, NULL);
-					free (buf);
+					if (buf) {
+						r_io_read_at (core->io, addr, buf, bsmax);
+						core->num->value = r_core_print_disasm (core->print,
+								core, addr, buf, bs, bs, 0, 0, formatted_json, NULL, NULL);
+						free (buf);
+					}
 				}
 			}
 			free (block1);
