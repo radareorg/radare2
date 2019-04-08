@@ -116,6 +116,7 @@ static const char *help_msg_panels[] = {
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
+	"a",        "toggle auto update for decompiler",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"c",        "toggle cursor",
 	"C",        "toggle color",
@@ -184,6 +185,7 @@ static void panelAllClear(RPanels *panels);
 static bool checkPanelNum(RPanels *panels);
 static void addPanelFrame(RCore *core, const char *title, const char *cmd, const bool caching);
 static bool checkFunc(RCore *core);
+static bool checkFuncDiff(RCore *core, RPanel *p);
 static bool findCacheCmdStr(RCore *core, RPanel *panel, char **str);
 static char *handleCacheCmdStr(RCore *core, RPanel *panel);
 static void activateCursor(RCore *core);
@@ -392,7 +394,11 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 				core->offset = o_offset;
 			}
 		} else {
-			if (!findCacheCmdStr (core, panel, &cmdStr)) {
+			if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCacheCmdStr (core, panel, &cmdStr)) {
+				x = 0;
+				y = 0;
+				panel->view->sx = 0;
+				panel->view->sy = 0;
 				cmdStr = handleCacheCmdStr (core, panel);
 			}
 			if (!strcmp (panel->model->cmd, PANEL_CMD_GRAPH)) {
@@ -1543,6 +1549,22 @@ static bool checkFunc(RCore *core) {
 	return true;
 }
 
+static bool checkFuncDiff(RCore *core, RPanel *p) {
+	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (!fun) {
+		if (R_STR_ISEMPTY (p->model->funcName)) {
+			return false;
+		}
+		p->model->funcName = r_str_dup (p->model->funcName, "");
+		return true;
+	}
+	if (!p->model->funcName || strcmp (p->model->funcName, fun->name)) {
+		p->model->funcName = r_str_dup (p->model->funcName, fun->name);
+		return true;
+	}
+	return false;
+}
+
 static void setRefreshAll(RPanels *panels, bool clearCache) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -1608,6 +1630,7 @@ static void addPanelFrame(RCore *core, const char *title, const char *cmd, const
 	p->model->caching = caching;
 	p->model->cmdStrCache = NULL;
 	p->model->addr = core->offset;
+	p->model->funcName = NULL;
 	if (p->model->cmd) {
 		registerdcb (p);
 		if (!strcmp (p->model->cmd, PANEL_CMD_STACK)) {
@@ -2835,6 +2858,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 		panels->layout = PANEL_LAYOUT_DEFAULT_STATIC;
 	}
 	panels->isResizing = false;
+	panels->autoUpdate = true;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
@@ -3655,6 +3679,9 @@ repeat:
 			r_core_cmd0 (core, "ecn");
 		}
 		doPanelsRefresh (core);
+		break;
+	case 'a':
+		panels->autoUpdate = r_cons_yesno ('y', "Auto update On? (Y/n)");
 		break;
 	case 'A':
 		r_core_visual_asm (core, core->offset);

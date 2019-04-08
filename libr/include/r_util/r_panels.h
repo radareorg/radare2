@@ -34,6 +34,7 @@ typedef struct r_panel_model_t {
 	ut64 addr;
 	bool caching;
 	char *cmdStrCache;
+	char *funcName;
 } RPanelModel;
 
 typedef struct r_panel_view_t {
