@@ -138,16 +138,22 @@ static int init_ehdr(ELFOBJ *bin) {
 			" EM_HUANY=81, EM_PRISM=82, EM_AVR=83, EM_FR30=84, EM_D10V=85, EM_D30V=86,"
 			" EM_V850=87, EM_M32R=88, EM_MN10300=89, EM_MN10200=90, EM_PJ=91,"
 			" EM_OPENRISC=92, EM_ARC_A5=93, EM_XTENSA=94, EM_NUM=95};", 0);
+	sdb_set (bin->kv, "elf_class.cparse", "enum elf_class {ELFCLASSNONE=0, ELFCLASS32=1, ELFCLASS64=2};", 0);
+	sdb_set (bin->kv, "elf_data.cparse", "enum elf_data {ELFDATANONE=0, ELFDATA2LSB=1, ELFDATA2MSB=2};", 0);
+	sdb_set (bin->kv, "elf_hdr_version.cparse", "enum elf_hdr_version {EV_NONE=0, EV_CURRENT=1};", 0);
+	sdb_set (bin->kv, "elf_obj_version.cparse", "enum elf_obj_version {EV_NONE=0, EV_CURRENT=1};", 0);
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
 	sdb_num_set (bin->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
+	sdb_set (bin->kv, "elf_ident.format", "[4]z[1]E[1]E[1]E.::"
+	         " magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
 #if R_BIN_ELF64
-	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exqqqxwwwwww"
-		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
-		" phentsize phnum shentsize shnum shstrndx", 0);
+	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Eqqqxwwwwww"
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #else
-	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exxxxxwwwwww"
-		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
-		" phentsize phnum shentsize shnum shstrndx", 0);
+	sdb_set (bin->kv, "elf_header.format", "?[2]E[2]E[4]Exxxxwwwwww"
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #endif
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
@@ -179,7 +185,7 @@ static int init_ehdr(ELFOBJ *bin) {
 	bin->ehdr.e_shnum = READ16 (ehdr, i);
 	bin->ehdr.e_shstrndx = READ16 (ehdr, i);
 	return handle_e_ident (bin);
-	// Usage example:
+	// [Outdated] Usage example:
 	// > td `k bin/cur/info/elf_type.cparse`; td `k bin/cur/info/elf_machine.cparse`
 	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
 }
