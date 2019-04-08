@@ -333,7 +333,7 @@ R_API bool r_egg_assemble(REgg *egg) {
 }
 
 R_API int r_egg_compile(REgg *egg) {
-	r_buf_seek (egg->src, 0, 0);
+	r_buf_seek(egg->src, 0, R_BUF_SET);
 	char b;
 	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
 	if (r != sizeof (b) || !egg->remit) {

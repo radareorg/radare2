@@ -10,6 +10,7 @@ typedef enum {
 	R_BUFFER_BYTES,
 	R_BUFFER_MMAP,
 	R_BUFFER_SPARSE,
+	R_BUFFER_REF,
 } RBufferType;
 
 #include "buf_file.c"
@@ -17,6 +18,7 @@ typedef enum {
 #include "buf_bytes.c"
 #include "buf_mmap.c"
 #include "buf_io.c"
+#include "buf_ref.c"
 
 static bool buf_init(RBuffer *b, const void *user) {
 	return b->methods->init? b->methods->init (b, user): true;
@@ -82,6 +84,9 @@ static RBuffer *new_buffer(RBufferType type, const void *user) {
 		break;
 	case R_BUFFER_IO:
 		b->methods = &buffer_io_methods;
+		break;
+	case R_BUFFER_REF:
+		b->methods = &buffer_ref_methods;
 		break;
 	default:
 		r_warn_if_reached ();
@@ -149,12 +154,15 @@ R_API RBuffer *r_buf_new_with_string(const char *msg) {
 }
 
 R_API RBuffer *r_buf_new_with_bufref(RBuffer *b) {
-	// FIXME: implement me
-	return NULL;
+	struct buf_ref_user u = { 0 };
+	u.parent = b;
+	return new_buffer (R_BUFFER_REF, &u);
 }
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
-	return r_buf_new_with_bytes (b->buf_priv, b->length_priv);
+	ut64 sz;
+	const ut8 *tmp = r_buf_buffer (b, &sz);
+	return r_buf_new_with_bytes (tmp, sz);
 }
 
 static void buffer_sparse_free(void *a) {
@@ -238,7 +246,7 @@ R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 R_API ut64 r_buf_tell(RBuffer *b) {
-	return r_buf_seek (b, 0, 1);
+	return r_buf_seek(b, 0, R_BUF_CUR);
 }
 
 R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
@@ -547,8 +555,11 @@ R_API bool r_buf_fini(RBuffer *b) {
 		return false;
 	}
 
+	// free the whole_buf only if it was initially allocated by the buf types
 	if (b->methods->get_whole_buf) {
-		b->methods->free_whole_buf (b);
+		if (b->methods->free_whole_buf) {
+			b->methods->free_whole_buf (b);
+		}
 	} else {
 		R_FREE (b->whole_buf);
 	}

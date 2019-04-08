@@ -4416,7 +4416,7 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 		r_cons_printf ("%s", cmd);
 	}
 	int i;
-	r_buf_seek (buf, 0, 0);
+	r_buf_seek(buf, 0, R_BUF_SET);
 	for (i = 0; i < r_buf_size (buf); i++) {
 		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}

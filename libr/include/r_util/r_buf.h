@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-#define R_BUF_CUR 0
-#define R_BUF_SET 1
+#define R_BUF_SET 0
+#define R_BUF_CUR 1
 #define R_BUF_END 2
 
 typedef struct r_buf_t RBuffer;
@@ -124,7 +124,9 @@ R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len);
 R_API int r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n);
-// TODO change all uses to use R_BUF_{SET,CUR,END}
+// WARNING: this function should be used with care because it may allocate the
+// entire buffer in memory. Consider using the r_buf_read* APIs instead and read
+// only the chunks you need.
 R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
