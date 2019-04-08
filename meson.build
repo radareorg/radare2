@@ -195,7 +195,7 @@ else
   r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
 endif
 
-r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'vendor-completions')
+r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'site-functions')
 
 # load plugin configuration
 subdir('libr')

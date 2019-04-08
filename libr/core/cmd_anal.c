@@ -290,7 +290,7 @@ static const char *help_msg_af[] = {
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
 	"afo", " [fcn.name]", "show address for the function named like this",
-	"afs", " [addr] [fcnsign]", "get/set function signature at current address",
+	"afs", " ([fcnsign])", "get/set function signature at current address",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " [addr]", "resize and analyze function from current address until addr",
@@ -1214,9 +1214,11 @@ static int var_cmd(RCore *core, const char *str) {
 				r_anal_var_delete (core->anal, fcn->addr,
 						type, 1, (int)r_num_math (core->num, str + 1));
 			} else {
-				char *name = r_str_trim ( strdup (str + 2));
-				r_anal_var_delete_byname (core->anal, fcn, type, name);
-				free (name);
+				char *name = r_str_trim (strdup (str + 2));
+				if (name) {
+					r_anal_var_delete_byname (core->anal, fcn, type, name);
+					free (name);
+				}
 			}
 		}
 		break;
@@ -2394,7 +2396,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
-		if (!input[2] || !strcmp (input + 2, "*")) {
+		if (!input[2]) {
+			cmd_anal_fcn (core, "f-$$");
+		} else if (!strcmp (input + 2, "*")) {
 			RAnalFunction *f;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, f) {
@@ -2649,24 +2653,28 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 's': // "afs"
 		{
-		ut64 addr;
+		ut64 addr = core->offset;
 		RAnalFunction *f;
-		const char *arg = input + 2;
-		if (input[2] && (addr = r_num_math (core->num, arg))) {
-			arg = strchr (arg, ' ');
-			if (arg) {
-				arg++;
-			}
-		} else {
-			addr = core->offset;
-		}
+		const char *arg = r_str_trim_ro (input + 2);
 		if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 			if (arg && *arg) {
-				r_anal_str_to_fcn (core->anal, f, arg);
+				// parse function signature here
+				char *fcnstr = r_str_newf ("%s;", arg);
+				r_anal_str_to_fcn (core->anal, f, fcnstr);
+				free (fcnstr);
 			} else {
+				// not working
 				char *str = r_anal_fcn_to_string (core->anal, f);
-				r_cons_println (str);
-				free (str);
+				if (str) {
+					r_cons_println (str);
+					free (str);
+				}
+				// working, but wtf
+				char *sig = r_anal_fcn_format_sig (core->anal, f, f->name, NULL, NULL, NULL);
+				if (sig) {
+					r_cons_println (sig);
+					free (sig);
+				}
 			}
 		} else {
 			eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
@@ -7605,7 +7613,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps");
-	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in = 'io.maps");
+	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in=io.maps");
 	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword
@@ -7798,7 +7806,10 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 }
 
 static bool is_unknown_file(RCore *core) {
-	return (r_list_empty (core->bin->cur->o->sections));
+	if (core->bin->cur && core->bin->cur->o) {
+		return (r_list_empty (core->bin->cur->o->sections));
+	}
+	return false;
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {

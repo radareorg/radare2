@@ -1167,6 +1167,11 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 	}
 }
 
+static void r_print_byte_escape(const RPrint* p, const char *src, char **dst, int dot_nl) {
+	r_return_if_fail (p->strconv_mode);
+	r_str_byte_escape (src, dst, dot_nl, !strcmp (p->strconv_mode, "asciidot"), p->esc_bslash);
+}
+
 static void r_print_format_nulltermstring(const RPrint* p, const int len, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
@@ -1222,11 +1227,10 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		}
 		p->cb_printf ("\"");
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j++) {
-			if (IS_PRINTABLE (buf[j])) {
-				p->cb_printf ("%c", buf[j]);
-			} else {
-				p->cb_printf (".");
-			}
+			char esc_str[5] = { 0 };
+			char *ptr = esc_str;
+			r_print_byte_escape (p, (char *)&buf[j], &ptr, false);
+			p->cb_printf ("%s", esc_str);
 		}
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {

@@ -1203,8 +1203,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			bool eol = false;
 			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
-				ut64 *foo = (ut64 *) (buf + i);
-				ut64 off = *foo;
+				ut64 off = 0;
+				if (i + 8 < len) {
+					ut64 *foo = (ut64 *) (buf + i);
+					off = *foo;
+				}
 				if (base == 32) {
 					off &= UT32_MAX;
 				}
@@ -1264,7 +1267,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
-				int i=0;
+				int i = 0;
 				printfmt (" _________");
 				if (!compact) {
 					printfmt ("_");

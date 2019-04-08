@@ -1202,7 +1202,9 @@ static int esil_asr(RAnalEsil *esil) {
 		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
 			if (param_num > regsize - 1) {
 				// capstone bug?
-				eprintf ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
+				if (esil->verbose) {
+					eprintf ("Invalid asr shift of %"PFMT64d" at 0x%"PFMT64x"\n", param_num, esil->address);
+				}
 				param_num = 30;
 			}
 			bool isNegative;

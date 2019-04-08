@@ -1208,7 +1208,7 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
-static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
+R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -3403,4 +3403,19 @@ R_API char *r_str_list_join(RList *str, const char *sep) {
 		r_strbuf_append (sb, p);
 	}
 	return r_strbuf_drain (sb);
+}
+
+/* return the number of arguments expected as extra arguments */
+R_API int r_str_fmtargs(const char *fmt) {
+	int n = 0;
+	while (*fmt) {
+		if (*fmt == '%') {
+			if (fmt[1] == '*') {
+				n++;
+			}
+			n++;
+		}
+		fmt++;
+	}
+	return n;
 }

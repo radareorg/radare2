@@ -341,6 +341,10 @@ R_API bool r_cons_is_interactive() {
 	return I.context->is_interactive;
 }
 
+R_API bool r_cons_default_context_is_interactive(void) {
+	return r_cons_context_default.is_interactive;
+}
+
 R_API bool r_cons_is_breaked() {
 	if (I.cb_break) {
 		I.cb_break (I.user);
