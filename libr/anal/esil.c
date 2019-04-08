@@ -592,14 +592,16 @@ static int esil_of(RAnalEsil *esil) {
 	}
 	const ut64 m[2] = {genmask (esil->lastsz - 1), genmask (esil->lastsz - 2)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
-	return r_anal_esil_pushnum (esil, result);
+	ut64 res = r_anal_esil_pushnum (esil, result);
+	return res;
 }
 
 static int esil_sf(RAnalEsil *esil) {
 	if (!esil || !esil->lastsz) {
 		return 0;
 	}
-	return ((esil->cur >> (esil->lastsz - 1)) & 1);
+	ut64 res = r_anal_esil_pushnum (esil, (esil->cur >> (esil->lastsz - 1)) & 1);
+	return res;
 }
 
 static int esil_ds(RAnalEsil *esil) {
@@ -631,7 +633,7 @@ static int esil_rs(RAnalEsil *esil) {
 	if (!esil || !esil->anal) {
 		return 0;
 	}
-	r_anal_esil_pushnum (esil, esil->anal->bits >> 3);
+	return r_anal_esil_pushnum (esil, esil->anal->bits >> 3);
 }
 
 //can we please deprecate this, plugins should know their current address
@@ -641,7 +643,7 @@ static int esil_address(RAnalEsil *esil) {
 	if (!esil) {
 		return 0;
 	}
-	r_anal_esil_pushnum (esil, esil->address);
+	return r_anal_esil_pushnum (esil, esil->address);
 }
 
 static int esil_weak_eq(RAnalEsil *esil) {
@@ -661,7 +663,7 @@ static int esil_weak_eq(RAnalEsil *esil) {
 		free (dst);
 		return 1;
 	}
-
+	
 	free (src);
 	free (dst);
 	return 0;
@@ -2331,7 +2333,10 @@ static int esil_mem_inceq_n(RAnalEsil *esil, int bits) {
 		ret = (!!esil_peek_n (esil, bits));
 		src = r_anal_esil_pop (esil);
 		if (src && r_anal_esil_get_parm (esil, src, &s)) {
+			esil->old = s;
 			s++;
+			esil->cur = s;
+			esil->lastsz = bits;
 			r_anal_esil_pushnum (esil, s);
 			r_anal_esil_push (esil, off);
 			ret &= (!!esil_poke_n (esil, bits));
@@ -2840,7 +2845,11 @@ static int runword(RAnalEsil *esil, const char *word) {
 					return 1; // XXX cannot return != 1
 				}
 			}
-			return op (esil);
+			const ut64 ret = op (esil);
+			if (!ret) {
+				eprintf ("%s returned 0\n", word);
+			}
+			return ret;
 		}
 	}
 	if (!*word || *word == ',') {
@@ -3060,6 +3069,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$c", esil_cf);
 	OP ("$b", esil_bf);
 	OP ("$p", esil_pf);
+	OP ("$s", esil_sf);
 	OP ("$o", esil_of);
 	OP ("$ds", esil_ds);
 	OP ("$jt", esil_jt);

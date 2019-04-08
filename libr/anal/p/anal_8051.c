@@ -606,17 +606,17 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		e ("1,"); xi (c, "^");
 		break;
 	case 0xB4: /* cjne a, imm, offset */
-		xr (imm1); xr (a); e ("-," flag_b); cjmp;
+		xr (imm1); xr (a); e ("==,$z,!," flag_b); cjmp;
 		break;
 	case 0xB5: /* cjne a, direct, offset */
-		xr (dir1); xr (a); e ("-," flag_b); cjmp;
+		xr (dir1); xr (a); e ("==,$z,!," flag_b); cjmp;
 		break;
 	case 0xB6: case 0xB7: /* cjne @ri, imm, offset */
-		xr (imm1); xr (ri); e ("-," flag_b); cjmp;
+		xr (imm1); xr (ri); e ("==,$z,!," flag_b); cjmp;
 		break;
 	case 0xB8: case 0xB9: case 0xBA: case 0xBB:
 	case 0xBC: case 0xBD: case 0xBE: case 0xBF: /* cjne Rn, imm, offset */
-		xr (imm1); xr (rn); e ("-," flag_b); cjmp;
+		xr (imm1); xr (rn); e ("==,$z,!," flag_b); cjmp;
 		break;
 	case 0xC0: /* push direct */
 		xr (dir1); xw (sp1);

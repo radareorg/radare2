@@ -447,10 +447,10 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_FMULP:
 		break;
 	case X86_INS_CLI:
-		esilprintf (op, "$0,if,=");
+		esilprintf (op, "0,if,:=");
 		break;
 	case X86_INS_STI:
-		esilprintf (op, "$1,if,=");
+		esilprintf (op, "1,if,:=");
 		break;
 	case X86_INS_CLC:
 		esilprintf (op, "0,cf,:=");
@@ -878,7 +878,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
 		break;
 	case X86_INS_AAA:
-		esilprintf (op, "0,cf,:=,$0,af,=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,$1,af,=,}");
+		esilprintf (op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}");	//dont
 		break;
 	case X86_INS_AAD:
 		arg0 = "0,zf,:=,0,sf,:=,0,pf,:=,10,ah,*,al,+,ax,=";
@@ -1698,10 +1698,10 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 		/* Direction flag */
 	case X86_INS_CLD:
-		esilprintf (op, "$0,df,=");
+		esilprintf (op, "0,df,:=");
 		break;
 	case X86_INS_STD:
-		esilprintf (op, "$1,df,=");
+		esilprintf (op, "1,df,:=");
 		break;
 	case X86_INS_SUBSD:    //cvtss2sd
 	case X86_INS_CVTSS2SD: //cvtss2sd
