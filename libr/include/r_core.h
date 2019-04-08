@@ -310,6 +310,7 @@ typedef struct r_core_t {
 	bool fixedbits;
 	bool fixedarch;
 	bool pava;
+	bool fixedblock;
 	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;

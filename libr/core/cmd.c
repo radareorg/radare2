@@ -2779,11 +2779,13 @@ repeat_arroba:
 					{
 						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, sz);
 						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-						if (tmpdesc) {
-							r_io_desc_close (tmpdesc);
+						if (d) {
+							if (tmpdesc) {
+								r_io_desc_close (tmpdesc);
+							}
+							tmpdesc = d;
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}
-						tmpdesc = d;
-						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 					}
 #if 0
 					buf = malloc (sz);
@@ -2856,13 +2858,16 @@ repeat_arroba:
 						if (len > 0) {
 							RBuffer *b = r_buf_new_with_bytes (buf, len);
 							RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-							if (tmpdesc) {
-								r_io_desc_close (tmpdesc);
+							if (d) {
+								if (tmpdesc) {
+									r_io_desc_close (tmpdesc);
+								}
+								tmpdesc = d;
+
+								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+								r_core_block_size (core, len);
+								//r_core_block_read (core);
 							}
-							tmpdesc = d;
-							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
-							r_core_block_size (core, len);
-							r_core_block_read (core);
 						}
 					} else {
 						eprintf ("cannot allocate\n");
@@ -2918,7 +2923,7 @@ repeat_arroba:
 				*trim = 0;
 				trim--;
 			}
-			goto next_arroba; //ignore; //return ret;
+			goto next_arroba;
 		}
 ignore:
 		ptr = r_str_trim_head (ptr + 1) - 1;
@@ -2961,6 +2966,10 @@ next_arroba:
 			*arroba = '@';
 			arroba = NULL;
 			goto repeat_arroba;
+		}
+		core->fixedblock = !!tmpdesc;
+		if (core->fixedblock) {
+			r_core_block_read (core);
 		}
 		if (ptr[1] == '@') {
 			if (ptr[2] == '@') {
