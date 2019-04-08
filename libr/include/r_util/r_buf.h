@@ -52,6 +52,7 @@ typedef struct r_buf_t {
 	void *priv;
 	ut8 tmp[8];
 	ut8 *whole_buf;
+	bool readonly;
 
 	ut8 *buf_priv;
 	ut64 length_priv;
@@ -60,7 +61,6 @@ typedef struct r_buf_t {
 	ut64 base_priv;
 	RMmap *mmap_priv;
 	bool empty_priv;
-	bool ro_priv; // read-only
 	int fd_priv;
 	int Oxff_priv;
 	RList *sparse_priv;
@@ -90,7 +90,6 @@ R_API RBuffer *r_buf_new_with_string(const char *msg);
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
 R_API RBuffer *r_buf_new_file(const char *file, int perm, int mode);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
-R_API RBuffer *r_buf_new_with_bufref(RBuffer *b);
 R_API RBuffer *r_buf_new_slurp(const char *file);
 R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size);
 R_API RBuffer *r_buf_new_empty(ut64 len);
