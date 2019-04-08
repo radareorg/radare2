@@ -91,6 +91,9 @@ static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
 
 static bool objc_build_refs(RCoreObjc *objc) {
 	ut64 off;
+	if (!objc->_const || !objc->_selrefs) {
+		return false;
+	}
 	
 	ut8 *buf = calloc (1, objc->_const->vsize);
 	if (!buf) {
