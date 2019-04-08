@@ -529,14 +529,17 @@ R_API void r_egg_finalize(REgg *egg) {
 			ut64 sz;
 			const ut8 *buf = r_buf_buffer (ep->b, &sz);
 			r_egg_append_bytes (egg, buf, sz);
-		} else {
+		} else if (ep->off < r_buf_size (egg->bin)) {
 			ut64 sz;
 			const ut8 *buf = r_buf_buffer (ep->b, &sz);
 			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
 			if (r < sz) {
-				eprintf ("Cannot patch outside\n");
+				eprintf ("Error during patch\n");
 				return;
 			}
+		} else {
+			eprintf ("Cannot patch outside\n");
+			return;
 		}
 	}
 }
