@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -13,7 +13,8 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 }
 
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
-	if (!sa || !sb || sa->len != sb->len) { // faster comparisons
+	r_return_val_if_fail (sa && sb, false);
+	if (sa->len != sb->len) {
 		return false;
 	}
 	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
