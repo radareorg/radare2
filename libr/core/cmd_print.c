@@ -4796,8 +4796,7 @@ static int cmd_print(void *data, const char *input) {
 			l = use_blocksize; // negative
 			use_blocksize = -use_blocksize;
 		} else {
-			//l = use_blocksize;
-			l = 0;
+			l = use_blocksize;
 		}
 
 		switch (input[1]) {
