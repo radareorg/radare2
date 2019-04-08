@@ -2853,15 +2853,16 @@ repeat_arroba:
 					if (buf) {
 						len = r_hex_str2bin (ptr + 2, buf);
 						r_core_block_size (core, R_ABS (len));
-						{
+						if (len > 0) {
 							RBuffer *b = r_buf_new_with_bytes (buf, len);
 							RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
 							if (tmpdesc) {
 								r_io_desc_close (tmpdesc);
 							}
-							r_core_block_size (core, len);
 							tmpdesc = d;
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_core_block_size (core, len);
+							r_core_block_read (core);
 						}
 					} else {
 						eprintf ("cannot allocate\n");
@@ -2907,6 +2908,16 @@ repeat_arroba:
 				goto ignore;
 			}
 			*ptr = '@';
+			/* trim whitespaces before the @ */
+			/* Fixes pd @x:9090 */
+			char *trim = ptr - 2;
+			while (trim > cmd) {
+				if (!IS_WHITESPACE (*trim)) {
+					break;
+				}
+				*trim = 0;
+				trim--;
+			}
 			goto next_arroba; //ignore; //return ret;
 		}
 ignore:
