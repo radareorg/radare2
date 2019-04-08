@@ -2799,6 +2799,11 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 	return 0;
 }
 
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
@@ -2838,6 +2843,30 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	case '+':
 		r_core_anal_fcn_list_size (core);
 		break;
+	case '=': { // afl=
+		r_list_sort (fcns, cmpaddr);
+		RList *flist = r_list_new ();
+		if (!flist) {
+			return -1;
+		}
+		ls_foreach (fcns, iter, fcn) {
+			char temp[4];
+			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return -1;
+			}
+			info->name = r_core_anal_fcn_name (core, fcn);
+			info->pitv = (RInterval) {fcn->addr, r_anal_fcn_size (fcn)};
+			info->vitv = info->pitv;
+			info->extra = sdb_itoa (fcn->bits, temp, 10); 
+			info->perm  = -1;
+			r_list_append (flist, info);
+		}
+		r_core_visual_list (core, flist, core->offset, core->blocksize,
+			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		r_list_free (flist);
+		break;
+		}
 	case 'l':
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);

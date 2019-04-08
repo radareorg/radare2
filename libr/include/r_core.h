@@ -333,6 +333,15 @@ typedef struct r_core_cmpwatch_t {
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
+
+typedef struct {
+	char *name;
+	RInterval pitv;
+	RInterval vitv;
+	int perm;
+	char *extra;
+} ListInfo;
+
 #ifdef R_API
 //#define r_core_ncast(x) (RCore*)(size_t)(x)
 R_API RList *r_core_list_themes(RCore *core);
@@ -428,6 +437,7 @@ R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 
 R_API void r_core_list_io(RCore *core);
+R_API void r_core_visual_list(RCore *core, RList* list, ut64 seek, ut64 len, int width, int use_color);
 /* visual marks */
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
 R_API void r_core_visual_mark(RCore *core, ut8 ch);

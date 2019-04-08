@@ -182,82 +182,6 @@ static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, oonn);
 }
 
-// very similiar to section list, must reuse more code
-static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
-	ut64 mul, min = -1, max = 0;
-	SdbListIter *iter;
-	RIOMap *s;
-	int j, i;
-
-	width -= 80;
-	if (width < 1) {
-		width = 30;
-	}
-
-	// this must be prev, maps the previous map allways has lower priority
-	ls_foreach_prev (io->maps, iter, s) {
-		min = R_MIN (min, s->itv.addr);
-		max = R_MAX (max, r_itv_end (s->itv) - 1);
-	}
-	mul = (max - min) / width;
-	if (min != -1 && mul != 0) {
-		const char * color = "", *color_end = "";
-		i = 0;
-		ls_foreach_prev (io->maps, iter, s) {
-			if (use_color) {
-				color_end = Color_RESET;
-				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bits
-					color = r_cons_singleton()->context->pal.graph_trufae;
-				} else if (s->perm & R_PERM_X) { // exec bit
-					color = r_cons_singleton()->context->pal.graph_true;
-				} else if (s->perm & R_PERM_W) { // write bit
-					color = r_cons_singleton()->context->pal.graph_false;
-				} else {
-					color = "";
-					color_end = "";
-				}
-			} else {
-				color = "";
-				color_end = "";
-			}
-			if (io->va) {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						r_itv_contain (s->itv, seek) ? '*' : ' ',
-						color, s->itv.addr, color_end);
-			} else {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						r_itv_contain (s->itv, seek) ? '*' : ' ',
-						color, s->itv.addr, color_end);
-			}
-			for (j = 0; j < width; j++) {
-				ut64 pos = min + j * mul;
-				ut64 npos = min + (j + 1) * mul;
-				// TODO trailing bytes
-				io->cb_printf (r_itv_overlap2 (s->itv, pos, npos - pos) ? "#" : "-");
-			}
-			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %d %s\n",
-					color, r_itv_end (s->itv), color_end,
-					r_str_rwx_i (s->perm), s->fd, s->name);
-			i++;
-		}
-		/* current seek */
-		if (i > 0 && len != 0) {
-			if (seek == UT64_MAX) {
-				seek = 0;
-			}
-			//len = 8096;//r_io_size (io);
-			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
-			for (j=0;j<width;j++) {
-				io->cb_printf (
-					((j*mul)+min >= seek &&
-					 (j*mul)+min <= seek+len)
-					?"^":"-");
-			}
-			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
-		}
-	}
-}
-
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -806,10 +730,25 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case '=': // "om="
-		list_maps_visual (core->io, core->offset, core->blocksize,
+	case '=': // "om=" 
+		{
+		RList *list = r_list_new ();
+		SdbListIter *iter;
+		RIOMap *map;
+		ls_foreach_prev (core->io->maps, iter, map) {
+			char temp[4];
+			ListInfo *info = R_NEW (ListInfo);
+			info->name = map->name;
+			info->pitv = map->itv;
+			info->vitv = map->itv;
+			info->perm = map->perm;
+			info->extra = sdb_itoa (map->fd, temp, 10);
+			r_list_append (list, info);
+		}
+		r_core_visual_list (core, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
-		break;
+		r_list_free (list);
+		} break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_om);
