@@ -21,11 +21,9 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
 	bf->rbin->maxstrbuf = 0x20000000;
-	bool res = check_bytes (bytes, sz);
-	free (bytes);
-	return res;
+	return check_bytes (bytes, sz);
 }
 
 static int destroy(RBinFile *bf) {

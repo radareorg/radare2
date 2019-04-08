@@ -25,12 +25,10 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
 	ut64 la = bf->o->loadaddr;
 	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
-	bool res = check_bytes (bytes, sz);
-	free (bytes);
-	return res;
+	return check_bytes (bytes, sz);
 }
 
 static int destroy(RBinFile *bf) {

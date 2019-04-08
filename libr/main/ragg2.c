@@ -73,11 +73,10 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
 		ut64 blen;
-		ut8 *tmp = r_buf_buffer (b, &blen);
+		const ut8 *tmp = r_buf_buffer (b, &blen);
 		if (write (1, tmp, blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
-		free (tmp);
 		r_buf_free (b);
 	} else {
 		eprintf ("Cannot create binary for this format '%s'.\n", format);
@@ -528,13 +527,11 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
 			ut64 blen;
-			ut8 *tmp = r_buf_buffer (b, &blen);
+			const ut8 *tmp = r_buf_buffer (b, &blen);
 			if (write (1, tmp, blen) != blen) {
 				eprintf ("Failed to write buffer\n");
-				free (tmp);
 				goto fail;
 			}
-			free (tmp);
 		} else {
 			if (!format) {
 				eprintf ("No format specified wtf\n");
@@ -542,7 +539,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 			}
 			RPrint *p = r_print_new ();
 			ut64 tmpsz;
-			ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
 			switch (*format) {
 			case 'c':
 				r_print_code (p, 0, tmp, tmpsz, 'c');
@@ -576,10 +573,8 @@ R_API int r_main_ragg2(int argc, char **argv) {
 				break;
 			default:
 				eprintf ("unknown executable format (%s)\n", format);
-				free (tmp);
 				goto fail;
 			}
-			free (tmp);
 			r_print_free (p);
 		}
 	}

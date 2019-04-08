@@ -226,10 +226,8 @@ static bool load(RBinFile *bf) {
 	}
 
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
-	bool res = load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	free (bytes);
-	return res;
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static RList *sections(RBinFile *bf) {

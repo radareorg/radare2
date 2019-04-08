@@ -40,9 +40,8 @@ static bool load(RBinFile *bf) {
 	}
 
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
 	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	free (bytes);
 	return bf->o->bin_obj? true: false;
 }
 

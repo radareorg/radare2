@@ -45,10 +45,8 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 
 static bool load(RBinFile *bf) {
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
-	bool res = check_bytes (bytes, sz);
-	free (bytes);
-	return res;
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	return check_bytes (bytes, sz);
 }
 
 static int destroy(RBinFile *bf) {

@@ -797,13 +797,12 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
 	ut64 tmpsz;
-	ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
+	const ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
 	if (r_mem_mem (tmp, tmpsz, (const ut8 *)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
 	}
-	free (tmp);
 	ret->machine = strdup ("Dalvik VM");
 	h = &ret->sum[0];
 	h->type = "sha1";
@@ -824,9 +823,8 @@ static RBinInfo *info(RBinFile *bf) {
 	{
 		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
 		ut64 tmpsz;
-		ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
+		const ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
 		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
-		free (tmp);
 		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
@@ -1546,7 +1544,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		}
 
 		ut64 bufbufsz;
-		ut8 *bufbuf = r_buf_buffer (binfile->buf, &bufbufsz);
+		const ut8 *bufbuf = r_buf_buffer (binfile->buf, &bufbufsz);
 		p = bufbuf + c->class_data_offset;
 		// XXX may overflow
 		if (bufbufsz < c->class_data_offset) {
@@ -1612,7 +1610,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		parse_dex_class_method (
 			binfile, bin, c, cls, p, p_end, sym_count,
 			c->class_data->virtual_methods_size, methods, false, bufbuf);
-		free (bufbuf);
 	}
 
 	if (dexdump) {

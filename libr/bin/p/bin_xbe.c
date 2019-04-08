@@ -22,7 +22,7 @@ static bool load(RBinFile *bf) {
 	}
 	r_bin_xbe_obj_t *obj = NULL;
 	ut64 bytessz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &bytessz);
+	const ut8 *bytes = r_buf_buffer (bf->buf, &bytessz);
 	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
 	obj = bf->o->bin_obj;
 	if (obj) {
@@ -40,10 +40,8 @@ static bool load(RBinFile *bf) {
 			obj->ep_key = XBE_EP_RETAIL;
 			obj->kt_key = XBE_KP_RETAIL;
 		}
-		free (bytes);
 		return true;
 	}
-	free (bytes);
 	return false;
 }
 

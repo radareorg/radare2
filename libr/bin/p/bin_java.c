@@ -99,11 +99,10 @@ static bool load(RBinFile *bf) {
 
 	int result = false;
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
 	struct r_bin_java_obj_t *bin_obj = NULL;
 
 	load_bytes (bf, (void **)&bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	free (bytes);
 
 	if (bin_obj) {
 		if (!bf->o->kv) {

@@ -83,7 +83,7 @@ static RList *strings(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	ut8 *bytes;
+	const ut8 *bytes;
 	ut64 sz;
 
 	if (!bf) {
@@ -108,7 +108,6 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
-	free (bytes);
 	return ret;
 }
 

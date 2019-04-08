@@ -111,9 +111,8 @@ static RList *patch_relocs(RBin *b) {
 		R_FREE (bin->reloc_table);
 	}
 	ut64 tmpsz;
-	ut8 *tmp = r_buf_buffer (bin->b, &tmpsz);
+	const ut8 *tmp = r_buf_buffer (bin->b, &tmpsz);
 	b->iob.write_at (b->iob.io, 0, tmp, tmpsz);
-	free (tmp);
 	return list;
 }
 

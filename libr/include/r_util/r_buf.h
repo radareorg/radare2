@@ -32,6 +32,8 @@ typedef int (*RBufferFWriteAt)(RBuffer *b, ut64 addr, const ut8 *buf, const char
 typedef ut64 (*RBufferGetSize)(RBuffer *b);
 typedef bool (*RBufferResize)(RBuffer *b, ut64 newsize);
 typedef int (*RBufferSeek)(RBuffer *b, st64 addr, int whence);
+typedef ut8 *(*RBufferGetWholeBuf)(RBuffer *b, ut64 *sz);
+typedef void (*RBufferFreeWholeBuf)(RBuffer *b);
 
 typedef struct r_buffer_methods_t {
 	RBufferInit init;
@@ -41,12 +43,15 @@ typedef struct r_buffer_methods_t {
 	RBufferGetSize get_size;
 	RBufferResize resize;
 	RBufferSeek seek;
+	RBufferGetWholeBuf get_whole_buf;
+	RBufferFreeWholeBuf free_whole_buf;
 } RBufferMethods;
 
 typedef struct r_buf_t {
 	const RBufferMethods *methods;
 	void *priv;
 	ut8 tmp[8];
+	ut8 *whole_buf;
 
 	ut8 *buf_priv;
 	ut64 length_priv;
@@ -120,7 +125,7 @@ R_API int r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n);
 // TODO change all uses to use R_BUF_{SET,CUR,END}
-R_API ut8 *r_buf_buffer(RBuffer *b, ut64 *size);
+R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
 R_API RBuffer *r_buf_ref(RBuffer *b);

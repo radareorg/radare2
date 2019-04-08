@@ -19,10 +19,8 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	ut64 size;
-	ut8 *byte = r_buf_buffer (bf->buf, &size);
-	bool res = load_bytes (bf, &bf->o->bin_obj, byte, size, bf->o->loadaddr, bf->sdb);
-	free (byte);
-	return res;
+	const ut8 *byte = r_buf_buffer (bf->buf, &size);
+	return load_bytes (bf, &bf->o->bin_obj, byte, size, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {

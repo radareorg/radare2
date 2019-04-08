@@ -908,7 +908,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
 			ut64 tmpsz;
-			ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
 			if (r_file_dump (file, tmp, tmpsz, 0)) {
 				eprintf ("Dumped %" PFMT64d " bytes in '%s'\n",
 					tmpsz, file);
@@ -916,7 +916,6 @@ R_API int r_main_rabin2(int argc, char **argv) {
 			} else {
 				eprintf ("Error dumping into a.out\n");
 			}
-			free (tmp);
 			r_buf_free (b);
 		} else {
 			eprintf ("Cannot create binary for this format '%s'.\n", create);

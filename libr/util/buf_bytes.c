@@ -117,6 +117,12 @@ static int buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	return priv->offset;
 }
 
+static ut8 *buf_bytes_get_whole_buf(RBuffer *b, ut64 *sz) {
+	struct buf_bytes_priv *priv = get_priv_bytes (b);
+	*sz = priv->length;
+	return priv->buf;
+}
+
 static const RBufferMethods buffer_bytes_methods = {
 	.init = buf_bytes_init,
 	.fini = buf_bytes_fini,
@@ -125,4 +131,5 @@ static const RBufferMethods buffer_bytes_methods = {
 	.get_size = buf_bytes_get_size,
 	.resize = buf_bytes_resize,
 	.seek = buf_bytes_seek,
+	.get_whole_buf = buf_bytes_get_whole_buf
 };

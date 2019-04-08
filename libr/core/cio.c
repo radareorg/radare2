@@ -106,7 +106,8 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	int i, j, len, ret = false;
+	int i, j, ret = false;
+	ut64 len;
 	char *str = NULL;
 	ut8 *buf;
 
@@ -134,7 +135,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				goto beach;
 			}
 		} else {  // use clipboard as key
-			ut8 *tmp = r_buf_buffer (core->yank_buf, &len);
+			const ut8 *tmp = r_buf_buffer (core->yank_buf, &len);
 			str = r_mem_dup (tmp, len);
 			if (!str) {
 				goto beach;

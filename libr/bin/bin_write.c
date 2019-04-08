@@ -38,10 +38,8 @@ R_API bool r_bin_wr_output(RBin *bin, const char *filename) {
 		return false;
 	}
 	ut64 tmpsz;
-	ut8 *tmp = r_buf_buffer (binfile->buf, &tmpsz);
-	bool res = r_file_dump (filename, tmp, tmpsz, 0);
-	free (tmp);
-	return res;
+	const ut8 *tmp = r_buf_buffer (binfile->buf, &tmpsz);
+	return r_file_dump (filename, tmp, tmpsz, 0);
 }
 
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {

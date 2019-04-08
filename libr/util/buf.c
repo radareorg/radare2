@@ -46,6 +46,22 @@ static bool buf_resize(RBuffer *b, ut64 newsize) {
 	return b->methods->resize? b->methods->resize (b, newsize): false;
 }
 
+static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
+	if (b->methods->get_whole_buf) {
+		return b->methods->get_whole_buf (b, sz);
+	}
+
+	ut64 bsz = r_buf_size (b);
+	free (b->whole_buf);
+	b->whole_buf = R_NEWS (ut8, bsz);
+	if (!b->whole_buf) {
+		return NULL;
+	}
+	r_buf_read_at (b, 0, b->whole_buf, bsz);
+	*sz = bsz;
+	return b->whole_buf;
+}
+
 static RBuffer *new_buffer(RBufferType type, const void *user) {
 	RBuffer *b = R_NEW0 (RBuffer);
 	if (!b) {
@@ -165,13 +181,10 @@ R_API RBuffer *r_buf_new() {
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
 
-R_API ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
+R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
 	r_return_val_if_fail (b && size, NULL);
-	ut64 sz = r_buf_size (b);
-	ut8 *res = R_NEWS (ut8, sz);
-	r_buf_read_at (b, 0, res, sz);
-	*size = sz;
-	return res;
+	b->whole_buf = get_whole_buf (b, size);
+	return b->whole_buf;
 }
 
 R_API ut64 r_buf_size(RBuffer *b) {
@@ -338,10 +351,8 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	r_return_val_if_fail (b && a, false);
 	ut64 sz;
-	ut8 *tmp = r_buf_buffer (a, &sz);
-	bool res = r_buf_append_bytes (b, tmp, sz);
-	free (tmp);
-	return res;
+	const ut8 *tmp = r_buf_buffer (a, &sz);
+	return r_buf_append_bytes (b, tmp, sz);
 }
 
 R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, int size) {
@@ -536,6 +547,11 @@ R_API bool r_buf_fini(RBuffer *b) {
 		return false;
 	}
 
+	if (b->methods->get_whole_buf) {
+		b->methods->free_whole_buf (b);
+	} else {
+		R_FREE (b->whole_buf);
+	}
 	return buf_fini (b);
 }
 

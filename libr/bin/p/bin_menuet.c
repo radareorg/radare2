@@ -68,11 +68,9 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 
 static bool load(RBinFile *bf) {
 	ut64 sz;
-	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
 	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
-	bool res = load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
-	free (bytes);
-	return res;
+	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static ut64 baddr(RBinFile *bf) {
