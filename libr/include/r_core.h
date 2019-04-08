@@ -303,7 +303,6 @@ typedef struct r_core_t {
 	int seltab; // selected tab
 	int cmdremote;
 	char *lastsearch;
-	bool fixedblock;
 	char *cmdfilter;
 	bool break_loop;
 	RThreadLock *lock;

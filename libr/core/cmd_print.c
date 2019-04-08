@@ -1402,10 +1402,6 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			eprintf ("cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
-		if ((struct_sz > core->blocksize) && !core->fixedblock) {
-			r_core_block_size (core, struct_sz);
-		}
-		memcpy (buf, core->block, core->blocksize);
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		bool syntax_ok = true;
 		char *args = strdup (fmt);
@@ -4233,9 +4229,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					len = l;
 					if (l > core->blocksize) {
-						if (core->fixedblock) {
-							l = core->blocksize;
-						} else if (!r_core_block_size (core, l)) {
+						if (!r_core_block_size (core, l)) {
 							goto beach;
 						}
 					}
@@ -5074,7 +5068,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 0:
 			/* "pd" -> will disassemble blocksize/4 instructions */
-			if (*input == 'd' && !core->fixedblock) {
+			if (*input == 'd') {
 				l /= 4;
 			}
 			break;

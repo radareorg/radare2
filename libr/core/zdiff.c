@@ -36,11 +36,6 @@ static bool matchGraph(RSignItem *a, RSignItem *b) {
 }
 
 R_API int r_core_zdiff(RCore *c, RCore *c2) {
-	RCore *cores[2] = {c, c2};
-	RAnalFunction *fcn;
-	RAnalBlock *bb;
-	int i;
-
 	if (!c || !c2) {
 		return false;
 	}
@@ -48,13 +43,13 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 	SdbList *a = sdb_foreach_list (c->anal->sdb_zigns, false);
 	SdbList *b = sdb_foreach_list (c2->anal->sdb_zigns, false);
 
-	eprintf ("Diff %lld %lld\n", ls_length (a), ls_length (b));
+	eprintf ("Diff %d %d\n", (int)ls_length (a), (int)ls_length (b));
 	SdbListIter *iter;
 	SdbKv *kv;
 	RList *la = r_list_new ();
 	ls_foreach (a, iter, kv) {
 		RSignItem *it = r_sign_item_new ();
-		if (r_sign_deserialize (a, it, kv->base.key, kv->base.value)) {
+		if (r_sign_deserialize (c->anal, it, kv->base.key, kv->base.value)) {
 			r_list_append (la, it);
 		} else {
 			r_sign_item_free (it);
@@ -63,7 +58,7 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 	RList *lb = r_list_new ();
 	ls_foreach (b, iter, kv) {
 		RSignItem *it = r_sign_item_new ();
-		if (r_sign_deserialize (b, it, kv->base.key, kv->base.value)) {
+		if (r_sign_deserialize (c2->anal, it, kv->base.key, kv->base.value)) {
 			r_list_append (lb, it);
 		} else {
 			r_sign_item_free (it);

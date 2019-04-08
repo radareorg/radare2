@@ -64,24 +64,18 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 		eprintf ("Failed to set thread name\n");
 		return false;
 	}	
-
-	return true;
 #elif __FreeBSD__ || __OpenBSD__ || __DragonFly__
 	pthread_set_name_np (th->tid, name);
-	return true;
 #elif __NetBSD__
 	if (pthread_setname_np (th->tid, "%s", (void *)name) != 0) {
 		eprintf ("Failed to set thread name\n");
 		return false;
 	}	
-
-	return true;
 #else
 #pragma message("warning r_th_setname not implemented")
 #endif
-#else
-	return true;
 #endif
+	return true;
 }
 
 R_API bool r_th_getname(RThread *th, char *name, size_t len) {
@@ -91,17 +85,13 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 		eprintf ("Failed to get thread name\n");
 		return false;
 	}
-
-	return true;
 #elif (__FreeBSD__ &&  __FreeBSD_version >= 1200000) || __DragonFly__ /* || __OpenBSD__ TODO after nxt rel. */
 	pthread_get_name_np (th->tid, name, len);
-	return true;
 #else
 #pragma message("warning r_th_getname not implemented")
 #endif
-#else
-	return true;
 #endif
+	return true;
 }
 
 R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {

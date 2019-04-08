@@ -5260,12 +5260,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	ds->len = nb_opcodes * 8;
 
 	if (ds->len > core->blocksize) {
-		if (core->fixedblock) {
-			nb_bytes = ds->len = core->blocksize;
-		} else {
-			r_core_block_size (core, ds->len);
-			r_core_block_read (core);
-		}
+		r_core_block_size (core, ds->len);
+		r_core_block_read (core);
 	}
 	if (!ds->l) {
 		ds->l = ds->len;
@@ -5904,9 +5900,6 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	}
 
 	int len = (nb_opcodes + nb_bytes) * 5;
-	if (core->fixedblock) {
-		len = core->blocksize;
-	}
 	if (len > core->blocksize) {
 		r_core_block_size (core, len);
 		r_core_block_read (core);
