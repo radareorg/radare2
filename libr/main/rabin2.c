@@ -768,7 +768,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'r': rad = true; break;
 		case 'v': 
 			  r_core_fini (&core);
-			  return r_main_version ("rabin2");
+			  return r_main_version_print ("rabin2");
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;

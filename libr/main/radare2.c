@@ -57,6 +57,7 @@ static int r_main_version_verify(int show) {
 		{ "r_crypto", &r_crypto_version },
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
+		{ "r_main", &r_main_version },
 		{ "r_hash", &r_hash_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
@@ -689,7 +690,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			} else {
 				r_main_version_verify (0);
 				LISTS_FREE ();
-				return r_main_version ("radare2");
+				return r_main_version_print ("radare2");
 			}
 		case 'V':
 			return r_main_version_verify (1);

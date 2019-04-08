@@ -655,7 +655,7 @@ R_API int r_main_rasm2(int argc, char *argv[]) {
 			if (as->quiet) {
 				printf ("%s\n", R2_VERSION);
 			} else {
-				ret = r_main_version ("rasm2");
+				ret = r_main_version_print ("rasm2");
 			}
 			goto beach;
 		case 'w':

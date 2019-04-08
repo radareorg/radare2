@@ -27,7 +27,7 @@ static int usage (int v) {
 }
 
 static int showversion() {
-	return r_main_version ("r2agent");
+	return r_main_version_print ("r2agent");
 }
 
 R_API int r_main_r2agent(int argc, char **argv) {

@@ -463,7 +463,7 @@ int r_main_rahash2(int argc, char **argv) {
 		case 'b': bsize = (int) r_num_math (NULL, r_optarg); break;
 		case 'f': from = r_num_math (NULL, r_optarg); break;
 		case 't': to = 1 + r_num_math (NULL, r_optarg); break;
-		case 'v': return r_main_version ("rahash2");
+		case 'v': return r_main_version_print ("rahash2");
 		case 'h': return do_help (0);
 		case 's': setHashString (r_optarg, 0); break;
 		case 'x': setHashString (r_optarg, 1); break;

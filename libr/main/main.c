@@ -5,6 +5,8 @@
 #include <r_main.h>
 #include <r_util.h>
 
+R_LIB_VERSION(r_main);
+
 static RMain foo[] = {
 	{ "r2", r_main_radare2 },
 	{ "rax2", r_main_rax2 },
