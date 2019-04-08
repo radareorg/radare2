@@ -2866,9 +2866,12 @@ repeat_arroba:
 
 								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 								r_core_block_size (core, len);
-								// r_core_block_read (core);
+								r_core_block_read (core);
 							}
+						} else {
+							eprintf ("Error: Invalid hexpairs for @x:\n");
 						}
+						free (buf);
 					} else {
 						eprintf ("cannot allocate\n");
 					}
@@ -2906,9 +2909,27 @@ repeat_arroba:
 				}
 				break;
 			case 's': // "@s:" // wtf syntax
-				len = strlen (ptr + 2);
-				r_core_block_size (core, len);
-				break;
+				{
+					len = strlen (ptr + 2);
+					r_core_block_size (core, len);
+					const ut8 *buf = (const ut8*)r_str_trim_ro (ptr + 2);
+
+					if (len > 0) {
+						RBuffer *b = r_buf_new_with_bytes (buf, len);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (d) {
+							if (tmpdesc) {
+								r_io_desc_close (tmpdesc);
+							}
+							tmpdesc = d;
+
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_core_block_size (core, len);
+							// r_core_block_read (core);
+						}
+					}
+				}
+break;
 			default:
 				goto ignore;
 			}
