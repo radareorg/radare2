@@ -3018,11 +3018,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_DB) {
-					int w = r_config_get_i (core->config, "hex.cols");
-					r_config_set_i (core->config, "stack.size",
-						r_config_get_i (core->config, "stack.size") - w);
-
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							r_core_cmdf (core, "dr %s = %s-1\n", creg, creg);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") - w);
+					}
 				} else {
 					if (core->print->ocur == -1) {
 						sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
@@ -3042,10 +3048,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_DB) {
-					int w = r_config_get_i (core->config, "hex.cols");
-					r_config_set_i (core->config, "stack.size",
-						r_config_get_i (core->config, "stack.size") + w);
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							r_core_cmdf (core, "dr %s = %s+1\n", creg, creg);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") + w);
+					}
 				} else {
 					if (core->print->ocur == -1) {
 						sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
