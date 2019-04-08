@@ -58,10 +58,13 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
-	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
+	if (!bf || !bf->o) {
+		return false;
+	}
+	ut64 sz;
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	ut64 la = bf->o->loadaddr;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -80,17 +83,16 @@ static RList *strings(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	const ut8 *bytes;
+	ut8 *bytes;
 	ut64 sz;
 
 	if (!bf) {
 		return NULL;
 	}
-	bytes = r_buf_buffer (bf->buf);
+	bytes = r_buf_buffer (bf->buf, &sz);
 	if (!bytes) {
 		return NULL;
 	}
-	sz = bf->buf ? r_buf_size (bf->buf): 0;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
@@ -106,6 +108,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
+	free (bytes);
 	return ret;
 }
 

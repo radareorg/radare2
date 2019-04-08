@@ -77,14 +77,16 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 
 static bool load(RBinFile *bf) {
 	if (bf && bf->buf) {
-		const ut8 *bytes = r_buf_buffer (bf->buf);
-		ut64 sz = r_buf_size (bf->buf);
-		return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+		ut64 sz;
+		ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+		bool res = load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+		free (bytes);
+		return res;
 	}
 	return false;
 }
 
-static int destroy (RBinFile *bf) {
+static int destroy(RBinFile *bf) {
 	return true;
 }
 

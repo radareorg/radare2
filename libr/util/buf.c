@@ -83,102 +83,6 @@ static RBuffer *new_buffer(RBufferType type, const void *user) {
 
 // copied from libr/io/cache.c:r_io_cache_read
 // ret # of bytes copied
-static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
-	int l, covered = 0;
-	RListIter *iter;
-	RBufferSparse *c;
-	r_list_foreach (list, iter, c) {
-		if (addr < c->to && c->from < addr + len) {
-			if (addr < c->from) {
-				l = R_MIN (addr + len - c->from, c->size);
-				memcpy (buf + c->from - addr, c->data, l);
-			} else {
-				l = R_MIN (c->to - addr, len);
-				memcpy (buf, c->data + addr - c->from, l);
-			}
-			covered += l;
-		}
-	}
-	return covered;
-}
-
-static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
-	if (l && data && len > 0) {
-		RBufferSparse *s = R_NEW0 (RBufferSparse);
-		if (s) {
-			s->data = calloc (1, len);
-			if (s->data) {
-				s->from = addr;
-				s->to = addr + len;
-				s->size = len;
-				memcpy (s->data, data, len);
-				return r_list_append (l, s)? s: NULL;
-			}
-			free (s);
-		}
-	}
-	return NULL;
-}
-
-//ret -1 if failed; # of bytes copied if success
-static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
-	RBufferSparse *s;
-	RListIter *iter;
-
-	r_list_foreach (l, iter, s) {
-		if (addr >= s->from && addr < s->to) {
-			int newlen = addr + len - s->to;
-			int delta = addr - s->from;
-			if (newlen > 0) {
-				// must realloc
-				ut8 *ndata = realloc (s->data, len + newlen);
-				if (ndata) {
-					s->data = ndata;
-				} else {
-					eprintf ("sparse write fail\n");
-					return -1;
-				}
-			}
-			memcpy (s->data + delta, data, len);
-			/* write here */
-			return len;
-		}
-	}
-	if (!sparse_append (l, addr, data, len)) {
-		return -1;
-	}
-	return len;
-}
-
-static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
-	bool set = false;
-	RBufferSparse *s;
-	RListIter *iter;
-
-	if (min) {
-		*min = UT64_MAX;
-	}
-	r_list_foreach (l, iter, s) {
-		if (set) {
-			if (min && s->from < *min) {
-				*min = s->from;
-			}
-			if (max && s->to > *max) {
-				*max = s->to;
-			}
-		} else {
-			set = true;
-			if (min) {
-				*min = s->from;
-			}
-			if (max) {
-				*max = s->to;
-			}
-		}
-	}
-	return set;
-}
-
 R_API RBuffer *r_buf_new_with_io(void *iob, int fd) {
 	r_return_val_if_fail (iob && fd >= 0, NULL);
 	struct buf_io_user u = { 0 };
@@ -229,9 +133,8 @@ R_API RBuffer *r_buf_new_with_string(const char *msg) {
 }
 
 R_API RBuffer *r_buf_new_with_bufref(RBuffer *b) {
-	RBuffer *buf = r_buf_new_with_pointers (b->buf_priv, b->length_priv);
-	r_buf_ref (buf);
-	return buf;
+	// FIXME: implement me
+	return NULL;
 }
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
@@ -262,12 +165,13 @@ R_API RBuffer *r_buf_new() {
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
 
-R_API const ut8 *r_buf_buffer(RBuffer *b) {
-	// TODO: very important, redo this
-	if (b && !b->sparse && b->fd == -1 && !b->mmap) {
-		return b->buf;
-	}
-	r_return_val_if_fail (false, NULL);
+R_API ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
+	r_return_val_if_fail (b && size, NULL);
+	ut64 sz = r_buf_size (b);
+	ut8 *res = R_NEWS (ut8, sz);
+	r_buf_read_at (b, 0, res, sz);
+	*size = sz;
+	return res;
 }
 
 R_API ut64 r_buf_size(RBuffer *b) {
@@ -433,25 +337,29 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	r_return_val_if_fail (b && a, false);
-	// TODO: get_data from buf a and append it to b
+	ut64 sz;
+	ut8 *tmp = r_buf_buffer (a, &sz);
+	bool res = r_buf_append_bytes (b, tmp, sz);
+	free (tmp);
+	return res;
+}
 
-	if (!b || b->ro) {
+R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, int size) {
+	r_return_val_if_fail (b && a, false);
+	ut8 *tmp = R_NEWS (ut8, size);
+	bool res = false;
+
+	if (!tmp) {
 		return false;
 	}
-	if (b->fd_priv != -1) {
-		r_buf_append_bytes (b, a->buf_priv, a->length_priv);
-		return true;
+	int r = r_buf_read_at (a, offset, tmp, size);
+	if (r < 0) {
+		goto err;
 	}
-	if (b->empty_priv) {
-		b->length_priv = 0;
-		b->empty_priv = 0;
-	}
-	if ((b->buf = realloc (b->buf, b->length + a->length))) {
-		memmove (b->buf + b->length, a->buf, a->length);
-		b->length += a->length;
-		return true;
-	}
-	return false;
+	res = r_buf_append_bytes (b, tmp, r);
+err:
+	free (tmp);
+	return res;
 }
 
 // read a max of 8 bytes at addr, and set the read length in len
@@ -472,10 +380,16 @@ R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	return buf_write (b, buf, len);
 }
 
-R_API ut8 r_buf_read8_at (RBuffer *b, ut64 addr) {
+R_API ut8 r_buf_read8(RBuffer *b) {
+	ut8 res;
+	int r = r_buf_read (b, &res, sizeof (res));
+	return r == sizeof (res)? res: b->Oxff_priv;
+}
+
+R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
 	ut8 res;
 	int r = r_buf_read_at (b, addr, &res, sizeof (res));
-	return r == sizeof (res) ? res : b->Oxff;
+	return r == sizeof (res)? res: b->Oxff_priv;
 }
 
 static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {

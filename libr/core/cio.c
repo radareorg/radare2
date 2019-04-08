@@ -134,12 +134,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				goto beach;
 			}
 		} else {  // use clipboard as key
-			len = r_buf_size (core->yank_buf);
-			if (len <= 0) {
-				eprintf ("Clipboard is empty and no value argument(s) given\n");
-				goto beach;
-			}
-			str = r_mem_dup (r_buf_buffer (core->yank_buf), len);
+			ut8 *tmp = r_buf_buffer (core->yank_buf, &len);
+			str = r_mem_dup (tmp, len);
 			if (!str) {
 				goto beach;
 			}

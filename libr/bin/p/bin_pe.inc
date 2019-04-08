@@ -47,15 +47,16 @@ static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes;
+	ut8 *bytes;
 	ut64 sz;
 
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bytes = r_buf_buffer (bf->buf);
-	sz = r_buf_size (bf->buf);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	bytes = r_buf_buffer (bf->buf, &sz);
+	bool res = load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	free (bytes);
+	return res;
 }
 
 static int destroy(RBinFile *bf) {
@@ -64,7 +65,7 @@ static int destroy(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return PE_(r_bin_pe_get_image_base) (bf->o->bin_obj);
+	return PE_ (r_bin_pe_get_image_base) (bf->o->bin_obj);
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
@@ -441,24 +442,25 @@ static int has_canary(RBinFile *bf) {
 }
 
 static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
-	const ut8 *buf;
+	ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
 	if (!bf) {
 		return false;
 	}
-	buf = r_buf_buffer (bf->buf);
+	buf = r_buf_buffer (bf->buf, &sz);
 	if (!buf) {
 		return false;
 	}
-	sz = r_buf_size (bf->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (idx + 0x5E + 1 >= sz ) {
 		return false;
 	}
 	//it's funny here idx+0x5E can be 158 and sz 159 but with
 	//the cast it reads two bytes until 160
-	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
+	bool res = ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
+	free (buf);
+	return res;
 }
 
 static RBinInfo* info(RBinFile *bf) {

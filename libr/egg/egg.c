@@ -378,7 +378,11 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
-	return r_sys_run (r_buf_buffer (egg->bin), r_buf_size (egg->bin));
+	ut64 tmpsz;
+	ut8 *tmp = r_buf_buffer (egg->bin, &tmpsz);
+	bool res = r_sys_run (tmp, tmpsz);
+	free (tmp);
+	return res;
 }
 
 #define R_EGG_FILL_TYPE_TRAP
@@ -402,7 +406,7 @@ R_API int r_egg_padding(REgg *egg, const char *pad) {
 	ut8 *buf, padding_byte;
 	char *p, *o = strdup (pad);
 
-	for (p = o; *p; ) { // parse pad string
+	for (p = o; *p;) { // parse pad string
 		const char f = *p++;
 		number = strtol (p, NULL, 10);
 
@@ -472,7 +476,9 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 				eprintf ("%s Shellcode has failed\n", p->name);
 				return false;
 			}
-			r_egg_raw (egg, r_buf_buffer (b), r_buf_size (b));
+			ut64 tmpsz;
+			ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			r_egg_raw (egg, tmp, tmpsz);
 			r_buf_free (b);
 			return true;
 		}
@@ -522,13 +528,15 @@ R_API void r_egg_finalize(REgg *egg) {
 	}
 	r_list_foreach (egg->patches, iter, ep) {
 		if (ep->off < 0) {
-			ut64 sz = r_buf_size (ep->b);
-			const ut8 *buf = r_buf_buffer (ep->b);
+			ut64 sz;
+			ut8 *buf = r_buf_buffer (ep->b, &sz);
 			r_egg_append_bytes (egg, buf, sz);
+			free (buf);
 		} else {
-			ut64 sz = r_buf_size (ep->b);
-			const ut8 *buf = r_buf_buffer (ep->b);
+			ut64 sz;
+			ut8 *buf = r_buf_buffer (ep->b, &sz);
 			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
+			free (buf);
 			if (r < sz) {
 				eprintf ("Cannot patch outside\n");
 				return;

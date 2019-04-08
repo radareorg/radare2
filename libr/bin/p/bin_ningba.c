@@ -17,13 +17,15 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 sz = bf? r_buf_size (bf->buf): 0;
 	if (!bf || !bf->o) {
 		return false;
 	}
+	ut64 sz;
+	ut8 *bytes = r_buf_buffer (bf->buf, &sz);
 	bf->rbin->maxstrbuf = 0x20000000;
-	return check_bytes (bytes, sz);
+	bool res = check_bytes (bytes, sz);
+	free (bytes);
+	return res;
 }
 
 static int destroy(RBinFile *bf) {

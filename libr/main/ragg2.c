@@ -72,10 +72,12 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	r_bin_arch_options_init (&opts, arch, bits);
 	b = r_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
-		size_t blen = r_buf_size (b);
-		if (write (1, r_buf_buffer (b), blen) != blen) {
+		ut64 blen;
+		ut8 *tmp = r_buf_buffer (b, &blen);
+		if (write (1, tmp, blen) != blen) {
 			eprintf ("Failed to write buffer\n");
 		}
+		free (tmp);
 		r_buf_free (b);
 	} else {
 		eprintf ("Cannot create binary for this format '%s'.\n", format);
@@ -131,7 +133,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 	char *shellcode = NULL;
 	char *encoder = NULL;
 	char *sequence = NULL;
-	int bits = (R_SYS_BITS & R_SYS_BITS_64) ? 64 : 32;
+	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
@@ -525,55 +527,59 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		}
 		b = r_egg_get_bin (egg);
 		if (show_raw) {
-			size_t blen = r_buf_size (b);
-			if (write (1, r_buf_buffer (b), blen) != blen) {
+			ut64 blen;
+			ut8 *tmp = r_buf_buffer (b, &blen);
+			if (write (1, tmp, blen) != blen) {
 				eprintf ("Failed to write buffer\n");
+				free (tmp);
 				goto fail;
 			}
+			free (tmp);
 		} else {
 			if (!format) {
 				eprintf ("No format specified wtf\n");
 				goto fail;
 			}
 			RPrint *p = r_print_new ();
+			ut64 tmpsz;
+			ut8 *tmp = r_buf_buffer (b, &tmpsz);
 			switch (*format) {
 			case 'c':
-				r_print_code (p, 0, (ut8 *)r_buf_buffer (b), r_buf_size (b), 'c');
+				r_print_code (p, 0, tmp, tmpsz, 'c');
 				break;
 			case 'j': // JavaScript
-				r_print_code (p, 0, (ut8 *)r_buf_buffer (b), r_buf_size (b), 'j');
+				r_print_code (p, 0, tmp, tmpsz, 'j');
 				break;
 			case 'r':
 				if (show_str) {
 					printf ("\"");
-					r_buf_seek (b, 0, 0);
-					for (i = 0; i < r_buf_size (b); i++) {
-						printf ("\\x%02x", r_buf_read8 (b));
+					for (i = 0; i < tmpsz; i++) {
+						printf ("\\x%02x", tmp[i]);
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
 					r_buf_seek (b, 0, 0);
-					for (i = 0; i < r_buf_size (b); i++) {
-						printf ("%02x", r_buf_read8 (b));
+					for (i = 0; i < tmpsz; i++) {
+						printf ("%02x", tmp[i]);
 					}
 					printf ("\n");
 				} // else show_raw is_above()
 				break;
 			case 'p': // PE
 				if (strlen(format) >= 2 && format[1] == 'y') { // Python
-					r_print_code (p, 0, (ut8 *)r_buf_buffer (b),
-						r_buf_size (b), 'p');
+					r_print_code (p, 0, tmp, tmpsz, 'p');
 				}
 				break;
 			case 'e': // ELF
 			case 'm': // MACH0
-				create (format, arch, bits, r_buf_buffer (b),
-					r_buf_size (b));
+				create (format, arch, bits, tmp, tmpsz);
 				break;
 			default:
 				eprintf ("unknown executable format (%s)\n", format);
+				free (tmp);
 				goto fail;
 			}
+			free (tmp);
 			r_print_free (p);
 		}
 	}

@@ -1383,7 +1383,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	if (!(node = R_NEW0 (RFlirtNode))) {
 		goto exit;
 	}
-	r_buf = r_buf_new_with_pointers (buf, size);
+	r_buf = r_buf_new_with_pointers (buf, size, false);
 #if DEBUG
 	r_file_dump ("sig_dump", r_buf->buf, r_buf_size (r_buf));
 #endif

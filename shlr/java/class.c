@@ -3110,9 +3110,13 @@ R_API RBinJavaObj *r_bin_java_new_buf(RBuffer *buf, ut64 loadaddr, Sdb *kv) {
 	if (!bin) {
 		return NULL;
 	}
-	if (!r_bin_java_new_bin (bin, loadaddr, kv, r_buf_buffer (buf), r_buf_size (buf))) {
+	ut64 tmpsz;
+	ut8 *tmp = r_buf_buffer (buf, &tmpsz);
+	if (!r_bin_java_new_bin (bin, loadaddr, kv, tmp, tmpsz)) {
+		free (tmp);
 		return r_bin_java_free (bin);
 	}
+	free (tmp);
 	return bin;
 }
 

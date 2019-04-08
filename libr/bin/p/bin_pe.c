@@ -118,10 +118,8 @@ static char *signature (RBinFile *bf, bool json) {
 }
 
 static RList *fields(RBinFile *bf) {
-	const ut8 *buf = bf ? r_buf_buffer (bf->buf) : NULL;
 	RList *ret  = r_list_new ();
-
-	if (!buf || !ret) {
+	if (!ret) {
 		return NULL;
 	}
 
