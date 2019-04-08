@@ -6079,6 +6079,7 @@ static int cmd_print(void *data, const char *input) {
 					if (!r_core_block_size (core, len)) {
 						len = core->blocksize;
 					}
+					r_core_block_read (core);
 					r_print_hexdump (core->print, r_core_pava (core, core->offset),
 						core->block, len, 16, 1, 1);
 				} else {
@@ -6136,12 +6137,13 @@ static int cmd_print(void *data, const char *input) {
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
-			block = core->block;
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
 			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $F @ $B");
 			} else {
+				r_core_block_read (core);
+				block = core->block;
 				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}
