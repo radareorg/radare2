@@ -2866,7 +2866,7 @@ repeat_arroba:
 
 								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 								r_core_block_size (core, len);
-								//r_core_block_read (core);
+								// r_core_block_read (core);
 							}
 						}
 					} else {
@@ -2949,6 +2949,7 @@ ignore:
 
 		addr = r_num_math (core->num, offstr);
 		addr_is_set = true;
+
 		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
 				eprintf ("Invalid address (%s)\n", ptr + 1);
@@ -2958,6 +2959,13 @@ ignore:
 			char ch = *offstr;
 			if (ch == '-' || ch == '+') {
 				addr = core->offset + addr;
+			}
+		}
+		// remap thhe tmpdesc if any
+		if (addr) {
+			RIODesc *d = tmpdesc;
+			if (d) {
+				r_io_map_new (core->io, d->fd, d->perm, 0, addr, r_io_desc_size (d));
 			}
 		}
 next_arroba:
