@@ -3078,7 +3078,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '/':
 			if (core->print->cur_enabled) {
-				visual_search (core);
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							int delta = core->assembler->bits / 8;
+							r_core_cmdf (core, "dr %s = %s-%d\n", creg, creg, delta);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") - w);
+					}
+				} else {
+					visual_search (core);
+				}
 			} else {
 				if (autoblocksize) {
 					r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
@@ -3106,7 +3120,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
-				r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							int delta = core->assembler->bits / 8;
+							r_core_cmdf (core, "dr %s = %s+%d\n", creg, creg, delta);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") + w);
+					}
+				} else {
+					r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
+				}
 			} else if (!autoblocksize) {
 				r_core_block_size (core, core->blocksize + cols);
 			}
