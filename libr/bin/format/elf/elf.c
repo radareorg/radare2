@@ -116,13 +116,12 @@ static int init_ehdr(ELFOBJ *bin) {
 	sdb_set (bin->kv, "elf_type.cparse", "enum elf_type { ET_NONE=0, ET_REL=1,"
 			" ET_EXEC=2, ET_DYN=3, ET_CORE=4, ET_LOOS=0xfe00, ET_HIOS=0xfeff,"
 			" ET_LOPROC=0xff00, ET_HIPROC=0xffff };", 0);
-	sdb_set (bin->kv, "elf_machine.cparse", "enum elf_machine{EM_NONE=0, EM_M32=1,"
-			" EM_SPARC=2, EM_386=3, EM_68K=4, EM_88K=5, EM_486=6, "
+	sdb_set (bin->kv, "elf_machine.cparse", "enum elf_machine {EM_NONE=0, EM_M32=1,"
+			" EM_SPARC=2, EM_386=3, EM_68K=4, EM_88K=5, EM_486=6,"
 			" EM_860=7, EM_MIPS=8, EM_S370=9, EM_MIPS_RS3_LE=10, EM_RS6000=11,"
-			" EM_UNKNOWN12=12, EM_UNKNOWN13=13, EM_UNKNOWN14=14, "
-			" EM_PA_RISC=15, EM_PARISC=EM_PA_RISC, EM_nCUBE=16, EM_VPP500=17,"
-			" EM_SPARC32PLUS=18, EM_960=19, EM_PPC=20, EM_PPC64=21, "
-			" EM_S390=22, EM_UNKNOWN22=EM_S390, EM_UNKNOWN23=23, EM_UNKNOWN24=24,"
+			" EM_UNKNOWN12=12, EM_UNKNOWN13=13, EM_UNKNOWN14=14, EM_PARISC=15,"
+			" EM_nCUBE=16, EM_VPP500=17, EM_SPARC32PLUS=18, EM_960=19, EM_PPC=20,"
+			" EM_PPC64=21, EM_S390=22, EM_UNKNOWN23=23, EM_UNKNOWN24=24,"
 			" EM_UNKNOWN25=25, EM_UNKNOWN26=26, EM_UNKNOWN27=27, EM_UNKNOWN28=28,"
 			" EM_UNKNOWN29=29, EM_UNKNOWN30=30, EM_UNKNOWN31=31, EM_UNKNOWN32=32,"
 			" EM_UNKNOWN33=33, EM_UNKNOWN34=34, EM_UNKNOWN35=35, EM_V800=36,"
@@ -130,24 +129,33 @@ static int init_ehdr(ELFOBJ *bin) {
 			" EM_SPARCV9=43, EM_TRICORE=44, EM_ARC=45, EM_H8_300=46, EM_H8_300H=47,"
 			" EM_H8S=48, EM_H8_500=49, EM_IA_64=50, EM_MIPS_X=51, EM_COLDFIRE=52,"
 			" EM_68HC12=53, EM_MMA=54, EM_PCP=55, EM_NCPU=56, EM_NDR1=57,"
-			" EM_STARCORE=58, EM_ME16=59, EM_ST100=60, EM_TINYJ=61, EM_AMD64=62,"
-			" EM_X86_64=EM_AMD64, EM_PDSP=63, EM_UNKNOWN64=64, EM_UNKNOWN65=65,"
+			" EM_STARCORE=58, EM_ME16=59, EM_ST100=60, EM_TINYJ=61, EM_X86_64=62,"
+			" EM_PDSP=63, EM_UNKNOWN64=64, EM_UNKNOWN65=65,"
 			" EM_FX66=66, EM_ST9PLUS=67, EM_ST7=68, EM_68HC16=69, EM_68HC11=70,"
-			" EM_68HC08=71, EM_68HC05=72, EM_SVX=73, EM_ST19=74, EM_VAX=75, "
+			" EM_68HC08=71, EM_68HC05=72, EM_SVX=73, EM_ST19=74, EM_VAX=75,"
 			" EM_CRIS=76, EM_JAVELIN=77, EM_FIREPATH=78, EM_ZSP=79, EM_MMIX=80,"
 			" EM_HUANY=81, EM_PRISM=82, EM_AVR=83, EM_FR30=84, EM_D10V=85, EM_D30V=86,"
 			" EM_V850=87, EM_M32R=88, EM_MN10300=89, EM_MN10200=90, EM_PJ=91,"
-			" EM_OPENRISC=92, EM_ARC_A5=93, EM_XTENSA=94, EM_NUM=95};", 0);
+			" EM_OPENRISC=92, EM_ARC_A5=93, EM_XTENSA=94, EM_VIDEOCORE=95,"
+			" EM_TMM_GPP=96, EM_NS32K=97, EM_TPC=98, EM_SNP1K=99, EM_ST200=100,"
+			" EM_IP2K=101, EM_MAX=102, EM_CR=103, EM_F2MC16=104, EM_MSP430=105,"
+			" EM_BLACKFIN=106, EM_SE_C33=107, EM_SEP=108, EM_ARCA=109, EM_UNICORE=110}", 0);
+	sdb_set (bin->kv, "elf_class.cparse", "enum elf_class {ELFCLASSNONE=0, ELFCLASS32=1, ELFCLASS64=2};", 0);
+	sdb_set (bin->kv, "elf_data.cparse", "enum elf_data {ELFDATANONE=0, ELFDATA2LSB=1, ELFDATA2MSB=2};", 0);
+	sdb_set (bin->kv, "elf_hdr_version.cparse", "enum elf_hdr_version {EV_NONE=0, EV_CURRENT=1};", 0);
+	sdb_set (bin->kv, "elf_obj_version.cparse", "enum elf_obj_version {EV_NONE=0, EV_CURRENT=1};", 0);
 	sdb_num_set (bin->kv, "elf_header.offset", 0, 0);
 	sdb_num_set (bin->kv, "elf_header.size", sizeof (Elf_(Ehdr)), 0);
+	sdb_set (bin->kv, "elf_ident.format", "[4]z[1]E[1]E[1]E.::"
+	         " magic (elf_class)class (elf_data)data (elf_hdr_version)version", 0);
 #if R_BIN_ELF64
-	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exqqqxwwwwww"
-		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
-		" phentsize phnum shentsize shnum shstrndx", 0);
+	sdb_set (bin->kv, "elf_header.format", "{1}?[2]E[2]E[4]Eqqqxwwwwww"
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #else
-	sdb_set (bin->kv, "elf_header.format", "[16]z[2]E[2]Exxxxxwwwwww"
-		" ident (elf_type)type (elf_machine)machine version entry phoff shoff flags ehsize"
-		" phentsize phnum shentsize shnum shstrndx", 0);
+	sdb_set (bin->kv, "elf_header.format", "{1}?[2]E[2]E[4]Exxxxwwwwww"
+		" (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version"
+		" entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx", 0);
 #endif
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
@@ -179,7 +187,7 @@ static int init_ehdr(ELFOBJ *bin) {
 	bin->ehdr.e_shnum = READ16 (ehdr, i);
 	bin->ehdr.e_shstrndx = READ16 (ehdr, i);
 	return handle_e_ident (bin);
-	// Usage example:
+	// [Outdated] Usage example:
 	// > td `k bin/cur/info/elf_type.cparse`; td `k bin/cur/info/elf_machine.cparse`
 	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
 }

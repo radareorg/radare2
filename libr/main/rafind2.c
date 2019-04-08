@@ -345,7 +345,7 @@ R_API int r_main_rafind2(int argc, char **argv) {
 			quiet = true;
 			break;
 		case 'v':
-			return r_main_version ("rafind2");
+			return r_main_version_print ("rafind2");
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':

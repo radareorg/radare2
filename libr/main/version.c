@@ -15,7 +15,7 @@
 #define R2_BIRTH "unknown"
 #endif
 
-R_API int r_main_version(const char *program) {
+R_API int r_main_version_print(const char *program) {
 	printf ("%s "R2_VERSION" %d @ "
 			R_SYS_OS"-"
 			R_SYS_ARCH"-%d git.%s\n",

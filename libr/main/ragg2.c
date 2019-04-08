@@ -299,7 +299,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 		case 'v':
 			free (sequence);
 			r_egg_free (egg);
-			return r_main_version ("ragg2");
+			return r_main_version_print ("ragg2");
 		case 'z':
 			show_str = 1;
 			break;
