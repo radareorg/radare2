@@ -1402,6 +1402,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			eprintf ("cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
+		memcpy (buf, core->block, core->blocksize);
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		bool syntax_ok = true;
 		char *args = strdup (fmt);
