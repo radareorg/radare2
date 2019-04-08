@@ -5148,8 +5148,11 @@ static int cmd_print(void *data, const char *input) {
 					ut8 *buf = calloc (1, bsmax);
 					if (buf) {
 						r_io_read_at (core->io, addr, buf, bsmax);
+						if (!l) {
+							l = bs;
+						}
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, buf, bs, bs, 0, 0, formatted_json, NULL, NULL);
+								core, addr, buf, bs, l, 0, 0, formatted_json, NULL, NULL);
 						free (buf);
 					}
 				}
