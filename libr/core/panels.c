@@ -3608,13 +3608,6 @@ repeat:
 	case 'b':
 		r_core_visual_browse (core, NULL);
 		break;
-	case 'o':
-		r_core_visual_showcursor (core, true);
-		r_core_visual_offset (core);
-		r_core_visual_showcursor (core, false);
-		cur->model->addr = core->offset;
-		cur->view->refresh = true;
-		break;
 	case 's':
 		panelSingleStepIn (core);
 		if (!strcmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY)) {
@@ -3742,6 +3735,13 @@ repeat:
 		panels->mode = PANEL_MODE_MENU;
 		break;
 	case 'g':
+		r_core_visual_showcursor (core, true);
+		r_core_visual_offset (core);
+		r_core_visual_showcursor (core, false);
+		cur->model->addr = core->offset;
+		cur->view->refresh = true;
+		break;
+	case 'G':
 		if (checkFunc (core)) {
 			replaceCmd (core, PANEL_TITLE_GRAPH, PANEL_CMD_GRAPH, 1);
 		}
