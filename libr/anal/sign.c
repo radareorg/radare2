@@ -137,12 +137,17 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	if (n != 3) {
 		goto out;
 	}
+	if (strcmp (r_str_word_get0 (k2, 0), "zign")) {
+		eprintf ("Invalid entry in the zigns database\n");
+		goto out;
+	}
 
 	// space (1)
 	it->space = r_spaces_add (&a->zign_spaces, r_str_word_get0 (k2, 1));
 
 	// name (2)
 	it->name = r_str_new (r_str_word_get0 (k2, 2));
+//	it->space = r_spaces_current (&a->zign_spaces);
 
 	// Deserialize value: |k:v|k:v|k:v|...
 	n = r_str_split (v2, '|');
@@ -164,7 +169,11 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		case R_SIGN_ANAL:
 			eprintf ("Unsupported\n");
 			break;
+		case R_SIGN_NAME:
+			it->realname = strdup (token);
+			break;
 		case R_SIGN_COMMENT:
+			it->comment = strdup (token);
 			break;
 		case R_SIGN_GRAPH:
 			if (strlen (token) == 2 * sizeof (RSignGraph)) {
@@ -177,7 +186,6 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		case R_SIGN_OFFSET:
 			it->addr = atoll (token);
 			break;
-		case R_SIGN_NAME:
 		case R_SIGN_REFS:
 			refs = r_str_new (token);
 			nrefs = r_str_split (refs, ',');
@@ -225,10 +233,9 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 				goto out;
 			}
 			it->bytes->bytes = malloc (it->bytes->size);
-			if (!it->bytes->bytes) {
-				goto out;
+			if (it->bytes->bytes) {
+				r_hex_str2bin (token, it->bytes->bytes);
 			}
-			r_hex_str2bin (token, it->bytes->bytes);
 			break;
 		case R_SIGN_BYTES_MASK:
 			if (!it->bytes) {
@@ -271,8 +278,7 @@ out:
 }
 
 static void serializeKey(RAnal *a, const RSpace *space, const char* name, char *k) {
-	snprintf (k, R_SIGN_KEY_MAXSZ, "zign|%s|%s",
-		space? space->name: "*", name);
+	snprintf (k, R_SIGN_KEY_MAXSZ, "zign|%s|%s", space? space->name: "*", name);
 }
 
 static void serializeKeySpaceStr(RAnal *a, const char *space, const char* name, char *k) {
@@ -402,6 +408,7 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 		if (!dst->bytes) {
 			return;
 		}
+		dst->space = src->space;
 		dst->bytes->size = src->bytes->size;
 		dst->bytes->bytes = malloc (src->bytes->size);
 		if (!dst->bytes->bytes) {
@@ -460,10 +467,10 @@ static void mergeItem(RSignItem *dst, RSignItem *src) {
 	if (src->hash) {
 		if (!dst->hash) {
 			dst->hash = R_NEW0 (RSignHash);
-		}
 			if (!dst->hash) {
 				return;
 			}
+		}
 		if (src->hash->bbhash) {
 			dst->hash->bbhash = strdup (src->hash->bbhash);
 		}
@@ -514,15 +521,17 @@ static bool addHash(RAnal *a, const char *name, int type, const char *val) {
 		r_sign_item_free (it);
 		return false;
 	}
+	it->space = r_spaces_current (&a->zign_spaces);
 
+	bool retval = false;
 	switch (type) {
 	case R_SIGN_BBHASH:
-		it->hash->bbhash = strdup(val);
+		it->hash->bbhash = strdup (val);
+		retval = addItem (a, it);
+		r_sign_item_free (it);
 		break;
 	}
 
-	bool retval = addItem (a, it);
-	r_sign_item_free (it);
 	return retval;
 }
 
@@ -537,6 +546,7 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 		goto beach;
 	}
 	it->hash = R_NEW0 (RSignHash);
+	it->space = r_spaces_current (&a->zign_spaces);
 	if (!it->hash) {
 		goto beach;
 	}
@@ -622,24 +632,17 @@ R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name) {
 
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
 	r_return_val_if_fail (a && name && size > 0 && bytes && mask, false);
-
 	return addBytes (a, name, size, bytes, mask);
 }
 
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
-	ut8 *mask = NULL;
-	bool retval = true;
-
+	bool retval = false;
 	r_return_val_if_fail (a && name && size > 0 && bytes, false);
-
-	mask = r_anal_mask (a, size, bytes, at);
-	if (!mask) {
-		return false;
+	ut8 *mask = r_anal_mask (a, size, bytes, at);
+	if (mask) {
+		retval = addBytes (a, name, size, bytes, mask);
+		free (mask);
 	}
-
-	retval = addBytes (a, name, size, bytes, mask);
-
-	free (mask);
 	return retval;
 }
 
@@ -679,6 +682,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 		return false;
 	}
 	it->name = r_str_new (name);
+	it->space = r_spaces_current (&a->zign_spaces);
 	it->comment = strdup (comment);
 	bool retval = addItem (a, it);
 	r_sign_item_free (it);
@@ -687,19 +691,16 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 
 R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 	r_return_val_if_fail (a && name && realname, false);
-
 	RSignItem *it = r_sign_item_new ();
-	if (!it) {
-		return false;
+	if (it) {
+		it->name = r_str_new (name);
+		it->realname = strdup (realname);
+		it->space = r_spaces_current (&a->zign_spaces);
+		bool retval = addItem (a, it);
+		r_sign_item_free (it);
+		return retval;
 	}
-	it->name = r_str_new (name);
-	it->realname = strdup (realname);
-
-	bool retval = addItem (a, it);
-
-	r_sign_item_free (it);
-
-	return retval;
+	return false;
 }
 
 R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
@@ -749,8 +750,8 @@ R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs) {
 	r_return_val_if_fail (a && name && refs, false);
 
-	RListIter *iter = NULL;
-	char *ref = NULL;
+	char *ref;
+	RListIter *iter;
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
 		return false;
@@ -803,11 +804,9 @@ struct ctxDeleteCB {
 
 static int deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
-
 	if (!strncmp (k, ctx->buf, strlen (ctx->buf))) {
 		sdb_remove (ctx->anal->sdb_zigns, k, 0);
 	}
-
 	return 1;
 }
 
@@ -912,7 +911,7 @@ static void listComment(RAnal *a, RSignItem *it, int format) {
 		} else if (format == 'j') {
 			a->cb_printf ("\"comments\":\"%s\",", it->comment);
 		} else {
-			a->cb_printf ("  addr: 0x%08"PFMT64x"\n", it->addr);
+			a->cb_printf ("  comment: 0x%08"PFMT64x"\n", it->addr);
 		}
 	}
 }
@@ -925,9 +924,9 @@ static void listRealname(RAnal *a, RSignItem *it, int format) {
 			a->cb_printf ("za %s %s\n", it->name, it->realname);
 			a->cb_printf ("afn %s @ 0x%08"PFMT64x"\n", it->realname, it->addr);
 		} else if (format == 'j') {
-			a->cb_printf ("\"addr\":%"PFMT64d",", it->addr);
+			a->cb_printf ("\"realname\":\"%s\",", it->realname);
 		} else {
-			a->cb_printf ("  addr: 0x%08"PFMT64x"\n", it->addr);
+			a->cb_printf ("  realname: %s\n", it->realname);
 		}
 	}
 }
@@ -998,7 +997,7 @@ static void listXRefs(RAnal *a, RSignItem *it, int format) {
 	} else if (format == 'j') {
 		a->cb_printf ("\"xrefs\":[");
 	} else {
-		if (it->refs && !r_list_empty (it->refs)) {
+		if (it->xrefs && !r_list_empty (it->xrefs)) {
 			a->cb_printf ("  xrefs: ");
 		}
 	}
@@ -1072,26 +1071,32 @@ static void listRefs(RAnal *a, RSignItem *it, int format) {
 }
 
 static void listHash(RAnal *a, RSignItem *it, int format) {
-	if (it->hash) {
-		if (format == 'q') {
-			if (it->hash->bbhash) {
-				a->cb_printf (" h(%08x)", r_str_hash(it->hash->bbhash));
-			}
-		} else if (format == '*') {
-			if (it->hash->bbhash) {
-				a->cb_printf ("za %s h %s\n", it->name, it->hash->bbhash);
-			}
-		} else if (format == 'j') {
-			a->cb_printf ("\"hash\":{");
-			if (it->hash->bbhash) {
-				a->cb_printf ("\"bbhash\":\"%s\"", it->hash->bbhash);
-			}
-			a->cb_printf ("}");
-		} else {
-			if (it->hash->bbhash) {
-				a->cb_printf ("  bbhash: %s\n", it->hash->bbhash);
-			}
+	if (!it->hash) {
+		return;
+	}
+	switch (format) {
+	case 'q':
+		if (it->hash->bbhash) {
+			a->cb_printf (" h(%08x)", r_str_hash(it->hash->bbhash));
 		}
+		break;
+	case '*':
+		if (it->hash->bbhash) {
+			a->cb_printf ("za %s h %s\n", it->name, it->hash->bbhash);
+		}
+		break;
+	case 'j':
+		a->cb_printf ("\"hash\":{");
+		if (it->hash->bbhash) {
+			a->cb_printf ("\"bbhash\":\"%s\"", it->hash->bbhash);
+		}
+		a->cb_printf ("}");
+		break;
+	default:
+		if (it->hash->bbhash) {
+			a->cb_printf ("  bbhash: %s\n", it->hash->bbhash);
+		}
+		break;
 	}
 }
 
@@ -1163,7 +1168,7 @@ static int listCB(void *user, const char *k, const char *v) {
 	}
 	// Name
 	if (it->realname) {
-		listRealname(a, it, ctx->format);
+		listRealname (a, it, ctx->format);
 	}
 	if (it->comment) {
 		listComment (a, it, ctx->format);
@@ -1242,9 +1247,7 @@ static int listGetCB(void *user, const char *key, const char *val) {
 R_API RList *r_sign_get_list(RAnal *a) {
 	r_return_val_if_fail (a, NULL);
 	struct ctxGetListCB ctx = { a, r_list_newf ((RListFree)r_sign_item_free) };
-
 	sdb_foreach (a->sdb_zigns, listGetCB, &ctx);
-
 	return ctx.list;
 }
 
@@ -1390,10 +1393,8 @@ static int foreachCB(void *user, const char *k, const char *v) {
 
 	if (r_sign_deserialize (a, it, k, v)) {
 		RSpace *cur = r_spaces_current (&a->zign_spaces);
-		if (!cur || cur != it->space) {
-			if (ctx->cb) {
-				retval = ctx->cb (it, ctx->user);
-			}
+		if (ctx->cb && cur == it->space) {
+			ctx->cb (it, ctx->user);
 		}
 	} else {
 		eprintf ("error: cannot deserialize zign\n");
@@ -1428,12 +1429,7 @@ R_API void r_sign_search_free(RSignSearch *ss) {
 
 static int searchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
 	RSignSearch *ss = (RSignSearch *) user;
-
-	if (ss->cb) {
-		return ss->cb ((RSignItem *) kw->data, kw, addr, ss->user);
-	}
-
-	return 1;
+	return ss->cb? ss->cb ((RSignItem *) kw->data, kw, addr, ss->user): 1;
 }
 
 struct ctxAddSearchKwCB {
@@ -1446,23 +1442,22 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 	RSignSearch *ss = ctx->ss;
 	RSignBytes *bytes = it->bytes;
 	RSearchKeyword *kw = NULL;
-	RSignItem *it2 = NULL;
 
 	if (!bytes) {
+		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
 		return 1;
 	}
 
-	if (bytes->size < ctx->minsz) {
+	if (ctx->minsz && bytes->size < ctx->minsz) {
 		return 1;
 	}
-
-	it2 = r_sign_item_dup (it);
-	r_list_append (ss->items, it2);
-
-	// TODO(nibble): change arg data in r_search_keyword_new to void*
-	kw = r_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *) it2);
-	r_search_kw_add (ss->search, kw);
-
+	RSignItem *it2 = r_sign_item_dup (it);
+	if (it2) {
+		r_list_append (ss->items, it2);
+		// TODO(nibble): change arg data in r_search_keyword_new to void*
+		kw = r_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *) it2);
+		r_search_kw_add (ss->search, kw);
+	}
 	return 1;
 }
 
@@ -1544,12 +1539,8 @@ static int graphMatchCB(RSignItem *it, void *user) {
 }
 
 R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGraphMatchCallback cb, void *user) {
+	r_return_val_if_fail (a && fcn && cb, false);
 	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, mincc };
-
-	if (!a || !fcn || !cb) {
-		return false;
-	}
-
 	return r_sign_foreach (a, graphMatchCB, &ctx);
 }
 
@@ -1581,11 +1572,7 @@ static int hashMatchCB(RSignItem *it, void *user) {
 	struct ctxFcnMatchCB *ctx = (struct ctxFcnMatchCB *) user;
 	RSignHash *hash = it->hash;
 
-	if (!hash) {
-		return 1;
-	}
-
-	if (!hash->bbhash || hash->bbhash[0] == 0) {
+	if (!hash || !hash->bbhash || hash->bbhash[0] == 0) {
 		return 1;
 	}
 
@@ -1605,10 +1592,8 @@ beach:
 }
 
 R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user) {
-	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
-
 	r_return_val_if_fail (a && fcn && cb, false);
-
+	struct ctxFcnMatchCB ctx = { a, fcn, cb, user, 0 };
 	return r_sign_foreach (a, hashMatchCB, &ctx);
 }
 
@@ -1734,6 +1719,12 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 		return NULL;
 	}
 	ret->name = r_str_new (it->name);
+	if (it->realname) {
+		ret->realname = r_str_newf (it->realname);
+	}
+	if (it->comment) {
+		ret->comment = r_str_newf (it->comment);
+	}
 	ret->space = it->space;
 
 	if (it->bytes) {
@@ -1769,6 +1760,10 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	ret->refs = r_list_newf ((RListFree) free);
 	r_list_foreach (it->refs, iter, ref) {
 		r_list_append (ret->refs, r_str_new (ref));
+	}
+	ret->xrefs = r_list_newf ((RListFree) free);
+	r_list_foreach (it->xrefs, iter, ref) {
+		r_list_append (ret->xrefs, r_str_new (ref));
 	}
 
 	return ret;

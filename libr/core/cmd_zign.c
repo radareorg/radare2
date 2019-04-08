@@ -101,16 +101,13 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	}
 
 	bool retval = false;
-	if (!r_io_is_valid_offset (core->io, fcn->addr, 0)) {
+	if (r_io_is_valid_offset (core->io, fcn->addr, 0)) {
+		(void)r_io_read_at (core->io, fcn->addr, buf, len);
+		retval = r_sign_add_anal (core->anal, name, len, buf, fcn->addr);
+	} else {
 		eprintf ("error: cannot read at 0x%08"PFMT64x"\n", fcn->addr);
-		goto out;
 	}
-	(void)r_io_read_at (core->io, fcn->addr, buf, len);
-	retval = r_sign_add_anal (core->anal, name, len, buf, fcn->addr);
-
-out:
 	free (buf);
-
 	return retval;
 }
 
@@ -491,11 +488,13 @@ out_case_fcn:
 				"  a: bytes pattern (anal mask)\n"
 				"  b: bytes pattern\n"
 				"  c: base64 comment\n"
+				"  n: real function name\n"
 				"  g: graph metrics\n"
 				"  o: original offset\n"
-				"  r: references\n\n"
-				"  h: bbhash (hashing of fcn basic blocks)\n\n"
-				"  v: vars (and args)\n\n"
+				"  r: references\n"
+				"  x: cross references\n"
+				"  h: bbhash (hashing of fcn basic blocks)\n"
+				"  v: vars (and args)\n"
 				"Bytes patterns:\n"
 				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
 				"Graph metrics:\n"
@@ -792,6 +791,9 @@ static bool search(RCore *core, bool rad) {
 			if (useHash) {
 				r_sign_match_hash (core->anal, fcni, fcnMatchCB, &hash_match_ctx);
 			}
+#if 0
+TODO: add useXRefs, useName
+#endif
 		}
 		r_cons_break_pop ();
 	}
