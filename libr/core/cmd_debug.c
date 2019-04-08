@@ -5052,7 +5052,9 @@ static int cmd_debug(void *data, const char *input) {
 			b = r_egg_get_bin (egg);
 			r_asm_set_pc (core->assembler, core->offset);
 			r_reg_arena_push (core->dbg->reg);
-			r_debug_execute (core->dbg, r_buf_buffer (b), r_buf_size (b), 0);
+			ut64 tmpsz;
+			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			r_debug_execute (core->dbg, tmp, tmpsz, 0);
 			r_reg_arena_pop (core->dbg->reg);
 			break;
 		}

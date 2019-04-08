@@ -661,8 +661,10 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 't': // "wt"
 		if (input[1] == 'f') { // "wtf"
+			ut64 tmpsz;
 			const char *file = r_str_trim_ro (input + 2);
-			if (!r_file_dump (file, r_buf_buffer (core->yank_buf), r_buf_size (core->yank_buf), false)) {
+			const ut8 *tmp = r_buf_buffer (core->yank_buf, &tmpsz);
+			if (!r_file_dump (file, tmp, tmpsz, false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}
 		} else if (input[1] == ' ') {

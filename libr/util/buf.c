@@ -415,8 +415,11 @@ R_API RBuffer *r_buf_new() {
 	return b;
 }
 
-R_API const ut8 *r_buf_buffer(RBuffer *b) {
+R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
 	if (b && !b->sparse_priv && b->fd_priv == -1 && !b->mmap_priv) {
+		if (size) {
+			*size = r_buf_size (b);
+		}
 		return b->buf_priv;
 	}
 	r_return_val_if_fail (false, NULL);

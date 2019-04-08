@@ -81,7 +81,7 @@ R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 R_API void r_buf_free(RBuffer *b);
 R_API bool r_buf_fini(RBuffer *b);
 R_API char *r_buf_free_to_string(RBuffer *b);
-R_API const ut8 *r_buf_buffer(RBuffer *b);
+R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
 R_API RList *r_buf_nonempty_list(RBuffer *b);

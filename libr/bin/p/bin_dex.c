@@ -796,7 +796,9 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
-	if (r_mem_mem (r_buf_buffer (bf->buf), r_buf_size (bf->buf), (const ut8*)kw, strlen (kw))) {
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
+	if (r_mem_mem (tmp, tmpsz, (const ut8 *)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
 		ret->subsystem = strdup ("android");
@@ -820,7 +822,9 @@ static RBinInfo *info(RBinFile *bf) {
 	r_buf_read_at (bf->buf, 8, h->buf, 4);
 	{
 		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
-		ut32 cc = __adler32 (r_buf_buffer (bf->buf) + 12, r_buf_size (bf->buf) - 12);
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
+		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
 		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
@@ -844,7 +848,7 @@ static RList *strings(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return NULL;
 	}
-	bin = (struct r_bin_dex_obj_t *) bf->o->bin_obj;
+	bin = (struct r_bin_dex_obj_t *)bf->o->bin_obj;
 	if (!bin || !bin->strings) {
 		return NULL;
 	}
@@ -1539,13 +1543,14 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 			return;
 		}
 
-		const ut8 *bufbuf = r_buf_buffer (binfile->buf);
+		ut64 bufbufsz;
+		const ut8 *bufbuf = r_buf_buffer (binfile->buf, &bufbufsz);
 		p = bufbuf + c->class_data_offset;
 		// XXX may overflow
-		if (r_buf_size (binfile->buf) < c->class_data_offset) {
+		if (bufbufsz < c->class_data_offset) {
 			return;
 		}
-		ut32 p_size = (r_buf_size (binfile->buf) - c->class_data_offset);
+		ut32 p_size = (bufbufsz - c->class_data_offset);
 		p_end = p + p_size;
 		//XXX check for NULL!!
 		c->class_data = (struct dex_class_data_item_t *)malloc (
