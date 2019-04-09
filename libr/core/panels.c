@@ -2385,7 +2385,7 @@ static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item) {
 	for (i = 0; i < item->n_sub; i++) {
 		if (i == item->selectedIndex) {
 			r_strbuf_appendf (buf, "> %s %s"Color_RESET,
-					core->cons->context->pal.graph_box, item->sub[i]->name);
+					core->cons->context->pal.graph_box2, item->sub[i]->name);
 		} else {
 			r_strbuf_appendf (buf, "   %s", item->sub[i]->name);
 		}
@@ -2695,7 +2695,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	if (panels->mode == PANEL_MODE_MENU) {
 		strcpy (title, "> ");
 	}
-	const char *color = panels->mode == PANEL_MODE_MENU ? core->cons->context->pal.graph_box : core->cons->context->pal.graph_box2;
+	const char *color = core->cons->context->pal.graph_box2;
 	if (panels->mode == PANEL_MODE_ZOOM) {
 		snprintf (str, sizeof (title) - 1, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, color);
 		strcat (title, str);
@@ -2985,6 +2985,7 @@ static bool handleMenu(RCore *core, const int key) {
 			removeMenu (panels);
 		} else {
 			panels->mode = PANEL_MODE_DEFAULT;
+			getCurPanel (panels)->view->refresh = true;
 		}
 		break;
 	case '$':
@@ -3760,6 +3761,7 @@ repeat:
 	break;
 	case 'm':
 		panels->mode = PANEL_MODE_MENU;
+		getCurPanel (panels)->view->refresh = true;
 		break;
 	case 'g':
 		r_core_visual_showcursor (core, true);
