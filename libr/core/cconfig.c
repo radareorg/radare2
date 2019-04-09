@@ -2706,7 +2706,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 	SETICB ("esil.stack.depth", 32, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
 	SETI ("esil.stack.size", 0xf0000, "Set stack size in ESIL VM");
-	SETI ("esil.stack.addr", 0x100000, "Set stack address in ESIL VM");
+	SETI ("esil.stack.addr", 0x57000000, "Set stack address in ESIL VM");
 	SETPREF ("esil.stack.pattern", "0", "Specify fill pattern to initialize the stack (0, w, d, i)");
 	SETI ("esil.addr.size", 64, "Maximum address size in accessed by the ESIL VM");
 	SETPREF ("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
