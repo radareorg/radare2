@@ -333,7 +333,6 @@ typedef struct r_core_cmpwatch_t {
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
-
 typedef struct {
 	char *name;
 	RInterval pitv;
