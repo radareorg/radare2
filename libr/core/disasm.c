@@ -2515,7 +2515,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	default: return false;
 	}
 	// adjust alignment
-	r_cons_printf ("  ");
+	r_cons_printf ("\t");
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
 	{
 		int q = core->print->cur_enabled &&
@@ -5017,6 +5017,7 @@ toro:
 		ds_print_cycles (ds);
 		ds_print_family (ds);
 		ds_print_stackptr (ds);
+		ds_print_show_bytes (ds);
 		int miType = ds_print_meta_infos (ds, buf, len, idx);
 		if (ds->mi_found) {
 			ds_print_dwarf (ds);
@@ -5052,7 +5053,6 @@ toro:
 			ds->mi_found = false;
 			/* show cursor */
 			ds_print_show_cursor (ds);
-			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
