@@ -2118,6 +2118,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	char *arroba = NULL;
 	char *grep = NULL;
 	RIODesc *tmpdesc = NULL;
+	int pamode = !core->io->va;
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
@@ -2784,6 +2785,9 @@ repeat_arroba:
 								r_io_desc_close (tmpdesc);
 							}
 							tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}
 					}
@@ -2863,7 +2867,9 @@ repeat_arroba:
 									r_io_desc_close (tmpdesc);
 								}
 								tmpdesc = d;
-
+								if (pamode) {
+									r_config_set_i (core->config, "io.va", 1);
+								}
 								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 								r_core_block_size (core, len);
 								r_core_block_read (core);
@@ -2917,12 +2923,17 @@ repeat_arroba:
 					if (len > 0) {
 						RBuffer *b = r_buf_new_with_bytes (buf, len);
 						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (!core->io->va) {
+							r_config_set_i (core->config, "io.va", 1);
+						}
 						if (d) {
 							if (tmpdesc) {
 								r_io_desc_close (tmpdesc);
 							}
 							tmpdesc = d;
-
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 							r_core_block_size (core, len);
 							// r_core_block_read (core);
@@ -3087,6 +3098,9 @@ next_arroba:
 			r_io_use_fd (core->io, tmpfd);
 		}
 		if (tmpdesc) {
+			if (pamode) {
+				r_config_set_i (core->config, "io.va", 0);
+			}
 			r_io_desc_close (tmpdesc);
 			tmpdesc = NULL;
 		}
