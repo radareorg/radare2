@@ -12,7 +12,7 @@
 #define PANEL_TITLE_REGISTERS    "Registers"
 #define PANEL_TITLE_REGISTERREFS "RegisterRefs"
 #define PANEL_TITLE_DISASSEMBLY  "Disassembly"
-#define PANEL_TITLE_PSEUDO       "Pseudo"
+#define PANEL_TITLE_DECOMPILER   "Decompiler"
 #define PANEL_TITLE_GRAPH        "Graph"
 #define PANEL_TITLE_FUNCTIONS    "Functions"
 #define PANEL_TITLE_FCNINFO      "FcnInfo"
@@ -24,7 +24,7 @@
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
-#define PANEL_CMD_PSEUDO         "pdc"
+#define PANEL_CMD_DECOMPILER     "pdc"
 #define PANEL_CMD_GRAPH          "agf"
 #define PANEL_CMD_FUNCTIONS      "afl"
 #define PANEL_CMD_FCNINFO        "afi"
@@ -69,8 +69,8 @@ static const char *menus_Edit[] = {
 };
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
-	"Stack", "StackRefs", "Pseudo", "Var READ address", "Var WRITE address",
+	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
+	"Stack", "StackRefs", "Var READ address", "Var WRITE address",
 	NULL
 };
 
@@ -110,7 +110,7 @@ static const char *help_msg_panels[] = {
 	"??",       "show the user-friendly hud",
 	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
-	"*",        "show pseudo code/r2dec in the current panel",
+	"*",        "show decompiler in the current panel",
 	"/",        "highlight the keyword",
 	"(",        "toggle snow",
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
@@ -2820,7 +2820,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Registers", "dr=", 0);
 	sdb_set (panels->db, "RegisterRefs", "drr", 0);
 	sdb_set (panels->db, "Disassembly", "pd $r", 0);
-	sdb_set (panels->db, "Pseudo", "pdc", 0);
+	sdb_set (panels->db, "Decompiler", "pdc", 0);
 	sdb_set (panels->db, "Graph", "agf", 0);
 	sdb_set (panels->db, "Info", "i", 0);
 	sdb_set (panels->db, "Database", "k ***", 0);
@@ -3398,7 +3398,7 @@ static void createDefaultPanels(RCore *core) {
 
 	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (decompiler_on && fun && !r_list_empty (fun->bbs)) {
-		addPanelFrame (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
+		addPanelFrame (core, PANEL_TITLE_DECOMPILER, PANEL_CMD_DECOMPILER, 1);
 	}
 
 	if (panels->layout == PANEL_LAYOUT_DEFAULT_DYNAMIC) {
@@ -3825,7 +3825,7 @@ repeat:
 			r_cons_canvas_free (can);
 			panels->can = NULL;
 
-			replaceCmd (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO, 1);
+			replaceCmd (core, PANEL_TITLE_DECOMPILER, PANEL_CMD_DECOMPILER, 1);
 
 			int h, w = r_cons_get_size (&h);
 			panels->can = createNewCanvas (core, w, h);
