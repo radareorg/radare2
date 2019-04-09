@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - condret, riq */
+/* radare - LGPL - Copyright 2019 - condret, riq */
 
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
@@ -27,18 +27,18 @@ enum {
 };
 
 static void _6502_anal_update_flags(RAnalOp *op, int flags) {
-	/* FIXME: $b9 instead of $b8 to prevent the bug triggered by: A = 0 - 0xff - 1 */
+	/* FIXME: 9,$b instead of 8,$b to prevent the bug triggered by: A = 0 - 0xff - 1 */
 	if (flags & _6502_FLAGS_B) {
-		r_strbuf_append (&op->esil, ",$b9,C,=");
+		r_strbuf_append (&op->esil, ",9,$b,C,:=");
 	}
 	if (flags & _6502_FLAGS_C) {
-		r_strbuf_append (&op->esil, ",$c7,C,=");
+		r_strbuf_append (&op->esil, ",7,$c,C,:=");
 	}
 	if (flags & _6502_FLAGS_Z) {
-		r_strbuf_append (&op->esil, ",$z,Z,=");
+		r_strbuf_append (&op->esil, ",$z,Z,:=");
 	}
 	if (flags & _6502_FLAGS_N) {
-		r_strbuf_append (&op->esil, ",$s,N,=");
+		r_strbuf_append (&op->esil, ",$s,N,:=");
 	}
 }
 
@@ -476,13 +476,13 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_ADD;
 		_6502_anal_esil_get_addr_pattern1 (op, data, len, addrbuf, buffsize);
 		if (data[0] == 0x69) { // immediate mode
-			r_strbuf_setf (&op->esil, "%s,a,+=,C,NUM,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
+			r_strbuf_setf (&op->esil, "%s,a,+=,7,$c,C,a,+=,7,$c,|,C,:=", addrbuf);
 		} else {
-			r_strbuf_setf (&op->esil, "%s,[1],a,+=,C,NUM,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
+			r_strbuf_setf (&op->esil, "%s,[1],a,+=,7,$c,C,a,+=,7,$c,|,C,:=", addrbuf);
 		}
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		// fix Z
-		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=");
+		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,:=");
 		break;
 	// SBC
 	case 0xe9: // sbc #$ff
@@ -504,7 +504,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		_6502_anal_update_flags (op, _6502_FLAGS_BNZ);
 		// fix Z and revert C
-		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=,C,!=");
+		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,:=,C,!=");
 		break;
 	// ORA
 	case 0x09: // ora #$ff
@@ -568,10 +568,10 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x1e: // asl $ffff,x
 		op->type = R_ANAL_OP_TYPE_SHL;
 		if (data[0] == 0x0a) {
-			r_strbuf_set (&op->esil, "1,a,<<=,$c7,C,=,a,a,=");
+			r_strbuf_set (&op->esil, "1,a,<<=,7,$c,C,:=,a,a,=");
 		} else  {
 			_6502_anal_esil_get_addr_pattern2 (op, data, len, addrbuf, buffsize, 'x');
-			r_strbuf_setf (&op->esil, "1,%s,[1],<<,%s,=[1],$c7,C,=", addrbuf, addrbuf);
+			r_strbuf_setf (&op->esil, "1,%s,[1],<<,%s,=[1],7,$c,C,:=", addrbuf, addrbuf);
 		}
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		break;
@@ -598,10 +598,10 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x3e: // rol $ffff,x
 		op->type = R_ANAL_OP_TYPE_ROL;
 		if (data[0] == 0x2a) {
-			r_strbuf_set (&op->esil, "1,a,<<,C,|,a,=,$c7,C,=,a,a,=");
+			r_strbuf_set (&op->esil, "1,a,<<,C,|,a,=,7,$c,C,:=,a,a,=");
 		} else {
 			_6502_anal_esil_get_addr_pattern2 (op, data, len, addrbuf, buffsize, 'x');
-			r_strbuf_setf (&op->esil, "1,%s,[1],<<,C,|,%s,=[1],$c7,C,=", addrbuf, addrbuf);
+			r_strbuf_setf (&op->esil, "1,%s,[1],<<,C,|,%s,=[1],7,$c,C,:=", addrbuf, addrbuf);
 		}
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		break;
