@@ -733,11 +733,17 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case '=': // "om=" 
 		{
 		RList *list = r_list_new ();
+		if (!list) {
+			return;
+		}
 		SdbListIter *iter;
 		RIOMap *map;
 		ls_foreach_prev (core->io->maps, iter, map) {
 			char temp[4];
 			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return;
+			}
 			info->name = map->name;
 			info->pitv = map->itv;
 			info->vitv = map->itv;

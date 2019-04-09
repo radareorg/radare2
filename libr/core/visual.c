@@ -4147,8 +4147,8 @@ R_API void r_core_visual_list(RCore *core, RList *list, ut64 seek, ut64 len, int
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %6s %s\n",
 					color, r_itv_end (info->pitv), color_end,
 					(info->perm != -1)? r_str_rwx_i (info->perm) : "   ",
-					(info->extra)?info->extra : "    ",
-					(info->name)?info->name : " ");
+					(info->extra)?info->extra : "      ",
+					(info->name)?info->name : "");
 			}
 			i++;
 		}

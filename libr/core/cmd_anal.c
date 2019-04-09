@@ -1803,8 +1803,14 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	r_list_sort (fcn->bbs, bb_cmp);
 	if (mode == '=') { // afb
 		RList *flist = r_list_new ();
+		if (!flist) {
+			return false;
+		}
 		ls_foreach (fcn->bbs, iter, b) {
 			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return false;
+			}
 			info->name = b->label;
 			info->pitv = (RInterval) {b->addr, b->size};
 			info->vitv = info->pitv;
