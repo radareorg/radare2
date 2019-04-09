@@ -2262,11 +2262,12 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 		return;
 	}
 	memset (out, ' ', outsz);
+	out[outsz - 1] = 0;
 	int sect_len = strlen (sect);
 
 	if (sect_len > cols) {
-		sect[cols-2] = '.';
-		sect[cols-1] = '.';
+		sect[cols - 2] = '.';
+		sect[cols - 1] = '.';
 		sect[cols] = 0;
 	}
 	if (ds->show_color) {
@@ -2274,13 +2275,12 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 		post = strlen (color) + 1 + strlen (Color_RESET);
 		snprintf (out, outsz-pre, "%s %s", color, sect);
 		strcat (out, Color_RESET);
-		out[outsz-1] = 0;
+		out[outsz - 1] = 0;
 	} else {
-		strcpy (out + 1, sect);
+		r_str_ncpy (out + 1, sect, outsz - 2);
 		post = 0;
 	}
-	out[strlen (out)] = ' ';
-	out[cols + post] = 0;
+	strcat (out, " ");
 	r_cons_strcat (out);
 	free (out);
 }
@@ -3896,7 +3896,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		bool emu_str_printed = false;
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
-		str[sizeof (str)-1] = 0;
+		str[sizeof (str) - 1] = 0;
 		// support cstring here
 		{
 			ut64 *cstr = (ut64*) str;
@@ -4444,7 +4444,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 			const char *tname = r_type_func_args_name (TDB, name, i);
 			if (type && *type) {
 				cmt = r_str_appendf (cmt, "%s%s%s%s%s", i == 0 ? "": " ", type,
-						type[strlen (type) -1] == '*' ? "": " ",
+						type[strlen (type) - 1] == '*' ? "": " ",
 						tname, i == arg_max - 1 ? ")": ",");
 			} else if (tname && !strcmp (tname, "...")) {
 				cmt = r_str_appendf (cmt, "%s%s%s", i == 0 ? "": " ",
