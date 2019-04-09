@@ -2735,7 +2735,7 @@ static int esil_set_jump_target(RAnalEsil *esil) {
 		esil->jump_target_set = 1;
 		ret = true;
 	} else {
-		free (src);
+		R_FREE (src);
 		ERR ("esil_set_jump_target: empty stack");
 	}
 	free (src);
@@ -2750,7 +2750,7 @@ static int esil_set_jump_target_set(RAnalEsil *esil) {
 		esil->jump_target_set = s;
 		ret = true;
 	} else {
-		free (src);
+		R_FREE (src);
 		ERR ("esil_set_jump_target_set: empty stack");
 	}
 	free (src);
@@ -2765,7 +2765,7 @@ static int esil_set_delay_slot(RAnalEsil *esil) {
 		esil->delay = s;
 		ret = true;
 	} else {
-		free (src);
+		R_FREE (src);
 		ERR ("esil_set_delay_slot: empty stack");
 	}
 	free (src);
