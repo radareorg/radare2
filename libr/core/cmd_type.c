@@ -1495,40 +1495,45 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'p': { // "tp"
-		char *tmp = strdup (input);
-		char *ptr = r_str_trim (strchr (tmp, ' '));
-		if (!ptr) {
-			break;
-		}
-		int nargs = r_str_word_set0 (ptr);
-		if (nargs > 0) {
-			const char *type = r_str_word_get0 (ptr, 0);
-			const char *arg = nargs > 1? r_str_word_get0 (ptr, 1): NULL;
-			char *fmt = r_type_format (TDB, type);
-			if (!fmt) {
-				eprintf ("Cannot find '%s' type\n", type);
+	case 'p':  // "tp"
+		if (input[1] == '?') { // "tp?"
+			r_core_cmd0 (core, "t?~tp\n");
+		} else { // "tp"
+			char *tmp = strdup (input);
+			char *ptr = r_str_trim (strchr (tmp, ' '));
+			if (!ptr) {
 				break;
 			}
-			if (input[1] == 'x' && arg) {
-				r_core_cmdf (core, "pf %s @x: %s", fmt, arg);
+			int nargs = r_str_word_set0 (ptr);
+			if (nargs > 0) {
+				const char *type = r_str_word_get0 (ptr, 0);
+				const char *arg = nargs > 1? r_str_word_get0 (ptr, 1): NULL;
+				char *fmt = r_type_format (TDB, type);
+				if (!fmt) {
+					eprintf ("Cannot find '%s' type\n", type);
+					break;
+				}
+				if (input[1] == 'x' && arg) { // "tpx"
+					r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
+					eprintf ("pf %s @x:%s", fmt, arg);
+				} else {
+					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
+					if (!addr && arg) {
+						RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+						addr = r_anal_var_addr (core->anal, fcn, arg);
+					}
+					if (addr != UT64_MAX) {
+						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+					}
+				}
+				free (fmt);
 			} else {
-				ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
-				if (!addr && arg) {
-					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-					addr = r_anal_var_addr (core->anal, fcn, arg);
-				}
-				if (addr != UT64_MAX) {
-					r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
-				}
+				eprintf ("see t?\n");
+				break;
 			}
-			free (fmt);
-		} else {
-			eprintf ("see t?\n");
-			break;
+			free (tmp);
 		}
-		free (tmp);
-	} break;
+		break;
 	case '-': // "t-"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_t_minus);

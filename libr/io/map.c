@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2019 - condret, MaskRay */
 
 #include <r_io.h>
 #include <stdlib.h>

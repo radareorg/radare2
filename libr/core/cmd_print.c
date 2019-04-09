@@ -1402,9 +1402,6 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			eprintf ("cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
-		if ((struct_sz > core->blocksize) && !core->fixedblock) {
-			r_core_block_size (core, struct_sz);
-		}
 		memcpy (buf, core->block, core->blocksize);
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		bool syntax_ok = true;
@@ -4233,9 +4230,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					len = l;
 					if (l > core->blocksize) {
-						if (core->fixedblock) {
-							l = core->blocksize;
-						} else if (!r_core_block_size (core, l)) {
+						if (!r_core_block_size (core, l)) {
 							goto beach;
 						}
 					}
@@ -4784,7 +4779,7 @@ static int cmd_print(void *data, const char *input) {
 		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
 			sp = input + 1;
 		}
-		if (sp && *sp) {
+		if (sp && *sp && sp[1]) {
 			int n = (int) r_num_math (core->num, r_str_trim_ro (sp)); //input + 1));
 			if (!n) {
 				goto beach;
@@ -5072,9 +5067,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'J': // pdJ
 			formatted_json = true;
 			break;
-		case 0:
+		case 0: // "pd"
 			/* "pd" -> will disassemble blocksize/4 instructions */
-			if (*input == 'd' && !core->fixedblock) {
+			if (!core->fixedblock && *input == 'd') {
 				l /= 4;
 			}
 			break;
@@ -5132,37 +5127,34 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			} else {
-				const int bs = core->blocksize;
 				// XXX: issue with small blocks
-				if (*input == 'D' && l > 0) {
+				if (*input == 'D' && use_blocksize > 0) {
+l = use_blocksize;
 					if (l > R_CORE_MAX_DISASM) { // pD
 						eprintf ("Block size too big\n");
 						return 1;
 					}
 					block1 = malloc (addrbytes * l);
 					if (block1) {
-						if (addrbytes * l > core->blocksize) {
-							r_io_read_at (core->io, addr, block1, addrbytes * l); // core->blocksize);
-						} else {
-							memcpy (block1, block, addrbytes * l);
-						}
+						r_io_read_at (core->io, addr, block1, addrbytes * l);
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
 						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
 				} else {
-					int bs1 = l * 16;
-					int bsmax = R_MAX (bs, bs1);
-					block1 = malloc (bsmax + 1);
-					if (block1) {
-						memcpy (block1, block, bs);
-						if (bs1 > bs) {
-							r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
-									bs1 - (bs - bs % addrbytes));
+					ut8 *buf = core->block;
+					const int buf_size = core->blocksize;
+					if (buf) {
+						if (!l) {
+							l = use_blocksize;
+							if (!core->fixedblock) {
+								l /= 4;
+							}
 						}
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block1, bs, l, 0, 0, formatted_json, NULL, NULL);
+								core, addr, buf, buf_size, l,
+								0, 0, formatted_json, NULL, NULL);
 					}
 				}
 			}
@@ -6088,6 +6080,7 @@ static int cmd_print(void *data, const char *input) {
 					if (!r_core_block_size (core, len)) {
 						len = core->blocksize;
 					}
+					r_core_block_read (core);
 					r_print_hexdump (core->print, r_core_pava (core, core->offset),
 						core->block, len, 16, 1, 1);
 				} else {
@@ -6141,16 +6134,20 @@ static int cmd_print(void *data, const char *input) {
 	case '8': // "p8"
 		if (input[1] == '?') {
 			r_cons_printf ("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
+			r_cons_printf (" p8  : print hexpairs string\n");
+			r_cons_printf (" p8f : print hexpairs of function (linear)\n");
+			r_cons_printf (" p8j : print hexpairs in JSON array\n");
 		} else if (l) {
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
-			block = core->block;
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
 			} else if (input[1] == 'f') { // "p8f"
-				r_core_cmdf (core, "p8 $F @ $B");
+				r_core_cmdf (core, "p8 $FS @ $FB");
 			} else {
+				r_core_block_read (core);
+				block = core->block;
 				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}

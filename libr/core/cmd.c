@@ -2117,6 +2117,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
 	char *grep = NULL;
+	RIODesc *tmpdesc = NULL;
+	int pamode = !core->io->va;
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
@@ -2126,6 +2128,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	bool oldfixedarch = core->fixedarch;
 	bool oldfixedbits = core->fixedbits;
 	bool cmd_tmpseek = false;
+	ut64 tmpbsz = core->blocksize;
 
 	if (!cmd) {
 		r_list_free (tmpenvs);
@@ -2658,7 +2661,6 @@ next2:
 	}
 escape_backtick:
 	// TODO must honor " and `
-	core->fixedblock = false;
 
 	if (r_str_endswith (cmd, "~?") && cmd[2] == '\0') {
 		r_cons_grep_help ();
@@ -2688,7 +2690,6 @@ escape_backtick:
 		bool addr_is_set = false;
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
-		ut64 tmpbsz = core->blocksize;
 		bool is_bits_set = false;
 		bool is_arch_set = false;
 		char *tmpeval = NULL;
@@ -2764,9 +2765,8 @@ repeat_arroba:
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
 							r_core_seek (core, bb->addr + inst_off, 1);
 							cmd_tmpseek = core->tmpseek = true;
-							usemyblock = true;
 						} else {
-							eprintf("The current basic block has %d instructions\n", bb->ninstr);
+							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
 						}
 					} else {
 						eprintf ("Can't find a basic block for 0x%08"PFMT64x"\n", core->offset);
@@ -2777,6 +2777,21 @@ repeat_arroba:
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
+					{
+						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, sz);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (d) {
+							if (tmpdesc) {
+								r_io_desc_close (tmpdesc);
+							}
+							tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						}
+					}
+#if 0
 					buf = malloc (sz);
 					if (buf) {
 						free (core->block);
@@ -2788,6 +2803,7 @@ repeat_arroba:
 						eprintf ("cannot alloc %d", sz);
 					}
 					free (f);
+#endif
 				} else {
 					eprintf ("cannot open '%s'\n", ptr + 3);
 				}
@@ -2809,8 +2825,8 @@ repeat_arroba:
 						regval = r_debug_reg_get (core->dbg, ptr + 2);
 					}
 					r_core_seek (core, regval, 1);
+					cmd_tmpseek = core->tmpseek = true;
 					free (mander);
-					usemyblock = true;
 				}
 				break;
 			case 'b': // "@b:" // bits
@@ -2821,7 +2837,8 @@ repeat_arroba:
 					ut64 addr = r_num_math (core->num, ptr + 2);
 					if (addr) {
 						r_core_cmdf (core, "so %s", ptr + 2);
-						usemyblock = true;
+				//		r_core_seek (core, core->offset, 1);
+						cmd_tmpseek = core->tmpseek = true;
 					}
 				}
 				break;
@@ -2841,10 +2858,25 @@ repeat_arroba:
 					buf = malloc (strlen (ptr + 2) + 1);
 					if (buf) {
 						len = r_hex_str2bin (ptr + 2, buf);
-						r_core_block_size (core, R_ABS(len));
-						memcpy (core->block, buf, core->blocksize);
-						core->fixedblock = true;
-						usemyblock = true;
+						r_core_block_size (core, R_ABS (len));
+						if (len > 0) {
+							RBuffer *b = r_buf_new_with_bytes (buf, len);
+							RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+							if (d) {
+								if (tmpdesc) {
+									r_io_desc_close (tmpdesc);
+								}
+								tmpdesc = d;
+								if (pamode) {
+									r_config_set_i (core->config, "io.va", 1);
+								}
+								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+								r_core_block_size (core, len);
+								r_core_block_read (core);
+							}
+						} else {
+							eprintf ("Error: Invalid hexpairs for @x:\n");
+						}
 						free (buf);
 					} else {
 						eprintf ("cannot allocate\n");
@@ -2882,17 +2914,48 @@ repeat_arroba:
 					eprintf ("Usage: pd 10 @a:arm:32\n");
 				}
 				break;
-			case 's': // "@s:"
-				len = strlen (ptr + 2);
-				r_core_block_size (core, len);
-				memcpy (core->block, ptr + 2, len);
-				usemyblock = true;
-				break;
+			case 's': // "@s:" // wtf syntax
+				{
+					len = strlen (ptr + 2);
+					r_core_block_size (core, len);
+					const ut8 *buf = (const ut8*)r_str_trim_ro (ptr + 2);
+
+					if (len > 0) {
+						RBuffer *b = r_buf_new_with_bytes (buf, len);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (!core->io->va) {
+							r_config_set_i (core->config, "io.va", 1);
+						}
+						if (d) {
+							if (tmpdesc) {
+								r_io_desc_close (tmpdesc);
+							}
+							tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_core_block_size (core, len);
+							// r_core_block_read (core);
+						}
+					}
+				}
+break;
 			default:
 				goto ignore;
 			}
 			*ptr = '@';
-			goto next_arroba; //ignore; //return ret;
+			/* trim whitespaces before the @ */
+			/* Fixes pd @x:9090 */
+			char *trim = ptr - 2;
+			while (trim > cmd) {
+				if (!IS_WHITESPACE (*trim)) {
+					break;
+				}
+				*trim = 0;
+				trim--;
+			}
+			goto next_arroba;
 		}
 ignore:
 		ptr = r_str_trim_head (ptr + 1) - 1;
@@ -2918,6 +2981,7 @@ ignore:
 
 		addr = r_num_math (core->num, offstr);
 		addr_is_set = true;
+
 		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
 				eprintf ("Invalid address (%s)\n", ptr + 1);
@@ -2929,12 +2993,23 @@ ignore:
 				addr = core->offset + addr;
 			}
 		}
+		// remap thhe tmpdesc if any
+		if (addr) {
+			RIODesc *d = tmpdesc;
+			if (d) {
+				r_io_map_new (core->io, d->fd, d->perm, 0, addr, r_io_desc_size (d));
+			}
+		}
 next_arroba:
 		if (arroba) {
 			ptr = arroba + 1;
 			*arroba = '@';
 			arroba = NULL;
 			goto repeat_arroba;
+		}
+		core->fixedblock = !!tmpdesc;
+		if (core->fixedblock) {
+			r_core_block_read (core);
 		}
 		if (ptr[1] == '@') {
 			if (ptr[2] == '@') {
@@ -3019,11 +3094,22 @@ next_arroba:
 			R_FREE (tmpasm);
 		}
 		if (tmpfd != -1) {
+			// TODO: reuse tmpfd instead of
 			r_io_use_fd (core->io, tmpfd);
+		}
+		if (tmpdesc) {
+			if (pamode) {
+				r_config_set_i (core->config, "io.va", 0);
+			}
+			r_io_desc_close (tmpdesc);
+			tmpdesc = NULL;
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
 			core->fixedbits = oldfixedbits;
+		}
+		if (tmpbsz != core->blocksize) {
+			r_core_block_size (core, tmpbsz);
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
@@ -3048,7 +3134,10 @@ beach:
 		r_config_set_i (core->config, "scr.color", scr_color);
 	}
 	r_list_free (tmpenvs);
-	core->fixedblock = false;
+	if (tmpdesc) {
+		r_io_desc_close (tmpdesc);
+		tmpdesc = NULL;
+	}
 	core->fixedarch = oldfixedarch;
 	core->fixedbits = oldfixedbits;
 	if (tmpseek) {
