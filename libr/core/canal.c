@@ -548,20 +548,21 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		return false;
 	}
 
-	const ut16 bufsz = 64;
-	ut8 buf[64];
-	r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-	if (map->perm & R_PERM_X &&
-	    r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, map->itv.addr,
-			      map->itv.addr + map->itv.size)) {
-		if (core->anal->limit) {
-			if (ref->addr < core->anal->limit->from ||
-			    ref->addr > core->anal->limit->to) {
-				free (buf);
-				return 1;
+	if (map->perm & R_PERM_X) {
+		ut8 buf[64];
+		r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
+		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, map->itv.addr,
+				map->itv.addr + map->itv.size);
+		if (looksLikeAFunction) {
+			if (core->anal->limit) {
+				if (ref->addr < core->anal->limit->from ||
+						ref->addr > core->anal->limit->to) {
+					free (buf);
+					return 1;
+				}
 			}
+			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth - 1);
 		}
-		r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth - 1);
 	} else {
 		ut64 offs = 0;
 		ut64 sz = core->anal->bits >> 3;
@@ -575,7 +576,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		ut64 offe = offs + 1024;
 		for (offs = 0; offs < offe; offs += sz, ref1.at += sz) {
 			ut8 bo[8];
-			r_io_read_at (core->io, offs, bo, R_MIN (sizeof (bo), sz));
+			r_io_read_at (core->io, ref->addr + offs, bo, R_MIN (sizeof (bo), sz));
 			bool be = core->anal->big_endian;
 			switch (sz) {
 			case 1:
