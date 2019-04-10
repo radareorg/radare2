@@ -2847,7 +2847,9 @@ static int runword(RAnalEsil *esil, const char *word) {
 			}
 			const ut64 ret = op (esil);
 			if (!ret) {
-				eprintf ("%s returned 0\n", word);
+				if (esil->verbose) {
+					eprintf ("%s returned 0\n", word);
+				}
 			}
 			return ret;
 		}

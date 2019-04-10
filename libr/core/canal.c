@@ -613,7 +613,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 			continue;
 		}
 		switch (ref->type) {
-		case 'd':
+		case R_ANAL_REF_TYPE_DATA:
 			if (core->anal->opt.followdatarefs) {
 				r_anal_try_get_fcn (core, ref, depth, 2);
 			}
