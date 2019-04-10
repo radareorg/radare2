@@ -2359,6 +2359,13 @@ static int cb_anal_jmpabove(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_loads(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.loads = node->i_value;
+	return true;
+}
+
 static int cb_anal_followdatarefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2669,6 +2676,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.jmp.ref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
 
 	SETCB ("anal.jmp.above", "true", &cb_anal_jmpabove, "Jump above function pointer");
+	SETCB ("anal.loads", "false", &cb_anal_loads, "Define as dword/string/qword when analyzing load instructions");
 	SETCB ("anal.datarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
 	SETCB ("anal.brokenrefs", "false", &cb_anal_brokenrefs, "Follow function references as well if function analysis was failed");
 	SETCB ("anal.jmp.mid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
