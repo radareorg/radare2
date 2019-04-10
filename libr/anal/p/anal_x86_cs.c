@@ -2806,8 +2806,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int n, ret;
 
 	if (handle && mode != omode) {
-		cs_close (&handle);
-		handle = 0;
+		if (handle != 0) {
+			cs_close (&handle);
+			handle = 0;
+		}
 	}
 	omode = mode;
 	if (handle == 0) {
@@ -2835,8 +2837,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	{
 		ut64 naddr = addr;
 		size_t size = len;
-		if (!insn)
+		if (!insn) {
 			insn = cs_malloc (handle);
+		}
 		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
 			&size, (uint64_t*)&naddr, insn);
 	}
@@ -2851,7 +2854,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";
 		//const char *bp = (a->bits==16)?"bp": (a->bits==32)?"ebp":"rbp";
 		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
-			+cs_len_prefix_opcode (insn->detail->x86.opcode);
+			+ cs_len_prefix_opcode (insn->detail->x86.opcode);
 		op->size = insn->size;
 		op->id = insn->id;
 		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
@@ -2949,9 +2952,17 @@ static int esil_x86_cs_init(RAnalEsil *esil) {
 	return true;
 }
 
-static int fini(void *p) {
-	cs_close (&handle);
+static int init(void *p) {
 	handle = 0;
+	return true;
+}
+
+static int fini(void *p) {
+	if (handle != 0) {
+		// SEGFAULTS RANDOMLY, better leak on exit
+		// cs_close (&handle);
+		handle = 0;
+	}
 	return true;
 }
 
@@ -3364,6 +3375,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.op = &analop,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
+	.init = init,
 	.fini = fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
