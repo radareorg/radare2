@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2019 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -664,14 +664,13 @@ INST_HANDLER (dec) {	// DEC Rd
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	ESIL_A ("-1,r%d,+,", d);				// --Rd
-								// FLAGS:
-	ESIL_A ("0,RPICK,0x7f,==,$z,vf,:=,");			// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	ESIL_A ("0x1,r%d,-=,", d);			// Rd--
+							// FLAGS:
+	ESIL_A ("$o,vf,:=,");				// V
+	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);		// N
+	ESIL_A ("$z,zf,:=,");				// Z
+	ESIL_A ("vf,nf,^,sf,:=,");			// S
 }
 
 INST_HANDLER (des) {	// DES k
@@ -830,14 +829,13 @@ INST_HANDLER (inc) {	// INC Rd
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	ESIL_A ("1,r%d,+,", d);					// ++Rd
-								// FLAGS:
-	ESIL_A ("0,RPICK,0x80,==,$z,vf,:=,");			// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	ESIL_A ("1,r%d,+=,", d);			// Rd++
+							// FLAGS:
+	ESIL_A ("$o,vf,:=,");				// V
+	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);		// N
+	ESIL_A ("$z,zf,:=,");				// Z
+	ESIL_A ("vf,nf,^,sf,:=,");			// S
 }
 
 INST_HANDLER (jmp) {	// JMP k
