@@ -264,6 +264,13 @@ static int cb_analstrings(void *user, void *data) {
 	return true;
 }
 
+static int cb_anal_ignbithints(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.ignbithints = node->i_value;
+	return true;
+}
+
 static int cb_analsleep(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2647,6 +2654,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
+	SETCB("anal.ignbithints", "false", &cb_anal_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETPREF ("anal.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
