@@ -1651,7 +1651,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		break;
 	case X86_INS_FADD:
+#if CS_API_MAJOR == 4
 	case X86_INS_FADDP:
+#endif
 		break;
 	case X86_INS_ADDPS:
 	case X86_INS_ADDSD:
@@ -2388,7 +2390,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_UD0:
 #endif
 	case X86_INS_UD2:
+#if CS_API_MAJOR == 4
 	case X86_INS_UD2B:
+#endif
 	case X86_INS_INT3:
 		op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
 		break;
@@ -2722,7 +2726,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_FADD:
+#if CS_API_MAJOR == 4
 	case X86_INS_FADDP:
+#endif
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;

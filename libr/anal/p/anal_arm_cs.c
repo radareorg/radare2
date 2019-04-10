@@ -468,6 +468,7 @@ static const char *vas_name(arm64_vas vas) {
 	}
 }
 
+#if CS_API_MAJOR == 4
 static const char *vess_name(arm64_vess vess) {
 	switch (vess) {
 	case ARM64_VESS_B:
@@ -482,6 +483,7 @@ static const char *vess_name(arm64_vess vess) {
 		return "";
 	}
 }
+#endif
 
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
@@ -595,9 +597,11 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vas != ARM64_VAS_INVALID) {
 			r_strbuf_appendf (buf, ",\"vas\":\"%s\"", vas_name (op->vas));
 		}
+#if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
 			r_strbuf_appendf (buf, ",\"vess\":\"%s\"", vess_name (op->vess));
 		}
+#endif
 		r_strbuf_append (buf, "}");
 	}
 	r_strbuf_append (buf, "]");
