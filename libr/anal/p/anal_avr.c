@@ -413,21 +413,16 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 	if (len < 1) {
 		return;
 	}
-	int d = ((buf[0] & 0x30) >> 3) + 24;
-	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
+	const ut32 d = ((buf[0] & 0x30) >> 3) + 24;
+	const ut32 k = (buf[0] & 0x0f) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
-	ESIL_A ("r%d:r%d,%d,+,", d + 1, d, k);			// Rd+1:Rd + Rr
+	ESIL_A ("%d,r%d_r%d,+=,", k, d + 1, d);			// Rd+1_Rd + k
 								// FLAGS:
-	ESIL_A ("r%d,0x80,&,!,"					// V
-		"0,RPICK,0x8000,&,!,!,"
-		"&,vf,=,", d + 1);
-	ESIL_A ("0,RPICK,0x8000,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,!,"				// C
-		"0,RPICK,0x8000,&,!,"
-		"&,cf,=,", d + 1);
+	ESIL_A ("$o,vf,:=,");					// V
+	ESIL_A ("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d);	// N
+	ESIL_A ("$z,zf,:=,");					// Z
+	ESIL_A ("15,$c,cf,:=,");				// C
 	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d:r%d,=,", d + 1, d);			// Rd = result
 }
 
 INST_HANDLER (and) {	// AND Rd, Rr
@@ -456,13 +451,12 @@ INST_HANDLER (asr) {	// ASR Rd
 		return;
 	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
-	ESIL_A ("1,r%d,>>,r%d,0x80,&,|,", d, d);		// 0: R=(Rd >> 1) | Rd7
-	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("nf,cf,^,vf,=,");				// V
-	ESIL_A ("nf,vf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = R
+	ESIL_A ("r%d,0x1,&,cf,:=,0x1,r%d,>>,r%d,0x80,&,|,", d, d, d);
+								// 0: R=(Rd >> 1) | Rd7
+	ESIL_A ("$z,zf,:=,");					// Z
+	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);			// N
+	ESIL_A ("nf,cf,^,vf,:=,");				// V
+	ESIL_A ("nf,vf,^,sf,:=,");				// S
 }
 
 INST_HANDLER (bclr) {	// BCLR s
