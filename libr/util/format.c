@@ -2162,7 +2162,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 				} else if (oldslide) {
 					p->cb_printf ("]},");
-					oldslide--;
+					oldslide -= NESTEDSTRUCT;
 				}
 				if (fieldname) {
 					p->cb_printf ("{\"name\":\"%s\",\"type\":\"", fieldname);
