@@ -3744,13 +3744,13 @@ repeat:
 		break;
 	case 'K':
 		r_cons_switchbuf (false);
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+		for (i = 0; i < getCurPanel (panels)->view->pos.h / 2 - 6; i++) {
 			cur->model->directionCb (core, (int)UP);
 		}
 		break;
 	case 'J':
 		r_cons_switchbuf (false);
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+		for (i = 0; i < getCurPanel (panels)->view->pos.h / 2 - 6; i++) {
 			cur->model->directionCb (core, (int)DOWN);
 		}
 		break;
