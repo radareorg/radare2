@@ -128,7 +128,8 @@ static const char *help_msg_panels[] = {
 	"hjkl",     "move around (left-down-up-right)",
 	"J",        "scroll panels down by page",
 	"K",        "scroll panels up by page",
-	"L",        "refresh all the panels",
+	"H",        "scroll panels left by page",
+	"L",        "scroll panels right by page",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
 	"nN",       "create new panel with given command",
@@ -3714,6 +3715,18 @@ repeat:
 			cur->model->directionCb (core, (int)DOWN);
 		}
 		break;
+	case 'H':
+		r_cons_switchbuf (false);
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+			cur->model->directionCb (core, (int)LEFT);
+		}
+		break;
+	case 'L':
+		r_cons_switchbuf (false);
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+			cur->model->directionCb (core, (int)RIGHT);
+		}
+		break;
 	case '_':
 		hudstuff (core);
 		break;
@@ -3782,9 +3795,6 @@ repeat:
 	case 'l':
 		r_cons_switchbuf (false);
 		cur->model->directionCb (core, (int)RIGHT);
-		break;
-	case 'L':
-		setRefreshAll (panels, true);
 		break;
 	case 'V':
 		if (r_config_get_i (core->config, "graph.web")) {
