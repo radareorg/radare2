@@ -2530,6 +2530,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		// TODO: show nested structs and field reference lines
 	}
 beach:
+	if (slide == 0) {
+		oldslide = 0;
+	}
 	free (oarg);
 	free (buf);
 	free (field);
