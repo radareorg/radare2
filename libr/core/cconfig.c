@@ -3240,8 +3240,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
-	/* TODO: rename to asm.color.ops ? */
-	SETPREF ("scr.zoneflags", "true", "Show zoneflags in visual mode before the title (see fz?)");
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
 #if __WINDOWS__
 	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
@@ -3275,8 +3273,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
 	SETCB ("scr.pager", "", &cb_pager, "System program (or '..') to use when output exceeds screen boundaries");
-	SETPREF ("scr.scrollbar", "false", "Show scrollbar in visual mode");
-	SETPREF ("scr.scrollbar.bottom", "false", "Show scrollbar in the bottom");
+	SETI ("scr.scrollbar", 0, "Show flagzone (fz) scrollbar in visual mode (0=no,1=right,2=top,3=bottom)");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
 	SETPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");

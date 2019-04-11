@@ -169,7 +169,7 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 }
 
 static int cb_list(void *user, const char *name, const char *from_to) {
-	eprintf ("%s\t%s\n", name, from_to);
+	eprintf ("%s%s  %s\n", name, r_str_pad (' ', 10 - strlen (name)), from_to);
 	return 1;
 }
 
@@ -261,8 +261,9 @@ R_API bool r_flag_zone_list(RFlag *f, int mode) {
 	RFlagZoneItem *zi;
 	r_list_foreach (DB, iter, zi) {
 		if (mode == '*') {
-			f->cb_printf ("f %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
-			f->cb_printf ("f %s @ 0x08%"PFMT64x"\n", zi->name, zi->to);
+			f->cb_printf ("fz %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
+			f->cb_printf ("f %s %d 0x08%"PFMT64x"\n", zi->name,
+				zi->to - zi->from, zi->from);
 		} else {
 			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
 					zi->from, zi->to, zi->name);
