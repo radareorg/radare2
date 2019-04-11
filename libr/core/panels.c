@@ -308,7 +308,7 @@ static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
 static void showHelp(RCore *core, RPanelsMode mode);
 static void createDefaultPanels(RCore *core);
-static void createNewPanel(RCore *core, char *name, char *cmd, bool caching);
+static void addNewPanel(RCore *core, char *name, char *cmd, bool caching);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
@@ -659,7 +659,6 @@ static void insertPanel(RCore *core, int n, const char *name, const char*cmd, bo
 		panel[i + 1] = panel[i];
 	}
 	panel[n] = last;
-	panels->n_panels++;
 	buildPanelParam (core, panel[n], name, cmd, caching);
 }
 
@@ -1594,7 +1593,7 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 	}
 }
 
-static void createNewPanel(RCore *core, char *name, char *cmd, bool caching) {
+static void addNewPanel(RCore *core, char *name, char *cmd, bool caching) {
 	RPanels *panels = core->panels;
 	insertPanel (core, 0, name, cmd, caching);
 	r_core_panels_layout (panels);
@@ -1656,6 +1655,7 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 			m->addr = stackbase - r_config_get_i (core->config, "stack.delta");
 		}
 	}
+	core->panels->n_panels++;
 	return;
 }
 
@@ -3428,11 +3428,9 @@ static void createDefaultPanels(RCore *core) {
 					continue;
 				}
 				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
-				panels->n_panels++;
 				continue;
 			}
 			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
-			panels->n_panels++;
 		}
 	} else {
 		while (panels_static[i]) {
@@ -3446,16 +3444,13 @@ static void createDefaultPanels(RCore *core) {
 					continue;
 				}
 				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
-				panels->n_panels++;
 				continue;
 			}
 			if (!strcmp (s, PANEL_TITLE_FCNINFO)) {
 				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
-				panels->n_panels++;
 				continue;
 			}
 			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
-			panels->n_panels++;
 		}
 	}
 }
@@ -3646,7 +3641,7 @@ repeat:
 			char *res = r_cons_input ("New panel with command: ");
 			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 			if (res && *res) {
-				createNewPanel (core, res, res, caching);
+				addNewPanel (core, res, res, caching);
 			}
 			free (res);
 		}
@@ -3761,13 +3756,13 @@ repeat:
 		break;
 	case 'H':
 		r_cons_switchbuf (false);
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+		for (i = 0; i < getCurPanel (panels)->view->pos.w / 3; i++) {
 			cur->model->directionCb (core, (int)LEFT);
 		}
 		break;
 	case 'L':
 		r_cons_switchbuf (false);
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+		for (i = 0; i < getCurPanel (panels)->view->pos.w / 3; i++) {
 			cur->model->directionCb (core, (int)RIGHT);
 		}
 		break;
@@ -3798,7 +3793,7 @@ repeat:
 		char *cmd = r_cons_input ("Command: ");
 		bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 		if (name && *name && cmd && *cmd) {
-			createNewPanel (core, name, cmd, caching);
+			addNewPanel (core, name, cmd, caching);
 		}
 		free (name);
 		free (cmd);
