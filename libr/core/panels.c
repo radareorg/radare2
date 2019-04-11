@@ -333,6 +333,19 @@ static RPanel *getCurPanel(RPanels *panels) {
 	return getPanel (panels, panels->curnode);
 }
 
+static void handlePrompt(RCore *core, RPanels *panels) {
+	r_core_visual_prompt_input (core);
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = getPanel (panels, i);
+		if (!strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
+			p->model->addr = core->offset;
+			break;
+		}
+	}
+	setRefreshAll (panels, false);
+}
+
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->view->refresh) {
 		return;
@@ -835,11 +848,11 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case 0x0d:
 		toggleZoomMode (panels);
 		break;
+	case 'c':
 	case 'h':
 	case 'j':
 	case 'k':
 	case 'l':
-	case 'c':
 	case 's':
 	case 'S':
 	case ':':
@@ -872,10 +885,21 @@ static bool handleWindowMode(RCore *core, const int key) {
 	switch (key) {
 	case 'Q':
 	case 'q':
+	case 'w':
 		toggleWindowMode (panels);
+		break;
+	case 'c':
+		toggleWindowMode (panels);
+		activateCursor (core);
 		break;
 	case 0x0d:
 		toggleZoomMode (panels);
+		break;
+	case 9: // tab
+		handleTabKey (core, false);
+		break;
+	case 'Z': // shift-tab
+		handleTabKey (core, true);
 		break;
 	case 'h':
 		if (moveToDirection (panels, LEFT)) {
@@ -909,10 +933,12 @@ static bool handleWindowMode(RCore *core, const int key) {
 			resetSnow (panels);
 		}
 		break;
+	case '[':
 	case 'H':
 		r_cons_switchbuf (false);
 		resizePanelLeft (panels);
 		break;
+	case ']':
 	case 'L':
 		r_cons_switchbuf (false);
 		resizePanelRight (panels);
@@ -925,6 +951,8 @@ static bool handleWindowMode(RCore *core, const int key) {
 		r_cons_switchbuf (false);
 		resizePanelUp (panels);
 		break;
+	case 'd':
+	case ':':
 	case '?':
 		return false;
 	}
@@ -942,6 +970,12 @@ static bool handleCursorMode(RCore *core, const int key) {
 		return false;
 	case 'Q':
 	case 'q':
+	case 'c':
+		setCursor (core, !print->cur_enabled);
+		cur->view->refresh = true;
+		break;
+	case 'w':
+		toggleWindowMode (core->panels);
 		setCursor (core, !print->cur_enabled);
 		cur->view->refresh = true;
 		break;
@@ -955,6 +989,9 @@ static bool handleCursorMode(RCore *core, const int key) {
 			cur->view->refresh = true;
 		}
 		break;
+	case 'd':
+	case ':':
+		return false;
 	}
 	return true;
 }
@@ -3025,18 +3062,7 @@ static bool handleMenu(RCore *core, const int key) {
 		handleTabKey (core, true);
 		break;
 	case ':':
-		{
-			r_core_visual_prompt_input (core);
-			int i;
-			for (i = 0; i < panels->n_panels; i++) {
-				RPanel *p = getPanel (panels, i);
-				if (!strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
-					p->model->addr = core->offset;
-					break;
-				}
-			}
-			setRefreshAll (panels, false);
-		}
+		handlePrompt (core, panels);
 		break;
 	case '?':
 		showHelp (core, panels->mode);
@@ -3062,7 +3088,7 @@ static void handleTabKey(RCore *core, bool shift) {
 			}
 		} else {
 			if (panels->curnode == panels->n_panels - 1) {
-				panels->mode = PANEL_MODE_MENU;
+				panels->curnode = 0;
 			} else {
 				panels->curnode++;
 			}
@@ -3081,7 +3107,7 @@ static void handleTabKey(RCore *core, bool shift) {
 			if (panels->curnode) {
 				panels->curnode--;
 			} else {
-				panels->mode = PANEL_MODE_MENU;
+				panels->curnode = panels->n_panels - 1;
 			}
 		}
 	}
