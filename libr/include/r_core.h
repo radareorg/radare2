@@ -394,6 +394,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_print_scrollbar(RCore *core);
+R_API void r_core_print_scrollbar_bottom(RCore *core);
 R_API void r_core_visual_prompt_input (RCore *core);
 R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);

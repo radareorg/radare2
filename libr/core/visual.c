@@ -3660,6 +3660,11 @@ static int visual_responsive(RCore *core) {
 R_API void r_core_print_scrollbar(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
 
+	if (r_config_get_i (core->config, "scr.scrollbar.bottom")) {
+		r_core_print_scrollbar_bottom (core);
+		return;
+	}
+
 	if (w < 10 || h < 3) {
 		return;
 	}
@@ -3707,6 +3712,73 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	s = r_str_newf ("[0x%08"PFMT64x"]", to);
 	if (s) {
 		r_cons_gotoxy (w - strlen (s) + 1, h + 1);
+		r_cons_strcat (s);
+		free (s);
+	}
+	r_list_free (words);
+	r_cons_flush ();
+}
+
+R_API void r_core_print_scrollbar_bottom(RCore *core) {
+	int i, h, w = r_cons_get_size (&h);
+
+	if (w < 10 || h < 4) {
+		return;
+	}
+	ut64 from = 0;
+	ut64 to = UT64_MAX;
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		from = r_num_math (core->num, "$D");
+		to = r_num_math (core->num, "$D+$DD");
+	} else if (r_config_get_i (core->config, "io.va")) {
+		from = r_num_math (core->num, "$S");
+		to = r_num_math (core->num, "$S+$SS");
+	} else {
+		to = r_num_math (core->num, "$s");
+	}
+	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
+	int slen = strlen (s) + 1;
+	r_cons_gotoxy (0, h + 1);
+	r_cons_strcat (s);
+	free (s);
+
+	int linew = (w - (slen * 2)) + 1;
+	ut64 block = (to - from) / linew;
+
+	RList *words = r_flag_zone_barlist (core->flags, from, block, h);
+
+	bool hadMatch = false;
+	for (i = 0; i < linew + 1; i++) {
+		r_cons_gotoxy (i + slen, h + 1);
+		if (hadMatch) {
+			r_cons_strcat ("-");
+		} else {
+			ut64 cur = from + (block * i);
+			ut64 nex = from + (block * (i + 2));
+			if (R_BETWEEN (cur, core->offset, nex)) {
+				r_cons_strcat (Color_INVERT"-"Color_RESET);
+				hadMatch = true;
+			} else {
+				r_cons_strcat ("-");
+			}
+		}
+	}
+	for (i = 0; i < linew; i++) {
+		const char *word = r_list_pop_head (words);
+		if (word && *word) {
+			ut64 cur = from + (block * i);
+			ut64 nex = from + (block * (i + strlen (word) + 1));
+			r_cons_gotoxy (i + slen - 1, h);
+			if (R_BETWEEN (cur, core->offset, nex)) {
+				r_cons_printf (Color_INVERT"{%s}"Color_RESET, word);
+			} else {
+				r_cons_printf ("{%s}", word);
+			}
+		}
+	}
+	s = r_str_newf ("[0x%08"PFMT64x"]", to);
+	if (s) {
+		r_cons_gotoxy (linew + slen + 1, h + 1);
 		r_cons_strcat (s);
 		free (s);
 	}

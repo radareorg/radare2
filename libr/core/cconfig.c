@@ -3276,6 +3276,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
 	SETCB ("scr.pager", "", &cb_pager, "System program (or '..') to use when output exceeds screen boundaries");
 	SETPREF ("scr.scrollbar", "false", "Show scrollbar in visual mode");
+	SETPREF ("scr.scrollbar.bottom", "false", "Show scrollbar in the bottom");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
 	SETPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");
