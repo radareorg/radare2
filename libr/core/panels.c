@@ -3516,9 +3516,6 @@ static void undoSeek(RCore *core) {
 		r_core_visual_seek_animation (core, undo->off);
 		cur->model->addr = core->offset;
 		cur->view->refresh = true;
-	} else {
-		const char *msg = "Cannot undo seek.";
-		(void)r_cons_yesno ('y', msg);
 	}
 }
 
@@ -3532,9 +3529,6 @@ static void redoSeek(RCore *core) {
 		r_core_visual_seek_animation (core, undo->off);
 		cur->model->addr = core->offset;
 		cur->view->refresh = true;
-	} else {
-		const char *msg = "Cannot redo seek.";
-		(void)r_cons_yesno ('y', msg);
 	}
 }
 
