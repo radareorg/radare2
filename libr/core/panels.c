@@ -408,11 +408,13 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 			}
 		} else {
 			if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCacheCmdStr (core, panel, &cmdStr)) {
-				x = 0;
-				y = 0;
-				panel->view->sx = 0;
-				panel->view->sy = 0;
 				cmdStr = handleCacheCmdStr (core, panel);
+				if (panel->model->cmdStrCache) {
+					x = 0;
+					y = 0;
+					panel->view->sx = 0;
+					panel->view->sy = 0;
+				}
 			}
 			if (!strcmp (panel->model->cmd, PANEL_CMD_GRAPH)) {
 				graph_pad = 1;
@@ -651,11 +653,13 @@ static void insertPanel(RCore *core, int n, const char *name, const char*cmd, bo
 	}
 	RPanel **panel = panels->panel;
 	int i;
-	for (i = panels->n_panels - 1; i >= n; i++) {
+	RPanel *last = panel[panels->n_panels];
+	for (i = panels->n_panels - 1; i >= n; i--) {
 		panel[i + 1] = panel[i];
 	}
-	RPanel *p = getPanel (panels, n);
-	buildPanelParam (core, p, name, cmd, caching);
+	panel[n] = last;
+	panels->n_panels++;
+	buildPanelParam (core, panel[n], name, cmd, caching);
 }
 
 static void setCursor(RCore *core, bool cur) {
