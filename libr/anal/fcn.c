@@ -1247,7 +1247,14 @@ repeat:
 				r_anal_op_fini (&jmp_aop);
 			}
 			break;
-		// Case of valid but unused "add [rax], al"
+		case R_ANAL_OP_TYPE_LOAD:
+			if (anal->opt.loads) {
+				if (anal->iob.is_valid_offset (anal->iob.io, op.ptr, 0)) {
+					r_meta_add (anal, R_META_TYPE_DATA, op.ptr, op.ptr + 4, "");
+				}
+			}
+			break;
+			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
 			if (anal->opt.ijmp) {
 				if ((op.size + 4 <= bytes_read) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {

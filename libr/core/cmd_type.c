@@ -80,7 +80,8 @@ static const char *help_msg_to[] = {
 
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
-	"tc", "", "List all loaded types in C output format",
+	"tc", "", "List all loaded types in C output format with newlines",
+	"tcd", "", "List all loaded types in C output format without newlines",
 	"tcc", "?", "Manage calling conventions types",
 	"tc?", "", "show this help",
 	NULL
@@ -100,7 +101,8 @@ static const char *help_msg_te[] = {
 	"tej", " <enum>", "Show enum in json",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
-	"tec", "", "List all loaded enums in C output format",
+	"tec", "", "List all loaded enums in C output format with newlines",
+	"ted", "", "List all loaded enums in C output format without newlines",
 	"te?", "", "show this help",
 	NULL
 };
@@ -145,7 +147,8 @@ static const char *help_msg_ts[] = {
 	"tsj", " [type]", "Show pf format string for given struct in json",
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
-	"tsc", "", "List all loaded structs in C output format", 
+	"tsc", "", "List all loaded structs in C output format with newlines", 
+	"tsd", "", "List all loaded structs in C output format without newlines", 
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
@@ -159,7 +162,8 @@ static const char *help_msg_tu[] = {
 	"tuj", " [type]", "Show pf format string for given union in json",
 	"tu*", "", "Show pf.<name> format string for all loaded unions",
 	"tu*", " [type]", "Show pf.<name> format string for given union",
-	"tuc", "", "List all loaded unions in C output format",
+	"tuc", "", "List all loaded unions in C output format with newlines",
+	"tud", "", "List all loaded unions in C output format without newlines",
 	"tu?", "", "show this help",
 	NULL
 };
@@ -410,6 +414,85 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	pj_free (pj);
 	ls_free (l);
 	return 1;
+}
+
+static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, bool multiline) {
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	const char *space = "";
+	ls_foreach (l, iter, kv) {
+		if (name && !strcmp (sdbkv_value (kv), name)) {
+			continue;
+		}
+		free (name);
+		int n;
+		name = strdup (sdbkv_key (kv));
+		r_cons_printf ("%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
+		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
+		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+			char *var2 = r_str_newf ("%s.%s", var, p);
+			if (var2) {
+				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				if (val) {
+					if (multiline) {
+						r_cons_printf ("\t%s", val);
+						if (p && p[0] != '\0') {
+							r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
+						}
+					} else {
+						r_cons_printf ("%s%s %s;", space, val, p);
+						space = " ";
+					}
+				}
+				if (multiline) {
+					r_cons_println (";");
+				}
+				free (val);
+			}
+			free (var2);
+			free (p);
+		}
+		free (var);
+		r_cons_println ("};");
+		space = "";
+	}
+	free (name);
+	ls_free (l);
+}
+
+static void print_enum_in_c_format(Sdb *TDB, bool multiline) {
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list (TDB, true);
+	const char *separator = "";
+	ls_foreach (l, iter, kv) {
+		if (!strcmp (sdbkv_value (kv), "enum")) {
+			if (!name || strcmp (sdbkv_value (kv), name)) {
+				free (name);
+				name = strdup (sdbkv_key (kv));
+				r_cons_printf ("%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
+				{
+					RList *list = r_type_get_enum (TDB, name);
+					if (list && !r_list_empty (list)) {
+						RListIter *iter;
+						RTypeEnum *member;
+						separator = multiline? "\t": "";
+						r_list_foreach (list, iter, member) {
+							r_cons_printf ("%s%s = %d", separator, member->name, r_num_math (NULL, member->val));
+							separator = multiline? ",\n\t": ", ";
+						}
+					}
+					r_list_free (list);
+				}
+				r_cons_println (multiline? "\n};": "};");
+			}
+		}
+	}
+	free (name);
+	ls_free (l);
 }
 
 static int printkey_cb(void *user, const char *k, const char *v) {
@@ -869,41 +952,12 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 'c':{
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list_filter (TDB, stdifunion, true);
-			const char *space = "";
-			ls_foreach (l, iter, kv) {
-				if (name && !strcmp (sdbkv_value (kv), name)) {
-					continue;
-				}
-				free (name);
-				int n;
-				name = strdup (sdbkv_key (kv));
-				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
-				for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-					char *var2 = r_str_newf ("%s.%s", var, p);
-					if (var2) {
-						char *val = sdb_array_get (TDB, var2, 0, NULL);
-						if (val) {
-							r_cons_printf ("%s%s %s;", space, val, p);
-							space = " ";
-						}
-						free (val);
-					}
-					free (var2);
-					free (p);
-				}
-				free (var);
-				r_cons_println ("};");
-				space = "";
-			}
-			free (name);
-			ls_free (l);
+			print_struct_union_in_c_format (TDB, stdifunion, true);
 			break;
 		}
+		case 'd':
+			print_struct_union_in_c_format (TDB, stdifunion, false);
+			break;	
 		case ' ':
 			showFormat (core, r_str_trim_ro (input + 1), 0);
 			break;
@@ -932,6 +986,9 @@ static int cmd_type(void *data, const char *input) {
 		case ' ':
 		case 0:
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
+			break;
+		case 'd':
+			r_core_cmd0 (core, "tud;tsd;ttc;ted");
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_tc);
@@ -971,41 +1028,12 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
 		case 'c':{
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
-			const char *space = "";
-			ls_foreach (l, iter, kv) {
-				if (name && !strcmp (sdbkv_value (kv), name)) {
-					continue;
-				}
-				free (name);
-				int n;
-				name = strdup (sdbkv_key (kv));
-				r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-				char *p, *var = r_str_newf ("%s.%s",sdbkv_value (kv), name);
-				for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-					char *var2 = r_str_newf ("%s.%s", var, p);
-					if (var2) {
-						char *val = sdb_array_get (TDB, var2, 0, NULL);
-						if (val) {
-							r_cons_printf  ("%s%s %s;", space, val, p);
-							space = " ";
-						}
-						free (val);
-					}
-					free (var2);
-					free (p);
-				}
-				free (var);
-				r_cons_println ("};");
-				space = "";
-			}
-			free (name);
-			ls_free (l);
+			print_struct_union_in_c_format (TDB, stdifstruct, true);
 			break;
 		}
+		case 'd':
+			print_struct_union_in_c_format (TDB, stdifstruct, false);
+			break;
 		case 'j': // "tsj"
 			// TODO: current output is a bit poor, will be good to improve
 			if (input[2]) {
@@ -1100,39 +1128,12 @@ static int cmd_type(void *data, const char *input) {
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
 		case 'c': { // "tec"
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list (TDB, true);
-			const char *comma = "";
-			ls_foreach (l, iter, kv) {
-				if (!strcmp (sdbkv_value (kv), "enum")) {
-					if (!name || strcmp (sdbkv_value (kv), name)) {
-						free (name);
-						name = strdup (sdbkv_key (kv));
-						r_cons_printf ("%s %s {", sdbkv_value (kv), name);
-						//r_cons_printf ("%s\"%s\"", comma, name);
-						{
-							RList *list = r_type_get_enum (TDB, name);
-							if (list && !r_list_empty (list)) {
-								RListIter *iter;
-								RTypeEnum *member;
-								comma = "";
-								r_list_foreach (list, iter, member) {
-									r_cons_printf ("%s%s = %d", comma, member->name, r_num_math (NULL, member->val));
-									comma = ", ";
-								}
-							}
-							r_list_free (list);
-						}
-						r_cons_println ("};");
-					}
-				}
-			}
-			free (name);
-			ls_free (l);
+			print_enum_in_c_format(TDB, true);
 			break;
 		}
+		case 'd':
+			print_enum_in_c_format(TDB, false);
+			break;
 		case ' ':
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));

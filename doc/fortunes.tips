@@ -85,3 +85,4 @@ The more 'a' you add after 'aa' the more analysis steps are executed.
 Review all the subcommands of aa to see better ways to analyze your targets.
 Use /m to carve for known magic headers. speedup with search.
 You can use registers in math expressions. For example: 'wx 1234 @ esp - 2'
+For HTTP authentification 'e http.auth = 1', 'e http.authfile = <path>'

@@ -114,9 +114,9 @@ static void cmd_fz(RCore *core, const char *input) {
 		break;
 	case '.':
 		{
-			const char *a, *b;
+			const char *a = NULL, *b = NULL;
 			r_flag_zone_around (core->flags, core->offset, &a, &b);
-			r_cons_printf ("%s %s\n", a, b);
+			r_cons_printf ("%s %s\n", a?a:"~", b?b:"~");
 		}
 		break;
 	case ':':

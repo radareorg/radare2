@@ -1343,7 +1343,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_SXTW: /* word */
-		op->type = R_ANAL_OP_TYPE_AND;
 		r_strbuf_setf (&op->esil, "%s,%s,=,32,%s,>>,%s,%s,=,%s,%s,&=,63,$c,?{,0xffffffffffffff00,%s,|=}",
 				REG64(1), REG64(0), REG64(1), REG64(1), REG64(0),
 				"0xffffffff", REG64(0), REG64(0));
@@ -1590,7 +1589,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_CMP:
-		op->type = R_ANAL_OP_TYPE_CMP;
 		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,:=,$s,nf,:=,32,$b,!,cf,:=,$o,vf,:=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_CMN:
