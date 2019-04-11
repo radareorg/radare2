@@ -423,6 +423,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		offset = entry->location.rva + sizeof (module_list);
 		for (i = 0; i < module_list.number_of_modules; i++) {
 			struct minidump_module *module = R_NEW (struct minidump_module);
+			if (!module) {
+				break;
+			}
 			r = r_buf_read_at (obj->b, offset, (ut8 *)module, sizeof (*module));
 			if (r != sizeof (*module)) {
 				break;
