@@ -670,6 +670,7 @@ R_API void r_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 			if (!e) {
 				continue;
 			}
+			pj_o (pj);
 			if (e->extnID) {
 				pj_ks (pj, "OID", e->extnID->string);
 			}
@@ -684,6 +685,7 @@ R_API void r_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 				}
 				r_asn1_free_string (m);
 			}
+			pj_end (pj);
 		}
 		pj_end (pj);
 		pj_end (pj);
@@ -778,20 +780,22 @@ R_API void r_x509_tbscertificate_json(PJ *pj, RX509TBSCertificate *tbsc) {
 }
 
 R_API void r_x509_certificate_json(PJ *pj, RX509Certificate *certificate) {
-	if (certificate) {
-		RASN1String *m = NULL;
-		pj_o (pj);
-		pj_k (pj, "TBSCertificate");
-		r_x509_tbscertificate_json (pj, &certificate->tbsCertificate);
-		if (certificate->algorithmIdentifier.algorithm) {
-			pj_ks (pj, "Algorithm", certificate->algorithmIdentifier.algorithm->string);
-		}
-		if (certificate->signature) {
-			m = r_asn1_stringify_integer (certificate->signature->binary, certificate->signature->length);
-			if (m) {
-				pj_ks (pj, "Signature", m->string);
-			}
-			r_asn1_free_string (m);
-		}
+	if (!certificate) {
+		return;
 	}
+	RASN1String *m = NULL;
+	pj_o (pj);
+	pj_k (pj, "TBSCertificate");
+	r_x509_tbscertificate_json (pj, &certificate->tbsCertificate);
+	if (certificate->algorithmIdentifier.algorithm) {
+		pj_ks (pj, "Algorithm", certificate->algorithmIdentifier.algorithm->string);
+	}
+	if (certificate->signature) {
+		m = r_asn1_stringify_integer (certificate->signature->binary, certificate->signature->length);
+		if (m) {
+			pj_ks (pj, "Signature", m->string);
+		}
+		r_asn1_free_string (m);
+	}
+	pj_end (pj);
 }

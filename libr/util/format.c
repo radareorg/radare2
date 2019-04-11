@@ -1167,6 +1167,11 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 	}
 }
 
+static void r_print_byte_escape(const RPrint* p, const char *src, char **dst, int dot_nl) {
+	r_return_if_fail (p->strconv_mode);
+	r_str_byte_escape (src, dst, dot_nl, !strcmp (p->strconv_mode, "asciidot"), p->esc_bslash);
+}
+
 static void r_print_format_nulltermstring(const RPrint* p, const int len, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
@@ -1222,11 +1227,10 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		}
 		p->cb_printf ("\"");
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j++) {
-			if (IS_PRINTABLE (buf[j])) {
-				p->cb_printf ("%c", buf[j]);
-			} else {
-				p->cb_printf (".");
-			}
+			char esc_str[5] = { 0 };
+			char *ptr = esc_str;
+			r_print_byte_escape (p, (char *)&buf[j], &ptr, false);
+			p->cb_printf ("%s", esc_str);
 		}
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
@@ -1468,7 +1472,7 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
 int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	char *end, *args, *fmt;
-	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0;
+	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
 	if (!f) {
 		return -1;
@@ -1501,6 +1505,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 
 	i = 0;
 	if (IS_DIGIT (fmt[i])) {
+		times = atoi (fmt);
 		while (IS_DIGIT(fmt[i])) {
 			i++;
 		}
@@ -1708,6 +1713,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			size = 0;
 		}
 	}
+	size *= times;
 	free (o);
 	free (args);
 	return (mode & R_PRINT_UNIONMODE)? biggest : size;
@@ -2156,6 +2162,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 				} else if (oldslide) {
 					p->cb_printf ("]},");
+					oldslide--;
 				}
 				if (fieldname) {
 					p->cb_printf ("{\"name\":\"%s\",\"type\":\"", fieldname);
@@ -2323,7 +2330,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size==-1)? 1: size;
 					break;
 				case 'r':
-					r_print_format_register (p, mode, fmtname, setval);
+					if (fmtname) {
+						r_print_format_register (p, mode, fmtname, setval);
+					} else {
+						eprintf ("Unknown register\n");
+					}
 					break;
 				case '?':
 					{

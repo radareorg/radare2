@@ -37,7 +37,7 @@ R_API bool r_bin_wr_output(RBin *bin, const char *filename) {
 	if (!filename || !binfile || !binfile->buf) {
 		return false;
 	}
-	return r_file_dump (filename, binfile->buf->buf, r_buf_size (binfile->buf), 0);
+	return r_file_dump (filename, r_buf_buffer (binfile->buf), r_buf_size (binfile->buf), 0);
 }
 
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {

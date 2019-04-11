@@ -11,21 +11,27 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_sign);
 
+// XXX those limits should go away
 #define R_SIGN_KEY_MAXSZ 1024
 #define R_SIGN_VAL_MAXSZ 10240
 
 #define ZIGN_HASH "sha256"
 #define R_ZIGN_HASH R_HASH_SHA256
 
-enum {
+typedef enum {
 	R_SIGN_BYTES     = 'b', // bytes pattern
-	R_SIGN_ANAL      = 'a', // bytes pattern (anal mask)
+	R_SIGN_BYTES_MASK= 'm', // bytes pattern
+	R_SIGN_BYTES_SIZE= 's', // bytes pattern
+	R_SIGN_ANAL      = 'a', // bytes pattern (anal mask) // wtf ?
+	R_SIGN_COMMENT   = 'c', // comment
 	R_SIGN_GRAPH     = 'g', // graph metrics
 	R_SIGN_OFFSET    = 'o', // addr
+	R_SIGN_NAME      = 'n', // real name
 	R_SIGN_REFS      = 'r', // references
+	R_SIGN_XREFS     = 'x', // xrefs
 	R_SIGN_VARS      = 'v', // variables
 	R_SIGN_BBHASH    = 'h', // basic block hash
-};
+} RSignType;
 
 typedef struct r_sign_graph_t {
 	int cc;
@@ -47,12 +53,15 @@ typedef struct r_sign_hash_t {
 
 typedef struct r_sign_item_t {
 	char *name;
+	char *realname;
+	char *comment;
 	const RSpace *space;
 
 	RSignBytes *bytes;
 	RSignGraph *graph;
 	ut64 addr;
 	RList *refs;
+	RList *xrefs;
 	RList *vars;
 	RSignHash *hash;
 } RSignItem;
@@ -77,7 +86,10 @@ R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *by
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
 R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr);
+R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname);
+R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
+R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs);
 R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
@@ -85,6 +97,7 @@ R_API RList *r_sign_get_list(RAnal *a);
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len);
 R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn);
+R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v);
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 
@@ -107,9 +120,9 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(RSignItem *item);
 
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
+R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn);
 
-// TODO
 R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
 R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file);

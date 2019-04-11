@@ -114,7 +114,9 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Sega Megadrive");
-	ret->bclass = r_str_ndup ((char *) bf->buf->buf + 0x100, 32);
+	ut8 tmp[32];
+	r_buf_read_at (bf->buf, 0x100, tmp, sizeof (tmp));
+	ret->bclass = r_str_ndup ((char *)tmp, 32);
 	ret->os = strdup ("smd");
 	ret->arch = strdup ("m68k");
 	ret->bits = 16;

@@ -24,7 +24,7 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 		  break;
 	case ':':
 		  r_core_cmdf (core, "s %s", str);
-		  r_core_cmdf (core, "wa %s", p);
+		  r_core_cmdf (core, "\"wa %s\"", p);
 		  break;
 	case 'v':
 		q = strchr (p + 1,' ');
@@ -98,7 +98,7 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	if (strcmp (off, "+")) {
 		*noff = r_num_math (core->num, off);
 	}
-	r_core_write_at (core, *noff, b->buf, r_buf_size (b));
+	r_core_write_at (core, *noff, r_buf_buffer (b), r_buf_size (b));
 	*noff += r_buf_size (b);
 	free (off);
 	return 1;

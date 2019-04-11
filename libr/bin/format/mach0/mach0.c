@@ -713,9 +713,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		bin->signature = (ut8 *)strdup ("Malformed entitlement");
 		return true;
 	}
-	super.blob.magic = r_read_ble32 (bin->b->buf + data, mach0_endian);
-	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, mach0_endian);
-	super.count = r_read_ble32 (bin->b->buf + data + 8, mach0_endian);
+	super.blob.magic = r_buf_read_ble32_at (bin->b, data, mach0_endian);
+	super.blob.length = r_buf_read_ble32_at (bin->b, data + 4, mach0_endian);
+	super.count = r_buf_read_ble32_at (bin->b, data + 8, mach0_endian);
 	char *verbose = r_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
 	bool isVerbose = false;
 	if (verbose) {
@@ -728,7 +728,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	// $ openssl asn1parse -inform der -in a|less
 	// $ openssl pkcs7 -inform DER -print_certs -text -in a
 	for (i = 0; i < super.count; i++) {
-		if ((ut8 *)(bin->b->buf + data + i) > (ut8 *)(bin->b->buf + bin->size)) {
+		if (data + i > bin->size) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
@@ -748,18 +748,19 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				break;
 			}
 			struct blob_t entitlements = {0};
-			entitlements.magic = r_read_ble32 (bin->b->buf + off, mach0_endian);
-			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, mach0_endian);
+			entitlements.magic = r_buf_read_ble32_at (bin->b, off, mach0_endian);
+			entitlements.length = r_buf_read_ble32_at (bin->b, off + 4, mach0_endian);
 			len = entitlements.length - sizeof (struct blob_t);
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
 				if (!bin->signature) {
 					break;
 				}
-				ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
 				if (off + sizeof (struct blob_t) + len < r_buf_size (bin->b)) {
-					memcpy (bin->signature, src, len);
-					bin->signature[len] = '\0';
+					r_buf_read_at (bin->b, off + sizeof (struct blob_t), (ut8 *)bin->signature, len);
+					if (len >= 0) {
+						bin->signature[len] = '\0';
+					}
 				} else {
 					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				}
@@ -1295,7 +1296,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			{
 			struct uuid_command uc = {0};
 			if (off + sizeof (struct uuid_command) > bin->size) {
-				bprintf ("UUID out of obunds\n");
+				bprintf ("UUID out of bounds\n");
 				return false;
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
@@ -1374,7 +1375,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "main", 0);
 
 			if (!is_first_thread) {
-				bprintf("Error: LC_MAIN with other threads\n");
+				bprintf ("Error: LC_MAIN with other threads\n");
 				return false;
 			}
 			if (off + 8 > bin->size || off + sizeof (ep) > bin->size) {
@@ -1516,6 +1517,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->func_start);
 	free (mo->signature);
 	free (mo->intrp);
+	free (mo->compiler);
 	r_buf_free (mo->b);
 	free (mo);
 	return NULL;
@@ -2764,6 +2766,15 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 				cb_printf ("\n");
 			}
 			break;
+		case LC_SEGMENT:
+		case LC_SEGMENT_64:
+			cb_printf ("pf.mach0_segment @ 0x%08"PFMT64x"\n", addr - 8);
+			{
+				ut8 name[17] = {0};
+				r_buf_read_at (buf, addr, name, sizeof (name) - 1);
+				cb_printf ("0x%08"PFMT64x"  name        %s\n", addr, name);
+			}
+			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
 			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
@@ -2803,12 +2814,12 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 #define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt)); \
 	addr += 4;
-	ROW ("hdr.magic", 4, mh->magic, "x");
-	ROW ("hdr.cputype", 4, mh->cputype, "x");
-	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");
-	ROW ("hdr.filetype", 4, mh->filetype, "x");
-	ROW ("hdr.nbcmds", 4, mh->ncmds, "x");
-	ROW ("hdr.sizeofcmds", 4, mh->sizeofcmds, "x");
+	ROW ("macho_magic", 4, mh->magic, "x");
+	ROW ("macho_cputype", 4, mh->cputype, "x");
+	ROW ("macho_cpusubtype", 4, mh->cpusubtype, "x");
+	ROW ("macho_filetype", 4, mh->filetype, "x");
+	ROW ("macho_nbcmds", 4, mh->ncmds, "x");
+	ROW ("macho_sizeofcmds", 4, mh->sizeofcmds, "x");
 	free (mh);
 	return ret;
 }

@@ -92,7 +92,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		" RABIN2_STRFILTER: e bin.str.filter   # r2 -qe bin.str.filter=? -c '' --\n"
+		" RABIN2_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=?" "?' -\n"
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
@@ -768,7 +768,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'r': rad = true; break;
 		case 'v': 
 			  r_core_fini (&core);
-			  return r_main_version ("rabin2");
+			  return r_main_version_print ("rabin2");
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
 			break;
@@ -907,7 +907,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_bin_arch_options_init (&opts, arch, bits);
 		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
-			if (r_file_dump (file, b->buf, r_buf_size (b), 0)) {
+			if (r_file_dump (file, r_buf_buffer (b), r_buf_size (b), 0)) {
 				eprintf ("Dumped %" PFMT64d " bytes in '%s'\n",
 					r_buf_size (b), file);
 				r_file_chmod (file, "+x", 0);

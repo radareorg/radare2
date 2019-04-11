@@ -196,7 +196,7 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 		return res;
 	}
 
-	struct zip_source *s = zip_source_buffer (zipArch, zfo->b->buf,
+	struct zip_source *s = zip_source_buffer (zipArch, r_buf_buffer (zfo->b),
 		r_buf_size (zfo->b), 0);
 	if (s && zfo->entry != -1) {
 		if (zip_replace(zipArch, zfo->entry, s) == 0) {

@@ -521,8 +521,13 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 		case '*':
 		case 'r':
 		case 1:
-			r_cons_printf ("ec %s rgb:%02x%02x%02x\n",
+			r_cons_printf ("ec %s rgb:%02x%02x%02x",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
+			if (rcolor->a == ALPHA_FGBG) {
+				r_cons_printf (" rgb:%02x%02x%02x",
+					rcolor->r2, rcolor->g2, rcolor->b2);
+			}
+			r_cons_newline ();
 			break;
 		default:
 			r_cons_printf (" %s##"Color_RESET"  %s\n", *color,

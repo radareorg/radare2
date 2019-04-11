@@ -77,11 +77,7 @@ static int __w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-#if __MINGW32__
-			r2_OpenThread = r_lib_dl_sym (NULL, "OpenThread");
-#else
 			r2_OpenThread = OpenThread;
-#endif
 			thid = r2_OpenThread
 			? r2_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID) : NULL;
 			if (!thid) {

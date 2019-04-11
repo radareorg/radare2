@@ -8,3 +8,5 @@ endif
 include ../../libr/main/deps.mk
 
 include ../rules.mk
+
+LDFLAGS+=$(LINK)

@@ -695,7 +695,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		argc = r_type_func_args_count (TDB, fname);
 	}
 	for (i = 0; i < max_count; i++) {
-		const char *regname = r_anal_cc_arg (anal, fcn->cc, i + 1);
+		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
 		// reg_set enusres we only extract first-read argument reg
 		if (!reg_set [i] && regname) {
 			bool cond = (op->type  == R_ANAL_OP_TYPE_CMP) && opdreg &&
@@ -1055,6 +1055,10 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 		for (i = 0; i < argc; i++) {
 			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
+			if (!type || !name) {
+				eprintf ("Missing type for %s\n", type_fcn_name);
+				goto beach;
+			}
 			if (i == argc - 1) {
 				comma = false;
 			}

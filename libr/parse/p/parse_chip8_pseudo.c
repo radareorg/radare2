@@ -48,10 +48,10 @@ static int replace(int argc, char *argv[], char *newstr, size_t len) {
 		{ "shl",  (char*[]){ argv[1], " <<= 1", NULL } },
 		{ "shr",  (char*[]){ argv[1], " >>= 1", NULL } },
 		{ "sknp", (char*[]){ "skip_next_instr if !key_pressed(", argv[1], ")", NULL } },
-		{ "skp",  (char*[]){ "skip_next_instr if key_pressed(", argv[1], "))", NULL } },
+		{ "skp",  (char*[]){ "skip_next_instr if key_pressed(", argv[1], ")", NULL } },
 		{ "sne",  (char*[]){ "skip_next_instr if ", argv[1], " != ", argv[2], NULL } },
 		{ "sub",  (char*[]){ argv[1], " -= ", argv[2], NULL } },
-		{ "subn", (char*[]){ argv[1], " = ", argv[1], " - ", argv[2], NULL } },
+		{ "subn", (char*[]){ argv[1], " = ", argv[2], " - ", argv[1], NULL } },
 		{ "xor",  (char*[]){ argv[1], " ^= ", argv[2], NULL } },
 		{ NULL }
 	};
@@ -69,9 +69,10 @@ static int replace(int argc, char *argv[], char *newstr, size_t len) {
 static int tokenize(const char* in, char* out[]) {
 	int len = strlen (in), count = 0, i = 0, tokenlen = 0, seplen = 0;
 	char *token, *buf = (char*) in;
+	const char* tokcharset = ", \t\n";
 
 	while (i < len) {
-		tokenlen = strcspn (buf, ", ");
+		tokenlen = strcspn (buf, tokcharset);
 		token = calloc (tokenlen + 1, sizeof(char));
 		memcpy (token, buf, tokenlen);
 		out[count] = token;
@@ -79,7 +80,7 @@ static int tokenize(const char* in, char* out[]) {
 		buf += tokenlen;
 		count++;
 
-		seplen = strspn (buf, ", ");
+		seplen = strspn (buf, tokcharset);
 		i += seplen;
 		buf += seplen;
 	}

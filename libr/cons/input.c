@@ -293,6 +293,8 @@ R_API int r_cons_any_key(const char *msg) {
 	//r_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
 }
 
+extern void resizeWin(void);
+
 #if __WINDOWS__
 static int readchar_win(ut32 usec) {
 	int ch = 0;
@@ -301,12 +303,14 @@ static int readchar_win(ut32 usec) {
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf[128];
-	int i;
-do_it_again:
+	int i, o;
+	bool resize = false;
+	void *bed;
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
-	SetConsoleMode (h, 0 | ENABLE_MOUSE_INPUT); // RAW
-	void *bed = r_cons_sleep_begin ();
+	SetConsoleMode (h, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS);
+do_it_again:
+	bed = r_cons_sleep_begin ();
 	if (usec) {
 		if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
 			r_cons_sleep_end (bed);
@@ -314,55 +318,48 @@ do_it_again:
 		}
 	}
 	ret = ReadConsoleInput (h, irInBuf, 128, &out);
+	r_cons_enable_mouse (true);
 	r_cons_sleep_end (bed);
 	if (ret) {
 		for (i = 0; i < out; i++) {
-			if (irInBuf[i].EventType==MOUSE_EVENT) {
-				switch (irInBuf[i].Event.MouseEvent.dwEventFlags) {
-				case MOUSE_WHEELED:
-					if (irInBuf[i].Event.MouseEvent.dwButtonState & 0xFF000000)
-						ch='j';
-					else
-						ch='k';
-				break;
+			if (irInBuf[i].EventType == MOUSE_EVENT) {
+				if (irInBuf[i].Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
+					if (irInBuf[i].Event.MouseEvent.dwButtonState & 0xFF000000) {
+						ch = bCtrl ? 'J' : 'j';
+					} else {
+						ch = bCtrl ? 'K' : 'k';
+					}
+					break;
 				}
+				switch (irInBuf[i].Event.MouseEvent.dwButtonState) {
+				case FROM_LEFT_1ST_BUTTON_PRESSED:
+					r_cons_enable_mouse (false);
+				} // TODO: Handle more buttons?
 			}
-			if (irInBuf[i].EventType==KEY_EVENT) {
+			if (irInBuf[i].EventType == KEY_EVENT) {
 				if (irInBuf[i].Event.KeyEvent.bKeyDown) {
-					ch=irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
+					ch = irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
 					bCtrl=irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
-					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar==0) {
+					if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar == 0) {
 						ch = 0;
 						switch (irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
-							ch = bCtrl ? 'J': 'j';
+							ch = bCtrl ? 'J' : 'j';
 							break;
 						case VK_RIGHT: // key right
-							ch = bCtrl ? 'L': 'l';
+							ch = bCtrl ? 'L' : 'l';
 							break;
 						case VK_UP: // key up
-							if (bCtrl)
-								ch='K';
-							else
-								ch='k';
+							ch = bCtrl ? 'K' : 'k';
 							break;
 						case VK_LEFT: // key left
-							if (bCtrl)
-								ch='H';
-							else
-								ch='h';
+							ch = bCtrl ? 'H' : 'h';
 							break;
 						case VK_PRIOR: // key home
-							if (bCtrl)
-								ch='K';
-							else
-								ch='K';
+							ch = 'K';
 							break;
 						case VK_NEXT: // key end
-							if (bCtrl)
-								ch='J';
-							else
-								ch='J';
+							ch = 'J';
 							break;
 						case VK_F1:
 							ch = R_CONS_KEY_F1;
@@ -377,10 +374,7 @@ do_it_again:
 							ch = R_CONS_KEY_F4;
 							break;
 						case VK_F5:
-							if (bCtrl)
-								ch=0xcf5;
-							else
-								ch=R_CONS_KEY_F5;
+							ch = bCtrl ? 0xcf5 : R_CONS_KEY_F5;
 							break;
 						case VK_F6:
 							ch = R_CONS_KEY_F6;
@@ -410,13 +404,20 @@ do_it_again:
 					}
 				}
 			}
+			if (irInBuf[i].EventType == WINDOW_BUFFER_SIZE_EVENT) {
+				resize = true;
+			}
+		}
+		if (resize) {
+			resizeWin ();
+			resize = false;
 		}
 	}
 	FlushConsoleInputBuffer (h);
-	SetConsoleMode (h, mode);
 	if (ch == 0) {
 		goto do_it_again;
 	}
+	SetConsoleMode (h, mode);
 	/*r_cons_gotoxy (1, 2);
 	r_cons_printf ("\n");
 	r_cons_printf ("| buf = %x |\n", ch);
@@ -475,7 +476,6 @@ R_API void r_cons_switchbuf(bool active) {
 
 #if !__WINDOWS__
 extern volatile sig_atomic_t sigwinchFlag;
-extern void resizeWin(void);
 #endif
 
 R_API int r_cons_readchar() {

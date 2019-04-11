@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 // pancake */
+/* radare - LGPL - Copyright 2009-2019 // pancake */
 
 #define ms_argc (sizeof (ms_argv)/sizeof(const char*))
 static const char *ms_argv[] = {
@@ -13,9 +13,10 @@ static const char *help_msg_m[] = {
 	"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
 	"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
 	"m-/", "", "Umount given path (/)",
+	"mc", "[file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
-	"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
+	"mg", " /foo", "Get fs file/dir and dump it to disk",
 	"mo", " /foo/bar", "Open given file into a malloc://",
 	"mi", " /foo/bar", "Get offset and size of given file",
 	"mp", "", "List all supported partition types",
@@ -287,7 +288,7 @@ static int cmd_mount(void *data, const char *_input) {
 			eprintf ("Cannot open file\n");
 		}
 		break;
-	case 'g': // "mg"
+	case 'c': // "mc"
 		input++;
 		if (*input == ' ') {
 			input++;
@@ -304,6 +305,33 @@ static int cmd_mount(void *data, const char *_input) {
 			r_cons_memcat ((const char *)file->data, file->size);
 			r_fs_close (core->fs, file);
 			r_cons_memcat ("\n", 1);
+		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
+			eprintf ("Cannot open file\n");
+		}
+		break;
+	case 'g': // "mg"
+		input++;
+		if (*input == ' ') {
+			input++;
+		}
+		ptr = strchr (input, ' ');
+		if (ptr) {
+			*ptr++ = 0;
+		} else {
+			ptr = "./";
+		}
+		file = r_fs_open (core->fs, input);
+		if (file) {
+			char *localFile = strdup (input);
+			char *slash = (char *)r_str_rchr (localFile, NULL, '/');
+			if (slash) {
+				memmove (localFile, slash + 1, strlen (slash));
+			}
+			r_fs_read (core->fs, file, 0, file->size);
+			r_file_dump (localFile, file->data, file->size, false);
+			r_fs_close (core->fs, file);
+			eprintf ("File '%s' created.\n", localFile);
+			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
 			eprintf ("Cannot open file\n");
 		}

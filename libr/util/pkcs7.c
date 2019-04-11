@@ -569,12 +569,14 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 			if (!attr) {
 				continue;
 			}
+			pj_o (pj);
 			if (attr->oid) {
 				pj_ks (pj, "oid", attr->oid->string);
 			}
 			if (attr->data) {
 				pj_ki (pj, "length", attr->data->length);
 			}
+			pj_end (pj);
 		}
 		pj_end (pj);
 		pj_end (pj);
@@ -611,13 +613,14 @@ R_API PJ *r_pkcs7_cms_json (RCMS *container) {
 			r_x509_certificate_json (pj, container->signedData.certificates.elements[i]);
 		}
 		pj_end (pj);
-		pj_end (pj);
+
 		pj_k (pj, "CRL");
 		pj_a (pj);
 		for (i = 0; i < container->signedData.crls.length; ++i) {
 			r_x509_crl_json (pj, container->signedData.crls.elements[i]);
 		}
 		pj_end (pj);
+
 		pj_k (pj, "SignerInfos");
 		pj_a (pj);
 		if (container->signedData.signerinfos.elements) {

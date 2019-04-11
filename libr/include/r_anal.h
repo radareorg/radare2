@@ -385,6 +385,7 @@ On x86 acording to Wikipedia
 
 // XXX: this definition is plain wrong. use enum or empower bits
 #define R_ANAL_OP_TYPE_MASK 0x8000ffff
+#define R_ANAL_OP_HINT_MASK 0xf0000000
 typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
 	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated
@@ -469,6 +470,7 @@ typedef enum {
 	R_ANAL_OP_MASK_VAL   = 2, // It fills RAnalop->dst/src info
 	R_ANAL_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
 	R_ANAL_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
+	R_ANAL_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
 	R_ANAL_OP_MASK_ALL   = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT
 } RAnalOpMask;
 
@@ -600,6 +602,8 @@ typedef struct r_anal_options_t {
 	int jmpabove;
 	bool ijmp;
 	bool jmpmid; // continue analysis after jmp into middle of insn
+	bool loads;
+	bool ignbithints;
 	int followdatarefs;
 	int searchstringrefs;
 	int followbrokenfcnsrefs;
@@ -696,7 +700,6 @@ typedef struct r_anal_t {
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
-	RList *reflines2;
 	//RList *noreturn;
 	RBNode *rb_hints_ranges; // <RAnalRange>
 	bool merge_hints;
@@ -988,7 +991,6 @@ enum {
 
 enum {
 	R_ANAL_ESIL_PARM_INVALID = 0,
-	R_ANAL_ESIL_PARM_INTERNAL,
 	R_ANAL_ESIL_PARM_REG,
 	R_ANAL_ESIL_PARM_NUM,
 };
@@ -1518,6 +1520,10 @@ R_API int r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
 R_API RList* r_anal_get_fcns (RAnal *anal);
+
+/* type.c */
+R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
+R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);

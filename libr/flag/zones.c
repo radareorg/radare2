@@ -19,6 +19,17 @@ static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
 }
 #endif
 
+static RFlagZoneItem *r_flag_zone_get_inrange (RFlag *f, ut64 from, ut64 to) {
+	RListIter *iter;
+	RFlagZoneItem *zi;
+	r_list_foreach (DB, iter, zi) {
+		if (R_BETWEEN (from, zi->from, to)) {
+			return zi;
+		}
+	}
+	return NULL;
+}
+
 R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 	r_return_val_if_fail (f && name && *name, false);
 #if R_FLAG_ZONE_USE_SDB
@@ -158,7 +169,7 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 }
 
 static int cb_list(void *user, const char *name, const char *from_to) {
-	eprintf ("%s\t%s\n", name, from_to);
+	eprintf ("%s%s  %s\n", name, r_str_pad (' ', 10 - strlen (name)), from_to);
 	return 1;
 }
 
@@ -230,13 +241,29 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 	return true;
 }
 
+R_API RList *r_flag_zone_barlist(RFlag *f, ut64 from, ut64 bsize, int rows) {
+	RList *list = r_list_newf (NULL);
+	int i;
+	for (i = 0; i < rows; i++) {
+		RFlagZoneItem *zi = r_flag_zone_get_inrange (f, from, from + bsize);
+		if (zi) {
+			r_list_append (list, zi->name);
+		} else {
+			r_list_append (list, "");
+		}
+		from += bsize;
+	}
+	return list;
+}
+
 R_API bool r_flag_zone_list(RFlag *f, int mode) {
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	r_list_foreach (DB, iter, zi) {
 		if (mode == '*') {
-			f->cb_printf ("f %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
-			f->cb_printf ("f %s @ 0x08%"PFMT64x"\n", zi->name, zi->to);
+			f->cb_printf ("fz %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
+			f->cb_printf ("f %s %d 0x08%"PFMT64x"\n", zi->name,
+				zi->to - zi->from, zi->from);
 		} else {
 			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
 					zi->from, zi->to, zi->name);

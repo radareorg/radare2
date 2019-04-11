@@ -34,10 +34,10 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	}
 	backup_fdn = fdn;
 #if __WINDOWS__
-	backup_fd = 2002-(fd-2); // windows xp has 2048 as limit fd
+	backup_fd = 2002 - (fd - 2); // windows xp has 2048 as limit fd
 	if (_dup2 (fdn, backup_fd) == -1) {
 #else
-	backup_fd = sysconf (_SC_OPEN_MAX)-(fd-2); // portable getdtablesize()
+	backup_fd = sysconf (_SC_OPEN_MAX) - (fd - 2); // portable getdtablesize()
 	if (backup_fd < 2) {
 		backup_fd = 2002 - (fd - 2); // fallback
 	}

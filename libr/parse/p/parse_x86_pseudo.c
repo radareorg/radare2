@@ -78,6 +78,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "palignr", "# = # align #", {1, 2, 3}},
 		{ "pxor", "# ^= #", {1, 2}},
 		{ "mul",  "# = # * #", {1, 2, 3}},
+		{ "mulss",  "# = # * #", {1, 2, 3}},
 		{ "neg",  "# ~= #", {1, 1}},
 		{ "nop",  "", {0}},
 		{ "not",  "# = !#", {1, 1}},

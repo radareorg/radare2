@@ -31,8 +31,6 @@ RAnalReilArgType reil_get_arg_type(RAnalEsil *esil, char *s) {
 		return ARG_REG;
 	case R_ANAL_ESIL_PARM_NUM:
 		return ARG_CONST;
-	case R_ANAL_ESIL_PARM_INTERNAL:
-		return ARG_ESIL_INTERNAL;
 	default:
 		return ARG_NONE;
 	}
