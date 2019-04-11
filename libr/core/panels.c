@@ -849,7 +849,15 @@ static bool handleZoomMode(RCore *core, const int key) {
 		toggleZoomMode (panels);
 		break;
 	case 'c':
+		toggleZoomMode (panels);
+		return false;
+	case ';':
+	case ' ':
+	case 'b':
+	case 'd':
 	case 'h':
+	case 'P':
+	case 'p':
 	case 'j':
 	case 'k':
 	case 'l':
@@ -877,6 +885,67 @@ static bool handleZoomMode(RCore *core, const int key) {
 		break;
 	}
 	return true;
+}
+
+// copypasta from visual.c ';'
+static void handleComment(RCore *core) {
+	char buf[4095];
+	int i;
+	r_cons_enable_mouse (false);
+	r_cons_gotoxy (0, 0);
+	r_core_visual_showcursor (core, true);
+	r_cons_flush ();
+	r_cons_set_raw (false);
+	r_line_set_prompt ("[Comment]> ");
+	strcpy (buf, "\"CC ");
+	i = strlen (buf);
+	if (r_cons_fgets (buf + i, sizeof (buf) - i - 1, 0, NULL) > 0) {
+		ut64 addr, orig;
+		addr = orig = core->offset;
+		if (core->print->cur_enabled) {
+			addr += core->print->cur;
+			r_core_seek (core, addr, 0);
+			r_core_cmdf (core, "s 0x%"PFMT64x, addr);
+		}
+		if (!strcmp (buf + i, "-")) {
+			strcpy (buf, "CC-");
+		} else {
+			switch (buf[i]) {
+				case '-':
+					memcpy (buf, "\"CC-\x00", 5);
+					break;
+				case '!':
+					memcpy (buf, "\"CC!\x00", 5);
+					break;
+				default:
+					memcpy (buf, "\"CC ", 4);
+					break;
+			}
+			strcat (buf, "\"");
+		}
+		if (buf[3] == ' ') {
+			// have to escape any quotes.
+			int j, len = strlen (buf);
+			char *duped = strdup (buf);
+			for (i = 4, j = 4; i < len; ++i,++j) {
+				char c = duped[i];
+				if (c == '"' && i != (len - 1)) {
+					buf[j] = '\\';
+					j++;
+					buf[j] = '"';
+				} else {
+					buf[j] = c;
+				}
+			}
+			free (duped);
+		}
+		r_core_cmd (core, buf, 1);
+		if (core->print->cur_enabled) {
+			r_core_seek (core, orig, 1);
+		}
+	}
+	r_cons_set_raw (true);
+	r_core_visual_showcursor (core, false);
 }
 
 static bool handleWindowMode(RCore *core, const int key) {
@@ -951,8 +1020,11 @@ static bool handleWindowMode(RCore *core, const int key) {
 		r_cons_switchbuf (false);
 		resizePanelUp (panels);
 		break;
-	case 'd':
 	case ':':
+	case ';':
+	case 'd':
+	case 'b':
+	case 'X':
 	case '?':
 		return false;
 	}
@@ -963,6 +1035,10 @@ static bool handleCursorMode(RCore *core, const int key) {
 	RPanel *cur = getCurPanel (core->panels);
 	RPrint *print = core->print;
 	switch (key) {
+	case ':':
+	case ';':
+	case 'd':
+	case 'b':
 	case 'h':
 	case 'j':
 	case 'k':
@@ -989,9 +1065,6 @@ static bool handleCursorMode(RCore *core, const int key) {
 			cur->view->refresh = true;
 		}
 		break;
-	case 'd':
-	case ':':
-		return false;
 	}
 	return true;
 }
@@ -3053,6 +3126,8 @@ static bool handleMenu(RCore *core, const int key) {
 			if (child->cb (core)) {
 				return false;
 			}
+			panels->mode = PANEL_MODE_DEFAULT;
+			getCurPanel (panels)->view->refresh = true;
 		}
 		break;
 	case 9:
@@ -3659,9 +3734,11 @@ repeat:
 				break;
 			}
 			char *res = r_cons_input ("New panel with command: ");
-			bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
 			if (res && *res) {
-				addNewPanel (core, res, res, caching);
+				bool caching = r_cons_yesno ('y', "Cache the result? (Y/n)");
+				if (res && *res) {
+					addNewPanel (core, res, res, caching);
+				}
 			}
 			free (res);
 		}
@@ -3692,6 +3769,9 @@ repeat:
 		break;
 	case 'b':
 		r_core_visual_browse (core, NULL);
+		break;
+	case ';':
+		handleComment (core);
 		break;
 	case 's':
 		panelSingleStepIn (core);
@@ -3756,34 +3836,46 @@ repeat:
 		break;
 	case 'j':
 		r_cons_switchbuf (false);
-		cur->model->directionCb (core, (int)DOWN);
+		if (cur->model->directionCb) {
+			cur->model->directionCb (core, (int)DOWN);
+		}
 		break;
 	case 'k':
 		r_cons_switchbuf (false);
-		cur->model->directionCb (core, (int)UP);
+		if (cur->model->directionCb) {
+			cur->model->directionCb (core, (int)UP);
+		}
 		break;
 	case 'K':
 		r_cons_switchbuf (false);
-		for (i = 0; i < getCurPanel (panels)->view->pos.h / 2 - 6; i++) {
-			cur->model->directionCb (core, (int)UP);
+		if (cur->model->directionCb) {
+			for (i = 0; i < getCurPanel (panels)->view->pos.h / 2 - 6; i++) {
+				cur->model->directionCb (core, (int)UP);
+			}
 		}
 		break;
 	case 'J':
 		r_cons_switchbuf (false);
-		for (i = 0; i < getCurPanel (panels)->view->pos.h / 2 - 6; i++) {
-			cur->model->directionCb (core, (int)DOWN);
+		if (cur->model->directionCb) {
+			for (i = 0; i < getCurPanel (panels)->view->pos.h / 2 - 6; i++) {
+				cur->model->directionCb (core, (int)DOWN);
+			}
 		}
 		break;
 	case 'H':
 		r_cons_switchbuf (false);
-		for (i = 0; i < getCurPanel (panels)->view->pos.w / 3; i++) {
-			cur->model->directionCb (core, (int)LEFT);
+		if (cur->model->directionCb) {
+			for (i = 0; i < getCurPanel (panels)->view->pos.w / 3; i++) {
+				cur->model->directionCb (core, (int)LEFT);
+			}
 		}
 		break;
 	case 'L':
 		r_cons_switchbuf (false);
-		for (i = 0; i < getCurPanel (panels)->view->pos.w / 3; i++) {
-			cur->model->directionCb (core, (int)RIGHT);
+		if (cur->model->directionCb) {
+			for (i = 0; i < getCurPanel (panels)->view->pos.w / 3; i++) {
+				cur->model->directionCb (core, (int)RIGHT);
+			}
 		}
 		break;
 	case '_':
@@ -3830,7 +3922,7 @@ repeat:
 		free (new_name);
 		free (new_cmd);
 	}
-	break;
+		break;
 	case 'm':
 		panels->mode = PANEL_MODE_MENU;
 		getCurPanel (panels)->view->refresh = true;
@@ -3849,11 +3941,15 @@ repeat:
 		break;
 	case 'h':
 		r_cons_switchbuf (false);
-		cur->model->directionCb (core, (int)LEFT);
+		if (cur->model->directionCb) {
+			cur->model->directionCb (core, (int)LEFT);
+		}
 		break;
 	case 'l':
 		r_cons_switchbuf (false);
-		cur->model->directionCb (core, (int)RIGHT);
+		if (cur->model->directionCb) {
+			cur->model->directionCb (core, (int)RIGHT);
+		}
 		break;
 	case 'V':
 		if (r_config_get_i (core->config, "graph.web")) {
