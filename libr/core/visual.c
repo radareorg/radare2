@@ -3452,7 +3452,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 		}
 	}
-	if (r_config_get_i (core->config, "scr.zoneflags")) {
+	if (r_config_get_i (core->config, "scr.scrollbar") == 2) {
 		r_core_cmd (core, "fz:", 0);
 	}
 	if (r_config_get_i (core->config, "cfg.debug")) {
@@ -3660,7 +3660,12 @@ static int visual_responsive(RCore *core) {
 R_API void r_core_print_scrollbar(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
 
-	if (r_config_get_i (core->config, "scr.scrollbar.bottom")) {
+	int scrollbar = r_config_get_i (core->config, "scr.scrollbar");
+	if (scrollbar == 2) {
+		// already handled by r_core_cmd("zf:") in visual.c
+		return;
+	}
+	if (scrollbar > 2) {
 		r_core_print_scrollbar_bottom (core);
 		return;
 	}
