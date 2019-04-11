@@ -5580,9 +5580,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			char *buf = malloc (strlen (aop) + 128);
 			if (buf) {
 				strcpy (buf, aop);
+				buf = ds_sub_jumps (ds, buf);
 				r_parse_filter (core->parser, ds->vat, core->flags, buf,
 					str, sizeof (str), core->print->big_endian);
 				r_asm_op_set_asm (&asmop, buf);
+				
 				free (buf);
 			}
 		}
