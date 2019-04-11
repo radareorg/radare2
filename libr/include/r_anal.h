@@ -603,6 +603,7 @@ typedef struct r_anal_options_t {
 	bool ijmp;
 	bool jmpmid; // continue analysis after jmp into middle of insn
 	bool loads;
+	bool ignbithints;
 	int followdatarefs;
 	int searchstringrefs;
 	int followbrokenfcnsrefs;
