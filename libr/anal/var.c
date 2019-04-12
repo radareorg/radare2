@@ -1069,7 +1069,7 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 		}
 		goto beach;
 	}
-	free (type_fcn_name);
+	R_FREE (type_fcn_name);
 
 
 	cache = reuse_cache;
@@ -1125,7 +1125,7 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 
 beach:
 	r_strbuf_append (buf, ");");
-	free (type_fcn_name);
+	R_FREE (type_fcn_name);
 	if (!reuse_cache) {
 		// !reuse_cache => we created our own cache
 		r_anal_fcn_vars_cache_fini (cache);
