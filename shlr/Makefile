@@ -40,7 +40,7 @@ CS_BRA=next
 else
 #CS_TIP=472845db9c2666ab66b3f517dda21f2b026a06c1
 CS_TIP=f9c6a90489be7b3637ff1c7298e45efafe7cf1b9
-CS_BRA=tags/4.0.1
+CS_BRA=master
 #CS_BRA=master
 endif
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build

@@ -3,7 +3,7 @@ CS_URL="$1" # url
 CS_BRA="$2" # branch name
 CS_TIP="$3" # tip commit
 CS_REV="$4" # revert
-CS_DEPTH_CLONE=10
+CS_DEPTH_CLONE=64
 
 git --help > /dev/null 2>&1
 if [ $? != 0 ]; then
