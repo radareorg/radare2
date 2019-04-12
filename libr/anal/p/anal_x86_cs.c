@@ -1651,7 +1651,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		break;
 	case X86_INS_FADD:
-#if CS_API_MAJOR == 4
+#if CS_API_MAJOR > 4
+	case X86_INS_PFADD:
+#else
 	case X86_INS_FADDP:
 #endif
 		break;
@@ -1894,7 +1896,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_FPREM:
 	case X86_INS_FPREM1:
 	case X86_INS_FPTAN:
-#if CS_API_MAJOR >=4
+#if CS_API_MAJOR >= 4
 	case X86_INS_FFREEP:
 #endif
 	case X86_INS_FRNDINT:

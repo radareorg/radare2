@@ -457,12 +457,24 @@ static const char *vas_name(arm64_vas vas) {
 		return "2s";
 	case ARM64_VAS_4S:
 		return "4s";
-	case ARM64_VAS_1D:
-		return "1d";
 	case ARM64_VAS_2D:
 		return "2d";
+	case ARM64_VAS_1D:
+		return "1d";
 	case ARM64_VAS_1Q:
 		return "1q";
+#if CS_API_MAJOR > 4
+	case ARM64_VAS_1B:
+		return "8b";
+	case ARM64_VAS_4B:
+		return "8b";
+	case ARM64_VAS_2H:
+		return "2h";
+	case ARM64_VAS_1H:
+		return "1h";
+	case ARM64_VAS_1S:
+		return "1s";
+#endif
 	default:
 		return "";
 	}
