@@ -737,8 +737,8 @@ INST_HANDLER (fmul) {	// FMUL Rd, Rr
 	if (len < 1) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0x7) + 16;
-	int r = (buf[0] & 0x7) + 16;
+	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
+	const ut32 r = (buf[0] & 0x7) + 16;
 
 	ESIL_A ("0xffff,1,r%d,r%d,*,<<,&,r1_r0,=,", r, d);	// 0: r1_r0 = (rd * rr) << 1
 	ESIL_A ("r1_r0,0x8000,&,!,!,cf,:=,");			// C = R/15
@@ -750,38 +750,32 @@ INST_HANDLER (fmuls) {	// FMULS Rd, Rr
 	if (len < 1) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0x7) + 16;
-	int r = (buf[0] & 0x7) + 16;
+	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
+	const ut32 r = (buf[0] & 0x7) + 16;
 
 	ESIL_A ("1,");
-	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
-	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", r);	// sign extension Rr
-	ESIL_A ("*,<<,", r, d);				// 0: (Rd*Rr)<<1
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xff00,|,},", d);	// sign extension Rd
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xff00,|,},", r);	// sign extension Rr
+	ESIL_A ("*,<<,r1_r0,=,", r, d);			// 0: (Rd*Rr)<<1
 
-	ESIL_A ("0xffff,&,");				// prevent overflow
-	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
-	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
-	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
-	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+	ESIL_A ("r1_r0,0x8000,&,!,!,cf,:=,");		// C = R/16
+	ESIL_A ("$z,zf,:=");				// Z = !R
 }
 
 INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 	if (len < 1) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0x7) + 16;
-	int r = (buf[0] & 0x7) + 16;
+	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
+	const ut32 r = (buf[0] & 0x7) + 16;
 
 	ESIL_A ("1,");
-	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xff00,|,},", d);	// sign extension Rd
 	ESIL_A ("r%d", r);				// unsigned Rr
-	ESIL_A ("*,<<,");				// 0: (Rd*Rr)<<1
+	ESIL_A ("*,<<,r1_r0,=,");			// 0: (Rd*Rr)<<1
 
-	ESIL_A ("0xffff,&,");				// prevent overflow
-	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
-	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
-	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
-	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+	ESIL_A ("r1_r0,0x8000,&,!,!,cf,:=,");		// C = R/16
+	ESIL_A ("$z,zf,:=");				// Z = !R
 }
 
 INST_HANDLER (ijmp) {	// IJMP k
@@ -1074,8 +1068,8 @@ INST_HANDLER (mul) {	// MUL Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
-	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
+	const ut32 d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
+	const ut32 r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
 
 	ESIL_A ("r%d,r%d,*,r1_r0,=,", r, d);		// 0: r1_r0 = rd * rr
 	ESIL_A ("r1_r0,0x8000,&,!,!,cf,:=,");		// C = R/15
