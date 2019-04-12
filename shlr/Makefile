@@ -38,10 +38,8 @@ ifeq ($(CS_NEXT),1)
 CS_TIP=3a660df88c30685cccf6ff68b4d6d4337b5caf7e
 CS_BRA=next
 else
-#CS_TIP=472845db9c2666ab66b3f517dda21f2b026a06c1
-CS_TIP=f9c6a90489be7b3637ff1c7298e45efafe7cf1b9
-CS_BRA=master
-#CS_BRA=master
+CS_TIP=7090f081b17a5293a2c185a06513fede18065d3c
+CS_BRA=v4
 endif
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 #CS_BRA=next
