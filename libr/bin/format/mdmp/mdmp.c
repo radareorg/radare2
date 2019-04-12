@@ -934,9 +934,12 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 		if (!(paddr = r_bin_mdmp_get_paddr (obj, module->base_of_image))) {
 			continue;
 		}
-		int left = 0;
-		const ut8 *b = r_buf_get_at (obj->b, paddr, &left);
-		buf = r_buf_new_with_bytes (b, R_MIN (left, module->size_of_image));
+		ut8 *b = R_NEWS (ut8, module->size_of_image);
+		if (!b) {
+			continue;
+		}
+		int r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
+		buf = r_buf_new_with_bytes (b, r);
 		dup = false;
 		if (check_pe32_buf (buf, module->size_of_image)) {
 			r_list_foreach(obj->pe32_bins, it_dup, pe32_dup) {

@@ -73,26 +73,49 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut64 total_size = tsize + rosize + dsize;
 	RBuffer *newbuf = r_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
+	ut8 *tmp = NULL;
 
 	if (rbin->iob.io && !(rbin->iob.io->cached & R_PERM_W)) {
 		eprintf ("Please add \'-e io.cache=true\' option to r2 command. This is required to decompress the code.\n");
 		goto fail;
 	}
 	/* Decompress each sections */
-	if (decompress (buf + toff, r_buf_get_at (newbuf, 0, NULL), rooff - toff, tsize) != tsize) {
+	tmp = R_NEWS (ut8, tsize);
+	if (!tmp) {
+		goto fail;
+	}
+	if (decompress (buf + toff, tmp, rooff - toff, tsize) != tsize) {
 		eprintf ("decompression failure\n");
 		goto fail;
 	}
-	if (decompress (buf + rooff, r_buf_get_at (newbuf, tsize, NULL), doff - rooff, rosize) != rosize) {
+	r_buf_write_at (newbuf, 0, tmp, tsize);
+	R_FREE (tmp);
+
+	tmp = R_NEWS (ut8, rosize);
+	if (!tmp) {
+		goto fail;
+	}
+	if (decompress (buf + rooff, tmp, doff - rooff, rosize) != rosize) {
 		eprintf ("decompression2 failure\n");
 		goto fail;
 	}
-	if (decompress (buf + doff, r_buf_get_at (newbuf, tsize + rosize, NULL), r_buf_size (bf->buf) - doff, dsize) != dsize) {
+	r_buf_write_at (newbuf, tsize, tmp, rosize);
+	R_FREE (tmp);
+
+	tmp = R_NEWS (ut8, dsize);
+	if (!tmp) {
+		goto fail;
+	}
+	if (decompress (buf + doff, tmp, r_buf_size (bf->buf) - doff, dsize) != dsize) {
 		eprintf ("decompression3 failure\n");
 		goto fail;
 	}
+	r_buf_write_at (newbuf, tsize + rosize, tmp, dsize);
+	R_FREE (tmp);
+
 	/* Load unpacked binary */
-	r_io_write_at (rbin->iob.io, ba, r_buf_get_at (newbuf, 0, NULL), total_size);
+	const ut8 *tmpbuf = r_buf_buffer (newbuf, &total_size);
+	r_io_write_at (rbin->iob.io, ba, tmpbuf, total_size);
 	ut32 modoff = readLE32 (newbuf, NSO_OFFSET_MODMEMOFF);
 	RBinNXOObj *bin = nso_new ();
 	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
@@ -101,6 +124,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	*bin_obj = bin;
 	return true;
 fail:
+	free (tmp);
 	r_buf_free (newbuf);
 	*bin_obj = NULL;
 	return false;
@@ -231,7 +255,13 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	const char *ft = fileType (r_buf_get_at (bf->buf, NSO_OFF (magic), NULL));
+	ut8 magic[4];
+	if (r_buf_read_at (bf->buf, NSO_OFF (magic), magic, sizeof (magic)) != sizeof (magic)) {
+		free (ret);
+		return NULL;
+	}
+
+	const char *ft = fileType (magic);
 	if (!ft) {
 		ft = "nso";
 	}
