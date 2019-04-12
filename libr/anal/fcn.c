@@ -50,8 +50,6 @@ typedef struct fcn_tree_iter_t {
 static Sdb *HB = NULL;
 #endif
 
-
-
 R_API const char *r_anal_fcn_type_tostring(int type) {
 	switch (type) {
 	case R_ANAL_FCN_TYPE_NULL: return "null";
@@ -1184,7 +1182,6 @@ repeat:
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
-			
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
@@ -1210,7 +1207,6 @@ repeat:
 					return R_ANAL_RET_END;
 				}
 			}
-				
 			break;
 		case R_ANAL_OP_TYPE_LEA:
 			// if first byte in op.ptr is 0xff, then set leaddr assuming its a jumptable
@@ -2492,7 +2488,6 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
-			memset (&op, 0, sizeof (op));
 			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_OPEX);
 			if (op.size < 1) {
 				op.size = 1;
@@ -2500,7 +2495,7 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
 				if (can_affect_bp (anal, &op) && op.src[0] && op.src[0]->reg && op.src[0]->reg->name
-				&& strcmp(op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {	
+				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {	
 					fcn->rbp_as_frame_ptr = false;
 				}
 				break;
