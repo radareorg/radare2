@@ -50,7 +50,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
       patch_cmd = run_command(git_exe, patch_cmd_str.split())
       if patch_cmd.returncode() != 0
-        error('Cannot apply patch ' + file)
+        warning('Cannot apply patch ' + file)
       endif
     endforeach
   endif
