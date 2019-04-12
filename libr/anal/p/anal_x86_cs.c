@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -1328,6 +1328,24 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					src, bits, src, dst);
 		}
 		break;
+	case X86_INS_BSWAP:
+		{
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			if (INSOP(0).size == 4) {
+				esilprintf (op, "0xff000000,24,%s,NUM,<<,&,24,%s,NUM,>>,|,"
+						"8,0x00ff0000,%s,NUM,&,>>,|,"
+						"8,0x0000ff00,%s,NUM,&,<<,|,"
+						"%s,=", dst, dst, dst, dst, dst);
+			} else {
+				esilprintf (op, "0xff00000000000000,56,%s,NUM,<<,&,"
+						"56,%s,NUM,>>,|,40,0xff000000000000,%s,NUM,&,>>,|,"
+						"40,0xff00,%s,NUM,&,<<,|,24,0xff0000000000,%s,NUM,&,>>,|,"
+						"24,0xff0000,%s,NUM,&,<<,|,8,0xff00000000,%s,NUM,&,>>,|,"
+						"8,0xff000000,%s,NUM,&,<<,|,"
+						"%s,=", dst, dst, dst, dst, dst, dst, dst, dst, dst);
+			}
+		}
+		break;
 	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
@@ -1651,7 +1669,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		break;
 	case X86_INS_FADD:
+#if CS_API_MAJOR > 4
+	case X86_INS_PFADD:
+#else
 	case X86_INS_FADDP:
+#endif
 		break;
 	case X86_INS_ADDPS:
 	case X86_INS_ADDSD:
@@ -1892,7 +1914,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_FPREM:
 	case X86_INS_FPREM1:
 	case X86_INS_FPTAN:
-#if CS_API_MAJOR >=4
+#if CS_API_MAJOR >= 4
 	case X86_INS_FFREEP:
 #endif
 	case X86_INS_FRNDINT:
@@ -2388,7 +2410,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_UD0:
 #endif
 	case X86_INS_UD2:
+#if CS_API_MAJOR == 4
 	case X86_INS_UD2B:
+#endif
 	case X86_INS_INT3:
 		op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
 		break;
@@ -2722,7 +2746,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_FADD:
+#if CS_API_MAJOR == 4
 	case X86_INS_FADDP:
+#endif
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;

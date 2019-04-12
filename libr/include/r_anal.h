@@ -348,6 +348,7 @@ enum {
 	R_ANAL_OP_FAMILY_CRYPTO, /* cryptographic instructions */
 	R_ANAL_OP_FAMILY_THREAD, /* thread/lock/sync instructions */
 	R_ANAL_OP_FAMILY_VIRT,   /* virtualization instructions */
+	R_ANAL_OP_FAMILY_PAC,    /* pointer authentication instructions */
 	R_ANAL_OP_FAMILY_IO,     /* IO instructions (i.e. IN/OUT) */
 	R_ANAL_OP_FAMILY_LAST
 };
@@ -809,7 +810,7 @@ typedef enum r_anal_data_type_t {
 } RAnalDataType;
 
 typedef struct r_anal_op_t {
-	char *mnemonic; /* mnemonic */
+	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
 	ut64 addr;      /* address */
 	ut32 type;      /* type of opcode */
 	ut64 prefix;    /* type of opcode prefix (rep,lock,..) */

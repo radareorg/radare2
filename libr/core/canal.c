@@ -557,7 +557,6 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 			if (core->anal->limit) {
 				if (ref->addr < core->anal->limit->from ||
 						ref->addr > core->anal->limit->to) {
-					free (buf);
 					return 1;
 				}
 			}
