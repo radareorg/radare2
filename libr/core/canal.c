@@ -849,7 +849,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
-
 	if (has_next) {
 		for (i = 0; i < nexti; i++) {
 			if (!next[i] || r_anal_get_fcn_in (core->anal, next[i], 0)) {
@@ -858,6 +857,10 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			r_core_anal_fcn (core, next[i], from, 0, depth - 1);
 		}
 		free (next);
+	}
+	r_anal_fcn_check_bp_use(core->anal, fcn);
+	if (!fcn->rbp_as_frame_ptr) {
+		r_anal_var_delete_all(core->anal, fcn->addr, 'b');
 	}
 	r_anal_hint_free (hint);
 	return true;
@@ -897,6 +900,10 @@ error:
 				free (next);
 			}
 		}
+	}
+	r_anal_fcn_check_bp_use(core->anal, fcn);
+	if (!fcn->rbp_as_frame_ptr) {
+		r_anal_var_delete_all(core->anal, fcn->addr, 'b');
 	}
 	r_anal_hint_free (hint);
 	return false;
@@ -1643,7 +1650,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	if (r_cons_is_breaked ()) {
 		return false;
 	}
-
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->addr == at) {
