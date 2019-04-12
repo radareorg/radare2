@@ -21,6 +21,8 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	LIBMAGIC = '' ;
 }
 
+ARG_WITH CSNEXT capstone5 build next branch of the capstone repository ;
+
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
