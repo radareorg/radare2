@@ -457,17 +457,30 @@ static const char *vas_name(arm64_vas vas) {
 		return "2s";
 	case ARM64_VAS_4S:
 		return "4s";
-	case ARM64_VAS_1D:
-		return "1d";
 	case ARM64_VAS_2D:
 		return "2d";
+	case ARM64_VAS_1D:
+		return "1d";
 	case ARM64_VAS_1Q:
 		return "1q";
+#if CS_API_MAJOR > 4
+	case ARM64_VAS_1B:
+		return "8b";
+	case ARM64_VAS_4B:
+		return "8b";
+	case ARM64_VAS_2H:
+		return "2h";
+	case ARM64_VAS_1H:
+		return "1h";
+	case ARM64_VAS_1S:
+		return "1s";
+#endif
 	default:
 		return "";
 	}
 }
 
+#if CS_API_MAJOR == 4
 static const char *vess_name(arm64_vess vess) {
 	switch (vess) {
 	case ARM64_VESS_B:
@@ -482,6 +495,7 @@ static const char *vess_name(arm64_vess vess) {
 		return "";
 	}
 }
+#endif
 
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
@@ -595,9 +609,11 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vas != ARM64_VAS_INVALID) {
 			r_strbuf_appendf (buf, ",\"vas\":\"%s\"", vas_name (op->vas));
 		}
+#if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
 			r_strbuf_appendf (buf, ",\"vess\":\"%s\"", vess_name (op->vess));
 		}
+#endif
 		r_strbuf_append (buf, "}");
 	}
 	r_strbuf_append (buf, "]");
