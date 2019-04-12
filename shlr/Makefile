@@ -13,7 +13,7 @@ else
 CS_RELEASE=1
 endif
 
-CS_NEXT=1
+CS_NEXT=0
 
 CAPSTONE_CFLAGS?=-g
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
@@ -38,8 +38,8 @@ ifeq ($(CS_NEXT),1)
 CS_TIP=3a660df88c30685cccf6ff68b4d6d4337b5caf7e
 CS_BRA=next
 else
-CS_TIP=472845db9c2666ab66b3f517dda21f2b026a06c1
-CS_BRA=master
+CS_TIP=7090f081b17a5293a2c185a06513fede18065d3c
+CS_BRA=v4
 endif
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 #CS_BRA=next
