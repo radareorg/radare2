@@ -1328,6 +1328,24 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					src, bits, src, dst);
 		}
 		break;
+	case X86_INS_BSWAP:
+		{
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			if (INSOP(0).size == 4) {
+				esilprintf (op, "0xff000000,24,%s,NUM,<<,&,24,%s,NUM,>>,|,"
+						"8,0x00ff0000,%s,NUM,&,>>,|,"
+						"8,0x0000ff00,%s,NUM,&,<<,|,"
+						"%s,=", dst, dst, dst, dst, dst);
+			} else {
+				esilprintf (op, "0xff00000000000000,56,%s,NUM,<<,&,"
+						"56,%s,NUM,>>,|,40,0xff000000000000,%s,NUM,&,>>,|,"
+						"40,0xff00,%s,NUM,&,<<,|,24,0xff0000000000,%s,NUM,&,>>,|,"
+						"24,0xff0000,%s,NUM,&,<<,|,8,0xff00000000,%s,NUM,&,>>,|,"
+						"8,0xff000000,%s,NUM,&,<<,|,"
+						"%s,=", dst, dst, dst, dst, dst, dst, dst, dst, dst);
+			}
+		}
+		break;
 	case X86_INS_OR:
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
