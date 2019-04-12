@@ -1,0 +1,15 @@
+diff --git a/include/capstone/capstone.h b/include/capstone/capstone.h
+index f66f305..261fc00 100644
+--- a/include/capstone/capstone.h
++++ b/include/capstone/capstone.h
+@@ -47,8 +47,9 @@ extern "C" {
+ #endif
+ 
+ // Capstone API version
+-#define CS_API_MAJOR 5
++#define CS_API_MAJOR 4
+ #define CS_API_MINOR 0
++#define CS_API_PATCH 2
+ 
+ // Version for bleeding edge code of the Github's "next" branch.
+ // Use this if you want the absolutely latest development code.

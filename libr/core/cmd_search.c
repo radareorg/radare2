@@ -1888,13 +1888,11 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
-	ut8 *buf;
 	RAnalOp aop;
 	int type = 0;
 	int mode = 0;
-	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
-	int count = 0;
+	int i, ret, count = 0;
 	bool firstItem = true;
 
 	while (*input && *input != ' ') {

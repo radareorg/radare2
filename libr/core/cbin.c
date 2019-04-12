@@ -2386,7 +2386,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		if (!list) {
 			return false;
 		}
-		SdbListIter *iter;
 		RBinSection *s;
 		r_list_foreach (sections, iter, s) {
 			char humansz[8];
