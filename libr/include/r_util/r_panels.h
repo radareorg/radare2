@@ -32,7 +32,7 @@ typedef struct r_panel_model_t {
 	char *title;
 	ut64 baseAddr;
 	ut64 addr;
-	bool caching;
+	bool cache;
 	char *cmdStrCache;
 	char *funcName;
 } RPanelModel;
