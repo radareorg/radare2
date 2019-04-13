@@ -1235,7 +1235,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
 		char * utf_encoded_buf = NULL;
-		p->cb_printf ("%d,\"string\":\"", seeki);
+		p->cb_printf ("\"");
 		utf_encoded_buf = r_str_escape_utf8 ((const char *) buf, true, true);
 		if (utf_encoded_buf){
 			p->cb_printf ("%s", utf_encoded_buf);
