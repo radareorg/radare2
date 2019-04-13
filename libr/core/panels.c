@@ -79,8 +79,8 @@ static const char *menus_Edit[] = {
 };
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
-	"Stack", "StackRefs", "Var READ address", "Var WRITE address",
+	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
+	"Stack", "StackRefs", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
 
@@ -2954,6 +2954,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
 	sdb_set (panels->db, "Entropy", "p=e", 0);
+	sdb_set (panels->db, "Entropy Fire", "p==e", 0);
 	sdb_set (panels->db, "DRX", "drx", 0);
 	sdb_set (panels->db, "Sections", "iSq", 0);
 	sdb_set (panels->db, "Strings", "izq", 0);
@@ -2967,6 +2968,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "New", "o", 0);
 	sdb_set (panels->db, "Var READ address", "afvR", 0);
 	sdb_set (panels->db, "Var WRITE address", "afvW", 0);
+	sdb_set (panels->db, "Summary", "pdsf", 0);
 }
 
 static void mht_free_kv(HtPPKv *kv) {
