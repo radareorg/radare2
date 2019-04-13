@@ -2251,7 +2251,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (mode & R_PRINT_STRUCT) {
 				char *type = get_format_type (tmp);
 				if (type) {
-					r_cons_printf ("    %s %s;", type, fieldname);
+					p->cb_printf ("    %s %s;", type, fieldname);
 				}
 				free (type);
 			}
