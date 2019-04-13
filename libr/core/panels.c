@@ -522,9 +522,11 @@ static void layoutDefault(RPanels *panels) {
 	p1->view->pos.y = 1;
 	p1->view->pos.w = colpos / 2 + 1;
 	p1->view->pos.h = h - 1;
+
+	int pos_x = p1->view->pos.x + p1->view->pos.w - 1;
 	for (i = 2; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		p->view->pos.x = colpos;
+		p->view->pos.x = pos_x;
 		p->view->pos.y = 2 + (ph * (i - 2));
 		p->view->pos.w = w - colpos;
 		if (p->view->pos.w < 0) {
