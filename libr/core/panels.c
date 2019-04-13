@@ -484,6 +484,7 @@ char *handleCmdStrCache(RCore *core, RPanel *panel) {
 	char *ret;
 	ret = r_core_cmd_str (core, panel->model->cmd);
 	if (panel->model->cache && R_STR_ISNOTEMPTY (ret)) {
+		free (panel->model->cmdStrCache);
 		panel->model->cmdStrCache = ret;
 	}
 	return ret;
@@ -620,6 +621,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	p0->view->pos.y = 1;
 	p0->view->pos.w = PANEL_CONFIG_SIDEPANEL_W;
 	p0->view->pos.h = h - 1;
+	free (p0->model->cmdStrCache);
 	p0->model->cmdStrCache = loadCmdf (core, p0, input, str);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
@@ -1634,9 +1636,10 @@ static void replaceCmd(RCore *core, const char *title, const char *cmd, const bo
 	RPanel *cur = getCurPanel (panels);
 	freePanelModel (cur);
 	cur->model = R_NEW0 (RPanelModel);
-	cur->model->title = r_str_new (title);
-	cur->model->cmd = r_str_new (cmd);
+	cur->model->title = r_str_dup (cur->model->title, title);
+	cur->model->cmd = r_str_dup (cur->model->cmd, cmd);
 	cur->model->cache = cache;
+	free (cur->model->cmdStrCache);
 	cur->model->cmdStrCache = NULL;
 	cur->model->addr = core->offset;
 	cur->model->type = PANEL_TYPE_DEFAULT;
@@ -1745,23 +1748,24 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 	RPanelModel *m = p->model;
 	RPanelView *v = p->view;
 	if (title) {
-		m->title = r_str_new (title);
+		m->title = r_str_dup (m->title, title);
 		if (cmd) {
-			m->cmd = r_str_new (cmd);
+			m->cmd = r_str_dup (m->cmd, cmd);
 		} else {
-			m->cmd = r_str_new ("");
+			m->cmd = r_str_dup (m->cmd, "");
 		}
 	} else if (cmd) {
-		m->title = r_str_new (cmd);
-		m->cmd = r_str_new (cmd);
+		m->title = r_str_dup (m->title, cmd);
+		m->cmd = r_str_dup (m->cmd, cmd);
 	} else {
-		m->title = r_str_new ("");
-		m->cmd = r_str_new ("");
+		m->title = r_str_dup (m->title, "");
+		m->cmd = r_str_dup (m->cmd, "");
 	}
 	m->cache = cache;
 	m->type = PANEL_TYPE_DEFAULT;
 	v->curpos = 0;
 	m->addr = core->offset;
+	free (m->cmdStrCache);
 	m->cmdStrCache = NULL;
 	m->funcName = NULL;
 	v->refresh = true;
@@ -3380,6 +3384,7 @@ static void toggleWindowMode(RPanels *panels) {
 
 static void toggleCache (RPanel *p) {
 	p->model->cache = !p->model->cache;
+	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = NULL;
 	p->view->refresh = true;
 }
