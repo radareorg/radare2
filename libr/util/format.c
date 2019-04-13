@@ -705,7 +705,7 @@ static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 	return seeki - prevseeki;
 }
 
-static void r_print_format_octal (const RPrint* p, int endian, int mode,
+static void r_print_format_octal(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
@@ -1317,7 +1317,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char* fmtname,
 	free (bitfield);
 }
 
-static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
+static void r_print_format_enum(const RPrint* p, ut64 seeki, char* fmtname,
 		char* fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
 	switch (size) {
@@ -1349,7 +1349,7 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 	free (enumvalue);
 }
 
-static void r_print_format_register (const RPrint* p, int mode,
+static void r_print_format_register(const RPrint* p, int mode,
 		const char *name, const char* setval) {
 	if (!p || !p->get_register || !p->reg) {
 		return;
@@ -1372,7 +1372,7 @@ static void r_print_format_register (const RPrint* p, int mode,
 	}
 }
 
-static void r_print_format_num_specifier (const RPrint *p, ut64 addr, int bytes, int sign) {
+static void r_print_format_num_specifier(const RPrint *p, ut64 addr, int bytes, int sign) {
 #define EXT(T) (sign ? (signed T)(addr) : (unsigned T)(addr) )
 	const char *fs64 = sign ? "%"PFMT64d : "%"PFMT64u;
 	const char *fs = sign ? "%d" : "%u";
@@ -1388,7 +1388,7 @@ static void r_print_format_num_specifier (const RPrint *p, ut64 addr, int bytes,
 #undef EXT
 }
 
-static void r_print_format_num (const RPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
+static void r_print_format_num(const RPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
 	ut64 addr = 0LL;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
