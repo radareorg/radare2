@@ -2534,9 +2534,11 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
+#if 0
 				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find) && at + op.size < fcn->addr + fcn->_size - 1) {
 					fcn->rbp_as_frame_ptr = false;
 				}
+#endif
 				break;
 			}
 			idx += op.size;
