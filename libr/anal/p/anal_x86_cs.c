@@ -774,6 +774,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
 		}
 		break;
+	case X86_INS_CPUID:
+		// https://c9x.me/x86/html/file_module_x86_id_45.html
+		// GenuineIntel
+		esilprintf (op, "0xa,eax,=,0x756E6547,ebx,=,0x6C65746E,ecx,=,0x49656E69,edx,=");
+		break;
 	case X86_INS_SHLD:
 	case X86_INS_SHLX:
 		// TODO: SHLD is not implemented yet.
@@ -2079,6 +2084,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_VALIGNQ:
 	case X86_INS_VPALIGNR:
 		op->type = R_ANAL_OP_TYPE_AND;
+		op->family = R_ANAL_OP_FAMILY_CPU;
+		break;
+	case X86_INS_CPUID:
+		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_CPU;
 		break;
 	case X86_INS_SFENCE:
