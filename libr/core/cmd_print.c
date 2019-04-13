@@ -299,6 +299,7 @@ static const char *help_msg_pf[] = {
 	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
+	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
 	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
 	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
 	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
@@ -1158,6 +1159,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	case 'v': // "pfv"
 		_input++;
 		mode = R_PRINT_VALUE | R_PRINT_MUSTSEE;
+		break;
+	case 'c': // "pfc"
+		_input++;
+		mode = R_PRINT_STRUCT;
 		break;
 	case 's': { // "pfs"
 		const char *val = NULL;

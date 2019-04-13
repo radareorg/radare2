@@ -1767,6 +1767,58 @@ static char* get_args_offset(const char *arg) {
 	return args;
 }
 
+static char* get_format_type(const char fmt) {
+	char *type = NULL;
+	switch (fmt) {
+	case 'b':
+	case 'C':
+		type = strdup ("unsigned char");
+		break;
+	case 'c':
+		type = strdup ("char");
+		break;
+	case 'd':
+		type = strdup ("unsigned int");
+		break;
+	case 'f':
+		type = strdup ("float");
+		break;
+	case 'F':
+		type = strdup ("double");
+		break;
+	case 'i':
+	case 'o':
+		type = strdup ("int");
+		break;
+	case 'p':
+		type = strdup ("void*");
+		break;
+	case 'q':
+		type = strdup ("long long");
+		break;
+	case 'u':
+		type = strdup ("uleb128_t");
+		break;
+	case 'w':
+		type = strdup ("unsigned short");
+		break;
+	case 'x':
+		type = strdup ("long");
+		break;
+	case 'X':
+		type = strdup ("unsigned char[]");
+		break;
+	case 'D':
+	case 's':
+	case 'S':
+	case 't':
+	case 'z':
+	case 'Z':
+		type = strdup ("char*");
+	}
+	return type;
+}
+
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
@@ -1871,6 +1923,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 #define ISNESTED ((slide%STRUCTPTR)<=(oldslide%STRUCTPTR))
 	if (mode == R_PRINT_JSON && slide == 0) {
 		p->cb_printf ("[");
+	}
+	if (mode == R_PRINT_STRUCT) {
+		if (formatname && *formatname) {
+			if (strchr (formatname, ' ')) {
+				p->cb_printf ("struct {\n");
+			} else {
+				p->cb_printf ("struct %s {\n", formatname);
+			}
+		} else {
+			p->cb_printf ("struct {\n");
+		}
 	}
 	if (mode && arg[0] == '0') {
 		mode |= R_PRINT_UNIONMODE;
@@ -2185,6 +2248,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->cb_printf ("\",\"offset\":%d,\"value\":",
 					isptr? (seek + nexti - (p->bits / 8)) : seek + i);
 			}
+
+			/* c struct */
+			if (mode & R_PRINT_STRUCT) {
+				char *type = get_format_type (tmp);
+				if (type) {
+					p->cb_printf ("    %s %s;", type, fieldname);
+				}
+				free (type);
+			}
 			bool noline = false;
 
 			int oi = i;
@@ -2471,6 +2543,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				} //switch
 			}
+			if (mode & R_PRINT_STRUCT) {
+				p->cb_printf ("\n");
+			}
 			if (mode & R_PRINT_DOT) {
 				p->cb_printf ("}");
 			}
@@ -2525,6 +2600,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	}
 	if (mode & R_PRINT_JSON && slide == 0) {
 		p->cb_printf("]\n");
+	}
+	if (mode & R_PRINT_STRUCT) {
+		p->cb_printf ("}\n");
 	}
 	if (mode & R_PRINT_DOT) {
 		p->cb_printf ("\"];\n}\n");
