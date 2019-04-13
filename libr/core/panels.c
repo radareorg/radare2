@@ -3645,12 +3645,16 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	}
 
 	r_cons_switchbuf (false);
+
 	int originCursor = core->print->cur;
 	core->print->cur = 0;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
+
 	bool originVmode = core->vmode;
 	core->vmode = true;
+
+	int color = r_config_get_i (core->config, "scr.color");
 
 	r_cons_enable_mouse (false);
 
@@ -3803,10 +3807,11 @@ repeat:
 		activateCursor (core);
 		break;
 	case 'C':
-		can->color = !can->color;
-		// r_config_toggle (core->config, "scr.color");
-		// refresh graph
-		setRefreshAll (panels, false);
+		if (++color > 2) {
+			color = 0;
+		}
+		r_config_set_i (core->config, "scr.color", color);
+		setRefreshAll (panels, true);
 		break;
 	case 'r':
 		r_core_cmd0 (core, "e!asm.hint.jmp");
