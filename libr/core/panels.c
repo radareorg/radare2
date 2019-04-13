@@ -386,7 +386,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	char title[128], *text, *cmdStr = NULL;
 	if (color) {
 		snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+				"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
 	} else {
 		snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->model->title);
