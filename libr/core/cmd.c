@@ -806,6 +806,21 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 					r_lang_use (core->lang, "vala");
 					lang_run_file (core, core->lang, file);
 					ret = 1;
+				} else if (!strcmp (ext, "sh")) {
+					char *shell = r_sys_getenv ("SHELL");
+					if (!shell) {
+						shell = strdup ("sh");
+					}
+					if (shell) {
+						r_lang_use (core->lang, "pipe");
+						char *cmd = r_str_newf ("%s '%s'", shell, file);
+						if (cmd) {
+							lang_run_file (core, core->lang, cmd);
+							free (cmd);
+						}
+						free (shell);
+					}
+					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");

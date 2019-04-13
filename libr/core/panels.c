@@ -79,8 +79,8 @@ static const char *menus_Edit[] = {
 };
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
-	"Stack", "StackRefs", "Var READ address", "Var WRITE address",
+	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
+	"Stack", "StackRefs", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
 
@@ -386,7 +386,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	char title[128], *text, *cmdStr = NULL;
 	if (color) {
 		snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+				"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
 	} else {
 		snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->model->title);
@@ -2954,6 +2954,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
 	sdb_set (panels->db, "Entropy", "p=e", 0);
+	sdb_set (panels->db, "Entropy Fire", "p==e", 0);
 	sdb_set (panels->db, "DRX", "drx", 0);
 	sdb_set (panels->db, "Sections", "iSq", 0);
 	sdb_set (panels->db, "Strings", "izq", 0);
@@ -2967,6 +2968,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "New", "o", 0);
 	sdb_set (panels->db, "Var READ address", "afvR", 0);
 	sdb_set (panels->db, "Var WRITE address", "afvW", 0);
+	sdb_set (panels->db, "Summary", "pdsf", 0);
 }
 
 static void mht_free_kv(HtPPKv *kv) {
@@ -3645,12 +3647,16 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	}
 
 	r_cons_switchbuf (false);
+
 	int originCursor = core->print->cur;
 	core->print->cur = 0;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
+
 	bool originVmode = core->vmode;
 	core->vmode = true;
+
+	int color = r_config_get_i (core->config, "scr.color");
 
 	r_cons_enable_mouse (false);
 
@@ -3803,10 +3809,11 @@ repeat:
 		activateCursor (core);
 		break;
 	case 'C':
-		can->color = !can->color;
-		// r_config_toggle (core->config, "scr.color");
-		// refresh graph
-		setRefreshAll (panels, false);
+		if (++color > 2) {
+			color = 0;
+		}
+		r_config_set_i (core->config, "scr.color", color);
+		setRefreshAll (panels, true);
 		break;
 	case 'r':
 		r_core_cmd0 (core, "e!asm.hint.jmp");

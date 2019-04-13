@@ -872,7 +872,7 @@ static const char *radare_argv[] = {
 	"ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj", "axF",
 	"axt", "axf", "ax.", "axff", "axffj", "axs",
 	"b?", "b", "b+", "b-", "bf", "bm",
-	"c?", "c", "c1", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
+	"c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
 	"cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud",
 	"cv", "cv1", "cv2", "cv4", "cv8",
 	"cV", "cV1", "cV2", "cV4", "cV8",
