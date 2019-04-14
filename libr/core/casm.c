@@ -109,7 +109,6 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
-	// int opsz = 0;
 	char *opst = NULL;
 	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
 		if (r_cons_is_breaked ()) {
@@ -122,6 +121,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		idx = 0, matchcount = 0;
 		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
+			if (addr >= to) {
+				break;
+			}
 			r_asm_set_pc (core->assembler, addr);
 			if (mode == 'i') {
 				RAnalOp analop = {0};
