@@ -1908,7 +1908,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 			delta = 0x30;
 		}
 		if (delta) {
-			ut64 pa = Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30-1]) & ~1);
+			ut64 pa = Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[delta-1]) & ~1);
 			if (pa < r_buf_size (bin->b)) {
 				return pa;
 			}
