@@ -817,7 +817,7 @@ static const char *radare_argv[] = {
 	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!vala", "#!pipe",
-	"*?", "*",
+	"*?", "*", "$",
 	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
 	"_?", "_",
 	"=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:",
@@ -1821,6 +1821,17 @@ static int autocomplete(RLine *line) {
 			ls_free (l);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "$", 1)) {
+			int i, j = 0;
+			for (i = 0; i < core->rcmd->aliases.count; i++) {
+				const char *key = core->rcmd->aliases.keys[i];
+				int len = strlen (line->buffer.data);
+				if (!len || !strncmp (line->buffer.data, key, len)) {
+					tmp_argv[j++] = strdup (key);
+				}
+			}
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "ts ", 3)
 		|| !strncmp (line->buffer.data, "ta ", 3)
 		|| !strncmp (line->buffer.data, "tp ", 3)
@@ -1835,9 +1846,10 @@ static int autocomplete(RLine *line) {
 			int chr = (line->buffer.data[2] == ' ')? 3: 4;
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
+				const char *key = sdbkv_key (kv);
+				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
 					if (!strncmp (sdbkv_value (kv), "struct", strlen ("struct") + 1)) {
-						tmp_argv[i++] = strdup (sdbkv_key (kv));
+						tmp_argv[i++] = strdup (key);
 					}
 				}
 			}
