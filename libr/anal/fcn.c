@@ -2168,7 +2168,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if ((anal && anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+		if ((!anal || anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			eprintf ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x"\n", bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
@@ -2188,7 +2188,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	}
 
 	int result = E - N + (2 * P);
-	if (result < 1 && anal->verbose) {
+	if (result < 1 && (!anal || anal->verbose)) {
 		eprintf ("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x"\n", E, N, P, fcn->addr);
 	}
 	// r_return_val_if_fail (result > 0, 0);
