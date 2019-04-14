@@ -286,6 +286,7 @@ typedef struct r_anal_function_t {
 	bool folded;
 	bool is_pure;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
+	bool bp_frame;
 	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
@@ -1454,6 +1455,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn);
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
+R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn);
 
 
 /* locals */
