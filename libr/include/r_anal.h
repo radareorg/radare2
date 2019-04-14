@@ -473,7 +473,7 @@ typedef enum {
 	R_ANAL_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
 	R_ANAL_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
 	R_ANAL_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
-	R_ANAL_OP_MASK_ALL   = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT
+	R_ANAL_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RAnalOpMask;
 
 /* TODO: what to do with signed/unsigned conditionals? */
