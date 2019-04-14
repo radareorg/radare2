@@ -275,7 +275,7 @@ static const char *help_msg_visual[] = {
 	"I", "insert hexpair block ",
 	"mK/'K", "mark/go to Key (any key)",
 	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
-	"g", "go/seek to given offset (o[g/G]<enter> to seek begin/end of file)",
+	"g", "go/seek to given offset (g[g/G]<enter> to seek begin/end of file)",
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to radare shell",
@@ -571,7 +571,7 @@ repeat:
 	case 'm':
 		r_strbuf_appendf (p, "Visual Moving Around:\n\n");
 		r_strbuf_appendf (p,
-			" o        type flag/offset/register name to seek\n"
+			" g        type flag/offset/register name to seek\n"
 			" hl       seek to the next/previous byte\n"
 			" jk       seek to the next row (core.offset += hex.cols)\n"
 			" JK       seek one page down\n"
