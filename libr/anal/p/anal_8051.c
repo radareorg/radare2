@@ -151,9 +151,11 @@ static void set_cpu_model(RAnal *anal, bool force) {
 
 	// (Re)allocate memory as needed.
 	// We assume that code is allocated with firmware image
-	map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100, force);
-	map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80, force);
-	map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000, force);
+	if (anal->iob.fd_get_name && anal->coreb.cmd) {
+		map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100, force);
+		map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80, force);
+		map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000, force);
+	}
 }
 
 static ut8 bitindex[] = {

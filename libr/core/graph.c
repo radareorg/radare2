@@ -4296,7 +4296,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" x/X          - jump to xref/ref\n"
 				" Y            - toggle tiny graph\n"
 				" z            - toggle node folding\n"
-				" Z            - follow parent node");
+				" Z            - toggle basic block folding");
 			r_cons_less ();
 			r_cons_any_key (NULL);
 			break;

@@ -117,6 +117,7 @@ typedef struct r_reg_t {
 	char *name[R_REG_NAME_LAST]; // aliases
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
+	RList *roregs;
 	int iters;
 	int arch;
 	int bits;
@@ -142,6 +143,7 @@ R_API int r_reg_set_name(RReg *reg, int role, const char *name);
 R_API int r_reg_set_profile_string(RReg *reg, const char *profile);
 R_API int r_reg_set_profile(RReg *reg, const char *profile);
 R_API int r_reg_parse_gdb_profile(const char *profile);
+R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);

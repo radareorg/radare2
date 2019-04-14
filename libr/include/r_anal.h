@@ -286,6 +286,7 @@ typedef struct r_anal_function_t {
 	bool folded;
 	bool is_pure;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
+	bool bp_frame;
 	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
@@ -472,7 +473,7 @@ typedef enum {
 	R_ANAL_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
 	R_ANAL_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
 	R_ANAL_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
-	R_ANAL_OP_MASK_ALL   = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT
+	R_ANAL_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RAnalOpMask;
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -1454,6 +1455,7 @@ R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 R_API void r_anal_fcn_update_tinyrange_bbs(RAnalFunction *fcn);
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
+R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn);
 
 
 /* locals */

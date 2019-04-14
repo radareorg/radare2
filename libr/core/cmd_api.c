@@ -188,12 +188,10 @@ R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const ch
 }
 
 R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(cb)) {
-	struct r_cmd_item_t *item;
 	int idx = (ut8)cmd[0];
-
-	item = c->cmds[idx];
+	RCmdItem *item = c->cmds[idx];
 	if (!item) {
-		item = R_NEW (RCmdItem);
+		item = R_NEW0 (RCmdItem);
 		c->cmds[idx] = item;
 	}
 	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);

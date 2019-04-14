@@ -386,6 +386,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
+	fcn->bp_frame = true;
 	r_tinyrange_init (&fcn->bbr);
 	fcn->meta.min = UT64_MAX;
 	return fcn;
@@ -1181,7 +1182,6 @@ repeat:
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
-
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
@@ -1781,7 +1781,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	int depth = anal->opt.depth;
 	recurseAt (addr)
 #endif
-
 	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
 		RAnalBlock *bb;
@@ -2168,7 +2167,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if ((anal && anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+		if ((!anal || anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			eprintf ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x"\n", bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
@@ -2188,7 +2187,7 @@ R_API int r_anal_fcn_cc(RAnal *anal, RAnalFunction *fcn) {
 	}
 
 	int result = E - N + (2 * P);
-	if (result < 1 && anal->verbose) {
+	if (result < 1 && (!anal || anal->verbose)) {
 		eprintf ("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x"\n", E, N, P, fcn->addr);
 	}
 	// r_return_val_if_fail (result > 0, 0);
@@ -2461,4 +2460,91 @@ R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
 		}
 	}
 	return fcn->is_pure;
+}
+
+static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
+	return op->dst && op->dst->reg && op->dst->reg->name &&!strcmp (op->dst->reg->name, anal->reg->name[R_REG_NAME_BP]); 
+}
+/*
+ * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
+ * and "pop bp" at the end).
+ */
+R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
+	char *pos;
+	strcat (str_to_find, anal->reg->name[R_REG_NAME_BP]);
+	if (!fcn) {
+		return;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RAnalOp op;
+		ut64 at, end = bb->addr + bb->size;
+		ut8 *buf = malloc (bb->size);
+		if (!buf) {
+			continue;
+		}
+		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
+		int idx = 0;
+		for (at = bb->addr; at < end;) {
+			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_OPEX);
+			if (op.size < 1) {
+				op.size = 1;
+			}
+			switch (op.type) {
+			case R_ANAL_OP_TYPE_MOV:
+				if (can_affect_bp (anal, &op) && op.src[0] && op.src[0]->reg && op.src[0]->reg->name
+				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {	
+					fcn->bp_frame = false;
+				}
+				break;
+			case R_ANAL_OP_TYPE_LEA:
+				if (can_affect_bp (anal, &op)) {
+					fcn->bp_frame = false;
+				}
+				break;
+			case R_ANAL_OP_TYPE_ADD:
+			case R_ANAL_OP_TYPE_AND:
+			case R_ANAL_OP_TYPE_CMOV:
+			case R_ANAL_OP_TYPE_NOT:
+			case R_ANAL_OP_TYPE_OR:
+			case R_ANAL_OP_TYPE_ROL:
+			case R_ANAL_OP_TYPE_ROR:
+			case R_ANAL_OP_TYPE_SAL:
+			case R_ANAL_OP_TYPE_SAR:
+			case R_ANAL_OP_TYPE_SHL:
+			case R_ANAL_OP_TYPE_SHR:
+			case R_ANAL_OP_TYPE_SUB:
+			case R_ANAL_OP_TYPE_XOR:
+			// op.dst is not filled for these operations, so for now, check for bp as dst looks like this; in the future it may be just replaced with call to can_affect_bp
+				if (op.opex.ptr) {
+					pos = strstr (op.opex.ptr, str_to_find);
+				}
+				else {
+					pos = NULL;
+				}
+				if (pos && pos - op.opex.ptr < 60) {
+					fcn->bp_frame = false;
+				}
+				break;
+			case R_ANAL_OP_TYPE_XCHG:
+				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
+					fcn->bp_frame = false;
+				}
+				break;
+			case R_ANAL_OP_TYPE_POP:
+#if 0
+				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find) && at + op.size < fcn->addr + fcn->_size - 1) {
+					fcn->bp_frame = false;
+				}
+#endif
+				break;
+			}
+			idx += op.size;
+			at += op.size;
+			r_anal_op_fini (&op);
+		}
+		free (buf);
+	}
 }
