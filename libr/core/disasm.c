@@ -2104,7 +2104,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		}
 	}
 	if (ds->hint && ds->hint->bits) {
-		r_config_set_i (core->config, "asm.bits", ds->hint->bits);
+		if (!ds->core->anal->opt.ignbithints) {
+			r_config_set_i (core->config, "asm.bits", ds->hint->bits);
+		}
 	}
 	if (ds->hint && ds->hint->size) {
 		ds->oplen = ds->hint->size;
