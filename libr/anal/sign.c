@@ -1576,9 +1576,8 @@ static int hashMatchCB(RSignItem *it, void *user) {
 		return 1;
 	}
 
-	char *digest_hex = NULL;
+	char *digest_hex = r_sign_calc_bbhash (ctx->anal, ctx->fcn);
 	bool retval = false;
-	digest_hex = r_sign_calc_bbhash (ctx->anal, ctx->fcn);
 	if (digest_hex && strcmp (hash->bbhash, digest_hex)) {
 		goto beach;
 	}
