@@ -156,6 +156,8 @@ R_API const char *r_reg_get_role(int role) {
 R_API void r_reg_free_internal(RReg *reg, bool init) {
 	ut32 i;
 
+	r_list_free (reg->roregs);
+	reg->roregs = NULL;
 	R_FREE (reg->reg_profile_str);
 	R_FREE (reg->reg_profile_cmt);
 
@@ -262,6 +264,20 @@ R_API RReg *r_reg_new() {
 		reg->regset[i].cur = r_list_tail (reg->regset[i].pool);
 	}
 	return reg;
+}
+
+R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
+	const char *name;
+	RListIter *iter;
+	if (!reg->roregs) {
+		return false;
+	}
+	r_list_foreach (reg->roregs, iter, name) {
+		if (!strcmp (item->name, name)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
