@@ -1236,7 +1236,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 	} else if (MUSTSEEJSON) {
 		char * utf_encoded_buf = NULL;
 		p->cb_printf ("\"");
-		utf_encoded_buf = r_str_escape_utf8_for_json ((char *) buf, -1);
+		utf_encoded_buf = r_str_escape_utf8_for_json ((char *) buf + i, -1);
 		if (utf_encoded_buf){
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
