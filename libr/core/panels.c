@@ -391,12 +391,12 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 		snprintf (title, sizeof (title) - 1,
 				"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
 		snprintf (cache_title, sizeof (cache_title) - 1,
-				"%s[cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "on" : "off");
+				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
 	} else {
 		snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->model->title);
 		snprintf (cache_title, sizeof (cache_title) - 1,
-				"[cache] %s", panel->model->cache ? "on" : "off");
+				"[Cache] %s", panel->model->cache ? "On" : "Off");
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
 		r_cons_canvas_write (can, title);
