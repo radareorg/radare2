@@ -386,16 +386,23 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
 	int graph_pad = 0;
-	char title[128], *text, *cmdStr = NULL;
+	char title[128], cache_title[128], *text, *cmdStr = NULL;
 	if (color) {
 		snprintf (title, sizeof (title) - 1,
 				"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+		snprintf (cache_title, sizeof (cache_title) - 1,
+				"%s[cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "on" : "off");
 	} else {
 		snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->model->title);
+		snprintf (cache_title, sizeof (cache_title) - 1,
+				"[cache] %s", panel->model->cache ? "on" : "off");
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
 		r_cons_canvas_write (can, title);
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (cache_title) - 2, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, cache_title);
 	}
 	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
 	if (panel->model->cmd) {
