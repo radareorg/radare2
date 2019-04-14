@@ -2306,6 +2306,14 @@ static int cb_dirpfx(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static int cb_anal_roregs(RCore *core, RConfigNode *node) {
+	if (core && core->anal && core->anal->reg) {
+		r_list_free (core->anal->reg->roregs);
+		core->anal->reg->roregs = r_str_split_duplist (node->value, ",");
+	}
+	return true;
+}
+
 static int cb_anal_gp(RCore *core, RConfigNode *node) {
 	core->anal->gp = node->i_value;
 	return true;
@@ -2629,6 +2637,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
+	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETI ("anal.gp2", 0, "Set anal.gp before emulating each instruction (workaround)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");

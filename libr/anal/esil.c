@@ -657,7 +657,7 @@ static int esil_weak_eq(RAnalEsil *esil) {
 	}
 
 	ut64 src_num;
-	if (r_anal_esil_get_parm(esil, src, &src_num)) {
+	if (r_anal_esil_get_parm (esil, src, &src_num)) {
 		const int ret = r_anal_esil_reg_write (esil, dst, src_num);
 		free (src);
 		free (dst);

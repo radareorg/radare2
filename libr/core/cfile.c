@@ -13,10 +13,12 @@ static void loadGP(RCore *core) {
 	if (strstr (core->assembler->cur->arch, "mips")) {
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
-			eprintf ("[mips] Finding out GP by emulating few instructions in the entrypoint...\n");
+			r_config_set (core->config, "anal.roregs", "zero");
 			r_core_cmd0 (core, "10aes@entry0");
+			r_config_set (core->config, "anal.roregs", "zero,gp");
 			gp = r_reg_getv (core->anal->reg, "gp");
 		}
+		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		r_config_set_i (core->config, "anal.gp", gp);
 	}
 }
