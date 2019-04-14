@@ -286,7 +286,7 @@ typedef struct r_anal_function_t {
 	bool folded;
 	bool is_pure;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
-	bool rbp_as_frame_ptr;
+	bool bp_frame;
 	RAnalType *args; // list of arguments
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;

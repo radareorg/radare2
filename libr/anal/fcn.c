@@ -386,7 +386,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
-	fcn->rbp_as_frame_ptr = true;
+	fcn->bp_frame = true;
 	r_tinyrange_init (&fcn->bbr);
 	fcn->meta.min = UT64_MAX;
 	return fcn;
@@ -2496,12 +2496,12 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_MOV:
 				if (can_affect_bp (anal, &op) && op.src[0] && op.src[0]->reg && op.src[0]->reg->name
 				&& strcmp (op.src[0]->reg->name, anal->reg->name[R_REG_NAME_SP])) {	
-					fcn->rbp_as_frame_ptr = false;
+					fcn->bp_frame = false;
 				}
 				break;
 			case R_ANAL_OP_TYPE_LEA:
 				if (can_affect_bp (anal, &op)) {
-					fcn->rbp_as_frame_ptr = false;
+					fcn->bp_frame = false;
 				}
 				break;
 			case R_ANAL_OP_TYPE_ADD:
@@ -2525,18 +2525,18 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 					pos = NULL;
 				}
 				if (pos && pos - op.opex.ptr < 60) {
-					fcn->rbp_as_frame_ptr = false;
+					fcn->bp_frame = false;
 				}
 				break;
 			case R_ANAL_OP_TYPE_XCHG:
 				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
-					fcn->rbp_as_frame_ptr = false;
+					fcn->bp_frame = false;
 				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
 #if 0
 				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find) && at + op.size < fcn->addr + fcn->_size - 1) {
-					fcn->rbp_as_frame_ptr = false;
+					fcn->bp_frame = false;
 				}
 #endif
 				break;
