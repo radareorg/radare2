@@ -3186,10 +3186,35 @@ struct exec_command_t {
 
 static bool exec_command_on_flag(RFlagItem *flg, void *u) {
 	struct exec_command_t *user = (struct exec_command_t *)u;
-	r_core_seek (user->core, flg->offset, 1);
 	r_core_block_size (user->core, flg->size);
+	r_core_seek (user->core, flg->offset, 1);
 	r_core_cmd0 (user->core, user->cmd);
 	return true;
+}
+
+static void foreach_pairs (RCore *core, const char *cmd, const char *each) {
+	const char *arg;
+	int pair = 0;
+	for (arg = each ; ; ) {
+		char *next = strchr (arg, ' ');
+		if (next) {
+			*next = 0;
+		}
+		if (arg && *arg) {
+			ut64 n = r_num_get (NULL, arg);
+			if (pair%2) {
+				r_core_block_size (core, n);
+				r_core_cmd0 (core, cmd);
+			} else {
+				r_core_seek (core, n, 1);
+			}
+			pair++;
+		}
+		if (!next) {
+			break;
+		}
+		arg = next + 1;
+	}
 }
 
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
@@ -3197,36 +3222,56 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	RList *list, *head;
 	RListIter *iter;
 	int i;
+	const char *filter = NULL;
+
+	if (each[1] == ':') {
+		filter = each + 2;
+	}
 
 	switch (each[0]) {
 	case '=':
-		{
-		char *arg;
-		for (arg = each + 1; ; ) {
-			char *next = strchr (arg, ' ');
-			if (next) {
-				*next = 0;
-			}
-			if (arg && *arg) {
-				r_core_cmdf (core, "%s %s", cmd, arg);
-			}
-			if (!next) {
-				break;
-			}
-			arg = next + 1;
-		}
-		}
+		foreach_pairs (core, cmd, each + 1);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_at_at_at);
 		break;
 	case 'c':
-		switch (each[1]) {
-		case 'a': // call
-			break;
-		default:
-			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd, UT64_MAX);
-			break;
+		if (filter) {
+			char *arg = r_core_cmd_str (core, filter);
+			foreach_pairs (core, cmd, arg);
+			free (arg);
+		} else {
+			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
+		}
+		break;
+	case 'C':
+		r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd, UT64_MAX);
+		break;
+	case 'm':
+		{
+			int fd = r_io_fd_get_current (core->io);
+			// only iterate maps of current fd
+			RList *maps = r_io_map_get_for_fd (core->io, fd);
+			RIOMap *map;
+			if (maps) {
+				RListIter *iter;
+				r_list_foreach (maps, iter, map) {
+					r_core_seek (core, map->itv.addr, 1);
+					r_core_block_size (core, map->itv.size);
+					r_core_cmd0 (core, cmd);
+				}
+				r_list_free (maps);
+			}
+		}
+		break;
+	case 'M':
+		if (dbg && dbg->h && dbg->maps) {
+			RDebugMap *map;
+			r_list_foreach (dbg->maps, iter, map) {
+				r_core_seek (core, map->addr, 1);
+				//r_core_block_size (core, map->size);
+				r_core_cmd0 (core, cmd);
+			}
 		}
 		break;
 	case 't':
@@ -3289,7 +3334,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_core_seek (core, offorig, 1);
 		}
 		break;
-	case 'S':
+	case 'S': // "@@@S"
 		{
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			if (obj) {
@@ -3302,8 +3347,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_block_size (core, sec->vsize);
 					r_core_cmd0 (core, cmd);
 				}
-				r_core_seek (core, offorig, 1);
 				r_core_block_size (core, bszorig);
+				r_core_seek (core, offorig, 1);
 			}
 		}
 #if ATTIC
@@ -3331,20 +3376,22 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			// symbols
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
+			ut64 obs = core->blocksize;
 			list = r_bin_get_symbols (core->bin);
 			r_list_foreach (list, iter, sym) {
+				r_core_block_size (core, sym->size);
 				r_core_seek (core, sym->vaddr, 1);
 				r_core_cmd0 (core, cmd);
 			}
+			r_core_block_size (core, obs);
 			r_core_seek (core, offorig, 1);
 		}
 		break;
-	case 'f':
+	case 'f': // flags
 		{
-			char *glob = r_str_trim (strdup (each + 1));
+			char *glob = filter? r_str_trim (strdup (filter)): NULL;
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
-
 			struct exec_command_t u = { .core = core, .cmd = cmd };
 			r_flag_foreach_glob (core->flags, glob, exec_command_on_flag, &u);
 			r_core_seek (core, off, 0);
@@ -3352,16 +3399,39 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			free (glob);
 		}
 		break;
-	case 'F':
+	case 'F': // functions
 		{
+			ut64 obs = core->blocksize;
 			ut64 offorig = core->offset;
 			RAnalFunction *fcn;
 			list = core->anal->fcns;
 			r_list_foreach (list, iter, fcn) {
-				r_core_seek (core, fcn->addr, 1);
-				r_core_cmd0 (core, cmd);
+				if (!filter || r_str_glob (fcn->name, filter)) {
+					r_core_seek (core, fcn->addr, 1);
+					r_core_block_size (core, r_anal_fcn_size (fcn));
+					r_core_cmd0 (core, cmd);
+				}
 			}
+			r_core_block_size (core, obs);
 			r_core_seek (core, offorig, 1);
+		}
+		break;
+	case 'b':
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			ut64 offorig = core->offset;
+			ut64 obs = core->blocksize;
+			if (fcn) {
+				RListIter *iter;
+				RAnalBlock *bb;
+				r_list_foreach (fcn->bbs, iter, bb) {
+					r_core_seek (core, bb->addr, 1);
+					r_core_block_size (core, bb->size);
+					r_core_cmd0 (core, cmd);
+				}
+				r_core_block_size (core, obs);
+				r_core_seek (core, offorig, 1);
+			}
 		}
 		break;
 	}

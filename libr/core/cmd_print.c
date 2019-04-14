@@ -152,11 +152,20 @@ static const char *help_msg_at_at[] = {
 
 static const char *help_msg_at_at_at[] = {
 	"@@@", "", " # foreach offset+size iterator command:",
+	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
+	"x", " @@@b", "basic blocks of current function",
+	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
+	"x", " @@@C:cmd", "comments matching",
 	"x", " @@@i", "imports",
+	"x", " @@@r", "registers",
 	"x", " @@@s", "symbols",
 	"x", " @@@S", "sections",
+	"x", " @@@m", "io.maps",
+	"x", " @@@M", "dbg.maps (See ?$?~size)",
 	"x", " @@@f", "flags",
-	"x", " @@@F", "functions",
+	"x", " @@@f:hit*", "flags matching glob expression",
+	"x", " @@@F", "functions (set fcn size which may be incorrect if not linear)",
+	"x", " @@@F:glob", "functions matching glob expression",
 	"x", " @@@t", "threads",
 	"x", " @@@r", "regs",
 	// TODO: Add @@k sdb-query-expression-here
