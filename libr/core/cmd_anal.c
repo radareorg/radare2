@@ -5080,7 +5080,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
 			r_anal_aefa (core, r_str_trim_ro (input + 2));
-		} else {
+		} else { // This should be aefb -> because its emulating all the bbs
 		RListIter *iter;
 		RAnalBlock *bb;
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
@@ -5091,13 +5091,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				ut64 pc = bb->addr;
 				ut64 end = bb->addr + bb->size;
 				RAnalOp op;
-				ut8 *buf;
 				int ret, bbs = end - pc;
 				if (bbs < 1 || bbs > 0xfffff) {
 					eprintf ("Invalid block size\n");
 				}
 		//		eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
-				buf = calloc (1, bbs + 1);
+				ut8 *buf = calloc (1, bbs + 1);
+				if (buf) {
+					break;
+				}
 				r_io_read_at (core->io, pc, buf, bbs);
 				int left;
 				while (pc < end) {
@@ -5117,6 +5119,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 						pc += 4; // XXX
 					}
 				}
+				free (buf);
 			}
 		} else {
 			eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
