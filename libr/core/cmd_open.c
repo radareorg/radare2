@@ -11,15 +11,16 @@ static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o","","list opened files",
 	"o","-1","close file descriptor 1",
+	"o"," [file]","open [file] file in read-only",
+	"o"," [file] 0x4000 rwx", "map file at 0x4000",
+	"o.","","show current filename (or o.q/oq to get the fd)",
+	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
-	"o"," [file]","open [file] file in read-only",
 	"o+"," [file]","open file in read-write mode",
-	"o"," [file] 0x4000 rwx", "map file at 0x4000",
 	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
 	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
-	"o."," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
@@ -29,10 +30,7 @@ static const char *help_msg_o[] = {
 	"oL","","list all IO plugins registered",
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-	"oo","[?]","reopen current file (kill+fork in debugger)",
-	"oo","+","reopen current file in read-write",
-	"ood","[r] [args]","reopen in debugger mode (with args)",
-	"oo[bnm]"," [...]","see oo? for help",
+	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op"," [fd]", "select the given fd as current file (see also ob)",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -118,6 +116,7 @@ static const char *help_msg_oo[] = {
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
 	"oob", "", "reopen loading rbin info",
+	"ooc", "", "reopen core with current file",
 	"ood", "", "reopen in debug mode",
 	"oom", "", "reopen in malloc://",
 	"oon", "", "reopen without loading rbin info",
@@ -1280,7 +1279,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'u': {
+	case 'u': { // "ou"
 		RListIter *iter = NULL;
 		RCoreFile *f;
 		int binfile_num;
@@ -1341,6 +1340,22 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case '.': // "o."
+		if (input[1] == 'q') { // "o.q" // same as oq
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				r_cons_printf ("%d\n", map->fd);
+			}
+		} else {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				RIODesc *desc = r_io_desc_get (core->io, map->fd);
+				if (desc) {
+					r_cons_printf ("%s\n", desc->uri);
+				}
+			}
+		}
+		break;
+	case ':': // "o:"
 		{
 			int len = r_num_math (core->num, input + 1);
 			if (len < 1) {
@@ -1374,6 +1389,9 @@ static int cmd_open(void *data, const char *input) {
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
 			}
+			break;
+		case 'c': // "oob" : reopen with bin info
+			r_core_cmd0 (core, "oc `o.`");
 			break;
 		case 'b': // "oob" : reopen with bin info
 			if ('?' == input[2]) {
