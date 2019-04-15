@@ -1860,6 +1860,7 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_XCHG:
 	case R_ANAL_OP_TYPE_POP:
 	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_ACMP:
 		CREATE_SRC_DST (op);
 		set_src_dst (op->dst, handle, insn, 0);
 		set_src_dst (op->src[0], handle, insn, 1);
