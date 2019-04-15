@@ -1431,7 +1431,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	if (!buf) {
 		return NULL;
 	}
-	len = strlen (buf);
+	len = buf_size < 0 ? strlen (buf) : buf_size;
 	end = buf + len;
 	/* Worst case scenario, we convert every byte to \u00hh */
 	new_buf = malloc (1 + (len * 6));
