@@ -1801,6 +1801,28 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		r_cons_printf ("fs blocks\n");
 	}
 	r_list_sort (fcn->bbs, bb_cmp);
+	if (mode == '=') { // afb
+		RList *flist = r_list_new ();
+		if (!flist) {
+			return false;
+		}
+		ls_foreach (fcn->bbs, iter, b) {
+			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return false;
+			}
+			info->name = b->label;
+			info->pitv = (RInterval) {b->addr, b->size};
+			info->vitv = info->pitv;
+			info->perm = -1;
+			info->extra = NULL;
+			r_list_append (flist, info);
+		}
+		r_core_visual_list (core, flist, core->offset, core->blocksize,
+			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		r_list_free (flist);
+		return true;
+	}
 	r_list_foreach (fcn->bbs, iter, b) {
 		if (one) {
 			if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
@@ -2640,6 +2662,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'q': // "aflq"
 		case 'm': // "aflm"
 		case '+': // "afl+"
+		case '=': // "afl="
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
@@ -2898,6 +2921,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case ' ': // "afb "
 		case 'q': // "afbq"
 		case 'r': // "afbr"
+		case '=': // "afb="
 		case '*': // "afb*"
 		case 'j': // "afbj"
 			anal_fcn_list_bb (core, input + 2, false);
@@ -5056,7 +5080,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
 			r_anal_aefa (core, r_str_trim_ro (input + 2));
-		} else {
+		} else { // This should be aefb -> because its emulating all the bbs
 		RListIter *iter;
 		RAnalBlock *bb;
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
@@ -5067,13 +5091,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				ut64 pc = bb->addr;
 				ut64 end = bb->addr + bb->size;
 				RAnalOp op;
-				ut8 *buf;
 				int ret, bbs = end - pc;
 				if (bbs < 1 || bbs > 0xfffff) {
 					eprintf ("Invalid block size\n");
 				}
 		//		eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
-				buf = calloc (1, bbs + 1);
+				ut8 *buf = calloc (1, bbs + 1);
+				if (buf) {
+					break;
+				}
 				r_io_read_at (core->io, pc, buf, bbs);
 				int left;
 				while (pc < end) {
@@ -5093,6 +5119,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 						pc += 4; // XXX
 					}
 				}
+				free (buf);
 			}
 		} else {
 			eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);

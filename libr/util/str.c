@@ -1431,7 +1431,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	if (!buf) {
 		return NULL;
 	}
-	len = strlen (buf);
+	len = buf_size < 0 ? strlen (buf) : buf_size;
 	end = buf + len;
 	/* Worst case scenario, we convert every byte to \u00hh */
 	new_buf = malloc (1 + (len * 6));
@@ -3038,8 +3038,8 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 
 // Splits the string <str> by string <c> and returns the result in a list.
 R_API RList *r_str_split_list(char *str, const char *c)  {
+	r_return_val_if_fail (str && c, NULL);
 	RList *lst = r_list_new ();
-	r_return_val_if_fail (str && c, lst);
 
 	char *aux;
 	bool first_loop = true;
@@ -3059,6 +3059,32 @@ R_API RList *r_str_split_list(char *str, const char *c)  {
 		r_list_append (lst, aux);
 	}
 
+	return lst;
+}
+
+R_API RList *r_str_split_duplist(const char *_str, const char *c)  {
+	r_return_val_if_fail (_str && c, NULL);
+	RList *lst = r_list_newf (free);
+	char *str = strdup (_str);
+
+	char *aux;
+	bool first_loop = true;
+
+	for (;;) {
+		if (first_loop) {
+			aux = strtok (str, c);
+			first_loop = false;
+		} else {
+			aux = strtok (NULL, c);
+		}
+		if (!aux) {
+			break;
+		}
+		r_str_trim (aux);
+		r_list_append (lst, strdup (aux));
+	}
+
+	free (str);
 	return lst;
 }
 

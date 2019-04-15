@@ -1091,6 +1091,7 @@ typedef struct r_panels_t {
 	int columnWidth;
 	int curnode;
 	bool isResizing;
+	bool autoUpdate;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
 	HtPP *mht;

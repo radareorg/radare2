@@ -4179,20 +4179,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				get_bbupdate (g, core, fcn);
 			}
 			break;
-#if 1
-// disabled for now, ultraslow in most situations
 		case '>':
 			if (fcn && r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
-				r_core_cmd0 (core, "ag-;.agc* $$;.axtg $$;aggi");
+				r_core_cmd0 (core, "ag-;.agc* @$FB;.axtg @$FB;aggi");
 			}
 			break;
 		case '<':
 			// r_core_visual_refs (core, true);
 			if (fcn) {
-				r_core_cmd0 (core, "ag-;.axtg $$;aggi");
+				r_core_cmd0 (core, "ag-;.axtg $FB;aggi");
 			}
 			break;
-#endif
 		case 'G':
 			r_core_cmd0 (core, "ag-;.dtg*;aggi");
 			break;
@@ -4299,7 +4296,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" x/X          - jump to xref/ref\n"
 				" Y            - toggle tiny graph\n"
 				" z            - toggle node folding\n"
-				" Z            - follow parent node");
+				" Z            - toggle basic block folding");
 			r_cons_less ();
 			r_cons_any_key (NULL);
 			break;
@@ -4475,6 +4472,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'z':
 			agraph_toggle_mini (g);
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'v':
 			r_core_visual_anal (core, NULL);

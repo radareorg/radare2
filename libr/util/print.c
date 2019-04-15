@@ -402,6 +402,12 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
+	if (p->pava) {
+		ut64 va = p->iob.p2v (p->iob.io, addr);
+		if (va != UT64_MAX) {
+			addr = va;
+		}
+	}
 	if (use_segoff) {
 		ut32 s, a;
 		a = addr & 0xffff;
@@ -997,7 +1003,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		if (use_offset && !isPxr) {
-			r_print_addr (p, addr + j * zoomsz);
+			ut64 at = addr + (j * zoomsz);
+			r_print_addr (p, at);
 		}
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;
@@ -1292,12 +1299,12 @@ R_API void r_print_hexdump_simple(const ut8 *buf, int len) {
 	r_print_hexdump (NULL, 0, buf, len, 16, 16, 0);
 }
 
-static const char* getbytediff(char *fmt, ut8 a, ut8 b) {
+static const char* getbytediff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
-			sprintf (fmt, Color_GREEN "%02x" Color_RESET, a);
+			sprintf (fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
 		} else {
-			sprintf (fmt, Color_RED "%02x" Color_RESET, a);
+			sprintf (fmt, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
 		}
 	} else {
 		sprintf (fmt, "%02x", a);
@@ -1305,13 +1312,13 @@ static const char* getbytediff(char *fmt, ut8 a, ut8 b) {
 	return fmt;
 }
 
-static const char* getchardiff(char *fmt, ut8 a, ut8 b) {
+static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 	char ch = IS_PRINTABLE (a)? a: '.';
 	if (*fmt) {
 		if (a == b) {
-			sprintf (fmt, Color_GREEN "%c" Color_RESET, ch);
+			sprintf (fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
 		} else {
-			sprintf (fmt, Color_RED "%c" Color_RESET, ch);
+			sprintf (fmt, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
 		}
 	} else {
 		sprintf (fmt, "%c", ch);
@@ -1320,8 +1327,8 @@ static const char* getchardiff(char *fmt, ut8 a, ut8 b) {
 	return fmt;
 }
 
-#define BD(a, b) getbytediff (fmt, (a)[i + j], (b)[i + j])
-#define CD(a, b) getchardiff (fmt, (a)[i + j], (b)[i + j])
+#define BD(a, b) getbytediff (p, fmt, (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff (p, fmt, (a)[i + j], (b)[i + j])
 
 static ut8* M(const ut8 *b, int len) {
 	ut8 *r = malloc (len + 16);

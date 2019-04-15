@@ -705,7 +705,7 @@ static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 	return seeki - prevseeki;
 }
 
-static void r_print_format_octal (const RPrint* p, int endian, int mode,
+static void r_print_format_octal(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
@@ -1234,9 +1234,17 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		}
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
-		char * utf_encoded_buf = NULL;
-		p->cb_printf ("%d,\"string\":\"", seeki);
-		utf_encoded_buf = r_str_escape_utf8 ((const char *) buf, true, true);
+		char *utf_encoded_buf = NULL;
+		int str_len = r_str_nlen ((char *)buf + i, len - i);
+#if 0
+		// TODO: make this work as expected
+		if ((size == -1 || size > len - i) && str_len == len - i) {
+			eprintf ("Warning: string overflows buffer\n");
+		}
+#endif
+		p->cb_printf ("\"");
+		utf_encoded_buf = r_str_escape_utf8_for_json (
+		    (char *)buf + i, size == -1 ? str_len : R_MIN (size, str_len));
 		if (utf_encoded_buf){
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
@@ -1317,7 +1325,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char* fmtname,
 	free (bitfield);
 }
 
-static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
+static void r_print_format_enum(const RPrint* p, ut64 seeki, char* fmtname,
 		char* fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
 	switch (size) {
@@ -1333,14 +1341,15 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 		if (mode & R_PRINT_DOT) {
 			p->cb_printf ("%s.%s", fmtname, enumvalue);
 		} else if (MUSTSEEJSON) {
-			p->cb_printf ("\"%s\"}", fmtname);
+			p->cb_printf ("%"PFMT64d",\"label\":\"%s\",\"enum\":\"%s\"}",
+				addr, enumvalue, fmtname);
 		} else if (MUSTSEE) {
 			p->cb_printf ("%s (enum %s) = 0x%"PFMT64x" ; %s\n",
 				fieldname, fmtname, addr, enumvalue);
 		}
 	} else {
 		if (MUSTSEEJSON) {
-			p->cb_printf ("\"`te %s 0x%x`\"}", fmtname, addr);
+			p->cb_printf ("%"PFMT64d",\"enum\":\"%s\"}", addr, fmtname);
 		} else if (MUSTSEE) {
 			p->cb_printf ("%s (enum %s) = 0x%x\n",//`te %s 0x%x`\n",
 				fieldname, fmtname, addr); //enumvalue); //fmtname, addr);
@@ -1349,7 +1358,7 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 	free (enumvalue);
 }
 
-static void r_print_format_register (const RPrint* p, int mode,
+static void r_print_format_register(const RPrint* p, int mode,
 		const char *name, const char* setval) {
 	if (!p || !p->get_register || !p->reg) {
 		return;
@@ -1372,7 +1381,7 @@ static void r_print_format_register (const RPrint* p, int mode,
 	}
 }
 
-static void r_print_format_num_specifier (const RPrint *p, ut64 addr, int bytes, int sign) {
+static void r_print_format_num_specifier(const RPrint *p, ut64 addr, int bytes, int sign) {
 #define EXT(T) (sign ? (signed T)(addr) : (unsigned T)(addr) )
 	const char *fs64 = sign ? "%"PFMT64d : "%"PFMT64u;
 	const char *fs = sign ? "%d" : "%u";
@@ -1388,7 +1397,7 @@ static void r_print_format_num_specifier (const RPrint *p, ut64 addr, int bytes,
 #undef EXT
 }
 
-static void r_print_format_num (const RPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
+static void r_print_format_num(const RPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
 	ut64 addr = 0LL;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -1766,6 +1775,58 @@ static char* get_args_offset(const char *arg) {
 	return args;
 }
 
+static char* get_format_type(const char fmt) {
+	char *type = NULL;
+	switch (fmt) {
+	case 'b':
+	case 'C':
+		type = strdup ("unsigned char");
+		break;
+	case 'c':
+		type = strdup ("char");
+		break;
+	case 'd':
+		type = strdup ("unsigned int");
+		break;
+	case 'f':
+		type = strdup ("float");
+		break;
+	case 'F':
+		type = strdup ("double");
+		break;
+	case 'i':
+	case 'o':
+		type = strdup ("int");
+		break;
+	case 'p':
+		type = strdup ("void*");
+		break;
+	case 'q':
+		type = strdup ("long long");
+		break;
+	case 'u':
+		type = strdup ("uleb128_t");
+		break;
+	case 'w':
+		type = strdup ("unsigned short");
+		break;
+	case 'x':
+		type = strdup ("long");
+		break;
+	case 'X':
+		type = strdup ("unsigned char[]");
+		break;
+	case 'D':
+	case 's':
+	case 'S':
+	case 't':
+	case 'z':
+	case 'Z':
+		type = strdup ("char*");
+	}
+	return type;
+}
+
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
@@ -1871,6 +1932,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (mode == R_PRINT_JSON && slide == 0) {
 		p->cb_printf ("[");
 	}
+	if (mode == R_PRINT_STRUCT) {
+		if (formatname && *formatname) {
+			if (strchr (formatname, ' ')) {
+				p->cb_printf ("struct {\n");
+			} else {
+				p->cb_printf ("struct %s {\n", formatname);
+			}
+		} else {
+			p->cb_printf ("struct {\n");
+		}
+	}
 	if (mode && arg[0] == '0') {
 		mode |= R_PRINT_UNIONMODE;
 		arg++;
@@ -1898,7 +1970,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		otimes = times = 1;
 	}
 	for (; times; times--) { // repeat N times
-		const char * orig = arg;
+		const char *orig = arg;
 		int first = 1;
 		if (otimes > 1) {
 			if (mode & R_PRINT_JSON) {
@@ -2162,6 +2234,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 				} else if (oldslide) {
 					p->cb_printf ("]},");
+					oldslide -= NESTEDSTRUCT;
 				}
 				if (fieldname) {
 					p->cb_printf ("{\"name\":\"%s\",\"type\":\"", fieldname);
@@ -2182,6 +2255,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				}
 				p->cb_printf ("\",\"offset\":%d,\"value\":",
 					isptr? (seek + nexti - (p->bits / 8)) : seek + i);
+			}
+
+			/* c struct */
+			if (mode & R_PRINT_STRUCT) {
+				char *type = get_format_type (tmp);
+				if (type) {
+					p->cb_printf ("    %s %s;", type, fieldname);
+				}
+				free (type);
 			}
 			bool noline = false;
 
@@ -2469,6 +2551,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				} //switch
 			}
+			if (mode & R_PRINT_STRUCT) {
+				p->cb_printf ("\n");
+			}
 			if (mode & R_PRINT_DOT) {
 				p->cb_printf ("}");
 			}
@@ -2524,11 +2609,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (mode & R_PRINT_JSON && slide == 0) {
 		p->cb_printf("]\n");
 	}
+	if (mode & R_PRINT_STRUCT) {
+		p->cb_printf ("}\n");
+	}
 	if (mode & R_PRINT_DOT) {
 		p->cb_printf ("\"];\n}\n");
 		// TODO: show nested structs and field reference lines
 	}
 beach:
+	if (slide == 0) {
+		oldslide = 0;
+	}
 	free (oarg);
 	free (buf);
 	free (field);

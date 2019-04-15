@@ -332,7 +332,7 @@ static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 
 R_API ut64 r_core_pava (RCore *core, ut64 addr) {
-	if (core->pava) {
+	if (core->print->pava) {
 		RIOMap *map = r_io_map_get_paddr (core->io, addr);
 		if (map) {
 			return addr - map->delta + map->itv.addr;
@@ -1059,6 +1059,16 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 		}
 		if (hint->high) {
 			/* TODO: do something here */
+		}
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
+	if (fcn) {
+		if (fcn->bits == 16 || fcn->bits == 32) {
+			if (!hint) {
+				hint = R_NEW0 (RAnalHint);
+			}
+			hint->bits = fcn->bits;
+			hint->new_bits = fcn->bits;
 		}
 	}
 	return hint;
@@ -2093,7 +2103,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			}
 		}
 	}
-
+	if (ds->hint && ds->hint->bits) {
+		if (!ds->core->anal->opt.ignbithints) {
+			r_config_set_i (core->config, "asm.bits", ds->hint->bits);
+		}
+	}
 	if (ds->hint && ds->hint->size) {
 		ds->oplen = ds->hint->size;
 	}
@@ -2262,11 +2276,12 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 		return;
 	}
 	memset (out, ' ', outsz);
+	out[outsz - 1] = 0;
 	int sect_len = strlen (sect);
 
 	if (sect_len > cols) {
-		sect[cols-2] = '.';
-		sect[cols-1] = '.';
+		sect[cols - 2] = '.';
+		sect[cols - 1] = '.';
 		sect[cols] = 0;
 	}
 	if (ds->show_color) {
@@ -2274,13 +2289,12 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 		post = strlen (color) + 1 + strlen (Color_RESET);
 		snprintf (out, outsz-pre, "%s %s", color, sect);
 		strcat (out, Color_RESET);
-		out[outsz-1] = 0;
+		out[outsz - 1] = 0;
 	} else {
-		strcpy (out + 1, sect);
+		r_str_ncpy (out + 1, sect, outsz - 2);
 		post = 0;
 	}
-	out[strlen (out)] = ' ';
-	out[cols + post] = 0;
+	strcat (out, " ");
 	r_cons_strcat (out);
 	free (out);
 }
@@ -2753,7 +2767,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 			RAnalValue *dst = ds->analop.dst;
 			if (dst && dst->reg && src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 				int index = 0;
-				int memref = core->assembler->bits/8;
+				int memref = core->assembler->bits / 8;
 				RFlagItem *item;
 				ut8 b[64];
 				ut64 ptr = index + ds->addr + src->delta + ds->analop.size;
@@ -3896,7 +3910,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		bool emu_str_printed = false;
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
-		str[sizeof (str)-1] = 0;
+		str[sizeof (str) - 1] = 0;
 		// support cstring here
 		{
 			ut64 *cstr = (ut64*) str;
@@ -4444,7 +4458,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 			const char *tname = r_type_func_args_name (TDB, name, i);
 			if (type && *type) {
 				cmt = r_str_appendf (cmt, "%s%s%s%s%s", i == 0 ? "": " ", type,
-						type[strlen (type) -1] == '*' ? "": " ",
+						type[strlen (type) - 1] == '*' ? "": " ",
 						tname, i == arg_max - 1 ? ")": ",");
 			} else if (tname && !strcmp (tname, "...")) {
 				cmt = r_str_appendf (cmt, "%s%s%s", i == 0 ? "": " ",
@@ -5260,12 +5274,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	ds->len = nb_opcodes * 8;
 
 	if (ds->len > core->blocksize) {
-		if (core->fixedblock) {
-			nb_bytes = ds->len = core->blocksize;
-		} else {
-			r_core_block_size (core, ds->len);
-			r_core_block_read (core);
-		}
+		r_core_block_size (core, ds->len);
+		r_core_block_read (core);
 	}
 	if (!ds->l) {
 		ds->l = ds->len;
@@ -5584,6 +5594,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			char *buf = malloc (strlen (aop) + 128);
 			if (buf) {
 				strcpy (buf, aop);
+				buf = ds_sub_jumps (ds, buf);
 				r_parse_filter (core->parser, ds->vat, core->flags, buf,
 					str, sizeof (str), core->print->big_endian);
 				r_asm_op_set_asm (&asmop, buf);
@@ -5904,9 +5915,6 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	}
 
 	int len = (nb_opcodes + nb_bytes) * 5;
-	if (core->fixedblock) {
-		len = core->blocksize;
-	}
 	if (len > core->blocksize) {
 		r_core_block_size (core, len);
 		r_core_block_read (core);

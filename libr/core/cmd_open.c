@@ -11,15 +11,16 @@ static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o","","list opened files",
 	"o","-1","close file descriptor 1",
+	"o"," [file]","open [file] file in read-only",
+	"o"," [file] 0x4000 rwx", "map file at 0x4000",
+	"o.","","show current filename (or o.q/oq to get the fd)",
+	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
-	"o"," [file]","open [file] file in read-only",
 	"o+"," [file]","open file in read-write mode",
-	"o"," [file] 0x4000 rwx", "map file at 0x4000",
 	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
 	"oq","","list all open files",
 	"o*","","list opened files in r2 commands",
-	"o."," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
@@ -29,10 +30,7 @@ static const char *help_msg_o[] = {
 	"oL","","list all IO plugins registered",
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-	"oo","[?]","reopen current file (kill+fork in debugger)",
-	"oo","+","reopen current file in read-write",
-	"ood","[r] [args]","reopen in debugger mode (with args)",
-	"oo[bnm]"," [...]","see oo? for help",
+	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op"," [fd]", "select the given fd as current file (see also ob)",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -117,7 +115,8 @@ static const char *help_msg_oo[] = {
 	"Usage:", "oo[-] [arg]", " # map opened files",
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
-	"oob", "", "reopen loading rbin info",
+	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
+	"ooc", "", "reopen core with current file",
 	"ood", "", "reopen in debug mode",
 	"oom", "", "reopen in malloc://",
 	"oon", "", "reopen without loading rbin info",
@@ -180,82 +179,6 @@ static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, ood);
 	DEFINE_CMD_DESCRIPTOR (core, oon);
 	DEFINE_CMD_DESCRIPTOR (core, oonn);
-}
-
-// very similiar to section list, must reuse more code
-static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
-	ut64 mul, min = -1, max = 0;
-	SdbListIter *iter;
-	RIOMap *s;
-	int j, i;
-
-	width -= 80;
-	if (width < 1) {
-		width = 30;
-	}
-
-	// this must be prev, maps the previous map allways has lower priority
-	ls_foreach_prev (io->maps, iter, s) {
-		min = R_MIN (min, s->itv.addr);
-		max = R_MAX (max, r_itv_end (s->itv) - 1);
-	}
-	mul = (max - min) / width;
-	if (min != -1 && mul != 0) {
-		const char * color = "", *color_end = "";
-		i = 0;
-		ls_foreach_prev (io->maps, iter, s) {
-			if (use_color) {
-				color_end = Color_RESET;
-				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bits
-					color = r_cons_singleton()->context->pal.graph_trufae;
-				} else if (s->perm & R_PERM_X) { // exec bit
-					color = r_cons_singleton()->context->pal.graph_true;
-				} else if (s->perm & R_PERM_W) { // write bit
-					color = r_cons_singleton()->context->pal.graph_false;
-				} else {
-					color = "";
-					color_end = "";
-				}
-			} else {
-				color = "";
-				color_end = "";
-			}
-			if (io->va) {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						r_itv_contain (s->itv, seek) ? '*' : ' ',
-						color, s->itv.addr, color_end);
-			} else {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						r_itv_contain (s->itv, seek) ? '*' : ' ',
-						color, s->itv.addr, color_end);
-			}
-			for (j = 0; j < width; j++) {
-				ut64 pos = min + j * mul;
-				ut64 npos = min + (j + 1) * mul;
-				// TODO trailing bytes
-				io->cb_printf (r_itv_overlap2 (s->itv, pos, npos - pos) ? "#" : "-");
-			}
-			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %d %s\n",
-					color, r_itv_end (s->itv), color_end,
-					r_str_rwx_i (s->perm), s->fd, s->name);
-			i++;
-		}
-		/* current seek */
-		if (i > 0 && len != 0) {
-			if (seek == UT64_MAX) {
-				seek = 0;
-			}
-			//len = 8096;//r_io_size (io);
-			io->cb_printf ("=>  0x%08"PFMT64x" |", seek);
-			for (j=0;j<width;j++) {
-				io->cb_printf (
-					((j*mul)+min >= seek &&
-					 (j*mul)+min <= seek+len)
-					?"^":"-");
-			}
-			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
-		}
-	}
 }
 
 static void cmd_open_bin(RCore *core, const char *input) {
@@ -806,10 +729,31 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case '=': // "om="
-		list_maps_visual (core->io, core->offset, core->blocksize,
+	case '=': // "om=" 
+		{
+		RList *list = r_list_new ();
+		if (!list) {
+			return;
+		}
+		SdbListIter *iter;
+		RIOMap *map;
+		ls_foreach_prev (core->io->maps, iter, map) {
+			char temp[4];
+			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return;
+			}
+			info->name = map->name;
+			info->pitv = map->itv;
+			info->vitv = map->itv;
+			info->perm = map->perm;
+			info->extra = sdb_itoa (map->fd, temp, 10);
+			r_list_append (list, info);
+		}
+		r_core_visual_list (core, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
-		break;
+		r_list_free (list);
+		} break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_om);
@@ -1335,7 +1279,7 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'u': {
+	case 'u': { // "ou"
 		RListIter *iter = NULL;
 		RCoreFile *f;
 		int binfile_num;
@@ -1396,6 +1340,22 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case '.': // "o."
+		if (input[1] == 'q') { // "o.q" // same as oq
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				r_cons_printf ("%d\n", map->fd);
+			}
+		} else {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				RIODesc *desc = r_io_desc_get (core->io, map->fd);
+				if (desc) {
+					r_cons_printf ("%s\n", desc->uri);
+				}
+			}
+		}
+		break;
+	case ':': // "o:"
 		{
 			int len = r_num_math (core->num, input + 1);
 			if (len < 1) {
@@ -1429,6 +1389,9 @@ static int cmd_open(void *data, const char *input) {
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
 			}
+			break;
+		case 'c': // "oob" : reopen with bin info
+			r_core_cmd0 (core, "oc `o.`");
 			break;
 		case 'b': // "oob" : reopen with bin info
 			if ('?' == input[2]) {

@@ -198,6 +198,9 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 }
 
 R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str) {
+	if (a->opt.ignbithints) {
+		return 0;
+	}
 	char *r, *nxt, *nxt2;
 	char *s = strdup (str);
 	int token = 0, bits = 0;

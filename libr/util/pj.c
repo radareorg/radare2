@@ -39,6 +39,7 @@ R_API void pj_free(PJ *pj) {
 
 R_API char *pj_drain(PJ *pj) {
 	if (pj) {
+		r_return_val_if_fail (pj->level == 0, NULL);
 		char *res = r_strbuf_drain (pj->sb);
 		pj->sb = NULL;
 		free (pj);

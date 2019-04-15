@@ -6,6 +6,8 @@
 extern "C" {
 #endif
 
+// TODO: choose whether the _at operations should preserve the current seek or not
+
 #define R_BUF_SET 0
 #define R_BUF_CUR 1
 #define R_BUF_END 2
@@ -110,7 +112,7 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n);
 R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, size_t length);
 R_API int r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, size_t length);
 R_API char *r_buf_to_string(RBuffer *b);
-R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
+R_API char *r_buf_get_string (RBuffer *b, ut64 addr);
 R_API int r_buf_read(RBuffer *b, ut8 *buf, size_t len);
 R_API ut8 r_buf_read8(RBuffer *b);
 R_API int r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n);
@@ -222,6 +224,18 @@ static inline ut64 r_buf_read_ble64_at(RBuffer *b, ut64 addr, bool big_endian) {
 	ut8 buf[sizeof (ut64)];
 	int r = r_buf_read_at (b, addr, buf, sizeof (buf));
 	return r == sizeof (buf)? r_read_ble64 (buf, big_endian): UT64_MAX;
+}
+
+R_API int r_buf_uleb128(RBuffer *b, ut64 *v);
+R_API int r_buf_sleb128(RBuffer *b, st64 *v);
+
+static inline int r_buf_uleb128_at(RBuffer *b, ut64 addr, ut64 *v) {
+	r_buf_seek (b, addr, 0);
+	return r_buf_uleb128 (b, v);
+}
+static inline int r_buf_sleb128_at(RBuffer *b, ut64 addr, st64 *v) {
+	r_buf_seek (b, addr, 0);
+	return r_buf_sleb128(b, v);
 }
 
 #ifdef __cplusplus

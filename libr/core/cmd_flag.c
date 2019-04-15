@@ -114,9 +114,9 @@ static void cmd_fz(RCore *core, const char *input) {
 		break;
 	case '.':
 		{
-			const char *a, *b;
+			const char *a = NULL, *b = NULL;
 			r_flag_zone_around (core->flags, core->offset, &a, &b);
-			r_cons_printf ("%s %s\n", a, b);
+			r_cons_printf ("%s %s\n", a?a:"~", b?b:"~");
 		}
 		break;
 	case ':':
@@ -926,7 +926,34 @@ rep:
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
-		r_flag_list (core->flags, *input, input[0]? input + 1: "");
+		if (input[1] == '.' && !input[2]) {
+			RFlagItem *item = r_flag_get_at (core->flags, core->offset, false);
+			if (item) {
+				switch (input[0]) {
+				case '*':
+					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item->name, item->offset);
+					break;
+				case 'j':
+					{
+						PJ *pj = pj_new ();
+						pj_o (pj);
+						pj_ks (pj, "name", item->name);
+						pj_kn (pj, "offset", item->offset);
+						pj_kn (pj, "size", item->size);
+						pj_end (pj);
+						char *s = pj_drain (pj);
+						r_cons_printf ("%s\n", s);
+						free (s);
+					}
+					break;
+				default:
+					r_cons_printf ("%s\n", item->name);
+					break;
+				}
+			}
+		} else {
+			r_flag_list (core->flags, *input, input[0]? input + 1: "");
+		}
 		break;
 	case 'i': // "fi"
 		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {

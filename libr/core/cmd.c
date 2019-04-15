@@ -806,6 +806,21 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 					r_lang_use (core->lang, "vala");
 					lang_run_file (core, core->lang, file);
 					ret = 1;
+				} else if (!strcmp (ext, "sh")) {
+					char *shell = r_sys_getenv ("SHELL");
+					if (!shell) {
+						shell = strdup ("sh");
+					}
+					if (shell) {
+						r_lang_use (core->lang, "pipe");
+						char *cmd = r_str_newf ("%s '%s'", shell, file);
+						if (cmd) {
+							lang_run_file (core, core->lang, cmd);
+							free (cmd);
+						}
+						free (shell);
+					}
+					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
@@ -831,17 +846,35 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
-	if (*input) {
-		const char *path = r_str_trim_ro (input + 1);
-		if (r_fs_check (core->fs, path)) {
-			r_core_cmdf (core, "md %s", path);
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1);
+	}
+	switch (*input) {
+	case '?': // "l?"
+		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
+		break;
+	case 'e': // "le"
+		if (arg) {
+			r_core_cmdf (core, "cat %s~..", arg);
 		} else {
-			char *res = r_syscmd_ls (path);
+			eprintf ("Usage: less [file]\n");
+		}
+		break;
+	default: // "ls"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_ls (arg);
 			if (res) {
 				r_cons_print (res);
 				free (res);
 			}
 		}
+		break;
 	}
 	return 0;
 }
@@ -2119,6 +2152,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
 	char *grep = NULL;
+	RIODesc *tmpdesc = NULL;
+	int pamode = !core->io->va;
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
@@ -2128,6 +2163,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	bool oldfixedarch = core->fixedarch;
 	bool oldfixedbits = core->fixedbits;
 	bool cmd_tmpseek = false;
+	ut64 tmpbsz = core->blocksize;
+	int cmd_ignbithints = -1;
 
 	if (!cmd) {
 		r_list_free (tmpenvs);
@@ -2660,7 +2697,6 @@ next2:
 	}
 escape_backtick:
 	// TODO must honor " and `
-	core->fixedblock = false;
 
 	if (r_str_endswith (cmd, "~?") && cmd[2] == '\0') {
 		r_cons_grep_help ();
@@ -2690,7 +2726,6 @@ escape_backtick:
 		bool addr_is_set = false;
 		char *tmpbits = NULL;
 		const char *offstr = NULL;
-		ut64 tmpbsz = core->blocksize;
 		bool is_bits_set = false;
 		bool is_arch_set = false;
 		char *tmpeval = NULL;
@@ -2766,9 +2801,8 @@ repeat_arroba:
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
 							r_core_seek (core, bb->addr + inst_off, 1);
 							cmd_tmpseek = core->tmpseek = true;
-							usemyblock = true;
 						} else {
-							eprintf("The current basic block has %d instructions\n", bb->ninstr);
+							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
 						}
 					} else {
 						eprintf ("Can't find a basic block for 0x%08"PFMT64x"\n", core->offset);
@@ -2779,6 +2813,21 @@ repeat_arroba:
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
+					{
+						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, sz);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (d) {
+							if (tmpdesc) {
+								r_io_desc_close (tmpdesc);
+							}
+							tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						}
+					}
+#if 0
 					buf = malloc (sz);
 					if (buf) {
 						free (core->block);
@@ -2790,6 +2839,7 @@ repeat_arroba:
 						eprintf ("cannot alloc %d", sz);
 					}
 					free (f);
+#endif
 				} else {
 					eprintf ("cannot open '%s'\n", ptr + 3);
 				}
@@ -2811,19 +2861,22 @@ repeat_arroba:
 						regval = r_debug_reg_get (core->dbg, ptr + 2);
 					}
 					r_core_seek (core, regval, 1);
+					cmd_tmpseek = core->tmpseek = true;
 					free (mander);
-					usemyblock = true;
 				}
 				break;
 			case 'b': // "@b:" // bits
 				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits);
+				cmd_ignbithints = r_config_get_i (core->config, "anal.ignbithints");
+				r_config_set_i (core->config, "anal.ignbithints", 1);
 				break;
 			case 'i': // "@i:"
 				{
 					ut64 addr = r_num_math (core->num, ptr + 2);
 					if (addr) {
 						r_core_cmdf (core, "so %s", ptr + 2);
-						usemyblock = true;
+				//		r_core_seek (core, core->offset, 1);
+						cmd_tmpseek = core->tmpseek = true;
 					}
 				}
 				break;
@@ -2843,10 +2896,25 @@ repeat_arroba:
 					buf = malloc (strlen (ptr + 2) + 1);
 					if (buf) {
 						len = r_hex_str2bin (ptr + 2, buf);
-						r_core_block_size (core, R_ABS(len));
-						memcpy (core->block, buf, core->blocksize);
-						core->fixedblock = true;
-						usemyblock = true;
+						r_core_block_size (core, R_ABS (len));
+						if (len > 0) {
+							RBuffer *b = r_buf_new_with_bytes (buf, len);
+							RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+							if (d) {
+								if (tmpdesc) {
+									r_io_desc_close (tmpdesc);
+								}
+								tmpdesc = d;
+								if (pamode) {
+									r_config_set_i (core->config, "io.va", 1);
+								}
+								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+								r_core_block_size (core, len);
+								r_core_block_read (core);
+							}
+						} else {
+							eprintf ("Error: Invalid hexpairs for @x:\n");
+						}
 						free (buf);
 					} else {
 						eprintf ("cannot allocate\n");
@@ -2884,17 +2952,48 @@ repeat_arroba:
 					eprintf ("Usage: pd 10 @a:arm:32\n");
 				}
 				break;
-			case 's': // "@s:"
-				len = strlen (ptr + 2);
-				r_core_block_size (core, len);
-				memcpy (core->block, ptr + 2, len);
-				usemyblock = true;
-				break;
+			case 's': // "@s:" // wtf syntax
+				{
+					len = strlen (ptr + 2);
+					r_core_block_size (core, len);
+					const ut8 *buf = (const ut8*)r_str_trim_ro (ptr + 2);
+
+					if (len > 0) {
+						RBuffer *b = r_buf_new_with_bytes (buf, len);
+						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						if (!core->io->va) {
+							r_config_set_i (core->config, "io.va", 1);
+						}
+						if (d) {
+							if (tmpdesc) {
+								r_io_desc_close (tmpdesc);
+							}
+							tmpdesc = d;
+							if (pamode) {
+								r_config_set_i (core->config, "io.va", 1);
+							}
+							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_core_block_size (core, len);
+							// r_core_block_read (core);
+						}
+					}
+				}
+break;
 			default:
 				goto ignore;
 			}
 			*ptr = '@';
-			goto next_arroba; //ignore; //return ret;
+			/* trim whitespaces before the @ */
+			/* Fixes pd @x:9090 */
+			char *trim = ptr - 2;
+			while (trim > cmd) {
+				if (!IS_WHITESPACE (*trim)) {
+					break;
+				}
+				*trim = 0;
+				trim--;
+			}
+			goto next_arroba;
 		}
 ignore:
 		ptr = r_str_trim_head (ptr + 1) - 1;
@@ -2920,6 +3019,7 @@ ignore:
 
 		addr = r_num_math (core->num, offstr);
 		addr_is_set = true;
+
 		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
 				eprintf ("Invalid address (%s)\n", ptr + 1);
@@ -2931,12 +3031,23 @@ ignore:
 				addr = core->offset + addr;
 			}
 		}
+		// remap thhe tmpdesc if any
+		if (addr) {
+			RIODesc *d = tmpdesc;
+			if (d) {
+				r_io_map_new (core->io, d->fd, d->perm, 0, addr, r_io_desc_size (d));
+			}
+		}
 next_arroba:
 		if (arroba) {
 			ptr = arroba + 1;
 			*arroba = '@';
 			arroba = NULL;
 			goto repeat_arroba;
+		}
+		core->fixedblock = !!tmpdesc;
+		if (core->fixedblock) {
+			r_core_block_read (core);
 		}
 		if (ptr[1] == '@') {
 			if (ptr[2] == '@') {
@@ -3021,11 +3132,22 @@ next_arroba:
 			R_FREE (tmpasm);
 		}
 		if (tmpfd != -1) {
+			// TODO: reuse tmpfd instead of
 			r_io_use_fd (core->io, tmpfd);
+		}
+		if (tmpdesc) {
+			if (pamode) {
+				r_config_set_i (core->config, "io.va", 0);
+			}
+			r_io_desc_close (tmpdesc);
+			tmpdesc = NULL;
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
 			core->fixedbits = oldfixedbits;
+		}
+		if (tmpbsz != core->blocksize) {
+			r_core_block_size (core, tmpbsz);
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
@@ -3050,11 +3172,17 @@ beach:
 		r_config_set_i (core->config, "scr.color", scr_color);
 	}
 	r_list_free (tmpenvs);
-	core->fixedblock = false;
+	if (tmpdesc) {
+		r_io_desc_close (tmpdesc);
+		tmpdesc = NULL;
+	}
 	core->fixedarch = oldfixedarch;
 	core->fixedbits = oldfixedbits;
 	if (tmpseek) {
 		*tmpseek = cmd_tmpseek;
+	}
+	if (cmd_ignbithints != -1) {
+		r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
 	}
 	return rc;
 fail:
@@ -3084,10 +3212,35 @@ struct exec_command_t {
 
 static bool exec_command_on_flag(RFlagItem *flg, void *u) {
 	struct exec_command_t *user = (struct exec_command_t *)u;
-	r_core_seek (user->core, flg->offset, 1);
 	r_core_block_size (user->core, flg->size);
+	r_core_seek (user->core, flg->offset, 1);
 	r_core_cmd0 (user->core, user->cmd);
 	return true;
+}
+
+static void foreach_pairs (RCore *core, const char *cmd, const char *each) {
+	const char *arg;
+	int pair = 0;
+	for (arg = each ; ; ) {
+		char *next = strchr (arg, ' ');
+		if (next) {
+			*next = 0;
+		}
+		if (arg && *arg) {
+			ut64 n = r_num_get (NULL, arg);
+			if (pair%2) {
+				r_core_block_size (core, n);
+				r_core_cmd0 (core, cmd);
+			} else {
+				r_core_seek (core, n, 1);
+			}
+			pair++;
+		}
+		if (!next) {
+			break;
+		}
+		arg = next + 1;
+	}
 }
 
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
@@ -3095,36 +3248,56 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	RList *list, *head;
 	RListIter *iter;
 	int i;
+	const char *filter = NULL;
+
+	if (each[1] == ':') {
+		filter = each + 2;
+	}
 
 	switch (each[0]) {
 	case '=':
-		{
-		char *arg;
-		for (arg = each + 1; ; ) {
-			char *next = strchr (arg, ' ');
-			if (next) {
-				*next = 0;
-			}
-			if (arg && *arg) {
-				r_core_cmdf (core, "%s %s", cmd, arg);
-			}
-			if (!next) {
-				break;
-			}
-			arg = next + 1;
-		}
-		}
+		foreach_pairs (core, cmd, each + 1);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_at_at_at);
 		break;
 	case 'c':
-		switch (each[1]) {
-		case 'a': // call
-			break;
-		default:
-			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd, UT64_MAX);
-			break;
+		if (filter) {
+			char *arg = r_core_cmd_str (core, filter);
+			foreach_pairs (core, cmd, arg);
+			free (arg);
+		} else {
+			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
+		}
+		break;
+	case 'C':
+		r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd, UT64_MAX);
+		break;
+	case 'm':
+		{
+			int fd = r_io_fd_get_current (core->io);
+			// only iterate maps of current fd
+			RList *maps = r_io_map_get_for_fd (core->io, fd);
+			RIOMap *map;
+			if (maps) {
+				RListIter *iter;
+				r_list_foreach (maps, iter, map) {
+					r_core_seek (core, map->itv.addr, 1);
+					r_core_block_size (core, map->itv.size);
+					r_core_cmd0 (core, cmd);
+				}
+				r_list_free (maps);
+			}
+		}
+		break;
+	case 'M':
+		if (dbg && dbg->h && dbg->maps) {
+			RDebugMap *map;
+			r_list_foreach (dbg->maps, iter, map) {
+				r_core_seek (core, map->addr, 1);
+				//r_core_block_size (core, map->size);
+				r_core_cmd0 (core, cmd);
+			}
 		}
 		break;
 	case 't':
@@ -3187,7 +3360,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_core_seek (core, offorig, 1);
 		}
 		break;
-	case 'S':
+	case 'S': // "@@@S"
 		{
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			if (obj) {
@@ -3200,8 +3373,8 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_block_size (core, sec->vsize);
 					r_core_cmd0 (core, cmd);
 				}
-				r_core_seek (core, offorig, 1);
 				r_core_block_size (core, bszorig);
+				r_core_seek (core, offorig, 1);
 			}
 		}
 #if ATTIC
@@ -3229,20 +3402,22 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			// symbols
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
+			ut64 obs = core->blocksize;
 			list = r_bin_get_symbols (core->bin);
 			r_list_foreach (list, iter, sym) {
+				r_core_block_size (core, sym->size);
 				r_core_seek (core, sym->vaddr, 1);
 				r_core_cmd0 (core, cmd);
 			}
+			r_core_block_size (core, obs);
 			r_core_seek (core, offorig, 1);
 		}
 		break;
-	case 'f':
+	case 'f': // flags
 		{
-			char *glob = r_str_trim (strdup (each + 1));
+			char *glob = filter? r_str_trim (strdup (filter)): NULL;
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
-
 			struct exec_command_t u = { .core = core, .cmd = cmd };
 			r_flag_foreach_glob (core->flags, glob, exec_command_on_flag, &u);
 			r_core_seek (core, off, 0);
@@ -3250,16 +3425,39 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			free (glob);
 		}
 		break;
-	case 'F':
+	case 'F': // functions
 		{
+			ut64 obs = core->blocksize;
 			ut64 offorig = core->offset;
 			RAnalFunction *fcn;
 			list = core->anal->fcns;
 			r_list_foreach (list, iter, fcn) {
-				r_core_seek (core, fcn->addr, 1);
-				r_core_cmd0 (core, cmd);
+				if (!filter || r_str_glob (fcn->name, filter)) {
+					r_core_seek (core, fcn->addr, 1);
+					r_core_block_size (core, r_anal_fcn_size (fcn));
+					r_core_cmd0 (core, cmd);
+				}
 			}
+			r_core_block_size (core, obs);
 			r_core_seek (core, offorig, 1);
+		}
+		break;
+	case 'b':
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			ut64 offorig = core->offset;
+			ut64 obs = core->blocksize;
+			if (fcn) {
+				RListIter *iter;
+				RAnalBlock *bb;
+				r_list_foreach (fcn->bbs, iter, bb) {
+					r_core_seek (core, bb->addr, 1);
+					r_core_block_size (core, bb->size);
+					r_core_cmd0 (core, cmd);
+				}
+				r_core_block_size (core, obs);
+				r_core_seek (core, offorig, 1);
+			}
 		}
 		break;
 	}
@@ -4165,7 +4363,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"g",        "egg manipulation", cmd_egg, cmd_egg_init},
 		{"info",     "get file info", cmd_info, cmd_info_init},
 		{"kuery",    "perform sdb query", cmd_kuery},
-		{"ls",       "list files and directories", cmd_ls},
+		{"l",       "list files and directories", cmd_ls},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins},
 		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
 		{"open",     "open or map file", cmd_open, cmd_open_init},

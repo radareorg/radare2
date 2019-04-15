@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -8,6 +8,21 @@
 
 static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
+
+static void loadGP(RCore *core) {
+	if (strstr (core->assembler->cur->arch, "mips")) {
+		ut64 gp = r_num_math (core->num, "loc._gp");
+		if (!gp || gp == UT64_MAX) {
+			r_config_set (core->config, "anal.roregs", "zero");
+			r_core_cmd0 (core, "10aes@entry0");
+			r_config_set (core->config, "anal.roregs", "zero,gp");
+			gp = r_reg_getv (core->anal->reg, "gp");
+		}
+		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
+		r_config_set_i (core->config, "anal.gp", gp);
+	}
+}
+
 
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
 	int isdebug = r_config_get_i (core->config, "cfg.debug");
@@ -27,6 +42,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		} else if (odesc->uri) {
 			ofilepath = odesc->uri;
 		}
+	}
+
+	ut64 new_baddr = UT64_MAX;
+	if (args) {
+		new_baddr = r_num_math (core->num, args);
+		if (new_baddr && new_baddr != UT64_MAX) {
+			r_config_set_i (core->config, "bin.baddr", new_baddr);
+		} else {
+			new_baddr = UT64_MAX;
+		}
+	}
+	if (new_baddr == UT64_MAX) {
+		new_baddr = r_config_get_i (core->config, "bin.baddr");
 	}
 
 	if (r_sandbox_enable (0)) {
@@ -83,11 +111,15 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			if (new_baddr != UT64_MAX) {
+				baddr = new_baddr;
+			}
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
 				eprintf ("Error: Failed to reload rbin for: %s", path);
 			}
+			origoff = r_num_math (core->num, "entry0");
 		}
 
 		if (core->bin->cur && core->io && r_io_desc_get (core->io, file->fd) && !loadbin) {
@@ -141,10 +173,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd0 (core, "sr PC");
 	} else {
-		ut64 gp = r_num_math (core->num, "loc._gp");
-		if (gp && gp != UT64_MAX) {
-			r_config_set_i (core->config, "anal.gp", gp);
-		}
+		loadGP (core);
 	}
 	// update anal io bind
 	r_io_bind (core->io, &(core->anal->iob));
@@ -605,11 +634,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			" wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 	if (!r_config_get_i (r->config, "cfg.debug")) {
-		/* load GP for mips */
-		ut64 gp = r_num_math (r->num, "loc._gp");
-		if (gp && gp != UT64_MAX) {
-			r_config_set_i (r->config, "anal.gp", gp);
-		}
+		loadGP (r);
 	}
 	if (r_config_get_i (r->config, "bin.libs")) {
 		ut64 libaddr = (r->assembler->bits == 64)? 0x00007fff00000000LL: 0x7f000000;

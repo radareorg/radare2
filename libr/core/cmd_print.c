@@ -152,11 +152,20 @@ static const char *help_msg_at_at[] = {
 
 static const char *help_msg_at_at_at[] = {
 	"@@@", "", " # foreach offset+size iterator command:",
+	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
+	"x", " @@@b", "basic blocks of current function",
+	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
+	"x", " @@@C:cmd", "comments matching",
 	"x", " @@@i", "imports",
+	"x", " @@@r", "registers",
 	"x", " @@@s", "symbols",
 	"x", " @@@S", "sections",
+	"x", " @@@m", "io.maps",
+	"x", " @@@M", "dbg.maps (See ?$?~size)",
 	"x", " @@@f", "flags",
-	"x", " @@@F", "functions",
+	"x", " @@@f:hit*", "flags matching glob expression",
+	"x", " @@@F", "functions (set fcn size which may be incorrect if not linear)",
+	"x", " @@@F:glob", "functions matching glob expression",
 	"x", " @@@t", "threads",
 	"x", " @@@r", "regs",
 	// TODO: Add @@k sdb-query-expression-here
@@ -299,6 +308,7 @@ static const char *help_msg_pf[] = {
 	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
+	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
 	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
 	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
 	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
@@ -449,7 +459,7 @@ static const char *help_msg_px[] = {
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
 	"pxA", "[?]", "show op analysis color map",
-	"pxb", "", "dump bits in hexdump form",
+	"pxb", "", "dump bits in hexdump form", // should be px1?
 	"pxc", "", "show hexdump with comments",
 	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
@@ -1159,6 +1169,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		_input++;
 		mode = R_PRINT_VALUE | R_PRINT_MUSTSEE;
 		break;
+	case 'c': // "pfc"
+		_input++;
+		mode = R_PRINT_STRUCT;
+		break;
 	case 's': { // "pfs"
 		const char *val = NULL;
 		_input += 2;
@@ -1402,9 +1416,6 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			eprintf ("cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
-		if ((struct_sz > core->blocksize) && !core->fixedblock) {
-			r_core_block_size (core, struct_sz);
-		}
 		memcpy (buf, core->block, core->blocksize);
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		bool syntax_ok = true;
@@ -1528,12 +1539,18 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		ebytes = bytes;
 		echars = chars;
 		hascolor = false;
+		ut64 ea = addr;
+		if (core->print->pava) {
+			ut64 va = r_io_p2v (core->io, addr);
+			if (va != UT64_MAX) {
+				ea = va;
+			}
+		}
 
-		// r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
 		}
-		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
+		ebytes += sprintf (ebytes, "0x%08"PFMT64x, ea);
 		if (usecolor) {
 			append (ebytes, Color_RESET);
 		}
@@ -1543,7 +1560,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			setcolor = true;
 			R_FREE (note[j]);
 
-			RAnalMetaItem *meta = r_meta_find_in (core->anal, addr + j,
+			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
+			RAnalMetaItem *meta = r_meta_find_in (core->anal, ea + j,
 					R_META_TYPE_FORMAT, R_META_WHERE_HERE);
 			if (meta && meta->type == R_META_TYPE_FORMAT && meta->from == addr + j) {
 				r_cons_printf (".format %s ; size=", meta->str);
@@ -4233,9 +4251,7 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					len = l;
 					if (l > core->blocksize) {
-						if (core->fixedblock) {
-							l = core->blocksize;
-						} else if (!r_core_block_size (core, l)) {
+						if (!r_core_block_size (core, l)) {
 							goto beach;
 						}
 					}
@@ -4784,7 +4800,7 @@ static int cmd_print(void *data, const char *input) {
 		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
 			sp = input + 1;
 		}
-		if (sp && *sp) {
+		if (sp && *sp && sp[1]) {
 			int n = (int) r_num_math (core->num, r_str_trim_ro (sp)); //input + 1));
 			if (!n) {
 				goto beach;
@@ -5072,9 +5088,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'J': // pdJ
 			formatted_json = true;
 			break;
-		case 0:
+		case 0: // "pd"
 			/* "pd" -> will disassemble blocksize/4 instructions */
-			if (*input == 'd' && !core->fixedblock) {
+			if (!core->fixedblock && *input == 'd') {
 				l /= 4;
 			}
 			break;
@@ -5132,37 +5148,34 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			} else {
-				const int bs = core->blocksize;
 				// XXX: issue with small blocks
-				if (*input == 'D' && l > 0) {
+				if (*input == 'D' && use_blocksize > 0) {
+l = use_blocksize;
 					if (l > R_CORE_MAX_DISASM) { // pD
 						eprintf ("Block size too big\n");
 						return 1;
 					}
 					block1 = malloc (addrbytes * l);
 					if (block1) {
-						if (addrbytes * l > core->blocksize) {
-							r_io_read_at (core->io, addr, block1, addrbytes * l); // core->blocksize);
-						} else {
-							memcpy (block1, block, addrbytes * l);
-						}
+						r_io_read_at (core->io, addr, block1, addrbytes * l);
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
 					} else {
 						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
 				} else {
-					int bs1 = l * 16;
-					int bsmax = R_MAX (bs, bs1);
-					block1 = malloc (bsmax + 1);
-					if (block1) {
-						memcpy (block1, block, bs);
-						if (bs1 > bs) {
-							r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
-									bs1 - (bs - bs % addrbytes));
+					ut8 *buf = core->block;
+					const int buf_size = core->blocksize;
+					if (buf) {
+						if (!l) {
+							l = use_blocksize;
+							if (!core->fixedblock) {
+								l /= 4;
+							}
 						}
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block1, bs, l, 0, 0, formatted_json, NULL, NULL);
+								core, addr, buf, buf_size, l,
+								0, 0, formatted_json, NULL, NULL);
 					}
 				}
 			}
@@ -5657,8 +5670,14 @@ static int cmd_print(void *data, const char *input) {
 				char buf[32];
 				for (i = c = 0; i < len; i++, c++) {
 					if (c == 0) {
-						r_print_offset (core->print,
-							core->offset + i, 0, 0, 0, 0, NULL);
+						ut64 ea = core->offset + i;
+						if (core->print->pava) {
+							ut64 va = r_io_p2v (core->io, ea);
+							if (va != UT64_MAX) {
+								ea = va;
+							}
+						}
+						r_print_offset (core->print, ea, 0, 0, 0, 0, NULL);
 					}
 					r_str_bits (buf, core->block + i, 8, NULL);
 
@@ -6088,6 +6107,7 @@ static int cmd_print(void *data, const char *input) {
 					if (!r_core_block_size (core, len)) {
 						len = core->blocksize;
 					}
+					r_core_block_read (core);
 					r_print_hexdump (core->print, r_core_pava (core, core->offset),
 						core->block, len, 16, 1, 1);
 				} else {
@@ -6141,16 +6161,20 @@ static int cmd_print(void *data, const char *input) {
 	case '8': // "p8"
 		if (input[1] == '?') {
 			r_cons_printf ("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
+			r_cons_printf (" p8  : print hexpairs string\n");
+			r_cons_printf (" p8f : print hexpairs of function (linear)\n");
+			r_cons_printf (" p8j : print hexpairs in JSON array\n");
 		} else if (l) {
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
-			block = core->block;
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
 			} else if (input[1] == 'f') { // "p8f"
-				r_core_cmdf (core, "p8 $F @ $B");
+				r_core_cmdf (core, "p8 $FS @ $FB");
 			} else {
+				r_core_block_read (core);
+				block = core->block;
 				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}

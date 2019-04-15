@@ -540,8 +540,6 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 }
 
 static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
-	ut16 bufsz = 1000; // XXX this is wrong
-	eprintf ("Warning: r_anal_try_get_fcn: is slow, should not use fixed bufsz\n");
 	if (!refdepth) {
 		return false;
 	}
@@ -549,26 +547,24 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 	if (!map) {
 		return false;
 	}
-	ut8 *buf = calloc (bufsz, 1);
-	if (!buf) {
-		eprintf ("Error: malloc (buf)\n");
-		return false;
-	}
-	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
-	if (map->perm & R_PERM_X &&
-	    r_anal_check_fcn (core->anal, buf, bufsz, ref->addr, map->itv.addr,
-			      map->itv.addr + map->itv.size)) {
-		if (core->anal->limit) {
-			if (ref->addr < core->anal->limit->from ||
-			    ref->addr > core->anal->limit->to) {
-				free (buf);
-				return 1;
+	if (map->perm & R_PERM_X) {
+		ut8 buf[64];
+		r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
+		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, map->itv.addr,
+				map->itv.addr + map->itv.size);
+		if (looksLikeAFunction) {
+			if (core->anal->limit) {
+				if (ref->addr < core->anal->limit->from ||
+						ref->addr > core->anal->limit->to) {
+					return 1;
+				}
 			}
+			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth - 1);
 		}
-		r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth - 1);
 	} else {
-		ut64 offs, sz = core->anal->bits >> 3;
+		ut64 offs = 0;
+		ut64 sz = core->anal->bits >> 3;
 		RAnalRef ref1;
 		ref1.type = R_ANAL_REF_TYPE_DATA;
 		ref1.at = ref->addr;
@@ -576,8 +572,10 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		ut32 i32;
 		ut16 i16;
 		ut8 i8;
-		for (offs = 0; offs < bufsz; offs += sz, ref1.at += sz) {
-			ut8* bo = buf + offs;
+		ut64 offe = offs + 1024;
+		for (offs = 0; offs < offe; offs += sz, ref1.at += sz) {
+			ut8 bo[8];
+			r_io_read_at (core->io, ref->addr + offs, bo, R_MIN (sizeof (bo), sz));
 			bool be = core->anal->big_endian;
 			switch (sz) {
 			case 1:
@@ -599,7 +597,6 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth - 1);
 		}
 	}
-	free (buf);
 	return 1;
 }
 
@@ -613,7 +610,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 			continue;
 		}
 		switch (ref->type) {
-		case 'd':
+		case R_ANAL_REF_TYPE_DATA:
 			if (core->anal->opt.followdatarefs) {
 				r_anal_try_get_fcn (core, ref, depth, 2);
 			}
@@ -852,7 +849,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
-
 	if (has_next) {
 		for (i = 0; i < nexti; i++) {
 			if (!next[i] || r_anal_get_fcn_in (core->anal, next[i], 0)) {
@@ -861,6 +857,12 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			r_core_anal_fcn (core, next[i], from, 0, depth - 1);
 		}
 		free (next);
+	}
+	if (core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
+		r_anal_fcn_check_bp_use (core->anal, fcn);
+		if (fcn && !fcn->bp_frame) {
+			r_anal_var_delete_all (core->anal, fcn->addr, 'b');
+		}
 	}
 	r_anal_hint_free (hint);
 	return true;
@@ -899,6 +901,12 @@ error:
 				}
 				free (next);
 			}
+		}
+	}
+	if (core->anal->cur && core->anal->cur->arch && !strcmp (core->anal->cur->arch, "x86")) {
+		r_anal_fcn_check_bp_use (core->anal, fcn);
+		if (fcn && !fcn->bp_frame) {
+			r_anal_var_delete_all (core->anal, fcn->addr, 'b');
 		}
 	}
 	r_anal_hint_free (hint);
@@ -1646,7 +1654,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	if (r_cons_is_breaked ()) {
 		return false;
 	}
-
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->addr == at) {
@@ -2799,6 +2806,11 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 	return 0;
 }
 
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
@@ -2838,6 +2850,30 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	case '+':
 		r_core_anal_fcn_list_size (core);
 		break;
+	case '=': { // afl=
+		r_list_sort (fcns, cmpaddr);
+		RList *flist = r_list_new ();
+		if (!flist) {
+			return -1;
+		}
+		ls_foreach (fcns, iter, fcn) {
+			char temp[4];
+			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return -1;
+			}
+			info->name = r_core_anal_fcn_name (core, fcn);
+			info->pitv = (RInterval) {fcn->addr, r_anal_fcn_size (fcn)};
+			info->vitv = info->pitv;
+			info->extra = sdb_itoa (fcn->bits, temp, 10); 
+			info->perm  = -1;
+			r_list_append (flist, info);
+		}
+		r_core_visual_list (core, flist, core->offset, core->blocksize,
+			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		r_list_free (flist);
+		break;
+		}
 	case 'l':
 		if (rad[1] == 'j') {
 			fcn_list_verbose_json (core, fcns);

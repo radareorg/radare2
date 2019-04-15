@@ -234,7 +234,9 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	if (!b || !file) {
 		return false;
 	}
-	return r_file_dump (file, r_buf_get_at (b, 0, NULL), r_buf_size (b), 0);
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+	return r_file_dump (file, tmp, tmpsz, 0);
 }
 
 R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
@@ -379,29 +381,53 @@ err:
 	return res;
 }
 
-// read a max of 8 bytes at addr, and set the read length in len
-R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len) {
-	r_return_val_if_fail (b, NULL);
-	int r = r_buf_read_at (b, addr, b->tmp, sizeof (b->tmp));
-	if (len) {
-		*len = R_MAX (r, 0);
+// return an heap-allocated string read from the RBuffer b at address addr. The
+// length depends on the first '\0' found in the buffer.
+R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
+	const ut8 *needle = NULL;
+	ut8 tmp[16];
+	ut64 sz = 0;
+	int r = r_buf_read_at (b, addr + sz, tmp, sizeof (tmp));
+	while (r >= 0) {
+		needle = r_mem_mem (tmp, r, (ut8 *)"\x00", 1);
+		if (needle) {
+			sz += (needle - tmp);
+			break;
+		}
+		sz += r;
+		r = r_buf_read_at (b, addr + sz, tmp, sizeof (tmp));
 	}
-	return r >= 0? b->tmp: NULL;
+	if (r < 0) {
+		return NULL;
+	}
+
+	char *res = R_NEWS (char, sz + 1);
+	if (!res) {
+		return NULL;
+	}
+	r = r_buf_read_at (b, addr + 20, (ut8 *)res, sz);
+	if (r < 0) {
+		free (res);
+		return NULL;
+	}
+	res[sz] = '\0';
+	return res;
 }
 
 R_API int r_buf_read(RBuffer *b, ut8 *buf, size_t len) {
+	r_return_val_if_fail (b && buf, -1);
 	return buf_read (b, buf, len);
 }
 
 R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len) {
-	r_return_val_if_fail (b && !b->readonly, -1);
+	r_return_val_if_fail (b && buf && !b->readonly, -1);
 	return buf_write (b, buf, len);
 }
 
 R_API ut8 r_buf_read8(RBuffer *b) {
 	ut8 res;
 	int r = r_buf_read (b, &res, sizeof (res));
-	return r == sizeof (res)? res: b->Oxff_priv;
+	return r == sizeof (res) ? res : b->Oxff_priv;
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
@@ -593,4 +619,48 @@ R_API RList *r_buf_nonempty_list(RBuffer *b) {
 		return NULL;
 	}
 	return r_list_clone (b->sparse_priv);
+}
+
+R_API int r_buf_uleb128(RBuffer *b, ut64 *v) {
+	ut8 c = 0xff;
+	ut64 s = 0, sum = 0, l = 0;
+	do {
+		ut8 data;
+		int r = r_buf_read (b, &data, sizeof (data));
+		if (r <= 0) {
+			return -1;
+		}
+		c = data & 0xff;
+		sum |= ((ut64) (c & 0x7f) << s);
+		s += 7;
+		l++;
+	} while (c & 0x80);
+	if (v) {
+		*v = sum;
+	}
+	return l;
+}
+
+R_API int r_buf_sleb128(RBuffer *b, st64 *v) {
+	st64 result = 0;
+	int offset = 0;
+	ut8 value;
+	do {
+		st64 chunk;
+		int r = r_buf_read (b, &value, sizeof (value));
+		if (r != sizeof (value)) {
+			return -1;
+		}
+		chunk = value & 0x7f;
+		result |= (chunk << offset);
+		offset += 7;
+	} while (value & 0x80);
+
+	if ((value & 0x40) != 0) {
+		result |= ~0UL << offset;
+	}
+	if (v) {
+		*v = result;
+	}
+	return offset / 7;
 }

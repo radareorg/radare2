@@ -16,8 +16,11 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = '0b37390f49499527fd9aca64afddeb5dfbe5e663'
-    CS_BRA = 'master'
+    #CS_TIP = '3a660df88c30685cccf6ff68b4d6d4337b5caf7e'
+    #CS_BRA = 'next'
+    #cs5#CS_TIP = '472845db9c2666ab66b3f517dda21f2b026a06c1'
+    CS_TIP = '7090f081b17a5293a2c185a06513fede18065d3c'
+    CS_BRA = 'v4'
 
     capstone_git_user = 'aquynh'
 
@@ -47,7 +50,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
       patch_cmd = run_command(git_exe, patch_cmd_str.split())
       if patch_cmd.returncode() != 0
-        error('Cannot apply patch ' + file)
+        warning('Cannot apply patch ' + file)
       endif
     endforeach
   endif
@@ -90,6 +93,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/X86/X86Disassembler.c',
     'arch/X86/X86DisassemblerDecoder.c',
     'arch/X86/X86IntelInstPrinter.c',
+    # cs5-only 'arch/X86/X86InstPrinterCommon.c',
     'arch/X86/X86Mapping.c',
     'arch/X86/X86Module.c',
     'arch/XCore/XCoreDisassembler.c',

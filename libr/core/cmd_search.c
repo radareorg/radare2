@@ -27,6 +27,7 @@ static const char *help_msg_slash[] = {
 	"/c", " jmp [esp]", "search for asm code matching the given string",
 	"/ce", "[j] rsp,rbp", "search for esil expressions matching",
 	"/ci", "[j] 0x300", "find all the instructions using that immediate",
+	"/ci", "[j] 0x300 0x500", "find all the instructions using an immediate",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -89,8 +90,8 @@ static const char *help_msg_slash_a[] = {
 	"/ai", "", "Search for infinite loop instructions (jmp $$)",
 	"/at", " type", "Search for instructions of given type",
 	"/af", " family", "Search for instruction of specific family",
+	"/am", " opcode", "Search for specific instructions of specific mnemonic",
 	"/as", "", "Search for syscalls (See /at swi and /af priv)",
-
 	"/al", "", "Same as aoml, list all opcodes",
 	"/asl", "", "Same as asl, list all syscalls",
 	"/atl", "", "List all instruction types",
@@ -1888,13 +1889,11 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
-	ut8 *buf;
 	RAnalOp aop;
 	int type = 0;
 	int mode = 0;
-	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
-	int count = 0;
+	int i, ret, count = 0;
 	bool firstItem = true;
 
 	while (*input && *input != ' ') {
@@ -1934,6 +1933,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 'f': // "/af"
 		case 's': // "/as"
 		case 't': // "/at"
+		case 'm': // "/am"
 		case ' ':
 			type = *input;
 			break;
@@ -1946,7 +1946,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		input++;
 	}
 	if (type == 's') {
-		eprintf ("Shouldnt reach\n");
+		eprintf ("Shouldn't reach\n");
 // ??
 #if 0
 	case 's': // "/s"
@@ -1960,39 +1960,31 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		r_cons_printf ("[");
 	}
 	input = r_str_trim_ro (input);
-	buf = malloc (bsize);
-	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		return false;
-	}
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
-		for (i = 0, at = from; at < to; at++, i++) {
+		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (i >= (bsize - 32)) {
-				i = 0;
-			}
-			if (!i) {
-				r_io_read_at (core->io, at, buf, bsize);
-			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+			at = from + i;
+			ut8 bufop[32];
+			r_io_read_at (core->io, at, bufop, sizeof(bufop));
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof(bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
-				if (type == 'f') {
+				if (type == 'm') {
+					const char *fam = aop.mnemonic;
+					if (fam && (!*input || r_str_startswith (fam, input))) {
+						match = true;
+					}
+				} else if (type == 'f') {
 					const char *fam = r_anal_op_family_to_string (aop.family);
-					if (fam) {
-						if (!*input || !strcmp (input, fam)) {
-							match = true;
-							if (mode == 0) {
-								r_cons_printf ("0x%08"PFMT64x " - %d %s\n", at, ret, fam);
-							}
-						}
+					if (fam && (!*input || !strcmp (input, fam))) {
+						match = true;
 					}
 				} else {
 					const char *type = r_anal_optype_to_string (aop.type);
@@ -2033,7 +2025,12 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 						r_cons_printf ("0x%08"PFMT64x "\n", at);
 						break;
 					default:
-						r_cons_printf ("0x%08"PFMT64x " %d %s\n", at, ret, opstr);
+						if (type == 'f') {
+							const char *fam = r_anal_op_family_to_string (aop.family);
+							r_cons_printf ("0x%08"PFMT64x " %d %s %s\n", at, ret, fam, opstr);
+						} else {
+							r_cons_printf ("0x%08"PFMT64x " %d %s\n", at, ret, opstr);
+						}
 						break;
 					}
 					R_FREE (opstr);
@@ -2069,7 +2066,6 @@ done:
 		r_cons_println ("]\n");
 	}
 	r_cons_break_pop ();
-	free (buf);
 	return false;
 }
 
@@ -2198,7 +2194,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 			hits = NULL;
 		} else {
 			hits = r_core_asm_strsearch (core, end_cmd,
-				from, to, maxhits, regexp, everyByte, mode);
+					from, to, maxhits, regexp, everyByte, mode);
 		}
 		if (hits) {
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");

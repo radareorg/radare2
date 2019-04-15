@@ -50,6 +50,7 @@ typedef struct r_print_zoom_t {
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
+	bool pava;
 	RCoreBind coreb;
 	const char *cfmt;
 	char datefmt[32];
@@ -169,6 +170,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 #define R_PRINT_VALUE     (1 << 6)
 #define R_PRINT_DOT       (1 << 7)
 #define R_PRINT_QUIET     (1 << 8)
+#define R_PRINT_STRUCT    (1 << 9)
 R_API int r_print_format_struct_size(const char *format, RPrint *p, int mode, int n);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API int r_print_format_length(const char *fmt);
