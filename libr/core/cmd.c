@@ -846,17 +846,35 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
-	if (*input) {
-		const char *path = r_str_trim_ro (input + 1);
-		if (r_fs_check (core->fs, path)) {
-			r_core_cmdf (core, "md %s", path);
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1);
+	}
+	switch (*input) {
+	case '?': // "l?"
+		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
+		break;
+	case 'e': // "le"
+		if (arg) {
+			r_core_cmdf (core, "cat %s~..", arg);
 		} else {
-			char *res = r_syscmd_ls (path);
+			eprintf ("Usage: less [file]\n");
+		}
+		break;
+	default: // "ls"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_ls (arg);
 			if (res) {
 				r_cons_print (res);
 				free (res);
 			}
 		}
+		break;
 	}
 	return 0;
 }
@@ -4345,7 +4363,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"g",        "egg manipulation", cmd_egg, cmd_egg_init},
 		{"info",     "get file info", cmd_info, cmd_info_init},
 		{"kuery",    "perform sdb query", cmd_kuery},
-		{"ls",       "list files and directories", cmd_ls},
+		{"l",       "list files and directories", cmd_ls},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins},
 		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
 		{"open",     "open or map file", cmd_open, cmd_open_init},
