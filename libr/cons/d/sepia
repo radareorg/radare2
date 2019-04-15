@@ -6,8 +6,8 @@ ec b0xff rgb:960
 ec bin rgb:fec
 ec other rgb:ba6
 ec btext rgb:fec
-ec ucall rgb:fec rgb:320
-ec call rgb:fec rgb:320
+ec ucall white
+ec call white
 ec ujmp rgb:fec
 ec cjmp rgb:fec
 ec jmp rgb:fec

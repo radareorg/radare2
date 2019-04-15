@@ -10,6 +10,7 @@
 static const char *help_msg_s[] = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "Print current address",
+	"s.", "hexoff", "Seek honoring a base from core->offset",
 	"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
 	"s", " addr", "Seek to address",
 	"s-", "", "Undo seek",
@@ -22,7 +23,6 @@ static const char *help_msg_s[] = {
 	"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names, s==)",
 	"s/", " DATA", "Search for next occurrence of 'DATA'",
 	"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
-	"s.", "hexoff", "Seek honoring a base from core->offset",
 	"sa", " [[+-]a] [asz]", "Seek asz (or bsize) aligned to addr",
 	"sb", "", "Seek aligned to bb start",
 	"sC", "[?] string", "Seek to comment matching given string",

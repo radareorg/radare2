@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_core.h>
@@ -81,7 +81,17 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 
-	ut64 usrimm = r_num_math (core->num, input + 1);
+	char *inp = r_str_trim (strdup (input + 1));
+	char *inp_arg = strchr (inp, ' ');
+	if (inp_arg) {
+		*inp_arg++ = 0;
+	}
+	ut64 usrimm = r_num_math (core->num, inp);
+	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
+	if (usrimm > usrimm2) {
+		eprintf ("Error: /ci : Invalid range\n");
+		return NULL;
+	}
 
 	if (core->blocksize < 8) {
 		eprintf ("error: block size too small\n");
@@ -131,7 +141,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
-				if (analop.val == usrimm) {
+				ut64 val = analop.val; // maybe chk for ptr or others?
+				if (val >= usrimm && val <= usrimm2) {
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						R_FREE (hits);

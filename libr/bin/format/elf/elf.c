@@ -1898,13 +1898,20 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 
 	// ARM Glibc
 	if (entry & 1) {
+		int delta = 0;
 		/* thumb entry points */
 		if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x02\xbc\x6a\x46", 11)) {
 			/* newer versions of gcc use push/pop */
-			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x28-1]) & ~1);
+			delta = 0x28;
 		} else if (!memcmp (buf, "\xf0\x00\x0b\x4f\xf0\x00\x0e\x5d\xf8\x04\x1b", 11)) {
 			/* older versions of gcc (4.5.x) use ldr/str */
-			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30-1]) & ~1);
+			delta = 0x30;
+		}
+		if (delta) {
+			ut64 pa = Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[delta-1]) & ~1);
+			if (pa < r_buf_size (bin->b)) {
+				return pa;
+			}
 		}
 	} else {
 		/* non-thumb entry points */
