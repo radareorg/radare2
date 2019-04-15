@@ -47,7 +47,11 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	ut64 new_baddr = UT64_MAX;
 	if (args) {
 		new_baddr = r_num_math (core->num, args);
-		r_config_set_i (core->config, "bin.baddr", new_baddr);
+		if (new_baddr && new_baddr != UT64_MAX) {
+			r_config_set_i (core->config, "bin.baddr", new_baddr);
+		} else {
+			new_baddr = UT64_MAX;
+		}
 	}
 
 	if (r_sandbox_enable (0)) {
