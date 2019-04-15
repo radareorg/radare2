@@ -1556,7 +1556,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			} else if (reloc->symbol && name && name[0]) {
 				r_cons_printf (" %s", name);
 			}
-			free (name);
+			R_FREE (name);
 			if (reloc->addend) {
 				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
 					r_cons_printf (" +");
