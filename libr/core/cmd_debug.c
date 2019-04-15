@@ -42,6 +42,7 @@ static const char *help_msg_d[] = {
 static const char *help_msg_db[] = {
 	"Usage: db", "", " # Breakpoints commands",
 	"db", "", "List breakpoints",
+	"db*", "", "List breakpoints in r commands",
 	"db", " sym.main", "Add breakpoint into sym.main",
 	"db", " <addr>", "Add breakpoint",
 	"db-", " <addr>", "Remove breakpoint",
