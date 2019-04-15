@@ -24,6 +24,7 @@ static const char *help_msg_t[] = {
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
+	"toe", "", "Open cfg.editor to edit types",
 	"tos", " <path>", "Load types from parsed Sdb database",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it",
 	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
@@ -1231,6 +1232,25 @@ static int cmd_type(void *data, const char *input) {
 					sdb_merge (TDB, db_tmp);
 					sdb_close (db_tmp);
 					sdb_free (db_tmp);
+				}
+			}  else if (input[1] == 'e') { // toe
+				char *str = r_core_cmd_str (core , "tc");
+				char *tmp = r_core_editor (core, "*.h", str);
+				if (tmp) {
+					char *error_msg = NULL;
+					char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+					if (out) {
+						// remove previous types and save new edited types
+						sdb_reset (TDB);
+						r_parse_reset ();
+						r_anal_save_parsed_type (core->anal, out);
+						free (out);
+					}
+					if (error_msg) {
+						fprintf (stderr, "%s", error_msg);
+						free (error_msg);
+					}
+					free (tmp);
 				}
 			}
 		} else {
