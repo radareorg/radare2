@@ -188,8 +188,8 @@ static int addCmdPanel(void *user);
 static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str);
 static int addCmdfPanel(RCore *core, char *input, char *str);
 static void insertPanel(RCore *core, int n, const char *name, const char*cmd, bool cache);
-static void splitPanelVertical(RCore *core);
-static void splitPanelHorizontal(RCore *core);
+static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache);
+static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
@@ -635,38 +635,36 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	return 0;
 }
 
-static void splitPanelVertical(RCore *core) {
+static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache) {
 	RPanels *panels = core->panels;
 	if (!checkPanelNum (panels)) {
 		return;
 	}
-	RPanel *cur = getCurPanel (panels);
-	insertPanel (core, panels->curnode + 1, cur->model->title, cur->model->cmd, cur->model->cache);
+	insertPanel (core, panels->curnode + 1, name, cmd, cache);
 	RPanel *next = getPanel (panels, panels->curnode + 1);
-	const int owidth = cur->view->pos.w;
-	cur->view->pos.w = owidth / 2 + 1;
-	next->view->pos.x = cur->view->pos.x + cur->view->pos.w - 1;
-	next->view->pos.y = cur->view->pos.y;
-	next->view->pos.w = owidth - cur->view->pos.w + 1;
-	next->view->pos.h = cur->view->pos.h;
+	int owidth = p->view->pos.w;
+	p->view->pos.w = owidth / 2 + 1;
+	next->view->pos.x = p->view->pos.x + p->view->pos.w - 1;
+	next->view->pos.y = p->view->pos.y;
+	next->view->pos.w = owidth - p->view->pos.w + 1;
+	next->view->pos.h = p->view->pos.h;
 	setRefreshAll (panels, false);
 }
 
-static void splitPanelHorizontal(RCore *core) {
+static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache) {
 	RPanels *panels = core->panels;
 	if (!checkPanelNum (panels)) {
 		return;
 	}
-	RPanel *cur = getCurPanel (panels);
-	insertPanel (core, panels->curnode + 1, cur->model->title, cur->model->cmd, cur->model->cache);
+	insertPanel (core, panels->curnode + 1, name, cmd, cache);
 	RPanel *next = getPanel (panels, panels->curnode + 1);
-	const int oheight = cur->view->pos.h;
-	cur->view->curpos = 0;
-	cur->view->pos.h = oheight / 2 + 1;
-	next->view->pos.x = cur->view->pos.x;
-	next->view->pos.y = cur->view->pos.y + cur->view->pos.h - 1;
-	next->view->pos.w = cur->view->pos.w;
-	next->view->pos.h = oheight - cur->view->pos.h + 1;
+	int oheight = p->view->pos.h;
+	p->view->curpos = 0;
+	p->view->pos.h = oheight / 2 + 1;
+	next->view->pos.x = p->view->pos.x;
+	next->view->pos.y = p->view->pos.y + p->view->pos.h - 1;
+	next->view->pos.w = p->view->pos.w;
+	next->view->pos.h = oheight - p->view->pos.h + 1;
 	setRefreshAll (panels, false);
 }
 
@@ -3761,6 +3759,20 @@ repeat:
 		redoSeek (core);
 		break;
 	case 'n':
+		{
+			if (!checkPanelNum (panels)) {
+				break;
+			}
+			char *res = r_cons_input ("New panel with command: ");
+			if (res && *res) {
+				bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
+				if (res && *res) {
+					splitPanelVertical (core, getCurPanel (panels), res, res, cache);
+				}
+			}
+			free (res);
+		}
+		break;
 	case 'N':
 		{
 			if (!checkPanelNum (panels)) {
@@ -3770,7 +3782,7 @@ repeat:
 			if (res && *res) {
 				bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
 				if (res && *res) {
-					addNewPanel (core, res, res, cache);
+					splitPanelHorizontal (core, getCurPanel (panels), res, res, cache);
 				}
 			}
 			free (res);
@@ -4016,11 +4028,17 @@ repeat:
 		toggleZoomMode (panels);
 		break;
 	case '|':
-		splitPanelVertical (core);
-		break;
+		{
+			RPanel *p = getCurPanel (panels);
+			splitPanelVertical (core, p, p->model->title, p->model->cmd, p->model->cache);
+			break;
+		}
 	case '-':
-		splitPanelHorizontal (core);
-		break;
+		{
+			RPanel *p = getCurPanel (panels);
+			splitPanelHorizontal (core, p, p->model->title, p->model->cmd, p->model->cache);
+			break;
+		}
 	case '*':
 		if (checkFunc (core)) {
 			r_cons_canvas_free (can);
