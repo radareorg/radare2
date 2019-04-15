@@ -2144,6 +2144,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	bool oldfixedbits = core->fixedbits;
 	bool cmd_tmpseek = false;
 	ut64 tmpbsz = core->blocksize;
+	int cmd_ignbithints = -1;
 
 	if (!cmd) {
 		r_list_free (tmpenvs);
@@ -2846,6 +2847,8 @@ repeat_arroba:
 				break;
 			case 'b': // "@b:" // bits
 				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits);
+				cmd_ignbithints = r_config_get_i (core->config, "anal.ignbithints");
+				r_config_set_i (core->config, "anal.ignbithints", 1);
 				break;
 			case 'i': // "@i:"
 				{
@@ -3157,6 +3160,9 @@ beach:
 	core->fixedbits = oldfixedbits;
 	if (tmpseek) {
 		*tmpseek = cmd_tmpseek;
+	}
+	if (cmd_ignbithints != -1) {
+		r_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
 	}
 	return rc;
 fail:
