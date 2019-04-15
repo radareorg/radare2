@@ -1235,8 +1235,13 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
 		char *utf_encoded_buf = NULL;
+		int str_len = r_str_nlen ((char *)buf + i, len - i);
+		if ((size == -1 || size > len - i) && str_len == len - i) {
+			eprintf ("Warning: string overflows buffer\n");
+		}
 		p->cb_printf ("\"");
-		utf_encoded_buf = r_str_escape_utf8_for_json ((char *)buf + i, -1);
+		utf_encoded_buf = r_str_escape_utf8_for_json (
+		    (char *)buf + i, size == -1 ? str_len : R_MIN (size, str_len));
 		if (utf_encoded_buf){
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
