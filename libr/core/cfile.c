@@ -44,6 +44,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		}
 	}
 
+	ut64 new_baddr = UT64_MAX;
+	if (args) {
+		new_baddr = r_num_math (core->num, args);
+		if (new_baddr && new_baddr != UT64_MAX) {
+			r_config_set_i (core->config, "bin.baddr", new_baddr);
+		} else {
+			new_baddr = UT64_MAX;
+		}
+	}
+	if (new_baddr == UT64_MAX) {
+		new_baddr = r_config_get_i (core->config, "bin.baddr");
+	}
+
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
 		free (obinfilepath);
@@ -98,11 +111,15 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			if (new_baddr != UT64_MAX) {
+				baddr = new_baddr;
+			}
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
 				eprintf ("Error: Failed to reload rbin for: %s", path);
 			}
+			origoff = r_num_math (core->num, "entry0");
 		}
 
 		if (core->bin->cur && core->io && r_io_desc_get (core->io, file->fd) && !loadbin) {

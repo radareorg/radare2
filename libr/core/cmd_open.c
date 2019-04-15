@@ -115,7 +115,7 @@ static const char *help_msg_oo[] = {
 	"Usage:", "oo[-] [arg]", " # map opened files",
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
-	"oob", "", "reopen loading rbin info",
+	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
 	"ooc", "", "reopen core with current file",
 	"ood", "", "reopen in debug mode",
 	"oom", "", "reopen in malloc://",
