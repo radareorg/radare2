@@ -2463,7 +2463,7 @@ R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
 }
 
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
-	return op->dst && op->dst->reg && op->dst->reg->name &&!strcmp (op->dst->reg->name, anal->reg->name[R_REG_NAME_BP]); 
+	return op->dst && op->dst->reg && op->dst->reg->name && !op->dst->memref && !strcmp (op->dst->reg->name, anal->reg->name[R_REG_NAME_BP]); 
 }
 /*
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
@@ -2488,7 +2488,7 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
-			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_OPEX);
+			r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ANAL_OP_MASK_VAL);
 			if (op.size < 1) {
 				op.size = 1;
 			}
@@ -2500,10 +2500,6 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				}
 				break;
 			case R_ANAL_OP_TYPE_LEA:
-				if (can_affect_bp (anal, &op)) {
-					fcn->bp_frame = false;
-				}
-				break;
 			case R_ANAL_OP_TYPE_ADD:
 			case R_ANAL_OP_TYPE_AND:
 			case R_ANAL_OP_TYPE_CMOV:
@@ -2513,23 +2509,21 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_ROR:
 			case R_ANAL_OP_TYPE_SAL:
 			case R_ANAL_OP_TYPE_SAR:
-			case R_ANAL_OP_TYPE_SHL:
 			case R_ANAL_OP_TYPE_SHR:
 			case R_ANAL_OP_TYPE_SUB:
 			case R_ANAL_OP_TYPE_XOR:
-			// op.dst is not filled for these operations, so for now, check for bp as dst looks like this; in the future it may be just replaced with call to can_affect_bp
-				if (op.opex.ptr) {
-					pos = strstr (op.opex.ptr, str_to_find);
-				}
-				else {
-					pos = NULL;
-				}
-				if (pos && pos - op.opex.ptr < 60) {
+			case R_ANAL_OP_TYPE_SHL:
+				if (can_affect_bp (anal, &op)) {
 					fcn->bp_frame = false;
 				}
 				break;
 			case R_ANAL_OP_TYPE_XCHG:
-				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
+				if (op.dst && op.dst->reg && !op.dst->memref 
+				&& !strcmp (op.dst->reg->name, anal->reg->name[R_REG_NAME_BP])) {
+					fcn->bp_frame = false;
+				}
+				if (op.src[0] && op.src[0]->reg && !op.src[0]->memref
+				&&  !strcmp (op.dst->reg->name, anal->reg->name[R_REG_NAME_BP])) {
 					fcn->bp_frame = false;
 				}
 				break;
