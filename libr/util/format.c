@@ -1234,9 +1234,9 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		}
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
-		char * utf_encoded_buf = NULL;
+		char *utf_encoded_buf = NULL;
 		p->cb_printf ("\"");
-		utf_encoded_buf = r_str_escape_utf8_for_json ((char *) buf + i, -1);
+		utf_encoded_buf = r_str_escape_utf8_for_json ((char *)buf + i, -1);
 		if (utf_encoded_buf){
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
@@ -1962,7 +1962,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		otimes = times = 1;
 	}
 	for (; times; times--) { // repeat N times
-		const char * orig = arg;
+		const char *orig = arg;
 		int first = 1;
 		if (otimes > 1) {
 			if (mode & R_PRINT_JSON) {
