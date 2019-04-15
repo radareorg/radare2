@@ -604,3 +604,4 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	io_map_calculate_skyline (io);
 	return true;
 }
+

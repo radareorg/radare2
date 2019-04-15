@@ -1750,7 +1750,7 @@ static int cb_ioaslr(void *user, void *data) {
 static int cb_io_pava(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->pava = node->i_value;
+	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
 		eprintf ("WARNING: You may probably want to disable io.va too\n");
 	}

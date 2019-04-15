@@ -332,7 +332,7 @@ static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 
 R_API ut64 r_core_pava (RCore *core, ut64 addr) {
-	if (core->pava) {
+	if (core->print->pava) {
 		RIOMap *map = r_io_map_get_paddr (core->io, addr);
 		if (map) {
 			return addr - map->delta + map->itv.addr;

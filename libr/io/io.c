@@ -475,6 +475,23 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 	return true;
 }
 
+R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
+	RIOMap *map = r_io_map_get_paddr (io, pa);
+	if (map) {
+		return pa - map->delta + map->itv.addr;
+	}
+	return UT64_MAX;
+}
+
+R_API ut64 r_io_v2p(RIO *io, ut64 va) {
+	RIOMap *map = r_io_map_get (io, va);
+	if (map) {
+		st64 delta = va - map->itv.addr;
+		return map->itv.addr + map->delta + delta;
+	}
+	return UT64_MAX;
+}
+
 R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	r_return_if_fail (io && bnd);
 
@@ -483,6 +500,8 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->desc_use = r_io_use_fd;
 	bnd->desc_get = r_io_desc_get;
 	bnd->desc_size = r_io_desc_size;
+	bnd->p2v = r_io_p2v;
+	bnd->v2p = r_io_v2p;
 	bnd->open = r_io_open_nomap;
 	bnd->open_at = r_io_open_at;
 	bnd->close = r_io_fd_close;
