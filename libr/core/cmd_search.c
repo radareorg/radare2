@@ -27,6 +27,7 @@ static const char *help_msg_slash[] = {
 	"/c", " jmp [esp]", "search for asm code matching the given string",
 	"/ce", "[j] rsp,rbp", "search for esil expressions matching",
 	"/ci", "[j] 0x300", "find all the instructions using that immediate",
+	"/ci", "[j] 0x300 0x500", "find all the instructions using an immediate",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -2193,7 +2194,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 			hits = NULL;
 		} else {
 			hits = r_core_asm_strsearch (core, end_cmd,
-				from, to, maxhits, regexp, everyByte, mode);
+					from, to, maxhits, regexp, everyByte, mode);
 		}
 		if (hits) {
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
