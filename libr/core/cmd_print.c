@@ -459,7 +459,7 @@ static const char *help_msg_px[] = {
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
 	"pxA", "[?]", "show op analysis color map",
-	"pxb", "", "dump bits in hexdump form",
+	"pxb", "", "dump bits in hexdump form", // should be px1?
 	"pxc", "", "show hexdump with comments",
 	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
@@ -1539,12 +1539,18 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		ebytes = bytes;
 		echars = chars;
 		hascolor = false;
+		ut64 ea = addr;
+		if (core->print->pava) {
+			ut64 va = r_io_p2v (core->io, addr);
+			if (va != UT64_MAX) {
+				ea = va;
+			}
+		}
 
-		// r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
 		}
-		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
+		ebytes += sprintf (ebytes, "0x%08"PFMT64x, ea);
 		if (usecolor) {
 			append (ebytes, Color_RESET);
 		}
@@ -1554,7 +1560,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			setcolor = true;
 			R_FREE (note[j]);
 
-			RAnalMetaItem *meta = r_meta_find_in (core->anal, addr + j,
+			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
+			RAnalMetaItem *meta = r_meta_find_in (core->anal, ea + j,
 					R_META_TYPE_FORMAT, R_META_WHERE_HERE);
 			if (meta && meta->type == R_META_TYPE_FORMAT && meta->from == addr + j) {
 				r_cons_printf (".format %s ; size=", meta->str);
@@ -5663,8 +5670,14 @@ l = use_blocksize;
 				char buf[32];
 				for (i = c = 0; i < len; i++, c++) {
 					if (c == 0) {
-						r_print_offset (core->print,
-							core->offset + i, 0, 0, 0, 0, NULL);
+						ut64 ea = core->offset + i;
+						if (core->print->pava) {
+							ut64 va = r_io_p2v (core->io, ea);
+							if (va != UT64_MAX) {
+								ea = va;
+							}
+						}
+						r_print_offset (core->print, ea, 0, 0, 0, 0, NULL);
 					}
 					r_str_bits (buf, core->block + i, 8, NULL);
 

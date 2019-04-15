@@ -402,6 +402,12 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
+	if (p->pava) {
+		ut64 va = p->iob.p2v (p->iob.io, addr);
+		if (va != UT64_MAX) {
+			addr = va;
+		}
+	}
 	if (use_segoff) {
 		ut32 s, a;
 		a = addr & 0xffff;
@@ -997,7 +1003,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		if (use_offset && !isPxr) {
-			r_print_addr (p, addr + j * zoomsz);
+			ut64 at = addr + (j * zoomsz);
+			r_print_addr (p, at);
 		}
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;

@@ -50,6 +50,7 @@ typedef struct r_print_zoom_t {
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
+	bool pava;
 	RCoreBind coreb;
 	const char *cfmt;
 	char datefmt[32];
