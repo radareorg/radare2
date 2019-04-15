@@ -53,6 +53,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			new_baddr = UT64_MAX;
 		}
 	}
+	if (new_baddr == UT64_MAX) {
+		new_baddr = r_config_get_i (core->config, "bin.baddr");
+	}
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot reopen in sandbox\n");
