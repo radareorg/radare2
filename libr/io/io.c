@@ -121,11 +121,12 @@ R_API void r_io_free(RIO *io) {
 }
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
-	const int bufSize = r_buf_size (b);
+	ut64 bufSize = r_buf_size (b);
 	char *uri = r_str_newf ("malloc://%d", bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
-		r_io_desc_write (desc, r_buf_get_at (b, 0, NULL), bufSize);
+		const ut8 *tmp = r_buf_buffer (b, &bufSize);
+		r_io_desc_write (desc, tmp, bufSize);
 	}
 	return desc;
 }

@@ -23,10 +23,10 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 		if (*data) {
 			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
-				if (s > 31) {
+				if (s > 63) {
 					eprintf ("r_uleb128: undefined behaviour in %d shift on ut32\n", (int)s);
 				} else {
-					sum |= ((ut32) (c & 0x7f) << s);
+					sum |= ((ut64) (c & 0x7f) << s);
 				}
 				if (!(c & 0x80)) {
 					break;
@@ -51,7 +51,7 @@ R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut64 s = 0, sum = 0, l = 0;
 	do {
 		c = *(data++) & 0xff;
-		sum |= ((ut32) (c&0x7f) << s);
+		sum |= ((ut64) (c&0x7f) << s);
 		s += 7;
 		l++;
 	} while (c & 0x80);
@@ -64,7 +64,7 @@ R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	return data;
 }
 
-R_API const ut8 *r_uleb128_encode(const ut64 s, int *len) {
+R_API ut8 *r_uleb128_encode(const ut64 s, int *len) {
 	ut8 c = 0;
 	int l = 0;
 	ut8 *otarget = NULL, *target = NULL, *tmptarget = NULL;
@@ -127,8 +127,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 		chunk = value & 0x7f;
 		result |= (chunk << offset);
 		offset += 7;
-	}
-	while (cond = *p & 0x80 && p + 1 < end, p++, cond);
+	} while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0) {
 		result |= ~0UL << offset;

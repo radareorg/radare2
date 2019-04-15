@@ -2751,10 +2751,13 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 #endif
 			}
 			break;
-		case LC_ID_DYLIB: // install_name_tool
+		case LC_ID_DYLIB: { // install_name_tool
+			char *id = r_buf_get_string (buf, addr + 20);
 			cb_printf ("0x%08"PFMT64x"  id           %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
+				addr + 20, id? id: "");
+			free (id);
 			break;
+		}
 		case LC_UUID:
 			{
 				ut8 i, uuid[16];
@@ -2776,17 +2779,24 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			}
 			break;
 		case LC_LOAD_DYLIB:
-		case LC_LOAD_WEAK_DYLIB:
+		case LC_LOAD_WEAK_DYLIB: {
+			char *load_dylib = r_buf_get_string (buf, addr + 16);
 			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
-				addr + 16, r_buf_get_at (buf, addr + 16, NULL));
+				addr + 16, load_dylib? load_dylib: "");
+			free (load_dylib);
 			break;
-		case LC_RPATH:
-			cb_printf ("0x%08"PFMT64x"  rpath       %s\n",
-				addr + 4, r_buf_get_at (buf, addr + 4, NULL));
+		}
+		case LC_RPATH: {
+			char *rpath = r_buf_get_string (buf, addr + 4);
+			cb_printf ("0x%08" PFMT64x "  rpath       %s\n",
+				addr + 4, rpath ? rpath : "");
+			free (rpath);
 			break;
+		}
 		case LC_CODE_SIGNATURE:
 			{
-			ut32 *words = (ut32*)r_buf_get_at (buf, addr, NULL);
+			ut32 words[2];
+			r_buf_read_at (buf, addr, (ut8 *)words, sizeof (words));
 			cb_printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
 			cb_printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
 			cb_printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);

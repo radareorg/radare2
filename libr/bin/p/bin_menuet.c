@@ -67,9 +67,9 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
+	ut64 sz;
+	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
 	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
@@ -77,7 +77,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0; // 0x800000;
 }
 
-static ut64 menuetEntry (const ut8 *buf, int buf_size) {
+static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	switch (MENUET_VERSION(buf)) {
 	case '0': return r_read_ble32 (buf + 12, false);
 	case '1': return r_read_ble32 (buf + 12, false);

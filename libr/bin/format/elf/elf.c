@@ -40,10 +40,10 @@
 #define READWORD(x, i) READ32 (x, i)
 #endif
 
-#define BREAD8(x, i) r_read_ble8(r_buf_get_at (x, (i), NULL)); (i) += 1
-#define BREAD16(x, i) r_read_ble16(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 2
-#define BREAD32(x, i) r_read_ble32(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 4
-#define BREAD64(x, i) r_read_ble64(r_buf_get_at (x, (i), NULL), bin->endian); (i) += 8
+#define BREAD8(x, i) r_buf_read_ble8_at(x, i); (i) += 1
+#define BREAD16(x, i) r_buf_read_ble16_at(x, i, bin->endian); (i) += 2
+#define BREAD32(x, i) r_buf_read_ble32_at(x, i, bin->endian); (i) += 4
+#define BREAD64(x, i) r_buf_read_ble64_at(x, i, bin->endian); (i) += 8
 
 #if R_BIN_ELF64
 static inline int UTX_MUL(ut64 *r, ut64 a, ut64 b) {

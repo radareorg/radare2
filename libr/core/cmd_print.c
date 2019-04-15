@@ -4080,7 +4080,7 @@ static const char* bits_to_c_code_fmtstr(int bits) {
 	}
 }
 
-static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w) {
+static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
 	const char *fmtstr;
 	int i, bits;
 
@@ -4113,7 +4113,7 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 	p->cb_printf ("\n};\n");
 }
 
-R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
+R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
 	int i, w = p->cols * 0.7;
 	if (w < 1) {
 		w = 1;
