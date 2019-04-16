@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2019 - pancake */
 
 #include <r_core.h>
+#define SORT_ADDRESS 0
+#define SORT_NAME 1
 
 // find a better name and move to r_util or r_cons?
 R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb) {
@@ -37,6 +39,7 @@ typedef struct {
 	ut64 addr;
 	RAnalFunction *fcn;
 	int cur; // current row selected
+	int cur_sort; // holds current sort
 	RCore *core;
 	RList *mainCol;
 	RList *xrefsCol;
@@ -146,11 +149,38 @@ static void __seek_cursor(RCoreVisualViewGraph *status) {
 	return;
 }
 
+static int cmpaddr (const void *_a, const void *_b) {
+	const RCoreVisualViewGraphItem *a = _a, *b = _b;
+	return a->addr - b->addr;
+}
+
+static int cmpname (const void *_a, const void *_b) {
+	const RCoreVisualViewGraphItem *a = _a, *b = _b;
+	return (int)strcmp (a->name, b->name);
+}
+
+static void __sort (RCoreVisualViewGraph *status, RList *list) {
+	r_return_if_fail (status && list);
+	RListComparator cmp = (status->cur_sort == SORT_ADDRESS)? cmpaddr: cmpname;
+	list->sorted = false;
+	r_list_sort (list, cmp);
+}
+
+static void __toggleSort (RCoreVisualViewGraph *status) {
+	r_return_if_fail (status);
+	status->cur_sort = (status->cur_sort == SORT_ADDRESS)? SORT_NAME: SORT_ADDRESS;
+	__sort (status, status->mainCol);
+	__sort (status, status->refsCol);
+	__sort (status, status->xrefsCol);
+	__seek_cursor (status);
+}
+
 static void __reset_status(RCoreVisualViewGraph *status) {
 	status->addr = status->core->offset;
 	status->fcn = r_anal_get_fcn_at (status->core->anal, status->addr, 0);
 	
 	status->mainCol = __fcns (status->core);
+	__sort (status, status->mainCol);
 	__seek_cursor (status);
 
 	return;
@@ -175,6 +205,8 @@ static void __sync_status_with_cursor(RCoreVisualViewGraph *status) {
 		status->xrefsCol = __xrefs (status->core, status->addr);
 		status->refsCol = r_list_newf (free);
 	}
+	__sort (status, status->xrefsCol);
+	__sort (status, status->refsCol);
 }
 
 R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *status) {
@@ -215,6 +247,7 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 R_API int r_core_visual_view_graph(RCore *core) {
 	RCoreVisualViewGraph status = {0};
 	status.core = core;
+	status.cur_sort = SORT_NAME;
 	__reset_status (&status);
 	__sync_status_with_cursor (&status);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, status.addr, 0);
@@ -222,7 +255,6 @@ R_API int r_core_visual_view_graph(RCore *core) {
 		status.addr = fcn->addr;
 		status.fcn = fcn;
 	}
-
 	while (true) {
 		__core_visual_view_graph_update (core, &status);
 		int ch = r_cons_readchar ();
@@ -297,7 +329,11 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			__sync_status_with_cursor (&status);
 			break;
 		case 'r':
-			// refresh
+			r_list_free (status.mainCol);
+			r_list_free (status.xrefsCol);
+			r_list_free (status.refsCol);
+			__reset_status (&status);
+			__sync_status_with_cursor (&status);
 			break;
 		case 'j':
 			{
@@ -373,6 +409,9 @@ R_API int r_core_visual_view_graph(RCore *core) {
 			r_cons_clear ();
 			}
 			break;
+		case '!': {
+			__toggleSort (&status);
+		} break;
 		}
 	}
 	return false;
