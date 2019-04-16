@@ -1507,6 +1507,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 					}
 					free (question);
 				}
+
+				if (r_config_get_i (r.config, "scr.confirmquit")) {
+					if (!r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+						continue;
+					}
+				}
 			} else {
 				// r_core_project_save (&r, prj);
 				if (debug && r_config_get_i (r.config, "dbg.exitkills")) {
