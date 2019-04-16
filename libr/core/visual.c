@@ -2681,15 +2681,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys
-			if (r_config_get_i (core->config, "asm.hint.jmp")) {
+			if (r_config_get_i (core->config, "asm.hint.call")) {
+				r_core_cmd0 (core, "e!asm.hint.call");
 				r_core_cmd0 (core, "e!asm.hint.jmp");
-				r_core_cmd0 (core, "e!asm.hint.call");
-			} else if (r_config_get_i (core->config, "asm.hint.call")) {
-				r_core_cmd0 (core, "e!asm.hint.call");
+			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
+				r_core_cmd0 (core, "e!asm.hint.jmp");
 				r_core_cmd0 (core, "e!asm.hint.lea");
 			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
 				r_core_cmd0 (core, "e!asm.hint.lea");
-				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e!asm.hint.call");
 			}
 			visual_refresh (core);
 			break;
