@@ -1543,7 +1543,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	p->cb_printf ("|");
 }
 
-R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;
 	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
@@ -1593,15 +1593,19 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 		p->zoom->to = to;
 		p->zoom->size = len; // size;
 	}
+}
+
+R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+	ut64 size = (to - from);
+	r_print_zoom_buf (p, user, cb, from, to, len, maxlen);
+	size = len? size / len: 0;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
-	r_print_hexdump (p, from, bufz, len, 16, 1, size);
+	r_print_hexdump (p, from, p->zoom->buf, p->zoom->size, 16, 1, size);
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
-	if (!p || !arr) {
-		return;
-	}
+	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	char *firebow[6];
 	int i = 0, j;
