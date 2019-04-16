@@ -3307,6 +3307,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
+	SETPREF ("scr.confirmquit", "false", "Confirm on quit");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
