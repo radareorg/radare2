@@ -78,6 +78,11 @@ static const char *menus_Edit[] = {
 	NULL
 };
 
+static const char *menus_iocache[] = {
+	"On", "Off",
+	NULL
+};
+
 static const char *menus_View[] = {
 	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
 	"Stack", "StackRefs", "Var READ address", "Var WRITE address", "Summary",
@@ -238,7 +243,6 @@ static int writeStrCb(void *user);
 static int writeHexCb(void *user);
 static int assembleCb(void *user);
 static int fillCb(void *user);
-static int iocacheCb(void *user);
 static int colorsCb(void *user);
 static int calculatorCb(void *user);
 static int r2shellCb(void *user);
@@ -265,6 +269,8 @@ static int gameCb(void *user);
 static int licenseCb(void *user);
 static int aboutCb(void *user);
 static int quitCb(void *user);
+static int ioCacheOnCb(void *user);
+static int ioCacheOffCb(void *user);
 static void directionDefaultCb(void *user, int direction);
 static void directionDisassemblyCb(void *user, int direction);
 static void directionGraphCb(void *user, int direction);
@@ -1904,12 +1910,6 @@ static int fillCb(void *user) {
 	return 0;
 }
 
-static int iocacheCb(void *user) {
-	RCore *core = (RCore *)user;
-	r_core_cmd0 (core, "e!io.cache");
-	return 0;
-}
-
 static int colorsCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmd0 (core, "e!scr.color");
@@ -1988,6 +1988,18 @@ static int stepoverCb(void *user) {
 	RCore *core = (RCore *)user;
 	panelSingleStepOver (core);
 	updateDisassemblyAddr (core);
+	return 0;
+}
+
+static int ioCacheOnCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_config_set_i (core->config, "io.cache", 1);
+	return 0;
+}
+
+static int ioCacheOffCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_config_set_i (core->config, "io.cache", 0);
 	return 0;
 }
 
@@ -2505,7 +2517,7 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 		return;
 	}
 	p_item->n_sub++;
-	struct r_panels_menu_item **sub = realloc (p_item->sub, sizeof (RPanelsMenuItem *) * p_item->n_sub);
+	RPanelsMenuItem **sub = realloc (p_item->sub, sizeof (RPanelsMenuItem *) * p_item->n_sub);
 	if (sub) {
 		p_item->sub = sub;
 		p_item->sub[p_item->n_sub - 1] = item;
@@ -2615,7 +2627,7 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_Edit[i], "Fill")) {
 			addMenu (core, parent, menus_Edit[i], fillCb);
 		} else if (!strcmp (menus_Edit[i], "io.cache")) {
-			addMenu (core, parent, menus_Edit[i], iocacheCb);
+			addMenu (core, parent, menus_Edit[i], openMenuCb);
 		} else {
 			addMenu (core, parent, menus_Edit[i], addCmdPanel);
 		}
@@ -2738,6 +2750,18 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_loadLayout[i], loadLayoutSavedCb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
 			addMenu (core, parent, menus_loadLayout[i], loadLayoutDefaultCb);
+		}
+		i++;
+	}
+
+	parent = "Edit.io.cache";
+
+	i = 0;
+	while (menus_iocache[i]) {
+		if (!strcmp (menus_iocache[i], "On")) {
+			addMenu (core, parent, menus_iocache[i], ioCacheOnCb);
+		} else if (!strcmp (menus_iocache[i], "Off")) {
+			addMenu (core, parent, menus_iocache[i], ioCacheOffCb);
 		}
 		i++;
 	}
