@@ -1509,7 +1509,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				}
 
 				if (r_config_get_i (r.config, "scr.confirmquit")) {
-					if (!r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+					if (!r_cons_yesno ('n', "Do you want to quit? (Y/n)")) {
 						continue;
 					}
 				}
