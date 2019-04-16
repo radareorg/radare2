@@ -143,6 +143,7 @@ typedef struct {
 	bool asm_hints;
 	bool asm_hint_jmp;
 	bool asm_hint_cdiv;
+	bool asm_hint_call;
 	bool asm_hint_lea;
 	int  asm_hint_pos;
 	bool show_slow;
@@ -676,6 +677,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->asm_hint_jmp = r_config_get_i (core->config, "asm.hint.jmp");
+	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
 	ds->asm_hint_cdiv = r_config_get_i (core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
@@ -3233,7 +3235,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 			ds_print_shortcut (ds, ds->analop.ptr, pos);
 		}
 #endif
-		if (ds->asm_hint_jmp) {
+		if (ds->asm_hint_call) {
 			if (ds->analop.jump != UT64_MAX) {
 				slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			} else {
@@ -3246,9 +3248,14 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		break;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
+		if (ds->asm_hint_jmp) {
+			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
+			gotShortcut = true;
+		}
+		break;
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-		if (ds->asm_hint_jmp) {
+		if (ds->asm_hint_call) {
 			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
