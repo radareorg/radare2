@@ -1493,7 +1493,7 @@ static void delPanel(RPanels *panels, int delPanelNum) {
 }
 
 static void delCurPanel(RPanels *panels) {
-	if (panels->n_panels <= 2) {
+	if (panels->n_panels <= 1) {
 		return;
 	}
 	dismantlePanel (panels);
@@ -3534,16 +3534,17 @@ static bool moveToDirection(RPanels *panels, Direction direction) {
 }
 
 static void createDefaultPanels(RCore *core) {
-	const char *msg = "Activate decompiler? It might take some time.(Y/n)";
-	bool decompiler_yesno = r_cons_yesno ('y', msg);
-	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-
 	RPanels *panels = core->panels;
 	panels->curnode = 0;
 	panels->n_panels = 0;
+	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 
+	bool decompiler_on = false;
+	if (fun && !r_list_empty (fun->bbs)) {
+		const char *msg = "Activate decompiler? It might take some time.(Y/n)";
+		decompiler_on = r_cons_yesno ('y', msg);
+	}
 	int i = 0;
-	bool decompiler_on =  decompiler_yesno && fun && !r_list_empty (fun->bbs);
 	if (panels->layout == PANEL_LAYOUT_DEFAULT_DYNAMIC) {
 		while (panels_dynamic[i]) {
 			RPanel *p = getPanel (panels, panels->n_panels);
