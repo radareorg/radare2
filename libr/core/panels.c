@@ -147,7 +147,7 @@ static const char *help_msg_panels[] = {
 	"o",        "go/seek to given offset",
 	"pP",       "seek to next or previous scr.nkey",
 	"q",        "quit, back to visual mode",
-	"r",        "toggle jmphints/leahints",
+	"r",        "toggle callhints/jmphints/leahints",
 	"sS",       "step in / step over",
 	"uU",       "undo / redo seek",
 	"w",        "start Window mode",
@@ -3855,8 +3855,16 @@ repeat:
 		setRefreshAll (panels, true);
 		break;
 	case 'r':
-		r_core_cmd0 (core, "e!asm.hint.jmp");
-		r_core_cmd0 (core, "e!asm.hint.lea");
+		if (r_config_get_i (core->config, "asm.hint.call")) {
+			r_core_cmd0 (core, "e!asm.hint.call");
+			r_core_cmd0 (core, "e!asm.hint.jmp");
+		} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
+			r_core_cmd0 (core, "e!asm.hint.jmp");
+			r_core_cmd0 (core, "e!asm.hint.lea");
+		} else if (r_config_get_i (core->config, "asm.hint.lea")) {
+			r_core_cmd0 (core, "e!asm.hint.lea");
+			r_core_cmd0 (core, "e!asm.hint.call");
+		}
 		setRefreshAll (panels, false);
 		break;
 	case 'R':
