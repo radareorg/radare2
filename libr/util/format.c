@@ -1237,7 +1237,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		char *utf_encoded_buf = NULL;
 		int str_len = r_str_nlen ((char *)buf + i, len - i);
 #if 0
-		// TODO: make this work as expected
+		// TODO: make this work as expected; add bool no_null field
 		if ((size == -1 || size > len - i) && str_len == len - i) {
 			eprintf ("Warning: string overflows buffer\n");
 		}
