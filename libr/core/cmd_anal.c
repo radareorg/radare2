@@ -8061,6 +8061,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 				} else {
 					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+					r_core_cmd0 (core, "aei"); // requires to be initialized to make aaft work
 					r_core_cmd0 (core, "aaft");
 					r_print_rowlog_done (core->print, oldstr);
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
