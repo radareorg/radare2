@@ -2463,7 +2463,13 @@ R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
 }
 
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
-	return op->dst && op->dst->reg && op->dst->reg->name && !op->dst->memref && !strcmp (op->dst->reg->name, anal->reg->name[R_REG_NAME_BP]); 
+	RAnalValue *dst = op->dst;
+	RAnalValue *src = op->src[0];
+	bool is_bp_dst = dst && dst->reg && dst->reg->name && !dst->memref && !strcmp (dst->reg->name, anal->reg->name[R_REG_NAME_BP]);
+	bool is_bp_src = src && src->reg && src->reg->name && !src->memref && !strcmp (src->reg->name, anal->reg->name[R_REG_NAME_BP]);
+	if (op->type == R_ANAL_OP_TYPE_XCHG)
+		return is_bp_src || is_bp_dst;
+	return is_bp_dst; 
 }
 /*
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
@@ -2472,9 +2478,10 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
+#if 0
 	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
-	char *pos;
 	strcat (str_to_find, anal->reg->name[R_REG_NAME_BP]);
+#endif
 	if (!fcn) {
 		return;
 	}
@@ -2513,17 +2520,8 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_SUB:
 			case R_ANAL_OP_TYPE_XOR:
 			case R_ANAL_OP_TYPE_SHL:
-				if (can_affect_bp (anal, &op)) {
-					fcn->bp_frame = false;
-				}
-				break;
 			case R_ANAL_OP_TYPE_XCHG:
-				if (op.dst && op.dst->reg && !op.dst->memref 
-				&& !strcmp (op.dst->reg->name, anal->reg->name[R_REG_NAME_BP])) {
-					fcn->bp_frame = false;
-				}
-				if (op.src[0] && op.src[0]->reg && !op.src[0]->memref
-				&&  !strcmp (op.dst->reg->name, anal->reg->name[R_REG_NAME_BP])) {
+				if (can_affect_bp (anal, &op)) {
 					fcn->bp_frame = false;
 				}
 				break;
