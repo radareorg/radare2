@@ -2820,6 +2820,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
+	SETPREF ("scr.square", "true", "Use square pixels or not");
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
