@@ -741,8 +741,14 @@ static void activateCursor(RCore *core) {
 			|| !strcmp (cur->model->cmd, PANEL_CMD_REGISTERS)
 			|| !strcmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY)
 			|| !strcmp (cur->model->cmd, PANEL_CMD_HEXDUMP)) {
+		if (cur->model->cache) {
+			(void)r_cons_yesno ('y', "Please turn off cache by \'&\' if you wish to use cursor.");
+			return;
+		}
 		setCursor (core, !core->print->cur_enabled);
 		cur->view->refresh = true;
+	} else {
+		(void)r_cons_yesno ('y', "Cursor is not available for the current panel.");
 	}
 }
 
@@ -865,8 +871,8 @@ static bool handleZoomMode(RCore *core, const int key) {
 		toggleZoomMode (panels);
 		break;
 	case 'c':
-		toggleZoomMode (panels);
-		return false;
+		activateCursor (core);
+		break;
 	case ';':
 	case ' ':
 	case 'b':
@@ -1743,7 +1749,7 @@ static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
 static bool checkPanelNum(RPanels *panels) {
 	if (panels->n_panels + 1 > PANEL_NUM_LIMIT) {
 		const char *msg = "panel limit exceeded.";
-		r_cons_yesno ('y', msg);
+		(void)r_cons_yesno ('y', msg);
 		return false;
 	}
 	return true;
@@ -3425,6 +3431,10 @@ static void showHelp(RCore *core, RPanelsMode mode) {
 }
 
 static void insertValue(RCore *core) {
+	if (!r_config_get_i (core->config, "io.cache")) {
+		(void)r_cons_yesno ('y', "Insert is not available because io.cache is off");
+		return;
+	}
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
 	char buf[128];
