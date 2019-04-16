@@ -1247,11 +1247,12 @@ static int cmd_type(void *data, const char *input) {
 						free (out);
 					}
 					if (error_msg) {
-						fprintf (stderr, "%s", error_msg);
+						fprintf (stderr, "%s\n", error_msg);
 						free (error_msg);
 					}
 					free (tmp);
 				}
+				free (str);
 			}
 		} else {
 			eprintf ("Sandbox: system call disabled\n");
