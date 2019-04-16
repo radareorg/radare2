@@ -3801,6 +3801,9 @@ R_API void r_agraph_reset(RAGraph *g) {
 	}
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
+	g->need_reload_nodes = false;
+	g->need_set_layout = true;
+	g->need_update_dim = true;
 	g->x = g->y = g->w = g->h = 0;
 	agraph_sdb_init (g);
 	g->curnode = NULL;
