@@ -279,7 +279,7 @@ static const char *help_msg_visual[] = {
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to radare shell",
-	"r", "toggle jmphints/leahints",
+	"r", "toggle callhints/jmphints/leahints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
