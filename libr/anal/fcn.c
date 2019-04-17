@@ -2478,10 +2478,6 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-#if 0
-	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
-	strcat (str_to_find, anal->reg->name[R_REG_NAME_BP]);
-#endif
 	if (!fcn) {
 		return;
 	}
@@ -2526,11 +2522,6 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
-#if 0
-				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find) && at + op.size < fcn->addr + fcn->_size - 1) {
-					fcn->bp_frame = false;
-				}
-#endif
 				break;
 			}
 			idx += op.size;
