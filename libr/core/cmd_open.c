@@ -225,7 +225,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					RBinOptions opt;
-					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					opt.offset = addr;
+					opt.baseaddr = addr;
+					opt.loadaddr = addr;
+					opt.sz = 1024*1024*1;
+					r_bin_options_init (&opt, desc->fd, addr, addr, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
