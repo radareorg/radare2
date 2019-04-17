@@ -752,7 +752,17 @@ static void activateCursor(RCore *core) {
 			|| !strcmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY)
 			|| !strcmp (cur->model->cmd, PANEL_CMD_HEXDUMP)) {
 		if (cur->model->cache) {
-			(void)r_cons_any_key ("Please turn off cache by \'&\' if you wish to use cursor.");
+			if (r_cons_yesno ('y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
+				cur->model->cache = false;
+				free (cur->model->cmdStrCache);
+				cur->model->cmdStrCache = NULL;
+				cur->view->refresh = true;
+				(void)r_cons_any_key ("Cache is off and cursor is on");
+				setCursor (core, !core->print->cur_enabled);
+				cur->view->refresh = true;
+			} else {
+				(void)r_cons_any_key ("You can always toggle cache by \'&\' key");
+			}
 			return;
 		}
 		setCursor (core, !core->print->cur_enabled);
@@ -2000,12 +2010,16 @@ static int stepoverCb(void *user) {
 static int ioCacheOnCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_i (core->config, "io.cache", 1);
+	(void)r_cons_any_key ("io.cache is on");
+	core->panels->mode = PANEL_MODE_DEFAULT;
 	return 0;
 }
 
 static int ioCacheOffCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_i (core->config, "io.cache", 0);
+	(void)r_cons_any_key ("io.cache is off");
+	core->panels->mode = PANEL_MODE_DEFAULT;
 	return 0;
 }
 
@@ -3477,8 +3491,13 @@ static void showHelp(RCore *core, RPanelsMode mode) {
 
 static void insertValue(RCore *core) {
 	if (!r_config_get_i (core->config, "io.cache")) {
-		(void)r_cons_any_key ("Insert is not available because io.cache is off");
-		return;
+		if (r_cons_yesno ('y', "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
+			r_config_set_i (core->config, "io.cache", 1);
+			(void)r_cons_any_key ("io.cache is on and insert is available now.");
+		} else {
+			(void)r_cons_any_key ("You can always turn on io.cache in Menu->Edit->io.cache");
+			return;
+		}
 	}
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
