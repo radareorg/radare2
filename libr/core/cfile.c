@@ -663,7 +663,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_config_set (r->config, "asm.arch", inf->arch);
 			r_config_set_i (r->config, "asm.bits", inf->bits);
 			r_bin_info_free (inf);
-                }
+		}
 		if (binfile->o->regstate) {
 			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
 				eprintf ("Setting up coredump: Problem while setting the registers\n");
@@ -677,8 +677,16 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 						stack_map = r_io_map_get (r->io, sp_addr);
 					}
 				}
+				regname = r_reg_get_name (r->anal->reg, R_REG_NAME_PC);
+				if (regname) {
+					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
+					if (reg) {
+						ut64 seek = r_reg_get_value (r->anal->reg, reg);
+						r_core_cmdf (r, "s 0x%x", seek);
+					}
+				}
 			}
-                }
+		}
 
 		RBinObject *o = binfile->o;
 		int map = 0;

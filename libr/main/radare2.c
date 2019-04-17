@@ -1276,7 +1276,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (debug) {
 			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
-		if (!debug && r_flag_get (r.flags, "entry0")) {
+		if (!debug && r_flag_get (r.flags, "entry0") && !r_bin_cur_object (r.bin)->regstate) {
 			r_core_cmd0 (&r, "s entry0");
 		}
 		if (s_seek) {
