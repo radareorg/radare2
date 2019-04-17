@@ -288,6 +288,8 @@ static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RCore *core);
 static bool initPanels(RCore *core, RPanels *panels);
+static void clearPanelsMenu(RCore *core);
+static void clearPanelsMenuRec(RPanelsMenuItem *pmi);
 static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item);
 static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void freePanelModel(RPanel *panel);
@@ -603,6 +605,7 @@ static int addCmdPanel(void *user) {
 	p0->view->pos.h = h - 1;
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
+	panels->mode = PANEL_MODE_DEFAULT;
 	return 0;
 }
 
@@ -638,6 +641,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	p0->model->cmdStrCache = loadCmdf (core, p0, input, str);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
+	panels->mode = PANEL_MODE_DEFAULT;
 	return 0;
 }
 
@@ -1847,6 +1851,7 @@ static int loadLayoutSavedCb(void *user) {
 	}
 	core->panels->curnode = 0;
 	core->panels->panelsMenu->depth = 1;
+	core->panels->mode = PANEL_MODE_DEFAULT;
 	return 0;
 }
 
@@ -1857,6 +1862,7 @@ static int loadLayoutDefaultCb(void *user) {
 	r_core_panels_layout (core->panels);
 	setRefreshAll (core->panels, false);
 	core->panels->panelsMenu->depth = 1;
+	core->panels->mode = PANEL_MODE_DEFAULT;
 	return 0;
 }
 
@@ -2580,7 +2586,6 @@ static bool initPanelsMenu(RCore *core) {
 	panels->panelsMenu = panelsMenu;
 	panelsMenu->root = root;
 	root->n_sub = 0;
-	root->selectedIndex = 0;
 	root->name = NULL;
 	root->sub = NULL;
 	int i = 0;
@@ -2766,13 +2771,31 @@ static bool initPanelsMenu(RCore *core) {
 		i++;
 	}
 
-	root->selectedIndex = 0;
 	panelsMenu->history = calloc (8, sizeof (RPanelsMenuItem *));
-	panelsMenu->history[0] = root;
-	panelsMenu->depth = 1;
-	panelsMenu->n_refresh = 0;
+	clearPanelsMenu (core);
 	panelsMenu->refreshPanels = calloc (8, sizeof (RPanel *));
 	return true;
+}
+
+static void clearPanelsMenuRec(RPanelsMenuItem *pmi) {
+	int i = 0;
+	for(i = 0; i < pmi->n_sub; i++) {
+		RPanelsMenuItem *sub = pmi->sub[i];
+		if (sub) {
+			sub->selectedIndex = 0;
+			clearPanelsMenuRec (sub);
+		}
+	}
+}
+
+static void clearPanelsMenu(RCore *core) {
+	RPanels *p = core->panels;
+	RPanelsMenu *pm = p->panelsMenu;
+	clearPanelsMenuRec (pm->root);
+	pm->root->selectedIndex = 0;
+	pm->history[0] = pm->root;
+	pm->depth = 1;
+	pm->n_refresh = 0;
 }
 
 static bool initPanels(RCore *core, RPanels *panels) {
@@ -3176,8 +3199,6 @@ static bool handleMenu(RCore *core, const int key) {
 			if (child->cb (core)) {
 				return false;
 			}
-			panels->mode = PANEL_MODE_DEFAULT;
-			getCurPanel (panels)->view->refresh = true;
 		}
 		break;
 	case 9:
@@ -4014,6 +4035,7 @@ repeat:
 		break;
 	case 'm':
 		panels->mode = PANEL_MODE_MENU;
+		clearPanelsMenu (core);
 		getCurPanel (panels)->view->refresh = true;
 		break;
 	case 'g':
