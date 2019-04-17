@@ -682,7 +682,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
 						ut64 seek = r_reg_get_value (r->anal->reg, reg);
-						r_core_cmdf (r, "s 0x%x", seek);
+						r_core_seek (r, seek, 1);
 					}
 				}
 			}
