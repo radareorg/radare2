@@ -912,6 +912,7 @@ static char *get_op_ireg (void *user, ut64 addr) {
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
+        RAnalHint *ohint = core->parser->hint;
 	if (!ds->opstr) {
 		ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 	}
@@ -954,6 +955,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = res;
 		}
 		free (asm_str);
+                core->parser->hint = ohint;
 		return;
 	}
 	if (ds->decode) {
@@ -1026,6 +1028,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 	}
+        core->parser->hint = ohint;
 	free (asm_str);
 }
 
