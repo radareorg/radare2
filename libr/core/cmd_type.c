@@ -1007,8 +1007,8 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_tc);
 			break;
 		case ' ': {
-			char *type = r_str_trim_ro (input + 1);
-			char *name = type ? strchr (type, '.') + 1: NULL;
+			const char *type = r_str_trim_ro (input + 1);
+			const char *name = type ? strchr (type, '.') + 1: NULL;
 			if (name && type) {
 				if (r_str_startswith (type, "struct")) {
 					r_core_cmdf (core, "tsc %s", name);
@@ -1681,7 +1681,7 @@ static int cmd_type(void *data, const char *input) {
 			SdbKv *kv;
 			SdbListIter *iter;
 			SdbList *l = sdb_foreach_list (TDB, true);
-			char *arg = r_str_trim_ro (input + 2);
+			const char *arg = r_str_trim_ro (input + 2);
 			bool match = false;
 			ls_foreach (l, iter, kv) {
 				if (!strcmp (sdbkv_value (kv), "typedef")) {
