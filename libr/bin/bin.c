@@ -252,10 +252,12 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	bf->o = NULL;
 	ut64 sz = iob->fd_size (iob->io, fd);
 	// TODO: deprecate, the code in the else should be enough
+sz = 128 * 1024;
+eprintf ("JklD\n");
 	if (sz == UT64_MAX) {
 		if (!iob->fd_is_dbg (iob->io, fd)) {
 			// too big, probably wrong
-			eprintf ("Too big\n");
+			eprintf ("fd_is_dbg\n");
 			res = false;
 			goto error;
 		}
