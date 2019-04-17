@@ -112,7 +112,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 				p->cb_printf (" ]");
 			}
 		}
-	} else if (MUSTSEEJSON) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
 		if (size == -1) {
 			p->cb_printf ("%"PFMT64d, addr64);
 		} else {
@@ -135,7 +135,9 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf ("}");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 	}
 }
 
@@ -177,8 +179,8 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 				p->cb_printf (" ]");
 			}
 		}
-	} else if (MUSTSEEJSON) {
-		if (size==-1) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
+		if (size == -1) {
 			p->cb_printf ("%d", buf[i]);
 		} else {
 			p->cb_printf ("[ ");
@@ -199,7 +201,9 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf ("}");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 	}
 }
 
@@ -258,7 +262,7 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 				p->cb_printf (" ]");
 			}
 		}
-	} else if (MUSTSEEJSON) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
 		if (size==-1) {
 			r_uleb128_decode (buf+i, &offset, &value);
 			p->cb_printf ("\"%"PFMT64d"\"", value);
@@ -283,7 +287,9 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf ("}");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 	}
 	return offset;
 }
@@ -326,7 +332,7 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 				p->cb_printf (" ]");
 			}
 		}
-	} else if (MUSTSEEJSON) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
 		if (size == -1) {
 			p->cb_printf ("\"%c\"", IS_PRINTABLE (buf[i])?buf[i]:'.');
 		} else {
@@ -348,7 +354,9 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf ("}");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 	}
 }
 
@@ -390,7 +398,7 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode,
 				p->cb_printf (" ]");
 			}
 		}
-	} else if (MUSTSEEJSON) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
 		if (size == -1) {
 			p->cb_printf ("\"%d\"", buf[i]);
 		} else {
@@ -412,7 +420,9 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode,
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf ("}");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 	}
 }
 
@@ -429,6 +439,12 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 		char *encstr = r_str_utf16_encode ((const char *)buffer, -1);
 		if (encstr) {
 			p->cb_printf ("%d,\"string\":\"%s\"}", seeki, encstr);
+			free (encstr);
+		}
+	} else if (R_PRINT_STRUCT) {
+		char *encstr = r_str_utf16_encode ((const char *)buffer, -1);
+		if (encstr) {
+			p->cb_printf ("\"%s\"", encstr);
 			free (encstr);
 		}
 	} else if (MUSTSEE) {
@@ -503,7 +519,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			}
 		}
 		free (timestr);
-	} else if (MUSTSEEJSON) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
 		char *timestr = strdup (asctime (gmtime_r ((time_t*)&addr, &timestruct)));
 		*(timestr+24) = '\0';
 		if (size==-1) {
@@ -532,7 +548,9 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			p->cb_printf (" ]");
 		}
 		free (timestr);
-		p->cb_printf ("}");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 	}
 }
 
@@ -548,7 +566,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("%"PFMT64d, addr);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
@@ -630,7 +648,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode,
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ %"PFMT64d"\n", setval, seeki+((elem>=0)?elem*4:0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("0x%08"PFMT64x, addr);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
@@ -716,7 +734,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode,
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("0%"PFMT64o, addr);
 	} else if (MUSTSEE) {
 		ut32 addr32 = (ut32)addr;
@@ -793,7 +811,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
 	updateAddr (buf + i, size - i, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("0x%08"PFMT64x, addr & UT32_MAX);
 	} else if (MUSTSEE) {
 		ut32 addr32 = (ut32)addr;
@@ -946,14 +964,17 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
 			}
 		}
 		p->cb_printf (")");
-	} else if (MUSTSEEJSON) {
+	} else if (MUSTSEEJSON || R_PRINT_STRUCT) {
 		size = (size < 1) ? 1 : size;
 		p->cb_printf ("[ %d", buf[0]);
 		j = 1;
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]}");
+		p->cb_printf ("]");
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
 		return size;
 	}
 	return size;
@@ -972,7 +993,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval,
 			seeki + ((elem >= 0) ? elem * 4 : 0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("%.9g", val_f);
 	} else {
 		if (MUSTSEE) {
@@ -1028,7 +1049,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 	if (MUSTSET) {
 		p->cb_printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval,
 			seeki + ((elem >= 0) ? elem * 8 : 0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("%.17g", val_f);
 	} else {
 		if (MUSTSEE) {
@@ -1084,7 +1105,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 		: (*(buf + i + 1)) << 8 | (*(buf + i));
 	if (MUSTSET) {
 		p->cb_printf ("wv2 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*2:0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		if (size == -1) {
 			p->cb_printf ("0x%04x", addr);
 		}
@@ -1206,9 +1227,11 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		}
 		p->cb_printf (" @ 0x%08"PFMT64x"\n", seeki);
 		free (ons);
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		int j = i;
-		p->cb_printf ("\\\"", seeki);
+		(R_PRINT_STRUCT) ?
+			p->cb_printf ("\"") :
+			p->cb_printf ("\\\"");
 		for (; j<len && ((size==-1 || size-- >0) && buf[j]) ; j++) {
 			char ch = buf[j];
 			if (ch == '"') {
@@ -1219,7 +1242,9 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 				p->cb_printf (".");
 			}
 		}
-		p->cb_printf ("\\\"");
+		(R_PRINT_STRUCT) ?
+			p->cb_printf ("\"") :
+			p->cb_printf ("\\\"");
 	} else if (MUSTSEE) {
 		int j = i;
 		if (!SEEVALUE && !ISQUIET) {
@@ -1411,7 +1436,7 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 	}
 	if (MUSTSET) {
 		p->cb_printf ("wv%d %s @ 0x%08"PFMT64x"\n", bytes, setval, seeki+((elem>=0)?elem*(bytes):0));
-	} else if (mode & R_PRINT_DOT) {
+	} else if ((mode & R_PRINT_DOT) || R_PRINT_STRUCT) {
 		p->cb_printf ("%"PFMT64u, addr);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
@@ -1795,9 +1820,6 @@ static char *get_format_type(const char fmt) {
 	case 'F':
 	case 'q':
 		type = strdup ("uint64_t");
-		break;
-	case 'p':
-		type = strdup ("void*");
 		break;
 	case 'u':
 		type = strdup ("uleb128_t");
@@ -2253,7 +2275,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (mode & R_PRINT_STRUCT) {
 				char *type = get_format_type (tmp);
 				if (type) {
-					p->cb_printf ("    %s %s;", type, fieldname);
+					p->cb_printf ("    %s %s; // ", type, fieldname);
 				}
 				free (type);
 			}
