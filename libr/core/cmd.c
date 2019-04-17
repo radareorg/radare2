@@ -4014,6 +4014,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (!odata) {
 		return false;
 	}
+	bool cont_after_err = r_config_get_i (core->config, "cfg.contaftererr");
 	nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break_push (NULL, NULL);
@@ -4025,7 +4026,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			}
 			*nl = '\0';
 			r = r_core_cmd (core, data, 0);
-			if (r < 0) { //== -1) {
+			if (r < 0 && !cont_after_err) { //== -1) {
 				data = nl + 1;
 				ret = -1; //r; //false;
 				break;

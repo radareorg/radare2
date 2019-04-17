@@ -2934,6 +2934,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* cfg */
 	SETPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
+	SETPREF ("cfg.contaftererr", "false", "Continue after error when using -i");
 	SETPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
