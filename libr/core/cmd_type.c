@@ -15,7 +15,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	"ta", " <type>", "Mark immediate as a type offset",
-	"tc", "", "List loaded types in C output format",
+	"tc", "[type.name]", "List all/given types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
 	"tf", "", "List all loaded functions signatures",
@@ -24,6 +24,7 @@ static const char *help_msg_t[] = {
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
+	"toe", "[type.name]", "Open cfg.editor to edit types",
 	"tos", " <path>", "Load types from parsed Sdb database",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it",
 	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
@@ -80,7 +81,7 @@ static const char *help_msg_to[] = {
 
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
-	"tc", "", "List all loaded types in C output format with newlines",
+	"tc", "[type.name]", "List all/given loaded types in C output format with newlines",
 	"tcd", "", "List all loaded types in C output format without newlines",
 	"tcc", "?", "Manage calling conventions types",
 	"tc?", "", "show this help",
@@ -101,7 +102,7 @@ static const char *help_msg_te[] = {
 	"tej", " <enum>", "Show enum in json",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
-	"tec", "", "List all loaded enums in C output format with newlines",
+	"tec", "<name>", "List all/given loaded enums in C output format with newlines",
 	"ted", "", "List all loaded enums in C output format without newlines",
 	"te?", "", "show this help",
 	NULL
@@ -112,7 +113,7 @@ static const char *help_msg_tt[] = {
 	"tt", "", "List all loaded typedefs",
 	"tt", " <typename>", "Show name for given type alias",
 	"ttj", "", "Show typename and type alias in json",
-	"ttc", "", "Show typename and type alias in C output format",
+	"ttc", "<name>", "Show typename and type alias in C output format",
 	"tt?", "", "show this help",
 	NULL
 };
@@ -147,7 +148,7 @@ static const char *help_msg_ts[] = {
 	"tsj", " [type]", "Show pf format string for given struct in json",
 	"ts*", "", "Show pf.<name> format string for all loaded structs",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
-	"tsc", "", "List all loaded structs in C output format with newlines", 
+	"tsc", "<name>", "List all/given loaded structs in C output format with newlines",
 	"tsd", "", "List all loaded structs in C output format without newlines", 
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
@@ -162,7 +163,7 @@ static const char *help_msg_tu[] = {
 	"tuj", " [type]", "Show pf format string for given union in json",
 	"tu*", "", "Show pf.<name> format string for all loaded unions",
 	"tu*", " [type]", "Show pf.<name> format string for given union",
-	"tuc", "", "List all loaded unions in C output format with newlines",
+	"tuc", "<name>", "List all/given loaded unions in C output format with newlines",
 	"tud", "", "List all loaded unions in C output format without newlines",
 	"tu?", "", "show this help",
 	NULL
@@ -416,12 +417,14 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	return 1;
 }
 
-static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, bool multiline) {
+static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	const char *space = "";
+	bool match = false;
+
 	ls_foreach (l, iter, kv) {
 		if (name && !strcmp (sdbkv_value (kv), name)) {
 			continue;
@@ -429,6 +432,13 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 		free (name);
 		int n;
 		name = strdup (sdbkv_key (kv));
+		if (name && (arg && *arg)) {
+			if (!strcmp (arg, name)) {
+				match = true;
+			} else {
+				continue;
+			}
+		}
 		r_cons_printf ("%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
@@ -457,22 +467,33 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 		free (var);
 		r_cons_println ("};");
 		space = "";
+		if (match) {
+			break;
+		}
 	}
 	free (name);
 	ls_free (l);
 }
 
-static void print_enum_in_c_format(Sdb *TDB, bool multiline) {
+static void print_enum_in_c_format(Sdb *TDB, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list (TDB, true);
 	const char *separator = "";
+	bool match = false;
 	ls_foreach (l, iter, kv) {
 		if (!strcmp (sdbkv_value (kv), "enum")) {
 			if (!name || strcmp (sdbkv_value (kv), name)) {
 				free (name);
 				name = strdup (sdbkv_key (kv));
+				if (name && (arg && *arg)) {
+					if (!strcmp (arg, name)) {
+						match = true;
+					} else {
+						continue;
+					}
+				}
 				r_cons_printf ("%s %s {%s", sdbkv_value (kv), name, multiline? "\n": "");
 				{
 					RList *list = r_type_get_enum (TDB, name);
@@ -488,6 +509,9 @@ static void print_enum_in_c_format(Sdb *TDB, bool multiline) {
 					r_list_free (list);
 				}
 				r_cons_println (multiline? "\n};": "};");
+				if (match) {
+					break;
+				}
 			}
 		}
 	}
@@ -951,12 +975,11 @@ static int cmd_type(void *data, const char *input) {
 				print_struct_union_list_json (TDB, stdifunion);
 			}
 			break;
-		case 'c':{
-			print_struct_union_in_c_format (TDB, stdifunion, true);
+		case 'c':
+			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_ro (input + 2), true);
 			break;
-		}
 		case 'd':
-			print_struct_union_in_c_format (TDB, stdifunion, false);
+			print_struct_union_in_c_format (TDB, stdifunion, r_str_trim_ro (input + 2), false);
 			break;	
 		case ' ':
 			showFormat (core, r_str_trim_ro (input + 1), 0);
@@ -983,7 +1006,24 @@ static int cmd_type(void *data, const char *input) {
 		case '?': //"tc?"
 			r_core_cmd_help (core, help_msg_tc);
 			break;
-		case ' ':
+		case ' ': {
+			char *type = r_str_trim_ro (input + 1);
+			char *name = type ? strchr (type, '.') + 1: NULL;
+			if (name && type) {
+				if (r_str_startswith (type, "struct")) {
+					r_core_cmdf (core, "tsc %s", name);
+				} else if (r_str_startswith (type, "union")) {
+					r_core_cmdf (core, "tuc %s", name);
+				} else if (r_str_startswith (type, "enum")) {
+					r_core_cmdf (core, "tec %s", name);
+				} else if (r_str_startswith (type, "typedef")) {
+					r_core_cmdf (core, "ttc %s", name);
+				} else if (r_str_startswith (type, "func")) {
+					r_core_cmdf (core, "tfc %s", name);
+				}
+			}
+			break;
+		}
 		case 0:
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
@@ -1027,12 +1067,11 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
-		case 'c':{
-			print_struct_union_in_c_format (TDB, stdifstruct, true);
+		case 'c':
+			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_ro (input + 2), true);
 			break;
-		}
 		case 'd':
-			print_struct_union_in_c_format (TDB, stdifstruct, false);
+			print_struct_union_in_c_format (TDB, stdifstruct, r_str_trim_ro (input + 2), false);
 			break;
 		case 'j': // "tsj"
 			// TODO: current output is a bit poor, will be good to improve
@@ -1127,12 +1166,11 @@ static int cmd_type(void *data, const char *input) {
 		case 'b': // "teb"
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
-		case 'c': { // "tec"
-			print_enum_in_c_format(TDB, true);
+		case 'c': // "tec"
+			print_enum_in_c_format(TDB, r_str_trim_ro (input + 2), true);
 			break;
-		}
 		case 'd':
-			print_enum_in_c_format(TDB, false);
+			print_enum_in_c_format(TDB, r_str_trim_ro (input + 2), false);
 			break;
 		case ' ':
 			if (member_name) {
@@ -1232,6 +1270,26 @@ static int cmd_type(void *data, const char *input) {
 					sdb_close (db_tmp);
 					sdb_free (db_tmp);
 				}
+			}  else if (input[1] == 'e') { // "toe"
+				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
+				char *tmp = r_core_editor (core, "*.h", str);
+				if (tmp) {
+					char *error_msg = NULL;
+					char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+					if (out) {
+						// remove previous types and save new edited types
+						sdb_reset (TDB);
+						r_parse_reset ();
+						r_anal_save_parsed_type (core->anal, out);
+						free (out);
+					}
+					if (error_msg) {
+						eprintf ("%s\n", error_msg);
+						free (error_msg);
+					}
+					free (tmp);
+				}
+				free (str);
 			}
 		} else {
 			eprintf ("Sandbox: system call disabled\n");
@@ -1623,15 +1681,27 @@ static int cmd_type(void *data, const char *input) {
 			SdbKv *kv;
 			SdbListIter *iter;
 			SdbList *l = sdb_foreach_list (TDB, true);
+			char *arg = r_str_trim_ro (input + 2);
+			bool match = false;
 			ls_foreach (l, iter, kv) {
 				if (!strcmp (sdbkv_value (kv), "typedef")) {
 					if (!name || strcmp (sdbkv_value (kv), name)) {
 						free (name);
 						name = strdup (sdbkv_key (kv));
+						if (name && (arg && *arg)) {
+							if (!strcmp (arg, name)) {
+								match = true;
+							} else {
+								continue;
+							}
+						}
 						const char *q = sdb_fmt ("typedef.%s", name);
 						const char *res = sdb_const_get (TDB, q, 0);
 						if (res) {
 							r_cons_printf ("%s %s %s;\n", sdbkv_value (kv), res, name);
+						}
+						if (match) {
+							break;
 						}
 					}
 				}
