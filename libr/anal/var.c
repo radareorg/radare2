@@ -699,7 +699,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		// reg_set enusres we only extract first-read argument reg
 		if (!reg_set [i] && regname) {
 			bool is_xor_reg_reg = op->type == R_ANAL_OP_TYPE_XOR && opsreg && opdreg && !strcmp (opsreg, opdreg);
-			if ((op->src[0] && opsreg && !strcmp (opsreg, regname)) && !is_xor_reg_reg) {
+			bool is_reg_as_dst_in_xor = op->type == R_ANAL_OP_TYPE_XOR && opdreg && !strcmp (opdreg, regname);
+			if ((op->src[0] && opsreg && !strcmp (opsreg, regname) || is_reg_as_dst_in_xor) && !is_xor_reg_reg) {
 				const char *vname = NULL;
 				char *type = NULL;
 				char *name = NULL;
