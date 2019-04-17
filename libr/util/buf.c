@@ -1080,7 +1080,7 @@ R_API int r_buf_sleb128(RBuffer *b, st64 *v) {
 	} while (value & 0x80);
 
 	if ((value & 0x40) != 0) {
-		result |= ~0UL << offset;
+		result |= ~0ULL << offset;
 	}
 	if (v) {
 		*v = result;
