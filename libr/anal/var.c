@@ -666,6 +666,7 @@ beach:
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op) {
 	#define STR_EQUAL(s1, s2) s1 && s2 && !strcmp (s1, s2)
 	RAnalValue *dst = op->dst;
+	RAnalValue *src = op->src[0];
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_POP:
 		return false;
@@ -688,7 +689,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 			return false;
     		return false;
 	case R_ANAL_OP_TYPE_XOR:
-		if (STR_EQUAL (opsreg, opdreg))
+		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref)
 			return false;
 		//fallthrough
 	default:

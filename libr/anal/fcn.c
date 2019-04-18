@@ -2465,8 +2465,17 @@ R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
-	bool is_bp_dst = dst && dst->reg && dst->reg->name && !dst->memref && !strcmp (dst->reg->name, anal->reg->name[R_REG_NAME_BP]);
-	bool is_bp_src = src && src->reg && src->reg->name && !src->memref && !strcmp (src->reg->name, anal->reg->name[R_REG_NAME_BP]);
+	char *opdreg = NULL;
+	char *opsreg = NULL;
+	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
+	if (dst && dst->reg) {
+		opdreg = dst->reg->name;
+	}
+	if (src && src->reg) {
+		opsreg = src->reg->name;
+	}
+	bool is_bp_dst = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
+	bool is_bp_src = opsreg && !src->memref && !strcmp (opsreg, bp_name);
 	if (op->type == R_ANAL_OP_TYPE_XCHG)
 		return is_bp_src || is_bp_dst;
 	return is_bp_dst; 
