@@ -916,7 +916,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 	}
 	/* initialize */
-	core->parser->hint = ds->hint;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->regsub = r_config_get_i (core->config, "asm.regsub");
 	core->parser->relsub_addr = 0;
@@ -989,7 +988,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					core->parser->relsub_addr = killme;
 				}
 			}
-			r_parse_filter (core->parser, ds->vat, core->flags, asm_str,
+			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
 				ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
@@ -5382,9 +5381,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 						core->parser->flagspace = NULL;
 					}
 				}
-				core->parser->hint = ds->hint;
-				ds->hint = NULL;
-				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&ds->asmop),
+				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&ds->asmop),
 					ds->str, sizeof (ds->str), core->print->big_endian);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
@@ -5602,7 +5599,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			if (buf) {
 				strcpy (buf, aop);
 				buf = ds_sub_jumps (ds, buf);
-				r_parse_filter (core->parser, ds->vat, core->flags, buf,
+				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, buf,
 					str, sizeof (str), core->print->big_endian);
 				r_asm_op_set_asm (&asmop, buf);
 				free (buf);
@@ -5788,7 +5785,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			count ++;
 			switch (mode) {
 			case 'i':
-				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&asmop),
+				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), core->print->big_endian);
 				if (scr_color) {
 					RAnalOp aop;
@@ -6065,9 +6062,10 @@ toro:
 					r_parse_immtrim (asm_str);
 				}
 				if (filter) {
-					core->parser->hint = r_anal_hint_get (core->anal, at);
-					r_parse_filter (core->parser, at, core->flags,
+					RAnalHint *hint = r_anal_hint_get (core->anal, at);
+					r_parse_filter (core->parser, at, core->flags, hint,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
+					r_anal_hint_free (hint);
 					asm_str = (char *)&opstr;
 				}
 				if (show_color) {
