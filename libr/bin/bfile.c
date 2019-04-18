@@ -516,7 +516,7 @@ R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id
 	return NULL;
 }
 
-R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
+R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
 	RListIter *iter;
 	RBinFile *binfile;
 	r_list_foreach (bin->binfiles, iter, binfile) {

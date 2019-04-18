@@ -61,7 +61,8 @@ static const char *help_msg_ob[] = {
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
 // those 3 commands are VERY SIMILAR, need love
-	"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
+	"ob", " [fd objid]", "Switch to open binary file by fd number and objid (DEPRECATED)",
+	"ob", " [objid]", "Switch to open given objid",
 	"obo", " [objid]", "Switch to open binary file by objid",
 	"obb", " [fd]", "Switch to open binfile by fd number",
 
@@ -291,13 +292,16 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		fd = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
+		fd = *v && r_is_valid_input_num_value (core->num, tmp)
+			? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
-			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
+			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)
+				? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
-			binfile_num = bf? bf->id: UT32_MAX;
+			RBinFile *bf = r_bin_file_find_by_object_id (core->bin, fd);
+			binfile_num = fd;
+			binobj_num = bf? bf->id: UT32_MAX;
 		}
 		r_core_bin_raise (core, binfile_num, binobj_num);
 		free (v);
