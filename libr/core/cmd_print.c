@@ -3201,15 +3201,23 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
-		if (core->file && core->io) {
-			totalsize = r_io_fd_size (core->io, core->file->fd);
-			if ((st64) totalsize < 1) {
-				totalsize = UT64_MAX;
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
+			if (map) {
+				totalsize = map->addr_end - map->addr;
+				from = map->addr;
 			}
-		}
-		if (totalsize == UT64_MAX) {
-			eprintf ("Cannot determine file size\n");
-			goto beach;
+		} else {
+			if (core->file && core->io) {
+				totalsize = r_io_fd_size (core->io, core->file->fd);
+				if ((st64) totalsize < 1) {
+					totalsize = UT64_MAX;
+				}
+			}
+			if (totalsize == UT64_MAX) {
+				eprintf ("Cannot determine file size\n");
+				goto beach;
+			}
 		}
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
@@ -3217,15 +3225,17 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	RIOMap* map1 = r_list_first (list);
-	if (map1) {
-		from = map1->itv.addr;
-		r_list_foreach (list, iter, map) {
-			to = r_itv_end (map->itv);
+	if (!r_config_get_i (core->config, "cfg.debug")) {
+		RIOMap* map1 = r_list_first (list);
+		if (map1) {
+			from = map1->itv.addr;
+			r_list_foreach (list, iter, map) {
+				to = r_itv_end (map->itv);
+			}
+			totalsize = to - from;
+		} else {
+			from = core->offset;
 		}
-		totalsize = to - from;
-	} else {
-		from = core->offset;
 	}
 	if (nblocks < 1) {
 		nblocks = totalsize / blocksize;
