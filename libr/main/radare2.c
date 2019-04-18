@@ -1162,7 +1162,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
 				if (r_config_get_i (r.config, "file.info")) {
 					// load symbols when using r2 -m 0x1000 /bin/ls
-					r_core_cmdf (&r, "oba 0x%"PFMT64x, mapaddr);
+					r_core_cmdf (&r, "oba 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (&r, ".ies*");
 				}
 			}
