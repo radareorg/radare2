@@ -2754,6 +2754,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			}
 			break;
 		case LC_SYMTAB:
+#if 0
 			{
 			char *id = r_buf_get_string (buf, addr + 20);
 			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, id? id: "");
@@ -2763,6 +2764,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, id? id: "");
 			free (id);
 			}
+#endif
 			break;
 		case LC_ID_DYLIB: { // install_name_tool
 			char *id = r_buf_get_string (buf, addr + 20);
