@@ -326,12 +326,18 @@ static void callVisualGraph(RCore *core);
 static char *parsePanelsConfig(const char *cfg, int len);
 static void rotatePanels(RPanels *panels, bool rev);
 static void rotateAsmemu(RCore *core);
-static void registerdcb(RPanel *p);
+static void setdcb(RPanel *p);
+static void setCmdStrCache(RPanel *p, char *s);
 static void resetScrollPos(RPanel *p);
 static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 static void buildPanelParam(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
+
+static void setCmdStrCache(RPanel *p, char *s) {
+	free (p->model->cmdStrCache);
+	p->model->cmdStrCache = s;
+}
 
 static RPanel *getPanel(RPanels *panels, int i) {
 	if (i >= PANEL_NUM_LIMIT) {
@@ -499,8 +505,7 @@ char *handleCmdStrCache(RCore *core, RPanel *panel) {
 	char *ret;
 	ret = r_core_cmd_str (core, panel->model->cmd);
 	if (panel->model->cache && R_STR_ISNOTEMPTY (ret)) {
-		free (panel->model->cmdStrCache);
-		panel->model->cmdStrCache = ret;
+		setCmdStrCache (panel, ret);
 	}
 	return ret;
 }
@@ -637,8 +642,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	p0->view->pos.y = 1;
 	p0->view->pos.w = PANEL_CONFIG_SIDEPANEL_W;
 	p0->view->pos.h = h - 1;
-	free (p0->model->cmdStrCache);
-	p0->model->cmdStrCache = loadCmdf (core, p0, input, str);
+	setCmdStrCache (p0, loadCmdf (core, p0, input, str));
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
 	panels->mode = PANEL_MODE_DEFAULT;
@@ -754,8 +758,7 @@ static void activateCursor(RCore *core) {
 		if (cur->model->cache) {
 			if (r_cons_yesno ('y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
-				free (cur->model->cmdStrCache);
-				cur->model->cmdStrCache = NULL;
+				setCmdStrCache (cur, NULL);
 				cur->view->refresh = true;
 				(void)r_cons_any_key ("Cache is off and cursor is on");
 				setCursor (core, !core->print->cur_enabled);
@@ -1670,11 +1673,10 @@ static void replaceCmd(RCore *core, const char *title, const char *cmd, const bo
 	cur->model->title = r_str_dup (cur->model->title, title);
 	cur->model->cmd = r_str_dup (cur->model->cmd, cmd);
 	cur->model->cache = cache;
-	free (cur->model->cmdStrCache);
-	cur->model->cmdStrCache = NULL;
+	setCmdStrCache (cur, NULL);
 	cur->model->addr = core->offset;
 	cur->model->type = PANEL_TYPE_DEFAULT;
-	registerdcb (cur);
+	setdcb (cur);
 	setRefreshAll (panels, false);
 }
 
@@ -1740,8 +1742,7 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 		RPanel *panel = getPanel (panels, i);
 		panel->view->refresh = true;
 		if (clearCache) {
-			free (panel->model->cmdStrCache);
-			panel->model->cmdStrCache = NULL;
+			setCmdStrCache (panel, NULL);
 		}
 	}
 }
@@ -1796,12 +1797,11 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 	m->type = PANEL_TYPE_DEFAULT;
 	v->curpos = 0;
 	m->addr = core->offset;
-	free (m->cmdStrCache);
-	m->cmdStrCache = NULL;
+	setCmdStrCache (p, NULL);
 	m->funcName = NULL;
 	v->refresh = true;
 	if (R_STR_ISNOTEMPTY (m->cmd)) {
-		registerdcb (p);
+		setdcb (p);
 		if (!strcmp (m->cmd, PANEL_CMD_STACK)) {
 			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 			const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
@@ -1813,7 +1813,7 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 	return;
 }
 
-static void registerdcb(RPanel *p) {
+static void setdcb(RPanel *p) {
 	if (p->model->cmd) {
 		if (!strcmp (p->model->cmd, PANEL_CMD_STACK)) {
 			p->model->directionCb = directionStackCb;
@@ -3454,8 +3454,7 @@ static void toggleWindowMode(RPanels *panels) {
 
 static void toggleCache (RPanel *p) {
 	p->model->cache = !p->model->cache;
-	free (p->model->cmdStrCache);
-	p->model->cmdStrCache = NULL;
+	setCmdStrCache (p, NULL);
 	p->view->refresh = true;
 }
 
