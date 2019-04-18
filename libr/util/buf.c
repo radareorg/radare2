@@ -776,27 +776,38 @@ R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size
 }
 
 // return an heap-allocated string read from the RBuffer b at address addr. The
-// length depends on the first '\0' found in the buffer.
+// length depends on the first '\0' found in the buffer. If there is no '\0' in
+// the buffer, there is no string, thus NULL is returned.
 R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
-	const ut8 *needle = NULL;
-	ut8 tmp[128] = {0};
+#define MIN_RES_SZ 64
+	ut8 *res = R_NEWS (ut8, MIN_RES_SZ + 1);
 	ut64 sz = 0;
-	r_buf_read_at (b, addr, tmp, sizeof (tmp) - 1);
-	int r = strlen ((const char *)tmp);
-	while (r >= 0) {
-		needle = r_mem_mem (tmp, r, (ut8 *)"\x00", 1);
+	int r = r_buf_read_at (b, addr, res, MIN_RES_SZ);
+	bool null_found = false;
+	while (r > 0) {
+		const ut8 *needle = r_mem_mem (res + sz, r, (ut8 *)"\x00", 1);
 		if (needle) {
-			sz += (needle - tmp);
+			sz += (needle - (res + sz));
+			null_found = true;
 			break;
 		}
 		sz += r;
-		r = r_buf_read_at (b, addr + sz, tmp + sz, sizeof (tmp) - sz);
+		addr += r;
+
+		ut8 *restmp = realloc (res, sz + MIN_RES_SZ + 1);
+		if (!restmp) {
+			free (res);
+			return NULL;
+		}
+		res = restmp;
+		r = r_buf_read_at (b, addr, res + sz, MIN_RES_SZ);
 	}
-	if (r < 0) {
+	if (r < 0 || !null_found) {
+		free (res);
 		return NULL;
 	}
-	tmp[sz] = 0;
-	return strdup ((const char *)tmp);
+	return (char *)res;
+#undef MIN_RES_SZ
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
