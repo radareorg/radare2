@@ -2240,6 +2240,35 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} while (--wheelspeed > 0);
 		}
 		break;
+		case 'o': // tab TAB
+			{
+				switch (core->printidx) {
+				case R_CORE_VISUAL_MODE_PX: // 0 // xc
+					hexMode--;
+					applyHexMode (core, hexMode);
+					printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
+					break;
+				case R_CORE_VISUAL_MODE_PD: // pd
+					applyDisMode (core, --disMode);
+					printfmtSingle[1] = rotateAsmemu (core);
+					break;
+				case R_CORE_VISUAL_MODE_DB: // debugger
+					applyDisMode (core, --disMode);
+					printfmtSingle[1] = rotateAsmemu (core);
+					current3format = current3format + 1;
+					printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+					break;
+				case R_CORE_VISUAL_MODE_OV: // overview
+					current4format = current4format - 1;
+					printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
+					break;
+				case R_CORE_VISUAL_MODE_CD: // code
+					current5format = current5format - 1;
+					printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+					break;
+				}
+			}
+			break;
 		case 'O': // tab TAB
 		case 9: // tab TAB
 			r_core_visual_toggle_decompiler_disasm (core, false, true);
