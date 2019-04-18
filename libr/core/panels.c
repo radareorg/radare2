@@ -302,6 +302,7 @@ static void panelPrompt(const char *prompt, char *buf, int len);
 static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
 static void setRefreshAll(RPanels *panels, bool clearCache);
+static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache);
 static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
@@ -932,15 +933,13 @@ static bool handleZoomMode(RCore *core, const int key) {
 	return true;
 }
 
-// copypasta from visual.c ';'
 static void handleComment(RCore *core) {
+	RPanel *p = getCurPanel (core->panels);
+	if (strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
+		return;
+	}
 	char buf[4095];
 	int i;
-	r_cons_enable_mouse (false);
-	r_cons_gotoxy (0, 0);
-	r_core_visual_showcursor (core, true);
-	r_cons_flush ();
-	r_cons_set_raw (false);
 	r_line_set_prompt ("[Comment]> ");
 	strcpy (buf, "\"CC ");
 	i = strlen (buf);
@@ -969,7 +968,6 @@ static void handleComment(RCore *core) {
 			strcat (buf, "\"");
 		}
 		if (buf[3] == ' ') {
-			// have to escape any quotes.
 			int j, len = strlen (buf);
 			char *duped = strdup (buf);
 			for (i = 4, j = 4; i < len; ++i,++j) {
@@ -989,8 +987,7 @@ static void handleComment(RCore *core) {
 			r_core_seek (core, orig, 1);
 		}
 	}
-	r_cons_set_raw (true);
-	r_core_visual_showcursor (core, false);
+	setRefreshByType (core->panels, p->model->cmd, true);
 }
 
 static bool handleWindowMode(RCore *core, const int key) {
@@ -1743,6 +1740,21 @@ static void setRefreshAll(RPanels *panels, bool clearCache) {
 		panel->view->refresh = true;
 		if (clearCache) {
 			setCmdStrCache (panel, NULL);
+		}
+	}
+}
+
+static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) {
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = getPanel (panels, i);
+		if (strcmp (p->model->cmd, cmd)) {
+			continue;
+		}
+		p->view->refresh = true;
+		if (clearCache) {
+			free (p->model->cmdStrCache);
+			p->model->cmdStrCache = NULL;
 		}
 	}
 }
