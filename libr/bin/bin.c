@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_types.h>
@@ -252,12 +252,10 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	bf->o = NULL;
 	ut64 sz = iob->fd_size (iob->io, fd);
 	// TODO: deprecate, the code in the else should be enough
-sz = 128 * 1024;
-eprintf ("JklD\n");
 	if (sz == UT64_MAX) {
 		if (!iob->fd_is_dbg (iob->io, fd)) {
 			// too big, probably wrong
-			eprintf ("fd_is_dbg\n");
+			eprintf ("Warning: file is too big and not in debugger\n");
 			res = false;
 			goto error;
 		}
