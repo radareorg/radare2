@@ -1811,13 +1811,17 @@ static char *get_format_type(const char fmt) {
 		type = strdup ("int8_t");
 		break;
 	case 'd':
-	case 'f':
 	case 'i':
 	case 'o':
 	case 'x':
 		type = strdup ("int32_t");
 		break;
+	case 'f':
+		type = strdup ("float");
+		break;
 	case 'F':
+		type = strdup ("double");
+		break;
 	case 'q':
 		type = strdup ("uint64_t");
 		break;
