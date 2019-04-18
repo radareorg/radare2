@@ -139,6 +139,7 @@ static const char *help_msg_ae[] = {
 	"aecue", " [esil]", "continue until esil expression match",
 	"aef", " [addr]", "emulate function",
 	"aefa", " [addr]", "emulate function to find out args in given or current offset",
+	"aeg", " [expr]", "esil graph",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 	"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
 	"aeip", "", "initialize ESIL program counter to curseek",
@@ -5074,6 +5075,21 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				break;
 
 				// TODO: display help?
+			}
+		}
+		break;
+	case 'g': // "aeg"
+		if (input[1] == 'v') {
+			r_core_cmd0 (core, ".aeg;agg");
+		} else if (input[1] == ' ') {
+			r_core_anal_esil_graph (core, input + 2);
+		} else { // "*"
+			RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
+			if (aop) {
+				const char *esilstr = r_strbuf_get (&aop->esil);
+				if (esilstr) {
+					r_core_anal_esil_graph (core, esilstr);
+				}
 			}
 		}
 		break;
