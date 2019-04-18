@@ -3836,8 +3836,6 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_println ("]");
 	}
-	//r_core_file_set_by_file (core, cur_cf);
-	//r_core_bin_bind (core, cur_bf);
 	return count;
 }
 

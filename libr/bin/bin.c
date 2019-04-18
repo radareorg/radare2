@@ -251,6 +251,9 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 	ut64 sz = iob->fd_size (iob->io, fd);
+	if (sz == UT64_MAX) {
+		sz = 128 * 1024;
+	}
 	// TODO: deprecate, the code in the else should be enough
 	if (sz == UT64_MAX) {
 		if (!iob->fd_is_dbg (iob->io, fd)) {
@@ -1014,6 +1017,13 @@ R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	} else {
 		binfile = r_bin_file_find_by_id (bin, binfile_id);
 		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
+		if (!binfile || !obj) {
+			/// binobj_id : holds the binobj counter which should die
+			// binfile_id contains the actual binobj_id
+			// workaround to fix the binid, objid, binfd mess :facepalm:
+			binfile = r_bin_file_find_by_object_id (bin, binfile_id);
+			obj = binfile? r_bin_file_object_find_by_id (binfile, binfile_id): NULL;
+		}
 	}
 	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
