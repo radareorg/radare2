@@ -779,9 +779,10 @@ R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size
 // length depends on the first '\0' found in the buffer.
 R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 	const ut8 *needle = NULL;
-	ut8 tmp[16];
+	ut8 tmp[128] = {0};
 	ut64 sz = 0;
-	int r = r_buf_read_at (b, addr + sz, tmp, sizeof (tmp));
+	r_buf_read_at (b, addr, tmp, sizeof (tmp) - 1);
+	int r = strlen ((const char *)tmp);
 	while (r >= 0) {
 		needle = r_mem_mem (tmp, r, (ut8 *)"\x00", 1);
 		if (needle) {
@@ -789,23 +790,13 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 			break;
 		}
 		sz += r;
-		r = r_buf_read_at (b, addr + sz, tmp, sizeof (tmp));
+		r = r_buf_read_at (b, addr + sz, tmp + sz, sizeof (tmp) - sz);
 	}
 	if (r < 0) {
 		return NULL;
 	}
-
-	char *res = R_NEWS (char, sz + 1);
-	if (!res) {
-		return NULL;
-	}
-	r = r_buf_read_at (b, addr + 20, (ut8 *)res, sz);
-	if (r < 0) {
-		free (res);
-		return NULL;
-	}
-	res[sz] = '\0';
-	return res;
+	tmp[sz] = 0;
+	return strdup ((const char *)tmp);
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {

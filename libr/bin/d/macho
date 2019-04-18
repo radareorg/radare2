@@ -1,2 +1,10 @@
 pf.mach0_header xxxxddx magic cputype cpusubtype filetype ncmds sizeofcmds flags
 pf.mach0_segment xd[16]zxxxxoodx cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags
+pf.mach0_symtab_command xdxdxd cmd cmdsize symoff nsyms stroff strsize
+pf.mach0_dysymtab_command xdddddddddddxdxdxxxd cmd cmdsize ilocalsym nlocalsym iextdefsym nextdefsym iundefsym nundefsym tocoff ntoc moddtaboff nmodtab extrefsymoff nextrefsyms inddirectsymoff nindirectsyms extreloff nextrel locreloff nlocrel
+pf.mach0_section [16]z16[z]xxxxxdxxx sectname segname addr size offset align reloff nreloc flags reserved1 reserved2
+pf.mach0_dylib xxxx name timestamp current_version compatibility_version
+pf.mach0_dylib_command xx? cmd cmdsize (mach0_dylib)dylib
+pf.mach0_uuid_command xx[16]b cmd cmdsize uuid
+pf.mach0_rpath_command xxx cmd cmdsize path
+pf.mach0_entry_point_command xxqq cmd cmdsize entryoff stacksize
