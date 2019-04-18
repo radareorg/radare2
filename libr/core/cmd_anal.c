@@ -1546,7 +1546,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			// 0x33->sym.xx
 			char *p = strdup (strsub);
 			if (p) {
-				r_parse_filter (core->parser, addr, core->flags, p,
+				r_parse_filter (core->parser, addr, core->flags, hint, p,
 						strsub, sizeof (strsub), be);
 				free (p);
 			}
@@ -6047,8 +6047,10 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 		r_parse_varsub (core->parser, fcn, addr, asmop.size,
 				ba, ba, sizeof (asmop.buf_asm));
 	}
-	r_parse_filter (core->parser, addr, core->flags,
+	RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+	r_parse_filter (core->parser, addr, core->flags, hint,
 			ba, str, sizeof (str), core->print->big_endian);
+	r_anal_hint_free (hint);
 	r_asm_op_set_asm (&asmop, ba);
 	free (ba);
 	if (color && has_color) {
@@ -6403,8 +6405,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 							r_asm_set_pc (core->assembler, ref->addr);
 							r_asm_disassemble (core->assembler, &asmop, buf, sizeof(buf));
-							r_parse_filter (core->parser, ref->addr, core->flags, r_asm_op_get_asm (&asmop),
+							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
+							r_parse_filter (core->parser, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
 									str, sizeof (str), core->print->big_endian);
+							r_anal_hint_free (hint);
 							if (has_color) {
 								desc = desc_to_free = r_print_colorize_opcode (core->print, str,
 										core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);

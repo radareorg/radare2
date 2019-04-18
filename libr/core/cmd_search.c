@@ -1864,8 +1864,10 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_asm_set_pc (core->assembler, ref->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-			r_parse_filter (core->parser, ref->addr, core->flags, r_strbuf_get (&asmop.buf_asm),
+			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
+			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
 				str, sizeof (str), core->print->big_endian);
+			r_anal_hint_free (hint);
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *buf_fcn = comment
 				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
@@ -2223,8 +2225,10 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 						char tmp[128] = {
 							0
 						};
-						r_parse_filter (core->parser, hit->addr, core->flags, hit->code, tmp, sizeof (tmp),
+						RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
+						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp),
 								core->print->big_endian);
+						r_anal_hint_free (hint);
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, tmp);
 					} else {

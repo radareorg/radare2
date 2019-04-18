@@ -1684,8 +1684,6 @@ R_API void r_anal_merge_hint_ranges(RAnal *a);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
 R_API void r_anal_hint_clear (RAnal *a);
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str);
-R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from);
-R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
