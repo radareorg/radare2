@@ -2795,7 +2795,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB: {
-			char *load_dylib = r_buf_get_string (buf, addr + 8);
+			char *load_dylib = r_buf_get_string (buf, addr + 16);
 			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
 				addr + 16, load_dylib? load_dylib: "");
 			free (load_dylib);
