@@ -779,7 +779,7 @@ R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size
 // length depends on the first '\0' found in the buffer. If there is no '\0' in
 // the buffer, there is no string, thus NULL is returned.
 R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
-#define MIN_RES_SZ 64
+	const int MIN_RES_SZ 64
 	ut8 *res = R_NEWS (ut8, MIN_RES_SZ + 1);
 	ut64 sz = 0;
 	int r = r_buf_read_at (b, addr, res, MIN_RES_SZ);
@@ -807,7 +807,6 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 		return NULL;
 	}
 	return (char *)res;
-#undef MIN_RES_SZ
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
