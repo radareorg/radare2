@@ -678,7 +678,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 	r_return_val_if_fail (a && name && comment, false);
 
 	RSignItem *it = r_sign_item_new ();
-	if (it) {
+	if (!it) {
 		return false;
 	}
 	it->name = r_str_new (name);
