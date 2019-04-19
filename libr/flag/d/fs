@@ -1,4 +1,4 @@
-open
+open$
 close
 read$
 write
