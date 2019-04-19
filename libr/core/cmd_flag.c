@@ -38,6 +38,7 @@ static const char *help_msg_f[] = {
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
 	"fnj","","list flags displaying the real name (demangled) in JSON format",
+	"fN"," [[name]] [realname]","set flag realname (if no flag name current seek one is used)",
 	"fo","","show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
@@ -64,7 +65,7 @@ static const char *help_msg_fd[] = {
  	"fd.", " $$", "# check flags in current address (no delta)",
 	"fdd", " $$", "# describe flag without space restrictions",
 	"fdw", " [string]", "# filter closest flag by string for current offset",
-	NULL	
+	NULL
 };
 
 static const char *help_msg_fs[] = {
@@ -931,6 +932,30 @@ rep:
 				}
 			} else {
 				eprintf ("Cannot find flag (%s)\n", old);
+			}
+		}
+		break;
+	case 'N':
+		if (input[1]==' ' && input[2]) {
+			char *name, *realname;
+			RFlagItem *item;
+			name = str + 1;
+			realname = strchr (name, ' ');
+			if (realname) {
+				*realname = 0;
+				realname++;
+				item = r_flag_get (core->flags, name);
+				if (!item && !strncmp (name, "fcn.", 4)) {
+					item = r_flag_get (core->flags, name+4);
+				}
+			} else {
+				realname = name;
+				item = r_flag_get_i (core->flags, core->offset);
+			}
+			if (item) {
+				r_flag_item_set_realname (item, realname);
+			} else {
+				eprintf ("Cannot find flag (%s)\n", name);
 			}
 		}
 		break;
