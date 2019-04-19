@@ -245,7 +245,7 @@ R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 R_API ut64 r_buf_tell(RBuffer *b) {
-	return r_buf_seek(b, 0, R_BUF_CUR);
+	return r_buf_seek (b, 0, R_BUF_CUR);
 }
 
 R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {

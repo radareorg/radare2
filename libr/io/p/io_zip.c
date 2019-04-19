@@ -531,17 +531,17 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case SEEK_SET:
 		seek_val = (r_buf_size (zfo->b) < offset)? r_buf_size (zfo->b): offset;
 		io->off = seek_val;
-		r_buf_seek(zfo->b, seek_val, R_BUF_SET);
+		r_buf_seek (zfo->b, seek_val, R_BUF_SET);
 		return seek_val;
 	case SEEK_CUR:
 		seek_val = (r_buf_size (zfo->b) < (offset + r_buf_tell (zfo->b)))? r_buf_size (zfo->b): offset + r_buf_tell (zfo->b);
 		io->off = seek_val;
-		r_buf_seek(zfo->b, seek_val, R_BUF_SET);
+		r_buf_seek (zfo->b, seek_val, R_BUF_SET);
 		return seek_val;
 	case SEEK_END:
 		seek_val = r_buf_size (zfo->b);
 		io->off = seek_val;
-		r_buf_seek(zfo->b, seek_val, R_BUF_SET);
+		r_buf_seek (zfo->b, seek_val, R_BUF_SET);
 		return seek_val;
 	}
 	return seek_val;

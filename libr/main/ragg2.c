@@ -555,7 +555,7 @@ R_API int r_main_ragg2(int argc, char **argv) {
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
-					r_buf_seek(b, 0, R_BUF_SET);
+					r_buf_seek (b, 0, R_BUF_SET);
 					for (i = 0; i < tmpsz; i++) {
 						printf ("%02x", tmp[i]);
 					}

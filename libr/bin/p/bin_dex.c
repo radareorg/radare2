@@ -2080,7 +2080,7 @@ static RList *dex_fields(RBinFile *bf) {
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt)); \
 	addr += siz;
 
-	r_buf_seek(bf->buf, 0, R_BUF_SET);
+	r_buf_seek (bf->buf, 0, R_BUF_SET);
 	ut64 magic = r_buf_read_le64 (bf->buf);
 	ROW ("dex_magic", 8, magic, "[8]c");
 	ut32 checksum = r_buf_read_le32 (bf->buf);
