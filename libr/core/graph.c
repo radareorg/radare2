@@ -3414,23 +3414,24 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 
 	r_cons_canvas_print_region (g->can);
-	if (is_interactive) {
-		r_cons_newline ();
-	}
 
 	if (is_interactive) {
+		r_cons_newline ();
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
+		bool mustFlush = false;
 		r_cons_visual_flush ();
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 2);
 			r_cons_strcat (Color_RESET);
 			r_core_cmd0 (core, cmdv);
+			mustFlush = true;
+		}
+		if (core && core->scr_gadgets) {
+			r_core_cmd0 (core, "pg");
+		}
+		if (mustFlush) {
 			r_cons_flush ();
 		}
-	}
-	if (core && core->scr_gadgets) {
-		r_core_cmd0 (core, "pg");
-		r_cons_flush ();
 	}
 	return true;
 }
