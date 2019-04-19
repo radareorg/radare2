@@ -1,2 +1,5 @@
 getpid
 kill
+exit
+abort
+assert

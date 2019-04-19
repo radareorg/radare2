@@ -239,11 +239,24 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 		return;
 	}
 	if (mode == '?') {
-		eprintf ("Usage: ft [k] [v ...]\n");
+		eprintf ("Usage: ft[?ln] [k] [v ...]\n");
 		eprintf (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
 		eprintf (" ft tag                   # get offsets of all matching flags\n");
 		eprintf (" ft                       # list all tags\n");
+		eprintf (" ftl                      # list all tags and the associated flags\n");
 		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
+		free (inp);
+		return;
+	}
+	if (mode == 'l') {
+		const char *tag;
+		RListIter *iter;
+		RList *list = r_flag_tags_list (core->flags);
+		r_list_foreach (list, iter, tag) {
+			r_cons_printf ("%s:\n", tag);
+			r_core_cmdf (core, "ftn %s", tag);
+		}
+		r_list_free (list);
 		free (inp);
 		return;
 	}
