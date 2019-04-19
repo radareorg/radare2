@@ -1090,7 +1090,6 @@ typedef struct r_panels_t {
 	int n_panels;
 	int columnWidth;
 	int curnode;
-	int disMode;
 	bool isResizing;
 	bool autoUpdate;
 	RPanelsMenu *panelsMenu;
