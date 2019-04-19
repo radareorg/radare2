@@ -1,4 +1,5 @@
 tags_r2_sources = [
+  'dylib',
   'alloc',
   'env',
   'fs',
