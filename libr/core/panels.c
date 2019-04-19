@@ -326,8 +326,10 @@ static void checkEdge(RPanels *panels);
 static void callVisualGraph(RCore *core);
 static char *parsePanelsConfig(const char *cfg, int len);
 static void rotatePanels(RPanels *panels, bool rev);
+static void rotateDisasCb(void *user, bool rev);
 static void rotateAsmemu(RCore *core);
 static void setdcb(RPanel *p);
+static void setrcb(RPanel *p);
 static void setCmdStrCache(RPanel *p, char *s);
 static void resetScrollPos(RPanel *p);
 static RPanel *getPanel(RPanels *panels, int i);
@@ -1814,6 +1816,7 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 	v->refresh = true;
 	if (R_STR_ISNOTEMPTY (m->cmd)) {
 		setdcb (p);
+		setrcb (p);
 		if (!strcmp (m->cmd, PANEL_CMD_STACK)) {
 			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 			const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
@@ -1826,20 +1829,24 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 }
 
 static void setdcb(RPanel *p) {
-	if (p->model->cmd) {
-		if (!strcmp (p->model->cmd, PANEL_CMD_STACK)) {
-			p->model->directionCb = directionStackCb;
-		} else if (!strcmp (p->model->cmd, PANEL_CMD_GRAPH)) {
-			p->model->directionCb = directionGraphCb;
-		} else if (!strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
-			p->model->directionCb = directionDisassemblyCb;
-		} else if (!strcmp (p->model->cmd, PANEL_CMD_REGISTERS)) {
-			p->model->directionCb = directionRegisterCb;
-		} else if (!strcmp (p->model->cmd, PANEL_CMD_HEXDUMP)) {
-			p->model->directionCb = directionHexdumpCb;
-		} else {
-			p->model->directionCb = directionDefaultCb;
-		}
+	if (!strcmp (p->model->cmd, PANEL_CMD_STACK)) {
+		p->model->directionCb = directionStackCb;
+	} else if (!strcmp (p->model->cmd, PANEL_CMD_GRAPH)) {
+		p->model->directionCb = directionGraphCb;
+	} else if (!strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
+		p->model->directionCb = directionDisassemblyCb;
+	} else if (!strcmp (p->model->cmd, PANEL_CMD_REGISTERS)) {
+		p->model->directionCb = directionRegisterCb;
+	} else if (!strcmp (p->model->cmd, PANEL_CMD_HEXDUMP)) {
+		p->model->directionCb = directionHexdumpCb;
+	} else {
+		p->model->directionCb = directionDefaultCb;
+	}
+}
+
+static void setrcb(RPanel *p) {
+	if (!strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
+		p->model->rotateCb = rotateDisasCb;
 	}
 }
 
@@ -3084,6 +3091,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	}
 	panels->isResizing = false;
 	panels->autoUpdate = true;
+	panels->disMode = 0;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
@@ -3694,6 +3702,13 @@ static void rotatePanels(RPanels *panels, bool rev) {
 	setRefreshAll (panels, false);
 }
 
+static void rotateDisasCb(void *user, bool rev) {
+	RCore *core = (RCore *)user;
+	core->panels->disMode += rev ? -1 : 1;
+	r_core_visual_applyDisMode (core, core->panels->disMode);
+	rotateAsmemu (core);
+}
+
 static void undoSeek(RCore *core) {
 	RPanel *cur = getCurPanel (core->panels);
 	if (strcmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY)) {
@@ -4113,6 +4128,20 @@ repeat:
 			swapPanels (panels, 0, panels->curnode);
 			panels->curnode = 0;
 			setRefreshAll (panels, false);
+		}
+		break;
+	case 't':
+		{
+			RPanel *cur = getCurPanel (panels);
+			cur->model->rotateCb (core, false);
+			cur->view->refresh = true;
+		}
+		break;
+	case 'T':
+		{
+			RPanel *cur = getCurPanel (panels);
+			cur->model->rotateCb (core, true);
+			cur->view->refresh = true;
 		}
 		break;
 	case 'w':
