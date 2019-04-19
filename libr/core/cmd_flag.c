@@ -243,12 +243,12 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 		eprintf (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
 		eprintf (" ft tag                   # get offsets of all matching flags\n");
 		eprintf (" ft                       # list all tags\n");
-		eprintf (" ftl                      # list all tags and the associated flags\n");
 		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
+		eprintf (" ftw                      # flag tags within this file\n");
 		free (inp);
 		return;
 	}
-	if (mode == 'l') {
+	if (mode == 'w') { // "ftw"
 		const char *tag;
 		RListIter *iter;
 		RList *list = r_flag_tags_list (core->flags);
