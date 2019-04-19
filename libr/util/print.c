@@ -66,13 +66,21 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
+	RConsPrintablePalette *pal = &p->cons->context->pal;
+	const char *kol[5];
+	kol[0] = pal->call;
+	kol[1] = pal->jmp;
+	kol[2] = pal->cjmp;
+	kol[3] = pal->mov;
+	kol[4] = pal->nop;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
 			int threshold = i * (0xff / rows);
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					p->cb_printf (Color_BGRED"_" Color_RESET);
+	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
+					int koli = i * 5 / rows;
+					p->cb_printf ("%s|" Color_RESET, kol[koli]);
 				} else {
 					p->cb_printf (" ");
 				}
