@@ -671,40 +671,38 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	case R_ANAL_OP_TYPE_POP:
 		return false;
 	case R_ANAL_OP_TYPE_MOV:
-		if (STR_EQUAL (opsreg, regname))
-			return true;
-		if (STR_EQUAL (opdreg, regname) && dst->memref)
-			return true;
-		return false;
+		return (STR_EQUAL (opsreg, regname)) || (STR_EQUAL (opdreg, regname) && dst->memref);
 	case R_ANAL_OP_TYPE_CMOV:
-		if (STR_EQUAL (opdreg, regname))
+		if (STR_EQUAL (opdreg, regname)) {
 			return false;
-		if (STR_EQUAL (opsreg, regname))
+		}
+		if (STR_EQUAL (opsreg, regname)) {
 			return true;
+		}
 		return false;
 	case R_ANAL_OP_TYPE_LEA:
-		if (STR_EQUAL (opsreg, regname))
+		if (STR_EQUAL (opsreg, regname)) {
 			return true;
-		if (STR_EQUAL (opdreg, regname))
+		}
+		if (STR_EQUAL (opdreg, regname)) {
 			return false;
+		}
     		return false;
 	case R_ANAL_OP_TYPE_XOR:
-		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref)
+		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref) {
 			return false;
+		}
 		//fallthrough
 	default:
-		if ((STR_EQUAL (opdreg, regname)) || (STR_EQUAL (opsreg, regname)))
-			return true;
-		return false;	
+		return ((STR_EQUAL (opdreg, regname)) || (STR_EQUAL (opsreg, regname)));
 	}
 }
 
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
-	const char *opsreg = NULL;
-	const char *opdreg = NULL;
 	int i, argc = 0;
 	r_return_if_fail (anal && op && fcn);
-
+	const char *opsreg = op->src[0] ? get_regname (anal, op->src[0]) : NULL;
+	const char *opdreg = op->dst ? get_regname (anal, op->dst) : NULL;
 	if (!fcn->cc) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
@@ -715,12 +713,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	int max_count = r_anal_cc_max_arg (anal, fcn->cc);
 	if (!max_count || (*count >= max_count)) {
 		return;
-	}
-	if (op->src[0]) {
-		opsreg = get_regname (anal, op->src[0]);
-	}
-	if (op->dst) {
-		opdreg = get_regname (anal, op->dst);
 	}
 	if (fname) {
 		char *tmp = strchr (fname, '.');
@@ -758,7 +750,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 				free (name);
 				free (type);
-				count++; // ? shouldn't be (*count)++? ; is it used anywhere at all?
+				*count++;
 			}
 			if (opsreg && !strcmp (regname, opsreg))
 				reg_set[i] = true;

@@ -2465,15 +2465,9 @@ R_API bool r_anal_fcn_get_purity(RAnal *anal, RAnalFunction *fcn) {
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
-	char *opdreg = NULL;
-	char *opsreg = NULL;
+	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
+	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
 	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
-	if (dst && dst->reg) {
-		opdreg = dst->reg->name;
-	}
-	if (src && src->reg) {
-		opsreg = src->reg->name;
-	}
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp (opsreg, bp_name);
 	if (op->type == R_ANAL_OP_TYPE_XCHG)
@@ -2487,6 +2481,9 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
+	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
+	char *pos;
+	strcat (str_to_find, anal->reg->name[R_REG_NAME_BP]);
 	if (!fcn) {
 		return;
 	}
@@ -2512,6 +2509,10 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 				}
 				break;
 			case R_ANAL_OP_TYPE_LEA:
+				if (can_affect_bp (anal, &op)) {
+					fcn->bp_frame = false;
+				}
+				break;
 			case R_ANAL_OP_TYPE_ADD:
 			case R_ANAL_OP_TYPE_AND:
 			case R_ANAL_OP_TYPE_CMOV:
@@ -2525,10 +2526,21 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_SUB:
 			case R_ANAL_OP_TYPE_XOR:
 			case R_ANAL_OP_TYPE_SHL:
-			case R_ANAL_OP_TYPE_XCHG:
-				if (can_affect_bp (anal, &op)) {
+// op.dst is not filled for these operations, so for now, check for bp as dst looks like this; in the future it may be just replaced with call to can_affect_bp
+ 				if (op.opex.ptr) {
+					pos = strstr (op.opex.ptr, str_to_find);
+				}
+				else {
+					pos = NULL;
+				}
+				if (pos && pos - op.opex.ptr < 60) {
 					fcn->bp_frame = false;
 				}
+				break;
+			case R_ANAL_OP_TYPE_XCHG:
+				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
+					fcn->bp_frame = false;
+    				}
 				break;
 			case R_ANAL_OP_TYPE_POP:
 				break;
