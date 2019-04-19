@@ -2527,12 +2527,7 @@ R_API void r_anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			case R_ANAL_OP_TYPE_XOR:
 			case R_ANAL_OP_TYPE_SHL:
 // op.dst is not filled for these operations, so for now, check for bp as dst looks like this; in the future it may be just replaced with call to can_affect_bp
- 				if (op.opex.ptr) {
-					pos = strstr (op.opex.ptr, str_to_find);
-				}
-				else {
-					pos = NULL;
-				}
+ 				pos = op.opex.ptr ? strstr (op.opex.ptr, str_to_find) : NULL;
 				if (pos && pos - op.opex.ptr < 60) {
 					fcn->bp_frame = false;
 				}
