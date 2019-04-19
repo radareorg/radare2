@@ -8076,6 +8076,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				if (input[1] == 'a') { // "aaaa"
+					oldstr = r_print_rowlog (core->print, "Finding function preludes");
+					r_core_cmd0 (core, "aap");
+					r_print_rowlog_done (core->print, oldstr);
+					/// 
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);
