@@ -7872,11 +7872,16 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "aef@@f");
 		} else if (input[1] == 't') { // "aaft"
 			cmd_anal_aaft (core);
-		} else { // "aaf"
+		} else if (input[1] == 0) { // "aaf"
 			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_config_set_i (core->config, "anal.hasnext", true);
 			r_core_cmd0 (core, "afr@@c:isq");
 			r_config_set_i (core->config, "anal.hasnext", analHasnext);
+		} else {
+			r_cons_printf ("Usage: aaf[et] - analyze all functions again\n");
+			r_cons_printf (" aafe = aef@@f\n");
+			r_cons_printf (" aaft = recursive type matching in all functions\n");
+			r_cons_printf (" aaf  = afr@@c:isq\n");
 		}
 		break;
 	case 'c': // "aac"
