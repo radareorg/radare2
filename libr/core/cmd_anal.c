@@ -7951,6 +7951,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			r_cons_println ("Usage: See aa? for more help");
 		} else {
+			bool didAap = false;
 			char *dh_orig = NULL;
 			if (!strncmp (input, "aaaaa", 5)) {
 				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
@@ -8014,6 +8015,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (is_unknown_file (core)) {
 					oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
+					didAap = true;
 					r_print_rowlog_done (core->print, oldstr);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
@@ -8081,10 +8083,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				if (input[1] == 'a') { // "aaaa"
-					oldstr = r_print_rowlog (core->print, "Finding function preludes");
-					r_core_cmd0 (core, "aap");
-					r_print_rowlog_done (core->print, oldstr);
-					/// 
+					if (!didAap) {
+						oldstr = r_print_rowlog (core->print, "Finding function preludes");
+						(void)r_core_search_preludes (core, false); // "aap"
+						r_print_rowlog_done (core->print, oldstr);
+						/// 
+					}
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);
