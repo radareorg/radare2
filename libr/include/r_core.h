@@ -754,7 +754,7 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
 /* undo */
 R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert);
 R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
-R_API void *r_core_undo_free(RCoreUndo *cu);
+R_API void r_core_undo_free(RCoreUndo *cu);
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
 
