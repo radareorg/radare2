@@ -1300,11 +1300,12 @@ static int cmd_bsize(void *data, const char *input) {
 	case '\0': // "b"
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
-	case '?': // "b?"
-		r_core_cmd_help (core, help_msg_b);
+	case ' ':
+		r_core_block_size (core, r_num_math (core->num, input));
 		break;
 	default:
-		r_core_block_size (core, r_num_math (core->num, input));
+	case '?': // "b?"
+		r_core_cmd_help (core, help_msg_b);
 		break;
 	}
 	return 0;
