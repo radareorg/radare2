@@ -30,11 +30,16 @@
 #define PANEL_CMD_FCNINFO        "afi"
 #define PANEL_CMD_HEXDUMP        "xc"
 
+#define PANEL_PREFIX_ENTROPY_V   "p="
+#define PANEL_PREFIX_ENTROPY_H   "p=="
+
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
+
+#define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
 typedef enum {
 	LEFT,
@@ -113,6 +118,11 @@ static const char *menus_Analyze[] = {
 
 static const char *menus_Help[] = {
 	"Fortune", "Commands", "2048", "License", "Lock Screen", "About",
+	NULL
+};
+
+static const char *entropy_rotate[] = {
+	"", "2", "b", "c", "d", "e", "F", "i", "j", "m", "p", "s", "z", "0",
 	NULL
 };
 
@@ -327,6 +337,9 @@ static void callVisualGraph(RCore *core);
 static char *parsePanelsConfig(const char *cfg, int len);
 static void rotatePanels(RPanels *panels, bool rev);
 static void rotateDisasCb(void *user, bool rev);
+static void rotateEntropy(RCore *core, bool rev, const char *prefix);
+static void rotateEntropyVCb(void *user, bool rev);
+static void rotateEntropyHCb(void *user, bool rev);
 static void rotateAsmemu(RCore *core);
 static void setdcb(RPanel *p);
 static void setrcb(RPanel *p);
@@ -405,13 +418,23 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	int graph_pad = 0;
 	char title[128], cache_title[128], *text, *cmdStr = NULL;
 	if (color) {
-		snprintf (title, sizeof (title) - 1,
-				"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+		if (!strcmp (panel->model->title, panel->model->cmd)) {
+			snprintf (title, sizeof (title) - 1,
+					"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+		}  else {
+			snprintf (title, sizeof (title) - 1,
+					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, panel->model->cmd);
+		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
 				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
 	} else {
-		snprintf (title, sizeof (title) - 1,
-				"   %s   ", panel->model->title);
+		if (!strcmp (panel->model->title, panel->model->cmd)) {
+			snprintf (title, sizeof (title) - 1,
+					"   %s   ", panel->model->title);
+		} else {
+			snprintf (title, sizeof (title) - 1,
+					"   %s (%s)  ", panel->model->title, panel->model->cmd);
+		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
 				"[Cache] %s", panel->model->cache ? "On" : "Off");
 	}
@@ -1676,6 +1699,7 @@ static void replaceCmd(RCore *core, const char *title, const char *cmd, const bo
 	cur->model->addr = core->offset;
 	cur->model->type = PANEL_TYPE_DEFAULT;
 	setdcb (cur);
+	setrcb (cur);
 	setRefreshAll (panels, false);
 }
 
@@ -1809,6 +1833,7 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 	}
 	m->cache = cache;
 	m->type = PANEL_TYPE_DEFAULT;
+	m->rotate = 0;
 	v->curpos = 0;
 	m->addr = core->offset;
 	setCmdStrCache (p, NULL);
@@ -1829,6 +1854,9 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 }
 
 static void setdcb(RPanel *p) {
+	if (!p->model->cmd) {
+		return;
+	}
 	if (!strcmp (p->model->cmd, PANEL_CMD_STACK)) {
 		p->model->directionCb = directionStackCb;
 	} else if (!strcmp (p->model->cmd, PANEL_CMD_GRAPH)) {
@@ -1845,8 +1873,19 @@ static void setdcb(RPanel *p) {
 }
 
 static void setrcb(RPanel *p) {
+	if (!p->model->cmd) {
+		return;
+	}
 	if (!strcmp (p->model->cmd, PANEL_CMD_DISASSEMBLY)) {
 		p->model->rotateCb = rotateDisasCb;
+		return;
+	}
+	if (!strncmp (p->model->cmd, PANEL_PREFIX_ENTROPY_H, strlen (PANEL_PREFIX_ENTROPY_H))) {
+		p->model->rotateCb = rotateEntropyHCb;
+		return;
+	}
+	if (!strncmp (p->model->cmd, PANEL_PREFIX_ENTROPY_V, strlen (PANEL_PREFIX_ENTROPY_V))) {
+		p->model->rotateCb = rotateEntropyVCb;
 	}
 }
 
@@ -3091,7 +3130,6 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	}
 	panels->isResizing = false;
 	panels->autoUpdate = true;
-	panels->disMode = 0;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
@@ -3704,9 +3742,30 @@ static void rotatePanels(RPanels *panels, bool rev) {
 
 static void rotateDisasCb(void *user, bool rev) {
 	RCore *core = (RCore *)user;
-	core->panels->disMode += rev ? -1 : 1;
-	r_core_visual_applyDisMode (core, core->panels->disMode);
+	RPanel *p = getCurPanel (core->panels);
+	p->model->rotate += rev ? -1 : 1;
+	r_core_visual_applyDisMode (core, p->model->rotate);
 	rotateAsmemu (core);
+}
+
+static void rotateEntropy(RCore *core, bool rev, const char *prefix) {
+	RPanel *p = getCurPanel (core->panels);
+	p->model->rotate += rev ? -1 : 1;
+	char cmd[64];
+	snprintf (cmd, sizeof (cmd), "%s%s", prefix, entropy_rotate[p->model->rotate % COUNT (entropy_rotate)]);
+	p->model->cmd = r_str_dup (p->model->cmd, cmd);
+	setCmdStrCache (p, NULL);
+	p->view->refresh = true;
+}
+
+static void rotateEntropyVCb(void *user, bool rev) {
+	RCore *core = (RCore *)user;
+	rotateEntropy (core, rev, PANEL_PREFIX_ENTROPY_V);
+}
+
+static void rotateEntropyHCb(void *user, bool rev) {
+	RCore *core = (RCore *)user;
+	rotateEntropy (core, rev, PANEL_PREFIX_ENTROPY_H);
 }
 
 static void undoSeek(RCore *core) {

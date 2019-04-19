@@ -37,6 +37,7 @@ typedef struct r_panel_model_t {
 	bool cache;
 	char *cmdStrCache;
 	char *funcName;
+	int rotate;
 } RPanelModel;
 
 typedef struct r_panel_view_t {
