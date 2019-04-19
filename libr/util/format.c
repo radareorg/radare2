@@ -67,7 +67,7 @@ static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 }
 
 static void r_print_format_quadword(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr64;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -140,7 +140,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_byte(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size / ARRAYINDEX_COEF - 1;
@@ -205,7 +205,7 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 
 // Return number of consumed bytes
 static int r_print_format_uleb(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	int s = 0, offset = 0;
 	ut64 value = 0;
@@ -289,7 +289,7 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_char(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size/ARRAYINDEX_COEF-1;
@@ -353,7 +353,7 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_decchar(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size/ARRAYINDEX_COEF-1;
@@ -456,7 +456,7 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 }
 
 static void r_print_format_time(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	struct tm timestruct;
 	int elem = -1;
@@ -538,7 +538,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 
 // TODO: support unsigned int?
 static void r_print_format_hex(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -620,7 +620,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_int(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -706,7 +706,7 @@ static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 }
 
 static void r_print_format_octal(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -783,7 +783,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr = 0;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -860,7 +860,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
 	}
 }
 
-static int r_print_format_10bytes(const RPrint* p, int mode, const char* setval,
+static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 		ut64 seeki, ut64 addr, ut8* buf) {
 	ut8 buffer[255];
 	int j;
@@ -916,7 +916,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char* setval,
 }
 
 static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int j;
 	size = (size == -1) ? 1 : size;
 	if (MUSTSET) {
@@ -960,7 +960,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_float(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	float val_f = 0.0f;
 	ut64 addr = 0;
 	int elem = -1;
@@ -1015,7 +1015,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 
 
 static void r_print_format_double(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	double val_f = 0.0;
 	ut64 addr = 0;
 	int elem = -1;
@@ -1072,7 +1072,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_word(const RPrint* p, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -1173,7 +1173,7 @@ static void r_print_byte_escape(const RPrint* p, const char *src, char **dst, in
 }
 
 static void r_print_format_nulltermstring(const RPrint* p, const int len, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
 		ut8 ch = 0xff;
 		// XXX there are some cases where the memory is there but is_valid_offset fails wtf
@@ -1237,7 +1237,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		char *utf_encoded_buf = NULL;
 		int str_len = r_str_nlen ((char *)buf + i, len - i);
 #if 0
-		// TODO: make this work as expected
+		// TODO: make this work as expected; add bool overflow field
 		if ((size == -1 || size > len - i) && str_len == len - i) {
 			eprintf ("Warning: string overflows buffer\n");
 		}
@@ -1254,7 +1254,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 }
 
 static void r_print_format_nulltermwidestring(const RPrint* p, const int len, int endian, int mode,
-		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (MUSTSET) {
 		int vallen = strlen(setval);
 		char *newstring, *ons;
@@ -1296,8 +1296,8 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 	}
 }
 
-static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char* fmtname,
-		char* fieldname, ut64 addr, int mode, int size) {
+static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
+		char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
 	switch (size) {
 	case 1: addr &= UT8_MAX; break;
@@ -1325,8 +1325,8 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char* fmtname,
 	free (bitfield);
 }
 
-static void r_print_format_enum(const RPrint* p, ut64 seeki, char* fmtname,
-		char* fieldname, ut64 addr, int mode, int size) {
+static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
+		char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
 	switch (size) {
 	case 1: addr &= UT8_MAX; break;
@@ -1359,7 +1359,7 @@ static void r_print_format_enum(const RPrint* p, ut64 seeki, char* fmtname,
 }
 
 static void r_print_format_register(const RPrint* p, int mode,
-		const char *name, const char* setval) {
+		const char *name, const char *setval) {
 	if (!p || !p->get_register || !p->reg) {
 		return;
 	}
@@ -1762,7 +1762,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 	return r_print_format_struct_size (fmt, p, mode, 0);
 }
 
-static char* get_args_offset(const char *arg) {
+static char *get_args_offset(const char *arg) {
 	char *args = strchr (arg, ' ');
 	char *sq_bracket = strchr (arg, '[');
 	int max = 30;
@@ -1775,7 +1775,7 @@ static char* get_args_offset(const char *arg) {
 	return args;
 }
 
-static char* get_format_type(const char fmt) {
+static char *get_format_type(const char fmt) {
 	char *type = NULL;
 	switch (fmt) {
 	case 'b':

@@ -1265,6 +1265,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 									s,
 									handler_addr);
 							}
+							free (s);
 						} else {
 							if (dexdump) {
 								rbin->cb_printf ("          (error) -> 0x%04"PFMT64x"\n", handler_addr);

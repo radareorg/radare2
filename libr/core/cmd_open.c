@@ -52,7 +52,8 @@ static const char *help_msg_o_star[] = {
 static const char *help_msg_oa[] = {
 	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
 	"oba", " [addr]", "Open bin info from the given address",
-	"oba", " [addr] [filename]", "Open file and load bin info at given address",
+	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
+	"oba", " [addr] [/abs/filename]", "Open file and load bin info at given address",
 	NULL
 };
 
@@ -60,16 +61,17 @@ static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
-// those 3 commands are VERY SIMILAR, need love
-	"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
-	"obo", " [objid]", "Switch to open binary file by objid",
-	"obb", " [fd]", "Switch to open binfile by fd number",
-
+	"ob", " [fd objid]", "Switch to open binary file by fd number and objid (DEPRECATED)",
+	"ob", " [objid]", "Switch to open given objid",
+	"obo", " [objid]", "Switch to open binary file by objid (DEPRECATED)",
+	"obb", " [fd]", "Switch to open binfile by fd number (DEPRECATED)",
 	"oba", " [addr]", "Open bin info from the given address",
+	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
+	"obL", "", "Same as iL or Li",
 	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob-", "*", "Delete all binfiles",
 	NULL
@@ -186,6 +188,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	ut32 binfile_num = -1, binobj_num = -1;
 
 	switch (input[1]) {
+	case 'L': // "obL"
+		r_core_cmd0 (core, "iL");
+		break;
 	case '\0': // "ob"
 	case 'q': // "obj"
 	case 'j': // "obj"
@@ -200,7 +205,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		if (input[2] && input[3]) {
 			char *arg = strdup (input + 3);
 			char *filename = strchr (arg, ' ');
-			if (filename) {
+			if (filename && *filename && (filename[1] == '/' || filename[1] == '.')) {
 				int saved_fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_R, 0);
 				if (desc) {
@@ -215,13 +220,34 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				} else {
 					eprintf ("Cannot open %s\n", filename + 1);
 				}
+			} else if (filename && *filename) {
+				ut64 baddr = r_num_math (core->num, filename);
+				ut64 addr = r_num_math (core->num, input + 2); // mapaddr
+				int fd = r_io_fd_get_current (core->io);
+				RIODesc *desc = r_io_desc_get (core->io, fd);
+				if (desc) {
+					RBinOptions opt;
+					opt.offset = addr;
+					opt.baseaddr = baddr;
+					opt.loadaddr = addr;
+					opt.sz = 1024*1024*1;
+					r_bin_options_init (&opt, desc->fd, baddr, addr, core->bin->rawstr);
+					r_bin_open_io (core->bin, &opt);
+					r_core_cmd0 (core, ".is*");
+				} else {
+					eprintf ("No file to load bin from?\n");
+				}
 			} else {
 				ut64 addr = r_num_math (core->num, input + 2);
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					RBinOptions opt;
-					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					opt.offset = addr;
+					opt.baseaddr = addr;
+					opt.loadaddr = addr;
+					opt.sz = 1024*1024*1;
+					r_bin_options_init (&opt, desc->fd, addr, addr, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -230,7 +256,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			free (arg);
 		} else {
-			eprintf ("RCoreFile has been killed here, this needs to be redone properly from non-uri iofiles\n");
 			RList *files = r_id_storage_list (core->io->files);
 			RIODesc *desc;
 			RListIter *iter;
@@ -238,7 +263,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				RBinOptions opt;
 				r_bin_options_init (&opt, desc->fd, core->offset, 0, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
-				r_core_cmd0 (core, ".is*");
+				r_core_cmd0 (core, ".ies*");
 				break;
 			}
 			r_list_free (files);
@@ -283,13 +308,16 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		fd = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
+		fd = *v && r_is_valid_input_num_value (core->num, tmp)
+			? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
-			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)? r_get_input_num_value (core->num, tmp): UT32_MAX;
+			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)
+				? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
-			binfile_num = bf? bf->id: UT32_MAX;
+			RBinFile *bf = r_bin_file_find_by_object_id (core->bin, fd);
+			binfile_num = fd;
+			binobj_num = bf? bf->id: UT32_MAX;
 		}
 		r_core_bin_raise (core, binfile_num, binobj_num);
 		free (v);

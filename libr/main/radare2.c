@@ -1162,7 +1162,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
 				if (r_config_get_i (r.config, "file.info")) {
 					// load symbols when using r2 -m 0x1000 /bin/ls
-					r_core_cmdf (&r, "oba 0x%"PFMT64x, mapaddr);
+					r_core_cmdf (&r, "oba 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (&r, ".ies*");
 				}
 			}
@@ -1276,7 +1276,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (debug) {
 			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
-		if (!debug && r_flag_get (r.flags, "entry0")) {
+		if (!debug && r_flag_get (r.flags, "entry0") && !r_bin_cur_object (r.bin)->regstate) {
 			r_core_cmd0 (&r, "s entry0");
 		}
 		if (s_seek) {
@@ -1506,6 +1506,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 						r_core_project_save (&r, prj);
 					}
 					free (question);
+				}
+
+				if (r_config_get_i (r.config, "scr.confirmquit")) {
+					if (!r_cons_yesno ('n', "Do you want to quit? (Y/n)")) {
+						continue;
+					}
 				}
 			} else {
 				// r_core_project_save (&r, prj);

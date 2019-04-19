@@ -279,7 +279,7 @@ static const char *help_msg_visual[] = {
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to radare shell",
-	"r", "toggle jmphints/leahints",
+	"r", "toggle callhints/jmphints/leahints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
@@ -2187,7 +2187,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	if (isNumber (core, ch)) {
 		// only in disasm and debug prints..
 		if (isDisasmPrint (core->printidx)) {
-			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp") || r_config_get_i (core->config, "asm.hint.lea"))) {
+			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp")
+			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.call"))) {
 				r_core_visual_jump (core, ch);
 			} else {
 				numbuf_append (ch);
@@ -2239,6 +2240,35 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			} while (--wheelspeed > 0);
 		}
 		break;
+		case 'o': // tab TAB
+			{
+				switch (core->printidx) {
+				case R_CORE_VISUAL_MODE_PX: // 0 // xc
+					hexMode--;
+					applyHexMode (core, hexMode);
+					printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
+					break;
+				case R_CORE_VISUAL_MODE_PD: // pd
+					applyDisMode (core, --disMode);
+					printfmtSingle[1] = rotateAsmemu (core);
+					break;
+				case R_CORE_VISUAL_MODE_DB: // debugger
+					applyDisMode (core, --disMode);
+					printfmtSingle[1] = rotateAsmemu (core);
+					current3format = current3format + 1;
+					printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+					break;
+				case R_CORE_VISUAL_MODE_OV: // overview
+					current4format = current4format - 1;
+					printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
+					break;
+				case R_CORE_VISUAL_MODE_CD: // code
+					current5format = current5format - 1;
+					printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+					break;
+				}
+			}
+			break;
 		case 'O': // tab TAB
 		case 9: // tab TAB
 			r_core_visual_toggle_decompiler_disasm (core, false, true);
@@ -2680,8 +2710,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys
-			r_core_cmd0 (core, "e!asm.hint.jmp");
-			r_core_cmd0 (core, "e!asm.hint.lea");
+			if (r_config_get_i (core->config, "asm.hint.call")) {
+				r_core_cmd0 (core, "e!asm.hint.call");
+				r_core_cmd0 (core, "e!asm.hint.jmp");
+			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
+				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e!asm.hint.lea");
+			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
+				r_core_cmd0 (core, "e!asm.hint.lea");
+				r_core_cmd0 (core, "e!asm.hint.call");
+			}
 			visual_refresh (core);
 			break;
 		case ' ':

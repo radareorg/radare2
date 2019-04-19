@@ -2759,7 +2759,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
 	SETPREF ("asm.jmpsub", "true", "Always substitute jump, call and branch targets in disassembly");
 	SETPREF ("asm.hints", "true", "Disable all asm.hint* if false");
-	SETPREF ("asm.hint.jmp", "true", "Show jump hints [numbers] in disasm");
+	SETPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
+	SETPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
 	SETPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
 	SETPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
 	SETI ("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
@@ -2819,6 +2820,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
+	SETPREF ("scr.square", "true", "Use square pixels or not");
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
@@ -3307,6 +3309,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
+	SETPREF ("scr.confirmquit", "false", "Confirm on quit");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");

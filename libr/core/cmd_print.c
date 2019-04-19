@@ -10,6 +10,7 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
+static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
@@ -46,7 +47,7 @@ static const char *help_msg_pF[] = {
 
 static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
-	"prc", "", "print bytes as colors in palette",
+	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
 	"prg", "[?]", "print raw GUNZIPped block",
@@ -567,7 +568,7 @@ R_API int r_core_get_prc_cols(RCore *core) {
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
-	bool square = true; //false;
+	bool square = r_config_get_i (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
 	int cols = r_core_get_prc_cols (core);
@@ -577,6 +578,110 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	for (i = 0; i < len; i += cols) {
 		r_print_addr (core->print, core->offset + i);
+		for (j = i; j < i + cols; j ++) {
+			if (j >= len) {
+				break;
+			}
+			if (show_color) {
+				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
+				color = r_cons_pal_parse (str, NULL);
+				free (str);
+				if (show_cursor && core->print->cur == j) {
+					ch = '_';
+				} else {
+					ch = ' ';
+				}
+			} else {
+				color = strdup ("");
+				if (show_cursor && core->print->cur == j) {
+					ch = '_';
+				} else {
+					const int idx = ((float)block[j] / 255) * (strlen (chars) - 1);
+					ch = chars[idx];
+				}
+			}
+			if (show_unalloc &&
+			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
+				if (show_color) {
+					free (color);
+					color = strdup (Color_RESET);
+					ch = core->print->io_unalloc_ch;
+					if (ch == ' ') {
+						ch = '.';
+					}
+				} else {
+					ch = '?'; // deliberately ignores io.unalloc.ch
+				}
+			}
+			if (square) {
+				if (show_flags) {
+					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
+					if (fi) {
+						ch = fi->name[0];
+						ch2 = fi->name[1];
+					} else {
+						ch2 = ch;
+					}
+				} else {
+					ch2 = ch;
+				}
+				r_cons_printf ("%s%c%c", color, ch, ch2);
+			} else {
+				r_cons_printf ("%s%c", color, ch);
+			}
+			free (color);
+		}
+		if (show_color) {
+			r_cons_printf (Color_RESET);
+		}
+		r_cons_newline ();
+	}
+}
+
+static void cmd_prc_zoom(RCore *core, const char *input) {
+	const char *chars = " .,:;!O@#";
+	bool square = r_config_get_i (core->config, "scr.square");
+	int i, j;
+	char ch, ch2, *color;
+	int cols = r_core_get_prc_cols (core);
+	bool show_color = r_config_get_i (core->config, "scr.color");
+	bool show_flags = r_config_get_i (core->config, "asm.flags");
+	bool show_cursor = core->print->cur_enabled;
+	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	ut64 from = 0;
+	ut64 to = 0;
+	RIOMap* map;
+	RListIter *iter;
+	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
+	if (list && r_list_length (list) > 0) {
+		RListIter *iter1 = list->head;
+		RIOMap* map1 = iter1->data;
+		from = map1->itv.addr;
+		r_list_foreach (list, iter, map) {
+			to = r_itv_end (map->itv);
+		}
+	} else {
+		from = core->offset;
+		to = from + core->blocksize;
+	}
+
+	core->print->zoom->mode = (input && *input)? input[1]: 'e';
+	r_print_zoom_buf (core->print, core, printzoomcallback, from, to, len, len);
+	block = core->print->zoom->buf;
+	switch (core->print->zoom->mode) {
+	case 'f':
+		// scale buffer for proper visualization of small numbers as colors
+		for (i = 0; i < core->print->zoom->size; i++) {
+			block[i] *= 8;
+		}
+		break;
+	}
+
+	for (i = 0; i < len; i += cols) {
+		ut64 ea = core->offset + i;
+		r_print_addr (core->print, ea);
 		for (j = i; j < i + cols; j ++) {
 			if (j >= len) {
 				break;
@@ -3096,15 +3201,23 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
-		if (core->file && core->io) {
-			totalsize = r_io_fd_size (core->io, core->file->fd);
-			if ((st64) totalsize < 1) {
-				totalsize = UT64_MAX;
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
+			if (map) {
+				totalsize = map->addr_end - map->addr;
+				from = map->addr;
 			}
-		}
-		if (totalsize == UT64_MAX) {
-			eprintf ("Cannot determine file size\n");
-			goto beach;
+		} else {
+			if (core->file && core->io) {
+				totalsize = r_io_fd_size (core->io, core->file->fd);
+				if ((st64) totalsize < 1) {
+					totalsize = UT64_MAX;
+				}
+			}
+			if (totalsize == UT64_MAX) {
+				eprintf ("Cannot determine file size\n");
+				goto beach;
+			}
 		}
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
@@ -3112,15 +3225,17 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	RIOMap* map1 = r_list_first (list);
-	if (map1) {
-		from = map1->itv.addr;
-		r_list_foreach (list, iter, map) {
-			to = r_itv_end (map->itv);
+	if (!r_config_get_i (core->config, "cfg.debug")) {
+		RIOMap* map1 = r_list_first (list);
+		if (map1) {
+			from = map1->itv.addr;
+			r_list_foreach (list, iter, map) {
+				to = r_itv_end (map->itv);
+			}
+			totalsize = to - from;
+		} else {
+			from = core->offset;
 		}
-		totalsize = to - from;
-	} else {
-		from = core->offset;
 	}
 	if (nblocks < 1) {
 		nblocks = totalsize / blocksize;
@@ -5505,7 +5620,14 @@ l = use_blocksize;
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'c': // "prc" // color raw dump
-			cmd_prc (core, block, len);
+			if (input[2] == '?') {
+				r_cons_printf ("prc=e # colorblocks of entropy\n");
+				r_core_cmd0 (core, "pz?");
+			} else if (input[2] == '=') {
+				cmd_prc_zoom (core, input + 2);
+			} else {
+				cmd_prc (core, block, len);
+			}
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_pr);
@@ -6376,7 +6498,6 @@ l = use_blocksize;
 				r_print_zoom (core->print, core, printzoomcallback,
 					from, to, l, (int) maxsize);
 			}
-
 			if (oldmode) {
 				r_config_set (core->config, "zoom.byte", oldmode);
 			}

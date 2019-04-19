@@ -42,6 +42,7 @@ static const char *help_msg_d[] = {
 static const char *help_msg_db[] = {
 	"Usage: db", "", " # Breakpoints commands",
 	"db", "", "List breakpoints",
+	"db*", "", "List breakpoints in r commands",
 	"db", " sym.main", "Add breakpoint into sym.main",
 	"db", " <addr>", "Add breakpoint",
 	"db-", " <addr>", "Remove breakpoint",
@@ -422,7 +423,7 @@ static const char *help_msg_dt[] = {
 	"dt-", "", "Reset traces (instruction/calls)",
 	"dta", " 0x804020 ...", "Only trace given addresses",
 	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
-	"dtd", " [delta]", "List all traced disassembled",
+	"dtd", "[qi] [nth-start]", "List all traced disassembled (quiet, instructions)",
 	"dte", "[?]", "Show esil trace logs",
 	"dtg", "", "Graph call/ret trace",
 	"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
@@ -4479,26 +4480,37 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'd': // "dtd"
-			if (input[2] == 'q') {
+			if (input[2] == 'q') { // "dtdq"
 				int min = r_num_math (core->num, input + 3);
 				RListIter *iter;
 				RDebugTracepoint *trace;
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
-					// if (trace->count >= min) {
 					if (n >= min) {
+						r_cons_printf ("%d  ", trace->count);
 						r_cons_printf ("0x%08"PFMT64x"\n", trace->addr);
 						break;
 					}
 					n++;
 				}
-			} else{ if (input[2] == ' ') {
+			} else if (input[2] == 'i') {
 				int min = r_num_math (core->num, input + 3);
 				RListIter *iter;
 				RDebugTracepoint *trace;
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
-					// if (trace->count >= min) {
+					if (n >= min) {
+						r_cons_printf ("%d  ", trace->count);
+						r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, trace->addr);
+					}
+					n++;
+				}
+			} else if (input[2] == ' ') {
+				int min = r_num_math (core->num, input + 3);
+				RListIter *iter;
+				RDebugTracepoint *trace;
+				int n = 0;
+				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 					if (n >= min) {
 						r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, trace->addr);
 					}
@@ -4507,7 +4519,6 @@ static int cmd_debug(void *data, const char *input) {
 			} else {
 				// TODO: reimplement using the api
 				r_core_cmd0 (core, "pd 1 @@= `dtq`");
-			}
 			}
 			break;
 		case 'g': // "dtg"

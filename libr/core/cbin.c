@@ -3784,11 +3784,12 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		break;
 	case 'j':
 		r_cons_printf ("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"size\":%d,\"objs\":[",
-			name, fd, id, bin_sz);
+			name? name: "", fd, id, bin_sz);
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
-			const char *arch = info ? info->arch : "unknown";
+			const char *asmarch = r_config_get (core->config, "asm.arch");
+			const char *arch = info ? info->arch ? info->arch: asmarch : "unknown";
 			r_cons_printf ("{\"objid\":%d,\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
 					PFMT64d",\"objsize\":%"PFMT64d"}",
 					obj->id, arch, bits, obj->boffset, obj->obj_size);
@@ -3802,10 +3803,8 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
-			const char *arch = info ? info->arch : "unknown";
-			if (!arch) {
-				arch = r_config_get (core->config, "asm.arch");
-			}
+			const char *asmarch = r_config_get (core->config, "asm.arch");
+			const char *arch = info ? info->arch ? info->arch: asmarch: "unknown";
 			r_cons_printf ("%4d  %s-%d at:0x%08"PFMT64x" sz:%"PFMT64d" ",
 					obj->id, arch, bits, obj->boffset, obj->obj_size );
 			r_cons_printf ("fd:%d %s\n", fd, name);
@@ -3837,8 +3836,6 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_println ("]");
 	}
-	//r_core_file_set_by_file (core, cur_cf);
-	//r_core_bin_bind (core, cur_bf);
 	return count;
 }
 

@@ -3801,6 +3801,9 @@ R_API void r_agraph_reset(RAGraph *g) {
 	}
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
+	g->need_reload_nodes = false;
+	g->need_set_layout = true;
+	g->need_update_dim = true;
 	g->x = g->y = g->w = g->h = 0;
 	agraph_sdb_init (g);
 	g->curnode = NULL;
@@ -4379,8 +4382,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			r_core_cmd0 (core, "e!asm.hint.jmp");
-			r_core_cmd0 (core, "e!asm.hint.lea");
+			if (r_config_get_i (core->config, "asm.hint.call")) {
+				r_core_cmd0 (core, "e!asm.hint.call");
+				r_core_cmd0 (core, "e!asm.hint.jmp");
+			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
+				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e!asm.hint.lea");
+			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
+				r_core_cmd0 (core, "e!asm.hint.lea");
+				r_core_cmd0 (core, "e!asm.hint.call");
+			}
 			break;
 		case '$':
 			r_core_cmd (core, "dr PC=$$", 0);
