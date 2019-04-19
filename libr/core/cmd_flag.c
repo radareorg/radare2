@@ -42,7 +42,7 @@ static const char *help_msg_f[] = {
 	"fo","","show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
-	"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
+	"fr"," [[old]] [new]","rename flag (if no new flag current seek one is used)",
 	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 	"fs","[?]+-*","manage flagspaces",
 	"ft","[?]*","flag tags, useful to find all flags matching some words",
@@ -910,11 +910,10 @@ rep:
 		flag_ordinals (core, input + 1);
 		break;
 	case 'r':
-		if (input[1]==' ' && input[2]) {
-			char *old, *new;
+		if (input[1] == ' ' && input[2]) {
 			RFlagItem *item;
-			old = str + 1;
-			new = strchr (old, ' ');
+			char *old = str + 1;
+			char *new = strchr (old, ' ');
 			if (new) {
 				*new = 0;
 				new++;
@@ -931,16 +930,15 @@ rep:
 					eprintf ("Invalid name\n");
 				}
 			} else {
-				eprintf ("Cannot find flag (%s)\n", old);
+				eprintf ("Usage: fr [[old]] [new]\n");
 			}
 		}
 		break;
 	case 'N':
-		if (input[1]==' ' && input[2]) {
-			char *name, *realname;
+		if (input[1] == ' ' && input[2]) {
 			RFlagItem *item;
-			name = str + 1;
-			realname = strchr (name, ' ');
+			char *name = str + 1;
+			char *realname = strchr (name, ' ');
 			if (realname) {
 				*realname = 0;
 				realname++;
@@ -955,7 +953,7 @@ rep:
 			if (item) {
 				r_flag_item_set_realname (item, realname);
 			} else {
-				eprintf ("Cannot find flag (%s)\n", name);
+				eprintf ("Usage: fN [[name]] [realname]\n");
 			}
 		}
 		break;
