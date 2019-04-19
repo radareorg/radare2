@@ -2249,11 +2249,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 					break;
 				case R_CORE_VISUAL_MODE_PD: // pd
-					applyDisMode (core, --disMode);
+					r_core_visual_applyDisMode (core, --disMode);
 					printfmtSingle[1] = rotateAsmemu (core);
 					break;
 				case R_CORE_VISUAL_MODE_DB: // debugger
-					applyDisMode (core, --disMode);
+					r_core_visual_applyDisMode (core, --disMode);
 					printfmtSingle[1] = rotateAsmemu (core);
 					current3format = current3format + 1;
 					printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
@@ -2313,11 +2313,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 						break;
 					case R_CORE_VISUAL_MODE_PD: // pd
-						applyDisMode (core, ++disMode);
+						r_core_visual_applyDisMode (core, ++disMode);
 						printfmtSingle[1] = rotateAsmemu (core);
 						break;
 					case R_CORE_VISUAL_MODE_DB: // debugger
-						applyDisMode (core, ++disMode);
+						r_core_visual_applyDisMode (core, ++disMode);
 						printfmtSingle[1] = rotateAsmemu (core);
 						current3format = current3format + 1;
 						printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
@@ -3397,13 +3397,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							break;
 						case R_CORE_VISUAL_MODE_PD: // pd
 							printfmtSingle[1] = rotateAsmemu (core);
-							applyDisMode (core, --disMode);
+							r_core_visual_applyDisMode (core, --disMode);
 							break;
 						case R_CORE_VISUAL_MODE_DB: // debugger
 							//printfmtSingle[1] = rotateAsmemu (core);
 							current3format = current3format - 1;
 							printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
-							applyDisMode (core, --disMode);
+							r_core_visual_applyDisMode (core, --disMode);
 							break;
 						case R_CORE_VISUAL_MODE_OV: // overview
 							current4format = current4format-1;
