@@ -111,7 +111,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	r_config_set (core->config, "asm.instr", "false");
 }
 
-static void applyDisMode(RCore *core, int disMode) {
+R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
 	switch (disMode % 5) {
 	case 0:
 		r_config_set (core->config, "asm.pseudo", "false");
