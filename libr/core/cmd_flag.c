@@ -38,7 +38,8 @@ static const char *help_msg_f[] = {
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
 	"fnj","","list flags displaying the real name (demangled) in JSON format",
-	"fN"," [[name]] [realname]","set flag realname (if no flag name current seek one is used)",
+	"fN","","show real name of flag at current address",
+	"fN"," [[name]] [realname]","set flag real name (if no flag name current seek one is used)",
 	"fo","","show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
@@ -935,7 +936,13 @@ rep:
 		}
 		break;
 	case 'N':
-		if (input[1] == ' ' && input[2]) {
+		if (!input[1]) {
+			RFlagItem *item = r_flag_get_i (core->flags, core->offset);
+			if (item) {
+				r_cons_printf ("%s\n", item->realname);
+			}
+			break;
+		} else if (input[1] == ' ' && input[2]) {
 			RFlagItem *item;
 			char *name = str + 1;
 			char *realname = strchr (name, ' ');
@@ -952,10 +959,10 @@ rep:
 			}
 			if (item) {
 				r_flag_item_set_realname (item, realname);
-			} else {
-				eprintf ("Usage: fN [[name]] [realname]\n");
 			}
+			break;
 		}
+		eprintf ("Usage: fN [[name]] [[realname]]\n");
 		break;
 	case '\0':
 	case 'n': // "fn" "fnj"
