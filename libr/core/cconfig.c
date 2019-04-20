@@ -2740,7 +2740,7 @@ R_API int r_core_config_init(RCore *core) {
 	//asm.os needs to be first, since other asm.* depend on it
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
-	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
+	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", NULL);
 	SETI ("asm.xrefs.fold", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETI ("asm.xrefs.max", 20,  "Maximum number of xrefs to be displayed without folding");
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
