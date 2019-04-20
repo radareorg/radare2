@@ -236,6 +236,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					memset (out, 0, 4);
 					return 4;
 				}
+				free (s);
 				return -1;
 			}
 		}
