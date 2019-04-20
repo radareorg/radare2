@@ -1172,7 +1172,7 @@ static void r_print_byte_escape(const RPrint* p, const char *src, char **dst, in
 	r_str_byte_escape (src, dst, dot_nl, !strcmp (p->strconv_mode, "asciidot"), p->esc_bslash);
 }
 
-static void r_print_format_nulltermstring(const RPrint* p, const int len, int endian, int mode,
+static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
 		ut8 ch = 0xff;
@@ -1182,6 +1182,22 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 			return;
 		}
 	}
+	if (p->flags & R_PRINT_FLAGS_UNALLOC && !(p->iob.io->cached & R_PERM_R)) {
+		ut64 total_map_left = 0;
+		ut64 addr = seeki;
+		RIOMap *map;
+		while ((map = p->iob.io->va
+		        ? r_io_map_get (p->iob.io, addr)
+		        : r_io_map_get_paddr (p->iob.io, addr)) && total_map_left < len) {
+			total_map_left += map->itv.size - (addr - (p->iob.io->va ? map->itv.addr : map->delta));
+			addr += total_map_left;
+		}
+		if (total_map_left < len) {
+			len = total_map_left;
+		}
+	}
+	int str_len = r_str_nlen ((char *)buf + i, len - i);
+	bool overflow = (size == -1 || size > len - i) && str_len == len - i;
 	if (MUSTSET) {
 		int buflen = strlen ((const char *)buf + seeki);
 		int vallen = strlen (setval);
@@ -1223,7 +1239,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 	} else if (MUSTSEE) {
 		int j = i;
 		if (!SEEVALUE && !ISQUIET) {
-			p->cb_printf ("0x%08" PFMT64x " = ", seeki);
+			p->cb_printf ("0x%08" PFMT64x " = %s", seeki, overflow ? "ovf " : "");
 		}
 		p->cb_printf ("\"");
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j++) {
@@ -1235,13 +1251,6 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		p->cb_printf ("\"");
 	} else if (MUSTSEEJSON) {
 		char *utf_encoded_buf = NULL;
-		int str_len = r_str_nlen ((char *)buf + i, len - i);
-#if 0
-		// TODO: make this work as expected; add bool overflow field
-		if ((size == -1 || size > len - i) && str_len == len - i) {
-			eprintf ("Warning: string overflows buffer\n");
-		}
-#endif
 		p->cb_printf ("\"");
 		utf_encoded_buf = r_str_escape_utf8_for_json (
 		    (char *)buf + i, size == -1 ? str_len : R_MIN (size, str_len));
