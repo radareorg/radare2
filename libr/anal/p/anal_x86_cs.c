@@ -37,6 +37,7 @@ call = 4
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
 #define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
+#define ISMEM(x) insn->detail->x86.operands[x].type == X86_OP_MEM
 
 #define BUF_SZ      64
 
@@ -53,6 +54,8 @@ call = 4
 #define ARG1_AR      1
 #define ARG2_AR      2
 
+static RRegItem base_regs[2];
+static RRegItem regdelta_regs[2];
 
 struct Getarg {
 	csh handle;
@@ -1782,20 +1785,24 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
-static int parse_reg_name(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
+static bool is_valid(x86_reg reg) {
+	return reg != X86_REG_INVALID;
+}
 
-	switch (INSOP (reg_num).type) {
+static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh *handle, cs_insn *insn, int reg_num) {
+	cs_x86_op x86op = INSOP (reg_num);
+	switch (x86op.type) {
 	case X86_OP_REG:
-		reg->name = (char *)cs_reg_name (*handle, INSOP(reg_num).reg);
+		reg_base->name = (char *)cs_reg_name (*handle, x86op.reg);
 		break;
 	case X86_OP_MEM:
-		if (INSOP (reg_num).mem.base != X86_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (*handle, INSOP (reg_num).mem.base);
-		} else if (INSOP (reg_num).mem.index != X86_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (*handle, INSOP (reg_num).mem.index);
+		if (is_valid (x86op.mem.base) && is_valid (x86op.mem.index)) {
+			reg_base->name = (char *)cs_reg_name (*handle, x86op.mem.base);
+			reg_delta->name = (char *)cs_reg_name (*handle, x86op.mem.index);
+		} else if (is_valid (x86op.mem.base)) {
+			reg_base->name = (char *)cs_reg_name (*handle, x86op.mem.base);
+		} else if (is_valid (x86op.mem.index)) {
+			reg_base->name = (char *)cs_reg_name (*handle, x86op.mem.index);
 		}
 		break;
 	default:
@@ -1807,42 +1814,56 @@ static int parse_reg_name(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num
 #define CREATE_SRC_DST(op) \
 	(op)->src[0] = r_anal_value_new ();\
 	(op)->dst = r_anal_value_new ();\
-	ZERO_FILL (regs[0]);\
-	ZERO_FILL (regs[1]);\
-	(op)->src[0]->reg = &regs[1];\
-	(op)->dst->reg = &regs[0];\
-	parse_reg_name ((op)->src[0]->reg, &gop.handle, insn, 1);\
-	parse_reg_name ((op)->dst->reg, &gop.handle, insn, 0);
+	ZERO_FILL (base_regs[0]);\
+	ZERO_FILL (base_regs[1]);\
+	ZERO_FILL (regdelta_regs[0]);\
+	ZERO_FILL (regdelta_regs[1]);
 
-static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
-	struct Getarg gop = {
-		.handle = *handle,
-		.insn = insn,
-		.bits = a->bits
-	};
-	static RRegItem regs[2];
+static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
+	parse_reg_name (&base_regs[x], &regdelta_regs[x], handle, insn, x);
+	switch (INSOP (x).type) {
+	case X86_OP_MEM:
+		val->mul = INSOP (x).mem.scale;
+		val->delta = INSOP (x).mem.disp;
+		val->sel = INSOP (x).mem.segment;
+		val->memref = INSOP (x).size;
+		val->regdelta = &regdelta_regs[x];
+		break;
+	case X86_OP_REG:
+		break;
+	case X86_OP_IMM:
+		val->imm = INSOP (x).imm;
+		break;
+	default:
+		break;
+	}
+	val->reg = &base_regs[x];	
+}
 
+static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_CMP:
 	case R_ANAL_OP_TYPE_LEA:
-		CREATE_SRC_DST (op);
-		switch (INSOP(0).type) {
-		case X86_OP_MEM:
-			op->dst->delta = INSOP(0).mem.disp;
-			break;
-		case X86_OP_REG:
-			if (INSOP(1).type == X86_OP_MEM) {
-				op->src[0]->delta = INSOP(1).mem.disp;
-			}
-		default:
-			break;
-		}
-		break;
+	case R_ANAL_OP_TYPE_CMOV:
 	case R_ANAL_OP_TYPE_SHL:
-		op->src[0] = r_anal_value_new ();
-		op->src[0]->imm = INSOP(1).imm;
-		parse_reg_name (op->src[0]->reg, &gop.handle, insn, 1);
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_XCHG:
+	case R_ANAL_OP_TYPE_POP:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_ACMP:
+		CREATE_SRC_DST (op);
+		set_src_dst (op->dst, handle, insn, 0);
+		set_src_dst (op->src[0], handle, insn, 1);
 		break;
 	default:
 		break;
