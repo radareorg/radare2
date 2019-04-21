@@ -1507,6 +1507,13 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 			cond? constr: "",
 			cond? "} ":"",
 			base, sign, delta);
+	if (ds->show_varsum == -1) {
+		char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
+		if (val) {
+			r_str_replace_char (val, '\n', '\0');
+			r_cons_printf (" = %s", val);
+		}
+	}
 	r_strbuf_free (constr_buf);
 }
 
@@ -1698,7 +1705,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		ds_newline (ds);
 	}
 
-	if (ds->show_vars && ds->show_varsum) {
+	if (ds->show_vars && ds->show_varsum && ds->show_varsum != -1) {
 		RList *all_vars = vars_cache.bvars;
 		r_list_join (all_vars, vars_cache.svars);
 		r_list_join (all_vars, vars_cache.rvars);
@@ -1728,14 +1735,14 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			r_cons_printf ("%s; ", COLOR_ARG (ds, color_func_var));
 			switch (var->kind) {
-			case 'b': {
+			case R_ANAL_VAR_KIND_BPV: {
 				char sign = var->delta > 0 ? '+' : '-';
 				bool is_var = var->delta <= 0;
 				ds_show_functions_argvar (ds, var,
 					anal->reg->name[R_REG_NAME_BP], is_var, sign);
 				}
 				break;
-			case 'r': {
+			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
 					eprintf("Register not found");
@@ -1745,9 +1752,16 @@ static void ds_show_functions(RDisasmState *ds) {
 					COLOR_ARG (ds, color_func_var_type),
 					var->type, r_str_endswith (var->type, "*") ? "" : " ",
 					var->name, COLOR_ARG (ds, color_func_var_addr), i->name);
+				if (ds->show_varsum == -1) {
+					char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
+					if (val) {
+						r_str_replace_char (val, '\n', '\0');
+						r_cons_printf ("%s", val);
+					}
+				}
 				}
 				break;
-			case 's': {
+			case R_ANAL_VAR_KIND_SPV: {
 				bool is_var = !var->isarg;
 				ds_show_functions_argvar (ds, var,
 					anal->reg->name[R_REG_NAME_SP],
