@@ -28,8 +28,9 @@ static const char *help_msg_t[] = {
 	"tos", " <path>", "Load types from parsed Sdb database",
 	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it",
 	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
-	"ts", "[?]", "print loaded struct types",
-	"tu", "[?]", "print loaded union types",
+	"ts", "[?]", "Print loaded struct types",
+	"tu", "[?]", "Print loaded union types",
+	"tx", "[f?]", "Type xrefs",
 	"tt", "[?]", "List all loaded typedefs",
 	NULL
 };
@@ -1322,33 +1323,89 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 'x': {
-		if (input[1] == 'f') { // "txf"
-			char *type;
-			if (input[2] == '.') {
-				RListIter *iter;
-				RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
-				if (fcn) {
-					RList *uniq = get_uniq_type (core, fcn);
-					r_list_foreach (uniq , iter , type) {
-						r_cons_println (type);
-					}
-					r_list_free (uniq);
-				} else {
-					eprintf ("cannot find function at 0x%08"PFMT64x"\n", core->offset);
+		  char *type, *type2;
+		RListIter *iter, *iter2;
+		  RAnalFunction *fcn;
+		switch (input[1]) {
+		case '.': // "tx." type xrefs 
+		case 'f': // "txf" type xrefs 
+			fcn  = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			if (fcn) {
+				RList *uniq = get_uniq_type (core, fcn);
+				r_list_foreach (uniq , iter , type) {
+					r_cons_println (type);
 				}
+				r_list_free (uniq);
 			} else {
-				RAnalFunction *fcn;
-				RListIter *iter, *iter2;
+				eprintf ("cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			}
+			break;
+		case 0: // "tx"
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				RList *uniq = get_uniq_type (core, fcn);
+				if (r_list_length (uniq)) {
+					r_cons_printf ("%s: ", fcn->name);
+				}
+				r_list_foreach (uniq , iter2, type) {
+					r_cons_printf ("%s%s", type, iter2->n ? ",":"\n");
+				}
+			}
+			break;
+		case 'g': // "txg"
+			{
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					RList *uniq = get_uniq_type (core, fcn);
 					if (r_list_length (uniq)) {
-						r_cons_printf ("%s: ", fcn->name);
+						r_cons_printf ("agn %s\n", fcn->name);
 					}
 					r_list_foreach (uniq , iter2, type) {
-						r_cons_printf ("%s%s", type, iter2->n ? ",":"\n");
+						char *myType = strdup (type);
+						r_str_replace_ch (myType, ' ', '_', true);
+						r_cons_printf ("agn %s\n", myType);
+						r_cons_printf ("age %s %s\n", myType, fcn->name);
+						free (myType);
 					}
 				}
 			}
+			break;
+		case 'l': // "txl"
+			{
+				RList *uniqList = r_list_newf (free);
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					RList *uniq = get_uniq_type (core, fcn);
+					r_list_foreach (uniq , iter2, type) {
+						if (!r_list_find (uniqList, type, (RListComparator)strcmp)) {
+							r_list_push (uniqList, strdup (type));
+						}
+					}
+				}
+				r_list_sort (uniqList, (RListComparator)strcmp);
+				r_list_foreach (uniqList, iter, type) {
+					r_cons_printf ("%s\n", type);
+				}
+				r_list_free (uniqList);
+			}
+			break;
+		case ' ': // "tx " -- show which function use given type
+			type = (char *)r_str_trim_ro (input + 2);
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				RList *uniq = get_uniq_type (core, fcn);
+				r_list_foreach (uniq , iter2, type2) {
+					if (!strcmp (type2, type)) {
+						r_cons_printf ("%s\n", fcn->name);
+						break;
+					}
+				}
+			}
+			break;
+		default:
+			eprintf ("Usage: tx[flg] [...]\n");
+			eprintf (" txf | tx.      list all types used in this function\n");
+			eprintf (" txl            list all types used by any function\n");
+			eprintf (" txg            render the type xrefs graph\n");
+			eprintf (" tx  int32_t    list functions names using this type\n");
+			eprintf (" tx             list functions and the types they use\n");
+			break;
 		}
 	} break;
 	// ta - link immediate type offset to an address
