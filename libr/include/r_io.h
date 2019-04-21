@@ -236,6 +236,7 @@ typedef RList *(*RIOFdGetMap) (RIO *io, int fd);
 typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef RIOMap *(*RIOMapGet) (RIO *io, ut64 addr);
+typedef RIOMap *(*RIOMapGetPaddr) (RIO *io, ut64 paddr);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapAdd) (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 #if HAVE_PTRACE
@@ -270,6 +271,7 @@ typedef struct r_io_bind_t {
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
 	RIOMapGet map_get;
+	RIOMapGetPaddr map_get_paddr;
 	RIOMapAdd map_add;
 	RIOV2P v2p;
 	RIOP2V p2v;

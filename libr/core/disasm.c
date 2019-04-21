@@ -111,6 +111,7 @@ typedef struct {
 	int linesout;
 	int adistrick;
 	bool asm_meta;
+	bool asm_xrefs_code;
 	int asm_demangle;
 	bool asm_instr;
 	bool show_offset;
@@ -671,6 +672,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
+	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
@@ -1179,7 +1181,8 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		ds_newline (ds);
 		r_list_free (xrefs);
 		return;
-	} else if (r_list_length (xrefs) > ds->foldxrefs) {
+	}
+	if (r_list_length (xrefs) > ds->foldxrefs) {
 		int cols = r_cons_get_size (NULL);
 		cols -= 15;
 		cols /= 23;
@@ -1213,6 +1216,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	RAnalFunction *fun, *next_fun;
 	RFlagItem *f, *next_f;
 	r_list_foreach (xrefs, iter, refi) {
+		if (!ds->asm_xrefs_code && refi->type == R_ANAL_REF_TYPE_CODE) {
+			continue;
+		}
 		if (refi->at == ds->at) {
 			fun = fcnIn (ds, refi->addr, -1);
 			if (fun) {

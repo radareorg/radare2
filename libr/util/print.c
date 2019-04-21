@@ -1615,11 +1615,12 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	const bool bgFill = (p && (p->flags & R_PRINT_FLAGS_BGFILL));
 	char *firebow[6];
 	int i = 0, j;
 
 	for (i = 0; i < 6; i++) {
-		firebow[i] = p->cb_color (i, 6, true);
+		firebow[i] = p->cb_color (i, 6, bgFill);
 	}
 #define INC 5
 #if TOPLINE
@@ -1666,10 +1667,13 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			base = 1;
 		}
 		if (next < arr[i]) {
-			//if (arr[i]>0 && i>0) p->cb_printf ("  ");
 			if (arr[i] > INC) {
 				for (j = 0; j < next + base; j += INC) {
-					p->cb_printf (i ? " " : "'");
+					if (bgFill) {
+						p->cb_printf (i ? " " : "'");
+					} else {
+						p->cb_printf (i ? "." : "'");
+					}
 				}
 			}
 			for (j = next + INC; j + base < arr[i]; j += INC) {
@@ -1682,11 +1686,10 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 				}
 			} else {
 				for (j = INC; j < arr[i] + base; j += INC) {
-					p->cb_printf (" ");
+					p->cb_printf (".");
 				}
 			}
 		}
-		//for (j=1;j<arr[i]; j+=INC) p->cb_printf (under);
 		if (show_colors) {
 			p->cb_printf ("|" Color_RESET);
 		} else {

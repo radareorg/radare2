@@ -12,7 +12,7 @@ struct VarUsedType {
 	st64 delta;
 };
 
-R_API RAnalOp *r_anal_op_new () {
+R_API RAnalOp *r_anal_op_new() {
 	RAnalOp *op = R_NEW (RAnalOp);
 	r_anal_op_init (op);
 	return op;
