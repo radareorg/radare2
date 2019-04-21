@@ -442,7 +442,7 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 			p->cb_printf ("%d,\"string\":\"%s\"}", seeki, encstr);
 			free (encstr);
 		}
-	} else if (R_PRINT_STRUCT) {
+	} else if (MUSTSEESTRUCT) {
 		char *encstr = r_str_utf16_encode ((const char *)buffer, -1);
 		if (encstr) {
 			p->cb_printf ("\"%s\"", encstr);
@@ -1230,7 +1230,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 		free (ons);
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		int j = i;
-		(R_PRINT_STRUCT) ?
+		(MUSTSEESTRUCT) ?
 			p->cb_printf ("\"") :
 			p->cb_printf ("\\\"");
 		for (; j<len && ((size==-1 || size-- >0) && buf[j]) ; j++) {
@@ -1243,7 +1243,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 				p->cb_printf (".");
 			}
 		}
-		(R_PRINT_STRUCT) ?
+		(MUSTSEESTRUCT) ?
 			p->cb_printf ("\"") :
 			p->cb_printf ("\\\"");
 	} else if (MUSTSEE) {
@@ -2277,7 +2277,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 
 			/* c struct */
-			if (mode & R_PRINT_STRUCT) {
+			if (MUSTSEESTRUCT) {
 				char *type = get_format_type (tmp);
 				if (type) {
 					p->cb_printf ("    %s %s; // ", type, fieldname);
@@ -2570,7 +2570,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				} //switch
 			}
-			if (mode & R_PRINT_STRUCT) {
+			if (MUSTSEESTRUCT) {
 				p->cb_printf ("\n");
 			}
 			if (mode & R_PRINT_DOT) {
@@ -2628,7 +2628,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (mode & R_PRINT_JSON && slide == 0) {
 		p->cb_printf("]\n");
 	}
-	if (mode & R_PRINT_STRUCT) {
+	if (MUSTSEESTRUCT) {
 		p->cb_printf ("}\n");
 	}
 	if (mode & R_PRINT_DOT) {
