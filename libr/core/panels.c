@@ -348,8 +348,8 @@ static void rotatePanelCmds(RCore *core, const char **cmds, const int cmdslen, c
 static void rotateEntropyVCb(void *user, bool rev);
 static void rotateEntropyHCb(void *user, bool rev);
 static void rotateHexdumpCb (void *user, bool rev);
+static void rotateAsmemu(RCore *core, RPanel *p);
 static void rotateRegisterCb (void *user, bool rev);
-static void rotateAsmemu(RCore *core);
 static void setdcb(RPanel *p);
 static void setrcb(RPanels *ps, RPanel *p);
 static void setCmdStrCache(RPanel *p, char *s);
@@ -3760,6 +3760,12 @@ static void rotatePanels(RPanels *panels, bool rev) {
 static void rotateDisasCb(void *user, bool rev) {
 	RCore *core = (RCore *)user;
 	RPanel *p = getCurPanel (core->panels);
+
+	//TODO: need to come up with a better solution but okay for now
+	if (!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER)) {
+		return;
+	}
+
 	if (rev) {
 		if (!p->model->rotate) {
 			p->model->rotate = 4;
@@ -3770,7 +3776,7 @@ static void rotateDisasCb(void *user, bool rev) {
 		p->model->rotate++;
 	}
 	r_core_visual_applyDisMode (core, p->model->rotate);
-	rotateAsmemu (core);
+	rotateAsmemu (core, p);
 }
 
 static void rotatePanelCmds(RCore *core, const char **cmds, const int cmdslen, const char *prefix, bool rev) {
@@ -3848,7 +3854,7 @@ static void redoSeek(RCore *core) {
 	}
 }
 
-static void rotateAsmemu(RCore *core) {
+static void rotateAsmemu(RCore *core, RPanel *p) {
 	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
 	const bool isEmu = r_config_get_i (core->config, "asm.emu");
 	if (isEmu) {
@@ -3860,7 +3866,7 @@ static void rotateAsmemu(RCore *core) {
 	} else {
 		r_config_set (core->config, "emu.str", "true");
 	}
-	setRefreshAll (core->panels, false);
+	p->view->refresh = true;
 }
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
@@ -4298,7 +4304,7 @@ repeat:
 		}
 		break;
 	case ')':
-		rotateAsmemu (core);
+		rotateAsmemu (core, getCurPanel (panels));
 		break;
 	case '&':
 		toggleCache (getCurPanel (panels));
