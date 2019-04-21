@@ -291,7 +291,7 @@ static const char *help_msg_af[] = {
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
 	"afo", " [fcn.name]", "show address for the function named like this",
-	"afs", " ([fcnsign])", "get/set function signature at current address",
+	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " [addr]", "resize and analyze function from current address until addr",
@@ -2676,33 +2676,39 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 's': // "afs"
-		{
-		ut64 addr = core->offset;
-		RAnalFunction *f;
-		const char *arg = r_str_trim_ro (input + 2);
-		if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
-			if (arg && *arg) {
-				// parse function signature here
-				char *fcnstr = r_str_newf ("%s;", arg);
-				r_anal_str_to_fcn (core->anal, f, fcnstr);
-				free (fcnstr);
-			} else {
-				// not working
-				char *str = r_anal_fcn_to_string (core->anal, f);
-				if (str) {
-					r_cons_println (str);
-					free (str);
-				}
-				// working, but wtf
-				char *sig = r_anal_fcn_format_sig (core->anal, f, f->name, NULL, NULL, NULL);
-				if (sig) {
-					r_cons_println (sig);
-					free (sig);
-				}
-			}
+		if (input [2] == '!') {
+			char *sig = r_core_cmd_str (core, "afs");
+			char *data = r_core_editor (core, NULL, sig);
+			r_core_cmdf (core, "\"afs %s\"", data);
+			free (sig);
+			free (data);
 		} else {
-			eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
-		}
+			ut64 addr = core->offset;
+			RAnalFunction *f;
+			const char *arg = r_str_trim_ro (input + 2);
+			if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
+				if (arg && *arg) {
+					// parse function signature here
+					char *fcnstr = r_str_newf ("%s;", arg);
+					r_anal_str_to_fcn (core->anal, f, fcnstr);
+					free (fcnstr);
+				} else {
+					// not working
+					char *str = r_anal_fcn_to_string (core->anal, f);
+					if (str) {
+						r_cons_println (str);
+						free (str);
+					}
+					// working, but wtf
+					char *sig = r_anal_fcn_format_sig (core->anal, f, f->name, NULL, NULL, NULL);
+					if (sig) {
+						r_cons_println (sig);
+						free (sig);
+					}
+				}
+			} else {
+				eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
+			}
 		}
 		break;
 	case 'm': // "afm" - merge two functions
