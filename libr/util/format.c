@@ -1191,6 +1191,10 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		           ? p->iob.map_get (p->iob.io, addr)
 		           : p->iob.map_get_paddr (p->iob.io, addr))
 		       && map->perm & R_PERM_R) {
+			if (!map->itv.size) {
+				total_map_left = addr == 0 ? UT64_MAX : UT64_MAX - addr + 1;
+				break;
+			}
 			total_map_left += map->itv.size - (addr - (p->iob.io->va ? map->itv.addr : map->delta));
 			addr += total_map_left;
 		}
