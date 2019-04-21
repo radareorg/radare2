@@ -2247,7 +2247,7 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 	} else {
 		fcnpfx = "";
 	}
-	if (strlen (name) < 4) {
+	if (strlen (name) > 4) {
 		return r_str_newf ("%s.%s", (*fcnpfx)? fcnpfx: "fcn", name);
 	}
 	if (r_reg_get (core->anal->reg, name, -1)) {
