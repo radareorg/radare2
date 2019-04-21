@@ -14,16 +14,12 @@
 #define PANEL_TITLE_DECOMPILER   "Decompiler"
 #define PANEL_TITLE_GRAPH        "Graph"
 #define PANEL_TITLE_FUNCTIONS    "Functions"
-#define PANEL_TITLE_FCNINFO      "FcnInfo"
 
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px"
-#define PANEL_CMD_LOCALS         "afvd"
 #define PANEL_CMD_REGISTERS      "dr"
 #define PANEL_CMD_DISASSEMBLY    "pd"
 #define PANEL_CMD_GRAPH          "agf"
-#define PANEL_CMD_FUNCTIONS      "afl"
-#define PANEL_CMD_FCNINFO        "afi"
 #define PANEL_CMD_HEXDUMP        "xc"
 
 #define PANEL_CONFIG_MENU_MAX    64
@@ -47,7 +43,7 @@ static const char *panels_dynamic [] = {
 };
 
 static const char *panels_static [] = {
-	"Disassembly", "Decompiler", "Functions", "FcnInfo", "Symbols",
+	"Disassembly", "Decompiler", "Functions", "Symbols",
 	NULL
 };
 
@@ -82,7 +78,7 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Decompiler", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
+	"Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
 	"Stack", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
@@ -126,6 +122,11 @@ static const char *hexdump_rotate[] = {
 
 static const char *register_rotate[] = {
 	"", "=", "r", "??", "C", "i", "o",
+	NULL
+};
+
+static const char *function_rotate[] = {
+	"l", "i", "x",
 	NULL
 };
 
@@ -348,6 +349,7 @@ static void rotateEntropyHCb(void *user, bool rev);
 static void rotateHexdumpCb (void *user, bool rev);
 static void rotateAsmemu(RCore *core, RPanel *p);
 static void rotateRegisterCb (void *user, bool rev);
+static void rotateFunctionCb (void *user, bool rev);
 static void setdcb(RPanel *p);
 static void setrcb(RPanels *ps, RPanel *p);
 static void setCmdStrCache(RPanel *p, char *s);
@@ -3105,6 +3107,7 @@ static void initRotatedb(RPanels *panels) {
 	sdb_ptr_set (panels->rotate_db, "p=", &rotateEntropyVCb, 0);
 	sdb_ptr_set (panels->rotate_db, "px", &rotateHexdumpCb, 0);
 	sdb_ptr_set (panels->rotate_db, "dr", &rotateRegisterCb, 0);
+	sdb_ptr_set (panels->rotate_db, "af", &rotateFunctionCb, 0);
 }
 
 static void initSdb(RPanels *panels) {
@@ -3131,7 +3134,6 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Breakpoints", "db", 0);
 	sdb_set (panels->db, "Imports", "iiq", 0);
 	sdb_set (panels->db, "Clipboard", "yx", 0);
-	sdb_set (panels->db, "FcnInfo", "afi", 0);
 	sdb_set (panels->db, "New", "o", 0);
 	sdb_set (panels->db, "Var READ address", "afvR", 0);
 	sdb_set (panels->db, "Var WRITE address", "afvW", 0);
@@ -3735,10 +3737,6 @@ static void createDefaultPanels(RCore *core) {
 				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
 				continue;
 			}
-			if (!strcmp (s, PANEL_TITLE_FCNINFO)) {
-				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
-				continue;
-			}
 			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
 		}
 	}
@@ -3838,6 +3836,11 @@ static void rotateHexdumpCb (void *user, bool rev) {
 static void rotateRegisterCb (void *user, bool rev) {
 	RCore *core = (RCore *)user;
 	rotatePanelCmds (core, register_rotate, COUNT (register_rotate), "dr", rev);
+}
+
+static void rotateFunctionCb (void *user, bool rev) {
+	RCore *core = (RCore *)user;
+	rotatePanelCmds (core, function_rotate, COUNT (function_rotate), "af", rev);
 }
 
 static void undoSeek(RCore *core) {
