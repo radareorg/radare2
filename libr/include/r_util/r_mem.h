@@ -11,6 +11,7 @@ typedef struct r_mmap_t {
 	int len;
 	int fd;
 	int rw;
+	char *filename;
 #if __WINDOWS__
 	HANDLE fh;
 	HANDLE fm;

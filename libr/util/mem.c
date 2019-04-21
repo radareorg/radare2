@@ -352,7 +352,27 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	m->buf = res;
 	return m->buf;
 #else
-	R_LOG_WARN ("mem_mmap_resize not supported on this platform");
-	return NULL;
+#if __WINDOWS__
+	if (m->fm != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fm);
+	}
+	if (m->fh != INVALID_HANDLE_VALUE) {
+		CloseHandle (m->fh);
+	}
+	if (m->buf) {
+		UnmapViewOfFile (m->buf);
+	}
+#elif __UNIX__
+	if (munmap (m->buf, m->len) != 0) {
+		return NULL;
+	}
+#endif
+	if (!r_sys_truncate (m->filename, newsize)) {
+		return NULL;
+	}
+
+	m->len = newsize;
+	r_file_mmap_arch (m, m->filename, m->fd);
+	return m->buf;
 #endif
 }
