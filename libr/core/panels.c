@@ -468,7 +468,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const char sign = (delta < 0)? '+': '-';
 			const int absdelta = R_ABS (delta);
-			cmdStr = r_core_cmd_strf (core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
+			cmdStr = r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
 		} else if (!strncmp (panel->model->cmd, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 			if (!findCmdStrCache (core, panel, &cmdStr)) {
 				ut64 o_offset = core->offset;
