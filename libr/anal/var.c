@@ -707,7 +707,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
 	}
-
 	char *fname = fcn->name;
 	Sdb *TDB = anal->sdb_types;
 	int max_count = r_anal_cc_max_arg (anal, fcn->cc);
@@ -724,7 +723,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
 		if (regname) {
-			if (!reg_set[i] && is_used_like_arg (regname, opsreg, opdreg, op)) {
+			bool is_used_like_an_arg = is_used_like_arg (regname, opsreg, opdreg, op);
+			if (reg_set[i] != 2 && is_used_like_an_arg) {
 				const char *vname = NULL;
 				char *type = NULL;
 				char *name = NULL;
@@ -751,12 +751,21 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				free (name);
 				free (type);
 				*count++;
+			} else {
+				if (STR_EQUAL (opsreg, regname)) {
+					reg_set[i] = 2;
+				}
+				if (STR_EQUAL (opdreg, regname)) {
+					reg_set[i] = 2;
+				}
+				continue;
 			}
-			if (opsreg && !strcmp (regname, opsreg))
-				reg_set[i] = true;
-			if (opdreg && !strcmp (regname, opdreg))
-				reg_set[i] = true;
-
+			if (STR_EQUAL (regname, opsreg)) {
+				reg_set[i] = 1;
+			}
+			if (STR_EQUAL (regname, opdreg)) {
+				reg_set[i] = 1;
+			}
 		}
 	}
 }
