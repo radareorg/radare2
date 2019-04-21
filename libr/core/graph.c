@@ -4130,7 +4130,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			// update scroll (with minor shift)
 			break;
-		case '|':
+		case '=':
 		{         // TODO: edit
 			showcursor (core, true);
 			const char *buf = NULL;
@@ -4143,7 +4143,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			showcursor (core, false);
 		}
 		break;
-		case '=':
+		case '|':
 			{
 				int e = r_config_get_i (core->config, "graph.layout");
 				if (++e > 1) {
@@ -4154,6 +4154,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_update_dim = true;
 				g->need_set_layout = true;
 			}
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'e':
 			{
@@ -4224,6 +4226,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				graph_single_step_in (core, g);
 			}
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'S':
 			if (fcn) {
