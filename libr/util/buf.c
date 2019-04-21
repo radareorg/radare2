@@ -60,7 +60,9 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 		return NULL;
 	}
 	r_buf_read_at (b, 0, b->whole_buf, bsz);
-	*sz = bsz;
+	if (sz) {
+		*sz = bsz;
+	}
 	return b->whole_buf;
 }
 
@@ -187,7 +189,7 @@ R_API RBuffer *r_buf_new() {
 }
 
 R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
-	r_return_val_if_fail (b && size, NULL);
+	r_return_val_if_fail (b, NULL);
 	b->whole_buf = get_whole_buf (b, size);
 	return b->whole_buf;
 }
