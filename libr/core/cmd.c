@@ -1300,11 +1300,12 @@ static int cmd_bsize(void *data, const char *input) {
 	case '\0': // "b"
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
-	case '?': // "b?"
-		r_core_cmd_help (core, help_msg_b);
+	case ' ':
+		r_core_block_size (core, r_num_math (core->num, input));
 		break;
 	default:
-		r_core_block_size (core, r_num_math (core->num, input));
+	case '?': // "b?"
+		r_core_cmd_help (core, help_msg_b);
 		break;
 	}
 	return 0;
@@ -2004,7 +2005,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	cmt = *icmd ? (char *)r_str_firstbut (icmd + 1, '#', "\""): NULL;
+	cmt = *icmd ? (char *)r_str_firstbut (icmd, '#', "\""): NULL;
 	if (cmt && (cmt[1] == ' ' || cmt[1] == '\t')) {
 		*cmt = 0;
 	}

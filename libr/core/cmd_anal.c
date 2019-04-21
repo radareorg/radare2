@@ -36,7 +36,6 @@ static const char *help_msg_a[] = {
 static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
-	"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 	"aaa", "[?]", "autoname functions after aa (see afna)",
 	"aab", "", "abb across bin.sections.rx",
 	"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
@@ -53,6 +52,7 @@ static const char *help_msg_aa[] = {
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
+	"aaS", "", "analyze all flags starting with sym. (af @@ sym.*)",
 	"aat", " [len]", "analyze all consecutive functions in section",
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
@@ -2247,11 +2247,11 @@ static char * getFunctionName (RCore *core, ut64 off, const char *name, bool pre
 	} else {
 		fcnpfx = "";
 	}
-	if (strlen (name) < 4) {
-		return r_str_newf ("%s.%s", (*fcnpfx)? fcnpfx: "fcn", name);
-	}
 	if (r_reg_get (core->anal->reg, name, -1)) {
 		return r_str_newf ("%s.%08"PFMT64x, "fcn", off);
+	}
+	if (strlen (name) < 4) {
+		return r_str_newf ("%s.%s", (*fcnpfx)? fcnpfx: "fcn", name);
 	}
 	return strdup (name); // r_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", name);
 }
@@ -7856,7 +7856,7 @@ static bool is_unknown_file(RCore *core) {
 	if (core->bin->cur && core->bin->cur->o) {
 		return (r_list_empty (core->bin->cur->o->sections));
 	}
-	return false;
+	return true;
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
@@ -7872,11 +7872,16 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "aef@@f");
 		} else if (input[1] == 't') { // "aaft"
 			cmd_anal_aaft (core);
-		} else { // "aaf"
+		} else if (input[1] == 0) { // "aaf"
 			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_config_set_i (core->config, "anal.hasnext", true);
 			r_core_cmd0 (core, "afr@@c:isq");
 			r_config_set_i (core->config, "anal.hasnext", analHasnext);
+		} else {
+			r_cons_printf ("Usage: aaf[et] - analyze all functions again\n");
+			r_cons_printf (" aafe = aef@@f\n");
+			r_cons_printf (" aaft = recursive type matching in all functions\n");
+			r_cons_printf (" aaf  = afr@@c:isq\n");
 		}
 		break;
 	case 'c': // "aac"
@@ -7897,10 +7902,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'j': // "aaj"
 		cmd_anal_jumps (core, input + 1);
 		break;
-	case '*': // "aa*"
-		r_core_cmd0 (core, "af @@ sym.*");
-		r_core_cmd0 (core, "af @@ entry*");
-		break;
 	case 'd': // "aad"
 		cmd_anal_aad (core, input);
 		break;
@@ -7915,6 +7916,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 's': // "aas"
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
+		r_core_cmd0 (core, "af @@ entry*");
+		break;
+	case 'S': // "aaS"
+		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
 	case 'F': // "aaF" "aaFa"
@@ -7946,6 +7951,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			r_cons_println ("Usage: See aa? for more help");
 		} else {
+			bool didAap = false;
 			char *dh_orig = NULL;
 			if (!strncmp (input, "aaaaa", 5)) {
 				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
@@ -8009,6 +8015,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (is_unknown_file (core)) {
 					oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
+					didAap = true;
 					r_print_rowlog_done (core->print, oldstr);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
@@ -8076,6 +8083,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				if (input[1] == 'a') { // "aaaa"
+					if (!didAap) {
+						oldstr = r_print_rowlog (core->print, "Finding function preludes");
+						(void)r_core_search_preludes (core, false); // "aap"
+						r_print_rowlog_done (core->print, oldstr);
+						/// 
+					}
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);

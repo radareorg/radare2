@@ -763,6 +763,9 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		goto err_r_file_mmap_read;
 	}
 	ut8 *obuf = MapViewOfFile (fm, FILE_MAP_READ, 0, 0, len);
+	if (!obuf) {
+		goto err_r_file_mmap_read;
+	}
 	memcpy (obuf, buf, len);
 	UnmapViewOfFile (obuf);
 	ret = len;

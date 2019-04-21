@@ -1,8 +1,11 @@
 tags_r2_sources = [
+  'dylib',
   'alloc',
+  'time',
   'env',
   'fs',
   'network',
+  'threads',
   'process',
   'stdout',
   'string'

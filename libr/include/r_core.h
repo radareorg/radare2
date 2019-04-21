@@ -396,6 +396,7 @@ R_API void r_core_print_scrollbar(RCore *core);
 R_API void r_core_print_scrollbar_bottom(RCore *core);
 R_API void r_core_visual_prompt_input (RCore *core);
 R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset);
+R_API void r_core_visual_applyDisMode(RCore *core, int disMode);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
@@ -754,7 +755,7 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
 /* undo */
 R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert);
 R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
-R_API void *r_core_undo_free(RCoreUndo *cu);
+R_API void r_core_undo_free(RCoreUndo *cu);
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
 
