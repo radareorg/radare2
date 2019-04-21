@@ -166,7 +166,7 @@ typedef struct {
 	int cursor;
 	int show_comment_right_default;
 	RSpace *flagspace_ports;
-	int show_flag_in_bytes;
+	bool show_flag_in_bytes;
 	int lbytes;
 	int show_comment_right;
 	int pre;
@@ -296,6 +296,7 @@ static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
 static void ds_build_op_str(RDisasmState *ds, bool print_color);
+static void ds_print_show_bytes(RDisasmState *ds);
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines);
 static void ds_show_xrefs(RDisasmState *ds);
 static void ds_atabs_option(RDisasmState *ds);
@@ -739,7 +740,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->min_ref_addr = r_config_get_i (core->config, "asm.var.submin");
 
 	if (ds->show_flag_in_bytes) {
-		ds->show_flags = 0;
+		ds->show_flags = false;
 	}
 	if (r_config_get_i (core->config, "asm.lines.wide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
@@ -2643,7 +2644,10 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	infos = sdb_const_get (s, key, 0);
 
 	ds->mi_found = false;
-	if (infos) {
+	if (infos && *infos) {
+		if (ds->show_flag_in_bytes) {
+			ds_print_show_bytes (ds);
+		}
 		for (; *infos; infos++) {
 			if (*infos == ',') {
 				continue;
@@ -5965,19 +5969,19 @@ toro:
 		if (meta && meta->size > 0) {
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
-				r_cons_printf (".data: %s\n", meta->str);
+				//r_cons_printf (".data: %s\n", meta->str);
 				i += meta->size;
 				continue;
 			case R_META_TYPE_STRING:
-				r_cons_printf (".string: %s\n", meta->str);
+				//r_cons_printf (".string: %s\n", meta->str);
 				i += meta->size;
 				continue;
 			case R_META_TYPE_FORMAT:
-				r_cons_printf (".format : %s\n", meta->str);
+				//r_cons_printf (".format : %s\n", meta->str);
 				i += meta->size;
 				continue;
 			case R_META_TYPE_MAGIC:
-				r_cons_printf (".magic : %s\n", meta->str);
+				//r_cons_printf (".magic : %s\n", meta->str);
 				i += meta->size;
 				continue;
 			case R_META_TYPE_RUN:
