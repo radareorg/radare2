@@ -335,6 +335,7 @@ static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
 static void showHelp(RCore *core, RPanelsMode mode);
 static void createDefaultPanels(RCore *core);
+static void createNewPanel(RCore *core, bool vertical);
 static void addNewPanel(RCore *core, char *name, char *cmd, bool cache);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
@@ -1100,6 +1101,12 @@ static bool handleWindowMode(RCore *core, const int key) {
 	case 'K':
 		r_cons_switchbuf (false);
 		resizePanelUp (panels);
+		break;
+	case 'n':
+		createNewPanel (core, true);
+		break;
+	case 'N':
+		createNewPanel (core, false);
 		break;
 	case ':':
 	case ';':
@@ -3695,6 +3702,25 @@ static bool moveToDirection(RPanels *panels, Direction direction) {
 	return false;
 }
 
+static void createNewPanel(RCore *core, bool vertical) {
+	RPanels *panels = core->panels;
+	if (!checkPanelNum (panels)) {
+		return;
+	}
+	char *res = r_cons_input ("New panel with command: ");
+	if (res && *res) {
+		bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		if (res && *res) {
+			if (vertical) {
+				splitPanelVertical (core, getCurPanel (panels), res, res, cache);
+			} else {
+				splitPanelHorizontal (core, getCurPanel (panels), res, res, cache);
+			}
+		}
+	}
+	free (res);
+}
+
 static void createDefaultPanels(RCore *core) {
 	RPanels *panels = core->panels;
 	panels->curnode = 0;
@@ -3996,34 +4022,10 @@ repeat:
 		redoSeek (core);
 		break;
 	case 'n':
-		{
-			if (!checkPanelNum (panels)) {
-				break;
-			}
-			char *res = r_cons_input ("New panel with command: ");
-			if (res && *res) {
-				bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
-				if (res && *res) {
-					splitPanelVertical (core, getCurPanel (panels), res, res, cache);
-				}
-			}
-			free (res);
-		}
+		createNewPanel (core, true);
 		break;
 	case 'N':
-		{
-			if (!checkPanelNum (panels)) {
-				break;
-			}
-			char *res = r_cons_input ("New panel with command: ");
-			if (res && *res) {
-				bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
-				if (res && *res) {
-					splitPanelHorizontal (core, getCurPanel (panels), res, res, cache);
-				}
-			}
-			free (res);
-		}
+		createNewPanel (core, false);
 		break;
 	case 'p':
 		rotatePanels (panels, false);
