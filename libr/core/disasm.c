@@ -1512,6 +1512,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 		if (val) {
 			r_str_replace_char (val, '\n', '\0');
 			r_cons_printf (" = %s", val);
+			free (val);
 		}
 	}
 	r_strbuf_free (constr_buf);
@@ -1757,6 +1758,7 @@ static void ds_show_functions(RDisasmState *ds) {
 					if (val) {
 						r_str_replace_char (val, '\n', '\0');
 						r_cons_printf ("%s", val);
+						free (val);
 					}
 				}
 				}
