@@ -4645,7 +4645,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		} else {
 			RFlagItem *flag = r_core_flag_get_by_spaces (f, addr);
 			if (flag) {
-				name = flag->name;
+				if (strchr (flag->name, '.')) {
+					name = flag->name;
+				}
 			}
 		}
 	}
