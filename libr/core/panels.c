@@ -3774,7 +3774,7 @@ static void rotateDisasCb(void *user, bool rev) {
 	RPanel *p = getCurPanel (core->panels);
 
 	//TODO: need to come up with a better solution but okay for now
-	if (!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER)) {
+	if (!strcmp (p->model->cmd, "pdc")) {
 		return;
 	}
 
