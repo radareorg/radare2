@@ -1186,9 +1186,11 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		ut64 total_map_left = 0;
 		ut64 addr = seeki;
 		RIOMap *map;
-		while (total_map_left < len && (map = p->iob.io->va
-		                                ? p->iob.map_get (p->iob.io, addr)
-		                                : p->iob.map_get_paddr (p->iob.io, addr))) {
+		while (total_map_left < len
+		       && (map = p->iob.io->va
+		           ? p->iob.map_get (p->iob.io, addr)
+		           : p->iob.map_get_paddr (p->iob.io, addr))
+		       && map->perm & R_PERM_R) {
 			total_map_left += map->itv.size - (addr - (p->iob.io->va ? map->itv.addr : map->delta));
 			addr += total_map_left;
 		}
