@@ -44,7 +44,7 @@ typedef enum {
 } Direction;
 
 static const char *panels_dynamic [] = {
-	"Disassembly", "Decompiler", "Stack", "Registers", "RegisterRefs",
+	"Disassembly", "Decompiler", "Stack", "Registers",
 	NULL
 };
 
@@ -100,7 +100,7 @@ static const char *menus_Search[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
+	"Registers", "DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Step", "Step Over", "Reload",
 	NULL
@@ -123,6 +123,11 @@ static const char *entropy_rotate[] = {
 
 static const char *hexdump_rotate[] = {
 	"", "a", "r", "b", "h", "w", "q", "d", "r",
+	NULL
+};
+
+static const char *register_rotate[] = {
+	"", "=", "r", "??", "C", "i", "o",
 	NULL
 };
 
@@ -343,6 +348,7 @@ static void rotatePanelCmds(RCore *core, const char **cmds, const int cmdslen, c
 static void rotateEntropyVCb(void *user, bool rev);
 static void rotateEntropyHCb(void *user, bool rev);
 static void rotateHexdumpCb (void *user, bool rev);
+static void rotateRegisterCb (void *user, bool rev);
 static void rotateAsmemu(RCore *core);
 static void setdcb(RPanel *p);
 static void setrcb(RPanels *ps, RPanel *p);
@@ -3088,14 +3094,14 @@ static void initRotatedb(RPanels *panels) {
 	sdb_ptr_set (panels->rotate_db, "p==", &rotateEntropyHCb, 0);
 	sdb_ptr_set (panels->rotate_db, "p=", &rotateEntropyVCb, 0);
 	sdb_ptr_set (panels->rotate_db, "px", &rotateHexdumpCb, 0);
+	sdb_ptr_set (panels->rotate_db, "dr", &rotateRegisterCb, 0);
 }
 
 static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Symbols", "isq", 0);
 	sdb_set (panels->db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (panels->db, "Locals", "afvd", 0);
-	sdb_set (panels->db, "Registers", "dr=", 0);
-	sdb_set (panels->db, "RegisterRefs", "drr", 0);
+	sdb_set (panels->db, "Registers", "dr", 0);
 	sdb_set (panels->db, "Disassembly", "pd $r", 0);
 	sdb_set (panels->db, "Decompiler", "pdc", 0);
 	sdb_set (panels->db, "Graph", "agf", 0);
@@ -3809,6 +3815,11 @@ static void rotateEntropyHCb(void *user, bool rev) {
 static void rotateHexdumpCb (void *user, bool rev) {
 	RCore *core = (RCore *)user;
 	rotatePanelCmds (core, hexdump_rotate, COUNT (hexdump_rotate), "px", rev);
+}
+
+static void rotateRegisterCb (void *user, bool rev) {
+	RCore *core = (RCore *)user;
+	rotatePanelCmds (core, register_rotate, COUNT (register_rotate), "dr", rev);
 }
 
 static void undoSeek(RCore *core) {
