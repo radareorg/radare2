@@ -1987,6 +1987,18 @@ static int cb_iotrap(void *user, void *data) {
 	return true;
 }
 
+static int cb_scr_bgfill(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_BGFILL;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_BGFILL);
+	}
+	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
 static int cb_scrint(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value && r_sandbox_enable (0)) {
@@ -3279,6 +3291,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB ("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RCons level");
 	SETCB ("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
+	SETCB ("scr.bgfill", "false", &cb_scr_bgfill, "Fill background for ascii art when possible");
 	SETI ("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB ("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
