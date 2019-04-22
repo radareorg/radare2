@@ -1290,7 +1290,11 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
 		}
-		p->cb_printf ("\"}");
+		p->cb_printf ("\"");
+		if (overflow) {
+			p->cb_printf (",\"overflow\":true");
+		}
+		p->cb_printf ("}");
 	}
 }
 
