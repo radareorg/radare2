@@ -3311,6 +3311,7 @@ static bool handleMenu(RCore *core, const int key) {
 			}
 		}
 		break;
+	case 'm':
 	case 'q':
 	case -1:
 		if (panels->panelsMenu->depth > 1) {
@@ -4439,8 +4440,6 @@ repeat:
 		}
 		break;
 	case '!':
-		r_cons_2048 (core->panels->can->color);
-		break;
 	case 'q':
 	case -1: // EOF
 		goto exit;
