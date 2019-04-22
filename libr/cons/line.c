@@ -20,6 +20,7 @@ R_API RLine *r_line_new() {
 	if (!r_line_dietline_init ()) {
 		eprintf ("error: r_line_dietline_init\n");
 	}
+	r_line_completion_init (&I.completion);
 	return &I;
 }
 
@@ -28,6 +29,7 @@ R_API void r_line_free() {
 	free ((void *)I.prompt);
 	I.prompt = NULL;
 	r_line_hist_free ();
+	r_line_completion_fini (&I.completion);
 }
 
 // handle const or dynamic prompts?
@@ -39,6 +41,54 @@ R_API void r_line_set_prompt(const char *prompt) {
 // handle const or dynamic prompts?
 R_API char *r_line_get_prompt() {
 	return strdup (I.prompt);
+}
+
+R_API void r_line_completion_init(RLineCompletion *completion) {
+	completion->run = NULL;
+	completion->args_weak = true;
+	r_pvector_init (&completion->args, NULL);
+}
+
+R_API void r_line_completion_fini(RLineCompletion *completion) {
+	r_line_completion_clear (completion);
+}
+
+R_API void r_line_completion_push_owned(RLineCompletion *completion, char *str) {
+	if (!str) {
+		return;
+	}
+	if (completion->args_weak) {
+		// weak to owned => must strdup all currently saved strings
+		const char *weak_str;
+		size_t i;
+		for (i = 0; i < r_pvector_len (&completion->args); i++) {
+			weak_str = r_pvector_at (&completion->args, i);
+			r_pvector_set (&completion->args, i, strdup (weak_str));
+		}
+	}
+	r_pvector_push (&completion->args, str);
+	completion->args_weak = false;
+}
+
+R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *str) {
+	if (!str) {
+		return;
+	}
+	if (!completion->args_weak) {
+		str = strdup (str);
+	}
+	r_pvector_push (&completion->args, (void *)str);
+}
+
+R_API void r_line_completion_set_weak(RLineCompletion *completion, int argc, const char **argv) {
+	r_line_completion_clear (completion);
+	r_pvector_insert_range (&completion->args, 0, (void **)argv, argc);
+}
+
+R_API void r_line_completion_clear(RLineCompletion *completion) {
+	r_pvector_set_free (&completion->args, completion->args_weak ? NULL : free);
+	r_pvector_clear (&completion->args);
+	completion->args_weak = true;
 }
 
 #include "dietline.c"

@@ -115,8 +115,7 @@ static char **getFilesFor(RLine *line, const char *path, int *ac) {
 
 static int ms_autocomplete(RLine *line) {
 	const char *data = line->buffer.data;
-	line->completion.argc = ms_argc;
-	line->completion.argv = ms_argv;
+	r_line_completion_set_weak (&line->completion, ms_argc, ms_argv);
 	if (!strncmp (data, "ls ", 3)
 		|| !strncmp (data, "cd ", 3)
 		|| !strncmp (data, "cat ", 4)
@@ -127,8 +126,7 @@ static int ms_autocomplete(RLine *line) {
 			int tmp_argc = 0;
 			// TODO: handle abs vs rel
 			char **tmp_argv = getFilesFor (line, file, &tmp_argc);
-			line->completion.argc = tmp_argc;
-			line->completion.argv = (const char **)tmp_argv;
+			r_line_completion_set_weak (&line->completion, tmp_argc, (const char **)tmp_argv);
 		}
 		return true;
 	}
@@ -400,8 +398,7 @@ static int cmd_mount(void *data, const char *_input) {
 			RLineCompletion c;
 			memcpy (&c, &rli->completion, sizeof (c));
 			rli->completion.run = ms_autocomplete;
-			rli->completion.argc = ms_argc;
-			rli->completion.argv = ms_argv;
+			r_line_completion_set_weak (&rli->completion, ms_argc, ms_argv);
 			r_fs_shell_prompt (&shell, core->fs, input);
 			free (cwd);
 			memcpy (&rli->completion, &c, sizeof (c));

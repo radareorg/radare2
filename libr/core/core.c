@@ -20,33 +20,8 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS
 };
 
-#define TMP_ARGV_SZ 4096
-static const char *tmp_argv[TMP_ARGV_SZ];
-static bool tmp_argv_heap = false;
-
 extern int r_is_heap (void *p);
 extern bool r_core_is_project (RCore *core, const char *name);
-
-static void r_line_free_autocomplete(RLine *line) {
-	int i;
-	if (tmp_argv_heap) {
-		int argc = line->completion.argc;
-		for (i = 0; i < argc; i++) {
-			free ((char*)tmp_argv[i]);
-			tmp_argv[i] = NULL;
-		}
-		tmp_argv_heap = false;
-	}
-	line->completion.argc = 0;
-	line->completion.argv = tmp_argv;
-}
-
-static void r_core_free_autocomplete(RCore *core) {
-	if (!core || !core->cons || !core->cons->line) {
-		return;
-	}
-	r_line_free_autocomplete (core->cons->line);
-}
 
 static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
@@ -1007,10 +982,10 @@ static const char *radare_argv[] = {
 
 
 
-static int autocomplete_process_path(RLine* line, const char* str, const char *path, int argv_idx) {
+static void autocomplete_process_path(RLine* line, const char* str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
-	int n = 0, i = argv_idx;
+	int n = 0;
 	RList *list;
 	RListIter *iter;
 
@@ -1057,35 +1032,22 @@ static int autocomplete_process_path(RLine* line, const char* str, const char *p
 			}
 			if (!basename[0] || !strncmp (filename, basename, n))  {
 				char *tmpstring = r_str_newf ("%s%s", dirname, filename);
-				if (r_file_is_directory (tmpstring) && chgdir) {
-					tmp_argv[i++] = r_str_newf ("%s/", tmpstring);
-					free (tmpstring);
-				} else if (r_file_is_directory (tmpstring) && !chgdir) {
-					tmp_argv[i++] = r_str_newf ("%s/", tmpstring);
+				if (r_file_is_directory (tmpstring)) {
+					r_line_completion_push_owned (&line->completion, r_str_newf ("%s/", tmpstring));
 					free (tmpstring);
 				} else if (!chgdir) {
-					tmp_argv[i++] = tmpstring;
+					r_line_completion_push_owned (&line->completion, tmpstring);
 				} else {
 					free (tmpstring);
-				}
-				if (i == TMP_ARGV_SZ - 1) {
-					i--;
-					break;
 				}
 			}
 		}
 		r_list_free (list);
 	}
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
-
 out:
 	free (lpath);
 	free (dirname);
 	free (basename);
-
-	return i;
 }
 
 static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
@@ -1112,7 +1074,7 @@ static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
 	}
 	const char *tinput = r_str_trim_ro (input);
 
-	int argv_idx = autocomplete_process_path (line, line->buffer.data, tinput, 0);
+	autocomplete_process_path (line, line->buffer.data, tinput);
 
 	if (input[0] == '/' || input[0] == '.' || !extra_paths) {
 		goto out;
@@ -1123,7 +1085,7 @@ static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
 		if (!buf) {
 			break;
 		}
-		argv_idx += autocomplete_process_path (line, line->buffer.data, buf, argv_idx);
+		autocomplete_process_path (line, line->buffer.data, buf);
 		free (buf);
 	}
 
@@ -1133,7 +1095,7 @@ out:
 }
 
 //TODO: make it recursive to handle nested struct
-static int autocomplete_pfele (RCore *core, char *key, char *pfx, int idx, char *ptr) {
+static int autocomplete_pfele (RCore *core, RLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
 	int i, ret = 0;
 	int len = strlen (ptr);
 	char* fmt = sdb_get (core->print->formats, key, NULL);
@@ -1150,7 +1112,7 @@ static int autocomplete_pfele (RCore *core, char *key, char *pfx, int idx, char 
 					*p2 = '\0';
 				}
 				if (!len || !strncmp (ptr, arg, len)) {
-					tmp_argv[ret++] = r_str_newf ("pf%s.%s.%s", pfx, key, arg);
+					r_line_completion_push_owned (completion, r_str_newf ("pf%s.%s.%s", pfx, key, arg));
 				}
 			}
 		}
@@ -1159,7 +1121,7 @@ static int autocomplete_pfele (RCore *core, char *key, char *pfx, int idx, char 
 	return ret;
 }
 
-#define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
+#define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { r_line_completion_push_weak (&line->completion, x); }
 
 static void autocomplete_default(RLine *line) {
 	RCore *core = line->user;
@@ -1167,25 +1129,21 @@ static void autocomplete_default(RLine *line) {
 		return;
 	}
 	RCoreAutocomplete *a = core->autocomplete;
-	int i, j;
-	j = 0;
+	int i;
 	if (a) {
-		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < a->n_subcmds; i++) {
+		for (i = 0; i < a->n_subcmds; i++) {
 			if (line->buffer.data[0] == 0 || !strncmp (a->subcmds[i]->cmd, line->buffer.data, a->subcmds[i]->length)) {
-				tmp_argv[j++] = a->subcmds[i]->cmd;
+				r_line_completion_push_weak (&line->completion, a->subcmds[i]->cmd);
 			}
 		}
 	} else {
-		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < radare_argc && radare_argv[i]; i++) {
+		for (i = 0; i < radare_argc && radare_argv[i]; i++) {
 			int length = strlen (radare_argv[i]);
 			if (!strncmp (radare_argv[i], line->buffer.data, length)) {
-				tmp_argv[j++] = radare_argv[i];
+				r_line_completion_push_weak (&line->completion, radare_argv[i]);
 			}
 		}
 	}
-	tmp_argv[j] = NULL;
-	line->completion.argc = j;
-	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_evals(RLine* line, const char* str) {
@@ -1193,25 +1151,18 @@ static void autocomplete_evals(RLine* line, const char* str) {
 	if (!core || !str) {
 		return;
 	}
-	int i = 0, n;
 	RConfigNode *bt;
 	RListIter *iter;
 	char *tmp = strrchr (str, ' ');
 	if (tmp) {
 		str = tmp + 1;
 	}
-	n = strlen (str);
+	int n = strlen (str);
 	r_list_foreach (core->config->nodes, iter, bt) {
 		if (!strncmp (bt->name, str, n)) {
-			tmp_argv[i++] = bt->name;
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
+			r_line_completion_push_weak (&line->completion, bt->name);
 		}
 	}
-	tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_project(RLine* line, const char* str) {
@@ -1223,24 +1174,17 @@ static void autocomplete_project(RLine* line, const char* str) {
 	RList *list = r_sys_dir (projects_path);
 	RListIter *iter;
 	int n = strlen (str);
-	int i = 0;
 	if (projects_path) {
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo)) {
 				if (!strncmp (foo, str, n)) {
-					tmp_argv[i++] = r_str_newf ("%s", foo);
-					if (i == TMP_ARGV_SZ - 1) {
-						break;
-					}
+					r_line_completion_push_weak (&line->completion, foo);
 				}
 			}
 		}
 		free (projects_path);
 		r_list_free (list);
 	}
-	tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_minus(RLine* line, const char* str) {
@@ -1251,19 +1195,14 @@ static void autocomplete_minus(RLine* line, const char* str) {
 	int count;
 	int length = strlen (str);
 	char **keys = r_cmd_alias_keys(core->rcmd, &count);
-	if (keys) {
-		int i, j;
-		for (i=j=0; i<count; i++) {
-			if (!strncmp (keys[i], str, length)) {
-				tmp_argv[j++] = keys[i];
-			}
+	if (!keys) {
+		return;
+	}
+	int i;
+	for (i = 0; i < count; i++) {
+		if (!strncmp (keys[i], str, length)) {
+			r_line_completion_push_weak (&line->completion, keys[i]);
 		}
-		tmp_argv[j] = NULL;
-		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
-	} else {
-		line->completion.argc = 0;
-		line->completion.argv = NULL;
 	}
 }
 
@@ -1275,25 +1214,21 @@ static void autocomplete_breakpoints(RLine* line, const char* str) {
 	RListIter *iter;
 	RBreakpoint *bp = core->dbg->bp;
 	RBreakpointItem *b;
-	int n, i = 0;
-	n = strlen (str);
+	int n = strlen (str);
 	r_list_foreach (bp->bps, iter, b) {
 		char *addr = r_str_newf ("0x%"PFMT64x"", b->addr);
 		if (!strncmp (addr, str, n)) {
-			tmp_argv[i++] = addr;
+			r_line_completion_push_owned (&line->completion, addr);
 		} else {
 			free (addr);
 		}
 	}
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static bool add_argv(RFlagItem *fi, void *user) {
-	int *i = (int *)user;
-	tmp_argv[(*i)++] = fi->name;
-	return *i != TMP_ARGV_SZ - 1;
+	RLineCompletion *completion = user;
+	r_line_completion_push_weak (completion, fi->name);
+	return true;
 }
 
 static void autocomplete_flags(RLine* line, const char* str) {
@@ -1301,12 +1236,8 @@ static void autocomplete_flags(RLine* line, const char* str) {
 	if (!core || !str) {
 		return;
 	}
-	int n, i = 0;
-	n = strlen (str);
-	r_flag_foreach_prefix (core->flags, str, n, add_argv, &i);
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
+	int n = strlen (str);
+	r_flag_foreach_prefix (core->flags, str, n, add_argv, &line->completion);
 }
 
 static void autocomplete_zignatures(RLine* line, const char* msg) {
@@ -1318,25 +1249,16 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 	RSpaces *zs = &core->anal->zign_spaces;
 	RSpace *s;
 	RSpaceIter it;
-	int i = 0;
 
 	r_spaces_foreach (zs, it, s) {
-		if (i == TMP_ARGV_SZ - 1) {
-			break;
-		}
 		if (!strncmp (msg, s->name, length)) {
-			if (i + 1 < TMP_ARGV_SZ) {
-				tmp_argv[i++] = s->name;
-			}
+			r_line_completion_push_weak (&line->completion, s->name);
 		}
 	}
 
-	if (strlen (msg) == 0 && i + 1 < TMP_ARGV_SZ) {
-		tmp_argv[i++] = "*";
+	if (strlen (msg) == 0) {
+		r_line_completion_push_weak (&line->completion, "*");
 	}
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_flagspaces(RLine* line, const char* msg) {
@@ -1346,25 +1268,14 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	}
 	int length = strlen (msg);
 	RFlag *flag = core->flags;
-	int i = 0;
 	RSpaceIter it;
 	RSpace *s;
 	r_flag_space_foreach (flag, it, s) {
-		if (i == TMP_ARGV_SZ - 1) {
-			break;
-		}
 		if (!strncmp (msg, s->name, length)) {
-			if (i + 1 < TMP_ARGV_SZ) {
-				tmp_argv[i++] = s->name;
-			}
+			r_line_completion_push_weak (&line->completion, s->name);
 		}
 	}
-	if (i + 1 < TMP_ARGV_SZ) {
-		tmp_argv[i++] = "*";
-	}
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
+	r_line_completion_push_weak (&line->completion, "*");
 }
 
 static void autocomplete_functions (RLine* line, const char* str) {
@@ -1374,18 +1285,15 @@ static void autocomplete_functions (RLine* line, const char* str) {
 	}
 	RListIter *iter;
 	RAnalFunction *fcn;
-	int n = strlen (str), i = 0;
+	int n = strlen (str);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		char *name = r_core_anal_fcn_name (core, fcn);
 		if (!strncmp (name, str, n)) {
-			tmp_argv[i++] = name;
+			r_line_completion_push_owned (&line->completion, name);
 		} else {
 			free (name);
 		}
 	}
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_macro(RLine* line, const char* str) {
@@ -1396,27 +1304,14 @@ static void autocomplete_macro(RLine* line, const char* str) {
 	RCmdMacroItem *item;
 	RListIter *iter;
 	char buf[1024];
-	int n, i = 0;
-	n = strlen(str);
+	int n = strlen(str);
 	r_list_foreach (core->rcmd->macro.macros, iter, item) {
 		char *p = item->name;
 		if (!*str || !strncmp (str, p, n)) {
 			snprintf (buf, sizeof (buf), "%s%s)", str, p);
-			// eprintf ("------ %p (%s) = %s\n", tmp_argv[i], buf, p);
-			if (r_is_heap ((void*)tmp_argv[i])) {
-				free ((char *)tmp_argv[i]);
-			}
-			tmp_argv[i] = strdup (buf); // LEAKS
-			i++;
-			if (i == TMP_ARGV_SZ - 1) {
-				break;
-			}
+			r_line_completion_push_owned (&line->completion, strdup (buf));
 		}
 	}
-	//tmp_argv[(i-1>0)?i-1:0] = NULL;
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_file(RLine* line, const char* str) {
@@ -1430,9 +1325,9 @@ static void autocomplete_file(RLine* line, const char* str) {
 		str = r_str_trim_ro (pipe + 1);
 	}
 	if (str && !*str) {
-		autocomplete_process_path (line, str, "./", 0);
+		autocomplete_process_path (line, str, "./");
 	} else {
-		autocomplete_process_path (line, str, str, 0);
+		autocomplete_process_path (line, str, str);
 	}
 
 }
@@ -1442,20 +1337,16 @@ static void autocomplete_theme(RLine* line, const char* str) {
 	if (!core || !str) {
 		return;
 	}
-	int i = 0;
 	int len = strlen (str);
 	char *theme;
 	RListIter *iter;
 	RList *themes = r_core_list_themes (core);
 	r_list_foreach (themes, iter, theme) {
 		if (!len || !strncmp (str, theme, len)) {
-			tmp_argv[i++] = strdup (theme);
+			r_line_completion_push_owned (&line->completion, strdup (theme));
 		}
 	}
-	tmp_argv[i] = NULL;
 	r_list_free (themes);
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 }
 
 static bool find_e_opts(RLine *line) {
@@ -1489,12 +1380,9 @@ static bool find_e_opts(RLine *line) {
 	int n = strlen (p);
 	r_list_foreach (node->options, iter, option) {
 		if (!strncmp (option, p, n)) {
-			tmp_argv[i++] = option;
+			r_line_completion_push_weak (&line->completion, option);
 		}
 	}
-	tmp_argv[i] = NULL;
-	line->completion.argc = i;
-	line->completion.argv = tmp_argv;
 	line->completion.opt = true;
 	ret = true;
 
@@ -1538,9 +1426,7 @@ static bool find_autocomplete(RLine *line) {
 	}
 	int i;
 	/* if something went wrong this will prevent bad behavior */
-	tmp_argv[0] = NULL;
-	line->completion.argc = 0;
-	line->completion.argv = tmp_argv;
+	r_line_completion_clear (&line->completion);
 	switch (parent->type) {
 	case R_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags (line, p);
@@ -1592,14 +1478,12 @@ static bool find_autocomplete(RLine *line) {
 			}
 			// fallback to command listing
 		}
-		int length = strlen (arg), j = 0;
-		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < parent->n_subcmds; i++) {
+		int length = strlen (arg);
+		for (i = 0; i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
-				tmp_argv[j++] = parent->subcmds[i]->cmd;
+				r_line_completion_push_weak (&line->completion, parent->subcmds[i]->cmd);
 			}
 		}
-		tmp_argv[j] = NULL;
-		line->completion.argc = j;
 		break;
 	}
 	return true;
@@ -1609,46 +1493,34 @@ static int autocomplete(RLine *line) {
 	RCore *core = line->user;
 	RListIter *iter;
 	if (core) {
-		r_core_free_autocomplete (core);
+		r_line_completion_clear (&line->completion);
 		char *pipe = strchr (line->buffer.data, '>');
 		char *ptr = strchr (line->buffer.data, '@');
 		if (pipe && strchr (pipe + 1, ' ') && line->buffer.data+line->buffer.index >= pipe) {
 			autocompleteFilename (line, NULL, 1);
 		} else if (ptr && strchr (ptr + 1, ' ') && line->buffer.data + line->buffer.index >= ptr) {
-			int sdelta, n, i = 0;
+			int sdelta, n;
 			ptr = (char *)r_str_trim_ro (ptr + 1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
 			sdelta = (int)(size_t)(ptr - line->buffer.data);
-			r_flag_foreach_prefix (core->flags, line->buffer.data + sdelta, n, add_argv, &i);
-			tmp_argv[i] = NULL;
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
+			r_flag_foreach_prefix (core->flags, line->buffer.data + sdelta, n, add_argv, &line->completion);
 		} else if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
 			if (strchr (line->buffer.data + 7, ' ')) {
 				autocompleteFilename (line, NULL, 2);
 			} else {
 				int chr = 7;
-				int j = 0;
-
-				tmp_argv_heap = false;
 				ADDARG ("node");
 				ADDARG ("vala");
 				ADDARG ("ruby");
 				ADDARG ("newlisp");
 				ADDARG ("perl");
 				ADDARG ("python");
-				tmp_argv[j] = NULL;
-				line->completion.argc = j;
-				line->completion.argv = tmp_argv;
 			}
 		} else if (!strncmp (line->buffer.data, "ec ", 3)) {
 			if (strchr (line->buffer.data + 3, ' ')) {
 				autocompleteFilename (line, NULL, 2);
 			} else {
 				int chr = 3;
-				int j = 0;
-
-				tmp_argv_heap = false;
 				ADDARG("comment")
 				ADDARG("usrcmt")
 				ADDARG("args")
@@ -1710,9 +1582,6 @@ static int autocomplete(RLine *line) {
 				ADDARG("gui.background")
 				ADDARG("gui.alt_background")
 				ADDARG("gui.border")
-				tmp_argv[j] = NULL;
-				line->completion.argc = j;
-				line->completion.argv = tmp_argv;
 			}
 		} else if (!strncmp (line->buffer.data, "pf.", 3)
 		|| !strncmp (line->buffer.data, "pf*.", 4)
@@ -1737,19 +1606,13 @@ static int autocomplete(RLine *line) {
 				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), minlen)) {
 					char *p = strchr (line->buffer.data + chr, '.');
 					if (p) {
-						j += autocomplete_pfele (core, sdbkv_key (kv), pfx, j, p + 1);
+						j += autocomplete_pfele (core, &line->completion, sdbkv_key (kv), pfx, j, p + 1);
 						break;
 					} else {
-						tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
+						r_line_completion_push_owned (&line->completion, r_str_newf ("pf%s.%s", pfx, sdbkv_key (kv)));
 					}
 				}
 			}
-			if (j > 0) {
-				tmp_argv_heap = true;
-			}
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "afvn ", 5))
 		|| (!strncmp (line->buffer.data, "afan ", 5))) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -1761,7 +1624,7 @@ static int autocomplete(RLine *line) {
 			}
 			const char *f_ptr, *l_ptr;
 			RAnalVar *var;
-			int j = 0, len = strlen (line->buffer.data);
+			int len = strlen (line->buffer.data);
 
 			f_ptr = r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, ' ');
 			f_ptr = f_ptr != NULL ? f_ptr + 1 : line->buffer.data;
@@ -1771,15 +1634,12 @@ static int autocomplete(RLine *line) {
 			}
 			r_list_foreach (vars, iter, var) {
 				if (!strncmp (f_ptr, var->name, l_ptr - f_ptr)) {
-					tmp_argv[j++] = strdup (var->name);
+					r_line_completion_push_owned (&line->completion, strdup (var->name));
 				}
 			}
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
+			r_list_free (vars);
 		} else if (!strncmp (line->buffer.data, "t ", 2)
 		|| !strncmp (line->buffer.data, "t- ", 3)) {
-			int i = 0;
 			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 			SdbListIter *iter;
 			SdbKv *kv;
@@ -1789,19 +1649,12 @@ static int autocomplete(RLine *line) {
 				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
 					if (!strcmp (sdbkv_value (kv), "type") || !strcmp (sdbkv_value (kv), "enum")
 					|| !strcmp (sdbkv_value (kv), "struct")) {
-						tmp_argv[i++] = strdup (sdbkv_key (kv));
+						r_line_completion_push_owned (&line->completion, strdup (sdbkv_key (kv)));
 					}
 				}
 			}
-			if (i > 0) {
-				tmp_argv_heap = true;
-			}
-			tmp_argv[i] = NULL;
 			ls_free (l);
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "te ", 3))) {
-			int i = 0;
 			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 			SdbListIter *iter;
 			SdbKv *kv;
@@ -1810,28 +1663,20 @@ static int autocomplete(RLine *line) {
 				int len = strlen (line->buffer.data + chr);
 				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
 					if (!strcmp (sdbkv_value (kv), "enum")) {
-						tmp_argv[i++] = strdup (sdbkv_key (kv));
+						r_line_completion_push_owned (&line->completion, strdup (sdbkv_key (kv)));
 					}
 				}
 			}
-			if (i > 0) {
-				tmp_argv_heap = true;
-			}
-			tmp_argv[i] = NULL;
 			ls_free (l);
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "$", 1)) {
-			int i, j = 0;
+			int i;
 			for (i = 0; i < core->rcmd->aliases.count; i++) {
 				const char *key = core->rcmd->aliases.keys[i];
 				int len = strlen (line->buffer.data);
 				if (!len || !strncmp (line->buffer.data, key, len)) {
-					tmp_argv[j++] = strdup (key);
+					r_line_completion_push_owned (&line->completion, strdup (key));
 				}
 			}
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "ts ", 3)
 		|| !strncmp (line->buffer.data, "ta ", 3)
 		|| !strncmp (line->buffer.data, "tp ", 3)
@@ -1839,7 +1684,6 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "tpx ", 4)
 		|| !strncmp (line->buffer.data, "tss ", 4)
 		|| !strncmp (line->buffer.data, "ts* ", 4)) {
-			int i = 0;
 			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 			SdbListIter *iter;
 			SdbKv *kv;
@@ -1849,17 +1693,11 @@ static int autocomplete(RLine *line) {
 				const char *key = sdbkv_key (kv);
 				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
 					if (!strncmp (sdbkv_value (kv), "struct", strlen ("struct") + 1)) {
-						tmp_argv[i++] = strdup (key);
+						r_line_completion_push_owned (&line->completion, strdup (key));
 					}
 				}
 			}
-			if (i > 0) {
-				tmp_argv_heap = true;
-			}
-			tmp_argv[i] = NULL;
 			ls_free (l);
-			line->completion.argc = i;
-			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "zo ", 3)
 		|| !strncmp (line->buffer.data, "zoz ", 4)) {
 			if (core->anal->zign_path && core->anal->zign_path[0]) {
@@ -1889,11 +1727,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	const char *ptr;
 	RLine *rli = r_line_singleton ();
 	buf[0] = '\0';
-	if (rli->completion.argv != radare_argv) {
-		r_line_free_autocomplete (rli);
-	}
-	rli->completion.argc = radare_argc;
-	rli->completion.argv = radare_argv;
+	r_line_completion_set_weak (&rli->completion, radare_argc, radare_argv);
  	rli->completion.run = autocomplete;
 	ptr = r_line_readline ();
 	if (!ptr) {
@@ -2780,7 +2614,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	//update_sdb (c);
 	// avoid double free
 	r_list_free (c->ropchain);
-	r_core_free_autocomplete (c);
 	r_event_free (c->ev);
 	R_FREE (c->cmdlog);
 	r_th_lock_free (c->lock);
