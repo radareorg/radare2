@@ -773,23 +773,23 @@ static bool cmd_anal_aaft(RCore *core) {
 		r_config_set_i (core->config, io_cache_key, true);
 	}
 	seek = core->offset;
-	r_core_cmd0 (core, "aei");
-	r_core_cmd0 (core, "aeim");
 	r_reg_arena_push (core->anal->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
+		r_core_cmd0 (core, "aei");
+		r_core_cmd0 (core, "aeim");
 		int ret = r_core_seek (core, fcn->addr, true);
 		if (!ret) {
 			continue;
 		}
 		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
+		r_core_cmd0 (core, "aeim-");
+		r_core_cmd0 (core, "aei-");
 		if (r_cons_is_breaked ()) {
 			break;
 		}
 	}
-	r_core_cmd0 (core, "aeim-");
-	r_core_cmd0 (core, "aei-");
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
@@ -8088,6 +8088,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "z/");
 					r_print_rowlog_done (core->print, oldstr);
 				}
+
+				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+				r_core_cmd0 (core, "aaft");
+				r_print_rowlog_done (core->print, oldstr);
+				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
+				r_print_rowlog_done (core->print, oldstr);
+
 				if (input[1] == 'a') { // "aaaa"
 					if (!didAap) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
@@ -8097,12 +8104,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
-					r_print_rowlog_done (core->print, oldstr);
-				} else {
-					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
-					r_core_cmd0 (core, "aaft");
-					r_print_rowlog_done (core->print, oldstr);
-					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_cmd0 (core, "s-");
