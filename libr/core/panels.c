@@ -926,6 +926,7 @@ static int cursorThreshold(RPanel* panel) {
 
 static bool handleZoomMode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
+	RPanel *cur = getCurPanel (panels);
 	r_cons_switchbuf (false);
 	switch (key) {
 	case 'Q':
@@ -935,6 +936,18 @@ static bool handleZoomMode(RCore *core, const int key) {
 		break;
 	case 'c':
 		activateCursor (core);
+		break;
+	case 't':
+		if (cur->model->rotateCb) {
+			cur->model->rotateCb (core, false);
+			cur->view->refresh = true;
+		}
+		break;
+	case 'T':
+		if (cur->model->rotateCb) {
+			cur->model->rotateCb (core, true);
+			cur->view->refresh = true;
+		}
 		break;
 	case ';':
 	case ' ':
@@ -1032,6 +1045,7 @@ static void handleComment(RCore *core) {
 
 static bool handleWindowMode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
+	RPanel *cur = getCurPanel (panels);
 	r_cons_switchbuf (false);
 	switch (key) {
 	case 'Q':
@@ -1107,6 +1121,18 @@ static bool handleWindowMode(RCore *core, const int key) {
 		break;
 	case 'N':
 		createNewPanel (core, false);
+		break;
+	case 't':
+		if (cur->model->rotateCb) {
+			cur->model->rotateCb (core, false);
+			cur->view->refresh = true;
+		}
+		break;
+	case 'T':
+		if (cur->model->rotateCb) {
+			cur->model->rotateCb (core, true);
+			cur->view->refresh = true;
+		}
 		break;
 	case ':':
 	case ';':
@@ -4273,14 +4299,12 @@ repeat:
 		break;
 	case 't':
 		if (cur->model->rotateCb) {
-			RPanel *cur = getCurPanel (panels);
 			cur->model->rotateCb (core, false);
 			cur->view->refresh = true;
 		}
 		break;
 	case 'T':
 		if (cur->model->rotateCb) {
-			RPanel *cur = getCurPanel (panels);
 			cur->model->rotateCb (core, true);
 			cur->view->refresh = true;
 		}
