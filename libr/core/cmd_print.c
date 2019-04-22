@@ -3292,7 +3292,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 							break;
 						case 'z':
 							if ((IS_PRINTABLE (p[j]))) {
-								if (j < blocksize && p[j + 1] == 0) {
+								if ((j + 1) < blocksize && p[j + 1] == 0) {
 									k++;
 									j++;
 								}
