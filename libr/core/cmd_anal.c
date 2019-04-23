@@ -291,7 +291,7 @@ static const char *help_msg_af[] = {
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
 	"afo", " [fcn.name]", "show address for the function named like this",
-	"afs", " ([fcnsign])", "get/set function signature at current address",
+	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " [addr]", "resize and analyze function from current address until addr",
@@ -773,23 +773,23 @@ static bool cmd_anal_aaft(RCore *core) {
 		r_config_set_i (core->config, io_cache_key, true);
 	}
 	seek = core->offset;
-	r_core_cmd0 (core, "aei");
-	r_core_cmd0 (core, "aeim");
 	r_reg_arena_push (core->anal->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
+		r_core_cmd0 (core, "aei");
+		r_core_cmd0 (core, "aeim");
 		int ret = r_core_seek (core, fcn->addr, true);
 		if (!ret) {
 			continue;
 		}
 		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
+		r_core_cmd0 (core, "aeim-");
+		r_core_cmd0 (core, "aei-");
 		if (r_cons_is_breaked ()) {
 			break;
 		}
 	}
-	r_core_cmd0 (core, "aeim-");
-	r_core_cmd0 (core, "aei-");
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
@@ -2676,33 +2676,39 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 's': // "afs"
-		{
-		ut64 addr = core->offset;
-		RAnalFunction *f;
-		const char *arg = r_str_trim_ro (input + 2);
-		if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
-			if (arg && *arg) {
-				// parse function signature here
-				char *fcnstr = r_str_newf ("%s;", arg);
-				r_anal_str_to_fcn (core->anal, f, fcnstr);
-				free (fcnstr);
-			} else {
-				// not working
-				char *str = r_anal_fcn_to_string (core->anal, f);
-				if (str) {
-					r_cons_println (str);
-					free (str);
-				}
-				// working, but wtf
-				char *sig = r_anal_fcn_format_sig (core->anal, f, f->name, NULL, NULL, NULL);
-				if (sig) {
-					r_cons_println (sig);
-					free (sig);
-				}
-			}
+		if (input [2] == '!') {
+			char *sig = r_core_cmd_str (core, "afs");
+			char *data = r_core_editor (core, NULL, sig);
+			r_core_cmdf (core, "\"afs %s\"", data);
+			free (sig);
+			free (data);
 		} else {
-			eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
-		}
+			ut64 addr = core->offset;
+			RAnalFunction *f;
+			const char *arg = r_str_trim_ro (input + 2);
+			if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
+				if (arg && *arg) {
+					// parse function signature here
+					char *fcnstr = r_str_newf ("%s;", arg);
+					r_anal_str_to_fcn (core->anal, f, fcnstr);
+					free (fcnstr);
+				} else {
+					// not working
+					char *str = r_anal_fcn_to_string (core->anal, f);
+					if (str) {
+						r_cons_println (str);
+						free (str);
+					}
+					// working, but wtf
+					char *sig = r_anal_fcn_format_sig (core->anal, f, f->name, NULL, NULL, NULL);
+					if (sig) {
+						r_cons_println (sig);
+						free (sig);
+					}
+				}
+			} else {
+				eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
+			}
 		}
 		break;
 	case 'm': // "afm" - merge two functions
@@ -8082,6 +8088,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "z/");
 					r_print_rowlog_done (core->print, oldstr);
 				}
+
+				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+				r_core_cmd0 (core, "aaft");
+				r_print_rowlog_done (core->print, oldstr);
+				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
+				r_print_rowlog_done (core->print, oldstr);
+
 				if (input[1] == 'a') { // "aaaa"
 					if (!didAap) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
@@ -8091,12 +8104,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
-					r_print_rowlog_done (core->print, oldstr);
-				} else {
-					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
-					r_core_cmd0 (core, "aaft");
-					r_print_rowlog_done (core->print, oldstr);
-					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_cmd0 (core, "s-");
