@@ -196,6 +196,13 @@ func.main.arg.1=char **,argv
 func.main.arg.2=char **,envp
 func.main.ret=int
 
+entry0=func
+func.entry0.args=3
+func.entry0.arg.0=int,argc
+func.entry0.arg.1=char **,argv
+func.entry0.arg.2=char **,envp
+func.entry0.ret=int
+
 xmalloc=func
 func.xmalloc.args=1
 func.xmalloc.arg.0=size_t,size
