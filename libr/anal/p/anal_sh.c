@@ -385,12 +385,16 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 			"mach,0x80000000,&,!," //mach_old sign (0)
 			S32_EXT("r%d,[4]")"," //@Rn sign extended
 			S32_EXT("r%d,[4]")"," //@Rm sign extended
-			"4,r%d,+=," //Rn+=4
-			"4,r%d,+=," //Rm+=4
-			"*,DUP," //(1)
+			"*," //(1)
 			"macl,32,mach,<<,|," //macl | (mach << 32)
 			"+," //MAC+@Rm*@Rn
-			"32,2,PICK,0xffffffff00000000,&,>>,mach,=," //MACH > mach
+			"32,"
+			S32_EXT("r%d,[4]")"," //@Rn sign extended
+			S32_EXT("r%d,[4]")"," //@Rm sign extended
+			"*,"
+			"4,r%d,+=," //Rn+=4
+			"4,r%d,+=," //Rm+=4
+			"0xffffffff00000000,&,>>,mach,=," //MACH > mach
 			"0xffffffff,&,macl,=,"
 			"0x2,sr,&,!,?{,BREAK,}," //if S==0 BREAK
 			"0x00007fff,mach,>,"
