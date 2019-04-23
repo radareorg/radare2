@@ -81,7 +81,8 @@ R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *
 R_API void r_line_completion_set_weak(RLineCompletion *completion, int argc, const char **argv) {
 	r_return_if_fail (completion);
 	r_line_completion_clear (completion);
-	r_pvector_insert_range (&completion->args, 0, (void **)argv, argc);
+	completion->argc = argc;
+	completion->argv = argv;
 }
 
 R_API void r_line_completion_clear(RLineCompletion *completion) {
