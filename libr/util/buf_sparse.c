@@ -1,8 +1,5 @@
 #include <r_util.h>
 
-struct buf_sparse_user {
-};
-
 struct buf_sparse_priv {
 	RList *sparse;
 	ut64 offset;
