@@ -45,6 +45,8 @@ R_API char *r_line_get_prompt() {
 
 R_API void r_line_completion_init(RLineCompletion *completion) {
 	completion->run = NULL;
+	completion->argc = 0;
+	completion->argv = NULL;
 	completion->args_weak = true;
 	r_pvector_init (&completion->args, NULL);
 }
@@ -89,6 +91,8 @@ R_API void r_line_completion_clear(RLineCompletion *completion) {
 	r_pvector_set_free (&completion->args, completion->args_weak ? NULL : free);
 	r_pvector_clear (&completion->args);
 	completion->args_weak = true;
+	completion->argc = 0;
+	completion->argv = NULL;
 }
 
 #include "dietline.c"
