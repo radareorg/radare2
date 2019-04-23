@@ -55,6 +55,7 @@ typedef struct r_buf_t {
 	ut8 tmp[8];
 	ut8 *whole_buf;
 	bool readonly;
+	int Oxff_priv;
 
 	ut8 *buf_priv;
 	ut64 length_priv;
@@ -64,7 +65,6 @@ typedef struct r_buf_t {
 	RMmap *mmap_priv;
 	bool empty_priv;
 	int fd_priv;
-	int Oxff_priv;
 	RList *sparse_priv;
 	int refctr;
 	// RIOBind *iob;

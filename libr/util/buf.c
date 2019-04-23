@@ -164,20 +164,11 @@ R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
 	return r_buf_new_with_bytes (tmp, sz);
 }
 
-static void buffer_sparse_free(void *a) {
-	RBufferSparse *s = (RBufferSparse *)a;
-	free (s->data);
-	free (s);
-}
-
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
-	// TODO: implement sparse type
 	RBuffer *b = new_buffer (R_BUFFER_SPARSE, NULL);
-	if (!b) {
-		return NULL;
+	if (b) {
+		b->Oxff_priv = Oxff;
 	}
-	b->Oxff_priv = Oxff;
-	b->sparse_priv = r_list_newf (buffer_sparse_free);
 	return b;
 }
 
@@ -430,7 +421,7 @@ R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 R_API ut8 r_buf_read8(RBuffer *b) {
 	ut8 res;
 	int r = r_buf_read (b, &res, sizeof (res));
-	return r == sizeof (res) ? res : b->Oxff_priv;
+	return r == sizeof (res)? res :b->Oxff_priv;
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
