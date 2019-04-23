@@ -2974,6 +2974,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			r = r_buf_read_at (bin->b, bin->import_directory_offset + idi * sizeof (curr_import_dir),
 				(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
 			if (r < 0) {
+				free (imports);
 				return NULL;
 			}
 		}
