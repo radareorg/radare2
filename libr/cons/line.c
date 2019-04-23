@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2017 - pancake */
 
+#include <r_util.h>
 #include <r_cons.h>
 
 static RLine r_line_instance;
@@ -56,15 +57,12 @@ R_API void r_line_completion_fini(RLineCompletion *completion) {
 }
 
 R_API void r_line_completion_push_owned(RLineCompletion *completion, char *str) {
-	if (!str) {
-		return;
-	}
+	r_return_if_fail (str);
 	if (completion->args_weak) {
 		// weak to owned => must strdup all currently saved strings
-		const char *weak_str;
 		size_t i;
 		for (i = 0; i < r_pvector_len (&completion->args); i++) {
-			weak_str = r_pvector_at (&completion->args, i);
+			const char *weak_str = r_pvector_at (&completion->args, i);
 			r_pvector_set (&completion->args, i, strdup (weak_str));
 		}
 	}
@@ -73,9 +71,7 @@ R_API void r_line_completion_push_owned(RLineCompletion *completion, char *str) 
 }
 
 R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *str) {
-	if (!str) {
-		return;
-	}
+	r_return_if_fail (str);
 	if (!completion->args_weak) {
 		str = strdup (str);
 	}

@@ -536,10 +536,9 @@ static void selection_widget_select() {
 }
 
 static void selection_widget_update() {
-	int argc = r_line_completion_argc (&I.completion);
-	const char **argv = r_line_completion_argv (&I.completion);
-	if (argc == 0 ||
-		(argc == 1 && I.buffer.length >= strlen (argv[0]))) {
+	int argc;
+	const char **argv = r_line_completion_argv (&I.completion, &argc);
+	if (argc == 0 || (argc == 1 && I.buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase ();
 		return;
 	}
@@ -568,8 +567,7 @@ R_API void r_line_autocomplete() {
 	if (I.completion.run) {
 		I.completion.opt = false;
 		I.completion.run (&I);
-		argc = r_line_completion_argc (&I.completion);
-		argv = r_line_completion_argv (&I.completion);
+		argv = r_line_completion_argv (&I.completion, &argc);
 		opt = I.completion.opt;
 	}
 	if (I.sel_widget && !I.sel_widget->complete_common) {

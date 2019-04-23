@@ -957,12 +957,14 @@ R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *
 R_API void r_line_completion_set_weak(RLineCompletion *completion, int argc, const char **argv);
 R_API void r_line_completion_clear(RLineCompletion *completion);
 
-static inline int r_line_completion_argc(RLineCompletion *completion) {
-	return completion->argv ? completion->argc : r_pvector_len (&completion->args);
-}
-
-static inline const char **r_line_completion_argv(RLineCompletion *completion) {
-	return completion->argv ? completion->argv : completion->args.v.a;
+static inline const char **r_line_completion_argv(RLineCompletion *completion, R_NONNULL int *argc) {
+	if (completion->argv) {
+		*argc = completion->argc;
+		return completion->argv;
+	} else {
+		*argc = r_pvector_len (&completion->args);
+		return completion->args.v.a;
+	}
 }
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
