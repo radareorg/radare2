@@ -1232,7 +1232,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					}
 					// TODO: catch left instead of null
 					st64 size;
-					r_buf_seek (binfile->buf, off, 0);
+					r_buf_seek (binfile->buf, off, R_BUF_SET);
 					int r = r_buf_sleb128 (binfile->buf, &size);
 					if (r <= 0) {
 						break;
