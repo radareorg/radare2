@@ -5646,6 +5646,10 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 						isValidCall = false;
 					}
 				}
+				RBinReloc *rel = r_core_getreloc (core, addr, op.size);
+				if (rel && (rel->import || rel->symbol)) {
+					isValidCall = false;
+				}
 				if (isValidCall) {
 #if JAYRO_03
 					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {

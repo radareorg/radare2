@@ -3800,42 +3800,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 #endif
 }
 
-struct getreloc_t {
-	ut64 vaddr;
-	int size;
-};
-
-static int getreloc_tree(const void *user, const RBNode *n) {
-	struct getreloc_t *gr = (struct getreloc_t *)user;
-	const RBinReloc *r = container_of (n, const RBinReloc, vrb);
-	if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
-		return 0;
-	}
-
-	if (gr->vaddr > r->vaddr) {
-		return 1;
-	}
-	if (gr->vaddr < r->vaddr) {
-		return -1;
-	}
-	return 0;
-}
-
-// TODO: Use sdb in rbin to accelerate this
-// we shuold use aligned reloc addresses instead of iterating all of them
-static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
-	if (size < 1 || addr == UT64_MAX) {
-		return NULL;
-	}
-	RBNode *relocs = r_bin_get_relocs (core->bin);
-	if (!relocs) {
-		return NULL;
-	}
-	struct getreloc_t gr = { .vaddr = addr, .size = size };
-	RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree);
-	return res? container_of (res, RBinReloc, vrb): NULL;
-}
-
 static void ds_print_relocs(RDisasmState *ds) {
 	char *demname = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
@@ -3844,7 +3808,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *lang = r_config_get (core->config, "bin.lang");
 	bool demangle = r_config_get_i (core->config, "asm.demangle");
-	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+	RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
 		char *ll = r_cons_lastline (&cstrlen);
@@ -4639,7 +4603,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
-		RBinReloc *rel = getreloc (ds->core, addr, ds->analop.size);
+		RBinReloc *rel = r_core_getreloc (ds->core, addr, ds->analop.size);
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = rel->import->name;
@@ -5654,7 +5618,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_ks (pj, "family", r_anal_op_family_to_string (ds->analop.family));
 		pj_ks (pj, "type", r_anal_optype_to_string (ds->analop.type));
 		// indicate a relocated address
-		RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+		RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 		// reloc is true if address in reloc table
 		pj_kb (pj, "reloc", rel);
 		// wanted the numerical values of the type information
