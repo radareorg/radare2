@@ -232,7 +232,7 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 	if (!*arg && !mode) {
 		const char *tag;
 		RListIter *iter;
-		RList *list = r_flag_tags_list (core->flags);
+		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
 			r_cons_printf ("%s\n", tag);
 		}
@@ -247,19 +247,53 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 		eprintf (" ft                       # list all tags\n");
 		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
 		eprintf (" ftw                      # flag tags within this file\n");
+		eprintf (" ftj                      # list all flagtags in JSON format\n");
+		eprintf (" ft*                      # list all flagtags in r2 commands\n");
 		free (inp);
 		return;
 	}
 	if (mode == 'w') { // "ftw"
 		const char *tag;
 		RListIter *iter;
-		RList *list = r_flag_tags_list (core->flags);
+		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
 			r_cons_printf ("%s:\n", tag);
 			r_core_cmdf (core, "ftn %s", tag);
 		}
 		r_list_free (list);
 		free (inp);
+		return;
+	}
+	if (mode == '*') {
+		RListIter *iter;
+		const char *tag;
+		RList *list = r_flag_tags_list (core->flags, NULL);
+		r_list_foreach (list, iter, tag) {
+			const char *flags = sdb_get (core->flags->tags, sdb_fmt ("tag.%s", tag), NULL);
+			r_cons_printf ("ft %s %s\n", tag, flags);
+		}
+		r_list_free (list);
+		return;
+	}
+	if (mode == 'j') { // "ftj"
+		RListIter *iter, *iter2;
+		const char *tag, *flg;
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		RList *list = r_flag_tags_list (core->flags, NULL);
+		r_list_foreach (list, iter, tag) {
+			pj_k (pj, tag);
+			pj_a (pj);
+			RList *flags = r_flag_tags_list (core->flags, tag);
+			r_list_foreach (flags, iter2, flg) {
+				pj_s (pj, flg);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		r_list_free (list);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		return;
 	}
 	char *arg1 = strchr (arg, ' ');
@@ -969,7 +1003,7 @@ rep:
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
-		if (input[1] == '.' && !input[2]) {
+		if (input[0] && input[1] == '.' && !input[2]) {
 			RFlagItem *item = r_flag_get_at (core->flags, core->offset, false);
 			if (item) {
 				switch (input[0]) {
