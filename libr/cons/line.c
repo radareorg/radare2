@@ -57,7 +57,7 @@ R_API void r_line_completion_fini(RLineCompletion *completion) {
 }
 
 R_API void r_line_completion_push_owned(RLineCompletion *completion, char *str) {
-	r_return_if_fail (str);
+	r_return_if_fail (completion && str);
 	if (completion->args_weak) {
 		// weak to owned => must strdup all currently saved strings
 		size_t i;
@@ -71,7 +71,7 @@ R_API void r_line_completion_push_owned(RLineCompletion *completion, char *str) 
 }
 
 R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	r_return_if_fail (completion && str);
 	if (!completion->args_weak) {
 		str = strdup (str);
 	}
@@ -79,11 +79,13 @@ R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *
 }
 
 R_API void r_line_completion_set_weak(RLineCompletion *completion, int argc, const char **argv) {
+	r_return_if_fail (completion);
 	r_line_completion_clear (completion);
 	r_pvector_insert_range (&completion->args, 0, (void **)argv, argc);
 }
 
 R_API void r_line_completion_clear(RLineCompletion *completion) {
+	r_return_if_fail (completion);
 	r_pvector_set_free (&completion->args, completion->args_weak ? NULL : free);
 	r_pvector_clear (&completion->args);
 	completion->args_weak = true;
