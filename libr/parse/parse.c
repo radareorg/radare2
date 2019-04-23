@@ -324,8 +324,36 @@ static int filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, c
 						}
 					}
 					*ptr = 0;
-					snprintf (str, len, "%s%s%s", data, f->realnames? flag->realname : flag->name,
-							(ptr != ptr2) ? ptr2 : "");
+					char *flagname = strdup (f->realnames? flag->realname : flag->name);
+					int maxflagname = p->maxflagnamelen;
+					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
+						char *doublelower = (char *)r_str_rstr (flagname, "__");
+						char *doublecolon = (char *)r_str_rstr (flagname, "::");
+						char *token = NULL;
+						if (doublelower && doublecolon) {
+							token = R_MAX (doublelower, doublecolon);
+						} else {
+							token = doublelower? doublelower: doublecolon;
+						}
+						if (token) {
+							const char *mod = doublecolon? "(cxx)": "(...)";
+							char *newstr = r_str_newf ("%s%s", mod, token);
+							free (flagname);
+							flagname = newstr;
+						} else {
+							const char *lower = r_str_rstr (flagname, "_");
+							char *newstr;
+							if (lower) {
+								newstr = r_str_newf ("..%s", lower + 1);
+							} else {
+								newstr = r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
+							}
+							free (flagname);
+							flagname = newstr;
+						}
+					}
+					snprintf (str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					free (flagname);
 					bool banned = false;
 					{
 						const char *p = strchr (str, '[');

@@ -887,6 +887,13 @@ static int cb_strpurge(void *user, void *data) {
 	return true;
 }
 
+static int cb_maxname (void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore *) user;
+	core->parser->maxflagnamelen = node->i_value;
+	return true;
+}
+
 static int cb_midflags (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
@@ -2808,8 +2815,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETPREF ("asm.lines.fcn", "true", "Show function boundary lines");
 	SETPREF ("asm.flags", "true", "Show flags");
+	SETICB ("asm.flags.maxname", 0, &cb_maxname, "Maximum length of flag name with smart chopping");
+	SETI ("asm.flags.limit", 0, "Maximum number of flags to show in a single offset");
 	SETPREF ("asm.flags.offset", "false", "Show offset in flags");
 	SETPREF ("asm.flags.inbytes", "false",  "Display flags inside the bytes space");
+	SETPREF ("asm.flags.inline", "false",  "Display flags in line separated by commas instead of newlines");
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
@@ -2827,7 +2837,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.lines.wide", "false", "Put a space between lines");
 	SETPREF ("asm.fcnsig", "true", "Show function signature in disasm");
 	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
-	SETI ("asm.maxflags", 0, "Maximum number of flags to show in a single offset");
 	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
 	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
