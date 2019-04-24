@@ -537,7 +537,7 @@ static void selection_widget_select() {
 
 static void selection_widget_update() {
 	int argc = r_pvector_len (&I.completion.args);
-	const char **argv = I.completion.args.v.a;
+	const char **argv = r_pvector_data (&I.completion.args);
 	if (argc == 0 || (argc == 1 && I.buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase ();
 		return;
@@ -568,7 +568,7 @@ R_API void r_line_autocomplete() {
 		I.completion.opt = false;
 		I.completion.run (&I);
 		argc = r_pvector_len (&I.completion.args);
-		argv = I.completion.args.v.a;
+		argv = r_pvector_data (&I.completion.args);
 		opt = I.completion.opt;
 	}
 	if (I.sel_widget && !I.sel_widget->complete_common) {
