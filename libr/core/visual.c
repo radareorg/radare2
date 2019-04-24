@@ -1616,13 +1616,40 @@ static void cursor_ocur(RCore *core, bool use_ocur) {
 	}
 }
 
+static void nextOpcode(RCore *core) {
+	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
+	RPrint *p = core->print;
+	if (aop) {
+		p->cur += aop->size;
+		r_anal_op_free (aop);
+	} else {
+		p->cur += 4;
+	}
+}
+
+static void prevOpcode(RCore *core) {
+	RPrint *p = core->print;
+	ut64 addr, oaddr = core->offset + core->print->cur;
+	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
+		const int delta = oaddr - addr;
+		p->cur -= delta;
+	} else {
+		p->cur -= 4;
+	}
+}
+
 static void cursor_nextrow(RCore *core, bool use_ocur) {
 	RPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
 	RAsmOp op;
 
+	if (PIDX == 1) { // DISASM
+		nextOpcode (core);
+		return;
+	}
 	cursor_ocur (core, use_ocur);
+
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
@@ -1654,6 +1681,9 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 			return;
 		case 1:
 			p->cur += cols > 0? cols: 3;
+			return;
+		default:
+			nextOpcode (core);
 			return;
 		}
 	}
@@ -1695,6 +1725,11 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	ut32 roff, prev_roff;
 	int row;
 
+	if (PIDX == 1) { // DISASM
+		prevOpcode (core);
+		return;
+	}
+
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
 		cols /= 2;
@@ -1714,19 +1749,28 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		}
 		return;
 	}
-	if (PIDX == R_CORE_VISUAL_MODE_DB && core->seltab == 0) {
-		int w = r_config_get_i (core->config, "hex.cols");
-		if (w < 1) {
-			w = 16;
+	if (PIDX == R_CORE_VISUAL_MODE_DB) {
+		switch (core->seltab) {
+		case 0:
+			{
+				int w = r_config_get_i (core->config, "hex.cols");
+				if (w < 1) {
+					w = 16;
+				}
+				r_config_set_i (core->config, "stack.delta",
+						r_config_get_i (core->config, "stack.delta") + w);
+			}
+			return;
+		case 1:
+			{
+				const int cols = core->dbg->regcols;
+				p->cur -= cols > 0? cols: 4;
+				return;
+			}
+		default:
+			prevOpcode (core);
+			return;
 		}
-		r_config_set_i (core->config, "stack.delta",
-			r_config_get_i (core->config, "stack.delta") + w);
-		return;
-	}
-	if (PIDX == R_CORE_VISUAL_MODE_DB && core->seltab == 1) {
-		const int cols = core->dbg->regcols;
-		p->cur -= cols > 0? cols: 4;
-		return;
 	}
 	if (p->row_offsets) {
 		int delta, prev_sz;
