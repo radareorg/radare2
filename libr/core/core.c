@@ -787,7 +787,7 @@ R_API RCore *r_core_new() {
 }
 
 /*-----------------------------------*/
-#define radare_argc (sizeof (radare_argv)/sizeof(const char*))
+#define radare_argc (sizeof (radare_argv) / sizeof(const char*) - 1)
 static const char *radare_argv[] = {
 	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
@@ -1033,13 +1033,13 @@ static void autocomplete_process_path(RLine* line, const char* str, const char *
 			if (!basename[0] || !strncmp (filename, basename, n))  {
 				char *tmpstring = r_str_newf ("%s%s", dirname, filename);
 				if (r_file_is_directory (tmpstring)) {
-					r_line_completion_push_owned (&line->completion, r_str_newf ("%s/", tmpstring));
-					free (tmpstring);
+					char *s = r_str_newf ("%s/", tmpstring);
+					r_line_completion_push (&line->completion, s);
+					free (s);
 				} else if (!chgdir) {
-					r_line_completion_push_owned (&line->completion, tmpstring);
-				} else {
-					free (tmpstring);
+					r_line_completion_push (&line->completion, tmpstring);
 				}
+				free (tmpstring);
 			}
 		}
 		r_list_free (list);
@@ -1112,7 +1112,9 @@ static int autocomplete_pfele (RCore *core, RLineCompletion *completion, char *k
 					*p2 = '\0';
 				}
 				if (!len || !strncmp (ptr, arg, len)) {
-					r_line_completion_push_owned (completion, r_str_newf ("pf%s.%s.%s", pfx, key, arg));
+					char *s = r_str_newf ("pf%s.%s.%s", pfx, key, arg);
+					r_line_completion_push (completion, s);
+					free (s);
 				}
 			}
 		}
@@ -1121,7 +1123,7 @@ static int autocomplete_pfele (RCore *core, RLineCompletion *completion, char *k
 	return ret;
 }
 
-#define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { r_line_completion_push_weak (&line->completion, x); }
+#define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { r_line_completion_push (&line->completion, x); }
 
 static void autocomplete_default(RLine *line) {
 	RCore *core = line->user;
@@ -1133,14 +1135,14 @@ static void autocomplete_default(RLine *line) {
 	if (a) {
 		for (i = 0; i < a->n_subcmds; i++) {
 			if (line->buffer.data[0] == 0 || !strncmp (a->subcmds[i]->cmd, line->buffer.data, a->subcmds[i]->length)) {
-				r_line_completion_push_weak (&line->completion, a->subcmds[i]->cmd);
+				r_line_completion_push (&line->completion, a->subcmds[i]->cmd);
 			}
 		}
 	} else {
 		for (i = 0; i < radare_argc && radare_argv[i]; i++) {
 			int length = strlen (radare_argv[i]);
 			if (!strncmp (radare_argv[i], line->buffer.data, length)) {
-				r_line_completion_push_weak (&line->completion, radare_argv[i]);
+				r_line_completion_push (&line->completion, radare_argv[i]);
 			}
 		}
 	}
@@ -1160,7 +1162,7 @@ static void autocomplete_evals(RLine* line, const char* str) {
 	int n = strlen (str);
 	r_list_foreach (core->config->nodes, iter, bt) {
 		if (!strncmp (bt->name, str, n)) {
-			r_line_completion_push_weak (&line->completion, bt->name);
+			r_line_completion_push (&line->completion, bt->name);
 		}
 	}
 }
@@ -1178,7 +1180,7 @@ static void autocomplete_project(RLine* line, const char* str) {
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo)) {
 				if (!strncmp (foo, str, n)) {
-					r_line_completion_push_weak (&line->completion, foo);
+					r_line_completion_push (&line->completion, foo);
 				}
 			}
 		}
@@ -1201,7 +1203,7 @@ static void autocomplete_minus(RLine* line, const char* str) {
 	int i;
 	for (i = 0; i < count; i++) {
 		if (!strncmp (keys[i], str, length)) {
-			r_line_completion_push_weak (&line->completion, keys[i]);
+			r_line_completion_push (&line->completion, keys[i]);
 		}
 	}
 }
@@ -1218,16 +1220,15 @@ static void autocomplete_breakpoints(RLine* line, const char* str) {
 	r_list_foreach (bp->bps, iter, b) {
 		char *addr = r_str_newf ("0x%"PFMT64x"", b->addr);
 		if (!strncmp (addr, str, n)) {
-			r_line_completion_push_owned (&line->completion, addr);
-		} else {
-			free (addr);
+			r_line_completion_push (&line->completion, addr);
 		}
+		free (addr);
 	}
 }
 
 static bool add_argv(RFlagItem *fi, void *user) {
 	RLineCompletion *completion = user;
-	r_line_completion_push_weak (completion, fi->name);
+	r_line_completion_push (completion, fi->name);
 	return true;
 }
 
@@ -1252,12 +1253,12 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 
 	r_spaces_foreach (zs, it, s) {
 		if (!strncmp (msg, s->name, length)) {
-			r_line_completion_push_weak (&line->completion, s->name);
+			r_line_completion_push (&line->completion, s->name);
 		}
 	}
 
 	if (strlen (msg) == 0) {
-		r_line_completion_push_weak (&line->completion, "*");
+		r_line_completion_push (&line->completion, "*");
 	}
 }
 
@@ -1272,10 +1273,10 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	RSpace *s;
 	r_flag_space_foreach (flag, it, s) {
 		if (!strncmp (msg, s->name, length)) {
-			r_line_completion_push_weak (&line->completion, s->name);
+			r_line_completion_push (&line->completion, s->name);
 		}
 	}
-	r_line_completion_push_weak (&line->completion, "*");
+	r_line_completion_push (&line->completion, "*");
 }
 
 static void autocomplete_functions (RLine* line, const char* str) {
@@ -1289,10 +1290,9 @@ static void autocomplete_functions (RLine* line, const char* str) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		char *name = r_core_anal_fcn_name (core, fcn);
 		if (!strncmp (name, str, n)) {
-			r_line_completion_push_owned (&line->completion, name);
-		} else {
-			free (name);
+			r_line_completion_push (&line->completion, name);
 		}
+		free (name);
 	}
 }
 
@@ -1309,7 +1309,7 @@ static void autocomplete_macro(RLine* line, const char* str) {
 		char *p = item->name;
 		if (!*str || !strncmp (str, p, n)) {
 			snprintf (buf, sizeof (buf), "%s%s)", str, p);
-			r_line_completion_push_owned (&line->completion, strdup (buf));
+			r_line_completion_push (&line->completion, buf);
 		}
 	}
 }
@@ -1343,7 +1343,7 @@ static void autocomplete_theme(RLine* line, const char* str) {
 	RList *themes = r_core_list_themes (core);
 	r_list_foreach (themes, iter, theme) {
 		if (!len || !strncmp (str, theme, len)) {
-			r_line_completion_push_owned (&line->completion, strdup (theme));
+			r_line_completion_push (&line->completion, theme);
 		}
 	}
 	r_list_free (themes);
@@ -1380,7 +1380,7 @@ static bool find_e_opts(RLine *line) {
 	int n = strlen (p);
 	r_list_foreach (node->options, iter, option) {
 		if (!strncmp (option, p, n)) {
-			r_line_completion_push_weak (&line->completion, option);
+			r_line_completion_push (&line->completion, option);
 		}
 	}
 	line->completion.opt = true;
@@ -1481,7 +1481,7 @@ static bool find_autocomplete(RLine *line) {
 		int length = strlen (arg);
 		for (i = 0; i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
-				r_line_completion_push_weak (&line->completion, parent->subcmds[i]->cmd);
+				r_line_completion_push (&line->completion, parent->subcmds[i]->cmd);
 			}
 		}
 		break;
@@ -1609,7 +1609,9 @@ static int autocomplete(RLine *line) {
 						j += autocomplete_pfele (core, &line->completion, sdbkv_key (kv), pfx, j, p + 1);
 						break;
 					} else {
-						r_line_completion_push_owned (&line->completion, r_str_newf ("pf%s.%s", pfx, sdbkv_key (kv)));
+						char *s = r_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
+						r_line_completion_push (&line->completion, s);
+						free (s);
 					}
 				}
 			}
@@ -1634,7 +1636,7 @@ static int autocomplete(RLine *line) {
 			}
 			r_list_foreach (vars, iter, var) {
 				if (!strncmp (f_ptr, var->name, l_ptr - f_ptr)) {
-					r_line_completion_push_owned (&line->completion, strdup (var->name));
+					r_line_completion_push (&line->completion, var->name);
 				}
 			}
 			r_list_free (vars);
@@ -1649,7 +1651,7 @@ static int autocomplete(RLine *line) {
 				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
 					if (!strcmp (sdbkv_value (kv), "type") || !strcmp (sdbkv_value (kv), "enum")
 					|| !strcmp (sdbkv_value (kv), "struct")) {
-						r_line_completion_push_owned (&line->completion, strdup (sdbkv_key (kv)));
+						r_line_completion_push (&line->completion, sdbkv_key (kv));
 					}
 				}
 			}
@@ -1663,7 +1665,7 @@ static int autocomplete(RLine *line) {
 				int len = strlen (line->buffer.data + chr);
 				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
 					if (!strcmp (sdbkv_value (kv), "enum")) {
-						r_line_completion_push_owned (&line->completion, strdup (sdbkv_key (kv)));
+						r_line_completion_push (&line->completion, sdbkv_key (kv));
 					}
 				}
 			}
@@ -1674,7 +1676,7 @@ static int autocomplete(RLine *line) {
 				const char *key = core->rcmd->aliases.keys[i];
 				int len = strlen (line->buffer.data);
 				if (!len || !strncmp (line->buffer.data, key, len)) {
-					r_line_completion_push_owned (&line->completion, strdup (key));
+					r_line_completion_push (&line->completion, key);
 				}
 			}
 		} else if (!strncmp (line->buffer.data, "ts ", 3)
@@ -1693,7 +1695,7 @@ static int autocomplete(RLine *line) {
 				const char *key = sdbkv_key (kv);
 				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
 					if (!strncmp (sdbkv_value (kv), "struct", strlen ("struct") + 1)) {
-						r_line_completion_push_owned (&line->completion, strdup (key));
+						r_line_completion_push (&line->completion, key);
 					}
 				}
 			}
@@ -1727,7 +1729,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	const char *ptr;
 	RLine *rli = r_line_singleton ();
 	buf[0] = '\0';
-	r_line_completion_set_weak (&rli->completion, radare_argc, radare_argv);
+	r_line_completion_set (&rli->completion, radare_argc, radare_argv);
  	rli->completion.run = autocomplete;
 	ptr = r_line_readline ();
 	if (!ptr) {

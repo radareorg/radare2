@@ -879,13 +879,8 @@ typedef int (*RLineCallback)(RLine *line);
 
 typedef struct r_line_comp_t {
 	bool opt;
-
-	// private! use r_line_completion_argc(), r_line_completion_argv()
-	int argc;
-	const char **argv; // weak reference to a whole list, if NULL, args will be used
+	size_t args_limit;
 	RPVector args; /* <char *> */
-	bool args_weak; // whether args are weak refs or should be freed on clear
-
 	RLineCallback run;
 } RLineCompletion;
 
@@ -950,22 +945,11 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHis
 R_API int cmd_history_up(RLine *line);
 R_API int cmd_history_down(RLine *line);
 
-R_API void r_line_completion_init(RLineCompletion *completion);
+R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit);
 R_API void r_line_completion_fini(RLineCompletion *completion);
-R_API void r_line_completion_push_owned(RLineCompletion *completion, char *str);
-R_API void r_line_completion_push_weak(RLineCompletion *completion, const char *str);
-R_API void r_line_completion_set_weak(RLineCompletion *completion, int argc, const char **argv);
+R_API void r_line_completion_push(RLineCompletion *completion, const char *str);
+R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
 R_API void r_line_completion_clear(RLineCompletion *completion);
-
-static inline const char **r_line_completion_argv(RLineCompletion *completion, R_NONNULL int *argc) {
-	if (completion->argv) {
-		*argc = completion->argc;
-		return completion->argv;
-	} else {
-		*argc = r_pvector_len (&completion->args);
-		return completion->args.v.a;
-	}
-}
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 

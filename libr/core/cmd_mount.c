@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 // pancake */
 
-#define ms_argc (sizeof (ms_argv)/sizeof(const char*))
+#define ms_argc (sizeof (ms_argv) / sizeof(const char*) - 1)
 static const char *ms_argv[] = {
 	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
 };
@@ -115,7 +115,7 @@ static char **getFilesFor(RLine *line, const char *path, int *ac) {
 
 static int ms_autocomplete(RLine *line) {
 	const char *data = line->buffer.data;
-	r_line_completion_set_weak (&line->completion, ms_argc, ms_argv);
+	r_line_completion_set (&line->completion, ms_argc, ms_argv);
 	if (!strncmp (data, "ls ", 3)
 		|| !strncmp (data, "cd ", 3)
 		|| !strncmp (data, "cat ", 4)
@@ -126,7 +126,7 @@ static int ms_autocomplete(RLine *line) {
 			int tmp_argc = 0;
 			// TODO: handle abs vs rel
 			char **tmp_argv = getFilesFor (line, file, &tmp_argc);
-			r_line_completion_set_weak (&line->completion, tmp_argc, (const char **)tmp_argv);
+			r_line_completion_set (&line->completion, tmp_argc, (const char **)tmp_argv);
 		}
 		return true;
 	}
@@ -398,7 +398,7 @@ static int cmd_mount(void *data, const char *_input) {
 			RLineCompletion c;
 			memcpy (&c, &rli->completion, sizeof (c));
 			rli->completion.run = ms_autocomplete;
-			r_line_completion_set_weak (&rli->completion, ms_argc, ms_argv);
+			r_line_completion_set (&rli->completion, ms_argc, ms_argv);
 			r_fs_shell_prompt (&shell, core->fs, input);
 			free (cwd);
 			memcpy (&rli->completion, &c, sizeof (c));
