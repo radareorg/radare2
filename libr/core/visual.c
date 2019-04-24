@@ -1177,7 +1177,7 @@ R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs)
 	return start_addr;
 }
 
-R_API int offset_history_up(RLine *line) {
+R_API int r_line_hist_offset_up(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
 	if (line->offset_hist_index <= -undo->undos) {
@@ -1198,7 +1198,7 @@ R_API int offset_history_up(RLine *line) {
 	return true;
 }
 
-R_API int offset_history_down(RLine *line) {
+R_API int r_line_hist_offset_down(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
 	if (line->offset_hist_index >= undo->redos) {
@@ -1230,7 +1230,9 @@ R_API void r_core_visual_offset(RCore *core) {
 
 	backup_current_addr (core, &addr, &bsze, &newaddr);
 	core->cons->line->offset_prompt = true;
-	r_line_set_hist_callback (core->cons->line, &offset_history_up, &offset_history_down);
+	r_line_set_hist_callback (core->cons->line,
+		&r_line_hist_offset_up,
+		&r_line_hist_offset_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
 	if (r_cons_fgets (buf + 2, sizeof (buf) - 3, 0, NULL) > 0) {
@@ -1244,7 +1246,7 @@ R_API void r_core_visual_offset(RCore *core) {
 			restore_current_addr (core, addr, bsze, newaddr);
 		}
 	}
-	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	core->cons->line->offset_prompt = false;
 }
 
@@ -1639,19 +1641,21 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		}
 		return;
 	}
-	if (PIDX == R_CORE_VISUAL_MODE_DB && core->seltab == 0) {
-		int w = r_config_get_i (core->config, "hex.cols");
-		if (w < 1) {
-			w = 16;
-		}
-		r_config_set_i (core->config, "stack.delta",
-			r_config_get_i (core->config, "stack.delta") - w);
-		return;
-	}
-	if (PIDX == R_CORE_VISUAL_MODE_DB && core->seltab == 1) {
+	if (PIDX == R_CORE_VISUAL_MODE_DB) {
 		const int cols = core->dbg->regcols;
-		p->cur += cols > 0? cols: 3;
-		return;
+		int w = r_config_get_i (core->config, "hex.cols");
+		switch (core->seltab) {
+		case 0:
+			if (w < 1) {
+				w = 16;
+			}
+			r_config_set_i (core->config, "stack.delta",
+					r_config_get_i (core->config, "stack.delta") - w);
+			return;
+		case 1:
+			p->cur += cols > 0? cols: 3;
+			return;
+		}
 	}
 	if (p->row_offsets) {
 		// FIXME: cache the current row
@@ -1724,7 +1728,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		p->cur -= cols > 0? cols: 4;
 		return;
 	}
-	if (p->row_offsets != NULL) {
+	if (p->row_offsets) {
 		int delta, prev_sz;
 
 		// FIXME: cache the current row

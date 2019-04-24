@@ -1986,7 +1986,7 @@ static int openFileCb(void *user) {
 	r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
 	addCmdfPanel (core, "open file: ", "o %s");
 	core->cons->line->file_prompt = false;
-	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	return 0;
 }
 
