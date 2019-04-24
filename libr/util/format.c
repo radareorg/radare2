@@ -1550,19 +1550,26 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	} else {
 		args = strdup ("");
 	}
+
+	i = 0;
+	if (fmt[i] == '{') {
+		char *end = strchr (fmt + i + 1, '}');
+		if (!end) {
+			eprintf ("No end curly bracket.\n");
+			free (o);
+			free (args);
+			return -1;
+		}
+		*end = '\0';
+		times = r_num_math (NULL, fmt + i + 1);
+		fmt = end + 1;
+		i = 0;
+	}
 	if (fmt[0] == '0') {
 		mode |= R_PRINT_UNIONMODE;
 		fmt++;
 	} else {
 		mode &= ~R_PRINT_UNIONMODE;
-	}
-
-	i = 0;
-	if (IS_DIGIT (fmt[i])) {
-		times = atoi (fmt);
-		while (IS_DIGIT(fmt[i])) {
-			i++;
-		}
 	}
 
 	int words = r_str_word_set0_stack (args);
