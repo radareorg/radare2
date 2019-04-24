@@ -941,8 +941,8 @@ R_API int r_line_hist_list(void);
 R_API const char *r_line_hist_get(int n);
 
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);
-R_API int cmd_history_up(RLine *line);
-R_API int cmd_history_down(RLine *line);
+R_API int r_line_hist_cmd_up(RLine *line);
+R_API int r_line_hist_cmd_down(RLine *line);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 

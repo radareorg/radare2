@@ -158,7 +158,8 @@ static const char *help_msg_panels[] = {
 	"d",        "define in the current address. Same as Vd",
 	"D",        "show disassembly in the current panel",
 	"e",        "change title and command of current panel",
-	"g",        "show graph in the current panel",
+	"g",        "go/seek to given offset",
+	"G",        "show graph in the current panel",
 	"i",        "insert hex",
 	"hjkl",     "move around (left-down-up-right)",
 	"J",        "scroll panels down by page",
@@ -168,7 +169,6 @@ static const char *help_msg_panels[] = {
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
 	"nN",       "create new panel with given command",
-	"o",        "go/seek to given offset",
 	"pP",       "seek to next or previous scr.nkey",
 	"q",        "quit, back to visual mode",
 	"r",        "toggle callhints/jmphints/leahints",
@@ -1907,6 +1907,16 @@ static bool checkPanelNum(RPanels *panels) {
 static void buildPanelParam(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache) {
 	RPanelModel *m = p->model;
 	RPanelView *v = p->view;
+	m->cache = cache;
+	m->type = PANEL_TYPE_DEFAULT;
+	m->rotate = 0;
+	v->curpos = 0;
+	m->addr = core->offset;
+	m->rotateCb = NULL;
+	setCmdStrCache (p, NULL);
+	setReadOnly(p, NULL);
+	m->funcName = NULL;
+	v->refresh = true;
 	if (title) {
 		m->title = r_str_dup (m->title, title);
 		if (cmd) {
@@ -1921,16 +1931,6 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 		m->title = r_str_dup (m->title, "");
 		m->cmd = r_str_dup (m->cmd, "");
 	}
-	m->cache = cache;
-	m->type = PANEL_TYPE_DEFAULT;
-	m->rotate = 0;
-	v->curpos = 0;
-	m->addr = core->offset;
-	m->rotateCb = NULL;
-	setCmdStrCache (p, NULL);
-	setReadOnly(p, NULL);
-	m->funcName = NULL;
-	v->refresh = true;
 	if (R_STR_ISNOTEMPTY (m->cmd)) {
 		setdcb (p);
 		setrcb (core->panels, p);
@@ -1986,7 +1986,7 @@ static int openFileCb(void *user) {
 	r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
 	addCmdfPanel (core, "open file: ", "o %s");
 	core->cons->line->file_prompt = false;
-	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	return 0;
 }
 
@@ -3592,6 +3592,17 @@ static int loadSavedPanelsLayout(RCore* core, bool temp) {
 		p->view->pos.w = atoi (w);
 		p->view->pos.h = atoi (h);
 		buildPanelParam(core, p, title, cmd, cache);
+		//TODO: Super hacky and refactoring is needed
+		if (r_str_endswith (cmd, "Help")) {
+			p->model->title = r_str_dup (p->model->title, "Help");
+			p->model->cmd = r_str_dup (p->model->cmd, "Help");
+			RStrBuf *rsb = r_strbuf_new (NULL);
+			r_core_visual_append_help (rsb, "Visual Ascii Art Panels", help_msg_panels);
+			if (!rsb) {
+				return 0;
+			}
+			setReadOnly (p, r_strbuf_drain (rsb));
+		}
 		cfg += strlen (cfg) + 1;
 	}
 	free (parsedConfig);
@@ -3646,33 +3657,35 @@ static void toggleCache (RPanel *p) {
 }
 
 static void showHelp(RCore *core, RPanelsMode mode) {
-	RStrBuf *p = r_strbuf_new (NULL);
-	if (!p) {
-		return;
-	}
-	r_cons_clear00 ();
-	const char *title;
+	const char *title, *cmd;
 	const char **msg;
 	switch (mode) {
 	case PANEL_MODE_WINDOW:
 		title = "Panels Window mode help";
+		cmd = "Window Mode Help";
 		msg = help_msg_panels_window;
 		break;
 	case PANEL_MODE_ZOOM:
-		title = "Panels Zoom mode help";
-		msg = help_msg_panels_zoom;
-		break;
+		{
+			RStrBuf *p = r_strbuf_new (NULL);
+			if (!p) {
+				return;
+			}
+			r_cons_clear00 ();
+			title = "Panels Zoom mode help";
+			msg = help_msg_panels_zoom;
+			r_core_visual_append_help (p, title, msg);
+			(void)r_cons_less_str (r_strbuf_get (p), "?");
+			r_strbuf_free (p);
+			return;
+		}
 	default:
 		title = "Visual Ascii Art Panels";
+		cmd = "Help";
 		msg = help_msg_panels;
 		break;
 	}
-	r_core_visual_append_help (p, title, msg);
-	int ret = r_cons_less_str (r_strbuf_get (p), "?");
-	r_strbuf_free (p);
-	if (ret == '?') {
-		r_core_visual_hud (core);
-	}
+	addHelpPanel (core, msg, title, cmd);
 }
 
 static void insertValue(RCore *core) {
@@ -4269,6 +4282,9 @@ repeat:
 		break;
 	case '_':
 		hudstuff (core);
+		break;
+	case '\\':
+		r_core_visual_hud (core);
 		break;
 	case 'x':
 		r_core_visual_refs (core, true, true);

@@ -2334,10 +2334,37 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case 'c': // "drc"
 		// todo: set flag values with drc zf=1
-		{
+		if (str[1] == '=') {
+			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+			if (rf) {
+				r_cons_printf ("s:%d z:%d c:%d o:%d p:%d\n",
+						rf->s, rf->z, rf->c, rf->o, rf->p);
+				free (rf);
+			}
+		} else if (strchr (str, '=')) {
+			char *a = strdup (r_str_trim_ro (str + 1));
+			char *eq = strchr (a, '=');
+			if (eq) {
+				*eq++ = 0;
+				char *k = r_str_trim (a);
+				bool v = !strcmp (eq, "true") || atoi (eq);
+				int type = r_reg_cond_from_string (k);
+				if (type != -1) {
+					RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+					if (rf) {
+						r_reg_cond_bits_set (core->dbg->reg, type, rf, v);
+						r_reg_cond_apply (core->dbg->reg, rf);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+						free (rf);
+					}
+				} else {
+					eprintf ("Unknown condition register\n");
+				}
+			}
+			free (a);
+		} else {
 			RRegItem *r;
-			const char *name = str+1;
-			while (*name==' ') name++;
+			const char *name = r_str_trim_ro (str + 1);
 			if (*name && name[1]) {
 				r = r_reg_cond_get (core->dbg->reg, name);
 				if (r) {
@@ -2356,8 +2383,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 				if (rf) {
-					r_cons_printf ("| s:%d z:%d c:%d o:%d p:%d\n",
-							rf->s, rf->z, rf->c, rf->o, rf->p);
 					if (*name=='=') {
 						for (i=0; i<R_REG_COND_LAST; i++) {
 							r_cons_printf ("%s:%d ",

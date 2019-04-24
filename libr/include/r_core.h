@@ -426,6 +426,7 @@ R_API int r_core_visual_hud(RCore *core);
 R_API void r_core_visual_jump(RCore *core, ut8 ch);
 R_API void r_core_visual_disasm_up(RCore *core, int *cols);
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols);
+R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size);
 R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str);
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
@@ -803,8 +804,8 @@ R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
 R_API void r_core_syscmd_mkdir(const char *dir);
 
-R_API int offset_history_up(RLine *line);
-R_API int offset_history_down(RLine *line);
+R_API int r_line_hist_offset_up(RLine *line);
+R_API int r_line_hist_offset_down(RLine *line);
 
 // TODO : move into debug or syscall++
 R_API char *cmd_syscall_dostr(RCore *core, int num, ut64 addr);

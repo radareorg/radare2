@@ -1031,7 +1031,7 @@ static int callback_foreach_kv (void *user, const char *k, const char *v) {
 	return 1;
 }
 
-R_API int sdbshell_history_up(RLine *line) {
+R_API int r_line_hist_sdb_up(RLine *line) {
 	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->n) {
 		return false;
 	}
@@ -1041,7 +1041,7 @@ R_API int sdbshell_history_up(RLine *line) {
 	return true;
 }
 
-R_API int sdbshell_history_down(RLine *line) {
+R_API int r_line_hist_sdb_down(RLine *line) {
 	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->p) {
 		return false;
 	}
@@ -1152,7 +1152,7 @@ static int cmd_kuery(void *data, const char *input) {
 			r_list_append (line->sdbshell_hist, r_str_new ("\0"));
 		}
 		RList *sdb_hist = line->sdbshell_hist;
-		r_line_set_hist_callback (line, &sdbshell_history_up, &sdbshell_history_down);
+		r_line_set_hist_callback (line, &r_line_hist_sdb_up, &r_line_hist_sdb_down);
 		for (;;) {
 			r_line_set_prompt (p);
 			if (r_cons_fgets (buf, buflen, 0, NULL) < 1) {
@@ -1172,7 +1172,7 @@ static int cmd_kuery(void *data, const char *input) {
 				r_cons_println (out);
 			}
 		}
-		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 		break;
 	case 'o':
 		if (r_sandbox_enable (0)) {

@@ -257,7 +257,7 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistor
 	return 1;
 }
 
-R_API int cmd_history_up(RLine *line) {
+R_API int r_line_hist_cmd_up(RLine *line) {
 	if (line->hist_up) {
 		return line->hist_up (line->user);
 	}
@@ -272,7 +272,7 @@ R_API int cmd_history_up(RLine *line) {
 	return false;
 }
 
-R_API int cmd_history_down(RLine *line) {
+R_API int r_line_hist_cmd_down(RLine *line) {
 	if (line->hist_down) {
 		return line->hist_down (line->user);
 	}
@@ -326,14 +326,14 @@ R_API int r_line_hist_add(const char *line) {
 
 static int r_line_hist_up() {
 	if (!I.cb_history_up) {
-		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
+		r_line_set_hist_callback (&I, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	}
 	return I.cb_history_up (&I);
 }
 
 static int r_line_hist_down() {
 	if (!I.cb_history_down) {
-		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
+		r_line_set_hist_callback (&I, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	}
 	return I.cb_history_down (&I);
 }

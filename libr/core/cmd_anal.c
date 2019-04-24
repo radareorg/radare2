@@ -200,8 +200,6 @@ static const char *help_detail_ae[] = {
 	"POP", "", "drops last element in the esil stack",
 	"DUP", "", "duplicate last value in stack",
 	"NUM", "", "evaluate last item in stack to number",
-	"PICK", "", "pick Nth element in stack",
-	"RPICK", "", "pick Nth element in reversed stack",
 	"SWAP", "", "swap last two values in stack",
 	"TRAP", "", "stop execution",
 	"BITS", "", "16,BITS  # change bits, useful for arm/thumb",
@@ -5647,6 +5645,10 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					if (!f || !strstr (f->name, "imp.")) {
 						isValidCall = false;
 					}
+				}
+				RBinReloc *rel = r_core_getreloc (core, addr, op.size);
+				if (rel && (rel->import || rel->symbol)) {
+					isValidCall = false;
 				}
 				if (isValidCall) {
 #if JAYRO_03

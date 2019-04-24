@@ -169,7 +169,10 @@ R_API int r_reg_type_by_name(const char *str);
 R_API int r_reg_get_name_idx(const char *type);
 
 R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name);
+R_API void r_reg_cond_apply(RReg *r, RRegFlags *f);
+R_API bool r_reg_cond_set(RReg *reg, const char *name, bool val);
 R_API int r_reg_cond_get_value(RReg *r, const char *name);
+R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v);
 R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f);
 R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *);
 R_API int r_reg_cond(RReg *r, int type);

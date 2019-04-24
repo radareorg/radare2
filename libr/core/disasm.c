@@ -129,6 +129,7 @@ typedef struct {
 	bool show_emu_ssa;
 	bool show_section;
 	int show_section_col;
+	bool flags_inline;
 	bool show_section_perm;
 	bool show_section_name;
 	bool show_symbols;
@@ -610,7 +611,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.xrefs.max");
-	ds->maxflags = r_config_get_i (core->config, "asm.maxflags");
+	ds->maxflags = r_config_get_i (core->config, "asm.flags.limit");
+	ds->flags_inline = r_config_get_i (core->config, "asm.flags.inline");
 	ds->asm_types = r_config_get_i (core->config, "asm.types");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
@@ -1953,6 +1955,7 @@ static int flagCmp(const void *a, const void *b) {
 	return strcmp (fa->name, fb->name);
 }
 
+#define printPre (outline || !*comma)
 static void ds_show_flags(RDisasmState *ds) {
 	//const char *beginch;
 	RFlagItem *flag;
@@ -1969,6 +1972,8 @@ static void ds_show_flags(RDisasmState *ds) {
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
 	int count = 0;
+	bool outline = !ds->flags_inline;
+	const char *comma = "";
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
@@ -1976,8 +1981,10 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		bool no_fcn_lines = (f && f->addr == flag->offset);
 		if (ds->maxflags && count >= ds->maxflags) {
-			ds_pre_xrefs (ds, no_fcn_lines);
-			r_cons_printf ("...\n");
+			if (printPre) {
+				ds_pre_xrefs (ds, no_fcn_lines);
+			}
+			r_cons_printf ("...");
 			break;
 		}
 		count++;
@@ -1997,17 +2004,21 @@ static void ds_show_flags(RDisasmState *ds) {
 				continue;
 			}
 		}
+		if (outline || !*comma) {
 			ds_begin_line (ds);
+		}
 
 		bool fake_flag_marks = (!ds->show_offset && ds->show_marks);
-		if (ds->show_flgoff) {
-			ds_pre_line (ds);
-			ds_print_offset (ds);
-			if (!fake_flag_marks) {
-				r_cons_printf (" ");
+		if (printPre) {
+			if (ds->show_flgoff) {
+				ds_pre_line (ds);
+				ds_print_offset (ds);
+				if (!fake_flag_marks) {
+					r_cons_printf (" ");
+				}
+			} else {
+				ds_pre_xrefs (ds, no_fcn_lines);
 			}
-		} else {
-			ds_pre_xrefs (ds, no_fcn_lines);
 		}
 
 		if (ds->show_color) {
@@ -2027,7 +2038,9 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 
 		if (!ds->show_flgoff || fake_flag_marks) {
-			r_cons_printf (";-- ");
+			if (printPre) {
+				r_cons_printf (";-- ");
+			}
 		}
 
 		if (ds->asm_demangle && flag->realname) {
@@ -2056,16 +2069,32 @@ static void ds_show_flags(RDisasmState *ds) {
 				}
 				if (name) {
 					r_str_ansi_filter (name, NULL, NULL, -1);
-					r_cons_printf ("%s:", name);
+					if (outline) {
+						r_cons_printf ("%s:", name);
+					} else {
+						r_cons_printf ("%s%s", comma, flag->name);
+					}
 					R_FREE (name);
 				}
 			}
 		} else {
-			r_cons_printf ("%s:", flag->name);
+			if (outline) {
+				r_cons_printf ("%s:", flag->name);
+			} else {
+				r_cons_printf ("%s%s", comma, flag->name);
+			}
 		}
 		if (ds->show_color) {
 			r_cons_strcat (Color_RESET);
 		}
+		if (outline) {
+			ds_newline (ds);
+		} else {
+			comma = ", ";
+		}
+	}
+	if (!outline && *comma) {
+		r_cons_printf (":");
 		ds_newline (ds);
 	}
 	r_list_free (uniqlist);
@@ -3800,42 +3829,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 #endif
 }
 
-struct getreloc_t {
-	ut64 vaddr;
-	int size;
-};
-
-static int getreloc_tree(const void *user, const RBNode *n) {
-	struct getreloc_t *gr = (struct getreloc_t *)user;
-	const RBinReloc *r = container_of (n, const RBinReloc, vrb);
-	if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
-		return 0;
-	}
-
-	if (gr->vaddr > r->vaddr) {
-		return 1;
-	}
-	if (gr->vaddr < r->vaddr) {
-		return -1;
-	}
-	return 0;
-}
-
-// TODO: Use sdb in rbin to accelerate this
-// we shuold use aligned reloc addresses instead of iterating all of them
-static RBinReloc *getreloc(RCore *core, ut64 addr, int size) {
-	if (size < 1 || addr == UT64_MAX) {
-		return NULL;
-	}
-	RBNode *relocs = r_bin_get_relocs (core->bin);
-	if (!relocs) {
-		return NULL;
-	}
-	struct getreloc_t gr = { .vaddr = addr, .size = size };
-	RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree);
-	return res? container_of (res, RBinReloc, vrb): NULL;
-}
-
 static void ds_print_relocs(RDisasmState *ds) {
 	char *demname = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
@@ -3844,7 +3837,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 	RCore *core = ds->core;
 	const char *lang = r_config_get (core->config, "bin.lang");
 	bool demangle = r_config_get_i (core->config, "asm.demangle");
-	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+	RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
 		char *ll = r_cons_lastline (&cstrlen);
@@ -4621,6 +4614,7 @@ static char *_find_next_number(char *op) {
 	return NULL;
 }
 
+// TODO: this should be moved into r_parse
 static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	RAnal *anal = ds->core->anal;
 	RFlag *f = ds->core->flags;
@@ -4630,7 +4624,12 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		return str;
 	}
 	int optype = ds->analop.type & 0xFFFF;
-	if (optype < R_ANAL_OP_TYPE_JMP || optype >= R_ANAL_OP_TYPE_RET) {
+	switch (optype) {
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		break;
+	default:
 		return str;
 	}
 	ut64 addr = ds->analop.jump;
@@ -4639,7 +4638,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
-		RBinReloc *rel = getreloc (ds->core, addr, ds->analop.size);
+		RBinReloc *rel = r_core_getreloc (ds->core, addr, ds->analop.size);
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = rel->import->name;
@@ -5654,7 +5653,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		pj_ks (pj, "family", r_anal_op_family_to_string (ds->analop.family));
 		pj_ks (pj, "type", r_anal_optype_to_string (ds->analop.type));
 		// indicate a relocated address
-		RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
+		RBinReloc *rel = r_core_getreloc (core, ds->at, ds->analop.size);
 		// reloc is true if address in reloc table
 		pj_kb (pj, "reloc", rel);
 		// wanted the numerical values of the type information
