@@ -67,9 +67,10 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str) 
 }
 
 R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv) {
-	r_return_if_fail (completion);
+	r_return_if_fail (completion && (argc >= 0));
 	r_line_completion_clear (completion);
 	size_t count = R_MIN (argc, completion->args_limit);
+	r_pvector_reserve (&completion->args, count);
 	int i;
 	for (i = 0; i < count; i++) {
 		r_line_completion_push (completion, argv[i]);
