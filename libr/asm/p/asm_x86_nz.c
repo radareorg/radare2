@@ -1668,12 +1668,17 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op){
 		}
 		data[l++] = 0x8d;
 		if (op->operands[1].regs[0] == X86R_UNDEFINED) {
-			int high = 0xff00 & op->operands[1].offset;
+			// RIP-relative LEA
+			ut64 offset = op->operands[1].offset - a->pc;
+			if (data[0] == 0x48) {
+				offset -= 7;
+			}
+			ut32 high = 0xff00 & offset;
 			data[l++] = op->operands[0].reg << 3 | 5;
-			data[l++] = op->operands[1].offset;
+			data[l++] = offset;
 			data[l++] = high >> 8;
-			data[l++] = op->operands[1].offset >> 16;
-			data[l++] = op->operands[1].offset >> 24;
+			data[l++] = offset >> 16;
+			data[l++] = offset >> 24;
 			return l;
 		} else {
 			reg = op->operands[0].reg;

@@ -457,17 +457,30 @@ static const char *vas_name(arm64_vas vas) {
 		return "2s";
 	case ARM64_VAS_4S:
 		return "4s";
-	case ARM64_VAS_1D:
-		return "1d";
 	case ARM64_VAS_2D:
 		return "2d";
+	case ARM64_VAS_1D:
+		return "1d";
 	case ARM64_VAS_1Q:
 		return "1q";
+#if CS_API_MAJOR > 4
+	case ARM64_VAS_1B:
+		return "8b";
+	case ARM64_VAS_4B:
+		return "8b";
+	case ARM64_VAS_2H:
+		return "2h";
+	case ARM64_VAS_1H:
+		return "1h";
+	case ARM64_VAS_1S:
+		return "1s";
+#endif
 	default:
 		return "";
 	}
 }
 
+#if CS_API_MAJOR == 4
 static const char *vess_name(arm64_vess vess) {
 	switch (vess) {
 	case ARM64_VESS_B:
@@ -482,6 +495,7 @@ static const char *vess_name(arm64_vess vess) {
 		return "";
 	}
 }
+#endif
 
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
@@ -595,9 +609,11 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		if (op->vas != ARM64_VAS_INVALID) {
 			r_strbuf_appendf (buf, ",\"vas\":\"%s\"", vas_name (op->vas));
 		}
+#if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
 			r_strbuf_appendf (buf, ",\"vess\":\"%s\"", vess_name (op->vess));
 		}
+#endif
 		r_strbuf_append (buf, "}");
 	}
 	r_strbuf_append (buf, "]");
@@ -694,8 +710,7 @@ static int regsize64(cs_insn *insn, int n) {
 #define REGSIZE64(x) regsize64 (insn, x)
 
 // return postfix
-const char* arm_prefix_cond(RAnalOp *op, int cond_type)
-{
+const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 	const char *close_cond[2];
 	close_cond[0] = "\0";
 	close_cond[1] = ",}\0";
@@ -2233,6 +2248,43 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	}
 
 	switch (insn->id) {
+#if CS_API_MAJOR > 4
+	case ARM64_INS_PACDA:
+	case ARM64_INS_PACDB:
+	case ARM64_INS_PACDZA:
+	case ARM64_INS_PACDZB:
+	case ARM64_INS_PACGA:
+	case ARM64_INS_PACIA:
+	case ARM64_INS_PACIA1716:
+	case ARM64_INS_PACIASP:
+	case ARM64_INS_PACIAZ:
+	case ARM64_INS_PACIB:
+	case ARM64_INS_PACIB1716:
+	case ARM64_INS_PACIBSP:
+	case ARM64_INS_PACIBZ:
+	case ARM64_INS_PACIZA:
+	case ARM64_INS_PACIZB:
+	case ARM64_INS_AUTDA:
+	case ARM64_INS_AUTDB:
+	case ARM64_INS_AUTDZA:
+	case ARM64_INS_AUTDZB:
+	case ARM64_INS_AUTIA:
+	case ARM64_INS_AUTIA1716:
+	case ARM64_INS_AUTIASP:
+	case ARM64_INS_AUTIAZ:
+	case ARM64_INS_AUTIB:
+	case ARM64_INS_AUTIB1716:
+	case ARM64_INS_AUTIBSP:
+	case ARM64_INS_AUTIBZ:
+	case ARM64_INS_AUTIZA:
+	case ARM64_INS_AUTIZB:
+	case ARM64_INS_XPACD:
+	case ARM64_INS_XPACI:
+	case ARM64_INS_XPACLRI:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->family = R_ANAL_OP_FAMILY_PAC;
+		break;
+#endif
 	case ARM64_INS_SVC:
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = IMM64(0);
@@ -2472,9 +2524,35 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 			}
 		}
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_BLRAA:
+	case ARM64_INS_BLRAAZ:
+	case ARM64_INS_BLRAB:
+	case ARM64_INS_BLRABZ:
+		op->family = R_ANAL_OP_FAMILY_PAC;
+		break;
+	case ARM64_INS_BRAA:
+	case ARM64_INS_BRAAZ:
+	case ARM64_INS_BRAB:
+	case ARM64_INS_BRABZ:
+		op->family = R_ANAL_OP_FAMILY_PAC;
+		break;
+	case ARM64_INS_LDRAA:
+	case ARM64_INS_LDRAB:
+		op->family = R_ANAL_OP_FAMILY_PAC;
+		break;
+	case ARM64_INS_RETAA:
+	case ARM64_INS_RETAB:
+	case ARM64_INS_ERETAA:
+	case ARM64_INS_ERETAB:
+		op->family = R_ANAL_OP_FAMILY_PAC;
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
+#endif
 	case ARM64_INS_ERET:
 		op->family = R_ANAL_OP_FAMILY_PRIV;
-		/* fallthru */
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
 	case ARM64_INS_RET:
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
@@ -3112,7 +3190,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 	} else {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = r_str_newf ("%s%s%s",
+				insn->mnemonic,
+				insn->op_str[0]?" ":"",
+				insn->op_str);
+		}
 		//bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
 		bool thumb = a->bits == 16;
 		op->size = insn->size;

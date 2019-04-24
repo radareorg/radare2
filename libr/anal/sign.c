@@ -678,7 +678,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 	r_return_val_if_fail (a && name && comment, false);
 
 	RSignItem *it = r_sign_item_new ();
-	if (it) {
+	if (!it) {
 		return false;
 	}
 	it->name = r_str_new (name);
@@ -1576,10 +1576,9 @@ static int hashMatchCB(RSignItem *it, void *user) {
 		return 1;
 	}
 
-	char *digest_hex = NULL;
+	char *digest_hex = r_sign_calc_bbhash (ctx->anal, ctx->fcn);
 	bool retval = false;
-	digest_hex = r_sign_calc_bbhash (ctx->anal, ctx->fcn);
-	if (strcmp (hash->bbhash, digest_hex)) {
+	if (digest_hex && strcmp (hash->bbhash, digest_hex)) {
 		goto beach;
 	}
 

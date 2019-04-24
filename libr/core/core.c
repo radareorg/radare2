@@ -117,6 +117,42 @@ static void r_core_debug_syscall_hit(RCore *core) {
 	}
 }
 
+struct getreloc_t {
+        ut64 vaddr;
+        int size;
+};
+
+static int getreloc_tree(const void *user, const RBNode *n) {
+        struct getreloc_t *gr = (struct getreloc_t *)user;
+        const RBinReloc *r = container_of (n, const RBinReloc, vrb);
+        if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
+                return 0;
+        }
+
+        if (gr->vaddr > r->vaddr) {
+                return 1;
+        }
+        if (gr->vaddr < r->vaddr) {
+                return -1;
+        }
+        return 0;
+}
+
+// TODO: Use sdb in rbin to accelerate this
+// we shuold use aligned reloc addresses instead of iterating all of them
+R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
+        if (size < 1 || addr == UT64_MAX) {
+                return NULL;
+        }
+        RBNode *relocs = r_bin_get_relocs (core->bin);
+        if (!relocs) {
+                return NULL;
+        }
+        struct getreloc_t gr = { .vaddr = addr, .size = size };
+        RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree);
+        return res? container_of (res, RBinReloc, vrb): NULL;
+}
+
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
  * if there's no valid shortcut. When is_asmqjmps_letter is true, the string
  * should be of the form XYZWu, where XYZW are uppercase letters and u is a
@@ -817,7 +853,7 @@ static const char *radare_argv[] = {
 	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!vala", "#!pipe",
-	"*?", "*",
+	"*?", "*", "$",
 	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
 	"_?", "_",
 	"=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:",
@@ -872,7 +908,7 @@ static const char *radare_argv[] = {
 	"ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj", "axF",
 	"axt", "axf", "ax.", "axff", "axffj", "axs",
 	"b?", "b", "b+", "b-", "bf", "bm",
-	"c?", "c", "c1", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
+	"c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
 	"cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud",
 	"cv", "cv1", "cv2", "cv4", "cv8",
 	"cV", "cV1", "cV2", "cV4", "cV8",
@@ -1821,6 +1857,17 @@ static int autocomplete(RLine *line) {
 			ls_free (l);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "$", 1)) {
+			int i, j = 0;
+			for (i = 0; i < core->rcmd->aliases.count; i++) {
+				const char *key = core->rcmd->aliases.keys[i];
+				int len = strlen (line->buffer.data);
+				if (!len || !strncmp (line->buffer.data, key, len)) {
+					tmp_argv[j++] = strdup (key);
+				}
+			}
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "ts ", 3)
 		|| !strncmp (line->buffer.data, "ta ", 3)
 		|| !strncmp (line->buffer.data, "tp ", 3)
@@ -1835,9 +1882,10 @@ static int autocomplete(RLine *line) {
 			int chr = (line->buffer.data[2] == ' ')? 3: 4;
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
+				const char *key = sdbkv_key (kv);
+				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
 					if (!strncmp (sdbkv_value (kv), "struct", strlen ("struct") + 1)) {
-						tmp_argv[i++] = strdup (sdbkv_key (kv));
+						tmp_argv[i++] = strdup (key);
 					}
 				}
 			}

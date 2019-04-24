@@ -10,6 +10,7 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
+static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
@@ -46,7 +47,7 @@ static const char *help_msg_pF[] = {
 
 static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
-	"prc", "", "print bytes as colors in palette",
+	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
 	"prg", "[?]", "print raw GUNZIPped block",
@@ -152,11 +153,20 @@ static const char *help_msg_at_at[] = {
 
 static const char *help_msg_at_at_at[] = {
 	"@@@", "", " # foreach offset+size iterator command:",
+	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
+	"x", " @@@b", "basic blocks of current function",
+	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
+	"x", " @@@C:cmd", "comments matching",
 	"x", " @@@i", "imports",
+	"x", " @@@r", "registers",
 	"x", " @@@s", "symbols",
 	"x", " @@@S", "sections",
+	"x", " @@@m", "io.maps",
+	"x", " @@@M", "dbg.maps (See ?$?~size)",
 	"x", " @@@f", "flags",
-	"x", " @@@F", "functions",
+	"x", " @@@f:hit*", "flags matching glob expression",
+	"x", " @@@F", "functions (set fcn size which may be incorrect if not linear)",
+	"x", " @@@F:glob", "functions matching glob expression",
 	"x", " @@@t", "threads",
 	"x", " @@@r", "regs",
 	// TODO: Add @@k sdb-query-expression-here
@@ -299,6 +309,7 @@ static const char *help_msg_pf[] = {
 	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
+	"pfc ", "fmt_name|fmt", "Show data using (named) format as C string",
 	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
 	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
 	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
@@ -449,7 +460,7 @@ static const char *help_msg_px[] = {
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
 	"pxA", "[?]", "show op analysis color map",
-	"pxb", "", "dump bits in hexdump form",
+	"pxb", "", "dump bits in hexdump form", // should be px1?
 	"pxc", "", "show hexdump with comments",
 	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
@@ -557,7 +568,7 @@ R_API int r_core_get_prc_cols(RCore *core) {
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
-	bool square = true; //false;
+	bool square = r_config_get_i (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
 	int cols = r_core_get_prc_cols (core);
@@ -567,6 +578,110 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	for (i = 0; i < len; i += cols) {
 		r_print_addr (core->print, core->offset + i);
+		for (j = i; j < i + cols; j ++) {
+			if (j >= len) {
+				break;
+			}
+			if (show_color) {
+				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
+				color = r_cons_pal_parse (str, NULL);
+				free (str);
+				if (show_cursor && core->print->cur == j) {
+					ch = '_';
+				} else {
+					ch = ' ';
+				}
+			} else {
+				color = strdup ("");
+				if (show_cursor && core->print->cur == j) {
+					ch = '_';
+				} else {
+					const int idx = ((float)block[j] / 255) * (strlen (chars) - 1);
+					ch = chars[idx];
+				}
+			}
+			if (show_unalloc &&
+			    !core->print->iob.is_valid_offset (core->print->iob.io, core->offset + j, false)) {
+				if (show_color) {
+					free (color);
+					color = strdup (Color_RESET);
+					ch = core->print->io_unalloc_ch;
+					if (ch == ' ') {
+						ch = '.';
+					}
+				} else {
+					ch = '?'; // deliberately ignores io.unalloc.ch
+				}
+			}
+			if (square) {
+				if (show_flags) {
+					RFlagItem *fi = r_flag_get_i (core->flags, core->offset + j);
+					if (fi) {
+						ch = fi->name[0];
+						ch2 = fi->name[1];
+					} else {
+						ch2 = ch;
+					}
+				} else {
+					ch2 = ch;
+				}
+				r_cons_printf ("%s%c%c", color, ch, ch2);
+			} else {
+				r_cons_printf ("%s%c", color, ch);
+			}
+			free (color);
+		}
+		if (show_color) {
+			r_cons_printf (Color_RESET);
+		}
+		r_cons_newline ();
+	}
+}
+
+static void cmd_prc_zoom(RCore *core, const char *input) {
+	const char *chars = " .,:;!O@#";
+	bool square = r_config_get_i (core->config, "scr.square");
+	int i, j;
+	char ch, ch2, *color;
+	int cols = r_core_get_prc_cols (core);
+	bool show_color = r_config_get_i (core->config, "scr.color");
+	bool show_flags = r_config_get_i (core->config, "asm.flags");
+	bool show_cursor = core->print->cur_enabled;
+	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	ut64 from = 0;
+	ut64 to = 0;
+	RIOMap* map;
+	RListIter *iter;
+	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
+	if (list && r_list_length (list) > 0) {
+		RListIter *iter1 = list->head;
+		RIOMap* map1 = iter1->data;
+		from = map1->itv.addr;
+		r_list_foreach (list, iter, map) {
+			to = r_itv_end (map->itv);
+		}
+	} else {
+		from = core->offset;
+		to = from + core->blocksize;
+	}
+
+	core->print->zoom->mode = (input && *input)? input[1]: 'e';
+	r_print_zoom_buf (core->print, core, printzoomcallback, from, to, len, len);
+	block = core->print->zoom->buf;
+	switch (core->print->zoom->mode) {
+	case 'f':
+		// scale buffer for proper visualization of small numbers as colors
+		for (i = 0; i < core->print->zoom->size; i++) {
+			block[i] *= 8;
+		}
+		break;
+	}
+
+	for (i = 0; i < len; i += cols) {
+		ut64 ea = core->offset + i;
+		r_print_addr (core->print, ea);
 		for (j = i; j < i + cols; j ++) {
 			if (j >= len) {
 				break;
@@ -1159,6 +1274,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		_input++;
 		mode = R_PRINT_VALUE | R_PRINT_MUSTSEE;
 		break;
+	case 'c': // "pfc"
+		_input++;
+		mode = R_PRINT_STRUCT;
+		break;
 	case 's': { // "pfs"
 		const char *val = NULL;
 		_input += 2;
@@ -1525,12 +1644,18 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		ebytes = bytes;
 		echars = chars;
 		hascolor = false;
+		ut64 ea = addr;
+		if (core->print->pava) {
+			ut64 va = r_io_p2v (core->io, addr);
+			if (va != UT64_MAX) {
+				ea = va;
+			}
+		}
 
-		// r_print_offset (core->print, addr + i, 0, 0, 0, 0, NULL);
 		if (usecolor) {
 			append (ebytes, core->cons->context->pal.offset);
 		}
-		ebytes += sprintf (ebytes, "0x%08"PFMT64x, addr);
+		ebytes += sprintf (ebytes, "0x%08"PFMT64x, ea);
 		if (usecolor) {
 			append (ebytes, Color_RESET);
 		}
@@ -1540,7 +1665,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			setcolor = true;
 			R_FREE (note[j]);
 
-			RAnalMetaItem *meta = r_meta_find_in (core->anal, addr + j,
+			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
+			RAnalMetaItem *meta = r_meta_find_in (core->anal, ea + j,
 					R_META_TYPE_FORMAT, R_META_WHERE_HERE);
 			if (meta && meta->type == R_META_TYPE_FORMAT && meta->from == addr + j) {
 				r_cons_printf (".format %s ; size=", meta->str);
@@ -3075,15 +3201,23 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
-		if (core->file && core->io) {
-			totalsize = r_io_fd_size (core->io, core->file->fd);
-			if ((st64) totalsize < 1) {
-				totalsize = UT64_MAX;
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
+			if (map) {
+				totalsize = map->addr_end - map->addr;
+				from = map->addr;
 			}
-		}
-		if (totalsize == UT64_MAX) {
-			eprintf ("Cannot determine file size\n");
-			goto beach;
+		} else {
+			if (core->file && core->io) {
+				totalsize = r_io_fd_size (core->io, core->file->fd);
+				if ((st64) totalsize < 1) {
+					totalsize = UT64_MAX;
+				}
+			}
+			if (totalsize == UT64_MAX) {
+				eprintf ("Cannot determine file size\n");
+				goto beach;
+			}
 		}
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
@@ -3091,15 +3225,17 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	RIOMap* map1 = r_list_first (list);
-	if (map1) {
-		from = map1->itv.addr;
-		r_list_foreach (list, iter, map) {
-			to = r_itv_end (map->itv);
+	if (!r_config_get_i (core->config, "cfg.debug")) {
+		RIOMap* map1 = r_list_first (list);
+		if (map1) {
+			from = map1->itv.addr;
+			r_list_foreach (list, iter, map) {
+				to = r_itv_end (map->itv);
+			}
+			totalsize = to - from;
+		} else {
+			from = core->offset;
 		}
-		totalsize = to - from;
-	} else {
-		from = core->offset;
 	}
 	if (nblocks < 1) {
 		nblocks = totalsize / blocksize;
@@ -3156,7 +3292,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 							break;
 						case 'z':
 							if ((IS_PRINTABLE (p[j]))) {
-								if (j < blocksize && p[j + 1] == 0) {
+								if ((j + 1) < blocksize && p[j + 1] == 0) {
 									k++;
 									j++;
 								}
@@ -3353,7 +3489,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 					break;
 				case 'z':
 					if ((IS_PRINTABLE (p[j]))) {
-						if (p[j + 1] == 0) {
+						if ((j + 1) < blocksize && p[j + 1] == 0) {
 							k++;
 							j++;
 						}
@@ -4059,7 +4195,7 @@ static const char* bits_to_c_code_fmtstr(int bits) {
 	}
 }
 
-static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w) {
+static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
 	const char *fmtstr;
 	int i, bits;
 
@@ -4092,7 +4228,7 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 	p->cb_printf ("\n};\n");
 }
 
-R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
+R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
 	int i, w = p->cols * 0.7;
 	if (w < 1) {
 		w = 1;
@@ -4674,11 +4810,24 @@ static int cmd_print(void *data, const char *input) {
 							if (pj) {
 								RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
 								char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+								char *dst2 = NULL;
+								RAnalOp *op = r_core_anal_op (core, refi->addr, R_ANAL_OP_MASK_BASIC);
+								RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
+								if (rel) {
+									if (rel && rel->import && rel->import->name) {
+										dst2 = rel->import->name;
+									} else if (rel && rel->symbol && rel->symbol->name) {
+										dst2 = rel->symbol->name;
+									}
+								} else {
+									dst2 = dst;
+								}
 								pj_o (pj);
-								pj_ks (pj, "dest", dst);
+								pj_ks (pj, "dest", dst2);
 								pj_kn (pj, "addr", refi->addr);
 								pj_kn (pj, "at", refi->at);
 								pj_end (pj);
+								r_anal_op_free (op);
 							} else {
 								char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
 								r_cons_printf ("%s", s);
@@ -5484,7 +5633,14 @@ l = use_blocksize;
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'c': // "prc" // color raw dump
-			cmd_prc (core, block, len);
+			if (input[2] == '?') {
+				r_cons_printf ("prc=e # colorblocks of entropy\n");
+				r_core_cmd0 (core, "pz?");
+			} else if (input[2] == '=') {
+				cmd_prc_zoom (core, input + 2);
+			} else {
+				cmd_prc (core, block, len);
+			}
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_pr);
@@ -5649,8 +5805,14 @@ l = use_blocksize;
 				char buf[32];
 				for (i = c = 0; i < len; i++, c++) {
 					if (c == 0) {
-						r_print_offset (core->print,
-							core->offset + i, 0, 0, 0, 0, NULL);
+						ut64 ea = core->offset + i;
+						if (core->print->pava) {
+							ut64 va = r_io_p2v (core->io, ea);
+							if (va != UT64_MAX) {
+								ea = va;
+							}
+						}
+						r_print_offset (core->print, ea, 0, 0, 0, 0, NULL);
 					}
 					r_str_bits (buf, core->block + i, 8, NULL);
 
@@ -6349,7 +6511,6 @@ l = use_blocksize;
 				r_print_zoom (core->print, core, printzoomcallback,
 					from, to, l, (int) maxsize);
 			}
-
 			if (oldmode) {
 				r_config_set (core->config, "zoom.byte", oldmode);
 			}

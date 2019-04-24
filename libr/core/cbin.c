@@ -1189,9 +1189,9 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
-			r_cons_printf ("f %s 1 @ 0x%08"PFMT64x"\n", name, at);
-			r_cons_printf ("f %s_%s 1 @ 0x%08"PFMT64x"\n", name, hpaddr_key, hpaddr);
-			r_cons_printf ("s %s\n", name);
+			r_cons_printf ("\"f %s 1 0x%08"PFMT64x"\"\n", name, at);
+			r_cons_printf ("\"f %s_%s 1 0x%08"PFMT64x"\"\n", name, hpaddr_key, hpaddr);
+			r_cons_printf ("\"s %s\"\n", name);
 			free (name);
 		} else {
 			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x, at, paddr);
@@ -1370,6 +1370,9 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 		if (bin_demangle) {
 			demname = r_bin_demangle (r->bin->cur, lang, str, addr);
+			if (demname) {
+				snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", demname);
+			}
 		}
 		r_name_filter (str, 0);
 		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc));
@@ -1397,9 +1400,8 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	RBinFile * binfile = r->bin->cur;
 	RBinObject *binobj = binfile ? binfile->o: NULL;
 	RBinInfo *info = binobj ? binobj->info: NULL;
-	int cdsz;
 
-	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (cdsz == 0) {
 		return;
 	}
@@ -1411,7 +1413,7 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	if (IS_MODE_SET (mode)) {
 		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
 	} else if (IS_MODE_RAD (mode)) {
-		r_cons_printf ("f Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
+		r_cons_printf ("Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
 	}
 }
 
@@ -1497,9 +1499,10 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				}
 			}
 			if (name) {
-				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
+				int reloc_size = 4;
+				r_cons_printf ("\"f %s%s%s %d 0x%08"PFMT64x"\"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
-					r->bin->prefix ? "." : "", name, addr);
+					r->bin->prefix ? "." : "", name, reloc_size, addr);
 				add_metadata (r, reloc, addr, mode);
 				free (name);
 			}
@@ -1556,7 +1559,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			} else if (reloc->symbol && name && name[0]) {
 				r_cons_printf (" %s", name);
 			}
-			free (name);
+			R_FREE (name);
 			if (reloc->addend) {
 				if ((reloc->import || (reloc->symbol && !R_STR_ISEMPTY (name))) && reloc->addend > 0) {
 					r_cons_printf (" +");
@@ -2386,7 +2389,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		if (!list) {
 			return false;
 		}
-		SdbListIter *iter;
 		RBinSection *s;
 		r_list_foreach (sections, iter, s) {
 			char humansz[8];
@@ -3785,11 +3787,12 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		break;
 	case 'j':
 		r_cons_printf ("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"size\":%d,\"objs\":[",
-			name, fd, id, bin_sz);
+			name? name: "", fd, id, bin_sz);
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
-			const char *arch = info ? info->arch : "unknown";
+			const char *asmarch = r_config_get (core->config, "asm.arch");
+			const char *arch = info ? info->arch ? info->arch: asmarch : "unknown";
 			r_cons_printf ("{\"objid\":%d,\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
 					PFMT64d",\"objsize\":%"PFMT64d"}",
 					obj->id, arch, bits, obj->boffset, obj->obj_size);
@@ -3803,10 +3806,8 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 		r_list_foreach (binfile->objs, iter, obj) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
-			const char *arch = info ? info->arch : "unknown";
-			if (!arch) {
-				arch = r_config_get (core->config, "asm.arch");
-			}
+			const char *asmarch = r_config_get (core->config, "asm.arch");
+			const char *arch = info ? info->arch ? info->arch: asmarch: "unknown";
 			r_cons_printf ("%4d  %s-%d at:0x%08"PFMT64x" sz:%"PFMT64d" ",
 					obj->id, arch, bits, obj->boffset, obj->obj_size );
 			r_cons_printf ("fd:%d %s\n", fd, name);
@@ -3838,8 +3839,6 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_println ("]");
 	}
-	//r_core_file_set_by_file (core, cur_cf);
-	//r_core_bin_bind (core, cur_bf);
 	return count;
 }
 

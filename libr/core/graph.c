@@ -3414,23 +3414,24 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 
 	r_cons_canvas_print_region (g->can);
-	if (is_interactive) {
-		r_cons_newline ();
-	}
 
 	if (is_interactive) {
+		r_cons_newline ();
 		const char *cmdv = r_config_get (core->config, "cmd.gprompt");
+		bool mustFlush = false;
 		r_cons_visual_flush ();
 		if (cmdv && *cmdv) {
 			r_cons_gotoxy (0, 2);
 			r_cons_strcat (Color_RESET);
 			r_core_cmd0 (core, cmdv);
+			mustFlush = true;
+		}
+		if (core && core->scr_gadgets) {
+			r_core_cmd0 (core, "pg");
+		}
+		if (mustFlush) {
 			r_cons_flush ();
 		}
-	}
-	if (core && core->scr_gadgets) {
-		r_core_cmd0 (core, "pg");
-		r_cons_flush ();
 	}
 	return true;
 }
@@ -3801,6 +3802,9 @@ R_API void r_agraph_reset(RAGraph *g) {
 	}
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
+	g->need_reload_nodes = false;
+	g->need_set_layout = true;
+	g->need_update_dim = true;
 	g->x = g->y = g->w = g->h = 0;
 	agraph_sdb_init (g);
 	g->curnode = NULL;
@@ -4126,7 +4130,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			// update scroll (with minor shift)
 			break;
-		case '|':
+		case '=':
 		{         // TODO: edit
 			showcursor (core, true);
 			const char *buf = NULL;
@@ -4139,7 +4143,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			showcursor (core, false);
 		}
 		break;
-		case '=':
+		case '|':
 			{
 				int e = r_config_get_i (core->config, "graph.layout");
 				if (++e > 1) {
@@ -4150,6 +4154,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_update_dim = true;
 				g->need_set_layout = true;
 			}
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'e':
 			{
@@ -4220,6 +4226,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				graph_single_step_in (core, g);
 			}
+			discroll = 0;
+			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'S':
 			if (fcn) {
@@ -4296,7 +4304,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" x/X          - jump to xref/ref\n"
 				" Y            - toggle tiny graph\n"
 				" z            - toggle node folding\n"
-				" Z            - follow parent node");
+				" Z            - toggle basic block folding");
 			r_cons_less ();
 			r_cons_any_key (NULL);
 			break;
@@ -4379,8 +4387,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			r_core_cmd0 (core, "e!asm.hint.jmp");
-			r_core_cmd0 (core, "e!asm.hint.lea");
+			if (r_config_get_i (core->config, "asm.hint.call")) {
+				r_core_cmd0 (core, "e!asm.hint.call");
+				r_core_cmd0 (core, "e!asm.hint.jmp");
+			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
+				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e!asm.hint.lea");
+			} else if (r_config_get_i (core->config, "asm.hint.lea")) {
+				r_core_cmd0 (core, "e!asm.hint.lea");
+				r_core_cmd0 (core, "e!asm.hint.call");
+			}
 			break;
 		case '$':
 			r_core_cmd (core, "dr PC=$$", 0);

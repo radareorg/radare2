@@ -309,7 +309,6 @@ typedef struct r_core_t {
 	RList *undos;
 	bool fixedbits;
 	bool fixedarch;
-	bool pava;
 	bool fixedblock;
 	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
@@ -397,6 +396,7 @@ R_API void r_core_print_scrollbar(RCore *core);
 R_API void r_core_print_scrollbar_bottom(RCore *core);
 R_API void r_core_visual_prompt_input (RCore *core);
 R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset);
+R_API void r_core_visual_applyDisMode(RCore *core, int disMode);
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr);
 R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
 R_API bool r_core_prevop_addr(RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
@@ -426,6 +426,7 @@ R_API int r_core_visual_hud(RCore *core);
 R_API void r_core_visual_jump(RCore *core, ut8 ch);
 R_API void r_core_visual_disasm_up(RCore *core, int *cols);
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols);
+R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size);
 R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str);
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
@@ -435,6 +436,7 @@ R_API void r_core_anal_inflags (RCore *core, const char *glob);
 R_API int cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
 R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
+R_API void r_core_anal_esil_graph(RCore *core, const char *expr);
 
 R_API void r_core_list_io(RCore *core);
 R_API void r_core_visual_list(RCore *core, RList* list, ut64 seek, ut64 len, int width, int use_color);
@@ -754,7 +756,7 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
 /* undo */
 R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert);
 R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
-R_API void *r_core_undo_free(RCoreUndo *cu);
+R_API void r_core_undo_free(RCoreUndo *cu);
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
 

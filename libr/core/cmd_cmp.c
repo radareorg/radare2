@@ -7,6 +7,7 @@ static const char *help_msg_c[] = {
 	"c", " [string]", "Compare a plain with escaped chars string",
 	"c*", " [string]", "Same as above, but printing r2 commands instead",
 	"c1", " [addr]", "Compare 8 bits from current offset",
+	"c2", " [value]", "Compare a word from a math expression",
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
 	"cat", " [file]", "Show contents of file (see pwd, ls)",
@@ -155,17 +156,18 @@ static int radare_compare_words(RCore *core, ut64 of, ut64 od, int len, int ws) 
 	int i;
 	bool useColor = r_config_get_i (core->config, "scr.color") != 0;
 	utAny v0, v1;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	for (i = 0; i < len; i+=ws) {
 		memset (&v0, 0, sizeof (v0));
 		memset (&v1, 0, sizeof (v1));
 		r_io_read_at (core->io, of + i, (ut8*)&v0, ws);
 		r_io_read_at (core->io, od + i, (ut8*)&v1, ws);
 		char ch = (v0.v64 == v1.v64)? '=': '!';
-		const char *color = useColor? ch == '='? "": Color_RED: "";
+		const char *color = useColor? ch == '='? "": pal->graph_false: "";
 		const char *colorEnd = useColor? Color_RESET: "";
 
 		if (useColor) {
-			r_cons_printf (Color_YELLOW"0x%08" PFMT64x"  "Color_RESET, of + i);
+			r_cons_printf ("%s0x%08" PFMT64x"  "Color_RESET, pal->offset, of + i);
 		} else {
 			r_cons_printf ("0x%08" PFMT64x"  ", of + i);
 		}
@@ -333,6 +335,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
 	ut64 off = r_num_math (core->num, input);
 	ut8 *buf = calloc (core->blocksize + 32, 1);
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	if (!buf) {
 		return false;
 	}
@@ -359,7 +362,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
-				r_cons_printf (iseq? Color_GREEN: Color_RED);
+				r_cons_printf (iseq? pal->graph_true: pal->graph_false);
 			}
 			r_cons_printf (" 0x%08"PFMT64x "  %s %s",
 				core->offset + i, r_strbuf_get (&op.buf_asm), colpad);
@@ -397,12 +400,12 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 					core->offset + i, r_strbuf_get (&op.buf_asm));
 			} else {
 				if (hascolor) {
-					r_cons_printf (Color_RED);
+					r_cons_printf (pal->graph_false);
 				}
 				r_cons_printf ("-0x%08"PFMT64x "  %s\n",
 					core->offset + i, r_strbuf_get (&op.buf_asm));
 				if (hascolor) {
-					r_cons_printf (Color_GREEN);
+					r_cons_printf (pal->graph_true);
 				}
 				r_cons_printf ("+0x%08"PFMT64x "  %s\n",
 					off + j, r_strbuf_get (&op2.buf_asm));
@@ -461,7 +464,8 @@ static void __core_cmp_bits (RCore *core, ut64 addr) {
 	ut8 a, b;
 	r_io_read_at (core->io, core->offset, &a, 1);
 	r_io_read_at (core->io, addr, &b, 1);
-	const char *color = scr_color? Color_CYAN: "";
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+	const char *color = scr_color? pal->offset: "";
 	const char *color_end = scr_color? Color_RESET: "";
 	if (r_config_get_i (core->config, "hex.header")) {
 		char *n = r_str_newf ("0x%08"PFMT64x, core->offset);
@@ -469,24 +473,24 @@ static void __core_cmp_bits (RCore *core, ut64 addr) {
 		free (n);
 		r_cons_printf ("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
 	}
-	color = scr_color? Color_RED: "";
+	color = scr_color? pal->graph_false: "";
 	color_end = scr_color? Color_RESET: "";
 
 	r_cons_printf ("%s0x%08"PFMT64x"%s  ", color, core->offset, color_end);
 	for (i = 7; i >= 0; i--) {
 		bool b0 = (a & 1<<i)? 1: 0;
 		bool b1 = (b & 1<<i)? 1: 0;
-		color = scr_color? (b0 == b1)? "": b0? Color_GREEN:Color_RED: "";
+		color = scr_color? (b0 == b1)? "": b0? pal->graph_true:pal->graph_false: "";
 		color_end = scr_color ? Color_RESET: "";
 		r_cons_printf ("%s%d%s ", color, b0, color_end);
 	}
-	color = scr_color? Color_GREEN: "";
+	color = scr_color? pal->graph_true: "";
 	color_end = scr_color? Color_RESET: "";
 	r_cons_printf ("\n%s0x%08"PFMT64x"%s  ", color, addr, color_end);
 	for (i = 7; i >= 0; i--) {
 		bool b0 = (a & 1<<i)? 1: 0;
 		bool b1 = (b & 1<<i)? 1: 0;
-		color = scr_color? (b0 == b1)? "": b1? Color_GREEN: Color_RED: "";
+		color = scr_color? (b0 == b1)? "": b1? pal->graph_true: pal->graph_false: "";
 		color_end = scr_color ? Color_RESET: "";
 		r_cons_printf ("%s%d%s ", color, b1, color_end);
 	}

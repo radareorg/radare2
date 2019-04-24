@@ -38,10 +38,12 @@ static const char *help_msg_f[] = {
 	"fm"," addr","move flag at current offset to new address",
 	"fn","","list flags displaying the real name (demangled)",
 	"fnj","","list flags displaying the real name (demangled) in JSON format",
+	"fN","","show real name of flag at current address",
+	"fN"," [[name]] [realname]","set flag real name (if no flag name current seek one is used)",
 	"fo","","show fortunes",
 	"fO", " [glob]", "flag as ordinals (sym.* func.* method.*)",
 	//" fc [name] [cmt]  ; set execution command for a specific flag"
-	"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
+	"fr"," [[old]] [new]","rename flag (if no new flag current seek one is used)",
 	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 	"fs","[?]+-*","manage flagspaces",
 	"ft","[?]*","flag tags, useful to find all flags matching some words",
@@ -64,7 +66,7 @@ static const char *help_msg_fd[] = {
  	"fd.", " $$", "# check flags in current address (no delta)",
 	"fdd", " $$", "# describe flag without space restrictions",
 	"fdw", " [string]", "# filter closest flag by string for current offset",
-	NULL	
+	NULL
 };
 
 static const char *help_msg_fs[] = {
@@ -230,7 +232,7 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 	if (!*arg && !mode) {
 		const char *tag;
 		RListIter *iter;
-		RList *list = r_flag_tags_list (core->flags);
+		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
 			r_cons_printf ("%s\n", tag);
 		}
@@ -239,12 +241,59 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 		return;
 	}
 	if (mode == '?') {
-		eprintf ("Usage: ft [k] [v ...]\n");
+		eprintf ("Usage: ft[?ln] [k] [v ...]\n");
 		eprintf (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
 		eprintf (" ft tag                   # get offsets of all matching flags\n");
 		eprintf (" ft                       # list all tags\n");
 		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
+		eprintf (" ftw                      # flag tags within this file\n");
+		eprintf (" ftj                      # list all flagtags in JSON format\n");
+		eprintf (" ft*                      # list all flagtags in r2 commands\n");
 		free (inp);
+		return;
+	}
+	if (mode == 'w') { // "ftw"
+		const char *tag;
+		RListIter *iter;
+		RList *list = r_flag_tags_list (core->flags, NULL);
+		r_list_foreach (list, iter, tag) {
+			r_cons_printf ("%s:\n", tag);
+			r_core_cmdf (core, "ftn %s", tag);
+		}
+		r_list_free (list);
+		free (inp);
+		return;
+	}
+	if (mode == '*') {
+		RListIter *iter;
+		const char *tag;
+		RList *list = r_flag_tags_list (core->flags, NULL);
+		r_list_foreach (list, iter, tag) {
+			const char *flags = sdb_get (core->flags->tags, sdb_fmt ("tag.%s", tag), NULL);
+			r_cons_printf ("ft %s %s\n", tag, flags);
+		}
+		r_list_free (list);
+		return;
+	}
+	if (mode == 'j') { // "ftj"
+		RListIter *iter, *iter2;
+		const char *tag, *flg;
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		RList *list = r_flag_tags_list (core->flags, NULL);
+		r_list_foreach (list, iter, tag) {
+			pj_k (pj, tag);
+			pj_a (pj);
+			RList *flags = r_flag_tags_list (core->flags, tag);
+			r_list_foreach (flags, iter2, flg) {
+				pj_s (pj, flg);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		r_list_free (list);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 		return;
 	}
 	char *arg1 = strchr (arg, ' ');
@@ -896,11 +945,10 @@ rep:
 		flag_ordinals (core, input + 1);
 		break;
 	case 'r':
-		if (input[1]==' ' && input[2]) {
-			char *old, *new;
+		if (input[1] == ' ' && input[2]) {
 			RFlagItem *item;
-			old = str + 1;
-			new = strchr (old, ' ');
+			char *old = str + 1;
+			char *new = strchr (old, ' ');
 			if (new) {
 				*new = 0;
 				new++;
@@ -917,16 +965,72 @@ rep:
 					eprintf ("Invalid name\n");
 				}
 			} else {
-				eprintf ("Cannot find flag (%s)\n", old);
+				eprintf ("Usage: fr [[old]] [new]\n");
 			}
 		}
+		break;
+	case 'N':
+		if (!input[1]) {
+			RFlagItem *item = r_flag_get_i (core->flags, core->offset);
+			if (item) {
+				r_cons_printf ("%s\n", item->realname);
+			}
+			break;
+		} else if (input[1] == ' ' && input[2]) {
+			RFlagItem *item;
+			char *name = str + 1;
+			char *realname = strchr (name, ' ');
+			if (realname) {
+				*realname = 0;
+				realname++;
+				item = r_flag_get (core->flags, name);
+				if (!item && !strncmp (name, "fcn.", 4)) {
+					item = r_flag_get (core->flags, name+4);
+				}
+			} else {
+				realname = name;
+				item = r_flag_get_i (core->flags, core->offset);
+			}
+			if (item) {
+				r_flag_item_set_realname (item, realname);
+			}
+			break;
+		}
+		eprintf ("Usage: fN [[name]] [[realname]]\n");
 		break;
 	case '\0':
 	case 'n': // "fn" "fnj"
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
-		r_flag_list (core->flags, *input, input[0]? input + 1: "");
+		if (input[0] && input[1] == '.' && !input[2]) {
+			RFlagItem *item = r_flag_get_at (core->flags, core->offset, false);
+			if (item) {
+				switch (input[0]) {
+				case '*':
+					r_cons_printf ("f %s = 0x%08"PFMT64x"\n", item->name, item->offset);
+					break;
+				case 'j':
+					{
+						PJ *pj = pj_new ();
+						pj_o (pj);
+						pj_ks (pj, "name", item->name);
+						pj_kn (pj, "offset", item->offset);
+						pj_kn (pj, "size", item->size);
+						pj_end (pj);
+						char *s = pj_drain (pj);
+						r_cons_printf ("%s\n", s);
+						free (s);
+					}
+					break;
+				default:
+					r_cons_printf ("%s\n", item->name);
+					break;
+				}
+			}
+		} else {
+			r_flag_list (core->flags, *input, input[0]? input + 1: "");
+		}
 		break;
 	case 'i': // "fi"
 		if (input[1] == ' ' || (input[1] && input[2] == ' ')) {

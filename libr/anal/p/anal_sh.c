@@ -385,12 +385,16 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 			"mach,0x80000000,&,!," //mach_old sign (0)
 			S32_EXT("r%d,[4]")"," //@Rn sign extended
 			S32_EXT("r%d,[4]")"," //@Rm sign extended
-			"4,r%d,+=," //Rn+=4
-			"4,r%d,+=," //Rm+=4
-			"*,DUP," //(1)
+			"*," //(1)
 			"macl,32,mach,<<,|," //macl | (mach << 32)
 			"+," //MAC+@Rm*@Rn
-			"32,2,PICK,0xffffffff00000000,&,>>,mach,=," //MACH > mach
+			"32,"
+			S32_EXT("r%d,[4]")"," //@Rn sign extended
+			S32_EXT("r%d,[4]")"," //@Rm sign extended
+			"*,"
+			"4,r%d,+=," //Rn+=4
+			"4,r%d,+=," //Rm+=4
+			"0xffffffff00000000,&,>>,mach,=," //MACH > mach
 			"0xffffffff,&,macl,=,"
 			"0x2,sr,&,!,?{,BREAK,}," //if S==0 BREAK
 			"0x00007fff,mach,>,"
@@ -399,7 +403,9 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 			"0xffff8000,mach,<,"
 			"0x80000000,mach,&,!,!,&,"
 			"?{,0xffff8000,mach,=,0x0,macl,=,}," //if (mach>0xffff8000&&mach<0) mac=0xffff800000000000
-			, GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code));
+			, GET_TARGET_REG (code), GET_SOURCE_REG (code),
+			GET_TARGET_REG (code), GET_SOURCE_REG (code),
+			GET_TARGET_REG (code), GET_SOURCE_REG (code));
 		op->type = R_ANAL_OP_TYPE_MUL;
 	}
 	return op->size;
@@ -549,20 +555,29 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		op->src[1] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil,
-						 "1,sr,>>,sr,^,0x80,&," //old_Q^M
-						 "0xFFFFFF7F,sr,&=,"
-						 "1,r%d,DUP,0x80000000,&,?{,0x80,sr,|=,},<<,sr,0x1,&,|,r%d,=," //shift Q<-Rn<-T
-						 "r%d,NUM,"//Rn_old (before substract)
-						 "r%d,r%d,"
-						 "0,RPICK,?{,+=,r%d,<,}," //tmp0
-						 "0,RPICK,!,?{,-=,r%d,>,}," //tmp0
-						 "sr,0x80,&,!,!,^," //Q^tmp0
-						 "sr,0x100,&,?{,!,},"//if (M) !(Q^tmp0)
-						 "0xFFFFFF7F,sr,&=," //Q==0
-						 "?{,0x80,sr,|=,}," //Q=!(Q^tmp0)or(Q^tmp0)
-						 CLR_T","
-						 "1,sr,>>,sr,^,0x80,&,!,sr,|="// sr=!Q^M
-						 , GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG(code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
+			"1,sr,>>,sr,^,0x80,&," //old_Q^M
+			"0xFFFFFF7F,sr,&=,"
+			"1,r%d,DUP,0x80000000,&,?{,0x80,sr,|=,},<<,sr,0x1,&,|,r%d,=," //shift Q<-Rn<-T
+			"DUP,!,!,?{,"
+			"r%d,NUM,"//Rn_old (before substract)
+			"r%d,r%d,+=,"
+			"r%d,<,}{," //tmp0
+			"r%d,NUM,"//Rn_old (before substract)
+			"r%d,r%d,-=,"
+			"r%d,>,}," //tmp0
+			"sr,0x80,&,!,!,^," //Q^tmp0
+			"sr,0x100,&,?{,!,},"//if (M) !(Q^tmp0)
+			"0xFFFFFF7F,sr,&=," //Q==0
+			"?{,0x80,sr,|=,}," //Q=!(Q^tmp0)or(Q^tmp0)
+			CLR_T","
+			"1,sr,>>,sr,^,0x80,&,!,sr,|=", // sr=!Q^M
+			GET_TARGET_REG (code), GET_TARGET_REG (code),
+			GET_TARGET_REG (code),
+			GET_SOURCE_REG(code), GET_TARGET_REG (code),
+			GET_TARGET_REG (code),
+			GET_TARGET_REG (code),
+			GET_SOURCE_REG(code), GET_TARGET_REG (code),
+			GET_TARGET_REG (code));
 	} else if (IS_DMULU (code)) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -717,27 +732,37 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 	} else if (IS_MACW(code)){
 		r_strbuf_setf (&op->esil,
-			S16_EXT("r%d,[2]")"," //@Rn sign extended
-			S16_EXT("r%d,[2]")"," //@Rm sign extended
-			"2,r%d,+=," //Rn+=2
-			"2,r%d,+=," //Rm+=2
-			"*,"
 			"0x2,sr,&,!,?{," //if S==0
+				S16_EXT("r%d,[2]")"," //@Rn sign extended
+				S16_EXT("r%d,[2]")"," //@Rm sign extended
+				"*,"
 				"macl,32,mach,<<,|," //macl | (mach << 32)
 				"+," //MAC+@Rm*@Rn
-				"32,2,PICK,0xffffffff00000000,&,>>,mach,=," //MACH > mach
+				"32,"
+				S16_EXT("r%d,[2]")"," //@Rn sign extended
+				S16_EXT("r%d,[2]")"," //@Rm sign extended
+				"*,"
+				"0xffffffff00000000,&,>>,mach,=," //MACH > mach
 				"0xffffffff,&,macl,=,"
-			"},"
-			"0x2,sr,&,?{," //if S==1
+			"}{," //if S==1
+				S16_EXT("r%d,[2]")"," //@Rn sign extended
+				S16_EXT("r%d,[2]")"," //@Rm sign extended
+				"*"
 				"macl,+=," //macl+(@Rm+@Rm)
 				"$o,?{," //if overflow
-					"macl,NUM,DUP,"
-					"0x80000000,&,?{,0x7fffffff,macl,=,},"
-					"0x80000000,&,!,?{,0x80000000,macl,=,},"
+					"macl,0x80000000,&,?{,"
+						"0x7fffffff,macl,=,"
+					"}{,"
+						"0x80000000,macl,=,"
+					"},"
 				"},"
-			"}"
-
-						 , GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code));
+			"},"
+			"2,r%d,+=," //Rn+=2
+			"2,r%d,+=,", //Rm+=2
+			GET_TARGET_REG (code), GET_SOURCE_REG (code),
+			GET_TARGET_REG (code), GET_SOURCE_REG (code),
+			GET_TARGET_REG (code), GET_SOURCE_REG (code),
+			GET_TARGET_REG (code), GET_SOURCE_REG (code));
 		op->type = R_ANAL_OP_TYPE_MUL;
 	}
 	return op->size;

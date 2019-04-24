@@ -54,14 +54,14 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 		r_name_filter (f_name, 512);
 		if (bin->prefix) {
 			nstr = r_str_newf ("%s.str.%s", bin->prefix, f_name);
-			io->cb_printf ("f %s.str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
+					"Cs %u @ 0x%08"PFMT64x"\n",
 					bin->prefix, f_name, string->size, addr,
 					string->size, addr);
 		} else {
 			nstr = r_str_newf ("str.%s", f_name);
-			io->cb_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+			io->cb_printf ("f str.%s %u @ 0x%08"PFMT64x"\n"
+					"Cs %u @ 0x%08"PFMT64x"\n",
 					f_name, string->size, addr,
 					string->size, addr);
 		}
@@ -516,7 +516,7 @@ R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id
 	return NULL;
 }
 
-R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
+R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
 	RListIter *iter;
 	RBinFile *binfile;
 	r_list_foreach (bin->binfiles, iter, binfile) {

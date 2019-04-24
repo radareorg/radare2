@@ -4,6 +4,37 @@
 #include <r_util.h>
 #include <r_io.h>
 
+static ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *left) {
+	if (b->empty_priv) {
+		return NULL;
+	}
+	if (b->iob) {
+		if (b->fd_priv != -1) {
+			eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
+			return NULL;
+		}
+		static ut8 buf[8];
+		r_buf_read_at (b, addr, buf, sizeof (buf));
+		if (left) {
+			*left = 8;
+		}
+		return buf;
+	}
+	if (addr == R_BUF_CUR) {
+		addr = b->cur_priv;
+	} else {
+		addr = addr - b->base_priv + b->offset_priv;
+	}
+	ut64 effective_size = r_buf_size (b);
+	if (addr == UT64_MAX || addr - b->offset_priv > effective_size) {
+		return NULL;
+	}
+	if (left) {
+		*left = effective_size - addr + b->offset_priv;
+	}
+	return b->buf_priv + addr;
+}
+
 // TODO: Optimize to use memcpy when buffers are not in range..
 // check buf boundaries and offsets and use memcpy or memmove
 
@@ -415,8 +446,11 @@ R_API RBuffer *r_buf_new() {
 	return b;
 }
 
-R_API const ut8 *r_buf_buffer(RBuffer *b) {
+R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
 	if (b && !b->sparse_priv && b->fd_priv == -1 && !b->mmap_priv) {
+		if (size) {
+			*size = r_buf_size (b);
+		}
 		return b->buf_priv;
 	}
 	r_return_val_if_fail (false, NULL);
@@ -498,7 +532,9 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	if (!b || !file) {
 		return false;
 	}
-	return r_file_dump (file, r_buf_get_at (b, 0, NULL), r_buf_size (b), 0);
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+	return r_file_dump (file, tmp, tmpsz, 0);
 }
 
 R_API ut64 r_buf_tell(RBuffer *b) {
@@ -739,35 +775,38 @@ R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size
 	return false;
 }
 
-R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *left) {
-	if (b->empty_priv) {
-		return NULL;
-	}
-	if (b->iob) {
-		if (b->fd_priv != -1) {
-			eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
+// return an heap-allocated string read from the RBuffer b at address addr. The
+// length depends on the first '\0' found in the buffer. If there is no '\0' in
+// the buffer, there is no string, thus NULL is returned.
+R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
+	const int MIN_RES_SZ = 64;
+	ut8 *res = R_NEWS (ut8, MIN_RES_SZ + 1);
+	ut64 sz = 0;
+	int r = r_buf_read_at (b, addr, res, MIN_RES_SZ);
+	bool null_found = false;
+	while (r > 0) {
+		const ut8 *needle = r_mem_mem (res + sz, r, (ut8 *)"\x00", 1);
+		if (needle) {
+			sz += (needle - (res + sz));
+			null_found = true;
+			break;
+		}
+		sz += r;
+		addr += r;
+
+		ut8 *restmp = realloc (res, sz + MIN_RES_SZ + 1);
+		if (!restmp) {
+			free (res);
 			return NULL;
 		}
-		static ut8 buf[8];
-		r_buf_read_at (b, addr, buf, sizeof (buf));
-		if (left) {
-			*left = 8;
-		}
-		return buf;
+		res = restmp;
+		r = r_buf_read_at (b, addr, res + sz, MIN_RES_SZ);
 	}
-	if (addr == R_BUF_CUR) {
-		addr = b->cur_priv;
-	} else {
-		addr = addr - b->base_priv + b->offset_priv;
-	}
-	ut64 effective_size = r_buf_size (b);
-	if (addr == UT64_MAX || addr - b->offset_priv > effective_size) {
+	if (r < 0 || !null_found) {
+		free (res);
 		return NULL;
 	}
-	if (left) {
-		*left = effective_size - addr + b->offset_priv;
-	}
-	return b->buf_priv + addr;
+	return (char *)res;
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
@@ -1004,4 +1043,48 @@ R_API RList *r_buf_nonempty_list(RBuffer *b) {
 		return NULL;
 	}
 	return r_list_clone (b->sparse_priv);
+}
+
+R_API int r_buf_uleb128(RBuffer *b, ut64 *v) {
+	ut8 c = 0xff;
+	ut64 s = 0, sum = 0, l = 0;
+	do {
+		ut8 data;
+		int r = r_buf_read (b, &data, sizeof (data));
+		if (r <= 0) {
+			return -1;
+		}
+		c = data & 0xff;
+		sum |= ((ut64) (c & 0x7f) << s);
+		s += 7;
+		l++;
+	} while (c & 0x80);
+	if (v) {
+		*v = sum;
+	}
+	return l;
+}
+
+R_API int r_buf_sleb128(RBuffer *b, st64 *v) {
+	st64 result = 0;
+	int offset = 0;
+	ut8 value;
+	do {
+		st64 chunk;
+		int r = r_buf_read (b, &value, sizeof (value));
+		if (r != sizeof (value)) {
+			return -1;
+		}
+		chunk = value & 0x7f;
+		result |= (chunk << offset);
+		offset += 7;
+	} while (value & 0x80);
+
+	if ((value & 0x40) != 0) {
+		result |= ~0ULL << offset;
+	}
+	if (v) {
+		*v = result;
+	}
+	return offset / 7;
 }

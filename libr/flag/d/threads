@@ -1,0 +1,7 @@
+pthread_create
+pthread_mutex_init
+pthread_cond_init
+CreateThread
+TerminateThread
+WaitForSingleObject
+GetCurrentThreadId

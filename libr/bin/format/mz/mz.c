@@ -88,8 +88,7 @@ RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin) {
 	for (i = 0; i < num_relocs; i++) {
 		RBinSection c;
 		ut64 laddr, paddr, section_laddr;
-		ut16 *curr_seg;
-		int left;
+		ut16 curr_seg;
 
 		laddr = r_bin_mz_va_to_la (relocs[i].segment, relocs[i].offset);
 		if ((laddr + 2) >= bin->load_module_size) {
@@ -97,12 +96,12 @@ RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin) {
 		}
 
 		paddr = r_bin_mz_la_to_pa (bin, laddr);
-		curr_seg = (ut16 *)r_buf_get_at (bin->b, paddr, &left);
-		if (left < 2) {
+		if (r_buf_size (bin->b) < paddr + 2) {
 			continue;
 		}
+		curr_seg = r_buf_read_le16_at (bin->b, paddr);
 
-		section_laddr = r_bin_mz_va_to_la (r_read_le16 (curr_seg), 0);
+		section_laddr = r_bin_mz_va_to_la (curr_seg, 0);
 		if (section_laddr > bin->load_module_size) {
 			continue;
 		}

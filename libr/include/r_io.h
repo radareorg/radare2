@@ -187,7 +187,7 @@ typedef struct r_io_map_t {
 	int perm;
 	ut32 id;
 	RInterval itv;
-	ut64 delta; //this delta means paddr when talking about section
+	ut64 delta; // paddr = itv.addr + delta
 	char *name;
 } RIOMap;
 
@@ -224,6 +224,8 @@ typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef bool (*RIOFdClose) (RIO *io, int fd);
 typedef ut64 (*RIOFdSeek) (RIO *io, int fd, ut64 addr, int whence);
 typedef ut64 (*RIOFdSize) (RIO *io, int fd);
+typedef ut64 (*RIOP2V) (RIO *io, ut64 pa);
+typedef ut64 (*RIOV2P) (RIO *io, ut64 va);
 typedef int (*RIOFdRead) (RIO *io, int fd, ut8 *buf, int len);
 typedef int (*RIOFdWrite) (RIO *io, int fd, const ut8 *buf, int len);
 typedef int (*RIOFdReadAt) (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
@@ -234,6 +236,7 @@ typedef RList *(*RIOFdGetMap) (RIO *io, int fd);
 typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef RIOMap *(*RIOMapGet) (RIO *io, ut64 addr);
+typedef RIOMap *(*RIOMapGetPaddr) (RIO *io, ut64 paddr);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapAdd) (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 #if HAVE_PTRACE
@@ -268,7 +271,10 @@ typedef struct r_io_bind_t {
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
 	RIOMapGet map_get;
+	RIOMapGetPaddr map_get_paddr;
 	RIOMapAdd map_add;
+	RIOV2P v2p;
+	RIOP2V p2v;
 #if HAVE_PTRACE
 	RIOPtraceFn ptrace;
 	RIOPtraceFuncFn ptrace_func;
@@ -306,6 +312,11 @@ R_API void r_io_map_del_name (RIOMap *map);
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align);
 R_API RList* r_io_map_get_for_fd(RIO *io, int fd);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
+
+// p2v/v2p
+
+R_API ut64 r_io_p2v(RIO *io, ut64 pa);
+R_API ut64 r_io_v2p(RIO *io, ut64 va);
 
 //io.c
 R_API RIO *r_io_new (void);

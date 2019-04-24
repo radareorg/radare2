@@ -71,7 +71,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	current3format = tab->current3format;
 	current4format = tab->current4format;
 	current5format = tab->current5format;
-	applyDisMode (core, disMode);
+	r_core_visual_applyDisMode (core, disMode);
 	applyHexMode (core, hexMode);
 	r_config_set_i (core->config, "asm.offset", tab->asm_offset);
 	r_config_set_i (core->config, "asm.instr", tab->asm_instr);

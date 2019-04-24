@@ -1,2 +1,9 @@
 getpid
+getppid
 kill
+exit
+abort
+assert
+gethostid
+sethostid
+sysctl

@@ -129,6 +129,10 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut8 *src = bytes;
 	r_return_val_if_fail (reg && item, false);
 
+	if (r_reg_is_readonly (reg, item)) {
+		return true;
+	}
+
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
@@ -251,7 +255,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
-	int off, packbytes, packmod;
+	int packbytes, packmod;
 
 	if (!reg || !item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
@@ -260,7 +264,6 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
-	off = item->offset;
 	packbytes = packbits / 8;
 	packmod = packbits % 8;
 	if (packidx * packbits > item->size) {
@@ -271,6 +274,7 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 		eprintf ("Invalid bit size for packet register\n");
 		return false;
 	}
+	int off = item->offset;
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
 		ut8 *dst = reg->regset[item->arena].arena->bytes + BITS2BYTES (off);
 		r_mem_copybits (dst, (ut8 *)&val, packbytes);

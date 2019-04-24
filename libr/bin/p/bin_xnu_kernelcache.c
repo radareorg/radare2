@@ -1547,6 +1547,8 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 		local_sym->ordinal = ordinal ++;
 		r_list_append (ret, local_sym);
 	}
+
+	R_FREE (stubs_info);
 }
 
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj) {
