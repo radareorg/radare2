@@ -20,7 +20,7 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS
 };
 
-#define TMP_ARGV_SZ 512
+#define TMP_ARGV_SZ 4096
 static const char *tmp_argv[TMP_ARGV_SZ];
 static bool tmp_argv_heap = false;
 
@@ -2742,6 +2742,7 @@ R_API bool r_core_init(RCore *core) {
 			free (a);
 		}
 	}
+	r_core_anal_type_init (core);
 	init_autocomplete (core);
 	return 0;
 }

@@ -18,31 +18,31 @@ enum {
 
 static void update_flags(RAnalOp *op, int flags) {
 	if (flags & V810_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",$c31,cy,=");
+		r_strbuf_append (&op->esil, ",31,$c,cy,:=");
 	}
 	if (flags & V810_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",$o,ov,=");
+		r_strbuf_append (&op->esil, ",$o,ov,:=");
 	}
 	if (flags & V810_FLAG_S) {
-		r_strbuf_append (&op->esil, ",$s,s,=");
+		r_strbuf_append (&op->esil, ",$s,s,:=");
 	}
 	if (flags & V810_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",$z,z,=");
+		r_strbuf_append (&op->esil, ",$z,z,:=");
 	}
 }
 
 static void clear_flags(RAnalOp *op, int flags) {
 	if (flags & V810_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",0,cy,=");
+		r_strbuf_append (&op->esil, ",0,cy,:=");
 	}
 	if (flags & V810_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",0,ov,=");
+		r_strbuf_append (&op->esil, ",0,ov,:=");
 	}
 	if (flags & V810_FLAG_S) {
-		r_strbuf_append (&op->esil, ",0,s,=");
+		r_strbuf_append (&op->esil, ",0,s,:=");
 	}
 	if (flags & V810_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",0,z,=");
+		r_strbuf_append (&op->esil, ",0,z,:=");
 	}
 }
 

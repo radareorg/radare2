@@ -84,6 +84,7 @@ RebuildZip() {
 
 RebuildTcc() {
 	Rebuild shlr/tcc
+	Rebuild libr/parse
 }
 
 case "$1" in

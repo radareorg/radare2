@@ -53,7 +53,7 @@ typedef struct r_config_hold_num_t {
 
 typedef struct r_config_hold_char_t {
 	char *key;
-	const char *value;
+	char *value;
 } RConfigHoldChar;
 
 typedef struct r_config_hold_t { 

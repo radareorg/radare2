@@ -1,0 +1,2 @@
+pf.mach0_header xxxxddx magic cputype cpusubtype filetype ncmds sizeofcmds flags
+pf.mach0_segment xd[16]zxxxxoodx cmd cmdsize segname vmaddr vmsize fileoff filesize maxprot initprot nsects flags

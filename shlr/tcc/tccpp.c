@@ -211,7 +211,6 @@ static TokenSym *tok_alloc_new(TokenSym **pts, const char *str, int len)
 		ptable = realloc (table_ident, (i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
 		table_ident = ptable;
 	}
-
 	ts = malloc (sizeof(TokenSym) + len);
 	table_ident[i] = ts;
 	ts->tok = tok_ident++;

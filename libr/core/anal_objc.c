@@ -91,13 +91,16 @@ static ut64 getRefPtr(RCoreObjc *objc, ut64 classMethodsVA, bool *res) {
 
 static bool objc_build_refs(RCoreObjc *objc) {
 	ut64 off;
+	if (!objc->_const || !objc->_selrefs) {
+		return false;
+	}
 	
 	ut8 *buf = calloc (1, objc->_const->vsize);
 	if (!buf) {
 		return false;
 	}
 	(void)r_io_read_at (objc->core->io, objc->_const->vaddr, buf, objc->_const->vsize);
-	for (off = 0; off < objc->_const->vsize; off += objc->word_size) {
+	for (off = 0; off + 8 < objc->_const->vsize; off += objc->word_size) {
 		ut64 va = objc->_const->vaddr + off;
 		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (!xrefs_to) {
@@ -112,7 +115,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		return false;
 	}
 	r_io_read_at (objc->core->io, objc->_selrefs->vaddr, buf, objc->_selrefs->vsize);
-	for (off = 0; off < objc->_selrefs->vsize; off += objc->word_size) {
+	for (off = 0; off + 8 < objc->_selrefs->vsize; off += objc->word_size) {
 		ut64 va = objc->_selrefs->vaddr + off;
 		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (!xrefs_to) {

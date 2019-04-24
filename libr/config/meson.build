@@ -1,6 +1,7 @@
 r_config_sources = [
   'callback.c',
   'config.c',
+  'hold.c',
 ]
 
 r_config = library('r_config', r_config_sources,

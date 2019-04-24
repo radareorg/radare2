@@ -90,7 +90,7 @@ R_API int r_egg_add(REgg *a, REggPlugin *foo) {
 }
 
 R_API char *r_egg_to_string(REgg *egg) {
-	return strdup ((const char *)egg->buf->buf);
+	return r_buf_to_string (egg->buf);
 }
 
 R_API void r_egg_free(REgg *egg) {
@@ -315,7 +315,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {
 			if (asmcode->len > 0) {
-				r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
+				r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
 			}
 			// LEAK r_asm_code_free (asmcode);
 		} else {
@@ -333,24 +333,21 @@ R_API bool r_egg_assemble(REgg *egg) {
 }
 
 R_API int r_egg_compile(REgg *egg) {
-	const char *b = (const char *)egg->src->buf;
-	if (!b || !egg->remit) {
+	r_buf_seek (egg->src, 0, 0);
+	char b;
+	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
+	if (r != sizeof (b) || !egg->remit) {
 		return true;
 	}
 	// only emit begin if code is found
-#if 0
-	if (*b)
-	if (egg->remit) {
-		if (egg->remit->init)
-			egg->remit->init (egg);
-	}
-#endif
 	r_egg_lang_init (egg);
-	if (b && *b) {
-		for (; b[0]; b++) {
-			r_egg_lang_parsechar (egg, *b);
-			// XXX: some parse fail errors are false positives :(
+	for (; b; ) {
+		r_egg_lang_parsechar (egg, b);
+		int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
+		if (r != sizeof (b)) {
+			break;
 		}
+		// XXX: some parse fail errors are false positives :(
 	}
 	if (egg->context>0) {
 		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
@@ -381,7 +378,7 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
-	return r_sys_run (egg->bin->buf, r_buf_size (egg->bin));
+	return r_sys_run (r_buf_buffer (egg->bin), r_buf_size (egg->bin));
 }
 
 #define R_EGG_FILL_TYPE_TRAP
@@ -475,7 +472,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 				eprintf ("%s Shellcode has failed\n", p->name);
 				return false;
 			}
-			r_egg_raw (egg, b->buf, r_buf_size (b));
+			r_egg_raw (egg, r_buf_buffer (b), r_buf_size (b));
 			r_buf_free (b);
 			return true;
 		}
@@ -519,7 +516,7 @@ R_API int r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
 R_API void r_egg_finalize(REgg *egg) {
 	struct egg_patch_t *ep;
 	RListIter *iter;
-	if (!egg->bin->buf) {
+	if (!egg->bin) {
 		r_buf_free (egg->bin);
 		egg->bin = r_buf_new ();
 	}

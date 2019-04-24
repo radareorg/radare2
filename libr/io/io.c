@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2018 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2019 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb.h>

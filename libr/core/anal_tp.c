@@ -653,6 +653,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
 						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
+						if (!jmp_op) {
+							break;
+						}
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_bb_is_in_offset (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
@@ -748,7 +751,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	// Type propgation from caller to callee function for stack based arguments
 	if (fcn->cc) {
 		const char *place = r_anal_cc_arg (anal, fcn->cc, 0);
-		eprintf ("[-] place: %s \n" ,place);
+		if (anal->verbose) {
+			eprintf ("[-] place: %s\n", place);
+		}
 		if (place && !strncmp (place, "stack", 5)) {
 			RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 			r_list_foreach (list2, iter2, bp_var) {

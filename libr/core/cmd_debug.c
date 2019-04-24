@@ -179,6 +179,7 @@ static const char *help_msg_di[] = {
 	"di*", "", "Same as above, but in r2 commands",
 	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
+	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
 	NULL
 };
 
@@ -4397,6 +4398,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	return 1;
 }
 
+static ut8*getFileData(RCore *core, const char *arg) {
+	if (*arg == '$') {
+		return (ut8*) r_cmd_alias_get (core->rcmd, arg, 1);
+	}
+	return (ut8*)r_file_slurp (arg, NULL);
+}
+
 static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 	if (!buf) {
 		if (errmsg) {
@@ -4408,8 +4416,9 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 		r_cons_printf ("%s", cmd);
 	}
 	int i;
+	r_buf_seek (buf, 0, 0);
 	for (i = 0; i < r_buf_size (buf); i++) {
-		r_cons_printf ("%02x", buf->buf[i]);
+		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}
 	r_cons_printf ("\n");
 }
@@ -4522,23 +4531,25 @@ static int cmd_debug(void *data, const char *input) {
 				r_list_free (args);
 				free (s);
 			} else {
-				ptr = input + 3;
+				ptr = input + 2;
 				addr = r_num_math (core->num, ptr);
 				ptr = strchr (ptr, ' ');
+				int count = 1;
 				if (ptr) {
-					RAnalOp *op = r_core_op_anal (core, addr);
-					if (op) {
-						RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
-						if (!tp) {
-							r_anal_op_free (op);
-							break;
-						}
-						tp->count = r_num_math (core->num, ptr + 1);
-						r_anal_trace_bb (core->anal, addr);
+					count = r_num_math (core->num, ptr + 1);
+				}
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op) {
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
+					if (!tp) {
 						r_anal_op_free (op);
-					} else {
-						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+						break;
 					}
+					tp->count = count;
+					r_anal_trace_bb (core->anal, addr);
+					r_anal_op_free (op);
+				} else {
+					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 				}
 			}
 			break;
@@ -4849,6 +4860,36 @@ static int cmd_debug(void *data, const char *input) {
 					P ("stopreason=%d\n", stop);
 				}
 				break;
+			case 'f': // "dif"
+				if (input[1] == '?') {
+					eprintf ("Usage: dif $a $b  # diff two alias files\n");
+				} else {
+					char *arg = strchr (input, ' ');
+					if (arg) {
+						arg = strdup (r_str_trim_ro (arg + 1));
+						char *arg2 = strchr (arg, ' ');
+						if (arg2) {
+							*arg2++ = 0;
+							ut8 *a = getFileData (core, arg);
+							ut8 *b = getFileData (core, arg2);
+							if (a && b) {
+								int al = strlen ((const char*)a);
+								int bl = strlen ((const char*)b);
+								RDiff *d = r_diff_new ();
+								char *uni = r_diff_buffers_to_string (d, a, al, b, bl);
+								r_cons_printf ("%s\n", uni);
+								r_diff_free (d);
+								free (uni);
+							} else {
+								eprintf ("Cannot open those alias files\n");
+							}
+						}
+						free (arg);
+					} else {
+						eprintf ("Usage: dif $a $b  # diff two alias files\n");
+					}
+				}
+				break;
 			case '*': // "di*"
 				if (rdi) {
 					r_cons_printf ("f dbg.signal = %d\n", core->dbg->reason.signum);
@@ -4990,10 +5031,9 @@ static int cmd_debug(void *data, const char *input) {
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, input + 2);
-			if (acode && *acode->buf_hex) {
+			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->buf,
-						acode->len, 0);
+				r_debug_execute (core->dbg, acode->bytes, acode->len, 0);
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
@@ -5012,7 +5052,7 @@ static int cmd_debug(void *data, const char *input) {
 			b = r_egg_get_bin (egg);
 			r_asm_set_pc (core->assembler, core->offset);
 			r_reg_arena_push (core->dbg->reg);
-			r_debug_execute (core->dbg, b->buf, r_buf_size (b), 0);
+			r_debug_execute (core->dbg, r_buf_buffer (b), r_buf_size (b), 0);
 			r_reg_arena_pop (core->dbg->reg);
 			break;
 		}

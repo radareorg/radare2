@@ -1055,6 +1055,10 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 		for (i = 0; i < argc; i++) {
 			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
+			if (!type || !name) {
+				eprintf ("Missing type for %s\n", type_fcn_name);
+				goto beach;
+			}
 			if (i == argc - 1) {
 				comma = false;
 			}

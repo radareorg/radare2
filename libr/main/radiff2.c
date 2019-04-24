@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -23,6 +23,7 @@ enum {
 	MODE_COLS
 };
 
+static bool zignatures = false;
 static char *file = NULL;
 static char *file2 = NULL;
 static ut32 count = 0;
@@ -53,7 +54,6 @@ static RCore *opencore(const char *f) {
 	}
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
 	r_config_set_i (c->config, "io.va", useva);
-	r_config_set_i (c->config, "anal.split", true);
 	r_config_set_i (c->config, "scr.interactive", false);
 	r_list_foreach (evals, iter, e) {
 		r_config_eval (c->config, e);
@@ -66,8 +66,13 @@ static RCore *opencore(const char *f) {
 			r_core_free (c);
 			return NULL;
 		}
-		r_core_bin_load (c, NULL, baddr);
+		(void) r_core_bin_load (c, NULL, baddr);
 		(void) r_core_bin_update_arch_bits (c);
+
+		// force PA mode when working with raw bins
+		if (r_list_empty (r_bin_get_sections (c->bin))) {
+			r_config_set_i (c->config, "io.va", false);
+		}
 
 		if (anal_all) {
 			const char *cmd = "aac";
@@ -80,6 +85,11 @@ static RCore *opencore(const char *f) {
 		if (runcmd) {
 			r_core_cmd0 (c, runcmd);
 		}
+		// generate zignaturez?
+		if (zignatures) {
+			r_core_cmd0 (c, "zg");
+		}
+		r_cons_flush ();
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
@@ -215,7 +225,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				int len = R_MAX (4, op->a_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->a_buf, len);
-				char *acbufasm = strdup (ac->buf_asm);
+				char *acbufasm = strdup (ac->assembly);
 				if (quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "- ");
 					printf ("%s\n", bufasm);
@@ -248,7 +258,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (core) {
 				int len = R_MAX (4, op->b_len);
 				RAsmCode *ac = r_asm_mdisassemble (core->assembler, op->b_buf, len);
-				char *acbufasm = strdup (ac->buf_asm);
+				char *acbufasm = strdup (ac->assembly);
 				if (quiet) {
 					char *bufasm = r_str_prefix_all (acbufasm, "+ ");
 					printf ("%s\n", bufasm);
@@ -426,7 +436,8 @@ static int show_help(int v) {
 			"  -U         unified output using system 'diff'\n"
 			"  -v         show version information\n"
 			"  -V         be verbose (current only for -s)\n"
-			"  -z         diff on extracted strings\n");
+			"  -z         diff on extracted strings\n"
+			"  -Z         diff code comparing zignatures\n");
 	}
 	return 1;
 }
@@ -699,7 +710,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 
 	evals = r_list_newf (NULL);
 
-	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zq")) != -1) {
+	while ((o = r_getopt (argc, argv, "Aa:b:BCDe:npg:G:OijrhcdsS:uUvVxt:zqZ")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = r_optarg;
@@ -784,7 +795,7 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			diffmode = 'U';
 			break;
 		case 'v':
-			return r_main_version ("radiff2");
+			return r_main_version_print ("radiff2");
 		case 'q':
 			quiet = true;
 			break;
@@ -796,6 +807,9 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			break;
 		case 'z':
 			mode = MODE_DIFF_STRS;
+			break;
+		case 'Z':
+			zignatures = true;
 			break;
 		default:
 			return show_help (0);
@@ -884,8 +898,14 @@ R_API int r_main_radiff2(int argc, char **argv) {
 			}
 			free (words);
 		} else if (mode == MODE_CODE) {
-			r_core_gdiff (c, c2);
-			r_core_diff_show (c, c2);
+			if (zignatures) {
+				r_core_cmd0 (c, "z~?");
+				r_core_cmd0 (c2, "z~?");
+				r_core_zdiff (c, c2);
+			} else {
+				r_core_gdiff (c, c2);
+				r_core_diff_show (c, c2);
+			}
 		} else if (mode == MODE_DIFF_IMPORTS) {
 			bufa = get_imports (c, &sza);
 			bufb = get_imports (c2, &szb);

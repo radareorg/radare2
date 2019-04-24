@@ -264,6 +264,7 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		}
 	}
 	if (len > 1) {
+		r_cons_gotoxy (x, y + rows);
 		r_cons_memcat (str + o, len);
 	}
 	r_cons_strcat (Color_RESET);
@@ -340,6 +341,10 @@ R_API bool r_cons_is_interactive() {
 	return I.context->is_interactive;
 }
 
+R_API bool r_cons_default_context_is_interactive(void) {
+	return r_cons_context_default.is_interactive;
+}
+
 R_API bool r_cons_is_breaked() {
 	if (I.cb_break) {
 		I.cb_break (I.user);
@@ -411,13 +416,12 @@ volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
 	sigwinchFlag = 1;
 }
-
+#endif
 void resizeWin(void) {
 	if (I.event_resize) {
 		I.event_resize (I.event_data);
 	}
 }
-#endif
 
 R_API bool r_cons_enable_mouse(const bool enable) {
 #if __UNIX__
@@ -427,6 +431,21 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 	bool enabled = I.mouse;
 	I.mouse = enable;
 	write (2, code, 16);
+	return enabled;
+#elif __WINDOWS__
+	DWORD mode, mouse;
+	HANDLE h;
+	bool enabled = I.mouse;
+	if (enabled == enable) {
+		return enabled;
+	}
+	h = GetStdHandle (STD_INPUT_HANDLE);
+	GetConsoleMode (h, &mode);
+	mouse = (ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS);
+	mode = enable ? (mode | mouse) & ~ENABLE_QUICK_EDIT_MODE : (mode & ~mouse) | ENABLE_QUICK_EDIT_MODE;
+	if (SetConsoleMode (h, mode)) {
+		I.mouse = enable;
+	}
 	return enabled;
 #else
 	return false;

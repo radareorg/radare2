@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2010-2019 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
+#include <r_parse.h>
 #include <r_util.h>
 #include <r_list.h>
 
@@ -1246,7 +1247,14 @@ repeat:
 				r_anal_op_fini (&jmp_aop);
 			}
 			break;
-		// Case of valid but unused "add [rax], al"
+		case R_ANAL_OP_TYPE_LOAD:
+			if (anal->opt.loads) {
+				if (anal->iob.is_valid_offset (anal->iob.io, op.ptr, 0)) {
+					r_meta_add (anal, R_META_TYPE_DATA, op.ptr, op.ptr + 4, "");
+				}
+			}
+			break;
+			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
 			if (anal->opt.ijmp) {
 				if ((op.size + 4 <= bytes_read) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
@@ -2191,29 +2199,19 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fs) {
 	return NULL;
 }
 
-// TODO: This function is not fully implemented
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
-	int length = 0;
-	if (!a || !f || !sig) {
-		eprintf ("r_anal_str_to_fcn: No function received\n");
-		return false;
+	r_return_val_if_fail (a || f || sig, false);
+	char *error_msg = NULL;
+	const char *out = r_parse_c_string (a, sig, &error_msg);
+	if (out) {
+		r_anal_save_parsed_type (a, out);
 	}
-	length = strlen (sig) + 10;
-	/* Add 'function' keyword */
-	char *str = calloc (1, length);
-	if (!str) {
-		eprintf ("Cannot allocate %d byte(s)\n", length);
-		return false;
+	if (error_msg) {
+		eprintf ("%s", error_msg);
+		free (error_msg);
 	}
-	strcpy (str, "function ");
-	strcat (str, sig);
 
-	/* TODO: improve arguments parsing */
-	/* TODO: implement parser */
-	/* TODO: simplify this complex api usage */
-
-	free (str);
 	return true;
 }
 

@@ -11,3 +11,5 @@ include ../../shlr/ar/deps.mk
 include ../../libr/socket/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
+
+LDFLAGS+=$(LINK)

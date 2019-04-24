@@ -57,7 +57,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "pCA", "pxx", "p=e $r-2", "pq 64", "pk 64"
+	"prc", "pxA", "pxx", "p=e $r-2", "pq 64", "pk 64"
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
@@ -588,6 +588,9 @@ repeat:
 			" df -> define function\n"
 			" du -> undefine function\n"
 			" dc -> define as code\n"
+			" dw -> define as dword (32bit)\n"
+			" dw -> define as qword (64bit)\n"
+			" dd -> define current block or selected bytes as data\n"
 			" V  -> view graph (same as press the 'space' key)\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
@@ -2172,6 +2175,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		wheelspeed = 1;
 	}
 
+	if (ch == 'l' && och == 6) {
+		ch = 'J';
+	} else if (ch == 'h' && och == 2) {
+		ch = 'K';
+	}
+
 	// do we need hotkeys for data references? not only calls?
 	// '0' is handled to seek at the beginning of the function
 	// unless the cursor is set, then, the 0 is captured here
@@ -2778,6 +2787,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
+							} else if (!strcmp (__core_visual_print_command (core),
+							                    "prc")) {
+								cols = r_core_get_prc_cols (core);
 							}
 							r_core_seek (core, core->offset + cols, 1);
 						}
@@ -2845,6 +2857,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					while (times--) {
 						if (isDisasmPrint (core->printidx)) {
 							r_core_visual_disasm_up (core, &cols);
+						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
+							cols = r_core_get_prc_cols (core);
 						}
 						r_core_seek_delta (core, -cols);
 					}
@@ -3004,11 +3018,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_DB) {
-					int w = r_config_get_i (core->config, "hex.cols");
-					r_config_set_i (core->config, "stack.size",
-						r_config_get_i (core->config, "stack.size") - w);
-
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							r_core_cmdf (core, "dr %s = %s-1\n", creg, creg);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") - w);
+					}
 				} else {
 					if (core->print->ocur == -1) {
 						sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
@@ -3028,10 +3048,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_DB) {
-					int w = r_config_get_i (core->config, "hex.cols");
-					r_config_set_i (core->config, "stack.size",
-						r_config_get_i (core->config, "stack.size") + w);
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							r_core_cmdf (core, "dr %s = %s+1\n", creg, creg);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") + w);
+					}
 				} else {
 					if (core->print->ocur == -1) {
 						sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
@@ -3051,7 +3078,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '/':
 			if (core->print->cur_enabled) {
-				visual_search (core);
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							int delta = core->assembler->bits / 8;
+							r_core_cmdf (core, "dr %s = %s-%d\n", creg, creg, delta);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") - w);
+					}
+				} else {
+					visual_search (core);
+				}
 			} else {
 				if (autoblocksize) {
 					r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
@@ -3079,7 +3120,21 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
-				r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
+				if (core->seltab < 2 && core->printidx == R_CORE_VISUAL_MODE_DB) {
+					if (core->seltab) {
+						const char *creg = core->dbg->creg;
+						if (creg) {
+							int delta = core->assembler->bits / 8;
+							r_core_cmdf (core, "dr %s = %s+%d\n", creg, creg, delta);
+						}
+					} else {
+						int w = r_config_get_i (core->config, "hex.cols");
+						r_config_set_i (core->config, "stack.size",
+							r_config_get_i (core->config, "stack.size") + w);
+					}
+				} else {
+					r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
+				}
 			} else if (!autoblocksize) {
 				r_core_block_size (core, core->blocksize + cols);
 			}
@@ -3397,7 +3452,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 		}
 	}
-	if (r_config_get_i (core->config, "scr.zoneflags")) {
+	if (r_config_get_i (core->config, "scr.scrollbar") == 2) {
 		r_core_cmd (core, "fz:", 0);
 	}
 	if (r_config_get_i (core->config, "cfg.debug")) {
@@ -3600,8 +3655,20 @@ static int visual_responsive(RCore *core) {
 	return w;
 }
 
-static void scrollbar(RCore *core) {
+// TODO: use colors
+// TODO: find better name
+R_API void r_core_print_scrollbar(RCore *core) {
 	int i, h, w = r_cons_get_size (&h);
+
+	int scrollbar = r_config_get_i (core->config, "scr.scrollbar");
+	if (scrollbar == 2) {
+		// already handled by r_core_cmd("zf:") in visual.c
+		return;
+	}
+	if (scrollbar > 2) {
+		r_core_print_scrollbar_bottom (core);
+		return;
+	}
 
 	if (w < 10 || h < 3) {
 		return;
@@ -3618,16 +3685,22 @@ static void scrollbar(RCore *core) {
 		to = r_num_math (core->num, "$s");
 	}
 	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
-	r_cons_gotoxy (w - strlen (s) + 1, 1);
+	r_cons_gotoxy (w - strlen (s) + 1, 2);
 	r_cons_strcat (s);
 	free (s);
 
 	ut64 block = (to - from) / h;
+
+	RList *words = r_flag_zone_barlist (core->flags, from, block, h);
+
 	bool hadMatch = false;
 	for (i = 0; i < h ; i++) {
-		// TODO: show short comment introduced by user in there
-		// TODO: use colors
-		r_cons_gotoxy (w, i + 2);
+		const char *word = r_list_pop_head (words);
+		if (word && *word) {
+			r_cons_gotoxy (w - strlen (word) - 1, i + 3);
+			r_cons_printf ("%s>", word);
+		}
+		r_cons_gotoxy (w, i + 3);
 		if (hadMatch) {
 			r_cons_printf ("|");
 		} else {
@@ -3647,6 +3720,74 @@ static void scrollbar(RCore *core) {
 		r_cons_strcat (s);
 		free (s);
 	}
+	r_list_free (words);
+	r_cons_flush ();
+}
+
+R_API void r_core_print_scrollbar_bottom(RCore *core) {
+	int i, h, w = r_cons_get_size (&h);
+
+	if (w < 10 || h < 4) {
+		return;
+	}
+	ut64 from = 0;
+	ut64 to = UT64_MAX;
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		from = r_num_math (core->num, "$D");
+		to = r_num_math (core->num, "$D+$DD");
+	} else if (r_config_get_i (core->config, "io.va")) {
+		from = r_num_math (core->num, "$S");
+		to = r_num_math (core->num, "$S+$SS");
+	} else {
+		to = r_num_math (core->num, "$s");
+	}
+	char *s = r_str_newf ("[0x%08"PFMT64x"]", from);
+	int slen = strlen (s) + 1;
+	r_cons_gotoxy (0, h + 1);
+	r_cons_strcat (s);
+	free (s);
+
+	int linew = (w - (slen * 2)) + 1;
+	ut64 block = (to - from) / linew;
+
+	RList *words = r_flag_zone_barlist (core->flags, from, block, h);
+
+	bool hadMatch = false;
+	for (i = 0; i < linew + 1; i++) {
+		r_cons_gotoxy (i + slen, h + 1);
+		if (hadMatch) {
+			r_cons_strcat ("-");
+		} else {
+			ut64 cur = from + (block * i);
+			ut64 nex = from + (block * (i + 2));
+			if (R_BETWEEN (cur, core->offset, nex)) {
+				r_cons_strcat (Color_INVERT"-"Color_RESET);
+				hadMatch = true;
+			} else {
+				r_cons_strcat ("-");
+			}
+		}
+	}
+	for (i = 0; i < linew; i++) {
+		const char *word = r_list_pop_head (words);
+		if (word && *word) {
+			ut64 cur = from + (block * i);
+			ut64 nex = from + (block * (i + strlen (word) + 1));
+			r_cons_gotoxy (i + slen - 1, h);
+			if (R_BETWEEN (cur, core->offset, nex)) {
+				r_cons_printf (Color_INVERT"{%s}"Color_RESET, word);
+			} else {
+				r_cons_printf ("{%s}", word);
+			}
+		}
+	}
+	s = r_str_newf ("[0x%08"PFMT64x"]", to);
+	if (s) {
+		r_cons_gotoxy (linew + slen + 1, h + 1);
+		r_cons_strcat (s);
+		free (s);
+	}
+	r_list_free (words);
 	r_cons_flush ();
 }
 
@@ -3783,7 +3924,7 @@ static void visual_refresh(RCore *core) {
 		printSnow (core);
 	}
 	if (r_config_get_i (core->config, "scr.scrollbar")) {
-		scrollbar (core);
+		r_core_print_scrollbar (core);
 	}
 }
 
@@ -4012,4 +4153,95 @@ dodo:
 	core->cons->event_data = NULL;
 	r_cons_show_cursor (true);
 	return 0;
+}
+
+// TODO: move this to the table api
+R_API void r_core_visual_list(RCore *core, RList *list, ut64 seek, ut64 len, int width, int use_color) {
+	ut64 mul, min = -1, max = -1;
+	RListIter *iter;
+	ListInfo *info;
+	int j, i;
+	RIO *io = core->io;
+	width -= 80;
+	if (width < 1) {
+		width = 30;
+	}
+
+	r_list_foreach (list, iter, info) {
+		if (min == -1 || info->pitv.addr < min) {
+			min = info->pitv.addr;
+		}
+		if (max == -1 || info->pitv.addr + info->pitv.size > max) {
+			max = info->pitv.addr + info->pitv.size;
+		}
+	}
+	mul = (max - min) / width;
+	if (min != -1 && mul > 0) {
+		const char * color = "", *color_end = "";
+		i = 0;
+		r_list_foreach (list, iter, info) {
+			if (use_color && info->perm != -1) {
+				color_end = Color_RESET;
+				if ((info->perm & R_PERM_X) && (info->perm & R_PERM_W)) { // exec & write bits
+					color = r_cons_singleton ()->context->pal.graph_trufae;
+				} else if ((info->perm & R_PERM_X)) { // exec bit
+					color = r_cons_singleton ()->context->pal.graph_true;
+				} else if ((info->perm & R_PERM_W)) { // write bit
+					color = r_cons_singleton ()->context->pal.graph_false;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
+			if (io->va) {
+				io->cb_printf ("%03d%c %s0x%08"PFMT64x"%s |", i,
+						r_itv_contain (info->vitv, seek) ? '*' : ' ',
+						color, info->vitv.addr, color_end);
+			} else {
+				io->cb_printf ("%03d%c %s0x%08"PFMT64x"%s |", i,
+						r_itv_contain (info->pitv, seek) ? '*' : ' ',
+						color, info->pitv.addr, color_end);
+			}
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + j * mul;
+				ut64 npos = min + (j + 1) * mul;
+				if (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos) {
+					io->cb_printf ("#");
+				} else {
+					io->cb_printf ("-");
+				}
+			}
+			if (io->va) {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %6s %s\n",
+					color, r_itv_end (info->vitv), color_end,
+					(info->perm != -1)? r_str_rwx_i (info->perm) : "   ",
+					(info->extra)?info->extra : "    ",
+					(info->name)?info->name : " ");
+			} else {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %s %6s %s\n",
+					color, r_itv_end (info->pitv), color_end,
+					(info->perm != -1)? r_str_rwx_i (info->perm) : "   ",
+					(info->extra)?info->extra : "      ",
+					(info->name)?info->name : "");
+			}
+			i++;
+		}
+		/* current seek */
+		if (i > 0 && len != 0) {
+			if (seek == UT64_MAX) {
+				seek = 0;
+			}
+			io->cb_printf ("=>   0x%08"PFMT64x" |", seek);
+			for (j = 0; j < width; j++) {
+				io->cb_printf (
+					((j * mul) + min >= seek &&
+					 (j * mul) + min <= seek+len)
+					?"^" : "-");
+			}
+			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
+		}
+	}
 }

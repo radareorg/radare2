@@ -210,7 +210,7 @@ typedef struct r_bin_wasm_obj_t {
 
 } RBinWasmObj;
 
-RBinWasmObj *r_bin_wasm_init(RBinFile *bf);
+RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RList *r_bin_wasm_get_types(RBinWasmObj *bin);

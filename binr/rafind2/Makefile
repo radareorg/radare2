@@ -12,3 +12,4 @@ include ../../shlr/gdb/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
+LDFLAGS+=$(LINK)

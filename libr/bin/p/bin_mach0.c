@@ -27,26 +27,6 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return r_str_dup (NULL, (const char*)bin->signature);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	struct MACH0_(obj_t) *res = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	RBuffer *tbuf = r_buf_new ();
-	if (!tbuf) {
-		return false;
-	}
-	r_buf_set_bytes (tbuf, buf, sz);
-	struct MACH0_(opts_t) opts;
-	MACH0_(opts_set_default) (&opts, bf);
-	res = MACH0_(new_buf) (tbuf, &opts);
-	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
 
 static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
@@ -60,26 +40,6 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	return res;
-}
-
-static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
-	ut64 sz = bf ? r_buf_size (bf->buf): 0;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	if (!bf->o || !bf->o->bin_obj) {
-		if (bf->o) {
-			MACH0_(mach0_free) (bf->o->bin_obj);
-		}
-		return false;
-	}
-	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
-	bf->o->kv = mo->kv; // NOP
-	sdb_ns_set (bf->sdb, "info", mo->kv);
-	return true;
 }
 
 static int destroy(RBinFile *bf) {
@@ -914,8 +874,6 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.desc = "mach0 bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,

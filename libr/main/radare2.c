@@ -57,6 +57,7 @@ static int r_main_version_verify(int show) {
 		{ "r_crypto", &r_crypto_version },
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
+		{ "r_main", &r_main_version },
 		{ "r_hash", &r_hash_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
@@ -689,7 +690,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			} else {
 				r_main_version_verify (0);
 				LISTS_FREE ();
-				return r_main_version ("radare2");
+				return r_main_version_print ("radare2");
 			}
 		case 'V':
 			return r_main_version_verify (1);
@@ -1293,7 +1294,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 
 		/* check if file.path has changed */
 		if (iod && !strstr (iod->uri, "://")) {
-			const char *npath, *nsha1;
+			const char *npath;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
 			iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
@@ -1322,15 +1323,17 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_flag_space_set (r.flags, NULL);
 		/* load <file>.r2 */
 		{
-			char f[128];
-			snprintf (f, sizeof (f), "%s.r2", pfile);
-			if (r_file_exists (f)) {
+			char* f = r_str_newf ("%s.r2", pfile);
+			const char *uri_splitter = strstr (f, "://");
+			const char *path = uri_splitter? uri_splitter + 3: f;
+			if (r_file_exists (path)) {
 				// TODO: should 'q' unset the interactive bit?
 				bool isInteractive = r_cons_is_interactive ();
-				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", f)) {
-					r_core_cmd_file (&r, f);
+				if (isInteractive && r_cons_yesno ('n', "Do you want to run the '%s' script? (y/N) ", path)) {
+					r_core_cmd_file (&r, path);
 				}
 			}
+			free (f);
 		}
 	} else {
 		r_core_block_read (&r);

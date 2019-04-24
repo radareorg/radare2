@@ -2575,6 +2575,23 @@ static void variable_rename (RCore *core, ut64 addr, int vindex, const char *nam
 	r_list_free (list);
 }
 
+static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *type) {
+	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RList *list = r_anal_var_all_list (core->anal, fcn);
+	RListIter *iter;
+	RAnalVar* var;
+
+	r_list_foreach (list, iter, var) {
+		if (vindex == 0) {
+			r_anal_var_retype (core->anal, fcn->addr,
+				R_ANAL_VAR_SCOPE_LOCAL, -1, var->kind, type, -1, var->isarg, var->name);
+			break;
+		}
+		vindex--;
+	}
+	r_list_free (list);
+}
+
 // In visual mode, display function list
 static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int wdelta = (idx > 5)? idx - 5: 0;
@@ -2746,9 +2763,9 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	case 1:
 		r_cons_printf (
 			"-[ variables ]----- 0x%08"PFMT64x"\n"
-			"(a) add     (x)xrefs  \n"
-			"(r) rename  (g)go     \n"
-			"(d) delete  (q)quit   \n", addr);
+			"(a) add     (x) xrefs   (r) rename\n"
+			"(t) type    (g) go      (d) delete\n"
+			"(q) quit   \n", addr);
 		addr = var_variables_show (core, option, &variable_option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
@@ -2930,8 +2947,13 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case ':':
-			r_core_visual_prompt (core);
-			r_cons_any_key (NULL);
+			{
+				ut64 orig = core->offset;
+				r_core_seek (core, addr, 0);
+				r_core_visual_prompt (core);
+				r_cons_any_key (NULL);
+				r_core_seek (core, orig, 0);
+			}
 			continue;
 		case 'a':
 			switch (level) {
@@ -2987,6 +3009,21 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 						}
 					}
 					break;
+				}
+				r_cons_set_raw (true);
+				r_cons_show_cursor (false);
+			}
+			break;
+		case 't':
+			if (level == 1) {
+				r_cons_show_cursor (true);
+				r_cons_set_raw (false);
+				r_line_set_prompt ("New type: ");
+				if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
+					if (*old) {
+						//old[strlen (old)-1] = 0;
+						variable_set_type (core, addr, variable_option, old);
+					}
 				}
 				r_cons_set_raw (true);
 				r_cons_show_cursor (false);
@@ -3063,7 +3100,13 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case '!':
-			r_core_cmd0 (core, "afls");
+			// TODO: use aflsn/aflsb/aflss/...
+			{
+			static int sortMode = 0;
+			const char *sortModes[4] = { "aflsa", "aflss", "aflsb", "aflsn" };
+			r_core_cmd0 (core, sortModes[sortMode%4]);
+			sortMode++;
+			}
 			break;
 		case 'k':
 			if (selectPanel) {

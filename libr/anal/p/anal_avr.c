@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2018 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2019 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -249,13 +249,6 @@ static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
 	return r;
 }
 
-static void __generic_bitop_flags(RAnalOp *op) {
-	ESIL_A ("0,vf,=,");					// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-}
-
 static void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
 	if (ireg) {
 		// preincrement index register
@@ -420,21 +413,16 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 	if (len < 1) {
 		return;
 	}
-	int d = ((buf[0] & 0x30) >> 3) + 24;
-	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
+	const ut32 d = ((buf[0] & 0x30) >> 3) + 24;
+	const ut32 k = (buf[0] & 0x0f) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
-	ESIL_A ("r%d:r%d,%d,+,", d + 1, d, k);			// Rd+1:Rd + Rr
+	ESIL_A ("%d,r%d_r%d,+=,", k, d + 1, d);			// Rd+1_Rd + k
 								// FLAGS:
-	ESIL_A ("r%d,0x80,&,!,"					// V
-		"0,RPICK,0x8000,&,!,!,"
-		"&,vf,=,", d + 1);
-	ESIL_A ("0,RPICK,0x8000,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,!,"				// C
-		"0,RPICK,0x8000,&,!,"
-		"&,cf,=,", d + 1);
+	ESIL_A ("$o,vf,:=,");					// V
+	ESIL_A ("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d);	// N
+	ESIL_A ("$z,zf,:=,");					// Z
+	ESIL_A ("15,$c,cf,:=,");				// C
 	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d:r%d,=,", d + 1, d);			// Rd = result
 }
 
 INST_HANDLER (and) {	// AND Rd, Rr
@@ -442,11 +430,9 @@ INST_HANDLER (and) {	// AND Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
-	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
-	ESIL_A ("r%d,r%d,&,", r, d);				// 0: Rd & Rr
-	__generic_bitop_flags (op);				// up flags
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	const ut32 r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	ESIL_A ("r%d,r%d,&=,$z,zf,:=,r%d,0x80,&,!,!,nf,:=,0,vf,:=,nf,sf,:=,", r, d, d);
 }
 
 INST_HANDLER (andi) {	// ANDI Rd, K
@@ -454,12 +440,10 @@ INST_HANDLER (andi) {	// ANDI Rd, K
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) + 16;
-	int k = ((buf[1] & 0x0f) << 4) | (buf[0] & 0x0f);
+	const ut32 d = ((buf[0] >> 4) & 0xf) + 16;
+	const ut32 k = ((buf[1] & 0x0f) << 4) | (buf[0] & 0x0f);
 	op->val = k;
-	ESIL_A ("%d,r%d,&,", k, d);				// 0: Rd & Rr
-	__generic_bitop_flags (op);				// up flags
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	ESIL_A ("%d,r%d,&=,$z,zf,:=,r%d,0x80,&,!,!,nf,:=,0,vf,:=,nf,sf,:=,", k, d, d);
 }
 
 INST_HANDLER (asr) {	// ASR Rd
@@ -467,13 +451,12 @@ INST_HANDLER (asr) {	// ASR Rd
 		return;
 	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
-	ESIL_A ("1,r%d,>>,r%d,0x80,&,|,", d, d);		// 0: R=(Rd >> 1) | Rd7
-	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("nf,cf,^,vf,=,");				// V
-	ESIL_A ("nf,vf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = R
+	ESIL_A ("r%d,0x1,&,cf,:=,0x1,r%d,>>,r%d,0x80,&,|,", d, d, d);
+								// 0: R=(Rd >> 1) | Rd7
+	ESIL_A ("$z,zf,:=,");					// Z
+	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);			// N
+	ESIL_A ("nf,cf,^,vf,:=,");				// V
+	ESIL_A ("nf,vf,^,sf,:=,");				// S
 }
 
 INST_HANDLER (bclr) {	// BCLR s
@@ -614,10 +597,8 @@ INST_HANDLER (com) {	// COM Rd
 	}
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 1) << 4);
 
-	ESIL_A ("r%d,0xff,-,0xff,&,r%d,=,", r, r);		// Rd = 0xFF-Rd
-								// FLAGS:
-	ESIL_A ("0,cf,=,");					// C
-	__generic_bitop_flags (op);				// ...rest...
+	ESIL_A ("r%d,0xff,-,r%d,=,$z,zf,:=,0,cf,:=,0,vf,:=,r%d,0x80,&,!,!,nf,:=,vf,nf,^,sf,:=", r, r, r);
+	// Rd = 0xFF-Rd
 }
 
 INST_HANDLER (cp) {	// CP Rd, Rr
@@ -683,14 +664,13 @@ INST_HANDLER (dec) {	// DEC Rd
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	ESIL_A ("-1,r%d,+,", d);				// --Rd
-								// FLAGS:
-	ESIL_A ("0,RPICK,0x7f,==,$z,vf,=,");			// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	ESIL_A ("0x1,r%d,-=,", d);			// Rd--
+							// FLAGS:
+	ESIL_A ("$o,vf,:=,");				// V
+	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);		// N
+	ESIL_A ("$z,zf,:=,");				// Z
+	ESIL_A ("vf,nf,^,sf,:=,");			// S
 }
 
 INST_HANDLER (des) {	// DES k
@@ -747,11 +727,10 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
-	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
-	ESIL_A ("r%d,r%d,^,", r, d);			// 0: Rd ^ Rr
-	__generic_bitop_flags (op);			// up flags
-	ESIL_A ("r%d,=,", d);				// Rd = Result
+	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	const ut32 r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	ESIL_A ("r%d,r%d,^=,$z,zf,:=,0,vf,:=,r%d,0x80,&,!,!,nf,:=,nf,sf,:=", r, d, d);
+	// 0: Rd ^= Rr
 }
 
 INST_HANDLER (fmul) {	// FMUL Rd, Rr
@@ -850,14 +829,13 @@ INST_HANDLER (inc) {	// INC Rd
 	if (len < 2) {
 		return;
 	}
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	ESIL_A ("1,r%d,+,", d);					// ++Rd
-								// FLAGS:
-	ESIL_A ("0,RPICK,0x80,==,$z,vf,=,");			// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	ESIL_A ("1,r%d,+=,", d);			// Rd++
+							// FLAGS:
+	ESIL_A ("$o,vf,:=,");				// V
+	ESIL_A ("r%d,0x80,&,!,!,nf,:=,", d);		// N
+	ESIL_A ("$z,zf,:=,");				// Z
+	ESIL_A ("vf,nf,^,sf,:=,");			// S
 }
 
 INST_HANDLER (jmp) {	// JMP k

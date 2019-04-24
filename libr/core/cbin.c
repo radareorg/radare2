@@ -369,7 +369,12 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
-		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+		ut8 *tmp = R_NEWS (ut8, bf->size);
+		if (!tmp) {
+			return false;
+		}
+		r_io_read_at (r->io, 0, tmp, bf->size);
+		r_buf_write_at (bf->buf, 0, tmp, bf->size);
 	}
 	if (!r->file) {
 		eprintf ("Core file not open\n");
@@ -773,8 +778,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (true, hash);
-				int len = r_hash_calculate (rh, hash, (const ut8*)
-						binfile->buf->buf+h->from, h->to);
+				ut8 *tmp = R_NEWS (ut8, h->to);
+				if (!tmp) {
+					return false;
+				}
+				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				int len = r_hash_calculate (rh, hash, tmp, h->to);
+				free (tmp);
 				if (len < 1) {
 					eprintf ("Invaild checksum length\n");
 				}
@@ -792,8 +802,13 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (true, hash);
-				int len = r_hash_calculate (rh, hash, (const ut8*)
-						binfile->buf->buf+h->from, h->to);
+				ut8 *tmp = R_NEWS (ut8, h->to);
+				if (!tmp) {
+					return false;
+				}
+				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				int len = r_hash_calculate (rh, hash, tmp, h->to);
+				free (tmp);
 				if (len < 1) {
 					eprintf ("Invalid wtf\n");
 				}
@@ -2233,93 +2248,6 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
-#define PRINT_CURRENT_SEEK \
-        if (i > 0 && len != 0) { \
-                if (seek == UT64_MAX) seek = 0; \
-                io->cb_printf ("=>  0x%08"PFMT64x" |", seek); \
-                for (j = 0; j < width; j++) { \
-                        io->cb_printf ( \
-                                ((j*mul) + min >= seek && \
-                                (j*mul) + min <= seek + len) \
-                                ? "^" : "-"); \
-                } \
-                io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len); \
-        }
-
-static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, int use_color, int cols) {
-	ut64 mul, min = -1, max = -1;
-	RListIter *iter;
-	RBinSection *s;
-	int j, i = 0;
-	int width = cols - 70;
-	if (width < 1) {
-		width = 30;
-	}
-	ls_foreach (sections, iter, s) {
-		if (min == -1 || s->paddr < min) {
-			min = s->paddr;
-		}
-		if (max == -1 || s->paddr+s->size > max) {
-			max = s->paddr + s->size;
-		}
-	}
-	mul = (max-min) / width;
-	if (min != -1 && mul != 0) {
-		const char * color = "", *color_end = "";
-		char humansz[8];
-		i = 0;
-		ls_foreach (sections, iter, s) {
-			char *r_sname = r_str_escape (s->name);
-			r_num_units (humansz, sizeof (humansz), s->size);
-			if (use_color) {
-				color_end = Color_RESET;
-				if ((s->perm & R_PERM_X) && (s->perm & R_PERM_W)) { // exec & write bits
-					color = r_cons_singleton()->context->pal.widget_sel;
-				} else if (s->perm & R_PERM_X) { // exec bit
-					color = r_cons_singleton()->context->pal.graph_true;
-				} else if (s->perm & R_PERM_W) { // write bit
-					color = r_cons_singleton()->context->pal.graph_false;
-				} else {
-					color = "";
-					color_end = "";
-				}
-			} else {
-				color = "";
-				color_end = "";
-			}
-			if (io->va) {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek >= s->vaddr && seek < s->vaddr + s->vsize) ? '*' : ' ',
-						color, s->vaddr, color_end);
-			} else {
-				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek >= s->paddr && seek < s->paddr + s->size) ? '*' : ' ',
-						color, s->paddr, color_end);
-			}
-			for (j = 0; j < width; j++) {
-				ut64 pos = min + (j * mul);
-				ut64 npos = min + ((j + 1) * mul);
-				if (s->paddr < npos && (s->paddr + s->size) > pos)
-					io->cb_printf ("#");
-				else io->cb_printf ("-");
-			}
-			if (io->va) {
-				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
-						color, s->vaddr + s->vsize, color_end, humansz,
-						r_str_rwx_i (s->perm), r_sname);
-			} else {
-				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
-						color, s->paddr+s->size, color_end, humansz,
-						r_str_rwx_i (s->perm), r_sname);
-			}
-
-			i++;
-			free (r_sname);
-		}
-		PRINT_CURRENT_SEEK;
-	}
-}
-
 typedef struct {
 	const char *uri;
 	int perm;
@@ -2454,7 +2382,28 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_EQUAL (mode)) {
 		int cols = r_cons_get_size (NULL);
-		list_section_visual (r->io, sections, r->offset, -1, r->print->flags & R_PRINT_FLAGS_COLOR, cols);
+		RList *list = r_list_new ();
+		if (!list) {
+			return false;
+		}
+		SdbListIter *iter;
+		RBinSection *s;
+		r_list_foreach (sections, iter, s) {
+			char humansz[8];
+			ListInfo *info = R_NEW (ListInfo);
+			if (!info) {
+				return false;
+			}
+			info->name = s->name;
+			info->pitv = (RInterval){s->paddr, s->size};
+			info->vitv = (RInterval){s->vaddr, s->vsize};
+			info->perm = s->perm;
+			r_num_units (humansz, sizeof (humansz), s->size);
+			info->extra = strdup (humansz);
+			r_list_append (list, info);
+		}
+		r_core_visual_list (r, list, r->offset, -1, cols, r->print->flags & R_PRINT_FLAGS_COLOR);
+		r_list_free (list);
 		goto out;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
@@ -2746,6 +2695,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
 			if (field->comment && *field->comment) {
 				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", field->comment, addr);
+				r_cons_printf ("Cf %d %s @ 0x%"PFMT64x"\n", field->size, field->format, addr);
 			}
 			if (field->format && *field->format) {
 				r_cons_printf ("pf.%s %s\n", field->name, field->format);
