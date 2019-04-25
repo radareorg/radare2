@@ -403,6 +403,7 @@ static const char *help_msg_pi[] = {
 	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
+	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
 	NULL
 };
 
@@ -3852,21 +3853,43 @@ r_cons_printf ("base:\n");
 }
 #endif
 
-static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
+static void disasm_until_ret(RCore *core, ut64 addr, char type_print, const char *arg) {
 	int p = 0;
-	ut8 *buf = calloc (core->blocksize, 1);
-	if (!buf) {
-		return;
+	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	int i, limit = 1024;
+	if (arg && *arg && arg[1]) {
+		limit = r_num_math (core->num, arg + 1);
 	}
-	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
-	while (p + 4 < core->blocksize) {
-		RAnalOp *op = r_core_anal_op (core, addr + p, R_ANAL_OP_MASK_BASIC);
+	for (i = 0; i < limit; i++) {
+		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 		if (op) {
-			r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", op->mnemonic);
-			if (op->type == R_ANAL_OP_TYPE_RET) {
-				break;
+			char *mnem = op->mnemonic;
+			char *m = malloc ((strlen (mnem) * 2) + 32);
+			strcpy (m, mnem);
+			r_parse_parse (core->parser, op->mnemonic, m);
+			if (type_print == 'q') {
+				r_cons_printf ("%s\n", m);
+			} else {
+				if (show_color) {
+					const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
+					r_cons_printf ("%s0x%08"PFMT64x""Color_RESET"  %10s %s\n",
+							offsetColor, addr + p, "", m);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", m);
+				}
 			}
-			p += op->size;
+			switch (op->type & 0xfffff) {
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_UJMP:
+				goto beach;
+				break;
+
+			}
+			if (op->type == R_ANAL_OP_TYPE_JMP) {
+				addr = op->jump;
+			} else {
+				addr += op->size;
+			}
 		} else {
 			eprintf ("[pdp] Cannot get op at 0x%08"PFMT64x"\n", addr + p);
 			r_anal_op_free (op);
@@ -3875,7 +3898,8 @@ static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
 		//r_io_read_at (core->io, n, rbuf, 512);
 		r_anal_op_free (op);
 	}
-	free (buf);
+beach:
+	return;
 }
 
 static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
@@ -3884,13 +3908,14 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	ut8 *buf = calloc (core->blocksize, 1);
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
 	while (p + 4 < core->blocksize) {
+		const bool be = core->print->big_endian;
 		if (core->assembler->bits == 64) {
-			n = r_read_ble64 (buf + p, core->print->big_endian);
+			n = r_read_ble64 (buf + p, be);
 		} else {
-			n = r_read_ble32 (buf + p, core->print->big_endian);
+			n = r_read_ble32 (buf + p, be);
 		}
 		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
-		disasm_until_ret (core, n, type_print);
+		disasm_until_ret (core, n, type_print, NULL);
 		if (core->assembler->bits == 64) {
 			p += 8;
 		} else {
@@ -4726,9 +4751,12 @@ static int cmd_print(void *data, const char *input) {
 	case 'i': // "pi"
 		switch (input[1]) {
 		case '?':
-// r_cons_printf ("|Usage: pi[defj] [num]\n");
+			// r_cons_printf ("|Usage: pi[defj] [num]\n");
 			r_core_cmd_help (core, help_msg_pi);
-		break;
+			break;
+		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
+			disasm_until_ret (core, core->offset, input[2], input + 2);
+			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
 				r_core_print_disasm_all (core, core->offset,
