@@ -1110,15 +1110,15 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 	if (use_spp) {
 		Output out;
 		out.fout = NULL;
-		out.cout = r_strbuf_new ("");
-		r_strbuf_init (out.cout);
+		out.cout = (SStrBuf *)r_strbuf_new ("");
+		r_strbuf_init ((RStrBuf *)out.cout);
 		struct Proc proc;
 		spp_proc_set (&proc, "spp", 1);
 
 		lbuf = replace_directives (lbuf);
 		spp_eval (lbuf, &out);
 		free (lbuf);
-		lbuf = strdup (r_strbuf_get (out.cout));
+		lbuf = strdup (r_strbuf_get ((RStrBuf *)out.cout));
 	}
 	acode = r_asm_massemble (a, lbuf);
 	free (lbuf);

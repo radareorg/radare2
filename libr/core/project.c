@@ -312,13 +312,13 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	}
 	Output out;
 	out.fout = NULL;
-	out.cout = r_strbuf_new (NULL);
-	r_strbuf_init (out.cout);
+	out.cout = (SStrBuf *)r_strbuf_new (NULL);
+	r_strbuf_init ((RStrBuf *)out.cout);
 	struct Proc proc;
 	spp_proc_set (&proc, "spp", 1);
 	spp_eval (data, &out);
 	free (data);
-	data = strdup (r_strbuf_get (out.cout));
+	data = strdup (r_strbuf_get ((RStrBuf *)out.cout));
 	char *bol = strtok (data, "\n");
 	while (bol) {
 		if (bol[0] == ':') {

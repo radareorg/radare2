@@ -84,6 +84,7 @@ struct Arg *args = (struct Arg *)&x##_args; \
 struct Proc *proc = &x##_proc;
 
 typedef struct s_strbuf_t {
+	// WARNING: this MUST be the same as RStrBuf!
 	int len;
 	char *ptr;
 	int ptrlen;

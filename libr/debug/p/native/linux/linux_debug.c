@@ -78,7 +78,7 @@ int linux_handle_signals (RDebug *dbg) {
 		dbg->stopaddr = (ut64)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-#warning DO MORE RDEBUGREASON HERE
+// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP:
 		{

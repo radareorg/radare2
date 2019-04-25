@@ -2323,7 +2323,7 @@ static void ds_print_lines_right(RDisasmState *ds){
 }
 
 static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) {
-	int pre, post;
+	int pre;
 	if (cols < 8) {
 		cols = 8;
 	}
@@ -2343,13 +2343,11 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 	}
 	if (ds->show_color) {
 		pre = strlen (color) + 1;
-		post = strlen (color) + 1 + strlen (Color_RESET);
 		snprintf (out, outsz-pre, "%s %s", color, sect);
 		strcat (out, Color_RESET);
 		out[outsz - 1] = 0;
 	} else {
 		r_str_ncpy (out + 1, sect, outsz - 2);
-		post = 0;
 	}
 	strcat (out, " ");
 	r_cons_strcat (out);
