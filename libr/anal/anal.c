@@ -814,5 +814,6 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 	if (b) {
 		b->anal = anal;
 		b->get_fcn_in = r_anal_get_fcn_in;
+		b->get_hint = r_anal_hint_get;
 	}
 }

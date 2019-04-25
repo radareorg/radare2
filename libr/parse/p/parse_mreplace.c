@@ -16,6 +16,21 @@ struct mreplace_t {
 	char *replace;
 };
 
+static char *new_parse(RParse *p, const char *data) {
+	const struct mreplace_t *sdata = (struct mreplace_t*)data;
+	return treplace (sdata->data, sdata->search, sdata->replace);
+}
+
+static char *new_assemble(RParse *p, const char *expr) {
+	char *str = strdup (expr);
+	char *ptr = strchr (str, '=');
+	if (ptr) {
+		*ptr = '\0';
+		return r_str_newf ("mov %s, %s", expr, ptr + 1);
+	}
+	return strdup (expr);
+}
+
 static int parse(RParse *p, const char *data, char *str) {
 	const struct mreplace_t *sdata = (struct mreplace_t*)data;
 	char *buf = treplace (sdata->data, sdata->search, sdata->replace);
@@ -28,9 +43,7 @@ static int assemble(RParse *p, char *data, char *str) {
 	char *ptr = strchr (str, '=');
 	if (ptr) {
 		*ptr = '\0';
-		sprintf (data, "mov %s, %s", str, ptr+1);
-	} else {
-		strcpy (data, str);
+		sprintf (data, "mov %s, %s", str, ptr + 1);
 	}
 	return true;
 }

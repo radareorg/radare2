@@ -32,12 +32,12 @@ typedef struct r_parse_t {
 	int minval;
 	char *retleave_asm;
 	struct r_parse_plugin_t *cur;
-	RAnal *anal; // weak anal ref
+	// RAnal *anal; // weak anal ref XXX do not use. use analb.anal
 	RList *parsers;
 	RAnalVarList varlist;
 	char* (*get_op_ireg)(void *user, ut64 addr);
 	RAnalBind analb;
-	RFlagGetAtAddr flag_get;
+	RFlagGetAtAddr flag_get; // XXX
 } RParse;
 
 typedef struct r_parse_plugin_t {
