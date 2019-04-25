@@ -1319,10 +1319,8 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_core_cmd_help (core, help_detail_pf);
 				}
 			} else {
-				while (IS_WHITESPACE (*_input)) {
-					_input++;
-				}
-				const char *val = sdb_get (core->print->formats, _input, NULL);
+				const char *struct_name = r_str_trim_ro (_input);
+				const char *val = sdb_get (core->print->formats, struct_name, NULL);
 				if (val) {
 					r_cons_printf ("%s\n", val);
 				} else {
