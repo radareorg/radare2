@@ -2662,9 +2662,10 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
 	const char *infos, *metas;
 	char key[100];
-	RAnalMetaItem MI, *mi = &MI;
+	RAnalMetaItem *mi;
 	RCore *core = ds->core;
 	Sdb *s = core->anal->sdb_meta;
+	RListIter *iter;
 	if (!ds->asm_meta) {
 		return 0;
 	}
@@ -2673,23 +2674,14 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	infos = sdb_const_get (s, key, 0);
 
 	ds->mi_found = false;
-	if (infos && *infos) {
+
+	RList *list =  r_meta_find_list_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+
+	if (list) {
 		if (ds->show_flag_in_bytes) {
 			ds_print_show_bytes (ds);
 		}
-		for (; *infos; infos++) {
-			if (*infos == ',') {
-				continue;
-			}
-			snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, ds->at);
-			metas = sdb_const_get (s, key, 0);
-			if (!metas) {
-				continue;
-			}
-			if (!r_meta_deserialize_val (core->anal, mi, *infos, ds->at, metas)) {
-				continue;
-			}
-			// TODO: implement ranged meta find (if not at the begging of function..
+		r_list_foreach (list, iter, mi) {
 			char *out = NULL;
 			int hexlen;
 			int delta;
@@ -2774,9 +2766,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					break;
 				}
 			}
-			R_FREE (MI.str);
 		}
 	}
+	r_list_free (list);
 	return ret;
 }
 
