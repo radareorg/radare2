@@ -678,17 +678,6 @@ static int addCmdPanel(void *user) {
 static void addHelpPanel(RCore *core) {
 	//TODO: all these things done below are very hacky and refactoring needed
 	RPanels *ps = core->panels;
-	int i;
-	for (i = 0; i < ps->n_panels; i++) {
-		RPanel *p = getPanel (ps, i);
-		if (r_str_endswith (p->model->cmd, "Help")) {
-			(void)r_cons_any_key ("Help already exists!");
-			if (ps->mode == PANEL_MODE_MENU) {
-				setMode (ps, PANEL_MODE_DEFAULT);
-			}
-			return;
-		}
-	}
 	int h;
 	const char *help = "Help";
 	(void)r_cons_get_size (&h);
@@ -1016,7 +1005,6 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case 's':
 	case 'S':
 	case ':':
-	case '?':
 		return false;
 	case 'X':
 		toggleZoomMode (panels);
@@ -1034,6 +1022,11 @@ static bool handleZoomMode(RCore *core, const int key) {
 		handleTabKey (core, true);
 		savePanelPos (panels->panel[panels->curnode]);
 		maximizePanelSize (panels);
+		break;
+	case '?':
+		toggleZoomMode (panels);
+		toggleHelp (core);
+		toggleZoomMode (panels);
 		break;
 	}
 	return true;
@@ -1192,8 +1185,12 @@ static bool handleWindowMode(RCore *core, const int key) {
 	case ';':
 	case 'd':
 	case 'b':
+	case 'p':
+	case 'P':
 	case 'X':
 	case '?':
+	case '|':
+	case '-':
 		return false;
 	}
 	return true;
