@@ -525,7 +525,7 @@ R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
 			const char *key = sdb_fmt ("meta.%c.0x%" PFMT64x, *infos, mia);
 			const char *metas = sdb_const_get (s, key, 0);
 			if (metas) {
-				RAnalMetaItem *mi = R_NEW0(RAnalMetaItem);
+				RAnalMetaItem *mi = R_NEW0 (RAnalMetaItem);
 				if (!r_meta_deserialize_val (a, mi, *infos, mia, metas)) {
 					continue;
 				}
