@@ -909,7 +909,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			}
 		}
 	} else {
-		// if (!strcmp (mode, "raw")) {
 		/* obey temporary seek if defined '/x 8080 @ addr:len' */
 		if (core->tmpseek) {
 			append_bound (list, core->io, search_itv, core->offset, core->blocksize, 5);

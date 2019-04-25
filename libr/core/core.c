@@ -2534,8 +2534,9 @@ R_API bool r_core_init(RCore *core) {
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
-	core->parser->anal = core->anal;
+	r_anal_bind (core->anal, &(core->parser->analb));
 	core->parser->varlist = r_anal_var_list;
+	/// XXX shouhld be using coreb
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
 	core->bin->cb_printf = (PrintfCallback) r_cons_printf;
