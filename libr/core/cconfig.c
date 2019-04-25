@@ -691,11 +691,10 @@ static int cb_asmbits(void *user, void *data) {
 
 static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 	int i, argc;
-	char *features;
 
 	if (core && core->assembler && core->assembler->cur) {
 		if (core->assembler->cur->features) {
-			features = strdup (core->assembler->cur->features);
+			char *features = strdup (core->assembler->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
