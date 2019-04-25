@@ -1319,12 +1319,14 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_core_cmd_help (core, help_detail_pf);
 				}
 			} else {
-				SdbListIter *iter;
-				Sdb *sht = core->print->formats;
-				SdbKv *kv;
-				SdbList *sdbls = sdb_foreach_list (sht, false);
-				ls_foreach (sdbls, iter, kv) {
-					r_cons_println (sdbkv_value (kv));
+				while (IS_WHITESPACE (*_input)) {
+					_input++;
+				}
+				const char *val = sdb_get (core->print->formats, _input, NULL);
+				if (val) {
+					r_cons_printf ("%s\n", val);
+				} else {
+					eprintf ("Struct %s is not defined\n", _input);
 				}
 			}
 		} else {
