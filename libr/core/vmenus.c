@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -1277,12 +1277,14 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n");
 	int delta = 0;
+	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup (line);
 	while (true) {
 		r_cons_clear00 ();
-		r_cons_printf ("[0x%08"PFMT64x"]-[visual-r2rop] %s\n", addr + delta, cursearch);
+		r_cons_printf ("[0x%08"PFMT64x"]-[visual-r2rop] %s (see pdp command)\n",
+			(addr == UT64_MAX)? 0: addr + delta, cursearch);
 
 		// compute chain
 		RStrBuf *sb = r_strbuf_new ("");

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -80,7 +80,7 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 			}
 			if (s) {
 				str = s + 1;
-				o = o + strlen (data);
+				o += strlen (data);
 				o[0] = '\n';
 				o[1] = '\0';
 				o++;
@@ -91,6 +91,8 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 	return ret;
 }
 
+// parse 'data' and generate pseudocode disassemble in 'str'
+// TODO: refactooring, this should return char * instead
 R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	if (p->cur && p->cur->parse) {
 		return p->cur->parse (p, data, str);
@@ -619,6 +621,8 @@ R_API char *r_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
+/// filter the opcode in data into str by following the flags and hints information
+// XXX this function have too many parameters, we need to simplify this
 R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
