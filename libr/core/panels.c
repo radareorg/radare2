@@ -373,6 +373,9 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 static void setCmdStrCache(RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = s;
+	if (p->model->cmdStrCache) {
+		setdcb (p);
+	}
 }
 
 static void setReadOnly(RPanel *p, char *s) {
@@ -1957,12 +1960,16 @@ static void setdcb(RPanel *p) {
 	if (!p->model->cmd) {
 		return;
 	}
+	if (p->model->cmdStrCache || p->model->readOnly) {
+		p->model->directionCb = directionDefaultCb;
+		return;
+	}
 	if (!strncmp (p->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		p->model->directionCb = directionStackCb;
 	} else if (!strncmp (p->model->cmd, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
 		p->model->directionCb = directionGraphCb;
 	} else if (!strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (p->model->cmd, "pdc")) {
+			strcmp (p->model->cmd, "pdc")) {
 		p->model->directionCb = directionDisassemblyCb;
 	} else if (!strncmp (p->model->cmd, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
 		p->model->directionCb = directionRegisterCb;
