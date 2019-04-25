@@ -165,7 +165,7 @@ static inline void **r_pvector_index_ptr(RPVector *vec, size_t index) {
 
 // same as r_pvector_index_ptr(<vec>, 0)
 static inline void **r_pvector_data(RPVector *vec) {
-	return vec->v.a;
+	return (void **)vec->v.a;
 }
 
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
