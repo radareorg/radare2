@@ -511,12 +511,10 @@ R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
 	RListIter *iter;
 	const char *meta;
 	r_list_foreach (list, iter, meta) {
-		const char *infos, *metas;
-		char key[100];
 		Sdb *s = a->sdb_meta;
 		ut64 mia = r_num_math (NULL, meta);
-		snprintf (key, sizeof (key), "meta.0x%" PFMT64x, mia);
-		infos = sdb_const_get (s, key, 0);
+		const char *key = sdb_fmt("meta.0x%" PFMT64x, mia);
+		const char *infos = sdb_const_get (s, key, 0);
 		if (!infos) {
 			return NULL;
 		}
@@ -524,8 +522,8 @@ R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
 			if (*infos == ',') {
 				continue;
 			}
-			snprintf (key, sizeof (key), "meta.%c.0x%" PFMT64x, *infos, mia);
-			metas = sdb_const_get (s, key, 0);
+			const char *key = sdb_fmt ("meta.%c.0x%" PFMT64x, *infos, mia);
+			const char *metas = sdb_const_get (s, key, 0);
 			if (metas) {
 				RAnalMetaItem *mi = R_NEW0(RAnalMetaItem);
 				if (!r_meta_deserialize_val (a, mi, *infos, mia, metas)) {
