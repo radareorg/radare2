@@ -537,7 +537,7 @@ static void selection_widget_select() {
 
 static void selection_widget_update() {
 	int argc = r_pvector_len (&I.completion.args);
-	const char **argv = r_pvector_data (&I.completion.args);
+	const char **argv = (const char **)r_pvector_data (&I.completion.args);
 	if (argc == 0 || (argc == 1 && I.buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase ();
 		return;
@@ -566,9 +566,9 @@ R_API void r_line_autocomplete() {
 	/* prepare argc and argv */
 	if (I.completion.run) {
 		I.completion.opt = false;
-		I.completion.run (&I);
+		I.completion.run (&I.completion, &I.buffer, I.prompt_type, I.completion.run_user);
 		argc = r_pvector_len (&I.completion.args);
-		argv = r_pvector_data (&I.completion.args);
+		argv = (const char **)r_pvector_data (&I.completion.args);
 		opt = I.completion.opt;
 	}
 	if (I.sel_widget && !I.sel_widget->complete_common) {
@@ -654,7 +654,7 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
-	if (I.offset_prompt || I.file_prompt) {
+	if (I.prompt_type != R_LINE_PROMPT_DEFAULT) {
 		selection_widget_update ();
 		if (I.sel_widget) {
 			I.sel_widget->complete_common = false;
