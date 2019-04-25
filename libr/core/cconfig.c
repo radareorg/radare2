@@ -505,10 +505,16 @@ static int cb_asmarch(void *user, void *data) {
 		if (newAsmCPU) {
 			if (*newAsmCPU) {
 				char *nac = strdup (newAsmCPU);
-				char *comma = strchr (nac, ',');
-				if (comma) {
-					*comma = 0;
-					r_config_set (core->config, "asm.cpu", nac);
+				if(asm_cpu) {
+					if(!strstr(nac, asm_cpu)) {
+						// set default cpu if asm.cpu is not set or
+						// not present in arch cpus
+						char *comma = strchr (nac, ',');
+						if (comma) {
+							*comma = 0;
+							r_config_set (core->config, "asm.cpu", nac);
+						}
+					}
 				}
 				free (nac);
 			} else {
