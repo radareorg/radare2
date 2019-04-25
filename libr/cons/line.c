@@ -46,6 +46,7 @@ R_API char *r_line_get_prompt() {
 
 R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit) {
 	completion->run = NULL;
+	completion->run_user = NULL;
 	completion->args_limit = args_limit;
 	r_pvector_init (&completion->args, free);
 }

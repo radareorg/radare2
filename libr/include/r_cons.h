@@ -874,15 +874,19 @@ typedef struct r_line_buffer_t {
 } RLineBuffer;
 
 typedef struct r_line_t RLine; // forward declaration
+typedef struct r_line_comp_t RLineCompletion;
 
-typedef int (*RLineCallback)(RLine *line);
+typedef enum { R_LINE_PROMPT_DEFAULT, R_LINE_PROMPT_OFFSET, R_LINE_PROMPT_FILE } RLinePromptType;
 
-typedef struct r_line_comp_t {
+typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user);
+
+struct r_line_comp_t {
 	bool opt;
 	size_t args_limit;
 	RPVector args; /* <char *> */
-	RLineCallback run;
-} RLineCompletion;
+	RLineCompletionCb run;
+	void *run_user;
+};
 
 typedef char* (*RLineEditorCb)(void *core, const char *str);
 typedef int (*RLineHistoryUpCb)(RLine* line);
@@ -908,9 +912,8 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
-	bool offset_prompt;
+	RLinePromptType prompt_type;
 	int offset_hist_index;
-	bool file_prompt;
 	int file_hist_index;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;

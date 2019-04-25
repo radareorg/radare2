@@ -1229,7 +1229,7 @@ R_API void r_core_visual_offset(RCore *core) {
 	char buf[256];
 
 	backup_current_addr (core, &addr, &bsze, &newaddr);
-	core->cons->line->offset_prompt = true;
+	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line,
 		&r_line_hist_offset_up,
 		&r_line_hist_offset_down);
@@ -1247,7 +1247,7 @@ R_API void r_core_visual_offset(RCore *core) {
 		}
 	}
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
-	core->cons->line->offset_prompt = false;
+	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 }
 
 static int prevopsz(RCore *core, ut64 addr) {
