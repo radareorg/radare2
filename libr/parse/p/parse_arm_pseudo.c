@@ -276,6 +276,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RList *bpargs = NULL;
 	RAnalVar *var;
 	RListIter *iter;
+	RAnal *anal = p->analb.anal;
 	char *oldstr, *newstr;
 	char *tstr = strdup (data);
 	if (!tstr) {
@@ -313,11 +314,11 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 	}
 
-	bpargs = p->varlist (p->anal, f, 'b');
-	spargs = p->varlist (p->anal, f, 's');
+	bpargs = p->varlist (anal, f, 'b');
+	spargs = p->varlist (anal, f, 's');
 	bool ucase = IS_UPPER (*tstr);
 	r_list_foreach (bpargs, iter, var) {
-		char *reg = p->anal->reg->name[R_REG_NAME_BP];
+		char *reg = anal->reg->name[R_REG_NAME_BP];
 		char *tmplt = NULL;
 		if (var->delta > -10 && var->delta < 10) {
 			if (p->pseudo) {
@@ -388,20 +389,20 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (oldstr);
 		if (var->delta > -10 && var->delta < 10) {
 			oldstr = r_str_newf ("[%s, %d]",
-				p->anal->reg->name[R_REG_NAME_SP],
+				anal->reg->name[R_REG_NAME_SP],
 				var->delta);
 		} else if (var->delta > 0) {
 			oldstr = r_str_newf ("[%s, 0x%x]",
-				p->anal->reg->name[R_REG_NAME_SP],
+				anal->reg->name[R_REG_NAME_SP],
 				var->delta);
 		} else {
 			oldstr = r_str_newf ("[%s, -0x%x]",
-				p->anal->reg->name[R_REG_NAME_SP],
+				anal->reg->name[R_REG_NAME_SP],
 				-var->delta);
 		}
 		if (strstr (tstr, oldstr)) {
 			newstr = r_str_newf ("[%s %c %s]",
-				p->anal->reg->name[R_REG_NAME_BP],
+				anal->reg->name[R_REG_NAME_BP],
 				var->delta > 0 ? '+' : '-',
 				var->name);
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);

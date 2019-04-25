@@ -755,7 +755,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				if (end == from) {
 					end = to;
 				} else {
-			//		eprintf ("[%llx - %llx]\n", begin, end);
+					// eprintf ("[%llx - %llx]\n", begin, end);
 					append_bound (list, NULL, search_itv, begin, end - begin, perm);
 					begin = from;
 					end = to;
