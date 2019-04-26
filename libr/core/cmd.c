@@ -110,7 +110,7 @@ static const char *help_msg_dollar[] = {
 	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
 	"$", "dis", "execute the previously defined alias",
-	"$", "dis?", "show commands aliased by 'analyze'",
+	"$", "dis?", "show commands aliased by $dis",
 	NULL
 };
 
