@@ -3361,7 +3361,8 @@ static void ds_print_dwarf(RDisasmState *ds) {
 		ds->sl = r_bin_addr2text (ds->core->bin, ds->at, dwarfFile);
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
-				char *chopstr, *line = strdup (ds->sl);
+				char *space = strchr (ds->sl, ' ');
+				char *chopstr, *line = strdup (space? space + 1: ds->sl);
 				if (!line) {
 					return;
 				}
