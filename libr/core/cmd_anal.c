@@ -8068,7 +8068,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
 					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae $SS @ $S");
+					r_core_cmd0 (core, "aae");
 					r_print_rowlog_done (core->print, oldstr);
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
@@ -8119,9 +8119,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_print_rowlog_done (core->print, oldstr);
 					}
-					oldstr = r_print_rowlog (core->print, "Linear emulating with ESIL to find computed references");
-					r_core_cmd0 (core, "aae");
-					r_print_rowlog_done (core->print, oldstr);
 
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
