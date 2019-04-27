@@ -116,6 +116,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 
 static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	ut64 cnksz;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	if (!GH(r_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
 		eprintf ("Fail at read symbol je_chunksize\n");
@@ -236,6 +237,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 	}
 	int i = 0;
 	GHT narenas = 0;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 
 	switch (input[0]) {
 	case '\0':
@@ -325,6 +327,8 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 	GHT arena = GHT_MAX; //, bin = GHT_MAX;
 	arena_t *ar = NULL;
 	arena_bin_info_t *b = NULL;
+	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
+
 	switch (input[0]) {
 	case ' ':
 		ar = R_NEW0 (arena_t);
