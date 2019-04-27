@@ -319,6 +319,7 @@ static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
 static void hudstuff(RCore *core);
 static char *getPanelsConfigPath();
+static int panels_process(RCore *core, RPanels *panels);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static void initRotatedb(RPanels *panels);
@@ -4027,7 +4028,24 @@ static void rotateAsmemu(RCore *core, RPanel *p) {
 	p->view->refresh = true;
 }
 
-R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
+R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
+	if (!panels_root) {
+		panels_root = R_NEW0 (RPanelsRoot);
+		if (!panels_root) {
+			return false;
+		}
+		core->panels_root = panels_root;
+	}
+	panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
+	panels_root->n_panels = 1;
+	panels_root->cur_panels = 0;
+	while (panels_root->n_panels) {
+		(void)panels_process (core, panels_root->panels[panels_root->cur_panels]);
+		panels_root->n_panels--;
+	}
+}
+
+static int panels_process(RCore *core, RPanels *panels) {
 	int i, okey, key;
 
 	if (!panels) {

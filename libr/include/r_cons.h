@@ -1113,6 +1113,12 @@ typedef struct r_panels_t {
 	RList *snows;
 } RPanels;
 
+typedef struct r_panels_root_t {
+	int n_panels;
+	int cur_panels;
+	RPanels **panels;
+} RPanelsRoot;
+
 #ifdef __cplusplus
 }
 #endif

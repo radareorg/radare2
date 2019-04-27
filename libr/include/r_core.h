@@ -256,6 +256,7 @@ typedef struct r_core_t {
 	REgg *egg;
 	RCoreLog *log;
 	RAGraph *graph;
+	RPanelsRoot *panels_root;
 	RPanels* panels;
 	char *panels_tmpcfg;
 	char *cmdqueue;
@@ -407,7 +408,7 @@ R_API int r_core_visual_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
-R_API int r_core_visual_panels(RCore *core, RPanels *panels);
+R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root);
 R_API RPanels *r_core_panels_new(RCore *core);
 R_API void r_core_panels_refresh(RCore *core);
 R_API void r_core_panels_check_stackbase(RCore *core);
