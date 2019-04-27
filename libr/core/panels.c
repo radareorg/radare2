@@ -153,6 +153,7 @@ static const char *help_msg_panels[] = {
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
+	"Enter",    "start Zoom mode",
 	"a",        "toggle auto update for decompiler",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"c",        "toggle cursor",
@@ -164,10 +165,7 @@ static const char *help_msg_panels[] = {
 	"G",        "show graph in the current panel",
 	"i",        "insert hex",
 	"hjkl",     "move around (left-down-up-right)",
-	"J",        "scroll panels down by page",
-	"K",        "scroll panels up by page",
-	"H",        "scroll panels left by page",
-	"L",        "scroll panels right by page",
+	"HJKL",     "move around (left-down-up-right) by page",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
 	"n/N",      "seek next/prev function/flag/hit (scr.nkey)",
@@ -176,38 +174,50 @@ static const char *help_msg_panels[] = {
 	"r",        "toggle callhints/jmphints/leahints",
 	"R",        "randomize color palette (ecr)",
 	"s/S",      "step in / step over",
-	"t",        "rotate related commands in a panel",
+	"t/T",      "rotate related commands in a panel",
 	"u/U",      "undo / redo seek",
 	"w",        "start Window mode",
 	"V",        "go to the graph mode",
-	"X",        "close current panel",
+	"xX",       "show xrefs/refs of current function from/to data/code",
 	"z",        "swap current panel with the first one",
 	NULL
 };
 
 static const char *help_msg_panels_window[] = {
+	":",        "run r2 command in prompt",
+	";",        "add/remove comment",
 	"?",        "show this help",
-	"\\",       "show the user-friendly hud",
+	"|",        "split the current panel vertically",
+	"-",        "split the current panel horizontally",
+	"tab",      "go to the next panel",
 	"Enter",    "start Zoom mode",
-	"c",        "toggle cursor",
+	"d",        "define in the current address. Same as Vd",
+	"b",        "browse symbols, flags, configurations, classes, ...",
 	"hjkl",     "move around (left-down-up-right)",
-	"JK",       "resize panels vertically",
-	"HL",       "resize panels horizontally",
-	"n/N",      "create new panel with given command",
-	"q",        "quit Window mode",
+	"HJKL",     "resize panels vertically/horizontally",
+	"Q/q/w",    "quit Window mode",
+	"p/P",      "rotate panel layout",
+	"t/T",      "rotate related commands in a panel",
+	"X",        "close current panel",
 	NULL
 };
 
 static const char *help_msg_panels_zoom[] = {
 	"?",        "show this help",
-	"\\",       "show the user-friendly hud",
 	":",        "run r2 command in prompt",
-	"Enter",    "quit Zoom mode",
+	";",        "add/remove comment",
+	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
+	"b",        "browse symbols, flags, configurations, classes, ...",
+	"d",        "define in the current address. Same as Vd",
+	"c",        "toggle cursor",
+	"C",        "toggle color",
 	"hjkl",     "move around (left-down-up-right)",
+	"p/P",      "seek to next or previous scr.nkey",
 	"s/S",      "step in / step over",
-	"X",        "close current panel",
-	"q",        "quit Zoom mode",
+	"t/T",      "rotate related commands in a panel",
+	"xX",       "show xrefs/refs of current function from/to data/code",
+	"q/Q/Enter","quit Zoom mode",
 	NULL
 };
 
@@ -972,7 +982,6 @@ static int cursorThreshold(RPanel* panel) {
 
 static bool handleZoomMode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
-	RPanel *cur = getCurPanel (panels);
 	r_cons_switchbuf (false);
 	switch (key) {
 	case 'Q':
@@ -981,20 +990,7 @@ static bool handleZoomMode(RCore *core, const int key) {
 		toggleZoomMode (panels);
 		break;
 	case 'c':
-		activateCursor (core);
-		break;
-	case 't':
-		if (cur->model->rotateCb) {
-			cur->model->rotateCb (core, false);
-			cur->view->refresh = true;
-		}
-		break;
-	case 'T':
-		if (cur->model->rotateCb) {
-			cur->model->rotateCb (core, true);
-			cur->view->refresh = true;
-		}
-		break;
+	case 'C':
 	case ';':
 	case ' ':
 	case 'b':
@@ -1003,20 +999,19 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case 'N':
 	case 'g':
 	case 'h':
-	case 'P':
-	case 'p':
 	case 'j':
 	case 'k':
 	case 'l':
+	case 'p':
+	case 'P':
 	case 's':
 	case 'S':
+	case 't':
+	case 'T':
+	case 'x':
+	case 'X':
 	case ':':
 		return false;
-	case 'X':
-		toggleZoomMode (panels);
-		dismantleDelPanel (panels, cur, panels->curnode);
-		toggleZoomMode (panels);
-		break;
 	case 9:
 		restorePanelPos (panels->panel[panels->curnode]);
 		handleTabKey (core, false);
@@ -1106,10 +1101,6 @@ static bool handleWindowMode(RCore *core, const int key) {
 	case 'w':
 		toggleWindowMode (panels);
 		break;
-	case 'c':
-		toggleWindowMode (panels);
-		activateCursor (core);
-		break;
 	case 0x0d:
 		toggleZoomMode (panels);
 		break;
@@ -1151,12 +1142,10 @@ static bool handleWindowMode(RCore *core, const int key) {
 			resetSnow (panels);
 		}
 		break;
-	case '[':
 	case 'H':
 		r_cons_switchbuf (false);
 		resizePanelLeft (panels);
 		break;
-	case ']':
 	case 'L':
 		r_cons_switchbuf (false);
 		resizePanelRight (panels);
@@ -1175,17 +1164,9 @@ static bool handleWindowMode(RCore *core, const int key) {
 	case 'N':
 		createNewPanel (core, false);
 		break;
-	case 't':
-		if (cur->model->rotateCb) {
-			cur->model->rotateCb (core, false);
-			cur->view->refresh = true;
-		}
-		break;
-	case 'T':
-		if (cur->model->rotateCb) {
-			cur->model->rotateCb (core, true);
-			cur->view->refresh = true;
-		}
+	case 'X':
+		dismantleDelPanel (panels, cur, panels->curnode);
+		setRefreshAll (panels, false);
 		break;
 	case ':':
 	case ';':
@@ -1193,7 +1174,8 @@ static bool handleWindowMode(RCore *core, const int key) {
 	case 'b':
 	case 'p':
 	case 'P':
-	case 'X':
+	case 't':
+	case 'T':
 	case '?':
 	case '|':
 	case '-':
@@ -4082,8 +4064,6 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	bool originVmode = core->vmode;
 	core->vmode = true;
 
-	int color = r_config_get_i (core->config, "scr.color");
-
 	r_cons_enable_mouse (false);
 
 	if (!core->panels_tmpcfg || !loadSavedPanelsLayout (core, true)) {
@@ -4222,11 +4202,15 @@ repeat:
 		activateCursor (core);
 		break;
 	case 'C':
-		if (++color > 2) {
-			color = 0;
+		{
+			int color = r_config_get_i (core->config, "scr.color");
+			if (++color > 2) {
+				color = 0;
+			}
+			r_config_set_i (core->config, "scr.color", color);
+			can->color = color;
+			setRefreshAll (panels, true);
 		}
-		r_config_set_i (core->config, "scr.color", color);
-		setRefreshAll (panels, true);
 		break;
 	case 'r':
 		if (r_config_get_i (core->config, "asm.hint.call")) {
@@ -4334,7 +4318,8 @@ repeat:
 		setRefreshAll (panels, false);
 		break;
 	case 'X':
-		dismantleDelPanel (panels, cur, panels->curnode);
+		r_core_visual_refs (core, false, true);
+		cur->model->addr = core->offset;
 		setRefreshAll (panels, false);
 		break;
 	case 9: // TAB

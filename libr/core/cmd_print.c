@@ -4925,7 +4925,6 @@ static int cmd_print(void *data, const char *input) {
 		ut8 bw_disassemble = false;
 		ut32 pd_result = false, processed_cmd = false;
 		bool formatted_json = false;
-
 		if (input[1] && input[2]) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
@@ -4975,6 +4974,8 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			l = use_blocksize;
 		}
+		// may be unnecessary, fixes 'pd 1;pdj 100;pd 1' bug
+		r_core_block_read (core);
 
 		switch (input[1]) {
 		case 'C': // "pdC"
