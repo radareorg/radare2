@@ -2679,12 +2679,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 
 	ds->mi_found = false;
 
-	RList *list =  r_meta_find_list_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	RList *list = r_meta_find_list_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 
 	if (list) {
-		if (ds->show_flag_in_bytes) {
-			ds_print_show_bytes (ds);
-		}
 		r_list_foreach (list, iter, mi) {
 			char *out = NULL;
 			int hexlen;
