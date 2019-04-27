@@ -321,7 +321,7 @@ static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
 static void hudstuff(RCore *core);
 static char *getPanelsConfigPath();
-static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cur_tab);
+static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cur_tab, bool *force_quit);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static void initRotatedb(RPanels *panels);
@@ -4054,23 +4054,31 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
 	panels_root->n_panels = 1;
 	panels_root->cur_panels = 0;
+	bool force_quit = false;
 	while (panels_root->n_panels) {
-		if (panels_process (core, &panels_root->panels[panels_root->cur_panels], panels_root->n_panels, panels_root->cur_panels)) {
+		if (panels_process (core, &panels_root->panels[panels_root->cur_panels], panels_root->n_panels, panels_root->cur_panels, &force_quit)) {
 			int i;
-			r_core_panels_free (panels_root->panels[panels_root->cur_panels]);
-			for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
-				panels_root->panels[i] = panels_root->panels[i + 1];
-			}
-			panels_root->n_panels--;
-			if (panels_root->cur_panels >= panels_root->n_panels) {
-				panels_root->cur_panels = panels_root->n_panels - 1;
+			if (force_quit) {
+				for (i = 0; i < panels_root->n_panels; i++) {
+					r_core_panels_free (panels_root->panels[i]);
+				}
+				return true;
+			} else {
+				r_core_panels_free (panels_root->panels[panels_root->cur_panels]);
+				for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
+					panels_root->panels[i] = panels_root->panels[i + 1];
+				}
+				panels_root->n_panels--;
+				if (panels_root->cur_panels >= panels_root->n_panels) {
+					panels_root->cur_panels = panels_root->n_panels - 1;
+				}
 			}
 		}
 	}
 	return true;
 }
 
-static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cur_tab) {
+static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cur_tab, bool *force_quit) {
 	int i, okey, key;
 
 	RPanels *panels;
@@ -4461,6 +4469,13 @@ repeat:
 		core->panels_root->cur_panels %= core->panels_root->n_panels;
 		savePanelsLayout (core, &panels->cfg, true);
 		return false;
+	case 'F':
+		core->panels_root->cur_panels--;
+		if (core->panels_root->cur_panels < 0) {
+			core->panels_root->cur_panels = core->panels_root->n_panels - 1;
+		}
+		savePanelsLayout (core, &panels->cfg, true);
+		return false;
 	case 'w':
 		toggleWindowMode (panels);
 		setRefreshAll (panels, false);
@@ -4590,6 +4605,9 @@ repeat:
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
+	case 'Q':
+		*force_quit = true;
+		goto exit;
 	case '!':
 	case 'q':
 	case -1: // EOF
