@@ -4074,26 +4074,27 @@ static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cu
 	int i, okey, key;
 
 	RPanels *panels;
+	RPanels *prev;
 	if (!*r_panels) {
 		panels = r_core_panels_new (core);
 		if (!panels) {
 			r_core_panels_free (panels);
 			return true;
 		}
+		prev = core->panels;
+		core->panels = panels;
+		if (!initPanelsMenu (core)) {
+			return true;
+		}
+		if (!initPanels (core, panels)) {
+			r_core_panels_free (panels);
+			return true;
+		}
 		*r_panels = panels;
 	} else {
+		prev = core->panels;
 		panels = *r_panels;
-	}
-	RPanels *prev = core->panels;
-	core->panels = panels;
-
-	if (!initPanelsMenu (core)) {
-		return true;
-	}
-
-	if (!initPanels (core, panels)) {
-		r_core_panels_free (panels);
-		return true;
+		core->panels = panels;
 	}
 
 	r_cons_switchbuf (false);
