@@ -1102,6 +1102,7 @@ typedef struct r_panels_t {
 	int curnode;
 	bool isResizing;
 	bool autoUpdate;
+	char *cfg;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
 	Sdb *rotate_db;
