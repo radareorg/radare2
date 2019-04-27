@@ -248,7 +248,11 @@ static RList* sections(RBinFile *bf) {
 				ptr->name = strdup ("OPENBSD_BOOTDATA");
 				break;
 			default:
-				ptr->name = setphname (mach, phdr[i].p_type);
+				if (ptr->size == 0 && ptr->vsize == 0) {
+					ptr->name = strdup ("NULL");
+				} else {
+					ptr->name = setphname (mach, phdr[i].p_type);
+				}
 				break;
 			}
 			r_list_append (ret, ptr);
