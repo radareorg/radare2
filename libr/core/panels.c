@@ -140,9 +140,10 @@ static const char *help_msg_panels[] = {
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
 	":",        "run r2 command in prompt",
+	";",        "add/remove comment",
 	"_",        "start the hud input mode",
+	"\\",       "show the user-friendly hud",
 	"?",        "show this help",
-	"??",       "show the user-friendly hud",
 	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
@@ -169,13 +170,14 @@ static const char *help_msg_panels[] = {
 	"L",        "scroll panels right by page",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
-	"nN",       "create new panel with given command",
-	"pP",       "seek to next or previous scr.nkey",
+	"n/N",      "seek next/prev function/flag/hit (scr.nkey)",
+	"p/P",      "rotate panel layout",
 	"q",        "quit, back to visual mode",
 	"r",        "toggle callhints/jmphints/leahints",
-	"sS",       "step in / step over",
+	"R",        "randomize color palette (ecr)",
+	"s/S",      "step in / step over",
 	"t",        "rotate related commands in a panel",
-	"uU",       "undo / redo seek",
+	"u/U",      "undo / redo seek",
 	"w",        "start Window mode",
 	"V",        "go to the graph mode",
 	"X",        "close current panel",
@@ -185,24 +187,25 @@ static const char *help_msg_panels[] = {
 
 static const char *help_msg_panels_window[] = {
 	"?",        "show this help",
-	"??",       "show the user-friendly hud",
+	"\\",       "show the user-friendly hud",
 	"Enter",    "start Zoom mode",
 	"c",        "toggle cursor",
 	"hjkl",     "move around (left-down-up-right)",
 	"JK",       "resize panels vertically",
 	"HL",       "resize panels horizontally",
+	"n/N",      "create new panel with given command",
 	"q",        "quit Window mode",
 	NULL
 };
 
 static const char *help_msg_panels_zoom[] = {
 	"?",        "show this help",
-	"??",       "show the user-friendly hud",
+	"\\",       "show the user-friendly hud",
 	":",        "run r2 command in prompt",
 	"Enter",    "quit Zoom mode",
 	"tab",      "go to the next panel",
 	"hjkl",     "move around (left-down-up-right)",
-	"sS",       "step in / step over",
+	"s/S",      "step in / step over",
 	"X",        "close current panel",
 	"q",        "quit Zoom mode",
 	NULL
@@ -996,6 +999,9 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case ' ':
 	case 'b':
 	case 'd':
+	case 'n':
+	case 'N':
+	case 'g':
 	case 'h':
 	case 'P':
 	case 'p':
@@ -4153,12 +4159,6 @@ repeat:
 	case 'U':
 		redoSeek (core);
 		break;
-	case 'n':
-		createNewPanel (core, true);
-		break;
-	case 'N':
-		createNewPanel (core, false);
-		break;
 	case 'p':
 		rotatePanels (panels, false);
 		break;
@@ -4311,6 +4311,22 @@ repeat:
 		break;
 	case '\\':
 		r_core_visual_hud (core);
+		break;
+	case 'n':
+		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
+				strcmp (cur->model->cmd, "pdc")) {
+			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
+			cur->model->addr = core->offset;
+			cur->view->refresh = true;
+		}
+		break;
+	case 'N':
+		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
+				strcmp (cur->model->cmd, "pdc")) {
+			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
+			cur->model->addr = core->offset;
+			cur->view->refresh = true;
+		}
 		break;
 	case 'x':
 		r_core_visual_refs (core, true, true);
