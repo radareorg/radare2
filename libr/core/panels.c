@@ -140,9 +140,10 @@ static const char *help_msg_panels[] = {
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
 	":",        "run r2 command in prompt",
+	";",        "add/remove comment",
 	"_",        "start the hud input mode",
+	"\\",       "show the user-friendly hud",
 	"?",        "show this help",
-	"??",       "show the user-friendly hud",
 	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
@@ -167,13 +168,14 @@ static const char *help_msg_panels[] = {
 	"HJKL",     "move around (left-down-up-right) by page",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
-	"n/N",      "create new panel with given command",
-	"p/P",      "seek to next or previous scr.nkey",
+	"n/N",      "seek next/prev function/flag/hit (scr.nkey)",
+	"p/P",      "rotate panel layout",
 	"q",        "quit, back to visual mode",
 	"r",        "toggle callhints/jmphints/leahints",
-	"sS",       "step in / step over",
+	"R",        "randomize color palette (ecr)",
+	"s/S",      "step in / step over",
 	"t/T",      "rotate related commands in a panel",
-	"uU",       "undo / redo seek",
+	"u/U",      "undo / redo seek",
 	"w",        "start Window mode",
 	"V",        "go to the graph mode",
 	"xX",       "show xrefs/refs of current function from/to data/code",
@@ -993,6 +995,9 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case ' ':
 	case 'b':
 	case 'd':
+	case 'n':
+	case 'N':
+	case 'g':
 	case 'h':
 	case 'j':
 	case 'k':
@@ -4134,12 +4139,6 @@ repeat:
 	case 'U':
 		redoSeek (core);
 		break;
-	case 'n':
-		createNewPanel (core, true);
-		break;
-	case 'N':
-		createNewPanel (core, false);
-		break;
 	case 'p':
 		rotatePanels (panels, false);
 		break;
@@ -4296,6 +4295,22 @@ repeat:
 		break;
 	case '\\':
 		r_core_visual_hud (core);
+		break;
+	case 'n':
+		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
+				strcmp (cur->model->cmd, "pdc")) {
+			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
+			cur->model->addr = core->offset;
+			cur->view->refresh = true;
+		}
+		break;
+	case 'N':
+		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
+				strcmp (cur->model->cmd, "pdc")) {
+			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
+			cur->model->addr = core->offset;
+			cur->view->refresh = true;
+		}
 		break;
 	case 'x':
 		r_core_visual_refs (core, true, true);
