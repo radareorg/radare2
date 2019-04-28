@@ -258,7 +258,6 @@ typedef struct r_core_t {
 	RAGraph *graph;
 	RPanelsRoot *panels_root;
 	RPanels* panels;
-	char *panels_tmpcfg;
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;

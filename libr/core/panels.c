@@ -345,7 +345,7 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache);
 static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
-static void savePanelsLayout(RCore* core, char **cfg, bool temp);
+static void savePanelsLayout(RPanels* panels, char **cfg, bool temp);
 static int loadSavedPanelsLayout(RCore *core, char *cfg, bool temp);
 static void replaceCmd(RCore *core, const char *title, const char *cmd, const bool cache);
 static void swapPanels(RPanels *panels, int p0, int p1);
@@ -2031,7 +2031,7 @@ static int closeFileCb(void *user) {
 
 static int saveLayoutCb(void *user) {
 	RCore *core = (RCore *)user;
-	savePanelsLayout (core, NULL, false);
+	savePanelsLayout (core->panels, NULL, false);
 	const char *msg = "Panels layout saved!";
 	(void)r_cons_any_key (msg);
 	return 0;
@@ -3134,17 +3134,22 @@ static void panels_refresh(RCore *core, int total_tab, int cur_tab) {
 	(void) r_cons_canvas_gotoxy (can, i, -can->sy);
 	r_cons_canvas_write (can, title);
 
-	int tab_pos = i - total_tab * 2;
-	for (i = 1; i <= total_tab; i++) {
-		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
+	int tab_pos = i;
+	for (i = total_tab; i > 0; i--) {
 		if (i - 1 == cur_tab) {
-			snprintf (title, sizeof (title) - 1, "%s%d"Color_RESET, color, i);
+			snprintf (title, sizeof (title) - 1, "%s[%d] "Color_RESET, color, i);
+			tab_pos -= r_str_ansi_len (title);
 		} else {
-			snprintf (title, sizeof (title) - 1, "%d", i);
+			snprintf (title, sizeof (title) - 1, "%d ", i);
+			tab_pos -= strlen (title);
 		}
+		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
 		r_cons_canvas_write (can, title);
-		tab_pos += 2;
 	}
+	snprintf (title, sizeof (title) - 1, "Tab ");
+	tab_pos -= strlen (title);
+	(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
+	r_cons_canvas_write (can, title);
 
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		printSnow (panels);
@@ -3523,8 +3528,7 @@ static char *getPanelsConfigPath() {
 	return newPath;
 }
 
-static void savePanelsLayout(RCore* core, char **cfg, bool temp) {
-	RPanels *panels = core->panels;
+static void savePanelsLayout(RPanels* panels, char **cfg, bool temp) {
 	int i;
 	PJ *pj = NULL;
 	pj = pj_new ();
@@ -4050,21 +4054,26 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			return false;
 		}
 		core->panels_root = panels_root;
+		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
+		panels_root->n_panels = 1;
+		panels_root->cur_panels = 0;
 	}
-	panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
-	panels_root->n_panels = 1;
-	panels_root->cur_panels = 0;
 	bool force_quit = false;
+	int i;
 	while (panels_root->n_panels) {
 		if (panels_process (core, &panels_root->panels[panels_root->cur_panels], panels_root->n_panels, panels_root->cur_panels, &force_quit)) {
-			int i;
 			if (force_quit) {
-				for (i = 0; i < panels_root->n_panels; i++) {
-					r_core_panels_free (panels_root->panels[i]);
+				for (int i = 0; i < panels_root->n_panels; i++) {
+					RPanels *panels = panels_root->panels[i];
+					if (!panels || !panels->cfg) {
+						continue;
+					}
+					savePanelsLayout (panels, &panels->cfg, true);
 				}
 				return true;
 			} else {
 				r_core_panels_free (panels_root->panels[panels_root->cur_panels]);
+				panels_root->panels[panels_root->cur_panels] = NULL;
 				for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
 					panels_root->panels[i] = panels_root->panels[i + 1];
 				}
@@ -4467,14 +4476,14 @@ repeat:
 	case 'f':
 		core->panels_root->cur_panels++;
 		core->panels_root->cur_panels %= core->panels_root->n_panels;
-		savePanelsLayout (core, &panels->cfg, true);
+		savePanelsLayout (panels, &panels->cfg, true);
 		return false;
 	case 'F':
 		core->panels_root->cur_panels--;
 		if (core->panels_root->cur_panels < 0) {
 			core->panels_root->cur_panels = core->panels_root->n_panels - 1;
 		}
-		savePanelsLayout (core, &panels->cfg, true);
+		savePanelsLayout (panels, &panels->cfg, true);
 		return false;
 	case 'w':
 		toggleWindowMode (panels);
