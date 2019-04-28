@@ -165,14 +165,16 @@ static const char *help_msg_panels[] = {
 	"i",        "insert hex",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
+	"f/F",      "next tab / prev tab",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
 	"n/N",      "create new panel with given command",
 	"p/P",      "seek to next or previous scr.nkey",
-	"q",        "quit, back to visual mode",
+	"q",        "quit, or close a tab",
+	"Q",        "close all the tabs and quit",
 	"r",        "toggle callhints/jmphints/leahints",
-	"sS",       "step in / step over",
-	"t/T",      "rotate related commands in a panel",
+	"s/S",      "step in / step over",
+	"t/T",      "new tab / close a tab",
 	"uU",       "undo / redo seek",
 	"w",        "start Window mode",
 	"V",        "go to the graph mode",
@@ -4472,6 +4474,11 @@ repeat:
 	case 't':
 		core->panels_root->n_panels++;
 		total_tab++;
+		break;
+	case 'T':
+		if (core->panels_root->n_panels > 1) {
+			goto exit;
+		}
 		break;
 	case 'f':
 		core->panels_root->cur_panels++;
