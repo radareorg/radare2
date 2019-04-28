@@ -2642,13 +2642,9 @@ next2:
 			}
 		}
 		bool empty = false;
-		int oneline = true;
 		if (ptr[1] == '`') {
 			memmove (ptr, ptr + 1, strlen (ptr));
 			empty = true;
-		} else if (ptr[1] == '|') {
-			memmove (ptr + 1, ptr + 2, strlen (ptr + 1));
-			oneline = false;
 		}
 		ptr2 = strchr (ptr + 1, '`');
 		if (empty) {
@@ -2679,13 +2675,6 @@ next2:
 				eprintf ("r_core_cmd_subst_i: invalid backticked command\n");
 				free (str);
 				goto fail;
-			}
-			if (oneline && str) {
-				for (i = 0; str[i]; i++) {
-					if (str[i] == '\n') {
-						str[i] = ' ';
-					}
-				}
 			}
 			str = r_str_append (str, ptr2 + 1);
 			cmd = r_str_append (strdup (cmd), str);
