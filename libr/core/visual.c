@@ -2009,6 +2009,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		"Browse stuff:\n"
 		"-------------\n"
 		" _  hud mode (V_)\n"
+		" 1  bit editor (vd1)\n"
 		" b  blocks\n"
 		" c  classes\n"
 		" C  comments\n"
@@ -2047,6 +2048,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
+		case '1':
+			r_core_visual_bit_editor (core);
+			break;
 		case 'M':
 			if (!r_list_empty (core->fs->roots)) {
 				r_core_visual_mounts (core);

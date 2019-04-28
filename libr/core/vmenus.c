@@ -270,7 +270,7 @@ beach:
 	return true;
 }
 
-static bool edit_bits (RCore *core) {
+R_API bool r_core_visual_bit_editor(RCore *core) {
 	const int nbits = sizeof (ut64) * 8;
 	bool colorBits = false;
 	int analopType;
@@ -1461,8 +1461,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				char *line = r_core_cmd_strf (core, "piuq@0x%08"PFMT64x, addr + delta);
 				r_str_replace_char (line, '\n', ';');
 				if (show_color) {
-					const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
 					// XXX parsing fails to read this ansi-offset
+					// const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
 					// r_list_push (core->ropchain, r_str_newf ("%s0x%08"PFMT64x""Color_RESET"  %s", offsetColor, addr + delta, line));
 					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
 				} else {
@@ -3418,7 +3418,7 @@ onemoretime:
 		}
 		break;
 	case '1':
-		edit_bits (core);
+		r_core_visual_bit_editor (core);
 		break;
 	case 't':
 	case 'o':
