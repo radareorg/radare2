@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_debug.h>
-#include <r_core.h>
-
 #define R_DEBUG_SDB_TRACES 1
 
 // DO IT WITH SDB
@@ -99,6 +97,13 @@ R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	return NULL;
 }
 
+typedef struct {
+	char *name;
+	RInterval pitv;
+	RInterval vitv;
+	int perm;
+	char *extra;
+} ListInfo;
 
 static int cmpaddr (const void *_a, const void *_b) {
 	const ListInfo *a = _a, *b = _b;
@@ -107,12 +112,12 @@ static int cmpaddr (const void *_a, const void *_b) {
 }
 
 // Copy from visual to avoid circular dependency
-void r_core_visual_list(RCore *core, RList *list, ut64 seek, ut64 len, int width, int use_color) {
+void r_core_visual_list(RDebug *dbg, RList *list, ut64 seek, ut64 len, int width, int use_color) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
 	ListInfo *info;
 	int j, i;
-	RIO *io = core->io;
+	RIO *io = dbg->iob.io;
 	width -= 80;
 	if (width < 1) {
 		width = 30;
@@ -197,7 +202,7 @@ void r_core_visual_list(RCore *core, RList *list, ut64 seek, ut64 len, int width
 	}
 }
 
-R_API void r_debug_trace_list (RDebug *dbg, int mode) {
+R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RListIter *iter;
 	bool flag = false;
@@ -214,17 +219,14 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 				break;
 			case '=': {
 				ListInfo *info = R_NEW0 (ListInfo);
-				char temp[8];
 				if (!info) {
 					return;
 				}
 				info->pitv = (RInterval) {trace->addr, trace->size};
 				info->vitv = info->pitv;
 				info->perm = -1;
-				snprintf (temp, sizeof (temp), "%d", trace->times);
-				info->name = strdup (temp);
-				snprintf (temp, sizeof (temp), "%d", trace->count);
-				info->extra = strdup (temp);
+				info->name = r_str_newf ("%d", trace->times);
+				info->extra = r_str_newf ("%d", trace->count);
 				r_list_append (info_list, info);
 				flag = true;
 			}	break;
@@ -240,9 +242,8 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 		}
 	}
 	if (flag) {
-		RCore *core = dbg->corebind.core;
 		r_list_sort (info_list, cmpaddr);
-		r_core_visual_list (core, info_list, core->offset, core->blocksize,
+		r_core_visual_list (dbg, info_list, offset, 1,
 			r_cons_get_size (NULL), false);
 		r_list_free (info_list);
 	}
