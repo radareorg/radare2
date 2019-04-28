@@ -2676,6 +2676,10 @@ next2:
 				free (str);
 				goto fail;
 			}
+			size_t len_str = strlen (str);
+			if (len_str && str[len_str - 1] == '\n') {
+				str[len_str - 1] = '\0';
+			}
 			str = r_str_append (str, ptr2 + 1);
 			cmd = r_str_append (strdup (cmd), str);
 			core->num->value = value;
