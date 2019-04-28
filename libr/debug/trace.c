@@ -112,7 +112,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 }
 
 // Copy from visual to avoid circular dependency
-void r_core_visual_list(RDebug *dbg, RList *list, ut64 seek, ut64 len, int width, int use_color) {
+void visual_list(RDebug *dbg, RList *list, ut64 seek, ut64 len, int width, int use_color) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
 	ListInfo *info;
@@ -243,7 +243,7 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	}
 	if (flag) {
 		r_list_sort (info_list, cmpaddr);
-		r_core_visual_list (dbg, info_list, offset, 1,
+		visual_list (dbg, info_list, offset, 1,
 			r_cons_get_size (NULL), false);
 		r_list_free (info_list);
 	}
