@@ -2642,11 +2642,13 @@ next2:
 			}
 		}
 		bool empty = false;
-		int oneline = 1;
+		int oneline = true;
 		if (ptr[1] == '`') {
 			memmove (ptr, ptr + 1, strlen (ptr));
-			oneline = 0;
 			empty = true;
+		} else if (ptr[1] == '|') {
+			memmove (ptr + 1, ptr + 2, strlen (ptr + 1));
+			oneline = false;
 		}
 		ptr2 = strchr (ptr + 1, '`');
 		if (empty) {

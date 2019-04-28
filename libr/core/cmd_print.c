@@ -125,7 +125,8 @@ static const char *help_msg_at[] = {
 	">>", "file", "append to file",
 	"H>", "file", "pipe output of command to file in HTML",
 	"H>>", "file", "append to file with the output of command in HTML",
-	"`", "pdi~push:0[0]`", "replace output of command inside the line",
+	"`", "pdi~push:0[0]`", "replace output of command inside the line (newlines -> spaces)",
+	"`|", "om*`", "replace output of command inside the line (newlines kept)",
 	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
 	NULL
 };
