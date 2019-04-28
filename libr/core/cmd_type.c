@@ -310,7 +310,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 			char *s = strdup (r_str_trim_ro (input + 1));
 			RListIter *iter;
 			char *k;
-			RList *list = r_str_split_list (s, " ");
+			RList *list = r_str_split_list (s, " \n");
 			r_list_foreach (list, iter, k) {
 				r_anal_noreturn_drop (core->anal, k);
 			}
