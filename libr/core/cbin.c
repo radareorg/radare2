@@ -2068,6 +2068,11 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (fn);
+				char *dllext = strstr (fnp, ".dll_");
+				if (dllext) {
+					char *dot = r_str_rchr (fnp, dllext - 1, '.');
+					memmove (dot + 1, dllext + 5, strlen (fnp) - (int)(dllext + 5 - fnp) + 1);
+				}
 				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
