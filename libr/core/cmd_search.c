@@ -718,13 +718,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 	} else if (r_str_startswith (mode, "io.maps.")) {
 		int len = strlen ("io.maps.");
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
-		bool only = (bool)(size_t)strstr (mode, ".only");
+		// bool only = (bool)(size_t)strstr (mode, ".only");
 
 		SdbListIter *iter;
 		RIOMap *map;
 		ls_foreach  (core->io->maps, iter, map) {
 			ut64 from = r_itv_begin (map->itv);
-			ut64 to = r_itv_end (map->itv);
+			//ut64 to = r_itv_end (map->itv);
 			int rwx = map->perm;
 			if ((rwx & mask) != mask) {
 				continue;

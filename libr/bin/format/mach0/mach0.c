@@ -2070,7 +2070,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size) {
 			return NULL;
 		}
-		int amount = bind_size + lazy_size + weak_size;
+		ut64 amount = bind_size + lazy_size + weak_size;
 		if (amount < 0) {
 			return NULL;
 		}
