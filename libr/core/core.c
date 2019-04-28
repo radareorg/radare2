@@ -2435,7 +2435,6 @@ R_API bool r_core_init(RCore *core) {
 	core->printidx = 0;
 	core->lastcmd = NULL;
 	core->stkcmd = NULL;
-	core->panels_tmpcfg = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
@@ -2617,7 +2616,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_th_lock_free (c->lock);
 	R_FREE (c->lastsearch);
 	R_FREE (c->cons->pager);
-	R_FREE (c->panels_tmpcfg);
 	R_FREE (c->cmdqueue);
 	R_FREE (c->lastcmd);
 	R_FREE (c->stkcmd);
