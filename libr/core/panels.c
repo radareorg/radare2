@@ -166,7 +166,6 @@ static const char *help_msg_panels[] = {
 	"i",        "insert hex",
 	"hjkl",     "move around (left-down-up-right)",
 	"HJKL",     "move around (left-down-up-right) by page",
-	"f/F",      "next tab / prev tab",
 	"m",        "select the menu panel",
 	"M",        "open new custom frame",
 	"n/N",      "seek next/prev function/flag/hit (scr.nkey)",
@@ -176,7 +175,7 @@ static const char *help_msg_panels[] = {
 	"r",        "toggle callhints/jmphints/leahints",
 	"R",        "randomize color palette (ecr)",
 	"s/S",      "step in / step over",
-	"t/T",      "new tab / close a tab",
+	"t/T",      "tab prompt / close a tab",
 	"u/U",      "undo / redo seek",
 	"w",        "start Window mode",
 	"V",        "go to the graph mode",
@@ -223,6 +222,9 @@ static const char *help_msg_panels_zoom[] = {
 	NULL
 };
 
+static RPanels *panels_new(RCore *core);
+static void panels_check_stackbase(RCore *core);
+static void panels_layout(RPanels *panels);
 static void layoutDefault(RPanels *panels);
 static void adjustSidePanels(RCore *core);
 static int addCmdPanel(void *user);
@@ -335,6 +337,7 @@ static void clearPanelsMenu(RCore *core);
 static void clearPanelsMenuRec(RPanelsMenuItem *pmi);
 static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item);
 static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
+static void panels_free(RPanels *panels);
 static void freePanelModel(RPanel *panel);
 static void freePanelView(RPanel *panel);
 static void freeSinglePanel(RPanel *panel);
@@ -603,7 +606,7 @@ static void panelAllClear(RPanels *panels) {
 	r_cons_flush ();
 }
 
-R_API void r_core_panels_layout (RPanels *panels) {
+static void panels_layout (RPanels *panels) {
 	panels->can->sx = 0;
 	panels->can->sy = 0;
 	layoutDefault (panels);
@@ -785,7 +788,7 @@ static void panels_layout_refresh(RCore *core, int total_tab, int cur_tab) {
 	fixBlockSize (core);
 	delInvalidPanels (core->panels);
 	checkEdge (core->panels);
-	r_core_panels_check_stackbase (core);
+	panels_check_stackbase (core);
 	panels_refresh (core, total_tab, cur_tab);
 }
 
@@ -1879,7 +1882,7 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) 
 static void addNewPanel(RCore *core, char *name, char *cmd, bool cache) {
 	RPanels *panels = core->panels;
 	insertPanel (core, 0, name, cmd, cache);
-	r_core_panels_layout (panels);
+	panels_layout (panels);
 	panels->curnode = 0;
 	setRefreshAll (panels, false);
 }
@@ -2011,7 +2014,7 @@ static int loadLayoutSavedCb(void *user) {
 	RCore *core = (RCore *)user;
 	if (!loadSavedPanelsLayout (core, NULL, false)) {
 		createDefaultPanels (core);
-		r_core_panels_layout (core->panels);
+		panels_layout (core->panels);
 	}
 	core->panels->curnode = 0;
 	core->panels->panelsMenu->depth = 1;
@@ -2023,7 +2026,7 @@ static int loadLayoutDefaultCb(void *user) {
 	RCore *core = (RCore *)user;
 	initPanels (core, core->panels);
 	createDefaultPanels (core);
-	r_core_panels_layout (core->panels);
+	panels_layout (core->panels);
 	setRefreshAll (core->panels, false);
 	core->panels->panelsMenu->depth = 1;
 	setMode (core->panels, PANEL_MODE_DEFAULT);
@@ -3218,7 +3221,7 @@ static void panelContinue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
 
-R_API void r_core_panels_check_stackbase(RCore *core) {
+static void panels_check_stackbase(RCore *core) {
 	if (!core || !core->panels) {
 		return;
 	}
@@ -3764,7 +3767,7 @@ static void insertValue(RCore *core) {
 	}
 }
 
-R_API RPanels *r_core_panels_new(RCore *core) {
+static RPanels *panels_new(RCore *core) {
 	RPanels *panels = R_NEW0 (RPanels);
 	if (!panels) {
 		return NULL;
@@ -3777,7 +3780,7 @@ R_API RPanels *r_core_panels_new(RCore *core) {
 	return panels;
 }
 
-R_API void r_core_panels_free(RPanels *panels) {
+static void panels_free(RPanels *panels) {
 	r_cons_switchbuf (true);
 	if (panels) {
 		freeAllPanels (panels);
@@ -4084,7 +4087,7 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 				}
 				return true;
 			} else {
-				r_core_panels_free (panels_root->panels[panels_root->cur_panels]);
+				panels_free (panels_root->panels[panels_root->cur_panels]);
 				panels_root->panels[panels_root->cur_panels] = NULL;
 				for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
 					panels_root->panels[i] = panels_root->panels[i + 1];
@@ -4105,9 +4108,9 @@ static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cu
 	RPanels *panels;
 	RPanels *prev;
 	if (!*r_panels) {
-		panels = r_core_panels_new (core);
+		panels = panels_new (core);
 		if (!panels) {
-			r_core_panels_free (panels);
+			panels_free (panels);
 			return true;
 		}
 		prev = core->panels;
@@ -4116,7 +4119,7 @@ static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cu
 			return true;
 		}
 		if (!initPanels (core, panels)) {
-			r_core_panels_free (panels);
+			panels_free (panels);
 			return true;
 		}
 		*r_panels = panels;
@@ -4140,7 +4143,7 @@ static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cu
 
 	if (!panels->cfg || !loadSavedPanelsLayout (core, panels->cfg, true)) {
 		createDefaultPanels (core);
-		r_core_panels_layout (panels);
+		panels_layout (panels);
 	}
 repeat:
 	core->panels = panels;
@@ -4492,26 +4495,41 @@ repeat:
 		}
 		break;
 	case 't':
-		core->panels_root->n_panels++;
-		total_tab++;
+		{
+			int ch = r_cons_any_key ("[Tab] nkey:nth; p:prev; n:next; t:new");
+			if (isdigit (ch)) {
+				ch -= '0' + 1;
+				if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
+					core->panels_root->cur_panels = ch;
+					savePanelsLayout (panels, &panels->cfg, true);
+					return false;
+				}
+			}
+			switch (ch) {
+				case 'p':
+					core->panels_root->cur_panels--;
+					if (core->panels_root->cur_panels < 0) {
+						core->panels_root->cur_panels = core->panels_root->n_panels - 1;
+					}
+					savePanelsLayout (panels, &panels->cfg, true);
+					return false;
+				case 'n':
+					core->panels_root->cur_panels++;
+					core->panels_root->cur_panels %= core->panels_root->n_panels;
+					savePanelsLayout (panels, &panels->cfg, true);
+					return false;
+				case 't':
+					core->panels_root->n_panels++;
+					total_tab++;
+					break;
+			}
+		}
 		break;
 	case 'T':
 		if (core->panels_root->n_panels > 1) {
 			goto exit;
 		}
 		break;
-	case 'f':
-		core->panels_root->cur_panels++;
-		core->panels_root->cur_panels %= core->panels_root->n_panels;
-		savePanelsLayout (panels, &panels->cfg, true);
-		return false;
-	case 'F':
-		core->panels_root->cur_panels--;
-		if (core->panels_root->cur_panels < 0) {
-			core->panels_root->cur_panels = core->panels_root->n_panels - 1;
-		}
-		savePanelsLayout (panels, &panels->cfg, true);
-		return false;
 	case 'w':
 		toggleWindowMode (panels);
 		setRefreshAll (panels, false);
