@@ -254,8 +254,8 @@ static void dismantleDelPanel(RPanels *ps, RPanel *p, int pi);
 static void delInvalidPanels(RPanels *panels);
 static void fixBlockSize(RCore *core);
 static void dismantlePanel(RPanels *ps, RPanel *p);
-static void panels_refresh(RCore *core, int total_tab, int cur_tab);
-static void panels_layout_refresh(RCore *core, int total_tab, int cur_tab);
+static void panels_refresh(RCore *core);
+static void panels_layout_refresh(RCore *core);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
 static void refreshCoreOffset (RCore *core);
@@ -327,7 +327,7 @@ static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
 static void hudstuff(RCore *core);
 static char *getPanelsConfigPath();
-static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cur_tab, bool *force_quit);
+static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static void initRotatedb(RPanels *panels);
@@ -390,6 +390,11 @@ static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 static void buildPanelParam(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
+static bool handle_tab(RCore *core);
+static bool handle_tab_nth(RCore *core, int ch);
+static bool handle_tab_next(RCore *core);
+static bool handle_tab_prev(RCore *core);
+static bool handle_tab_new(RCore *core);
 
 static void setCmdStrCache(RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
@@ -784,12 +789,12 @@ static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const
 	setRefreshAll (panels, false);
 }
 
-static void panels_layout_refresh(RCore *core, int total_tab, int cur_tab) {
+static void panels_layout_refresh(RCore *core) {
 	fixBlockSize (core);
 	delInvalidPanels (core->panels);
 	checkEdge (core->panels);
 	panels_check_stackbase (core);
-	panels_refresh (core, total_tab, cur_tab);
+	panels_refresh (core);
 }
 
 static void insertPanel(RCore *core, int n, const char *name, const char *cmd, bool cache) {
@@ -3067,7 +3072,7 @@ static void refreshCoreOffset (RCore *core) {
 	}
 }
 
-static void panels_refresh(RCore *core, int total_tab, int cur_tab) {
+static void panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
 	if (!panels) {
 		return;
@@ -3145,8 +3150,8 @@ static void panels_refresh(RCore *core, int total_tab, int cur_tab) {
 	r_cons_canvas_write (can, title);
 
 	int tab_pos = i;
-	for (i = total_tab; i > 0; i--) {
-		if (i - 1 == cur_tab) {
+	for (i = core->panels_root->n_panels; i > 0; i--) {
+		if (i - 1 == core->panels_root->cur_panels) {
 			snprintf (title, sizeof (title) - 1, "%s[%d] "Color_RESET, color, i);
 			tab_pos -= r_str_ansi_len (title);
 		} else {
@@ -3178,7 +3183,7 @@ static void doPanelsRefresh(RCore *core) {
 	}
 	core->panels->isResizing = true;
 	panelAllClear (core->panels);
-	panels_refresh (core, core->panels_root->n_panels, core->panels_root->cur_panels);
+	panels_refresh (core);
 }
 
 static void doPanelsRefreshOneShot(RCore *core) {
@@ -4076,7 +4081,7 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	bool force_quit = false;
 	int i;
 	while (panels_root->n_panels) {
-		if (panels_process (core, &panels_root->panels[panels_root->cur_panels], panels_root->n_panels, panels_root->cur_panels, &force_quit)) {
+		if (panels_process (core, &panels_root->panels[panels_root->cur_panels], &force_quit)) {
 			if (force_quit) {
 				for (int i = 0; i < panels_root->n_panels; i++) {
 					RPanels *panels = panels_root->panels[i];
@@ -4102,7 +4107,76 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	return true;
 }
 
-static int panels_process(RCore *core, RPanels **r_panels, int total_tab, int cur_tab, bool *force_quit) {
+static bool handle_tab(RCore *core) {
+	int ch = r_cons_any_key ("[Tab] nkey:nth; p:prev; n:next; t:new");
+	if (handle_tab_nth (core, ch)) {
+		return true;
+	}
+	switch (ch) {
+		case 'n':
+			if (handle_tab_next (core)) {
+				return true;
+			}
+			break;
+		case 'p':
+			if (handle_tab_prev (core)) {
+				return true;
+			}
+			break;
+		case 't':
+			(void)handle_tab_new (core);
+			break;
+	}
+	return false;
+}
+
+static bool handle_tab_nth(RCore *core, int ch) {
+	RPanels *panels = core->panels;
+	if (isdigit (ch)) {
+		ch -= '0' + 1;
+		if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
+			core->panels_root->cur_panels = ch;
+			savePanelsLayout (panels, &panels->cfg, true);
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool handle_tab_next(RCore *core) {
+	RPanels *panels = core->panels;
+	if (core->panels_root->n_panels <= 1) {
+		return false;
+	}
+	core->panels_root->cur_panels++;
+	core->panels_root->cur_panels %= core->panels_root->n_panels;
+	savePanelsLayout (panels, &panels->cfg, true);
+	return true;
+}
+
+
+static bool handle_tab_prev(RCore *core) {
+	RPanels *panels = core->panels;
+	if (core->panels_root->n_panels <= 1) {
+		return false;
+	}
+	core->panels_root->cur_panels--;
+	if (core->panels_root->cur_panels < 0) {
+		core->panels_root->cur_panels = core->panels_root->n_panels - 1;
+	}
+	savePanelsLayout (panels, &panels->cfg, true);
+	return true;
+}
+
+static bool handle_tab_new(RCore *core) {
+	if (core->panels_root->n_panels >= PANEL_NUM_LIMIT) {
+		return false;
+	}
+	core->panels_root->n_panels++;
+	return true;
+}
+
+static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 	int i, okey, key;
 
 	RPanels *panels;
@@ -4150,7 +4224,7 @@ repeat:
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
-	panels_layout_refresh (core, total_tab, cur_tab);
+	panels_layout_refresh (core);
 	RPanel *cur = getCurPanel (panels);
 	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 		if (panels->mode != PANEL_MODE_MENU) {
@@ -4495,34 +4569,8 @@ repeat:
 		}
 		break;
 	case 't':
-		{
-			int ch = r_cons_any_key ("[Tab] nkey:nth; p:prev; n:next; t:new");
-			if (isdigit (ch)) {
-				ch -= '0' + 1;
-				if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
-					core->panels_root->cur_panels = ch;
-					savePanelsLayout (panels, &panels->cfg, true);
-					return false;
-				}
-			}
-			switch (ch) {
-				case 'p':
-					core->panels_root->cur_panels--;
-					if (core->panels_root->cur_panels < 0) {
-						core->panels_root->cur_panels = core->panels_root->n_panels - 1;
-					}
-					savePanelsLayout (panels, &panels->cfg, true);
-					return false;
-				case 'n':
-					core->panels_root->cur_panels++;
-					core->panels_root->cur_panels %= core->panels_root->n_panels;
-					savePanelsLayout (panels, &panels->cfg, true);
-					return false;
-				case 't':
-					core->panels_root->n_panels++;
-					total_tab++;
-					break;
-			}
+		if (handle_tab (core)) {
+			return false;
 		}
 		break;
 	case 'T':
