@@ -421,6 +421,7 @@ static const char *help_msg_dt[] = {
 	"dt*", "", "List all traced opcode offsets",
 	"dt+"," [addr] [times]", "Add trace for address N times",
 	"dt-", "", "Reset traces (instruction/calls)",
+	"dt=", "", "Show ascii-art color bars with the debug trace ranges",
 	"dta", " 0x804020 ...", "Only trace given addresses",
 	"dtc[?][addr]|([from] [to] [addr])", "", "Trace call/ret",
 	"dtd", "[qi] [nth-start]", "List all traced disassembled (quiet, instructions)",
@@ -4474,6 +4475,9 @@ static int cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case '\0': // "dt"
 			r_debug_trace_list (core->dbg, 0);
+			break;
+		case '=': // "dt="
+			r_debug_trace_list (core->dbg, '=');
 			break;
 		case 'q': // "dtq"
 			r_debug_trace_list (core->dbg, 'q');
