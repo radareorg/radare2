@@ -4064,6 +4064,11 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
 		panels_root->n_panels = 1;
 		panels_root->cur_panels = 0;
+	} else {
+		if (!panels_root->n_panels) {
+			panels_root->n_panels = 1;
+			panels_root->cur_panels = 0;
+		}
 	}
 	bool force_quit = false;
 	int i;
