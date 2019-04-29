@@ -3161,7 +3161,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
 	SETICB ("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
-	SETI ("hex.pcols", 40, "Number of pixel columns for prc");
 	SETI ("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETPREF ("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB ("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");

@@ -557,22 +557,13 @@ static void cmd_print_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, pz);
 }
 
-R_API int r_core_get_prc_cols(RCore *core) {
-	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
-	cols /= 2;
-	if (cols < 1) {
-		cols = 1;
-	}
-	return cols;
-}
-
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = r_config_get_i (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
-	int cols = r_core_get_prc_cols (core);
+	int cols = r_config_get_i (core->config, "hex.cols");
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
@@ -644,7 +635,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	bool square = r_config_get_i (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
-	int cols = r_core_get_prc_cols (core);
+	int cols = r_config_get_i (core->config, "hex.cols");
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
@@ -2058,7 +2049,7 @@ static void cmd_print_pwn(const RCore *core) {
 	r_cons_printf ("easter egg license has expired\n");
 }
 
-static int cmd_print_pxA(RCore *core, int len, const char *data) {
+static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
@@ -2070,8 +2061,21 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
 	RAnalOp op;
-
-	if (len < 0 || len > core->blocksize) {
+	ut8 *data;
+	int datalen;
+	if (*input == 'v') {
+		datalen = cols * 8 * core->cons->rows;
+		data = malloc (datalen);
+		r_io_read_at (core->io, core->offset, data, datalen);
+		len = datalen;
+	} else {
+		data = core->block;
+		datalen = core->blocksize;
+	}
+	if (len < 1) {
+		len = datalen;
+	}
+	if (len < 0 || len > datalen) {
 		eprintf ("Invalid length\n");
 		return 0;
 	}
@@ -2105,7 +2109,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i, R_ANAL_OP_MASK_BASIC) <= 0) {
+		if (r_anal_op (core->anal, &op, core->offset + i, data + i, len - i, R_ANAL_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
@@ -2304,6 +2308,9 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	r_cons_printf ("  %d\n", i - oi);
 	if (bgcolor_in_heap) {
 		free (bgcolor);
+	}
+	if (data != core->block) {
+		free (data);
 	}
 
 	return true;
@@ -5824,7 +5831,7 @@ l = use_blocksize;
 			if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_pxA);
 			} else if (l) {
-				cmd_print_pxA (core, len, input + 1);
+				cmd_print_pxA (core, len, input + 2);
 			}
 			break;
 		case 'b': // "pxb"
