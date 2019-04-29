@@ -6961,6 +6961,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	{
 		RANode *ran = r_agraph_get_first_node (core->graph);
 		if (ran) {
+			ut64 oseek = core->offset;
 			r_agraph_set_title (core->graph, r_config_get (core->config, "graph.title"));
 			r_agraph_set_curnode (core->graph, ran);
 			core->graph->force_update_seek = true;
@@ -6972,6 +6973,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
+			r_core_seek (core, oseek, 0);
 		} else {
 			eprintf ("This graph contains no nodes\n");
 		}

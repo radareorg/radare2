@@ -146,6 +146,9 @@ R_API void r_graph_reset (RGraph *t) {
 }
 
 R_API RGraphNode *r_graph_add_node (RGraph *t, void *data) {
+	if (!t) {
+		return NULL;
+	}
 	RGraphNode *n = r_graph_node_new (data);
 	if (!n) {
 		return NULL;
