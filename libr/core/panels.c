@@ -115,6 +115,10 @@ static const char *menus_About[] = {
 	NULL
 };
 
+static const char *menus_Help[] = {
+	"Toggle Help",
+	NULL
+};
 
 static const char *entropy_rotate[] = {
 	"", "2", "b", "c", "d", "e", "F", "i", "j", "m", "p", "s", "z", "0",
@@ -719,9 +723,6 @@ static void addHelpPanel(RCore *core) {
 	p0->view->pos.h = h - 1;
 	ps->curnode = 0;
 	setRefreshAll (ps, false);
-	if (ps->mode == PANEL_MODE_MENU) {
-		setMode (ps, PANEL_MODE_DEFAULT);
-	}
 }
 
 static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str) {
@@ -2807,11 +2808,7 @@ static bool initPanelsMenu(RCore *core) {
 	root->sub = NULL;
 	int i = 0;
 	while (menus[i]) {
-		if (!strcmp (menus[i], "Help")) {
-			addMenu (core, NULL, menus[i], helpCb);
-		} else {
-			addMenu (core, NULL, menus[i], openMenuCb);
-		}
+		addMenu (core, NULL, menus[i], openMenuCb);
 		i++;
 	}
 	char *parent = "File";
@@ -2957,6 +2954,15 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_About[i], licenseCb);
 		} else if (!strcmp (menus_About[i], "Version")) {
 			addMenu (core, parent, menus_About[i], versionCb);
+		}
+		i++;
+	}
+
+	parent = "Help";
+	i = 0;
+	while (menus_Help[i]) {
+		if (!strcmp (menus_Help[i], "Toggle Help")) {
+			addMenu (core, parent, menus_Help[i], helpCb);
 		}
 		i++;
 	}
@@ -3708,22 +3714,17 @@ static void toggleHelp(RCore *core) {
 		RPanel *p = getPanel (ps, i);
 		if (r_str_endswith (p->model->cmd, "Help")) {
 			dismantleDelPanel (ps, p, i);
+			if (ps->mode == PANEL_MODE_MENU) {
+				setMode (ps, PANEL_MODE_DEFAULT);
+			}
 			setRefreshAll (ps, false);
 			return;
 		}
 	}
-	if (ps->mode == PANEL_MODE_ZOOM) {
-		RStrBuf *p = r_strbuf_new (NULL);
-		if (!p) {
-			return;
-		}
-		r_cons_clear00 ();
-		r_core_visual_append_help (p, "Panels Zoom mode help", help_msg_panels_zoom);
-		(void)r_cons_less_str (r_strbuf_get (p), "?");
-		r_strbuf_free (p);
-		return;
-	}
 	addHelpPanel (core);
+	if (ps->mode == PANEL_MODE_MENU) {
+		setMode (ps, PANEL_MODE_DEFAULT);
+	}
 	updateHelp (ps);
 }
 
