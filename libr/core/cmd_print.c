@@ -3873,7 +3873,7 @@ static void disasm_until_ret(RCore *core, ut64 addr, char type_print, const char
 			char *mnem = op->mnemonic;
 			char *m = malloc ((strlen (mnem) * 2) + 32);
 			strcpy (m, mnem);
-			r_parse_parse (core->parser, op->mnemonic, m);
+			//r_parse_parse (core->parser, op->mnemonic, m);
 			if (type_print == 'q') {
 				r_cons_printf ("%s\n", m);
 			} else {
