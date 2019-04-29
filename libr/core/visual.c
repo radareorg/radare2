@@ -2015,6 +2015,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 		" C  comments\n"
 		" d  debug traces\n"
 		" e  eval var configurations\n"
+		" E  esil debugger mode\n"
 		" f  flags\n"
 		" F  functions\n"
 		" g  graph\n"
@@ -2084,6 +2085,9 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			break;
 		case 'e': // "vbe"
 			r_core_visual_config (core);
+			break;
+		case 'E': // "vbe"
+			r_core_visual_esil (core);
 			break;
 		case 'c': // "vbc"
 			r_core_visual_classes (core);
@@ -2530,14 +2534,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_config_set_i (core->config, "scr.color", color);
 			break;
 		case 'd':
-			if (r_config_get_i (core->config, "asm.esil")) {
-				r_core_visual_esil (core);
-			} else {
-				r_core_visual_showcursor (core, true);
-				int distance = numbuf_pull ();
-				r_core_visual_define (core, arg + 1, distance - 1);
-				r_core_visual_showcursor (core, false);
-			}
+			r_core_visual_showcursor (core, true);
+			int distance = numbuf_pull ();
+			r_core_visual_define (core, arg + 1, distance - 1);
+			r_core_visual_showcursor (core, false);
 			break;
 		case 'D':
 			setdiff (core);
