@@ -374,6 +374,9 @@ static int edf_use_new_push_1(RAnalEsil *esil, const char *op_string, AddConstra
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	RGraphNode *op_node = r_graph_add_node (edf->flow, new_edf_node (edf, op_string));
 	RGraphNode *latest_new = sdb_ptr_get (edf->latest_nodes, "new", 0);	//node for esil->cur
+	if (!latest_new) {
+		return 0;
+	}
 	EsilDataFlowNode *result = new_edf_node (edf, "result_");
 	r_strbuf_appendf(result->content, "%d", edf->idx++);
 	if (cb) {
