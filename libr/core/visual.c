@@ -57,7 +57,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "pxA", "pxx", "p=e $r-2", "pq 64", "pk 64"
+	"prc", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64"
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
@@ -1078,8 +1078,11 @@ static void setprintmode(RCore *core, int n) {
 		core->inc = r_asm_disassemble (core->assembler, &op, core->block, R_MIN (32, core->blocksize));
 		r_asm_op_fini (&op);
 		break;
-	case 5: // "pxA"
-		core->inc = 256;
+	case 5:
+		{
+			int cols = r_config_get_i (core->config, "hex.cols");
+			core->inc = cols;
+		}
 		break;
 	}
 }
@@ -1651,9 +1654,7 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 	cursor_ocur (core, use_ocur);
 
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
-		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
-		cols /= 2;
-		p->cur += cols > 0? cols: 0;
+		p->cur += r_config_get_i (core->config, "hex.cols");
 		return;
 	}
 	if (splitView) {
@@ -1731,8 +1732,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 	}
 
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
-		int cols = r_config_get_i (core->config, "hex.cols") + r_config_get_i (core->config, "hex.pcols");
-		cols /= 2;
+		int cols = r_config_get_i (core->config, "hex.cols");
 		p->cur -= R_MAX (cols, 0);
 		return;
 	}
@@ -1877,7 +1877,6 @@ static bool fix_cursor(RCore *core) {
 
 	if (p->cur < 0) {
 		int sz = p->cols;
-
 		if (isDisasmPrint (core->printidx)) {
 			sz = prevopsz (core, core->offset + p->cur);
 			if (sz < 1) {
@@ -2879,7 +2878,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 								r_core_visual_disasm_down (core, &op, &cols);
 							} else if (!strcmp (__core_visual_print_command (core),
 							                    "prc")) {
-								cols = r_core_get_prc_cols (core);
+								cols = r_config_get_i (core->config, "hex.cols");
 							}
 							r_core_seek (core, core->offset + cols, 1);
 						}
@@ -2948,7 +2947,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						if (isDisasmPrint (core->printidx)) {
 							r_core_visual_disasm_up (core, &cols);
 						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
-							cols = r_core_get_prc_cols (core);
+							cols = r_config_get_i (core->config, "hex.cols");
 						}
 						r_core_seek_delta (core, -cols);
 					}
@@ -3433,38 +3432,29 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						core->seltab = 2;
 					}
 				} else {
-	#if 0
-					//  we need to improve visual zoom, not deleted because we need more brainstorming here
-					if (zoom && core->print->cur) {
-						ut64 from = r_config_get_i (core->config, "zoom.from");
-						ut64 to = r_config_get_i (core->config, "zoom.to");
-						r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
-					}
-					zoom = !zoom;
-	#endif
 					switch (core->printidx) {
-						case R_CORE_VISUAL_MODE_PX: // 0 // xc
-							applyHexMode (core, --hexMode);
-							printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
-							break;
-						case R_CORE_VISUAL_MODE_PD: // pd
-							printfmtSingle[1] = rotateAsmemu (core);
-							r_core_visual_applyDisMode (core, --disMode);
-							break;
-						case R_CORE_VISUAL_MODE_DB: // debugger
-							//printfmtSingle[1] = rotateAsmemu (core);
-							current3format = current3format - 1;
-							printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
-							r_core_visual_applyDisMode (core, --disMode);
-							break;
-						case R_CORE_VISUAL_MODE_OV: // overview
-							current4format = current4format-1;
-							printfmtSingle[3] = print4Formats[R_ABS(current4format)% PRINT_4_FORMATS];
-							break;
-						case R_CORE_VISUAL_MODE_CD: // code
-							current5format = current5format-1;
-							printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
-							break;
+					case R_CORE_VISUAL_MODE_PX: // 0 // xc
+						applyHexMode (core, --hexMode);
+						printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
+						break;
+					case R_CORE_VISUAL_MODE_PD: // pd
+						printfmtSingle[1] = rotateAsmemu (core);
+						r_core_visual_applyDisMode (core, --disMode);
+						break;
+					case R_CORE_VISUAL_MODE_DB: // debugger
+						//printfmtSingle[1] = rotateAsmemu (core);
+						current3format = current3format - 1;
+						printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
+						r_core_visual_applyDisMode (core, --disMode);
+						break;
+					case R_CORE_VISUAL_MODE_OV: // overview
+						current4format = current4format-1;
+						printfmtSingle[3] = print4Formats[R_ABS(current4format)% PRINT_4_FORMATS];
+						break;
+					case R_CORE_VISUAL_MODE_CD: // code
+						current5format = current5format-1;
+						printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+						break;
 					}
 				}
 			} else { // "Z"
@@ -3521,7 +3511,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		case R_CORE_VISUAL_MODE_PX: // x
 		case R_CORE_VISUAL_MODE_OV:
 		case R_CORE_VISUAL_MODE_CD:
-			r_core_block_size (core, (int)(core->cons->rows * hexcols * 3.5));
+			r_core_block_size (core, (int)(core->cons->rows * hexcols * 2));
 			break;
 		case R_CORE_VISUAL_MODE_PD: // pd
 		case R_CORE_VISUAL_MODE_DB: // pd+dbg
