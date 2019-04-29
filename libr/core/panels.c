@@ -337,7 +337,7 @@ static void clearPanelsMenu(RCore *core);
 static void clearPanelsMenuRec(RPanelsMenuItem *pmi);
 static RStrBuf *drawMenu(RCore *core, RPanelsMenuItem *item);
 static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
-static void panels_free(RPanels *panels);
+static void panels_free(RPanelsRoot *panels_root, int i, RPanels *panels);
 static void freePanelModel(RPanel *panel);
 static void freePanelView(RPanel *panel);
 static void freeSinglePanel(RPanel *panel);
@@ -388,6 +388,8 @@ static void setReadOnly(RPanel *p, char *s);
 static void resetScrollPos(RPanel *p);
 static RPanel *getPanel(RPanels *panels, int i);
 static RPanel *getCurPanel(RPanels *panels);
+static RPanels *get_panels(RPanelsRoot *panels_root, int i);
+static RPanels *get_cur_panels(RPanelsRoot *panels_root);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 static void buildPanelParam(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
 static bool handle_tab(RCore *core);
@@ -3785,7 +3787,7 @@ static RPanels *panels_new(RCore *core) {
 	return panels;
 }
 
-static void panels_free(RPanels *panels) {
+static void panels_free(RPanelsRoot *panels_root, int i, RPanels *panels) {
 	r_cons_switchbuf (true);
 	if (panels) {
 		freeAllPanels (panels);
@@ -3794,6 +3796,7 @@ static void panels_free(RPanels *panels) {
 		sdb_free (panels->rotate_db);
 		ht_pp_free (panels->mht);
 		free (panels);
+		panels_root->panels[i] = NULL;
 	}
 }
 
@@ -4081,10 +4084,11 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	bool force_quit = false;
 	int i;
 	while (panels_root->n_panels) {
-		if (panels_process (core, &panels_root->panels[panels_root->cur_panels], &force_quit)) {
+		RPanels *cur_p = get_cur_panels (panels_root);
+		if (panels_process (core, &cur_p, &force_quit)) {
 			if (force_quit) {
 				for (int i = 0; i < panels_root->n_panels; i++) {
-					RPanels *panels = panels_root->panels[i];
+					RPanels *panels = get_panels (panels_root, i);
 					if (!panels || !panels->cfg) {
 						continue;
 					}
@@ -4092,8 +4096,7 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 				}
 				return true;
 			} else {
-				panels_free (panels_root->panels[panels_root->cur_panels]);
-				panels_root->panels[panels_root->cur_panels] = NULL;
+				panels_free (panels_root, panels_root->cur_panels, cur_p);
 				for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
 					panels_root->panels[i] = panels_root->panels[i + 1];
 				}
@@ -4105,6 +4108,17 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	return true;
+}
+
+static RPanels *get_panels(RPanelsRoot *panels_root, int i) {
+	if (i >= PANEL_NUM_LIMIT) {
+		return NULL;
+	}
+	return panels_root->panels[i];
+}
+
+static RPanels *get_cur_panels(RPanelsRoot *panels_root) {
+	return get_panels (panels_root, panels_root->cur_panels);
 }
 
 static bool handle_tab(RCore *core) {
@@ -4178,13 +4192,12 @@ static bool handle_tab_new(RCore *core) {
 
 static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 	int i, okey, key;
-
+    RPanelsRoot *panels_root = core->panels_root;
 	RPanels *panels;
 	RPanels *prev;
 	if (!*r_panels) {
 		panels = panels_new (core);
 		if (!panels) {
-			panels_free (panels);
 			return true;
 		}
 		prev = core->panels;
@@ -4193,7 +4206,6 @@ static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 			return true;
 		}
 		if (!initPanels (core, panels)) {
-			panels_free (panels);
 			return true;
 		}
 		*r_panels = panels;
@@ -4574,7 +4586,7 @@ repeat:
 		}
 		break;
 	case 'T':
-		if (core->panels_root->n_panels > 1) {
+		if (panels_root->n_panels > 1) {
 			goto exit;
 		}
 		break;
