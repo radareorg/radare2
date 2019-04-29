@@ -1304,6 +1304,9 @@ static int cmd_write(void *data, const char *input) {
 			if (tmp) {
 				if (toend) {
 					sz = r_io_fd_size (core->io, core->file->fd) - core->offset;
+					if (sz < 0) {
+						eprintf ("Warning: File size is unknown.");
+					}
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					*tmp = 0;
@@ -1317,6 +1320,9 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				if (toend) {
 					sz = r_io_fd_size (core->io, core->file->fd);
+					if (sz < 0) {
+						eprintf ("Warning: File size is unknown.");
+					}
 					if (sz != -1 && core->offset <= sz) {
 						sz -= core->offset;
 						if (!r_core_dump (core, filename, core->offset, (ut64)sz, append)) {
