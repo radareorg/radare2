@@ -2796,13 +2796,21 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 			RAnalValue *dst = ds->analop.dst;
 			if (dst && dst->reg && dst->reg->name) {
 				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
-					RFlagItem *item;
-					ut8 b[8];
 					ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
+					ut8 bs[8];
+					ut8 *b = bs;
+					if (src->memref > sizeof(b)) {
+						b = malloc (src->memref);
+					}
 					ut64 off = 0LL;
-					r_io_read_at (core->io, ptr, b, src->memref);
-					off = r_mem_get_num (b, src->memref);
-					item = r_flag_get_i (core->flags, off);
+					if (b) {
+						r_io_read_at (core->io, ptr, b, src->memref);
+						off = r_mem_get_num (b, src->memref);
+						if (b != bs) {
+							free (b);
+						}
+					}
+					RFlagItem *item = r_flag_get_i (core->flags, off);
 					//TODO: introduce env for this print?
 					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
 							dst->reg->name, ptr, off, item?item->name: "");
