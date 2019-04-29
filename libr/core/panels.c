@@ -397,6 +397,8 @@ static bool handle_tab_nth(RCore *core, int ch);
 static bool handle_tab_next(RCore *core);
 static bool handle_tab_prev(RCore *core);
 static bool handle_tab_new(RCore *core);
+static void save_all_panels_settings(RCore *core);
+static void remove_panels(RCore *core);
 
 static void setCmdStrCache(RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
@@ -4082,32 +4084,42 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	bool force_quit = false;
-	int i;
 	while (panels_root->n_panels) {
-		RPanels *cur_p = get_cur_panels (panels_root);
-		if (panels_process (core, &cur_p, &force_quit)) {
+		if (panels_process (core, &(panels_root->panels[panels_root->cur_panels]), &force_quit)) {
 			if (force_quit) {
-				for (int i = 0; i < panels_root->n_panels; i++) {
-					RPanels *panels = get_panels (panels_root, i);
-					if (!panels || !panels->cfg) {
-						continue;
-					}
-					savePanelsLayout (panels, &panels->cfg, true);
-				}
+				save_all_panels_settings (core);
 				return true;
 			} else {
-				panels_free (panels_root, panels_root->cur_panels, cur_p);
-				for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
-					panels_root->panels[i] = panels_root->panels[i + 1];
-				}
-				panels_root->n_panels--;
-				if (panels_root->cur_panels >= panels_root->n_panels) {
-					panels_root->cur_panels = panels_root->n_panels - 1;
-				}
+				remove_panels (core);
 			}
 		}
 	}
 	return true;
+}
+
+static void save_all_panels_settings(RCore *core) {
+	RPanelsRoot *panels_root = core->panels_root;
+	int i;
+	for (i = 0; i < panels_root->n_panels; i++) {
+		RPanels *panels = get_panels (panels_root, i);
+		if (!panels) {
+			continue;
+		}
+		savePanelsLayout (panels, &panels->cfg, true);
+	}
+}
+
+static void remove_panels(RCore *core) {
+	RPanelsRoot *panels_root = core->panels_root;
+	panels_free (panels_root, panels_root->cur_panels, get_cur_panels (panels_root));
+	int i;
+	for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
+		panels_root->panels[i] = panels_root->panels[i + 1];
+	}
+	panels_root->n_panels--;
+	if (panels_root->cur_panels >= panels_root->n_panels) {
+		panels_root->cur_panels = panels_root->n_panels - 1;
+	}
 }
 
 static RPanels *get_panels(RPanelsRoot *panels_root, int i) {
