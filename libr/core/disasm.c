@@ -2795,6 +2795,9 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = ds->analop.dst;
 			if (dst && dst->reg && dst->reg->name) {
+				if (src->memref < 0 || src->memref > 8) {
+					break;
+				}
 				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 					RFlagItem *item;
 					ut8 b[8];
