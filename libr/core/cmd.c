@@ -2664,7 +2664,9 @@ next2:
 				// Color disabled when doing backticks ?e `pi 1`
 				int ocolor = r_config_get_i (core->config, "scr.color");
 				r_config_set_i (core->config, "scr.color", 0);
+				core->cmd_in_backticks = true;
 				str = r_core_cmd_str (core, ptr + 1);
+				core->cmd_in_backticks = false;
 				r_config_set_i (core->config, "scr.color", ocolor);
 			}
 			if (!str) {

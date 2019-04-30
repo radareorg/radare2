@@ -264,6 +264,7 @@ typedef struct r_core_t {
 	bool cfglog;
 	int cmdrepeat;
 	const char *cmdtimes;
+	bool cmd_in_backticks;
 	ut64 inc;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
