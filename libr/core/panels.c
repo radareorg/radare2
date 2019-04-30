@@ -115,6 +115,8 @@ static const char *menus_About[] = {
 	NULL
 };
 
+static const char *menus_Colors[128];
+
 static const char *menus_Help[] = {
 	"Toggle Help",
 	NULL
@@ -358,6 +360,7 @@ static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RPanels* panels);
 static int loadSavedPanelsLayout(RCore *core);
+static void load_config_menu(RCore *core);
 static void replaceCmd(RCore *core, const char *title, const char *cmd, const bool cache);
 static void swapPanels(RPanels *panels, int p0, int p1);
 static bool handleMenu(RCore *core, const int key);
@@ -2094,7 +2097,10 @@ static int fillCb(void *user) {
 
 static int colorsCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd0 (core, "e!scr.color");
+	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	r_core_cmdf (core, "eco %s", child->name);
 	return 0;
 }
 
@@ -2806,6 +2812,9 @@ static bool initPanelsMenu(RCore *core) {
 	root->n_sub = 0;
 	root->name = NULL;
 	root->sub = NULL;
+
+	load_config_menu (core);
+
 	int i = 0;
 	while (menus[i]) {
 		addMenu (core, NULL, menus[i], openMenuCb);
@@ -2861,7 +2870,7 @@ static bool initPanelsMenu(RCore *core) {
 	i = 0;
 	while (menus_View[i]) {
 		if (!strcmp (menus_View[i], "Colors")) {
-			addMenu (core, parent, menus_View[i], colorsCb);
+			addMenu (core, parent, menus_View[i], openMenuCb);
 		} else {
 			addMenu (core, parent, menus_View[i], addCmdPanel);
 		}
@@ -2990,7 +2999,6 @@ static bool initPanelsMenu(RCore *core) {
 	}
 
 	parent = "Edit.io.cache";
-
 	i = 0;
 	while (menus_iocache[i]) {
 		if (!strcmp (menus_iocache[i], "On")) {
@@ -2998,6 +3006,13 @@ static bool initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_iocache[i], "Off")) {
 			addMenu (core, parent, menus_iocache[i], ioCacheOffCb);
 		}
+		i++;
+	}
+
+	parent = "View.Colors";
+	i = 0;
+	while (menus_Colors[i]) {
+		addMenu (core, parent, menus_Colors[i], colorsCb);
 		i++;
 	}
 
@@ -3603,6 +3618,16 @@ static char *parsePanelsConfig(const char *cfg, int len) {
 		}
 	}
 	return tmp;
+}
+
+static void load_config_menu(RCore *core) {
+	RList *themes_list = r_core_list_themes (core);
+	RListIter *th_iter;
+	const char *th;
+	int i = 0;
+	r_list_foreach (themes_list, th_iter, th) {
+		menus_Colors[i++] = th;
+	}
 }
 
 static int loadSavedPanelsLayout(RCore *core) {
