@@ -304,6 +304,7 @@ static const char *help_msg_afb[] = {
 	".afbr-*", "", "Remove breakpoint on every return address of the function",
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
+	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
 	"afbr", "", "Show addresses of instructions which leave the function",
 	"afbi", "", "print current basic block information",
@@ -352,6 +353,7 @@ static const char *help_msg_afl[] = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
 	"afl+", "", "display sum all function sizes",
+	"afl=", "", "display ascii-art bars with function ranges",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
@@ -1622,6 +1624,21 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_anal_esil_stack_free (esil);
 			}
 		} else {
+		char disasm[128] = { 0 };
+		r_parse_varsub (core->parser, NULL,
+			core->offset + idx,
+			asmop.size, r_asm_op_get_asm (&asmop),
+			disasm, sizeof (disasm));
+		ut64 killme = UT64_MAX;
+		if (r_io_read_i (core->io, op.ptr, &killme, op.refptr, be)) {
+			core->parser->relsub_addr = killme;
+		}
+		char *p = strdup (disasm);
+		if (p) {
+			r_parse_filter (core->parser, addr, core->flags, hint, p,
+				disasm, sizeof (disasm), be);
+			free (p);
+		}
 #define printline(k, fmt, arg)\
 	{ \
 		if (use_color)\
@@ -1632,6 +1649,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
+			printline ("disasm", "%s\n", disasm);
 			printline ("mnemonic", "%s\n", mnem);
 			if (hint) {
 				if (hint->opcode) {
@@ -6943,6 +6961,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	{
 		RANode *ran = r_agraph_get_first_node (core->graph);
 		if (ran) {
+			ut64 oseek = core->offset;
 			r_agraph_set_title (core->graph, r_config_get (core->config, "graph.title"));
 			r_agraph_set_curnode (core->graph, ran);
 			core->graph->force_update_seek = true;
@@ -6954,6 +6973,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
+			r_core_seek (core, oseek, 0);
 		} else {
 			eprintf ("This graph contains no nodes\n");
 		}
@@ -8052,7 +8072,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
 					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae $SS @ $S");
+					r_core_cmd0 (core, "aae");
 					r_print_rowlog_done (core->print, oldstr);
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
@@ -8102,8 +8122,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_print_rowlog_done (core->print, oldstr);
-						/// 
 					}
+
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);

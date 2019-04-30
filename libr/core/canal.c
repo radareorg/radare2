@@ -1445,6 +1445,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 						: (current && color_current)
 							? pal_curr
 							: pal_box4;
+					const char *fill_color = (current || label_color == pal_traced)? pal_traced: "white";
 					nodes++;
 					//r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
 					//	"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
@@ -1456,7 +1457,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 						"color=\"%s\", fontname=\"%s\","
 						"label=\"%s\"]\n",
 						bbi->addr, fcn->name, bbi->addr,
-						current? "palegreen": "white", label_color, font, str);
+						fill_color, label_color, font, str);
 				}
 			}
 			free (str);
@@ -1974,7 +1975,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
 			if (!gv_node || !*gv_node) {
-				gv_node = "fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
+				gv_node = "penwidth=4 fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
 			}
 			if (!gv_grph || !*gv_grph) {
 				gv_grph = "bgcolor=azure";
@@ -4214,12 +4215,10 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (anal && anal->opt.armthumb) {
 		if (anal->cur && anal->cur->arch && anal->bits < 33 &&
 		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
-			switch (op->id) {
-			//Thoses values comes from capstone so basically for others plugin
-			//will not work since they not fill analop.id
-			//do not include here capstone's headers
-			case 14: //ARM_INS_BLX
-			case 15: //ARM_INS_BX
+			switch (op->type) {
+			case R_ANAL_OP_TYPE_UCALL: // BLX
+			case R_ANAL_OP_TYPE_UJMP: // BX
+				// maybe UJMP/UCALL is enough here
 				if (!(*val & 1)) {
 					r_anal_hint_set_bits (anal, *val, 32);
 				} else {
@@ -4230,11 +4229,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 						}
 					}
 				}
-				break;
-			default:
-				break;
 			}
-
 		}
 	}
 	if (core->assembler->bits == 32 && strstr (core->assembler->cur->name, "arm")) {
@@ -4675,7 +4670,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			case R_ANAL_OP_TYPE_MJMP:
 				{
 					ut64 dst = core->anal->esil->jump_target;
-					if (dst == UT64_MAX) {
+					if (dst == 0 || dst == UT64_MAX) {
 						dst = r_reg_getv (core->anal->reg, pcname);
 					}
 					if (CHECKREF (dst)) {

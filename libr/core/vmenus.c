@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -270,7 +270,7 @@ beach:
 	return true;
 }
 
-static bool edit_bits (RCore *core) {
+R_API bool r_core_visual_bit_editor(RCore *core) {
 	const int nbits = sizeof (ut64) * 8;
 	bool colorBits = false;
 	int analopType;
@@ -1277,12 +1277,14 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n");
 	int delta = 0;
+	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup (line);
 	while (true) {
 		r_cons_clear00 ();
-		r_cons_printf ("[0x%08"PFMT64x"]-[visual-r2rop] %s\n", addr + delta, cursearch);
+		r_cons_printf ("[0x%08"PFMT64x"]-[visual-r2rop] %s (see pdp command)\n",
+			(addr == UT64_MAX)? 0: addr + delta, cursearch);
 
 		// compute chain
 		RStrBuf *sb = r_strbuf_new ("");
@@ -1300,7 +1302,11 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		}
 		char *chainstr = r_strbuf_drain (sb);
 
-		char *curline = r_str_dup (NULL, r_str_trim_ro (r_str_widget_list (core, rops, rows, cur, print_rop)));
+		char *wlist = r_str_widget_list (core, rops, rows, cur, print_rop);
+		r_cons_printf ("%s", wlist);
+		free (wlist);
+		char *curline = r_str_dup (NULL, r_str_trim_ro (r_str_widget_list (
+			core, rops, rows, cur, print_rop)));
 		if (curline) {
 			char *sp = strchr (curline, ' ');
 			if (sp) {
@@ -1311,23 +1317,22 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				*sp = ' ';
 			}
 			if (addr != UT64_MAX) {
-				r_cons_printf ("Current Gadget:\n");
+				r_cons_printf ("Gadget:");
 				// get comment
-				char *output = r_core_cmd_strf (core, "pd 10 @ 0x%08"PFMT64x, addr + delta);
-				r_cons_strcat_at (output, 0, 11, scr_w, 10);
-				free (output);
+				char *output = r_core_cmd_strf (core, "piu 10 @ 0x%08"PFMT64x, addr + delta);
+				if (output) {
+					r_cons_strcat_at (output, 0, 10, scr_w, 10);
+					free (output);
+				}
 			}
 		}
 		int count = 0;
 		r_cons_flush ();
-		r_cons_gotoxy (0, 22);
-		r_cons_printf ("ROPChain:\n");
-		if (chainstr) {
-			r_cons_printf ("%s\n", chainstr);
-		}
+		r_cons_gotoxy (0, 20);
+		r_cons_printf ("ROPChain:\n  %s\n", chainstr? chainstr: "");
 		r_list_foreach (core->ropchain, iter, msg) {
 			int extra = strlen (chainstr) / scr_w;
-			r_cons_gotoxy (0, extra + 24 + count);
+			r_cons_gotoxy (0, extra + 22 + count);
 			r_cons_strcat (msg);
 			char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, r_num_get (NULL, msg));
 			if (cmt) {
@@ -1372,23 +1377,26 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			r_cons_any_key (NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
-			{
-			char cmd[1024];
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0] = '\0';
-			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			while (true) {
+				char cmd[1024];
 				cmd[0] = '\0';
+				r_line_set_prompt (":> ");
+				if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+					cmd[0] = '\0';
+				}
+				if (!*cmd || *cmd == 'q') {
+					break;
+				}
+				ut64 oseek = core->offset;
+				r_core_seek (core, addr + delta, 0);
+				r_core_cmd (core, cmd, 1);
+				r_core_seek (core, oseek, 0);
+				r_cons_flush ();
 			}
-			r_core_cmd (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
-			if (cmd[0]) {
-				r_cons_any_key (NULL);
-			}
-			r_cons_clear ();
-			}
 			break;
 		case 'y':
 			r_core_cmdf (core, "yfx %s", chainstr);
@@ -1450,9 +1458,16 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case '\n':
 		case '\r':
 			if (curline && *curline) {
-				char *line = r_core_cmd_strf (core, "pi 4 @ 0x%08"PFMT64x, addr + delta);
+				char *line = r_core_cmd_strf (core, "piuq@0x%08"PFMT64x, addr + delta);
 				r_str_replace_char (line, '\n', ';');
-				r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
+				if (show_color) {
+					// XXX parsing fails to read this ansi-offset
+					// const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
+					// r_list_push (core->ropchain, r_str_newf ("%s0x%08"PFMT64x""Color_RESET"  %s", offsetColor, addr + delta, line));
+					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
+				} else {
+					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
+				}
 				free (line);
 			}
 			break;
@@ -3403,7 +3418,7 @@ onemoretime:
 		}
 		break;
 	case '1':
-		edit_bits (core);
+		r_core_visual_bit_editor (core);
 		break;
 	case 't':
 	case 'o':

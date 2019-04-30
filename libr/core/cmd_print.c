@@ -403,6 +403,7 @@ static const char *help_msg_pi[] = {
 	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
+	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
 	NULL
 };
 
@@ -556,22 +557,13 @@ static void cmd_print_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, pz);
 }
 
-R_API int r_core_get_prc_cols(RCore *core) {
-	int cols = r_config_get_i (core->config, "hex.pcols") + core->print->cols; // * 3.5;
-	cols /= 2;
-	if (cols < 1) {
-		cols = 1;
-	}
-	return cols;
-}
-
 // colordump
 static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = r_config_get_i (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
-	int cols = r_core_get_prc_cols (core);
+	int cols = r_config_get_i (core->config, "hex.cols");
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
@@ -643,7 +635,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	bool square = r_config_get_i (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
-	int cols = r_core_get_prc_cols (core);
+	int cols = r_config_get_i (core->config, "hex.cols");
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
@@ -1319,12 +1311,12 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_core_cmd_help (core, help_detail_pf);
 				}
 			} else {
-				SdbListIter *iter;
-				Sdb *sht = core->print->formats;
-				SdbKv *kv;
-				SdbList *sdbls = sdb_foreach_list (sht, false);
-				ls_foreach (sdbls, iter, kv) {
-					r_cons_println (sdbkv_value (kv));
+				const char *struct_name = r_str_trim_ro (_input);
+				const char *val = sdb_get (core->print->formats, struct_name, NULL);
+				if (val) {
+					r_cons_printf ("%s\n", val);
+				} else {
+					eprintf ("Struct %s is not defined\n", _input);
 				}
 			}
 		} else {
@@ -2057,7 +2049,7 @@ static void cmd_print_pwn(const RCore *core) {
 	r_cons_printf ("easter egg license has expired\n");
 }
 
-static int cmd_print_pxA(RCore *core, int len, const char *data) {
+static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
@@ -2069,8 +2061,21 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
 	RAnalOp op;
-
-	if (len < 0 || len > core->blocksize) {
+	ut8 *data;
+	int datalen;
+	if (*input == 'v') {
+		datalen = cols * 8 * core->cons->rows;
+		data = malloc (datalen);
+		r_io_read_at (core->io, core->offset, data, datalen);
+		len = datalen;
+	} else {
+		data = core->block;
+		datalen = core->blocksize;
+	}
+	if (len < 1) {
+		len = datalen;
+	}
+	if (len < 0 || len > datalen) {
 		eprintf ("Invalid length\n");
 		return 0;
 	}
@@ -2104,7 +2109,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i, R_ANAL_OP_MASK_BASIC) <= 0) {
+		if (r_anal_op (core->anal, &op, core->offset + i, data + i, len - i, R_ANAL_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
@@ -2303,6 +2308,9 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	r_cons_printf ("  %d\n", i - oi);
 	if (bgcolor_in_heap) {
 		free (bgcolor);
+	}
+	if (data != core->block) {
+		free (data);
 	}
 
 	return true;
@@ -3852,21 +3860,43 @@ r_cons_printf ("base:\n");
 }
 #endif
 
-static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
+static void disasm_until_ret(RCore *core, ut64 addr, char type_print, const char *arg) {
 	int p = 0;
-	ut8 *buf = calloc (core->blocksize, 1);
-	if (!buf) {
-		return;
+	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	int i, limit = 1024;
+	if (arg && *arg && arg[1]) {
+		limit = r_num_math (core->num, arg + 1);
 	}
-	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
-	while (p + 4 < core->blocksize) {
-		RAnalOp *op = r_core_anal_op (core, addr + p, R_ANAL_OP_MASK_BASIC);
+	for (i = 0; i < limit; i++) {
+		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 		if (op) {
-			r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", op->mnemonic);
-			if (op->type == R_ANAL_OP_TYPE_RET) {
-				break;
+			char *mnem = op->mnemonic;
+			char *m = malloc ((strlen (mnem) * 2) + 32);
+			strcpy (m, mnem);
+			//r_parse_parse (core->parser, op->mnemonic, m);
+			if (type_print == 'q') {
+				r_cons_printf ("%s\n", m);
+			} else {
+				if (show_color) {
+					const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
+					r_cons_printf ("%s0x%08"PFMT64x""Color_RESET"  %10s %s\n",
+							offsetColor, addr + p, "", m);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", m);
+				}
 			}
-			p += op->size;
+			switch (op->type & 0xfffff) {
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_UJMP:
+				goto beach;
+				break;
+
+			}
+			if (op->type == R_ANAL_OP_TYPE_JMP) {
+				addr = op->jump;
+			} else {
+				addr += op->size;
+			}
 		} else {
 			eprintf ("[pdp] Cannot get op at 0x%08"PFMT64x"\n", addr + p);
 			r_anal_op_free (op);
@@ -3875,7 +3905,8 @@ static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
 		//r_io_read_at (core->io, n, rbuf, 512);
 		r_anal_op_free (op);
 	}
-	free (buf);
+beach:
+	return;
 }
 
 static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
@@ -3884,13 +3915,14 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	ut8 *buf = calloc (core->blocksize, 1);
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
 	while (p + 4 < core->blocksize) {
+		const bool be = core->print->big_endian;
 		if (core->assembler->bits == 64) {
-			n = r_read_ble64 (buf + p, core->print->big_endian);
+			n = r_read_ble64 (buf + p, be);
 		} else {
-			n = r_read_ble32 (buf + p, core->print->big_endian);
+			n = r_read_ble32 (buf + p, be);
 		}
 		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
-		disasm_until_ret (core, n, type_print);
+		disasm_until_ret (core, n, type_print, NULL);
 		if (core->assembler->bits == 64) {
 			p += 8;
 		} else {
@@ -4726,9 +4758,12 @@ static int cmd_print(void *data, const char *input) {
 	case 'i': // "pi"
 		switch (input[1]) {
 		case '?':
-// r_cons_printf ("|Usage: pi[defj] [num]\n");
+			// r_cons_printf ("|Usage: pi[defj] [num]\n");
 			r_core_cmd_help (core, help_msg_pi);
-		break;
+			break;
+		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
+			disasm_until_ret (core, core->offset, input[2], input + 2);
+			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
 				r_core_print_disasm_all (core, core->offset,
@@ -4897,7 +4932,6 @@ static int cmd_print(void *data, const char *input) {
 		ut8 bw_disassemble = false;
 		ut32 pd_result = false, processed_cmd = false;
 		bool formatted_json = false;
-
 		if (input[1] && input[2]) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
@@ -4947,6 +4981,8 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			l = use_blocksize;
 		}
+		// may be unnecessary, fixes 'pd 1;pdj 100;pd 1' bug
+		r_core_block_read (core);
 
 		switch (input[1]) {
 		case 'C': // "pdC"
@@ -5795,7 +5831,7 @@ l = use_blocksize;
 			if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_pxA);
 			} else if (l) {
-				cmd_print_pxA (core, len, input + 1);
+				cmd_print_pxA (core, len, input + 2);
 			}
 			break;
 		case 'b': // "pxb"

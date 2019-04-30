@@ -17,6 +17,7 @@ ec fline rgb:55b4d4             # function line. the boundary of a function
 ec flow rgb:c2d94c              # lines that show jump destinations
 ec flow2 rgb:ddd
 ec fname rgb:ff6a00             # function name
+ec graph.traced rgb:2eb
 ec graph.box rgb:5c6773         # unselected boxes in visual graph mode
 ec graph.box2 rgb:ff6a00        # currently selected box in visual graph mode
 ec graph.box3 rgb:66d9ef

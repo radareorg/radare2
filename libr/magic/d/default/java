@@ -15,12 +15,35 @@
 # 0	belong		0xcececece	Java JCE KeyStore
 # !:mime	application/x-java-jce-keystore
 
-# Dalvik .dex format. http://retrodev.com/android/dexformat.html
+# Android .dex format. http://retrodev.com/android/dexformat.html
+# https://source.android.com/devices/tech/dalvik/dex-format.html
 # From <mkf@google.com> "Mike Fleming"
 0	string	dex\n
->0	regex	dex\n[0-9][0-9][0-9]\0	Dalvik DEX file
+>0	regex	dex\n[0-9][0-9][0-9]\0	Android DEX file
 >4	string	>000			version %s
 0	string	dey\n
->0	regex	dey\n[0-9][0-9][0-9]\0	Dalvik ODEX file (optimized for host)
+>0	regex	dey\n[0-9][0-9][0-9]\0	Android ODEX file
 >4	string	>000			version %s
 
+# Android .oat format
+0	string	oat\n
+>0	regex	oat\n[0-9][0-9][0-9]\0	Android OAT file
+>4	string	>000			version %s
+
+# Android .vdex format.
+# https://android.googlesource.com/platform/art/+/master/runtime/vdex_file.h#114
+# http://romainthomas.fr/post/android-vdex/
+# https://github.com/anestisb/vdexExtractor/blob/master/src/vdex/vdex_common.h#L30
+0	string	vdex
+>0	regex	vdex[0-9][0-9][0-9]\0	Android VDEX file
+>4	string	>000			version %s
+
+# Android .cdex format. https://android.googlesource.com/platform/art/+/android-9.0.0_r3/libdexfile/dex/compact_dex_file.h#29
+0	string	cdex
+>0	regex	cdex[0-9][0-9][0-9]\0	Android CDEX file
+>4	string	>000			version %s
+
+# Android .art format. https://source.android.com/devices/tech/dalvik
+0	string	art\n
+>0	regex	art\n[0-9][0-9][0-9]\0	Android ART file
+>4	string	>000			version %s

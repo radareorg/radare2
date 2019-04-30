@@ -716,13 +716,6 @@ typedef struct r_anal_t {
 	REvent *ev;
 } RAnal;
 
-typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
-
-typedef struct r_anal_bind_t {
-	RAnal *anal;
-	RAnalGetFcnIn get_fcn_in;
-} RAnalBind;
-
 typedef struct r_anal_hint_t {
 	ut64 addr;
 	ut64 ptr;
@@ -751,6 +744,16 @@ typedef struct r_anal_var_access_t {
 	ut64 addr;
 	int set;
 } RAnalVarAccess;
+
+typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
+typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
+
+typedef struct r_anal_bind_t {
+	RAnal *anal;
+	RAnalGetFcnIn get_fcn_in;
+	RAnalGetHint get_hint;
+} RAnalBind;
+
 
 #define R_ANAL_VAR_KIND_ANY 0
 #define R_ANAL_VAR_KIND_ARG 'a'

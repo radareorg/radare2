@@ -18,6 +18,7 @@ extern "C" {
 #include <r_util/r_str.h>
 #include <r_util/r_sys.h>
 #include <r_util/r_file.h>
+#include <r_vector.h>
 #include <sdb.h>
 
 #include <stdio.h>
@@ -873,15 +874,19 @@ typedef struct r_line_buffer_t {
 } RLineBuffer;
 
 typedef struct r_line_t RLine; // forward declaration
+typedef struct r_line_comp_t RLineCompletion;
 
-typedef int (*RLineCallback)(RLine *line);
+typedef enum { R_LINE_PROMPT_DEFAULT, R_LINE_PROMPT_OFFSET, R_LINE_PROMPT_FILE } RLinePromptType;
 
-typedef struct r_line_comp_t {
+typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user);
+
+struct r_line_comp_t {
 	bool opt;
-	int argc;
-	const char **argv;
-	RLineCallback run;
-} RLineCompletion;
+	size_t args_limit;
+	RPVector args; /* <char *> */
+	RLineCompletionCb run;
+	void *run_user;
+};
 
 typedef char* (*RLineEditorCb)(void *core, const char *str);
 typedef int (*RLineHistoryUpCb)(RLine* line);
@@ -907,9 +912,8 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
-	bool offset_prompt;
+	RLinePromptType prompt_type;
 	int offset_hist_index;
-	bool file_prompt;
 	int file_hist_index;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
@@ -943,6 +947,12 @@ R_API const char *r_line_hist_get(int n);
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);
 R_API int r_line_hist_cmd_up(RLine *line);
 R_API int r_line_hist_cmd_down(RLine *line);
+
+R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit);
+R_API void r_line_completion_fini(RLineCompletion *completion);
+R_API void r_line_completion_push(RLineCompletion *completion, const char *str);
+R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
+R_API void r_line_completion_clear(RLineCompletion *completion);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
@@ -1102,6 +1112,12 @@ typedef struct r_panels_t {
 	RPanelsLayout layout;
 	RList *snows;
 } RPanels;
+
+typedef struct r_panels_root_t {
+	int n_panels;
+	int cur_panels;
+	RPanels **panels;
+} RPanelsRoot;
 
 #ifdef __cplusplus
 }

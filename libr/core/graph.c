@@ -3839,7 +3839,7 @@ static void visual_offset(RAGraph *g, RCore *core) {
 	r_cons_get_size (&rows);
 	r_cons_gotoxy (0, rows);
 	r_cons_flush ();
-	core->cons->line->offset_prompt = true;
+	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_offset_up, &r_line_hist_offset_down);
 	r_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
@@ -3849,8 +3849,8 @@ static void visual_offset(RAGraph *g, RCore *core) {
 		}
 		r_core_cmd0 (core, buf);
 		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
-		core->cons->line->offset_prompt = false;
 	}
+	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 }
 
 static void goto_asmqjmps(RAGraph *g, RCore *core) {
@@ -4416,7 +4416,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			get_bbupdate (g, core, fcn);
 			break;
 		case '!':
-			r_core_visual_panels (core, NULL);
+			r_core_visual_panels_root (core, core->panels_root);
 			break;
 		case '\'':
 			if (fcn) {

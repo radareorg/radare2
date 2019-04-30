@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 // pancake */
 
-#define ms_argc (sizeof (ms_argv)/sizeof(const char*))
+#define ms_argc (sizeof (ms_argv) / sizeof(const char*) - 1)
 static const char *ms_argv[] = {
 	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
 };
@@ -48,8 +48,7 @@ static char *cwd = NULL;
 static char * av[1024] = {NULL};
 #define av_max 1024
 
-static char **getFilesFor(RLine *line, const char *path, int *ac) {
-	RCore *core = line->user;
+static char **getFilesFor(RCore *core, const char *path, int *ac) {
 	RFS *fs = core->fs;
 	RListIter *iter;
 	RFSFile *file;
@@ -113,10 +112,9 @@ static char **getFilesFor(RLine *line, const char *path, int *ac) {
 	return av;
 }
 
-static int ms_autocomplete(RLine *line) {
-	const char *data = line->buffer.data;
-	line->completion.argc = ms_argc;
-	line->completion.argv = ms_argv;
+static int ms_autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
+	const char *data = buf->data;
+	r_line_completion_set (completion, ms_argc, ms_argv);
 	if (!strncmp (data, "ls ", 3)
 		|| !strncmp (data, "cd ", 3)
 		|| !strncmp (data, "cat ", 4)
@@ -126,9 +124,8 @@ static int ms_autocomplete(RLine *line) {
 			//eprintf ("FILE (%s)\n", file);
 			int tmp_argc = 0;
 			// TODO: handle abs vs rel
-			char **tmp_argv = getFilesFor (line, file, &tmp_argc);
-			line->completion.argc = tmp_argc;
-			line->completion.argv = (const char **)tmp_argv;
+			char **tmp_argv = getFilesFor (user, file, &tmp_argc);
+			r_line_completion_set (completion, tmp_argc, (const char **)tmp_argv);
 		}
 		return true;
 	}
@@ -400,8 +397,8 @@ static int cmd_mount(void *data, const char *_input) {
 			RLineCompletion c;
 			memcpy (&c, &rli->completion, sizeof (c));
 			rli->completion.run = ms_autocomplete;
-			rli->completion.argc = ms_argc;
-			rli->completion.argv = ms_argv;
+			rli->completion.run_user = rli->user;
+			r_line_completion_set (&rli->completion, ms_argc, ms_argv);
 			r_fs_shell_prompt (&shell, core->fs, input);
 			free (cwd);
 			memcpy (&rli->completion, &c, sizeof (c));

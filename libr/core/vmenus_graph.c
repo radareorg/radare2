@@ -156,6 +156,9 @@ static int cmpaddr (const void *_a, const void *_b) {
 
 static int cmpname (const void *_a, const void *_b) {
 	const RCoreVisualViewGraphItem *a = _a, *b = _b;
+	if (!a || !b || !a->name || !b->name) {
+		return 0;
+	}
 	return (int)strcmp (a->name, b->name);
 }
 

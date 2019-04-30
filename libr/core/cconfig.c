@@ -691,11 +691,10 @@ static int cb_asmbits(void *user, void *data) {
 
 static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 	int i, argc;
-	char *features;
 
 	if (core && core->assembler && core->assembler->cur) {
 		if (core->assembler->cur->features) {
-			features = strdup (core->assembler->cur->features);
+			char *features = strdup (core->assembler->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
@@ -2287,6 +2286,7 @@ static int cb_searchin(void *user, void *data) {
 			"raw                search in raw io (ignoring bounds)\n"
 			"block              search in the current block\n"
 			"io.map             search in current map\n"
+			"io.sky.[rwx]       search in all skyline segments\n"
 			"io.maps            search in all maps\n"
 			"io.maps.[rwx]      search in all r-w-x io maps\n"
 			// "io.section        search in current mapped section\n"
@@ -3161,7 +3161,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
 	SETICB ("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
-	SETI ("hex.pcols", 40, "Number of pixel columns for prc");
 	SETI ("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETPREF ("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB ("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");

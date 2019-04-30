@@ -1908,6 +1908,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
 	char previous = '\0';
+	const char *color_flag = print->cons->context->pal.flag;
 
 	if (!p || !*p) {
 		return NULL;
@@ -1925,12 +1926,18 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		/* colorize numbers */
 		if ((ishexprefix (&p[i]) && previous != ':') \
 		     || (isdigit ((ut8)p[i]) && issymbol (previous))) {
-			int nlen = strlen (num);
+			const char *num2 = num;
+			ut64 n = r_num_get (NULL, p + i);
+			const char *name = print->offname (print->user, n)? color_flag: NULL;
+			if (name) {
+				num2 = name;
+			}
+			int nlen = strlen (num2);
 			if (nlen + j >= sizeof (o)) {
 				eprintf ("Colorize buffer is too small\n");
 				break;
 			}
-			memcpy (o + j, num, nlen + 1);
+			memcpy (o + j, num2, nlen + 1);
 			j += nlen;
 		}
 		previous = p[i];
