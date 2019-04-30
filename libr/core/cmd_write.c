@@ -1463,7 +1463,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 				char* hex = r_asm_code_get_hex (acode);
 				if (input[1] == '*') {
-					cmd_write_hexpair (core, hex);
+					r_cons_printf ("wx %s\n", hex);
 				} else {
 					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 						cmd_write_fail ();
