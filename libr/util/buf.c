@@ -172,7 +172,7 @@ R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 	return b;
 }
 
-R_API RBuffer *r_buf_new() {
+R_API RBuffer *r_buf_new(void) {
 	struct buf_bytes_user u = { 0 };
 	u.data = NULL;
 	u.length = 0;
@@ -410,7 +410,11 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 
 R_API int r_buf_read(RBuffer *b, ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && buf, -1);
-	return buf_read (b, buf, len);
+	int r = buf_read (b, buf, len);
+	if (r >= 0 && r < len) {
+		memset (buf + r, b->Oxff_priv, len - r);
+	}
+	return r;
 }
 
 R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len) {

@@ -38,7 +38,9 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 			free (priv);
 			return NULL;
 		}
-		memmove (priv->buf, u->data, priv->length);
+		if (priv->length) {
+			memmove (priv->buf, u->data, priv->length);
+		}
 		priv->is_bufowner = true;
 	}
 	b->priv = priv;
