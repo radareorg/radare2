@@ -8118,7 +8118,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_print_rowlog_done (core->print, oldstr);
 
 				if (input[1] == 'a') { // "aaaa"
-					if (!didAap) {
+					if (!r_config_get_i (core->config, "cfg.debug") && !didAap) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_print_rowlog_done (core->print, oldstr);
