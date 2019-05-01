@@ -3453,6 +3453,7 @@ static bool handleMenu(RCore *core, const int key) {
 		break;
 	case 'm':
 	case 'q':
+	case 'Q':
 	case -1:
 		if (panels->panelsMenu->depth > 1) {
 			removeMenu (panels);
@@ -4086,7 +4087,11 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 			if (force_quit) {
 				return true;
 			} else {
-				remove_panels (core);
+				if (panels_root->n_panels > 1) {
+					remove_panels (core);
+				} else {
+					return true;
+				}
 			}
 		}
 	}
