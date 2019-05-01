@@ -2101,6 +2101,13 @@ static int colorsCb(void *user) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	r_core_cmdf (core, "eco %s", child->name);
+	setRefreshAll (core->panels, false);
+	int i;
+	for (i = 1; i < menu->depth; i++) {
+		RPanel *p = menu->history[i]->p;
+		p->view->refresh = true;
+		menu->refreshPanels[menu->n_refresh++] = p;
+	}
 	return 0;
 }
 
