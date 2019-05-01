@@ -396,11 +396,13 @@ static int cmd_mount(void *data, const char *_input) {
 			RLine *rli = r_line_singleton ();
 			RLineCompletion c;
 			memcpy (&c, &rli->completion, sizeof (c));
+			r_pvector_init (&rli->completion.args, free);  // UGLY HACK
 			rli->completion.run = ms_autocomplete;
 			rli->completion.run_user = rli->user;
 			r_line_completion_set (&rli->completion, ms_argc, ms_argv);
 			r_fs_shell_prompt (&shell, core->fs, input);
 			free (cwd);
+			r_pvector_clear (&rli->completion.args);
 			memcpy (&rli->completion, &c, sizeof (c));
 		}
 		break;
