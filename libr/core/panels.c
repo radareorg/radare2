@@ -38,12 +38,12 @@ typedef enum {
 } Direction;
 
 static const char *panels_dynamic [] = {
-	"Disassembly", "Decompiler", "Stack", "Registers",
+	"Disassembly", "Stack", "Registers",
 	NULL
 };
 
 static const char *panels_static [] = {
-	"Disassembly", "Decompiler", "Functions", "Symbols",
+	"Disassembly", "Functions", "Symbols",
 	NULL
 };
 
@@ -3897,13 +3897,7 @@ static void createDefaultPanels(RCore *core) {
 	RPanels *panels = core->panels;
 	panels->curnode = 0;
 	panels->n_panels = 0;
-	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 
-	bool decompiler_on = false;
-	if (fun && !r_list_empty (fun->bbs)) {
-		const char *msg = "Activate decompiler? It might take some time.(Y/n)";
-		decompiler_on = r_cons_yesno ('y', msg);
-	}
 	int i = 0;
 	if (panels->layout == PANEL_LAYOUT_DEFAULT_DYNAMIC) {
 		while (panels_dynamic[i]) {
@@ -3912,13 +3906,6 @@ static void createDefaultPanels(RCore *core) {
 				return;
 			}
 			const char *s = panels_dynamic[i++];
-			if (!strcmp (s, PANEL_TITLE_DECOMPILER)) {
-				if (!decompiler_on) {
-					continue;
-				}
-				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
-				continue;
-			}
 			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
 		}
 	} else {
@@ -3928,13 +3915,6 @@ static void createDefaultPanels(RCore *core) {
 				return;
 			}
 			const char *s = panels_static[i++];
-			if (!strcmp (s, PANEL_TITLE_DECOMPILER)) {
-				if (!decompiler_on) {
-					continue;
-				}
-				buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 1);
-				continue;
-			}
 			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
 		}
 	}
