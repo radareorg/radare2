@@ -1746,16 +1746,20 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (I.echo) {
 			if (gcomp) {
 				gcomp_line = "";
+				int counter = 0;
 				if (I.history.data != NULL) {
-					for (i = 0; i < I.history.size; i++) {
+					for (i = I.history.size-1; i >= 0; i--) {
 						if (!I.history.data[i]) {
-							break;
+							continue;
 						}
 						if (strstr (I.history.data[i], I.buffer.data)) {
 							gcomp_line = I.history.data[i];
-							if (!gcomp_idx--) {
+							if (++counter > gcomp_idx) {
 								break;
 							}
+						}
+						if (i == 0) {
+							gcomp_idx--;
 						}
 					}
 				}
