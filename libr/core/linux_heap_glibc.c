@@ -286,7 +286,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		RIOMap *map;
 		SdbListIter *iter;
 		ls_foreach (core->io->maps, iter, map) {
-			if (strstr (map->name, "arena")) {
+			if (map->name && strstr (map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;
 				libc_addr_end = map->itv.addr + map->itv.size;
 				break;
