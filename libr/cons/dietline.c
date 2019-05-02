@@ -1350,6 +1350,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			fflush (stdout);
 			break;
 		case 18:// ^R -- autocompletion
+			if (gcomp) {
+				gcomp_idx++;
+			}
 			gcomp = 1;
 			break;
 		case 19:// ^S -- backspace
