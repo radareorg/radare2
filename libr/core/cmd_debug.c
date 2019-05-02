@@ -1935,12 +1935,12 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		r_cons_printf ("[");
 	}
 	r_list_foreach (list, iter, r) {
-		char *rrstr, *tmp = NULL;
+		char *tmp = NULL;
 		if (r->size != bits) {
 			continue;
 		}
 		value = r_reg_get_value (core->dbg->reg, r);
-		rrstr = r_core_anal_hasrefs (core, value, true);
+		char *rrstr = r_core_anal_hasrefs (core, value, true);
 		delta = 0;
 		int regSize = r->size;
 		if (regSize < 80) {
@@ -1967,7 +1967,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			{
 				const char *arg = "";
 				int i;
-				for (i = 0; i< R_REG_NAME_LAST; i++) {
+				for (i = 0; i < R_REG_NAME_LAST; i++) {
 					const char *t = r_reg_get_name (reg, i);
 					if (t && !strcmp (t, r->name)) {
 						arg = r_reg_get_role (i);
