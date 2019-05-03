@@ -167,6 +167,8 @@ static const char *help_msg_panels[] = {
 	"d",        "define in the current address. Same as Vd",
 	"D",        "show disassembly in the current panel",
 	"e",        "change title and command of current panel",
+	"f",        "set/add filter keywords",
+	"F",        "remove all the filters",
 	"g",        "go/seek to given offset",
 	"G",        "show graph in the current panel",
 	"i",        "insert hex",
