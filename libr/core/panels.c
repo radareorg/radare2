@@ -486,11 +486,9 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 }
 
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
-	char cache_title[128], *text, *cmdStr = NULL;
+	char title[128], cache_title[128], *text, *cmdStr = NULL;
 	char *readOnly = panel->model->readOnly;
 	char *cmd_title  = apply_filter_cmd (panel);
-	int title_size = strlen (panel->model->title) + strlen (cmd_title) + 128;
-	char title[title_size];
 	int graph_pad = 0;
 	if (color) {
 		if (!strcmp (panel->model->title, cmd_title)) {
