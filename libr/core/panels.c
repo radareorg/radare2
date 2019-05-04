@@ -1081,8 +1081,8 @@ static bool handleZoomMode(RCore *core, const int key) {
 
 static void handleComment(RCore *core) {
 	RPanel *p = getCurPanel (core->panels);
-	if (!strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (p->model->cmd, "pdc")) {
+	if (strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) ||
+				!strcmp (p->model->cmd, "pdc")) {
 		return;
 	}
 	char buf[4095];
@@ -1906,7 +1906,7 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) 
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		if (strcmp (p->model->cmd, cmd)) {
+		if (strncmp (p->model->cmd, cmd, strlen (cmd))) {
 			continue;
 		}
 		p->view->refresh = true;
