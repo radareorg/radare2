@@ -974,7 +974,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 		if (GetModuleFileNameEx (processHandle, NULL, filename, FILENAME_MAX) == 0) {
 			eprintf ("r_sys_pid_to_path: Cannot get module filename.");
 		} else {
-			return strdup (filename);
+			return r_sys_conv_win_to_utf8 (filename);
 		}
 		CloseHandle (processHandle);
 	} else {
