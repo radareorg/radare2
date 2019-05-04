@@ -565,6 +565,9 @@ static const char *help_msg_ao[] = {
 static const char *help_msg_ar[] = {
 	"Usage: ar", "", "# Analysis Registers",
 	"ar", "", "Show 'gpr' registers",
+	"ar.", ">$snapshot", "Show r2 commands to set register values to the current state",
+	".ar*", "", "Import register values as flags",
+	".ar-", "", "Unflag all registers",
 	"ar0", "", "Reset register arenas to 0",
 	"ara", "[?]", "Manage register arenas",
 	"arA", "", "Show values of function argument calls (A0, A1, A2, ..)",
@@ -586,8 +589,6 @@ static const char *help_msg_ar[] = {
 	"ars", "", "Stack register state",
 	"art", "", "List all register types",
 	"arw", " <hexnum>", "Set contents of the register arena",
-	".ar*", "", "Import register values as flags",
-	".ar-", "", "Unflag all registers",
 	NULL
 };
 
@@ -3624,6 +3625,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			free (p);
 		}
 		break;
+	case '.': // "ar."
 	case '-': // "ar-"
 	case '*': // "ar*"
 	case 'R': // "arR"

@@ -217,7 +217,10 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				break;
 			case 1:
 			case '*':
-				dbg->cb_printf ("f %s 1 %s\n", item->name, strvalue);
+				dbg->cb_printf ("f %s %d %s\n", item->name, item->size / 8, strvalue);
+				break;
+			case '.':
+				dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
 				break;
 			case 'd':
 			case 2:
