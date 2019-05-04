@@ -167,6 +167,8 @@ static const char *help_msg_panels[] = {
 	"d",        "define in the current address. Same as Vd",
 	"D",        "show disassembly in the current panel",
 	"e",        "change title and command of current panel",
+	"f",        "set/add filter keywords",
+	"F",        "remove all the filters",
 	"g",        "go/seek to given offset",
 	"G",        "show graph in the current panel",
 	"i",        "insert hex",
@@ -229,6 +231,7 @@ static const char *help_msg_panels_zoom[] = {
 };
 
 static RPanels *panels_new(RCore *core);
+static void renew_filter(RPanel *panel, int n);
 static void panels_check_stackbase(RCore *core);
 static void panels_layout(RPanels *panels);
 static void layoutDefault(RPanels *panels);
@@ -276,6 +279,9 @@ static void fitToCanvas(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static void undoSeek(RCore *core);
 static void redoSeek(RCore *core);
+static void set_filter(RPanel *panel);
+static void reset_filter(RPanel *panel);
+static char *apply_filter_cmd(RPanel *panel);
 static int openMenuCb(void *user);
 static int openFileCb(void *user);
 static int rwCb(void *user);
@@ -478,30 +484,32 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 }
 
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
-	int graph_pad = 0;
-	char *readOnly = panel->model->readOnly;
 	char title[128], cache_title[128], *text, *cmdStr = NULL;
+	char *readOnly = panel->model->readOnly;
+	char *cmd_title  = apply_filter_cmd (panel);
+	int graph_pad = 0;
 	if (color) {
-		if (!strcmp (panel->model->title, panel->model->cmd)) {
+		if (!strcmp (panel->model->title, cmd_title)) {
 			snprintf (title, sizeof (title) - 1,
 					"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
 		}  else {
 			snprintf (title, sizeof (title) - 1,
-					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, panel->model->cmd);
+					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
 		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
 				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
 	} else {
-		if (!strcmp (panel->model->title, panel->model->cmd)) {
+		if (!strcmp (panel->model->title, cmd_title)) {
 			snprintf (title, sizeof (title) - 1,
 					"   %s   ", panel->model->title);
 		} else {
 			snprintf (title, sizeof (title) - 1,
-					"   %s (%s)  ", panel->model->title, panel->model->cmd);
+					"   %s (%s)  ", panel->model->title, cmd_title);
 		}
 		snprintf (cache_title, sizeof (cache_title) - 1,
 				"[Cache] %s", readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
 	}
+	free (cmd_title);
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
 		r_cons_canvas_write (can, title);
 	}
@@ -596,13 +604,33 @@ bool findCmdStrCache(RCore *core, RPanel* panel, char **str) {
 	return false;
 }
 
-char *handleCmdStrCache(RCore *core, RPanel *panel) {
-	char *ret;
-	ret = r_core_cmd_str (core, panel->model->cmd);
-	if (panel->model->cache && R_STR_ISNOTEMPTY (ret)) {
-		setCmdStrCache (panel, ret);
+char *apply_filter_cmd(RPanel *panel) {
+	char *out = r_str_ndup (panel->model->cmd, strlen (panel->model->cmd) + 1024);
+	if (!panel->model->filter) {
+		return out;
 	}
-	return ret;
+	int i;
+	for (i = 0; i < panel->model->n_filter; i++) {
+		char *filter = panel->model->filter[i];
+		if (strlen (filter) > 1024) {
+			r_cons_any_key ("filter is too big.");
+			return out;
+		}
+		strcat (out, "~");
+		strcat (out, filter);
+	}
+	return out;
+}
+
+char *handleCmdStrCache(RCore *core, RPanel *panel) {
+	char *out;
+	char *cmd = apply_filter_cmd (panel);
+	out = r_core_cmd_str (core, cmd);
+	if (panel->model->cache && R_STR_ISNOTEMPTY (out)) {
+		setCmdStrCache (panel, out);
+	}
+	free (cmd);
+	return out;
 }
 
 static void panelAllClear(RPanels *panels) {
@@ -3057,6 +3085,7 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	for (i = 0; i < PANEL_NUM_LIMIT; i++) {
 		panels->panel[i] = R_NEW0 (RPanel);
 		panels->panel[i]->model = R_NEW0 (RPanelModel);
+		renew_filter (panels->panel[i], PANEL_NUM_LIMIT);
 		panels->panel[i]->view = R_NEW0 (RPanelView);
 		if (!panels->panel[i]->model || !panels->panel[i]->view) {
 			return false;
@@ -3812,6 +3841,16 @@ static RPanels *panels_new(RCore *core) {
 	return panels;
 }
 
+static void renew_filter(RPanel *panel, int n) {
+	panel->model->n_filter = 0;
+	char **filter = calloc (sizeof (char *), n);
+	if (!filter) {
+		panel->model->filter = NULL;
+		return;
+	}
+	panel->model->filter = filter;
+}
+
 static void panels_free(RPanelsRoot *panels_root, int i, RPanels *panels) {
 	r_cons_switchbuf (true);
 	if (panels) {
@@ -3978,6 +4017,7 @@ static void rotatePanelCmds(RCore *core, const char **cmds, const int cmdslen, c
 		return;
 	}
 	RPanel *p = getCurPanel (core->panels);
+	reset_filter (p);
 	if (rev) {
 		if (!p->model->rotate) {
 			p->model->rotate = cmdslen - 1;
@@ -4039,6 +4079,28 @@ static void undoSeek(RCore *core) {
 		cur->model->addr = core->offset;
 		cur->view->refresh = true;
 	}
+}
+
+static void set_filter(RPanel *panel) {
+	if (!panel->model->filter) {
+		return;
+	}
+	char *input = r_cons_input ("filter word: ");
+	if (input) {
+		panel->model->filter[panel->model->n_filter++] = input;
+		setCmdStrCache (panel, NULL);
+		panel->view->refresh = true;
+	}
+	resetScrollPos (panel);
+}
+
+static void reset_filter(RPanel *panel) {
+	free (panel->model->filter);
+	panel->model->filter = NULL;
+	renew_filter (panel, PANEL_NUM_LIMIT);
+	setCmdStrCache (panel, NULL);
+	panel->view->refresh = true;
+	resetScrollPos (panel);
 }
 
 static void redoSeek(RCore *core) {
@@ -4451,6 +4513,12 @@ repeat:
 				cur->model->directionCb (core, (int)RIGHT);
 			}
 		}
+		break;
+	case 'f':
+		set_filter (cur);
+		break;
+	case 'F':
+		reset_filter (cur);
 		break;
 	case '_':
 		hudstuff (core);

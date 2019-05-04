@@ -38,6 +38,8 @@ typedef struct r_panel_model_t {
 	char *cmdStrCache;
 	char *readOnly;
 	char *funcName;
+	char **filter;
+	int n_filter;
 	int rotate;
 } RPanelModel;
 
