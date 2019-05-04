@@ -613,6 +613,10 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	}
 	map->perm = perms;
 	RInterval itv = {from, size};
+	if (size == -1) {
+		eprintf ("Warning: Invalid range. Use different search.in=? or anal.in=dbg.maps.x\n");
+		return;
+	}
 	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
 	if (search_itv.addr == UT64_MAX && !search_itv.size) {
 		map->itv = itv;
