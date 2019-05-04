@@ -409,9 +409,7 @@ static void remove_panels(RCore *core);
 static void setCmdStrCache(RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = s;
-	if (p->model->cmdStrCache) {
-		setdcb (p);
-	}
+	setdcb (p);
 }
 
 static void setReadOnly(RPanel *p, char *s) {
