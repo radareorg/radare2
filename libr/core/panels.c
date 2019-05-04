@@ -468,18 +468,16 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		return;
 	}
 	panel->view->refresh = false;
-	int w = R_MIN (can->w - panel->view->pos.x, panel->view->pos.w);
-	int h = R_MIN (can->h - panel->view->pos.y, panel->view->pos.h);
-	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, w, h, ' ');
+	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	if (panel->model->type == PANEL_TYPE_MENU) {
-		menuPanelPrint (can, panel, panel->view->sx, panel->view->sy, w, h);
+		menuPanelPrint (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
 	} else {
-		defaultPanelPrint (core, can, panel, panel->view->sx, panel->view->sy, w, h, color);
+		defaultPanelPrint (core, can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h, color);
 	}
 	if (color) {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box);
 	}
 }
 
@@ -1089,8 +1087,7 @@ static bool handleZoomMode(RCore *core, const int key) {
 
 static void handleComment(RCore *core) {
 	RPanel *p = getCurPanel (core->panels);
-	if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) ||
-				!strcmp (p->model->cmd, "pdc")) {
+	if (!check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		return;
 	}
 	char buf[4095];
