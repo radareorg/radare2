@@ -138,7 +138,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	STARTUPINFO si = {0};
 	LPTSTR cmdline_;
 	bool ret = false;
-	const size_t max_length = 32768;
+	const size_t max_length = 32768 * sizeof (TCHAR);
 	LPTSTR _cmdline_ = malloc (max_length);
 
 	if (!_cmdline_) {
