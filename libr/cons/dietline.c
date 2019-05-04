@@ -202,11 +202,9 @@ static ut8 *r_line_readchar_win(int *vch) { // this function handle the input in
 		int rsz = read (0, buf, 1);
 		r_cons_sleep_end (bed);
 		if (rsz != 1)
-			return -1;
+			return NULL;
 		return buf;
 	}
-
-	*buf = '\0';
 
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
@@ -224,7 +222,7 @@ do_it_again:
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
 				free (buf);
-				buf = r_sys_conv_win_to_utf8_l (&irInBuf.Event.KeyEvent.uChar, 1);
+				buf = r_sys_conv_win_to_utf8_l ((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 			} else {
 				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
@@ -747,7 +745,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 		}
 		ch = r_line_readchar_win (&vch);
-		if (ch == -1) {
+		if (!ch) {
 			r_cons_break_pop ();
 			return NULL;
 		}
