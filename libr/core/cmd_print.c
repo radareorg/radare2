@@ -575,7 +575,11 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				break;
 			}
 			if (show_color) {
-				char *str = r_str_newf ("rgb:fff rgb:%06x", colormap[block[j]]);
+				ut32 color_val = colormap[block[j]];
+				int brightness = ((color_val & 0xff0000) >> 16)
+				                + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 2;
+				char *str = r_str_newf ("rgb:%s rgb:%06x",
+					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
 				color = r_cons_pal_parse (str, NULL);
 				free (str);
 				if (show_cursor && core->print->cur == j) {
