@@ -1575,9 +1575,7 @@ static void visual_comma(RCore *core) {
 	cwd = getcommapath (core);
 	if (!cmtfile) {
 		char *fn;
-		r_core_visual_showcursor (core, true);
 		fn = r_cons_input ("<comment-file> ");
-		r_core_visual_showcursor (core, false);
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (!comment || !*comment) {

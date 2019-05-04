@@ -42,7 +42,7 @@ r_core_sources = [
   'fortune.c',
   'gdiff.c',
   'zdiff.c',
-  'graph.c',
+  'agraph.c',
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
