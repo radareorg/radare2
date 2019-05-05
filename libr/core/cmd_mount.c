@@ -9,7 +9,7 @@ static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", "", "List all mountpoints in human readable format",
 	"m*", "", "Same as above, but in r2 commands",
-	"ml", "", "List filesystem plugins",
+	"mL", "", "List filesystem plugins (Same as Lm)",
 	"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
 	"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
 	"m-/", "", "Umount given path (/)",
@@ -195,8 +195,8 @@ static int cmd_mount(void *data, const char *_input) {
 				root->p->name, root->delta, root->path);
 		}
 		break;
-	case 'L': // "ml" list of plugins .. should be mL
-	case 'l': // "ml" list of plugins .. should be mL
+	case 'l': // "ml" should be deprecated
+	case 'L': // "mL" list of plugins
 		r_list_foreach (core->fs->plugins, iter, plug) {
 			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
 		}
