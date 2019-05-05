@@ -124,14 +124,15 @@ static const char *help_msg_star[] = {
 };
 
 static const char *help_msg_dot[] = {
-	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", " # define macro or load r2, cparse or rlang file",
+	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, cparse, r_lang,"
+	    " d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
 	".", "", "repeat last command backward",
 	".", "r2cmd", "interpret the output of the command as r2 commands",
 	"..", " [file]", "run the output of the execution of a script as r2 commands",
 	"...", "", "repeat last command forward (same as \\n)",
 	".:", "8080", "listen for commands on given tcp port",
 	".--", "", "terminate tcp server for remote commands",
-	".", " foo.r2", "interpret r2 script",
+	".", " foo.r2", "interpret script",
 	".-", "", "open cfg.editor and interpret tmp file",
 	".*", " file ...", "same as #!pipe open cfg.editor and interpret tmp file",
 	".!", "rabin -ri $FILE", "interpret output of command",
