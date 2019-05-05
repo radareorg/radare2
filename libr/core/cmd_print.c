@@ -160,6 +160,7 @@ static const char *help_msg_at_at_at[] = {
 	"x", " @@@i", "imports",
 	"x", " @@@r", "registers",
 	"x", " @@@s", "symbols",
+	"x", " @@@st", "strings",
 	"x", " @@@S", "sections",
 	"x", " @@@m", "io.maps",
 	"x", " @@@M", "dbg.maps (See ?$?~size)",

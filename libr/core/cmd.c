@@ -3401,7 +3401,21 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 #endif
 		break;
 	case 's':
-		{
+		if (each[1] == 't') { // strings
+			list = r_bin_get_strings (core->bin);
+			RBinString *s;
+			if (list) {
+				ut64 offorig = core->offset;
+				ut64 obs = core->blocksize;
+				r_list_foreach (list, iter, s) {
+					r_core_block_size (core, s->size);
+					r_core_seek (core, s->vaddr, 1);
+					r_core_cmd0 (core, cmd);
+				}
+				r_core_block_size (core, obs);
+				r_core_seek (core, offorig, 1);
+			}
+		} else {
 			// symbols
 			RBinSymbol *sym;
 			ut64 offorig = core->offset;
