@@ -952,9 +952,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		case 'j':
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
 				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
-				core->io->desc->fd == f->fd ? "true": "false",
+				r_str_bool (core->io->desc->fd == f->fd),
 				(int) f->fd, desc->uri, (ut64) from,
-				desc->perm & R_PERM_W? "true": "false",
+				r_str_bool (desc->perm & R_PERM_W),
 				(int) r_io_desc_size (desc),
 				iter->n? ",": "");
 			break;

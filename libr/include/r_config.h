@@ -17,7 +17,7 @@ R_LIB_VERSION_HEADER(r_config);
 #define CN_RO    0x000010
 #define CN_RW    0x000020
 
-typedef int (*RConfigCallback)(void *user, void *data);
+typedef bool (*RConfigCallback)(void *user, void *data);
 
 typedef struct r_config_node_t {
 	char *name;
@@ -73,15 +73,15 @@ R_API void r_config_hold_restore(RConfigHold *h);
 
 R_API RConfig *r_config_new(void *user);
 R_API RConfig *r_config_clone (RConfig *cfg);
-R_API int r_config_free(RConfig *cfg);
+R_API void r_config_free(RConfig *cfg);
 R_API void r_config_lock(RConfig *cfg, int l);
-R_API int r_config_eval(RConfig *cfg, const char *str);
+R_API bool r_config_eval(RConfig *cfg, const char *str);
 R_API void r_config_bump(RConfig *cfg, const char *key);
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i);
-R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, int (*callback)(void *user, void *data));
-R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, int (*callback)(void *user, void *data));
+R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, bool (*callback)(void *user, void *data));
+R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, bool (*callback)(void *user, void *data));
 R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *value);
-R_API int r_config_rm(RConfig *cfg, const char *name);
+R_API bool r_config_rm(RConfig *cfg, const char *name);
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name);
 R_API const char *r_config_get(RConfig *cfg, const char *name);
 R_API const char *r_config_desc(RConfig *cfg, const char *name, const char *desc);
@@ -91,15 +91,12 @@ R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API void r_config_node_free(void *n);
 R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node);
-R_API int r_config_toggle(RConfig *cfg, const char *name);
-R_API int r_config_readonly (RConfig *cfg, const char *key);
+R_API bool r_config_toggle(RConfig *cfg, const char *name);
+R_API bool r_config_readonly (RConfig *cfg, const char *key);
 
-/*----------------------------------------------------------------------------------------------*/
 R_API void r_config_set_sort_column (char *column);
-/*----------------------------------------------------------------------------------------------*/
-
-R_API int r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb);
-R_API int r_config_set_getter (RConfig *cfg, const char *key, RConfigCallback cb);
+R_API bool r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb);
+R_API bool r_config_set_getter (RConfig *cfg, const char *key, RConfigCallback cb);
 #endif
 
 #ifdef __cplusplus
