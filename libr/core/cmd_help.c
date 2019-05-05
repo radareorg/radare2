@@ -553,8 +553,10 @@ static int cmd_help(void *data, const char *input) {
 				} else {
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
+						r_cons_printf ("uint64  %"PFMT64u"\n", (ut64)n);
 					} else {
 						r_cons_printf ("int32   %d\n", (st32)n);
+						r_cons_printf ("uint32  %u\n", (ut32)n);
 					}
 					r_cons_printf ("hex     0x%"PFMT64x"\n", n);
 					r_cons_printf ("octal   0%"PFMT64o"\n", n);
