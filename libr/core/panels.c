@@ -230,6 +230,7 @@ static const char *help_msg_panels_zoom[] = {
 	NULL
 };
 
+static bool check_panel_type(RPanel *panel, const char *type, int len);
 static RPanels *panels_new(RCore *core);
 static void renew_filter(RPanel *panel, int n);
 static void panels_check_stackbase(RCore *core);
@@ -412,6 +413,17 @@ static bool handle_tab_prev(RCore *core);
 static bool handle_tab_new(RCore *core);
 static void remove_panels(RCore *core);
 
+static bool check_panel_type(RPanel *panel, const char *type, int len) {
+	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
+		if (!strncmp (panel->model->cmd, type, len) &&
+				strcmp (panel->model->cmd, "pdc")) {
+			return true;
+		}
+		return false;
+	}
+	return !strncmp (panel->model->cmd, type, len);
+}
+
 static void setCmdStrCache(RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = s;
@@ -439,8 +451,7 @@ static void handlePrompt(RCore *core, RPanels *panels) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		if (!strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (p->model->cmd, "pdc")) {
+		if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			p->model->addr = core->offset;
 			break;
 		}
@@ -457,18 +468,16 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		return;
 	}
 	panel->view->refresh = false;
-	int w = R_MIN (can->w - panel->view->pos.x, panel->view->pos.w);
-	int h = R_MIN (can->h - panel->view->pos.y, panel->view->pos.h);
-	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, w, h, ' ');
+	r_cons_canvas_fill (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	if (panel->model->type == PANEL_TYPE_MENU) {
-		menuPanelPrint (can, panel, panel->view->sx, panel->view->sy, w, h);
+		menuPanelPrint (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
 	} else {
-		defaultPanelPrint (core, can, panel, panel->view->sx, panel->view->sy, w, h, color);
+		defaultPanelPrint (core, can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h, color);
 	}
 	if (color) {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box2);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, w, h, core->cons->context->pal.graph_box);
+		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box);
 	}
 }
 
@@ -521,8 +530,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 		cmdStr = readOnly;
 	} else {
 		if (panel->model->cmd) {
-			if (!strncmp (panel->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (panel->model->cmd, "pdc")) {
+			if (check_panel_type(panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 				if (!findCmdStrCache (core, panel, &cmdStr)) {
 					ut64 o_offset = core->offset;
 					core->offset = panel->model->addr;
@@ -531,12 +539,12 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 					cmdStr = handleCmdStrCache (core, panel);
 					core->offset = o_offset;
 				}
-			} else if (!strncmp (panel->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+			} else if (check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 				const int delta = r_config_get_i (core->config, "stack.delta");
 				const char sign = (delta < 0)? '+': '-';
 				const int absdelta = R_ABS (delta);
 				cmdStr = r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
-			} else if (!strncmp (panel->model->cmd, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+			} else if (check_panel_type (panel, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 				if (!findCmdStrCache (core, panel, &cmdStr)) {
 					ut64 o_offset = core->offset;
 					if (!panel->model->cache) {
@@ -555,7 +563,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 						resetScrollPos (panel);
 					}
 				}
-				if (!strncmp (panel->model->cmd, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
+				if (check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
 					graph_pad = 1;
 					core->cons->event_resize = NULL; // avoid running old event with new data
 					core->cons->event_data = core;
@@ -860,11 +868,11 @@ static void setCursor(RCore *core, bool cur) {
 static void cursorRight(RCore *core) {
 	RPanel *cur = getCurPanel (core->panels);
 	RPrint *print = core->print;
-	if (!strncmp (cur->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && print->cur >= 15) {
+	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && print->cur >= 15) {
 		return;
 	}
-	if (!strncmp (cur->model->cmd, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
-			|| !strncmp (cur->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+	if (check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
+			|| check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		print->cur++;
 		cur->model->addr++;
 	} else {
@@ -891,11 +899,10 @@ static void cursorRight(RCore *core) {
 static void activateCursor(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
-	if (!strncmp (cur->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))
-			|| !strncmp (cur->model->cmd, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
-			|| (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc"))
-			|| !strncmp (cur->model->cmd, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))
+			|| check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
+			|| check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
+			|| check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		if (cur->model->cache) {
 			if (r_cons_yesno ('y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
@@ -919,14 +926,13 @@ static void activateCursor(RCore *core) {
 static void cursorLeft(RCore *core) {
 	RPanel *cur = getCurPanel (core->panels);
 	RPrint *print = core->print;
-	if (!strncmp (cur->model->cmd, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
-			|| !strncmp (cur->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+	if (check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
+			|| check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		if (print->cur > 0) {
 			print->cur--;
 			cur->model->addr--;
 		}
-	} else if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc")) {
+	} else if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		print->cur--;
 		int row = r_print_row_at_off (print, print->cur);
 		if (row < 0) {
@@ -1081,8 +1087,7 @@ static bool handleZoomMode(RCore *core, const int key) {
 
 static void handleComment(RCore *core) {
 	RPanel *p = getCurPanel (core->panels);
-	if (strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) ||
-				!strcmp (p->model->cmd, "pdc")) {
+	if (!check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		return;
 	}
 	char buf[4095];
@@ -1258,8 +1263,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 		insertValue (core);
 		break;
 	case '*':
-		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc")) {
+		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + print->cur);
 			cur->model->addr = core->offset + print->cur;
 			cur->view->refresh = true;
@@ -1906,7 +1910,7 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) 
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		if (strncmp (p->model->cmd, cmd, strlen (cmd))) {
+		if (!check_panel_type (p, cmd, strlen (cmd))) {
 			continue;
 		}
 		p->view->refresh = true;
@@ -1976,7 +1980,7 @@ static void buildPanelParam(RCore *core, RPanel *p, const char *title, const cha
 	if (R_STR_ISNOTEMPTY (m->cmd)) {
 		setdcb (p);
 		setrcb (core->panels, p);
-		if (!strncmp (m->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+		if (check_panel_type (p, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 			const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
 			m->baseAddr = stackbase;
@@ -1995,16 +1999,16 @@ static void setdcb(RPanel *p) {
 		p->model->directionCb = directionDefaultCb;
 		return;
 	}
-	if (!strncmp (p->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+	if (check_panel_type (p, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		p->model->directionCb = directionStackCb;
-	} else if (!strncmp (p->model->cmd, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
+	} else if (check_panel_type (p, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
 		p->model->directionCb = directionGraphCb;
-	} else if (!strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
+	} else if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
 			strcmp (p->model->cmd, "pdc")) {
 		p->model->directionCb = directionDisassemblyCb;
-	} else if (!strncmp (p->model->cmd, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
+	} else if (check_panel_type (p, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
 		p->model->directionCb = directionRegisterCb;
-	} else if (!strncmp (p->model->cmd, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+	} else if (check_panel_type (p, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		p->model->directionCb = directionHexdumpCb;
 	} else {
 		p->model->directionCb = directionDefaultCb;
@@ -2017,7 +2021,7 @@ static void setrcb(RPanels *ps, RPanel *p) {
 	SdbList *sdb_list = sdb_foreach_list (ps->rotate_db, false);
 	ls_foreach (sdb_list, sdb_iter, kv) {
 		char *key =  sdbkv_key (kv);
-		if (strncmp (key, p->model->cmd, strlen (key))) {
+		if (!check_panel_type (p, key, strlen (key))) {
 			continue;
 		}
 		p->model->rotateCb = (RPanelRotateCallback)sdb_ptr_get (ps->rotate_db, key, 0);
@@ -2233,8 +2237,7 @@ static void updateDisassemblyAddr (RCore *core) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		if (!strncmp (p->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (p->model->cmd, "pdc")) {
+		if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			p->model->addr = core->offset;
 		}
 	}
@@ -2660,15 +2663,13 @@ static void hudstuff(RCore *core) {
 	RPanel *cur = getCurPanel (panels);
 	r_core_visual_hudstuff (core);
 
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		cur->model->addr = core->offset;
 	} else {
 		int i;
 		for (i = 0; i < panels->n_panels; i++) {
 			RPanel *panel = getPanel (panels, i);
-			if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-						strcmp (cur->model->cmd, "pdc")) {
+			if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 				panel->model->addr = core->offset;
 				break;
 			}
@@ -3124,8 +3125,7 @@ static void freeAllPanels(RPanels *panels) {
 static void refreshCoreOffset (RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		core->offset = cur->model->addr;
 	}
 }
@@ -3273,8 +3273,7 @@ static void panelSingleStepOver(RCore *core) {
 
 static void panelBreakpoint(RCore *core) {
 	RPanel *cur = getCurPanel (core->panels);
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		r_core_cmd (core, "dbs $$", 0);
 		cur->view->refresh = true;
 	}
@@ -3294,7 +3293,7 @@ static void panels_check_stackbase(RCore *core) {
 	RPanels *panels = core->panels;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = getPanel (panels, i);
-		if (panel->model->cmd && !strncmp (panel->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && panel->model->baseAddr != stackbase) {
+		if (panel->model->cmd && check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && panel->model->baseAddr != stackbase) {
 			panel->model->baseAddr = stackbase;
 			panel->model->addr = stackbase - r_config_get_i (core->config, "stack.delta") + core->print->cur;
 			panel->view->refresh = true;
@@ -3567,8 +3566,7 @@ static void handleTabKey(RCore *core, bool shift) {
 		}
 	}
 	cur = getCurPanel (panels);
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		setRefreshAll (panels, false);
 		return;
 	}
@@ -3801,12 +3799,12 @@ static void insertValue(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
 	char buf[128];
-	if (!strncmp (cur->model->cmd, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		const char *prompt = "insert hex: ";
 		panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
 		cur->view->refresh = true;
-	} else if (!strncmp (cur->model->cmd, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
+	} else if (check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
 		const char *creg = core->dbg->creg;
 		if (creg) {
 			const char *prompt = "new-reg-value> ";
@@ -3814,13 +3812,13 @@ static void insertValue(RCore *core) {
 			r_core_cmdf (core, "dr %s = %s", creg, buf);
 			cur->view->refresh = true;
 		}
-	} else if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
+	} else if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
 					strcmp (cur->model->cmd, "pdc")) {
 		const char *prompt = "insert hex: ";
 		panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
 		cur->view->refresh = true;
-	} else if (!strncmp (cur->model->cmd, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+	} else if (check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		const char *prompt = "insert hex: ";
 		panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
@@ -4069,8 +4067,7 @@ static void rotateFunctionCb (void *user, bool rev) {
 
 static void undoSeek(RCore *core) {
 	RPanel *cur = getCurPanel (core->panels);
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		return;
 	}
 	RIOUndos *undo = r_io_sundo (core->io, core->offset);
@@ -4105,8 +4102,7 @@ static void reset_filter(RPanel *panel) {
 
 static void redoSeek(RCore *core) {
 	RPanel *cur = getCurPanel (core->panels);
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		return;
 	}
 	RIOUndos *undo = r_io_sundo_redo (core->io);
@@ -4345,8 +4341,7 @@ repeat:
 		}
 	}
 
-	if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc") && '0' < key && key <= '9') {
+	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) && '0' < key && key <= '9') {
 		ut8 ch = key;
 		r_core_visual_jump (core, ch);
 		cur->model->addr = core->offset;
@@ -4370,8 +4365,7 @@ repeat:
 		rotatePanels (panels, true);
 		break;
 	case '.':
-		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc")) {
+		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			ut64 addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr && addr != UT64_MAX) {
 				r_core_seek (core, addr, 1);
@@ -4396,16 +4390,14 @@ repeat:
 		break;
 	case 's':
 		panelSingleStepIn (core);
-		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc")) {
+		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			cur->model->addr = core->offset;
 		}
 		setRefreshAll (panels, false);
 		break;
 	case 'S':
 		panelSingleStepOver (core);
-		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc")) {
+		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			cur->model->addr = core->offset;
 		}
 		setRefreshAll (panels, false);
@@ -4527,16 +4519,14 @@ repeat:
 		r_core_visual_hud (core);
 		break;
 	case 'n':
-		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			cur->model->addr = core->offset;
 			cur->view->refresh = true;
 		}
 		break;
 	case 'N':
-		if (!strncmp (cur->model->cmd, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-				strcmp (cur->model->cmd, "pdc")) {
+		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			cur->model->addr = core->offset;
 			cur->view->refresh = true;
