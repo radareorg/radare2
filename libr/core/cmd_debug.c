@@ -309,6 +309,7 @@ static const char *help_msg_dr[] = {
 	"Usage: dr", "", "Registers commands",
 	"dr", "", "Show 'gpr' registers",
 	"dr", " <register>=<val>", "Set register value",
+	"dr.", " >$snapshot", "Capture current register values in r2 alias file",
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
@@ -2658,6 +2659,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // xxx detect which one is current usage
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // xxx detect which one is current usage
 				core->dbg->reg = orig;
+			}
+		}
+		break;
+	case '.':
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, '.', use_color);
+			if (pcbits2) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, '.', use_color);
 			}
 		}
 		break;
