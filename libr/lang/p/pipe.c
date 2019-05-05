@@ -16,6 +16,7 @@ static int lang_pipe_file(RLang *lang, const char *file) {
 }
 
 #if __WINDOWS__
+static HANDLE pipe = 0;
 static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
@@ -30,7 +31,7 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	LPTSTR pipeName = calloc (128, sizeof (TCHAR)); 
 	GetEnvironmentVariable (TEXT ("R2PIPE_PATH"), pipeName, 128);
 
-	HANDLE pipe = CreateFile (pipeName,
+	pipe = CreateFile (pipeName,
 				GENERIC_READ | GENERIC_WRITE,
 				FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
 				&saAttr, OPEN_EXISTING, 0, NULL);
@@ -57,19 +58,27 @@ static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 }
 static void lang_pipe_run_win(RLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
-	BOOL bSuccess = FALSE;
+	BOOL bSuccess = TRUE;
 	int i, res = 0;
-	DWORD dwRead, dwWritten;
+	DWORD dwRead = 0, dwWritten = 0, dwLeft = 1;
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
-			TerminateProcess (hproc,0);
+			TerminateProcess (hproc, 0);
 			break;
 		}
 		memset (buf, 0, PIPE_BUF_SIZE);
-		bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
+		while (bSuccess && (!dwLeft || !dwRead)) {
+			bSuccess = PeekNamedPipe (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL, &dwLeft);
+			if (bStopPipeLoop && (!dwLeft || !dwRead)) {
+				break;
+			}
+		}
+		if (bSuccess && (dwRead || dwLeft)) {
+			bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
+		}
 		if (bSuccess && dwRead > 0) {
-			buf[sizeof (buf)-1] = 0;
+			buf[sizeof (buf) - 1] = 0;
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
 				int res_len = strlen (res) + 1;
@@ -79,7 +88,6 @@ static void lang_pipe_run_win(RLang *lang) {
 					int writelen = res_len - i;
 					int rc = WriteFile (hPipeInOut, res + i, writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen, &dwWritten, 0);
 					if (bStopPipeLoop) {
-						free (res);
 						break;
 					}
 					if (!rc) {
@@ -227,6 +235,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		lang_pipe_run_win (lang);
 		DeleteFile (r2pipe_paz_);
 		CloseHandle (hPipeInOut);
+		CloseHandle (pipe);
 	}
 	free (r2pipe_var);
 	free (r2pipe_paz);
