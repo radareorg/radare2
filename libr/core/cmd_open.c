@@ -961,9 +961,9 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	ut64 from = 0LL;
 	p->cb_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
 			PFMT64d ",\"writable\":%s,\"size\":%" PFMT64d "}%s",
-			(desc->io && (desc->io->desc == desc)) ? "true" : "false",
+			r_str_bool (desc->io && (desc->io->desc == desc)),
 			desc->fd, desc->uri, from,
-			((desc->perm & R_PERM_W) ? "true": "false"),
+			r_str_bool ((desc->perm & R_PERM_W)),
 			r_io_desc_size (desc), (desc->io->files->top_id == id) ? "" : ",");
 	return true;
 }
