@@ -3220,6 +3220,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* graph */
 	SETPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
+	SETPREF ("graph.dummy", "true", "Create dummy nodes in the graph for better layout (20% slower)");
 	SETPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");

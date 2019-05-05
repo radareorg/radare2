@@ -667,6 +667,9 @@ static int is_reversed(const RAGraph *g, const RGraphEdge *e) {
 
 /* add dummy nodes when there are edges that span multiple layers */
 static void create_dummy_nodes(RAGraph *g) {
+	if (!g->dummy) {
+		return;
+	}
 	RGraphVisitor dummy_vis = {
 		NULL, NULL, NULL, NULL, NULL, NULL
 	};
@@ -3835,6 +3838,7 @@ R_API RAGraph *r_agraph_new(RConsCanvas *can) {
 		return NULL;
 	}
 	g->can = can;
+	g->dummy = true;
 	agraph_init (g);
 	agraph_sdb_init (g);
 	return g;
@@ -4050,6 +4054,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 		g->is_tiny = is_interactive == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
+		g->dummy = r_config_get_i (core->config, "graph.dummy");
 	} else {
 		o_can = g->can;
 	}
