@@ -1257,15 +1257,16 @@ static int cmd_write(void *data, const char *input) {
 					poff = map ? poff - map->itv.addr + map->delta : poff;
 					str++;
 				}
-				if (*str == 'f') {
+				if (*str == 'f') { // "wtff"
 					if (str[1] == '?') {
 						r_core_cmd_help (core, help_msg_wt);
 						return 0;
 					}
-					const char *prefix = r_str_trim_ro (str + 1);
+					const char *prefix = r_str_trim_ro (str + 2);
 					if (!*prefix) {
 						prefix = "dump";
 					}
+					str++;
 					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
 					if (*str) {
