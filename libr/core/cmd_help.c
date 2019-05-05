@@ -544,7 +544,9 @@ static int cmd_help(void *data, const char *input) {
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
 					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
+					pj_ks (pj, "uint32", sdb_fmt ("%u", (ut32)n));
 					pj_ks (pj, "int64", sdb_fmt ("%"PFMT64d, (st64)n));
+					pj_ks (pj, "uint64", sdb_fmt ("%"PFMT64u, (ut64)n));
 					pj_ks (pj, "hex", sdb_fmt ("0x%08"PFMT64x, n));
 					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
