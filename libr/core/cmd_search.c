@@ -669,6 +669,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 	}
 	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
+	} else if (!strcmp (mode, "file")) {
+		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "block")) {
 		append_bound (list, core->io, search_itv, core->offset, core->blocksize, 7);
 	} else if (!strcmp (mode, "io.map")) {
