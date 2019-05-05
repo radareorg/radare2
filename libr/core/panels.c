@@ -411,6 +411,7 @@ static bool handle_tab_nth(RCore *core, int ch);
 static bool handle_tab_next(RCore *core);
 static bool handle_tab_prev(RCore *core);
 static bool handle_tab_new(RCore *core);
+static bool handle_tab_del(RCore *core);
 static void remove_panels(RCore *core);
 
 static bool check_panel_type(RPanel *panel, const char *type, int len) {
@@ -1621,6 +1622,9 @@ static void checkEdge(RPanels *panels) {
 	int i, tmpright, tmpbottom, maxright = 0, maxbottom = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = getPanel (panels, i);
+		if (!panel) {
+			continue;
+		}
 		tmpright = panel->view->pos.x + panel->view->pos.w;
 		tmpbottom = panel->view->pos.y + panel->view->pos.h;
 		if (tmpright > maxright) {
@@ -1633,6 +1637,9 @@ static void checkEdge(RPanels *panels) {
 	int f1, f2;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = getPanel (panels, i);
+		if (!panel) {
+			continue;
+		}
 		f1 = f2 = 0;
 		if (panel->view->pos.x + panel->view->pos.w == maxright) {
 			f1 = (1 << PANEL_EDGE_RIGHT);
@@ -1649,6 +1656,9 @@ static void fitToCanvas(RPanels *panels) {
 	int i, w, h;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = getPanel (panels, i);
+		if (!panel) {
+			continue;
+		}
 		if (panel->view->edgeflag & 1 << PANEL_EDGE_RIGHT && panel->view->pos.x < can->w) {
 			w = can->w - panel->view->pos.x;
 			if (w != panel->view->pos.w) {
@@ -1667,9 +1677,11 @@ static void fitToCanvas(RPanels *panels) {
 }
 
 static void delPanel(RPanels *ps, int pi) {
-	//TODO use getPanel
 	int i;
 	RPanel *tmp = getPanel (ps, pi);
+	if (!tmp) {
+		return;
+	}
 	for (i = pi; i < (ps->n_panels - 1); i++) {
 		ps->panel[i] = ps->panel[i + 1];
 	}
@@ -4186,24 +4198,27 @@ static RPanels *get_cur_panels(RPanelsRoot *panels_root) {
 }
 
 static bool handle_tab(RCore *core) {
-	int ch = r_cons_any_key ("[Tab] nkey:nth; p:prev; n:next; t:new");
+	r_cons_gotoxy (0, 0);
+	int min = 0;
+	int max = core->panels_root->n_panels - 1;
+	r_cons_printf (R_CONS_CLEAR_LINE"[Tab] nkey:nth; p:prev; n:next; t:new  [%d .. %d]", min, max);
+	r_cons_flush ();
+	int ch = r_cons_readchar ();
 	if (handle_tab_nth (core, ch)) {
 		return true;
 	}
 	switch (ch) {
-		case 'n':
-			if (handle_tab_next (core)) {
-				return true;
-			}
-			break;
-		case 'p':
-			if (handle_tab_prev (core)) {
-				return true;
-			}
-			break;
-		case 't':
-			(void)handle_tab_new (core);
-			break;
+	case 'n':
+		if (handle_tab_next (core)) {
+			return true;
+		}
+		break;
+	case 'p':
+		return handle_tab_prev (core);
+	case '-':
+		return handle_tab_del (core);
+	case 't':
+		return handle_tab_new (core);
 	}
 	return false;
 }
@@ -4237,6 +4252,14 @@ static bool handle_tab_prev(RCore *core) {
 	if (core->panels_root->cur_panels < 0) {
 		core->panels_root->cur_panels = core->panels_root->n_panels - 1;
 	}
+	return true;
+}
+
+static bool handle_tab_del(RCore *core) {
+	if (core->panels_root->n_panels >= PANEL_NUM_LIMIT) {
+		return false;
+	}
+	core->panels_root->n_panels--;
 	return true;
 }
 
@@ -4518,6 +4541,10 @@ repeat:
 	case '\\':
 		r_core_visual_hud (core);
 		break;
+	case '"':
+		// createNewPanel (core, true);
+		createNewPanel (core, false);
+		break;
 	case 'n':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
@@ -4538,8 +4565,13 @@ repeat:
 		setRefreshAll (panels, false);
 		break;
 	case 'X':
+#if 0
+// already accessible via xX
 		r_core_visual_refs (core, false, true);
 		cur->model->addr = core->offset;
+		setRefreshAll (panels, false);
+#endif
+		dismantleDelPanel (panels, cur, panels->curnode);
 		setRefreshAll (panels, false);
 		break;
 	case 9: // TAB
