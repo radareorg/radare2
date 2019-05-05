@@ -9,6 +9,7 @@ static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", "", "List all mountpoints in human readable format",
 	"m*", "", "Same as above, but in r2 commands",
+	"mj", "", "List mounted filesystems in JSON",
 	"mL", "", "List filesystem plugins (Same as Lm)",
 	"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
 	"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
@@ -153,21 +154,22 @@ static int cmd_mount(void *data, const char *_input) {
 
 	switch (*input) {
 	case ' ':
-		input++;
-		if (input[0]==' ') {
-			input++;
-		}
+		input = (char *)r_str_trim_ro (input + 1);
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
-			ptr++;
+			ptr = (char *)r_str_trim_ro (ptr + 1);
 			ptr2 = strchr (ptr, ' ');
 			if (ptr2) {
 				*ptr2 = 0;
 				off = r_num_math (core->num, ptr2+1);
 			}
-			if (!r_fs_mount (core->fs, ptr, input, off)) {
-				eprintf ("Cannot mount %s\n", input);
+			input = (char *)r_str_trim_ro (input);
+			ptr = (char*)r_str_trim_ro (ptr);
+			if (!r_fs_mount (core->fs, input, ptr, off)) {
+				if (!r_fs_mount (core->fs, ptr, input, off)) {
+					eprintf ("Cannot mount %s\n", input);
+				}
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
@@ -182,8 +184,37 @@ static int cmd_mount(void *data, const char *_input) {
 	case '-':
 		r_fs_umount (core->fs, input+1);
 		break;
+	case 'j':
+		{
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_k (pj, "mountpoints");
+			pj_a (pj);
+			r_list_foreach (core->fs->roots, iter, root) {
+				pj_o (pj);
+				pj_ks (pj, "path", root->path);
+				pj_ks (pj, "plugin", root->p->name);
+				pj_kn (pj, "offset", root->delta);
+				pj_end (pj);
+			}
+			pj_end (pj);
+//
+			pj_k (pj, "plugins");
+			pj_a (pj);
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				pj_o (pj);
+				pj_ks (pj, "name", plug->name);
+				pj_ks (pj, "description", plug->desc);
+				pj_end (pj);
+			}
+
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
+		break;
 	case '*':
-		eprintf ("List commands in radare format\n");
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
 				root-> path, root->p->name, root->delta);
