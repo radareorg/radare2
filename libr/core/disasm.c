@@ -2172,7 +2172,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (ds->hint && ds->hint->opcode) {
 		free (ds->opstr);
 		ds->opstr = strdup (ds->hint->opcode);
-		return true;
 	}
 	r_asm_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
@@ -5373,8 +5372,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			continue;
 		}
 
-		// r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (ds->hint && ds->hint->size) {
+		if (ds->hint && ds->hint->size > 0) {
 			ret = ds->hint->size;
 			ds->oplen = ret;
 			ds->analop.size = ret;
@@ -5593,7 +5591,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		char opstr[256];
-		strcpy (opstr, r_asm_op_get_asm (&asmop));
+		r_str_ncpy (opstr, r_asm_op_get_asm (&asmop), sizeof (opstr) - 1);
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
