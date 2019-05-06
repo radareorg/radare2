@@ -205,6 +205,8 @@ static const char *help_msg_b[] = {
 	"b", "+3", "increase blocksize by 3",
 	"b", "-16", "decrease blocksize by 16",
 	"b", " eip+4", "numeric argument can be an expression",
+	"b*", "", "display current block size in r2 command",
+	"bj", "", "display block size information in JSON",
 	"bf", " foo", "set block size to flag size",
 	"bm", " 1M", "set max block size",
 	NULL
@@ -254,8 +256,12 @@ static const char *help_msg_y[] = {
 	"y", " 16", "copy 16 bytes into clipboard",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
+	"y!", "", "open cfg.editor to edit the clipboard",
+	"y*", "", "print in r2 commands whats been yanked",
+	"yj", "", "print in JSON commands whats been yanked",
 	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	"yp", "", "print contents of clipboard",
+	"yq", "", "print contents of clipboard in hexpairs",
 	"yx", "", "print contents of clipboard in hexadecimal",
 	"ys", "", "print contents of clipboard as string",
 	"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
@@ -642,8 +648,8 @@ static int cmd_yank(void *data, const char *input) {
 			if (input[2] == ' ') {
 				char *out = strdup (input + 3);
 				int len = r_hex_str2bin (input + 3, (ut8*)out);
-				if (len> 0) {
-					r_core_yank_set (core, 0LL, (const ut8*)out, len);
+				if (len > 0) {
+					r_core_yank_set (core, core->offset, (const ut8*)out, len);
 				} else {
 					eprintf ("Invalid length\n");
 				}
@@ -697,8 +703,25 @@ static int cmd_yank(void *data, const char *input) {
 			break;
 		}
 		break;
+	case '!': // "y!"
+		{
+			char *sig = r_core_cmd_str (core, "y*");
+			if (!sig || !*sig) {
+				free (sig);
+				sig = strdup ("wx 10203040");
+			}
+			char *data = r_core_editor (core, NULL, sig);
+			(void) strtok (data, ";\n");
+			r_core_cmdf (core, "y%s", data);
+			free (sig);
+			free (data);
+		}
+		break;
+	case '*': // "y*"
+	case 'j': // "yj"
+	case 'q': // "yq"
 	case '\0': // "y"
-		r_core_yank_dump (core, r_num_math (core->num, ""));
+		r_core_yank_dump (core, 0, input[0]);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_y);
@@ -1301,6 +1324,12 @@ static int cmd_bsize(void *data, const char *input) {
 		} else {
 			eprintf ("Usage: bf [flagname]\n");
 		}
+		break;
+	case 'j': // "bj"
+		r_cons_printf ("{\"blocksize\":%d,\"blocksize_limit\":%d}\n", core->blocksize, core->blocksize_max);
+		break;
+	case '*': // "b*"
+		r_cons_printf ("b 0x%x\n", core->blocksize);
 		break;
 	case '\0': // "b"
 		r_cons_printf ("0x%x\n", core->blocksize);
