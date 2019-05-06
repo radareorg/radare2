@@ -366,6 +366,19 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 
 /*** ^^^ thready ***/
 
+static ut64 getProjectLaddr(RCore *core, const char *prjfile) {
+	ut64 laddr = 0;
+	char *buf = r_file_slurp (prjfile, NULL);
+	char *pos;
+	if (buf) {
+		if ((pos = strstr(buf, "\"e bin.laddr = "))) {
+			laddr = r_num_math (NULL, pos + 15);
+		}
+		free (buf);
+	}
+	return laddr;
+}
+
 R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	bool askuser = true;
 	int ret, close_current_session = 1;
@@ -438,25 +451,23 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		r_io_desc_init (core->io);
 		if (filepath[0]) {
 			/* Old-style project without embedded on commands to open all files.  */
-			if (!r_core_file_open (core, filepath, 0, 0)) {
+			if (!r_core_file_open (core, filepath, 0, UT64_MAX)) {
 				eprintf ("Cannot open file '%s'\n", filepath);
 				ret = false;
 				goto beach;
 			}
 		}
 	}
-
+	mapaddr = getProjectLaddr (core, prj);
+	if (mapaddr) {
+		r_config_set_i (core->config, "bin.laddr", mapaddr);
+	}
 	if (filepath[0] && close_current_session && r_config_get_i (core->config, "file.info")) {
 		mapaddr = r_config_get_i (core->config, "file.offset");
 		(void)r_core_bin_load (core, filepath, mapaddr? mapaddr: UT64_MAX);
 	}
-	if (thready) {
-		(void) r_core_project_load_bg (core, prjfile, prj);
-		ret = true;
-	} else {
-		/* load sdb stuff in here */
-		ret = r_core_project_load (core, prjfile, prj);
-	}
+	/* load sdb stuff in here */
+	ret = r_core_project_load (core, prjfile, prj);
 	if (filepath[0]) {
 		newbin = r_config_get (core->config, "file.path");
 		if (!newbin || !*newbin) {
