@@ -840,8 +840,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_B:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-#if CS_API_MAJOR >= 4
-			op->jump = ((addr >> 16)<<16) | (IMM(0) & 0xffff);
+#if CS_API_MAJOR > 4
+			{
+				ut64 n = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
+				op->jump = ((addr >> 24) << 24) | (n & 0xffffff);
+			}
 #else
 			op->jump = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
 #endif
