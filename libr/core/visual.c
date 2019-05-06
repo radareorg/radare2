@@ -497,7 +497,9 @@ repeat:
 	r_cons_clear00 ();
 	r_cons_printf ("Visual Help:\n\n"
 	" (?) full help\n"
+	" (!) enter panels\n"
 	" (a) code analysis\n"
+	" (c) toggle cursor\n"
 	" (d) debugger / emulator\n"
 	" (e) toggle configurations\n"
 	" (i) insert / write\n"
