@@ -258,7 +258,8 @@ static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void cursorDown(RCore *core);
 static void cursorUp(RCore *core);
-static int cursorThreshold(RPanel* panel);
+static void fix_cursor_up(RCore *core);
+static void fix_cursor_down(RCore *core);
 static void delPanel(RPanels *ps, int pi);
 static void dismantleDelPanel(RPanels *ps, RPanel *p, int pi);
 static void delInvalidPanels(RPanels *panels);
@@ -532,13 +533,18 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	} else {
 		if (panel->model->cmd) {
 			if (check_panel_type(panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+				core->print->screen_bounds = 1LL;
 				if (!findCmdStrCache (core, panel, &cmdStr)) {
+					char *ocmd = panel->model->cmd;
+					panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
 					ut64 o_offset = core->offset;
 					core->offset = panel->model->addr;
 					r_core_seek (core, panel->model->addr, 1);
 					r_core_block_read (core);
 					cmdStr = handleCmdStrCache (core, panel);
 					core->offset = o_offset;
+					free (panel->model->cmd);
+					panel->model->cmd = ocmd;
 				}
 			} else if (check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 				const int delta = r_config_get_i (core->config, "stack.delta");
@@ -867,37 +873,6 @@ static void setCursor(RCore *core, bool cur) {
 	print->col = print->cur_enabled ? 1: 0;
 }
 
-static void cursorRight(RCore *core) {
-	RPanel *cur = getCurPanel (core->panels);
-	RPrint *print = core->print;
-	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && print->cur >= 15) {
-		return;
-	}
-	if (check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
-			|| check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
-		print->cur++;
-		cur->model->addr++;
-	} else {
-		print->cur++;
-		int threshold = cursorThreshold (cur);
-		int row = r_print_row_at_off (print, print->cur);
-		if (row >= threshold) {
-			core->offset = cur->model->addr;
-			RAsmOp op;
-			ut32 next_roff = r_print_rowoff (print, row + 1);
-			int sz = r_asm_disassemble (core->assembler, &op,
-					core->block + next_roff, 32);
-			if (sz < 1) {
-				sz = 1;
-			}
-			r_core_seek_delta (core, sz);
-			cur->model->addr = core->offset;
-			r_core_block_read (core);
-			print->cur = R_MAX (print->cur - sz, 0);
-		}
-	}
-}
-
 static void activateCursor(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
@@ -936,102 +911,89 @@ static void cursorLeft(RCore *core) {
 		}
 	} else if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		print->cur--;
-		int row = r_print_row_at_off (print, print->cur);
-		if (row < 0) {
-			int cols = print->cols;
-			ut64 prevoff = core->offset;
-			core->offset = cur->model->addr;
-			r_core_visual_disasm_up (core, &cols);
-			r_core_seek_delta (core, -cols);
-			cur->model->addr = core->offset;
-			print->cur = prevoff - core->offset - 1;
-		}
+		fix_cursor_up (core);
 	} else {
 		print->cur--;
 	}
 }
 
+static void cursorRight(RCore *core) {
+	RPanel *cur = getCurPanel (core->panels);
+	RPrint *print = core->print;
+	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && print->cur >= 15) {
+		return;
+	}
+	if (check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
+			|| check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+		print->cur++;
+		cur->model->addr++;
+	} else {
+		print->cur++;
+		fix_cursor_down (core);
+	}
+}
+
+
 static void cursorUp(RCore *core) {
 	RPrint *print = core->print;
-	ut32 roff;
-	int row;
-	if (print->row_offsets) {
-		row = r_print_row_at_off (print, print->cur);
-		roff = r_print_rowoff (print, row);
-		if (roff == UT32_MAX) {
-			print->cur--;
-			return;
-		}
-		if (row > 0) {
-			ut32 prev_roff;
-			int delta, prev_sz;
-			prev_roff = r_print_rowoff (print, row - 1);
-			delta = print->cur - roff;
-			prev_sz = roff - prev_roff;
-			int res = R_MIN (delta, prev_sz - 1);
-			ut64 cur = prev_roff + res;
-			if (cur == print->cur) {
-				if (print->cur > 0) {
-					print->cur--;
-				}
-			} else {
-				print->cur = prev_roff + delta;
-			}
-		} else {
-			RPanel *cur = getCurPanel (core->panels);
-			int cols = print->cols;
-			ut64 prevoff = core->offset;
-			r_core_visual_disasm_up (core, &cols);
-			r_core_seek_delta (core, -cols);
-			cur->model->addr = core->offset;
-			print->cur = R_MIN (prevoff - core->offset - 1, print->cur);
-		}
+	ut64 addr, oaddr = core->offset + print->cur;
+	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
+		const int delta = oaddr - addr;
+		print->cur -= delta;
 	} else {
-		print->cur -= print->cols;
+		print->cur -= 4;
 	}
+	fix_cursor_up (core);
 }
 
 static void cursorDown(RCore *core) {
-	RPanel *cur = getCurPanel (core->panels);
 	RPrint *print = core->print;
-	ut32 roff, next_roff;
-	int row, sz, delta, threshold = cursorThreshold (cur);
-	RAsmOp op;
-	if (print->row_offsets) {
-		row = r_print_row_at_off (print, print->cur);
-		roff = r_print_rowoff (print, row);
-		if (roff == -1) {
-			print->cur++;
-			return;
-		}
-		next_roff = r_print_rowoff (print, row + 1);
-		if (next_roff == -1) {
-			print->cur++;
-			return;
-		}
-		sz = r_asm_disassemble (core->assembler, &op,
-				core->block + next_roff, 32);
-		if (sz < 1) {
-			sz = 1;
-		}
-		delta = print->cur - roff;
-		print->cur = next_roff + R_MIN (delta, sz - 1);
-		row = r_print_row_at_off (print, print->cur);
-		if (row >= threshold) {
-			r_core_seek_delta (core, sz);
-			print->cur = R_MAX (print->cur - sz, 0);
-		}
+	RAnalOp *aop = r_core_anal_op (core, core->offset + print->cur, R_ANAL_OP_MASK_BASIC);
+	if (aop) {
+		print->cur += aop->size;
+		r_anal_op_free (aop);
 	} else {
-		print->cur += R_MAX (1, print->cols);
+		print->cur += 4;
+	}
+	fix_cursor_down (core);
+}
+
+static void fix_cursor_up(RCore *core) {
+	RPrint *print = core->print;
+	if (print->cur >= 0) {
+		return;
+	}
+	int sz = r_core_visual_prevopsz (core, core->offset + print->cur);
+	if (sz < 1) {
+		sz = 1;
+	}
+	r_core_seek_delta (core, -sz);
+	print->cur += sz;
+	if (print->ocur != -1) {
+		print->ocur += sz;
 	}
 }
 
-static int cursorThreshold(RPanel* panel) {
-	int threshold = (panel->view->pos.h - 4) / 2;
-	if (threshold < 10) {
-		threshold = 1;
+static void fix_cursor_down(RCore *core) {
+	RPrint *print = core->print;
+	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
+	if (!cur_is_visible) {
+		int i = 0;
+		//XXX: ugly hack
+		for (i = 0; i < 2; i++) {
+			RAsmOp op;
+			int sz = r_asm_disassemble (core->assembler,
+					&op, core->block, 32);
+			if (sz < 1) {
+				sz = 1;
+			}
+			r_core_seek_delta (core, sz);
+			print->cur = R_MAX (print->cur - sz, 0);
+			if (print->ocur != -1) {
+				print->ocur = R_MAX (print->ocur - sz, 0);
+			}
+		}
 	}
-	return threshold;
 }
 
 static bool handleZoomMode(RCore *core, const int key) {
@@ -2456,6 +2418,8 @@ static void directionDisassemblyCb(void *user, int direction) {
 	case LEFT:
 		if (core->print->cur_enabled) {
 			cursorLeft (core);
+			r_core_block_read (core);
+			cur->model->addr = core->offset;
 		} else if (cur->view->sx > 0) {
 			cur->view->sx--;
 			cur->view->refresh = true;
@@ -2464,6 +2428,8 @@ static void directionDisassemblyCb(void *user, int direction) {
 	case RIGHT:
 		if (core->print->cur_enabled) {
 			cursorRight (core);
+			r_core_block_read (core);
+			cur->model->addr = core->offset;
 		} else {
 			cur->view->sx++;
 			cur->view->refresh = true;
@@ -2473,6 +2439,7 @@ static void directionDisassemblyCb(void *user, int direction) {
 		core->offset = cur->model->addr;
 		if (core->print->cur_enabled) {
 			cursorUp (core);
+			r_core_block_read (core);
 			cur->model->addr = core->offset;
 		} else {
 			r_core_visual_disasm_up (core, &cols);
@@ -3335,7 +3302,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (panels->db, "Locals", "afvd", 0);
 	sdb_set (panels->db, "Registers", "dr", 0);
-	sdb_set (panels->db, "Disassembly", "pd $r", 0);
+	sdb_set (panels->db, "Disassembly", "pd", 0);
 	sdb_set (panels->db, "Decompiler", "pdc", 0);
 	sdb_set (panels->db, "Graph", "agf", 0);
 	sdb_set (panels->db, "Info", "i", 0);
