@@ -1253,7 +1253,7 @@ R_API void r_core_visual_offset(RCore *core) {
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 }
 
-static int prevopsz(RCore *core, ut64 addr) {
+R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
 	ut64 prev_addr = prevop_addr (core, addr);
 	return addr - prev_addr;
 }
@@ -1876,7 +1876,7 @@ static bool fix_cursor(RCore *core) {
 	if (p->cur < 0) {
 		int sz = p->cols;
 		if (isDisasmPrint (core->printidx)) {
-			sz = prevopsz (core, core->offset + p->cur);
+			sz = r_core_visual_prevopsz (core, core->offset + p->cur);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -4018,7 +4018,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = 4;
 		}
 	} else {
-		*cols = prevopsz (core, core->offset);
+		*cols = r_core_visual_prevopsz (core, core->offset);
 	}
 }
 
