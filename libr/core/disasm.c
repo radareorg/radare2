@@ -1011,6 +1011,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			free (ds->opstr);
 			ds->opstr = strdup (asm_str? asm_str: "");
 		}
+		r_str_trim (ds->opstr);
 	}
 	if (ds->show_color) {
 		int i = 0;
