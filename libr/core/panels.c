@@ -557,6 +557,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 					if (!panel->model->cache) {
 						core->offset = panel->model->addr;
 						r_core_seek (core, core->offset, 1);
+						r_core_block_read (core);
 					}
 					cmdStr = handleCmdStrCache (core, panel);
 					core->offset = o_offset;
@@ -927,9 +928,11 @@ static void cursorRight(RCore *core) {
 			|| check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		print->cur++;
 		cur->model->addr++;
-	} else {
+	} else if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		print->cur++;
 		fix_cursor_down (core);
+	} else {
+		print->cur++;
 	}
 }
 
@@ -2608,7 +2611,7 @@ static void directionHexdumpCb(void *user, int direction) {
 				if (!(core->print->cur / cols)) {
 					cur->model->addr -= cols;
 				} else {
-					cursorUp (core);
+					core->print->cur -= cols;
 				}
 			} else {
 				if (cur->model->addr <= cols) {
@@ -2627,7 +2630,7 @@ static void directionHexdumpCb(void *user, int direction) {
 				if (core->print->cur / cols + 1 > cur->view->pos.h - 5) {
 					cur->model->addr += cols;
 				} else {
-					cursorDown (core);
+					core->print->cur += cols;
 				}
 			} else {
 				cur->model->addr += cols;
