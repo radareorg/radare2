@@ -736,7 +736,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	op->size = 2;
 	ut16 b = *(ut16 *)buf;
 	ut32 dword_instr = 0;
-	memcpy (&dword_instr, buf, len);
+	memcpy (&dword_instr, buf, R_MIN (sizeof (dword_instr), len));
 	switch (b >> 9) {
 	case 0x76: //call
 		if (len < 4) {
