@@ -4193,10 +4193,16 @@ static RPanels *get_cur_panels(RPanelsRoot *panels_root) {
 }
 
 static bool handle_tab(RCore *core) {
+	char msg[128];
+	if (core->panels_root->n_panels <= 1) {
+		snprintf (msg, sizeof (msg), R_CONS_CLEAR_LINE"%s[Tab] t:new -:del"Color_RESET, core->cons->context->pal.graph_box2);
+	} else {
+		int min = 1;
+		int max = core->panels_root->n_panels;
+		snprintf (msg, sizeof (msg), R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del"Color_RESET, core->cons->context->pal.graph_box2, min, max);
+	}
 	r_cons_gotoxy (0, 0);
-	int min = 0;
-	int max = core->panels_root->n_panels - 1;
-	r_cons_printf (R_CONS_CLEAR_LINE"[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del", min, max);
+	r_cons_printf (msg);
 	r_cons_flush ();
 	int ch = r_cons_readchar ();
 	if (handle_tab_nth (core, ch)) {
@@ -4221,6 +4227,9 @@ static bool handle_tab(RCore *core) {
 static bool handle_tab_nth(RCore *core, int ch) {
 	if (isdigit (ch)) {
 		ch -= '0' + 1;
+		if (ch < 0) {
+			return  false;
+		}
 		if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
 			core->panels_root->cur_panels = ch;
 			return true;
