@@ -958,7 +958,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				? ds->opstr
 				: r_asm_op_get_asm (&ds->asmop),
 				ds->str);
-		free (ds->opstr);
 		asm_str = strdup (ds->str);
 	}
 	asm_str = ds_sub_jumps (ds, asm_str);
@@ -1889,11 +1888,6 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
 		free (comment);
 	}
-#if 0
-	if (!ds->show_comments) {
-		return;
-	}
-#endif
 	if (!ds->comment || !*ds->comment) {
 		return;
 	}

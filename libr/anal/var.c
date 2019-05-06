@@ -750,7 +750,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 				free (name);
 				free (type);
-				*count++;
+				(*count)++;
 			} else {
 				if (STR_EQUAL (opsreg, regname)) {
 					reg_set[i] = 2;
