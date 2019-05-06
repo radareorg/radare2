@@ -535,9 +535,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 				core->print->screen_bounds = 1LL;
 				if (!findCmdStrCache (core, panel, &cmdStr)) {
 					char *ocmd = panel->model->cmd;
-					char ncmd[128];
-					snprintf (ncmd, sizeof (ncmd), "%s %d", panel->model->cmd, panel->view->pos.h - 3);
-					panel->model->cmd = r_str_new (ncmd);
+					panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
 					ut64 o_offset = core->offset;
 					core->offset = panel->model->addr;
 					r_core_seek (core, panel->model->addr, 1);
