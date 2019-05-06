@@ -85,6 +85,7 @@ static int edf_sub (RAnalEsil *esil) {
 	return edf_consume_2_push_1 (esil, "-");
 }
 
+#if 0
 static int edf_and (RAnalEsil *esil) {
 	return edf_consume_2_push_1 (esil, "&");
 }
@@ -92,6 +93,7 @@ static int edf_and (RAnalEsil *esil) {
 static int edf_or (RAnalEsil *esil) {
 	return edf_consume_2_push_1 (esil, "|");
 }
+#endif
 
 static int edf_xor (RAnalEsil *esil) {
 	return edf_consume_2_push_1 (esil, "^");
@@ -166,10 +168,12 @@ static int edf_cf (RAnalEsil *esil) {
 	return edf_consume_1_use_old_new_push_1 (esil, "$c", edf_cf_constraint);
 }
 
+#if 0
 static void edf_bf_constraint (RStrBuf *result, const char *consume, const char *o, const char *n) {
 	r_strbuf_appendf (result, ":((%s&mask((%s+0x3f)&0x3f))<(%s& mask((%s+0x3f)&0x3f)))",
 			o, consume, n, consume);
 }
+#endif
 
 static int edf_bf (RAnalEsil *esil) {
 	return edf_consume_1_use_old_new_push_1 (esil, "$b", edf_cf_constraint);

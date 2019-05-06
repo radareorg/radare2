@@ -1821,7 +1821,7 @@ static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	char bufw[1024], bufr[8], *cmd_output = NULL;
 	const char *cmd = NULL;
-	unsigned int cmd_len;
+	unsigned int cmd_len = 0;
 	int i, fd = atoi (input);
 
 	// "=:"
