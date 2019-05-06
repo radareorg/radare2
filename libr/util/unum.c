@@ -265,14 +265,14 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 					if (str[i] == '1') {
 						ret |= (1ULL << j);
 					} else if (str[i] != '0') {
-						eprintf ("Unexpected char in binary number string '%c'\n", str[i]);
+						// eprintf ("Unexpected char in binary number string '%c'\n", str[i]);
 						ok = false;
 						break;
 					}
 				}
 			} else {
 				ok = false;
-				eprintf ("Binary number is too large to fit in ut64\n");
+				//  eprintf ("Binary number is too large to fit in ut64\n");
 			}
 			if (!ok || !len_num) {
 				error (num, "invalid binary number");
