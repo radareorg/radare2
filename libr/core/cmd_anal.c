@@ -4084,7 +4084,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	ut32 size = 0xf0000;
 	char name[128];
 	RFlagItem *fi;
-	const char *sp, *pc;
+	const char *sp, *bp, *pc;
 	char uri[32];
 	char nomalloc[256];
 	char *p;
@@ -4218,13 +4218,19 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 	// SP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_SP);
-	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	if (sp) {
+		r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	}
 	// BP
-	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
-	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	bp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
+	if (bp) {
+		r_debug_reg_set (core->dbg, bp, addr + (size / 2));
+	}
 	// PC
 	pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	r_debug_reg_set (core->dbg, pc, curoff);
+	if (pc) {
+		r_debug_reg_set (core->dbg, pc, curoff);
+	}
 	r_core_cmd0 (core, ".ar*");
 	if (esil) {
 		esil->stack_addr = addr;

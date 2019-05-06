@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -209,7 +209,9 @@ static int set_reg_profile(RAnal *anal) {
 		p =
 			"=PC	pc\n"
 			"=SP	r1\n"
+			"=BP	r31\n"
 			"=SR	srr1\n" // status register ??
+			"=SN	r3\n" // also for ret
 			"=A0	r3\n" // also for ret
 			"=A1	r4\n"
 			"=A2	r5\n"
