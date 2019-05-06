@@ -663,7 +663,7 @@ beach:
 	free (esil_buf);
 }
 
-static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op) {
+static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
 	#define STR_EQUAL(s1, s2) s1 && s2 && !strcmp (s1, s2)
 	RAnalValue *dst = op->dst;
 	RAnalValue *src = op->src[0];
@@ -681,6 +681,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		return false;
 	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_LOAD:
 		if (STR_EQUAL (opsreg, regname)) {
 			return true;
 		}
@@ -694,6 +695,14 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
+		if ((op->type == R_ANAL_OP_TYPE_ADD || op->type == R_ANAL_OP_TYPE_SUB) && STR_EQUAL (anal->cur->arch, "arm")) {
+			if (STR_EQUAL (opdreg, regname)) {
+				return false;
+			}
+			if (STR_EQUAL (opsreg, regname)) {
+				return true;
+			}
+		}
 		return ((STR_EQUAL (opdreg, regname)) || (STR_EQUAL (opsreg, regname)));
 	}
 }
@@ -723,7 +732,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i);
 		if (regname) {
-			bool is_used_like_an_arg = is_used_like_arg (regname, opsreg, opdreg, op);
+			bool is_used_like_an_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal);
 			if (reg_set[i] != 2 && is_used_like_an_arg) {
 				const char *vname = NULL;
 				char *type = NULL;

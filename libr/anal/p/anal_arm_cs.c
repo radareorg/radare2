@@ -3162,10 +3162,14 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
 		set_src_dst (op->src[0], &handle, insn, 1, bits);
+		set_src_dst (op->dst, &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		set_src_dst (op->dst, &handle, insn, 1, bits);
+		set_src_dst (op->src[0], &handle, insn, 0, bits);
 		break;
 	default:
 		break;
