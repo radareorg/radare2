@@ -953,6 +953,14 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 	}
 	char *asm_str = colorize_asm_string (core, ds, print_color);
+	if (ds->pseudo) {
+		r_parse_parse (core->parser, ds->opstr
+				? ds->opstr
+				: r_asm_op_get_asm (&ds->asmop),
+				ds->str);
+		free (ds->opstr);
+		asm_str = strdup (ds->str);
+	}
 	asm_str = ds_sub_jumps (ds, asm_str);
 	if (ds->immtrim) {
 		char *res = r_parse_immtrim (ds->opstr);
@@ -5362,6 +5370,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
+			// XXX we probably dont need MASK_ALL
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
 			hasanal = true;
 		}
@@ -5423,8 +5432,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 						core->parser->flagspace = NULL;
 					}
 				}
-				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&ds->asmop),
-					ds->str, sizeof (ds->str), core->print->big_endian);
+				ds_build_op_str (ds, true);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
 				core->parser->flagspace = ofs;
