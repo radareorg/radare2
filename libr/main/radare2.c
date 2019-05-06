@@ -434,7 +434,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
-	int do_connect = 0;
+	bool do_connect = false;
 	bool fullfile = false;
 	int has_project;
 	bool zerosep = false;
@@ -833,7 +833,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_config_set (r.config, "bin.strings", "false");
 	}
 
-	//cverify_version (0);
 	if (do_connect) {
 		const char *uri = argv[r_optind];
 		if (r_optind >= argc) {
@@ -841,13 +840,14 @@ R_API int r_main_radare2(int argc, char **argv) {
 			LISTS_FREE ();
 			return 1;
 		}
-		if (!strncmp (uri, "http://", 7)) {
+		if (strstr (uri, "://")) {
 			r_core_cmdf (&r, "=+%s", uri);
 		} else {
 			r_core_cmdf (&r, "=+http://%s/cmd/", argv[r_optind]);
 		}
-		LISTS_FREE ();
-		return 0;
+		r_core_cmd0 (&r, "=!=");
+		//LISTS_FREE ();
+	//	return 0;
 	}
 
 	switch (zflag) {

@@ -153,14 +153,15 @@ static const char *help_msg_equal[] = {
 	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
 	"=!=", "", "disable remote cmd mode",
 	"!=!", "", "enable remote cmd mode",
-	"\nrap server - radare binary protocol:","","",
-	"=", ":port", "start the rap server (o rap://9999)",
-	"=&", ":port", "start rap server in background",
-	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nother:","","",
+	"\nservers:","","",
+	".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
+	"=:", "port", "start the rap server (o rap://9999)",
 	"=g", "[?]", "start the gdbserver",
 	"=h", "[?]", "start the http webserver",
 	"=H", "[?]", "start the http webserver (and laungh the web browser)",
+	"\nother:","","",
+	"=&", ":port", "start rap server in background (same as '&_=h')",
+	"=", ":host:port cmd", "run 'cmd' command on remote server",
 	NULL
 };
 
@@ -532,6 +533,9 @@ static int cmd_rap(void *data, const char *input) {
 	switch (*input) {
 	case '\0': // "="
 		r_core_rtr_list (core);
+		break;
+	case 'j': // "=j"
+		eprintf ("TODO: list connections in json\n");
 		break;
 	case '!': // "=!"
 		if (input[1] == '=') {
@@ -1501,7 +1505,8 @@ static int cmd_tasks(void *data, const char *input) {
 	default:
 		helpCmdTasks (core);
 		break;
-	case ' ': // "&"
+	case ' ': // "& "
+	case '_': // "&_"
 	case 't': { // "&t"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
@@ -1986,6 +1991,19 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
+
+	if (r_str_startswith (cmd, "GET /cmd/")) {
+		memmove (cmd, cmd + 9, strlen (cmd + 9) + 1);
+		char *http = strstr (cmd, "HTTP");
+		if (http) {
+			*http = 0;
+			http--;
+			if (*http == ' ') {
+				*http = 0;
+			}
+		}
+		return r_core_cmd0 (core, cmd);
+	}
 
 	/* must store a local orig_offset because there can be
 	 * nested call of this function */
