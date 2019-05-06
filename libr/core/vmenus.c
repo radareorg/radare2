@@ -3074,7 +3074,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_visual_refs (core, true, true);
 			break;
 		case 's':
-			r_core_cmd0 (core, "afs!");
+			r_core_cmdf (core, "afs!@0x%08"PFMT64x, addr);
 			break;
 		case 'c':
 			level = 2;

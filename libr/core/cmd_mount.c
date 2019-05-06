@@ -147,8 +147,6 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 	RListIter *iter;
 	RFSFile *file;
 	RFSRoot *root;
-	RFSPlugin *plug;
-	RFSPartition *part;
 	input = r_str_trim_ro (input + isJSON);
 	RList *list = r_fs_dir (core->fs, input);
 	PJ *pj = NULL;
