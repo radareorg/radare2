@@ -678,6 +678,7 @@ static void layoutDefault(RPanels *panels) {
 	}
 	p0->view->pos.w = colpos / 2 + 1;
 	p0->view->pos.h = h - 1;
+
 	p1->view->pos.x = colpos / 2;
 	p1->view->pos.y = 1;
 	p1->view->pos.w = colpos / 2 + 1;
@@ -1210,6 +1211,7 @@ static bool handleWindowMode(RCore *core, const int key) {
 		r_cons_switchbuf (false);
 		resizePanelUp (panels);
 		break;
+	case '"':
 	case 'n':
 		createNewPanel (core, true);
 		break;
@@ -3712,7 +3714,7 @@ static int loadSavedPanelsLayout(RCore *core) {
 		p->view->pos.y = atoi (y);
 		p->view->pos.w = atoi (w);
 		p->view->pos.h = atoi (h);
-		buildPanelParam(core, p, title, cmd, cache);
+		buildPanelParam (core, p, title, cmd, cache);
 		//TODO: Super hacky and refactoring is needed
 		if (r_str_endswith (cmd, "Help")) {
 			p->model->title = r_str_dup (p->model->title, "Help");
@@ -3952,26 +3954,19 @@ static void createDefaultPanels(RCore *core) {
 	RPanels *panels = core->panels;
 	panels->curnode = 0;
 	panels->n_panels = 0;
+	const char **panels_list = panels_static;
+	if (panels->layout == PANEL_LAYOUT_DEFAULT_DYNAMIC) {
+		panels_list = panels_dynamic;
+	}
 
 	int i = 0;
-	if (panels->layout == PANEL_LAYOUT_DEFAULT_DYNAMIC) {
-		while (panels_dynamic[i]) {
-			RPanel *p = getPanel (panels, panels->n_panels);
-			if (!p) {
-				return;
-			}
-			const char *s = panels_dynamic[i++];
-			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
+	while (panels_list[i]) {
+		RPanel *p = getPanel (panels, panels->n_panels);
+		if (!p) {
+			return;
 		}
-	} else {
-		while (panels_static[i]) {
-			RPanel *p = getPanel (panels, panels->n_panels);
-			if (!p) {
-				return;
-			}
-			const char *s = panels_static[i++];
-			buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
-		}
+		const char *s = panels_list[i++];
+		buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
 	}
 }
 
@@ -4201,7 +4196,7 @@ static bool handle_tab(RCore *core) {
 	r_cons_gotoxy (0, 0);
 	int min = 0;
 	int max = core->panels_root->n_panels - 1;
-	r_cons_printf (R_CONS_CLEAR_LINE"[Tab] nkey:nth; p:prev; n:next; t:new  [%d .. %d]", min, max);
+	r_cons_printf (R_CONS_CLEAR_LINE"[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del", min, max);
 	r_cons_flush ();
 	int ch = r_cons_readchar ();
 	if (handle_tab_nth (core, ch)) {
@@ -4274,7 +4269,7 @@ static bool handle_tab_new(RCore *core) {
 static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 	int i, okey, key;
 	bool first_load = !*r_panels;
-    RPanelsRoot *panels_root = core->panels_root;
+	RPanelsRoot *panels_root = core->panels_root;
 	RPanels *panels;
 	RPanels *prev;
 	if (!*r_panels) {
@@ -4314,6 +4309,7 @@ static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 		panels_layout (panels);
 	}
 repeat:
+	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
