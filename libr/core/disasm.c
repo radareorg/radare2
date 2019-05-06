@@ -125,6 +125,7 @@ typedef struct {
 	bool show_emu_strflag;
 	bool show_emu_stack;
 	bool show_emu_write;
+	bool show_optype;
 	bool show_emu_strlea;
 	bool show_emu_ssa;
 	bool show_section;
@@ -674,6 +675,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->show_optype = r_config_get_i (core->config, "asm.optype");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
@@ -3011,6 +3013,15 @@ static void ds_print_indent(RDisasmState *ds) {
 	}
 }
 
+static void ds_print_optype(RDisasmState *ds) {
+	if (ds->show_optype) {
+		const char *optype = r_anal_optype_to_string (ds->analop.type);
+		ds_print_color_reset (ds);
+		const char *pad = r_str_pad (' ', 8 - strlen (optype));
+		r_cons_printf ("[%s]%s", optype, pad);
+	}
+}
+
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->asm_instr) {
@@ -5104,6 +5115,7 @@ toro:
 			ds_print_show_cursor (ds);
 			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
+			ds_print_optype (ds);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
 			ds_end_line_highlight (ds);
