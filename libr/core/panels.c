@@ -258,7 +258,8 @@ static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void cursorDown(RCore *core);
 static void cursorUp(RCore *core);
-static int cursorThreshold(RPanel* panel);
+static void fix_cursor_up(RCore *core);
+static void fix_cursor_down(RCore *core);
 static void delPanel(RPanels *ps, int pi);
 static void dismantleDelPanel(RPanels *ps, RPanel *p, int pi);
 static void delInvalidPanels(RPanels *panels);
@@ -910,15 +911,7 @@ static void cursorLeft(RCore *core) {
 		}
 	} else if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		print->cur--;
-		if (print->cur < 0) {
-			int cols = print->cols;
-			ut64 prevoff = core->offset;
-			core->offset = cur->model->addr;
-			r_core_visual_disasm_up (core, &cols);
-			r_core_seek_delta (core, -cols);
-			cur->model->addr = core->offset;
-			print->cur = prevoff - core->offset - 1;
-		}
+		fix_cursor_up (core);
 	} else {
 		print->cur--;
 	}
@@ -936,60 +929,54 @@ static void cursorRight(RCore *core) {
 		cur->model->addr++;
 	} else {
 		print->cur++;
-		bool cur_is_visible = core->offset + print->cur + 32 < core->print->screen_bounds;
-		if (!cur_is_visible) {
-			int i = 0;
-			//XXX: ugly hack
-			for (i = 0; i < 2; i++) {
-				RAsmOp op;
-				int sz = r_asm_disassemble (core->assembler,
-						&op, core->block, 32);
-				if (sz < 1) {
-					sz = 1;
-				}
-				r_core_seek_delta (core, sz);
-				print->cur = R_MAX (print->cur - sz, 0);
-				if (print->ocur != -1) {
-					print->ocur = R_MAX (print->ocur - sz, 0);
-				}
-			}
-		}
+		fix_cursor_down (core);
 	}
 }
 
 
 static void cursorUp(RCore *core) {
-	RPrint *p = core->print;
-	ut64 addr, oaddr = core->offset + core->print->cur;
+	RPrint *print = core->print;
+	ut64 addr, oaddr = core->offset + print->cur;
 	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
 		const int delta = oaddr - addr;
-		p->cur -= delta;
+		print->cur -= delta;
 	} else {
-		p->cur -= 4;
+		print->cur -= 4;
 	}
-	if (p->cur < 0) {
-		int sz = r_core_visual_prevopsz (core, core->offset + p->cur);
-		if (sz < 1) {
-			sz = 1;
-		}
-		r_core_seek_delta (core, -sz);
-		p->cur += sz;
-		if (p->ocur != -1) {
-			p->ocur += sz;
-		}
-	}
+	fix_cursor_up (core);
 }
 
 static void cursorDown(RCore *core) {
-	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
-	RPrint *p = core->print;
+	RPrint *print = core->print;
+	RAnalOp *aop = r_core_anal_op (core, core->offset + print->cur, R_ANAL_OP_MASK_BASIC);
 	if (aop) {
-		p->cur += aop->size;
+		print->cur += aop->size;
 		r_anal_op_free (aop);
 	} else {
-		p->cur += 4;
+		print->cur += 4;
 	}
-	bool cur_is_visible = core->offset + p->cur + 32 < core->print->screen_bounds;
+	fix_cursor_down (core);
+}
+
+static void fix_cursor_up(RCore *core) {
+	RPrint *print = core->print;
+	if (print->cur >= 0) {
+		return;
+	}
+	int sz = r_core_visual_prevopsz (core, core->offset + print->cur);
+	if (sz < 1) {
+		sz = 1;
+	}
+	r_core_seek_delta (core, -sz);
+	print->cur += sz;
+	if (print->ocur != -1) {
+		print->ocur += sz;
+	}
+}
+
+static void fix_cursor_down(RCore *core) {
+	RPrint *print = core->print;
+	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
 		int i = 0;
 		//XXX: ugly hack
@@ -1001,20 +988,12 @@ static void cursorDown(RCore *core) {
 				sz = 1;
 			}
 			r_core_seek_delta (core, sz);
-			p->cur = R_MAX (p->cur - sz, 0);
-			if (p->ocur != -1) {
-				p->ocur = R_MAX (p->ocur - sz, 0);
+			print->cur = R_MAX (print->cur - sz, 0);
+			if (print->ocur != -1) {
+				print->ocur = R_MAX (print->ocur - sz, 0);
 			}
 		}
 	}
-}
-
-static int cursorThreshold(RPanel* panel) {
-	int threshold = (panel->view->pos.h - 4) / 2;
-	if (threshold < 10) {
-		threshold = 1;
-	}
-	return threshold;
 }
 
 static bool handleZoomMode(RCore *core, const int key) {
@@ -2427,6 +2406,8 @@ static void directionDisassemblyCb(void *user, int direction) {
 	case LEFT:
 		if (core->print->cur_enabled) {
 			cursorLeft (core);
+			r_core_block_read (core);
+			cur->model->addr = core->offset;
 		} else if (cur->view->sx > 0) {
 			cur->view->sx--;
 			cur->view->refresh = true;
@@ -3688,7 +3669,7 @@ static int loadSavedPanelsLayout(RCore *core) {
 		p->view->pos.y = atoi (y);
 		p->view->pos.w = atoi (w);
 		p->view->pos.h = atoi (h);
-		buildPanelParam(core, p, title, cmd, cache);
+		buildPanelParam (core, p, title, cmd, cache);
 		//TODO: Super hacky and refactoring is needed
 		if (r_str_endswith (cmd, "Help")) {
 			p->model->title = r_str_dup (p->model->title, "Help");
@@ -4239,7 +4220,7 @@ static bool handle_tab_new(RCore *core) {
 static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 	int i, okey, key;
 	bool first_load = !*r_panels;
-    RPanelsRoot *panels_root = core->panels_root;
+	RPanelsRoot *panels_root = core->panels_root;
 	RPanels *panels;
 	RPanels *prev;
 	if (!*r_panels) {
