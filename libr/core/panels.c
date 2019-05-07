@@ -889,6 +889,7 @@ static void activateCursor(RCore *core) {
 				(void)r_cons_any_key ("Cache is off and cursor is on");
 				setCursor (core, !core->print->cur_enabled);
 				cur->view->refresh = true;
+				resetScrollPos (cur);
 			} else {
 				(void)r_cons_any_key ("You can always toggle cache by \'&\' key");
 			}
