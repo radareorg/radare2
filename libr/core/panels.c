@@ -2821,8 +2821,12 @@ static void moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *pare
 static bool initPanelsMenu(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *panelsMenu = R_NEW0 (RPanelsMenu);
+	if (!panelsMenu) {
+		return false;
+	}
 	RPanelsMenuItem *root = R_NEW0 (RPanelsMenuItem);
 	if (!root) {
+		R_FREE (panelsMenu);
 		return false;
 	}
 	panels->panelsMenu = panelsMenu;

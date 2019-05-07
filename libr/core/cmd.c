@@ -2017,7 +2017,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
-	char *cmt, *colon = NULL, *icmd = strdup (cmd);
+	char *cmt, *colon = NULL, *icmd = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
 
@@ -2037,6 +2037,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* must store a local orig_offset because there can be
 	 * nested call of this function */
 	ut64 orig_offset = core->offset;
+	icmd = strdup (cmd);
 
 	if (core->max_cmd_depth - core->cmd_depth == 1) {
 		core->prompt_offset = core->offset;
