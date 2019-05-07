@@ -1099,7 +1099,11 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
-	cache->buf = r_buf_ref (buf);
+	cache->buf = r_buf_new_with_io (&bf->rbin->iob, bf->fd);
+	if (!cache->buf) {
+		r_dyldcache_free (cache);
+		return NULL;
+	}
 	cache->hdr = read_cache_header (cache->buf);
 	if (!cache->hdr) {
 		r_dyldcache_free (cache);
