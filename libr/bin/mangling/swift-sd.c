@@ -93,7 +93,7 @@ static const char *numpos(const char* n) {
 static const char *getstring(const char *s, int len) {
 	static char buf[256] = {0};
 	if (len < 0 || len > sizeof (buf) - 2) {
-		return NULL;
+		return "";
 	}
 	strncpy (buf, s, len);
 	buf[len] = 0;
