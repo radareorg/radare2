@@ -3825,8 +3825,9 @@ static bool block_flags_stat(RFlagItem *fi, void *user) {
 /* stats --- colorful bar */
 R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut64 step) {
 	RAnalFunction *F;
+	RAnalBlock  *B;
 	RBinSymbol *S;
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
 	ut64 at;
@@ -3858,7 +3859,6 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	// iter all flags
 	struct block_flags_stat_t u = { .step = step, .from = from, .as = as };
 	r_flag_foreach_range (core->flags, from, to + 1, block_flags_stat, &u);
-
 	// iter all functions
 	r_list_foreach (core->anal->fcns, iter, F) {
 		if (F->addr < from || F->addr > to) {
@@ -3869,6 +3869,14 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		int last_piece = R_MIN ((F->addr + F->_size - 1) / step, blocks - 1);
 		for (; piece <= last_piece; piece++) {
 			as->block[piece].in_functions++;
+		}
+		// iter all basic blocks
+		r_list_foreach (F->bbs, iter2, B) {
+			if (B->addr < from || B->addr > to) {
+				continue;
+			}
+			piece = (B->addr - from) / step;
+			as->block[piece].blocks++;
 		}
 	}
 	// iter all symbols
