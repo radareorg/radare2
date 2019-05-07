@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
-#include <sdb/ht_uu.h>
 #include <r_types.h>
 #include <r_list.h>
 #include <r_flag.h>
 #include <r_core.h>
 #include <r_bin.h>
+#include <sdb/ht_uu.h>
 
 #include <string.h>
 
