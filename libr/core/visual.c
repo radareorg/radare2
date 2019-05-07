@@ -3074,10 +3074,22 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			//r_core_cmd0 (core, "=H");
 			break;
 		case 'm':
-			r_core_visual_mark (core, r_cons_readchar ());
+			{
+				r_cons_gotoxy (0, 0);
+				r_cons_printf (R_CONS_CLEAR_LINE"set shortcut key for 0x%"PFMT64x"\n", core->offset);
+				r_cons_flush ();
+				int ch = r_cons_readchar ();
+				r_core_visual_mark (core, ch);
+			}
 			break;
 		case '\'':
-			r_core_visual_mark_seek (core, r_cons_readchar ());
+			{
+				r_cons_gotoxy (0, 0);
+				r_core_visual_mark_dump (core);
+				r_cons_flush ();
+				int ch = r_cons_readchar ();
+				r_core_visual_mark_seek (core, ch);
+			}
 			break;
 		case 'y':
 			if (core->print->ocur == -1) {

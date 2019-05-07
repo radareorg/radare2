@@ -21,7 +21,7 @@ R_API void r_core_visual_mark_dump(RCore *core) {
 	}
 	for (i = 0; i < UT8_MAX; i++) {
 		if (marks[i] != UT64_MAX) {
-			r_cons_printf ("fV %d 0x%"PFMT64x"\n", i, marks[i]);
+			r_cons_printf (R_CONS_CLEAR_LINE"fV %c 0x%"PFMT64x"\n", i, marks[i]);
 		}
 	}
 }
