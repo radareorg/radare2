@@ -823,20 +823,19 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
+	bool debugMode = r_config_get_i (core->config, "cfg.debug");
 
 	RList *optypes_list = NULL;
 	RListIter *iter;
-	char *optype;
-	char *optypes = strdup (r_str_trim_head ((char *) _optypes));
+	char *optype, *optypes = strdup (r_str_trim_head ((char *) _optypes));
 
 	if (!core || !core->dbg) {
-		eprint ("Wrong state");
+		eprintf ("Wrong state\n");
 		res = false;
 		goto end;
 	}
-
 	if (!optypes || !*optypes) {
-		eprint ("Missing optypes. Usage example: 'dsuo ucall ujmp'");
+		eprintf ("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
 		goto end;
 	}
@@ -849,27 +848,32 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 			core->break_loop = true;
 			break;
 		}
-		if (r_debug_is_dead (core->dbg)) {
-			core->break_loop = true;
-			break;
+		if (debugMode) {
+			if (r_debug_is_dead (core->dbg)) {
+				core->break_loop = true;
+				break;
+			}
+			r_debug_step (core->dbg, 1);
+			pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
+			// 'Copy' from r_debug_step_soft
+			if (!core->dbg->iob.read_at) {
+				eprintf ("ERROR\n");
+				res = false;
+				goto cleanup_after_push;
+			}
+			if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
+				eprintf ("ERROR\n");
+				res = false;
+				goto cleanup_after_push;
+			}
+		} else {
+			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+			pc = r_reg_getv (core->anal->reg, "PC");
 		}
-		r_debug_step (core->dbg, 1);
+		r_io_read_at (core->io, pc, buf, sizeof (buf));
 
-		pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
-
-		// 'Copy' from r_debug_step_soft
-		if (!core->dbg->iob.read_at) {
-			eprint("ERROR\n");
-			res = false;
-			goto cleanup_after_push;
-		}
-		if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
-			eprint("ERROR\n");
-			res = false;
-			goto cleanup_after_push;
-		}
 		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
-			eprint("ERROR\n");
+			eprintf ("Error: r_anal_op failed\n");
 			res = false;
 			goto cleanup_after_push;
 		}
