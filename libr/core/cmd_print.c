@@ -225,18 +225,20 @@ static const char *help_msg_p_equal[] = {
 	"p=", "", "print bytes of current block in bars",
 	"p==", "[..]", "same subcommands as p=, using column bars instead of rows",
 	"p=", "2", "short (signed int16) bars, good for waves",
+	"p=", "a", "analysis bbs maps",
+	"p=", "A", "analysis stats maps (see p-)",
 	"p=", "b", "same as above",
-	"p=", "c", "print number of calls per block",
-	"p=", "d", "print min/max/number of unique bytes in block",
-	"p=", "e", "print entropy for each filesize/blocksize",
-	"p=", "F", "print number of 0xFF bytes for each filesize/blocksize",
-	"p=", "i", "print number of invalid instructions per block",
-	"p=", "j", "print number of jumps and conditional jumps in block",
-	"p=", "m", "print number of flags and marks in block",
-	"p=", "p", "print number of printable bytes for each filesize/blocksize",
-	"p=", "s", "print number of syscall and priviledged instructions",
-	"p=", "z", "print number of chars in strings in block",
-	"p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
+	"p=", "c", "number of calls per block",
+	"p=", "d", "min/max/number of unique bytes in block",
+	"p=", "e", "entropy for each filesize/blocksize",
+	"p=", "F", "number of 0xFF bytes for each filesize/blocksize",
+	"p=", "i", "number of invalid instructions per block",
+	"p=", "j", "number of jumps and conditional jumps in block",
+	"p=", "m", "number of flags and marks in block",
+	"p=", "p", "number of printable bytes for each filesize/blocksize",
+	"p=", "s", "number of syscall and priviledged instructions",
+	"p=", "z", "number of chars in strings in block",
+	"p=", "0", "number of 0x00 bytes for each filesize/blocksize",
 	NULL
 };
 
@@ -1994,6 +1996,35 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	struct count_pz_t u;
 
 	switch (mode) {
+	case 'a':
+		{
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		int value = 0;
+		if (fcn) {
+			value = r_list_length (fcn->bbs);
+		}
+		return value;
+		}
+		break;
+	case 'A':
+		{
+		RCoreAnalStats *as = r_core_anal_get_stats (core, addr, addr + size * 2, size);
+		int i;
+		int value = 0;
+		for (i = 0; i < 1; i++) {
+			value += as->block[i].functions;
+			value += as->block[i].in_functions;
+			value += as->block[i].comments;
+			value += as->block[i].symbols;
+			value += as->block[i].flags;
+			value += as->block[i].strings;
+			value += as->block[i].blocks;
+			value *= 20;
+		}
+		r_core_anal_stats_free (as);
+		return value;
+		}
+		break;
 	case '0': // "pz0"
 		for (j = 0; j < size; j++) {
 			if (bufz[j] == 0) {
@@ -3124,18 +3155,34 @@ static inline void matchBar(ut8 *ptr, int i) {
 }
 
 static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skipblocks, ut64 from) {
-	ut8 *p;
 	int j, i = 0;
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
 		eprintf ("Error: failed to malloc memory");
 		return NULL;
 	}
-	p = malloc (blocksize);
+	ut8 *p = malloc (blocksize);
 	if (!p) {
 		R_FREE (ptr);
 		eprintf ("Error: failed to malloc memory");
 		return NULL;
+	}
+	if (type == 'A') {
+		ut64 to = from + (blocksize * nblocks);
+		RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, blocksize);
+		for (i = 0; i < nblocks; i++) {
+			int value = 0;
+			value += as->block[i].functions;
+			value += as->block[i].in_functions;
+			value += as->block[i].comments;
+			value += as->block[i].symbols;
+			value += as->block[i].flags;
+			value += as->block[i].strings;
+			value += as->block[i].blocks;
+			ptr[i] = R_MIN (255, value);
+		}
+		r_core_anal_stats_free (as);
+		return ptr;
 	}
 	for (i = 0; i < nblocks; i++) {
 		if (r_cons_is_breaked ()) {
@@ -3143,6 +3190,13 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 		}
 		ut64 off = from + (i + skipblocks) * blocksize;
 		for (j = 0; j < blocksize ; j++) {
+			if (type == 'a') {
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
+				if (fcn) {
+					ptr[i] = r_list_length (fcn->bbs);
+				}
+				continue;
+			}
 			RAnalOp *op = r_core_anal_op (core, off + j, R_ANAL_OP_MASK_BASIC);
 			if (op) {
 				if (op->size < 1) {
@@ -3271,28 +3325,55 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		case '0': // 0x00 bytes
 		case 'f': // 0xff bytes
 		case 'F': // 0xff bytes
+		case 'A': // anal stats
+		case 'a': // anal bb
 		case 'p': // printable chars
 		case 'z': // zero terminated strings
+		case 'b': // zero terminated strings
 			{
-				ut8 *p;
 				ut64 i, j, k;
 				ptr = calloc (1, nblocks);
 				if (!ptr) {
 					eprintf ("Error: failed to malloc memory");
 					goto beach;
 				}
-				p = calloc (1, blocksize);
+				ut8 *p = calloc (1, blocksize);
 				if (!p) {
 					R_FREE (ptr);
 					eprintf ("Error: failed to malloc memory");
 					goto beach;
 				}
 				int len = 0;
-				for (i = 0; i < nblocks; i++) {
+				if (submode == 'A') {
+					ut64 to = from + totalsize; //  (blocksize * nblocks);
+					RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, blocksize);
+					for (i = 0; i < nblocks; i++) {
+						int value = 0;
+						value += as->block[i].functions;
+						value += as->block[i].in_functions;
+						value += as->block[i].comments;
+						value += as->block[i].symbols;
+						value += as->block[i].flags;
+						value += as->block[i].strings;
+						value += as->block[i].blocks;
+						ptr[i] = 256 * value / blocksize;
+						ptr[i] *= 3;
+					}
+					r_core_anal_stats_free (as);
+				} else for (i = 0; i < nblocks; i++) {
 					ut64 off = from + blocksize * (i + skipblocks);
 					r_io_read_at (core->io, off, p, blocksize);
 					for (j = k = 0; j < blocksize; j++) {
 						switch (submode) {
+						case 'a':
+							{
+								RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
+								if (fcn) {
+									k += r_list_length (fcn->bbs);
+									k = R_MAX (255, k);
+								}
+							}
+							break;
 						case '0':
 							if (!p[j]) {
 								k++;
@@ -3396,22 +3477,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
-		if ((ptr = analBars (core, 'j', nblocks, blocksize, skipblocks, from))) {
-			print_bars = true;
-		}
-		break;
+	case 'A': // "p=A" anal info 
+	case 'a': // "p=a" bb info
 	case 'c': // "p=c" calls
-		if ((ptr = analBars (core, 'c', nblocks, blocksize, skipblocks, from))) {
-			print_bars = true;
-		}
-		break;
 	case 'i': // "p=i" invalid
-		if ((ptr = analBars (core, 'i', nblocks, blocksize, skipblocks, from))) {
-			print_bars = true;
-		}
-		break;
 	case 's': // "p=s" syscalls
-		if ((ptr = analBars (core, 's', nblocks, blocksize, skipblocks, from))) {
+		if ((ptr = analBars (core, mode, nblocks, blocksize, skipblocks, from))) {
 			print_bars = true;
 		}
 		break;
@@ -5678,7 +5749,11 @@ l = use_blocksize;
 				r_cons_printf ("prc=e # colorblocks of entropy\n");
 				r_core_cmd0 (core, "pz?");
 			} else if (input[2] == '=') {
-				cmd_prc_zoom (core, input + 2);
+				if (input[3] == '?') {
+					r_core_cmd_help (core, help_msg_p_equal);
+				} else {
+					cmd_prc_zoom (core, input + 2);
+				}
 			} else {
 				cmd_prc (core, block, len);
 			}
