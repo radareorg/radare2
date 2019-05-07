@@ -96,7 +96,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/X86/X86Disassembler.c',
     'arch/X86/X86DisassemblerDecoder.c',
     'arch/X86/X86IntelInstPrinter.c',
-    'arch/X86/X86InstPrinterCommon.c',
     'arch/X86/X86Mapping.c',
     'arch/X86/X86Module.c',
     'arch/XCore/XCoreDisassembler.c',
@@ -115,6 +114,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
+  if get_option('use_capstone5')
+    cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
+  endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
