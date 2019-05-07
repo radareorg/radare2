@@ -44,7 +44,7 @@ static bool is_a_kernel_mapping(const char *name) {
 		&& strcmp (name, "[vvar]")
 		&& strcmp (name, "[heap]")
 		&& strcmp (name, "[vectors]")
-		&& strncmp (name, "[stack", sizeof ("[stack") - 1));
+		&& strncmp (name, "[stack", strlen ("[stack")));
 }
 
 static char *prpsinfo_get_psargs(char *buffer, int len) {

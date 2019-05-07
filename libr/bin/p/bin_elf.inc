@@ -249,7 +249,7 @@ static RList* sections(RBinFile *bf) {
 				break;
 			default:
 				if (ptr->size == 0 && ptr->vsize == 0) {
-					ptr->name = strdup ("NULL");
+					ptr->name = strdup ("NONE");
 				} else {
 					ptr->name = setphname (mach, phdr[i].p_type);
 				}
