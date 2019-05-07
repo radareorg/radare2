@@ -3660,10 +3660,14 @@ static int loadSavedPanelsLayout(RCore *core) {
 	panelsConfig = r_file_slurp (configPath, &s);
 	free (configPath);
 	if (!panelsConfig) {
-		free (panelsConfig);
 		return 0;
 	}
-	char *parsedConfig = parsePanelsConfig (panelsConfig, strlen (panelsConfig));
+
+	for(s = strlen(panelsConfig); s && panelsConfig[s - 1] != ']'; s--) {
+		panelsConfig[s - 1] = 0;
+	}
+
+	char *parsedConfig = parsePanelsConfig (panelsConfig, s);
 	free (panelsConfig);
 	if (!parsedConfig) {
 		return 0;
