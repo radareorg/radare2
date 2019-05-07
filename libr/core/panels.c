@@ -3618,6 +3618,8 @@ static void savePanelsLayout(RPanels* panels) {
 }
 
 static char *parsePanelsConfig(const char *cfg, int len) {
+	for(len = strlen(cfg); len && cfg[len] != ']'; len--);
+
 	if (!cfg || !*cfg || len < 2 || *cfg != '[') {
 		eprintf ("Not valid config!\n");
 		return NULL;
@@ -3639,6 +3641,8 @@ static char *parsePanelsConfig(const char *cfg, int len) {
 			return NULL;
 		}
 	}
+
+	tmp[len] = 0;
 	return tmp;
 }
 
@@ -3661,10 +3665,6 @@ static int loadSavedPanelsLayout(RCore *core) {
 	free (configPath);
 	if (!panelsConfig) {
 		return 0;
-	}
-
-	for(s = strlen(panelsConfig); s && panelsConfig[s - 1] != ']'; s--) {
-		panelsConfig[s - 1] = 0;
 	}
 
 	char *parsedConfig = parsePanelsConfig (panelsConfig, s);
