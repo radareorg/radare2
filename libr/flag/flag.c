@@ -139,9 +139,11 @@ static void set_name(RFlagItem *item, char *name) {
 	item->realname = item->name;
 }
 
-static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool force) {
-	if (item->offset != newoff || force) {
-		remove_offsetmap (f, item);
+static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool is_new) {
+	if (item->offset != newoff || is_new) {
+		if (!is_new) {
+			remove_offsetmap (f, item);
+		}
 		item->offset = newoff;
 
 		RFlagsAtOffset *flagsAtOffset = flags_at_offset (f, newoff);
@@ -156,13 +158,13 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 	return false;
 }
 
-static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
+static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool is_new) {
 	bool res = false;
 	if (!newname) {
 		return false;
 	}
 
-	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
+	if (!is_new && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
 
