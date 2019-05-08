@@ -1768,7 +1768,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 	}
 	if (anal->cur && anal->cur->fcn) {
 		int result = anal->cur->fcn (anal, fcn, addr, reftype);
-		if (anal->cur->custom_fn_anal) {
+		if (anal->use_ex && anal->cur->custom_fn_anal) {
 			return result;
 		}
 	}

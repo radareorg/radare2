@@ -4753,7 +4753,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	{ /* used by asm.emu */
 		r_reg_arena_push (core->anal->reg);
 	}
-	if (core->anal->cur && core->anal->cur->reset_counter) {
+	if (core->anal->use_ex && core->anal->cur && core->anal->cur->reset_counter) {
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 

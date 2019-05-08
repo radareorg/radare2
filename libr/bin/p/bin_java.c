@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2019 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>

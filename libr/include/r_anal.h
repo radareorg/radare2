@@ -714,6 +714,7 @@ typedef struct r_anal_t {
 	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
+	bool use_ex;
 } RAnal;
 
 typedef struct r_anal_hint_t {
