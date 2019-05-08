@@ -9,7 +9,8 @@ static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", "", "List all mountpoints in human readable format",
 	"m*", "", "Same as above, but in r2 commands",
-	"ml", "", "List filesystem plugins",
+	"mj", "", "List mounted filesystems in JSON",
+	"mL", "", "List filesystem plugins (Same as Lm)",
 	"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
 	"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
 	"m-/", "", "Umount given path (/)",
@@ -132,6 +133,71 @@ static int ms_autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineP
 	return false;
 }
 
+static const char *t2s(const char ch) {
+	switch (ch) {
+	case 'f': return "file";
+	case 'd': return "directory";
+	case 'm': return "mountpoint";
+	}
+	return "unknown";
+}
+
+static void cmd_mount_ls (RCore *core, const char *input) {
+	bool isJSON = *input == 'j';
+	RListIter *iter;
+	RFSFile *file;
+	RFSRoot *root;
+	input = r_str_trim_ro (input + isJSON);
+	RList *list = r_fs_dir (core->fs, input);
+	PJ *pj = NULL;
+	if (isJSON) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	if (list) {
+		r_list_foreach (list, iter, file) {
+			if (isJSON) {
+				pj_o (pj);
+				pj_ks (pj, "type", t2s(file->type));
+				pj_ks (pj, "name", file->name);
+				pj_end (pj);
+			} else {
+				r_cons_printf ("%c %s\n", file->type, file->name);
+			}
+		}
+		r_list_free (list);
+	}
+	const char *path = *input? input: "/";
+	r_list_foreach (core->fs->roots, iter, root) {
+		// TODO: adjust contents between //
+		if (!strncmp (path, root->path, strlen (path))) {
+			char *base = strdup (root->path);
+			char *ls = (char *)r_str_lchr (base, '/');
+			if (ls) {
+				ls++;
+				*ls = 0;
+			}
+			// TODO: adjust contents between //
+			if (!strcmp (path, base)) {
+				if (isJSON) {
+					pj_o (pj);
+					pj_ks (pj, "path", root->path);
+					pj_ks (pj, "type", "mountpoint");
+					pj_end (pj);
+				} else {
+					r_cons_printf ("m %s\n", root->path); //  (root->path && root->path[0]) ? root->path + 1: "");
+				}
+			}
+			free (base);
+		}
+	}
+	if (isJSON) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+}
+
 static int cmd_mount(void *data, const char *_input) {
 	ut64 off = 0;
 	char *input, *oinput, *ptr, *ptr2;
@@ -153,21 +219,22 @@ static int cmd_mount(void *data, const char *_input) {
 
 	switch (*input) {
 	case ' ':
-		input++;
-		if (input[0]==' ') {
-			input++;
-		}
+		input = (char *)r_str_trim_ro (input + 1);
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
-			ptr++;
+			ptr = (char *)r_str_trim_ro (ptr + 1);
 			ptr2 = strchr (ptr, ' ');
 			if (ptr2) {
 				*ptr2 = 0;
 				off = r_num_math (core->num, ptr2+1);
 			}
-			if (!r_fs_mount (core->fs, ptr, input, off)) {
-				eprintf ("Cannot mount %s\n", input);
+			input = (char *)r_str_trim_ro (input);
+			ptr = (char*)r_str_trim_ro (ptr);
+			if (!r_fs_mount (core->fs, input, ptr, off)) {
+				if (!r_fs_mount (core->fs, ptr, input, off)) {
+					eprintf ("Cannot mount %s\n", input);
+				}
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
@@ -182,8 +249,37 @@ static int cmd_mount(void *data, const char *_input) {
 	case '-':
 		r_fs_umount (core->fs, input+1);
 		break;
+	case 'j':
+		{
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_k (pj, "mountpoints");
+			pj_a (pj);
+			r_list_foreach (core->fs->roots, iter, root) {
+				pj_o (pj);
+				pj_ks (pj, "path", root->path);
+				pj_ks (pj, "plugin", root->p->name);
+				pj_kn (pj, "offset", root->delta);
+				pj_end (pj);
+			}
+			pj_end (pj);
+//
+			pj_k (pj, "plugins");
+			pj_a (pj);
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				pj_o (pj);
+				pj_ks (pj, "name", plug->name);
+				pj_ks (pj, "description", plug->desc);
+				pj_end (pj);
+			}
+
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+		}
+		break;
 	case '*':
-		eprintf ("List commands in radare format\n");
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
 				root-> path, root->p->name, root->delta);
@@ -195,41 +291,14 @@ static int cmd_mount(void *data, const char *_input) {
 				root->p->name, root->delta, root->path);
 		}
 		break;
-	case 'L': // "ml" list of plugins .. should be mL
-	case 'l': // "ml" list of plugins .. should be mL
+	case 'L': // "mL" list of plugins
 		r_list_foreach (core->fs->plugins, iter, plug) {
 			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
 		}
 		break;
-	case 'd': // "md"
-		input++;
-		if (input[0] == ' ') {
-			input++;
-		}
-		list = r_fs_dir (core->fs, input);
-		if (list) {
-			r_list_foreach (list, iter, file) {
-				r_cons_printf ("%c %s\n", file->type, file->name);
-			}
-			r_list_free (list);
-		}
-		const char *path = *input? input: "/";
-		r_list_foreach (core->fs->roots, iter, root) {
-			// TODO: adjust contents between //
-			if (!strncmp (path, root->path, strlen (path))) {
-				char *base = strdup (root->path);
-				char *ls = (char *)r_str_lchr (base, '/');
-				if (ls) {
-					ls++;
-					*ls = 0;
-				}
-				// TODO: adjust contents between //
-				if (!strcmp (path, base)) {
-					r_cons_printf ("m %s\n", (root->path && root->path[0]) ? root->path + 1: "");
-				}
-				free (base);
-			}
-		}
+	case 'l': // "ml"
+	case 'd': // "md" // should be deprecated. ls is better than dir :P
+		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p':
 		input++;
@@ -396,11 +465,13 @@ static int cmd_mount(void *data, const char *_input) {
 			RLine *rli = r_line_singleton ();
 			RLineCompletion c;
 			memcpy (&c, &rli->completion, sizeof (c));
+			r_pvector_init (&rli->completion.args, free);  // UGLY HACK
 			rli->completion.run = ms_autocomplete;
 			rli->completion.run_user = rli->user;
 			r_line_completion_set (&rli->completion, ms_argc, ms_argv);
 			r_fs_shell_prompt (&shell, core->fs, input);
 			free (cwd);
+			r_pvector_clear (&rli->completion.args);
 			memcpy (&rli->completion, &c, sizeof (c));
 		}
 		break;

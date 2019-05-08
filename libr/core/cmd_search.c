@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2010-2019 - pancake */
 
 #include <sdb/ht_uu.h>
-#include "r_core.h"
+#include <r_core.h>
 #include <r_hash.h>
 #include "r_io.h"
 #include "r_list.h"
@@ -613,6 +613,10 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	}
 	map->perm = perms;
 	RInterval itv = {from, size};
+	if (size == -1) {
+		eprintf ("Warning: Invalid range. Use different search.in=? or anal.in=dbg.maps.x\n");
+		return;
+	}
 	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
 	if (search_itv.addr == UT64_MAX && !search_itv.size) {
 		map->itv = itv;
@@ -664,6 +668,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		perm = R_PERM_RWX;
 	}
 	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
+		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
+	} else if (!strcmp (mode, "file")) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "block")) {
 		append_bound (list, core->io, search_itv, core->offset, core->blocksize, 7);

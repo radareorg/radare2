@@ -202,11 +202,9 @@ static ut8 *r_line_readchar_win(int *vch) { // this function handle the input in
 		int rsz = read (0, buf, 1);
 		r_cons_sleep_end (bed);
 		if (rsz != 1)
-			return -1;
+			return NULL;
 		return buf;
 	}
-
-	*buf = '\0';
 
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
@@ -224,7 +222,7 @@ do_it_again:
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
 				free (buf);
-				buf = r_sys_conv_win_to_utf8_l (&irInBuf.Event.KeyEvent.uChar, 1);
+				buf = r_sys_conv_win_to_utf8_l ((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 			} else {
 				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
@@ -747,7 +745,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 		}
 		ch = r_line_readchar_win (&vch);
-		if (ch == -1) {
+		if (!ch) {
 			r_cons_break_pop ();
 			return NULL;
 		}
@@ -1350,6 +1348,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			fflush (stdout);
 			break;
 		case 18:// ^R -- autocompletion
+			if (gcomp) {
+				gcomp_idx++;
+			}
 			gcomp = 1;
 			break;
 		case 19:// ^S -- backspace
@@ -1746,16 +1747,20 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (I.echo) {
 			if (gcomp) {
 				gcomp_line = "";
+				int counter = 0;
 				if (I.history.data != NULL) {
-					for (i = 0; i < I.history.size; i++) {
+					for (i = I.history.size-1; i >= 0; i--) {
 						if (!I.history.data[i]) {
-							break;
+							continue;
 						}
 						if (strstr (I.history.data[i], I.buffer.data)) {
 							gcomp_line = I.history.data[i];
-							if (!gcomp_idx--) {
+							if (++counter > gcomp_idx) {
 								break;
 							}
+						}
+						if (i == 0) {
+							gcomp_idx--;
 						}
 					}
 				}

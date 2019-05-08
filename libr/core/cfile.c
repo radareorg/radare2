@@ -830,7 +830,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	//used by r_core_bin_load otherwise won't load correctly
 	//this should be argument of r_core_bin_load <shrug>
-	r_config_set_i (r->config, "bin.laddr", loadaddr);
+	if (loadaddr != UT64_MAX) {
+		r_config_set_i (r->config, "bin.laddr", loadaddr);
+	}
 beach:
 	r->times->file_open_time = r_sys_now () - prev;
 	return fh;
@@ -952,9 +954,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		case 'j':
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
 				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
-				core->io->desc->fd == f->fd ? "true": "false",
+				r_str_bool (core->io->desc->fd == f->fd),
 				(int) f->fd, desc->uri, (ut64) from,
-				desc->perm & R_PERM_W? "true": "false",
+				r_str_bool (desc->perm & R_PERM_W),
 				(int) r_io_desc_size (desc),
 				iter->n? ",": "");
 			break;

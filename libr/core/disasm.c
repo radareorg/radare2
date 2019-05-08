@@ -125,6 +125,7 @@ typedef struct {
 	bool show_emu_strflag;
 	bool show_emu_stack;
 	bool show_emu_write;
+	bool show_optype;
 	bool show_emu_strlea;
 	bool show_emu_ssa;
 	bool show_section;
@@ -674,6 +675,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->show_optype = r_config_get_i (core->config, "asm.optype");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
@@ -951,6 +953,13 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 	}
 	char *asm_str = colorize_asm_string (core, ds, print_color);
+	if (ds->pseudo) {
+		r_parse_parse (core->parser, ds->opstr
+				? ds->opstr
+				: r_asm_op_get_asm (&ds->asmop),
+				ds->str);
+		asm_str = strdup (ds->str);
+	}
 	asm_str = ds_sub_jumps (ds, asm_str);
 	if (ds->immtrim) {
 		char *res = r_parse_immtrim (ds->opstr);
@@ -1002,6 +1011,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			free (ds->opstr);
 			ds->opstr = strdup (asm_str? asm_str: "");
 		}
+		r_str_trim (ds->opstr);
 	}
 	if (ds->show_color) {
 		int i = 0;
@@ -1879,11 +1889,6 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
 		free (comment);
 	}
-#if 0
-	if (!ds->show_comments) {
-		return;
-	}
-#endif
 	if (!ds->comment || !*ds->comment) {
 		return;
 	}
@@ -2167,7 +2172,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (ds->hint && ds->hint->opcode) {
 		free (ds->opstr);
 		ds->opstr = strdup (ds->hint->opcode);
-		return true;
 	}
 	r_asm_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
@@ -2795,6 +2799,9 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = ds->analop.dst;
 			if (dst && dst->reg && dst->reg->name) {
+				if (src->memref < 0 || src->memref > 8) {
+					break;
+				}
 				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 					RFlagItem *item;
 					ut8 b[8];
@@ -3005,6 +3012,15 @@ static void ds_print_indent(RDisasmState *ds) {
 		memset (indent, ' ', num);
 		indent[num] = 0;
 		r_cons_strcat (indent);
+	}
+}
+
+static void ds_print_optype(RDisasmState *ds) {
+	if (ds->show_optype) {
+		const char *optype = r_anal_optype_to_string (ds->analop.type);
+		ds_print_color_reset (ds);
+		const char *pad = r_str_pad (' ', 8 - strlen (optype));
+		r_cons_printf ("[%s]%s", optype, pad);
 	}
 }
 
@@ -5101,6 +5117,7 @@ toro:
 			ds_print_show_cursor (ds);
 			ds_print_show_bytes (ds);
 			ds_print_lines_right (ds);
+			ds_print_optype (ds);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
 			ds_end_line_highlight (ds);
@@ -5347,6 +5364,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
+			// XXX we probably dont need MASK_ALL
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
 			hasanal = true;
 		}
@@ -5354,8 +5372,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			continue;
 		}
 
-		// r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (ds->hint && ds->hint->size) {
+		if (ds->hint && ds->hint->size > 0) {
 			ret = ds->hint->size;
 			ds->oplen = ret;
 			ds->analop.size = ret;
@@ -5408,8 +5425,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 						core->parser->flagspace = NULL;
 					}
 				}
-				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&ds->asmop),
-					ds->str, sizeof (ds->str), core->print->big_endian);
+				ds_build_op_str (ds, true);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
 				core->parser->flagspace = ofs;
@@ -5575,7 +5591,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 
 		char opstr[256];
-		strcpy (opstr, r_asm_op_get_asm (&asmop));
+		r_str_ncpy (opstr, r_asm_op_get_asm (&asmop), sizeof (opstr) - 1);
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);

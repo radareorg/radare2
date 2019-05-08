@@ -16,6 +16,7 @@ static const char *help_msg_L[] = {
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
+	"Lm", "", "list fs plugins (same as mL)",
 	"Lh", "", "list hash plugins (same as ph)",
 	"Li", "", "list bin plugins (same as iL)",
 	"Lo", "", "list io plugins (same as oL)",
@@ -327,8 +328,11 @@ static int cmd_plugins(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
 		break;
+	case 'm': // "Lm"
+		r_core_cmd0 (core, "mL");
+		break;
 	case 'd': // "Ld"
-		r_core_cmd0 (core, "dL"); // rahash2 -L is more verbose
+		r_core_cmd0 (core, "dL");
 		break;
 	case 'h': // "Lh"
 		r_core_cmd0 (core, "ph"); // rahash2 -L is more verbose

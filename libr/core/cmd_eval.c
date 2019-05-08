@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -569,8 +569,10 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
 		}
 		break;
-	case ' ':
-		if (strchr (input + 1, ' ')) { // XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
+	case ' ': // "e "
+		if (r_str_endswith (input, ".")) {
+			r_config_list (core->config, input + 1, 0);
+		} else if (strchr (input + 1, ' ')) { // XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
 			r_config_eval (core->config, input + 1);
 		} else {
 			// simple get/set of config keys, assuming there are no spaces

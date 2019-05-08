@@ -2770,9 +2770,9 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			r_cons_strcat ("\n" Color_RESET);
 		}
 		r_cons_printf (
-			"(a) add     (x) xrefs  (q) quit  (jk) next/prev\n"
-			"(r) rename  (c) calls  (g) go    (tab) column\n"
-			"(d) delete  (v) vars   (?) help  (:)  enter cmd\n");
+			"(a) add    (x) xrefs (X) refs (jk) next/prev (s) signature\n"
+			"(r) rename (c) calls (g) go   (tab) column   (_) hud\n"
+			"(d) delete (v) vars  (?) help (:)  enter cmd (q) quit\n");
 		addr = var_functions_show (core, option, 1);
 		break;
 	case 1:
@@ -3072,6 +3072,9 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			break;
 		case 'X':
 			r_core_visual_refs (core, true, true);
+			break;
+		case 's':
+			r_core_cmdf (core, "afs!@0x%08"PFMT64x, addr);
 			break;
 		case 'c':
 			level = 2;

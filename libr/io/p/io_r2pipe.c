@@ -152,24 +152,26 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *msg) {
-	char fmt[4096];
-	int rv, rescount = -1;
-	char *res, *r;
-	if (!fd || !fd->data) {
-		return NULL;
-	}
-	snprintf (fmt, sizeof (fmt), "{\"op\":\"system\",\"cmd\":\"%s\"}", msg);
-	rv = r2pipe_write (R2P (fd), fmt);
+	r_return_val_if_fail (io && fd && msg, NULL);
+	PJ *pj = pj_new ();
+	pj_o (pj);
+	pj_ks (pj, "op", "system");
+	pj_ks (pj, "cmd", msg);
+	pj_end (pj);
+	char *fmt = pj_string (pj);
+
+	int rv = r2pipe_write (R2P (fd), fmt);
+	pj_free (pj);
 	if (rv < 1) {
 		eprintf ("r2pipe_write: error\n");
 		return NULL;
 	}
-	res = r2pipe_read (R2P (fd));
+	char *res = r2pipe_read (R2P (fd));
 	//eprintf ("%s\n", res);
 	/* TODO: parse json back */
-	r = strstr (res, "result");
+	char *r = strstr (res, "result");
 	if (r) {
-		rescount = atoi (r + 6 + 1);
+		int rescount = atoi (r + 6 + 1);
 		eprintf ("RESULT %d\n", rescount);
 	}
 	free (res);

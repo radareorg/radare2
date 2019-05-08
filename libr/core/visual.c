@@ -43,7 +43,7 @@ static const char *printfmtColumns[NPF] = {
 // to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 10
 #define PRINT_3_FORMATS 2
-#define PRINT_4_FORMATS 6
+#define PRINT_4_FORMATS 7
 #define PRINT_5_FORMATS 8
 
 static int currentHexFormat = 0;
@@ -57,7 +57,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64"
+	"prc", "prc=a", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64"
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
@@ -497,7 +497,9 @@ repeat:
 	r_cons_clear00 ();
 	r_cons_printf ("Visual Help:\n\n"
 	" (?) full help\n"
+	" (!) enter panels\n"
 	" (a) code analysis\n"
+	" (c) toggle cursor\n"
 	" (d) debugger / emulator\n"
 	" (e) toggle configurations\n"
 	" (i) insert / write\n"
@@ -1253,7 +1255,7 @@ R_API void r_core_visual_offset(RCore *core) {
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 }
 
-static int prevopsz(RCore *core, ut64 addr) {
+R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
 	ut64 prev_addr = prevop_addr (core, addr);
 	return addr - prev_addr;
 }
@@ -1575,9 +1577,7 @@ static void visual_comma(RCore *core) {
 	cwd = getcommapath (core);
 	if (!cmtfile) {
 		char *fn;
-		r_core_visual_showcursor (core, true);
 		fn = r_cons_input ("<comment-file> ");
-		r_core_visual_showcursor (core, false);
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (!comment || !*comment) {
@@ -1878,7 +1878,7 @@ static bool fix_cursor(RCore *core) {
 	if (p->cur < 0) {
 		int sz = p->cols;
 		if (isDisasmPrint (core->printidx)) {
-			sz = prevopsz (core, core->offset + p->cur);
+			sz = r_core_visual_prevopsz (core, core->offset + p->cur);
 			if (sz < 1) {
 				sz = 1;
 			}
@@ -4020,7 +4020,7 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 			*cols = 4;
 		}
 	} else {
-		*cols = prevopsz (core, core->offset);
+		*cols = r_core_visual_prevopsz (core, core->offset);
 	}
 }
 

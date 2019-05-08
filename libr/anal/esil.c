@@ -658,7 +658,7 @@ static int esil_weak_eq(RAnalEsil *esil) {
 
 	ut64 src_num;
 	if (r_anal_esil_get_parm (esil, src, &src_num)) {
-		const int ret = r_anal_esil_reg_write (esil, dst, src_num);
+		(void)r_anal_esil_reg_write (esil, dst, src_num);
 		free (src);
 		free (dst);
 		return 1;
@@ -674,6 +674,10 @@ static int esil_eq(RAnalEsil *esil) {
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
+	if (!src || !dst) {
+		eprintf ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x"\n", esil->address);
+		return 0;
+	}
 	if (ispackedreg (esil, dst)) {
 		char *src2 = r_anal_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst);

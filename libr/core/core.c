@@ -1918,7 +1918,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			r_strbuf_appendf (s, " %slibrary%s", c, cend);
 		}
 		if (type & R_ANAL_ADDR_TYPE_ASCII) {
-			r_strbuf_appendf (s, " %sascii%s", c, cend);
+			r_strbuf_appendf (s, " %sascii%s ('%c')", c, cend, value);
 		}
 		if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
 			r_strbuf_appendf (s, " %ssequence%s", c, cend);

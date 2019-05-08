@@ -6,6 +6,7 @@
 #include "r_socket.h"
 #include "r_types.h"
 #include "r_magic.h"
+#include "r_agraph.h"
 #include "r_io.h"
 #include "r_fs.h"
 #include "r_lib.h"
@@ -264,6 +265,7 @@ typedef struct r_core_t {
 	bool cfglog;
 	int cmdrepeat;
 	const char *cmdtimes;
+	bool cmd_in_backticks;
 	ut64 inc;
 	int rtr_n;
 	RCoreRtrHost rtr_host[RTR_MAX_HOSTS];
@@ -495,7 +497,7 @@ R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len);  // set yank buffer bytes
 R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
 R_API int r_core_yank_to(RCore *core, const char *arg);
-R_API int r_core_yank_dump (RCore *core, ut64 pos);
+R_API bool r_core_yank_dump (RCore *core, ut64 pos, int format);
 R_API int r_core_yank_hexdump (RCore *core, ut64 pos);
 R_API int r_core_yank_cat (RCore *core, ut64 pos);
 R_API int r_core_yank_cat_string (RCore *core, ut64 pos);
@@ -714,6 +716,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 R_API int r_core_rtr_http_stop(RCore *u);
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 
+R_API int r_core_visual_prevopsz(RCore *core, ut64 addr);
 R_API void r_core_visual_config(RCore *core);
 R_API void r_core_visual_mounts(RCore *core);
 R_API void r_core_visual_anal(RCore *core, const char *input);
@@ -780,6 +783,7 @@ typedef struct {
 	ut32 flags;
 	ut32 comments;
 	ut32 functions;
+	ut32 blocks;
 	ut32 in_functions;
 	ut32 symbols;
 	ut32 strings;

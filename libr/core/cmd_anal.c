@@ -160,6 +160,7 @@ static const char *help_msg_ae[] = {
 	"aess", " ", "step skip (in case of CALL, just skip, instead of step into)",
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
+	"aesuo", " [optype]", "step until given opcode type",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
@@ -565,6 +566,9 @@ static const char *help_msg_ao[] = {
 static const char *help_msg_ar[] = {
 	"Usage: ar", "", "# Analysis Registers",
 	"ar", "", "Show 'gpr' registers",
+	"ar.", ">$snapshot", "Show r2 commands to set register values to the current state",
+	".ar*", "", "Import register values as flags",
+	".ar-", "", "Unflag all registers",
 	"ar0", "", "Reset register arenas to 0",
 	"ara", "[?]", "Manage register arenas",
 	"arA", "", "Show values of function argument calls (A0, A1, A2, ..)",
@@ -586,8 +590,6 @@ static const char *help_msg_ar[] = {
 	"ars", "", "Stack register state",
 	"art", "", "List all register types",
 	"arw", " <hexnum>", "Set contents of the register arena",
-	".ar*", "", "Import register values as flags",
-	".ar-", "", "Unflag all registers",
 	NULL
 };
 
@@ -3624,6 +3626,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			free (p);
 		}
 		break;
+	case '.': // "ar."
 	case '-': // "ar-"
 	case '*': // "ar*"
 	case 'R': // "arR"
@@ -4082,7 +4085,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	ut32 size = 0xf0000;
 	char name[128];
 	RFlagItem *fi;
-	const char *sp, *pc;
+	const char *sp, *bp, *pc;
 	char uri[32];
 	char nomalloc[256];
 	char *p;
@@ -4216,13 +4219,19 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 	// SP
 	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_SP);
-	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	if (sp) {
+		r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	}
 	// BP
-	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
-	r_debug_reg_set (core->dbg, sp, addr + (size / 2));
+	bp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
+	if (bp) {
+		r_debug_reg_set (core->dbg, bp, addr + (size / 2));
+	}
 	// PC
 	pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	r_debug_reg_set (core->dbg, pc, curoff);
+	if (pc) {
+		r_debug_reg_set (core->dbg, pc, curoff);
+	}
 	r_core_cmd0 (core, ".ar*");
 	if (esil) {
 		esil->stack_addr = addr;
@@ -4835,7 +4844,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		// aesue -> until esil expression
 		switch (input[1]) {
 		case '?':
-			eprintf ("See: ae?~aes\n");
+			r_core_cmd0 (core, "ae?~aes");
 			break;
 		case 'l': // "aesl"
 		{
@@ -4858,12 +4867,27 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'u': // "aesu"
-			if (input[2] == 'e') {
+			until_expr = NULL;
+			until_addr = UT64_MAX;
+			if (r_str_endswith (input, "?")) {
+				r_core_cmd0 (core, "ae?~aesu");
+			} else switch (input[2]) {
+			case 'e': // "aesue"
 				until_expr = input + 3;
-			} else {
+				break;
+			case ' ': // "aesu"
 				until_addr = r_num_math (core->num, input + 2);
+				break;
+			case 'o': // "aesuo"
+				step_until_optype (core, r_str_trim_ro (input + 3));
+				break;
+			default:
+				r_core_cmd0 (core, "ae?~aesu");
+				break;
 			}
-			r_core_esil_step (core, until_addr, until_expr, NULL, false);
+			if (until_expr || until_addr != UT64_MAX) {
+				r_core_esil_step (core, until_addr, until_expr, NULL, false);
+			}
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 's': // "aess"
@@ -4874,10 +4898,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					until_addr = r_num_math (core->num, input + 2);
 				}
 				r_core_esil_step (core, until_addr, until_expr, NULL, true);
-				r_core_cmd0 (core, ".ar*");
 			} else {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL, true);
 			}
+			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"

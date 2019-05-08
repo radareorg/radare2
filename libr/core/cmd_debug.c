@@ -309,6 +309,7 @@ static const char *help_msg_dr[] = {
 	"Usage: dr", "", "Registers commands",
 	"dr", "", "Show 'gpr' registers",
 	"dr", " <register>=<val>", "Set register value",
+	"dr.", " >$snapshot", "Capture current register values in r2 alias file",
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
@@ -822,20 +823,19 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
+	bool debugMode = r_config_get_i (core->config, "cfg.debug");
 
 	RList *optypes_list = NULL;
 	RListIter *iter;
-	char *optype;
-	char *optypes = strdup (r_str_trim_head ((char *) _optypes));
+	char *optype, *optypes = strdup (r_str_trim_head ((char *) _optypes));
 
 	if (!core || !core->dbg) {
-		eprint ("Wrong state");
+		eprintf ("Wrong state\n");
 		res = false;
 		goto end;
 	}
-
 	if (!optypes || !*optypes) {
-		eprint ("Missing optypes. Usage example: 'dsuo ucall ujmp'");
+		eprintf ("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
 		goto end;
 	}
@@ -848,27 +848,32 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 			core->break_loop = true;
 			break;
 		}
-		if (r_debug_is_dead (core->dbg)) {
-			core->break_loop = true;
-			break;
+		if (debugMode) {
+			if (r_debug_is_dead (core->dbg)) {
+				core->break_loop = true;
+				break;
+			}
+			r_debug_step (core->dbg, 1);
+			pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
+			// 'Copy' from r_debug_step_soft
+			if (!core->dbg->iob.read_at) {
+				eprintf ("ERROR\n");
+				res = false;
+				goto cleanup_after_push;
+			}
+			if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
+				eprintf ("ERROR\n");
+				res = false;
+				goto cleanup_after_push;
+			}
+		} else {
+			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+			pc = r_reg_getv (core->anal->reg, "PC");
 		}
-		r_debug_step (core->dbg, 1);
+		r_io_read_at (core->io, pc, buf, sizeof (buf));
 
-		pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
-
-		// 'Copy' from r_debug_step_soft
-		if (!core->dbg->iob.read_at) {
-			eprint("ERROR\n");
-			res = false;
-			goto cleanup_after_push;
-		}
-		if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
-			eprint("ERROR\n");
-			res = false;
-			goto cleanup_after_push;
-		}
 		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
-			eprint("ERROR\n");
+			eprintf ("Error: r_anal_op failed\n");
 			res = false;
 			goto cleanup_after_push;
 		}
@@ -1935,12 +1940,12 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		r_cons_printf ("[");
 	}
 	r_list_foreach (list, iter, r) {
-		char *rrstr, *tmp = NULL;
+		char *tmp = NULL;
 		if (r->size != bits) {
 			continue;
 		}
 		value = r_reg_get_value (core->dbg->reg, r);
-		rrstr = r_core_anal_hasrefs (core, value, true);
+		char *rrstr = r_core_anal_hasrefs (core, value, true);
 		delta = 0;
 		int regSize = r->size;
 		if (regSize < 80) {
@@ -1967,7 +1972,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			{
 				const char *arg = "";
 				int i;
-				for (i = 0; i< R_REG_NAME_LAST; i++) {
+				for (i = 0; i < R_REG_NAME_LAST; i++) {
 					const char *t = r_reg_get_name (reg, i);
 					if (t && !strcmp (t, r->name)) {
 						arg = r_reg_get_role (i);
@@ -2658,6 +2663,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // xxx detect which one is current usage
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // xxx detect which one is current usage
 				core->dbg->reg = orig;
+			}
+		}
+		break;
+	case '.':
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, '.', use_color);
+			if (pcbits2) {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, '.', use_color);
 			}
 		}
 		break;

@@ -1460,6 +1460,7 @@ R_API void r_core_rtr_list(RCore *core) {
 		case RTR_PROTOCOL_HTTP: proto = "http"; break;
 		case RTR_PROTOCOL_TCP: proto = "tcp"; break;
 		case RTR_PROTOCOL_UDP: proto = "udp"; break;
+		case RTR_PROTOCOL_RAP: proto = "r2p"; break;
 		}
 		r_cons_printf ("%i - %s://%s:%i/%s\n", 
 			rtr_host[i].fd->fd, proto, rtr_host[i].host,
@@ -1483,10 +1484,11 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		struct {
 			const char *name;
 			int protocol;
-		} uris[5] = {
+		} uris[6] = {
 			{"tcp", RTR_PROTOCOL_TCP},
 			{"udp", RTR_PROTOCOL_UDP},
 			{"rap", RTR_PROTOCOL_RAP},
+			{"r2p", RTR_PROTOCOL_RAP},
 			{"http", RTR_PROTOCOL_HTTP},
 			{NULL, 0}
 		};
@@ -1711,7 +1713,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	int fd, i;
 
-	if (IS_DIGIT(input[0])) {
+	if (IS_DIGIT (input[0])) {
 		fd = r_num_math (core->num, input);
 		for (i = 0; i < RTR_MAX_HOSTS; i++) {
 			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
@@ -1819,7 +1821,7 @@ static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	char bufw[1024], bufr[8], *cmd_output = NULL;
 	const char *cmd = NULL;
-	unsigned int cmd_len;
+	unsigned int cmd_len = 0;
 	int i, fd = atoi (input);
 
 	// "=:"
@@ -1869,15 +1871,34 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
+	if (rtr_host[rtr_n].proto == RTR_PROTOCOL_TCP) {
+		RSocket *fh = rtr_host[rtr_n].fd;
+		eprintf ("PRPTOTO CP\n");
+		if (cmd_len < 1 || cmd_len > 16384) {
+			eprintf ("Error: cmd_len is wrong\n");
+		}
+		return;
+		cmd_output = calloc (1, cmd_len + 1);
+		if (!cmd_output) {
+			eprintf ("Error: Allocating cmd output\n");
+			return;
+		}
+		r_socket_read_block (fh, (ut8*)cmd_output, cmd_len);
+		//ensure the termination
+		cmd_output[cmd_len] = 0;
+		r_cons_println (cmd_output);
+		free ((void *)cmd_output);
+		return;
+	}
+
+
 	if (rtr_host[rtr_n].proto != RTR_PROTOCOL_RAP) {
 		eprintf ("Error: Not a rap:// host\n");
 		return;
 	}
 
 	core->num->value = 0; // that's fine
-	while (IS_WHITESPACE (*cmd)) {
-		cmd++;
-	}
+	cmd = r_str_trim_ro (cmd);
 	RSocket *fh = rtr_host[rtr_n].fd;
 	if (!strlen (cmd)) {
 		// just check if we can connect
@@ -2169,7 +2190,6 @@ beach:
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	unsigned char buf[4097];
 	RSocket *ch = NULL;
-	RSocket *s;
 	int i, ret;
 	char *str;
 
@@ -2178,7 +2198,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		return false;
 	}
 
-	s = r_socket_new (0);
+	RSocket *s = r_socket_new (0);
 	s->local = r_config_get_i(core->config, "tcp.islocal");
 
 	if (!r_socket_listen (s, port, NULL)) {

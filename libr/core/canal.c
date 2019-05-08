@@ -5,6 +5,7 @@
 #include <r_flag.h>
 #include <r_core.h>
 #include <r_bin.h>
+#include <sdb/ht_uu.h>
 
 #include <string.h>
 
@@ -1795,22 +1796,35 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
+#define USE_ID 1
 R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	if (!fcn) {
 		return false;
 	}
+	int id = 0;
+	HtUUOptions opt = { 0 };
+	HtUU *ht = ht_uu_new_opt (&opt);
 
 	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
 		char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, bb->addr);
+#if USE_ID
+		ht_uu_insert (ht, bb->addr, id);
+		r_cons_printf ("  node [\n"
+				"    id  %d\n"
+				"    label  \"%s\"\n"
+				"  ]\n", id, msg);
+		id++;
+#else
 		r_cons_printf ("  node [\n"
 				"    id  %"PFMT64d"\n"
 				"    label  \"%s\"\n"
 				"  ]\n", bb->addr, msg);
+#endif
 		free (msg);
 	}
 
@@ -1819,6 +1833,51 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 			continue;
 		}
 
+#if USE_ID
+		if (bb->jump != UT64_MAX) {
+			bool found;
+			int i = ht_uu_find (ht, bb->addr, &found);
+			if (found) {
+				int i2 = ht_uu_find (ht, bb->jump, &found);
+				if (found) {
+					r_cons_printf ("  edge [\n"
+							"    source  %d\n"
+							"    target  %d\n"
+							"  ]\n", i, i2);
+				}
+			}
+		}
+		if (bb->fail != UT64_MAX) {
+			bool found;
+			int i = ht_uu_find (ht, bb->addr, &found);
+			if (found) {
+				int i2 = ht_uu_find (ht, bb->fail, &found);
+				if (found) {
+					r_cons_printf ("  edge [\n"
+						"    source  %d\n"
+						"    target  %d\n"
+						"  ]\n", i, i2);
+				}
+			}
+		}
+		if (bb->switch_op) {
+			RListIter *it;
+			RAnalCaseOp *cop;
+			r_list_foreach (bb->switch_op->cases, it, cop) {
+				bool found;
+				int i = ht_uu_find (ht, bb->addr, &found);
+				if (found) {
+					int i2 = ht_uu_find (ht, cop->addr, &found);
+					if (found) {
+						r_cons_printf ("  edge [\n"
+								"    source  %d\n"
+								"    target  %d\n"
+								"  ]\n", i, i2);
+					}
+				}
+			}
+		}
+#else
 		if (bb->jump != UT64_MAX) {
 			r_cons_printf ("  edge [\n"
 				"    source  %"PFMT64d"\n"
@@ -1844,8 +1903,10 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 					);
 			}
 		}
+#endif
 	}
 	r_cons_printf ("]\n");
+	ht_uu_free (ht);
 	return true;
 }
 
@@ -2477,7 +2538,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		pj_ks (pj, "name", name);
 	}
 	pj_ki (pj, "size", r_anal_fcn_size (fcn));
-	pj_ks (pj, "is-pure", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
+	pj_ks (pj, "is-pure", r_str_bool (r_anal_fcn_get_purity (core->anal, fcn)));
 	pj_ki (pj, "realsz", r_anal_fcn_realsize (fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
 	if (fcn->cc) {
@@ -2697,7 +2758,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
-	r_cons_printf ("\nis-pure: %s", r_anal_fcn_get_purity (core->anal, fcn) ? "true" : "false");
+	r_cons_printf ("\nis-pure: %s", r_str_bool (r_anal_fcn_get_purity (core->anal, fcn)));
 	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	if (fcn->cc) {
@@ -3278,7 +3339,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	r_io_use_fd (core->io, core->file->fd);
+	if (core->file) {
+		r_io_use_fd (core->io, core->file->fd);
+	}
 	if (!ref) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
@@ -3762,8 +3825,9 @@ static bool block_flags_stat(RFlagItem *fi, void *user) {
 /* stats --- colorful bar */
 R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut64 step) {
 	RAnalFunction *F;
+	RAnalBlock  *B;
 	RBinSymbol *S;
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
 	ut64 at;
@@ -3795,7 +3859,6 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	// iter all flags
 	struct block_flags_stat_t u = { .step = step, .from = from, .as = as };
 	r_flag_foreach_range (core->flags, from, to + 1, block_flags_stat, &u);
-
 	// iter all functions
 	r_list_foreach (core->anal->fcns, iter, F) {
 		if (F->addr < from || F->addr > to) {
@@ -3806,6 +3869,14 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		int last_piece = R_MIN ((F->addr + F->_size - 1) / step, blocks - 1);
 		for (; piece <= last_piece; piece++) {
 			as->block[piece].in_functions++;
+		}
+		// iter all basic blocks
+		r_list_foreach (F->bbs, iter2, B) {
+			if (B->addr < from || B->addr > to) {
+				continue;
+			}
+			piece = (B->addr - from) / step;
+			as->block[piece].blocks++;
 		}
 	}
 	// iter all symbols
@@ -4540,7 +4611,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				continue;
 			}
 			r_anal_esil_set_pc (ESIL, cur);
-			r_reg_setv(core->anal->reg, pcname, cur + op.size);
+			r_reg_setv (core->anal->reg, pcname, cur + op.size);
 			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
 			//r_anal_esil_dumpstack (ESIL);
