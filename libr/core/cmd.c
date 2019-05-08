@@ -287,6 +287,16 @@ static const char *help_msg_triple_exclamation[] = {
 	NULL
 };
 
+static const char *help_msg_vertical_bar[] = {
+	"Usage:", "[cmd] | [program|H|T|]", "",
+	"", "[cmd] |?", "show this help",
+	"", "[cmd] |", "disable scr.html and scr.color",
+	"", "[cmd] |H", "enable scr.html, respect scr.color",
+	"", "[cmd] |T", "use scr.tts to speak out the stdout",
+	"", "[cmd] | [program]", "pipe output of command to program",
+	NULL
+};
+
 R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
@@ -2411,12 +2421,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				*ptr = '\0';
 				cmd = r_str_trim_nc (cmd);
 				if (!strcmp (ptr + 1, "?")) { // "|?"
-					// TODO: should be disable scr.color in pd| ?
-					eprintf ("Usage: <r2command> | <program|H|>\n");
-					eprintf (" pd|?   - show this help\n");
-					eprintf (" pd|    - disable scr.html and scr.color\n");
-					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
-					eprintf (" pi 1|T - use scr.tts to speak out the stdout\n");
+					r_core_cmd_help (core, help_msg_vertical_bar);
 					r_list_free (tmpenvs);
 					return ret;
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
