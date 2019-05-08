@@ -6,19 +6,18 @@
 static char *hashify(char *s, ut64 vaddr) {
 	r_return_val_if_fail (s, NULL);
 
-	char *ret;
 	char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
-				ret = r_str_newf ("_%" PFMT64d, vaddr);
+				char *ret = r_str_newf ("_%" PFMT64d, vaddr);
 				if (ret) {
 					free (os);
 				}
 				return ret;
 			}
 			ut32 hash = sdb_hash (s);
-			ret = r_str_newf ("%x", hash);
+			char *ret = r_str_newf ("%x", hash);
 			if (ret) {
 				free (os);
 			}
@@ -63,10 +62,8 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 }
 
 R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) {
-	if (!db || !sym || !sym->name) {
-		return;
-	}
-	char *name = sym->name;
+	r_return_if_fail (db && sym && sym->name);
+	const char *name = sym->name;
 	// if (!strncmp (sym->name, "imp.", 4)) {
 	// demangle symbol name depending on the language specs if any
 	if (bf && bf->o && bf->o->lang) {
