@@ -1325,16 +1325,10 @@ R_IPI void r_bin_class_free(RBinClass *c) {
 
 static RBinClass *class_get(RBinFile *binfile, const char *name) {
 	r_return_val_if_fail (binfile && binfile->o && name, NULL);
-
-	RBinClass *c;
-	RListIter *iter;
-	// TODO: switch to an hashtable to easily get this in O(1)
-	r_list_foreach (binfile->o->classes, iter, c) {
-		if (!strcmp (c->name, name)) {
-			return c;
-		}
+	if (!binfile->o->classes_ht) {
+		return NULL;
 	}
-	return NULL;
+	return ht_pp_find (binfile->o->classes_ht, name, NULL);
 }
 
 R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view) {
@@ -1360,6 +1354,7 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char
 	}
 	if (!list) {
 		list = o->classes = r_list_new ();
+		o->classes_ht = ht_pp_new0 ();
 	}
 	c->name = strdup (name);
 	c->super = super? strdup (super): NULL;
@@ -1368,6 +1363,7 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char
 	c->fields = r_list_new ();
 	c->visibility = view;
 	r_list_append (list, c);
+	ht_pp_insert (o->classes_ht, name, c);
 	return c;
 }
 

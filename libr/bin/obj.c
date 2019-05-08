@@ -48,6 +48,7 @@ static void object_delete_items(RBinObject *o) {
 	ht_up_free (o->strings_db);
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
+	ht_pp_free (o->classes_ht);
 	r_list_free (o->lines);
 	sdb_free (o->kv);
 	if (o->mem) {
