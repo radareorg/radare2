@@ -243,6 +243,7 @@ typedef struct r_bin_object_t {
 	RBNode/*<RBinReloc>*/ *relocs;
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
+	HtPP *classes_ht;
 	RList/*<RBinDwarfRow>*/ *lines;
 	HtUP *strings_db;
 	RList/*<??>*/ *mem;	//RBinMem maybe?

@@ -714,9 +714,7 @@ R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 			bin->cur = bf;
 		}
 	}
-	if (bf->xtr_data) {
-		r_list_free (bf->xtr_data);
-	}
+	r_list_free (bf->xtr_data);
 	bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
 	if (bf->xtr_data) {
 		RListIter *iter;
