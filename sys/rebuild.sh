@@ -43,6 +43,7 @@ RebuildIOSDebug() {
 RebuildJava() {
 	Rebuild shlr/java
 	Rebuild libr/asm
+	Rebuild libr/anal
 	Rebuild libr/bin
 	Rebuild libr/core
 }

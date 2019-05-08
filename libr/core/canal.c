@@ -1610,10 +1610,13 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (from == UT64_MAX && r_anal_get_fcn_in (core->anal, at, 0)) {
+		if (core->anal->verbose) {
+			eprintf ("Message: Invalid address for function 0x%08"PFMT64x"\n", at);
+		}
 		return 0;
 	}
 
-	bool use_esil = r_config_get_i (core->config, "anal.esil");
+	const bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
 
@@ -1636,7 +1639,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	/* if there is an anal plugin and it wants to analyze the function itself,
 	 * run it instead of the normal analysis */
-	if (core->anal->cur && core->anal->cur->analyze_fns) {
+	if (core->anal->use_ex && core->anal->cur && core->anal->cur->analyze_fns) {
 		int result = R_ANAL_RET_ERROR;
 		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
 		/* update the flags after running the analysis function of the plugin */
@@ -1648,9 +1651,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return result;
 	}
 	if (from != UT64_MAX && !at) {
+		eprintf ("invalid address\n");
 		return false;
 	}
 	if (at == UT64_MAX || depth < 0) {
+		eprintf ("err dp\n");
 		return false;
 	}
 	if (r_cons_is_breaked ()) {
