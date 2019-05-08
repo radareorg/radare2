@@ -1354,6 +1354,8 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char
 	}
 	if (!list) {
 		list = o->classes = r_list_new ();
+	}
+	if (!o->classes_ht) {
 		o->classes_ht = ht_pp_new0 ();
 	}
 	c->name = strdup (name);
