@@ -139,8 +139,8 @@ static void set_name(RFlagItem *item, char *name) {
 	item->realname = item->name;
 }
 
-static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool is_new) {
-	if (item->offset != newoff || is_new) {
+static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool is_new, bool force) {
+	if (item->offset != newoff || force) {
 		if (!is_new) {
 			remove_offsetmap (f, item);
 		}
@@ -158,13 +158,13 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 	return false;
 }
 
-static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool is_new) {
+static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
 	bool res = false;
 	if (!newname) {
 		return false;
 	}
 
-	if (!is_new && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
+	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
 
@@ -718,6 +718,7 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	r_return_val_if_fail (f && name && *name, NULL);
 
+	bool is_new = false;
 	char *itemname = filter_item_name (name);
 	if (!itemname) {
 		return NULL;
@@ -735,12 +736,13 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		if (!item) {
 			goto err;
 		}
+		is_new = true;
 	}
 
 	item->space = r_flag_space_cur (f);
 	item->size = size;
 
-	update_flag_item_offset (f, item, off + f->base, true);
+	update_flag_item_offset (f, item, off + f->base, is_new, true);
 	update_flag_item_name (f, item, name, true);
 	return item;
 err:
@@ -858,7 +860,7 @@ static bool flag_relocate_foreach(RFlagItem *fi, void *user) {
 	if (fn == on) {
 		ut64 fm = fi->offset & u->off_mask;
 		ut64 om = u->to & u->off_mask;
-		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om, false);
+		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om, false, false);
 		u->n++;
 	}
 	return true;
