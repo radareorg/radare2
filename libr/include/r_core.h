@@ -442,7 +442,8 @@ R_API void r_core_visual_list(RCore *core, RList* list, ut64 seek, ut64 len, int
 R_API void r_core_visual_mark_seek(RCore *core, ut8 ch);
 R_API void r_core_visual_mark(RCore *core, ut8 ch);
 R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr);
-R_API void r_core_visual_mark_dump(RCore *core);
+R_API void r_core_visual_mark_del(RCore *core, ut8 ch);
+R_API bool r_core_visual_mark_dump(RCore *core);
 R_API void r_core_visual_mark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
