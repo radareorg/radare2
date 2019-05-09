@@ -111,17 +111,17 @@ static void cmd_flag_init(RCore *core) {
 
 static void cmd_fz(RCore *core, const char *input) {
 	switch (*input) {
-	case '?':
+	case '?': // "fz?"
 		r_core_cmd_help (core, help_msg_fz);
 		break;
-	case '.':
+	case '.': // "fz."
 		{
 			const char *a = NULL, *b = NULL;
 			r_flag_zone_around (core->flags, core->offset, &a, &b);
 			r_cons_printf ("%s %s\n", a?a:"~", b?b:"~");
 		}
 		break;
-	case ':':
+	case ':': // "fz:"
 		{
 			const char *a, *b;
 			int a_len = 0;
@@ -1085,21 +1085,41 @@ rep:
 					addr = r_num_math (core->num, arg + 1);
 				}
 				break;
-			case '.': // list all flags at given offset
+			case '.': // "fd." list all flags at given offset
 				{
 				RFlagItem *flag;
 				RListIter *iter;
+				bool isJson = false;
 				const RList *flaglist;
 				arg = strchr (input, ' ');
 				if (arg) {
 					addr = r_num_math (core->num, arg + 1);
 				}
 				flaglist = r_flag_get_list (core->flags, addr);
+				isJson = strchr (input, 'j');
+				PJ *pj = pj_new (); 
+				if (isJson) {
+					pj_a (pj);
+				}
 				r_list_foreach (flaglist, iter, flag) {
 					if (flag) {
-						r_cons_println (flag->name);
+						if (isJson) {
+							pj_s (pj, flag->name);
+						} else {
+							r_cons_println (flag->name);
+						}
 					}
 				}
+
+				if (isJson) {
+					pj_end (pj);
+					r_cons_println (pj_string (pj));
+				}
+
+				if (pj) {
+					pj_free (pj);
+				}
+
 				return 0;
 				}
 			case 'w': {
@@ -1162,8 +1182,15 @@ rep:
 					}
 				} else {
 					if (strchr (input, 'j')) {
-						r_cons_printf ("{\"name\":\"%s\"}\n",
-									   f->name);
+						if (strchr (input, '.')) {
+
+
+									
+
+						} else {
+							r_cons_printf ("{\"name\":\"%s\"}\n",
+										f->name);
+						}
 					} else {
 						r_cons_println (f->name);
 					}
