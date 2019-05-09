@@ -1182,7 +1182,7 @@ rep:
 					}
 				} else {
 					if (strchr (input, 'j')) {
-							r_cons_printf ("{\"name\":\"%s\"}\n",
+						r_cons_printf ("{\"name\":\"%s\"}\n",
 										f->name);
 					} else {
 						r_cons_println (f->name);
