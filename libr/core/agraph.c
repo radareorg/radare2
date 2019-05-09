@@ -2715,6 +2715,9 @@ static void agraph_print_nodes(const RAGraph *g) {
 
 	graph_foreach_anode (nodes, it, gn, n) {
 		if (gn != g->curnode) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			agraph_print_node (g, n);
 		}
 	}
@@ -2823,10 +2826,10 @@ static void agraph_print_edges(RAGraph *g) {
 		RList *neighbours = (RList *)r_graph_get_neighbours (g->graph, ga);
 		int ax, ay, bx, by, a_x_inc, b_x_inc;
 		tl = tm = NULL;
+
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-
 		r_list_foreach (lyr, ito, tl) {
 			if (tl->layer == a->layer) {
 				tm = tl;
@@ -2876,6 +2879,9 @@ static void agraph_print_edges(RAGraph *g) {
 		graph_foreach_anode (neighbours, itn, gb, b) {
 			out_nth = get_edge_number (g, a, b, true);
 			in_nth = get_edge_number (g, a, b, false);
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 
 			bool parent_many = false;
 			if (a->is_dummy) {
@@ -3083,6 +3089,7 @@ static void agraph_print_edges(RAGraph *g) {
 		}
 	}
 
+	// XXX why not use r_list_free ??
 	r_list_foreach (lyr, ito, tl) {
 		free (tl);
 	}

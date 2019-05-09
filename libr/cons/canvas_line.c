@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_cons.h>
 #define W(y) r_cons_canvas_write(c,y)
@@ -432,6 +432,9 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert) {
 	if (!c->linemode) {
 		r_cons_canvas_line (c, x, y, x2, y2, style);
+		return;
+	}
+	if (r_cons_is_breaked ()) {
 		return;
 	}
 	int min_x1 = R_MIN (x, xbendpoint);

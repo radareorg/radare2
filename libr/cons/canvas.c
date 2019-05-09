@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_cons.h>
 
@@ -342,6 +342,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	** using the ANSI chars to set the attr of the canvas */
 	r_cons_break_push (NULL, NULL);
 	do {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		const char *s_part = set_attr (c, s);
 		ch = 0;
 		piece_len = _get_piece (s_part, &ch);
@@ -390,7 +393,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 			attr_x += utf8_len;
 		}
 		s += piece_len;
-	} while (*s && !r_cons_is_breaked ());
+	} while (*s);
 	r_cons_break_pop ();
 	c->x = orig_x;
 }
