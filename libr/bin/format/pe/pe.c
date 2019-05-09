@@ -2566,7 +2566,6 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_addr_t* entry = NULL;
 	static bool debug = false;
-	PE_DWord pe_entry;
 	int i;
 	ut64 base_addr = PE_(r_bin_pe_get_image_base) (bin);
 	if (!bin || !bin->optional_header) {
@@ -2576,7 +2575,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		r_sys_perror ("malloc (entrypoint)");
 		return NULL;
 	}
-	pe_entry = bin->optional_header->AddressOfEntryPoint;
+	PE_DWord pe_entry = bin->optional_header->AddressOfEntryPoint;
 	entry->vaddr = bin_pe_rva_to_va (bin, pe_entry);
 	entry->paddr = bin_pe_rva_to_paddr (bin, pe_entry);
 	// haddr is the address of AddressOfEntryPoint in header.

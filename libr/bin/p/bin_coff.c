@@ -38,7 +38,6 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 
 static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
-	char *coffname = NULL;
 	struct coff_symbol *s = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
 		return false;
@@ -47,7 +46,7 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 		return false;
 	}
 	s = &bin->symbols[idx];
-	coffname = r_coff_symbol_name (bin, s);
+	char *coffname = r_coff_symbol_name (bin, s);
 	if (!coffname) {
 		return false;
 	}
@@ -65,7 +64,7 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 	case COFF_SYM_CLASS_SECTION:
 		ptr->type = r_str_const (R_BIN_TYPE_SECTION_STR);
 		break;
-	case COFF_SYM_CLASS_EXTERNAL:
+	case COFF_SYM_CLASS_EXTERNAL: // should be prefixed with sym.imp
 		ptr->type = r_str_const ("EXTERNAL");
 		break;
 	case COFF_SYM_CLASS_STATIC:
@@ -85,26 +84,45 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 	return true;
 }
 
+static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
+	RBinImport *ptr = R_NEW0 (RBinImport);
+	if (idx < 0 || idx > bin->hdr.f_nsyms) {
+		return NULL;
+	}
+	struct coff_symbol *s = &bin->symbols[idx];
+	if (s->n_sclass != COFF_SYM_CLASS_EXTERNAL) {
+		return NULL;
+	}
+	char *coffname = r_coff_symbol_name (bin, s);
+	if (!coffname) {
+		return false;
+	}
+	ptr->name = strdup (coffname);
+	ptr->bind = r_str_const ("NONE");
+	ptr->type = r_str_const ("FUNC");
+	return ptr;
+}
+
 static RList *entries(RBinFile *bf) {
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	RList *ret;
-	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ptr = r_coff_get_entry (obj);
-	r_list_append (ret, ptr);
+	RBinAddr *ptr = r_coff_get_entry (obj);
+	if (ptr) {
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
 static RList *sections(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
-	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 
-	ret = r_list_newf (free);
+	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
@@ -151,6 +169,7 @@ static RList *symbols(RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
+	struct coff_symbol *s;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
@@ -158,6 +177,10 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
+			s = &obj->symbols[i];
+			if (s->n_sclass == COFF_SYM_CLASS_EXTERNAL) {
+				continue;
+			}
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
@@ -173,7 +196,26 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static RList *imports(RBinFile *bf) {
-	return NULL;
+	int i;
+	RList *ret = NULL;
+	RBinImport *ptr = NULL;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
+	if (!(ret = r_list_new ())) {
+		return ret;
+	}
+	ret->free = free;
+	if (obj->symbols) {
+		int ord = 0;
+		for (i = 0; i < obj->hdr.f_nsyms; i++) {
+			RBinImport *ptr = _fill_bin_import (obj, i);
+			if (ptr) {
+				ptr->ordinal = ord++;
+				r_list_append (ret, ptr);
+			}
+			i += obj->symbols[i].n_numaux;
+		}
+	}
+	return ret;
 }
 
 static RList *libs(RBinFile *bf) {
