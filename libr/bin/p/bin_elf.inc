@@ -385,42 +385,45 @@ static RList* entries(RBinFile *bf) {
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
-	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-	ptr->hpaddr = 0x18;  // e_entry offset in ELF header
-	ptr->hvaddr = UT64_MAX;
-	if (bf->o->sections) {
-		RListIter *iter;
-		RBinSection *section;
-		r_list_foreach_prev (bf->o->sections, iter, section) {
-			if (!strcmp (section->name, "ehdr")) {
-				ptr->hvaddr = section->vaddr + ptr->hpaddr;
-				break;
+	ut64 pa = Elf_(r_bin_elf_get_entry_offset) (obj);
+	if (pa != UT64_MAX) {
+		if (!(ptr = R_NEW0 (RBinAddr))) {
+			return ret;
+		}
+		ptr->paddr = pa;
+		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
+		ptr->hvaddr = UT64_MAX;
+		if (bf->o->sections) {
+			RListIter *iter;
+			RBinSection *section;
+			r_list_foreach_prev (bf->o->sections, iter, section) {
+				if (!strcmp (section->name, "ehdr")) {
+					ptr->hvaddr = section->vaddr + ptr->hpaddr;
+					break;
+				}
 			}
 		}
-	}
-	if (ptr->hvaddr == UT64_MAX) {
-		Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
-	}
+		if (ptr->hvaddr == UT64_MAX) {
+			Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
+		}
 
-	if (obj->ehdr.e_machine == EM_ARM) {
-		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
-		if (bin_bits != 64) {
-			ptr->bits = 32;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
+		if (obj->ehdr.e_machine == EM_ARM) {
+			int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
+			if (bin_bits != 64) {
+				ptr->bits = 32;
+				if (ptr->vaddr & 1) {
+					ptr->vaddr--;
+					ptr->bits = 16;
+				}
+				if (ptr->paddr & 1) {
+					ptr->paddr--;
+					ptr->bits = 16;
+				}
 			}
 		}
+		r_list_append (ret, ptr);
 	}
-	r_list_append (ret, ptr);
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
