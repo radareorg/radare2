@@ -804,7 +804,9 @@ R_API void r_sys_perror_str(const char *fun) {
 			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPTSTR)&lpMsgBuf,
 			0, NULL )) {
-		eprintf ("%s: " W32_TCHAR_FSTR "\n", fun, lpMsgBuf);
+		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
+		eprintf ("%s: %s\n", fun, err);
+		free (err);
 		LocalFree (lpMsgBuf);
 	} else {
 		eprintf ("%s\n", fun);
