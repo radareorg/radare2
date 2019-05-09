@@ -3,6 +3,7 @@ CS_URL="$1" # url
 CS_BRA="$2" # branch name
 CS_TIP="$3" # tip commit
 CS_REV="$4" # revert
+CS_ARCHIVE="$5" # download archived tip
 CS_DEPTH_CLONE=512
 
 git --help > /dev/null 2>&1
@@ -32,11 +33,27 @@ parse_capstone_tip() {
 	BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 }
 
-clone_capstone() {
+download_archive() {
+	echo '[capstone] Downloading capstone snapshot...' >&2
+	wget -O .cs_tmp.zip "$CS_ARCHIVE" || fatal_msg 'Cannot download archived capstone'
+	unzip .cs_tmp.zip
+	mv "capstone-$CS_TIP" capstone
+}
+
+git_clone() {
+	echo '[capstone] Cloning capstone from git...' >&2
+	git clone --quiet --single-branch --branch "${CS_BRA}" \
+	    --depth "$CS_DEPTH_CLONE" "${CS_URL}" capstone \
+	|| fatal_msg 'Cannot clone capstone from git'
+}
+
+get_capstone() {
 	if [ ! -d capstone ]; then
-		git clone --quiet --single-branch --branch "${CS_BRA}" \
-		    --depth "$CS_DEPTH_CLONE" "${CS_URL}" capstone \
-		  || fatal_msg 'Cannot clone capstone from git'
+		if [ -n "${CS_ARCHIVE}" ]; then
+			download_archive
+		else
+			git_clone
+		fi
 	fi
 	cd capstone && parse_capstone_tip
 	cd - || fatal_msg 'Cannot change working directory'
@@ -71,12 +88,12 @@ if [ -d capstone ] && [ ! -d capstone/.git ]; then
 	#patch_capstone
 	cd -
 else
-	clone_capstone
+	get_capstone
 
 	if [ "${BRANCH}" != "${CS_BRA}" ]; then
 		echo '[capstone] Reset capstone' >&2
 		rm -rf capstone
-		clone_capstone
+		get_capstone
 	fi
 
 #	if [ "${HEAD}" = "${CS_TIP}" ]; then
