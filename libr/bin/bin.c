@@ -177,17 +177,11 @@ R_API void r_bin_import_free(void *_imp) {
 	}
 }
 
-R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o) {
-	r_return_val_if_fail (o, NULL);
-
-	RBinSymbol *res = r_mem_dup (o, sizeof (*o));
-	if (!res) {
-		return NULL;
+R_API const char *r_bin_symbol_name(RBinSymbol *s) {
+	if (s->dup_count) {
+		return sdb_fmt ("%s_%d", s->name, s->dup_count);
 	}
-	res->name = R_STR_DUP (o->name);
-	res->dname = R_STR_DUP (o->dname);
-	res->classname = R_STR_DUP (o->classname);
-	return res;
+	return s->name;
 }
 
 R_API void r_bin_symbol_free(void *_sym) {
