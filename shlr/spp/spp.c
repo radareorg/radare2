@@ -56,7 +56,7 @@ static char *spp_run_str(char *buf, int *rv) {
 	char *b;
 	Output tmp;
 	tmp.fout = NULL;
-	tmp.cout = (SStrBuf *)r_strbuf_new ("");
+	tmp.cout = r_strbuf_new ("");
 	int rc = spp_run (buf, &tmp);
 	b = strdup (r_strbuf_get (tmp.cout));
 	r_strbuf_free (tmp.cout);
