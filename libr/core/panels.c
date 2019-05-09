@@ -230,6 +230,9 @@ static const char *help_msg_panels_zoom[] = {
 	NULL
 };
 
+static int show_status(RCore *core, const char *msg);
+static bool show_status_yesno(RCore *core, int def, const char *msg);
+static char *show_status_input(RCore *core, const char *msg);
 static bool check_panel_type(RPanel *panel, const char *type, int len);
 static RPanels *panels_new(RCore *core);
 static void renew_filter(RPanel *panel, int n);
@@ -248,7 +251,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
 static void panelAllClear(RPanels *panels);
-static bool checkPanelNum(RPanels *panels);
+static bool checkPanelNum(RCore *core);
 static bool checkFunc(RCore *core);
 static bool checkFuncDiff(RCore *core, RPanel *p);
 static bool findCmdStrCache(RCore *core, RPanel *panel, char **str);
@@ -281,9 +284,9 @@ static void fitToCanvas(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static void undoSeek(RCore *core);
 static void redoSeek(RCore *core);
-static void set_filter(RPanel *panel);
+static void set_filter(RCore *core, RPanel *panel);
 static void reset_filter(RPanel *panel);
-static char *apply_filter_cmd(RPanel *panel);
+static char *apply_filter_cmd(RCore *core, RPanel *panel);
 static int openMenuCb(void *user);
 static int openFileCb(void *user);
 static int rwCb(void *user);
@@ -415,6 +418,28 @@ static bool handle_tab_new(RCore *core);
 static bool handle_tab_del(RCore *core);
 static void remove_panels(RCore *core);
 
+static int show_status(RCore *core, const char *msg) {
+	r_cons_gotoxy (0, 0);
+	r_cons_printf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
+	r_cons_flush ();
+	return r_cons_readchar ();
+}
+
+static bool show_status_yesno(RCore *core, int def, const char *msg) {
+	r_cons_gotoxy (0, 0);
+	r_cons_flush ();
+	return r_cons_yesno (def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
+}
+
+static char *show_status_input(RCore *core, const char *msg) {
+	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, core->cons->context->pal.graph_box2, msg);
+	r_cons_gotoxy (0, 0);
+	r_cons_flush ();
+	char *out = r_cons_input (n_msg);
+	free (n_msg);
+	return out;
+}
+
 static bool check_panel_type(RPanel *panel, const char *type, int len) {
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
 		if (!strncmp (panel->model->cmd, type, len) &&
@@ -497,7 +522,7 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
 	char title[128], cache_title[128], *text, *cmdStr = NULL;
 	char *readOnly = panel->model->readOnly;
-	char *cmd_title  = apply_filter_cmd (panel);
+	char *cmd_title  = apply_filter_cmd (core, panel);
 	int graph_pad = 0;
 	if (color) {
 		if (!strcmp (panel->model->title, cmd_title)) {
@@ -620,7 +645,7 @@ bool findCmdStrCache(RCore *core, RPanel* panel, char **str) {
 	return false;
 }
 
-char *apply_filter_cmd(RPanel *panel) {
+char *apply_filter_cmd(RCore *core, RPanel *panel) {
 	char *out = r_str_ndup (panel->model->cmd, strlen (panel->model->cmd) + 1024);
 	if (!panel->model->filter) {
 		return out;
@@ -629,7 +654,7 @@ char *apply_filter_cmd(RPanel *panel) {
 	for (i = 0; i < panel->model->n_filter; i++) {
 		char *filter = panel->model->filter[i];
 		if (strlen (filter) > 1024) {
-			r_cons_any_key ("filter is too big.");
+			(void)show_status (core, "filter is too big.");
 			return out;
 		}
 		strcat (out, "~");
@@ -640,7 +665,7 @@ char *apply_filter_cmd(RPanel *panel) {
 
 char *handleCmdStrCache(RCore *core, RPanel *panel) {
 	char *out;
-	char *cmd = apply_filter_cmd (panel);
+	char *cmd = apply_filter_cmd (core, panel);
 	out = r_core_cmd_str (core, cmd);
 	if (panel->model->cache && R_STR_ISNOTEMPTY (out)) {
 		setCmdStrCache (panel, out);
@@ -728,7 +753,7 @@ static void adjustSidePanels(RCore *core) {
 static int addCmdPanel(void *user) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
-	if (!checkPanelNum (panels)) {
+	if (!checkPanelNum (core)) {
 		return 0;
 	}
 	RPanelsMenu *menu = core->panels->panelsMenu;
@@ -740,7 +765,7 @@ static int addCmdPanel(void *user) {
 	}
 	int h;
 	(void)r_cons_get_size (&h);
-	bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
+	bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
 	adjustSidePanels (core);
 	insertPanel (core, 0, child->name, cmd, cache);
 	RPanel *p0 = getPanel (panels, 0);
@@ -773,7 +798,7 @@ static void addHelpPanel(RCore *core) {
 
 static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str) {
 	char *ret = NULL;
-	char *res = r_cons_input (input);
+	char *res = show_status_input (core, input);
 	if (res) {
 		p->model->cmd = r_str_newf (str, res);
 		ret = r_core_cmd_str (core, p->model->cmd);
@@ -784,7 +809,7 @@ static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str) {
 
 static int addCmdfPanel(RCore *core, char *input, char *str) {
 	RPanels *panels = core->panels;
-	if (!checkPanelNum (panels)) {
+	if (!checkPanelNum (core)) {
 		return 0;
 	}
 	int h;
@@ -808,7 +833,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 
 static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache) {
 	RPanels *panels = core->panels;
-	if (!checkPanelNum (panels)) {
+	if (!checkPanelNum (core)) {
 		return;
 	}
 	insertPanel (core, panels->curnode + 1, name, cmd, cache);
@@ -824,7 +849,7 @@ static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const c
 
 static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache) {
 	RPanels *panels = core->panels;
-	if (!checkPanelNum (panels)) {
+	if (!checkPanelNum (core)) {
 		return;
 	}
 	insertPanel (core, panels->curnode + 1, name, cmd, cache);
@@ -882,23 +907,23 @@ static void activateCursor(RCore *core) {
 			|| check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
 			|| check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		if (cur->model->cache) {
-			if (r_cons_yesno ('y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
+			if (show_status_yesno (core, 'y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
 				setCmdStrCache (cur, NULL);
 				cur->view->refresh = true;
-				(void)r_cons_any_key ("Cache is off and cursor is on");
+				(void)show_status (core, "Cache is off and cursor is on");
 				setCursor (core, !core->print->cur_enabled);
 				cur->view->refresh = true;
 				resetScrollPos (cur);
 			} else {
-				(void)r_cons_any_key ("You can always toggle cache by \'&\' key");
+				(void)show_status (core, "You can always toggle cache by \'&\' key");
 			}
 			return;
 		}
 		setCursor (core, !core->print->cur_enabled);
 		cur->view->refresh = true;
 	} else {
-		(void)r_cons_any_key ("Cursor is not available for the current panel.");
+		(void)show_status (core, "Cursor is not available for the current panel.");
 	}
 }
 
@@ -1921,10 +1946,11 @@ static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
 	return can;
 }
 
-static bool checkPanelNum(RPanels *panels) {
+static bool checkPanelNum(RCore *core) {
+	RPanels *panels = core->panels;
 	if (panels->n_panels + 1 > PANEL_NUM_LIMIT) {
 		const char *msg = "panel limit exceeded.";
-		(void)r_cons_any_key (msg);
+		(void)show_status (core, msg);
 		return false;
 	}
 	return true;
@@ -2064,8 +2090,7 @@ static int closeFileCb(void *user) {
 static int saveLayoutCb(void *user) {
 	RCore *core = (RCore *)user;
 	savePanelsLayout (core->panels);
-	const char *msg = "Panels layout saved!";
-	(void)r_cons_any_key (msg);
+	(void)show_status (core, "Panels layout saved!");
 	return 0;
 }
 
@@ -2124,7 +2149,7 @@ static int colorsCb(void *user) {
 static int calculatorCb(void *user) {
 	RCore *core = (RCore *)user;
 	for (;;) {
-		char *s = r_cons_input ("> ");
+		char *s = show_status_input (core, "> ");
 		if (!s || !*s) {
 			free (s);
 			break;
@@ -2199,7 +2224,7 @@ static int stepoverCb(void *user) {
 static int ioCacheOnCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_i (core->config, "io.cache", 1);
-	(void)r_cons_any_key ("io.cache is on");
+	(void)show_status (core, "io.cache is on");
 	setMode (core->panels, PANEL_MODE_DEFAULT);
 	return 0;
 }
@@ -2207,7 +2232,7 @@ static int ioCacheOnCb(void *user) {
 static int ioCacheOffCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_config_set_i (core->config, "io.cache", 0);
-	(void)r_cons_any_key ("io.cache is off");
+	(void)show_status (core, "io.cache is off");
 	setMode (core->panels, PANEL_MODE_DEFAULT);
 	return 0;
 }
@@ -2376,7 +2401,7 @@ static int versionCb(void *user) {
 
 static int writeValueCb(void *user) {
 	RCore *core = (RCore *)user;
-	char *res = r_cons_input ("insert number: ");
+	char *res = show_status_input (core, "insert number: ");
 	if (res) {
 		r_core_cmdf (core, "\"wv %s\"", res);
 		free (res);
@@ -3777,11 +3802,11 @@ static void toggleHelp(RCore *core) {
 
 static void insertValue(RCore *core) {
 	if (!r_config_get_i (core->config, "io.cache")) {
-		if (r_cons_yesno ('y', "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
+		if (show_status_yesno (core, 'y', "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
 			r_config_set_i (core->config, "io.cache", 1);
-			(void)r_cons_any_key ("io.cache is on and insert is available now.");
+			(void)show_status (core, "io.cache is on and insert is available now.");
 		} else {
-			(void)r_cons_any_key ("You can always turn on io.cache in Menu->Edit->io.cache");
+			(void)show_status (core, "You can always turn on io.cache in Menu->Edit->io.cache");
 			return;
 		}
 	}
@@ -3908,12 +3933,12 @@ static bool moveToDirection(RPanels *panels, Direction direction) {
 
 static void createNewPanel(RCore *core, bool vertical) {
 	RPanels *panels = core->panels;
-	if (!checkPanelNum (panels)) {
+	if (!checkPanelNum (core)) {
 		return;
 	}
-	char *res = r_cons_input ("New panel with command: ");
+	char *res = show_status_input (core, "New panel with command: ");
 	if (res && *res) {
-		bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
 		if (res && *res) {
 			if (vertical) {
 				splitPanelVertical (core, getCurPanel (panels), res, res, cache);
@@ -4060,11 +4085,11 @@ static void undoSeek(RCore *core) {
 	}
 }
 
-static void set_filter(RPanel *panel) {
+static void set_filter(RCore *core, RPanel *panel) {
 	if (!panel->model->filter) {
 		return;
 	}
-	char *input = r_cons_input ("filter word: ");
+	char *input = show_status_input (core, "filter word: ");
 	if (input) {
 		panel->model->filter[panel->model->n_filter++] = input;
 		setCmdStrCache (panel, NULL);
@@ -4168,17 +4193,14 @@ static RPanels *get_cur_panels(RPanelsRoot *panels_root) {
 }
 
 static bool handle_tab(RCore *core) {
-	char *msg;
+	r_cons_gotoxy (0, 0);
 	if (core->panels_root->n_panels <= 1) {
-		msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Tab] t:new -:del"Color_RESET, core->cons->context->pal.graph_box2);
+		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] t:new -:del"Color_RESET, core->cons->context->pal.graph_box2);
 	} else {
 		int min = 1;
 		int max = core->panels_root->n_panels;
-		msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del"Color_RESET, core->cons->context->pal.graph_box2, min, max);
+		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del"Color_RESET, core->cons->context->pal.graph_box2, min, max);
 	}
-	r_cons_gotoxy (0, 0);
-	r_cons_printf (msg);
-	free (msg);
 	r_cons_flush ();
 	int ch = r_cons_readchar ();
 	if (handle_tab_nth (core, ch)) {
@@ -4454,7 +4476,7 @@ repeat:
 		doPanelsRefresh (core);
 		break;
 	case 'a':
-		panels->autoUpdate = r_cons_yesno ('y', "Auto update On? (Y/n)");
+		panels->autoUpdate = show_status_yesno (core, 'y', "Auto update On? (Y/n)");
 		break;
 	case 'A':
 		r_core_visual_asm (core, core->offset);
@@ -4511,7 +4533,7 @@ repeat:
 		}
 		break;
 	case 'f':
-		set_filter (cur);
+		set_filter (core, cur);
 		break;
 	case 'F':
 		reset_filter (cur);
@@ -4563,12 +4585,12 @@ repeat:
 		break;
 	case 'M':
 	{
-		if (!checkPanelNum (panels)) {
+		if (!checkPanelNum (core)) {
 			break;
 		}
-		char *name = r_cons_input ("Name: ");
-		char *cmd = r_cons_input ("Command: ");
-		bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		char *name = show_status_input (core, "Name: ");
+		char *cmd = show_status_input (core, "Command: ");
+		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
 		if (name && *name && cmd && *cmd) {
 			addNewPanel (core, name, cmd, cache);
 		}
@@ -4578,9 +4600,9 @@ repeat:
 	break;
 	case 'e':
 	{
-		char *new_name = r_cons_input ("New name: ");
-		char *new_cmd = r_cons_input ("New command: ");
-		bool cache = r_cons_yesno ('y', "Cache the result? (Y/n)");
+		char *new_name = show_status_input (core, "New name: ");
+		char *new_cmd = show_status_input (core, "New command: ");
+		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
 		if (new_name && *new_name && new_cmd && *new_cmd) {
 			replaceCmd (core, new_name, new_cmd, cache);
 		}
