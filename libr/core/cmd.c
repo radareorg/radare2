@@ -1275,9 +1275,8 @@ static int cmd_kuery(void *data, const char *input) {
 			eprintf ("Usage: kd [file] [namespace]\n");
 		}
 		break;
-	case '?': {
-			r_core_cmd_help (core, help_msg_k);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg_k);
 		break;
 	}
 
