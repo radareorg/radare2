@@ -1845,11 +1845,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	}
 	pfx = getPrefixFor (sym->type);
 	sn->name = strdup (sym->name);
-	if (sym->dup_count) {
-		sn->nameflag = r_str_newf ("%s.%s_%d", pfx, sym->name, sym->dup_count);
-	} else {
-		sn->nameflag = r_str_newf ("%s.%s", pfx, sym->name);
-	}
+	sn->nameflag = r_str_newf ("%s.%s", pfx, r_bin_symbol_name (sym));
 	r_name_filter (sn->nameflag, MAXFLAG_LEN);
 	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup (sym->classname);
@@ -2133,22 +2129,12 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 					lastfs = 's';
 				}
 				if (r->bin->prefix) {
-					if (symbol->dup_count) {
-						r_cons_printf ("f %s.sym.%s_%d %u 0x%08" PFMT64x "\n",
-							r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
-					} else {
-						r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
-							r->bin->prefix, name, symbol->size, addr);
-					}
+					r_cons_printf ("f %s.sym.%s %u 0x%08" PFMT64x "\n",
+						r->bin->prefix, r_bin_symbol_name (symbol), symbol->size, addr);
 				} else {
 					if (*name) {
-						if (symbol->dup_count) {
-							r_cons_printf ("f sym.%s_%d %u 0x%08" PFMT64x "\n",
-								name, symbol->dup_count, symbol->size, addr);
-						} else {
-							r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
-								name, symbol->size, addr);
-						}
+						r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
+							r_bin_symbol_name (symbol), symbol->size, addr);
 					} else {
 						// we dont want unnamed symbol flags
 					}
