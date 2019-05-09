@@ -65,7 +65,7 @@ test_script:
   - cd radare2-regressions/new
   - npm install
   - set NOOK=1
-  - node bin/r2r.js
+  - node_modules/.bin/r2r
   - cd ../..
 
 after_test:

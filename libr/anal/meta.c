@@ -40,7 +40,6 @@ static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	// return string array of all the offsets where there are stuff
 	for (; base <= base2; base++) {
 		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
-		// char *r = sdb_array_get (DB, key, 0, 0);
 		char *r = sdb_get (DB, key, 0);
 		if (r) {
 			if (res) {
@@ -214,6 +213,19 @@ R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
 	return (char *)sdb_decode (p2+1, NULL);
 }
 
+static bool mustDeleteMetaEntry(RAnal *a, ut64 addr) {
+	const char *tt = sdb_const_get (DB, sdb_fmt ("meta.t.0x%"PFMT64x, addr), NULL);
+	const char *ss = sdb_const_get (DB, sdb_fmt ("meta.s.0x%"PFMT64x, addr), NULL);
+	const char *dd = sdb_const_get (DB, sdb_fmt ("meta.d.0x%"PFMT64x, addr), NULL);
+	const char *cc = sdb_const_get (DB, sdb_fmt ("meta.C.0x%"PFMT64x, addr), NULL);
+	int count = 0;
+	if (tt) count++;
+	if (ss) count++;
+	if (dd) count++;
+	if (cc) count++;
+	return (count == 0);
+}
+
 R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	char key[100], *dtr, *s, *p, *next;
 	const char *val;
@@ -261,7 +273,6 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	} else {
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, addr);
 	}
-	meta_inrange_del (a, addr, size);
 	val = sdb_const_get (DB, key, 0);
 	if (val) {
 		if (type == R_META_TYPE_ANY) {
@@ -295,8 +306,12 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		sdb_unset (DB, key, 0);
 	}
 	sdb_unset (DB, key, 0);
+	if (mustDeleteMetaEntry (a, addr)) {
+		meta_inrange_del (a, addr, size);
+	}
 	return false;
 }
+
 
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
 	char *key = r_str_newf ("meta.%c.0x%"PFMT64x"0x%"PFMT64x, type, addr, idx);
@@ -496,6 +511,48 @@ R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {
 	r_list_free (list);
 	free (res);
 	return NULL;
+}
+
+R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where) {
+	char *res = meta_inrange_get (a, at, 1);
+	if (!res) {
+		return NULL;
+	}
+	RList *list = r_str_split_list (res, ",");
+	RList *out = r_list_new ();
+	if (!out) {
+		return NULL;
+	}
+	RListIter *iter;
+	const char *meta;
+	r_list_foreach (list, iter, meta) {
+		Sdb *s = a->sdb_meta;
+		ut64 mia = r_num_math (NULL, meta);
+		const char *key = sdb_fmt ("meta.0x%" PFMT64x, mia);
+		const char *infos = sdb_const_get (s, key, 0);
+		if (!infos) {
+			continue;
+		}
+		for (; *infos; infos++) {
+			if (*infos == ',') {
+				continue;
+			}
+			const char *key = sdb_fmt ("meta.%c.0x%" PFMT64x, *infos, mia);
+			const char *metas = sdb_const_get (s, key, 0);
+			if (metas) {
+				RAnalMetaItem *mi = R_NEW0 (RAnalMetaItem);
+				if (!r_meta_deserialize_val (a, mi, *infos, mia, metas)) {
+					continue;
+				}
+				if (mi && (at >= mi->from && at < mi->to)) {
+					r_list_append (out, mi);
+				}
+			}
+		}
+	}
+	r_list_free (list);
+	free (res);
+	return out;
 }
 
 R_API const char *r_meta_type_to_string(int type) {

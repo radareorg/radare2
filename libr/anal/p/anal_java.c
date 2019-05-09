@@ -1,4 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2015 - pancake and
+/* radare - Apache 2.0 - Copyright 2010-2019 - pancake and
  Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <string.h>
@@ -133,10 +133,12 @@ static ut64 java_get_method_start () {
 }
 
 static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
-	RAnalBlock *current_head = state && state->current_bb_head ? state->current_bb_head : NULL;
-	if (current_head && state->current_bb &&
-		state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
-		r_anal_ex_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
+	r_return_val_if_fail (anal && state, R_ANAL_RET_ERROR);
+	RAnalBlock *head = state->current_bb_head;
+	RAnalBlock *bb = state->current_bb;
+	r_return_val_if_fail (bb && head, R_ANAL_RET_ERROR);
+	if (bb->type & R_ANAL_BB_TYPE_TAIL) {
+		r_anal_ex_update_bb_cfg_head_tail (head, head, bb);
 		// XXX should i do this instead -> r_anal_ex_perform_post_anal_bb_cb (anal, state, addr+offset);
 		state->done = 1;
 	}
@@ -144,18 +146,13 @@ static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state
 }
 
 static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
-	RAnalBlock *bb;
-	RAnalBlock *current_head;
+	r_return_val_if_fail (anal && state && state->current_bb && state->current_bb_head, 0);
 
-	if (!anal || !state || !state->current_bb || state->current_bb_head) {
-		return 0;
-	}
+	RAnalBlock *bb = state->current_bb;
+	RAnalBlock *head = state->current_bb_head;
 
-	bb = state->current_bb;
-	current_head = state->current_bb_head;
-
-	if (current_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
-		r_anal_ex_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
+	if (head && bb->type & R_ANAL_BB_TYPE_TAIL) {
+		r_anal_ex_update_bb_cfg_head_tail (head, head, bb);
 	}
 
 	// basic filter for handling the different type of operations
@@ -207,9 +204,7 @@ static int java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr) {
 }
 
 static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
-
 	RAnalBlock *bb = state->current_bb;
-
 	ut64 addr = 0;
 	int result = 0;
 	if (!bb) {
@@ -226,137 +221,137 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 
 	// XXX - transition to type2 control flow condtions
 	switch (control_type) {
-		case R_ANAL_OP_TYPE_CALL:
-			IFDBG eprintf (" - Handling a call @ 0x%04"PFMT64x".\n", addr);
-			r_anal_xrefs_set (anal, bb->addr, bb->jump, R_ANAL_REF_TYPE_CALL);
-			result = R_ANAL_RET_ERROR;
-			break;
-		case R_ANAL_OP_TYPE_JMP:
-			{
-				RList * jmp_list;
-				IFDBG eprintf (" - Handling a jmp @ 0x%04"PFMT64x" to 0x%04"PFMT64x".\n", addr, bb->jump);
+	case R_ANAL_OP_TYPE_CALL:
+		IFDBG eprintf (" - Handling a call @ 0x%04"PFMT64x".\n", addr);
+		r_anal_xrefs_set (anal, bb->addr, bb->jump, R_ANAL_REF_TYPE_CALL);
+		result = R_ANAL_RET_ERROR;
+		break;
+	case R_ANAL_OP_TYPE_JMP:
+		{
+			RList * jmp_list;
+			IFDBG eprintf (" - Handling a jmp @ 0x%04"PFMT64x" to 0x%04"PFMT64x".\n", addr, bb->jump);
 
-				// visited some other time
-				if (!r_anal_state_search_bb (state, bb->jump)) {
-					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
-					if (jmp_list) {
-						bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
-					}
-					if (bb->jumpbb) {
-						bb->jump = bb->jumpbb->addr;
-					}
-				} else {
-					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
-					if (bb->jumpbb) {
-						bb->jump = bb->jumpbb->addr;
-					}
+			// visited some other time
+			if (!r_anal_state_search_bb (state, bb->jump)) {
+				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
+				if (jmp_list) {
+					bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
 				}
-
-				if (state->done == 1) {
-					IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
-				}
-				result = R_ANAL_RET_END;
-			}
-			break;
-		case R_ANAL_OP_TYPE_CJMP:
-			{
-				RList *jmp_list;
-				ut8 encountered_stop = 0;
-				IFDBG eprintf (" - Handling a cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
-				IFDBG eprintf (" - Handling jmp to 0x%04"PFMT64x".\n", bb->jump);
-				// visited some other time
-				if (!r_anal_state_search_bb (state, bb->jump)) {
-					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
-					if (jmp_list) {
-						bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
-					}
-					if (bb->jumpbb) {
-						bb->jump = bb->jumpbb->addr;
-					}
-				} else {
-					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
+				if (bb->jumpbb) {
 					bb->jump = bb->jumpbb->addr;
 				}
-
-				if (state->done == 1) {
-					IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
-					state->done = 0;
-					encountered_stop = 1;
-				}
-
-				if (!r_anal_state_search_bb (state, bb->fail)) {
-					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
-					if (jmp_list) {
-						bb->failbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
-					}
-					if (bb->failbb) {
-						bb->fail = bb->failbb->addr;
-					}
-				} else {
-					bb->failbb = r_anal_state_search_bb (state, bb->fail);
-					if (bb->failbb) {
-						bb->fail = bb->failbb->addr;
-					}
-				}
-
-				IFDBG eprintf (" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
-				IFDBG eprintf (" - Handling fail to 0x%04"PFMT64x".\n", bb->fail);
-				// r_anal_state_merge_bb_list (state, fail_list);
-				if (state->done == 1) {
-					IFDBG eprintf (" Looks like this fail (bb @ 0x%04"PFMT64x") found a return.\n", addr);
-				}
-
-				result = R_ANAL_RET_END;
-				if (encountered_stop) {
-					state->done = 1;
+			} else {
+				bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
+				if (bb->jumpbb) {
+					bb->jump = bb->jumpbb->addr;
 				}
 			}
-			break;
 
-		case R_ANAL_OP_TYPE_SWITCH:
+			if (state->done == 1) {
+				IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
+			}
+			result = R_ANAL_RET_END;
+		}
+		break;
+	case R_ANAL_OP_TYPE_CJMP:
 		{
-			IFDBG eprintf (" - Handling an switch @ 0x%04"PFMT64x".\n", addr);
-			if (bb->switch_op) {
-				RAnalCaseOp *caseop;
-				RListIter *iter;
-				RList *jmp_list = NULL;
-				ut8 encountered_stop = 0;
-				r_list_foreach (bb->switch_op->cases, iter, caseop) {
-					if (caseop) {
-						if (r_anal_state_addr_is_valid (state, caseop->jump) ) {
-							jmp_list = r_anal_ex_perform_analysis ( anal, state, caseop->jump );
-							if (jmp_list) {
-								caseop->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
-							}
-							if (state->done == 1) {
-								IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
-								state->done = 0;
-								encountered_stop = 1;
-							}
+			RList *jmp_list;
+			ut8 encountered_stop = 0;
+			IFDBG eprintf (" - Handling a cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
+			IFDBG eprintf (" - Handling jmp to 0x%04"PFMT64x".\n", bb->jump);
+			// visited some other time
+			if (!r_anal_state_search_bb (state, bb->jump)) {
+				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
+				if (jmp_list) {
+					bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+				}
+				if (bb->jumpbb) {
+					bb->jump = bb->jumpbb->addr;
+				}
+			} else {
+				bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
+				bb->jump = bb->jumpbb->addr;
+			}
+
+			if (state->done == 1) {
+				IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
+				state->done = 0;
+				encountered_stop = 1;
+			}
+
+			if (!r_anal_state_search_bb (state, bb->fail)) {
+				jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
+				if (jmp_list) {
+					bb->failbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+				}
+				if (bb->failbb) {
+					bb->fail = bb->failbb->addr;
+				}
+			} else {
+				bb->failbb = r_anal_state_search_bb (state, bb->fail);
+				if (bb->failbb) {
+					bb->fail = bb->failbb->addr;
+				}
+			}
+
+			IFDBG eprintf (" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
+			IFDBG eprintf (" - Handling fail to 0x%04"PFMT64x".\n", bb->fail);
+			// r_anal_state_merge_bb_list (state, fail_list);
+			if (state->done == 1) {
+				IFDBG eprintf (" Looks like this fail (bb @ 0x%04"PFMT64x") found a return.\n", addr);
+			}
+
+			result = R_ANAL_RET_END;
+			if (encountered_stop) {
+				state->done = 1;
+			}
+		}
+		break;
+
+	case R_ANAL_OP_TYPE_SWITCH:
+	{
+		IFDBG eprintf (" - Handling an switch @ 0x%04"PFMT64x".\n", addr);
+		if (bb->switch_op) {
+			RAnalCaseOp *caseop;
+			RListIter *iter;
+			RList *jmp_list = NULL;
+			ut8 encountered_stop = 0;
+			r_list_foreach (bb->switch_op->cases, iter, caseop) {
+				if (caseop) {
+					if (r_anal_state_addr_is_valid (state, caseop->jump) ) {
+						jmp_list = r_anal_ex_perform_analysis ( anal, state, caseop->jump );
+						if (jmp_list) {
+							caseop->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+						}
+						if (state->done == 1) {
+							IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
+							state->done = 0;
+							encountered_stop = 1;
 						}
 					}
 				}
-				r_list_free (jmp_list);
-				if (encountered_stop) {
-					state->done = 1;
-				}
 			}
-
-			result = R_ANAL_RET_END;
+			r_list_free (jmp_list);
+			if (encountered_stop) {
+				state->done = 1;
+			}
 		}
-			break;
-		case R_ANAL_OP_TYPE_TRAP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_ILL:
-			IFDBG eprintf (" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
-			state->done = 1;
-			result = R_ANAL_RET_END;
-			break;
-		default: break;
+
+		result = R_ANAL_RET_END;
+	}
+		break;
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_ILL:
+		IFDBG eprintf (" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
+		state->done = 1;
+		result = R_ANAL_RET_END;
+		break;
+	default: break;
 	}
 
 	state->current_depth--;
@@ -380,10 +375,10 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr
 		if (paddr64 && !r_anal_state_search_bb (state, *paddr64)) {
 			ut64 list_length = 0;
 			IFDBG eprintf (" - Visiting 0x%04"PFMT64x" for analysis.\n", *paddr64);
-			jmp_list = r_anal_ex_perform_analysis ( anal, state, *paddr64 );
+			jmp_list = r_anal_ex_perform_analysis (anal, state, *paddr64 );
 			list_length = r_list_length (jmp_list);
 			r_list_free (jmp_list);
-			if ( list_length > 0) {
+			if (list_length > 0) {
 				IFDBG eprintf (" - Found %"PFMT64d" more basic blocks missed on the initial pass.\n", *paddr64);
 			}
 		}
@@ -482,7 +477,6 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 
 //many flaws UAF
 static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length) {
-	char gen_name[1025];
 	RListIter *bb_iter;
 	RAnalBlock *bb;
 	ut64 actual_size = 0;
@@ -492,9 +486,8 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 
 	free (fcn->name);
 	free (fcn->dsc);
-	snprintf (gen_name, 1024, "sym.%08"PFMT64x"", addr);
 
-	fcn->name = strdup (gen_name);
+	fcn->name = r_str_newf ("sym.%08"PFMT64x, addr);
 	fcn->dsc = strdup ("unknown");
 	r_anal_fcn_set_size (NULL, fcn, code_length);
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
@@ -526,23 +519,20 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr) {
 	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
-	ut8 * code_buf = NULL;
 	int result = false;
-	ut64 code_length = 0;
-	ut64 code_addr = -1;
 
 	if (!code_attr) {
 		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
-		r_anal_fcn_set_size (NULL, fcn, code_length);
+		r_anal_fcn_set_size (NULL, fcn, 1); // code_length);
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		fcn->addr = 0;
 		return R_ANAL_RET_ERROR;
 	}
 
-	code_length = code_attr->info.code_attr.code_length;
-	code_addr = code_attr->info.code_attr.code_offset;
-	code_buf = calloc (1, code_length);
+	ut64 code_length = code_attr->info.code_attr.code_length;
+	ut64 code_addr = code_attr->info.code_attr.code_offset;
+	ut8 *code_buf = calloc (1, code_length);
 
 	anal->iob.read_at (anal->iob.io, code_addr + loadaddr, code_buf, code_length);
 	result = analyze_from_code_buffer (anal, fcn, code_addr + loadaddr, code_buf, code_length);
@@ -647,8 +637,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	RList * anal_fcns = NULL;
 
 	ut8 analyze_all = 0;
-	//RAnalRef *ref = NULL;
-	int result = R_ANAL_RET_ERROR;
+	int result = 0; // R_ANAL_RET_ERROR;
 
 	if (end == UT64_MAX) {
 		analyze_all = 1;
@@ -673,7 +662,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 				java_set_function_prototype (anal, fcn, method);
 				result = analyze_from_code_attr (anal, fcn, method, loadaddr);
 				if (result == R_ANAL_RET_ERROR) {
-					//eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
+					eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
 					return result;
 					// XXX - TO Stop or not to Stop ??
 				}
@@ -744,15 +733,17 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	/* get opcode size */
+	if (len < 1) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return 1;
+	}
 	//ut8 op_byte = data[0];
 	ut8 op_byte = data[0];
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
 	int sz = JAVA_OPS[op_byte].size;
 	if (!op) {
+		op->type = R_ANAL_OP_TYPE_ILL;
 		return sz;
 	}
-	memset (op, '\0', sizeof (RAnalOp));
 	IFDBG {
 		//eprintf ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", len, addr);
 		//eprintf ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
@@ -797,6 +788,15 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	if (len < 4) {
 		// incomplete analysis here
 		return 0;
+	}
+	if (op->type == R_ANAL_OP_TYPE_POP) {
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 8;
+	}
+		op->direction = R_ANAL_OP_DIR_EXEC;
+	if (op->type == R_ANAL_OP_TYPE_PUSH) {
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -8;
 	}
 	if (op->type == R_ANAL_OP_TYPE_CJMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
@@ -933,17 +933,21 @@ static int java_reset_counter (RAnal *anal, ut64 start_addr ) {
 	return true;
 }
 
+#define USE_CUSTOM_ANAL 1
+
 RAnalPlugin r_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
 	.license = "Apache",
 	.arch = "java",
 	.bits = 32,
+#if USE_CUSTOM_ANAL
 	.custom_fn_anal = 1,
 	.reset_counter = java_reset_counter,
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_recursive_descent,
 	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
+#endif
 	.op = &java_op,
 	.cmd_ext = java_cmd_ext,
 	0
@@ -955,11 +959,13 @@ RAnalPlugin r_anal_plugin_java_ls = {
 	.license = "Apache",
 	.arch = "java",
 	.bits = 32,
+#if USE_CUSTOM_ANAL
 	.custom_fn_anal = 1,
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_linear_sweep,
 	.post_anal = java_post_anal_linear_sweep,
 	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,
+#endif
 	.op = &java_op,
 	.cmd_ext = java_cmd_ext,
 	0

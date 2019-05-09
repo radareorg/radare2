@@ -139,9 +139,11 @@ static void set_name(RFlagItem *item, char *name) {
 	item->realname = item->name;
 }
 
-static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool force) {
+static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool is_new, bool force) {
 	if (item->offset != newoff || force) {
-		remove_offsetmap (f, item);
+		if (!is_new) {
+			remove_offsetmap (f, item);
+		}
 		item->offset = newoff;
 
 		RFlagsAtOffset *flagsAtOffset = flags_at_offset (f, newoff);
@@ -157,32 +159,25 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 }
 
 static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
-	bool res = false;
-	if (!newname) {
+	if (!f || !item || !newname) {
 		return false;
 	}
-
 	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
 		return false;
 	}
-
-	char *filtered_name= filter_item_name (newname);
-	if (!filtered_name) {
+	char *fname = filter_item_name (newname);
+	if (!fname) {
 		return false;
 	}
-
-	if (item->name) {
-		res = ht_pp_update_key (f->ht_name, item->name, filtered_name);
-	} else {
-		res = ht_pp_insert (f->ht_name, filtered_name, item);
-	}
-
+	bool res = (item->name)
+		? ht_pp_update_key (f->ht_name, item->name, fname)
+		: ht_pp_insert (f->ht_name, fname, item);
 	if (res) {
-		set_name (item, filtered_name);
-	} else {
-		free (filtered_name);
+		set_name (item, fname);
+		return true;
 	}
-	return res;
+	free (fname);
+	return false;
 }
 
 static void ht_free_flag(HtPPKv *kv) {
@@ -382,6 +377,7 @@ static bool print_flag_orig_name(RFlagItem *flag, void *user) {
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
 R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
+	r_return_if_fail (f && pfx);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
@@ -488,12 +484,11 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 	RListIter *iter = NULL;
 	RFlagItem *item = NULL;
 	const RList *list = r_flag_get_list (f, off);
-	if (!list) {
-		return false;
-	}
-	r_list_foreach (list, iter, item) {
-		if (item->name && !strncmp (item->name, flag_prefix, fp_size)) {
-			return true;
+	if (list) {
+		r_list_foreach (list, iter, item) {
+			if (item->name && !strncmp (item->name, flag_prefix, fp_size)) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -716,6 +711,7 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	r_return_val_if_fail (f && name && *name, NULL);
 
+	bool is_new = false;
 	char *itemname = filter_item_name (name);
 	if (!itemname) {
 		return NULL;
@@ -733,12 +729,13 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		if (!item) {
 			goto err;
 		}
+		is_new = true;
 	}
 
 	item->space = r_flag_space_cur (f);
 	item->size = size;
 
-	update_flag_item_offset (f, item, off + f->base, true);
+	update_flag_item_offset (f, item, off + f->base, is_new, true);
 	update_flag_item_name (f, item, name, true);
 	return item;
 err:
@@ -856,7 +853,7 @@ static bool flag_relocate_foreach(RFlagItem *fi, void *user) {
 	if (fn == on) {
 		ut64 fm = fi->offset & u->off_mask;
 		ut64 om = u->to & u->off_mask;
-		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om, false);
+		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om, false, false);
 		u->n++;
 	}
 	return true;
@@ -922,7 +919,6 @@ static bool flag_count_foreach(RFlagItem *fi, void *user) {
 R_API int r_flag_count(RFlag *f, const char *glob) {
 	int count = 0;
 	r_return_val_if_fail (f, -1);
-
 	r_flag_foreach_glob (f, glob, flag_count_foreach, &count);
 	return count;
 }

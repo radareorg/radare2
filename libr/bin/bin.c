@@ -177,17 +177,11 @@ R_API void r_bin_import_free(void *_imp) {
 	}
 }
 
-R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o) {
-	r_return_val_if_fail (o, NULL);
-
-	RBinSymbol *res = r_mem_dup (o, sizeof (*o));
-	if (!res) {
-		return NULL;
+R_API const char *r_bin_symbol_name(RBinSymbol *s) {
+	if (s->dup_count) {
+		return sdb_fmt ("%s_%d", s->name, s->dup_count);
 	}
-	res->name = R_STR_DUP (o->name);
-	res->dname = R_STR_DUP (o->dname);
-	res->classname = R_STR_DUP (o->classname);
-	return res;
+	return s->name;
 }
 
 R_API void r_bin_symbol_free(void *_sym) {
@@ -1325,16 +1319,10 @@ R_IPI void r_bin_class_free(RBinClass *c) {
 
 static RBinClass *class_get(RBinFile *binfile, const char *name) {
 	r_return_val_if_fail (binfile && binfile->o && name, NULL);
-
-	RBinClass *c;
-	RListIter *iter;
-	// TODO: switch to an hashtable to easily get this in O(1)
-	r_list_foreach (binfile->o->classes, iter, c) {
-		if (!strcmp (c->name, name)) {
-			return c;
-		}
+	if (!binfile->o->classes_ht) {
+		return NULL;
 	}
-	return NULL;
+	return ht_pp_find (binfile->o->classes_ht, name, NULL);
 }
 
 R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view) {
@@ -1361,6 +1349,9 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char
 	if (!list) {
 		list = o->classes = r_list_new ();
 	}
+	if (!o->classes_ht) {
+		o->classes_ht = ht_pp_new0 ();
+	}
 	c->name = strdup (name);
 	c->super = super? strdup (super): NULL;
 	c->index = r_list_length (list);
@@ -1368,6 +1359,7 @@ R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char
 	c->fields = r_list_new ();
 	c->visibility = view;
 	r_list_append (list, c);
+	ht_pp_insert (o->classes_ht, name, c);
 	return c;
 }
 
