@@ -913,7 +913,7 @@ static elf_fpxregset_t *linux_get_fpx_regset (RDebug *dbg, int tid) {
 	if (fpxregset) {
 		transfer.iov_base = fpxregset;
 		transfer.iov_len = sizeof (elf_fpxregset_t);
-		if (r_debug_ptrace (PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
+		if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
 			perror ("linux_get_fpx_regset");
 			R_FREE (fpxregset);
 		}
