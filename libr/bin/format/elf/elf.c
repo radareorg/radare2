@@ -2848,7 +2848,8 @@ static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) *sym, const char *name)
 	case 'a':
 	case 't':
 	case 'd':
-		return name[2] == '\0' && ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
+		return (name[2] == '\0' || name[2] == '.') &&
+			ELF_ST_TYPE (sym->st_info) == STT_NOTYPE &&
 			ELF_ST_BIND (sym->st_info) == STB_LOCAL &&
 			ELF_ST_VISIBILITY (sym->st_info) == STV_DEFAULT;
 	default:
