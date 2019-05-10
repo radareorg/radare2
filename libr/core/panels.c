@@ -415,7 +415,8 @@ static bool handle_tab(RCore *core);
 static bool handle_tab_nth(RCore *core, int ch);
 static bool handle_tab_next(RCore *core);
 static bool handle_tab_prev(RCore *core);
-static bool handle_tab_new(RCore *core);
+static void handle_tab_name(RCore *core);
+static void handle_tab_new(RCore *core);
 static bool handle_tab_del(RCore *core);
 static void remove_panels(RCore *core);
 
@@ -3236,11 +3237,24 @@ static void panels_refresh(RCore *core) {
 
 	int tab_pos = i;
 	for (i = core->panels_root->n_panels; i > 0; i--) {
+		RPanels *panels = core->panels_root->panels[i - 1];
+		char *name = NULL;
+		if (panels) {
+			name = panels->name;
+		}
 		if (i - 1 == core->panels_root->cur_panels) {
-			snprintf (title, sizeof (title) - 1, "%s[%d] "Color_RESET, color, i);
+			if (!name) {
+				snprintf (title, sizeof (title) - 1, "%s[%d] "Color_RESET, color, i);
+			} else {
+				snprintf (title, sizeof (title) - 1, "%s[%s] "Color_RESET, color, name);
+			}
 			tab_pos -= r_str_ansi_len (title);
 		} else {
-			snprintf (title, sizeof (title) - 1, "%d ", i);
+			if (!name) {
+				snprintf (title, sizeof (title) - 1, "%d ", i);
+			} else {
+				snprintf (title, sizeof (title) - 1, "%s ", name);
+			}
 			tab_pos -= strlen (title);
 		}
 		(void) r_cons_canvas_gotoxy (can, tab_pos, -can->sy);
@@ -3396,6 +3410,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	setMode (panels, PANEL_MODE_DEFAULT);
 	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
+	panels->name = NULL;
 	initSdb (panels);
 	initRotatedb (panels);
 
@@ -4208,11 +4223,11 @@ static RPanels *get_cur_panels(RPanelsRoot *panels_root) {
 static bool handle_tab(RCore *core) {
 	r_cons_gotoxy (0, 0);
 	if (core->panels_root->n_panels <= 1) {
-		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] t:new -:del"Color_RESET, core->cons->context->pal.graph_box2);
+		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] t:new -:del =:name"Color_RESET, core->cons->context->pal.graph_box2);
 	} else {
 		int min = 1;
 		int max = core->panels_root->n_panels;
-		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del"Color_RESET, core->cons->context->pal.graph_box2, min, max);
+		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del =:name"Color_RESET, core->cons->context->pal.graph_box2, min, max);
 	}
 	r_cons_flush ();
 	int ch = r_cons_readchar ();
@@ -4220,17 +4235,17 @@ static bool handle_tab(RCore *core) {
 		return true;
 	}
 	switch (ch) {
-	case 'n':
-		if (handle_tab_next (core)) {
-			return true;
-		}
-		break;
-	case 'p':
-		return handle_tab_prev (core);
-	case '-':
-		return handle_tab_del (core);
-	case 't':
-		return handle_tab_new (core);
+		case 'n':
+			return handle_tab_next (core);
+		case 'p':
+			return handle_tab_prev (core);
+		case '-':
+			return handle_tab_del (core);
+		case '=':
+			handle_tab_name (core);
+			break;
+		case 't':
+			handle_tab_new (core);
 	}
 	return false;
 }
@@ -4271,19 +4286,19 @@ static bool handle_tab_prev(RCore *core) {
 }
 
 static bool handle_tab_del(RCore *core) {
-	if (core->panels_root->n_panels >= PANEL_NUM_LIMIT) {
-		return false;
-	}
 	core->panels_root->n_panels--;
 	return true;
 }
 
-static bool handle_tab_new(RCore *core) {
+static void handle_tab_name(RCore *core) {
+	core->panels->name = show_status_input (core, "tab name: ");
+}
+
+static void handle_tab_new(RCore *core) {
 	if (core->panels_root->n_panels >= PANEL_NUM_LIMIT) {
-		return false;
+		return;
 	}
 	core->panels_root->n_panels++;
-	return true;
 }
 
 static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
