@@ -336,6 +336,7 @@ static void directionRegisterCb(void *user, int direction);
 static void directionStackCb(void *user, int direction);
 static void directionHexdumpCb(void *user, int direction);
 static void updateDisassemblyAddr (RCore *core);
+static void updateAddr (RCore *core);
 static void setMode(RPanels *ps, RPanelsMode mode);
 static void updateHelp(RPanels *ps);
 static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb);
@@ -557,7 +558,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 		cmdStr = readOnly;
 	} else {
 		if (panel->model->cmd) {
-			if (check_panel_type(panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+			if (check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 				core->print->screen_bounds = 1LL;
 				if (!findCmdStrCache (core, panel, &cmdStr)) {
 					char *ocmd = panel->model->cmd;
@@ -565,7 +566,9 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 					ut64 o_offset = core->offset;
 					core->offset = panel->model->addr;
 					r_core_seek (core, panel->model->addr, 1);
-					r_core_block_read (core);
+					if (r_config_get_i (core->config, "cfg.debug")) {
+						r_core_cmd (core, ".dr*", 0);
+					}
 					cmdStr = handleCmdStrCache (core, panel);
 					core->offset = o_offset;
 					free (panel->model->cmd);
@@ -2247,6 +2250,16 @@ static void updateDisassemblyAddr (RCore *core) {
 		}
 	}
 	setRefreshAll (panels, false);
+}
+
+static void updateAddr (RCore *core) {
+	RPanels *panels = core->panels;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = getPanel (panels, i);
+		p->model->addr = core->offset;
+	}
+	setRefreshAll (panels, true);
 }
 
 static void setMode(RPanels *ps, RPanelsMode mode) {
@@ -4297,6 +4310,7 @@ static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 		prev = core->panels;
 		panels = *r_panels;
 		core->panels = panels;
+		updateAddr (core);
 	}
 
 	r_cons_switchbuf (false);
@@ -4792,7 +4806,11 @@ repeat:
 		if (cmd && *cmd) {
 			(void)r_core_cmd0 (core, cmd);
 		} else {
-			panelContinue (core);
+			if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+				panelContinue (core);
+				cur->model->addr = core->offset;
+				setRefreshAll (panels, false);
+			}
 		}
 		break;
 	case R_CONS_KEY_F10:
