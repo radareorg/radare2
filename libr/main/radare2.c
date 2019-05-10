@@ -1276,19 +1276,22 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (debug) {
 			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
-		if (!debug && !r_bin_cur_object (r.bin)->regstate) {
-			RFlagItem *fi = r_flag_get (r.flags, "entry0");
-			if (fi) {
-				r_core_seek (&r, fi->offset, 1);
-			} else {
-				RList *sections = r_bin_get_sections (r.bin);
-				RListIter *iter;
-				RBinSection *s;
-				r_list_foreach (sections, iter, s) {
-					if (s->perm & R_PERM_X) {
-						ut64 addr = s->vaddr? s->vaddr: s->paddr;
-						r_core_seek (&r, addr, 1);
-						break;
+		if (!debug) {
+			RBinObject *o = r_bin_cur_object (r.bin);
+			if (o && o->regstate) {
+				RFlagItem *fi = r_flag_get (r.flags, "entry0");
+				if (fi) {
+					r_core_seek (&r, fi->offset, 1);
+				} else {
+					RList *sections = r_bin_get_sections (r.bin);
+					RListIter *iter;
+					RBinSection *s;
+					r_list_foreach (sections, iter, s) {
+						if (s->perm & R_PERM_X) {
+							ut64 addr = s->vaddr? s->vaddr: s->paddr;
+							r_core_seek (&r, addr, 1);
+							break;
+						}
 					}
 				}
 			}
