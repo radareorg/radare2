@@ -299,12 +299,11 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 		return false;
 	}
 	if (fs && file) {
-#if 0
-		free (file->data);
-		file->data = calloc (1, len + 1);
-#endif
-		// file->data_len = len;
 		if (file->p && file->p->read) {
+			if (!file->data) {
+				free (file->data);
+				file->data = calloc (1, len + 1);
+			}
 			file->p->read (file, addr, len);
 			return true;
 		} else {
