@@ -3,7 +3,7 @@
 #include <r_fs.h>
 #include "grubfs.h"
 
-static RFSFile* FSP(_open)(RFSRoot *root, const char *path) {
+static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 	RFSFile *file = r_fs_file_new (root, path);
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
 	file->ptr = gfs;

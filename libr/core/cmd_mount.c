@@ -445,7 +445,7 @@ static int cmd_mount(void *data, const char *_input) {
 			break;
 		}
 		break;
-	case 's':
+	case 's': // "ms"
 		if (core->http_up) {
 			free (oinput);
 			return false;
