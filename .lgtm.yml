@@ -1,6 +1,6 @@
 extraction:
     cpp:
-        prepare:
+        after_prepare:
             - export GNU_MAKE=make
         configure:
             command: "./configure"
