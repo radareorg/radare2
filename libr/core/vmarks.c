@@ -2,6 +2,8 @@
 
 #include <r_core.h>
 
+#define ASCII_MAX 127
+
 /* maybe move this into RCore */
 static bool marks_init = false;
 static ut64 marks[UT8_MAX + 1];
@@ -22,7 +24,11 @@ R_API bool r_core_visual_mark_dump(RCore *core) {
 	}
 	for (i = 0; i < UT8_MAX; i++) {
 		if (marks[i] != UT64_MAX) {
-			r_cons_printf (R_CONS_CLEAR_LINE"fV %c 0x%"PFMT64x"\n", i, marks[i]);
+			if (i > ASCII_MAX) {
+				r_cons_printf (R_CONS_CLEAR_LINE"fV %d 0x%"PFMT64x"\n", i - ASCII_MAX - 1, marks[i]);
+			} else {
+				r_cons_printf (R_CONS_CLEAR_LINE"fV %c 0x%"PFMT64x"\n", i, marks[i]);
+			}
 			out = true;
 		}
 	}
@@ -44,6 +50,9 @@ R_API void r_core_visual_mark_del(RCore *core, ut8 ch) {
 }
 
 R_API void r_core_visual_mark(RCore *core, ut8 ch) {
+	if (IS_DIGIT (ch)) {
+		ch += ASCII_MAX + 1;
+	}
 	r_core_visual_mark_set (core, ch, core->offset);
 }
 
