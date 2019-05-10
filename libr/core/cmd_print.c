@@ -4919,7 +4919,8 @@ static int cmd_print(void *data, const char *input) {
 						// iterate over all call references
 						r_list_foreach (refs, iter, refi) {
 							if (pj) {
-								RFlagItem *f = r_flag_get_i (core->flags, refi->addr);
+								RAnalFunction *f = r_anal_get_fcn_in (core->anal, refi->addr,
+									R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 								char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 								char *dst2 = NULL;
 								RAnalOp *op = r_core_anal_op (core, refi->addr, R_ANAL_OP_MASK_BASIC);
