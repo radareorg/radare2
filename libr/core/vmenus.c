@@ -2450,7 +2450,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 						if (strncmp (root, path, strlen (root) - 1)) {
 							strncpy (path, root, sizeof (path) - 1);
 						}
-						file = r_fs_open (core->fs, path);
+						file = r_fs_open (core->fs, path, false);
 						if (file) {
 							r_fs_read (core->fs, file, 0, file->size);
 							r_cons_show_cursor (true);
