@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2019 pancake, inisider */
 
 #include <r_util.h>
 
@@ -20,11 +20,6 @@ bool r_coff_supported_arch(const ut8 *buf) {
 	}
 }
 
-int r_coff_is_stripped(struct r_bin_coff_obj *obj) {
-	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
-		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
-}
-
 char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0, offset = 0;
@@ -39,7 +34,7 @@ char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 		return NULL;
 	}
 	if (p->zero) {
-		return strdup (p->name);
+		return r_str_ndup (p->name, 8);
 	}
 	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
 	if (offset > obj->size) {

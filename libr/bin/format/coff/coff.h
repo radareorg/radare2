@@ -30,6 +30,5 @@ struct r_bin_coff_obj* r_bin_coff_new_buf(RBuffer *buf, bool verbose);
 void r_bin_coff_free(struct r_bin_coff_obj *obj);
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj);
 char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr);
-int r_coff_is_stripped (struct r_bin_coff_obj *obj);
 
 #endif /* COFF_H */

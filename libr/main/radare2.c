@@ -1277,12 +1277,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
 		if (!debug) {
-			RBinObject *o = r_bin_cur_object (r.bin);
-			if (o && o->regstate) {
-				RFlagItem *fi = r_flag_get (r.flags, "entry0");
-				if (fi) {
-					r_core_seek (&r, fi->offset, 1);
-				} else {
+			RFlagItem *fi = r_flag_get (r.flags, "entry0");
+			if (fi) {
+				r_core_seek (&r, fi->offset, 1);
+			} else {
+				RBinObject *o = r_bin_cur_object (r.bin);
+				if (o && o->regstate) {
 					RList *sections = r_bin_get_sections (r.bin);
 					RListIter *iter;
 					RBinSection *s;

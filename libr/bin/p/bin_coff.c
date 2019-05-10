@@ -19,6 +19,11 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
+static bool r_coff_is_stripped(struct r_bin_coff_obj *obj) {
+	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
+		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
+}
+
 static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return r_bin_coff_new_buf (buf, bf->rbin->verbose);
 }
