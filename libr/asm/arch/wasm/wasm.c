@@ -252,6 +252,7 @@ static WasmOpDef opcodes_threads[256] = {
 	[WASM_OP_I64ATOMICRMW32UCMPXCHG] = { "i64.atomic.rmw32_u.cmpxchg" , 3, 3 }
 };
 
+#ifndef WASM_NO_ASM
 // assembles the given line of wasm assembly.
 R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	int i = 0, len = 0;
@@ -292,6 +293,7 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	err:
 		return -1;
 }
+#endif
 
 // disassemble an instruction from the given buffer.
 R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
