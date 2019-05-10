@@ -839,15 +839,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			esilprintf (op, "pc,lr,=,ctr,pc,=");
 			break;
 		case PPC_INS_B:
+		case PPC_INS_BC:
+		case PPC_INS_BA:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-#if CS_API_MAJOR > 4
-			{
-				ut64 n = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
-				op->jump = ((addr >> 24) << 24) | (n & 0xffffff);
-			}
-#else
 			op->jump = ARG (1)[0] == '\0' ? IMM (0) : IMM (1);
-#endif
 			op->fail = addr + op->size;
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
@@ -903,10 +898,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				break;
 			}
 			break;
-		case PPC_INS_BA:
 		case PPC_INS_BT:
 		case PPC_INS_BF:
-		case PPC_INS_BC:
 			switch (insn->detail->ppc.operands[0].type) {
 			case PPC_OP_CRX:
 				op->type = R_ANAL_OP_TYPE_CJMP;
