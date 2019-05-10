@@ -65,6 +65,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 		return NULL;
 	}
 	r_buf_read_at (bin->b, bin->strings[idx] + uleblen, ptr, len + 1);
+	ptr[len] = 0;
 	if (len != r_utf8_strlen (ptr)) {
 		// eprintf ("WARNING: Invalid string for index %d\n", idx);
 		return NULL;

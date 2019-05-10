@@ -77,8 +77,8 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_hash.c"
 #include "cmd_debug.c"
 #include "cmd_log.c"
-#include "cmd_zign.c"
 #include "cmd_flag.c"
+#include "cmd_zign.c"
 #include "cmd_project.c"
 #include "cmd_write.c"
 #include "cmd_cmp.c"
@@ -1275,9 +1275,8 @@ static int cmd_kuery(void *data, const char *input) {
 			eprintf ("Usage: kd [file] [namespace]\n");
 		}
 		break;
-	case '?': {
-			r_core_cmd_help (core, help_msg_k);
-		}
+	case '?':
+		r_core_cmd_help (core, help_msg_k);
 		break;
 	}
 

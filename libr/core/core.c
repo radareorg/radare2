@@ -7,7 +7,6 @@
 #if __UNIX__
 #include <signal.h>
 #endif
-#include "i/private.h"
 
 #define DB core->sdb
 
@@ -2254,40 +2253,6 @@ static char *hasrefs_cb(void *user, ut64 addr, bool verbose) {
 
 static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
-}
-
-R_IPI void spaces_list(RSpaces *sp, int mode) {
-	RSpaceIter it;
-	RSpace *s;
-	const RSpace *cur = r_spaces_current (sp);
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = pj_new ();
-		pj_a (pj);
-	}
-	r_spaces_foreach (sp, it, s) {
-		int count = r_spaces_count (sp, s->name);
-		if (mode == 'j') {
-			pj_o (pj);
-			pj_ks (pj, "name", s->name);
-			pj_ki (pj, "count", count);
-			pj_kb (pj, "selected", cur == s);
-			pj_end (pj);
-		} else if (mode == '*') {
-			r_cons_printf ("%s %s\n", sp->name, s->name);
-		} else {
-			r_cons_printf ("%5d %c %s\n", count, (!cur || cur == s)? '*': '.',
-				s->name);
-		}
-	}
-	if (mode == '*' && r_spaces_current (sp)) {
-		r_cons_printf ("%s %s # current\n", sp->name, r_spaces_current_name (sp));
-	}
-	if (mode == 'j') {
-		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
-	}
 }
 
 static void cb_event_handler(REvent *ev, int event_type, void *user, void *data) {

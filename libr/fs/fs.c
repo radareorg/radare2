@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2018 - pancake */
+/* radare2 - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_fs.h>
 #include "config.h"
@@ -147,7 +147,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 			return NULL;
 		}
 	}
-	file = r_fs_open (fs, str);
+	file = r_fs_open (fs, str, false);
 	if (file) {
 		r_fs_close (fs, file);
 		eprintf ("r_fs_mount: Invalid mount point\n");
@@ -234,24 +234,29 @@ R_API RList* r_fs_root(RFS* fs, const char* p) {
 }
 
 /* filez */
-R_API RFSFile* r_fs_open(RFS* fs, const char* p) {
+R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
 	RFSRoot* root;
-	RList* roots;
 	RListIter* iter;
 	RFSFile* f = NULL;
 	const char* dir;
-	char* path = strdup (p);
-	//r_str_trim_path (path);
-	roots = r_fs_root (fs, path);
+	char* path = r_str_trim (strdup (p));
+	RList *roots = r_fs_root (fs, path);
 	if (!r_list_empty (roots)) {
 		r_list_foreach (roots, iter, root) {
+			if (create) {
+				if (root && root->p && root->p->write) {
+					f = r_fs_file_new (root, path + strlen (root->path));
+					break;
+				}
+				continue;
+			}
 			if (root && root->p && root->p->open) {
 				if (strlen (root->path) == 1) {
 					dir = path;
 				} else {
 					dir = path + strlen (root->path);
 				}
-				f = root->p->open (root, dir);
+				f = root->p->open (root, dir, false);
 				if (f) {
 					break;
 				}
@@ -263,7 +268,7 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p) {
 	return f;
 }
 
-// TODO: close or free?
+// NOTE: close doesnt free
 R_API void r_fs_close(RFS* fs, RFSFile* file) {
 	if (fs && file) {
 		R_FREE (file->data);
@@ -273,16 +278,32 @@ R_API void r_fs_close(RFS* fs, RFSFile* file) {
 	}
 }
 
+R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len) {
+	if (len < 1) {
+		return false;
+	}
+	if (fs && file) {
+		// TODO: fill file->data ? looks like dupe of rbuffer 
+		if (file->p && file->p->write) {
+			file->p->write (file, addr, data, len);
+			return true;
+		}
+		eprintf ("r_fs_write: file->p->write is null\n");
+	}
+	return false;
+}
+
 R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 	if (len < 1) {
 		eprintf ("r_fs_read: too short read\n");
 		return false;
 	}
 	if (fs && file) {
-		free (file->data);
-		file->data = calloc (1, len + 1);
-		// file->data_len = len;
-		if (file->p && file->data && file->p->read) {
+		if (file->p && file->p->read) {
+			if (!file->data) {
+				free (file->data);
+				file->data = calloc (1, len + 1);
+			}
 			file->p->read (file, addr, len);
 			return true;
 		} else {
@@ -293,13 +314,13 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 }
 
 R_API RList* r_fs_dir(RFS* fs, const char* p) {
-	RList* roots, * ret = NULL;
+	RList *ret = NULL;
 	RFSRoot* root;
 	RListIter* iter;
 	const char* dir;
 	char* path = strdup (p);
 	r_str_trim_path (path);
-	roots = r_fs_root (fs, path);
+	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
 		if (root) {
 			if (strlen (root->path) == 1) {
@@ -366,7 +387,7 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 			}
 			break;
 		case R_FS_FILE_TYPE_REGULAR:
-			item = r_fs_open (fs, npath);
+			item = r_fs_open (fs, npath, false);
 			if (item) {
 				r_fs_read (fs, item, 0, item->size);
 				if (!r_file_dump (str, item->data, item->size, 0)) {
@@ -407,7 +428,7 @@ static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* lis
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
 			r_fs_find_off_aux (fs, found, offset, list);
 		} else {
-			file = r_fs_open (fs, found);
+			file = r_fs_open (fs, found, false);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				if (file->off == offset) {
@@ -467,10 +488,9 @@ static void r_fs_find_name_aux(RFS* fs, const char* name, const char* glob, RLis
 
 R_API RList* r_fs_find_name(RFS* fs, const char* name, const char* glob) {
 	RList* list = r_list_newf (free);
-	if (!list) {
-		return NULL;
+	if (list) {
+		r_fs_find_name_aux (fs, name, glob, list);
 	}
-	r_fs_find_name_aux (fs, name, glob, list);
 	return list;
 }
 
@@ -484,7 +504,7 @@ R_API RFSFile* r_fs_slurp(RFS* fs, const char* path) {
 			continue;
 		}
 		if (root->p->open && root->p->read && root->p->close) {
-			file = root->p->open (root, path);
+			file = root->p->open (root, path, false);
 			if (file) {
 				root->p->read (file, 0, file->size); //file->data
 			}else {

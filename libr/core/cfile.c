@@ -146,7 +146,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			core->dbg->main_pid = newpid;
 			newtid = newpid;
 #endif
-#pragma message ("fix debugger-concept in core")
+// TODO: fix debugger-concept in core
 #if __WINDOWS__
 			r_debug_select (core->dbg, newpid, newtid);
 			core->dbg->reason.type = R_DEBUG_REASON_NONE;

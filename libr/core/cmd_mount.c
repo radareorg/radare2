@@ -23,6 +23,7 @@ static const char *help_msg_m[] = {
 	"mp", "", "List all supported partition types",
 	"mp", " msdos 0", "Show partitions in msdos format at offset 0",
 	"ms", " /mnt", "Open filesystem prompt at /mnt",
+	"mw", " [file] [data]", "Write data into file", // TODO: add mwf
 	"my", "", "Yank contents of file into clipboard",
 	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
 	NULL
@@ -327,7 +328,7 @@ static int cmd_mount(void *data, const char *_input) {
 		if (input[0]==' ') {
 			input++;
 		}
-		file = r_fs_open (core->fs, input);
+		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
 			char *uri = r_str_newf ("malloc://%d", file->size);
@@ -344,7 +345,7 @@ static int cmd_mount(void *data, const char *_input) {
 		if (input[0]==' ') {
 			input++;
 		}
-		file = r_fs_open (core->fs, input);
+		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			// XXX: dump to file or just pipe?
 			r_fs_read (core->fs, file, 0, file->size);
@@ -365,7 +366,7 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			ptr = "./";
 		}
-		file = r_fs_open (core->fs, input);
+		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
 			r_cons_memcat ((const char *)file->data, file->size);
@@ -386,7 +387,7 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			ptr = "./";
 		}
-		file = r_fs_open (core->fs, input);
+		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			char *localFile = strdup (input);
 			char *slash = (char *)r_str_rchr (localFile, NULL, '/');
@@ -445,7 +446,7 @@ static int cmd_mount(void *data, const char *_input) {
 			break;
 		}
 		break;
-	case 's':
+	case 's': // "ms"
 		if (core->http_up) {
 			free (oinput);
 			return false;
@@ -473,6 +474,27 @@ static int cmd_mount(void *data, const char *_input) {
 			free (cwd);
 			r_pvector_clear (&rli->completion.args);
 			memcpy (&rli->completion, &c, sizeof (c));
+		}
+		break;
+	case 'w':
+		if (input[1] == ' ') {
+			char *args = r_str_trim (strdup (input + 1));
+			char *arg = strchr (args, ' ');
+			if (arg) {
+				data = arg + 1;
+			} else {
+				data = "";
+				// touch and truncate
+			}
+			RFSFile *f = r_fs_open (core->fs, args, true);
+			if (f) {
+				r_fs_write (core->fs, f, 0, (const ut8 *)data, strlen (data));
+				r_fs_close (core->fs, f);
+				r_fs_file_free (f);
+				free (args);
+			}
+		} else {
+			eprintf ("Usage: mw [file] ([data])\n");
 		}
 		break;
 	case 'y':

@@ -6,7 +6,6 @@
 #include <r_list.h>
 #include <r_cons.h>
 #include <r_util.h>
-#include "i/private.h"
 
 static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",

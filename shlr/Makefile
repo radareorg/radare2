@@ -32,14 +32,21 @@ CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 CS_PATCHES=0
 else
 CS_TAR=
-CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20190506
+CS_URL_BASE=github.com/aquynh/capstone
+CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
+CS_ARCHIVE=https://$(CS_URL_BASE)/archive
+CS_UPD=20190510
 ifeq ($(CS_NEXT),1)
-CS_TIP=d59d1e75d1f261e938fc23130a5bffdc56d1af74
+CS_TIP=b6924f4b86f5040dd356ddbbb7128b0c89cfc7c6
 CS_BRA=next
 else
-CS_TIP=7090f081b17a5293a2c185a06513fede18065d3c
+CS_TIP=e72d711a585305804267bc740f5281333ad8d478
 CS_BRA=v4
+endif
+ifeq ($(CS_COMMIT_ARCHIVE),1)
+CS_ARCHIVE_URL=$(CS_ARCHIVE)/$(CS_TIP).zip
+else
+CS_ARCHIVE_URL=
 endif
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 #CS_BRA=next
@@ -281,7 +288,7 @@ capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
-	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
 	@echo "[capstone] Applying patches"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
