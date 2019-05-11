@@ -5,7 +5,7 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl izZXnrhqv
+.Op Fl ijzZXnrhqv
 .Op Fl b Ar size
 .Op Fl f Ar from
 .Op Fl t Ar to
@@ -19,6 +19,8 @@ The options are:
 .Bl -tag -width Fl
 .It Fl z
 Search for zero-terminated strings
+.It Fl j
+Output in JSON format
 .It Fl a Ar align
 Only accept aligned hits
 .It Fl s Ar str
