@@ -442,8 +442,16 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 static void selection_widget_draw() {
 	RCons *cons = r_cons_singleton ();
 	RSelWidget *sel_widget = I.sel_widget;
-	int y, pos_y = cons->rows, pos_x = r_str_ansi_len (I.prompt);
-
+	int y, pos_y, pos_x = r_str_ansi_len (I.prompt);
+	if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+		pos_y = cons->rows;
+	} else {
+		pos_y = r_cons_get_cur_line ();
+		if (pos_y + R_SELWIDGET_MAXH > cons->rows) {
+			printf ("%s", R_CONS_CLEAR_SCREEN);
+			r_cons_gotoxy (pos_x, 1);
+		}
+	}
 	for (y = 0; y < sel_widget->options_len; y++) {
 		sel_widget->w = R_MAX (sel_widget->w, strlen (sel_widget->options[y]));
 	}
@@ -459,7 +467,11 @@ static void selection_widget_draw() {
 	}
 
 	for (y = 0; y < R_MIN (sel_widget->h, R_SELWIDGET_MAXH); y++) {
-		r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
+		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+			r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
+		} else {
+			r_cons_gotoxy (pos_x + 1, pos_y + y + 1);
+		}
 		int scroll = R_MAX (0, sel_widget->selection - sel_widget->scroll);
 		const char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
 		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
@@ -479,12 +491,21 @@ static void selection_widget_draw() {
 static void selection_widget_up(int steps) {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
-		int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
-		sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
-		if (steps == 1) {
-			sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
-		} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
-			sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+			int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
+			sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
+			if (steps == 1) {
+				sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+			} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+				sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+			}
+		} else {
+			sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
+			if (steps == 1) {
+				sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+			} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+				sel_widget->scroll = sel_widget->selection;
+			}
 		}
 	}
 }
@@ -492,11 +513,21 @@ static void selection_widget_up(int steps) {
 static void selection_widget_down(int steps) {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
-		sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
-		if (steps == 1) {
-			sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
-		} else if (sel_widget->selection - sel_widget->scroll <= 0) {
-			sel_widget->scroll = sel_widget->selection;
+		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+			sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
+			if (steps == 1) {
+				sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+			} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+				sel_widget->scroll = sel_widget->selection;
+			}
+		} else {
+			int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
+			sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
+			if (steps == 1) {
+				sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+			} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+				sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+			}
 		}
 	}
 }
@@ -519,6 +550,7 @@ static void selection_widget_erase() {
 			cons->event_resize (cons->event_data);
 			cons->cb_task_oneshot (cons->user, print_rline_task, NULL);
 		}
+		printf ("%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
 	}
 }
 
@@ -549,6 +581,12 @@ static void selection_widget_update() {
 	I.sel_widget->options_len = argc;
 	I.sel_widget->options = argv;
 	I.sel_widget->h = R_MAX (I.sel_widget->h, I.sel_widget->options_len);
+
+	if (I.prompt_type ==  R_LINE_PROMPT_DEFAULT) {
+		I.sel_widget->direction = R_SELWIDGET_DIR_DOWN;
+	} else {
+		I.sel_widget->direction = R_SELWIDGET_DIR_UP;
+	}
 	selection_widget_draw ();
 	r_cons_flush ();
 	return;
@@ -560,6 +598,7 @@ R_API void r_line_autocomplete() {
 	int argc = 0, i, j, plen, len = 0;
 	bool opt = false;
 	int cols = (int)(r_cons_get_size (NULL) * 0.82);
+	RCons *cons = r_cons_singleton ();
 
 	/* prepare argc and argv */
 	if (I.completion.run) {
@@ -652,7 +691,9 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
-	if (I.prompt_type != R_LINE_PROMPT_DEFAULT) {
+	if (I.prompt_type != R_LINE_PROMPT_DEFAULT ||
+		cons->show_autocomplete_widget) {
+
 		selection_widget_update ();
 		if (I.sel_widget) {
 			I.sel_widget->complete_common = false;

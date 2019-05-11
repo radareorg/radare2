@@ -34,6 +34,7 @@ extern "C" {
 #if __WINDOWS__
 #include <windows.h>
 #include <wincon.h>
+#include <winuser.h>
 #else
 #include <unistd.h>
 #endif
@@ -438,6 +439,7 @@ typedef struct r_cons_t {
 	int fix_columns;
 	bool break_lines;
 	int noflush;
+	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
@@ -520,9 +522,11 @@ typedef struct r_cons_t {
 
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
 #define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
+#define R_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
 
 #define R_CONS_CURSOR_SAVE "\x1b[s"
 #define R_CONS_CURSOR_RESTORE "\x1b[u"
+#define R_CONS_GET_CURSOR_POSITION "\x1b[6n"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
@@ -734,6 +738,7 @@ R_API void r_cons_fill_line(void);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
+R_API int r_cons_get_cur_line ();
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
@@ -849,6 +854,8 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 
 #define R_SELWIDGET_MAXH 15
 #define R_SELWIDGET_MAXW 30
+#define R_SELWIDGET_DIR_UP 0
+#define R_SELWIDGET_DIR_DOWN 1
 
 typedef struct r_selection_widget_t {
 	const char **options;
@@ -857,6 +864,7 @@ typedef struct r_selection_widget_t {
 	int w, h;
 	int scroll;
 	bool complete_common;
+	int direction;
 } RSelWidget;
 
 typedef struct r_line_hist_t {
