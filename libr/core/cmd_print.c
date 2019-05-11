@@ -1337,10 +1337,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
 				r_sys_prefix (NULL));
 		} else if (_input[2] == ' ') {
-			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), _input + 3);
+			const char *fname = r_str_trim_ro (_input + 3);
+			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), fname);
 			char *home = r_str_home (tmp);
 			free (tmp);
-			tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), _input + 3);
+			tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), fname);
 			char *path = r_str_r2_prefix (tmp);
 			if (r_str_endswith (_input, ".h")) {
 				char *error_msg = NULL;
