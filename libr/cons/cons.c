@@ -363,16 +363,16 @@ R_API int r_cons_get_cur_line () {
 	int curline = 0;
 #if __WINDOWS__
 	POINT point;
-		if (GetCursorPos(&point)) {
+		if (GetCursorPos (&point)) {
 			curline = point.y;
 		}
 #endif
 #if __UNIX__
 		char buf[8];
 		struct termios save,raw;
-		tcgetattr (0,&save);
+		tcgetattr (0, &save);
 		cfmakeraw (&raw);
-		tcsetattr (0,TCSANOW,&raw);
+		tcsetattr (0, TCSANOW, &raw);
 		if (isatty (fileno (stdin))){
 			write(1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
 			read (0, buf, sizeof(buf));
@@ -382,7 +382,7 @@ R_API int r_cons_get_cur_line () {
 				curline = curline * 10 + (buf[3] - '0');
 			}
 		}
-		tcsetattr (0,TCSANOW,&save);
+		tcsetattr (0, TCSANOW,&save);
 #endif
 	return curline;
 }
