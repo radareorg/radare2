@@ -562,9 +562,12 @@ rep:
 			break;
 		case ' ':
 			{
-			const char *arg = strchr (input+2, ' ');
-			ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-			r_core_visual_mark_set (core, atoi (input+1), addr);
+				const int ASCII_MAX = 127;
+				if (atoi (input+1) + ASCII_MAX + 1 < UT8_MAX) {
+					const char *arg = strchr (input+2, ' ');
+					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
+					r_core_visual_mark_set (core, atoi (input+1) + ASCII_MAX + 1, addr);
+				}
 			}
 			break;
 		case '?':
