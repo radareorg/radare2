@@ -1873,6 +1873,12 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn) {
 		set_src_dst (op->src[1], handle, insn, 2);
 		set_src_dst (op->src[2], handle, insn, 3);
 		break;
+	case R_ANAL_OP_TYPE_PUSH:
+		if (INSOP (0).type == X86_OP_REG) {
+			CREATE_SRC_DST (op);
+			set_src_dst (op->src[0], handle, insn, 0);
+		}
+		break;
 	default:
 		break;
 	}
@@ -2400,6 +2406,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
+			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->cycles = CYCLE_REG + CYCLE_MEM;
+			break;
+		case X86_OP_REG:
 			op->type = R_ANAL_OP_TYPE_PUSH;
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
