@@ -129,6 +129,7 @@ static int show_help(char *argv0, int line) {
 	" -f [from]  start searching from address 'from'\n"
 	" -h         show this help\n"
 	" -i         identify filetype (r2 -nqcpm file)\n"
+	" -j         output in JSON\n"
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
