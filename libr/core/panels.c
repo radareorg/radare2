@@ -4235,17 +4235,17 @@ static bool handle_tab(RCore *core) {
 		return true;
 	}
 	switch (ch) {
-		case 'n':
-			return handle_tab_next (core);
-		case 'p':
-			return handle_tab_prev (core);
-		case '-':
-			return handle_tab_del (core);
-		case '=':
-			handle_tab_name (core);
-			break;
-		case 't':
-			handle_tab_new (core);
+	case 'n':
+		return handle_tab_next (core);
+	case 'p':
+		return handle_tab_prev (core);
+	case '-':
+		return handle_tab_del (core);
+	case '=':
+		handle_tab_name (core);
+		break;
+	case 't':
+		handle_tab_new (core);
 	}
 	return false;
 }
