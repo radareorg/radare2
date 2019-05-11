@@ -1199,11 +1199,11 @@ repeat:
 					last_is_mov_lr_pc = true;
 				}
 			}
-			// Is this a mov into a register?
-			if (op.dst && op.dst->reg && op.dst->reg->name) {
+			// Is this a mov of immediate value into a register?
+			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
 				free (last_reg_mov_lea_name);
 				if ((last_reg_mov_lea_name = strdup (op.dst->reg->name))) {
-					last_reg_mov_lea_val = op.ptr;
+					last_reg_mov_lea_val = op.val;
 					last_is_reg_mov_lea = true;
 				}
 			}
