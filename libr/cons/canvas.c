@@ -588,6 +588,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 			W (vline);
 		}
 		if (G (x + w - 1, y + i)) {
+			W (Color_RESET_ALL);
 			W (vline);
 		}
 	}

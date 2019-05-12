@@ -2662,7 +2662,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 
 static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
-	const char *infos, *metas;
+	const char *infos;
 	char key[100];
 	RAnalMetaItem *mi;
 	RCore *core = ds->core;
