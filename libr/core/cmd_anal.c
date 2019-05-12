@@ -3022,7 +3022,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 			} else {
 				if (!*name || !setFunctionName (core, off, name, false)) {
-					eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, off);
+					eprintf ("Cannot find function at 0x%08" PFMT64x "\n", off);
 				}
 			}
 			free (name);
@@ -3230,7 +3230,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		if (name) {
 			if (*name && !setFunctionName (core, addr, name, true)) {
-				eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, (ut64)addr);
+				eprintf ("Cannot find function at 0x%08" PFMT64x "\n", (ut64)addr);
 			}
 			free (name);
 		}
