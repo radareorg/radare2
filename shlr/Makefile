@@ -273,7 +273,9 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+	if [ -d capstone/.git ]; then \
+		cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
+	fi
 endif
 	mkdir -p capstone/include/capstone
 	cp -rf capstone/include/*.h capstone/include/capstone
@@ -291,9 +293,11 @@ else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
 	@echo "[capstone] Applying patches"
 ifeq ($(CS_PATCHES),1)
-	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
-	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+	if [ -d capstone/.git ]; then \
+		cd capstone ; \
+		$(GIT) reset --hard "${CS_TIP}" ; \
+		for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
+	fi
 endif
 endif
 
