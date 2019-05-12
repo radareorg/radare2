@@ -22,10 +22,8 @@ static char *new_parse(RParse *p, const char *data) {
 }
 
 static char *new_assemble(RParse *p, const char *expr) {
-	char *str = strdup (expr);
-	char *ptr = strchr (str, '=');
+	char *ptr = strchr (expr, '=');
 	if (ptr) {
-		*ptr = '\0';
 		return r_str_newf ("mov %s, %s", expr, ptr + 1);
 	}
 	return strdup (expr);
