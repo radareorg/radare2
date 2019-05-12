@@ -1233,7 +1233,7 @@ repeat:
 				if (buf[2] == 0xff && buf[3] == 0xff) {
 					leaddr = op.ptr; // XXX movptr is dupped but seems to be trashed sometimes, better track leaddr separately
 				}
-				if (op.dst && op.dst->reg && op.dst->reg->name) {
+				if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 					free (last_reg_mov_lea_name);
 					if ((last_reg_mov_lea_name = strdup (op.dst->reg->name))) {
 						last_reg_mov_lea_val = op.ptr;
@@ -1636,14 +1636,19 @@ analopfinish:
 		/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;
-			if (last_is_reg_mov_lea && op.src[0] && op.src[0]->reg
-				&& op.src[0]->reg->name && !strcmp (op.src[0]->reg->name, last_reg_mov_lea_name)) {
-				last_push_addr = last_reg_mov_lea_val;
-			} else {
-				last_push_addr = op.val;
-			}
+			last_push_addr = op.val;
 			if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
 				(void) r_anal_xrefs_set (anal, op.addr, last_push_addr, R_ANAL_REF_TYPE_DATA);
+			}
+			break;
+		case R_ANAL_OP_TYPE_UPUSH:
+			if ((op.type & R_ANAL_OP_TYPE_REG) && last_is_reg_mov_lea && op.src[0] && op.src[0]->reg
+				&& op.src[0]->reg->name && !strcmp (op.src[0]->reg->name, last_reg_mov_lea_name)) {
+				last_is_push = true;
+				last_push_addr = last_reg_mov_lea_val;
+				if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
+					(void) r_anal_xrefs_set (anal, op.addr, last_push_addr, R_ANAL_REF_TYPE_DATA);
+				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
@@ -1671,7 +1676,7 @@ analopfinish:
 		if (op.type != R_ANAL_OP_TYPE_MOV && op.type != R_ANAL_OP_TYPE_CMOV && op.type != R_ANAL_OP_TYPE_LEA) {
 			last_is_reg_mov_lea = false;
 		}
-		if (op.type != R_ANAL_OP_TYPE_PUSH) {
+		if (op.type != R_ANAL_OP_TYPE_PUSH && op.type != R_ANAL_OP_TYPE_RPUSH) {
 			last_is_push = false;
 		}
 		if (is_arm && op.type != R_ANAL_OP_TYPE_MOV) {
@@ -1719,6 +1724,7 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_PUSH:
 		case R_ANAL_OP_TYPE_UPUSH:
+		case R_ANAL_OP_TYPE_RPUSH:
 			pushcnt++;
 			break;
 		case R_ANAL_OP_TYPE_MOV:

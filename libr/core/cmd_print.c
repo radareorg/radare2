@@ -2163,6 +2163,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 			break;
 		case R_ANAL_OP_TYPE_PUSH:
 		case R_ANAL_OP_TYPE_UPUSH:
+		case R_ANAL_OP_TYPE_RPUSH:
 			bgcolor = pal->push;
 			fgcolor = Color_WHITE;
 			text = "->";

@@ -380,6 +380,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
 	{ R_ANAL_OP_TYPE_UNK   , "unk" },
 	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
+	{ R_ANAL_OP_TYPE_RPUSH , "upush" },
 	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
 	{ R_ANAL_OP_TYPE_XOR   , "xor" },
 	{ R_ANAL_OP_TYPE_CASE  , "case" },
@@ -520,6 +521,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
+	case R_ANAL_OP_TYPE_RPUSH:
 		snprintf (ret, sizeof (ret), "push %s", a0);
 		break;
 	case R_ANAL_OP_TYPE_POP:
