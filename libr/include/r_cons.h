@@ -1016,6 +1016,7 @@ typedef struct r_panels_t {
 	RPanelsMode prevMode;
 	RPanelsLayout layout;
 	RList *snows;
+	char *name;
 } RPanels;
 
 typedef struct r_panels_root_t {
