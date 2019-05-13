@@ -263,6 +263,9 @@ R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, size_t length) {
 R_API char *r_buf_to_string(RBuffer *b) {
 	ut64 sz = r_buf_size (b);
 	char *s = malloc (sz + 1);
+	if (!s) {
+		return NULL;
+	}
 	if (r_buf_read_at (b, 0, (ut8 *)s, sz) < 0) {
 		free (s);
 		return NULL;
