@@ -61,10 +61,7 @@ git_clone() {
 }
 
 get_capstone() {
-	if [ ! -d capstone ]; then
-		git_clone
-	fi
-	[ ! -d capstone ] && fatal_msg 'Clone failed'
+	git_clone || fatal_msg 'Clone failed'
 	cd capstone || fatal_msg 'Failed to chdir'
 	parse_capstone_tip
 	cd ..
@@ -92,6 +89,8 @@ update_capstone_git() {
 	fi
 }
 
+### MAIN ###
+
 if [ -n "${CS_ARCHIVE}" ]; then
 	echo "CS_ARCHIVE=${CS_ARCHIVE}"
 else
@@ -107,30 +106,17 @@ if [ -z "${CS_ARCHIVE}" ]; then
 	fi
 fi
 
-if [ -n "${CS_ARCHIVE}" ]; then
-	if [ ! -d capstone ]; then
-		download_archive
-		patch_capstone
-	fi
-else
-	if [ ! -d capstone ]; then
-		get_capstone
-
-		if [ "${BRANCH}" != "${CS_BRA}" ]; then
-			echo '[capstone] Reset capstone' >&2
-			rm -rf capstone
-			get_capstone
-		fi
-		echo '[capstone] Updating capstone from git...' >&2
-		echo "HEAD ${HEAD}" >&2
-		echo "TIP  ${CS_TIP}" >&2
-
-		cd capstone || fatal_msg 'Cannot change working directory'
-		if [ -d .git ]; then
-			git_assert
-			update_capstone_git
-		fi
-		patch_capstone
-		cd -
-	fi
+if [ -d capstone ]; then
+	echo "[capstone] Nothing to do"
+	exit 0
 fi
+if [ -n "${CS_ARCHIVE}" ]; then
+	download_archive
+else
+	git_assert
+	get_capstone
+	# if [ ! -d capstone/.git ]; then update_capstone_git fi
+fi
+cd capstone || fatal_msg 'Cannot change working directory'
+patch_capstone
+cd -
