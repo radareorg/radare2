@@ -197,7 +197,7 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	}
 
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (zfo->b, &tmpsz);
+	const ut8 *tmp = r_buf_data (zfo->b, &tmpsz);
 	struct zip_source *s = zip_source_buffer (zipArch, tmp, tmpsz, 0);
 	if (s && zfo->entry != -1) {
 		if (zip_replace(zipArch, zfo->entry, s) == 0) {

@@ -160,7 +160,7 @@ R_API RBuffer *r_buf_new_with_string(const char *msg) {
 
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
 	ut64 sz;
-	const ut8 *tmp = r_buf_buffer (b, &sz);
+	const ut8 *tmp = r_buf_data (b, &sz);
 	return r_buf_new_with_bytes (tmp, sz);
 }
 
@@ -179,7 +179,7 @@ R_API RBuffer *r_buf_new(void) {
 	return new_buffer (R_BUFFER_BYTES, &u);
 }
 
-R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size) {
+R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size) {
 	r_return_val_if_fail (b, NULL);
 	b->whole_buf = get_whole_buf (b, size);
 	return b->whole_buf;
@@ -228,7 +228,7 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 		return false;
 	}
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+	const ut8 *tmp = r_buf_data (b, &tmpsz);
 	return r_file_dump (file, tmp, tmpsz, 0);
 }
 
@@ -352,7 +352,7 @@ R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	r_return_val_if_fail (b && a && !b->readonly, false);
 	ut64 sz;
-	const ut8 *tmp = r_buf_buffer (a, &sz);
+	const ut8 *tmp = r_buf_data (a, &sz);
 	return r_buf_append_bytes (b, tmp, sz);
 }
 

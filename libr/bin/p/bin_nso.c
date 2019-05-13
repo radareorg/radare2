@@ -114,7 +114,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	R_FREE (tmp);
 
 	/* Load unpacked binary */
-	const ut8 *tmpbuf = r_buf_buffer (newbuf, &total_size);
+	const ut8 *tmpbuf = r_buf_data (newbuf, &total_size);
 	r_io_write_at (rbin->iob.io, ba, tmpbuf, total_size);
 	ut32 modoff = readLE32 (newbuf, NSO_OFFSET_MODMEMOFF);
 	RBinNXOObj *bin = nso_new ();

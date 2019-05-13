@@ -45,7 +45,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 
 static bool load(RBinFile *bf) {
 	ut64 sz;
-	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_data (bf->buf, &sz);
 	return check_bytes (bytes, sz);
 }
 

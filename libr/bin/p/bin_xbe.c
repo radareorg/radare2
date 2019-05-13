@@ -21,7 +21,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	r_bin_xbe_obj_t *obj = NULL;
-	const ut8 *bytes = r_buf_buffer (bf->buf, NULL);
+	const ut8 *bytes = r_buf_data (bf->buf, NULL);
 	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
 	obj = bf->o->bin_obj;
 	if (obj) {

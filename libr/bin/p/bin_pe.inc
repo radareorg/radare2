@@ -53,7 +53,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bytes = r_buf_buffer (bf->buf, &sz);
+	bytes = r_buf_data (bf->buf, &sz);
 	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
@@ -446,7 +446,7 @@ static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	if (!bf) {
 		return false;
 	}
-	buf = r_buf_buffer (bf->buf, &sz);
+	buf = r_buf_data (bf->buf, &sz);
 	if (!buf) {
 		return false;
 	}

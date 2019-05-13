@@ -125,7 +125,7 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	char *uri = r_str_newf ("malloc://%d", bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
-		const ut8 *tmp = r_buf_buffer (b, &bufSize);
+		const ut8 *tmp = r_buf_data (b, &bufSize);
 		r_io_desc_write (desc, tmp, bufSize);
 	}
 	return desc;

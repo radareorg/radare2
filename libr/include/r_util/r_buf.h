@@ -128,7 +128,7 @@ R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt
 // WARNING: this function should be used with care because it may allocate the
 // entire buffer in memory. Consider using the r_buf_read* APIs instead and read
 // only the chunks you need.
-R_API const ut8 *r_buf_buffer(RBuffer *b, ut64 *size);
+R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
 R_API RBuffer *r_buf_ref(RBuffer *b);
