@@ -76,6 +76,8 @@ CHKFNC c explicit_memset
 CHKFNC c clock_nanosleep
 CHKFNC c mremap
 
+IF HAVE_MREMAP { CFLAGS += -D_GNU_SOURCE ; }
+
 (( TODO must deprecate
 CHKLIB gmp
 ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;

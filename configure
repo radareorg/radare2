@@ -525,6 +525,8 @@ if [ $? = 0 ]; then
 	echo yes ; HAVE_MREMAP=1
 else
 	HAVE_MREMAP=0 ; echo no ; fi
+if [ "$HAVE_MREMAP" = "1" ]; then
+CFLAGS="${CFLAGS} -D_GNU_SOURCE"; fi
 HAVE_LIB_GMP="0"
 check_library HAVE_LIB_SSL ssl 0
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config

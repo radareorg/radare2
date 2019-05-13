@@ -344,7 +344,7 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 
 R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 #if HAVE_MREMAP
-	void *res = mremap (m->buf, m->len, newsize, 0);
+	void *res = mremap (m->buf, m->len, newsize, MREMAP_MAYMOVE);
 	if (res == MAP_FAILED) {
 		return NULL;
 	}

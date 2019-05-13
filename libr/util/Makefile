@@ -36,6 +36,10 @@ else
 endif
 endif
 
+ifeq (${HAVE_MREMAP},1)
+  CFLAGS+=-D_GNU_SOURCE
+endif
+
 include deps.mk
 
 LDFLAGS+=${BN_LIBS}
