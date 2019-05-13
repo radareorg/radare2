@@ -452,7 +452,7 @@ static void selection_widget_draw() {
 	} else {
 		pos_y = r_cons_get_cur_line ();
 		if (pos_y + sel_widget->h > cons->rows) {
-			printf ("%s\n", r_str_pad('\n', sel_widget->h))
+			printf ("%s\n", r_str_pad('\n', sel_widget->h));
 			pos_y = cons->rows - sel_widget->h;
 		}
 	}
