@@ -84,8 +84,7 @@ static int match_opcode(const struct riscv_opcode *op, insn_t insn)
   return ((insn ^ op->match) & op->mask) == 0;
 }
 
-static int match_never(const struct riscv_opcode *op,
-		       insn_t insn)
+static int match_never(const struct riscv_opcode *op, insn_t insn)
 {
   return 0;
 }
