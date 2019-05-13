@@ -733,7 +733,6 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 	r_return_val_if_fail (bf && bytes, false);
 
 	r_buf_free (bf->buf);
-	bf->buf = r_buf_new ();
 #if LIMIT_SIZE
 	if (sz > 1024 * 1024) {
 		eprintf ("Too big\n");
