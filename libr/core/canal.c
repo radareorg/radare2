@@ -1655,7 +1655,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return false;
 	}
 	if (at == UT64_MAX || depth < 0) {
-		eprintf ("err dp\n");
 		return false;
 	}
 	if (r_cons_is_breaked ()) {
