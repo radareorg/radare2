@@ -361,30 +361,29 @@ R_API bool r_cons_is_breaked() {
 
 R_API int r_cons_get_cur_line () {
 	int curline = 0;
-	#if __WINDOWS__
+#if __WINDOWS__
 	POINT point;
 		if (GetCursorPos(&point)) {
 			curline = point.y;
 		}
-	#endif
-	#if __UNIX__
+#endif
+#if __UNIX__
 		char buf[8];
 		struct termios save,raw;
-		tcgetattr(0,&save);
-		cfmakeraw(&raw);
-		tcsetattr(0,TCSANOW,&raw);
-		if (isatty(fileno(stdin)))
-		{
-			write(1,R_CONS_GET_CURSOR_POSITION,sizeof(R_CONS_GET_CURSOR_POSITION));
-			read (0 ,buf ,sizeof(buf));
+		tcgetattr (0,&save);
+		cfmakeraw (&raw);
+		tcsetattr (0,TCSANOW,&raw);
+		if (isatty (fileno (stdin))){
+			write(1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
+			read (0, buf, sizeof(buf));
 			if (isdigit (buf[2])) {
 				curline = (buf[2] - '0');
 			} if (isdigit (buf[3])) {
 				curline = curline * 10 + (buf[3] - '0');
 			}
 		}
-		tcsetattr(0,TCSANOW,&save);
-	#endif
+		tcsetattr (0,TCSANOW,&save);
+#endif
 	return curline;
 }
 

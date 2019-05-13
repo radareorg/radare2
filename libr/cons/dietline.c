@@ -691,8 +691,7 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
-	if (I.prompt_type != R_LINE_PROMPT_DEFAULT ||
-		cons->show_autocomplete_widget) {
+	if (I.prompt_type != R_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {
 
 		selection_widget_update ();
 		if (I.sel_widget) {
