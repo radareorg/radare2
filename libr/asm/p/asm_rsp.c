@@ -54,18 +54,22 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case RSP_OPND_OFFSET:
 		case RSP_OPND_TARGET:
-			snappendf (&buffer, &size, "0x%08x", r_instr.operands[i].u);
+			snappendf (&buffer, &size, "0x%08"PFMT64x, r_instr.operands[i].u);
 			break;
 		case RSP_OPND_ZIMM:
-			snappendf (&buffer, &size, "0x%04x", r_instr.operands[i].u >> ((r_instr.operands[i].u & ~0xffff) ? 16 : 0));
+			{
+			int shift = (r_instr.operands[i].u & ~0xffff) ? 16 : 0;
+			snappendf (&buffer, &size, "0x%04"PFMT64x,
+				r_instr.operands[i].u >> shift);
+			}
 			break;
 		case RSP_OPND_SIMM:
-			snappendf (&buffer, &size, "%s0x%04x",
+			snappendf (&buffer, &size, "%s0x%04"PFMT64x,
 			(r_instr.operands[i].s<0)?"-":"",
 			(r_instr.operands[i].s<0)?-r_instr.operands[i].s:r_instr.operands[i].s);
 			break;
 		case RSP_OPND_SHIFT_AMOUNT:
-			snappendf (&buffer, &size, "%u", r_instr.operands[i].u);
+			snappendf (&buffer, &size, "%"PFMT64u, r_instr.operands[i].u);
 			break;
 		case RSP_OPND_BASE_OFFSET:
 			snappendf (&buffer, &size, "%s0x%04x(%s)",

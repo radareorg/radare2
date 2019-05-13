@@ -4969,7 +4969,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
 			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
-			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, sz);
+			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, (int)sz);
 		} else {
 			r_core_cmdf (core, "aab@%s!%s-%s\n", addr, addr2, addr);
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
