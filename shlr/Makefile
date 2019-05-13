@@ -291,17 +291,9 @@ ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
-	@echo "[capstone] Applying patches"
-ifeq ($(CS_PATCHES),1)
-	if [ -d capstone/.git ]; then \
-		cd capstone ; \
-		$(GIT) reset --hard "${CS_TIP}" ; \
-		for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
-	fi
-endif
 endif
 
-.PHONY: capstone
+.PHONY: capstone capstone-sync
 endif
 
 ifeq (${EXT_AR},)
