@@ -182,10 +182,13 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	if (strcmp (zigname, fcn->name)) {
 		r_sign_add_name (core->anal, zigname, fcn->name);
 	}
+/*
+	XXX this is very slow and poorly tested
 	char *comments = getFcnComments (core, fcn);
 	if (comments) {
 		r_sign_add_comment (core->anal, zigname, comments);
 	}
+*/
 	r_sign_add_addr (core->anal, zigname, fcn->addr);
 
 	free (zigname);
