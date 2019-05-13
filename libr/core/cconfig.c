@@ -2080,14 +2080,14 @@ static bool cb_stopthreads(void *user, void *data) {
 	return true;
 }
 
-static int cb_showautocompletewidget(void *user, void *data) {
+static bool cb_scr_prompt_popup(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->show_autocomplete_widget = node->i_value;
 	return true;
 }
 
-static int cb_swstep(void *user, void *data) {
+static bool cb_swstep(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->swstep = node->i_value;
@@ -3286,7 +3286,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
-	SETCB ("scr.prompt.popup", "true", &cb_showautocompletewidget, "Show widget dropdown for autocomplete");
+	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
 	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
 		&scr_ansicon, "Use ANSICON mode or not on Windows");
