@@ -293,7 +293,7 @@ static const char *help_msg_af[] = {
 	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
-	"afu", " [addr]", "resize and analyze function from current address until addr",
+	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[bsra]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
 	NULL
