@@ -160,6 +160,9 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			continue;
 		}
 		token = word + 2;
+		if (!strcmp (word, "*")) {
+			continue;
+		} 
 		if (strlen (word) < 3 || word[1] != ':') {
 			eprintf ("Corrupted zignatures database (%s)\n", word);
 			break;
