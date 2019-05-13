@@ -382,7 +382,7 @@ R_API int r_cons_get_cur_line () {
 				curline = curline * 10 + (buf[3] - '0');
 			}
 		}
-		tcsetattr (0, TCSANOW,&save);
+		tcsetattr (0, TCSANOW, &save);
 #endif
 	return curline;
 }
