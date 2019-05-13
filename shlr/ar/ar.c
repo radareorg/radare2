@@ -39,7 +39,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	ar_read_filename_table (b, buffer, files, filename);
 
 	/* If b->base is set, then we found the file root in the archive */
-	while (r && !b->base_priv) {
+	while (r) {
 		r = ar_read_file (b, buffer, false, files, filename);
 	}
 
@@ -72,11 +72,11 @@ R_API int ar_close(RBuffer *b) {
 }
 
 R_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_read_at (b, off + b->base_priv, buf, count);
+	return r_buf_read_at (b, off, buf, count);
 }
 
 R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_write_at (b, off + b->base_priv, buf, count);
+	return r_buf_write_at (b, off, buf, count);
 }
 
 int ar_read(RBuffer *b, void *dest, int len) {
@@ -193,9 +193,6 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		/* Check filename */
 		if (index == index_filename || !strcmp (curfile, filename)) {
 			r_buf_resize(b, filesize);
-			// FIXME: direct access to base should be avoided (use _sparse
-			// when you need buffer that starts at given addr)
-			b->base_priv = r_buf_tell (b);
 			free (curfile);
 			return r_buf_size (b);
 		}

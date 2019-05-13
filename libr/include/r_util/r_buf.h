@@ -44,9 +44,6 @@ typedef struct r_buf_t {
 	ut8 *whole_buf;
 	bool readonly;
 	int Oxff_priv;
-
-	// FIXME: some direct accesses to base_priv still exist unfortunately
-	ut64 base_priv;
 	int refctr;
 } RBuffer;
 
