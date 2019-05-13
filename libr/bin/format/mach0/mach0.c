@@ -1736,8 +1736,13 @@ static int parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol,
 					continue;
 				}
 				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				symbol->offset = bin->sects[i].offset + j * bin->sects[i].reserved2;
-				symbol->addr = bin->sects[i].addr + j * bin->sects[i].reserved2;
+				int delta = j * bin->sects[i].reserved2;
+				if (delta < 0) {
+					bprintf ("mach0: corrupted reserved2 value leads to int overflow.\n");
+					continue;
+				}
+				symbol->offset = bin->sects[i].offset + delta;
+				symbol->addr = bin->sects[i].addr + delta;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
 				if (stridx >= 0 && stridx < bin->symstrlen) {

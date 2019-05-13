@@ -482,7 +482,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 		RListIter *iter;
 		r_list_foreach (list, iter, member) {
 			sdb_unset (TDB, sdb_fmt ("enum.%s.%s", name, member->name), 0);
-			sdb_unset (TDB, sdb_fmt ("enum.%s.0x%x", name, member->val), 0);
+			sdb_unset (TDB, sdb_fmt ("enum.%s.%s", name, member->val), 0);
 		}
 		sdb_unset (TDB, name, 0);
 		r_list_free (list);

@@ -175,7 +175,7 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 			"Host: %s\r\n"
 			"Content-Length: %i\r\n"
 			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, strlen (data));
+			"\r\n", path, host, (int)strlen (data));
 	r_socket_write (s, (void *)data, strlen (data));
 	response = r_socket_http_answer (s, code, rlen);
 	free (uri);

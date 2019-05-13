@@ -546,7 +546,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'o': // "omo"
 		if (input[2] == ' ') {
-			r_core_cmdf (core, "om %s 0x%08" PFMT64x " $s r omo", input + 2);
+			r_core_cmdf (core, "om %s 0x%08" PFMT64x " $s r omo", input + 2, core->offset);
 		} else {
 			r_core_cmd0 (core, "om `oq.` $B $s r");
 		}
