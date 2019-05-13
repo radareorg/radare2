@@ -359,13 +359,6 @@ R_API bool r_cons_is_breaked() {
 	return I.context->breaked;
 }
 
-R_API void r_cons_add_newlines (int n) {
-	int i;
-	for (i = 0; i < n; ++i) {
-		printf ("\n");
-	}
-}
-
 R_API int r_cons_get_cur_line () {
 	int curline = 0;
 #if __WINDOWS__
