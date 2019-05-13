@@ -616,10 +616,7 @@ R_API RBuffer *r_buf_ref(RBuffer *b) {
 }
 
 R_API RList *r_buf_nonempty_list(RBuffer *b) {
-	if (!b->sparse_priv) {
-		return NULL;
-	}
-	return r_list_clone (b->sparse_priv);
+	return b->methods->nonempty_list? b->methods->nonempty_list (b): NULL;
 }
 
 R_API int r_buf_uleb128(RBuffer *b, ut64 *v) {

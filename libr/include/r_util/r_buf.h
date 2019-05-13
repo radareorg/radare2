@@ -23,6 +23,7 @@ typedef bool (*RBufferResize)(RBuffer *b, ut64 newsize);
 typedef int (*RBufferSeek)(RBuffer *b, st64 addr, int whence);
 typedef ut8 *(*RBufferGetWholeBuf)(RBuffer *b, ut64 *sz);
 typedef void (*RBufferFreeWholeBuf)(RBuffer *b);
+typedef RList *(*RBufferNonEmptyList)(RBuffer *b);
 
 typedef struct r_buffer_methods_t {
 	RBufferInit init;
@@ -34,32 +35,20 @@ typedef struct r_buffer_methods_t {
 	RBufferSeek seek;
 	RBufferGetWholeBuf get_whole_buf;
 	RBufferFreeWholeBuf free_whole_buf;
+	RBufferNonEmptyList nonempty_list;
 } RBufferMethods;
 
 typedef struct r_buf_t {
 	const RBufferMethods *methods;
 	void *priv;
-	ut8 tmp[8];
 	ut8 *whole_buf;
 	bool readonly;
 	int Oxff_priv;
 
-	ut8 *buf_priv;
-	ut64 length_priv;
-	st64 cur_priv;
 	// FIXME: some direct accesses to base_priv still exist unfortunately
 	ut64 base_priv;
-	RMmap *mmap_priv;
-	bool empty_priv;
-	int fd_priv;
 	RList *sparse_priv;
 	int refctr;
-	// RIOBind *iob;
-	// forward declaration
-	void *iob;
-	ut64 offset_priv;
-	ut64 limit_priv;
-	struct r_buf_t *parent_priv;
 } RBuffer;
 
 // XXX: this should not be public
