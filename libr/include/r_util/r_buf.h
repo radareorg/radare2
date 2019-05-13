@@ -230,12 +230,12 @@ R_API int r_buf_uleb128(RBuffer *b, ut64 *v);
 R_API int r_buf_sleb128(RBuffer *b, st64 *v);
 
 static inline int r_buf_uleb128_at(RBuffer *b, ut64 addr, ut64 *v) {
-	r_buf_seek (b, addr, 0);
+	r_buf_seek (b, addr, R_BUF_SET);
 	return r_buf_uleb128 (b, v);
 }
 static inline int r_buf_sleb128_at(RBuffer *b, ut64 addr, st64 *v) {
-	r_buf_seek (b, addr, 0);
-	return r_buf_sleb128(b, v);
+	r_buf_seek (b, addr, R_BUF_SET);
+	return r_buf_sleb128 (b, v);
 }
 
 #ifdef __cplusplus
