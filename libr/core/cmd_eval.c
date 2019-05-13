@@ -62,7 +62,7 @@ static const char *help_msg_eco[] = {
 	NULL
 };
 
-static char *curtheme = "default";
+static char *curtheme = NULL;
 static bool getNext = false;
 
 static void cmd_eval_init(RCore *core) {
