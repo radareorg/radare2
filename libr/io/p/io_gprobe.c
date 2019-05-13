@@ -124,7 +124,14 @@ static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 
 	ddc2bi3_len = buf[1] & ~0x80;
 
-	if (((buf[0] & 0xfe) != GPROBE_I2C_ADDR) || !(buf[1] & 0x80) || (buf[2] != 0xc2) || (buf[3] != 0x00) || (buf[4] != 0x00) || (cmd != buf[6]) || !(buf[5] - 2) || (buf[5] != ddc2bi3_len - 2)) {
+	if (((buf[0] & 0xfe) != GPROBE_I2C_ADDR)
+	    || !(buf[1] & 0x80)
+	    || (buf[2] != 0xc2)
+	    || (buf[3] != 0x00)
+	    || (buf[4] != 0x00)
+	    || (cmd != buf[6])
+	    || !(buf[5] - 2)
+	    || (buf[5] != ddc2bi3_len - 2)) {
 		return -1;
 	}
 
