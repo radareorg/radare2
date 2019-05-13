@@ -1025,7 +1025,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 					} else {
 						// f is a filename
 						if (r_file_exists (f)) {
-							path = r_str_prefix (strdup (f), "./");
+							path = r_str_prepend (strdup (f), "./");
 						} else {
 							path = r_file_path (f);
 						}
