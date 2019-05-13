@@ -522,6 +522,7 @@ typedef struct r_cons_t {
 
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
 #define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
+#define R_CONS_ADD_NEWLINES "\x1b[2J"
 #define R_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
 
 #define R_CONS_CURSOR_SAVE "\x1b[s"
@@ -685,7 +686,6 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch);
 R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert);
 R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
-
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
 R_API RCons *r_cons_free(void);
@@ -729,6 +729,7 @@ R_API char *r_cons_editor(const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
 R_API void r_cons_print_clear(void);
+R_API void r_cons_add_newlines (int n);
 R_API void r_cons_zero(void);
 R_API void r_cons_highlight(const char *word);
 R_API void r_cons_clear(void);
@@ -865,7 +866,7 @@ typedef struct r_selection_widget_t {
 	int w, h;
 	int scroll;
 	bool complete_common;
-	int direction;
+	bool direction;
 } RSelWidget;
 
 typedef struct r_line_hist_t {

@@ -443,17 +443,18 @@ static void selection_widget_draw() {
 	RCons *cons = r_cons_singleton ();
 	RSelWidget *sel_widget = I.sel_widget;
 	int y, pos_y, pos_x = r_str_ansi_len (I.prompt);
+	sel_widget->h = R_MIN (sel_widget->h, R_SELWIDGET_MAXH);
+	for (y = 0; y < sel_widget->options_len; y++) {
+		sel_widget->w = R_MAX (sel_widget->w, strlen (sel_widget->options[y]));
+	}
 	if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
 		pos_y = cons->rows;
 	} else {
 		pos_y = r_cons_get_cur_line ();
-		if (pos_y + R_SELWIDGET_MAXH > cons->rows) {
-			printf ("%s", R_CONS_CLEAR_SCREEN);
-			r_cons_gotoxy (pos_x, 1);
+		if (pos_y + sel_widget->h > cons->rows) {
+			r_cons_add_newlines (sel_widget->h);
+			pos_y = cons->rows - sel_widget->h;
 		}
-	}
-	for (y = 0; y < sel_widget->options_len; y++) {
-		sel_widget->w = R_MAX (sel_widget->w, strlen (sel_widget->options[y]));
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
@@ -466,7 +467,7 @@ static void selection_widget_draw() {
 		scrollbar_l = (R_SELWIDGET_MAXH * R_SELWIDGET_MAXH) / sel_widget->options_len;
 	}
 
-	for (y = 0; y < R_MIN (sel_widget->h, R_SELWIDGET_MAXH); y++) {
+	for (y = 0; y < sel_widget->h; y++) {
 		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
 			r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
 		} else {

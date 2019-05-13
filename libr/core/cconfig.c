@@ -2991,11 +2991,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-<<<<<<< HEAD
 	
-=======
-	SETCB ("cfg.autocomplete.widget", "true", &cb_showautocompletewidget, "Show widget dropdown for autocomplete");
->>>>>>> Initial working of autcompletion in rcons
 	/* log */
 	// R2_LOGLEVEL / log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");

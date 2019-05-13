@@ -359,6 +359,13 @@ R_API bool r_cons_is_breaked() {
 	return I.context->breaked;
 }
 
+R_API void r_cons_add_newlines (int n) {
+	int i;
+	for (i = 0; i < n; ++i) {
+		printf ("\n");
+	}
+}
+
 R_API int r_cons_get_cur_line () {
 	int curline = 0;
 #if __WINDOWS__
@@ -370,19 +377,19 @@ R_API int r_cons_get_cur_line () {
 #if __UNIX__
 		char buf[8];
 		struct termios save,raw;
-		tcgetattr (0, &save);
+		(void) tcgetattr (0, &save);
 		cfmakeraw (&raw);
-		tcsetattr (0, TCSANOW, &raw);
+		(void) tcsetattr (0, TCSANOW, &raw);
 		if (isatty (fileno (stdin))){
-			write(1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
-			read (0, buf, sizeof(buf));
+			write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
+			read (0, buf, sizeof (buf));
 			if (isdigit (buf[2])) {
 				curline = (buf[2] - '0');
 			} if (isdigit (buf[3])) {
 				curline = curline * 10 + (buf[3] - '0');
 			}
 		}
-		tcsetattr (0, TCSANOW, &save);
+		(void) tcsetattr (0, TCSANOW, &save);
 #endif
 	return curline;
 }
