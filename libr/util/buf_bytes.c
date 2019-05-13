@@ -64,7 +64,7 @@ static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
 			return false;
 		}
 		priv->buf = t;
-		memset (priv->buf + priv->length, 0, newsize - priv->length);
+		memset (priv->buf + priv->length, b->Oxff_priv, newsize - priv->length);
 	}
 	priv->length = newsize;
 	return true;

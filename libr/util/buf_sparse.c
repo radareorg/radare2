@@ -204,7 +204,8 @@ static int buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 static RList *buf_sparse_nonempty_list(RBuffer *b) {
-	return r_list_clone (b->sparse_priv);
+	struct buf_sparse_priv *priv = get_priv_sparse (b);
+	return r_list_clone (priv->sparse);
 }
 
 static const RBufferMethods buffer_sparse_methods = {
