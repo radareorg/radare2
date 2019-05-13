@@ -3533,6 +3533,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			break;
 #endif
 		case R_CORE_VISUAL_MODE_PX: // x
+			if ((R_ABS(hexMode) % 3) == 0) { // prx
+				r_core_block_size (core, (int)(core->cons->rows * hexcols * 4));
+			} else {
+				r_core_block_size (core, (int)(core->cons->rows * hexcols * 2));
+			}
+			break;
 		case R_CORE_VISUAL_MODE_OV:
 		case R_CORE_VISUAL_MODE_CD:
 			r_core_block_size (core, (int)(core->cons->rows * hexcols * 2));

@@ -1762,7 +1762,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			r_config_hold_free (hc);
 			return false;
 		}
-		body_b64 = r_str_prefix (body_b64, "base64:");
+		body_b64 = r_str_prepend (body_b64, "base64:");
 		r_cons_printf ("agn %s %s\n", title, body_b64);
 		free (body);
 		free (body_b64);
@@ -4969,7 +4969,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
 			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
-			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, sz);
+			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, (int)sz);
 		} else {
 			r_core_cmdf (core, "aab@%s!%s-%s\n", addr, addr2, addr);
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);

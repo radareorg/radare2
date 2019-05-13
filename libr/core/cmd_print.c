@@ -1679,7 +1679,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			// collect comments
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
-				comment = r_str_prefix (comment, ";");
+				comment = r_str_prepend (comment, ";");
 				note[j] = comment;
 				marks = true;
 			}
@@ -1692,7 +1692,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				} else {
 					fend = addr + j + flag->size;
 				}
-				note[j] = r_str_prefix (strdup (flag->name), "/");
+				note[j] = r_str_prepend (strdup (flag->name), "/");
 				marks = true;
 				color_idx++;
 				color_idx %= 10;

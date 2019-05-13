@@ -825,8 +825,7 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 	va_end (ap);
 }
 
-// TODO: rename to prepend
-R_API char *r_str_prefix(char *ptr, const char *string) {
+R_API char *r_str_prepend(char *ptr, const char *string) {
 	int slen, plen;
 	if (!ptr) {
 		return strdup (string);

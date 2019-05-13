@@ -2011,7 +2011,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 				free (res);
 				return NULL;
 			}
-			res = r_str_prefix (res, cmd);
+			res = r_str_prepend (res, cmd);
 			free (cmd);
 			r_config_set (core->config, kv, eq + 1);
 			*eq = '=';
@@ -2942,7 +2942,7 @@ repeat_arroba:
 					if (!tmpeval) {
 						tmpeval = cmd;
 					} else {
-						tmpeval = r_str_prefix (tmpeval, cmd);
+						tmpeval = r_str_prepend (tmpeval, cmd);
 						free (cmd);
 					}
 				}

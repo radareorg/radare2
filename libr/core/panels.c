@@ -276,6 +276,8 @@ static void refreshCoreOffset (RCore *core);
 static bool handleZoomMode(RCore *core, const int key);
 static bool handleWindowMode(RCore *core, const int key);
 static bool handleCursorMode(RCore *core, const int key);
+static void handle_visual_mark(RCore *core);
+static void add_visual_mark(RCore *core);
 static void resizePanelLeft(RPanels *panels);
 static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
@@ -385,7 +387,6 @@ static bool moveToDirection(RPanels *panels, Direction direction);
 static void toggleHelp(RCore *core);
 static void createDefaultPanels(RCore *core);
 static void createNewPanel(RCore *core, bool vertical);
-static void addNewPanel(RCore *core, char *name, char *cmd, bool cache);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
@@ -1271,6 +1272,45 @@ static bool handleCursorMode(RCore *core, const int key) {
 	return true;
 }
 
+static void handle_visual_mark(RCore *core) {
+	RPanel *cur = getCurPanel (core->panels);
+	if (!check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+		return;
+	}
+	int act = show_status (core, "Visual Mark  s:set -:remove \':use: ");
+	switch (act) {
+	case 's':
+		add_visual_mark (core);
+		break;
+	case '-':
+		r_cons_gotoxy (0, 0);
+		if (r_core_visual_mark_dump (core)) {
+			r_cons_printf (R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
+			r_cons_flush ();
+			int ch = r_cons_readchar ();
+			r_core_visual_mark_del (core, ch);
+		}
+		break;
+	case '\'':
+		r_cons_gotoxy (0, 0);
+		if (r_core_visual_mark_dump (core)) {
+			r_cons_flush ();
+			int ch = r_cons_readchar ();
+			r_core_visual_mark_seek (core, ch);
+			cur->model->addr = core->offset;
+			cur->view->refresh = true;
+		}
+	}
+	return;
+}
+
+static void add_visual_mark(RCore *core) {
+	char *msg = r_str_newf (R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x": ", core->offset);
+	int ch = show_status (core, msg);
+	free (msg);
+	r_core_visual_mark (core, ch);
+}
+
 static void resizePanelLeft(RPanels *panels) {
 	RPanel *cur = getCurPanel (panels);
 	int i, cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0, cur3 = 0, cur4 = 0;
@@ -1928,14 +1968,6 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) 
 			p->model->cmdStrCache = NULL;
 		}
 	}
-}
-
-static void addNewPanel(RCore *core, char *name, char *cmd, bool cache) {
-	RPanels *panels = core->panels;
-	insertPanel (core, 0, name, cmd, cache);
-	panels_layout (panels);
-	panels->curnode = 0;
-	setRefreshAll (panels, false);
 }
 
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
@@ -3964,16 +3996,16 @@ static void createNewPanel(RCore *core, bool vertical) {
 	if (!checkPanelNum (core)) {
 		return;
 	}
-	char *res = show_status_input (core, "New panel with command: ");
-	if (res && *res) {
-		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
-		if (res && *res) {
-			if (vertical) {
-				splitPanelVertical (core, getCurPanel (panels), res, res, cache);
-			} else {
-				splitPanelHorizontal (core, getCurPanel (panels), res, res, cache);
-			}
-		}
+	char *name = show_status_input (core, "Name: ");
+	char *res = show_status_input (core, "Command: ");
+	if (R_STR_ISEMPTY (res)) {
+		return;
+	}
+	bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
+	if (vertical) {
+		splitPanelVertical (core, getCurPanel (panels), name, res, cache);
+	} else {
+		splitPanelHorizontal (core, getCurPanel (panels), name, res, cache);
 	}
 	free (res);
 }
@@ -4613,19 +4645,7 @@ repeat:
 		handleTabKey (core, true);
 		break;
 	case 'M':
-	{
-		if (!checkPanelNum (core)) {
-			break;
-		}
-		char *name = show_status_input (core, "Name: ");
-		char *cmd = show_status_input (core, "Command: ");
-		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
-		if (name && *name && cmd && *cmd) {
-			addNewPanel (core, name, cmd, cache);
-		}
-		free (name);
-		free (cmd);
-	}
+		handle_visual_mark (core);
 	break;
 	case 'e':
 	{
