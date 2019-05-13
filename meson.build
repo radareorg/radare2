@@ -333,7 +333,6 @@ foreach item : [
     ['explicit_bzero', '#include <string.h>'],
     ['explicit_memset', '#include <string.h>'],
     ['clock_nanosleep', '#include <time.h>'],
-    ['mremap', '#include <sys/mman.h>', '-D_GNU_SOURCE']
   ]
   func = item[0]
   if item.length() > 2

@@ -343,15 +343,6 @@ R_API void r_mem_memzero(void *dst, size_t l) {
 }
 
 R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
-#if HAVE_MREMAP
-	void *res = mremap (m->buf, m->len, newsize, MREMAP_MAYMOVE);
-	if (res == MAP_FAILED) {
-		return NULL;
-	}
-	m->len = newsize;
-	m->buf = res;
-	return m->buf;
-#else
 #if __WINDOWS__
 	if (m->fm != INVALID_HANDLE_VALUE) {
 		CloseHandle (m->fm);
@@ -374,5 +365,4 @@ R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize) {
 	m->len = newsize;
 	r_file_mmap_arch (m, m->filename, m->fd);
 	return m->buf;
-#endif
 }
