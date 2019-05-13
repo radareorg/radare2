@@ -25,13 +25,9 @@ fatal_msg() {
 
 patch_capstone() {
 	echo "[capstone] Applying patches..."
-	if [ -d .git ]; then
-		for patchfile in ../capstone-patches/*.patch ; do
-			yes n | patch -p 1 -i "${patchfile}"
-		done
-	else
-		echo "capstone.sh: Not applying patches if using archive capstone"
-	fi
+	for patchfile in ../capstone-patches/*.patch ; do
+		yes n | patch -p 1 -i "${patchfile}"
+	done
 }
 
 parse_capstone_tip() {
@@ -94,7 +90,6 @@ update_capstone_git() {
 		fi
 		env EDITOR=cat git revert --no-edit "${CS_REV}"
 	fi
-	return 0
 }
 
 if [ -n "${CS_ARCHIVE}" ]; then
@@ -115,6 +110,7 @@ fi
 if [ -n "${CS_ARCHIVE}" ]; then
 	if [ ! -d capstone ]; then
 		download_archive
+		patch_capstone
 	fi
 else
 	if [ ! -d capstone ]; then
@@ -134,7 +130,7 @@ else
 			git_assert
 			update_capstone_git
 		fi
-		#patch_capstone
+		patch_capstone
 		cd -
 	fi
 fi
