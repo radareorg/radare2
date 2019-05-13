@@ -2257,7 +2257,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		if (off > bin->size || off + sizeof (entry) > bin->size) {
 			break;
 		}
-		if (r_buf_read_at (bin->b, off, (ut8*)&entry, sizeof(entry)) != sizeof (entry)) {
+		if (r_buf_read_at (bin->b, off, (ut8*)&entry, sizeof(entry)) < 1) {
 			eprintf ("Warning: read resource entry\n");
 			break;
 		}
@@ -2440,7 +2440,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}
-		if (r_buf_read_at (bin->b, off, (ut8*)&typeEntry, sizeof(typeEntry)) != sizeof (typeEntry)) {
+		if (r_buf_read_at (bin->b, off, (ut8*)&typeEntry, sizeof(typeEntry)) < 1) {
 			eprintf ("Warning: read resource  directory entry\n");
 			break;
 		}
@@ -2691,7 +2691,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
 			int ret = r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord), (ut8*) &function_rva, sizeof(PE_VWord));
-			if (ret != sizeof (PE_VWord)) {
+			if (ret < 1) {
 				break;
 			}
 			// have exports by name?
@@ -2700,7 +2700,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 				name_vaddr = 0;
 				for (n = 0; n < bin->export_directory->NumberOfNames; n++) {
 					ret = r_buf_read_at (bin->b, ordinals_paddr + n * sizeof(PE_Word), (ut8*) &function_ordinal, sizeof (PE_Word));
-					if (ret != sizeof (PE_Word)) {
+					if (ret < 1) {
 						break;
 					}
 					// if exist this index into AddressOfOrdinals
@@ -2932,7 +2932,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		int r = r_buf_read_at (bin->b, bin->import_directory_offset + idi * sizeof (curr_import_dir),
 			(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
-		if (r != sizeof (curr_import_dir)) {
+		if (r < 0) {
 			return NULL;
 		}
 
@@ -2976,7 +2976,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			idi++;
 			r = r_buf_read_at (bin->b, bin->import_directory_offset + idi * sizeof (curr_import_dir),
 				(ut8 *)&curr_import_dir, sizeof (curr_import_dir));
-			if (r != sizeof (curr_import_dir)) {
+			if (r < 0) {
 				free (imports);
 				return NULL;
 			}

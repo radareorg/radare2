@@ -63,7 +63,7 @@ static int destroy(RBinFile *bf) {
 }
 
 static ut64 baddr(RBinFile *bf) {
-	return PE_ (r_bin_pe_get_image_base) (bf->o->bin_obj);
+	return PE_(r_bin_pe_get_image_base) (bf->o->bin_obj);
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
