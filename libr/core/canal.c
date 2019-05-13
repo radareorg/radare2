@@ -1762,7 +1762,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			r_config_hold_free (hc);
 			return false;
 		}
-		body_b64 = r_str_prefix (body_b64, "base64:");
+		body_b64 = r_str_prepend (body_b64, "base64:");
 		r_cons_printf ("agn %s %s\n", title, body_b64);
 		free (body);
 		free (body_b64);

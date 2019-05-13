@@ -166,7 +166,7 @@ R_API char *r_str_r2_prefix(const char *str);
 R_API int r_str_nlen(const char *s, int n);
 R_API int r_str_nlen_w(const char *s, int n);
 R_API int r_wstr_clen(const char *s);
-R_API char *r_str_prefix(char *ptr, const char *string);
+R_API char *r_str_prepend(char *ptr, const char *string);
 R_API char *r_str_prefix_all(const char *s, const char *pfx);
 R_API char *r_str_append(char *ptr, const char *string);
 R_API char *r_str_append_owned(char *ptr, char *string);
