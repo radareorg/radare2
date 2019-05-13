@@ -8,6 +8,7 @@
 #include "../../asm/arch/riscv/riscv-opc.c"
 #include "../../asm/arch/riscv/riscv.h"
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
+#define RISCVARGSMAX (8)
 #define RISCVARGSIZE (64)
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
 
@@ -17,7 +18,7 @@ static const char * const *riscv_fpr_names = riscv_fpr_names_abi;
 
 typedef struct riscv_args {
 	int num;
-	char arg[8][RISCVARGSIZE];
+	char arg[RISCVARGSMAX][RISCVARGSIZE];
 } riscv_args_t;
 
 #define is_any(...) _is_any(o->name, __VA_ARGS__, NULL)
@@ -72,7 +73,7 @@ static void get_insn_args (riscv_args_t *args, const char *d, insn_t l, uint64_t
 	uint64_t target;
 	args->num = 0;
 
-	for (; *d != '\0'; d++) {
+	for (; *d != '\0' && args->num < RISCVARGSMAX; d++) {
 		switch (*d) {
 			/* Xcustom */
 		case '^':
