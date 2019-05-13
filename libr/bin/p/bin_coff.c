@@ -91,16 +91,18 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 
 static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	RBinImport *ptr = R_NEW0 (RBinImport);
-	if (idx < 0 || idx > bin->hdr.f_nsyms) {
+	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
 		return NULL;
 	}
 	struct coff_symbol *s = &bin->symbols[idx];
 	if (s->n_sclass != COFF_SYM_CLASS_EXTERNAL) {
+		R_FREE (ptr);
 		return NULL;
 	}
 	char *coffname = r_coff_symbol_name (bin, s);
 	if (!coffname) {
-		return false;
+		R_FREE (ptr);
+		return NULL;
 	}
 	ptr->name = strdup (coffname);
 	ptr->bind = r_str_const ("NONE");

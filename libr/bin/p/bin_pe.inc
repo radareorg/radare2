@@ -520,7 +520,7 @@ static RBinInfo* info(RBinFile *bf) {
 
 	ret->has_va = true;
 
-	if (!PE_(r_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
+	if (PE_(r_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
 	if (PE_(r_bin_pe_is_stripped_line_nums) (bf->o->bin_obj)) {

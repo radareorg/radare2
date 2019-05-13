@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +29,8 @@ static int hexstr = 0;
 static int widestr = 0;
 static RPrint *pr = NULL;
 static RList *keywords;
+static const char *comma = "";
+static bool json = false;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	int delta = addr - cur;
@@ -40,33 +42,70 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		eprintf ("Invalid delta\n");
 		return 0;
 	}
-	if (rad) {
+	char _str[128];
+	char *str = _str;
+	*_str = 0;
+	if (showstr) {
+		if (widestr) {
+			str = _str;
+			int i, j = 0;
+			for (i = delta; buf[i] && i < sizeof (_str); i++) {
+				char ch = buf[i];
+				if (ch == '"' || ch == '\\') {
+					ch = '\'';
+				}
+				if (!IS_PRINTABLE (ch)) {
+					break;
+				}
+				str[j++] = ch;
+				i++;
+				if (j > 80) {
+					strcpy (str + j, "...");
+					j += 3;
+					break;
+				}
+				if (buf[i]) {
+					break;
+				}
+			}
+			str[j] = 0;
+		} else {
+			int i;
+			for (i = 0; i < sizeof (_str); i++) {
+				char ch = buf[delta + i];
+				if (ch == '"' || ch == '\\') {
+					ch = '\'';
+				}
+				if (!ch || !IS_PRINTABLE (ch)) {
+					break;
+				}
+				str[i] = ch;
+			}
+			str[i] = 0;
+		}
+	} else {
+		int i;
+		for (i = 0; i < sizeof (_str); i++) {
+			char ch = buf[delta + i];
+			if (ch == '"' || ch == '\\') {
+				ch = '\'';
+			}
+			if (!ch || !IS_PRINTABLE (ch)) {
+				break;
+			}
+			str[i] = ch;
+		}
+		str[i] = 0;
+	}
+	if (json) {
+		const char *type = "string";
+		printf ("%s{\"offset\":%"PFMT64d",\"type\":\"%s\",\"data\":\"%s\"}", comma, addr, type, str);
+		comma = ",";
+	} else if (rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
 		if (showstr) {
-			if (widestr) {
-				char *str = calloc (1, bsize);
-				int i, j = 0;
-				for (i = delta; buf[i] && i < bsize; i++) {
-					if (!IS_PRINTABLE (buf[i])) {
-						break;
-					}
-					str[j++] = buf[i++];
-					if (j > 80) {
-						strcpy (str + j, "...");
-						j += 3;
-						break;
-					}
-					if (buf[i]) {
-						break;
-					}
-				}
-				str[j] = 0;
-				printf ("0x%"PFMT64x" %s\n", addr, str);
-				free (str);
-			} else {
-				printf ("0x%"PFMT64x" %s\n", addr, buf + delta);
-			}
+			printf ("0x%"PFMT64x" %s\n", addr, str);
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (pr) {
@@ -90,6 +129,7 @@ static int show_help(char *argv0, int line) {
 	" -f [from]  start searching from address 'from'\n"
 	" -h         show this help\n"
 	" -i         identify filetype (r2 -nqcpm file)\n"
+	" -j         output in JSON\n"
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
@@ -106,8 +146,6 @@ static int show_help(char *argv0, int line) {
 	);
 	return 0;
 }
-
-static int rafind_open(char *file);
 
 static int rafind_open_file(char *file) {
 	RListIter *iter;
@@ -165,7 +203,7 @@ static int rafind_open_file(char *file) {
 
 	if (mode == R_SEARCH_STRING) {
 		/* TODO: implement using api */
-		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
+		r_sys_cmdf ("rabin2 -q%szzz '%s'", json? "j": "", file);
 		goto done;
 	}
 	if (mode == R_SEARCH_MAGIC) {
@@ -175,8 +213,8 @@ static int rafind_open_file(char *file) {
 			" -e search.in=range"
 			" -e search.align=%d"
 			" -e search.from=%"PFMT64d
-			" %s -qnc/m '%s'",
-			align, from, tostr, file);
+			" %s -qnc/m%s '%s'",
+			align, from, tostr, json? "j": "", file);
 		r_sandbox_system (cmd, 1);
 		free (cmd);
 		free (tostr);
@@ -244,8 +282,15 @@ err:
 	r_io_free (io);
 	return result;
 }
+static int rafind_open_dir(const char *dir);
 
-static int rafind_open_dir(char *dir) {
+static int rafind_open(char *file) {
+	return r_file_is_directory (file)
+		? rafind_open_dir (file)
+		: rafind_open_file (file);
+}
+
+static int rafind_open_dir(const char *dir) {
 	RListIter *iter;
 	char *fullpath;
 	char *fname = NULL;
@@ -258,30 +303,20 @@ static int rafind_open_dir(char *dir) {
 			if (*fname == '.') {
 				continue;
 			}
-
 			fullpath = r_str_newf ("%s"R_SYS_DIR"%s", dir, fname);
-			rafind_open (fullpath);
+			(void)rafind_open (fullpath);
 			free (fullpath);
 		}
 		r_list_free (files);
 	}
-
 	return 0;
-}
-
-static int rafind_open(char *file) {
-	if (r_file_is_directory (file)) {
-		return rafind_open_dir (file);
-	}
-
-	return rafind_open_file (file);
 }
 
 R_API int r_main_rafind2(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = r_getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
+	while ((c = r_getopt (argc, argv, "a:ie:b:jmM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, r_optarg);
@@ -291,6 +326,9 @@ R_API int r_main_rafind2(int argc, char **argv) {
 			break;
 		case 'i':
 			identify = true;
+			break;
+		case 'j':
+			json = true;
 			break;
 		case 'n':
 			nonstop = 1;
@@ -365,8 +403,14 @@ R_API int r_main_rafind2(int argc, char **argv) {
 	if (r_optind + 1 == argc && !r_file_is_directory (argv[r_optind])) {
 		quiet = true;
 	}
+	if (json) {
+		printf ("[");
+	}
 	for (; r_optind < argc; r_optind++) {
 		rafind_open (argv[r_optind]);
+	}
+	if (json) {
+		printf ("]\n");
 	}
 	return 0;
 }

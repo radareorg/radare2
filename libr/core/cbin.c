@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2018 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2019 - earada, pancake */
 
 #include <r_core.h>
 #include <r_config.h>

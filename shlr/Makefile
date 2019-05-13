@@ -273,7 +273,9 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+	if [ -d capstone/.git ]; then \
+		cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
+	fi
 endif
 	mkdir -p capstone/include/capstone
 	cp -rf capstone/include/*.h capstone/include/capstone
@@ -289,15 +291,9 @@ ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
-	@echo "[capstone] Applying patches"
-ifeq ($(CS_PATCHES),1)
-	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
-	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
-endif
 endif
 
-.PHONY: capstone
+.PHONY: capstone capstone-sync
 endif
 
 ifeq (${EXT_AR},)

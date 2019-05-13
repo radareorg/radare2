@@ -293,7 +293,7 @@ static const char *help_msg_af[] = {
 	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
-	"afu", " [addr]", "resize and analyze function from current address until addr",
+	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[bsra]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
 	NULL
@@ -2491,6 +2491,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'u': // "afu"
 		{
+		if (input[2] != ' ') {
+			eprintf ("Missing argument\n");
+			return false;
+		}
+
 		ut64 addr = core->offset;
 		ut64 addr_end = r_num_math (core->num, input + 2);
 		if (addr_end < addr) {
@@ -3013,7 +3018,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case ' ': // "afn "
 			{
 			ut64 off = core->offset;
-			char *p, *name = strdup (input + 3);
+			char *p, *name = strdup (r_str_trim_ro (input + 3));
 			if ((p = strchr (name, ' '))) {
 				*p++ = 0;
 				off = r_num_math (core->num, p);
@@ -3022,7 +3027,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				eprintf ("Usage: afn newname [off]   # set new name to given function\n");
 			} else {
 				if (!*name || !setFunctionName (core, off, name, false)) {
-					eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, off);
+					eprintf ("Cannot find function at 0x%08" PFMT64x "\n", off);
 				}
 			}
 			free (name);
@@ -3156,7 +3161,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 		// first undefine
 		if (input[0] && input[1] == ' ') {
-			name = strdup (input + 2);
+			name = strdup (r_str_trim_ro (input + 2));
 			uaddr = strchr (name, ' ');
 			if (uaddr) {
 				*uaddr++ = 0;
@@ -3230,7 +3235,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		if (name) {
 			if (*name && !setFunctionName (core, addr, name, true)) {
-				eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, (ut64)addr);
+				eprintf ("Cannot find function at 0x%08" PFMT64x "\n", (ut64)addr);
 			}
 			free (name);
 		}
