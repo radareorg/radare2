@@ -2491,6 +2491,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'u': // "afu"
 		{
+		if (input[2] != ' ') {
+			eprintf ("Missing argument\n");
+			return false;
+		}
+
 		ut64 addr = core->offset;
 		ut64 addr_end = r_num_math (core->num, input + 2);
 		if (addr_end < addr) {
