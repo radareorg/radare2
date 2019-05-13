@@ -10,6 +10,9 @@ void out_printf(Output *out, char *str, ...);
 void out_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
 
+#if USE_R2
+#include <r_util.h>
+#else
 SStrBuf *r_strbuf_new(const char *s);
 bool r_strbuf_set(SStrBuf *sb, const char *s);
 int r_strbuf_append(SStrBuf *sb, const char *s);
@@ -18,5 +21,6 @@ void r_strbuf_free(SStrBuf *sb);
 void r_strbuf_fini(SStrBuf *sb);
 void r_strbuf_init(SStrBuf *sb);
 int r_sys_setenv(const char *key, const char *value);
+#endif
 
 #endif

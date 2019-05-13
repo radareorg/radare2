@@ -83,12 +83,17 @@ struct Tag *tags = (struct Tag *)&x##_tags; \
 struct Arg *args = (struct Arg *)&x##_args; \
 struct Proc *proc = &x##_proc;
 
+#if USE_R2
+#include <r_util.h>
+#define SStrBuf RStrBuf
+#else
 typedef struct s_strbuf_t {
 	int len;
 	char *ptr;
 	int ptrlen;
 	char buf[64];
 } SStrBuf;
+#endif
 
 typedef struct {
 	SStrBuf *cout;
