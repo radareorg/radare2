@@ -5,6 +5,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#define USE_R2 1
 #include <spp/spp.h>
 #include <config.h>
 

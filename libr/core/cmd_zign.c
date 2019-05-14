@@ -151,7 +151,9 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 	return retval;
 }
 
+#if 0
 static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
+	// XXX this is slow as hell on big binaries
 	char *r = r_core_cmd_strf (core, "CCf* @ 0x%08"PFMT64x, fcn->addr);
 	if (r && *r) {
 		return r;
@@ -159,6 +161,7 @@ static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
 	// 
 	return NULL;
 }
+#endif
 
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;

@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2017 - pancake */
+/* radare - LGPL - Copyright 2017-2019 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
 #include <sys/stat.h>
 
-static RFSFile *fs_io_open(RFSRoot *root, const char *path) {
+static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 	char *cmd = r_str_newf ("m %s", path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);

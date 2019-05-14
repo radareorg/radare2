@@ -183,19 +183,12 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
 				RFSRoot *root;
-				bool found = false;
 				RListIter *iter;
 				r_list_foreach (fs->roots, iter, root) {
 					if (!strcmp (path, root->path)) {
 						r_list_append (list, root->path);
-						found = true;
 					}
 				}
-#if 0
-				if (!found) {
-					strcpy (path, opath);
-				}
-#endif
 			}
 		} else if (!memcmp (buf, "cat ", 4)) {
 			input = buf + 3;

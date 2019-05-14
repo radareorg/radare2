@@ -205,7 +205,6 @@ static RList *symbols(RBinFile *bf) {
 static RList *imports(RBinFile *bf) {
 	int i;
 	RList *ret = NULL;
-	RBinImport *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
