@@ -1260,6 +1260,22 @@ R_API int r_core_visual_prevopsz(RCore *core, ut64 addr) {
 	return addr - prev_addr;
 }
 
+static void addComment(RCore *core, ut64 addr) {
+	char buf[1024];
+	r_cons_printf ("Enter comment for reference:\n");
+	r_core_visual_showcursor (core, true);
+	r_cons_flush ();
+	r_cons_set_raw (false);
+	r_line_set_prompt (":> ");
+	r_cons_enable_mouse (false);
+	if (r_cons_fgets (buf, sizeof (buf) - 2, 0, NULL) < 0) {
+		buf[0] = '\0';
+	}
+	r_core_cmdf (core, "\"CC %s\"@0x%08"PFMT64x, buf, addr);
+	r_core_visual_showcursor (core, false);
+	r_cons_set_raw (true);
+}
+
 static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 	RAnalRef *refi = r_list_get_n (xrefs, choice);
 	if (refi) {
@@ -1275,6 +1291,7 @@ static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 }
 
 R_API int r_core_visual_refs(RCore *core, bool xref, bool fcnInsteadOfAddr) {
+	ut64 cur_ref_addr = UT64_MAX;
 	int ret = 0;
 #if FCN_OLD
 	char ch;
@@ -1355,6 +1372,9 @@ repeat:
 				} else {
 					snprintf (cstr, sizeof (cstr), "%d", count);
 				}
+				if (idx == skip) {
+					cur_ref_addr = refi->addr;
+				}
 				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
 				char *name;
 				if (fun) {
@@ -1374,10 +1394,12 @@ repeat:
 				} else {
 					name[0] = 0;
 				}
-				r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s)\n",
+				char *cmt = r_str_trim (r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, refi->addr));
+				r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
 					idx, cstr, refi->at, refi->addr,
 					r_anal_xrefs_type_tostring (refi->type),
-					xref ? "x":"", name);
+					xref ? "x":"", name, cmt);
+				free (cmt);
 				free (name);
 				if (idx == skip) {
 					free (dis);
@@ -1504,6 +1526,9 @@ repeat:
 		goto repeat;
 	} else if (ch == 'G') {
 		skip = 9999;
+		goto repeat;
+	} else if (ch == ';') {
+		addComment (core, cur_ref_addr);
 		goto repeat;
 	} else if (ch == '.') {
 		skip = 0;
