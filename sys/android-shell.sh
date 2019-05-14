@@ -17,7 +17,11 @@ mips)
 	AR=mipsel-linux-android-ar
 	RANLIB=mipsel-linux-android-ranlib
 	;;
-x86)
+x64)
+	NDK_ARCH=x86_64
+	export NDK_ARCH
+	;;
+x86|x86_64)
 	export NDK_ARCH
 	;;
 aarch64|arm64)
@@ -35,7 +39,7 @@ local)
 	export ANDROID=1
 	;;
 *)
-	echo "Usage: $0 [arm64|arm|mips|mips64|x86]"
+	echo "Usage: $0 [arm64|arm|mips|mips64|x86|x64]"
 	exit 1
 	;;
 esac
