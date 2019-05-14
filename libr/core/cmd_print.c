@@ -2946,7 +2946,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_p_minus);
 		return 0;
 	}
-	int cols = r_cons_get_size (NULL) - 30;
+	int cols = r_config_get_i (core->config, "hex.cols");
+	//int cols = r_cons_get_size (NULL) - 30;
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
