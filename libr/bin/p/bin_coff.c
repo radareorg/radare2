@@ -92,6 +92,7 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 	RBinImport *ptr = R_NEW0 (RBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
+		R_FREE (ptr);
 		return NULL;
 	}
 	struct coff_symbol *s = &bin->symbols[idx];
