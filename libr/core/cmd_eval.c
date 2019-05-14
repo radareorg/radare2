@@ -62,7 +62,7 @@ static const char *help_msg_eco[] = {
 	NULL
 };
 
-static char *curtheme = NULL;
+static char *curtheme = "default";
 static bool getNext = false;
 
 static void cmd_eval_init(RCore *core) {
@@ -120,6 +120,11 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (!_arg || !*_arg) {
 		return false;
 	}
+	if (!r_str_cmp (_arg, "default", strlen (_arg))) {
+		curtheme = strdup (_arg);
+		r_cons_pal_init (core->cons->context);
+		return true;
+	}
 	char *arg = strdup (_arg);
 
 	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
@@ -169,7 +174,8 @@ R_API char *r_core_get_theme () {
 R_API RList *r_core_list_themes(RCore *core) {
 	RList *list = r_list_newf (free);
 	getNext = false;
-
+	const char *tmp = strdup ("default");
+	r_list_append (list, tmp);
 	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);

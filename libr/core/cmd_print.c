@@ -2946,7 +2946,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_p_minus);
 		return 0;
 	}
-
+	int cols = r_cons_get_size (NULL) - 30;
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
@@ -2966,7 +2966,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			to = t;
 		}
 	}
-	ut64 piece = R_MAX ((to - from) / w, 1);
+	ut64 piece = R_MAX ((to - from) / R_MAX (cols, w), 1);
 	RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, piece);
 	if (!as) {
 		return 0;
@@ -3061,7 +3061,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 		case 'e': // p-e
 			cmd_p_minus_e (core, at, ate);
 			break;
-		default:
+		default:{ // p--
 			if (off >= at && off < ate) {
 				r_cons_memcat ("^", 1);
 			} else {
@@ -3069,12 +3069,12 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {
-							r_cons_print (Color_BGBLUE);
+							r_cons_print (r_cons_singleton ()->context->pal.graph_trufae);
 						} else {
-							r_cons_print (Color_BGGREEN);
+							r_cons_print (r_cons_singleton ()->context->pal.graph_true);
 						}
 					} else {
-						r_cons_print (Color_BGRED);
+						r_cons_print (r_cons_singleton ()->context->pal.graph_false);
 					}
 				}
 				if (as->block[p].strings > 0) {
@@ -3093,7 +3093,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 					r_cons_memcat ("_", 1);
 				}
 			}
-			break;
+		}
+		break;
 		}
 	}
 	switch (mode) {
