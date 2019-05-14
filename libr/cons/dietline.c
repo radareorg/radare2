@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -558,6 +558,14 @@ static void selection_widget_erase() {
 static void selection_widget_select() {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
+		char *sp = strchr (I.buffer.data, ' ');
+		if (sp) {
+			int delta = sp - I.buffer.data + 1;
+			I.buffer.length = R_MIN (delta + strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
+			memcpy (I.buffer.data + delta, sel_widget->options[sel_widget->selection], I.buffer.length);
+			I.buffer.index = I.buffer.length;
+			return;
+		}
 		I.buffer.length = R_MIN (strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
 		memcpy (I.buffer.data, sel_widget->options[sel_widget->selection], I.buffer.length);
 		I.buffer.data[I.buffer.length] = '\0';
