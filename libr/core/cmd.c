@@ -766,7 +766,8 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 			free (out);
 		}
 	} else if (r_parse_is_c_file (file)) {
-		char *out = r_parse_c_file (core->anal, file, NULL);
+		const char *dir = r_config_get (core->config, "dir.types");
+		char *out = r_parse_c_file (core->anal, file, dir, NULL);
 		if (out) {
 			r_cons_strcat (out);
 			sdb_query_lines (core->anal->sdb_types, out);
