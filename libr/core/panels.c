@@ -639,7 +639,8 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 		free (text);
 	}
 	if (b) {
-		(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+		int sub = panel->view->curpos - panel->view->sy;
+		(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2 + sub);
 		r_cons_canvas_write (can, "*");
 	}
 	if (!panel->model->cmdStrCache && !readOnly) {
@@ -2758,7 +2759,8 @@ static void directionFunctionCb(void *user, int direction) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
 	cur->view->refresh = true;
-	int n;
+	const int THRESHOLD = cur->view->pos.h / 2;
+	int n, sub;
 	switch ((Direction)direction) {
 	case LEFT:
 		if (core->print->cur_enabled) {
@@ -2776,9 +2778,14 @@ static void directionFunctionCb(void *user, int direction) {
 		return;
 	case UP:
 		if (core->print->cur_enabled) {
-			cur->view->curpos--;
+			if (cur->view->curpos > 0) {
+				cur->view->curpos--;
+			}
 			if (cur->view->sy > 0) {
-				cur->view->sy--;
+				sub = cur->view->curpos - cur->view->sy;
+				if (sub < 0) {
+					cur->view->sy--;
+				}
 			}
 		} else {
 			if (cur->view->sy > 0) {
@@ -2792,7 +2799,10 @@ static void directionFunctionCb(void *user, int direction) {
 		core->offset = cur->model->addr;
 		if (core->print->cur_enabled) {
 			cur->view->curpos++;
-			cur->view->sy++;
+			sub = cur->view->curpos - cur->view->sy;
+			if (sub > THRESHOLD) {
+				cur->view->sy++;
+			}
 		} else {
 			n = r_config_get_i (core->config, "graph.scroll");
 			cur->view->curpos += n;
