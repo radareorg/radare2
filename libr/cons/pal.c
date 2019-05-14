@@ -54,9 +54,6 @@ static struct {
 	{ "func_var_addr", r_offsetof (RConsPrintablePalette, func_var_addr), r_offsetof (RConsPalette, func_var_addr) },
 	{ "widget_bg", r_offsetof (RConsPrintablePalette, widget_bg), r_offsetof (RConsPalette, widget_bg) },
 	{ "widget_sel", r_offsetof (RConsPrintablePalette, widget_sel), r_offsetof (RConsPalette, widget_sel) },
-	{ "bg_true", r_offsetof (RConsPrintablePalette, bg_true), r_offsetof (RConsPalette, bg_true) },
-	{ "bg_false", r_offsetof (RConsPrintablePalette, bg_false), r_offsetof (RConsPalette, bg_false) },
-	{ "bg_trufae", r_offsetof (RConsPrintablePalette, bg_trufae), r_offsetof (RConsPalette, bg_trufae) },
 
 	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
 	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
@@ -184,10 +181,6 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 
 	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00);
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
-
-	ctx->cpal.bg_true	     = (RColor) RColor_BGGREEN;
-	ctx->cpal.bg_false	     = (RColor) RColor_BGRED;
-	ctx->cpal.bg_trufae 	     = (RColor) RColor_BGBLUE;
 
 	ctx->cpal.graph_box          = (RColor) RColor_NULL;
 	ctx->cpal.graph_box2         = (RColor) RColor_BLUE;

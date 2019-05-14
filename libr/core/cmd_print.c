@@ -3062,12 +3062,12 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 				if (use_color) {
 					if (s) {
 						if (s->perm & R_PERM_X) {
-							r_cons_print (r_cons_singleton ()->context->pal.bg_trufae);
+							r_cons_print (r_cons_singleton ()->context->pal.graph_trufae);
 						} else {
-							r_cons_print (r_cons_singleton ()->context->pal.bg_true);
+							r_cons_print (r_cons_singleton ()->context->pal.graph_true);
 						}
 					} else {
-						r_cons_print (r_cons_singleton ()->context->pal.bg_false);
+						r_cons_print (r_cons_singleton ()->context->pal.graph_false);
 					}
 				}
 				if (as->block[p].strings > 0) {
