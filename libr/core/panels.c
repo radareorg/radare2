@@ -680,11 +680,18 @@ char *apply_filter_cmd(RCore *core, RPanel *panel) {
 char *handleCmdStrCache(RCore *core, RPanel *panel) {
 	char *out;
 	char *cmd = apply_filter_cmd (core, panel);
+	bool b = core->print->cur_enabled && getCurPanel (core->panels) != panel;
+	if (b) {
+		core->print->cur_enabled = false;
+	}
 	out = r_core_cmd_str (core, cmd);
 	if (panel->model->cache && R_STR_ISNOTEMPTY (out)) {
 		setCmdStrCache (panel, out);
 	}
 	free (cmd);
+	if (b) {
+		core->print->cur_enabled = true;
+	}
 	return out;
 }
 
@@ -905,6 +912,9 @@ static void setCursor(RCore *core, bool cur) {
 	RPanel *p = getCurPanel (core->panels);
 	RPrint *print = core->print;
 	print->cur_enabled = cur;
+	if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+		return;
+	}
 	if (cur) {
 		print->cur = p->view->curpos;
 	} else {
@@ -2747,6 +2757,7 @@ static void directionFunctionCb(void *user, int direction) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
 	cur->view->refresh = true;
+	int n;
 	switch ((Direction)direction) {
 	case LEFT:
 		if (core->print->cur_enabled) {
@@ -2770,7 +2781,9 @@ static void directionFunctionCb(void *user, int direction) {
 			}
 		} else {
 			if (cur->view->sy > 0) {
-				cur->view->sy -= r_config_get_i (core->config, "graph.scroll");
+				n = r_config_get_i (core->config, "graph.scroll");
+				cur->view->curpos -= n;
+				cur->view->sy -= n;
 			}
 		}
 		return;
@@ -2780,7 +2793,9 @@ static void directionFunctionCb(void *user, int direction) {
 			cur->view->curpos++;
 			cur->view->sy++;
 		} else {
-			cur->view->sy += r_config_get_i (core->config, "graph.scroll");
+			n = r_config_get_i (core->config, "graph.scroll");
+			cur->view->curpos += n;
+			cur->view->sy += n;
 		}
 		return;
 	}
