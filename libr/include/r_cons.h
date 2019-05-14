@@ -226,9 +226,6 @@ typedef struct r_cons_palette_t {
 	RColor func_var_addr;
 	RColor widget_bg;
 	RColor widget_sel;
-	RColor bg_true;
-	RColor bg_false;
-	RColor bg_trufae;
 
 	/* Graph colors */
 	RColor graph_box;
@@ -301,9 +298,6 @@ typedef struct r_cons_printable_palette_t {
 	char *func_var_addr;
 	char *widget_bg;
 	char *widget_sel;
-	char *bg_false;
-	char *bg_true;
-	char *bg_trufae;
 
 	/* graph colors */
 	char *graph_box;
