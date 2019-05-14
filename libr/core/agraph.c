@@ -1816,7 +1816,7 @@ static void backedge_info (RAGraph *g) {
 				int l = (ax - min) + (bx - min);
 				int r = (max - ax) + (max - bx);
 
-			    for (k = b->layer; k <= a->layer; k++) {
+				for (k = b->layer; k <= a->layer; k++) {
 					if (r < l) {
 						arr[k][1] = max + 1;
 					} else {
@@ -2014,7 +2014,7 @@ static void set_layout(RAGraph *g) {
 				n->y = 1;
 				for (k = 0; k < j; k++) {
 					RANode *m = get_anode (g->layers[i].nodes[k]);
-					n->y += m->h + VERTICAL_NODE_SPACING;
+					n->y -= (m->h + VERTICAL_NODE_SPACING);
 				}
 			}
 		}
