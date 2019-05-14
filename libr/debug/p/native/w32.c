@@ -1082,14 +1082,15 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	memset(&ctx, 0, sizeof (CONTEXT));
 	ctx.ContextFlags = CONTEXT_ALL ;
 	if (GetThreadContext (hThread, &ctx) == TRUE) {
-		if (type == R_REG_TYPE_GPR) {
+		// on windows we dont need check type alway read/write full arena
+		//if (type == R_REG_TYPE_GPR) {
 			if (size > sizeof (CONTEXT)) {
 				size = sizeof (CONTEXT);
 			}
 			memcpy (buf, &ctx, size);
-		} else {
-			size = 0;
-		}
+		//} else {
+		//	size = 0;
+		//}
 	} else {
 		r_sys_perror ("w32_reg_read/GetThreadContext");
 		size = 0;
@@ -1112,13 +1113,14 @@ static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
 	thread = w32_open_thread (dbg->pid, dbg->tid);
 	ctx.ContextFlags = CONTEXT_ALL;
 	GetThreadContext (thread, &ctx);
-	if (type == R_REG_TYPE_GPR) {
+	// on windows we dont need check type alway read/write full arena
+	//if (type == R_REG_TYPE_GPR) {
 		if (size > sizeof (CONTEXT)) {
 			size = sizeof (CONTEXT);
 		}
 		memcpy (&ctx, buf, size);
 		ret = SetThreadContext (thread, &ctx)? true: false;
-	}
+	//}
 	CloseHandle (thread);
 	return ret;
 }
