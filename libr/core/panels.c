@@ -19,6 +19,7 @@
 #define PANEL_CMD_STACK          "px"
 #define PANEL_CMD_REGISTERS      "dr"
 #define PANEL_CMD_DISASSEMBLY    "pd"
+#define PANEL_CMD_FUNCTION       "afl"
 #define PANEL_CMD_GRAPH          "agf"
 #define PANEL_CMD_HEXDUMP        "xc"
 
@@ -337,6 +338,7 @@ static void directionGraphCb(void *user, int direction);
 static void directionRegisterCb(void *user, int direction);
 static void directionStackCb(void *user, int direction);
 static void directionHexdumpCb(void *user, int direction);
+static void directionFunctionCb(void *user, int direction);
 static void updateDisassemblyAddr (RCore *core);
 static void updateAddr (RCore *core);
 static void setMode(RPanels *ps, RPanelsMode mode);
@@ -613,6 +615,9 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (y < 0) {
 		y = 0;
 	}
+	if (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) && core->print->cur_enabled) {
+		x = -2;
+	}
 	if (x < 0) {
 		char *white = (char*)r_str_pad (' ', 128);
 		int idx = R_MIN (-x, strlen (white) - 1);
@@ -631,6 +636,10 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (text) {
 		r_cons_canvas_write (can, text);
 		free (text);
+	}
+	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
+	if (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) && core->print->cur_enabled) {
+		r_cons_canvas_write (can, "*");
 	}
 	if (!panel->model->cmdStrCache && !readOnly) {
 		free (cmdStr);
@@ -910,12 +919,12 @@ static void activateCursor(RCore *core) {
 	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))
 			|| check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
 			|| check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
-			|| check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+			|| check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))
+			|| check_panel_type (cur, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
 		if (cur->model->cache) {
 			if (show_status_yesno (core, 'y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
 				setCmdStrCache (cur, NULL);
-				cur->view->refresh = true;
 				(void)show_status (core, "Cache is off and cursor is on");
 				setCursor (core, !core->print->cur_enabled);
 				cur->view->refresh = true;
@@ -1266,6 +1275,23 @@ static bool handleCursorMode(RCore *core, const int key) {
 			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + print->cur);
 			cur->model->addr = core->offset + print->cur;
 			cur->view->refresh = true;
+		}
+		break;
+	case 0x0d:
+		if (!check_panel_type (cur, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+			return false;
+		}
+		{
+			RListIter *iter;
+			RAnalFunction *fcn;
+			int i = 0;
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				if (cur->view->curpos == i++) {
+					core->offset = fcn->addr;
+					updateDisassemblyAddr (core);
+					break;
+				}
+			}
 		}
 		break;
 	}
@@ -2052,6 +2078,8 @@ static void setdcb(RPanel *p) {
 		p->model->directionCb = directionRegisterCb;
 	} else if (check_panel_type (p, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		p->model->directionCb = directionHexdumpCb;
+	} else if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+		p->model->directionCb = directionFunctionCb;
 	} else {
 		p->model->directionCb = directionDefaultCb;
 	}
@@ -2709,6 +2737,50 @@ static void directionHexdumpCb(void *user, int direction) {
 			}
 		} else {
 			cur->view->sy++;
+		}
+		return;
+	}
+}
+
+static void directionFunctionCb(void *user, int direction) {
+	RCore *core = (RCore *)user;
+	RPanels *panels = core->panels;
+	RPanel *cur = getCurPanel (panels);
+	cur->view->refresh = true;
+	switch ((Direction)direction) {
+	case LEFT:
+		if (core->print->cur_enabled) {
+			return;
+		}
+		if (cur->view->sx > 0) {
+			cur->view->sx -= r_config_get_i (core->config, "graph.scroll");
+		}
+		return;
+	case RIGHT:
+		if (core->print->cur_enabled) {
+			return;
+		}
+		cur->view->sx += r_config_get_i (core->config, "graph.scroll");
+		return;
+	case UP:
+		if (core->print->cur_enabled) {
+			cur->view->curpos--;
+			if (cur->view->sy > 0) {
+				cur->view->sy--;
+			}
+		} else {
+			if (cur->view->sy > 0) {
+				cur->view->sy -= r_config_get_i (core->config, "graph.scroll");
+			}
+		}
+		return;
+	case DOWN:
+		core->offset = cur->model->addr;
+		if (core->print->cur_enabled) {
+			cur->view->curpos++;
+			cur->view->sy++;
+		} else {
+			cur->view->sy += r_config_get_i (core->config, "graph.scroll");
 		}
 		return;
 	}
