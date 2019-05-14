@@ -68,3 +68,6 @@ ec ai.write white . bold
 ec ai.exec red . bold
 ec ai.seq green . bold
 ec ai.ascii yellow . bold
+
+ec widget_bg yellow black
+ec widget_sel black yellow

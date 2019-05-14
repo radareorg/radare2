@@ -571,6 +571,9 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
+	if (cols < 1 || cols > 0xfffff) {
+		cols = 32;
+	}
 	for (i = 0; i < len; i += cols) {
 		r_print_addr (core->print, core->offset + i);
 		for (j = i; j < i + cols; j ++) {
@@ -653,6 +656,10 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	ut64 to = 0;
 	RIOMap* map;
 	RListIter *iter;
+
+	if (cols < 1 || cols > 0xfffff) {
+		cols = 32;
+	}
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
 	if (list && r_list_length (list) > 0) {
 		RListIter *iter1 = list->head;

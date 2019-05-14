@@ -50,3 +50,6 @@ ec usrcmt rgb:007D96 0 bold           # user comment
 ec func_var rgb:400080      # var name in function
 ec func_var_type rgb:305F65 0 italic     # function variable
 ec func_var_addr magenta
+
+ec widget_bg rgb:2f6f9f white
+ec widget_sel white rgb:f73 bold
