@@ -615,7 +615,8 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (y < 0) {
 		y = 0;
 	}
-	if (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) && core->print->cur_enabled) {
+	bool b = check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) && core->print->cur_enabled;
+	if (b) {
 		x = -2;
 	}
 	if (x < 0) {
@@ -637,8 +638,8 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 		r_cons_canvas_write (can, text);
 		free (text);
 	}
-	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
-	if (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) && core->print->cur_enabled) {
+	if (b) {
+		(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
 		r_cons_canvas_write (can, "*");
 	}
 	if (!panel->model->cmdStrCache && !readOnly) {
