@@ -238,6 +238,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		bin->phdr[i].p_memsz = READWORD (phdr, j);
 		if (!is_elf64) {
 			bin->phdr[i].p_flags = READ32 (phdr, j);
+		//	bin->phdr[i].p_flags |= 1; tiny.elf needs this somehow :? LOAD0 is always +x for linux?
 		}
 		bin->phdr[i].p_align = READWORD (phdr, j);
 	}
@@ -506,7 +507,6 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	ut64 strtabaddr = 0;
 	char *strtab = NULL;
 	size_t relentry = 0, strsize = 0;
-	int entries;
 	int i, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
 	ut64 dyn_size = 0, loaded_offset;
@@ -522,7 +522,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	}
 	dyn_size = dyn_phdr->p_filesz;
 
-	entries = compute_dyn_entries (bin, dyn_phdr, dyn_size);
+	int entries = compute_dyn_entries (bin, dyn_phdr, dyn_size);
 	if (entries < 0) {
 		return false;
 	}
@@ -1808,9 +1808,9 @@ ut64 Elf_(r_bin_elf_get_boffset)(ELFOBJ *bin) {
 
 ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	ut8 buf[512];
-	if (!bin) {
-		return 0LL;
+	ut8 buf[128];
+	if (!bin || entry == UT64_MAX) {
+		return UT64_MAX;
 	}
 	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
 		bprintf ("read (init_offset)\n");
@@ -1818,7 +1818,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 	}
 	if (buf[0] == 0x68) { // push // x86 only
 		ut64 addr;
-		memmove (buf, buf+1, 4);
+		memmove (buf, buf + 1, 4);
 		addr = (ut64)r_read_le32 (buf);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
@@ -1828,29 +1828,24 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
-	if (!bin) {
-		return 0LL;
+	if (!bin || entry == UT64_MAX) {
+		return UT64_MAX;
 	}
-
-	if (r_buf_read_at (bin->b, entry+11, buf, sizeof (buf)) == -1) {
+	if (r_buf_read_at (bin->b, entry + 11, buf, sizeof (buf)) == -1) {
 		bprintf ("read (get_fini)\n");
 		return 0;
 	}
 	if (*buf == 0x68) { // push // x86/32 only
-		ut64 addr;
-		memmove (buf, buf+1, 4);
-		addr = (ut64)r_read_le32 (buf);
+		memmove (buf, buf + 1, 4);
+		ut64 addr = (ut64)r_read_le32 (buf);
 		return Elf_(r_bin_elf_v2p) (bin, addr);
 	}
 	return 0;
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	ut64 entry;
-	if (!bin) {
-		return 0LL;
-	}
-	entry = bin->ehdr.e_entry;
+	r_return_val_if_fail (bin, UT64_MAX);
+	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
@@ -1860,13 +1855,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 		if (entry != UT64_MAX) {
 			return entry;
 		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		if (entry == UT64_MAX) {
-			return 0;
-		}
+		return Elf_(r_bin_elf_get_section_offset)(bin, ".init");
 	}
 	return Elf_(r_bin_elf_v2p) (bin, entry);
 }
@@ -1888,15 +1877,15 @@ static ut64 getmainsymbol(ELFOBJ *bin) {
 ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 	ut8 buf[512];
-	if (!bin) {
-		return 0LL;
+	if (!bin || entry == UT64_MAX) {
+		return UT64_MAX;
 	}
 	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) {
-		return 0;
+		return UT64_MAX;
 	}
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) < 1) {
 		bprintf ("read (main)\n");
-		return 0;
+		return UT64_MAX;
 	}
 	// ARM64
 	if (buf[0x18+3] == 0x58 && buf[0x2f] == 0x00) {
@@ -2348,11 +2337,9 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 				}
 			}
 		}
-		{
-			ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-			if (entry & 1) {
-				return 16;
-			}
+		ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+		if (entry & 1) {
+			return 16;
 		}
 	}
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
@@ -2739,7 +2726,8 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum || !bin->dyn_buf) {
+	r_return_val_if_fail (bin && bin->phdr, NULL);
+	if (!bin->ehdr.e_phnum || !bin->dyn_buf) {
 		return NULL;
 	}
 
