@@ -338,7 +338,7 @@ static void directionGraphCb(void *user, int direction);
 static void directionRegisterCb(void *user, int direction);
 static void directionStackCb(void *user, int direction);
 static void directionHexdumpCb(void *user, int direction);
-static void directionFunctionCb(void *user, int direction);
+static void direction_panels_cursor_cb(void *user, int direction);
 static void updateDisassemblyAddr (RCore *core);
 static void updateAddr (RCore *core);
 static void setMode(RPanels *ps, RPanelsMode mode);
@@ -615,7 +615,8 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (y < 0) {
 		y = 0;
 	}
-	bool b = check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) && core->print->cur_enabled;
+	bool b = (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
+			check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) && core->print->cur_enabled;
 	if (b) {
 		x = -2;
 	}
@@ -914,7 +915,8 @@ static void setCursor(RCore *core, bool cur) {
 	RPanel *p = getCurPanel (core->panels);
 	RPrint *print = core->print;
 	print->cur_enabled = cur;
-	if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+	if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
+			check_panel_type (p, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
 		return;
 	}
 	if (cur) {
@@ -932,6 +934,7 @@ static void activateCursor(RCore *core) {
 			|| check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
 			|| check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
 			|| check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))
+			|| check_panel_type (cur, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))
 			|| check_panel_type (cur, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
 		if (cur->model->cache) {
 			if (show_status_yesno (core, 'y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
@@ -1290,10 +1293,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 		}
 		break;
 	case 0x0d:
-		if (!check_panel_type (cur, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
-			return false;
-		}
-		{
+		if (check_panel_type (cur, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
 			RListIter *iter;
 			RAnalFunction *fcn;
 			int i = 0;
@@ -1305,7 +1305,18 @@ static bool handleCursorMode(RCore *core, const int key) {
 				}
 			}
 		}
-		break;
+		if (check_panel_type (cur, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
+			RListIter *iter;
+			RBinSymbol *s;
+			RList *syms = r_bin_get_symbols (core->bin);
+			int i = 0;
+			r_list_foreach (syms, iter, s) {
+				if (cur->view->curpos == i++) {
+					core->offset = s->vaddr;
+					updateDisassemblyAddr (core);
+				}
+			}
+		}
 	}
 	return true;
 }
@@ -2090,8 +2101,9 @@ static void setdcb(RPanel *p) {
 		p->model->directionCb = directionRegisterCb;
 	} else if (check_panel_type (p, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		p->model->directionCb = directionHexdumpCb;
-	} else if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
-		p->model->directionCb = directionFunctionCb;
+	} else if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
+			check_panel_type (p, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
+		p->model->directionCb = direction_panels_cursor_cb;
 	} else {
 		p->model->directionCb = directionDefaultCb;
 	}
@@ -2754,12 +2766,12 @@ static void directionHexdumpCb(void *user, int direction) {
 	}
 }
 
-static void directionFunctionCb(void *user, int direction) {
+static void direction_panels_cursor_cb(void *user, int direction) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
 	cur->view->refresh = true;
-	const int THRESHOLD = cur->view->pos.h / 2;
+	const int THRESHOLD = cur->view->pos.h / 3;
 	int n, sub;
 	switch ((Direction)direction) {
 	case LEFT:
