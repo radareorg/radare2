@@ -939,10 +939,14 @@ R_API char *r_sys_pid_to_path(int pid) {
 		CloseHandle (processHandle);
 		return NULL;
 	}
-	char *tmp = r_str_newf("\\\\.\\GLOBALROOT%s", filename);
+	CloseHandle (processHandle);
+	char *tmp = r_str_newf ("\\\\.\\GLOBALROOT%s", filename);
+	if(tmp) {
+		eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
+		return NULL;
+	}
 	const char *result = r_sys_conv_win_to_utf8 (tmp);
 	free (tmp);
-	CloseHandle (processHandle);
 	return result;
 #elif __APPLE__
 #if __POWERPC__
