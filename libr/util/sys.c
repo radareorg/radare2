@@ -927,6 +927,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	HANDLE processHandle = NULL;
 	TCHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
+	DWORD length;
 	const char* result = NULL;
 	char* tmp;
 
@@ -935,11 +936,12 @@ R_API char *r_sys_pid_to_path(int pid) {
 		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
 		goto err_r_sys_pid_to_path;
 	}
-	if (GetProcessImageFileName (processHandle, filename, maxlength) == 0) {
+	length = GetProcessImageFileName (processHandle, filename, maxlength);
+	if (length == 0) {
 		eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 		goto err_r_sys_pid_to_path;
 	}
-	tmp = malloc (strlen(filename) + 14);
+	tmp = malloc (length + 14);
 	strcpy (tmp, "\\\\.\\GLOBALROOT");
 	strcat (tmp, filename);
 	result = r_sys_conv_win_to_utf8 (tmp);
