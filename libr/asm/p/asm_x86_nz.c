@@ -1686,6 +1686,15 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op){
 
 			offset = op->operands[1].offset * op->operands[1].offset_sign;
 			if (offset != 0 || op->operands[1].regs[0] == X86R_EBP) {
+				if (op->operands[1].regs[0] == X86R_RIP) {
+					// RIP-relative LEA (not caught above, so "offset" is already relative)
+					data[l++] = reg << 3 | 5;
+					data[l++] = offset;
+					data[l++] = offset >> 8;
+					data[l++] = offset >> 16;
+					data[l++] = offset >> 24;
+					return l;
+				}
 				mod = 1;
 				if (offset >= 128 || offset < -128) {
 					mod = 2;
