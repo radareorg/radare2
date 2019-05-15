@@ -167,8 +167,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --with-capstone5       build next branch of the capstone repository
@@ -187,10 +186,8 @@ Optional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
-"
-printf "
-Some influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -198,10 +195,8 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }

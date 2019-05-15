@@ -21,7 +21,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 	ut64 sz;
-	const ut8 *bytes = r_buf_buffer (bf->buf, &sz);
+	const ut8 *bytes = r_buf_data (bf->buf, &sz);
 	bf->rbin->maxstrbuf = 0x20000000;
 	return check_bytes (bytes, sz);
 }

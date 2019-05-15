@@ -44,6 +44,7 @@ R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
 R_API bool r_file_copy (const char *src, const char *dst);
 R_API RList* r_file_globsearch (const char *globbed_path, int maxdepth);
+R_API RMmap *r_file_mmap_arch (RMmap *map, const char *filename, int fd);
 
 #ifdef __cplusplus
 }

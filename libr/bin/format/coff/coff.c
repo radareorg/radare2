@@ -115,7 +115,7 @@ static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
 		return false;
 	}
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
-		ret = r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
+		ret = r_buf_fread (obj->b, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 		if (ret != sizeof (ut16)) {
 			return false;
 		}

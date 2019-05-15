@@ -135,7 +135,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				goto beach;
 			}
 		} else {  // use clipboard as key
-			const ut8 *tmp = r_buf_buffer (core->yank_buf, &len);
+			const ut8 *tmp = r_buf_data (core->yank_buf, &len);
 			str = r_mem_dup (tmp, len);
 			if (!str) {
 				goto beach;

@@ -4457,7 +4457,7 @@ static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
 		r_cons_printf ("%s", cmd);
 	}
 	int i;
-	r_buf_seek (buf, 0, 0);
+	r_buf_seek (buf, 0, R_BUF_SET);
 	for (i = 0; i < r_buf_size (buf); i++) {
 		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}
@@ -5019,7 +5019,7 @@ static int cmd_debug(void *data, const char *input) {
 			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
 			eprintf ("Writing to file '%s'\n", corefile);
 			r_file_rm (corefile);
-			RBuffer *dst = r_buf_new_file (corefile, true);
+			RBuffer *dst = r_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
 				if (!core->dbg->h->gcore (core->dbg, dst)) {
 					eprintf ("dg: coredump failed\n");
@@ -5107,7 +5107,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_asm_set_pc (core->assembler, core->offset);
 			r_reg_arena_push (core->dbg->reg);
 			ut64 tmpsz;
-			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			const ut8 *tmp = r_buf_data (b, &tmpsz);
 			r_debug_execute (core->dbg, tmp, tmpsz, 0);
 			r_reg_arena_pop (core->dbg->reg);
 			break;

@@ -38,7 +38,7 @@ R_API bool r_bin_wr_output(RBin *bin, const char *filename) {
 		return false;
 	}
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (binfile->buf, &tmpsz);
+	const ut8 *tmp = r_buf_data (binfile->buf, &tmpsz);
 	return r_file_dump (filename, tmp, tmpsz, 0);
 }
 
