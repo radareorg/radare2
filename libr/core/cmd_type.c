@@ -1226,6 +1226,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_to);
 		} else if (!r_sandbox_enable (0)) {
 			if (input[1] == ' ') {
+				const char *dir = r_config_get (core->config, "dir.types");
 				const char *filename = input + 2;
 				char *homefile = NULL;
 				if (*filename == '~') {
@@ -1252,7 +1253,7 @@ static int cmd_type(void *data, const char *input) {
 					}
 				} else {
 					char *error_msg = NULL;
-					char *out = r_parse_c_file (core->anal, filename, &error_msg);
+					char *out = r_parse_c_file (core->anal, filename, dir, &error_msg);
 					if (out) {
 						//r_cons_strcat (out);
 						r_anal_save_parsed_type (core->anal, out);

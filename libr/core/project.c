@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake, maijin */
+/* radare - LGPL - Copyright 2010-2019 - pancake, maijin */
 
 #include <r_types.h>
 #include <r_list.h>
 #include <r_flag.h>
 #include <r_core.h>
+#define USE_R2 1
 #include <spp/spp.h>
 
 static bool is_valid_project_name(const char *name) {

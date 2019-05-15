@@ -392,7 +392,8 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach_prev (io->maps, iter, map) {			//this must be prev
+	char *om_cmds = NULL;
+	ls_foreach_prev (io->maps, iter, map) {			//this must be prev (LIFO)
 		if (fd >= 0 && map->fd != fd) {
 			continue;
 		}
@@ -416,11 +417,17 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 			break;
 		case 1:
 		case '*':
-		case 'r':
-			print->cb_printf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n", map->fd,
-					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->perm),
+		case 'r': {
+			// Need FIFO order here
+			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
+					map->fd, map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->perm),
 					map->name ? " " : "", map->name ? map->name : "");
+			if (om_cmd) {
+				om_cmds = r_str_prepend (om_cmds, om_cmd);
+				free (om_cmd);
+			}
 			break;
+		}
 		default:
 			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
@@ -428,6 +435,10 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 					r_str_rwx_i (map->perm), (map->name ? map->name : ""));
 			break;
 		}
+	}
+	if (om_cmds) {
+		print->cb_printf ("%s", om_cmds);
+		free (om_cmds);
 	}
 	if (mode == 'j') {
 		print->cb_printf ("]\n");

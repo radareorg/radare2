@@ -733,8 +733,12 @@ the_end:
 	return ret;
 }
 
-LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename)
+LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename, const char *directory)
 {
+	if (directory) {
+		dirname = strdup (directory);
+	}
+
 	if (s->output_type == TCC_OUTPUT_PREPROCESS) {
 		return tcc_add_file_internal (s, filename, AFF_PRINT_ERROR | AFF_PREPROCESS);
 	} else {

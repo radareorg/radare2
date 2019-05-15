@@ -73,6 +73,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 				retlen -= subret_space - subret_len;
 				ret[retlen] = '\0';
 				tmp = strstr (tmp3, "<xi:include");
+				free (subret);
 				continue;
 			}
 			if (subret_len > retmax - retlen - 1) {

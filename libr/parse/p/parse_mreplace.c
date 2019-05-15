@@ -16,6 +16,7 @@ struct mreplace_t {
 	char *replace;
 };
 
+#if 0
 static char *new_parse(RParse *p, const char *data) {
 	const struct mreplace_t *sdata = (struct mreplace_t*)data;
 	return treplace (sdata->data, sdata->search, sdata->replace);
@@ -28,6 +29,7 @@ static char *new_assemble(RParse *p, const char *expr) {
 	}
 	return strdup (expr);
 }
+#endif
 
 static int parse(RParse *p, const char *data, char *str) {
 	const struct mreplace_t *sdata = (struct mreplace_t*)data;

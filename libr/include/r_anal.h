@@ -424,6 +424,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_CSWI  = 11 | R_ANAL_OP_TYPE_COND,  /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
+	R_ANAL_OP_TYPE_RPUSH = R_ANAL_OP_TYPE_UPUSH | R_ANAL_OP_TYPE_REG, /* push register */
 	R_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
 	R_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
 	R_ANAL_OP_TYPE_CMP   = 15,  /* compare something */

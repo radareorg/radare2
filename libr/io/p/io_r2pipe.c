@@ -158,8 +158,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *msg) {
 	pj_ks (pj, "op", "system");
 	pj_ks (pj, "cmd", msg);
 	pj_end (pj);
-	char *fmt = pj_string (pj);
-
+	const char *fmt = pj_string (pj);
 	int rv = r2pipe_write (R2P (fd), fmt);
 	pj_free (pj);
 	if (rv < 1) {

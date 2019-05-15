@@ -7,7 +7,7 @@ ec b0x7f rgb:fff
 ec b0xff rgb:abb0b6             # ff bytes
 ec bin rgb:f07178               # operations like xor
 ec btext rgb:66737f             # text section opcode? first byte of opcode
-ec call rgb:5ccfe6              # call instructions
+ec call rgb:5de                 # call instructions
 ec cjmp rgb:c2d94c              # je, jg, etc
 ec cmp rgb:f07178               # cmp instructions
 ec comment rgb:95e6cb           # r2 renerated comments
@@ -38,7 +38,7 @@ ec num rgb:f28779               # numbers
 ec offset rgb:ed9366            # offset in visual mode
 ec other rgb:888
 ec pop rgb:ff7733               # pop instructions
-ec prompt rgb:fa6e32            # color for main r2 prompt
+ec prompt rgb:5de               # color for main r2 prompt
 ec push rgb:ff7733              # push instructions
 ec reg rgb:e6e1cf               # register names
 ec ret rgb:d66                  # ret opcode
@@ -51,3 +51,6 @@ ec usrcmt rgb:fa6e32           # user comment
 ec func_var rgb:95e6cb
 ec func_var_type rgb:ffd580
 ec func_var_addr rgb:f28779
+
+ec widget_bg rgb:888 rgb:000
+ec widget_sel rgb:5de rgb:333

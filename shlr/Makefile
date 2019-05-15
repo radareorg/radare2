@@ -35,12 +35,12 @@ CS_TAR=
 CS_URL_BASE=github.com/aquynh/capstone
 CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
-CS_UPD=20190510
+CS_UPD=20190515
 ifeq ($(CS_NEXT),1)
-CS_TIP=7d72c1e1da9f705ed312100f1b6227bb17b172b3
+CS_TIP=69e26b50eb97d6aed8745b9d794a9cff3d1ed501
 CS_BRA=next
 else
-CS_TIP=bbe920f3c442c4baf6784bbb384f1b979b426f6f
+CS_TIP=6cae0faf5a374966d6b48eb8f79dc2015cfb18c8
 CS_BRA=v4
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
@@ -350,7 +350,7 @@ spp-sync sync-spp:
 	git add spp
 
 spp: spp-sync
-	CFLAGS="-DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp
+	CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp r2lib
 
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a

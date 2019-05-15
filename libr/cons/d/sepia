@@ -57,3 +57,6 @@ ec ai.write rgb:ca6
 ec ai.exec rgb:db7
 ec ai.seq rgb:960
 ec ai.ascii rgb:fec
+
+ec widget_bg rgb:db7 black
+ec widget_sel black rgb:fec

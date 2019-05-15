@@ -64,7 +64,7 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str);
 R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
-R_API char *r_parse_c_file(RAnal *anal, const char *path, char **error_msg);
+R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
 R_API int r_parse_is_c_file(const char *file);
 R_API char *r_parse_immtrim(char *opstr);
 R_API void r_parse_reset(void);

@@ -8,7 +8,7 @@
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #define MAXPATHLEN 255
 #endif
-static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
+static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
 	if (!file) {
@@ -16,7 +16,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	}
 	file->ptr = NULL;
 	file->p = root->p;
-	fd = r_sandbox_fopen (path, "r");
+	fd = r_sandbox_fopen (path, create? "wb": "rb");
 	if (fd) {
 		fseek (fd, 0, SEEK_END);
 		file->size = ftell (fd);

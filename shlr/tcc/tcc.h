@@ -996,6 +996,7 @@ ST_DATA CType func_vt; /* current function return type (used by return instructi
 ST_DATA int func_vc;
 ST_DATA int last_line_num, last_ind, func_ind; /* debug last line number and pc */
 ST_DATA char *funcname;
+ST_DATA char *dirname;
 
 ST_INLN int is_float(int t);
 ST_FUNC int ieee_finite(double d);
