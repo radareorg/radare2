@@ -238,6 +238,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		bin->phdr[i].p_memsz = READWORD (phdr, j);
 		if (!is_elf64) {
 			bin->phdr[i].p_flags = READ32 (phdr, j);
+		//	bin->phdr[i].p_flags |= 1; tiny.elf needs this somehow :? LOAD0 is always +x for linux?
 		}
 		bin->phdr[i].p_align = READWORD (phdr, j);
 	}
@@ -1843,14 +1844,9 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	if (!bin) {
-		return 0LL;
-	}
+	r_return_val_if_fail (bin, UT64_MAX);
 	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
-		return UT64_MAX;
-	}
-	{
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
 			return entry;
@@ -1859,13 +1855,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 		if (entry != UT64_MAX) {
 			return entry;
 		}
-		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		if (entry == UT64_MAX) {
-			return 0;
-		}
+		return Elf_(r_bin_elf_get_section_offset)(bin, ".init");
 	}
 	return Elf_(r_bin_elf_v2p) (bin, entry);
 }
@@ -2736,7 +2726,8 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum || !bin->dyn_buf) {
+	r_return_val_if_fail (bin && bin->phdr, NULL);
+	if (!bin->ehdr.e_phnum || !bin->dyn_buf) {
 		return NULL;
 	}
 
