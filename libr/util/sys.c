@@ -931,7 +931,6 @@ R_API char *r_sys_pid_to_path(int pid) {
 	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, pid);
 	if (processHandle == NULL) {
 		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
-		CloseHandle (processHandle);
 		return NULL;
 	}
 	DWORD length = GetProcessImageFileName (processHandle, filename, maxlength);
