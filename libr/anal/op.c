@@ -400,6 +400,13 @@ R_API int r_anal_optype_from_string(const char *type) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
+	switch (t) {
+	case R_ANAL_OP_TYPE_RPUSH:
+		return "rpush";
+	defalt:
+		/* nothing */
+		break;
+	}
 	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
 #if 0
 	int i;
@@ -466,7 +473,6 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
 	case R_ANAL_OP_TYPE_UPUSH : return "upush";
-	case R_ANAL_OP_TYPE_RPUSH : return "rpush";
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
 	case R_ANAL_OP_TYPE_XOR   : return "xor";
 	case R_ANAL_OP_TYPE_CASE  : return "case";
