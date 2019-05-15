@@ -144,7 +144,6 @@ static int buf_sparse_read(RBuffer *b, ut8 *buf, size_t len) {
 	RBufferSparse *c;
 	RListIter *iter;
 	ut64 max = 0;
-	int r;
 
 	memset (buf, b->Oxff_priv, len);
 	r_list_foreach (priv->sparse, iter, c) {
@@ -164,7 +163,7 @@ static int buf_sparse_read(RBuffer *b, ut8 *buf, size_t len) {
 	if (priv->offset > max) {
 		return -1;
 	}
-	r = R_MIN (max - priv->offset, len);
+	int r = R_MIN (max - priv->offset, len);
 	priv->offset += r;
 	return r;
 }
