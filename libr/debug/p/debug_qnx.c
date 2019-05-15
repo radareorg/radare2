@@ -37,7 +37,7 @@ static void pidlist_cb (void *ctx, pid_t pid, char *name) {
 	r_list_append (list, __r_debug_pid_new (name, pid, 's', 0));
 }
 
-static int r_debug_qnx_select (int pid, int tid) {
+static int r_debug_qnx_select (RDebug *dbg, int pid, int tid) {
 	return qnxr_select (desc, pid, tid);
 }
 

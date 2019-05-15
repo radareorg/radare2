@@ -44,18 +44,20 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if __WINDOWS__
+#include <windows.h>
+#include <tlhelp32.h>
+#include <winbase.h>
+#include <psapi.h>
+#endif
 
 /*
  * Creates a new process and returns the result:
  * -1 : error
  *  0 : ok
  */
-#if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winbase.h>
-#include <psapi.h>
 
+#if __WINDOWS__
 typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
