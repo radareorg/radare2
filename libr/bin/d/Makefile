@@ -12,7 +12,7 @@ DLLS+=mfc42 mfc42u mstlsapi msvbvm50 odbc32 olecli32 oledlg
 DLLS+=olepro32 olesvr32 shdocvw shell32 shlwapi uxtheme
 DLLS+=vb40032 vssapi winmm cabinet gsprop32 spr32d70 mfc90u
 DLLS+=wldap32 iertutil urlmon wsnmp32 mfc30 mfc40 mfc71 mfc71u
-DLLS+=mfc120 csmtpapi csncdapi mfc140u
+DLLS+=mfc120 csmtpapi csncdapi mfc140u mfc100u
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 #-include $(OBJS:.o=.d)
 
