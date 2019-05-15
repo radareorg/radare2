@@ -927,26 +927,24 @@ R_API char *r_sys_pid_to_path(int pid) {
 	HANDLE processHandle = NULL;
 	TCHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
-	DWORD length;
-	const char* result = NULL;
-	char* tmp;
 
 	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, pid);
 	if (processHandle == NULL) {
 		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
-		goto err_r_sys_pid_to_path;
+		CloseHandle (processHandle);
+		return NULL;
 	}
-	length = GetProcessImageFileName (processHandle, filename, maxlength);
+	DWORD length = GetProcessImageFileName (processHandle, filename, maxlength);
 	if (length == 0) {
 		eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
-		goto err_r_sys_pid_to_path;
+		CloseHandle (processHandle);
+		return NULL;
 	}
-	tmp = malloc (length + 14);
+	char *tmp = r_str_newf(length + 14);
 	strcpy (tmp, "\\\\.\\GLOBALROOT");
 	strcat (tmp, filename);
-	result = r_sys_conv_win_to_utf8 (tmp);
+	const char *result = r_sys_conv_win_to_utf8 (tmp);
 	free (tmp);
-err_r_sys_pid_to_path:
 	CloseHandle (processHandle);
 	return result;
 #elif __APPLE__
