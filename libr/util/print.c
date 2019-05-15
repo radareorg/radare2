@@ -1840,6 +1840,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 		return pal->mov;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
+	case R_ANAL_OP_TYPE_RPUSH:
 	case R_ANAL_OP_TYPE_LOAD:
 		return pal->push;
 	case R_ANAL_OP_TYPE_POP:
