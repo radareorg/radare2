@@ -940,9 +940,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 		CloseHandle (processHandle);
 		return NULL;
 	}
-	char *tmp = r_str_newf(length + 14);
-	strcpy (tmp, "\\\\.\\GLOBALROOT");
-	strcat (tmp, filename);
+	char *tmp = r_str_newf("\\\\.\\GLOBALROOT%s", filename);
 	const char *result = r_sys_conv_win_to_utf8 (tmp);
 	free (tmp);
 	CloseHandle (processHandle);
