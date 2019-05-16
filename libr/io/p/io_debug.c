@@ -106,7 +106,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	STARTUPINFO si = { 0 } ;
 	DEBUG_EVENT de;
 	int pid, tid;
-	HANDLE th = INVALID_HANDLE_VALUE;
 	if (!*cmd) {
 		return -1;
 	}
@@ -158,6 +157,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 	LPTSTR appname_ = r_sys_conv_utf8_to_win (argv[0]);
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
+	free (cmdline);
+	// TODO: Add DEBUG_PROCESS to support child process debugging
 	if (!CreateProcess (appname_, cmdline_, NULL, NULL, FALSE,
 						 CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 						 NULL, NULL, &si, &pi)) {
@@ -168,8 +169,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	free (appname_);
 	free (cmdline_);
-	free (cmdline);
 	r_str_argv_free (argv);
+
 	/* get process id and thread id */
 	pid = pi.dwProcessId;
 	tid = pi.dwThreadId;
@@ -183,9 +184,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		goto err_fork;
 	}
 
-	if (th != INVALID_HANDLE_VALUE) {
-		CloseHandle (th);
-	}
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
 	winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	wintid = tid;
@@ -194,7 +192,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 err_fork:
 	eprintf ("ERRFORK\n");
 	TerminateProcess (pi.hProcess, 1);
-	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
+	CloseHandle (pi.hThread);
+	CloseHandle (pi.hProcess);
 	return -1;
 }
 #else // windows
