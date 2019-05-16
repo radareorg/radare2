@@ -132,7 +132,6 @@ att_exit:
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
-		char *pidpath;
 		RIODesc *ret;
 		RIOW32Dbg *dbg = R_NEW0 (RIOW32Dbg);
 		if (!dbg) {
@@ -143,10 +142,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			free (dbg);
 			return NULL;
 		}
-		pidpath = r_sys_pid_to_path (dbg->pid);
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
 				file, rw | R_PERM_X, mode, dbg);
-		ret->name = pidpath;
+		ret->name = r_sys_pid_to_path (dbg->pid);
 		return ret;
 	}
 	return NULL;

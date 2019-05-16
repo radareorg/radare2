@@ -68,20 +68,14 @@ extern char **environ;
 #define TMP_BUFSIZE	4096
 #ifdef _MSC_VER
 #include <psapi.h>
-#include <io.h>
 #include <process.h>  // to allow getpid under windows msvc compilation
 #include <direct.h>  // to allow getcwd under windows msvc compilation
-#else
-typedef BOOL WINAPI (*QueryFullProcessImageName_t) (HANDLE, DWORD, LPTSTR, PDWORD);
-typedef DWORD WINAPI (*GetProcessImageFileName_t) (HANDLE, LPTSTR, DWORD);
-GetProcessImageFileName_t GetProcessImageFileName;
-QueryFullProcessImageName_t QueryFullProcessImageName;
 #endif
 #endif
 
 R_LIB_VERSION(r_util);
 #ifdef _MSC_VER
-// Required for GetProcessImageFileName linking
+// Required for GetModuleFileNameEx and GetProcessImageFileName linking
 #pragma comment(lib, "psapi.lib")
 #endif
 
@@ -925,28 +919,58 @@ R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	// TODO: add maximum path length support
 	HANDLE processHandle = NULL;
-	TCHAR filename[MAX_PATH];
-	DWORD maxlength = MAX_PATH;
+	const DWORD maxlength = MAX_PATH;
+	TCHAR filename[maxlength];
+	const char *result
 
-	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, pid);
+	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
 		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
 		return NULL;
 	}
-	DWORD length = GetProcessImageFileName (processHandle, filename, maxlength);
+	DWORD length = GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
 	if (length == 0) {
-		eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
-		CloseHandle (processHandle);
-		return NULL;
+		// Upon failure fallback to GetProcessImageFileName
+		length = GetProcessImageFileName (processHandle, filename, maxlength);
+		if (length == 0) {
+			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+			CloseHandle (processHandle);
+			return NULL;
+		}
+		// Convert NT path to win32 path
+		char *tmp = strchr (filename + 1, '\\');
+		if (!tmp) {
+			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			CloseHandle (processHandle);
+			return NULL;
+		}
+		tmp = strchr (tmp + 1, '\\');
+		if (!tmp) {
+			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			CloseHandle (processHandle);
+			return NULL;
+		}
+		length = tmp - filename;
+		TCHAR device[maxlength];
+		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+			if (QueryDosDevice (drv, device, maxlength) == length) {
+				if (!strncmp (filename, device, length)) {
+					tmp = r_str_newf ("%s%s", drv, tmp);
+					if (!tmp) {
+						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
+						CloseHandle (processHandle);
+						return NULL;
+					}
+					result = r_sys_conv_win_to_utf8 (tmp);
+					free (tmp);
+					break;
+				}
+			}
+		}
+	} else {
+		result = r_sys_conv_win_to_utf8 (filename);
 	}
 	CloseHandle (processHandle);
-	char *tmp = r_str_newf ("\\\\.\\GLOBALROOT%s", filename);
-	if (!tmp) {
-		eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
-		return NULL;
-	}
-	const char *result = r_sys_conv_win_to_utf8 (tmp);
-	free (tmp);
 	return result;
 #elif __APPLE__
 #if __POWERPC__
