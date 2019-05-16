@@ -2915,7 +2915,7 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 static void rap_break (void *u) {
 	RIORap *rior = (RIORap*) u;
 	if (u) {
-		r_socket_free (rior->fd);
+		r_socket_close (rior->fd);
 		rior->fd = NULL;
 	}
 }
@@ -3047,7 +3047,10 @@ reaccept:
 						cmd[i] = '\0';
 						eprintf ("len: %d cmd:'%s'\n", i, cmd);
 						fflush (stdout);
+						int scr_interactive = r_config_get_i (core->config, "scr.interactive");
+						r_config_set_i (core->config, "scr.interactive", 0);
 						cmd_output = r_core_cmd_str (core, cmd);
+						r_config_set_i (core->config, "scr.interactive", scr_interactive);
 						free (cmd);
 					} else {
 						eprintf ("rap: cannot malloc\n");
@@ -3148,9 +3151,38 @@ reaccept:
 				}
 				break;
 			default:
-				eprintf ("unknown command 0x%02x\n", cmd);
-				r_socket_close (c);
-				R_FREE (ptr);
+				if (cmd == 'G') {
+					// silly http emulation over rap://
+					char line[256] = {0};
+					char *cmd = line;
+					r_socket_read (c, (ut8*)line, sizeof (line));
+					if (!strncmp (line, "ET /cmd/", 8)) {
+						cmd = line + 8;
+						char *http = strstr (cmd, "HTTP");
+						if (http) {
+							*http = 0;
+							http--;
+							if (*http == ' ') {
+								*http = 0;
+							}
+						}
+						r_str_uri_decode (cmd);
+						char *res = r_core_cmd_str (core, cmd);
+						if (res) {
+							r_socket_printf (c, "HTTP/1.0 %d %s\r\n%s"
+									"Connection: close\r\nContent-Length: %d\r\n\r\n",
+									200, "OK", "", -1); // strlen (res));
+							r_socket_write (c, res, strlen (res));
+							free (res);
+						}
+						r_socket_flush (c);
+						r_socket_close (c);
+					}
+				} else {
+					eprintf ("[r2p] unknown command 0x%02x\n", cmd);
+					r_socket_close (c);
+					R_FREE (ptr);
+				}
 				if (r_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
 					r_socket_free (c);
