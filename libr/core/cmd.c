@@ -2041,6 +2041,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 				*http = 0;
 			}
 		}
+		r_cons_printf ("HTTP/1.0 %d %s\r\n%s"
+				"Connection: close\r\nContent-Length: %d\r\n\r\n",
+				200, "OK", "", -1);
 		return r_core_cmd0 (core, cmd);
 	}
 

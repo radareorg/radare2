@@ -1289,8 +1289,6 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 
-	RAnalIsValidOffsetCB is_valid_offset;
-
 	RAnalEsilCB esil_init; // initialize esil-related stuff
 	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
 	RAnalEsilTrapCB esil_trap; // traps / exceptions

@@ -48,7 +48,7 @@ static int __rap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 static bool __rap_accept(RIO *io, RIODesc *desc, int fd) {
 	RIORap *rap = desc->data;
-	if (rap) {
+	if (rap && desc && fd != -1) {
 		rap->client = r_socket_new_from_fd (fd);
 		return true;
 	}
@@ -78,7 +78,7 @@ static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	i = r_read_at_be32 (tmp, 1);
-	if (i >count) {
+	if (i > count) {
 		eprintf ("__rap_read: Unexpected data size %d\n", i);
 		return -1;
 	}
@@ -91,9 +91,15 @@ static int __rap_close(RIODesc *fd) {
 	if (RIORAP_IS_VALID (fd)) {
 		if (RIORAP_FD (fd) != NULL) {
 			RIORap *r = fd->data;
-			(void)r_socket_close (r->fd);
-			ret = r_socket_close (r->client);
-			R_FREE (fd->data);
+			if (r && fd->fd != -1) {
+				if (r->fd) {
+					(void)r_socket_close (r->fd);
+				}
+				if (r->client) {
+					ret = r_socket_close (r->client);
+				}
+				R_FREE (r);
+			}
 		}
 	} else {
 		eprintf ("__rap_close: fdesc is not a r_io_rap plugin\n");
@@ -104,29 +110,23 @@ static int __rap_close(RIODesc *fd) {
 static ut64 __rap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RSocket *s = RIORAP_FD (fd);
 	ut8 tmp[10];
-	int ret;
-	// query
 	tmp[0] = RMT_SEEK;
 	tmp[1] = (ut8)whence;
 	r_write_be64 (tmp + 2, offset);
 	(void)r_socket_write (s, &tmp, 10);
 	r_socket_flush (s);
-	// get reply
-	memset (tmp, 0, 9);
-	ret = r_socket_read_block (s, (ut8*)&tmp, 9);
+	int ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret != 9 || tmp[0] != (RMT_SEEK | RMT_REPLY)) {
 		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n",
 		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
 	}
-	offset = r_read_at_be64 (tmp, 1);
-	return offset;
+	return r_read_at_be64 (tmp, 1);
 }
 
 static bool __rap_plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "rap://", 6)) \
-		|| (!strncmp (pathname, "raps://", 7));
+	return r_str_startswith (pathname, "rap://") || r_str_startswith (pathname, "raps://");
 }
 
 static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
@@ -206,6 +206,10 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	eprintf ("Connected to: %s at port %s\n", ptr, port);
 	rior = R_NEW0 (RIORap);
+	if (!rior) {
+		r_socket_free (rap_fd);
+		return NULL;
+	}
 	rior->listener = false;
 	rior->client = rior->fd = rap_fd;
 	if (file && *file) {
@@ -230,7 +234,8 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		if (i > 0) {
 			eprintf ("ok\n");
 		}
-		io->cb_core_cmd (io->user, "e io.va=0");
+		// io->cb_core_cmd (io->user, "e io.va=0");
+		io->cb_core_cmd (io->user, ".=!i*");
 		io->cb_core_cmd (io->user, ".=!f*");
 		io->cb_core_cmd (io->user, ".=!om*");
 #if 0
