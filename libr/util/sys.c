@@ -949,21 +949,23 @@ R_API char *r_sys_pid_to_path(int pid) {
 			return NULL;
 		}
 		length = tmp - filename;
+		tmp = strndup (filename, length);
 		TCHAR device[MAX_PATH];
 		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-			if (QueryDosDevice (drv, device, maxlength) == length) {
-				if (!strncmp (filename, device, length)) {
-					tmp = r_str_newf ("%s%s", drv, tmp);
+			if (QueryDosDevice (drv, device, maxlength) > 0) {
+				if (!strcmp (tmp, device)) {
+					free (tmp);
+					tmp = r_str_newf ("%s%s", drv, filename[length]);
 					if (!tmp) {
 						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
 						return NULL;
 					}
 					result = r_sys_conv_win_to_utf8 (tmp);
-					free (tmp);
 					break;
 				}
 			}
 		}
+		free (tmp);
 	} else {
 		CloseHandle (processHandle);
 		result = r_sys_conv_win_to_utf8 (filename);
