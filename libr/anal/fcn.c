@@ -993,7 +993,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
-	bool is_x86 = anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_x86 = is_arm? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_dalvik = is_x86? false: anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -1004,10 +1005,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 
 	if (depth < 1) {
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
-	}
-
-	if (!noncode && anal->cur && anal->cur->is_valid_offset && !anal->cur->is_valid_offset (anal, addr, 0)) {
-		return R_ANAL_RET_END;
 	}
 
 	// check if address is readable //:
@@ -1061,6 +1058,20 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	ut64 movptr = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 	int maxlen = len * addrbytes;
+	if (is_dalvik) {
+		bool skipAnalysis = false;
+		if (!strncmp (fcn->name, "sym.", 4)) {
+			if (!strncmp (fcn->name + 4, "imp.", 4)) {
+				skipAnalysis = true;
+			} else if (strstr (fcn->name, "field")) {
+				skipAnalysis = true;
+			}
+		}
+		if (skipAnalysis) {
+			ret = 0;
+			gotoBeach (R_ANAL_RET_END);
+		}
+	}
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			free (last_reg_mov_lea_name);
@@ -1080,6 +1091,7 @@ repeat:
 
 		if (ret < 0) {
 			eprintf ("Failed to read\n");
+			break;
 		}
 		if (isInvalidMemory (buf, bytes_read)) {
 			FITFCNSZ ();
