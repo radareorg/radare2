@@ -798,7 +798,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->os = strdup ("linux");
 	const char *kw = "Landroid/support/wearable/view";
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
+	const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
 	if (r_mem_mem (tmp, tmpsz, (const ut8 *)kw, strlen (kw))) {
 		ret->subsystem = strdup ("android-wear");
 	} else {
@@ -824,7 +824,7 @@ static RBinInfo *info(RBinFile *bf) {
 	{
 		ut32 fc = r_buf_read_le32_at (bf->buf, 8);
 		ut64 tmpsz;
-		const ut8 *tmp = r_buf_buffer (bf->buf, &tmpsz);
+		const ut8 *tmp = r_buf_data (bf->buf, &tmpsz);
 		ut32 cc = __adler32 (tmp + 12, tmpsz - 12);
 		if (fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
@@ -1233,7 +1233,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					}
 					// TODO: catch left instead of null
 					st64 size;
-					r_buf_seek (binfile->buf, off, 0);
+					r_buf_seek (binfile->buf, off, R_BUF_SET);
 					int r = r_buf_sleb128 (binfile->buf, &size);
 					if (r <= 0) {
 						break;
@@ -1548,7 +1548,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 		}
 
 		ut64 bufbufsz;
-		const ut8 *bufbuf = r_buf_buffer (binfile->buf, &bufbufsz);
+		const ut8 *bufbuf = r_buf_data (binfile->buf, &bufbufsz);
 		p = bufbuf + c->class_data_offset;
 		// XXX may overflow
 		if (bufbufsz < c->class_data_offset) {
@@ -2081,7 +2081,7 @@ static RList *dex_fields(RBinFile *bf) {
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt)); \
 	addr += siz;
 
-	r_buf_seek (bf->buf, 0, 0);
+	r_buf_seek (bf->buf, 0, R_BUF_SET);
 	ut64 magic = r_buf_read_le64 (bf->buf);
 	ROW ("dex_magic", 8, magic, "[8]c");
 	ut32 checksum = r_buf_read_le32 (bf->buf);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -24,10 +24,8 @@ static int get_file_type(RBinFile *bf) {
 }
 
 static RList *maps(RBinFile *bf) {
-	if (bf && bf->o) {
-		return Elf_(r_bin_elf_get_maps)(bf->o->bin_obj);
-	}
-	return NULL;
+	r_return_val_if_fail (bf && bf->o, NULL);
+	return Elf_(r_bin_elf_get_maps)(bf->o->bin_obj);
 }
 
 static char* regstate(RBinFile *bf) {
@@ -161,6 +159,7 @@ static RList* sections(RBinFile *bf) {
 	if (!obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
+
 	//there is not leak in section since they are cached by elf.c
 	//and freed within Elf_(r_bin_elf_free)
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
@@ -248,7 +247,11 @@ static RList* sections(RBinFile *bf) {
 				ptr->name = strdup ("OPENBSD_BOOTDATA");
 				break;
 			default:
-				ptr->name = setphname (mach, phdr[i].p_type);
+				if (ptr->size == 0 && ptr->vsize == 0) {
+					ptr->name = strdup ("NONE");
+				} else {
+					ptr->name = setphname (mach, phdr[i].p_type);
+				}
 				break;
 			}
 			r_list_append (ret, ptr);
@@ -298,14 +301,10 @@ static RList* sections(RBinFile *bf) {
 }
 
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
-	struct Elf_(r_bin_elf_obj_t)* obj;
-	RBinAddr *ptr;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	obj = bf->o->bin_obj;
-	ptr = R_NEW0 (RBinAddr);
+	struct Elf_(r_bin_elf_obj_t)* obj = bf->o->bin_obj;
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = Elf_(r_bin_elf_v2p) (obj, vaddr);
 		ptr->vaddr = vaddr;
@@ -368,55 +367,56 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 }
 
 static RList* entries(RBinFile *bf) {
-	struct Elf_(r_bin_elf_obj_t)* obj;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+
 	RBinAddr *ptr = NULL;
 	struct r_bin_elf_symbol_t *symbol;
-	RList *ret;
 	int i;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
+	struct Elf_(r_bin_elf_obj_t)* obj = bf->o->bin_obj;
+	RList *ret = r_list_newf ((RListFree)free);
+	if (!ret) {
 		return NULL;
 	}
-	obj = bf->o->bin_obj;
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
-	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-	ptr->hpaddr = 0x18;  // e_entry offset in ELF header
-	ptr->hvaddr = UT64_MAX;
-	if (bf->o->sections) {
-		RListIter *iter;
-		RBinSection *section;
-		r_list_foreach_prev (bf->o->sections, iter, section) {
-			if (!strcmp (section->name, "ehdr")) {
-				ptr->hvaddr = section->vaddr + ptr->hpaddr;
-				break;
+	ut64 pa = Elf_(r_bin_elf_get_entry_offset) (obj);
+	if (pa != UT64_MAX) {
+		if (!(ptr = R_NEW0 (RBinAddr))) {
+			return ret;
+		}
+		ptr->paddr = pa;
+		ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
+		ptr->hvaddr = UT64_MAX;
+		if (bf->o->sections) {
+			RListIter *iter;
+			RBinSection *section;
+			r_list_foreach_prev (bf->o->sections, iter, section) {
+				if (!strcmp (section->name, "ehdr")) {
+					ptr->hvaddr = section->vaddr + ptr->hpaddr;
+					break;
+				}
 			}
 		}
-	}
-	if (ptr->hvaddr == UT64_MAX) {
-		Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
-	}
+		if (ptr->hvaddr == UT64_MAX) {
+			Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
+		}
 
-	if (obj->ehdr.e_machine == EM_ARM) {
-		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
-		if (bin_bits != 64) {
-			ptr->bits = 32;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
+		if (obj->ehdr.e_machine == EM_ARM) {
+			int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
+			if (bin_bits != 64) {
+				ptr->bits = 32;
+				if (ptr->vaddr & 1) {
+					ptr->vaddr--;
+					ptr->bits = 16;
+				}
+				if (ptr->paddr & 1) {
+					ptr->paddr--;
+					ptr->bits = 16;
+				}
 			}
 		}
+		r_list_append (ret, ptr);
 	}
-	r_list_append (ret, ptr);
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
@@ -443,10 +443,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
-			  RBinSymbol *ptr,
-			  bool is_sht_null,
-			  RList *ret) {
+static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol *ptr, bool is_sht_null, RList *ret) {
 	// add it to the list of symbols only if it doesn't point to SHT_NULL
 	if (is_sht_null) {
 		r_bin_symbol_free (ptr);
@@ -456,18 +453,14 @@ static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 }
 
 static RList* symbols(RBinFile *bf) {
-	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 	RBinSymbol *ptr = NULL;
-	RList *ret = NULL;
 	int i;
 
-	if (!bf|| !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	bin = bf->o->bin_obj;
-	ret = r_list_newf (free);
+	struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
+	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}

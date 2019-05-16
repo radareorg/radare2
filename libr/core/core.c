@@ -3151,6 +3151,11 @@ reaccept:
 				eprintf ("unknown command 0x%02x\n", cmd);
 				r_socket_close (c);
 				R_FREE (ptr);
+				if (r_config_get_i (core->config, "rap.loop")) {
+					eprintf ("rap: waiting for new connection\n");
+					r_socket_free (c);
+					goto reaccept;
+				}
 				goto out_of_function;
 			}
 		}

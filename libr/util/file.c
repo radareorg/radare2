@@ -858,8 +858,22 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 }
 #endif
 
+R_API RMmap *r_file_mmap_arch(RMmap *mmap, const char *filename, int fd) {
+#if __WINDOWS__
+	(void)fd;
+	return r_file_mmap_windows (mmap, filename);
+#elif __UNIX__
+	(void)filename;
+	return r_file_mmap_unix (mmap, fd);
+#else
+	(void)filename;
+	(void)fd;
+	return r_file_mmap_other (mmap);
+#endif
+}
+
 // TODO: add rwx support?
-R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
+R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	RMmap *m = NULL;
 	int fd = -1;
 	if (!rw && !r_file_exists (file)) {
@@ -882,6 +896,7 @@ R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
 	m->rw = rw;
 	m->fd = fd;
 	m->len = fd != -1? lseek (fd, (off_t)0, SEEK_END) : 0;
+	m->filename = strdup (file);
 
 	if (m->fd == -1) {
 		return m;
@@ -922,6 +937,7 @@ R_API void r_file_mmap_free (RMmap *m) {
 		free (m);
 		return;
 	}
+	free (m->filename);
 #if __UNIX__
 	munmap (m->buf, m->len);
 #endif

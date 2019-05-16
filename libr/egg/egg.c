@@ -333,7 +333,7 @@ R_API bool r_egg_assemble(REgg *egg) {
 }
 
 R_API int r_egg_compile(REgg *egg) {
-	r_buf_seek (egg->src, 0, 0);
+	r_buf_seek (egg->src, 0, R_BUF_SET);
 	char b;
 	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
 	if (r != sizeof (b) || !egg->remit) {
@@ -379,7 +379,7 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
 	ut64 tmpsz;
-	const ut8 *tmp = r_buf_buffer (egg->bin, &tmpsz);
+	const ut8 *tmp = r_buf_data (egg->bin, &tmpsz);
 	bool res = r_sys_run (tmp, tmpsz);
 	return res;
 }
@@ -476,7 +476,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 				return false;
 			}
 			ut64 tmpsz;
-			const ut8 *tmp = r_buf_buffer (b, &tmpsz);
+			const ut8 *tmp = r_buf_data (b, &tmpsz);
 			r_egg_raw (egg, tmp, tmpsz);
 			return true;
 		}
@@ -527,16 +527,19 @@ R_API void r_egg_finalize(REgg *egg) {
 	r_list_foreach (egg->patches, iter, ep) {
 		if (ep->off < 0) {
 			ut64 sz;
-			const ut8 *buf = r_buf_buffer (ep->b, &sz);
+			const ut8 *buf = r_buf_data (ep->b, &sz);
 			r_egg_append_bytes (egg, buf, sz);
-		} else {
+		} else if (ep->off < r_buf_size (egg->bin)) {
 			ut64 sz;
-			const ut8 *buf = r_buf_buffer (ep->b, &sz);
+			const ut8 *buf = r_buf_data (ep->b, &sz);
 			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
 			if (r < sz) {
-				eprintf ("Cannot patch outside\n");
+				eprintf ("Error during patch\n");
 				return;
 			}
+		} else {
+			eprintf ("Cannot patch outside\n");
+			return;
 		}
 	}
 }

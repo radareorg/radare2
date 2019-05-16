@@ -224,6 +224,7 @@ typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef bool (*RIOFdClose) (RIO *io, int fd);
 typedef ut64 (*RIOFdSeek) (RIO *io, int fd, ut64 addr, int whence);
 typedef ut64 (*RIOFdSize) (RIO *io, int fd);
+typedef bool (*RIOFdResize) (RIO *io, int fd, ut64 newsize);
 typedef ut64 (*RIOP2V) (RIO *io, ut64 pa);
 typedef ut64 (*RIOV2P) (RIO *io, ut64 va);
 typedef int (*RIOFdRead) (RIO *io, int fd, ut8 *buf, int len);
@@ -260,6 +261,7 @@ typedef struct r_io_bind_t {
 	RIOFdClose fd_close;
 	RIOFdSeek fd_seek;	//needed for esil
 	RIOFdSize fd_size;
+	RIOFdResize fd_resize;
 	RIOFdRead fd_read;	//needed for esil
 	RIOFdWrite fd_write;	//needed for esil
 	RIOFdReadAt fd_read_at;

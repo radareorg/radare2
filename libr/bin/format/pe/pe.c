@@ -519,7 +519,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		r_sys_perror ("malloc (dos header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*) bin->dos_header, sizeof(PE_(image_dos_header))) == -1) {
+	if (r_buf_read_at (bin->b, 0, (ut8*) bin->dos_header, sizeof(PE_(image_dos_header))) < 0) {
 		bprintf ("Warning: read (dos header)\n");
 		return false;
 	}
@@ -537,7 +537,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		return false;
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
-	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew, (ut8*) bin->nt_headers, sizeof (PE_(image_nt_headers))) < -1) {
+	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew, (ut8*) bin->nt_headers, sizeof (PE_(image_nt_headers))) < 0) {
 		bprintf ("Warning: read (dos header)\n");
 		return false;
 	}
@@ -596,10 +596,10 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->optional_header = &bin->nt_headers->optional_header;
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
 
-	if (strncmp ((char*) &bin->dos_header->e_magic, "MZ", 2) ||
-	(strncmp ((char*) &bin->nt_headers->Signature, "PE", 2) &&
-	/* Check also for Phar Lap TNT DOS extender PL executable */
-	strncmp ((char*) &bin->nt_headers->Signature, "PL", 2))) {
+	if (strncmp ((char *)&bin->dos_header->e_magic, "MZ", 2) ||
+		(strncmp ((char *)&bin->nt_headers->Signature, "PE", 2) &&
+		/* Check also for Phar Lap TNT DOS extender PL executable */
+		strncmp ((char *)&bin->nt_headers->Signature, "PL", 2))) {
 		return false;
 	}
 	return true;
@@ -672,7 +672,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		}
 	}
 	symctr = 0;
-	if (r_buf_read_at (bin->b, sym_tbl_off, (ut8*) buf, bufsz)) {
+	if (r_buf_read_at (bin->b, sym_tbl_off, (ut8*) buf, bufsz) > 0) {
 		for (i = 0; i < shsz; i += srsz) {
 			sr = (SymbolRecord*) (buf + i);
 			//bprintf ("SECNUM %d\n", sr->secnum);
@@ -730,8 +730,7 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	bin->section_header_offset = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
 		bin->nt_headers->file_header.SizeOfOptionalHeader;
-	if (r_buf_read_at (bin->b, bin->section_header_offset,
-		(ut8*) bin->section_header, sections_size) == -1) {
+	if (r_buf_read_at (bin->b, bin->section_header_offset, (ut8*) bin->section_header, sections_size) < 0) {
 		bprintf ("Warning: read (sections)\n");
 		R_FREE (bin->section_header);
 		goto out_error;
@@ -954,7 +953,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			goto fail;
 		}
 
-		rr = r_buf_read_at (bin->b, metadata_directory + 16, (ut8*)(metadata->VersionString),  len);
+		rr = r_buf_read_at (bin->b, metadata_directory + 16, (ut8*)(metadata->VersionString), len);
 		if (rr != len) {
 			eprintf ("Warning: read (metadata header) - cannot parse version string\n");
 			free (metadata->VersionString);
@@ -1135,7 +1134,7 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 			import_dir = new_import_dir;
 			new_import_dir = NULL;
 			curr_import_dir = import_dir + (indx - 1);
-			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size, (ut8*) (curr_import_dir), dir_size) < 1) {
+			if (r_buf_read_at (bin->b, import_dir_offset + (indx - 1) * dir_size, (ut8*) (curr_import_dir), dir_size) <= 0) {
 				bprintf ("Warning: read (import directory)\n");
 				R_FREE (import_dir);
 				break; //return false;
@@ -1203,7 +1202,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t)* bin) {
 		r_sys_perror ("malloc (export directory)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*) bin->export_directory, sizeof (PE_(image_export_directory))) == -1) {
+	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*) bin->export_directory, sizeof (PE_(image_export_directory))) < 0) {
 		bprintf ("Warning: read (export directory)\n");
 		R_FREE (bin->export_directory);
 		return false;
@@ -2265,14 +2264,16 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		if (entry.u1.s.NameIsString) {
 			int i;
 			ut16 buf, resourceEntryNameLength;
-			r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&buf, sizeof (ut16));
+			if (r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset, (ut8*)&buf, sizeof (ut16)) != sizeof (ut16)) {
+				break;
+			}
 			resourceEntryNameLength = r_read_le16 (&buf);
 			resourceEntryName = calloc (resourceEntryNameLength + 1, sizeof (ut8));
 			if (resourceEntryName) {
 				for (i = 0; i < resourceEntryNameLength; i++) { /* Convert Unicode to ASCII */
 					ut8 byte;
 					int r = r_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + (i*2), &byte, sizeof (ut8));
-					if (r < 1 || !byte) {
+					if (r != sizeof (ut8) || !byte) {
 						R_FREE (resourceEntryName);
 						break;
 					}
@@ -2467,6 +2468,9 @@ static void bin_pe_get_certificate(struct PE_ (r_bin_pe_obj_t) * bin) {
 	bin->cms = NULL;
 	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
 	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
+	if (size == 0) {
+		return;
+	}
 	data = calloc (1, size);
 	if (!data) {
 		return;
@@ -3584,7 +3588,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file, bool verbose) {
 	return bin;
 }
 
-struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(RBuffer * buf, bool verbose) {
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
 	struct PE_(r_bin_pe_obj_t)* bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
 	if (!bin) {
 		return NULL;

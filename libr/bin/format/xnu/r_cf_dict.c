@@ -501,8 +501,7 @@ static RCFValueData *r_cf_value_data_new(char *string) {
 	r_base64_decode (out, string, len);
 
 	data->type = R_CF_DATA;
-	data->value = r_buf_new ();
-	r_buf_set_bytes_steal (data->value, out, out_len);
+	data->value = r_buf_new_with_pointers (out, out_len, true);
 
 	return data;
 }

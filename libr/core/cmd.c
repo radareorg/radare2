@@ -684,7 +684,7 @@ static int cmd_yank(void *data, const char *input) {
 		if (input[1] == 'f') { // "wtf"
 			ut64 tmpsz;
 			const char *file = r_str_trim_ro (input + 2);
-			const ut8 *tmp = r_buf_buffer (core->yank_buf, &tmpsz);
+			const ut8 *tmp = r_buf_data (core->yank_buf, &tmpsz);
 			if (!r_file_dump (file, tmp, tmpsz, false)) {
 				eprintf ("Cannot dump to '%s'\n", file);
 			}

@@ -125,7 +125,7 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	char *uri = r_str_newf ("malloc://%d", bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
-		const ut8 *tmp = r_buf_buffer (b, &bufSize);
+		const ut8 *tmp = r_buf_data (b, &bufSize);
 		r_io_desc_write (desc, tmp, bufSize);
 	}
 	return desc;
@@ -513,6 +513,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_close = r_io_fd_close;
 	bnd->fd_seek = r_io_fd_seek;
 	bnd->fd_size = r_io_fd_size;
+	bnd->fd_resize = r_io_fd_resize;
 	bnd->fd_read = r_io_fd_read;
 	bnd->fd_write = r_io_fd_write;
 	bnd->fd_read_at = r_io_fd_read_at;

@@ -29,7 +29,7 @@ static int check_buffer(RBuffer *b) {
 }
 
 static bool check_bytes(const ut8 *buf, ut64 len) {
-	RBuffer *b = r_buf_new_with_pointers (buf, len);
+	RBuffer *b = r_buf_new_with_pointers (buf, len, false);
 	if (b) {
 		int res = check_buffer (b);
 		r_buf_free (b);

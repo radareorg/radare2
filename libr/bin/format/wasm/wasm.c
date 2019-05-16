@@ -30,7 +30,7 @@ static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fc
 		free (buf);
 		return 0;
 	}
-	r_buf_seek (b, cur + n, R_IO_SEEK_SET);
+	r_buf_seek (b, cur + n, R_BUF_SET);
 	*n_out = n;
 	free (buf);
 	return tmp;
@@ -235,7 +235,7 @@ static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, P
 		return NULL;
 	}
 	RBuffer *b = bin->buf;
-	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
+	r_buf_seek (b, sec->payload_data, R_BUF_SET);
 	ut32 r = 0;
 	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
@@ -403,7 +403,7 @@ static void *parse_code_entry(RBuffer *b, ut64 max) {
 	}
 	ptr->code = r_buf_tell (b);
 	ptr->len = ptr->body_size - ptr->code + j;
-	r_buf_seek (b, ptr->len - 1, R_IO_SEEK_CUR); // consume bytecode
+	r_buf_seek (b, ptr->len - 1, R_BUF_CUR); // consume bytecode
 	r_buf_read (b, &ptr->byte, 1);
 	if (ptr->byte != R_BIN_WASM_END_OF_CODE) {
 		goto beach;
@@ -430,7 +430,7 @@ static void *parse_data_entry(RBuffer *b, ut64 max) {
 		goto beach;
 	}
 	ptr->data = r_buf_tell (b);
-	r_buf_seek (b, ptr->size, R_IO_SEEK_CUR);
+	r_buf_seek (b, ptr->size, R_BUF_CUR);
 	return ptr;
 
 beach:
@@ -575,7 +575,7 @@ static RBinWasmStartEntry *r_bin_wasm_get_start(RBinWasmObj *bin, RBinWasmSectio
 	}
 
 	RBuffer *b = bin->buf;
-	r_buf_seek (b, sec->payload_data, R_IO_SEEK_SET);
+	r_buf_seek (b, sec->payload_data, R_BUF_SET);
 	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < r_buf_size (b))) {
 		goto beach;
@@ -675,7 +675,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 	}
 	RBuffer *b = bin->buf;
 	ut64 max = r_buf_size (b) - 1;
-	r_buf_seek (b, 8, R_IO_SEEK_SET);
+	r_buf_seek (b, 8, R_BUF_SET);
 	while (r_buf_tell (b) <= max) {
 		if (!(ptr = R_NEW0 (RBinWasmSection))) {
 			return ret;
@@ -765,7 +765,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			break;
 		default:
 			eprintf("[wasm] error: unkown section id: %d\n", ptr->id);
-			r_buf_seek (b, ptr->size - 1, R_IO_SEEK_CUR);
+			r_buf_seek (b, ptr->size - 1, R_BUF_CUR);
 			continue;
 		}
 		if (ptr->id != R_BIN_WASM_SECTION_START
@@ -780,7 +780,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 		if (ptr->payload_len > ptr->size) {
 			goto beach;
 		}
-		r_buf_seek (b, ptr->payload_len, R_IO_SEEK_CUR);
+		r_buf_seek (b, ptr->payload_len, R_BUF_CUR);
 		if (!r_list_append (ret, ptr)) {
 			free (ptr);
 			// should it jump to beach?
