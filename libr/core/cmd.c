@@ -162,6 +162,12 @@ static const char *help_msg_equal[] = {
 	"\nother:","","",
 	"=&", ":port", "start rap server in background (same as '&_=h')",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
+	"\nexamples:","","",
+	"=+", "tcp://localhost:9090/", "connect to: r2 -c.:9090 ./bin",
+	// "=+", "udp://localhost:9090/", "connect to: r2 -c.:9090 ./bin",
+	"=+", "rap://localhost:9090/", "connect to: r2 rap://:9090",
+	"=+", "http://localhost:9090/cmd/", "connect to: r2 -c'=h 9090' bin",
+	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
 	NULL
 };
 
