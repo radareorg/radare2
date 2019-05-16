@@ -949,14 +949,15 @@ R_API char *r_sys_pid_to_path(int pid) {
 			return NULL;
 		}
 		length = tmp - filename;
-		tmp = malloc(length);
+		tmp = malloc(length + 1);
+		tmp[length + 1] = '\0';
 		strncpy (tmp, filename, length);
 		TCHAR device[MAX_PATH];
 		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
 			if (QueryDosDevice (drv, device, maxlength) > 0) {
 				if (!strcmp (tmp, device)) {
 					free (tmp);
-					tmp = r_str_newf ("%s%s", drv, filename[length]);
+					tmp = r_str_newf ("%s%s", drv, &filename[length]);
 					if (!tmp) {
 						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
 						return NULL;
