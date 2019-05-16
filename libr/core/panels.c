@@ -235,6 +235,8 @@ static int show_status(RCore *core, const char *msg);
 static bool show_status_yesno(RCore *core, int def, const char *msg);
 static char *show_status_input(RCore *core, const char *msg);
 static bool check_panel_type(RPanel *panel, const char *type, int len);
+static bool is_abnormal_cursor_type(RPanel *panel);
+static bool is_normal_cursor_type(RPanel *panel);
 static RPanels *panels_new(RCore *core);
 static void renew_filter(RPanel *panel, int n);
 static void panels_check_stackbase(RCore *core);
@@ -456,6 +458,24 @@ static bool check_panel_type(RPanel *panel, const char *type, int len) {
 	return !strncmp (panel->model->cmd, type, len);
 }
 
+static bool is_abnormal_cursor_type(RPanel *panel) {
+	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))
+			|| check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+		return true;
+	}
+	return false;
+}
+
+static bool is_normal_cursor_type(RPanel *panel) {
+	if (check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))
+			|| check_panel_type (panel, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
+			|| check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
+			|| check_panel_type (panel, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+		return true;
+	}
+	return false;
+}
+
 static void setCmdStrCache(RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = s;
@@ -529,6 +549,8 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	char *readOnly = panel->model->readOnly;
 	char *cmd_title  = apply_filter_cmd (core, panel);
 	int graph_pad = 0;
+	bool o_cur = core->print->cur_enabled;
+	core->print->cur_enabled = o_cur & (getCurPanel (core->panels) == panel);
 	if (color) {
 		if (!strcmp (panel->model->title, cmd_title)) {
 			snprintf (title, sizeof (title) - 1,
@@ -615,8 +637,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (y < 0) {
 		y = 0;
 	}
-	bool b = (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) && core->print->cur_enabled;
+	bool b = is_abnormal_cursor_type (panel) && core->print->cur_enabled;
 	if (b) {
 		x = -2;
 	}
@@ -647,6 +668,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (!panel->model->cmdStrCache && !readOnly) {
 		free (cmdStr);
 	}
+	core->print->cur_enabled = o_cur;
 }
 
 static void resetScrollPos(RPanel *p) {
@@ -915,8 +937,7 @@ static void setCursor(RCore *core, bool cur) {
 	RPanel *p = getCurPanel (core->panels);
 	RPrint *print = core->print;
 	print->cur_enabled = cur;
-	if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			check_panel_type (p, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
+	if (is_abnormal_cursor_type (p)) {
 		return;
 	}
 	if (cur) {
@@ -930,12 +951,7 @@ static void setCursor(RCore *core, bool cur) {
 static void activateCursor(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
-	if (check_panel_type (cur, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))
-			|| check_panel_type (cur, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
-			|| check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
-			|| check_panel_type (cur, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))
-			|| check_panel_type (cur, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))
-			|| check_panel_type (cur, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+	if (is_normal_cursor_type (cur) || is_abnormal_cursor_type (cur)) {
 		if (cur->model->cache) {
 			if (show_status_yesno (core, 'y', "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
 				cur->model->cache = false;
@@ -2101,8 +2117,7 @@ static void setdcb(RPanel *p) {
 		p->model->directionCb = directionRegisterCb;
 	} else if (check_panel_type (p, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		p->model->directionCb = directionHexdumpCb;
-	} else if (check_panel_type (p, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			check_panel_type (p, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
+	} else if (is_abnormal_cursor_type (p)) {
 		p->model->directionCb = direction_panels_cursor_cb;
 	} else {
 		p->model->directionCb = directionDefaultCb;
