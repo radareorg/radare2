@@ -81,7 +81,7 @@ QueryFullProcessImageName_t QueryFullProcessImageName;
 
 R_LIB_VERSION(r_util);
 #ifdef _MSC_VER
-// Required for GetModuleFileNameEx linking
+// Required for GetProcessImageFileName linking
 #pragma comment(lib, "psapi.lib")
 #endif
 
@@ -923,69 +923,31 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	HANDLE kernel32 = GetModuleHandle (TEXT("kernel32"));
-	if (!kernel32) {
-		eprintf ("Error getting the handle to kernel32.dll\n");
-		return NULL;
-	}
-#ifndef _MSC_VER
-	if (!GetProcessImageFileName) {
-		if (!QueryFullProcessImageName) {
-			QueryFullProcessImageName = (QueryFullProcessImageName_t) GetProcAddress (kernel32, W32_TCALL ("QueryFullProcessImageName"));
-		}
-		if (!QueryFullProcessImageName) {
-			// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
-			HANDLE psapi = LoadLibrary (TEXT("Psapi.dll"));
-			if (!psapi) {
-				eprintf ("Error getting the handle to Psapi.dll\n");
-				return NULL;
-			}
-			GetProcessImageFileName = (GetProcessImageFileName_t) GetProcAddress (psapi, W32_TCALL ("GetProcessImageFileName"));
-			if (!GetProcessImageFileName) {
-				eprintf ("Error getting the address of GetProcessImageFileName\n");
-				return NULL;
-			}
-		}
-	}
-	HANDLE handle = NULL;
+	// TODO: add maximum path length support
+	HANDLE processHandle = NULL;
 	TCHAR filename[MAX_PATH];
 	DWORD maxlength = MAX_PATH;
-	handle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (handle != NULL) {
-		if (QueryFullProcessImageName) {
-			if (QueryFullProcessImageName (handle, 0, filename, &maxlength) == 0) {
-				eprintf ("Error calling QueryFullProcessImageName\n");
-				CloseHandle (handle);
-				return NULL;
-			}
-		} else {
-			if (GetProcessImageFileName (handle, filename, maxlength) == 0) {
-				eprintf ("Error calling GetProcessImageFileName\n");
-				CloseHandle (handle);
-				return NULL;
-			}
-		}
-		CloseHandle (handle);
-		return r_sys_conv_win_to_utf8 (filename);
-	}
-	return NULL;
-#else
-	HANDLE processHandle = NULL;
-	TCHAR filename[FILENAME_MAX];
 
-	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (processHandle != NULL) {
-		if (GetModuleFileNameEx (processHandle, NULL, filename, FILENAME_MAX) == 0) {
-			eprintf ("r_sys_pid_to_path: Cannot get module filename.");
-		} else {
-			return r_sys_conv_win_to_utf8 (filename);
-		}
-		CloseHandle (processHandle);
-	} else {
-		eprintf ("r_sys_pid_to_path: Cannot open process.");
+	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, pid);
+	if (!processHandle) {
+		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
+		return NULL;
 	}
-	return NULL;
-#endif
+	DWORD length = GetProcessImageFileName (processHandle, filename, maxlength);
+	if (length == 0) {
+		eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+		CloseHandle (processHandle);
+		return NULL;
+	}
+	CloseHandle (processHandle);
+	char *tmp = r_str_newf ("\\\\.\\GLOBALROOT%s", filename);
+	if (!tmp) {
+		eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
+		return NULL;
+	}
+	const char *result = r_sys_conv_win_to_utf8 (tmp);
+	free (tmp);
+	return result;
 #elif __APPLE__
 #if __POWERPC__
 #warning TODO getpidproc
