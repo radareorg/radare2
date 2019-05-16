@@ -384,7 +384,7 @@ static int cmd_uname(void *data, const char *input) {
 		case '*':
 			r_core_undo_print (core, 1, NULL);
 			break;
-		case '-':
+		case '-': // "uc-"
 			r_core_undo_pop (core);
 			break;
 		default:
