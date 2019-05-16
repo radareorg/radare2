@@ -949,7 +949,8 @@ R_API char *r_sys_pid_to_path(int pid) {
 			return NULL;
 		}
 		length = tmp - filename;
-		tmp = strndup (filename, length);
+		tmp = malloc(length);
+		strncpy (tmp, filename, length);
 		TCHAR device[MAX_PATH];
 		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
 			if (QueryDosDevice (drv, device, maxlength) > 0) {
