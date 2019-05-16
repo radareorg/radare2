@@ -258,6 +258,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 }
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+	r_return_val_if_fail (s, false);
 #if __WINDOWS__
 	struct sockaddr_in sa;
 	struct hostent *he;

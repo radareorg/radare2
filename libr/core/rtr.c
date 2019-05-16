@@ -1462,8 +1462,8 @@ R_API void r_core_rtr_list(RCore *core) {
 		case RTR_PROTOCOL_UDP: proto = "udp"; break;
 		case RTR_PROTOCOL_RAP: proto = "r2p"; break;
 		}
-		r_cons_printf ("%i - %s://%s:%i/%s\n", 
-			rtr_host[i].fd->fd, proto, rtr_host[i].host,
+		r_cons_printf ("%d fd:%i %s://%s:%i/%s\n", 
+			i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
 }
@@ -1714,18 +1714,10 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	int fd, i;
 
 	if (IS_DIGIT (input[0])) {
-		fd = r_num_math (core->num, input);
-		for (i = 0; i < RTR_MAX_HOSTS; i++) {
-			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
-				r_socket_free (rtr_host[i].fd);
-				rtr_host[i].fd = NULL;
-				if (rtr_n == i) {
-					for (rtr_n = 0; !rtr_host[rtr_n].fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
-						;
-					}
-				}
-				break;
-			}
+		i = r_num_math (core->num, input);
+		if (i >= 0 && i < RTR_MAX_HOSTS) {
+			r_socket_free (rtr_host[i].fd);
+			rtr_host[i].fd = NULL;
 		}
 	} else {
 		for (i = 0; i < RTR_MAX_HOSTS; i++) {
@@ -1822,10 +1814,17 @@ static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	char bufw[1024], bufr[8], *cmd_output = NULL;
-	const char *cmd = NULL;
+	//const char *cmd = NULL;
 	unsigned int cmd_len = 0;
 	int i, fd = atoi (input);
-
+	if (!fd && *input != '0') {
+		fd = -1;
+	}
+	const char *cmd = strchr (r_str_trim_ro (input), ' ');
+	if (cmd) {
+		cmd ++;
+		cmd_len = strlen (cmd);
+	}
 	// "=:"
 	if (*input == ':' && !strchr (input + 1, ':')) {
 		void *bed = r_cons_sleep_begin ();
@@ -1854,16 +1853,14 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 
-	if (fd != 0) {
-		RSocket *fh = rtr_host[rtr_n].fd;
-		for (rtr_n = 0; fh && fh->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
-			/* do nothing */
-		}
-		if (!(cmd = strchr (input, ' '))) {
-			eprintf ("Error\n");
-			return;
+	if (fd != -1) {
+		if (fd >= 0 && fd < RTR_MAX_HOSTS) {
+			rtr_n = fd;
+		} else {
+			fd = -1;
 		}
 	} else {
+		// XXX
 		cmd = input;
 	}
 
@@ -1874,24 +1871,30 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	if (rtr_host[rtr_n].proto == RTR_PROTOCOL_TCP) {
-		RSocket *fh = rtr_host[rtr_n].fd;
+		ut8 blen[4];
+		RCoreRtrHost *rh = &rtr_host[rtr_n];
+		RSocket *s = rh->fd;
 		if (cmd_len < 1 || cmd_len > 16384) {
-			eprintf ("Error: cmd_len is wrong\n");
+			return;
 		}
-		return;
-		cmd_output = calloc (1, cmd_len + 1);
+		r_socket_close (s);
+		r_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0);
+		r_socket_write (s, (ut8*)cmd, cmd_len);
+		r_socket_write (s, "\n", 2);
+		int maxlen = 4096; // r_read_le32 (blen);
+		cmd_output = calloc (1, maxlen + 1);
 		if (!cmd_output) {
 			eprintf ("Error: Allocating cmd output\n");
 			return;
 		}
-		r_socket_read_block (fh, (ut8*)cmd_output, cmd_len);
+		(void)r_socket_read_block (s, (ut8*)cmd_output, maxlen);
 		//ensure the termination
-		cmd_output[cmd_len] = 0;
+		r_socket_close (s);
+		cmd_output[maxlen] = 0;
 		r_cons_println (cmd_output);
 		free ((void *)cmd_output);
 		return;
 	}
-
 
 	if (rtr_host[rtr_n].proto != RTR_PROTOCOL_RAP) {
 		eprintf ("Error: Not a rap:// host\n");
