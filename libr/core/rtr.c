@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2018 - pancake, nibble */
+/* radare - Copyright 2009-2019 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -1796,9 +1796,11 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
 			if (!r_core_serve (core, fd)) {
-				r_cons_singleton () ->context->breaked = true;
+				r_cons_singleton ()->context->breaked = true;
 			}
-			r_io_desc_free (fd);
+			r_io_desc_close (fd);
+			// avoid doble free, we are not the owners of this fd so we cant destroy it
+			//r_io_desc_free (fd);
 		}
 	} else {
 		r_cons_singleton ()->context->breaked = true;
@@ -1873,7 +1875,6 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	if (rtr_host[rtr_n].proto == RTR_PROTOCOL_TCP) {
 		RSocket *fh = rtr_host[rtr_n].fd;
-		eprintf ("PRPTOTO CP\n");
 		if (cmd_len < 1 || cmd_len > 16384) {
 			eprintf ("Error: cmd_len is wrong\n");
 		}
@@ -1986,8 +1987,6 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	r_socket_free (s);
 	return rbuf;
 }
-
-
 
 #if HAVE_LIBUV
 
@@ -2199,7 +2198,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	}
 
 	RSocket *s = r_socket_new (0);
-	s->local = r_config_get_i(core->config, "tcp.islocal");
+	s->local = r_config_get_i (core->config, "tcp.islocal");
 
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Error listening on port %s\n", port);

@@ -455,6 +455,7 @@ R_API int r_socket_close(RSocket *s) {
 #else
 		ret = close (s->fd);
 #endif
+		s->fd = -1;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {

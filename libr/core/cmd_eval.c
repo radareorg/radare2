@@ -174,7 +174,7 @@ R_API char *r_core_get_theme () {
 R_API RList *r_core_list_themes(RCore *core) {
 	RList *list = r_list_newf (free);
 	getNext = false;
-	const char *tmp = strdup ("default");
+	char *tmp = strdup ("default");
 	r_list_append (list, tmp);
 	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 	if (path) {
