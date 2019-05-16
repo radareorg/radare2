@@ -932,22 +932,20 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
 		length = GetProcessImageFileName (processHandle, filename, maxlength);
+		CloseHandle (processHandle);
 		if (length == 0) {
 			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
-			CloseHandle (processHandle);
 			return NULL;
 		}
 		// Convert NT path to win32 path
 		char *tmp = strchr (filename + 1, '\\');
 		if (!tmp) {
 			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
-			CloseHandle (processHandle);
 			return NULL;
 		}
 		tmp = strchr (tmp + 1, '\\');
 		if (!tmp) {
 			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
-			CloseHandle (processHandle);
 			return NULL;
 		}
 		length = tmp - filename;
@@ -958,7 +956,6 @@ R_API char *r_sys_pid_to_path(int pid) {
 					tmp = r_str_newf ("%s%s", drv, tmp);
 					if (!tmp) {
 						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
-						CloseHandle (processHandle);
 						return NULL;
 					}
 					result = r_sys_conv_win_to_utf8 (tmp);
@@ -968,9 +965,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 			}
 		}
 	} else {
+		CloseHandle (processHandle);
 		result = r_sys_conv_win_to_utf8 (filename);
 	}
-	CloseHandle (processHandle);
 	return result;
 #elif __APPLE__
 #if __POWERPC__
