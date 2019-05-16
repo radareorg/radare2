@@ -1282,7 +1282,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				r_core_seek (&r, fi->offset, 1);
 			} else {
 				RBinObject *o = r_bin_cur_object (r.bin);
-				if (o && o->regstate) {
+				if (o) {
 					RList *sections = r_bin_get_sections (r.bin);
 					RListIter *iter;
 					RBinSection *s;

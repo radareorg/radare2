@@ -1828,16 +1828,13 @@ static int already_entry(RList *entries, ut64 vaddr) {
 
 static RList *entries(RBinFile *bf) {
 	RListIter *iter;
-	RBinDexObj *bin;
 	RBinSymbol *m;
 	RBinAddr *ptr;
-	RList *ret;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	bin = (RBinDexObj*) bf->o->bin_obj;
-	ret = r_list_newf ((RListFree)free);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+
+	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	RList *ret = r_list_newf ((RListFree)free);
 
 	if (!bin->methods_list) {
 		dex_loadcode (bf, bin);
@@ -1873,7 +1870,8 @@ static RList *entries(RBinFile *bf) {
 			}
 		}
 	}
-
+#if 0
+	// this is now done by r2 in a generic way
 	// STEP 3. NOTHING FOUND POINT TO CODE_INIT
 	if (r_list_empty (ret)) {
 		if (!already_entry (ret, bin->code_from)) {
@@ -1884,6 +1882,7 @@ static RList *entries(RBinFile *bf) {
 			}
 		}
 	}
+#endif
 	return ret;
 }
 
