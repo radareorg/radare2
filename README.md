@@ -64,8 +64,9 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 Native bindings are supported but the recommended way to interact with r2
 from other languages is by using [r2pipe](https://github.com/radare/radare2-r2pipe)
 
-D, Clojure Vala/Genie, Python, Erlang, Shell, Haskell, Prolog, Swift, Lisp, Nim,
-Javascript, Lua, Rust, Go, Perl, Guile, PHP, Newlisp, c#, Java, Ruby, Java, OCaml...
+Python, Ruby, JavaScript, Lua, Perl, PHP, Go, Rust, Swift, C#, Java,
+Shell, OCaml, Haskell, Scheme (Guile), CommonLisp, Clojure, Erlang, D,
+Vala/Genie, Prolog, Nim, Newlisp...
 
 # Install / Update
 
@@ -94,7 +95,7 @@ version or remove all previous installations:
 
 	$ make uninstall
 	$ make purge
-	
+
 To remove all stuff including libraries, use
 
 	$ make system-purge
