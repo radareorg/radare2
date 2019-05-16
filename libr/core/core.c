@@ -2994,6 +2994,11 @@ reaccept:
 						pipefd = -1;
 						eprintf ("Cannot open file (%s)\n", ptr);
 						r_socket_close (c);
+						if (r_config_get_i (core->config, "rap.loop")) {
+							eprintf ("rap: waiting for new connection\n");
+							r_socket_free (c);
+							goto reaccept;
+						}
 						goto out_of_function; //XXX: Close conection and goto accept
 					}
 				}
@@ -3045,8 +3050,6 @@ reaccept:
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						eprintf ("len: %d cmd:'%s'\n", i, cmd);
-						fflush (stdout);
 						int scr_interactive = r_config_get_i (core->config, "scr.interactive");
 						r_config_set_i (core->config, "scr.interactive", 0);
 						cmd_output = r_core_cmd_str (core, cmd);
