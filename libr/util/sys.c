@@ -920,7 +920,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	// TODO: add maximum path length support
 	HANDLE processHandle = NULL;
 	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[maxlength];
+	TCHAR filename[MAX_PATH];
 	const char *result
 
 	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
@@ -949,7 +949,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			return NULL;
 		}
 		length = tmp - filename;
-		TCHAR device[maxlength];
+		TCHAR device[MAX_PATH];
 		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
 			if (QueryDosDevice (drv, device, maxlength) == length) {
 				if (!strncmp (filename, device, length)) {
