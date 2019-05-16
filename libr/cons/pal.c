@@ -456,13 +456,13 @@ static void r_cons_pal_show_rgb() {
 
 R_API void r_cons_pal_show() {
 	int i;
-	for (i = 0; colors[i].name; i++) {
 #if __WINDOWS__
-		if (r_cons_singleton ()->ansicon
+	bool ansicon = r_cons_singleton ()->ansicon;
 #else
-		if (true
+	bool ansicon = true;
 #endif
-		    && !strcmp (colors[i].name, "gray")) {
+	for (i = 0; colors[i].name; i++) {
+		if (ansicon && !strcmp (colors[i].name, "gray")) {
 			continue;
 		}
 		r_cons_printf ("%s%s__"Color_RESET" %s\n",
