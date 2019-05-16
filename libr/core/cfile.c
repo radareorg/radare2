@@ -587,7 +587,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	if (plugin && plugin->name) {
 		if (!strcmp (plugin->name, "any")) {
-			if (strstr (desc->name, "://")) {
+			if (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")) {
 				r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, UT64_MAX);
 			} else {
 				r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
