@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2018 - condret */
+/* radare - LGPL - Copyright 2017-2019 - condret */
 
 #include <r_io.h>
 #include <r_util.h>
@@ -8,12 +8,8 @@
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
-	if (io) {
-		if (io->va && r_io_map_get (io, vaddr)) {
-			return true;
-		}
-	}
-	return false;
+	r_return_val_if_fail (io, false);
+	return (io->va && r_io_map_get (io, vaddr));
 }
 
 // when io.va is true this checks if the highest priorized map at this
@@ -21,10 +17,8 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
 // check for the current desc permissions and size.
 // when io.va is false it only checks for the desc
 R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
+	r_return_val_if_fail (io, false);
 	RIOMap* map;
-	if (!io) {
-		return false;
-	}
 	if (io->va) {
 		if (!hasperm) {
 			return r_io_map_is_mapped (io, offset);
@@ -37,7 +31,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	if (!io->desc) {
 		return false;
 	}
-	if (r_io_desc_size (io->desc) <= offset) {
+	if (offset > r_io_desc_size (io->desc)) {
 		return false;
 	}
 	return ((io->desc->perm & hasperm) == hasperm);
