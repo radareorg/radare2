@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2019 - MapleLeaf-X */
-#include <windows.h>
-#include <processthreadsapi.h> // OpenProess, OpenProcessToken
+//#include <windows.h>
+//#include <processthreadsapi.h> // OpenProess, OpenProcessToken
 #include "windows_debug.h"
 
 typedef struct {
 	bool dbgpriv;
-	HANDLE processHandle;
+	//HANDLE processHandle;
 } RIOW32;
 
 int w32_init(RDebug *dbg) {
@@ -19,7 +19,7 @@ int w32_init(RDebug *dbg) {
 		return false;
 	}
 	dbg->user->dbgpriv = false;
-	dbg->user->processHandle = (HANDLE)NULL;
+	//dbg->user->processHandle = (HANDLE)NULL;
 	return true;
 }
 
