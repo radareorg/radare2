@@ -918,7 +918,7 @@ R_API int r_is_heap (void *p) {
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	// TODO: add maximum path length support
-	HANDLE processHandle = NULL;
+	HANDLE processHandle;
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
 	const char *result;
