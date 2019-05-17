@@ -22,7 +22,7 @@ static const char *help_msg_z[] = {
 	"zo", "[?]", "manage zignature files",
 	"zf", "[?]", "manage FLIRT signatures",
 	"z/", "[?]", "search zignatures",
-	"zc", " [zspace]", "compare current zignspace zignatures with others",
+	"zc", "[?]", "compare current zignspace zignatures with another one",
 	"zs", "[?]", "manage zignspaces",
 	"zi", "", "show zignatures matching information",
 	NULL
@@ -74,6 +74,14 @@ static const char *help_msg_zs[] = {
 	NULL
 };
 
+static const char *help_msg_zc[] = {
+	"Usage:", "zc[n!] other_space ", "# Compare zignspaces",
+	"zc", " other_space", "compare all current space with other_space",
+	"zcn", " other_space", "compare current space with zigns with same name on other_space",
+	"zcn!", " other_space", "same as above but show the ones not matching",
+	NULL
+};
+
 static void cmd_zign_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, z);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
@@ -81,6 +89,7 @@ static void cmd_zign_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, zf);
 	DEFINE_CMD_DESCRIPTOR (core, zo);
 	DEFINE_CMD_DESCRIPTOR (core, zs);
+	DEFINE_CMD_DESCRIPTOR (core, zc);
 }
 
 static bool addFcnHash(RCore *core, RAnalFunction *fcn, const char *name) {
@@ -158,7 +167,7 @@ static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
 	if (r && *r) {
 		return r;
 	}
-	// 
+	//
 	return NULL;
 }
 #endif
@@ -820,8 +829,46 @@ TODO: add useXRefs, useName
 }
 
 static int cmdCompare(void *data, const char *input) {
-	eprintf ("TODO\n");
-	return 0;
+	RCore *core = (RCore *) data;
+
+	switch (*input) {
+	case ' ':
+		if (!input[1]) {
+			eprintf ("usage: zc other_space\n");
+			return false;
+		}
+		return r_sign_diff (core->anal, input + 1);
+		break;
+	case 'n':
+		switch (input[1]) {
+		case ' ':
+			if (!input[2]) {
+				eprintf ("usage: zcn other_space\n");
+				return false;
+			}
+			return r_sign_diff_by_name (core->anal, input + 2, false);
+			break;
+		case '!':
+			if (input[2] != ' ' || !input[3]) {
+				eprintf ("usage: zcn! other_space\n");
+				return false;
+			}
+			return r_sign_diff_by_name (core->anal, input + 3, true);
+			break;
+		default:
+			eprintf ("usage: zcn! other_space\n");
+			return false;
+		}
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_zc);
+		break;
+	default:
+		eprintf ("usage: zc[?n!] other_space\n");
+		return false;
+	}
+
+	return true;
 }
 
 static int cmdCheck(void *data, const char *input) {
