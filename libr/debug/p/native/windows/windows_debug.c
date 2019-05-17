@@ -4,27 +4,32 @@
 #include "windows_debug.h"
 
 typedef struct {
+	bool dbgpriv;
 	HANDLE processHandle;
 } RIOW32;
 
-int windows_attach (RDebug *dbg, int pid) {
-	int ret;
+static int w32_dbg_init() {
+}
+
+int windows_attach(RDebug *dbg, int pid) {
+	int ret = -1;
 	RIOW32 *rio = dbg->user;
 	// TODO: move this code out
 	if (!rio) {
 		rio = dbg->user = R_NEW (RIOW32);
+		rio->dbgpriv = false;
 		rio->processHandle = (HANDLE)NULL;
 	}
 	else {
 		rio = dbg->user;
 	}
+	if (!rio->dbgpriv) {
+		rio->dbgpriv;
+	}
 	if (!rio->processHandle) {
-		HANDLE processHandle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-		rio->processHandle = processHandle;
-		if (processHandle) {
+		rio->processHandle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+		if (rio->processHandle) {
 			// TODO: get main thread id
-		} else {
-			ret = -1;
 		}
 	}
 	return ret;

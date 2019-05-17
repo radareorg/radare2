@@ -6,4 +6,5 @@
 */
 
 // APIs
-int windows_attach (RDebug *dbg, int pid);
+static int w32_dbg_init();
+int windows_attach(RDebug *dbg, int pid);
