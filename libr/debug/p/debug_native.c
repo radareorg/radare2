@@ -31,7 +31,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #endif
 
 #if __WINDOWS__
-#include <windows.h>
+//#include <windows.h>
 #include "native/windows/windows_debug.h"
 #define R_DEBUG_REG_T CONTEXT
 #include "native/w32.c" // to be removed!
