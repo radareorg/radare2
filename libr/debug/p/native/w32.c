@@ -233,12 +233,13 @@ static bool w32dbg_SeDebugPrivilege() {
 	return ret;
 }
 
-static int w32_dbg_init() {
+//merged
+/*static int w32_dbg_init() {
 	HANDLE lib;
 
-	/* escalate privs (required for win7/vista) */
+	/* escalate privs (required for win7/vista) * /
 	w32dbg_SeDebugPrivilege ();
-	/* lookup function pointers for portability */
+	/* lookup function pointers for portability * /
 	w32_DebugActiveProcessStop = (BOOL (WINAPI *)(DWORD))
 		GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
 				"DebugActiveProcessStop");
@@ -305,7 +306,7 @@ static int w32_dbg_init() {
 		return false;
 	}
 	return true;
-}
+}*/
 
 #if 0
 static HANDLE w32_t2h(pid_t tid) {
@@ -834,7 +835,8 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	return ret;
 }
 
-RList *w32_pids (int pid, RList *list) {
+//merged
+/*RList *w32_pids (int pid, RList *list) {
 	HANDLE process_snapshot;
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof (PROCESSENTRY32);
@@ -864,7 +866,7 @@ RList *w32_pids (int pid, RList *list) {
 
 	CloseHandle (process_snapshot);
 	return list;
-}
+}*/
 
 bool w32_terminate_process (RDebug *dbg, int pid) {
 	HANDLE h_proc = w32_OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE , FALSE, pid);
@@ -1065,7 +1067,8 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	}
 }
 
-static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+//merged
+/*static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #ifdef _MSC_VER
 	CONTEXT ctx;
 #else
@@ -1101,9 +1104,10 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	CloseHandle(hThread);
 	return size;
-}
+}*/
 
-static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
+//merged
+/*static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
 	BOOL ret = false;
 	HANDLE thread;
 #if _MSC_VER
@@ -1124,7 +1128,7 @@ static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
 	//}
 	CloseHandle (thread);
 	return ret;
-}
+}*/
 
 static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	HANDLE h_tok = NULL;
@@ -1222,7 +1226,8 @@ err_w32_info_exe:
 	free (path);
 }
 
-static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
+//merged
+/*static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
@@ -1238,6 +1243,6 @@ static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {
 	w32_info_user (dbg, rdi);
 	w32_info_exe (dbg, rdi);
 	return rdi;
-}
+}*/
 
 #include "maps/windows.c"
