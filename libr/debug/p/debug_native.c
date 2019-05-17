@@ -151,12 +151,12 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 	if (!dbg || pid == dbg->pid)
 		return dbg->tid;
 #endif
-#if __linux__ || __ANDROID__
-	return linux_attach (dbg, pid);
+#if __APPLE__
+	return xnu_attach (dbg, pid);
 #elif __WINDOWS__
 	return w32_attach (dbg, pid);
-#elif __APPLE__
-	return xnu_attach (dbg, pid);
+#elif __linux__ || __ANDROID__
+	return linux_attach (dbg, pid);
 #elif __KFBSD__
 	if (ptrace (PT_ATTACH, pid, 0, 0) != -1) {
 		perror ("ptrace (PT_ATTACH)");
@@ -173,10 +173,10 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 }
 
 static int r_debug_native_detach (RDebug *dbg, int pid) {
-#if __WINDOWS__
-	return w32_DebugActiveProcessStop (pid)? 0 : -1;
-#elif __APPLE__
+#if __APPLE__
 	return xnu_detach (dbg, pid);
+#elif __WINDOWS__
+	return w32_detach (dbg, pid);
 #elif __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
@@ -644,9 +644,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	if (!list) {
 		return NULL;
 	}
-#if __WINDOWS__
-	return w32_pids (pid, list);
-#elif __APPLE__
+#if __APPLE__
 	if (pid) {
 		RDebugPid *p = xnu_get_pid (pid);
 		if (p) {
@@ -661,6 +659,8 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			}
 		}
 	}
+#elif __WINDOWS__
+	return w32_pids (pid, list);
 #elif __linux__
 	list->free = (RListFree)&r_debug_pid_free;
 	DIR *dh;
@@ -813,8 +813,8 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 	}
 #if __APPLE__
 	return xnu_thread_list (dbg, pid, list);
-#el#if __WINDOWS__
-	return w32_thread_list (pid, list);
+#elif __WINDOWS__
+	return w32_thread_list (dbg, pid, list);
 #elif __linux__
 	return linux_thread_list (pid, list);
 #else
@@ -910,15 +910,15 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
-#if __KFBSD__
-		return (0 == ptrace (PT_SETDBREGS, dbg->pid,
-			(caddr_t)buf, sizeof (struct dbreg)));
-#elif __linux__
-		return linux_reg_write (dbg, type, buf, size);
-#elif __APPLE__
+#if __APPLE__
 		return xnu_reg_write (dbg, type, buf, size);
 #elif __WINDOWS__
 		return w32_reg_write (dbg, type, buf, size);
+#elif __linux__
+		return linux_reg_write (dbg, type, buf, size);
+#elif __KFBSD__
+		return (0 == ptrace (PT_SETDBREGS, dbg->pid,
+			(caddr_t)buf, sizeof (struct dbreg)));
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
 		return false;
@@ -1190,7 +1190,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #if __APPLE__
 	list = xnu_dbg_maps (dbg, 0);
 #elif __WINDOWS__
-	list = w32_dbg_maps (dbg); // TODO: moar?
+	list = w32_dbg_maps (dbg);
 #else
 #if __sun
 	char path[1024];
@@ -1326,7 +1326,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	}
 	fclose (fd);
 #endif // __sun
-#endif // __WINDOWS
+#endif // __APPLE
 	return list;
 }
 
@@ -1341,8 +1341,7 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 	if (list && !r_list_empty (list)) {
 		return list;
 	}
-#endif
-#if __WINDOWS__
+#elif __WINDOWS__
 	list = w32_dbg_modules (dbg);
 	if (list && !r_list_empty (list)) {
 		return list;

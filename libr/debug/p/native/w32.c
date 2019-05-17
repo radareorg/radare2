@@ -764,7 +764,8 @@ static HANDLE w32_open_thread (int pid, int tid) {
 	return thread;
 }
 
-RList *w32_thread_list (int pid, RList *list) {
+//merged
+/*RList *w32_thread_list (int pid, RList *list) {
         HANDLE th;
         HANDLE thid;
         THREADENTRY32 te32;
@@ -779,10 +780,10 @@ RList *w32_thread_list (int pid, RList *list) {
         if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
                 goto err_load_th;
         do {
-                /* get all threads of process */
+                /* get all threads of process * /
                 if (te32.th32OwnerProcessID == pid) {
 			//te32.dwFlags);
-                        /* open a new handler */
+                        /* open a new handler * /
 			// XXX: fd leak?
 #if 0
  75 typedef struct tagTHREADENTRY32 {
@@ -806,7 +807,7 @@ err_load_th:
         if(th != INVALID_HANDLE_VALUE)
                 CloseHandle (th);
 	return list;
-}
+}*/
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	TCHAR image_name[MAX_PATH + 1];

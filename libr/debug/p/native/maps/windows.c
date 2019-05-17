@@ -73,6 +73,8 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 	return add_map (list, name, (ut64)(size_t)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
 }
 
+// migrated
+/*
 static RList *w32_dbg_modules(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
@@ -107,7 +109,7 @@ err_w32_dbg_modules:
 		CloseHandle (h_mod_snap);
 	}
 	return list;
-}
+}*/
 
 static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	IMAGE_DOS_HEADER *dos_hdr;
@@ -232,7 +234,8 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 	}
 }
 
-static RList *w32_dbg_maps(RDebug *dbg) {
+//merged
+/*static RList *w32_dbg_maps(RDebug *dbg) {
 	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;
@@ -247,9 +250,9 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 		goto err_w32_dbg_maps;
 	}
 	cur_addr = si.lpMinimumApplicationAddress;
-	/* get process modules list */
+	/* get process modules list * /
 	mod_list = w32_dbg_modules (dbg);
-	/* process memory map */
+	/* process memory map * /
 	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
 		if (mbi.State != MEM_FREE) {
@@ -270,4 +273,4 @@ err_w32_dbg_maps:
 	free (mod_inf.sect_hdr);
 	r_list_free (mod_list);
 	return map_list;
-}
+}*/
