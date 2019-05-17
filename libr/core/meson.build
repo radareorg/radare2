@@ -53,6 +53,8 @@ r_core_sources = [
   'project.c',
   'pseudo.c',
   'rtr.c',
+  #'rtr_http.c',
+  #'rtr_shell.c',
   'task.c',
   'vasm.c',
   'visual.c',

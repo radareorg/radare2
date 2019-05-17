@@ -62,6 +62,7 @@ typedef struct r_socket_t {
 	int fd;
 #endif
 	bool is_ssl;
+	int proto;
 	int local;	// TODO: merge ssl with local -> flags/options
 	int port;
 	struct sockaddr_in sa;
@@ -87,20 +88,21 @@ typedef struct r_socket_http_options {
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd(int fd);
 R_API RSocket *r_socket_new(bool is_ssl);
+R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout);
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
-R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout);
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
 #define r_socket_connect_tcp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_TCP, d)
 #define r_socket_connect_udp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_UDP, d)
 #if __UNIX__
-#define r_socket_connect_unix(a, b) r_socket_connect (a, b, NULL, R_SOCKET_PROTO_UNIX)
-R_API int r_socket_unix_listen(RSocket *s, const char *file);
+#define r_socket_connect_unix(a, b) r_socket_connect (a, b, b, R_SOCKET_PROTO_UNIX, 0)
+#else
+#define r_socket_connect_unix(a, b) {}
 #endif
+R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile);
 R_API int r_socket_port_by_name(const char *name);
 R_API int r_socket_close_fd(RSocket *s);
 R_API int r_socket_close(RSocket *s);
 R_API int r_socket_free(RSocket *s);
-R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile);
 R_API RSocket *r_socket_accept(RSocket *s);
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout);
 R_API int r_socket_block_time(RSocket *s, int block, int sec);

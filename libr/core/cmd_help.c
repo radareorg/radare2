@@ -990,7 +990,7 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("%s\n", r_str_bool (!core->num->value));
 				break;
 			case 'm': // "?im"
-				r_cons_message (input+2);
+				r_cons_message (input + 2);
 				break;
 			case 'p': // "?ip"
 				core->num->value = r_core_yank_hud_path (core, input + 2, 0) == true;
