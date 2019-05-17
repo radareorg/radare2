@@ -62,8 +62,13 @@ endif
 
 if host_machine.system() != 'windows'
   r_debug_sources += [
+    'p/native/procfs.c'
+  ]
+endif
+
+if host_machine.system() == 'windows'
+  r_debug_sources += [
     'p/native/windows/windows_debug.c',
-    'p/native/procfs.c' # is this really needed?
   ]
 endif
 
