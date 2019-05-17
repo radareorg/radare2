@@ -179,6 +179,9 @@ static int __close(RIODesc *fd) {
 	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
+	if (riogdb) {	//TODO is there a less band-aid fix to do this?
+		riogdb->data = NULL;
+	}
 	R_FREE (desc);
 	return -1;
 }
