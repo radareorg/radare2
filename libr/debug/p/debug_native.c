@@ -128,27 +128,11 @@ static char *r_debug_native_reg_profile (RDebug *dbg) {
 #include "native/reg.c" // x86 specific
 
 #endif
-#if __WINDOWS__
-static int windows_step (RDebug *dbg) {
-	/* set TRAP flag */
-#if _MSC_VER
-	CONTEXT regs;
-#else
-	CONTEXT regs __attribute__ ((aligned (16)));
-#endif
-	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
-	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
-	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	(void)r_debug_handle_signals (dbg);
-	return true;
-}
-#endif
 static int r_debug_native_step (RDebug *dbg) {
-#if __WINDOWS__
-	return windows_step (dbg);
-#elif __APPLE__
+#if __APPLE__
 	return xnu_step (dbg);
+#elif __WINDOWS__
+	return w32_step (dbg);
 #elif __BSD__
 	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0);
 	if (ret != 0) {
@@ -170,7 +154,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 #if __linux__ || __ANDROID__
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__
-	return windows_attach (dbg, pid);
+	return w32_attach (dbg, pid);
 #elif __APPLE__
 	return xnu_attach (dbg, pid);
 #elif __KFBSD__
@@ -226,18 +210,14 @@ static void r_debug_native_stop(RDebug *dbg) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-#if __WINDOWS__
-	/* Honor the Windows-specific signal that instructs threads to process exceptions */
-	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
-		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
-	if (ContinueDebugEvent (pid, tid, continue_status) == 0) {
-		r_sys_perror ("r_debug_native_continue/ContinueDebugEvent");
-		eprintf ("debug_contp: error\n");
-		return false;
+#if __APPLE__
+	bool ret = xnu_continue (dbg, pid, tid, sig);
+	if (!ret) {
+		return -1;
 	}
 	return tid;
-#elif __APPLE__
-	bool ret = xnu_continue (dbg, pid, tid, sig);
+#elif __WINDOWS__
+	bool ret = w32_continue (dbg, pid, tid, sig);
 	if (!ret) {
 		return -1;
 	}
@@ -282,6 +262,8 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 #if __APPLE__
 	return xnu_info (dbg, arg);
+#elif __WINDOWS__
+	return w32_info (dbg, arg);
 #elif __linux__
 	return linux_info (dbg, arg);
 #elif __KFBSD__
@@ -364,8 +346,6 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 	kvm_close (kd);
 
 	return rdi;
-#elif __WINDOWS__
-	return w32_info (dbg, arg);
 #else
 	return NULL;
 #endif
@@ -831,10 +811,10 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 		eprintf ("No list?\n");
 		return NULL;
 	}
-#if __WINDOWS__
-	return w32_thread_list (pid, list);
-#elif __APPLE__
+#if __APPLE__
 	return xnu_thread_list (dbg, pid, list);
+#el#if __WINDOWS__
+	return w32_thread_list (pid, list);
 #elif __linux__
 	return linux_thread_list (pid, list);
 #else
@@ -912,10 +892,10 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1) {
 		return false;
 	}
-#if __WINDOWS__
-	return w32_reg_read (dbg, type, buf, size);
-#elif __APPLE__
+#if __APPLE__
 	return xnu_reg_read (dbg, type, buf, size);
+#elif __WINDOWS__
+	return w32_reg_read (dbg, type, buf, size);
 #elif __linux__
 	return linux_reg_read (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __DragonFly__
@@ -937,19 +917,20 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 		return linux_reg_write (dbg, type, buf, size);
 #elif __APPLE__
 		return xnu_reg_write (dbg, type, buf, size);
+#elif __WINDOWS__
+		return w32_reg_write (dbg, type, buf, size);
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
-#if __WINDOWS__
-		return w32_reg_write (dbg, type, buf, size);
-#endif
 		return false;
 #endif
 #else // i386/x86-64
 		return false;
 #endif
 	} else if (type == R_REG_TYPE_GPR) {
-#if __WINDOWS__
-		return w32_reg_write(dbg, type, buf, size);
+#if __APPLE__
+		return xnu_reg_write (dbg, type, buf, size);
+#elif __WINDOWS__
+		return w32_reg_write (dbg, type, buf, size);
 #elif __linux__
 		return linux_reg_write (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __DragonFly__
@@ -958,8 +939,6 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 		if (sizeof (R_DEBUG_REG_T) < size)
 			size = sizeof (R_DEBUG_REG_T);
 		return (ret != 0) ? false: true;
-#elif __APPLE__
-		return xnu_reg_write (dbg, type, buf, size);
 #else
 #warning r_debug_native_reg_write not implemented
 #endif
@@ -1163,54 +1142,13 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 err_linux_map_dealloc:
 	return ret;
 }
-#elif __WINDOWS__
-static int io_perms_to_prot(int io_perms) {
-	int prot_perms;
-
-	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {
-		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_PERM_W | R_PERM_X)) == (R_PERM_W | R_PERM_X)) {
-		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_PERM_R | R_PERM_X)) == (R_PERM_R | R_PERM_X)) {
-		prot_perms = PAGE_EXECUTE_READ;
-	} else if ((io_perms & R_PERM_RW) == R_PERM_RW) {
-		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_PERM_W) {
-		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_PERM_X) {
-		prot_perms = PAGE_EXECUTE;
-	} else if (io_perms & R_PERM_R) {
-		prot_perms = PAGE_READONLY;
-	} else {
-		prot_perms = PAGE_NOACCESS;
-	}
-	return prot_perms;
-}
 #endif
 
 static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
-
 #if __APPLE__
-
 	return xnu_map_alloc (dbg, addr, size);
-
 #elif __WINDOWS__
-	RDebugMap *map = NULL;
-	LPVOID base = NULL;
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	if (process == INVALID_HANDLE_VALUE) {
-		return map;
-	}
-	base = VirtualAllocEx (process, (LPVOID)(size_t)addr,
-	  			(SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
-	CloseHandle (process);
-	if (!base) {
-		eprintf ("Failed to allocate memory\n");
-		return map;
-	}
-	r_debug_map_sync (dbg);
-	map = r_debug_map_get (dbg, (ut64)(size_t)base);
-	return map;
+	return w32_map_alloc (dbg, addr, size);
 #elif __linux__
 	return linux_map_alloc (dbg, addr, size);
 #else
@@ -1221,24 +1159,11 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 
 static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 #if __APPLE__
-
 	return xnu_map_dealloc (dbg, addr, size);
-
 #elif __WINDOWS__
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->tid);
-	if (process == INVALID_HANDLE_VALUE) {
-		return false;
-	}
-	int ret = true;
-	if (!VirtualFreeEx (process, (LPVOID)(size_t)addr,
-			  (SIZE_T)size, MEM_DECOMMIT)) {
-		eprintf ("Failed to free memory\n");
-		ret = false;
-	}
-	CloseHandle (process);
-	return ret;
+	return w32_map_dealloc (dbg, addr, size);
 #elif __linux__
-	return linux_map_dealloc(dbg, addr, size);
+	return linux_map_dealloc (dbg, addr, size);
 #else
     // mdealloc not implemented for this platform
 	return false;
@@ -1496,7 +1421,7 @@ struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
 static int r_debug_native_init (RDebug *dbg) {
 	dbg->h->desc = r_debug_desc_plugin_native;
 #if __WINDOWS__
-	return w32_dbg_init ();
+	return w32_init (dbg);
 #else
 	return true;
 #endif
@@ -1777,7 +1702,9 @@ static RList *xnu_desc_list (int pid) {
 
 #if __WINDOWS__
 static RList *win_desc_list (int pid) {
-	RDebugDesc *desc;
+	return NULL;
+	// Disabling this for now
+	/*RDebugDesc *desc;
 	RList *ret = r_list_new();
 	int i;
 	HANDLE processHandle;
@@ -1851,7 +1778,7 @@ static RList *win_desc_list (int pid) {
 	}
 	free(handleInfo);
 	CloseHandle(processHandle);
-	return ret;
+	return ret;*/
 }
 #endif
 
@@ -1966,16 +1893,7 @@ static RList *r_debug_desc_native_list (int pid) {
 
 static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__
-	DWORD old;
-	BOOL ret = FALSE;
-	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-
-	if (h_proc) {
-		ret = VirtualProtectEx (h_proc, (LPVOID)(size_t)addr,
-			size, io_perms_to_prot (perms), &old);
-		CloseHandle (h_proc);
-	}
-	return ret;
+	return w32_map_protect (dbg, addr, size, perms);
 #elif __APPLE__
 	return xnu_map_protect (dbg, addr, size, perms);
 #elif __linux__
