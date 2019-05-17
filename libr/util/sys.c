@@ -950,6 +950,10 @@ R_API char *r_sys_pid_to_path(int pid) {
 		}
 		length = tmp - filename;
 		tmp = malloc (length + 1);
+		if (!tmp) {
+			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
+			return NULL;
+		}
 		strncpy (tmp, filename, length);
 		tmp[length + 1] = '\0';
 		TCHAR device[MAX_PATH];
