@@ -18,7 +18,7 @@ int w32_init(RDebug *dbg) {
 		eprintf ("w32_dbg_init: failed to allocate memory\n");
 		return false;
 	}
-	dbg->user->dbgpriv = false;
+	//dbg->user->dbgpriv = false;
 	//dbg->user->processHandle = (HANDLE)NULL;
 	return true;
 }
