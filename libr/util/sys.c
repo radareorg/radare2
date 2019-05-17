@@ -918,7 +918,7 @@ R_API int r_is_heap (void *p) {
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	// TODO: add maximum path length support
-	HANDLE processHandle = NULL;
+	HANDLE processHandle;
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
 	const char *result;
@@ -949,21 +949,29 @@ R_API char *r_sys_pid_to_path(int pid) {
 			return NULL;
 		}
 		length = tmp - filename;
+		tmp = malloc (length + 1);
+		if (!tmp) {
+			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
+			return NULL;
+		}
+		strncpy (tmp, filename, length);
+		tmp[length + 1] = '\0';
 		TCHAR device[MAX_PATH];
 		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-			if (QueryDosDevice (drv, device, maxlength) == length) {
-				if (!strncmp (filename, device, length)) {
-					tmp = r_str_newf ("%s%s", drv, tmp);
+			if (QueryDosDevice (drv, device, maxlength) > 0) {
+				if (!strcmp (tmp, device)) {
+					free (tmp);
+					tmp = r_str_newf ("%s%s", drv, &filename[length]);
 					if (!tmp) {
 						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
 						return NULL;
 					}
 					result = r_sys_conv_win_to_utf8 (tmp);
-					free (tmp);
 					break;
 				}
 			}
 		}
+		free (tmp);
 	} else {
 		CloseHandle (processHandle);
 		result = r_sys_conv_win_to_utf8 (filename);
