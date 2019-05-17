@@ -459,18 +459,18 @@ static bool check_panel_type(RPanel *panel, const char *type, int len) {
 }
 
 static bool is_abnormal_cursor_type(RPanel *panel) {
-	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))
-			|| check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
+	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
+			check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
 		return true;
 	}
 	return false;
 }
 
 static bool is_normal_cursor_type(RPanel *panel) {
-	if (check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))
-			|| check_panel_type (panel, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))
-			|| check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))
-			|| check_panel_type (panel, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+	if (check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) ||
+			check_panel_type (panel, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS)) ||
+			check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) ||
+			check_panel_type (panel, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
 		return true;
 	}
 	return false;
