@@ -44,6 +44,12 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if __WINDOWS__
+#include <windows.h>
+#include <tlhelp32.h>
+#include <winbase.h>
+#include <psapi.h>
+#endif
 
 static void trace_me (void);
 
@@ -52,12 +58,6 @@ static void trace_me (void);
  * -1 : error
  *  0 : ok
  */
-#if __WINDOWS__
-#include <windows.h>
-#include <tlhelp32.h>
-#include <winbase.h>
-#include <psapi.h>
-#endif
 
 #if __WINDOWS__
 typedef struct {

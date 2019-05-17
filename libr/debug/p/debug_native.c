@@ -32,8 +32,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #if __WINDOWS__
 #include <windows.h>
+#include "native/windows/windows_debug.h"
 #define R_DEBUG_REG_T CONTEXT
-#include "native/w32.c"
+// #include "native/w32.c" // to be removed!
 #ifdef NTSTATUS
 #undef NTSTATUS
 #endif
@@ -169,17 +170,7 @@ static int r_debug_native_attach (RDebug *dbg, int pid) {
 #if __linux__ || __ANDROID__
 	return linux_attach (dbg, pid);
 #elif __WINDOWS__
-	int ret;
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (process != (HANDLE)NULL && DebugActiveProcess (pid)) {
-		ret = w32_first_thread (pid);
-	} else {
-		ret = -1;
-	}
-	// XXX: What is this for?
-	ret = w32_first_thread (pid);
-	CloseHandle (process);
-	return ret;
+	return windows_attach (dbg, pid);
 #elif __APPLE__
 	return xnu_attach (dbg, pid);
 #elif __KFBSD__

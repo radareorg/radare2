@@ -61,9 +61,10 @@ if host_machine.system() == 'linux'
 endif
 
 if host_machine.system() != 'windows'
- r_debug_sources += [
-  'p/native/procfs.c'
- ]
+  r_debug_sources += [
+    'p/native/windows/windows_debug.c',
+    'p/native/procfs.c' # is this really needed?
+  ]
 endif
 
 if host_machine.system() == 'darwin'
