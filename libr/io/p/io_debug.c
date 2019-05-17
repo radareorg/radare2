@@ -57,7 +57,9 @@ static void trace_me (void);
 #include <tlhelp32.h>
 #include <winbase.h>
 #include <psapi.h>
+#endif
 
+#if __WINDOWS__
 typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
