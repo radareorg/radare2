@@ -96,7 +96,7 @@ R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, in
 #if __UNIX__
 #define r_socket_connect_unix(a, b) r_socket_connect (a, b, b, R_SOCKET_PROTO_UNIX, 0)
 #else
-#define r_socket_connect_unix(a, b) {}
+#define r_socket_connect_unix(a, b) (false)
 #endif
 R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile);
 R_API int r_socket_port_by_name(const char *name);
