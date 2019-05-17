@@ -13,6 +13,7 @@ typedef struct {
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
+static RIOGdb ** origriogdb = NULL;
 static libgdbr_t *desc = NULL;
 static ut8* reg_buf = NULL;
 static int buf_size = 0;
@@ -363,6 +364,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
+			origriogdb = (RIOGdb **)&d->data;	//TODO bit of a hack, please improve
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
 			int arch = r_sys_arch_id (dbg->arch);
@@ -1044,7 +1046,8 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static int r_debug_gdb_select(int pid, int tid) {
-	if (!desc) {
+	if (!desc  || !*origriogdb ) {
+		desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
 		return false;
 	}
 	return gdbr_select (desc, pid, tid) >= 0;
