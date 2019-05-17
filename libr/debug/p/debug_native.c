@@ -352,7 +352,7 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 }
 
 #if __WINDOWS__
-static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
+/*static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 	const char *needle = NULL;
 	int tmp = 0;
 	if (mode) {
@@ -370,7 +370,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 		tmp = r_str_glob (item->Name, needle);
 	}
 	return !mode || !needle || tmp ;
-}
+}*/
 #endif
 
 /*
@@ -382,7 +382,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 #if __WINDOWS__
-	reason = w32_dbg_wait (dbg, pid);
+	/*reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
@@ -391,7 +391,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			}
 			r_debug_info_free (r);
 
-			/* Check if autoload PDB is set, and load PDB information if yes */
+			/* Check if autoload PDB is set, and load PDB information if yes * /
 			RCore* core = dbg->corebind.core;
 			bool autoload_pdb = dbg->corebind.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
@@ -451,7 +451,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 
 			r_debug_info_free (r);
 		}
-	}
+	}*/
 #else
 	if (pid == -1) {
 		eprintf ("r_debug_native_wait called with -1 pid!\n");
