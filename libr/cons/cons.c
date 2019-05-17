@@ -1079,18 +1079,20 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 		return;
 	}
 	if (strchr (format, '%')) {
-		palloc (MOAR + strlen (format) * 20);
+		if (palloc (MOAR + strlen (format) * 20)) {
 club:
-		size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
-		written = vsnprintf (I.context->buffer + I.context->buffer_len, size, format, ap3);
-		if (written >= size) { /* not all bytes were written */
-			palloc (written);
-			va_end (ap3);
-			va_copy (ap3, ap2);
-			goto club;
+			size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
+			written = vsnprintf (I.context->buffer + I.context->buffer_len, size, format, ap3);
+			if (written >= size) { /* not all bytes were written */
+				if (palloc (written)) {
+					va_end (ap3);
+					va_copy (ap3, ap2);
+					goto club;
+				}
+			}
+			I.context->buffer_len += written;
+			I.context->buffer[I.context->buffer_len] = 0;
 		}
-		I.context->buffer_len += written;
-		I.context->buffer[I.context->buffer_len] = 0;
 	} else {
 		r_cons_strcat (format);
 	}
@@ -1151,10 +1153,11 @@ R_API int r_cons_memcat(const char *str, int len) {
 
 R_API void r_cons_memset(char ch, int len) {
 	if (!I.null && len > 0) {
-		palloc (len + 1);
-		memset (I.context->buffer + I.context->buffer_len, ch, len);
-		I.context->buffer_len += len;
-		I.context->buffer[I.context->buffer_len] = 0;
+		if (palloc (len + 1)) {
+			memset (I.context->buffer + I.context->buffer_len, ch, len);
+			I.context->buffer_len += len;
+			I.context->buffer[I.context->buffer_len] = 0;
+		}
 	}
 }
 
