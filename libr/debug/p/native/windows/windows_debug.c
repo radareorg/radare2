@@ -407,6 +407,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	w32_info_user (dbg, rdi);
 	w32_info_exe (dbg, rdi);
 	return rdi;*/
+	eprintf("w32_info is disabled\n");
 	return NULL;
 }
 
@@ -442,5 +443,6 @@ RList *w32_pids(int pid, RList *list) {
 
 	CloseHandle (process_snapshot);
 	return list;*/
+	eprintf("w32_pids is disabled\n");
 	return NULL;
 }
