@@ -541,7 +541,7 @@ RList *w32_pid_list(int pid, RList *list) {
 				if (debug_pid) {
 					r_list_append (list, debug_pid);
 				} else {
-					eprintf ("w32_pid_list: failed to process pid %d\n", pe->th32ProcessID);
+					eprintf ("w32_pid_list: failed to process pid %d\n", pe.th32ProcessID);
 				}
 			}
 		} while (Process32Next (sh, &pe));

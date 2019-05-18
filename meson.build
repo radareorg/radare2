@@ -109,7 +109,7 @@ platform_inc = include_directories(platform_inc)
 
 if get_option('static_runtime')
   if cc.get_id() == 'msvc'
-    add_project_arguments('/MT', language: 'c', '/MP')
+    add_project_arguments('/MT','/MP', language: 'c')
   endif
 endif
 
