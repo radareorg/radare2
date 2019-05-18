@@ -469,7 +469,7 @@ err_load_th:
 		eprintf ("w32_thread_list: failed to enumerate threads\n");
 	}
 	CloseHandle (th);
-	return NULL;
+	return list;
 }
 
 RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
