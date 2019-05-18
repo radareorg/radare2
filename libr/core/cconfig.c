@@ -3255,6 +3255,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF ("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF ("graph.title", "", "Title of the graph");
+	SETPREF ("graph.ntitles", "true", "Display title of node");
 	SETPREF ("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF ("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
 	SETPREF ("graph.gv.spline", "", "Graphviz spline style. (splines=\"ortho\")");
