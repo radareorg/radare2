@@ -413,7 +413,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static char *resolve_path(HANDLE ph) {
+static const char *resolve_path(HANDLE ph) {
 	// TODO: add maximum path length support
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
@@ -481,16 +481,16 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
 	free (name);*/
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
-	const char *ret = resolve_path (ph);
+	const char *path = resolve_path (ph);
 	if (!ret) {
-		ret = pe->szExeFile;
+		path = pe->szExeFile;
 	}
 	DWORD sid;
 	if (!ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
 		sid = 0;
 	}
 	CloseHandle (ph);
-	RDebugPid *ret = r_debug_pid_new (name, pe->th32ProcessID, sid, 's', 0);
+	RDebugPid *ret = r_debug_pid_new (path, pe->th32ProcessID, sid, 's', 0);
 	return ret;
 }
 
