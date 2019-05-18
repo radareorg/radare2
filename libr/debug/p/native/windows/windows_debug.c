@@ -413,7 +413,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static void resolve_path(HANDLE ph) {
+static char *resolve_path(HANDLE ph) {
 	// TODO: add maximum path length support
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
@@ -486,7 +486,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 		ret = pe->szExeFile;
 	}
 	DWORD sid;
-	if (!ProcessIdToSessionId (pid, &sid)) {
+	if (!ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
 		sid = 0;
 	}
 	CloseHandle (ph);
