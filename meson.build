@@ -115,7 +115,7 @@ endif
 
 # this will be removed!!!
 if cc.get_id() == 'msvc'
-  add_project_arguments('/MP')
+  add_project_arguments('/MP', language: 'c')
 endif
 
 if get_option('default_library') == 'shared'
