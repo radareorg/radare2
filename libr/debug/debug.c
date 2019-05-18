@@ -1091,7 +1091,8 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		return false;
 	}
 #if __WINDOWS__
-	r_cons_break_push (w32_break_process, dbg);
+	//TODO: revert this back
+	//r_cons_break_push (w32_break_process, dbg);
 #endif
 repeat:
 	if (r_debug_is_dead (dbg)) {
@@ -1101,7 +1102,8 @@ repeat:
 		/* handle the stage-2 of breakpoints */
 		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE)) {
 #if __WINDOWS__
-			r_cons_break_pop ();
+			//TODO: revert this back
+			//r_cons_break_pop ();
 #endif
 			return false;
 		}
