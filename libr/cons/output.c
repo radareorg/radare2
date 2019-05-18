@@ -271,10 +271,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				case '7': // WHITE
 					fg = 1|2|4;
 					break;
-				case '8': // GRAY
-					fg = 8;
-					break;
-				case '9': // ???
+				case '8': // ???
+				case '9':
 					break;
 				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
@@ -317,6 +315,18 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				}
 				esc = 0;
 				ptr = ptr + 2;
+				str = ptr + 1;
+				continue;
+			} else if (!strncmp (ptr, "1;30m", 5)) {
+				fg = 8;
+				SetConsoleTextAttribute (hConsole, bg|fg|inv);
+				esc = 0;
+				ptr = ptr + 4;
+				str = ptr + 1;
+			} else if (!strncmp (ptr, "48;5;8m", 7)) {
+				// TODO background gray
+				esc = 0;
+				ptr = ptr + 6;
 				str = ptr + 1;
 				continue;
 			}
