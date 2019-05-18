@@ -482,7 +482,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	free (name);*/
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
 	const char *path = resolve_path (ph);
-	if (!ret) {
+	if (!path) {
 		path = pe->szExeFile;
 	}
 	DWORD sid;
