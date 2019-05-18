@@ -158,7 +158,7 @@ static const char *help_msg_equal[] = {
 	"=:", "port", "start the rap server (o rap://9999)",
 	"=g", "[?]", "start the gdbserver",
 	"=h", "[?]", "start the http webserver",
-	"=H", "[?]", "start the http webserver (and laungh the web browser)",
+	"=H", "[?]", "start the http webserver (and launch the web browser)",
 	"\nother:","","",
 	"=&", ":port", "start rap server in background (same as '&_=h')",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
