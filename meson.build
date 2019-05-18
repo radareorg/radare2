@@ -113,6 +113,11 @@ if get_option('static_runtime')
   endif
 endif
 
+# this will be removed!!!
+if cc.get_id() == 'msvc'
+  add_project_arguments('/MP')
+endif
+
 if get_option('default_library') == 'shared'
   if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
     add_project_arguments('-fvisibility=hidden', language: 'c')

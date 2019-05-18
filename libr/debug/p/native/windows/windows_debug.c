@@ -463,7 +463,7 @@ err_load_th:
 				// TODO: add pc if process is debugged
 				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', 0));
 			}
-		} while (Thread32Next (th, &te))
+		} while (Thread32Next (th, &te));
 		free (path);
 	} else {
 		eprintf ("w32_thread_list: failed to enumerate threads\n");
