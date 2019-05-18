@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2019 - MapleLeaf-X */
 #include <string.h>
 #include <windows.h>
-//#include <processthreadsapi.h> // OpenProess, OpenProcessToken
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
 #include "windows_debug.h"
@@ -459,7 +458,7 @@ static void resolve_path(HANDLE ph) {
 	return ret;
 }
 
-static RDebugPid *w32_build_debug_pid(int pid) {
+static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	/*TCHAR image_name[MAX_PATH + 1];
 	DWORD length = MAX_PATH;
 	RDebugPid *ret;
@@ -481,14 +480,21 @@ static RDebugPid *w32_build_debug_pid(int pid) {
 	}
 	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
 	free (name);*/
-	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	resolve_path (ph);
+	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
+	const char *ret = resolve_path (ph);
+	if (!ret) {
+		ret = pe->szExeFile;
+	}
+	DWORD sid;
+	if (!ProcessIdToSessionId (pid, &sid)) {
+		sid = 0;
+	}
 	CloseHandle (ph);
-	RDebugPid *ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
+	RDebugPid *ret = r_debug_pid_new (name, pe->th32ProcessID, sid, 's', 0);
 	return ret;
 }
 
-RList *w32_pids(int pid, RList *list) {
+RList *w32_pid_list(int pid, RList *list) {
 	// disabled for now
 	/*
 	HANDLE process_snapshot;
@@ -522,22 +528,26 @@ RList *w32_pids(int pid, RList *list) {
 	return list;*/
 	HANDLE sh = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
-		eprintf ("w32_pids: failed to create a snapshot of processes\n");
+		eprintf ("w32_pid_list: failed to create a snapshot of processes\n");
 		return list;
 	}
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof (pe);
 	if (Process32First (sh, &pe)) {
+		bool b = pid == 0;
 		do {
-			RDebugPid *debug_pid = build_debug_pid (&pe);
-			if (debug_pid) {
-				r_list_append (list, debug_pid);
+			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
+				RDebugPid *debug_pid = build_debug_pid (&pe);
+				if (debug_pid) {
+					r_list_append (list, debug_pid);
+				} else {
+					eprintf ("w32_pid_list: failed to process pid %d\n", pe->th32ProcessID);
+				}
 			}
 		} while (Process32Next (sh, &pe));
 	} else {
-		eprintf ("w32_pids: failed to enumerate processes\n");
+		eprintf ("w32_pid_list: failed to enumerate processes\n");
 	}
 	CloseHandle (sh);
-	eprintf ("w32_pids is disabled\n");
 	return list;
 }

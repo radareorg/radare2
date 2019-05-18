@@ -660,7 +660,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		}
 	}
 #elif __WINDOWS__
-	return w32_pids (pid, list);
+	return w32_pid_list (pid, list);
 #elif __linux__
 	list->free = (RListFree)&r_debug_pid_free;
 	DIR *dh;
