@@ -713,14 +713,18 @@ R_API void r_line_autocomplete() {
 	if (argc > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
+#ifdef __WINDOWS__
 		if (I.ansicon) {
+#endif
 			printf ("%s%s\n", I.prompt, I.buffer.data);
+#ifdef __WINDOWS__
 		} else {
 			// r_cons_w32_printf ("%s%s\n", I.prompt, I.buffer.data);
 			r_cons_w32_print (I.prompt, strlen (I.prompt), 0);
 			r_cons_w32_print (I.buffer.data, strlen (I.buffer.data), 0);
 			printf ("\n");
 		}
+#endif
 		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
 			if (sep + l > col) {
