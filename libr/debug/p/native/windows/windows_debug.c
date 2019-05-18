@@ -17,7 +17,7 @@ int w32_init(RDebug *dbg) {
 	}*/
 	RIOW32 *rio = dbg->user = R_NEW (RIOW32);
 	if (!rio) {
-		eprintf ("w32_dbg_init: failed to allocate memory\n");
+		eprintf ("w32_init: failed to allocate memory\n");
 		return false;
 	}
 	rio->dbgpriv = false;
@@ -95,7 +95,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 }
 
 int w32_attach(RDebug *dbg, int pid) { // intrusive
-	eprintf ("w32_detach is disabled\n");
+	eprintf ("w32_attach is disabled");
 	return -1;
 	/*int ret = -1;
 	RIOW32 *rio = dbg->user;
@@ -494,27 +494,6 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 }
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
-	/*TCHAR image_name[MAX_PATH + 1];
-	DWORD length = MAX_PATH;
-	RDebugPid *ret;
-	char *name;
-	HANDLE process = w32_OpenProcess (0x1000, //PROCESS_QUERY_LIMITED_INFORMATION,
-		FALSE, pe->th32ProcessID);
-
-	*image_name = '\0';
-	if (process) {
-		if (w32_QueryFullProcessImageName) {
-			w32_QueryFullProcessImageName (process, 0, image_name, &length);
-		}
-		CloseHandle(process);
-	}
-	if (*image_name) {
-		name = r_sys_conv_win_to_utf8 (image_name);
-	} else {
-		name = r_sys_conv_win_to_utf8 (pe->szExeFile);
-	}
-	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
-	free (name);*/
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
 	const char *path = NULL;
 	int uid = -1;
@@ -533,7 +512,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	} else {
 		tmp = r_sys_conv_win_to_utf8 (pe->szExeFile);
 	}
-	// it is possible to get pc but the operation is too expensive and not worth it
+	// it is possible to get pc but the operation is way too expensive
 	return r_debug_pid_new (tmp, pe->th32ProcessID, uid, 's', 0);
 }
 
