@@ -1,9 +1,9 @@
 /* radare - LGPL - Copyright 2019 - MapleLeaf-X */
+#include "windows_debug.h"
 #include <string.h>
 #include <windows.h>
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
-#include "windows_debug.h"
 
 typedef struct {
 	bool dbgpriv;
