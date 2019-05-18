@@ -481,15 +481,19 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
 	free (name);*/
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
-	const char *path = resolve_path (ph);
+	DWORD sid = 0;
+	const char *path = NULL;
+	if (ph != (HANDLE)NULL) {
+		path = resolve_path (ph);
+		if (!ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
+			// set to 0 in case of failure
+			sid = 0;
+		}
+		CloseHandle (ph);
+	}
 	if (!path) {
 		path = pe->szExeFile;
 	}
-	DWORD sid;
-	if (!ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
-		sid = 0;
-	}
-	CloseHandle (ph);
 	RDebugPid *ret = r_debug_pid_new (path, pe->th32ProcessID, sid, 's', 0);
 	return ret;
 }
