@@ -449,7 +449,7 @@ err_load_th:
 		if (ph != (HANDLE)NULL) {
 			path = resolve_path (ph);
 			DWORD sid;
-			if (ProcessIdToSessionId (te->th32OwnerProcessID, &sid)) {
+			if (ProcessIdToSessionId (te.th32OwnerProcessID, &sid)) {
 				uid = sid;
 			}
 			CloseHandle (ph);
@@ -464,10 +464,10 @@ err_load_th:
 				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', 0));
 			}
 		} while (Thread32Next (th, &te))
+		free (path);
 	} else {
 		eprintf ("w32_thread_list: failed to enumerate threads\n");
 	}
-	free (path);
 	CloseHandle (th);
 	return NULL;
 }
