@@ -7068,7 +7068,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	RConfigHold *hc = r_config_hold_new (core->config);
 	r_config_hold_i (hc, "asm.offset", NULL);
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
-
+	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {

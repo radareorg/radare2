@@ -66,6 +66,7 @@ typedef struct r_ascii_graph_t {
 	RANodeCallback on_curnode_change;
 	void *on_curnode_change_data;
 	bool dummy; // enable the dummy nodes for better layouting
+	bool show_node_titles;
 
 	int x, y;
 	int w, h;
