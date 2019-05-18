@@ -103,13 +103,13 @@ endif
 platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32')]
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('psapi')]
 endif
 platform_inc = include_directories(platform_inc)
 
 if get_option('static_runtime')
   if cc.get_id() == 'msvc'
-    add_project_arguments('/MT','/MP', language: 'c')
+    add_project_arguments('/MT', language: 'c')
   endif
 endif
 
