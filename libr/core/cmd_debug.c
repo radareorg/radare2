@@ -997,7 +997,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	const char *ptr;
 	switch (input[1]) {
 	case '\0': // "dp"
-		eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
+		if (input[2]) {
+			eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
+		}
 		r_debug_pid_list (core->dbg, core->dbg->pid, 0);
 		break;
 	case '-': // "dp-"
