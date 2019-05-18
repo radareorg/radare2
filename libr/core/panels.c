@@ -270,6 +270,8 @@ static void delegate_cursor(RCore *core, RPanel *panel);
 static void cursor_function(RCore *core, RPanel *panel);
 static void cursor_symbols(RCore *core, RPanel *panel);
 static void cursor_strings(RCore *core, RPanel *panel);
+static void cursor_breakpoints(RCore *core, RPanel *panel);
+static void cursor_del_breakpoints(RCore *core, RPanel *panel);
 static void delPanel(RPanels *ps, int pi);
 static void dismantleDelPanel(RPanels *ps, RPanel *p, int pi);
 static void delInvalidPanels(RPanels *panels);
@@ -465,7 +467,8 @@ static bool check_panel_type(RPanel *panel, const char *type, int len) {
 static bool is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
 			check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			check_panel_type (panel, sdb_get (core->panels->db, "Strings", 0), strlen (sdb_get (core->panels->db, "Strings", 0)))) {
+			check_panel_type (panel, sdb_get (core->panels->db, "Strings", 0), strlen (sdb_get (core->panels->db, "Strings", 0))) ||
+			check_panel_type (panel, sdb_get (core->panels->db, "Breakpoints", 0), strlen (sdb_get (core->panels->db, "Breakpoints", 0)))) {
 		return true;
 	}
 	return false;
@@ -1315,6 +1318,12 @@ static bool handleCursorMode(RCore *core, const int key) {
 			cur->view->refresh = true;
 		}
 		break;
+	case '-':
+		if (check_panel_type (cur, sdb_get (core->panels->db, "Breakpoints", 0), strlen (sdb_get (core->panels->db, "Breakpoints", 0)))) {
+			cursor_del_breakpoints(core, cur);
+			break;
+		}
+		return false;
 	case 0x0d:
 		delegate_cursor (core, cur);
 	}
@@ -1330,6 +1339,9 @@ static void delegate_cursor (RCore *core, RPanel *panel) {
 	}
 	if (check_panel_type (panel, sdb_get (core->panels->db, "Strings", 0), strlen (sdb_get (core->panels->db, "Strings", 0)))) {
 		cursor_strings (core, panel);
+	}
+	if (check_panel_type (panel, sdb_get (core->panels->db, "Breakpoints", 0), strlen (sdb_get (core->panels->db, "Breakpoints", 0)))) {
+		cursor_breakpoints (core, panel);
 	}
 }
 
@@ -1367,6 +1379,30 @@ static void cursor_strings(RCore *core, RPanel *panel) {
 		if (panel->view->curpos == i++) {
 			core->offset = s->vaddr;
 			updateDisassemblyAddr (core);
+		}
+	}
+}
+
+static void cursor_breakpoints(RCore *core, RPanel *panel) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	int i = 0;
+	r_list_foreach (core->dbg->bp->bps, iter, b) {
+		if (panel->view->curpos == i++) {
+			core->offset = b->addr;
+			updateDisassemblyAddr (core);
+		}
+	}
+}
+
+static void cursor_del_breakpoints(RCore *core, RPanel *panel) {
+	RListIter *iter;
+	RBreakpointItem *b;
+	int i = 0;
+	r_list_foreach (core->dbg->bp->bps, iter, b) {
+		if (panel->view->curpos == i++) {
+			r_bp_del(core->dbg->bp, b->addr);
+			setRefreshAll (core, false);
 		}
 	}
 }
@@ -2486,7 +2522,15 @@ static int breakpointsCb(void *user) {
 	RCore *core = (RCore *)user;
 	char buf[128];
 	const char *prompt = "addr: ";
+
+	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
+	r_line_set_hist_callback (core->cons->line,
+		&r_line_hist_offset_up,
+		&r_line_hist_offset_down);
 	panelPrompt (prompt, buf, sizeof (buf));
+	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
+	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
+
 	ut64 addr = r_num_math (core->num, buf);
 	r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
 	setRefreshAll (core, false);
