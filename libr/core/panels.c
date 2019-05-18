@@ -1106,6 +1106,8 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case 'x':
 	case 'X':
 	case ':':
+	case '[':
+	case ']':
 		return false;
 	case 9:
 		restorePanelPos (panels->panel[panels->curnode]);
@@ -2593,9 +2595,10 @@ static void directionDisassemblyCb(void *user, int direction) {
 			cursorLeft (core);
 			r_core_block_read (core);
 			cur->model->addr = core->offset;
+		} else if (panels->mode == PANEL_MODE_ZOOM) {
+			cur->model->addr--;
 		} else if (cur->view->sx > 0) {
 			cur->view->sx--;
-			cur->view->refresh = true;
 		}
 		return;
 	case RIGHT:
@@ -2603,9 +2606,10 @@ static void directionDisassemblyCb(void *user, int direction) {
 			cursorRight (core);
 			r_core_block_read (core);
 			cur->model->addr = core->offset;
+		} else if (panels->mode == PANEL_MODE_ZOOM) {
+			cur->model->addr++;
 		} else {
 			cur->view->sx++;
-			cur->view->refresh = true;
 		}
 		return;
 	case UP:
@@ -2758,9 +2762,8 @@ static void directionHexdumpCb(void *user, int direction) {
 			core->print->cur += cols - 1;
 		} else if (core->print->cur_enabled) {
 			cursorLeft (core);
-		} else if (cur->view->sx > 0) {
-			cur->view->sx--;
-			cur->view->refresh = true;
+		} else {
+			cur->model->addr--;
 		}
 		return;
 	case RIGHT:
@@ -2771,8 +2774,7 @@ static void directionHexdumpCb(void *user, int direction) {
 		} else if (core->print->cur_enabled) {
 			cursorRight (core);
 		} else {
-			cur->view->sx++;
-			cur->view->refresh = true;
+			cur->model->addr++;
 		}
 		return;
 	case UP:
@@ -4856,9 +4858,11 @@ repeat:
 		break;
 	case ']':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		cur->view->refresh = true;
 		break;
 	case '[':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+		cur->view->refresh = true;
 		break;
 	case '/':
 		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
