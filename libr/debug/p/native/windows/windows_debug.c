@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2019 - MapleLeaf-X */
-#include "windows_debug.h"
 #include <string.h>
+#include "windows_debug.h"
 #include <windows.h>
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
@@ -15,12 +15,12 @@ int w32_init(RDebug *dbg) {
 	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
 		return false;
 	}*/
-	RIOW32 rio = dbg->user = R_NEW (RIOW32);
+	RIOW32 *rio = dbg->user = R_NEW (RIOW32);
 	if (!rio) {
 		eprintf ("w32_dbg_init: failed to allocate memory\n");
 		return false;
 	}
-	//rio->dbgpriv = false;
+	rio->dbgpriv = false;
 	//rio->ph = (HANDLE)NULL;
 	return true;
 }
