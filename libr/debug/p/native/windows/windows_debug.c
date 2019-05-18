@@ -481,55 +481,23 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
 	free (name);*/
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
-	DWORD sid = 0;
 	const char *path = NULL;
+	int uid = -1;
 	if (ph != (HANDLE)NULL) {
 		path = resolve_path (ph);
-		if (!ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
-			// set to 0 in case of failure
-			sid = 0;
+		DWORD sid;
+		if (ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
+			uid = sid;
 		}
 		CloseHandle (ph);
 	}
 	if (!path) {
 		path = pe->szExeFile;
 	}
-	RDebugPid *ret = r_debug_pid_new (path, pe->th32ProcessID, sid, 's', 0);
-	return ret;
+	return r_debug_pid_new (r_sys_conv_win_to_utf8 (path), pe->th32ProcessID, uid, 's', 0);
 }
 
-RList *w32_pid_list(int pid, RList *list) {
-	// disabled for now
-	/*
-	HANDLE process_snapshot;
-	PROCESSENTRY32 pe;
-	pe.dwSize = sizeof (PROCESSENTRY32);
-	int show_all_pids = pid == 0;
-
-	process_snapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
-	if (process_snapshot == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("w32_pids/CreateToolhelp32Snapshot");
-		return list;
-	}
-	if (!Process32First (process_snapshot, &pe)) {
-		r_sys_perror ("w32_pids/Process32First");
-		CloseHandle (process_snapshot);
-		return list;
-	}
-	do {
-		if (show_all_pids ||
-			pe.th32ProcessID == pid ||
-			pe.th32ParentProcessID == pid) {
-
-			RDebugPid *debug_pid = build_debug_pid (&pe);
-			if (debug_pid) {
-				r_list_append (list, debug_pid);
-			}
-		}
-	} while (Process32Next (process_snapshot, &pe));
-
-	CloseHandle (process_snapshot);
-	return list;*/
+RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	HANDLE sh = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
 		eprintf ("w32_pid_list: failed to create a snapshot of processes\n");
@@ -542,6 +510,8 @@ RList *w32_pid_list(int pid, RList *list) {
 		do {
 			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
 				RDebugPid *debug_pid = build_debug_pid (&pe);
+				// TODO: ignore inaccessible processes unless if they're children of a selected process?
+				// if (dbg->pid != -1)
 				if (debug_pid) {
 					r_list_append (list, debug_pid);
 				} else {
