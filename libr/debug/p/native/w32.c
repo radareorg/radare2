@@ -810,7 +810,8 @@ err_load_th:
 	return list;
 }*/
 
-static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
+//merged
+/*static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	TCHAR image_name[MAX_PATH + 1];
 	DWORD length = MAX_PATH;
 	RDebugPid *ret;
@@ -833,7 +834,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
 	free (name);
 	return ret;
-}
+}*/
 
 //merged
 /*RList *w32_pids (int pid, RList *list) {

@@ -1,11 +1,14 @@
 /* radare - LGPL - Copyright 2019 - MapleLeaf-X */
-//#include <windows.h>
+#include <string.h>
+#include <windows.h>
 //#include <processthreadsapi.h> // OpenProess, OpenProcessToken
+#include <tlhelp32.h> // CreateToolhelp32Snapshot
+#include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
 #include "windows_debug.h"
 
 typedef struct {
 	bool dbgpriv;
-	//HANDLE processHandle;
+	//HANDLE ph;
 } RIOW32;
 
 int w32_init(RDebug *dbg) {
@@ -13,13 +16,13 @@ int w32_init(RDebug *dbg) {
 	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
 		return false;
 	}*/
-	dbg->user = R_NEW (RIOW32);
-	if (!dbg->user) {
+	RIOW32 rio = dbg->user = R_NEW (RIOW32);
+	if (!rio) {
 		eprintf ("w32_dbg_init: failed to allocate memory\n");
 		return false;
 	}
-	//dbg->user->dbgpriv = false;
-	//dbg->user->processHandle = (HANDLE)NULL;
+	//rio->dbgpriv = false;
+	//rio->ph = (HANDLE)NULL;
 	return true;
 }
 
@@ -62,7 +65,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	CloseHandle(hThread);
 	return size;
 	*/
-	eprintf("w32_reg_read is disabled\n");
+	eprintf ("w32_reg_read is disabled\n");
 	return 0;
 }
 
@@ -88,12 +91,12 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	//}
 	CloseHandle (thread);
 	return ret;*/
-	eprintf("w32_reg_write is disabled\n");
+	eprintf ("w32_reg_write is disabled\n");
 	return false;
 }
 
 int w32_attach(RDebug *dbg, int pid) { // intrusive
-	eprintf("w32_detach is disabled\n");
+	eprintf ("w32_detach is disabled\n");
 	return -1;
 	/*int ret = -1;
 	RIOW32 *rio = dbg->user;
@@ -127,7 +130,7 @@ int w32_attach(RDebug *dbg, int pid) { // intrusive
 int w32_detach(RDebug *dbg, int pid) {
 	// disabled for now
 	//return w32_DebugActiveProcessStop (pid)? 0 : -1;
-	eprintf("w32_detach is disabled\n");
+	eprintf ("w32_detach is disabled\n");
 	return false;
 }
 
@@ -147,7 +150,7 @@ int w32_step(RDebug *dbg) {
 	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 	(void)r_debug_handle_signals (dbg);
 	return true;*/
-	eprintf("w32_step is disabled\n");
+	eprintf ("w32_step is disabled\n");
 	return false;
 }
 
@@ -162,7 +165,7 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 	return tid;*/
-	eprintf("w32_continue is disabled\n");
+	eprintf ("w32_continue is disabled\n");
 	return false;
 }
 
@@ -184,7 +187,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	r_debug_map_sync (dbg);
 	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;*/
-	eprintf("w32_map_alloc is disabled\n");
+	eprintf ("w32_map_alloc is disabled\n");
 	return NULL;
 }
 
@@ -202,7 +205,7 @@ int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	}
 	CloseHandle (process);
 	return ret;*/
-	eprintf("w32_map_dealloc is disabled\n");
+	eprintf ("w32_map_dealloc is disabled\n");
 	return false;
 }
 
@@ -241,7 +244,7 @@ int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 		CloseHandle (h_proc);
 	}
 	return ret;*/
-	eprintf("w32_map_protect is disabled\n");
+	eprintf ("w32_map_protect is disabled\n");
 	return false;
 }
 
@@ -299,7 +302,7 @@ err_w32_dbg_maps:
 	free (mod_inf.sect_hdr);
 	r_list_free (mod_list);
 	return map_list;*/
-	eprintf("w32_dbg_maps is disabled\n");
+	eprintf ("w32_dbg_maps is disabled\n");
 	return NULL;
 }
 
@@ -338,7 +341,7 @@ err_w32_dbg_modules:
 		CloseHandle (h_mod_snap);
 	}
 	return list;*/
-	eprintf("w32_dbg_modules is disabled\n");
+	eprintf ("w32_dbg_modules is disabled\n");
 	return NULL;
 }
 
@@ -352,7 +355,7 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
         te32.dwSize = sizeof(THREADENTRY32);
 
 	if (!w32_OpenThread) {
-		eprintf("w32_thread_list: no w32_OpenThread?\n");
+		eprintf ("w32_thread_list: no w32_OpenThread?\n");
 		return list;
 	}
         th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
@@ -386,7 +389,7 @@ err_load_th:
         if(th != INVALID_HANDLE_VALUE)
                 CloseHandle (th);
 	return list;*/
-	eprintf("w32_thread_list is disabled\n");
+	eprintf ("w32_thread_list is disabled\n");
 	return NULL;
 }
 
@@ -407,8 +410,82 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	w32_info_user (dbg, rdi);
 	w32_info_exe (dbg, rdi);
 	return rdi;*/
-	eprintf("w32_info is disabled\n");
+	eprintf ("w32_info is disabled\n");
 	return NULL;
+}
+
+static void resolve_path(HANDLE ph) {
+	// TODO: add maximum path length support
+	const DWORD maxlength = MAX_PATH;
+	TCHAR filename[MAX_PATH];
+	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
+	if (length > 0) {
+		return r_sys_conv_win_to_utf8 (filename);
+	}
+	// Upon failure fallback to GetProcessImageFileName
+	length = GetProcessImageFileName (ph, filename, maxlength);
+	if (length == 0) {
+		return NULL;
+	}
+	// Convert NT path to win32 path
+	char *tmp = strchr (filename + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	tmp = strchr (tmp + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	length = tmp - filename;
+	tmp = malloc (length + 1);
+	if (!tmp) {
+		return NULL;
+	}
+	strncpy (tmp, filename, length);
+	tmp[length + 1] = '\0';
+	TCHAR device[MAX_PATH];
+	const char *ret;
+	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+		if (QueryDosDevice (drv, device, maxlength) > 0) {
+			if (!strcmp (tmp, device)) {
+				TCHAR path[MAX_PATH];
+				sprintf (path, "%s%s", drv, &filename[length]);
+				ret = r_sys_conv_win_to_utf8 (path);
+				break;
+			}
+		}
+	}
+	free (tmp);
+	return ret;
+}
+
+static RDebugPid *w32_build_debug_pid(int pid) {
+	/*TCHAR image_name[MAX_PATH + 1];
+	DWORD length = MAX_PATH;
+	RDebugPid *ret;
+	char *name;
+	HANDLE process = w32_OpenProcess (0x1000, //PROCESS_QUERY_LIMITED_INFORMATION,
+		FALSE, pe->th32ProcessID);
+
+	*image_name = '\0';
+	if (process) {
+		if (w32_QueryFullProcessImageName) {
+			w32_QueryFullProcessImageName (process, 0, image_name, &length);
+		}
+		CloseHandle(process);
+	}
+	if (*image_name) {
+		name = r_sys_conv_win_to_utf8 (image_name);
+	} else {
+		name = r_sys_conv_win_to_utf8 (pe->szExeFile);
+	}
+	ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
+	free (name);*/
+	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	resolve_path (ph);
+	CloseHandle (ph);
+	RDebugPid *ret = r_debug_pid_new (name, pe->th32ProcessID, 0, 's', 0);
+	return ret;
 }
 
 RList *w32_pids(int pid, RList *list) {
@@ -443,6 +520,24 @@ RList *w32_pids(int pid, RList *list) {
 
 	CloseHandle (process_snapshot);
 	return list;*/
-	eprintf("w32_pids is disabled\n");
-	return NULL;
+	HANDLE sh = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
+	if (sh == INVALID_HANDLE_VALUE) {
+		eprintf ("w32_pids: failed to create a snapshot of processes\n");
+		return list;
+	}
+	PROCESSENTRY32 pe;
+	pe.dwSize = sizeof (pe);
+	if (Process32First (sh, &pe)) {
+		do {
+			RDebugPid *debug_pid = build_debug_pid (&pe);
+			if (debug_pid) {
+				r_list_append (list, debug_pid);
+			}
+		} while (Process32Next (sh, &pe));
+	} else {
+		eprintf ("w32_pids: failed to enumerate processes\n");
+	}
+	CloseHandle (sh);
+	eprintf ("w32_pids is disabled\n");
+	return list;
 }
