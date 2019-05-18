@@ -344,6 +344,51 @@ err_w32_dbg_modules:
 	return NULL;
 }
 
+static const char *resolve_path(HANDLE ph) {
+	// TODO: add maximum path length support
+	const DWORD maxlength = MAX_PATH;
+	TCHAR filename[MAX_PATH];
+	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
+	if (length > 0) {
+		return strdup (filename);
+	}
+	// Upon failure fallback to GetProcessImageFileName
+	length = GetProcessImageFileName (ph, filename, maxlength);
+	if (length == 0) {
+		return NULL;
+	}
+	// Convert NT path to win32 path
+	char *tmp = strchr (filename + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	tmp = strchr (tmp + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	length = tmp - filename;
+	tmp = malloc (length + 1);
+	if (!tmp) {
+		return NULL;
+	}
+	strncpy (tmp, filename, length);
+	tmp[length + 1] = '\0';
+	TCHAR device[MAX_PATH];
+	const char *ret = NULL;
+	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+		if (QueryDosDevice (drv, device, maxlength) > 0) {
+			if (!strcmp (tmp, device)) {
+				TCHAR path[MAX_PATH];
+				sprintf (path, "%s%s", drv, &filename[length]);
+				ret = strdup (path);
+				break;
+			}
+		}
+	}
+	free (tmp);
+	return ret;
+}
+
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 	// disabled for now
 	/*
@@ -388,7 +433,42 @@ err_load_th:
         if(th != INVALID_HANDLE_VALUE)
                 CloseHandle (th);
 	return list;*/
-	eprintf ("w32_thread_list is disabled\n");
+	// pid is not respected for the TH32CS_SNAPTHREAD flag
+	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
+	if(th == INVALID_HANDLE_VALUE) {
+		eprintf ("w32_thread_list: failed to create a snapshot of threads\n");
+		return list;
+	}
+	THREADENTRY32 te;
+	te.dwSize = sizeof (te);
+	if (Thread32First (th, &te)) {
+		// TODO: export this code to its own function?
+		HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+		const char *path = NULL;
+		int uid = -1;
+		if (ph != (HANDLE)NULL) {
+			path = resolve_path (ph);
+			DWORD sid;
+			if (ProcessIdToSessionId (te->th32OwnerProcessID, &sid)) {
+				uid = sid;
+			}
+			CloseHandle (ph);
+		}
+		if (!path) {
+			// TODO: enum processes to get binary's name
+			path = strdup ("???");
+		}
+		do {
+			if (te.th32OwnerProcessID == pid) {
+				// TODO: add pc if process is debugged
+				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', 0));
+			}
+		} while (Thread32Next (th, &te))
+	} else {
+		eprintf ("w32_thread_list: failed to enumerate threads\n");
+	}
+	free (path);
+	CloseHandle (th);
 	return NULL;
 }
 
@@ -411,51 +491,6 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return rdi;*/
 	eprintf ("w32_info is disabled\n");
 	return NULL;
-}
-
-static const char *resolve_path(HANDLE ph) {
-	// TODO: add maximum path length support
-	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
-	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
-	if (length > 0) {
-		return r_sys_conv_win_to_utf8 (filename);
-	}
-	// Upon failure fallback to GetProcessImageFileName
-	length = GetProcessImageFileName (ph, filename, maxlength);
-	if (length == 0) {
-		return NULL;
-	}
-	// Convert NT path to win32 path
-	char *tmp = strchr (filename + 1, '\\');
-	if (!tmp) {
-		return NULL;
-	}
-	tmp = strchr (tmp + 1, '\\');
-	if (!tmp) {
-		return NULL;
-	}
-	length = tmp - filename;
-	tmp = malloc (length + 1);
-	if (!tmp) {
-		return NULL;
-	}
-	strncpy (tmp, filename, length);
-	tmp[length + 1] = '\0';
-	TCHAR device[MAX_PATH];
-	const char *ret;
-	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-		if (QueryDosDevice (drv, device, maxlength) > 0) {
-			if (!strcmp (tmp, device)) {
-				TCHAR path[MAX_PATH];
-				sprintf (path, "%s%s", drv, &filename[length]);
-				ret = r_sys_conv_win_to_utf8 (path);
-				break;
-			}
-		}
-	}
-	free (tmp);
-	return ret;
 }
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
@@ -491,10 +526,15 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 		}
 		CloseHandle (ph);
 	}
-	if (!path) {
-		path = pe->szExeFile;
+	const char *tmp;
+	if (path) {
+		tmp = r_sys_conv_win_to_utf8 (path);
+		free (path);
+	} else {
+		tmp = r_sys_conv_win_to_utf8 (pe->szExeFile);
 	}
-	return r_debug_pid_new (r_sys_conv_win_to_utf8 (path), pe->th32ProcessID, uid, 's', 0);
+	// it is possible to get pc but the operation is too expensive and not worth it
+	return r_debug_pid_new (tmp, pe->th32ProcessID, uid, 's', 0);
 }
 
 RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
@@ -509,11 +549,11 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		bool b = pid == 0;
 		do {
 			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
-				RDebugPid *debug_pid = build_debug_pid (&pe);
+				RDebugPid *dbg_pid = build_debug_pid (&pe);
 				// TODO: ignore inaccessible processes unless if they're children of a selected process?
 				// if (dbg->pid != -1)
-				if (debug_pid) {
-					r_list_append (list, debug_pid);
+				if (dbg_pid) {
+					r_list_append (list, dbg_pid);
 				} else {
 					eprintf ("w32_pid_list: failed to process pid %d\n", pe.th32ProcessID);
 				}
