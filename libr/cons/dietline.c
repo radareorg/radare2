@@ -713,7 +713,18 @@ R_API void r_line_autocomplete() {
 	if (argc > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
-		printf ("%s%s\n", I.prompt, I.buffer.data);
+#ifdef __WINDOWS__
+		if (I.ansicon) {
+#endif
+			printf ("%s%s\n", I.prompt, I.buffer.data);
+#ifdef __WINDOWS__
+		} else {
+			// r_cons_w32_printf ("%s%s\n", I.prompt, I.buffer.data);
+			r_cons_w32_print (I.prompt, strlen (I.prompt), 0);
+			r_cons_w32_print (I.buffer.data, strlen (I.buffer.data), 0);
+			printf ("\n");
+		}
+#endif
 		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
 			if (sep + l > col) {
@@ -782,7 +793,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		} else {
 			r_cons_clear_line (0);
-			printf ("%s%s", I.prompt, I.buffer.data);
+			// r_cons_w32_printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
+			r_cons_w32_print (Color_RESET, strlen (Color_RESET), 0);
+			r_cons_w32_print (I.prompt, strlen (I.prompt), 0);
+			r_cons_w32_print (I.buffer.data, strlen (I.buffer.data), 0);
 		}
 		fflush (stdout);
 	}
@@ -1156,11 +1170,20 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				if (I.ansicon) {
 					printf ("\r%s%s", Color_RESET, I.prompt);
 				} else {
-					printf ("\r%s", I.prompt);
+					// r_cons_w32_printf ("\r%s%s", Color_RESET, I.prompt);
+					printf ("\r");
+					r_cons_w32_print (Color_RESET, strlen (Color_RESET), 0);
+					r_cons_w32_print (I.prompt, strlen (I.prompt), 0);
 				}
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
-				printf ("\r%s", I.prompt);
+				if (I.ansicon) {
+					printf ("\r%s", I.prompt);
+				} else {
+					// r_cons_w32_printf ("\r%s", I.prompt);
+					printf ("\r");
+					r_cons_w32_print (I.prompt, strlen (I.prompt), 0);
+				}
 				if (I.buffer.index > cols) {
 					printf ("< ");
 					i = I.buffer.index - cols;
@@ -1182,7 +1205,15 @@ _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (0);
 	if (I.echo) {
-		printf ("\r%s%s\n", I.prompt, I.buffer.data);
+		if (I.ansicon) {
+			printf ("\r%s%s\n", I.prompt, I.buffer.data);
+		} else {
+			// r_cons_w32_printf ("\r%s%s\n", I.prompt, I.buffer.data);
+			printf ("\r");
+			r_cons_w32_print (I.prompt, strlen (I.prompt), 0);
+			r_cons_w32_print (I.buffer.data, strlen (I.buffer.data), 0);
+			printf ("\n");
+		}
 		fflush (stdout);
 	}
 

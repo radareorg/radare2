@@ -2735,12 +2735,12 @@ static void set_prompt (RCore *r) {
 		free (s);
 		remote = "=!";
 	}
-#if __UNIX__
+
 	if (r_config_get_i (r->config, "scr.color")) {
 		BEGIN = r->cons->context->pal.prompt;
 		END = r->cons->context->pal.reset;
 	}
-#endif
+
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
