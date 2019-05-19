@@ -285,35 +285,34 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				/* background color */
 				switch (ptr[1]) {
 				case '0': // BLACK
-					bg = 0;
+					bg = 0x0;
 					break;
 				case '1': // RED
-					bg = 40;
+					bg = 0x40;
 					break;
 				case '2': // GREEN
-					bg = 20;
+					bg = 0x20;
 					break;
 				case '3': // YELLOW
-					bg = 20|40;
+					bg = 0x20|0x40;
 					break;
 				case '4': // BLUE
-					bg = 10;
+					bg = 0x10;
 					break;
 				case '5': // MAGENTA
-					bg = 10|40;
+					bg = 0x10|0x40;
 					break;
 				case '6': // TURQOISE
-					bg = 10|20|80;
+					bg = 0x10|0x20|0x80;
 					break;
 				case '7': // WHITE
-					bg = 10|20|40;
+					bg = 0x10|0x20|0x40;
 					break;
-				case '8': // GRAY
-					bg = 80;
-					break;
-				case '9': // ???
+				case '8': // ???
+				case '9':
 					break;
 				}
+				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
 				ptr = ptr + 2;
 				str = ptr + 1;
@@ -325,7 +324,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				ptr = ptr + 4;
 				str = ptr + 1;
 			} else if (!strncmp (ptr, "48;5;8m", 7)) {
-				// TODO background gray
+				bg = 0x80;
+				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
 				ptr = ptr + 6;
 				str = ptr + 1;
