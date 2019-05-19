@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_cons.h>
+#include <r_util/r_assert.h>
 #define I r_cons_singleton ()
 
 #if __WINDOWS__
@@ -58,7 +59,7 @@ static int wrapline (const char *s, int len) {
 	return n - (n > len)? l: 1;
 }
 
-R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
+R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	int esc = 0;
 	int bg = 0, fg = 1|2|4|8;
@@ -350,6 +351,30 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			linelen += ll;
 		}
 	}
+	return ret;
+}
+
+R_API int r_cons_w32_printf(bool vmode, const char *fmt, ...) {
+	va_list ap, ap2;
+	int ret = -1;
+	r_return_val_if_fail (fmt, -1);
+
+	va_start (ap, fmt);
+	if (!strchr (fmt, '%')) {
+		va_end (ap);
+		return r_cons_w32_print (fmt, strlen (fmt), vmode);
+	}
+	va_copy (ap2, ap);
+	int num_chars = vsnprintf (NULL, 0, fmt, ap2);
+	num_chars++;
+	char *buf = calloc (1, num_chars);
+	if (buf) {
+		(void)vsnprintf (buf, num_chars, fmt, ap);
+		ret = r_cons_w32_print (buf, num_chars - 1, vmode);
+		free (buf);
+	}
+	va_end (ap2);
+	va_end (ap);
 	return ret;
 }
 #endif
