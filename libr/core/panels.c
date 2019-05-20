@@ -154,6 +154,7 @@ static const char *help_msg_panels[] = {
 	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
+	"\"",       "create a panel from the list and replace the current one",
 	"/",        "highlight the keyword",
 	"(",        "toggle snow",
 	"&",        "toggle cache",
@@ -4221,7 +4222,7 @@ static void create_widget(RCore *core, RPanel *panel, int *idx) {
 	if (*idx < 0) {
 		*idx = 0;
 	}
-	*idx = R_MIN (sdb_count (panels->db) - 1, *idx);  
+	*idx = R_MIN (sdb_count (panels->db) - 1, *idx);
 	if (panels->n_panels >= PANEL_NUM_LIMIT) {
 		return;
 	}
@@ -4287,6 +4288,11 @@ static void create_almighty(RCore *core, RPanel *panel) {
 						}
 					}
 				}
+				panel->view->refresh = true;
+				return;
+			case 'q':
+			case '"':
+				panel->view->refresh = true;
 				return;
 		}
 	}
