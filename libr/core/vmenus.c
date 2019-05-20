@@ -2681,13 +2681,39 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 				break;
 			}
 			if (show) {
-				r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
-						i == *vindex ? "* ":"  ",
-						var->kind == 'v'?"var":"arg",
-						var->type, var->name,
-						core->anal->reg->name[R_REG_NAME_BP],
-						(var->kind == 'v')?"-":"+",
-						var->delta);
+				switch (var->kind & 0xff) {
+				case 'r':
+					{
+						RRegItem *r = r_reg_index_get (core->anal->reg, var->delta);
+						if (!r) {
+							eprintf ("Register not found");
+							break;
+						}
+						r_cons_printf ("%sarg %s %s @ %s\n",
+								i == *vindex ? "* ":"  ",
+								var->type, var->name,
+								r->name);
+					}
+					break;
+				case 'b':
+					r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
+							i == *vindex ? "* ":"  ",
+							var->delta < 0? "var": "arg",
+							var->type, var->name,
+							core->anal->reg->name[R_REG_NAME_BP],
+							(var->kind == 'v')?"-":"+",
+							var->delta);
+					break;
+				case 's':
+					r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
+							i == *vindex ? "* ":"  ",
+							var->delta < 0? "var": "arg",
+							var->type, var->name,
+							core->anal->reg->name[R_REG_NAME_BP],
+							(var->kind == 'v')?"-":"+",
+							var->delta);
+					break;
+				}
 			}
 		}
 		++i;
@@ -2770,17 +2796,18 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 			r_cons_strcat ("\n" Color_RESET);
 		}
 		r_cons_printf (
-			"(a) add    (x) xrefs (X) refs (jk) next/prev (s) signature\n"
-			"(r) rename (c) calls (g) go   (tab) column   (_) hud\n"
-			"(d) delete (v) vars  (?) help (:)  enter cmd (q) quit\n");
+			"(a) analyze (-) delete (x) xrefs (X) refs   j/k next/prev\n"
+			"(r) rename  (c) calls  (d) definetab column (_) hud\n"
+			"(d) define  (v) vars   (?) help  (:) shell  (q) quit\n"
+			"(s) edit function signature.  \n\n");
 		addr = var_functions_show (core, option, 1);
 		break;
 	case 1:
 		r_cons_printf (
 			"-[ variables ]----- 0x%08"PFMT64x"\n"
-			"(a) add     (x) xrefs   (r) rename\n"
-			"(t) type    (g) go      (d) delete\n"
-			"(q) quit   \n", addr);
+			"(a) add    (x) xrefs     (r) rename\n"
+			"(t) type   (g) go        (-) delete\n"
+			"(q) quit   (s) signature\n\n", addr);
 		addr = var_variables_show (core, option, &variable_option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
@@ -2895,6 +2922,31 @@ beach:
 	;
 }
 
+static char *__prompt(const char *msg, void *p) {
+	char res[128];
+	r_cons_show_cursor (true);
+	r_cons_set_raw (false);
+	r_line_set_prompt (msg);
+	res[0] =0;
+	if (!r_cons_fgets (res, sizeof (res), 0, NULL)) {
+		res[0] = 0;
+	}
+	return strdup (res);
+}
+
+static void addVar(RCore *core, int ch, const char *msg) {
+	char *src = __prompt (msg, NULL);
+	char *name = __prompt ("Variable Name: ", NULL);
+	char *type = __prompt ("Type of Variable (int32_t): ", NULL);
+	char *cmd = r_str_newf ("afv%c %s %s %s", ch, src, name, type);
+	r_str_trim (cmd);
+	r_core_cmd0 (core, cmd);
+	free(cmd);
+	free (src);
+	free (name);
+	free (type);
+}
+
 /* Like emenu but for real */
 R_API void r_core_visual_anal(RCore *core, const char *input) {
 	char old[218];
@@ -2965,39 +3017,34 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			{
 				ut64 orig = core->offset;
 				r_core_seek (core, addr, 0);
-				r_core_visual_prompt (core);
-				r_cons_any_key (NULL);
+				while (r_core_visual_prompt (core));
 				r_core_seek (core, orig, 0);
 			}
 			continue;
+		case '/':
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
+			break;
 		case 'a':
 			switch (level) {
 			case 0:
-				eprintf ("TODO: Add new function manually\n");
-/*
-				r_cons_show_cursor (true);
-				r_cons_set_raw (false);
-				r_line_set_prompt ("Address: ");
-				if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
-				old[strlen (old)-1] = 0;
-				if (!*old) break;
-				addr = r_num_math (core->num, old);
-				r_line_set_prompt ("Size: ");
-				if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
-				old[strlen (old)-1] = 0;
-				if (!*old) break;
-				size = r_num_math (core->num, old);
-				r_line_set_prompt ("Name: ");
-				if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
-				old[strlen (old)-1] = 0;
-				r_flag_set (core->flags, old, addr, 0, 0);
-				//XXX sprintf(cmd, "CF %lld @ 0x%08llx", size, addr);
-				// XXX r_core_cmd0(core, cmd);
-				r_cons_set_raw (true);
-				r_cons_show_cursor (false);
-*/
+				r_core_cmd0 (core, "af-$$;af"); // reanalize
 				break;
 			case 1:
+				{
+					eprintf ("Select variable source ('r'egister, 's'tackptr or 'b'aseptr): ");
+					int type = r_cons_readchar ();
+					switch (type) {
+					case 'r':
+						addVar (core, type, "Source Register Name: ");
+						break;
+					case 's':
+						addVar (core, type, "BP Relative Delta: ");
+						break;
+					case 'b':
+						addVar (core, type, "SP Relative Delta: ");
+						break;
+					}
+				}
 				break;
 			}
 			break;
@@ -3061,6 +3108,9 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case 'd':
+			r_core_visual_define(core, "", 0);
+			break;
+		case '-':
 			switch (level) {
 			case 0:
 				r_core_cmdf (core, "af-0x%"PFMT64x, addr);
