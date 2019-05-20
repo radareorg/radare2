@@ -56,6 +56,25 @@ R_API void r_free(void *p) {
 	return _r_free (p);
 }
 #endif
+
+#else
+
+R_API void *r_malloc(size_t sz) {
+	return malloc (sz);
+}
+
+R_API void *r_calloc(size_t count, size_t sz) {
+	return calloc (count, sz);
+}
+
+R_API void *r_realloc(void *p, size_t sz) {
+	return realloc (p, sz);
+}
+
+R_API void r_free(void *p) {
+	return free (p);
+}
+
 #endif
 
 R_API void* r_malloc_aligned(size_t size, size_t alignment) {

@@ -38,10 +38,10 @@ R_API void r_free(void *p);
 
 #else
 
-#define r_malloc(x) malloc((x))
-#define r_calloc(x,y) calloc((x),(y))
-#define r_realloc(x,y) realloc((x),(y))
-#define r_free(x) free((x))
+R_API void *r_malloc(size_t sz);
+R_API void *r_calloc(size_t count, size_t sz);
+R_API void *r_realloc(void *p, size_t sz);
+R_API void r_free(void *p);
 
 #define _r_malloc r_malloc
 #define _r_calloc r_calloc
