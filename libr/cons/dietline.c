@@ -840,7 +840,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 40:// down arrow
 			if (I.sel_widget) {
-				selection_widget_up (1);
+				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
