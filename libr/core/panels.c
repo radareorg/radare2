@@ -154,6 +154,7 @@ static const char *help_msg_panels[] = {
 	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
+	"\"",       "create a panel from the list and replace the current one",
 	"/",        "highlight the keyword",
 	"(",        "toggle snow",
 	"&",        "toggle cache",
@@ -397,6 +398,8 @@ static bool moveToDirection(RPanels *panels, Direction direction);
 static void toggleHelp(RCore *core);
 static void createDefaultPanels(RCore *core);
 static void createNewPanel(RCore *core, bool vertical);
+static void create_widget(RCore *core, RPanel *panel, int *idx);
+static void create_almighty(RCore *core, RPanel *panel);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
@@ -4214,6 +4217,87 @@ static void createNewPanel(RCore *core, bool vertical) {
 	free (res);
 }
 
+static void create_widget(RCore *core, RPanel *panel, int *idx) {
+	RPanels *panels = core->panels;
+	if (*idx < 0) {
+		*idx = 0;
+	}
+	*idx = R_MIN (sdb_count (panels->db) - 1, *idx);
+	if (panels->n_panels >= PANEL_NUM_LIMIT) {
+		return;
+	}
+	SdbList *l = sdb_foreach_list (panels->db, true);
+	SdbKv *kv;
+	SdbListIter *iter;
+	RStrBuf *buf = r_strbuf_new (NULL);
+	if (!buf) {
+		return;
+	}
+	int i = 0;
+	ls_foreach (l, iter, kv) {
+		if (i++ == *idx) {
+			r_strbuf_appendf (buf, ">  %s%s"Color_RESET,
+					core->cons->context->pal.graph_box2, sdbkv_key (kv));
+		} else {
+			r_strbuf_appendf (buf, "   %s", sdbkv_key (kv));
+		}
+		r_strbuf_append (buf, "          \n");
+	}
+	int x, y, w, h;
+	w = r_str_bounds (r_strbuf_get (buf), &h);
+	x = panel->view->pos.x + (panel->view->pos.w - w) / 2;
+	y = panel->view->pos.y + (panel->view->pos.h - h) / 2;
+
+	r_cons_canvas_fill (panels->can, x, y, w + 2, h + 2, ' ');
+	(void) r_cons_canvas_gotoxy (panels->can, x + 2, y + 1);
+	r_cons_canvas_write (panels->can, r_strbuf_drain (buf));
+
+	r_cons_canvas_box (panels->can, x, y, w + 2, h + 2, core->cons->context->pal.graph_box2);
+
+	r_cons_canvas_print (panels->can);
+	r_cons_flush ();
+}
+
+static void create_almighty(RCore *core, RPanel *panel) {
+	int idx = 0, okey, key;
+	RPanels *panels = core->panels;
+	create_widget (core, panel, &idx);
+	while (true) {
+		okey = r_cons_readchar ();
+		key = r_cons_arrow_to_hjkl (okey);
+		switch (key) {
+			case 'j':
+				idx++;
+				create_widget (core, panel, &idx);
+				break;
+			case 'k':
+				idx--;
+				create_widget (core, panel, &idx);
+				break;
+			case 0x0d:
+				{
+					SdbList *l = sdb_foreach_list (panels->db, true);
+					SdbKv *kv;
+					SdbListIter *iter;
+					int i = 0;
+					ls_foreach (l, iter, kv) {
+						if (i++ == idx) {
+							replaceCmd (core, sdbkv_key (kv), sdbkv_value (kv), false);
+							panel->view->refresh = true;
+							return;
+						}
+					}
+				}
+				panel->view->refresh = true;
+				return;
+			case 'q':
+			case '"':
+				panel->view->refresh = true;
+				return;
+		}
+	}
+}
+
 static void createDefaultPanels(RCore *core) {
 	RPanels *panels = core->panels;
 	panels->curnode = 0;
@@ -4811,8 +4895,9 @@ repeat:
 		r_core_visual_hud (core);
 		break;
 	case '"':
-		// createNewPanel (core, true);
-		createNewPanel (core, false);
+		r_cons_switchbuf (false);
+		create_almighty (core, cur);
+		r_cons_switchbuf (true);
 		break;
 	case 'n':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
