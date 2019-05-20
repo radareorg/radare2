@@ -1911,7 +1911,7 @@ static bool cb_scrhighlight(void *user, void *data) {
 #if __WINDOWS__
 static int scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->ansicon = node->i_value;
+	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
 	return true;
 }
 #endif
