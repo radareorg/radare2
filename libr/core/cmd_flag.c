@@ -128,10 +128,8 @@ static size_t countMatching (const char *a, const char *b) {
 static const char *__isOnlySon(RCore *core, RList *flags, const char *kw) {
         RListIter *iter;
         RFlagItem *f;
-        char *fn;
 
         size_t count = 0;
-        // r_flag_foreach_glob (core->flags, kw,
         char *fname = NULL;
         r_list_foreach (flags, iter, f) {
                 if (!strncmp (f->name, kw, strlen (kw))) {
@@ -162,7 +160,6 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		int matches = 0;
 		const char *name = f->name;
 		int name_len = strlen (name);
 		r_list_foreach (flags, iter2, f2) {
@@ -190,7 +187,6 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 			free (kw);
 			kw = strdup (only);
 		} else {
-			int maxmatch = -1;
 			const char *fname = NULL;
 			size_t fname_len = 0;
 			r_list_foreach (flags, iter2, f2) {
@@ -266,18 +262,9 @@ static void __printRecursive (RCore *core, RList *flags, const char *prefix, int
 	r_list_free (children);
 }
 
-static int sortByName(const void *_a, const void *_b) {
-	const RFlagItem *flag1 = _a , *flag2 = _b;
-	return strcmp (flag1->name, flag2->name);
-}
-
 static void __flag_graph (RCore *core, const char *input, int mode) {
-	RListIter *iter;
-	RFlagItem *f;
-
 	RList *flags = r_list_newf (NULL);
 	r_flag_foreach_space (core->flags, r_flag_space_cur (core->flags), listFlag, flags);
-	// r_list_sort (flags, sortByName);
 	__printRecursive (core, flags, input, mode, 0);
 	r_list_free (flags);
 }
