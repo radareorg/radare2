@@ -79,7 +79,7 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
+	"Console", "Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
 	"Stack", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
@@ -3580,12 +3580,6 @@ static void panels_check_stackbase(RCore *core) {
 	}
 }
 
-static void panelPrompt(const char *prompt, char *buf, int len) {
-	r_line_set_prompt (prompt);
-	*buf = 0;
-	r_cons_fgets (buf, len, 0, NULL);
-}
-
 static void initRotatedb(RPanels *panels) {
 	sdb_ptr_set (panels->rotate_db, "pd", &rotateDisasCb, 0);
 	sdb_ptr_set (panels->rotate_db, "p==", &rotateEntropyHCb, 0);
@@ -3605,6 +3599,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Graph", "agf", 0);
 	sdb_set (panels->db, "Info", "i", 0);
 	sdb_set (panels->db, "Database", "k ***", 0);
+	sdb_set (panels->db, "Console", "$console", 0);
 	sdb_set (panels->db, "Hexdump", "xc", 0);
 	sdb_set (panels->db, "Functions", "afl", 0);
 	sdb_set (panels->db, "Comments", "CC", 0);
@@ -4622,6 +4617,12 @@ static void handle_tab_new(RCore *core) {
 	core->panels_root->n_panels++;
 }
 
+static void panelPrompt(const char *prompt, char *buf, int len) {
+	r_line_set_prompt (prompt);
+	*buf = 0;
+	r_cons_fgets (buf, len, 0, NULL);
+}
+
 static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 	int i, okey, key;
 	bool first_load = !*r_panels;
@@ -5004,7 +5005,20 @@ repeat:
 		}
 		break;
 	case 'i':
-		if (cur->model->rotateCb) {
+		if (strstr (cur->model->cmd, "$console")) {
+			char cmd[128] = {0};
+			char *prompt = r_str_newf ("[0x%08"PFMT64x"]) ", core->offset);
+			panelPrompt (prompt, cmd, sizeof (cmd));
+			if (*cmd) {
+				if (!strcmp (cmd, "clear")) {
+					r_core_cmd0 (core, ":>$console");
+				} else {
+					r_core_cmdf (core, "?e %s %s>>$console", prompt, cmd);
+					r_core_cmdf (core, "%s >>$console", cmd);
+				}
+			}
+			cur->view->refresh = true;
+		} else if (cur->model->rotateCb) {
 			cur->model->rotateCb (core, false);
 			cur->view->refresh = true;
 		}
