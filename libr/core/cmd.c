@@ -294,12 +294,13 @@ static const char *help_msg_triple_exclamation[] = {
 };
 
 static const char *help_msg_vertical_bar[] = {
-	"Usage:", "[cmd] | [program|H|T|]", "",
+	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"", "[cmd] |?", "show this help",
 	"", "[cmd] |", "disable scr.html and scr.color",
 	"", "[cmd] |H", "enable scr.html, respect scr.color",
 	"", "[cmd] |T", "use scr.tts to speak out the stdout",
 	"", "[cmd] | [program]", "pipe output of command to program",
+	"", "[cmd] |.", "alias for .[cmd]",
 	NULL
 };
 
@@ -2440,6 +2441,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 					core->cons->use_tts = true;
+				} else if (!strcmp (ptr + 1, ".")) { // "|."
+					ret = *cmd ? r_core_cmdf (core, ".%s", cmd) : 0;
+					r_list_free (tmpenvs);
+					return ret;
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
 					if (*cmd) {
