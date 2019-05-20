@@ -238,8 +238,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				continue;
 				// invert off
 			} else if (ptr[0]=='7'&&ptr[1]=='m') {
-				SetConsoleTextAttribute (hConsole, bg|fg|128);
-				inv = 128;
+				SetConsoleTextAttribute (hConsole, bg|fg|COMMON_LVB_REVERSE_VIDEO);
+				inv = COMMON_LVB_REVERSE_VIDEO;
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
