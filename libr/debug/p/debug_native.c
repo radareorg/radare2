@@ -184,6 +184,12 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #endif
 }
 
+#if __WINDOWS__
+static int r_debug_native_select (int pid, int tid) {
+	return w32_select (pid, tid);
+}
+#endif
+
 static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
 #if __linux__
@@ -2019,6 +2025,9 @@ RDebugPlugin r_debug_plugin_native = {
 	.contsc = &r_debug_native_continue_syscall,
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
+#if __WINDOWS__
+	.select = &r_debug_native_select,
+#endif
 	.pids = &r_debug_native_pids,
 	.tids = &r_debug_native_tids,
 	.threads = &r_debug_native_threads,

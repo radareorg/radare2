@@ -7,21 +7,23 @@
 
 typedef struct {
 	bool dbgpriv;
-	//HANDLE ph;
-} RIOW32;
+	HANDLE ph;
+	int (*select)(int pid, int tid);
+} RIOW32Dbg;
 
 int w32_init(RDebug *dbg) {
 	/*HANDLE token;
 	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
 		return false;
 	}*/
-	RIOW32 *rio = dbg->user = R_NEW (RIOW32);
+	RIOW32Dbg *rio = dbg->user = R_NEW (RIOW32Dbg);
 	if (!rio) {
 		eprintf ("w32_init: failed to allocate memory\n");
 		return false;
 	}
 	rio->dbgpriv = false;
-	//rio->ph = (HANDLE)NULL;
+	rio->ph = (HANDLE)NULL;
+	rio->select = &w32_select;
 	return true;
 }
 
@@ -94,9 +96,17 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	return false;
 }
 
-int w32_attach(RDebug *dbg, int pid) { // intrusive
-	eprintf ("w32_attach is disabled");
+int w32_attach(RDebug *dbg, int pid) {
+	eprintf ("w32_attach is disabled\n");
 	return -1;
+	RW32Dbg *rdbg = dbg->user;
+	if (rdbg->ph == (HANDLE)NULL) {
+		HANDLE ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+		if (ph != (HANDLE)NULL) {
+			return -1;
+		}
+		rdbg->ph = ph;
+	}
 	/*int ret = -1;
 	RIOW32 *rio = dbg->user;
 	// 
@@ -130,6 +140,11 @@ int w32_detach(RDebug *dbg, int pid) {
 	// disabled for now
 	//return w32_DebugActiveProcessStop (pid)? 0 : -1;
 	eprintf ("w32_detach is disabled\n");
+	return false;
+}
+
+int w32_select(int pid, int tid) {
+	eprintf ("w32_select is not implemented!\n");
 	return false;
 }
 
