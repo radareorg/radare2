@@ -5,7 +5,7 @@
 #define I r_cons_singleton ()
 
 #if __WINDOWS__
-static void fill_tail (int cols, int lines) {
+static void fill_tail(int cols, int lines) {
 	lines++;
 	if (lines > 0) {
 		char white[1024];
@@ -37,20 +37,20 @@ static void w32_clear() {
 }
 
 void w32_gotoxy(int x, int y) {
-        static HANDLE hStdout = NULL;
-        COORD coord;
-        coord.X = x;
-        coord.Y = y;
+	static HANDLE hStdout = NULL;
+	COORD coord;
+	coord.X = x;
+	coord.Y = y;
 	if (I->is_wine == 1) {
 		write (1, "\x1b[0;0H", 6);
 	}
-        if (!hStdout) {
-                hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (!hStdout) {
+		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 	}
-        SetConsoleCursorPosition (hStdout, coord);
+	SetConsoleCursorPosition (hStdout, coord);
 }
 
-static int wrapline (const char *s, int len) {
+static int wrapline(const char *s, int len) {
 	int l, n = 0;
 	for (; n < len; ) {
 		l = r_str_len_utf8char (s+n, (len-n));
