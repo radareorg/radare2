@@ -139,7 +139,7 @@ static inline void __cons_write(const char *buf, int len) {
 		(void) write (I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
-			r_cons_w32_print ((const ut8*)buf, len, 0);
+			r_cons_w32_print ((const ut8*)buf, len, false);
 		} else {
 			(void) write (I.fdout, buf, len);
 		}
@@ -957,7 +957,7 @@ R_API void r_cons_visual_flush() {
 		if (I.ansicon) {
 			r_cons_visual_write (I.context->buffer);
 		} else {
-			r_cons_w32_print ((const ut8*)I.context->buffer, I.context->buffer_len, 1);
+			r_cons_w32_print ((const ut8*)I.context->buffer, I.context->buffer_len, true);
 		}
 #else
 		r_cons_visual_write (I.context->buffer);
