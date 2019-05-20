@@ -270,7 +270,9 @@ static const char *help_msg_pc[] = {
 	"pck", "", "kotlin",
 	"pcj", "", "json",
 	"pcJ", "", "javascript",
+	"pco", "", "Objective-C",
 	"pcp", "", "python",
+	"pcr", "", "rust",
 	"pcs", "", "string",
 	"pcS", "", "shellscript that reconstructs the bin",
 	"pcw", "", "C words (4 byte)",
@@ -4440,6 +4442,24 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			r_print_cursor (p, i, 1, 0);
 		}
 		p->cb_printf ("]\n");
+		break;
+	case 'r': // "pcr" // Rust
+		p->cb_printf ("let _: [u8; %d] = [\n", len);
+		for (i = 0; !p->interrupt && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf ("];\n");
+		break;
+	case 'o': // "pco" // Objective-C
+		p->cb_printf ("NSData *endMarker = [[NSData alloc] initWithBytes:{\n");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf ("}];\n");
 		break;
 	case 'v': // "pcv" // JaVa
 		p->cb_printf ("byte[] ba = {");
