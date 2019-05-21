@@ -1563,6 +1563,19 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_ks (pj, "pseudo", pseudo);
 				free (pseudo);
 			}
+			{
+				char *opname = strdup (strsub);
+				char *sp = strchr (opname, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				char *d = r_asm_describe (core->assembler, opname);
+				if (d && *d) {
+					pj_ks (pj, "description", d);
+				}
+				free (d);
+				free (opname);
+			}
 			pj_ks (pj, "mnemonic", mnem);
 			if (hint) {
 				pj_ks (pj, "ophint", hint->opcode);
@@ -1666,6 +1679,19 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (pseudo);
 			}
 			printline ("mnemonic", "%s\n", mnem);
+			{
+				char *opname = strdup (disasm);
+				char *sp = strchr (opname, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				char *d = r_asm_describe (core->assembler, opname);
+				if (d && *d) {
+					printline ("description", "%s\n", d);
+				}
+				free (d);
+				free (opname);
+			}
 			if (hint) {
 				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
@@ -1746,7 +1772,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.delay) {
 				printline ("delay", "%d\n", op.delay);
 			}
-			printline ("stack", "%s\n", r_anal_stackop_tostring (op.stackop));
 			{
 				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)?  r_anal_cond_tostring (op.cond): NULL;
 				if (arg) {
@@ -1754,7 +1779,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 			}
 			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
-			printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
+			if (op.stackop != R_ANAL_STACK_NULL) {
+				printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
+			}
 			if (op.stackptr) {
 				printline ("stackptr", "%"PFMT64u"\n", op.stackptr);
 			}
