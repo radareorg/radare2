@@ -6,24 +6,41 @@
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
 
 typedef struct {
-	bool dbgpriv;
+	// bool dbgpriv;
 	HANDLE ph;
-	int (*select)(int pid, int tid);
+	// int (*select)(int pid, int tid);
 } RIOW32Dbg;
 
-int w32_init(RDebug *dbg) {
-	/*HANDLE token;
-	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
+bool setup_debug_privileges(bool b) {
+	HANDLE tok;
+	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) {
 		return false;
-	}*/
+	}
+	bool ret = false;
+	LUID luid;
+	if (LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luid)) {
+		TOKEN_PRIVILEGE tp;
+		tp.PrivilegeCount = 1;
+		tp.Privileges[0].Luid = luid;
+		tp.Privileges[0].Attributes = b ? SE_PRIVILEGE_ENABLED : 0;
+		if (AdjustTokenPrivileges (tok, FALSE, &tp, 0, NULL, NULL)) {
+			// TODO: handle ERROR_NOT_ALL_ASSIGNED
+			ret = GetLastError () == ERROR_SUCCESS;
+		}
+	}
+	CloseHandle (tok);
+	return ret;
+}
+
+int w32_init(RDebug *dbg) {
 	RIOW32Dbg *rio = dbg->user = R_NEW (RIOW32Dbg);
 	if (!rio) {
 		eprintf ("w32_init: failed to allocate memory\n");
 		return false;
 	}
-	rio->dbgpriv = false;
+	// rio->dbgpriv = setup_debug_privileges (true);
 	rio->ph = (HANDLE)NULL;
-	rio->select = &w32_select;
+	// rio->select = &w32_select;
 	return true;
 }
 
@@ -97,16 +114,15 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 }
 
 int w32_attach(RDebug *dbg, int pid) {
-	eprintf ("w32_attach is disabled\n");
-	return -1;
-	/*RIOW32Dbg *rio = dbg->user;
+	RIOW32Dbg *rio = dbg->user;
 	if (rio->ph == (HANDLE)NULL) {
 		HANDLE ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 		if (ph != (HANDLE)NULL) {
 			return -1;
 		}
 		rio->ph = ph;
-	}*/
+	}
+	DebugActiveProcess (pid);
 	/*int ret = -1;
 	RIOW32 *rio = dbg->user;
 	// 
