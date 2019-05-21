@@ -945,17 +945,20 @@ R_API char *r_sys_pid_to_path(int pid) {
 		}
 		char *tmp = strchr (name + 1, '\\');
 		if (!tmp) {
+			free (name);
 			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
 			return NULL;
 		}
 		tmp = strchr (tmp + 1, '\\');
 		if (!tmp) {
+			free (name);
 			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
 			return NULL;
 		}
 		length = tmp - name;
 		tmp = malloc (length + 1);
 		if (!tmp) {
+			free (name);
 			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
 			return NULL;
 		}
@@ -966,6 +969,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			if (QueryDosDevice (drv, device, maxlength) > 0) {
 				char *dvc = r_sys_conv_win_to_utf8 (device);
 				if (!dvc) {
+					free (name);
 					free (tmp);
 					eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
 					return NULL;
