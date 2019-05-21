@@ -986,7 +986,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC: // Add with carry.
-	case ARM64_INS_ADCS: // Add with carry.
+	//case ARM64_INS_ADCS: // Add with carry.
 		OPCALL("+");
 		break;
 	case ARM64_INS_SUB:
@@ -2355,7 +2355,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_ADC:
-	case ARM64_INS_ADCS:
+	//case ARM64_INS_ADCS:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:
 	case ARM64_INS_FMADD:
