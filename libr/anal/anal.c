@@ -269,20 +269,21 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	if (anal) {
 		bool change = anal->cur && strcmp (anal->cur->name, name);
 		r_list_foreach (anal->plugins, it, h) {
-			if (!strcmp (h->name, name)) {
+			if (!h->name || strcmp (h->name, name)) {
+				continue;
+			}
 	#if 0
 				// regression happening here for asm.emu
 				if (anal->cur && anal->cur == h) {
 					return true;
 				}
 	#endif
-				anal->cur = h;
-				r_anal_set_reg_profile (anal);
-				if (change) {
-					r_anal_set_fcnsign (anal, NULL);
-				}
-				return true;
+			anal->cur = h;
+			r_anal_set_reg_profile (anal);
+			if (change) {
+				r_anal_set_fcnsign (anal, NULL);
 			}
+			return true;
 		}
 	}
 	return false;
