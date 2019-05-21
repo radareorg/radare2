@@ -429,7 +429,16 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 	r_return_val_if_fail (bin && bytes, NULL);
 
 	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
+		if (plugin->check_buffer) {
+			RBuffer *b = r_buf_new_with_pointers (bytes, sz, false);
+			if (b) {
+				bool ok = plugin->check_buffer (b);
+				r_buf_free (b);
+				if (ok) {
+					return plugin;
+				}
+			}
+		} else if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
 			return plugin;
 		}
 	}
