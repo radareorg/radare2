@@ -753,11 +753,10 @@ static void panels_layout (RPanels *panels) {
 
 static void layoutDefault(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
-	int ph = (h - 1) / (panels->n_panels - 2);
+	int ph = (h - 1) / (panels->n_panels - 1);
 	int i;
 	int colpos = w - panels->columnWidth;
 	RPanel *p0 = getPanel (panels, 0);
-	RPanel *p1 = getPanel (panels, 1);
 	p0->view->pos.x = 0;
 	p0->view->pos.y = 1;
 	if (panels->n_panels <= 1) {
@@ -765,19 +764,14 @@ static void layoutDefault(RPanels *panels) {
 		p0->view->pos.h = h - 1;
 		return;
 	}
-	p0->view->pos.w = colpos / 2 + 1;
+	p0->view->pos.w = colpos + 1;
 	p0->view->pos.h = h - 1;
 
-	p1->view->pos.x = colpos / 2;
-	p1->view->pos.y = 1;
-	p1->view->pos.w = colpos / 2 + 1;
-	p1->view->pos.h = h - 1;
-
-	int pos_x = p1->view->pos.x + p1->view->pos.w - 1;
-	for (i = 2; i < panels->n_panels; i++) {
+	int pos_x = p0->view->pos.x + p0->view->pos.w - 1;
+	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
 		p->view->pos.x = pos_x;
-		p->view->pos.y = 2 + (ph * (i - 2));
+		p->view->pos.y = 2 + (ph * (i - 1));
 		p->view->pos.w = w - colpos;
 		if (p->view->pos.w < 0) {
 			p->view->pos.w = 0;
