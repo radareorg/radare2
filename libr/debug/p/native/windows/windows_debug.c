@@ -19,7 +19,7 @@ bool setup_debug_privileges(bool b) {
 	bool ret = false;
 	LUID luid;
 	if (LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luid)) {
-		TOKEN_PRIVILEGE tp;
+		TOKEN_PRIVILEGES tp;
 		tp.PrivilegeCount = 1;
 		tp.Privileges[0].Luid = luid;
 		tp.Privileges[0].Attributes = b ? SE_PRIVILEGE_ENABLED : 0;
@@ -38,6 +38,7 @@ int w32_init(RDebug *dbg) {
 		eprintf ("w32_init: failed to allocate memory\n");
 		return false;
 	}
+	setup_debug_privileges (true);
 	// rio->dbgpriv = setup_debug_privileges (true);
 	rio->ph = (HANDLE)NULL;
 	// rio->select = &w32_select;
@@ -83,7 +84,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	CloseHandle(hThread);
 	return size;
 	*/
-	eprintf ("w32_reg_read is disabled\n");
+	eprintf ("w32_reg_read is not implemented\n");
 	return 0;
 }
 
@@ -109,7 +110,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	//}
 	CloseHandle (thread);
 	return ret;*/
-	eprintf ("w32_reg_write is disabled\n");
+	eprintf ("w32_reg_write is not implemented\n");
 	return false;
 }
 
@@ -155,7 +156,7 @@ int w32_attach(RDebug *dbg, int pid) {
 int w32_detach(RDebug *dbg, int pid) {
 	// disabled for now
 	//return w32_DebugActiveProcessStop (pid)? 0 : -1;
-	eprintf ("w32_detach is disabled\n");
+	eprintf ("w32_detach is not implemented\n");
 	return false;
 }
 
@@ -180,7 +181,7 @@ int w32_step(RDebug *dbg) {
 	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 	(void)r_debug_handle_signals (dbg);
 	return true;*/
-	eprintf ("w32_step is disabled\n");
+	eprintf ("w32_step is not implemented\n");
 	return false;
 }
 
@@ -195,7 +196,7 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 	return tid;*/
-	eprintf ("w32_continue is disabled\n");
+	eprintf ("w32_continue is not implemented\n");
 	return false;
 }
 
@@ -217,7 +218,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	r_debug_map_sync (dbg);
 	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;*/
-	eprintf ("w32_map_alloc is disabled\n");
+	eprintf ("w32_map_alloc is not implemented\n");
 	return NULL;
 }
 
@@ -235,7 +236,7 @@ int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	}
 	CloseHandle (process);
 	return ret;*/
-	eprintf ("w32_map_dealloc is disabled\n");
+	eprintf ("w32_map_dealloc is not implemented\n");
 	return false;
 }
 
@@ -274,7 +275,7 @@ int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 		CloseHandle (h_proc);
 	}
 	return ret;*/
-	eprintf ("w32_map_protect is disabled\n");
+	eprintf ("w32_map_protect is not implemented\n");
 	return false;
 }
 
@@ -332,7 +333,7 @@ err_w32_dbg_maps:
 	free (mod_inf.sect_hdr);
 	r_list_free (mod_list);
 	return map_list;*/
-	eprintf ("w32_dbg_maps is disabled\n");
+	eprintf ("w32_dbg_maps is not implemented\n");
 	return NULL;
 }
 
@@ -371,7 +372,7 @@ err_w32_dbg_modules:
 		CloseHandle (h_mod_snap);
 	}
 	return list;*/
-	eprintf ("w32_dbg_modules is disabled\n");
+	eprintf ("w32_dbg_modules is not implemented\n");
 	return NULL;
 }
 
@@ -398,25 +399,18 @@ static const char *resolve_path(HANDLE ph) {
 		return NULL;
 	}
 	length = tmp - filename;
-	tmp = malloc (length + 1);
-	if (!tmp) {
-		return NULL;
-	}
-	strncpy (tmp, filename, length);
-	tmp[length + 1] = '\0';
 	TCHAR device[MAX_PATH];
 	const char *ret = NULL;
 	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
 		if (QueryDosDevice (drv, device, maxlength) > 0) {
-			if (!strcmp (tmp, device)) {
+			if (!strncmp (filename, device, length)) {
 				TCHAR path[MAX_PATH];
-				sprintf (path, "%s%s", drv, &filename[length]);
+				snprintf (path, maxlength, "%s%s", drv, &tmp[1]);
 				ret = strdup (path);
 				break;
 			}
 		}
 	}
-	free (tmp);
 	return ret;
 }
 
