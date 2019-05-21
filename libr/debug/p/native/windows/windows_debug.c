@@ -11,6 +11,8 @@ typedef struct {
 	// int (*select)(int pid, int tid);
 } RIOW32Dbg;
 
+static RDebug *g_dbg = NULL;
+
 bool setup_debug_privileges(bool b) {
 	HANDLE tok;
 	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) {
@@ -42,6 +44,7 @@ int w32_init(RDebug *dbg) {
 	// rio->dbgpriv = setup_debug_privileges (true);
 	rio->ph = (HANDLE)NULL;
 	// rio->select = &w32_select;
+	g_dbg = dbg;
 	return true;
 }
 
@@ -165,6 +168,14 @@ int w32_detach(RDebug *dbg, int pid) {
 }
 
 int w32_select(int pid, int tid) {
+	if (g_dbg->pid == pid) {
+		return true;
+	}
+	/*RIOW32Dbg *rio = g_dbg->user;
+	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	if (rio->ph == (HANDLE)NULL) {
+		return false;
+	}*/
 	eprintf ("w32_select is not implemented!\n");
 	return false;
 }
