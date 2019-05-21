@@ -17,6 +17,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);
 int w32_attach(RDebug *dbg, int pid);
 int w32_detach(RDebug *dbg, int pid);
 int w32_select(int pid, int tid);
+int w32_kill(RDebug *dbg, int pid, int tid, int sig);
 
 int w32_step(RDebug *dbg);
 int w32_continue(RDebug *dbg, int pid, int tid, int sig);

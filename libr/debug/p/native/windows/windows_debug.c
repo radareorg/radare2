@@ -8,6 +8,7 @@
 typedef struct {
 	// bool dbgpriv;
 	HANDLE ph;
+	bool debug;
 	// int (*select)(int pid, int tid);
 } RIOW32Dbg;
 
@@ -43,6 +44,7 @@ int w32_init(RDebug *dbg) {
 	setup_debug_privileges (true);
 	// rio->dbgpriv = setup_debug_privileges (true);
 	rio->ph = (HANDLE)NULL;
+	rio->debug = false;
 	// rio->select = &w32_select;
 	g_dbg = dbg;
 	return true;
@@ -128,6 +130,7 @@ int w32_attach(RDebug *dbg, int pid) {
 		return -1;
 	}
 	rio->ph = ph;
+	rio->debug = true;
 	return 0;
 	// rio->ph = ph;
 	/*int ret = -1;
@@ -176,9 +179,34 @@ int w32_select(int pid, int tid) {
 	/*rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (rio->ph == (HANDLE)NULL) {
 		return false;
-	}*/
+	}
+	rio->debug = false;*/
 	eprintf ("w32_select is not implemented!\n");
 	return false;
+}
+
+int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
+	if (sig == 0) {
+		return true;
+	}
+	RIOW32Dbg *rio = dbg->user;
+	if (rio->debug) {
+		DebugActiveProcessStop (pid);
+	}
+	bool ret = false;
+	if (TerminateProcess (rio->ph, 1)) {
+		DWORD ret_wait = WaitForSingleObject (rio->ph, 1000);
+		if (ret_wait == WAIT_FAILED) {
+			r_sys_perror ("w32_kill/WaitForSingleObject");
+		} else if (ret_wait == WAIT_TIMEOUT) {
+			eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
+		}
+		else {
+			ret = true;
+		}
+	}
+	CloseHandle (rio->ph);
+	return ret;
 }
 
 int w32_step(RDebug *dbg) {

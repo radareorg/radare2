@@ -869,14 +869,15 @@ err_load_th:
 	return list;
 }*/
 
-bool w32_terminate_process (RDebug *dbg, int pid) {
+//migrated
+/*bool w32_terminate_process (RDebug *dbg, int pid) {
 	HANDLE h_proc = w32_OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE , FALSE, pid);
 	bool ret = false;
 	if (!h_proc) {
 		r_sys_perror ("w32_terminate_process/OpenProcess");
 		goto err_w32_terminate_process;
 	}
-	/* stop debugging if we are still attached */
+	/* stop debugging if we are still attached * /
 	if (w32_DebugActiveProcessStop) {
 		w32_DebugActiveProcessStop (pid); //DebugActiveProcessStop (pid);
 	}
@@ -885,7 +886,7 @@ bool w32_terminate_process (RDebug *dbg, int pid) {
 		goto err_w32_terminate_process;
 
 	}
-	/* wait up to one second to give the process some time to exit */
+	/* wait up to one second to give the process some time to exit * /
 	DWORD ret_wait = WaitForSingleObject (h_proc, 1000);
 	if (ret_wait == WAIT_FAILED) {
 		r_sys_perror ("w32_terminate_process/WaitForSingleObject");
@@ -901,7 +902,7 @@ err_w32_terminate_process:
 		CloseHandle (h_proc);
 	}
 	return ret;
-}
+}*/
 
 void w32_break_process (void *d) {
 	RDebug *dbg = (RDebug *)d;
