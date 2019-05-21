@@ -206,6 +206,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 	}
 	CloseHandle (rio->ph);
+	rio->ph = NULL;
 	return ret;
 }
 
