@@ -1556,6 +1556,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_o (pj);
 			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
 			pj_ks (pj, "disasm", strsub);
+			// apply pseudo if needed
+			{
+				char *pseudo = strdup (strsub);
+				r_parse_parse (core->parser, strsub, pseudo);
+				pj_ks (pj, "pseudo", pseudo);
+				free (pseudo);
+			}
 			pj_ks (pj, "mnemonic", mnem);
 			if (hint) {
 				pj_ks (pj, "ophint", hint->opcode);
@@ -1652,6 +1659,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
 			printline ("disasm", "%s\n", disasm);
+			{
+				char *pseudo = strdup (disasm);
+				r_parse_parse (core->parser, disasm, pseudo);
+				printline ("pseudo", "%s\n", pseudo);
+				free (pseudo);
+			}
 			printline ("mnemonic", "%s\n", mnem);
 			if (hint) {
 				if (hint->opcode) {
