@@ -318,12 +318,13 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return ret;
 }
 
+// TODO: kill this wrapper
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	bool ret;
-	if (!core) {
+	r_return_val_if_fail (core && buf && addr != UT64_MAX, false);
+	if (size < 1) {
 		return false;
 	}
-	ret = r_io_write_at (core->io, addr, buf, size);
+	bool ret = r_io_write_at (core->io, addr, buf, size);
 	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
 		r_core_block_read (core);
 	}
