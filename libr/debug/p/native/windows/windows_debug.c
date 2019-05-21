@@ -195,13 +195,9 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	bool ret = false;
 	if (TerminateProcess (rio->ph, 1)) {
-		DWORD ret_wait = WaitForSingleObject (rio->ph, 1000);
-		if (ret_wait == WAIT_FAILED) {
+		if (WaitForSingleObject (rio->ph, 1000) != WAIT_OBJECT_0) {
 			r_sys_perror ("w32_kill/WaitForSingleObject");
-		} else if (ret_wait == WAIT_TIMEOUT) {
-			eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
-		}
-		else {
+		} else {
 			ret = true;
 		}
 	}
