@@ -1555,12 +1555,17 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_o (pj);
 			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
+			if (!*strsub) {
+				r_str_ncpy (strsub, r_asm_op_get_asm (&asmop), sizeof (strsub) -1 );
+			}
 			pj_ks (pj, "disasm", strsub);
 			// apply pseudo if needed
 			{
-				char *pseudo = strdup (strsub);
+				char *pseudo = calloc (128 + strlen (strsub), 3);
 				r_parse_parse (core->parser, strsub, pseudo);
-				pj_ks (pj, "pseudo", pseudo);
+				if (pseudo && *pseudo) {
+					pj_ks (pj, "pseudo", pseudo);
+				}
 				free (pseudo);
 			}
 			{
@@ -1577,6 +1582,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (opname);
 			}
 			pj_ks (pj, "mnemonic", mnem);
+			{
+				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
+				char *maskstr = r_hex_bin2strdup (mask, size);
+				pj_ks (pj, "mask", maskstr);
+				free (mask);
+				free (maskstr);
+			}
 			if (hint) {
 				pj_ks (pj, "ophint", hint->opcode);
 			}
@@ -1671,11 +1683,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
+			if (!*disasm) {
+				r_str_ncpy (disasm, r_asm_op_get_asm (&asmop), sizeof (disasm) - 1);
+			}
 			printline ("disasm", "%s\n", disasm);
 			{
-				char *pseudo = strdup (disasm);
+				char *pseudo = calloc (128 + strlen (disasm), 3);
 				r_parse_parse (core->parser, disasm, pseudo);
-				printline ("pseudo", "%s\n", pseudo);
+				if (pseudo && *pseudo) {
+					printline ("pseudo", "%s\n", pseudo);
+				}
 				free (pseudo);
 			}
 			printline ("mnemonic", "%s\n", mnem);
@@ -1691,6 +1708,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 				free (d);
 				free (opname);
+			}
+			{
+				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
+				char *maskstr = r_hex_bin2strdup (mask, size);
+				printline ("mask", "%s\n", maskstr);
+				free (mask);
+				free (maskstr);
 			}
 			if (hint) {
 				if (hint->opcode) {
