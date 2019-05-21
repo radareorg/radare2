@@ -168,7 +168,9 @@ int w32_detach(RDebug *dbg, int pid) {
 }
 
 int w32_select(int pid, int tid) {
-	if (g_dbg->pid == pid) {
+	RIOW32Dbg *rio = g_dbg->user;
+	// if (g_dbg->pid == pid) {
+	if (rio->ph != (HANDLE)NULL) {
 		return true;
 	}
 	/*RIOW32Dbg *rio = g_dbg->user;
