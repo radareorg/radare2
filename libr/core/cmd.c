@@ -244,6 +244,7 @@ static const char *help_msg_r[] = {
 	"rm" ," [file]", "remove file",
 	"rh" ,"", "show size in human format",
 	"r2" ," [file]", "launch r2 (same for rax2, rasm2, ...)",
+	"reset" ,"", "reset console settings (clear --hard)",
 	NULL
 };
 
@@ -1435,6 +1436,9 @@ static int cmd_resize(void *data, const char *input) {
 			return false;
 		}
 		break;
+	case 'e':
+		write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+		return true;
 	case '?': // "r?"
 	default:
 		r_core_cmd_help (core, help_msg_r);
@@ -3879,7 +3883,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char cmd2[1024];
 			FILE *fd = r_sandbox_fopen (each + 1, "r");
 			if (fd) {
-				core->rcmd->macro.counter=0;
+				core->rcmd->macro.counter = 0;
 				while (!feof (fd)) {
 					buf[0] = '\0';
 					if (!fgets (buf, sizeof (buf), fd)) {
