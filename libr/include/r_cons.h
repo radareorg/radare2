@@ -715,7 +715,7 @@ R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
 R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
-R_API int r_cons_w32_printf(bool vmode, const char *fmt, ...);
+R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
 #endif
 
 R_API void r_cons_push(void);

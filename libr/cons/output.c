@@ -354,7 +354,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	return ret;
 }
 
-R_API int r_cons_w32_printf(bool vmode, const char *fmt, ...) {
+R_API int r_cons_win_printf(bool vmode, const char *fmt, ...) {
 	va_list ap, ap2;
 	int ret = -1;
 	r_return_val_if_fail (fmt, -1);
@@ -362,7 +362,11 @@ R_API int r_cons_w32_printf(bool vmode, const char *fmt, ...) {
 	va_start (ap, fmt);
 	if (!strchr (fmt, '%')) {
 		va_end (ap);
-		return r_cons_w32_print (fmt, strlen (fmt), vmode);
+		size_t len = strlen (fmt);
+		if (I->ansicon) {
+			return fwrite (fmt, 1, len, stdout);
+		}
+		return r_cons_w32_print (fmt, len, vmode);
 	}
 	va_copy (ap2, ap);
 	int num_chars = vsnprintf (NULL, 0, fmt, ap2);
@@ -370,7 +374,11 @@ R_API int r_cons_w32_printf(bool vmode, const char *fmt, ...) {
 	char *buf = calloc (1, num_chars);
 	if (buf) {
 		(void)vsnprintf (buf, num_chars, fmt, ap);
-		ret = r_cons_w32_print (buf, num_chars - 1, vmode);
+		if (I->ansicon) {
+			ret = fwrite (buf, 1, num_chars - 1, stdout);
+		} else {
+			ret = r_cons_w32_print (buf, num_chars - 1, vmode);
+		}
 		free (buf);
 	}
 	va_end (ap2);

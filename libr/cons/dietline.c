@@ -714,13 +714,9 @@ R_API void r_line_autocomplete() {
 		const int sep = 3;
 		int slen, col = 10;
 #ifdef __WINDOWS__
-		if (I.ansicon) {
-#endif
-			printf ("%s%s\n", I.prompt, I.buffer.data);
-#ifdef __WINDOWS__
-		} else {
-			r_cons_w32_printf (false, "%s%s\n", I.prompt, I.buffer.data);
-		}
+		r_cons_win_printf (false, "%s%s\n", I.prompt, I.buffer.data);
+#else
+		printf ("%s%s\n", I.prompt, I.buffer.data);
 #endif
 		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
@@ -787,11 +783,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	if (I.echo) {
 		if (I.ansicon) {
 			printf ("\r%s", R_CONS_CLEAR_LINE);
-			printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		} else {
 			r_cons_clear_line (0);
-			r_cons_w32_printf (false, "%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		}
+		r_cons_win_printf (false, "%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 	r_cons_break_push (NULL, NULL);
@@ -1161,18 +1156,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				int chars = R_MAX (1, strlen (I.buffer.data));	// wtf?
 				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 				/* print line */
-				if (I.ansicon) {
-					printf ("\r%s%s", Color_RESET, I.prompt);
-				} else {
-					r_cons_w32_printf (false, "\r%s%s", Color_RESET, I.prompt);
-				}
+				r_cons_win_printf (false, "\r%s%s", Color_RESET, I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
-				if (I.ansicon) {
-					printf ("\r%s", I.prompt);
-				} else {
-					r_cons_w32_printf (false, "\r%s", I.prompt);
-				}
+				r_cons_win_printf (false, "\r%s", I.prompt);
 				if (I.buffer.index > cols) {
 					printf ("< ");
 					i = I.buffer.index - cols;
@@ -1194,11 +1181,7 @@ _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (0);
 	if (I.echo) {
-		if (I.ansicon) {
-			printf ("\r%s%s\n", I.prompt, I.buffer.data);
-		} else {
-			r_cons_w32_printf (false, "\r%s%s\n", I.prompt, I.buffer.data);
-		}
+		r_cons_win_printf (false, "\r%s%s\n", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 
