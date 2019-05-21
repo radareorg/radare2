@@ -321,9 +321,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
-	ut8 *buf_bytes = NULL;
 	RBinXtrPlugin *xtr;
-	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
 	int tfd = opt->fd;
 
@@ -334,7 +332,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
-	file_sz = iob->fd_size (io, opt->fd);
+	ut64 file_sz = iob->fd_size (io, opt->fd);
 	// file_sz = UT64_MAX happens when attaching to frida:// and other non-debugger io plugins which results in double opening
 	if (is_debugger && file_sz == UT64_MAX) {
 		tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
@@ -350,35 +348,18 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		opt->sz = 1024 * 32;
 	}
 	RBuffer *buf = r_buf_new_with_io (&bin->iob, tfd);
-
+	if (!buf) {
+		return false;
+	}
 	bin->file = fname;
 	opt->sz = R_MIN (file_sz, opt->sz);
-	if (!r_list_length (bin->binfiles)) {
-		if (is_debugger) {
-			//use the temporal RIODesc to read the content of the file instead
-			//from the memory
-			if (tfd >= 0) {
-				buf_bytes = calloc (1, opt->sz + 1);
-				if (buf_bytes) {
-					iob->fd_read_at (io, tfd, 0, buf_bytes, opt->sz);
-				}
-				// iob->fd_close (io, tfd);
-			}
-		}
-	}
-	// this thing works for 2GB ELF core from vbox
-	if (!buf_bytes) {
-		const unsigned int asz = opt->sz? (unsigned int)opt->sz: 1;
-		buf_bytes = calloc (1, asz);
-		if (!buf_bytes) {
-			eprintf ("Cannot allocate %u bytes.\n", asz);
-			return false;
-		}
-		ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
-		r_buf_seek (buf, seekaddr, R_BUF_CUR);
-		// buf->base_priv = seekaddr;
-		if (!iob->fd_read_at (io, opt->fd, seekaddr, buf_bytes, asz)) {
-			opt->sz = 0LL;
+	ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
+	if (seekaddr > 0 && seekaddr != UT64_MAX) {
+		// slice buffer if necessary
+		RBuffer *nb = r_buf_new_slice (buf, seekaddr, opt->sz);
+		if (nb) {
+			r_buf_free (buf);
+			buf = nb;
 		}
 	}
 	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
