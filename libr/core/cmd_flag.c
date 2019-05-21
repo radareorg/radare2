@@ -31,7 +31,7 @@ static const char *help_msg_f[] = {
 	"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
 	"ff"," ([glob])","distance in bytes to reach the next flag (see sn/sp)",
 	"fi"," [size] | [from] [to]","show flags in current block or range",
-	"fg","","bring visual mode to foreground",
+	"fg","[*] ([prefix])","construct a graph with the flag names",
 	"fj","","list flags in JSON format",
 	"fl"," (@[flag]) [size]","show or set flag length (size)",
 	"fla"," [glob]","automatically compute the size of all flags matching glob",
@@ -107,6 +107,166 @@ static void cmd_flag_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, fd);
 	DEFINE_CMD_DESCRIPTOR (core, fs);
 	DEFINE_CMD_DESCRIPTOR (core, fz);
+}
+
+static bool listFlag(RFlagItem *flag, void *user) {
+	r_list_append (user, flag);
+	return true;
+}
+
+static size_t countMatching (const char *a, const char *b) {
+	size_t matches = 0;
+	for (; *a && *b; a++, b++) {
+		if (*a != *b) {
+			break;
+		}
+		matches++;
+	}
+	return matches;
+}
+
+static const char *__isOnlySon(RCore *core, RList *flags, const char *kw) {
+        RListIter *iter;
+        RFlagItem *f;
+
+        size_t count = 0;
+        char *fname = NULL;
+        r_list_foreach (flags, iter, f) {
+                if (!strncmp (f->name, kw, strlen (kw))) {
+                        count++;
+                        if (count > 1) {
+                                return NULL;
+                        }
+                        fname = f->name;
+                }
+        }
+        return fname;
+}
+
+static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
+	RList *list = r_list_newf (free);
+	RListIter *iter, *iter2;
+	RFlagItem *f, *f2;
+	char *fn;
+
+	const size_t prefix_len = strlen (prefix);
+	r_list_foreach (flags, iter, f) {
+		if (prefix_len > 0 && strncmp (f->name, prefix, prefix_len)) {
+			continue;
+		}
+		if (prefix_len > strlen (f->name)) {
+			continue;
+		}
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		const char *name = f->name;
+		int name_len = strlen (name);
+		r_list_foreach (flags, iter2, f2) {
+			if (prefix_len > strlen (f2->name)) {
+				continue;
+			}
+			if (prefix_len > 0 && strncmp (f2->name, prefix, prefix_len)) {
+				continue;
+			}
+			int matching = countMatching (name, f2->name);
+			if (matching < prefix_len || matching == name_len) {
+				continue;
+			}
+			if (matching > name_len) {
+				break;
+			}
+			if (matching < name_len) {
+				name_len = matching;
+			}
+		}
+		char *kw = r_str_ndup (name, name_len + 1);
+		const int kw_len = strlen (kw);
+		const char *only = __isOnlySon (core, flags, kw);
+		if (only) {
+			free (kw);
+			kw = strdup (only);
+		} else {
+			const char *fname = NULL;
+			size_t fname_len = 0;
+			r_list_foreach (flags, iter2, f2) {
+				if (strncmp (f2->name, kw, kw_len)) {
+					continue;
+				}
+				if (fname) {
+					int matching = countMatching (fname, f2->name);
+					if (fname_len) {
+						if (matching < fname_len) {
+							fname_len = matching;
+						}
+					} else {
+						fname_len = matching;
+					}
+				} else {
+					fname = f2->name;
+				}
+			}
+			if (fname_len > 0) {
+				free (kw);
+				kw = r_str_ndup (fname, fname_len);
+			}
+		}
+		
+		bool found = false;
+		r_list_foreach (list, iter2, fn) {
+			if (!strcmp (fn, kw)) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			free (kw);
+		} else {
+			if (strcmp (prefix, kw)) {
+				r_list_append (list, kw);
+			} else {
+				free (kw);
+			}
+		}
+	}
+	return list;
+}
+
+static void __printRecursive (RCore *core, RList *list, const char *prefix, int mode, int depth);
+
+static void __printRecursive (RCore *core, RList *flags, const char *prefix, int mode, int depth) {
+	char *fn;
+	RListIter *iter;
+	const int prefix_len = strlen (prefix);
+	// eprintf ("# fg %s\n", prefix);
+	if (mode == '*' && !*prefix) {
+		r_cons_printf ("agn root\n");
+	}
+	if (r_flag_get (core->flags, prefix)) {
+		return;
+	}
+	RList *children = __childrenFlagsOf (core, flags, prefix);
+	r_list_foreach (children, iter, fn) {
+		if (!strcmp (fn, prefix)) {
+			continue;
+		}
+		if (mode == '*') {
+			r_cons_printf ("agn %s %s\n", fn, fn + prefix_len);
+			r_cons_printf ("age %s %s\n", *prefix? prefix: "root", fn);
+		} else {
+			r_cons_printf ("%s %s\n", r_str_pad (' ', prefix_len), fn + prefix_len);
+		}
+		//r_cons_printf (".fg %s\n", fn);
+		__printRecursive (core, flags, fn, mode, depth+1);
+	}
+	r_list_free (children);
+}
+
+static void __flag_graph (RCore *core, const char *input, int mode) {
+	RList *flags = r_list_newf (NULL);
+	r_flag_foreach_space (core->flags, r_flag_space_cur (core->flags), listFlag, flags);
+	__printRecursive (core, flags, input, mode, 0);
+	r_list_free (flags);
 }
 
 static void spaces_list(RSpaces *sp, int mode) {
@@ -918,10 +1078,23 @@ rep:
 			break;
 		}
 		break;
-	case 'g':
-		r_core_cmd0 (core, "V");
+	case 'g': // "fg"
+		switch (input[1]) {
+		case '*':
+			__flag_graph (core, r_str_trim_ro (input + 2), '*');
+			break;
+		case ' ':
+			__flag_graph (core, r_str_trim_ro (input + 2), ' ');
+			break;
+		case 0:
+			__flag_graph (core, r_str_trim_ro (input + 1), 0);
+			break;
+		default:
+			eprintf ("Usage: fg[*] ([prefix])\n");
+			break;
+		}
 		break;
-	case 'c':
+	case 'c': // "fc"
 		if (input[1]=='?' || input[1] != ' ') {
 			r_core_cmd_help (core, help_msg_fc);
 		} else {

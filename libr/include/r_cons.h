@@ -532,7 +532,14 @@ typedef struct r_cons_t {
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
-/* plain colors */
+     /* See 'man 4 console_codes' for details:
+      * "ESC c"        -- Reset
+      * "ESC ( K"      -- Select user mapping
+      * "ESC [ 0 m"    -- Reset all display attributes
+      * "ESC [ J"      -- Erase to the end of screen
+      * "ESC [ ? 25 h" -- Make cursor visible
+      */
+#define Color_RESET_TERMINAL  "\x1b" "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
 #define Color_RESET_NOBG "\x1b[22;24;25;27;28;39m"  /* Reset everything except background */
 #define Color_RESET_BG   "\x1b[49m"
@@ -553,9 +560,9 @@ typedef struct r_cons_t {
 #define Color_BGCYAN     "\x1b[46m"
 #define Color_BLUE       "\x1b[34m"
 #define Color_BGBLUE     "\x1b[44m"
-#define Color_GRAY       "\x1b[38m"
-#define Color_BGGRAY     "\x1b[48m"
-/* bold colors */
+#define Color_GRAY       "\x1b[1;30m"
+#define Color_BGGRAY     "\x1b[48;5;8m"
+/* bright colors */
 #define Color_BBLACK    "\x1b[1;30m"
 #define Color_BRED      "\x1b[1;31m"
 #define Color_BBGRED    "\x1b[1;41m"
@@ -589,8 +596,8 @@ typedef struct r_cons_t {
 #define RColor_BGCYAN    RCOLOR(ALPHA_BG, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00)
 #define RColor_BLUE      RCOLOR(ALPHA_FG, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)
 #define RColor_BGBLUE    RCOLOR(ALPHA_BG, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)
-#define RColor_GRAY      RCOLOR(ALPHA_FG, 0x7f, 0x7f, 0x7f, 0x00, 0x00, 0x00)
-#define RColor_BGGRAY    RCOLOR(ALPHA_BG, 0x7f, 0x7f, 0x7f, 0x00, 0x00, 0x00)
+#define RColor_GRAY      RCOLOR(ALPHA_FG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00)
+#define RColor_BGGRAY    RCOLOR(ALPHA_BG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00)
 
 #define Colors_PLAIN { \
 	Color_BLACK, Color_RED, Color_WHITE, \
@@ -707,7 +714,8 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
+R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
+R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
 #endif
 
 R_API void r_cons_push(void);

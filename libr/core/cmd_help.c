@@ -202,6 +202,7 @@ static const char *help_msg_question_v[] = {
 	"$M", "", "map address (lowest map address)",
 	"$MM", "", "map size (lowest map address)",
 	"$o", "", "here (current disk io offset)",
+	"$O", "", "cursor here (current offset pointed by the cursor)",
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
 	"$s", "", "file size",
@@ -990,7 +991,7 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("%s\n", r_str_bool (!core->num->value));
 				break;
 			case 'm': // "?im"
-				r_cons_message (input+2);
+				r_cons_message (input + 2);
 				break;
 			case 'p': // "?ip"
 				core->num->value = r_core_yank_hud_path (core, input + 2, 0) == true;

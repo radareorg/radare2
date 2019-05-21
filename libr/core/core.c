@@ -467,7 +467,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				*ok = true;
 			}
 			return r_num_tail (core->num, core->offset, str + 2);
-		} else if (core->num->nc.curr_tok == '+') {
+		}
+		if (core->num->nc.curr_tok == '+') {
 			ut64 off = core->num->nc.number_value.n;
 			if (!off) {
 				off = core->offset;
@@ -729,6 +730,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			break;
 		}
+		case 'O': // $O
+			  if (core->print->cur_enabled) {
+				  return core->offset + core->print->cur;
+			  }
+			  return core->offset;
 		case 'C': // $C nth call
 			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
 		case 'J': // $J nth jump
@@ -2109,6 +2115,7 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "s+", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "b", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "f", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "fg", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "?", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "?v", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "ad", R_CORE_AUTOCMPLT_FLAG, true);
@@ -2734,12 +2741,12 @@ static void set_prompt (RCore *r) {
 		free (s);
 		remote = "=!";
 	}
-#if __UNIX__
+
 	if (r_config_get_i (r->config, "scr.color")) {
 		BEGIN = r->cons->context->pal.prompt;
 		END = r->cons->context->pal.reset;
 	}
-#endif
+
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
@@ -2994,6 +3001,11 @@ reaccept:
 						pipefd = -1;
 						eprintf ("Cannot open file (%s)\n", ptr);
 						r_socket_close (c);
+						if (r_config_get_i (core->config, "rap.loop")) {
+							eprintf ("rap: waiting for new connection\n");
+							r_socket_free (c);
+							goto reaccept;
+						}
 						goto out_of_function; //XXX: Close conection and goto accept
 					}
 				}
@@ -3045,8 +3057,6 @@ reaccept:
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						eprintf ("len: %d cmd:'%s'\n", i, cmd);
-						fflush (stdout);
 						int scr_interactive = r_config_get_i (core->config, "scr.interactive");
 						r_config_set_i (core->config, "scr.interactive", 0);
 						cmd_output = r_core_cmd_str (core, cmd);

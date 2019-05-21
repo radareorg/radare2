@@ -1484,7 +1484,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
 		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
-		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx,
+		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
 			R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_OPEX | R_ANAL_OP_MASK_HINT);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
@@ -1555,8 +1555,40 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_o (pj);
 			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
+			if (!*strsub) {
+				r_str_ncpy (strsub, r_asm_op_get_asm (&asmop), sizeof (strsub) -1 );
+			}
 			pj_ks (pj, "disasm", strsub);
+			// apply pseudo if needed
+			{
+				char *pseudo = calloc (128 + strlen (strsub), 3);
+				r_parse_parse (core->parser, strsub, pseudo);
+				if (pseudo && *pseudo) {
+					pj_ks (pj, "pseudo", pseudo);
+				}
+				free (pseudo);
+			}
+			{
+				char *opname = strdup (strsub);
+				char *sp = strchr (opname, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				char *d = r_asm_describe (core->assembler, opname);
+				if (d && *d) {
+					pj_ks (pj, "description", d);
+				}
+				free (d);
+				free (opname);
+			}
 			pj_ks (pj, "mnemonic", mnem);
+			{
+				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
+				char *maskstr = r_hex_bin2strdup (mask, size);
+				pj_ks (pj, "mask", maskstr);
+				free (mask);
+				free (maskstr);
+			}
 			if (hint) {
 				pj_ks (pj, "ophint", hint->opcode);
 			}
@@ -1651,8 +1683,39 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
+			if (!*disasm) {
+				r_str_ncpy (disasm, r_asm_op_get_asm (&asmop), sizeof (disasm) - 1);
+			}
 			printline ("disasm", "%s\n", disasm);
+			{
+				char *pseudo = calloc (128 + strlen (disasm), 3);
+				r_parse_parse (core->parser, disasm, pseudo);
+				if (pseudo && *pseudo) {
+					printline ("pseudo", "%s\n", pseudo);
+				}
+				free (pseudo);
+			}
 			printline ("mnemonic", "%s\n", mnem);
+			{
+				char *opname = strdup (disasm);
+				char *sp = strchr (opname, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				char *d = r_asm_describe (core->assembler, opname);
+				if (d && *d) {
+					printline ("description", "%s\n", d);
+				}
+				free (d);
+				free (opname);
+			}
+			{
+				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
+				char *maskstr = r_hex_bin2strdup (mask, size);
+				printline ("mask", "%s\n", maskstr);
+				free (mask);
+				free (maskstr);
+			}
 			if (hint) {
 				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
@@ -1733,7 +1796,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.delay) {
 				printline ("delay", "%d\n", op.delay);
 			}
-			printline ("stack", "%s\n", r_anal_stackop_tostring (op.stackop));
 			{
 				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)?  r_anal_cond_tostring (op.cond): NULL;
 				if (arg) {
@@ -1741,7 +1803,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 			}
 			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
-			printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
+			if (op.stackop != R_ANAL_STACK_NULL) {
+				printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
+			}
 			if (op.stackptr) {
 				printline ("stackptr", "%"PFMT64u"\n", op.stackptr);
 			}
@@ -5343,7 +5407,7 @@ static void cmd_anal_bytes(RCore *core, const char *input) {
 static void cmd_anal_opcode(RCore *core, const char *input) {
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
-
+	r_core_block_read (core);
 	switch (input[0]) {
 	case 's': // "aos"
 	case 'j': // "aoj"
@@ -7068,7 +7132,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	RConfigHold *hc = r_config_hold_new (core->config);
 	r_config_hold_i (hc, "asm.offset", NULL);
 	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
-
+	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {

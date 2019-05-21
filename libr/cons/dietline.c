@@ -713,7 +713,11 @@ R_API void r_line_autocomplete() {
 	if (argc > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
+#ifdef __WINDOWS__
+		r_cons_win_printf (false, "%s%s\n", I.prompt, I.buffer.data);
+#else
 		printf ("%s%s\n", I.prompt, I.buffer.data);
+#endif
 		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
 			if (sep + l > col) {
@@ -779,11 +783,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	if (I.echo) {
 		if (I.ansicon) {
 			printf ("\r%s", R_CONS_CLEAR_LINE);
-			printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		} else {
 			r_cons_clear_line (0);
-			printf ("%s%s", I.prompt, I.buffer.data);
 		}
+		r_cons_win_printf (false, "%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 	r_cons_break_push (NULL, NULL);
@@ -832,7 +835,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 40:// down arrow
 			if (I.sel_widget) {
-				selection_widget_up (1);
+				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
@@ -1153,14 +1156,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				int chars = R_MAX (1, strlen (I.buffer.data));	// wtf?
 				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 				/* print line */
-				if (I.ansicon) {
-					printf ("\r%s%s", Color_RESET, I.prompt);
-				} else {
-					printf ("\r%s", I.prompt);
-				}
+				r_cons_win_printf (false, "\r%s%s", Color_RESET, I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
-				printf ("\r%s", I.prompt);
+				r_cons_win_printf (false, "\r%s", I.prompt);
 				if (I.buffer.index > cols) {
 					printf ("< ");
 					i = I.buffer.index - cols;
@@ -1182,7 +1181,7 @@ _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (0);
 	if (I.echo) {
-		printf ("\r%s%s\n", I.prompt, I.buffer.data);
+		r_cons_win_printf (false, "\r%s%s\n", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 

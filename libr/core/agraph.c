@@ -322,6 +322,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
+	const bool showTitle = g->show_node_titles;
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -335,17 +336,19 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 	}
 	/* print the title */
-	if (cur) {
-		snprintf (title, sizeof (title) - 1, "[%s]", n->title);
-	} else {
-		char *color = g->can->color ? Color_RESET : "";
-		snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
-		append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
-	}
-	if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
-		char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);
-		W (res);
-		free (res);
+	if (showTitle) {
+		if (cur) {
+			snprintf (title, sizeof (title) - 1, "[%s]", n->title);
+		} else {
+			char *color = g->can->color ? Color_RESET : "";
+			snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
+			append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
+		}
+		if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
+			char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);
+			W (res);
+			free (res);
+		}
 	}
 
 	/* print the body */
@@ -381,11 +384,13 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 			}
 		}
 		/* print some dots when the body is cropped because of zoom */
-		if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
-			char *dots = "...";
-			if (delta_x < strlen (dots)) {
-				dots += delta_x;
-				W (dots);
+		if (n->body && *n->body) {
+			if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
+				char *dots = "...";
+				if (delta_x < strlen (dots)) {
+					dots += delta_x;
+					W (dots);
+				}
 			}
 		}
 	}
@@ -3230,6 +3235,14 @@ static void agraph_follow_innodes (RAGraph *g, bool in) {
 		RGraphNode *gnn = agraph_get_title (g, an, in);
 		if (gnn) {
 			RANode *nnn = gnn->data;
+			RANode *o;
+			RListIter *iter2;
+			// avoid dupes
+			r_list_foreach (options, iter2, o) {
+				if (!strcmp (o->title, nnn->title)) {
+					continue;
+				}
+			}
 			r_cons_printf ("%d %s\n", count, nnn->title);
 			r_list_append (options, nnn);
 			count++;
@@ -3529,6 +3542,7 @@ static void agraph_init(RAGraph *g) {
 	g->is_callgraph = false;
 	g->is_instep = false;
 	g->need_reload_nodes = true;
+	g->show_node_titles = true;
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 ();
@@ -3676,7 +3690,7 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 		}
 		estr = sdb_encode ((const void *) b, -1);
 		//s = sdb_fmt ("base64:%s", estr);
-s = r_str_newf ("base64:%s", estr);
+		s = r_str_newf ("base64:%s", estr);
 		free (estr);
 		free (b);
 		sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
@@ -4055,12 +4069,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		g->is_tiny = is_interactive == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
 		g->dummy = r_config_get_i (core->config, "graph.dummy");
+		g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	} else {
 		o_can = g->can;
 	}
 	r_config_set_i (core->config, "scr.interactive", false);
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
+	g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
@@ -4665,8 +4681,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case ':':
 			r_core_visual_prompt_input (core);
-			g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
-			get_bbupdate (g, core, fcn);
+			if (!g) {
+				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
+				get_bbupdate (g, core, fcn);
+			}
 			break;
 		case 'w':
 			agraph_toggle_speed (g, core);

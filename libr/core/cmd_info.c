@@ -895,17 +895,22 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "ic"
+		// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[ljqc*] [class-index or name]\n");
-			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c') {
+				eprintf ("Usage: ic[ljqc**] [class-index or name]\n");
+			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RBinClass *cls;
 				RBinSymbol *sym;
 				RListIter *iter, *iter2;
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (obj) {
 					if (input[2]) {
+						bool radare2 = strstr (input, "**") != NULL;
 						int idx = -1;
 						const char * cls_name = NULL;
+						if (radare2) {
+							input ++;
+						}
 						if (r_num_is_valid_input (core->num, input + 2)) {
 							idx = r_num_math (core->num, input + 2);
 						} else {
@@ -915,10 +920,21 @@ static int cmd_info(void *data, const char *input) {
 								cls_name = first_char + not_space;
 							}
 						}
+						if (radare2) {
+							input++;
+						}
 						int count = 0;
 						r_list_foreach (obj->classes, iter, cls) {
+							if (radare2) {
+								r_cons_printf ("ac %s\n", cls->name);
+								r_list_foreach (cls->methods, iter2, sym) {
+									const char *comma = iter2->p? " ": "";
+									r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", cls->name, sym->name, sym->vaddr);
+								}
+								continue;
+							}
 							if ((idx >= 0 && idx != count++) ||
-							   (cls_name && strcmp (cls_name, cls->name) != 0)){
+							   (cls_name && *cls_name && strcmp (cls_name, cls->name) != 0)) {
 								continue;
 							}
 							switch (input[1]) {
@@ -1015,7 +1031,12 @@ static int cmd_info(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_i);
 			goto redone;
 		case '*': // "i*"
-			mode = R_MODE_RADARE;
+			if (mode == R_MODE_RADARE) {
+				// TODO:handle ** submodes
+				mode = R_MODE_RADARE;
+			} else {
+				mode = R_MODE_RADARE;
+			}
 			goto done;
 		case 'q': // "iq"
 			mode = R_MODE_SIMPLE;

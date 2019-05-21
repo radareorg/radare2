@@ -38,14 +38,14 @@ typedef struct r_buffer_methods_t {
 	RBufferNonEmptyList nonempty_list;
 } RBufferMethods;
 
-typedef struct r_buf_t {
+struct r_buf_t {
 	const RBufferMethods *methods;
 	void *priv;
 	ut8 *whole_buf;
 	bool readonly;
 	int Oxff_priv;
 	int refctr;
-} RBuffer;
+};
 
 // XXX: this should not be public
 typedef struct r_buf_cache_t {
