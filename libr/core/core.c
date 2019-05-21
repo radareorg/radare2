@@ -467,7 +467,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				*ok = true;
 			}
 			return r_num_tail (core->num, core->offset, str + 2);
-		} else if (core->num->nc.curr_tok == '+') {
+		}
+		if (core->num->nc.curr_tok == '+') {
 			ut64 off = core->num->nc.number_value.n;
 			if (!off) {
 				off = core->offset;
@@ -729,6 +730,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			break;
 		}
+		case 'O': // $O
+			  if (core->print->cur_enabled) {
+				  return core->offset + core->print->cur;
+			  }
+			  return core->offset;
 		case 'C': // $C nth call
 			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
 		case 'J': // $J nth jump

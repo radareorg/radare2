@@ -202,6 +202,7 @@ static const char *help_msg_question_v[] = {
 	"$M", "", "map address (lowest map address)",
 	"$MM", "", "map size (lowest map address)",
 	"$o", "", "here (current disk io offset)",
+	"$O", "", "cursor here (current offset pointed by the cursor)",
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
 	"$s", "", "file size",
