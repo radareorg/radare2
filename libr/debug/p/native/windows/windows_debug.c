@@ -122,7 +122,7 @@ int w32_attach(RDebug *dbg, int pid) {
 	}
 	if (!DebugActiveProcess (pid)) {
 		CloseHandle (ph);
-		return -1
+		return -1;
 	}
 	return 0;
 	// rio->ph = ph;
