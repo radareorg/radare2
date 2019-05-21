@@ -1977,6 +1977,16 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
 		break;
+	case ARM_INS_SXTH:
+		r_strbuf_appendf (&op->esil,
+			"15,%s,>>,1,&,?{,15,-1,<<,%s,0xffff,&,|,%s,:=,}{,%s,0xffff,%s,:=,}",
+			REG(1), REG(1), REG(0), REG(1), REG(0));
+		break;
+	case ARM_INS_SXTB:
+		r_strbuf_appendf (&op->esil,
+			"7,%s,>>,1,&,?{,7,-1,<<,%s,0xff,&,|,%s,:=,}{,%s,0xff,&,%s,:=,}",
+			REG(1), REG(1), REG(0), REG(1), REG(0));
+		break;
 	case ARM_INS_LDREX:
 	case ARM_INS_LDREXB:
 	case ARM_INS_LDREXD:
@@ -2383,7 +2393,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_UXTB:
 	case ARM64_INS_SXTB:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ANAL_OP_TYPE_CAST;
 		op->ptr = 0LL;
 		op->ptrsize = 1;
 		break;
@@ -2905,6 +2915,11 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackptr = 0;
 			op->ptr = -MEMDISP(1);
 		}
+		break;
+	case ARM_INS_SXTB:
+	case ARM_INS_SXTH:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case ARM_INS_LDREX:
 	case ARM_INS_LDREXB:
