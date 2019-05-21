@@ -99,14 +99,14 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 int w32_attach(RDebug *dbg, int pid) {
 	eprintf ("w32_attach is disabled\n");
 	return -1;
-	RW32Dbg *rdbg = dbg->user;
-	if (rdbg->ph == (HANDLE)NULL) {
+	/*RIOW32Dbg *rio = dbg->user;
+	if (rio->ph == (HANDLE)NULL) {
 		HANDLE ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 		if (ph != (HANDLE)NULL) {
 			return -1;
 		}
-		rdbg->ph = ph;
-	}
+		rio->ph = ph;
+	}*/
 	/*int ret = -1;
 	RIOW32 *rio = dbg->user;
 	// 
