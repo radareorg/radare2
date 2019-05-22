@@ -742,8 +742,9 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin->kv;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_bin_dex_new_buf (buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = r_bin_dex_new_buf (buf);
+	return *bin_obj != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -2103,20 +2104,12 @@ static RList *dex_fields(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *bytes, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
-	.check_bytes = check_bytes,
 	.check_buffer = check_buffer,
 	.baddr = baddr,
 	.entries = entries,

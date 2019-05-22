@@ -1,20 +1,30 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 #define R_BIN_PE64 1
 #include "bin_pe.inc"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	int idx, ret = false;
-	if (!buf || length <= 0x3d) {
+static bool check_buffer(RBuffer *b) {
+	ut64 length = r_buf_size (b);
+	if (length <= 0x3d) {
 		return false;
 	}
-	idx = buf[0x3c] | (buf[0x3d] << 8);
-	if (length >= idx + 0x20) {
-		if (!memcmp (buf, "MZ", 2) && !memcmp (buf + idx, "PE", 2) &&
-			!memcmp (buf + idx + 0x18, "\x0b\x02", 2)) {
-			ret = true;
+	ut16 idx = r_buf_read_le16_at (b, 0x3c);
+	if (idx + 26 < length) {
+		/* Here PE signature for usual PE files
+		 * and PL signature for Phar Lap TNT DOS extender 32bit executables
+		 */
+		ut8 buf[2];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		if (!memcmp (buf, "MZ", 2)) {
+			r_buf_read_at (b, idx, buf, sizeof (buf));
+			// TODO: Add one more indicator, to prevent false positives
+			// if (!memcmp (buf, "PL", 2)) { return true; }
+			if (!memcmp (buf, "PE", 2)) {
+				r_buf_read_at (b, idx + 0x18, buf, sizeof (buf));
+				return !memcmp (buf, "\x0b\x02", 2);
+			}
 		}
 	}
-	return ret;
+	return false;
 }
 
 static void header(RBinFile *bf) {
@@ -129,7 +139,7 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.load_buffer = &load_buffer,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

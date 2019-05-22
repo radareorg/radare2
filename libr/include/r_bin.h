@@ -369,7 +369,9 @@ typedef struct r_bin_xtr_plugin_t {
 	bool (*check_buffer)(RBuffer *b);
 
 	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
+	RBinXtrData * (*extract_from_buffer)(RBin *bin, RBuffer *buf);
 	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
+	RList * (*extractall_from_buffer)(RBin *bin, RBuffer *buf);
 	RBinXtrData * (*extract)(RBin *bin, int idx);
 	RList * (*extractall)(RBin *bin);
 
@@ -404,7 +406,7 @@ typedef struct r_bin_plugin_t {
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load)(RBinFile *arch);
 	bool (*load_bytes)(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
-	void *(*load_buffer)(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
+	bool (*load_buffer)(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
@@ -650,6 +652,7 @@ R_API int r_bin_list_plugin(RBin *bin, const char *name, int json);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz);
+R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 
 // get/set various bin information

@@ -33,20 +33,8 @@ static bool check_buffer(RBuffer *buf) {
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *obj = r_buf_ref (buf);
-	if (!check_buffer (obj)) {
-		r_buf_free (obj);
-		return NULL;
-	}
-	return obj;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static int destroy(RBinFile *bf) {
@@ -141,7 +129,6 @@ RBinPlugin r_bin_plugin_bios = {
 	.license = "LGPL",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,

@@ -81,14 +81,14 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return true;
 }
 
-static void *load(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct r_bin_mz_obj_t *mz_obj;
-
-	mz_obj = r_bin_mz_new_buf (buf);
+static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	struct r_bin_mz_obj_t *mz_obj = r_bin_mz_new_buf (buf);
 	if (mz_obj) {
 		sdb_ns_set (sdb, "info", mz_obj->kv);
+		*bin_obj = mz_obj;
+		return true;
 	}
-	return mz_obj;
+	return false;
 }
 
 static int destroy(RBinFile *bf) {

@@ -184,50 +184,20 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *tbuf;
-	struct r_bin_mdmp_obj *res;
-
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-
-	tbuf = r_buf_new_with_bytes (buf, sz);
-	if (!tbuf) {
-		return false;
-	}
-
-	if ((res = r_bin_mdmp_new_buf (tbuf))) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	r_buf_free (tbuf);
-
-	if (res) {
-		*bin_obj = res;
-		return true;
-	} else {
-		return false;
-	}
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (buf, NULL);
-
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (buf, false);
 	struct r_bin_mdmp_obj *res = r_bin_mdmp_new_buf (buf);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	return res;
+	return false;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	r_return_val_if_fail (bf && bf->o, false);
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -523,7 +493,6 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.info = &info,
 	.libs = &libs,
 	.load = &load,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
 	.mem = &mem,
 	.relocs = &relocs,

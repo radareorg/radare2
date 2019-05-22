@@ -63,6 +63,7 @@ static RBinNXOObj *nso_new () {
 }
 
 static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	eprintf ("load_bytes in bin.nso must die\n");
 	RBin *rbin = bf->rbin;
 	ut32 toff = readLE32 (bf->buf, NSO_OFF (text_memoffset));
 	ut32 tsize = readLE32 (bf->buf, NSO_OFF (text_size));
@@ -130,19 +131,13 @@ fail:
 	return false;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf, NULL);
-	const ut64 sz = r_buf_size (buf);
-	ut8 *bytes = malloc (sz);
-	if (!bytes) {
-		return NULL;
-	}
-	r_buf_read_at (buf, 0, bytes, sz);
-	void *ptr = NULL;
 	const ut64 la = bf->loadaddr;
-	(void)load_bytes (bf, &ptr, bytes, sz, la, bf->sdb);
-	free (bytes);
-	return ptr;
+	ut64 sz = 0;
+	const ut8 *bytes = r_buf_data (buf, &sz);
+	bool res = load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
+	return res;
 }
 
 static int destroy(RBinFile *bf) {

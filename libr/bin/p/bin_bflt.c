@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2019 - Oscar Salvador */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,8 +7,9 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_bin_bflt_new_buf (buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = r_bin_bflt_new_buf (buf);
+	return *bin_obj;
 }
 
 static RList *entries(RBinFile *bf) {

@@ -76,12 +76,8 @@ static bool check_bytes(const ut8 *b, ut64 length) {
 	return res;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *obj = r_buf_ref (buf);
-	if (!check_buffer (obj)) {
-		return NULL;
-	}
-	return obj;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static int destroy(RBinFile *bf) {

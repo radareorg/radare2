@@ -34,16 +34,15 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	return true;
 }
 
-static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct PE_(r_bin_pe_obj_t) *res;
-	if (!buf) {
-		return NULL;
-	}
-	res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (bf && bin_obj && buf, false);
+	struct PE_(r_bin_pe_obj_t) *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	return res;
+	return false;
 }
 
 static bool load(RBinFile *bf) {

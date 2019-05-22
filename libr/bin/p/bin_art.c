@@ -65,20 +65,19 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = R_NEW0 (ArtObj);
-	if (!ao) {
-		return NULL;
+	if (ao) {
+		ao->kv = sdb_new0 ();
+		if (ao->kv) {
+			ao->buf = r_buf_ref (buf);
+			art_header_load (ao, ao->kv);
+			sdb_ns_set (sdb, "info", ao->kv);
+			*bin_obj = ao;
+			return true;
+		}
 	}
-	ao->kv = sdb_new0 ();
-	if (!ao->kv) {
-		free (ao);
-		return NULL;
-	}
-	ao->buf = r_buf_ref (buf);
-	art_header_load (ao, ao->kv);
-	sdb_ns_set (sdb, "info", ao->kv);
-	return ao;
+	return false;
 }
 
 static int destroy(RBinFile *bf) {

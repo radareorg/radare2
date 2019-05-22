@@ -178,13 +178,14 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	o->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 
 	if (plugin && plugin->load_buffer) {
-		o->bin_obj = plugin->load_buffer (binfile, binfile->buf, loadaddr, sdb); // bytes + offset, sz, loadaddr, sdb);
-		if (!o->bin_obj) {
+		if (!plugin->load_buffer (binfile, &o->bin_obj, binfile->buf, loadaddr, sdb)) {
 			bprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n", plugin->name);
 			sdb_free (o->kv);
 			free (o);
 			return NULL;
 		}
+		binfile->o = o;
+		o->obj_size = sz;
 	} else if (plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
 		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load_bytes.\n", plugin->name);
 		// XXX more checking will be needed here
