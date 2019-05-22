@@ -68,7 +68,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	hThread = w32_open_thread (pid, tid);
 	memset(&ctx, 0, sizeof (CONTEXT));
-	ctx.ContextFlags = CONTEXT_ALL ;
+	ctx.ContextFlags = CONTEXT_ALL;
 	if (GetThreadContext (hThread, &ctx) == TRUE) {
 		// on windows we dont need check type alway read/write full arena
 		//if (type == R_REG_TYPE_GPR) {
@@ -89,8 +89,41 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	CloseHandle(hThread);
 	return size;
 	*/
-	eprintf ("w32_reg_read is not implemented!\n");
-	return 0;
+	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
+	if (dbg->bits == 64) {
+		flags |= THREAD_QUERY_INFORMATION;
+	}
+	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
+	if (th == (HANDLE)NULL) {
+		r_sys_perror ("w32_reg_read/OpenThread");
+		return 0;
+	}
+	/*if (dbg->bits != 64) {
+
+	}*/
+	// Always suspend the process
+	if (SuspendThread (th) == -1) {
+		CloseHandle (th);
+		return 0;
+	}
+	CONTEXT ctx = {0};
+	// TODO: support various types?
+	ctx.ContextFlags = CONTEXT_ALL;
+	// TODO: select correct function depending on bitness
+	if (GetThreadContext (th, &ctx)) {
+		if (size > sizeof (ctx)) {
+			size = sizeof (ctx);
+		}
+		memcpy (buf, &ctx, size);
+	} else {
+		size = 0;
+	}
+	if (ResumeThread (th) == -1) {
+		size = 0;
+	}
+	CloseHandle (th);
+	//eprintf ("w32_reg_read is not implemented!\n");
+	return size;
 }
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
@@ -115,8 +148,38 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	//}
 	CloseHandle (thread);
 	return ret;*/
-	eprintf ("w32_reg_write is not implemented!\n");
-	return false;
+	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
+	if (dbg->bits == 64) {
+		flags |= THREAD_QUERY_INFORMATION;
+	}
+	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
+	if (th == (HANDLE)NULL) {
+		r_sys_perror ("w32_reg_write/OpenThread");
+		return false;
+	}
+	// Always suspend the process
+	if (SuspendThread (th) != -1) {
+		r_sys_perror ("w32_reg_write/SuspendThread");
+		CloseHandle (th);
+		return false;
+	}
+	CONTEXT ctx = {0};
+	if (size > sizeof (ctx)) {
+		size = sizeof (ctx);
+	}
+	// TODO: select correct function depending on bitness
+	memcpy (&ctx, buf, size);
+	bool ret = SetThreadContext (th, &ctx);
+	if (!ret) {
+		r_sys_perror ("w32_reg_write/SetThreadContext");
+	}
+	// Resume the process even upon failure
+	if (ResumeThread (th) == -1) {
+		if (ret) ret = false;
+		r_sys_perror ("w32_reg_write/ResumeThread");
+	}
+	CloseHandle (th);
+	return ret;
 }
 
 int w32_attach(RDebug *dbg, int pid) {
@@ -502,7 +565,7 @@ err_load_th:
 	// pid is not respected for the TH32CS_SNAPTHREAD flag
 	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
 	if(th == INVALID_HANDLE_VALUE) {
-		eprintf ("w32_thread_list: failed to create a snapshot of threads\n");
+		r_sys_perror ("w32_thread_list/CreateToolhelp32Snapshot");
 		return list;
 	}
 	THREADENTRY32 te;
@@ -532,7 +595,7 @@ err_load_th:
 		} while (Thread32Next (th, &te));
 		free (path);
 	} else {
-		eprintf ("w32_thread_list: failed to enumerate threads\n");
+		r_sys_perror ("w32_thread_list/Thread32First");
 	}
 	CloseHandle (th);
 	return list;
@@ -559,7 +622,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
+static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
 	const char *path = NULL;
 	int uid = -1;
@@ -570,6 +633,8 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 			uid = sid;
 		}
 		CloseHandle (ph);
+	} else if (b) {
+		return NULL;
 	}
 	const char *tmp;
 	if (path) {
@@ -594,9 +659,8 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		bool b = pid == 0;
 		do {
 			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
-				RDebugPid *dbg_pid = build_debug_pid (&pe);
-				// TODO: ignore inaccessible processes unless if they're children of a selected process?
-				// if (dbg->pid != -1)
+				//returns NULL for inaccessible processes unless if they're child processes
+				RDebugPid *dbg_pid = build_debug_pid (&pe, b && dbg->pid != -1);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				} else {
