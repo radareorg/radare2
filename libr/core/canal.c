@@ -17,7 +17,7 @@
 typedef struct {
 	RAnal *a;
 	int mode;
-	int count;
+	PJ *pj;
 } HintListState;
 
 // used to speedup strcmp with rconfig.get in loops
@@ -981,14 +981,9 @@ static void print_hint_h_format(RAnalHint* hint) {
 	r_cons_newline ();
 }
 
-// TODO: move this into anal/hint.c ?
-static int cb(void *p, const char *k, const char *v) {
-	HintListState *hls = p;
-	RAnalHint *hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
-	switch (hls->mode) {
-	case 's':
-		r_cons_printf ("%s=%s\n", k, v);
-		break;
+// if mode == 'j', pj must be an existing PJ!
+static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
+	switch (mode) {
 	case '*':
 		HINTCMD_ADDR (hint, arch, "aha %s");
 		HINTCMD_ADDR (hint, bits, "ahb %d");
@@ -1002,27 +997,60 @@ static int cb(void *p, const char *k, const char *v) {
 		}
 		break;
 	case 'j':
-		r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d,
-			hls->count>0?",":"", hint->addr, hint->addr+hint->size);
-		HINTCMD (hint, arch, ",\"arch\":\"%s\"", true); // XXX: arch must not contain strange chars
-		HINTCMD (hint, bits, ",\"bits\":%d", true);
-		HINTCMD (hint, type, ",\"type\":%d", true);
-		HINTCMD (hint, size, ",\"size\":%d", true);
-		HINTCMD (hint, opcode, ",\"opcode\":\"%s\"", true);
-		HINTCMD (hint, syntax, ",\"syntax\":\"%s\"", true);
-		HINTCMD (hint, immbase, ",\"immbase\":%d", true);
-		HINTCMD (hint, esil, ",\"esil\":\"%s\"", true);
-		HINTCMD (hint, ptr, ",\"ptr\":\"0x%"PFMT64x"x\"", true);
-		if (hint->jump != UT64_MAX) {
-			r_cons_printf (",\"jump\":\"0x%"PFMT64x"\"", hint->jump);
+		pj_o (pj);
+		pj_kn (pj, "from", hint->addr);
+		pj_kn (pj, "to", hint->addr + hint->size);
+		if (hint->arch) {
+			pj_ks (pj, "arch", hint->arch);
 		}
-		r_cons_print ("}");
+		if (hint->bits) {
+			pj_ki (pj, "bits", hint->bits);
+		}
+		if (hint->type) {
+			pj_kn (pj, "type", hint->type);
+		}
+		if (hint->size) {
+			pj_ki (pj, "size", hint->size);
+		}
+		if (hint->opcode) {
+			pj_ks (pj, "opcode", hint->opcode);
+		}
+		if (hint->syntax) {
+			pj_ks (pj, "syntax", hint->syntax);
+		}
+		if (hint->immbase) {
+			pj_ki (pj, "immbase", hint->immbase);
+		}
+		if (hint->esil) {
+			pj_ks (pj, "esil", hint->esil);
+		}
+		if (hint->ptr) {
+			pj_kn (pj, "ptr", hint->ptr);
+		}
+		if (hint->jump != UT64_MAX) {
+			pj_kn (pj, "jump", hint->jump);
+		}
+		if (hint->fail != UT64_MAX) {
+			pj_kn (pj, "fail", hint->fail);
+		}
+		pj_end (pj);
 		break;
 	default:
 		print_hint_h_format (hint);
 		break;
 	}
-	free (hint);
+}
+
+// TODO: move this into anal/hint.c ?
+static int cb(void *p, const char *k, const char *v) {
+	HintListState *hls = p;
+	if (hls->mode == 's') {
+		r_cons_printf ("%s=%s\n", k, v);
+	} else {
+		RAnalHint *hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
+		anal_hint_print (hint, hls->mode, hls->pj);
+		free (hint);
+	}
 	return 1;
 }
 
@@ -1031,16 +1059,15 @@ R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	if (!hint) {
 		return;
 	}
-	if (mode == '*') {
-		HINTCMD_ADDR (hint, arch, "aha %s");
-		HINTCMD_ADDR (hint, bits, "ahb %d");
-		HINTCMD_ADDR (hint, size, "ahs %d");
-		HINTCMD_ADDR (hint, opcode, "aho %s");
-		HINTCMD_ADDR (hint, syntax, "ahS %s");
-		HINTCMD_ADDR (hint, immbase, "ahi %d");
-		HINTCMD_ADDR (hint, esil, "ahe %s");
-	} else {
-		print_hint_h_format (hint);
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	anal_hint_print (hint, mode, pj);
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
 	}
 	free (hint);
 }
@@ -1052,10 +1079,11 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 	HintListState hls = {};
 #endif
 	hls.mode = mode;
-	hls.count = 0;
 	hls.a = a;
+	hls.pj = NULL;
 	if (mode == 'j') {
-		r_cons_strcat ("[");
+		hls.pj = pj_new ();
+		pj_a (hls.pj);
 	}
 	SdbList *ls = sdb_foreach_list (a->sdb_hints, true);
 	SdbListIter *lsi;
@@ -1064,8 +1092,9 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 		cb (&hls, sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (ls);
-	if (mode == 'j') {
-		r_cons_strcat ("]\n");
+	if (hls.pj) {
+		pj_end (hls.pj);
+		r_cons_printf ("%s\n", pj_string (hls.pj));
 	}
 }
 
