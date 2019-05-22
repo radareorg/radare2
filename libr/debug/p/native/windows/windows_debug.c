@@ -229,15 +229,13 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		return false;
 	}
 	// Always suspend
-	if (suspend_thread (th, dbg->bits) != -1) {
-		r_sys_perror ("w32_reg_write/SuspendThread");
+	if (suspend_thread (th, dbg->bits) == -1) {
 		CloseHandle (th);
 		return false;
 	}
-	ret = set_thread_context (th, buf, size, dbg->bits);
+	bool ret = set_thread_context (th, buf, size, dbg->bits);
 	// Always resume
 	if (resume_thread (th, dbg->bits) == -1) {
-		r_sys_perror ("w32_reg_write/ResumeThread");
 		ret = false;
 	}
 	CloseHandle (th);
