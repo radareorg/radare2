@@ -585,7 +585,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
+__declspec(noinline) static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
 	const char *path = NULL;
 	int uid = -1;
