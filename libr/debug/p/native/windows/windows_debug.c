@@ -519,7 +519,7 @@ static const char *resolve_path(HANDLE ph) {
 }
 
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
-	// pid is not respected for the TH32CS_SNAPTHREAD flag
+	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
 	if(th == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("w32_thread_list/CreateToolhelp32Snapshot");
@@ -530,7 +530,7 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 	if (Thread32First (th, &te)) {
 		// TODO: export this code to its own function?
 		HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-		const char *path = NULL;
+		char *path = NULL;
 		int uid = -1;
 		if (ph != (HANDLE)NULL) {
 			path = resolve_path (ph);
@@ -597,8 +597,6 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, HANDLE ph) {
 				uid = sid;
 			}
 			CloseHandle (ph);
-		} else if (b) {
-			return NULL;
 		}
 	} else {
 		path = resolve_path (ph);
