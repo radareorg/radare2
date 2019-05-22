@@ -260,6 +260,7 @@ static bool checkPanelNum(RCore *core);
 static bool checkFunc(RCore *core);
 static bool checkFuncDiff(RCore *core, RPanel *p);
 static bool findCmdStrCache(RCore *core, RPanel *panel, char **str);
+static bool find_panel(RCore *core, int idx, char **title, char **cmd);
 static char *handleCmdStrCache(RCore *core, RPanel *panel);
 static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
@@ -4261,17 +4262,17 @@ static void create_widget(RCore *core, RPanel *panel, int *idx) {
 	int i = 0;
 	ls_foreach (l, iter, kv) {
 		if (i++ == *idx) {
-			r_strbuf_appendf (buf, ">  %s%s"Color_RESET,
-					core->cons->context->pal.graph_box2, sdbkv_key (kv));
+			r_strbuf_appendf (buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
 		} else {
 			r_strbuf_appendf (buf, "   %s", sdbkv_key (kv));
 		}
 		r_strbuf_append (buf, "          \n");
 	}
+	RConsCanvas *can = panels->can;
 	int x, y, w, h;
 	w = r_str_bounds (r_strbuf_get (buf), &h);
-	x = panel->view->pos.x + (panel->view->pos.w - w) / 2;
-	y = panel->view->pos.y + (panel->view->pos.h - h) / 2;
+	x = (can->w - w) / 2;
+	y = (can->h - h) / 2;
 
 	r_cons_canvas_fill (panels->can, x, y, w + 2, h + 2, ' ');
 	(void) r_cons_canvas_gotoxy (panels->can, x + 2, y + 1);
@@ -4285,42 +4286,57 @@ static void create_widget(RCore *core, RPanel *panel, int *idx) {
 
 static void create_almighty(RCore *core, RPanel *panel) {
 	int idx = 0, okey, key;
-	RPanels *panels = core->panels;
 	create_widget (core, panel, &idx);
+	char *title;
+	char *cmd;
 	while (true) {
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
 		switch (key) {
-			case 'j':
-				idx++;
-				create_widget (core, panel, &idx);
-				break;
-			case 'k':
-				idx--;
-				create_widget (core, panel, &idx);
-				break;
-			case 0x0d:
-				{
-					SdbList *l = sdb_foreach_list (panels->db, true);
-					SdbKv *kv;
-					SdbListIter *iter;
-					int i = 0;
-					ls_foreach (l, iter, kv) {
-						if (i++ == idx) {
-							replaceCmd (core, sdbkv_key (kv), sdbkv_value (kv), false);
-							panel->view->refresh = true;
-							return;
-						}
-					}
-				}
-				panel->view->refresh = true;
-				return;
-			case 'q':
-			case '"':
-				panel->view->refresh = true;
-				return;
+		case 'j':
+			idx++;
+			create_widget (core, panel, &idx);
+			break;
+		case 'k':
+			idx--;
+			create_widget (core, panel, &idx);
+			break;
+		case 'v':
+			if (find_panel (core, idx, &title, &cmd)) {
+				splitPanelVertical (core, panel, title, cmd, false);
+			}
+			return;
+		case 'h':
+			if (find_panel (core, idx, &title, &cmd)) {
+				splitPanelHorizontal (core, panel, title, cmd, false);
+			}
+			return;
+		case 0x0d:
+			if (find_panel (core, idx, &title, &cmd)) {
+				replaceCmd (core, title, cmd, false);
+			}
+			return;
+		case 'q':
+		case '"':
+			panel->view->refresh = true;
+			return;
 		}
 	}
+}
+
+static bool find_panel(RCore *core, int idx, char **title, char **cmd) {
+	SdbList *l = sdb_foreach_list (core->panels->db, true);
+	SdbKv *kv;
+	SdbListIter *iter;
+	int i = 0;
+	ls_foreach (l, iter, kv) {
+		if (i++ == idx) {
+			*title = sdbkv_key (kv);
+			*cmd = sdbkv_value (kv);
+			return true;
+		}
+	}
+	return false;
 }
 
 static void createDefaultPanels(RCore *core) {
