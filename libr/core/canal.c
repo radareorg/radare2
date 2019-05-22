@@ -11,7 +11,7 @@
 
 #define HINTCMD_ADDR(hint,x,y) if((hint)->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", (hint)->x, (hint)->addr)
-#define HINTCMD(hint,x,y,json) if((hint)->x) \
+#define HINTCMD(hint,x,y) if((hint)->x) \
 	r_cons_printf (y"", (hint)->x)
 
 typedef struct {
@@ -964,19 +964,31 @@ err_op:
 
 static void print_hint_h_format(RAnalHint* hint) {
 	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x" =>", hint->addr, hint->addr + hint->size);
-	HINTCMD (hint, arch, " arch='%s'", false);
-	HINTCMD (hint, bits, " bits=%d", false);
-	HINTCMD (hint, type, " type=%d", false);
-	HINTCMD (hint, size, " size=%d", false);
-	HINTCMD (hint, opcode, " opcode='%s'", false);
-	HINTCMD (hint, syntax, " syntax='%s'", false);
-	HINTCMD (hint, immbase, " immbase=%d", false);
-	HINTCMD (hint, esil, " esil='%s'", false);
+	HINTCMD (hint, arch, " arch='%s'");
+	HINTCMD (hint, bits, " bits=%d");
+	if (hint->type) {
+		const char *type = r_anal_optype_to_string (hint->type);
+		if (type) {
+			r_cons_printf (" type='%s'", type);
+		}
+	}
+	HINTCMD (hint, size, " size=%d");
+	HINTCMD (hint, opcode, " opcode='%s'");
+	HINTCMD (hint, syntax, " syntax='%s'");
+	HINTCMD (hint, immbase, " immbase=%d");
+	HINTCMD (hint, esil, " esil='%s'");
+	HINTCMD (hint, ptr, " ptr=0x%"PFMT64x);
 	if (hint->jump != UT64_MAX) {
 		r_cons_printf (" jump=0x%08"PFMT64x, hint->jump);
 	}
+	if (hint->fail != UT64_MAX) {
+		r_cons_printf (" fail=0x%08"PFMT64x, hint->fail);
+	}
 	if (hint->ret != UT64_MAX) {
 		r_cons_printf (" ret=0x%08"PFMT64x, hint->ret);
+	}
+	if (hint->high) {
+		r_cons_printf (" high=true");
 	}
 	r_cons_newline ();
 }
@@ -987,13 +999,29 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 	case '*':
 		HINTCMD_ADDR (hint, arch, "aha %s");
 		HINTCMD_ADDR (hint, bits, "ahb %d");
+		if (hint->type) {
+			const char *type = r_anal_optype_to_string (hint->type);
+			if (type) {
+				r_cons_printf ("aht %s @ 0x%"PFMT64x"\n", type, hint->addr);
+			}
+		}
 		HINTCMD_ADDR (hint, size, "ahs %d");
 		HINTCMD_ADDR (hint, opcode, "aho %s");
 		HINTCMD_ADDR (hint, syntax, "ahS %s");
 		HINTCMD_ADDR (hint, immbase, "ahi %d");
 		HINTCMD_ADDR (hint, esil, "ahe %s");
+		HINTCMD_ADDR (hint, ptr, "ahp 0x%"PFMT64x);
 		if (hint->jump != UT64_MAX) {
 			r_cons_printf ("ahc 0x%"PFMT64x" @ 0x%"PFMT64x"\n", hint->jump, hint->addr);
+		}
+		if (hint->fail != UT64_MAX) {
+			r_cons_printf ("ahf 0x%"PFMT64x" @ 0x%"PFMT64x"\n", hint->fail, hint->addr);
+		}
+		if (hint->ret != UT64_MAX) {
+			r_cons_printf ("ahr 0x%"PFMT64x" @ 0x%"PFMT64x"\n", hint->ret, hint->addr);
+		}
+		if (hint->high) {
+			r_cons_printf ("ahh @ 0x%"PFMT64x"\n", hint->addr);
 		}
 		break;
 	case 'j':
@@ -1007,7 +1035,10 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 			pj_ki (pj, "bits", hint->bits);
 		}
 		if (hint->type) {
-			pj_kn (pj, "type", hint->type);
+			const char *type = r_anal_optype_to_string (hint->type);
+			if (type) {
+				pj_ks (pj, "type", type);
+			}
 		}
 		if (hint->size) {
 			pj_ki (pj, "size", hint->size);
@@ -1032,6 +1063,12 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		}
 		if (hint->fail != UT64_MAX) {
 			pj_kn (pj, "fail", hint->fail);
+		}
+		if (hint->ret != UT64_MAX) {
+			pj_kn (pj, "ret", hint->ret);
+		}
+		if (hint->high) {
+			pj_kb (pj, "high", true);
 		}
 		pj_end (pj);
 		break;
