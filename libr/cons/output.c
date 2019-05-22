@@ -36,18 +36,20 @@ static void w32_clear() {
 		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
 }
 
-void w32_gotoxy(int x, int y) {
+R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
 	static HANDLE hStdout = NULL;
+	static HANDLE hStderr = NULL;
+	HANDLE *hConsole = fd == 1 ? &hStdout : &hStderr;
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
 	if (I->is_wine == 1) {
-		write (1, "\x1b[0;0H", 6);
+		write (fd, "\x1b[0;0H", 6);
 	}
-	if (!hStdout) {
-		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (!*hConsole) {
+		*hConsole = GetStdHandle (fd == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
 	}
-	SetConsoleCursorPosition (hStdout, coord);
+	SetConsoleCursorPosition (*hConsole, coord);
 }
 
 static int wrapline(const char *s, int len) {
@@ -194,7 +196,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (state == -2) {
-				w32_gotoxy (x, y);
+				r_cons_w32_gotoxy (1, x, y);
 				ptr += i;
 				str = ptr; // + i-2;
 				continue;
@@ -206,7 +208,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 					// fill row here
 					fill_tail (cols, lines);
 				}
-				w32_gotoxy (0, 0);
+				r_cons_w32_gotoxy (1, 0, 0);
 				lines = 0;
 				esc = 0;
 				ptr += 3;
