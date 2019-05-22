@@ -385,7 +385,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 
 int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
-	int ret = true;
+	bool ret = true;
 	if (!VirtualFreeEx (rio->ph, (LPVOID)(size_t)addr,
 			  (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf ("Failed to free memory\n");
@@ -418,19 +418,10 @@ static int io_perms_to_prot(int io_perms) {
 }
 
 int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
-	// Disabling this for now
-	/*DWORD old;
-	BOOL ret = FALSE;
-	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-
-	if (h_proc) {
-		ret = VirtualProtectEx (h_proc, (LPVOID)(size_t)addr,
-			size, io_perms_to_prot (perms), &old);
-		CloseHandle (h_proc);
-	}
-	return ret;*/
-	eprintf ("w32_map_protect is not implemented!\n");
-	return false;
+	DWORD old;
+	RIOW32Dbg *rio = dbg->user;
+	return VirtualProtectEx (rio->ph, (LPVOID)(size_t)addr,
+		size, io_perms_to_prot (perms), &old);
 }
 
 /*
@@ -493,41 +484,33 @@ err_w32_dbg_maps:
 
 RList *w32_dbg_modules(RDebug *dbg) {
 	// disabled for now
-	/*MODULEENTRY32 me32;
-	RDebugMap *mr;
 	RList *list = r_list_new ();
-	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
-	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (flags, dbg->pid);
-
-	if (!h_mod_snap) {
-		r_sys_perror ("w32_dbg_modules/CreateToolhelp32Snapshot");
-		goto err_w32_dbg_modules;
+	HANDLE mh = CreateToolhelp32Snapshot (TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, dbg->pid);
+	if (mh == INVALID_HANDLE_VALUE) {
+		r_sys_perror ("w32_thread_list/CreateToolhelp32Snapshot");
+		return list;
 	}
-	me32.dwSize = sizeof (MODULEENTRY32);
-	if (!Module32First (h_mod_snap, &me32)) {
-		goto err_w32_dbg_modules;
-	}
-	do {
-		char *mod_name;
-		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
+	MODULEENTRY32 me;
+	me.dwSize = sizeof (MODULEENTRY32);
+	if (Module32First (mh, &me)) {
+		do {
+			ut64 baddr = (ut64)(size_t)me.modBaseAddr;
 
-		mod_name = r_sys_conv_win_to_utf8 (me32.szModule);
-		mr = r_debug_map_new (mod_name, baddr, baddr + me32.modBaseSize, 0, 0);
-		free (mod_name);
-		if (mr) {
-			mr->file = r_sys_conv_win_to_utf8 (me32.szExePath);
-			if (mr->file) {
-				r_list_append (list, mr);
+			char *name = r_sys_conv_win_to_utf8 (me.szModule);
+			RDebugMap *mr; = r_debug_map_new (name, baddr, baddr + me.modBaseSize, 0, 0);
+			free (name);
+			if (mr) {
+				mr->file = r_sys_conv_win_to_utf8 (me.szExePath);
+				if (mr->file) {
+					r_list_append (list, mr);
+				}
 			}
-		}
-	} while (Module32Next (h_mod_snap, &me32));
-err_w32_dbg_modules:
-	if (h_mod_snap) {
-		CloseHandle (h_mod_snap);
+		} while (Module32Next (mh, &me));
+	} else {
+		r_sys_perror ("w32_dbg_modules/Module32First");
 	}
-	return list;*/
-	eprintf ("w32_dbg_modules is not implemented!\n");
-	return NULL;
+	CloseHandle (mh);
+	return list;
 }
 
 static const char *resolve_path(HANDLE ph) {
@@ -661,7 +644,9 @@ static RDebugPid *build_debug_pid(int pid, HANDLE ph, const char* name) {
 		path = r_sys_conv_win_to_utf8 (name);
 	}
 	// it is possible to get pc for a non debugged process but the operation is expensive and might be risky
-	return r_debug_pid_new (path, pid, uid, 's', 0);
+	RDebugPid *ret = r_debug_pid_new (path, pid, uid, 's', 0);
+	free (path);
+	return ret;
 }
 
 RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
