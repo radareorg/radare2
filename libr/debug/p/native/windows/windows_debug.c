@@ -585,19 +585,27 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
-	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
-	const char *path = NULL;
-	int uid = -1;
-	if (ph != (HANDLE)NULL) {
+static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, HANDLE ph) {
+	if (ph == (HANDLE)NULL) {
+		ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
+		const char *path = NULL;
+		int uid = -1;
+		if (ph != (HANDLE)NULL) {
+			path = resolve_path (ph);
+			DWORD sid;
+			if (ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
+				uid = sid;
+			}
+			CloseHandle (ph);
+		} else if (b) {
+			return NULL;
+		}
+	} else {
 		path = resolve_path (ph);
 		DWORD sid;
 		if (ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
 			uid = sid;
 		}
-		CloseHandle (ph);
-	} else if (b) {
-		return NULL;
 	}
 	if (!path) {
 		path = r_sys_conv_win_to_utf8 (pe->szExeFile);
@@ -615,11 +623,12 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof (pe);
 	if (Process32First (sh, &pe)) {
-		bool b = pid == 0, ndbg = dbg->pid == -1;
+		RIOW32Dbg *rio = dbg->user;
+		bool all = pid == 0, b;
 		do {
-			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
+			if (all || pe.th32ProcessID == pid || (b = pe.th32ParentProcessID == pid)) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RDebugPid *dbg_pid = build_debug_pid (&pe, b && ndbg);
+				RDebugPid *dbg_pid = build_debug_pid (&pe, b ? rio->ph : NULL);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				}/* else {
