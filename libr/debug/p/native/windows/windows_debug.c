@@ -226,11 +226,20 @@ int w32_attach(RDebug *dbg, int pid) {
 }
 
 int w32_detach(RDebug *dbg, int pid) {
-	// disabled for now
-	//return w32_DebugActiveProcessStop (pid)? 0 : -1;
-	// CloseHandle (rio->ph);
-	// rio->ph = NULL;
-	eprintf ("w32_detach is not implemented!\n");
+	if (pid == -1) {
+		return false;
+	}
+	if (dbg->pid == pid) {
+		RIOW32Dbg *rio = dbg->user;
+		bool ret;
+		if (rio->debug) {
+			ret = DebugActiveProcessStop (pid);
+		}
+		CloseHandle (rio->ph);
+		rio->ph = NULL;
+		rio->debug = false;
+		return ret;
+	}
 	return false;
 }
 
