@@ -615,11 +615,11 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof (pe);
 	if (Process32First (sh, &pe)) {
-		bool b = pid == 0;
+		bool b = pid == 0, ndbg = dbg->pid == -1;
 		do {
 			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RDebugPid *dbg_pid = build_debug_pid (&pe, b && dbg->pid == -1);
+				RDebugPid *dbg_pid = build_debug_pid (&pe, b && ndbg);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				}/* else {
