@@ -486,7 +486,7 @@ static const char *resolve_path(HANDLE ph) {
 	TCHAR filename[MAX_PATH];
 	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
 	if (length > 0) {
-		return strdup (filename);
+		return r_sys_conv_win_to_utf8 (filename);
 	}
 	// Upon failure fallback to GetProcessImageFileName
 	length = GetProcessImageFileName (ph, filename, maxlength);
@@ -510,7 +510,7 @@ static const char *resolve_path(HANDLE ph) {
 			if (!strncmp (filename, device, length)) {
 				TCHAR path[MAX_PATH];
 				snprintf (path, maxlength, "%s%s", drv, &tmp[1]);
-				ret = strdup (path);
+				ret = r_sys_conv_win_to_utf8 (path);
 				break;
 			}
 		}
@@ -519,49 +519,6 @@ static const char *resolve_path(HANDLE ph) {
 }
 
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
-	// disabled for now
-	/*
-        HANDLE th;
-        HANDLE thid;
-        THREADENTRY32 te32;
-
-        te32.dwSize = sizeof(THREADENTRY32);
-
-	if (!w32_OpenThread) {
-		eprintf ("w32_thread_list: no w32_OpenThread?\n");
-		return list;
-	}
-        th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
-        if(th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32))
-                goto err_load_th;
-        do {
-                /* get all threads of process * /
-                if (te32.th32OwnerProcessID == pid) {
-			//te32.dwFlags);
-                        /* open a new handler * /
-			// XXX: fd leak?
-#if 0
- 75 typedef struct tagTHREADENTRY32 {
- 76         DWORD dwSize;
- 77         DWORD cntUsage;
- 78         DWORD th32ThreadID;
- 79         DWORD th32OwnerProcessID;
- 80         LONG tpBasePri;
- 81         LONG tpDeltaPri;
- 82         DWORD dwFlags;
-#endif
-			thid = w32_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-			if (!thid) {
-				r_sys_perror ("w32_thread_list/OpenThread");
-                                goto err_load_th;
-			}
-			r_list_append (list, r_debug_pid_new ("???", te32.th32ThreadID, 0, 's', 0));
-                }
-        } while (Thread32Next (th, &te32));
-err_load_th:
-        if(th != INVALID_HANDLE_VALUE)
-                CloseHandle (th);
-	return list;*/
 	// pid is not respected for the TH32CS_SNAPTHREAD flag
 	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
 	if(th == INVALID_HANDLE_VALUE) {
@@ -578,7 +535,7 @@ err_load_th:
 		if (ph != (HANDLE)NULL) {
 			path = resolve_path (ph);
 			DWORD sid;
-			if (ProcessIdToSessionId (te.th32OwnerProcessID, &sid)) {
+			if (ProcessIdToSessionId (pid, &sid)) {
 				uid = sid;
 			}
 			CloseHandle (ph);
@@ -590,6 +547,12 @@ err_load_th:
 		do {
 			if (te.th32OwnerProcessID == pid) {
 				// TODO: add pc if process is debugged
+				/*ut64 pc;
+				if (dbg->pid == pid) {
+					CONTEXT ctx = {0};
+					w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
+					pc = ctx->eip;
+				}*/
 				r_list_append (list, r_debug_pid_new (path, te.th32ThreadID, uid, 's', 0));
 			}
 		} while (Thread32Next (th, &te));
@@ -636,21 +599,17 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
 	} else if (b) {
 		return NULL;
 	}
-	const char *tmp;
-	if (path) {
-		tmp = r_sys_conv_win_to_utf8 (path);
-		free (path);
-	} else {
-		tmp = r_sys_conv_win_to_utf8 (pe->szExeFile);
+	if (!path) {
+		path = r_sys_conv_win_to_utf8 (pe->szExeFile);
 	}
-	// it is possible to get pc but the operation is way too expensive
-	return r_debug_pid_new (tmp, pe->th32ProcessID, uid, 's', 0);
+	// it is possible to get pc for a non debugged process but the operation is expensive and might be risky
+	return r_debug_pid_new (path, pe->th32ProcessID, uid, 's', 0);
 }
 
 RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	HANDLE sh = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
-		eprintf ("w32_pid_list: failed to create a snapshot of processes\n");
+		r_sys_perror ("w32_pid_list/CreateToolhelp32Snapshot");
 		return list;
 	}
 	PROCESSENTRY32 pe;
@@ -659,7 +618,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		bool b = pid == 0;
 		do {
 			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
-				//returns NULL for inaccessible processes unless if they're child processes
+				// Returns NULL if process is inaccessible unless if its a child process of debugged process
 				RDebugPid *dbg_pid = build_debug_pid (&pe, b && dbg->pid != -1);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
@@ -669,7 +628,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 			}
 		} while (Process32Next (sh, &pe));
 	} else {
-		eprintf ("w32_pid_list: failed to enumerate processes\n");
+		r_sys_perror ("w32_pid_list/Process32First");
 	}
 	CloseHandle (sh);
 	return list;
