@@ -304,17 +304,17 @@ int w32_detach(RDebug *dbg, int pid) {
 }
 
 int w32_select(int pid, int tid) {
-	RIOW32Dbg *rio = g_dbg->user;
+	/*RIOW32Dbg *rio = g_dbg->user;
 	if (rio->ph != (HANDLE)NULL) {
 		return true;
 	}
-	/*rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (rio->ph == (HANDLE)NULL) {
 		return false;
 	}
 	rio->debug = false;*/
 	eprintf ("w32_select is not implemented!\n");
-	return false;
+	return true;
 }
 
 int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
