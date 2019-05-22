@@ -522,6 +522,7 @@ static const char *help_msg_ah[] = {
 	"ahc", " 0x804804", "override call/jump address",
 	"ahe", " 3,eax,+=", "set vm analysis string",
 	"ahf", " 0x804840", "override fallback address for call",
+	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
@@ -6715,6 +6716,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_fail (core->anal, core->offset);
 		}
 		break;
+	case 'F': // "ahF" set stackframe size
+		if (input[1] == ' ') {
+			r_anal_hint_set_stackframe (
+				core->anal, core->offset,
+				r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_stackframe (core->anal, core->offset);
+		}
+		break;
 	case 's': // "ahs" set size (opcode length)
 		if (input[1] == ' ') {
 			r_anal_hint_set_size (core->anal, core->offset, atoi (input + 1));
@@ -6724,7 +6734,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			eprintf ("Usage: ahs 16\n");
 		}
 		break;
-	case 'S': // "ahS" set size (opcode length)
+	case 'S': // "ahS" set asm.syntax
 		if (input[1] == ' ') {
 			r_anal_hint_set_syntax (core->anal, core->offset, input + 2);
 		} else if (input[1] == '-') {

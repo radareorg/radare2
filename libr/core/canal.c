@@ -990,6 +990,9 @@ static void print_hint_h_format(RAnalHint* hint) {
 	if (hint->high) {
 		r_cons_printf (" high=true");
 	}
+	if (hint->stackframe != UT64_MAX) {
+		r_cons_printf (" stackframe=0x%"PFMT64x, hint->stackframe);
+	}
 	r_cons_newline ();
 }
 
@@ -1022,6 +1025,9 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		}
 		if (hint->high) {
 			r_cons_printf ("ahh @ 0x%"PFMT64x"\n", hint->addr);
+		}
+		if (hint->stackframe != UT64_MAX) {
+			r_cons_printf ("ahF 0x%"PFMT64x" @ 0x%"PFMT64x"\n", hint->stackframe, hint->addr);
 		}
 		break;
 	case 'j':
@@ -1069,6 +1075,9 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		}
 		if (hint->high) {
 			pj_kb (pj, "high", true);
+		}
+		if (hint->stackframe != UT64_MAX) {
+			pj_kn (pj, "stackframe", hint->stackframe);
 		}
 		pj_end (pj);
 		break;
