@@ -585,15 +585,15 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, HANDLE ph) {
+static RDebugPid *build_debug_pid(int pid, HANDLE ph, const char* name) {
 	char *path = NULL;
 	int uid = -1;
 	if (ph == (HANDLE)NULL) {
-		ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
+		ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 		if (ph != (HANDLE)NULL) {
 			path = resolve_path (ph);
 			DWORD sid;
-			if (ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
+			if (ProcessIdToSessionId (pid, &sid)) {
 				uid = sid;
 			}
 			CloseHandle (ph);
@@ -603,15 +603,15 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, HANDLE ph) {
 	} else {
 		path = resolve_path (ph);
 		DWORD sid;
-		if (ProcessIdToSessionId (pe->th32ProcessID, &sid)) {
+		if (ProcessIdToSessionId (pid, &sid)) {
 			uid = sid;
 		}
 	}
 	if (!path) {
-		path = r_sys_conv_win_to_utf8 (pe->szExeFile);
+		path = r_sys_conv_win_to_utf8 (name);
 	}
 	// it is possible to get pc for a non debugged process but the operation is expensive and might be risky
-	return r_debug_pid_new (path, pe->th32ProcessID, uid, 's', 0);
+	return r_debug_pid_new (path, pid, uid, 's', 0);
 }
 
 RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
@@ -628,7 +628,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		do {
 			if (all || pe.th32ProcessID == pid || (b = pe.th32ParentProcessID == pid)) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RDebugPid *dbg_pid = build_debug_pid (&pe, b ? rio->ph : NULL);
+				RDebugPid *dbg_pid = build_debug_pid (pe->th32ProcessID, b ? rio->ph : NULL, pe->szExeFile);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
 				}/* else {
