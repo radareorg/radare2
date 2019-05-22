@@ -325,54 +325,40 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	string_scan_range (list, bf, min, from, to, -1, raw, section);
 }
 
-R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
-	RBinFile *binfile = R_NEW0 (RBinFile);
-	if (!binfile) {
+R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
+	ut32 bf_id;
+	if (!r_id_pool_grab_id (bin->ids->pool, &bf_id)) {
 		return NULL;
 	}
-	// TODO: use r_id_storage api
-	if (!r_id_pool_grab_id (bin->ids->pool, &binfile->id)) {
-		if (steal_ptr) { // we own the ptr, free on error
-			free ((void*) bytes);
-		}
-		free (binfile);		//no id means no binfile
+	RBinFile *bf = R_NEW0 (RBinFile);
+	if (!bf) {
 		return NULL;
 	}
-	if (bytes) {
-		int res = r_bin_file_set_bytes (binfile, bytes, sz, steal_ptr);
-		if (!res && steal_ptr) { // we own the ptr, free on error
-			free ((void *)bytes);
-		}
-	}
-	binfile->rbin = bin;
-	binfile->file = file ? strdup (file) : NULL;
-	binfile->rawstr = rawstr;
-	binfile->fd = fd;
-	binfile->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
-	binfile->sdb = sdb;
-	binfile->size = file_sz;
-	binfile->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
-	binfile->objs = r_list_newf ((RListFree)r_bin_object_free);
-	binfile->xtr_obj = NULL;
-
-	if (!binfile->buf) {
-		binfile->buf = r_buf_new ();
-	}
-
+	bf->id = bf_id;
+	bf->rbin = bin;
+	bf->file = file ? strdup (file) : NULL;
+	bf->rawstr = rawstr;
+	bf->fd = fd;
+	bf->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
+	bf->sdb = sdb;
+	bf->size = file_sz;
+	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
+	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
+	bf->xtr_obj = NULL;
 	if (sdb) {
-		binfile->sdb = sdb_ns (sdb, sdb_fmt ("fd.%d", fd), 1);
-		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0); // x86??
+		bf->sdb = sdb_ns (sdb, sdb_fmt ("fd.%d", fd), 1);
+		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
 		 * sub-namespaces */
 		/* And if any namespace is referenced backwards it gets
 		 * double-freed */
-		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo", 1);
-		binfile->sdb_addrinfo->refs++;
-		sdb_ns_set (sdb, "cur", binfile->sdb);
-		binfile->sdb->refs++;
+		bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
+		bf->sdb_addrinfo->refs++;
+		sdb_ns_set (sdb, "cur", bf->sdb);
+		bf->sdb->refs++;
 	}
-	return binfile;
+	return bf;
 }
 
 static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBuffer *buf) {
@@ -439,8 +425,7 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
 	r_return_val_if_fail (file_sz != UT64_MAX, NULL);
 
-	RBinFile *bf = r_bin_file_new (bin, file, NULL, r_buf_size (buf),
-		file_sz, rawstr, fd, pluginname, NULL, false);
+	RBinFile *bf = r_bin_file_new (bin, file, file_sz, rawstr, fd, pluginname, NULL, false);
 	if (bf) {
 		bf->buf = r_buf_ref (buf);
 		RBinPlugin *plugin = get_plugin_from_buffer (bin, pluginname, bf->buf);
@@ -685,7 +670,7 @@ R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const 
 
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		bf = r_bin_file_new (bin, filename, NULL, r_buf_size (buf), file_sz, rawstr, fd, NULL, bin->sdb, false);
+		bf = r_bin_file_new (bin, filename, file_sz, rawstr, fd, xtr->name, bin->sdb, false);
 		if (!bf) {
 			return NULL;
 		}

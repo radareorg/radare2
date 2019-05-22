@@ -3475,9 +3475,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	}
 	if (!ret) {
 		return Elf_(get_phdr_symbols) (bin, type);
-	} else {
-		ret[ret_ctr].last = 1; // ugly dirty hack :D
 	}
+	ret[ret_ctr].last = 1; // ugly dirty hack :D
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
 	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
@@ -3566,10 +3565,10 @@ RBinElfField* Elf_(r_bin_elf_get_fields)(ELFOBJ *bin) {
 	return ret;
 }
 
-void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
+void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	int i;
 	if (!bin) {
-		return NULL;
+		return;
 	}
 	free (bin->phdr);
 	free (bin->shdr);
@@ -3603,44 +3602,41 @@ void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	free (bin);
-	return NULL;
 }
 
 ELFOBJ* Elf_(r_bin_elf_new)(const char* file, bool verbose) {
-	ut8 *buf;
 	int size;
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
-	if (!bin) {
-		return NULL;
+	if (bin) {
+		bin->file = file;
+		ut8 *buf = (ut8*)r_file_slurp (file, &size);
+		if (buf) {
+			bin->size = size;
+			bin->verbose = verbose;
+			bin->b = r_buf_new ();
+			if (r_buf_set_bytes (bin->b, buf, bin->size)) {
+				if (elf_init (bin)) {
+					return bin;
+				}
+			}
+			free (buf);
+		}
+		Elf_(r_bin_elf_free) (bin);
 	}
-	memset (bin, 0, sizeof (ELFOBJ));
-	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &size))) {
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	bin->size = size;
-	bin->verbose = verbose;
-	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
-		free (buf);
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	if (!elf_init (bin)) {
-		free (buf);
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	free (buf);
-	return bin;
+	return NULL;
 }
 
 ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
-	bin->kv = sdb_new0 ();
-	bin->size = (ut32)r_buf_size (buf);
-	bin->verbose = verbose;
-	bin->b = r_buf_ref (buf);
-	if (!elf_init (bin)) {
-		return Elf_(r_bin_elf_free) (bin);
+	if (bin) {
+		bin->kv = sdb_new0 ();
+		bin->size = (ut32)r_buf_size (buf);
+		bin->verbose = verbose;
+		bin->b = r_buf_ref (buf);
+		if (!elf_init (bin)) {
+			Elf_(r_bin_elf_free) (bin);
+			return NULL;
+		}
 	}
 	return bin;
 }

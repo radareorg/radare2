@@ -154,7 +154,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
 RBinElfSymbol* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
-void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
+void Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file, bool verbose);
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose);
 ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size);
@@ -168,5 +168,4 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin);
 RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 					  struct r_bin_elf_symbol_t *symbol,
 					  const char *namefmt);
-
 #endif

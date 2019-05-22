@@ -11,7 +11,7 @@
 
 static bool check_buffer(RBuffer* rbuf) {
 	ut8 buf[4] = {0};
-	return rbuf && r_buf_read (rbuf, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
+	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 
 static bool find_symbol(const ut32 *p, const RBinWasmSymbol* q) {

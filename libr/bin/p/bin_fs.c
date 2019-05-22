@@ -104,7 +104,6 @@ RBinPlugin r_bin_plugin_fs = {
 	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	// .check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.strings = &strings,
