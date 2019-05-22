@@ -354,6 +354,61 @@ static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
+static const char *get_utf8_char (const char line, RDisasmState *ds) {
+	switch (line) {
+	case '<': return ds->core->cons->vline[ARROW_LEFT];
+	case '>': return ds->core->cons->vline[ARROW_RIGHT];
+	case ':': return ds->core->cons->vline[LINE_UP];
+	case '|': return ds->core->cons->vline[LINE_VERT];
+	case '=': return ds->core->cons->vline[LINE_HORIZ];
+	case '-': return ds->core->cons->vline[LINE_HORIZ];
+	case ',': return ds->core->cons->vline[CORNER_TL];
+	case '.': return ds->core->cons->vline[CORNER_TR];
+	case '`': return ds->core->cons->vline[CORNER_BL];
+	default: return " ";
+	}
+}
+static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
+	int i;
+	int len = strlen (line);
+	if (ds->core->cons->use_utf8 || ds->linesopts & R_ANAL_REFLINE_TYPE_UTF8) {
+		if (ds->show_color) {
+			for (i = 0; i < len; i++) {
+				if (line[i] == ' ') {
+					r_cons_printf (" ");
+					continue;
+				}
+				if (line_col[i] == 'd') {
+					r_cons_printf ("%s%s%s", COLOR (ds, color_flow), get_utf8_char (line[i], ds), COLOR_RESET (ds));
+				} else	{
+					r_cons_printf ("%s%s%s", COLOR (ds, color_flow2), get_utf8_char (line[i], ds), COLOR_RESET (ds));
+				}
+			}
+		} else {
+			len = strlen (line);
+			for (i = 0; i < len; ++i) {
+				r_cons_printf ("%s", get_utf8_char (line[i], ds));
+			}
+		}
+	} else {
+		if (ds->show_color) {
+			for (i = 0; i < len; i++) {
+				if (line[i] == ' ') {
+					r_cons_printf (" ");
+					continue;
+				}
+				if (line_col[i] == 'd') {
+					r_cons_printf ("%s%c%s", COLOR (ds, color_flow), line[i], COLOR_RESET (ds));
+				} else	{
+					r_cons_printf ("%s%c%s", COLOR (ds, color_flow2), line[i], COLOR_RESET (ds));
+				}
+			}
+		} else {
+			r_cons_printf ("%s", line);
+		}
+	}
+}
+
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
 	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->assembler->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
@@ -373,7 +428,7 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 	}
 }
 
-static const char * get_section_name(RCore *core, ut64 addr) {
+static const char *get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
 	if (oaddr == addr) {
@@ -422,9 +477,9 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	ds_align_comment (ds);
 	r_cons_print (COLOR_RESET (ds));
 	ds_print_pre (ds);
-	r_cons_printf ("%s%s%s%s%s  %s %s", nl? "\n": "", sn,
-			COLOR (ds, color_flow),ds->refline, COLOR_RESET (ds),
-			up? "": ".-", COLOR (ds, color_comment));
+	r_cons_printf ("%s%s", nl? "\n": "", sn);
+	ds_print_ref_lines (ds->refline, ds->line_col, ds);
+	r_cons_printf ("  %s %s",up? "": ".-", COLOR (ds, color_comment));
 #if 0
 // r_cons_printf ("(%d)", ds->cmtcount);
 	if (ds->cmtcount == 1) {
@@ -540,7 +595,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_floc = P(floc): Color_MAGENTA;
 	ds->color_fline = P(fline): Color_CYAN;
 	ds->color_flow = P(flow): Color_CYAN;
-	ds->color_flow2 = P(flow2): Color_RED;
+	ds->color_flow2 = P(flow2): Color_BLUE;
 	ds->color_flag = P(flag): Color_CYAN;
 	ds->color_label = P(label): Color_CYAN;
 	ds->color_other = P(other): Color_WHITE;
@@ -1485,21 +1540,6 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 	ds->line = tmp;
 }
 
-static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
-	int i;
-	if (!line_col) {
-		r_cons_printf ("%s", line);
-	}
-	for (i = 0; i < strlen (line); i++) {
-		if (line_col[i] == 'd') {
-			r_cons_printf ("%s%c%s", COLOR (ds, color_flow), line[i], COLOR_RESET (ds));
-		} else {
-			r_cons_printf ("%s%c%s", COLOR (ds, color_flow2), line[i], COLOR_RESET (ds));
-		}
-	}
-
-}
-
 static void ds_begin_comment(RDisasmState *ds) {
 	if (ds->show_comment_right) {
 		_ALIGN;
@@ -2132,6 +2172,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);
+		free (line);
 		line = r_anal_reflines_str (ds->core, ds->at,
 			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE);
 		ds->refline2 = line->str;
@@ -2145,6 +2186,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		} else {
 			ds->indent_level = 0;
 		}
+		free (line);
 	} else {
 		R_FREE (ds->line);
 		R_FREE (ds->line_col);
@@ -2420,14 +2462,8 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		}
 	}
 	if (ds->line) {
-		if (ds->show_color) {
-			if (!ds->linesright && ds->show_lines_bb) {
-				ds_print_ref_lines (ds->line, ds->line_col, ds);
-			}
-		} else {
-			r_cons_printf ("%s", ds->line);
-		}
-	}
+		ds_print_ref_lines (ds->line, ds->line_col, ds);
+	} 
 }
 
 static void ds_print_family(RDisasmState *ds) {
@@ -4162,12 +4198,14 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 			ds_begin_line (ds);
 			ds_setup_print_pre (ds, false, false);
 			if (!ds->linesright && ds->show_lines_bb && ds->line) {
-				char *refline, *reflinecol;
+				char *refline, *reflinecol = NULL;
 				RAnalRefStr *refstr;
 				if (force) { // bbline is after disasm
 					refstr = r_anal_reflines_str (ds->core, ds->at,
 						ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
 					refline = refstr->str;
+					reflinecol = refstr->cols;
+					free (refstr);
 				} else {
 					ds_update_ref_lines (ds);
 					refline = ds->refline2;
@@ -4221,9 +4259,10 @@ static void delete_last_comment(RDisasmState *ds) {
 			                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
 			char *refline = refstr->str;
 			char *reflinecol = refstr->cols;
-			r_return_if_fail (refstr);
 			ds_print_ref_lines (refline, reflinecol, ds);
 			free (refline);
+			free (reflinecol);
+			free (refstr);
 		}
 	}
 }
@@ -5188,8 +5227,10 @@ toro:
 				}
 				ds_begin_line (ds);
 				ds_print_pre (ds);
-				r_cons_printf ("%s%s%s; --------------------------------------",
-					COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
+				ds_print_ref_lines (ds->line, ds->line_col, ds);
+				r_cons_printf ("; --------------------------------------");
+				// r_cons_printf ("%s%s%s; --------------------------------------",
+				// 	COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 				ds_newline (ds);
 			}
 			R_FREE (ds->line);

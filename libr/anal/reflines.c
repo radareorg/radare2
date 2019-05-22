@@ -399,7 +399,6 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
-	int color;
 	RCore *core = _core;
 	RCons *cons = core->cons;
 	RAnal *anal = core->anal;
@@ -415,9 +414,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	char *str = NULL;
 	char *col_str = NULL;
 
-	if (!cons || !anal || !anal->reflines) {
-		return NULL;
-	}
+	r_return_val_if_fail (cons && anal && anal->reflines, NULL);
 
 	RList *lvls = r_list_new ();
 	if (!lvls) {
@@ -533,20 +530,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		: (dir == 2) ? "=< " : "   ");
 	col_str = r_str_append (col_str, arr_col);
 
-	// if (core->cons->use_utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
-	// 	str = r_str_replace (str, "<", cons->vline[ARROW_LEFT], 1);
-	// 	str = r_str_replace (str, ">", cons->vline[ARROW_RIGHT], 1);
-	// 	str = r_str_replace (str, ":", cons->vline[LINE_UP], 1);
-	// 	str = r_str_replace (str, "|", cons->vline[LINE_VERT], 1);
-	// 	str = r_str_replace (str, "=", cons->vline[LINE_HORIZ], 1);
-	// 	str = r_str_replace (str, "-", cons->vline[LINE_HORIZ], 1);
-	// 	str = r_str_replace (str, ",", cons->vline[CORNER_TL], 1);
-	// 	str = r_str_replace (str, ".", cons->vline[CORNER_TR], 1);
-	// 	str = r_str_replace (str, "`", cons->vline[CORNER_BL], 1);
-	// }
 	r_list_free (lvls);
-	RAnalRefStr out;
-	out.cols = col_str;
-	out.str = str;
-	return &out;
+	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
+	out->cols = col_str;
+	out->str = str;
+	return out;
 }
