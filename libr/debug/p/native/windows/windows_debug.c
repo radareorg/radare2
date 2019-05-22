@@ -622,7 +622,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	pe.dwSize = sizeof (pe);
 	if (Process32First (sh, &pe)) {
 		RIOW32Dbg *rio = dbg->user;
-		bool all = pid == 0, b;
+		bool all = pid == 0, b = false;
 		do {
 			if (all || pe.th32ProcessID == pid || (b = pe.th32ParentProcessID == pid)) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
