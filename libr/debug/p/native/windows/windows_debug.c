@@ -586,10 +586,10 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 }
 
 static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, HANDLE ph) {
+	char *path = NULL;
+	int uid = -1;
 	if (ph == (HANDLE)NULL) {
 		ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
-		const char *path = NULL;
-		int uid = -1;
 		if (ph != (HANDLE)NULL) {
 			path = resolve_path (ph);
 			DWORD sid;
