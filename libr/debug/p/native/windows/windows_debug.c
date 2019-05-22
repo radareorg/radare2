@@ -50,6 +50,90 @@ int w32_init(RDebug *dbg) {
 	return true;
 }
 
+static int suspend_thread(HANDLE th, int bits) {
+	bool ret;
+	if (bits == 32) {
+		if ((ret = SuspendThread (th)) == -1) {
+			r_sys_perror ("suspend_thread/SuspendThread");
+		}
+	} else {
+		if ((ret = Wow64SuspendThread (th)) == -1) {
+			r_sys_perror ("suspend_thread/Wow64SuspendThread");
+		}
+	}
+	return ret;
+}
+
+static int resume_thread(HANDLE th, int bits) {
+	bool ret;
+	if (bits == 32) {
+		if ((ret = ResumeThread (th)) == -1) {
+			r_sys_perror ("resume_thread/ResumeThread");
+		}
+	} else {
+		if ((ret = ResumeThread (th)) == -1) {
+			r_sys_perror ("resume_thread/Wow64ResumeThread");
+		}
+	}
+	return ret;
+}
+
+static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
+	bool ret;
+	if (bits == 32) {
+		CONTEXT ctx = {0};
+		if (size > sizeof (ctx)) {
+			size = sizeof (ctx);
+		}
+		memcpy (&ctx, buf, size);
+		if(!(ret = SetThreadContext (th, &ctx))) {
+			r_sys_perror ("set_thread_context/SetThreadContext");
+		}
+	} else {
+		WOW64_CONTEXT ctx = {0};
+		if (size > sizeof (ctx)) {
+			size = sizeof (ctx);
+		}
+		memcpy (&ctx, buf, size);
+		if(!(ret = Wow64SetThreadContext (th, &ctx))) {
+			r_sys_perror ("set_thread_context/Wow64SetThreadContext");
+		}
+	}
+	return ret;
+}
+
+static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
+	int ret = 0;
+	if (bits == 32) {
+		CONTEXT ctx = {0};
+		// TODO: support various types?
+		ctx.ContextFlags = CONTEXT_ALL;
+		if (GetThreadContext (th, &ctx)) {
+			if (size > sizeof (ctx)) {
+				size = sizeof (ctx);
+			}
+			memcpy (buf, &ctx, size);
+			ret = size;
+		} else {
+			r_sys_perror ("get_thread_context/GetThreadContext");
+		}
+	} else {
+		WOW64_CONTEXT ctx = {0};
+		// TODO: support various types?
+		ctx.ContextFlags = CONTEXT_ALL;
+		if (Wow64GetThreadContext (th, &ctx)) {
+			if (size > sizeof (ctx)) {
+				size = sizeof (ctx);
+			}
+			memcpy (buf, &ctx, size);
+			ret = size;
+		} else {
+			r_sys_perror ("get_thread_context/Wow64GetThreadContext");
+		}
+	}
+	return ret;
+}
+
 int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	// disabled for now
 	/*
@@ -98,27 +182,14 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		r_sys_perror ("w32_reg_read/OpenThread");
 		return 0;
 	}
-	/*if (dbg->bits != 64) {
-
-	}*/
-	// Always suspend the process
-	if (SuspendThread (th) == -1) {
+	// Always suspend
+	if (suspend_thread (th, dbg->bits) == -1) {
 		CloseHandle (th);
 		return 0;
 	}
-	CONTEXT ctx = {0};
-	// TODO: support various types?
-	ctx.ContextFlags = CONTEXT_ALL;
-	// TODO: select correct function depending on bitness
-	if (GetThreadContext (th, &ctx)) {
-		if (size > sizeof (ctx)) {
-			size = sizeof (ctx);
-		}
-		memcpy (buf, &ctx, size);
-	} else {
-		size = 0;
-	}
-	if (ResumeThread (th) == -1) {
+	size = get_thread_context (th, buf, size, dbg->bits);
+	// Always resume
+	if (resume_thread (th, dbg->bits) == -1) {
 		size = 0;
 	}
 	CloseHandle (th);
@@ -157,26 +228,17 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		r_sys_perror ("w32_reg_write/OpenThread");
 		return false;
 	}
-	// Always suspend the process
-	if (SuspendThread (th) != -1) {
+	// Always suspend
+	if (suspend_thread (th, dbg->bits) != -1) {
 		r_sys_perror ("w32_reg_write/SuspendThread");
 		CloseHandle (th);
 		return false;
 	}
-	CONTEXT ctx = {0};
-	if (size > sizeof (ctx)) {
-		size = sizeof (ctx);
-	}
-	// TODO: select correct function depending on bitness
-	memcpy (&ctx, buf, size);
-	bool ret = SetThreadContext (th, &ctx);
-	if (!ret) {
-		r_sys_perror ("w32_reg_write/SetThreadContext");
-	}
-	// Resume the process even upon failure
-	if (ResumeThread (th) == -1) {
-		if (ret) ret = false;
+	ret = set_thread_context (th, buf, size, dbg->bits);
+	// Always resume
+	if (resume_thread (th, dbg->bits) == -1) {
 		r_sys_perror ("w32_reg_write/ResumeThread");
+		ret = false;
 	}
 	CloseHandle (th);
 	return ret;
