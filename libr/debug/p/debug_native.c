@@ -2022,6 +2022,7 @@ RDebugPlugin r_debug_plugin_native = {
 	.contsc = &r_debug_native_continue_syscall,
 	.attach = &r_debug_native_attach,
 	.detach = &r_debug_native_detach,
+// TODO: add native select for other platforms?
 #if __WINDOWS__
 	.select = &r_debug_native_select,
 #endif

@@ -9,7 +9,6 @@ typedef struct {
 	// bool dbgpriv;
 	HANDLE ph;
 	bool debug;
-	// int (*select)(int pid, int tid);
 } RIOW32Dbg;
 
 static RDebug *g_dbg = NULL;
@@ -45,7 +44,6 @@ int w32_init(RDebug *dbg) {
 	// rio->dbgpriv = setup_debug_privileges (true);
 	rio->ph = (HANDLE)NULL;
 	rio->debug = false;
-	// rio->select = &w32_select;
 	g_dbg = dbg;
 	return true;
 }
@@ -304,16 +302,16 @@ int w32_detach(RDebug *dbg, int pid) {
 }
 
 int w32_select(int pid, int tid) {
-	/*RIOW32Dbg *rio = g_dbg->user;
+	RIOW32Dbg *rio = g_dbg->user;
 	if (rio->ph != (HANDLE)NULL) {
 		return true;
 	}
+	// hack to support w32dbg:// and attach://
 	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (rio->ph == (HANDLE)NULL) {
 		return false;
 	}
-	rio->debug = false;*/
-	eprintf ("w32_select is not implemented!\n");
+	rio->debug = false;
 	return true;
 }
 
@@ -374,43 +372,26 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
-	// Disabling this for now
-	/*RDebugMap *map = NULL;
-	LPVOID base = NULL;
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	if (process == INVALID_HANDLE_VALUE) {
-		return map;
-	}
-	base = VirtualAllocEx (process, (LPVOID)(size_t)addr,
+	RIOW32Dbg *rio = dbg->user;
+	LPVOID base = VirtualAllocEx (rio->ph, (LPVOID)(size_t)addr,
 	  			(SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
-	CloseHandle (process);
 	if (!base) {
 		eprintf ("Failed to allocate memory\n");
-		return map;
+		return NULL;
 	}
 	r_debug_map_sync (dbg);
-	map = r_debug_map_get (dbg, (ut64)(size_t)base);
-	return map;*/
-	eprintf ("w32_map_alloc is not implemented!\n");
-	return NULL;
+	return r_debug_map_get (dbg, (ut64)(size_t)base);
 }
 
 int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
-	// disabling this for now
-	/*HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->tid);
-	if (process == INVALID_HANDLE_VALUE) {
-		return false;
-	}
+	RIOW32Dbg *rio = dbg->user;
 	int ret = true;
-	if (!VirtualFreeEx (process, (LPVOID)(size_t)addr,
+	if (!VirtualFreeEx (rio->ph, (LPVOID)(size_t)addr,
 			  (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf ("Failed to free memory\n");
 		ret = false;
 	}
-	CloseHandle (process);
-	return ret;*/
-	eprintf ("w32_map_dealloc is not implemented!\n");
-	return false;
+	return ret;
 }
 
 static int io_perms_to_prot(int io_perms) {
