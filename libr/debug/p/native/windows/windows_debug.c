@@ -597,6 +597,8 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, HANDLE ph) {
 				uid = sid;
 			}
 			CloseHandle (ph);
+		} else {
+			return NULL;
 		}
 	} else {
 		path = resolve_path (ph);
