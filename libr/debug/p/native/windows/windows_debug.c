@@ -585,7 +585,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-__declspec(noinline) static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
+static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe, bool b) {
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe->th32ProcessID);
 	const char *path = NULL;
 	int uid = -1;
@@ -619,12 +619,12 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 		do {
 			if (b || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RDebugPid *dbg_pid = build_debug_pid (&pe, b && dbg->pid != -1);
+				RDebugPid *dbg_pid = build_debug_pid (&pe, b && dbg->pid == -1);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
-				} else {
+				}/* else {
 					eprintf ("w32_pid_list: failed to process pid %d\n", pe.th32ProcessID);
-				}
+				}*/
 			}
 		} while (Process32Next (sh, &pe));
 	} else {
