@@ -13,6 +13,8 @@ typedef struct {
 
 static RDebug *g_dbg = NULL;
 
+static NTSTATUS (WINAPI *w32_NtQueryInformationThread)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
+
 bool setup_debug_privileges(bool b) {
 	HANDLE tok;
 	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) {
@@ -45,12 +47,14 @@ int w32_init(RDebug *dbg) {
 	rio->ph = (HANDLE)NULL;
 	rio->debug = false;
 	g_dbg = dbg;
+	HMODULE lib = GetModuleHandle ("ntdll"); //Always loaded
+	w32_NtQueryInformationThread = GetProcAddress (lib, "NtQueryInformationThread");
 	return true;
 }
 
 static int suspend_thread(HANDLE th, int bits) {
 	bool ret;
-	if (bits == 32) {
+	if (bits == R_SYS_BITS_32) {
 		if ((ret = SuspendThread (th)) == -1) {
 			r_sys_perror ("suspend_thread/SuspendThread");
 		}
@@ -64,7 +68,7 @@ static int suspend_thread(HANDLE th, int bits) {
 
 static int resume_thread(HANDLE th, int bits) {
 	bool ret;
-	if (bits == 32) {
+	if (bits == R_SYS_BITS_32) {
 		if ((ret = ResumeThread (th)) == -1) {
 			r_sys_perror ("resume_thread/ResumeThread");
 		}
@@ -78,7 +82,7 @@ static int resume_thread(HANDLE th, int bits) {
 
 static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	bool ret;
-	if (bits == 32) {
+	if (bits == R_SYS_BITS_32) {
 		CONTEXT ctx = {0};
 		if (size > sizeof (ctx)) {
 			size = sizeof (ctx);
@@ -102,7 +106,7 @@ static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 
 static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	int ret = 0;
-	if (bits == 32) {
+	if (bits == R_SYS_BITS_32) {
 		CONTEXT ctx = {0};
 		// TODO: support various types?
 		ctx.ContextFlags = CONTEXT_ALL;
@@ -134,7 +138,7 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 
 int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
-	if (dbg->bits == 64) {
+	if (dbg->bits == R_SYS_BITS_64) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
@@ -158,7 +162,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
-	if (dbg->bits == 64) {
+	if (dbg->bits == R_SYS_BITS_64) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
@@ -206,28 +210,6 @@ int w32_attach(RDebug *dbg, int pid) {
 	rio->ph = ph;
 	rio->debug = true;
 	return tid;
-	// rio->ph = ph;
-	/*int ret = -1;
-	RIOW32 *rio = dbg->user;
-	// 
-	if (rio->dbgpriv) {
-	}
-	if (!rio->processHandle) {
-		rio->processHandle = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-		if (rio->processHandle != (HANDLE)NULL) {
-			if (DebugActiveProcess (pid)) {
-			}
-			// TODO: get main thread id
-		}
-	}
-	return ret;*/
-
-	/*
-	// XXX: What is this for?
-	ret = w32_first_thread (pid);
-	CloseHandle (process);
-	return ret;
-	*/
 }
 
 int w32_detach(RDebug *dbg, int pid) {
@@ -277,6 +259,7 @@ int w32_select(int pid, int tid) {
 						}
 					} break;
 				case EXCEPTION_DEBUG_EVENT:
+					// TODO: check for the type of exception
 					cont = false;
 					break;
 				default:
@@ -323,6 +306,379 @@ void w32_break_process(RDebug *dbg) {
 	if (!DebugBreakProcess (rio->ph)) {
 		r_sys_perror ("w32_break_process/DebugBreakProcess");
 	}
+}
+
+static char *get_w32_excep_name(unsigned long code) {
+	char *desc;
+	switch (code) {
+	/* fatal exceptions */
+	case EXCEPTION_ACCESS_VIOLATION:
+		desc = "access violation";
+		break;
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+		desc = "array bounds exceeded";
+		break;
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+		desc = "illegal instruction";
+		break;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+		desc = "divide by zero";
+		break;
+	case EXCEPTION_STACK_OVERFLOW:
+		desc = "stack overflow";
+		break;
+	default:
+		desc = "unknown";
+	}
+
+	return desc;
+}
+
+static int debug_exception_event(DEBUG_EVENT *de) {
+	unsigned long code = de->u.Exception.ExceptionRecord.ExceptionCode;
+	switch (code) {
+	/* fatal exceptions */
+	case EXCEPTION_ACCESS_VIOLATION:
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	case EXCEPTION_STACK_OVERFLOW:
+		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
+			(int)de->dwProcessId, 
+			get_w32_excep_name(code),
+			(int)de->dwThreadId);
+		break;
+	/* MS_VC_EXCEPTION */
+	case 0x406D1388:
+		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
+			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
+		return 1;
+	default:
+		eprintf ("(%d) Unknown exception %x in thread %d\n",
+			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
+		break;
+	}
+	return 0;
+}
+
+static char *get_file_name_from_handle (HANDLE handle_file) {
+	HANDLE handle_file_map = NULL;
+	LPTSTR filename = NULL;
+	DWORD file_size_high = 0;
+	LPVOID map = NULL;
+	DWORD file_size_low = GetFileSize (handle_file, &file_size_high);
+
+	if (file_size_low == 0 && file_size_high == 0) {
+		return NULL;
+	}
+	handle_file_map = CreateFileMapping (handle_file, NULL, PAGE_READONLY, 0, 1, NULL);
+	if (!handle_file_map) {
+		goto err_get_file_name_from_handle;
+	}
+	filename = malloc ((MAX_PATH + 1) * sizeof (TCHAR));
+	if (!filename) {
+		goto err_get_file_name_from_handle;
+	}
+	/* Create a file mapping to get the file name. */
+	map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
+	if (!map || !w32_GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
+		goto err_get_file_name_from_handle;
+	}
+	TCHAR temp_buffer[512];
+	/* Translate path with device name to drive letters. */
+	if (!GetLogicalDriveStrings (sizeof (temp_buffer) - 1, temp_buffer)) {
+		goto err_get_file_name_from_handle;
+	}
+	TCHAR name[MAX_PATH];
+	TCHAR drive[3] =  TEXT (" :");
+	LPTSTR cur_drive = temp_buffer;
+	while (*cur_drive) {
+		/* Look up each device name */
+		*drive = *cur_drive;
+		if (QueryDosDevice (drive, name, MAX_PATH)) {
+			size_t name_length = _tcslen (name);
+
+			if (name_length < MAX_PATH) {
+				if (_tcsnicmp (filename, name, name_length) == 0
+					&& *(filename + name_length) == TEXT ('\\')) {
+					TCHAR temp_filename[MAX_PATH];
+					_sntprintf (temp_filename, MAX_PATH, TEXT ("%s%s"),
+						drive, filename + name_length);
+					_tcsncpy (filename, temp_filename,
+						_tcslen (temp_filename) + 1);
+					break;
+				}
+			}
+		}
+		cur_drive++;
+	} 
+err_get_file_name_from_handle:
+	if (map) {
+		UnmapViewOfFile (map);
+	}
+	if (handle_file_map) {
+		CloseHandle (handle_file_map);
+	}
+	if (filename) {
+		char *filename_ = r_sys_conv_win_to_utf8(filename);
+		free (filename);
+		return filename_;
+
+	}	
+	return NULL;
+}
+
+typedef struct{
+	int pid;
+	HANDLE hFile;
+	void* BaseOfDll;
+	char Path[MAX_PATH];
+	char Name[MAX_PATH];
+} LIB_ITEM, *PLIB_ITEM;
+LPVOID lstLib = 0;
+PLIB_ITEM lstLibPtr = 0;
+/*
+static char * r_debug_get_dll() {
+	return lstLibPtr->Path;
+}
+*/
+
+static  PLIB_ITEM  r_debug_get_lib_item() {
+	return lstLibPtr;
+}
+#define PLIB_MAX 512
+static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * dllname) {
+	int x;
+	if (lstLib == 0)
+		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
+	lstLibPtr = (PLIB_ITEM)lstLib;
+	for (x=0; x<PLIB_MAX; x++) {
+		if (!lstLibPtr->hFile) {
+			lstLibPtr->pid = pid;
+			lstLibPtr->hFile = hFile; //DBGEvent->u.LoadDll.hFile;
+			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
+			strncpy (lstLibPtr->Path,dllname,MAX_PATH-1);
+			int i = strlen (dllname);
+                        int n = i;
+                        while(dllname[i] != '\\' && i >= 0) {
+                             i--;
+                        }
+                        strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
+			return;
+		}
+		lstLibPtr++;
+	}
+	eprintf("r_debug_lstLibAdd: Cannot find slot\n");
+}
+static void * r_debug_findlib (void * BaseOfDll) {
+	PLIB_ITEM libPtr = NULL;
+	if (lstLib) {
+		libPtr = (PLIB_ITEM)lstLib;
+		while (libPtr->hFile != NULL) {
+			if (libPtr->hFile != (HANDLE)-1)
+				if (libPtr->BaseOfDll == BaseOfDll)
+					return ((void*)libPtr);
+			libPtr = (PLIB_ITEM)((ULONG_PTR)libPtr + sizeof (LIB_ITEM));
+		}
+	}
+	return NULL;
+}
+
+// thread list
+typedef struct {
+	int pid;
+	int tid;
+	BOOL bFinished;
+	HANDLE hThread;
+	LPVOID lpThreadLocalBase;
+	LPVOID lpStartAddress;
+	PVOID lpThreadEntryPoint;
+	DWORD dwExitCode;
+} THREAD_ITEM, *PTHREAD_ITEM;
+LPVOID lstThread = 0;
+PTHREAD_ITEM lstThreadPtr = 0;
+static  PTHREAD_ITEM  r_debug_get_thread_item() {
+	return lstThreadPtr;
+}
+#define PTHREAD_MAX 1024
+static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID  lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
+	int x;
+	PVOID startAddress = 0;
+	if (lstThread == 0)
+		lstThread = VirtualAlloc (0, PTHREAD_MAX * sizeof (THREAD_ITEM), MEM_COMMIT, PAGE_READWRITE);
+	lstThreadPtr = (PTHREAD_ITEM)lstThread;
+	for (x = 0; x < PTHREAD_MAX; x++) {
+		if (!lstThreadPtr->tid) {
+			lstThreadPtr->pid = pid;
+			lstThreadPtr->tid = tid;
+			lstThreadPtr->bFinished = bFinished;
+			lstThreadPtr->hThread = hThread;
+			lstThreadPtr->lpThreadLocalBase = lpThreadLocalBase;
+			lstThreadPtr->lpStartAddress = lpStartAddress;
+			if (w32_NtQueryInformationThread (hThread, 0x9 /*ThreadQuerySetWin32StartAddress*/, &startAddress, sizeof (PVOID), NULL) == 0) {
+				lstThreadPtr->lpThreadEntryPoint = startAddress;
+			}
+			return;
+		}
+		lstThreadPtr++;
+	}
+	eprintf ("r_debug_lstThreadAdd: Cannot find slot\n");
+}
+
+static void * r_debug_findthread(int pid, int tid) {
+	PTHREAD_ITEM threadPtr = NULL;
+	if (lstThread) {
+		threadPtr = (PTHREAD_ITEM)lstThread;
+		while (threadPtr->tid != 0) {
+			if (threadPtr->pid == pid) {
+				if (threadPtr->tid == tid) {
+					return ((void*)threadPtr);
+				}
+			}
+			threadPtr = (PTHREAD_ITEM)((ULONG_PTR)threadPtr + sizeof (THREAD_ITEM));
+		}
+	}
+	return NULL;
+}
+
+int w32_dbg_wait(RDebug *dbg, int pid) {
+	DEBUG_EVENT de;
+	int tid, next_event = 0;
+	unsigned int code;
+	char *dllname = NULL;
+	int ret = R_DEBUG_REASON_UNKNOWN;
+	static int exited_already = 0;
+	/* handle debug events */
+	do {
+		/* do not continue when already exited but still open for examination */
+		if (exited_already == pid) {
+			return -1;
+		}
+		memset (&de, 0, sizeof (DEBUG_EVENT));
+		if (!WaitForDebugEvent (&de, INFINITE)) {
+			r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
+			return -1;
+		}
+		code = de.dwDebugEventCode;
+		tid = de.dwThreadId;
+		pid = de.dwProcessId;
+		dbg->tid = tid;
+		dbg->pid = pid;
+		/* TODO: DEBUG_CONTROL_C */
+		switch (code) {
+		case CREATE_PROCESS_DEBUG_EVENT:
+			//TODO: replace w32_h2t calls to w32_thread_list to get tid
+			/*eprintf ("(%d) created process (%d:%p)\n",
+				pid, w32_h2t (de.u.CreateProcessInfo.hProcess),
+				de.u.CreateProcessInfo.lpStartAddress);*/
+			w32_continue (dbg, pid, tid, -1);
+			next_event = 1;
+			ret = R_DEBUG_REASON_NEW_PID;
+			break;
+		case EXIT_PROCESS_DEBUG_EVENT:
+			//eprintf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
+			//	(int)de.u.ExitProcess.dwExitCode);
+			/*r_cons_printf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
+				(int)de.u.ExitProcess.dwExitCode);
+			r_cons_flush ();*/
+			//debug_load();
+			next_event = 0;
+			exited_already = pid;
+			ret = R_DEBUG_REASON_EXIT_PID;
+			break;
+		case CREATE_THREAD_DEBUG_EVENT:
+			//eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
+			r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
+			//r_debug_native_continue (dbg, pid, tid, -1);
+			ret = R_DEBUG_REASON_NEW_TID;
+			next_event = 0;
+			break;
+		case EXIT_THREAD_DEBUG_EVENT:
+			//eprintf ("(%d) Finished thread %d\n", pid, tid);
+			lstThreadPtr = (PTHREAD_ITEM)r_debug_findthread (pid, tid);
+			if (lstThreadPtr) {
+				lstThreadPtr->bFinished = TRUE;
+				lstThreadPtr->dwExitCode = de.u.ExitThread.dwExitCode;
+			} else {
+				r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
+			}
+			//r_debug_native_continue (dbg, pid, tid, -1);
+			next_event = 0;
+			ret = R_DEBUG_REASON_EXIT_TID;
+			break;
+		case LOAD_DLL_DEBUG_EVENT:
+			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
+			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
+			r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
+			if (dllname) {
+				free (dllname);
+			}
+			next_event = 0;
+			ret = R_DEBUG_REASON_NEW_LIB;
+			break;
+		case UNLOAD_DLL_DEBUG_EVENT:
+			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
+			lstLibPtr = (PLIB_ITEM)r_debug_findlib (de.u.UnloadDll.lpBaseOfDll);
+			if (lstLibPtr != NULL) {
+				lstLibPtr->hFile = (HANDLE)-1;
+			} else {
+				r_debug_lstLibAdd (pid, de.u.UnloadDll.lpBaseOfDll, (HANDLE)-1, "not cached");
+				if (dllname)
+					free (dllname);
+			}
+			next_event = 0;
+			ret = R_DEBUG_REASON_EXIT_LIB;
+			break;
+		case OUTPUT_DEBUG_STRING_EVENT:
+			//eprintf ("(%d) Debug string\n", pid);
+			r_cons_printf ("(%d) Debug string\n", pid);
+			r_cons_flush ();
+
+			w32_continue (dbg, pid, tid, -1);
+			next_event = 1;
+			break;
+		case RIP_EVENT:
+			//eprintf ("(%d) RIP event\n", pid);
+			r_cons_printf ("(%d) RIP event\n", pid);
+			r_cons_flush ();
+			w32_continue (dbg, pid, tid, -1);
+			next_event = 1;
+			// XXX unknown ret = R_DEBUG_REASON_TRAP;
+			break;
+		case EXCEPTION_DEBUG_EVENT:
+			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
+#if _WIN64
+			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
+#endif
+			case EXCEPTION_BREAKPOINT:
+				ret = R_DEBUG_REASON_BREAKPOINT;
+				next_event = 0;
+				break;
+#if _WIN64
+			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP */
+#endif
+			case EXCEPTION_SINGLE_STEP:
+				ret = R_DEBUG_REASON_STEP;
+				next_event = 0;
+				break;
+			default:
+				if (!debug_exception_event (&de)) {
+					ret = R_DEBUG_REASON_TRAP;
+					next_event = 0;
+				}
+				else {
+					next_event = 1;
+					w32_continue (dbg, pid, tid, -1);
+				}
+
+			}
+			break;
+		default:
+			eprintf ("(%d) unknown event: %d\n", pid, code);
+			return -1;
+		}
+	} while (next_event);
+	return ret;
 }
 
 int w32_step(RDebug *dbg) {

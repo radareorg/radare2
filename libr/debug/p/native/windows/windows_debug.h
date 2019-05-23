@@ -19,6 +19,7 @@ int w32_detach(RDebug *dbg, int pid);
 int w32_select(int pid, int tid);
 int w32_kill(RDebug *dbg, int pid, int tid, int sig);
 void w32_break_process(RDebug *dbg);
+int w32_dbg_wait(RDebug *dbg, int pid);
 
 int w32_step(RDebug *dbg);
 int w32_continue(RDebug *dbg, int pid, int tid, int sig);

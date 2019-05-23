@@ -197,7 +197,7 @@ static HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)(DWORD, DWORD) = NULL;
 #ifndef CONTEXT_ALL
 #define CONTEXT_ALL 1048607
 #endif
-static bool w32dbg_SeDebugPrivilege() {
+/*static bool w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
 	//     MSDN @ http://msdn.microsoft.com/en-us/library/aa446619%28VS.85%29.aspx
@@ -231,7 +231,7 @@ static bool w32dbg_SeDebugPrivilege() {
 	}
 	CloseHandle (hToken);
 	return ret;
-}
+}*/
 
 //merged
 /*static int w32_dbg_init() {
@@ -335,7 +335,7 @@ static inline int w32_h2p(HANDLE h) {
 	return w32_GetProcessId (h);
 }
 
-static int w32_first_thread(int pid) {
+/*static int w32_first_thread(int pid) {
 	HANDLE th;
 	HANDLE thid;
 	THREADENTRY32 te32;
@@ -356,7 +356,7 @@ static int w32_first_thread(int pid) {
 		return -1;
 	}
 	do {
-		/* get all threads of process */
+		/* get all threads of process * /
 		if (te32.th32OwnerProcessID == pid) {
 			thid = w32_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
@@ -371,7 +371,7 @@ err_load_th:
 	eprintf ("Could not find an active thread for pid %d\n", pid);
 	CloseHandle (th);
 	return pid;
-}
+}*/
 
 static char *get_w32_excep_name(unsigned long code) {
 	char *desc;
@@ -605,16 +605,16 @@ static void * r_debug_findthread (int pid, int tid) {
 	return NULL;
 }
 
-static int w32_dbg_wait(RDebug *dbg, int pid) {
+/*static int w32_dbg_wait(RDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	unsigned int code;
 	char *dllname = NULL;
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
-	/* handle debug events */
+	/* handle debug events * /
 	do {
-		/* do not continue when already exited but still open for examination */
+		/* do not continue when already exited but still open for examination * /
 		if (exited_already == pid) {
 			return -1;
 		}
@@ -628,7 +628,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		pid = de.dwProcessId;
 		dbg->tid = tid;
 		dbg->pid = pid;
-		/* TODO: DEBUG_CONTROL_C */
+		/* TODO: DEBUG_CONTROL_C * /
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
 			eprintf ("(%d) created process (%d:%p)\n",
@@ -711,14 +711,14 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
 #if _WIN64
-			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
+			case 0x4000001f: /* STATUS_WX86_BREAKPOINT * /
 #endif
 			case EXCEPTION_BREAKPOINT:
 				ret = R_DEBUG_REASON_BREAKPOINT;
 				next_event = 0;
 				break;
 #if _WIN64
-			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP */
+			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP * /
 #endif
 			case EXCEPTION_SINGLE_STEP:
 				ret = R_DEBUG_REASON_STEP;
@@ -742,9 +742,9 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		}
 	} while (next_event);
 	return ret;
-}
+}*/
 
-static inline int is_pe_hdr(unsigned char *pe_hdr) {
+/*static inline int is_pe_hdr(unsigned char *pe_hdr) {
 	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)pe_hdr;
 	IMAGE_NT_HEADERS *nt_headers;
 
@@ -755,7 +755,7 @@ static inline int is_pe_hdr(unsigned char *pe_hdr) {
 			return 1;
 	}
 	return 0;
-}
+}*/
 
 static HANDLE w32_open_thread (int pid, int tid) {
 	HANDLE thread = w32_OpenThread (THREAD_ALL_ACCESS, 0, tid);
@@ -904,7 +904,7 @@ err_w32_terminate_process:
 	return ret;
 }*/
 
-void w32_break_process (void *d) {
+/*void w32_break_process (void *d) {
 	RDebug *dbg = (RDebug *)d;
 	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (!h_proc) {
@@ -919,7 +919,7 @@ err_w32_break_process:
 	if (h_proc) {
 		CloseHandle (h_proc);
 	}
-}
+}*/
 
 static int GetAVX (HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	BOOL Success;
