@@ -6774,18 +6774,16 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_ret (core->anal, core->offset);
 		}
 	case '*': // "ah*"
+	case 'j': // "ahj"
+	case '\0': // "ah"
 		if (input[1] == ' ') {
 			char *ptr = strdup (r_str_trim_ro (input + 2));
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			r_core_anal_hint_print (core->anal, addr, '*');
+			r_core_anal_hint_print (core->anal, addr, input[0]);
 		} else {
 			r_core_anal_hint_list (core->anal, input[0]);
 		}
-		break;
-	case 'j': // "ahj"
-	case '\0': // "ah"
-		r_core_anal_hint_list (core->anal, input[0]);
 		break;
 	case '-': // "ah-"
 		if (input[1]) {
