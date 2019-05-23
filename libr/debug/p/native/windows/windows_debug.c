@@ -283,6 +283,17 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
+void w32_break_process_wrapper(void *d) {
+	w32_break_process (d);
+}
+
+void w32_break_process(RDebug *dbg) {
+	RIOW32Dbg *rio = dbg->user;
+	if (!DebugBreakProcess (rio->ph)) {
+		r_sys_perror ("w32_break_process/w32_DebugBreakProcess");
+	}
+}
+
 int w32_step(RDebug *dbg) {
 	// disabled for now
 	/* set TRAP flag */
