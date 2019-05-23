@@ -321,11 +321,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
-	ut8 *buf_bytes = NULL;
 	RBinXtrPlugin *xtr;
-	ut64 file_sz = UT64_MAX;
 	RBinFile *binfile = NULL;
-	int tfd = -1;
+	int tfd = opt->fd;
 
 	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
 	const char *fname = iob->fd_get_name (io, opt->fd);
@@ -334,7 +332,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
-	file_sz = iob->fd_size (io, opt->fd);
+	ut64 file_sz = iob->fd_size (io, opt->fd);
 	// file_sz = UT64_MAX happens when attaching to frida:// and other non-debugger io plugins which results in double opening
 	if (is_debugger && file_sz == UT64_MAX) {
 		tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
@@ -349,33 +347,19 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	if (opt->sz >= UT32_MAX) {
 		opt->sz = 1024 * 32;
 	}
-
+	RBuffer *buf = r_buf_new_with_io (&bin->iob, tfd);
+	if (!buf) {
+		return false;
+	}
 	bin->file = fname;
 	opt->sz = R_MIN (file_sz, opt->sz);
-	if (!r_list_length (bin->binfiles)) {
-		if (is_debugger) {
-			//use the temporal RIODesc to read the content of the file instead
-			//from the memory
-			if (tfd >= 0) {
-				buf_bytes = calloc (1, opt->sz + 1);
-				if (buf_bytes) {
-					iob->fd_read_at (io, tfd, 0, buf_bytes, opt->sz);
-				}
-				// iob->fd_close (io, tfd);
-			}
-		}
-	}
-	// this thing works for 2GB ELF core from vbox
-	if (!buf_bytes) {
-		const unsigned int asz = opt->sz? (unsigned int)opt->sz: 1;
-		buf_bytes = calloc (1, asz);
-		if (!buf_bytes) {
-			eprintf ("Cannot allocate %u bytes.\n", asz);
-			return false;
-		}
-		ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
-		if (!iob->fd_read_at (io, opt->fd, seekaddr, buf_bytes, asz)) {
-			opt->sz = 0LL;
+	ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
+	if (seekaddr > 0 && seekaddr != UT64_MAX) {
+		// slice buffer if necessary
+		RBuffer *nb = r_buf_new_slice (buf, seekaddr, opt->sz);
+		if (nb) {
+			r_buf_free (buf);
+			buf = nb;
 		}
 	}
 	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
@@ -383,27 +367,26 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr->check_bytes (buf_bytes, opt->sz)) {
+			if (!xtr->check_buffer) {
+				eprintf ("Missing check_buffer callback for '%s'\n", xtr->name);
+				continue;
+			}
+			if (xtr->check_buffer (buf)) {
 				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					if (is_debugger && opt->sz != file_sz) {
-						R_FREE (buf_bytes);
 						if (tfd < 0) {
 							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
 						}
 						opt->sz = iob->fd_size (io, tfd);
 						if (opt->sz != UT64_MAX) {
-							buf_bytes = calloc (1, opt->sz + 1);
-							if (buf_bytes) {
-								(void)iob->fd_read_at (io, tfd, 0, buf_bytes, opt->sz);
-							}
+							r_buf_seek (buf, 0, R_BUF_SET);
+							//buf->base_priv = 0;
 						}
 						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
 						tfd = -1; // marking it closed
-					} else if (opt->sz != file_sz) {
-						(void)iob->read_at (io, 0LL, buf_bytes, opt->sz);
 					}
-					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
-						fname, buf_bytes, opt->sz, file_sz,
+					binfile = r_bin_file_xtr_load_buffer (bin, xtr,
+						fname, buf, file_sz,
 						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
 						opt->fd, bin->rawstr);
 				}
@@ -411,11 +394,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		}
 	}
 	if (!binfile) {
-		binfile = r_bin_file_new_from_bytes (
-			bin, fname, buf_bytes, opt->sz, file_sz, bin->rawstr,
+		binfile = r_bin_file_new_from_buffer (
+			bin, fname, buf, file_sz, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
-	} else {
-		free (buf_bytes);
 	}
 
 	if (!binfile || !r_bin_file_set_cur_binfile (bin, binfile)) {
@@ -448,7 +429,16 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 	r_return_val_if_fail (bin && bytes, NULL);
 
 	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
+		if (plugin->check_buffer) {
+			RBuffer *b = r_buf_new_with_pointers (bytes, sz, false);
+			if (b) {
+				bool ok = plugin->check_buffer (b);
+				r_buf_free (b);
+				if (ok) {
+					return plugin;
+				}
+			}
+		} else if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
 			return plugin;
 		}
 	}

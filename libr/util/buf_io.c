@@ -30,7 +30,7 @@ static bool buf_io_init(RBuffer *b, const void *user) {
 }
 
 static bool buf_io_fini(RBuffer *b) {
-	struct buf_io_priv *priv = get_priv_io (b);
+	//struct buf_io_priv *priv = get_priv_io (b);
 	R_FREE (b->priv);
 	return true;
 }
