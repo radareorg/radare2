@@ -254,11 +254,37 @@ int w32_select(int pid, int tid) {
 		return true;
 	}
 	// hack to support w32dbg:// and attach://
+	DEBUG_EVENT de;
+	bool cont = true;
+	do {
+		if (!WaitForDebugEvent (&de, 1000)) {
+			break;
+		}
+		switch (de.dwDebugEventCode) {
+			//case CREATE_PROCESS_DEBUG_EVENT:
+			case CREATE_THREAD_DEBUG_EVENT:
+				cont = false;
+				break;
+			case LOAD_DLL_DEBUG_EVENT:
+				{
+					HANDLE hf = de.u.LoadDll.hFile;
+					if (hf && hf != INVALID_HANDLE_VALUE) {
+						CloseHandle (hf);
+					}
+				} break;
+			default:
+				eprintf ("Unhandled debug event %d", de.dwDebugEventCode);
+				break;
+		}
+	} while (cont);
+	if (cont) { // Should never be true unless if WaitForDebugEvent failed
+		return false;
+	}
 	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (rio->ph == (HANDLE)NULL) {
 		return false;
 	}
-	rio->debug = false;
+	rio->debug = true;
 	return true;
 }
 
