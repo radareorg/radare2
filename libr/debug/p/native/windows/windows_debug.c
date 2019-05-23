@@ -322,7 +322,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	size = get_thread_context (th, buf, size, dbg->bits);
 	if (showfpu) {
-		printwincontext (hThread, &ctx);
+		printwincontext (th, (void *)buf);
 	}
 	// Always resume
 	if (resume_thread (th, dbg->bits) == -1) {
