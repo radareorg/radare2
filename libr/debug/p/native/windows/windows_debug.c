@@ -224,7 +224,7 @@ static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	return nRegs;
 }
 
-static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
+static void printwincontext(HANDLE hThread, void *context) {
 	ut128 xmm[16];
 	ut128 ymm[16];
 	ut80 st[8];
@@ -232,6 +232,7 @@ static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
 	ut16 top = 0;
 	int x = 0, nxmm = 0, nymm = 0;
 #if _WIN64
+	WOW64_CONTEXT *ctx = context;
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
 	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
@@ -255,10 +256,11 @@ static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
 	}
 	nxmm = 16;
 #else
-	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", (ut32) ctx->FloatSave.ControlWord, (ut32) ctx->FloatSave.StatusWord);
+	CONTEXT *ctx = context;
+	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", (ut32)ctx->FloatSave.ControlWord, (ut32)ctx->FloatSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], (ut32)ctx->FloatSave.TagWord);
 	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", (ut32)ctx->FloatSave.ErrorOffset, (ut32)ctx->FloatSave.DataOffset);
-	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", (ut32)ctx->FloatSave.ErrorSelector, (ut32) ctx->FloatSave.DataSelector);
+	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", (ut32)ctx->FloatSave.ErrorSelector, (ut32)ctx->FloatSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].High = (ut16) *((ut16 *)(&ctx->FloatSave.RegisterArea[x * 10] + 8));
 		st[x].Low = (ut64) *((ut64 *)&ctx->FloatSave.RegisterArea[x * 10]);
