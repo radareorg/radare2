@@ -362,7 +362,7 @@ static int debug_exception_event(DEBUG_EVENT *de) {
 	return 0;
 }
 
-static char *get_file_name_from_handle (HANDLE handle_file) {
+static char *get_file_name_from_handle(HANDLE handle_file) {
 	HANDLE handle_file_map = NULL;
 	LPTSTR filename = NULL;
 	DWORD file_size_high = 0;
@@ -824,8 +824,78 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 	return list;
 }
 
-RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
+static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
+	HANDLE h_tok = NULL;
+	DWORD tok_len = 0;
+	PTOKEN_USER tok_usr = NULL;
+	LPTSTR usr = NULL, usr_dom = NULL;
+	DWORD usr_len = 512;
+	DWORD usr_dom_len = 512;
+	SID_NAME_USE snu = {0};
+	RIOW32Dbg *rio = dbg->user;
+
+	if (!OpenProcessToken (rio->ph, TOKEN_QUERY, &h_tok)) {
+		r_sys_perror ("w32_info_user/OpenProcessToken");
+		goto err_w32_info_user;
+	}
+	if (!GetTokenInformation (h_tok, TokenUser, (LPVOID)&tok_usr, 0, &tok_len) && GetLastError () != ERROR_INSUFFICIENT_BUFFER) {
+		r_sys_perror ("w32_info_user/GetTokenInformation");
+		goto err_w32_info_user;
+	}
+	tok_usr = (PTOKEN_USER)malloc (tok_len);
+	if (!tok_usr) {
+		perror ("w32_info_user/malloc tok_usr");
+		goto err_w32_info_user;
+	}
+	if (!GetTokenInformation (h_tok, TokenUser, (LPVOID)tok_usr, tok_len, &tok_len)) {
+		r_sys_perror ("w32_info_user/GetTokenInformation");
+		goto err_w32_info_user;
+	}
+	usr = (LPTSTR)malloc (usr_len);
+	if (!usr) {
+		perror ("w32_info_user/malloc usr");
+		goto err_w32_info_user;
+	}
+	*usr = '\0';
+	usr_dom = (LPTSTR)malloc (usr_dom_len);
+	if (!usr_dom) {
+		perror ("w32_info_user/malloc usr_dom");
+		goto err_w32_info_user;
+	}
+	*usr_dom = '\0';
+	if (!LookupAccountSid (NULL, tok_usr->User.Sid, usr, &usr_len, usr_dom, &usr_dom_len, &snu)) {
+		r_sys_perror ("w32_info_user/LookupAccountSid");
+		goto err_w32_info_user;
+	}
+	if (*usr_dom) {
+		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);		
+	} else {
+		rdi->usr = r_sys_conv_win_to_utf8 (usr);
+	}
+err_w32_info_user:
+	if (h_tok) {
+		CloseHandle (h_tok);
+	}
+	free (usr);
+	free (usr_dom);
+	free (tok_usr);
+}
+
+static void w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
+	RIOW32Dbg *rio = dbg->user;
+	rdi->exe = resolve_path (rio->ph);
 	/*
+	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, dbg->pid);
+	if (!ph) {
+		r_sys_perror ("w32_info_exe/OpenProcess");
+		return;
+	}
+	rdi->exe = resolve_path (ph);
+	CloseHandle (ph);
+	*/
+}
+
+RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
@@ -840,9 +910,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	rdi->libname = NULL;
 	w32_info_user (dbg, rdi);
 	w32_info_exe (dbg, rdi);
-	return rdi;*/
-	eprintf ("w32_info is not implemented!\n");
-	return NULL;
+	return rdi;
 }
 
 static RDebugPid *build_debug_pid(int pid, HANDLE ph, const char* name) {
