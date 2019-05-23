@@ -68,7 +68,7 @@ endif
 
 if host_machine.system() == 'windows'
   r_debug_sources += [
-    'p/native/map/windows.c',
+    'p/native/maps/windows.c',
     'p/native/windows/windows_debug.c',
   ]
 endif
