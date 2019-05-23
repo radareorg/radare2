@@ -9,7 +9,6 @@
 #define PANEL_TITLE_SYMBOLS      "Symbols"
 #define PANEL_TITLE_STACK        "Stack"
 #define PANEL_TITLE_REGISTERS    "Registers"
-#define PANEL_TITLE_REGISTERREFS "RegisterRefs"
 #define PANEL_TITLE_DISASSEMBLY  "Disassembly"
 #define PANEL_TITLE_DECOMPILER   "Decompiler"
 #define PANEL_TITLE_GRAPH        "Graph"
@@ -96,7 +95,7 @@ static const char *menus_Search[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "DRX", "Breakpoints", "Watchpoints",
+	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Step", "Step Over", "Reload",
 	NULL
@@ -260,7 +259,7 @@ static bool checkPanelNum(RCore *core);
 static bool checkFunc(RCore *core);
 static bool checkFuncDiff(RCore *core, RPanel *p);
 static bool findCmdStrCache(RCore *core, RPanel *panel, char **str);
-static bool find_panel(RCore *core, int idx, char **title, char **cmd);
+static bool exec_almighty(RCore *core, RPanel *panel, int idx, char **title, char **cmd);
 static char *handleCmdStrCache(RCore *core, RPanel *panel);
 static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
@@ -402,7 +401,7 @@ static bool moveToDirection(RCore *core, Direction direction);
 static void toggleHelp(RCore *core);
 static void createDefaultPanels(RCore *core);
 static void createNewPanel(RCore *core, bool vertical);
-static void create_widget(RCore *core, RPanel *panel, int *idx);
+static void create_widget(RCore *core, int *idx);
 static void create_almighty(RCore *core, RPanel *panel);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
@@ -3607,6 +3606,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (panels->db, "Locals", "afvd", 0);
 	sdb_set (panels->db, "Registers", "dr", 0);
+	sdb_set (panels->db, "RegisterRefs", "drr", 0);
 	sdb_set (panels->db, "Disassembly", "pd", 0);
 	sdb_set (panels->db, "Decompiler", "pdc", 0);
 	sdb_set (panels->db, "Graph", "agf", 0);
@@ -4243,9 +4243,9 @@ static void createNewPanel(RCore *core, bool vertical) {
 	free (res);
 }
 
-static void create_widget(RCore *core, RPanel *panel, int *idx) {
+static void create_widget(RCore *core, int *idx) {
 	RPanels *panels = core->panels;
-	int count = sdb_count (panels->db);
+	int count = sdb_count (panels->db) + 1;
 	if (*idx < 0) {
 		*idx = count;
 	}
@@ -4271,6 +4271,12 @@ static void create_widget(RCore *core, RPanel *panel, int *idx) {
 		}
 		r_strbuf_append (buf, "          \n");
 	}
+	if (i++ == *idx) {
+		r_strbuf_appendf (buf, ">  %sAdd the current panel"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
+	} else {
+		r_strbuf_append (buf, "   Add the current panel");
+	}
+	r_strbuf_append (buf, "          \n");
 	if (i == *idx) {
 		r_strbuf_appendf (buf, ">  %sCreate New"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
 	} else {
@@ -4295,7 +4301,7 @@ static void create_widget(RCore *core, RPanel *panel, int *idx) {
 
 static void create_almighty(RCore *core, RPanel *panel) {
 	int idx = 0, okey, key;
-	create_widget (core, panel, &idx);
+	create_widget (core, &idx);
 	char *title;
 	char *cmd;
 	while (true) {
@@ -4304,27 +4310,33 @@ static void create_almighty(RCore *core, RPanel *panel) {
 		switch (key) {
 		case 'j':
 			idx++;
-			create_widget (core, panel, &idx);
+			create_widget (core, &idx);
 			break;
 		case 'k':
 			idx--;
-			create_widget (core, panel, &idx);
+			create_widget (core, &idx);
 			break;
 		case 'v':
-			if (find_panel (core, idx, &title, &cmd)) {
+			if (exec_almighty (core, panel, idx, &title, &cmd)) {
 				splitPanelVertical (core, panel, title, cmd, false);
+				return;
 			}
-			return;
+			create_widget (core, &idx);
+			break;
 		case 'h':
-			if (find_panel (core, idx, &title, &cmd)) {
+			if (exec_almighty (core, panel, idx, &title, &cmd)) {
 				splitPanelHorizontal (core, panel, title, cmd, false);
+				return;
 			}
-			return;
+			create_widget (core, &idx);
+			break;
 		case 0x0d:
-			if (find_panel (core, idx, &title, &cmd)) {
+			if (exec_almighty (core, panel, idx, &title, &cmd)) {
 				replaceCmd (core, title, cmd, false);
+				return;
 			}
-			return;
+			create_widget (core, &idx);
+			break;
 		case 'q':
 		case '"':
 			panel->view->refresh = true;
@@ -4333,7 +4345,7 @@ static void create_almighty(RCore *core, RPanel *panel) {
 	}
 }
 
-static bool find_panel(RCore *core, int idx, char **title, char **cmd) {
+static bool exec_almighty(RCore *core, RPanel *panel, int idx, char **title, char **cmd) {
 	SdbList *l = sdb_foreach_list (core->panels->db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -4344,6 +4356,12 @@ static bool find_panel(RCore *core, int idx, char **title, char **cmd) {
 			*cmd = sdbkv_value (kv);
 			return true;
 		}
+	}
+	if (i++ == idx) {
+		*title = show_status_input (core, "Name: ");
+		*cmd = panel->model->cmd;
+		sdb_set (core->panels->db, *title, *cmd, 0);
+		return false;
 	}
 	if (i == idx) {
 		*title = show_status_input (core, "New name: ");
