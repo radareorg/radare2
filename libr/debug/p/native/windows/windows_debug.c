@@ -440,38 +440,36 @@ int w32_select(int pid, int tid) {
 		return true;
 	}
 	// hack to support w32dbg:// and attach://
-	if (g_dbg->pid != pid) {
-		DEBUG_EVENT de;
-		de.dwProcessId = pid;
-		de.dwThreadId = tid;
-		bool cont = true;
-		do {
-			if (!ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE)) {
-				return false;
-			}
-			if (!WaitForDebugEvent (&de, 1000)) {
-				return false;
-			}
-			switch (de.dwDebugEventCode) {
-			//case CREATE_PROCESS_DEBUG_EVENT:
-			//case CREATE_THREAD_DEBUG_EVENT:
-			case LOAD_DLL_DEBUG_EVENT:
-				{
-					HANDLE hf = de.u.LoadDll.hFile;
-					if (hf && hf != INVALID_HANDLE_VALUE) {
-						CloseHandle (hf);
-					}
-				} break;
-			case EXCEPTION_DEBUG_EVENT:
-				// TODO: check for the type of exception?
-				cont = false;
-				break;
-			default:
-				eprintf ("Unhandled debug event %d\n", de.dwDebugEventCode);
-				break;
-			}
-		} while (cont);
-	}
+	DEBUG_EVENT de;
+	de.dwProcessId = pid;
+	de.dwThreadId = tid;
+	bool cont = true;
+	do {
+		if (!ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE)) {
+			break;
+		}
+		if (!WaitForDebugEvent (&de, 1000)) {
+			break;
+		}
+		switch (de.dwDebugEventCode) {
+		//case CREATE_PROCESS_DEBUG_EVENT:
+		//case CREATE_THREAD_DEBUG_EVENT:
+		case LOAD_DLL_DEBUG_EVENT:
+			{
+				HANDLE hf = de.u.LoadDll.hFile;
+				if (hf && hf != INVALID_HANDLE_VALUE) {
+					CloseHandle (hf);
+				}
+			} break;
+		case EXCEPTION_DEBUG_EVENT:
+			// TODO: check for the type of exception?
+			cont = false;
+			break;
+		default:
+			eprintf ("Unhandled debug event %d\n", de.dwDebugEventCode);
+			break;
+		}
+	} while (cont);
 	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (rio->ph == (HANDLE)NULL) {
 		return false;
