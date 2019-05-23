@@ -185,8 +185,8 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 }
 
 #if __WINDOWS__
-static int r_debug_native_select (int pid, int tid) {
-	return w32_select (pid, tid);
+static int r_debug_native_select (RDebug *dbg, int pid, int tid) {
+	return w32_select (dbg, pid, tid);
 }
 #endif
 

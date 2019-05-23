@@ -187,7 +187,7 @@ static RList *r_debug_windbg_pids(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static int r_debug_windbg_select(int pid, int tid) {
+static int r_debug_windbg_select(RDebug *dbg, int pid, int tid) {
 	ut32 old = windbg_get_target (wctx);
 	int ret = windbg_set_target (wctx, pid);
 	if (!ret) {

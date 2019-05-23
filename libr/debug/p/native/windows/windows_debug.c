@@ -36,8 +36,6 @@ typedef struct {
 	bool debug;
 } RIOW32Dbg;
 
-static RDebug *g_dbg = NULL;
-
 static ut64 (WINAPI *w32_GetEnabledXStateFeatures)() = NULL;
 static BOOL (WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
 static BOOL (WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
@@ -77,7 +75,6 @@ int w32_init(RDebug *dbg) {
 	// rio->dbgpriv = setup_debug_privileges (true);
 	rio->ph = (HANDLE)NULL;
 	rio->debug = false;
-	g_dbg = dbg;
 
 	HMODULE lib = GetModuleHandle ("kernel32"); //Always loaded
 	w32_GetEnabledXStateFeatures = GetProcAddress (lib, "GetEnabledXStateFeatures");
@@ -426,8 +423,8 @@ int w32_detach(RDebug *dbg, int pid) {
 	return false;
 }
 
-int w32_select(int pid, int tid) {
-	RIOW32Dbg *rio = g_dbg->user;
+int w32_select(RDebug *dbg, int pid, int tid) {
+	RIOW32Dbg *rio = dbg->user;
 	if (rio->ph != (HANDLE)NULL) {
 		return true;
 	}
