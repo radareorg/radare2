@@ -256,7 +256,7 @@ static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	return nRegs;
 }
 
-static void printwincontext(HANDLE hThread, void *context) {
+static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
 	ut128 xmm[16];
 	ut128 ymm[16];
 	ut80 st[8];
@@ -264,7 +264,6 @@ static void printwincontext(HANDLE hThread, void *context) {
 	ut16 top = 0;
 	int x = 0, nxmm = 0, nymm = 0;
 #if _WIN64
-	WOW64_CONTEXT *ctx = context;
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
 	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
@@ -288,7 +287,6 @@ static void printwincontext(HANDLE hThread, void *context) {
 	}
 	nxmm = 16;
 #else
-	CONTEXT *ctx = context;
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", (ut32)ctx->FloatSave.ControlWord, (ut32)ctx->FloatSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], (ut32)ctx->FloatSave.TagWord);
 	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", (ut32)ctx->FloatSave.ErrorOffset, (ut32)ctx->FloatSave.DataOffset);
@@ -356,7 +354,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	size = get_thread_context (th, buf, size, dbg->bits);
 	if (showfpu) {
-		printwincontext (th, (void *)buf);
+		printwincontext (th, (CONTEXT *)buf);
 	}
 	// Always resume
 	if (resume_thread (th, dbg->bits) == -1) {
