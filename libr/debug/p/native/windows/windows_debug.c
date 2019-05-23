@@ -290,7 +290,7 @@ void w32_break_process_wrapper(void *d) {
 void w32_break_process(RDebug *dbg) {
 	RIOW32Dbg *rio = dbg->user;
 	if (!DebugBreakProcess (rio->ph)) {
-		r_sys_perror ("w32_break_process/w32_DebugBreakProcess");
+		r_sys_perror ("w32_break_process/DebugBreakProcess");
 	}
 }
 

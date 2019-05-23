@@ -1,5 +1,6 @@
 #include <r_debug.h>
 #include <windows.h>
+#include <tlhelp32.h>
 
 typedef struct {
 	// bool dbgpriv;
