@@ -589,7 +589,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		case CREATE_THREAD_DEBUG_EVENT:
 			//eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
 			r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
-			//r_debug_native_continue (dbg, pid, tid, -1);
+			//w32_continue (dbg, pid, tid, -1);
 			ret = R_DEBUG_REASON_NEW_TID;
 			next_event = 0;
 			break;
@@ -602,7 +602,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			} else {
 				r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
 			}
-			//r_debug_native_continue (dbg, pid, tid, -1);
+			//w32_continue (dbg, pid, tid, -1);
 			next_event = 0;
 			ret = R_DEBUG_REASON_EXIT_TID;
 			break;
@@ -702,8 +702,6 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		return false;
 	}
 	return tid;
-	eprintf ("w32_continue is not implemented!\n");
-	return false;
 }
 
 RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {

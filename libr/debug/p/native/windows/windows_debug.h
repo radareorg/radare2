@@ -8,6 +8,14 @@
 #include <r_types.h>
 #include <r_debug.h>
 
+typedef struct{
+	int pid;
+	HANDLE hFile;
+	void* BaseOfDll;
+	char Path[MAX_PATH];
+	char Name[MAX_PATH];
+} LIB_ITEM, *PLIB_ITEM;
+
 // APIs
 int w32_init(RDebug *dbg);
 
