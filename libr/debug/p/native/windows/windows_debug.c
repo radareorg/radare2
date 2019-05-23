@@ -259,8 +259,9 @@ int w32_select(int pid, int tid) {
 	de.dwThreadId = tid;
 	bool cont = true;
 	do {
-		// TODO: Check for failure
-		ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE);
+		if (!ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE)) {
+			return false;
+		}
 		if (!WaitForDebugEvent (&de, 1000)) {
 			break;
 		}
