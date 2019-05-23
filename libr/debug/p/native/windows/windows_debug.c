@@ -682,36 +682,26 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 }
 
 int w32_step(RDebug *dbg) {
-	// disabled for now
 	/* set TRAP flag */
-	/*
-#if _MSC_VER
-	CONTEXT regs;
-#else
-	// might not be required for mingw64 but leaving this here for now
-	CONTEXT regs __attribute__ ((aligned (16)));
-#endif
-	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
-	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
-	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	(void)r_debug_handle_signals (dbg);
-	return true;*/
-	eprintf ("w32_step is not implemented!\n");
-	return false;
+	CONTEXT ctx;
+	w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
+	ctx.EFlags |= 0x100;
+	w32_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
+	w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
+	// (void)r_debug_handle_signals (dbg);
+	return true;
 }
 
 int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
-	// disabled for now
 	/* Honor the Windows-specific signal that instructs threads to process exceptions */
-	/*DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
+	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
 	if (ContinueDebugEvent (pid, tid, continue_status) == 0) {
-		r_sys_perror ("r_debug_native_continue/ContinueDebugEvent");
+		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		eprintf ("debug_contp: error\n");
 		return false;
 	}
-	return tid;*/
+	return tid;
 	eprintf ("w32_continue is not implemented!\n");
 	return false;
 }
