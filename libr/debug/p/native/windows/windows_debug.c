@@ -428,13 +428,6 @@ err_get_file_name_from_handle:
 	return NULL;
 }
 
-typedef struct{
-	int pid;
-	HANDLE hFile;
-	void* BaseOfDll;
-	char Path[MAX_PATH];
-	char Name[MAX_PATH];
-} LIB_ITEM, *PLIB_ITEM;
 LPVOID lstLib = 0;
 PLIB_ITEM lstLibPtr = 0;
 /*
@@ -484,20 +477,9 @@ static void * r_debug_findlib (void * BaseOfDll) {
 	return NULL;
 }
 
-// thread list
-typedef struct {
-	int pid;
-	int tid;
-	BOOL bFinished;
-	HANDLE hThread;
-	LPVOID lpThreadLocalBase;
-	LPVOID lpStartAddress;
-	PVOID lpThreadEntryPoint;
-	DWORD dwExitCode;
-} THREAD_ITEM, *PTHREAD_ITEM;
 LPVOID lstThread = 0;
 PTHREAD_ITEM lstThreadPtr = 0;
-static  PTHREAD_ITEM  r_debug_get_thread_item() {
+static PTHREAD_ITEM r_debug_get_thread_item() {
 	return lstThreadPtr;
 }
 #define PTHREAD_MAX 1024

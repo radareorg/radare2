@@ -8,6 +8,18 @@
 #include <r_types.h>
 #include <r_debug.h>
 
+// thread list
+typedef struct {
+	int pid;
+	int tid;
+	BOOL bFinished;
+	HANDLE hThread;
+	LPVOID lpThreadLocalBase;
+	LPVOID lpStartAddress;
+	PVOID lpThreadEntryPoint;
+	DWORD dwExitCode;
+} THREAD_ITEM, *PTHREAD_ITEM;
+
 typedef struct{
 	int pid;
 	HANDLE hFile;
