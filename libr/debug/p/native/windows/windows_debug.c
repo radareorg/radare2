@@ -133,44 +133,6 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 }
 
 int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	// disabled for now
-	/*
-	#ifdef _MSC_VER
-	CONTEXT ctx;
-#else
-	CONTEXT ctx __attribute__ ((aligned (16)));
-#endif
-	int showfpu = false;
-	int pid = dbg->pid;
-	int tid = dbg->tid;
-	HANDLE hThread = NULL;
-	if (type < -1) {
-		showfpu = true; // hack for debugging
-		type = -type;
-	}
-	hThread = w32_open_thread (pid, tid);
-	memset(&ctx, 0, sizeof (CONTEXT));
-	ctx.ContextFlags = CONTEXT_ALL;
-	if (GetThreadContext (hThread, &ctx) == TRUE) {
-		// on windows we dont need check type alway read/write full arena
-		//if (type == R_REG_TYPE_GPR) {
-			if (size > sizeof (CONTEXT)) {
-				size = sizeof (CONTEXT);
-			}
-			memcpy (buf, &ctx, size);
-		//} else {
-		//	size = 0;
-		//}
-	} else {
-		r_sys_perror ("w32_reg_read/GetThreadContext");
-		size = 0;
-	}
-	if (showfpu) {
-		printwincontext (hThread, &ctx);
-	}
-	CloseHandle(hThread);
-	return size;
-	*/
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
 	if (dbg->bits == 64) {
 		flags |= THREAD_QUERY_INFORMATION;
@@ -191,32 +153,10 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		size = 0;
 	}
 	CloseHandle (th);
-	//eprintf ("w32_reg_read is not implemented!\n");
 	return size;
 }
 
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	// disabled for now
-	/*BOOL ret = false;
-	HANDLE thread;
-#if _MSC_VER
-	CONTEXT ctx;
-#else
-	CONTEXT ctx __attribute__((aligned (16)));
-#endif
-	thread = w32_open_thread (dbg->pid, dbg->tid);
-	ctx.ContextFlags = CONTEXT_ALL;
-	GetThreadContext (thread, &ctx);
-	// on windows we dont need check type alway read/write full arena
-	//if (type == R_REG_TYPE_GPR) {
-		if (size > sizeof (CONTEXT)) {
-			size = sizeof (CONTEXT);
-		}
-		memcpy (&ctx, buf, size);
-		ret = SetThreadContext (thread, &ctx)? true: false;
-	//}
-	CloseHandle (thread);
-	return ret;*/
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
 	if (dbg->bits == 64) {
 		flags |= THREAD_QUERY_INFORMATION;
@@ -250,9 +190,22 @@ int w32_attach(RDebug *dbg, int pid) {
 		CloseHandle (ph);
 		return -1;
 	}
+	RList *threads = r_list_new ();
+	if (!threads) {
+		CloseHandle (ph);
+		return -1;
+	}
+	threads = w32_thread_list (dbg, pid, threads);
+	if (threads->length == 0) {
+		r_list_free (threads);
+		CloseHandle (ph);
+		return -1;
+	}
+	int tid = ((RDebugPid *)threads->head->data)->pid;
+	r_list_free (threads);
 	rio->ph = ph;
 	rio->debug = true;
-	return 0;
+	return tid;
 	// rio->ph = ph;
 	/*int ret = -1;
 	RIOW32 *rio = dbg->user;
