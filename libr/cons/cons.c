@@ -980,7 +980,16 @@ R_API void r_cons_visual_flush() {
 		} else {
 			prev = r_sys_now ();
 		}
-		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
+#ifdef __WINDOWS__
+		if (I.ansicon) {
+#endif
+			eprintf ("\x1b[0;%dH[%d FPS] \n", w - 10, fps);
+#ifdef __WINDOWS__
+		} else {
+			r_cons_w32_gotoxy (2, w - 10, 0);
+			eprintf ("[%d FPS] \n", fps);
+		}
+#endif
 	}
 }
 

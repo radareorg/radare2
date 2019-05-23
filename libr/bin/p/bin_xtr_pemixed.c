@@ -12,6 +12,10 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_ty
 static int destroy(RBin *bin);
 static int free_xtr (void *xtr_obj);
 
+static bool check_buffer(RBuffer *b) {
+	return false;
+}
+
 //copied from bin_pe
 //another check is used later to check for .NET only code
 static bool check_bytes(const ut8 *bytes, ut64 sz) {
@@ -128,7 +132,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 };
 
 #ifndef CORELIB

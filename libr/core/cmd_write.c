@@ -1462,21 +1462,25 @@ static int cmd_write(void *data, const char *input) {
 					r_anal_op_fini (&analop);
 					r_core_cmd0 (core, "wao nop");
 				}
-				char* hex = r_asm_code_get_hex (acode);
-				if (input[1] == '*') {
-					r_cons_printf ("wx %s\n", hex);
-				} else {
-					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
-						cmd_write_fail ();
+				if (acode->len > 0) {
+					char* hex = r_asm_code_get_hex (acode);
+					if (input[1] == '*') {
+						r_cons_printf ("wx %s\n", hex);
 					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
+						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
+							cmd_write_fail ();
+						} else {
+							if (r_config_get_i (core->config, "scr.prompt")) {
+								eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
+							}
+							WSEEK (core, acode->len);
 						}
-						WSEEK (core, acode->len);
+						r_core_block_read (core);
 					}
-					r_core_block_read (core);
+					free (hex);
+				} else {
+					eprintf ("Nothing to do.\n");
 				}
-				free (hex);
 				r_asm_code_free (acode);
 			}
 		}

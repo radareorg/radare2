@@ -21,34 +21,42 @@ typedef enum {
 #include "buf_ref.c"
 
 static bool buf_init(RBuffer *b, const void *user) {
+	r_return_val_if_fail (b && b->methods, false);
 	return b->methods->init? b->methods->init (b, user): true;
 }
 
 static bool buf_fini(RBuffer *b) {
+	r_return_val_if_fail (b && b->methods, false);
 	return b->methods->fini? b->methods->fini (b): true;
 }
 
 static ut64 buf_get_size(RBuffer *b) {
+	r_return_val_if_fail (b && b->methods, UT64_MAX);
 	return b->methods->get_size? b->methods->get_size (b): UT64_MAX;
 }
 
 static int buf_read(RBuffer *b, ut8 *buf, size_t len) {
+	r_return_val_if_fail (b && b->methods, -1);
 	return b->methods->read? b->methods->read (b, buf, len): -1;
 }
 
 static int buf_write(RBuffer *b, const ut8 *buf, size_t len) {
+	r_return_val_if_fail (b && b->methods, -1);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
 static int buf_seek(RBuffer *b, st64 addr, int whence) {
+	r_return_val_if_fail (b && b->methods, -1);
 	return b->methods->seek? b->methods->seek (b, addr, whence): -1;
 }
 
 static bool buf_resize(RBuffer *b, ut64 newsize) {
+	r_return_val_if_fail (b && b->methods, -1);
 	return b->methods->resize? b->methods->resize (b, newsize): false;
 }
 
 static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
+	r_return_val_if_fail (b && b->methods, NULL);
 	if (b->methods->get_whole_buf) {
 		return b->methods->get_whole_buf (b, sz);
 	}
@@ -478,9 +486,7 @@ static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 				ut16 d2;
 				ut32 d3;
 				ut64 d4;
-				int r;
-
-				r = r_buf_read (src, tmp, tsize);
+				int r = r_buf_read (src, tmp, tsize);
 				if (r < tsize) {
 					return -1;
 				}
