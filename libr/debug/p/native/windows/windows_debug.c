@@ -270,12 +270,6 @@ int w32_attach(RDebug *dbg, int pid) {
 	return ret;*/
 
 	/*
-	HANDLE process = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (process != (HANDLE)NULL && DebugActiveProcess (pid)) {
-		ret = w32_first_thread (pid);
-	} else {
-		ret = -1;
-	}
 	// XXX: What is this for?
 	ret = w32_first_thread (pid);
 	CloseHandle (process);
@@ -422,95 +416,6 @@ int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 	RIOW32Dbg *rio = dbg->user;
 	return VirtualProtectEx (rio->ph, (LPVOID)(size_t)addr,
 		size, io_perms_to_prot (perms), &old);
-}
-
-/*
-static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
-	TCHAR f_name[MAX_PATH + 1];
-
-	DWORD len = w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
-	if (len > 0) {
-		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
-		add_map_reg (map_list, f_name_, mbi);
-		free (f_name_);
-	} else {
-		add_map_reg (map_list, "", mbi);
-	}
-}
-*/
-
-RList *w32_dbg_maps(RDebug *dbg) {
-	// disabled for now
-	/*SYSTEM_INFO si = {0};
-	LPVOID cur_addr;
-	MEMORY_BASIC_INFORMATION mbi;
-	HANDLE h_proc;
-	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_new(), *mod_list = NULL;
-
-	GetSystemInfo (&si);
-	h_proc = w32_OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
-	if (!h_proc) {
-		r_sys_perror ("w32_dbg_maps/w32_OpenProcess");
-		goto err_w32_dbg_maps;
-	}
-	cur_addr = si.lpMinimumApplicationAddress;
-	/* get process modules list * /
-	mod_list = w32_dbg_modules (dbg);
-	/* process memory map * /
-	while (cur_addr < si.lpMaximumApplicationAddress &&
-		VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
-		if (mbi.State != MEM_FREE) {
-			switch (mbi.Type) {
-			case MEM_IMAGE:
-				proc_mem_img (h_proc, map_list, mod_list, &mod_inf, &si, &mbi);
-				break;
-			case MEM_MAPPED:
-				proc_mem_map (h_proc, map_list, &mbi);
-				break;
-			default:
-				add_map_reg (map_list, "", &mbi);
-			}
-		}
-		cur_addr = (LPVOID)(size_t)((ut64)(size_t)mbi.BaseAddress + mbi.RegionSize);
-	}
-err_w32_dbg_maps:
-	free (mod_inf.sect_hdr);
-	r_list_free (mod_list);
-	return map_list;*/
-	eprintf ("w32_dbg_maps is not implemented!\n");
-	return NULL;
-}
-
-RList *w32_dbg_modules(RDebug *dbg) {
-	// disabled for now
-	RList *list = r_list_new ();
-	HANDLE mh = CreateToolhelp32Snapshot (TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, dbg->pid);
-	if (mh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("w32_thread_list/CreateToolhelp32Snapshot");
-		return list;
-	}
-	MODULEENTRY32 me;
-	me.dwSize = sizeof (MODULEENTRY32);
-	if (Module32First (mh, &me)) {
-		do {
-			ut64 baddr = (ut64)(size_t)me.modBaseAddr;
-
-			char *name = r_sys_conv_win_to_utf8 (me.szModule);
-			RDebugMap *mr; = r_debug_map_new (name, baddr, baddr + me.modBaseSize, 0, 0);
-			free (name);
-			if (mr) {
-				mr->file = r_sys_conv_win_to_utf8 (me.szExePath);
-				if (mr->file) {
-					r_list_append (list, mr);
-				}
-			}
-		} while (Module32Next (mh, &me));
-	} else {
-		r_sys_perror ("w32_dbg_modules/Module32First");
-	}
-	CloseHandle (mh);
-	return list;
 }
 
 static const char *resolve_path(HANDLE ph) {
