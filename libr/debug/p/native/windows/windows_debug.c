@@ -254,6 +254,9 @@ int w32_select(int pid, int tid) {
 		return true;
 	}
 	// hack to support w32dbg:// and attach://
+	if (!ContinueDebugEvent (pid, tid, DBG_CONTINUE)) {
+		return false;
+	}
 	DEBUG_EVENT de;
 	bool cont = true;
 	do {
@@ -276,6 +279,8 @@ int w32_select(int pid, int tid) {
 				eprintf ("Unhandled debug event %d", de.dwDebugEventCode);
 				break;
 		}
+		// TODO: Check for failure
+		ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE);
 	} while (cont);
 	if (cont) { // Should never be true unless if WaitForDebugEvent failed
 		return false;
