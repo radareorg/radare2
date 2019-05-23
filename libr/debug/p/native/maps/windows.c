@@ -79,7 +79,7 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 	return add_map (list, name, (ut64)(size_t)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
 }
 
-static RList *w32_dbg_modules(RDebug *dbg) {
+RList *w32_dbg_modules(RDebug *dbg) {
 	RList *list = r_list_new ();
 	HANDLE mh = CreateToolhelp32Snapshot (TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, dbg->pid);
 	if (mh == INVALID_HANDLE_VALUE) {
