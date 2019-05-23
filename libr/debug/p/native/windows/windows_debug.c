@@ -92,36 +92,44 @@ int w32_init(RDebug *dbg) {
 }
 
 static int suspend_thread(HANDLE th, int bits) {
-	bool ret;
-	if (bits == R_SYS_BITS_32) {
-		if ((ret = SuspendThread (th)) == -1) {
+	bool ret = false;
+	//if (bits == R_SYS_BITS_32) {
+		if (SuspendThread (th) != -1) {
+			ret = true;
+		} else {
 			r_sys_perror ("suspend_thread/SuspendThread");
 		}
-	} else {
-		if ((ret = Wow64SuspendThread (th)) == -1) {
+	/*} else {
+		if (Wow64SuspendThread (th) != -1) {
+			ret = true;
+		} else {
 			r_sys_perror ("suspend_thread/Wow64SuspendThread");
 		}
-	}
+	}*/
 	return ret;
 }
 
 static int resume_thread(HANDLE th, int bits) {
-	bool ret;
-	if (bits == R_SYS_BITS_32) {
-		if ((ret = ResumeThread (th)) == -1) {
+	bool ret = false;
+	//if (bits == R_SYS_BITS_32) {
+		if (ResumeThread (th) != -1) {
+			ret = true;
+		} else {
 			r_sys_perror ("resume_thread/ResumeThread");
 		}
-	} else {
-		if ((ret = ResumeThread (th)) == -1) {
+	/*} else {
+		if (ResumeThread (th) != -1) {
+			ret = true;
+		} else {
 			r_sys_perror ("resume_thread/Wow64ResumeThread");
 		}
-	}
+	}*/
 	return ret;
 }
 
 static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	bool ret;
-	if (bits == R_SYS_BITS_32) {
+	//if (bits == R_SYS_BITS_32) {
 		CONTEXT ctx = {0};
 		if (size > sizeof (ctx)) {
 			size = sizeof (ctx);
@@ -130,7 +138,7 @@ static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 		if(!(ret = SetThreadContext (th, &ctx))) {
 			r_sys_perror ("set_thread_context/SetThreadContext");
 		}
-	} else {
+	/*} else {
 		WOW64_CONTEXT ctx = {0};
 		if (size > sizeof (ctx)) {
 			size = sizeof (ctx);
@@ -139,13 +147,13 @@ static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 		if(!(ret = Wow64SetThreadContext (th, &ctx))) {
 			r_sys_perror ("set_thread_context/Wow64SetThreadContext");
 		}
-	}
+	}*/
 	return ret;
 }
 
 static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	int ret = 0;
-	if (bits == R_SYS_BITS_32) {
+	//if (bits == R_SYS_BITS_32) {
 		CONTEXT ctx = {0};
 		// TODO: support various types?
 		ctx.ContextFlags = CONTEXT_ALL;
@@ -158,7 +166,7 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 		} else {
 			r_sys_perror ("get_thread_context/GetThreadContext");
 		}
-	} else {
+	/*} else {
 		WOW64_CONTEXT ctx = {0};
 		// TODO: support various types?
 		ctx.ContextFlags = CONTEXT_ALL;
@@ -171,7 +179,7 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 		} else {
 			r_sys_perror ("get_thread_context/Wow64GetThreadContext");
 		}
-	}
+	}*/
 	return ret;
 }
 
