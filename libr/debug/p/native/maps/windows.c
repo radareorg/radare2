@@ -108,6 +108,19 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 	return list;
 }
 
+static inline int is_pe_hdr(unsigned char *pe_hdr) {
+	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)pe_hdr;
+	IMAGE_NT_HEADERS *nt_headers;
+
+	if (dos_header->e_magic==IMAGE_DOS_SIGNATURE) {
+		nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header
+				+ dos_header->e_lfanew);
+		if (nt_headers->Signature==IMAGE_NT_SIGNATURE)
+			return 1;
+	}
+	return 0;
+}
+
 static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	IMAGE_DOS_HEADER *dos_hdr;
 	IMAGE_NT_HEADERS *nt_hdrs;
@@ -216,7 +229,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
 	TCHAR f_name[MAX_PATH + 1];
 
-	DWORD len = w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	DWORD len = GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
 		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
 		add_map_reg (map_list, f_name_, mbi);
