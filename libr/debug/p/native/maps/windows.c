@@ -1,3 +1,6 @@
+#include <r_debug.h>
+#include <windows.h>
+
 typedef struct {
 	// bool dbgpriv;
 	HANDLE ph;
