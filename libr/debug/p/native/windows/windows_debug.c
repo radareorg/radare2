@@ -6,6 +6,30 @@
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
 #include <tchar.h>
 
+#ifndef XSTATE_GSSE
+#define XSTATE_GSSE 2
+#endif
+
+#ifndef XSTATE_LEGACY_SSE
+#define XSTATE_LEGACY_SSE 1
+#endif
+
+#if !defined(XSTATE_MASK_GSSE)
+#define XSTATE_MASK_GSSE (1LLU << (XSTATE_GSSE))
+#endif
+
+#undef CONTEXT_XSTATE
+#if defined(_M_X64)
+#define CONTEXT_XSTATE                      (0x00100040)
+#else
+#define CONTEXT_XSTATE                      (0x00010040)
+#endif
+#define XSTATE_AVX                          (XSTATE_GSSE)
+#define XSTATE_MASK_AVX                     (XSTATE_MASK_GSSE)
+#ifndef CONTEXT_ALL
+#define CONTEXT_ALL 1048607
+#endif
+
 typedef struct {
 	// bool dbgpriv;
 	HANDLE ph;
