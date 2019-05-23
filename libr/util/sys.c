@@ -74,10 +74,6 @@ extern char **environ;
 #endif
 
 R_LIB_VERSION(r_util);
-#ifdef _MSC_VER
-// Required for GetModuleFileNameEx and GetProcessImageFileName linking
-#pragma comment(lib, "psapi.lib")
-#endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"x86", R_SYS_ARCH_X86},
