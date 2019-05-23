@@ -26,9 +26,6 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size);
 int w32_map_dealloc(RDebug *dbg, ut64 addr, int size);
 int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 
-RList *w32_dbg_maps(RDebug *dbg);
-RList *w32_dbg_modules(RDebug *dbg);
-
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list);
 RDebugInfo *w32_info(RDebug *dbg, const char *arg);
 
