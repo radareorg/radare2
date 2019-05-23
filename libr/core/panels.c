@@ -4245,10 +4245,13 @@ static void createNewPanel(RCore *core, bool vertical) {
 
 static void create_widget(RCore *core, RPanel *panel, int *idx) {
 	RPanels *panels = core->panels;
+	int count = sdb_count (panels->db);
 	if (*idx < 0) {
+		*idx = count;
+	}
+	if (*idx > count) {
 		*idx = 0;
 	}
-	*idx = R_MIN (sdb_count (panels->db) - 1, *idx);
 	if (panels->n_panels >= PANEL_NUM_LIMIT) {
 		return;
 	}
@@ -4268,6 +4271,12 @@ static void create_widget(RCore *core, RPanel *panel, int *idx) {
 		}
 		r_strbuf_append (buf, "          \n");
 	}
+	if (i == *idx) {
+		r_strbuf_appendf (buf, ">  %sCreate New"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
+	} else {
+		r_strbuf_append (buf, "   Create New");
+	}
+	r_strbuf_append (buf, "          \n");
 	RConsCanvas *can = panels->can;
 	int x, y, w, h;
 	w = r_str_bounds (r_strbuf_get (buf), &h);
@@ -4335,6 +4344,12 @@ static bool find_panel(RCore *core, int idx, char **title, char **cmd) {
 			*cmd = sdbkv_value (kv);
 			return true;
 		}
+	}
+	if (i == idx) {
+		*title = show_status_input (core, "New name: ");
+		*cmd = show_status_input (core, "New command: ");
+		sdb_set (core->panels->db, *title, *cmd, 0);
+		return true;
 	}
 	return false;
 }
