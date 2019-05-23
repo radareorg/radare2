@@ -259,13 +259,15 @@ int w32_select(int pid, int tid) {
 		de.dwProcessId = pid;
 		de.dwThreadId = tid;
 		bool cont = true;
+		DWORD flag = DBG_CONTINUE;
 		do {
-			if (!ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE)) {
+			if (!ContinueDebugEvent (de.dwProcessId, de.dwThreadId, flag)) {
 				return false;
 			}
 			if (!WaitForDebugEvent (&de, 1000)) {
 				return false;
 			}
+			flag = DBG_CONTINUE;
 			switch (de.dwDebugEventCode) {
 				//case CREATE_PROCESS_DEBUG_EVENT:
 				case CREATE_THREAD_DEBUG_EVENT:
@@ -278,6 +280,9 @@ int w32_select(int pid, int tid) {
 							CloseHandle (hf);
 						}
 					} break;
+				case EXCEPTION_DEBUG_EVENT:
+					flag = DBG_EXCEPTION_NOT_HANDLED;
+					break;
 				default:
 					eprintf ("Unhandled debug event %d\n", de.dwDebugEventCode);
 					break;
