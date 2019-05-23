@@ -32,15 +32,15 @@ static ut64 buf_get_size(RBuffer *b) {
 	return b->methods->get_size? b->methods->get_size (b): UT64_MAX;
 }
 
-static int buf_read(RBuffer *b, ut8 *buf, size_t len) {
+static st64 buf_read(RBuffer *b, ut8 *buf, ut64 len) {
 	return b->methods->read? b->methods->read (b, buf, len): -1;
 }
 
-static int buf_write(RBuffer *b, const ut8 *buf, size_t len) {
+static st64 buf_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
-static int buf_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_seek(RBuffer *b, st64 addr, int whence) {
 	return b->methods->seek? b->methods->seek (b, addr, whence): -1;
 }
 
@@ -232,7 +232,7 @@ R_API bool r_buf_dump(RBuffer *b, const char *file) {
 	return r_file_dump (file, tmp, tmpsz, 0);
 }
 
-R_API int r_buf_seek(RBuffer *b, st64 addr, int whence) {
+R_API st64 r_buf_seek(RBuffer *b, st64 addr, int whence) {
 	r_return_val_if_fail (b, -1);
 	return buf_seek (b, addr, whence);
 }
@@ -255,7 +255,7 @@ R_API bool r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	return r_buf_seek (b, 0, R_BUF_SET) >= 0;
 }
 
-R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, size_t length) {
+R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	r_return_val_if_fail (b && buf && !b->readonly, false);
 	return r_buf_insert_bytes (b, 0, buf, length) >= 0;
 }
@@ -274,7 +274,7 @@ R_API char *r_buf_to_string(RBuffer *b) {
 	return s;
 }
 
-R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, size_t length) {
+R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	r_return_val_if_fail (b && buf && !b->readonly, false);
 
 	if (r_buf_seek (b, 0, R_BUF_END) < 0) {
@@ -284,7 +284,7 @@ R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, size_t length) {
 	return r_buf_write (b, buf, length) >= 0;
 }
 
-R_API bool r_buf_append_nbytes(RBuffer *b, size_t length) {
+R_API bool r_buf_append_nbytes(RBuffer *b, ut64 length) {
 	r_return_val_if_fail (b && !b->readonly, false);
 	ut8 *buf = R_NEWS0 (ut8, length);
 	if (!buf) {
@@ -295,9 +295,9 @@ R_API bool r_buf_append_nbytes(RBuffer *b, size_t length) {
 	return res;
 }
 
-R_API int r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, size_t length) {
+R_API st64 r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length) {
 	r_return_val_if_fail (b && !b->readonly, -1);
-	int pos, r = r_buf_seek (b, 0, R_BUF_CUR);
+	st64 pos, r = r_buf_seek (b, 0, R_BUF_CUR);
 	if (r < 0) {
 		return r;
 	}
@@ -313,7 +313,7 @@ R_API int r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, size_t lengt
 	if (r < 0) {
 		goto free_tmp;
 	}
-	size_t tmp_length = (size_t)r;
+	st64 tmp_length = r;
 	if (!r_buf_resize (b, sz + length)) {
 		goto free_tmp;
 	}
@@ -359,7 +359,7 @@ R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 	return r_buf_append_bytes (b, tmp, sz);
 }
 
-R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, int size) {
+R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size) {
 	r_return_val_if_fail (b && a && !b->readonly, false);
 	ut8 *tmp = R_NEWS (ut8, size);
 	bool res = false;
@@ -367,7 +367,7 @@ R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, int size)
 	if (!tmp) {
 		return false;
 	}
-	int r = r_buf_read_at (a, offset, tmp, size);
+	st64 r = r_buf_read_at (a, offset, tmp, size);
 	if (r < 0) {
 		goto err;
 	}
@@ -384,7 +384,7 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 	const int MIN_RES_SZ = 64;
 	ut8 *res = R_NEWS (ut8, MIN_RES_SZ + 1);
 	ut64 sz = 0;
-	int r = r_buf_read_at (b, addr, res, MIN_RES_SZ);
+	st64 r = r_buf_read_at (b, addr, res, MIN_RES_SZ);
 	bool null_found = false;
 	while (r > 0) {
 		const ut8 *needle = r_mem_mem (res + sz, r, (ut8 *)"\x00", 1);
@@ -411,34 +411,35 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 	return (char *)res;
 }
 
-R_API int r_buf_read(RBuffer *b, ut8 *buf, size_t len) {
+R_API st64 r_buf_read(RBuffer *b, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
-	int r = buf_read (b, buf, len);
+	ut64 r = buf_read (b, buf, len);
 	if (r >= 0 && r < len) {
 		memset (buf + r, b->Oxff_priv, len - r);
 	}
 	return r;
 }
 
-R_API int r_buf_write(RBuffer *b, const ut8 *buf, size_t len) {
+R_API st64 r_buf_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf && !b->readonly, -1);
 	return buf_write (b, buf, len);
 }
 
 R_API ut8 r_buf_read8(RBuffer *b) {
 	ut8 res;
-	int r = r_buf_read (b, &res, sizeof (res));
-	return r == sizeof (res)? res :b->Oxff_priv;
+	st64 r = r_buf_read (b, &res, sizeof (res));
+	return r == sizeof (res)? res: b->Oxff_priv;
 }
 
 R_API ut8 r_buf_read8_at(RBuffer *b, ut64 addr) {
 	ut8 res;
-	int r = r_buf_read_at (b, addr, &res, sizeof (res));
+	st64 r = r_buf_read_at (b, addr, &res, sizeof (res));
 	return r == sizeof (res)? res: b->Oxff_priv;
 }
 
-static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
-	int i, res = 0;
+static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
+	st64 res = 0;
+	int i;
 	for (i = 0; i < n; ++i) {
 		int j;
 		int m = 1;
@@ -478,7 +479,7 @@ static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 				ut16 d2;
 				ut32 d3;
 				ut64 d4;
-				int r;
+				st64 r;
 
 				r = r_buf_read (src, tmp, tsize);
 				if (r < tsize) {
@@ -516,16 +517,16 @@ static int buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 	return res;
 }
 
-R_API int r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
+R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
 	// XXX: we assume the caller knows what he's doing
 	RBuffer *dst = r_buf_new_with_pointers (buf, UT64_MAX, false);
-	int res = buf_format (dst, b, fmt, n);
+	st64 res = buf_format (dst, b, fmt, n);
 	r_buf_free (dst);
 	return res;
 }
 
-R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
+R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
 	int r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
@@ -534,27 +535,27 @@ R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n
 	return r_buf_fread (b, buf, fmt, n);
 }
 
-R_API int r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n) {
+R_API st64 r_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt && !b->readonly, -1);
 	// XXX: we assume the caller knows what he's doing
 	RBuffer *src = r_buf_new_with_pointers (buf, UT64_MAX, false);
-	int res = buf_format (b, src, fmt, n);
+	st64 res = buf_format (b, src, fmt, n);
 	r_buf_free (src);
 	return res;
 }
 
-R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n) {
+R_API st64 r_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt && !b->readonly, -1);
-	int r = r_buf_seek (b, addr, R_BUF_SET);
+	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 	return r_buf_fwrite (b, buf, fmt, n);
 }
 
-R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
+R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
-	int r = r_buf_seek (b, addr, R_BUF_SET);
+	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
@@ -562,9 +563,9 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	return r_buf_read (b, buf, len);
 }
 
-R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
+R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf && !b->readonly, -1);
-	int r = r_buf_seek (b, addr, R_BUF_SET);
+	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
@@ -598,7 +599,7 @@ R_API void r_buf_free(RBuffer *b) {
 	}
 }
 
-R_API int r_buf_append_string(RBuffer *b, const char *str) {
+R_API st64 r_buf_append_string(RBuffer *b, const char *str) {
 	r_return_val_if_fail (b && str && !b->readonly, false);
 	return r_buf_append_bytes (b, (const ut8 *)str, strlen (str));
 }
@@ -619,12 +620,12 @@ R_API RList *r_buf_nonempty_list(RBuffer *b) {
 	return b->methods->nonempty_list? b->methods->nonempty_list (b): NULL;
 }
 
-R_API int r_buf_uleb128(RBuffer *b, ut64 *v) {
+R_API st64 r_buf_uleb128(RBuffer *b, ut64 *v) {
 	ut8 c = 0xff;
 	ut64 s = 0, sum = 0, l = 0;
 	do {
 		ut8 data;
-		int r = r_buf_read (b, &data, sizeof (data));
+		st64 r = r_buf_read (b, &data, sizeof (data));
 		if (r <= 0) {
 			return -1;
 		}
@@ -639,13 +640,12 @@ R_API int r_buf_uleb128(RBuffer *b, ut64 *v) {
 	return l;
 }
 
-R_API int r_buf_sleb128(RBuffer *b, st64 *v) {
-	st64 result = 0;
-	int offset = 0;
+R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
+	st64 result = 0, offset = 0;
 	ut8 value;
 	do {
 		st64 chunk;
-		int r = r_buf_read (b, &value, sizeof (value));
+		st64 r = r_buf_read (b, &value, sizeof (value));
 		if (r != sizeof (value)) {
 			return -1;
 		}
