@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
+#include <tchar.h>
 
 typedef struct {
 	// bool dbgpriv;
@@ -249,22 +250,22 @@ int w32_select(int pid, int tid) {
 				return false;
 			}
 			switch (de.dwDebugEventCode) {
-				//case CREATE_PROCESS_DEBUG_EVENT:
-				//case CREATE_THREAD_DEBUG_EVENT:
-				case LOAD_DLL_DEBUG_EVENT:
-					{
-						HANDLE hf = de.u.LoadDll.hFile;
-						if (hf && hf != INVALID_HANDLE_VALUE) {
-							CloseHandle (hf);
-						}
-					} break;
-				case EXCEPTION_DEBUG_EVENT:
-					// TODO: check for the type of exception
-					cont = false;
-					break;
-				default:
-					eprintf ("Unhandled debug event %d\n", de.dwDebugEventCode);
-					break;
+			//case CREATE_PROCESS_DEBUG_EVENT:
+			//case CREATE_THREAD_DEBUG_EVENT:
+			case LOAD_DLL_DEBUG_EVENT:
+				{
+					HANDLE hf = de.u.LoadDll.hFile;
+					if (hf && hf != INVALID_HANDLE_VALUE) {
+						CloseHandle (hf);
+					}
+				} break;
+			case EXCEPTION_DEBUG_EVENT:
+				// TODO: check for the type of exception?
+				cont = false;
+				break;
+			default:
+				eprintf ("Unhandled debug event %d\n", de.dwDebugEventCode);
+				break;
 			}
 		} while (cont);
 	}
@@ -381,7 +382,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	}
 	/* Create a file mapping to get the file name. */
 	map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
-	if (!map || !w32_GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
+	if (!map || !GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
 		goto err_get_file_name_from_handle;
 	}
 	TCHAR temp_buffer[512];
@@ -390,7 +391,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 		goto err_get_file_name_from_handle;
 	}
 	TCHAR name[MAX_PATH];
-	TCHAR drive[3] =  TEXT (" :");
+	TCHAR drive[3] = TEXT (" :");
 	LPTSTR cur_drive = temp_buffer;
 	while (*cur_drive) {
 		/* Look up each device name */
@@ -420,7 +421,7 @@ err_get_file_name_from_handle:
 		CloseHandle (handle_file_map);
 	}
 	if (filename) {
-		char *filename_ = r_sys_conv_win_to_utf8(filename);
+		char *filename_ = r_sys_conv_win_to_utf8 (filename);
 		free (filename);
 		return filename_;
 
@@ -436,11 +437,11 @@ static char * r_debug_get_dll() {
 }
 */
 
-static  PLIB_ITEM  r_debug_get_lib_item() {
+static PLIB_ITEM r_debug_get_lib_item() {
 	return lstLibPtr;
 }
 #define PLIB_MAX 512
-static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * dllname) {
+static void r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
 	int x;
 	if (lstLib == 0)
 		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
@@ -452,23 +453,23 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * 
 			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
 			strncpy (lstLibPtr->Path,dllname,MAX_PATH-1);
 			int i = strlen (dllname);
-                        int n = i;
-                        while(dllname[i] != '\\' && i >= 0) {
-                             i--;
-                        }
-                        strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
+			int n = i;
+			while (dllname[i] != '\\' && i >= 0) {
+				i--;
+			}
+			strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
 			return;
 		}
 		lstLibPtr++;
 	}
 	eprintf("r_debug_lstLibAdd: Cannot find slot\n");
 }
-static void * r_debug_findlib (void * BaseOfDll) {
+static void *r_debug_findlib(void *BaseOfDll) {
 	PLIB_ITEM libPtr = NULL;
 	if (lstLib) {
 		libPtr = (PLIB_ITEM)lstLib;
 		while (libPtr->hFile != NULL) {
-			if (libPtr->hFile != (HANDLE)-1)
+			if (libPtr->hFile != INVALID_HANDLE_VALUE)
 				if (libPtr->BaseOfDll == BaseOfDll)
 					return ((void*)libPtr);
 			libPtr = (PLIB_ITEM)((ULONG_PTR)libPtr + sizeof (LIB_ITEM));
@@ -483,7 +484,7 @@ static PTHREAD_ITEM r_debug_get_thread_item() {
 	return lstThreadPtr;
 }
 #define PTHREAD_MAX 1024
-static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID  lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
+static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
 	int x;
 	PVOID startAddress = 0;
 	if (lstThread == 0)
@@ -507,7 +508,7 @@ static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID  l
 	eprintf ("r_debug_lstThreadAdd: Cannot find slot\n");
 }
 
-static void * r_debug_findthread(int pid, int tid) {
+static void *r_debug_findthread(int pid, int tid) {
 	PTHREAD_ITEM threadPtr = NULL;
 	if (lstThread) {
 		threadPtr = (PTHREAD_ITEM)lstThread;
@@ -602,9 +603,9 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
 			lstLibPtr = (PLIB_ITEM)r_debug_findlib (de.u.UnloadDll.lpBaseOfDll);
 			if (lstLibPtr != NULL) {
-				lstLibPtr->hFile = (HANDLE)-1;
+				lstLibPtr->hFile = INVALID_HANDLE_VALUE;
 			} else {
-				r_debug_lstLibAdd (pid, de.u.UnloadDll.lpBaseOfDll, (HANDLE)-1, "not cached");
+				r_debug_lstLibAdd (pid, de.u.UnloadDll.lpBaseOfDll, INVALID_HANDLE_VALUE, "not cached");
 				if (dllname)
 					free (dllname);
 			}
