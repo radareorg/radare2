@@ -92,17 +92,13 @@ int w32_init(RDebug *dbg) {
 }
 
 static int suspend_thread(HANDLE th, int bits) {
-	bool ret = false;
+	int ret;
 	//if (bits == R_SYS_BITS_32) {
-		if (SuspendThread (th) != -1) {
-			ret = true;
-		} else {
+		if ((ret = SuspendThread (th)) == -1) {
 			r_sys_perror ("suspend_thread/SuspendThread");
 		}
 	/*} else {
-		if (Wow64SuspendThread (th) != -1) {
-			ret = true;
-		} else {
+		if ((ret = Wow64SuspendThread (th)) == -1) {
 			r_sys_perror ("suspend_thread/Wow64SuspendThread");
 		}
 	}*/
@@ -110,17 +106,13 @@ static int suspend_thread(HANDLE th, int bits) {
 }
 
 static int resume_thread(HANDLE th, int bits) {
-	bool ret = false;
+	int ret;
 	//if (bits == R_SYS_BITS_32) {
-		if (ResumeThread (th) != -1) {
-			ret = true;
-		} else {
+		if ((ret = ResumeThread (th)) == -1) {
 			r_sys_perror ("resume_thread/ResumeThread");
 		}
 	/*} else {
-		if (ResumeThread (th) != -1) {
-			ret = true;
-		} else {
+		if ((ret = ResumeThread (th)) == -1) {
 			r_sys_perror ("resume_thread/Wow64ResumeThread");
 		}
 	}*/
