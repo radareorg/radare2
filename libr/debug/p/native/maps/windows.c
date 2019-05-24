@@ -67,8 +67,7 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 		perror ("r_str_newf");
 		return NULL;
 	}
-	RDebugMap *mr = r_debug_map_new (map_name, addr,
-		addr + len, perm, mbi->Type == MEM_PRIVATE);
+	RDebugMap *mr = r_debug_map_new (map_name, addr, addr + len, perm, mbi->Type == MEM_PRIVATE);
 	free (map_name);
 	if (mr) {
 		r_list_append (list, mr);
