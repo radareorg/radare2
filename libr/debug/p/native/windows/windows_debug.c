@@ -425,7 +425,7 @@ int w32_detach(RDebug *dbg, int pid) {
 
 int w32_select(RDebug *dbg, int pid, int tid) {
 	RIOW32Dbg *rio = dbg->user;
-	if (rio->ph != (HANDLE)NULL) {
+	if (rio->ph) {
 		return true;
 	}
 	// hack to support w32dbg:// and attach://
@@ -460,7 +460,7 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 		}
 	} while (cont);
 	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (rio->ph == (HANDLE)NULL) {
+	if (!rio->ph) {
 		return false;
 	}
 	rio->debug = true;
