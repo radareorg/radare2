@@ -717,7 +717,6 @@ static void *r_debug_findthread(int pid, int tid) {
 int w32_dbg_wait(RDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
-	unsigned int code;
 	char *dllname = NULL;
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
