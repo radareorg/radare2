@@ -631,25 +631,26 @@ static char * r_debug_get_dll() {
 static PLIB_ITEM r_debug_get_lib_item() {
 	return lstLibPtr;
 }
+
 #define PLIB_MAX 512
+
 static void r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
-	int x;
 	if (lstLib == 0) {
 		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
 	}
 	lstLibPtr = (PLIB_ITEM)lstLib;
-	for (x=0; x<PLIB_MAX; x++) {
+	for (int x = 0; x < PLIB_MAX; x++) {
 		if (!lstLibPtr->hFile) {
 			lstLibPtr->pid = pid;
 			lstLibPtr->hFile = hFile; //DBGEvent->u.LoadDll.hFile;
 			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
-			strncpy (lstLibPtr->Path,dllname,MAX_PATH-1);
+			strncpy (lstLibPtr->Path, dllname, MAX_PATH - 1);
 			int i = strlen (dllname);
 			int n = i;
 			while (dllname[i] != '\\' && i >= 0) {
 				i--;
 			}
-			strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
+			strncpy (lstLibPtr->Name, &dllname[i + 1], n - i);
 			return;
 		}
 		lstLibPtr++;
@@ -680,13 +681,12 @@ static PTHREAD_ITEM r_debug_get_thread_item() {
 #define PTHREAD_MAX 1024
 
 static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
-	int x;
 	PVOID startAddress = 0;
 	if (lstThread == 0) {
 		lstThread = VirtualAlloc (0, PTHREAD_MAX * sizeof (THREAD_ITEM), MEM_COMMIT, PAGE_READWRITE);
 	}
 	lstThreadPtr = (PTHREAD_ITEM)lstThread;
-	for (x = 0; x < PTHREAD_MAX; x++) {
+	for (int x = 0; x < PTHREAD_MAX; x++) {
 		if (!lstThreadPtr->tid) {
 			lstThreadPtr->pid = pid;
 			lstThreadPtr->tid = tid;
