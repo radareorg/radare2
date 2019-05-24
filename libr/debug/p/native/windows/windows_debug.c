@@ -255,7 +255,7 @@ static void printwincontext(HANDLE th, CONTEXT *ctx) {
 	ut80 st[8];
 	ut64 mm[8];
 	ut16 top = 0;
-	int x = 0, nxmm = 0, nymm = 0;
+	int x, nxmm = 0, nymm = 0;
 #if _WIN64
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
@@ -266,7 +266,6 @@ static void printwincontext(HANDLE th, CONTEXT *ctx) {
 		st[x].High = (ut16)ctx->FltSave.FloatRegisters[x].High;
 	}
 	top = (ctx->FltSave.StatusWord & 0x3fff) >> 11;
-	x = 0;
 	for (x = 0; x < 8; x++) {
 		mm[top] = ctx->FltSave.FloatRegisters[x].Low;
 		top++;
