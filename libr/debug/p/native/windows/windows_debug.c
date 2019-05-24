@@ -633,8 +633,9 @@ static PLIB_ITEM r_debug_get_lib_item() {
 #define PLIB_MAX 512
 static void r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
 	int x;
-	if (lstLib == 0)
+	if (lstLib == 0) {
 		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
+	}
 	lstLibPtr = (PLIB_ITEM)lstLib;
 	for (x=0; x<PLIB_MAX; x++) {
 		if (!lstLibPtr->hFile) {
@@ -652,7 +653,7 @@ static void r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 		}
 		lstLibPtr++;
 	}
-	eprintf("r_debug_lstLibAdd: Cannot find slot\n");
+	eprintf ("r_debug_lstLibAdd: Cannot find slot\n");
 }
 static void *r_debug_findlib(void *BaseOfDll) {
 	PLIB_ITEM libPtr = NULL;
@@ -677,8 +678,9 @@ static PTHREAD_ITEM r_debug_get_thread_item() {
 static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
 	int x;
 	PVOID startAddress = 0;
-	if (lstThread == 0)
+	if (lstThread == 0) {
 		lstThread = VirtualAlloc (0, PTHREAD_MAX * sizeof (THREAD_ITEM), MEM_COMMIT, PAGE_READWRITE);
+	}
 	lstThreadPtr = (PTHREAD_ITEM)lstThread;
 	for (x = 0; x < PTHREAD_MAX; x++) {
 		if (!lstThreadPtr->tid) {
