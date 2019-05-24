@@ -185,8 +185,7 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	return ret;
 }
 
-static int get_avx(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
-	BOOL success;
+static int get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
 	int nregs = 0, index = 0;
 	DWORD ctxsize = 0;
 	DWORD featurelen = 0;
@@ -203,34 +202,25 @@ static int get_avx(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	if ((featuremask & XSTATE_MASK_AVX) == 0) {
 		return 0;
 	}
-	success = w32_InitializeContext (NULL, CONTEXT_ALL | CONTEXT_XSTATE, NULL, &ctxsize);
-	if ((success == TRUE) || (GetLastError () != ERROR_INSUFFICIENT_BUFFER)) {
+	if ((w32_InitializeContext (NULL, CONTEXT_ALL | CONTEXT_XSTATE, NULL, &ctxsize)) || (GetLastError () != ERROR_INSUFFICIENT_BUFFER)) {
 		return 0;
 	}
 	buffer = malloc (ctxsize);
-	if (buffer == NULL) {
+	if (!buffer) {
 		return 0;
 	}
-	success = w32_InitializeContext (buffer, CONTEXT_ALL | CONTEXT_XSTATE, &ctx, &ctxsize);
-	if (success == FALSE) {
-		free (buffer);
-		return 0;
+	if (!w32_InitializeContext (buffer, CONTEXT_ALL | CONTEXT_XSTATE, &ctx, &ctxsize)) {
+		goto err_get_avx;
 	}
-	success = w32_SetXStateFeaturesMask (ctx, XSTATE_MASK_AVX);
-	if (success == FALSE) {
-		free (buffer);
-		return 0;
+	if (!w32_SetXStateFeaturesMask (ctx, XSTATE_MASK_AVX)) {
+		goto err_get_avx;
 	}
 	// TODO: Use get_thread_context
-	success = GetThreadContext (hThread, ctx);
-	if (success == FALSE) {
-		free (buffer);
-		return 0;
+	if (!GetThreadContext (th, ctx)) {
+		goto err_get_avx;
 	}
-	success = w32_GetXStateFeaturesMask (ctx, &featuremask);
-	if (success == FALSE) {
-		free (buffer);
-		return 0;
+	if (w32_GetXStateFeaturesMask (ctx, &featuremask)) {
+		goto err_get_avx;
 	}
 	newxmm = (ut128 *)w32_LocateXStateFeature (ctx, XSTATE_LEGACY_SSE, &featurelen);
 		nregs = featurelen / sizeof(*newxmm);
@@ -254,6 +244,7 @@ static int get_avx(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 			ymm[index].Low = newymm[index].Low;
 		}
 	}
+err_get_avx:
 	free (buffer);
 	return nregs;
 }
