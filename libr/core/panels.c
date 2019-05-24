@@ -284,6 +284,7 @@ static void panels_layout_refresh(RCore *core);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
 static void refreshCoreOffset (RCore *core);
+static char *search_db(RCore *core, const char *title);
 static bool handleZoomMode(RCore *core, const int key);
 static bool handleWindowMode(RCore *core, const int key);
 static bool handleCursorMode(RCore *core, const int key);
@@ -401,7 +402,7 @@ static bool moveToDirection(RCore *core, Direction direction);
 static void toggleHelp(RCore *core);
 static void createDefaultPanels(RCore *core);
 static void createNewPanel(RCore *core, bool vertical);
-static void create_widget(RCore *core, int *idx);
+static void create_widget(RCore *core, RPanel *panel, int *idx, int *offset);
 static void create_almighty(RCore *core, RPanel *panel);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
@@ -436,6 +437,16 @@ static void handle_tab_name(RCore *core);
 static void handle_tab_new(RCore *core);
 static bool handle_tab_del(RCore *core);
 static void remove_panels(RCore *core);
+
+static char *search_db(RCore *core, const char *title) {
+	char *out;
+	RPanels *panels = core->panels;
+	out = sdb_get (panels->db, title, 0);
+	if (out) {
+		return out;
+	}
+	return sdb_get (panels->del_db, title, 0);
+}
 
 static int show_status(RCore *core, const char *msg) {
 	r_cons_gotoxy (0, 0);
@@ -476,8 +487,8 @@ static bool check_panel_type(RPanel *panel, const char *type, int len) {
 static bool is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
 			check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			check_panel_type (panel, sdb_get (core->panels->db, "Strings", 0), strlen (sdb_get (core->panels->db, "Strings", 0))) ||
-			check_panel_type (panel, sdb_get (core->panels->db, "Breakpoints", 0), strlen (sdb_get (core->panels->db, "Breakpoints", 0)))) {
+			check_panel_type (panel, search_db (core, "Strings"), strlen (search_db (core, "Strings"))) ||
+			check_panel_type (panel, search_db (core, "Breakpoints"), strlen (search_db (core, "Breakpoints")))) {
 		return true;
 	}
 	return false;
@@ -816,7 +827,7 @@ static int addCmdPanel(void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	const char *cmd = sdb_get (panels->db, child->name, 0);
+	const char *cmd = search_db (core, child->name);
 	if (!cmd) {
 		return 0;
 	}
@@ -1322,7 +1333,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 		}
 		break;
 	case '-':
-		if (check_panel_type (cur, sdb_get (core->panels->db, "Breakpoints", 0), strlen (sdb_get (core->panels->db, "Breakpoints", 0)))) {
+		if (check_panel_type (cur, search_db (core, "Breakpoints"), strlen (search_db (core, "Breakpoints")))) {
 			cursor_del_breakpoints(core, cur);
 			break;
 		}
@@ -1340,10 +1351,10 @@ static void delegate_cursor (RCore *core, RPanel *panel) {
 	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
 		cursor_symbols (core, panel);
 	}
-	if (check_panel_type (panel, sdb_get (core->panels->db, "Strings", 0), strlen (sdb_get (core->panels->db, "Strings", 0)))) {
+	if (check_panel_type (panel, search_db (core, "Strings"), strlen (search_db (core, "Strings")))) {
 		cursor_strings (core, panel);
 	}
-	if (check_panel_type (panel, sdb_get (core->panels->db, "Breakpoints", 0), strlen (sdb_get (core->panels->db, "Breakpoints", 0)))) {
+	if (check_panel_type (panel, search_db (core, "Breakpoints"), strlen (search_db (core, "Breakpoints")))) {
 		cursor_breakpoints (core, panel);
 	}
 }
@@ -3651,6 +3662,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->autoUpdate = true;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
+	panels->del_db = sdb_new0 ();
 	panels->rotate_db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	setMode (panels, PANEL_MODE_DEFAULT);
@@ -4243,17 +4255,26 @@ static void createNewPanel(RCore *core, bool vertical) {
 	free (res);
 }
 
-static void create_widget(RCore *core, int *idx) {
+static void create_widget(RCore *core, RPanel *panel, int *idx, int *offset) {
+	const int WIDGET_WIDTH = 30;
+	const int WIDGET_HEIGHT = 20;
 	RPanels *panels = core->panels;
-	int count = sdb_count (panels->db) + 1;
-	if (*idx < 0) {
-		*idx = count;
-	}
-	if (*idx > count) {
+	int count = sdb_count (panels->db) + 2;
+	if (*idx >= count) {
 		*idx = 0;
-	}
-	if (panels->n_panels >= PANEL_NUM_LIMIT) {
-		return;
+		*offset = 0;
+	} else if (*idx >= *offset + WIDGET_HEIGHT) {
+		if (*offset + WIDGET_HEIGHT >= count) {
+			*offset = 0;
+			*idx = 0;
+		} else {
+			*offset += 1;
+		}
+	} else if (*idx < 0) {
+		*offset = R_MAX (count - WIDGET_HEIGHT, 0);
+		*idx = count - 1;
+	} else if (*idx < *offset) {
+		*offset -= 1;
 	}
 	SdbList *l = sdb_foreach_list (panels->db, true);
 	SdbKv *kv;
@@ -4263,13 +4284,22 @@ static void create_widget(RCore *core, int *idx) {
 		return;
 	}
 	int i = 0;
+	int max_h = R_MIN (*offset + WIDGET_HEIGHT, count);
 	ls_foreach (l, iter, kv) {
-		if (i++ == *idx) {
+		if (i < *offset) {
+			i++;
+			continue;
+		}
+		if (i >= max_h) {
+			break;
+		}
+		if (i == *idx) {
 			r_strbuf_appendf (buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
 		} else {
 			r_strbuf_appendf (buf, "   %s", sdbkv_key (kv));
 		}
 		r_strbuf_append (buf, "          \n");
+		i++;
 	}
 	if (i++ == *idx) {
 		r_strbuf_appendf (buf, ">  %sAdd the current panel"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
@@ -4284,24 +4314,23 @@ static void create_widget(RCore *core, int *idx) {
 	}
 	r_strbuf_append (buf, "          \n");
 	RConsCanvas *can = panels->can;
-	int x, y, w, h;
-	w = r_str_bounds (r_strbuf_get (buf), &h);
-	x = (can->w - w) / 2;
-	y = (can->h - h) / 2;
+	int x, y;
+	x = (can->w - WIDGET_WIDTH) / 2;
+	y = (can->h - WIDGET_HEIGHT) / 2;
 
-	r_cons_canvas_fill (panels->can, x, y, w + 2, h + 2, ' ');
-	(void) r_cons_canvas_gotoxy (panels->can, x + 2, y + 1);
+	r_cons_canvas_fill (panels->can, x, y, WIDGET_WIDTH + 2, WIDGET_HEIGHT + 2, ' ');
+	(void)r_cons_canvas_gotoxy (panels->can, x + 2, y + 1);
 	r_cons_canvas_write (panels->can, r_strbuf_drain (buf));
 
-	r_cons_canvas_box (panels->can, x, y, w + 2, h + 2, core->cons->context->pal.graph_box2);
+	r_cons_canvas_box (panels->can, x, y, WIDGET_WIDTH + 2, WIDGET_HEIGHT + 2, core->cons->context->pal.graph_box2);
 
 	r_cons_canvas_print (panels->can);
 	r_cons_flush ();
 }
 
 static void create_almighty(RCore *core, RPanel *panel) {
-	int idx = 0, okey, key;
-	create_widget (core, &idx);
+	int idx = 0, offset = 0, okey, key;
+	create_widget (core, panel, &idx, &offset);
 	char *title;
 	char *cmd;
 	while (true) {
@@ -4310,32 +4339,44 @@ static void create_almighty(RCore *core, RPanel *panel) {
 		switch (key) {
 		case 'j':
 			idx++;
-			create_widget (core, &idx);
+			create_widget (core, panel, &idx, &offset);
 			break;
 		case 'k':
 			idx--;
-			create_widget (core, &idx);
+			create_widget (core, panel, &idx, &offset);
 			break;
 		case 'v':
 			if (exec_almighty (core, panel, idx, &title, &cmd)) {
 				splitPanelVertical (core, panel, title, cmd, false);
 				return;
 			}
-			create_widget (core, &idx);
+			create_widget (core, panel, &idx, &offset);
 			break;
 		case 'h':
 			if (exec_almighty (core, panel, idx, &title, &cmd)) {
 				splitPanelHorizontal (core, panel, title, cmd, false);
 				return;
 			}
-			create_widget (core, &idx);
+			create_widget (core, panel, &idx, &offset);
 			break;
 		case 0x0d:
 			if (exec_almighty (core, panel, idx, &title, &cmd)) {
 				replaceCmd (core, title, cmd, false);
 				return;
 			}
-			create_widget (core, &idx);
+			create_widget (core, panel, &idx, &offset);
+		case '-':
+			{
+				int count = sdb_count (core->panels->db) + 2;
+				int last =  count - 1;
+				if (idx != last && idx != last - 1) {
+					if (exec_almighty (core, panel, idx, &title, &cmd)) {
+						sdb_set (core->panels->del_db, title, cmd, 0);
+						sdb_remove (core->panels->db, title, 0);
+					}
+					create_widget (core, panel, &idx, &offset);
+				}
+			}
 			break;
 		case 'q':
 		case '"':
@@ -4388,7 +4429,7 @@ static void createDefaultPanels(RCore *core) {
 			return;
 		}
 		const char *s = panels_list[i++];
-		buildPanelParam (core, p, s, sdb_get (panels->db, s, 0), 0);
+		buildPanelParam (core, p, s, search_db (core, s), 0);
 	}
 }
 
