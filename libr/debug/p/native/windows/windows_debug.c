@@ -500,29 +500,21 @@ void w32_break_process(RDebug *dbg) {
 }
 
 static const char *get_w32_excep_name(DWORD code) {
-	const char *desc;
 	switch (code) {
 	/* fatal exceptions */
 	case EXCEPTION_ACCESS_VIOLATION:
-		desc = "access violation";
-		break;
+		return "access violation";
 	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-		desc = "array bounds exceeded";
-		break;
+		return "array bounds exceeded";
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		desc = "illegal instruction";
-		break;
+		return "illegal instruction";
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		desc = "divide by zero";
-		break;
+		return "divide by zero";
 	case EXCEPTION_STACK_OVERFLOW:
-		desc = "stack overflow";
-		break;
+		return "stack overflow";
 	default:
-		desc = "unknown";
+		return "unknown";
 	}
-
-	return desc;
 }
 
 static int debug_exception_event(DEBUG_EVENT *de) {
