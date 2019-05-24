@@ -1742,7 +1742,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			if (strstr (symname, ".dll_") && cdsz) {
 				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
 			}
-		} else if (IS_MODE_SIMPLE (mode)) {
+		} else if (IS_MODE_SIMPLE (mode) || IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
 			str = r_str_escape_utf8_for_json (symname, -1);
@@ -2849,6 +2849,8 @@ static int bin_classes(RCore *r, int mode) {
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
+		} else if (IS_MODE_SIMPLEST (mode)) {
+			r_cons_printf ("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s%s%s\n",
 				c->addr, at_min, at_max, c->name, c->super ? " " : "",
