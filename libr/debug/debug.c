@@ -5,7 +5,7 @@
 #include <signal.h>
 
 #if __WINDOWS__
-void w32_break_process_wrapper(void *);
+static void w32_break_process_wrapper(void *);
 #endif
 
 R_LIB_VERSION(r_debug);
