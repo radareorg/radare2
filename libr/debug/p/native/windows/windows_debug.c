@@ -185,80 +185,80 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	return ret;
 }
 
-static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
-	BOOL Success;
-	int nRegs = 0, Index = 0;
-	DWORD ContextSize = 0;
-	DWORD FeatureLength = 0;
-	ut64 FeatureMask = 0;
-	ut128 * Xmm = NULL;
-	ut128 * Ymm = NULL;
-	void * buffer = NULL;
-	PCONTEXT Context;
+static int get_avx(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
+	BOOL success;
+	int nregs = 0, index = 0;
+	DWORD ctxsize = 0;
+	DWORD featurelen = 0;
+	ut64 featuremask = 0;
+	ut128 *newxmm = NULL;
+	ut128 *newymm = NULL;
+	void *buffer = NULL;
+	PCONTEXT ctx;
 	if (!w32_GetEnabledXStateFeatures) {
 		return 0;
 	}
 	// Check for AVX extension
-	FeatureMask = w32_GetEnabledXStateFeatures ();
-	if ((FeatureMask & XSTATE_MASK_AVX) == 0) {
+	featuremask = w32_GetEnabledXStateFeatures ();
+	if ((featuremask & XSTATE_MASK_AVX) == 0) {
 		return 0;
 	}
-	Success = w32_InitializeContext (NULL, CONTEXT_ALL | CONTEXT_XSTATE, NULL, &ContextSize);
-	if ((Success == TRUE) || (GetLastError () != ERROR_INSUFFICIENT_BUFFER)) {
+	success = w32_InitializeContext (NULL, CONTEXT_ALL | CONTEXT_XSTATE, NULL, &ctxsize);
+	if ((success == TRUE) || (GetLastError () != ERROR_INSUFFICIENT_BUFFER)) {
 		return 0;
 	}
-	buffer = malloc (ContextSize);
+	buffer = malloc (ctxsize);
 	if (buffer == NULL) {
 		return 0;
 	}
-	Success = w32_InitializeContext (buffer, CONTEXT_ALL | CONTEXT_XSTATE, &Context, &ContextSize);
-	if (Success == FALSE) {
-		free(buffer);
+	success = w32_InitializeContext (buffer, CONTEXT_ALL | CONTEXT_XSTATE, &ctx, &ctxsize);
+	if (success == FALSE) {
+		free (buffer);
 		return 0;
 	}
-	Success = w32_SetXStateFeaturesMask (Context, XSTATE_MASK_AVX);
-	if (Success == FALSE) {
-		free(buffer);
+	success = w32_SetXStateFeaturesMask (ctx, XSTATE_MASK_AVX);
+	if (success == FALSE) {
+		free (buffer);
 		return 0;
 	}
 	// TODO: Use get_thread_context
-	Success = GetThreadContext (hThread, Context);
-	if (Success == FALSE) {
-		free(buffer);
+	success = GetThreadContext (hThread, ctx);
+	if (success == FALSE) {
+		free (buffer);
 		return 0;
 	}
-	Success = w32_GetXStateFeaturesMask (Context, &FeatureMask);
-	if (Success == FALSE) {
-		free(buffer);
+	success = w32_GetXStateFeaturesMask (ctx, &featuremask);
+	if (success == FALSE) {
+		free (buffer);
 		return 0;
 	}
-	Xmm = (ut128 *)w32_LocateXStateFeature (Context, XSTATE_LEGACY_SSE, &FeatureLength);
-		nRegs = FeatureLength / sizeof(*Xmm);
-	for (Index = 0; Index < nRegs; Index++) {
-		ymm[Index].High = 0;
-		xmm[Index].High = 0;
-		ymm[Index].Low = 0;
-		xmm[Index].Low = 0;
+	newxmm = (ut128 *)w32_LocateXStateFeature (ctx, XSTATE_LEGACY_SSE, &featurelen);
+		nregs = featurelen / sizeof(*newxmm);
+	for (index = 0; index < nregs; index++) {
+		ymm[index].High = 0;
+		xmm[index].High = 0;
+		ymm[index].Low = 0;
+		xmm[index].Low = 0;
 	}
-	if (Xmm != NULL) {
-		for (Index = 0; Index < nRegs; Index++) {
-			xmm[Index].High = Xmm[Index].High;
-			xmm[Index].Low = Xmm[Index].Low;
+	if (newxmm != NULL) {
+		for (index = 0; index < nregs; index++) {
+			xmm[index].High = newxmm[index].High;
+			xmm[index].Low = newxmm[index].Low;
 		}
 	}
-	if ((FeatureMask & XSTATE_MASK_AVX) != 0) {
+	if ((featuremask & XSTATE_MASK_AVX) != 0) {
 		// check for AVX initialization and get the pointer.
-		Ymm = (ut128 *)w32_LocateXStateFeature (Context, XSTATE_AVX, NULL);
-		for (Index = 0; Index < nRegs; Index++) {
-			ymm[Index].High = Ymm[Index].High;
-			ymm[Index].Low = Ymm[Index].Low;
+		newymm = (ut128 *)w32_LocateXStateFeature (ctx, XSTATE_AVX, NULL);
+		for (index = 0; index < nregs; index++) {
+			ymm[index].High = newymm[index].High;
+			ymm[index].Low = newymm[index].Low;
 		}
 	}
 	free (buffer);
-	return nRegs;
+	return nregs;
 }
 
-static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
+static void printwincontext(HANDLE th, CONTEXT *ctx) {
 	ut128 xmm[16];
 	ut128 ymm[16];
 	ut80 st[8];
@@ -326,7 +326,7 @@ static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
 		eprintf ("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
 	}
 	// show Ymm regs
-	nymm = GetAVX (hThread, xmm, ymm);
+	nymm = get_avx (th, xmm, ymm);
 	if (nymm) {
 		for (x = 0; x < nymm; x++) {
 			eprintf ("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );
