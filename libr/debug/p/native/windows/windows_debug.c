@@ -614,7 +614,6 @@ err_get_file_name_from_handle:
 		char *ret = r_sys_conv_win_to_utf8 (filename);
 		free (filename);
 		return ret;
-
 	}	
 	return NULL;
 }
