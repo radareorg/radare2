@@ -835,12 +835,10 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 				if (!debug_exception_event (&de)) {
 					ret = R_DEBUG_REASON_TRAP;
 					next_event = 0;
-				}
-				else {
+				} else {
 					next_event = 1;
 					w32_continue (dbg, pid, tid, -1);
 				}
-
 			}
 			break;
 		default:
