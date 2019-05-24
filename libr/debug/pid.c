@@ -34,9 +34,6 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 	RList *list;
 	RListIter *iter;
 	RDebugPid *p;
-	if (pid == -1) {
-		return false;
-	}
 	if (dbg && dbg->h && dbg->h->pids) {
 		list = dbg->h->pids (dbg, R_MAX (0, pid));
 		if (!list) {
