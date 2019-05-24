@@ -870,7 +870,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	LPVOID base = VirtualAllocEx (rio->ph, (LPVOID)(size_t)addr,
 	  			(SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
-		eprintf ("Failed to allocate memory\n");
+		r_sys_perror ("w32_map_alloc/VirtualAllocEx\n");
 		return NULL;
 	}
 	r_debug_map_sync (dbg);
@@ -881,7 +881,7 @@ int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
 	if (!VirtualFreeEx (rio->ph, (LPVOID)(size_t)addr,
 			  (SIZE_T)size, MEM_DECOMMIT)) {
-		eprintf ("Failed to free memory\n");
+		r_sys_perror ("w32_map_dealloc/VirtualFreeEx\n");
 		return false;
 	}
 	return true;
