@@ -732,13 +732,12 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
 			return -1;
 		}
-		code = de.dwDebugEventCode;
 		tid = de.dwThreadId;
 		pid = de.dwProcessId;
 		dbg->tid = tid;
 		dbg->pid = pid;
 		/* TODO: DEBUG_CONTROL_C */
-		switch (code) {
+		switch (de.dwDebugEventCode) {
 		case CREATE_PROCESS_DEBUG_EVENT:
 			//TODO: replace w32_h2t calls to w32_thread_list to get tid
 			/*eprintf ("(%d) created process (%d:%p)\n",
@@ -840,7 +839,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			}
 			break;
 		default:
-			eprintf ("(%d) unknown event: %d\n", pid, code);
+			eprintf ("(%d) unknown event: %d\n", pid, de.dwDebugEventCode);
 			return -1;
 		}
 	} while (next_event);
