@@ -611,9 +611,9 @@ err_get_file_name_from_handle:
 		CloseHandle (handle_file_map);
 	}
 	if (filename) {
-		char *filename_ = r_sys_conv_win_to_utf8 (filename);
+		char *ret = r_sys_conv_win_to_utf8 (filename);
 		free (filename);
-		return filename_;
+		return ret;
 
 	}	
 	return NULL;
@@ -650,7 +650,7 @@ static void r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 			while (dllname[i] != '\\' && i >= 0) {
 				i--;
 			}
-			strncpy (lstLibPtr->Name, &dllname[i + 1], n - i);
+			strncpy (lstLibPtr->Name, dllname + i + 1, n - i);
 			return;
 		}
 		lstLibPtr++;
