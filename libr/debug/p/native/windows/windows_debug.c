@@ -409,21 +409,18 @@ int w32_attach(RDebug *dbg, int pid) {
 }
 
 int w32_detach(RDebug *dbg, int pid) {
-	if (pid == -1) {
+	if (pid == -1 || dbg->pid != pid) {
 		return false;
 	}
-	if (dbg->pid == pid) {
-		RIOW32Dbg *rio = dbg->user;
-		bool ret;
-		if (rio->debug) {
-			ret = DebugActiveProcessStop (pid);
-		}
-		CloseHandle (rio->ph);
-		rio->ph = NULL;
-		rio->debug = false;
-		return ret;
+	RIOW32Dbg *rio = dbg->user;
+	bool ret;
+	if (rio->debug) {
+		ret = DebugActiveProcessStop (pid);
 	}
-	return false;
+	CloseHandle (rio->ph);
+	rio->ph = NULL;
+	rio->debug = false;
+	return ret;
 }
 
 int w32_select(RDebug *dbg, int pid, int tid) {
