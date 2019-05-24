@@ -843,21 +843,23 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 int w32_step(RDebug *dbg) {
 	/* set TRAP flag */
 	CONTEXT ctx;
-	w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
+	if (!w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
+		return false;
+	}
 	ctx.EFlags |= 0x100;
-	w32_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
-	w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
+	if (!w32_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
+		return false;
+	}
+	return w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 	// (void)r_debug_handle_signals (dbg);
-	return true;
 }
 
 int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	/* Honor the Windows-specific signal that instructs threads to process exceptions */
 	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
 		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
-	if (ContinueDebugEvent (pid, tid, continue_status) == 0) {
+	if (!ContinueDebugEvent (pid, tid, continue_status)) {
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
-		eprintf ("debug_contp: error\n");
 		return false;
 	}
 	return tid;
