@@ -1064,7 +1064,7 @@ err_w32_info_user:
 static void w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 	RIOW32Dbg *rio = dbg->user;
 	rdi->exe = resolve_path (rio->ph);
-	/*
+#if 0
 	HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION, FALSE, dbg->pid);
 	if (!ph) {
 		r_sys_perror ("w32_info_exe/OpenProcess");
@@ -1072,7 +1072,7 @@ static void w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 	}
 	rdi->exe = resolve_path (ph);
 	CloseHandle (ph);
-	*/
+#endif
 }
 
 RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
