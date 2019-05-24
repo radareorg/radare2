@@ -1106,9 +1106,9 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 static RDebugPid *build_debug_pid(int pid, HANDLE ph, const char* name) {
 	char *path = NULL;
 	int uid = -1;
-	if (ph == (HANDLE)NULL) {
+	if (!ph) {
 		ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-		if (ph != (HANDLE)NULL) {
+		if (ph) {
 			path = resolve_path (ph);
 			DWORD sid;
 			if (ProcessIdToSessionId (pid, &sid)) {
