@@ -71,12 +71,11 @@ int w32_init(RDebug *dbg) {
 		eprintf ("w32_init: failed to allocate memory\n");
 		return false;
 	}
-	setup_debug_privileges (true);
-	// rio->dbgpriv = setup_debug_privileges (true);
-	rio->ph = (HANDLE)NULL;
-	rio->debug = false;
 
 	HMODULE lib = GetModuleHandle ("kernel32"); //Always loaded
+	if (!lib) {
+		return false;
+	}
 	w32_GetEnabledXStateFeatures = GetProcAddress (lib, "GetEnabledXStateFeatures");
 	w32_InitializeContext = GetProcAddress (lib, "InitializeContext");
 	w32_GetXStateFeaturesMask = GetProcAddress (lib, "GetXStateFeaturesMask");
@@ -84,7 +83,15 @@ int w32_init(RDebug *dbg) {
 	w32_SetXStateFeaturesMask = GetProcAddress (lib, "SetXStateFeaturesMask");
 
 	lib = GetModuleHandle ("ntdll"); //Always loaded
+	if (!lib) {
+		return false;
+	}
 	w32_NtQueryInformationThread = GetProcAddress (lib, "NtQueryInformationThread");
+
+	setup_debug_privileges (true);
+	// rio->dbgpriv = setup_debug_privileges (true);
+	rio->ph = (HANDLE)NULL;
+	rio->debug = false;
 	return true;
 }
 
