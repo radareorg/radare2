@@ -894,7 +894,7 @@ int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	if (!VirtualFreeEx (rio->ph, (LPVOID)(size_t)addr,
 			  (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf ("Failed to free memory\n");
-		return true;
+		return false;
 	}
 	return true;
 }
