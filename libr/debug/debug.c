@@ -5,7 +5,7 @@
 #include <signal.h>
 
 #if __WINDOWS__
-static void w32_break_process_wrapper(void *);
+static void __w32_break_process_wrapper(void *);
 #endif
 
 R_LIB_VERSION(r_debug);
@@ -1091,7 +1091,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 		return false;
 	}
 #if __WINDOWS__
-	r_cons_break_push (w32_break_process_wrapper, dbg);
+	r_cons_break_push (__w32_break_process_wrapper, dbg);
 #endif
 repeat:
 	if (r_debug_is_dead (dbg)) {
