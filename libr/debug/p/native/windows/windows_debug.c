@@ -335,7 +335,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
-	if (th == (HANDLE)NULL) {
+	if (!th) {
 		r_sys_perror ("w32_reg_read/OpenThread");
 		return 0;
 	}
@@ -362,7 +362,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = OpenThread (flags, FALSE, dbg->tid);
-	if (th == (HANDLE)NULL) {
+	if (!th) {
 		r_sys_perror ("w32_reg_write/OpenThread");
 		return false;
 	}
@@ -383,7 +383,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 int w32_attach(RDebug *dbg, int pid) {
 	RIOW32Dbg *rio = dbg->user;
 	HANDLE ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (ph == (HANDLE)NULL) {
+	if (!ph) {
 		return -1;
 	}
 	if (!DebugActiveProcess (pid)) {
@@ -970,7 +970,7 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 		HANDLE ph = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 		char *path = NULL;
 		int uid = -1;
-		if (ph != (HANDLE)NULL) {
+		if (!ph) {
 			path = resolve_path (ph);
 			DWORD sid;
 			if (ProcessIdToSessionId (pid, &sid)) {
