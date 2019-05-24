@@ -891,13 +891,12 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 
 int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
-	bool ret = true;
 	if (!VirtualFreeEx (rio->ph, (LPVOID)(size_t)addr,
 			  (SIZE_T)size, MEM_DECOMMIT)) {
 		eprintf ("Failed to free memory\n");
-		ret = false;
+		return true;
 	}
-	return ret;
+	return true;
 }
 
 static int io_perms_to_prot(int io_perms) {
