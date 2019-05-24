@@ -740,6 +740,7 @@ typedef struct r_anal_hint_t {
 	int immbase;
 	bool high; // highlight hint
 	int nword;
+	ut64 stackframe;
 } RAnalHint;
 
 typedef struct r_anal_var_access_t {
@@ -1706,6 +1707,7 @@ R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
+R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
@@ -1719,6 +1721,7 @@ R_API void r_anal_hint_unset_ret(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
 
 R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str);
 R_API int r_anal_range_tree_find_bits_at(RBNode *root, ut64 addr);
