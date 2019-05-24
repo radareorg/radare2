@@ -1027,6 +1027,7 @@ typedef struct r_panels_t {
 	bool autoUpdate;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
+	Sdb *del_db;
 	Sdb *rotate_db;
 	HtPP *mht;
 	RPanelsMode mode;
