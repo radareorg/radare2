@@ -64,7 +64,6 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 	}
 	char *map_name = r_str_newf ("%-8s %s", map_type, name);
 	if (!map_name) {
-		perror ("r_str_newf");
 		return NULL;
 	}
 	RDebugMap *mr = r_debug_map_new (map_name, addr, addr + len, perm, mbi->Type == MEM_PRIVATE);
