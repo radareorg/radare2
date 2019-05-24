@@ -499,8 +499,8 @@ void w32_break_process(RDebug *dbg) {
 	}
 }
 
-static char *get_w32_excep_name(unsigned long code) {
-	char *desc;
+static const char *get_w32_excep_name(DWORD code) {
+	const char *desc;
 	switch (code) {
 	/* fatal exceptions */
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -621,11 +621,12 @@ err_get_file_name_from_handle:
 
 LPVOID lstLib = 0;
 PLIB_ITEM lstLibPtr = 0;
-/*
+
+#if 0
 static char * r_debug_get_dll() {
 	return lstLibPtr->Path;
 }
-*/
+#endif
 
 static PLIB_ITEM r_debug_get_lib_item() {
 	return lstLibPtr;
@@ -655,6 +656,7 @@ static void r_debug_lstLibAdd(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 	}
 	eprintf ("r_debug_lstLibAdd: Cannot find slot\n");
 }
+
 static void *r_debug_findlib(void *BaseOfDll) {
 	PLIB_ITEM libPtr = NULL;
 	if (lstLib) {
@@ -674,7 +676,9 @@ PTHREAD_ITEM lstThreadPtr = 0;
 static PTHREAD_ITEM r_debug_get_thread_item() {
 	return lstThreadPtr;
 }
+
 #define PTHREAD_MAX 1024
+
 static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
 	int x;
 	PVOID startAddress = 0;
