@@ -1911,12 +1911,15 @@ static bool cb_scrhighlight(void *user, void *data) {
 #if __WINDOWS__
 static int scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
+	if (!strcmp (node->value, "true")) {
+		node->i_value = 1;
+	}
 	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
 # ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	DWORD mode;
 	int i;
-	if (node->i_value) {
+	if (node->i_value == 1) {  // scr.ansicon=2 to show esc seqs (for debugging) if using non-ConEmu-hosted cmd.exe
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
@@ -3307,7 +3310,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
 	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
-	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
+	SETICB ("scr.ansicon", r_cons_singleton ()->ansicon,
 		&scr_ansicon, "Use ANSICON mode or not on Windows");
 #endif
 #if __ANDROID__

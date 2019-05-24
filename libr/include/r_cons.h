@@ -475,7 +475,7 @@ typedef struct r_cons_t {
 	int refcnt;
 	bool newline;
 #if __WINDOWS__
-	bool ansicon;
+	int ansicon;
 #endif
 	bool flush;
 	bool use_utf8; // use utf8 features
@@ -936,7 +936,7 @@ struct r_line_t {
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
 #if __WINDOWS__
-	bool ansicon;
+	int ansicon;
 #endif
 }; /* RLine */
 
