@@ -549,7 +549,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return ret;
 }
 
-static void __w32_break_process_wrapper(void *d) {
+void w32_break_process_wrapper(void *d) {
 	w32_break_process (d);
 }
 
