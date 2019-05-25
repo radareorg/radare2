@@ -1341,12 +1341,24 @@ R_API int r_cons_get_size(int *rows) {
 
 R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
-	// TODO
-#else
-	if (cursor) {
-		write (1, "\x1b[?25h", 6);
+	if (I.ansicon) {
+#endif
+		write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+#if __WINDOWS__
 	} else {
-		write (1, "\x1b[?25l", 6);
+		static HANDLE hStdout = NULL;
+		static DWORD size = -1;
+		CONSOLE_CURSOR_INFO cursor_info;
+		if (!hStdout) {
+			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+		}
+		if (size == -1) {
+			GetConsoleCursorInfo (hStdout, &cursor_info);
+			size = cursor_info.dwSize;
+		}
+		cursor_info.dwSize = size;
+		cursor_info.bVisible = cursor ? TRUE : FALSE;
+		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
 }
