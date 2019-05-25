@@ -186,8 +186,8 @@ R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
 /* op.c */
 R_API RAsmOp *r_asm_op_new(void);
-R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_init(RAsmOp *op);
+R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_fini(RAsmOp *op);
 R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
@@ -241,6 +241,7 @@ extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_propeller;
 extern RAsmPlugin r_asm_plugin_riscv;
+extern RAsmPlugin r_asm_plugin_riscv_cs;
 extern RAsmPlugin r_asm_plugin_rsp;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_snes;

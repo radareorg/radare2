@@ -18,6 +18,7 @@ extern "C" {
 #include <r_util/r_str.h>
 #include <r_util/r_sys.h>
 #include <r_util/r_file.h>
+#include <r_vector.h>
 #include <sdb.h>
 
 #include <stdio.h>
@@ -33,6 +34,7 @@ extern "C" {
 #if __WINDOWS__
 #include <windows.h>
 #include <wincon.h>
+#include <winuser.h>
 #else
 #include <unistd.h>
 #endif
@@ -437,6 +439,7 @@ typedef struct r_cons_t {
 	int fix_columns;
 	bool break_lines;
 	int noflush;
+	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
@@ -472,7 +475,7 @@ typedef struct r_cons_t {
 	int refcnt;
 	bool newline;
 #if __WINDOWS__
-	bool ansicon;
+	int ansicon;
 #endif
 	bool flush;
 	bool use_utf8; // use utf8 features
@@ -519,17 +522,28 @@ typedef struct r_cons_t {
 
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
 #define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
+#define R_CONS_ADD_NEWLINES "\x1b[2J"
+#define R_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
 
 #define R_CONS_CURSOR_SAVE "\x1b[s"
 #define R_CONS_CURSOR_RESTORE "\x1b[u"
+#define R_CONS_GET_CURSOR_POSITION "\x1b[6n"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
-/* plain colors */
+     /* See 'man 4 console_codes' for details:
+      * "ESC c"        -- Reset
+      * "ESC ( K"      -- Select user mapping
+      * "ESC [ 0 m"    -- Reset all display attributes
+      * "ESC [ J"      -- Erase to the end of screen
+      * "ESC [ ? 25 h" -- Make cursor visible
+      */
+#define Color_RESET_TERMINAL  "\x1b" "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
 #define Color_RESET_NOBG "\x1b[22;24;25;27;28;39m"  /* Reset everything except background */
 #define Color_RESET_BG   "\x1b[49m"
+#define Color_RESET_ALL  "\x1b[0m\x1b[49m"
 #define Color_BLACK      "\x1b[30m"
 #define Color_BGBLACK    "\x1b[40m"
 #define Color_RED        "\x1b[31m"
@@ -546,9 +560,9 @@ typedef struct r_cons_t {
 #define Color_BGCYAN     "\x1b[46m"
 #define Color_BLUE       "\x1b[34m"
 #define Color_BGBLUE     "\x1b[44m"
-#define Color_GRAY       "\x1b[38m"
-#define Color_BGGRAY     "\x1b[48m"
-/* bold colors */
+#define Color_GRAY       "\x1b[90m"
+#define Color_BGGRAY     "\x1b[100m"
+/* bright colors */
 #define Color_BBLACK    "\x1b[1;30m"
 #define Color_BRED      "\x1b[1;31m"
 #define Color_BBGRED    "\x1b[1;41m"
@@ -582,8 +596,8 @@ typedef struct r_cons_t {
 #define RColor_BGCYAN    RCOLOR(ALPHA_BG, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00)
 #define RColor_BLUE      RCOLOR(ALPHA_FG, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)
 #define RColor_BGBLUE    RCOLOR(ALPHA_BG, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00)
-#define RColor_GRAY      RCOLOR(ALPHA_FG, 0x7f, 0x7f, 0x7f, 0x00, 0x00, 0x00)
-#define RColor_BGGRAY    RCOLOR(ALPHA_BG, 0x7f, 0x7f, 0x7f, 0x00, 0x00, 0x00)
+#define RColor_GRAY      RCOLOR(ALPHA_FG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00)
+#define RColor_BGGRAY    RCOLOR(ALPHA_BG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00)
 
 #define Colors_PLAIN { \
 	Color_BLACK, Color_RED, Color_WHITE, \
@@ -679,7 +693,6 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch);
 R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert);
 R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
-
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
 R_API RCons *r_cons_free(void);
@@ -701,7 +714,9 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
+R_API void r_cons_w32_gotoxy(int fd, int x, int y);
+R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
+R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
 #endif
 
 R_API void r_cons_push(void);
@@ -733,6 +748,7 @@ R_API void r_cons_fill_line(void);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
+R_API int r_cons_get_cur_line ();
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
@@ -848,6 +864,8 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 
 #define R_SELWIDGET_MAXH 15
 #define R_SELWIDGET_MAXW 30
+#define R_SELWIDGET_DIR_UP 0
+#define R_SELWIDGET_DIR_DOWN 1
 
 typedef struct r_selection_widget_t {
 	const char **options;
@@ -856,6 +874,7 @@ typedef struct r_selection_widget_t {
 	int w, h;
 	int scroll;
 	bool complete_common;
+	bool direction;
 } RSelWidget;
 
 typedef struct r_line_hist_t {
@@ -873,15 +892,19 @@ typedef struct r_line_buffer_t {
 } RLineBuffer;
 
 typedef struct r_line_t RLine; // forward declaration
+typedef struct r_line_comp_t RLineCompletion;
 
-typedef int (*RLineCallback)(RLine *line);
+typedef enum { R_LINE_PROMPT_DEFAULT, R_LINE_PROMPT_OFFSET, R_LINE_PROMPT_FILE } RLinePromptType;
 
-typedef struct r_line_comp_t {
+typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user);
+
+struct r_line_comp_t {
 	bool opt;
-	int argc;
-	const char **argv;
-	RLineCallback run;
-} RLineCompletion;
+	size_t args_limit;
+	RPVector args; /* <char *> */
+	RLineCompletionCb run;
+	void *run_user;
+};
 
 typedef char* (*RLineEditorCb)(void *core, const char *str);
 typedef int (*RLineHistoryUpCb)(RLine* line);
@@ -907,14 +930,13 @@ struct r_line_t {
 	int (*hist_down)(void *user);
 	char *contents;
 	bool zerosep;
-	bool offset_prompt;
+	RLinePromptType prompt_type;
 	int offset_hist_index;
-	bool file_prompt;
 	int file_hist_index;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
 #if __WINDOWS__
-	bool ansicon;
+	int ansicon;
 #endif
 }; /* RLine */
 
@@ -941,106 +963,17 @@ R_API int r_line_hist_list(void);
 R_API const char *r_line_hist_get(int n);
 
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);
-R_API int cmd_history_up(RLine *line);
-R_API int cmd_history_down(RLine *line);
+R_API int r_line_hist_cmd_up(RLine *line);
+R_API int r_line_hist_cmd_down(RLine *line);
+
+R_API void r_line_completion_init(RLineCompletion *completion, size_t args_limit);
+R_API void r_line_completion_fini(RLineCompletion *completion);
+R_API void r_line_completion_push(RLineCompletion *completion, const char *str);
+R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
+R_API void r_line_completion_clear(RLineCompletion *completion);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
-#endif
-
-/* r_agraph */
-
-typedef struct r_ascii_node_t {
-	RGraphNode *gnode;
-	char *title;
-	char *body;
-
-	int x;
-	int y;
-	int w;
-	int h;
-
-	int layer;
-	int layer_height;
-	int layer_width;
-	int pos_in_layer;
-	int is_dummy;
-	int is_reversed;
-	int klass;
-	bool is_mini;
-} RANode;
-
-#define R_AGRAPH_MODE_NORMAL 0
-#define R_AGRAPH_MODE_OFFSET 1
-#define R_AGRAPH_MODE_MINI 2
-#define R_AGRAPH_MODE_TINY 3
-#define R_AGRAPH_MODE_SUMMARY 4
-#define R_AGRAPH_MODE_COMMENTS 5
-#define R_AGRAPH_MODE_MAX 6
-
-typedef void (*RANodeCallback)(RANode *n, void *user);
-typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);
-
-typedef struct r_ascii_graph_t {
-	RConsCanvas *can;
-	RGraph *graph;
-	const RGraphNode *curnode;
-	char *title;
-	Sdb *db;
-	Sdb *nodes; // Sdb with title(key)=RANode*(value)
-
-	int layout;
-	int is_instep;
-	bool is_tiny;
-	bool is_dis;
-	int edgemode;
-	int mode;
-	bool is_callgraph;
-	bool is_interactive;
-	int zoom;
-	int movspeed;
-	bool hints;
-
-	RANode *update_seek_on;
-	bool need_reload_nodes;
-	bool need_set_layout;
-	int need_update_dim;
-	int force_update_seek;
-
-	/* events */
-	RANodeCallback on_curnode_change;
-	void *on_curnode_change_data;
-
-	int x, y;
-	int w, h;
-
-	/* layout algorithm info */
-	RList *back_edges;
-	RList *long_edges;
-	struct layer_t *layers;
-	int n_layers;
-	RList *dists; /* RList<struct dist_t> */
-	RList *edges; /* RList<AEdge> */
-} RAGraph;
-
-#ifdef R_API
-R_API RAGraph *r_agraph_new(RConsCanvas *can);
-R_API void r_agraph_free(RAGraph *g);
-R_API void r_agraph_reset(RAGraph *g);
-R_API void r_agraph_set_title(RAGraph *g, const char *title);
-R_API RANode *r_agraph_get_first_node(const RAGraph *g);
-R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title);
-R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body);
-R_API bool r_agraph_del_node(const RAGraph *g, const char *title);
-R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b);
-R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth);
-R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
-R_API void r_agraph_print(RAGraph *g);
-R_API void r_agraph_print_json(RAGraph *g, PJ *pj);
-R_API Sdb *r_agraph_get_sdb(RAGraph *g);
-R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
-R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
-R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
 typedef int (*RPanelsMenuCallback)(void *user);
@@ -1094,13 +1027,22 @@ typedef struct r_panels_t {
 	bool autoUpdate;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
+	Sdb *del_db;
+	Sdb *rotate_db;
 	HtPP *mht;
 	RPanelsMode mode;
 	RPanelsFun fun;
 	RPanelsMode prevMode;
 	RPanelsLayout layout;
 	RList *snows;
+	char *name;
 } RPanels;
+
+typedef struct r_panels_root_t {
+	int n_panels;
+	int cur_panels;
+	RPanels **panels;
+} RPanelsRoot;
 
 #ifdef __cplusplus
 }

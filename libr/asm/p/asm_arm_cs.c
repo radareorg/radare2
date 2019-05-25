@@ -180,7 +180,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = "v8,cortex",
+	.cpus = ",v8,cortex",
 	.features = "v8",
 	.license = "BSD",
 	.arch = "arm",

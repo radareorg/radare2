@@ -28,7 +28,7 @@ static void err(RAnalEsil *esil, const char *msg) {
 /* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
 	ut64 m = UT64_MAX;
-	if (bits < 64) {
+	if (bits > 0 && bits < 64) {
 		m = (ut64)(((ut64)(2) << bits) - 1);
 		if (!m) {
 			m = UT64_MAX;
@@ -657,8 +657,8 @@ static int esil_weak_eq(RAnalEsil *esil) {
 	}
 
 	ut64 src_num;
-	if (r_anal_esil_get_parm(esil, src, &src_num)) {
-		const int ret = r_anal_esil_reg_write (esil, dst, src_num);
+	if (r_anal_esil_get_parm (esil, src, &src_num)) {
+		(void)r_anal_esil_reg_write (esil, dst, src_num);
 		free (src);
 		free (dst);
 		return 1;
@@ -674,6 +674,12 @@ static int esil_eq(RAnalEsil *esil) {
 	ut64 num, num2;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
+	if (!src || !dst) {
+		if (esil->verbose) {
+			eprintf ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x"\n", esil->address);
+		}
+		return 0;
+	}
 	if (ispackedreg (esil, dst)) {
 		char *src2 = r_anal_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst);
@@ -2552,49 +2558,6 @@ static int esil_swap(RAnalEsil *esil) {
 	return true;
 }
 
-static int __esil_generic_pick(RAnalEsil *esil, int rev) {
-	char *idx = r_anal_esil_pop (esil);
-	ut64 i;
-	int ret = false;
-	if (!idx || !r_anal_esil_get_parm (esil, idx, &i)) {
-		ERR ("esil_pick: invalid index number");
-		goto end;
-	}
-	if (!esil || !esil->stack) {
-		ERR ("esil_pick: stack not initialized");
-		goto end;
-	}
-	if (rev) {
-		i = esil->stackptr + (((st64) i) * -1);
-	}
-	if (esil->stackptr < i) {
-		ERR ("esil_pick: index out of stack bounds");
-		goto end;
-	}
-	if (!esil->stack[esil->stackptr-i]) {
-		ERR ("esil_pick: undefined element");
-		goto end;
-	}
-	if (!r_anal_esil_push (esil, esil->stack[esil->stackptr-i])) {
-		ERR ("ESIL stack is full");
-		esil->trap = 1;
-		esil->trap_code = 1;
-		goto end;
-	}
-	ret = true;
-end:
-	free (idx);
-	return ret;
-}
-
-static int esil_pick(RAnalEsil *esil) {
-	return __esil_generic_pick (esil, 0);
-}
-
-static int esil_rpick(RAnalEsil *esil) {
-	return __esil_generic_pick (esil, 1);
-}
-
 // NOTE on following comparison functions:
 // The push to top of the stack is based on a
 // signed compare (as this causes least surprise to the users).
@@ -3202,8 +3165,6 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("CLEAR", esil_clear);
 	OP ("DUP", esil_dup);
 	OP ("NUM", esil_num);
-	OP ("PICK", esil_pick);
-	OP ("RPICK", esil_rpick);
 	OP ("SWAP", esil_swap);
 	OP ("TRAP", esil_trap);
 	OP ("BITS", esil_bits);

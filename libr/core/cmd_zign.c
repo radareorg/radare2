@@ -6,7 +6,6 @@
 #include <r_list.h>
 #include <r_cons.h>
 #include <r_util.h>
-#include "i/private.h"
 
 static const char *help_msg_z[] = {
 	"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
@@ -23,7 +22,7 @@ static const char *help_msg_z[] = {
 	"zo", "[?]", "manage zignature files",
 	"zf", "[?]", "manage FLIRT signatures",
 	"z/", "[?]", "search zignatures",
-	"zc", " [zspace]", "compare current zignspace zignatures with others",
+	"zc", "[?]", "compare current zignspace zignatures with another one",
 	"zs", "[?]", "manage zignspaces",
 	"zi", "", "show zignatures matching information",
 	NULL
@@ -75,6 +74,14 @@ static const char *help_msg_zs[] = {
 	NULL
 };
 
+static const char *help_msg_zc[] = {
+	"Usage:", "zc[n!] other_space ", "# Compare zignspaces",
+	"zc", " other_space", "compare all current space with other_space",
+	"zcn", " other_space", "compare current space with zigns with same name on other_space",
+	"zcn!", " other_space", "same as above but show the ones not matching",
+	NULL
+};
+
 static void cmd_zign_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, z);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
@@ -82,6 +89,7 @@ static void cmd_zign_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, zf);
 	DEFINE_CMD_DESCRIPTOR (core, zo);
 	DEFINE_CMD_DESCRIPTOR (core, zs);
+	DEFINE_CMD_DESCRIPTOR (core, zc);
 }
 
 static bool addFcnHash(RCore *core, RAnalFunction *fcn, const char *name) {
@@ -152,14 +160,17 @@ static bool addFcnVars(RCore *core, RAnalFunction *fcn, const char *name) {
 	return retval;
 }
 
+#if 0
 static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
+	// XXX this is slow as hell on big binaries
 	char *r = r_core_cmd_strf (core, "CCf* @ 0x%08"PFMT64x, fcn->addr);
 	if (r && *r) {
 		return r;
 	}
-	// 
+	//
 	return NULL;
 }
+#endif
 
 static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	char *zigname = NULL;
@@ -183,10 +194,13 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	if (strcmp (zigname, fcn->name)) {
 		r_sign_add_name (core->anal, zigname, fcn->name);
 	}
+/*
+	XXX this is very slow and poorly tested
 	char *comments = getFcnComments (core, fcn);
 	if (comments) {
 		r_sign_add_comment (core->anal, zigname, comments);
 	}
+*/
 	r_sign_add_addr (core->anal, zigname, fcn->addr);
 
 	free (zigname);
@@ -815,8 +829,46 @@ TODO: add useXRefs, useName
 }
 
 static int cmdCompare(void *data, const char *input) {
-	eprintf ("TODO\n");
-	return 0;
+	RCore *core = (RCore *) data;
+
+	switch (*input) {
+	case ' ':
+		if (!input[1]) {
+			eprintf ("usage: zc other_space\n");
+			return false;
+		}
+		return r_sign_diff (core->anal, input + 1);
+		break;
+	case 'n':
+		switch (input[1]) {
+		case ' ':
+			if (!input[2]) {
+				eprintf ("usage: zcn other_space\n");
+				return false;
+			}
+			return r_sign_diff_by_name (core->anal, input + 2, false);
+			break;
+		case '!':
+			if (input[2] != ' ' || !input[3]) {
+				eprintf ("usage: zcn! other_space\n");
+				return false;
+			}
+			return r_sign_diff_by_name (core->anal, input + 3, true);
+			break;
+		default:
+			eprintf ("usage: zcn! other_space\n");
+			return false;
+		}
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_zc);
+		break;
+	default:
+		eprintf ("usage: zc[?n!] other_space\n");
+		return false;
+	}
+
+	return true;
 }
 
 static int cmdCheck(void *data, const char *input) {

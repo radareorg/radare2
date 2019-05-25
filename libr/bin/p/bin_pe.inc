@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -53,8 +53,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bytes = r_buf_buffer (bf->buf);
-	sz = r_buf_size (bf->buf);
+	bytes = r_buf_data (bf->buf, &sz);
 	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
@@ -447,11 +446,10 @@ static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	if (!bf) {
 		return false;
 	}
-	buf = r_buf_buffer (bf->buf);
+	buf = r_buf_data (bf->buf, &sz);
 	if (!buf) {
 		return false;
 	}
-	sz = r_buf_size (bf->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
 	if (idx + 0x5E + 1 >= sz ) {
 		return false;
@@ -522,7 +520,7 @@ static RBinInfo* info(RBinFile *bf) {
 
 	ret->has_va = true;
 
-	if (!PE_(r_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
+	if (PE_(r_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
 	if (PE_(r_bin_pe_is_stripped_line_nums) (bf->o->bin_obj)) {

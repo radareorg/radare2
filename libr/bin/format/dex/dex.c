@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2019 - pancake, h4ng3r */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -36,7 +36,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 
-	r_buf_seek (bin->b, 0, 0);
+	r_buf_seek (bin->b, 0, R_BUF_SET);
 	r_buf_read (bin->b, (ut8 *)&dexhdr->magic, 8);
 	dexhdr->checksum = r_buf_read_le32 (bin->b);
 	r_buf_read (bin->b, (ut8 *)&dexhdr->signature, 20);
@@ -100,7 +100,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->classes);
 			goto fail;
 		}
-		r_buf_seek (bin->b, offset, 0);
+		r_buf_seek (bin->b, offset, R_BUF_SET);
 		bin->classes[i].class_id = r_buf_read_le32 (bin->b);
 		bin->classes[i].access_flags = r_buf_read_le32 (bin->b);
 		bin->classes[i].super_class = r_buf_read_le32 (bin->b);
@@ -129,7 +129,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->methods);
 			goto fail;
 		}
-		r_buf_seek (bin->b, offset, 0);
+		r_buf_seek (bin->b, offset, R_BUF_SET);
 		bin->methods[i].class_id = r_buf_read_le16 (bin->b);
 		bin->methods[i].proto_id = r_buf_read_le16 (bin->b);
 		bin->methods[i].name_id = r_buf_read_le32 (bin->b);
@@ -177,7 +177,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->fields);
 			goto fail;
 		}
-		r_buf_seek (bin->b, offset, 0);
+		r_buf_seek (bin->b, offset, R_BUF_SET);
 		bin->fields[i].class_id = r_buf_read_le16 (bin->b);
 		bin->fields[i].type_id = r_buf_read_le16 (bin->b);
 		bin->fields[i].name_id = r_buf_read_le32 (bin->b);
@@ -205,7 +205,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->protos);
 			goto fail;
 		}
-		r_buf_seek (bin->b, offset, 0);
+		r_buf_seek (bin->b, offset, R_BUF_SET);
 		bin->protos[i].shorty_id = r_buf_read_le32 (bin->b);
 		bin->protos[i].return_type_id = r_buf_read_le32 (bin->b);
 		bin->protos[i].parameters_off = r_buf_read_le32 (bin->b);

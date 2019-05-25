@@ -73,6 +73,7 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 				retlen -= subret_space - subret_len;
 				ret[retlen] = '\0';
 				tmp = strstr (tmp3, "<xi:include");
+				free (subret);
 				continue;
 			}
 			if (subret_len > retmax - retlen - 1) {
@@ -209,7 +210,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	case R_SYS_ARCH_ARM:
 		switch (g->target.bits) {
 		case 32:
-			if (!(profile = r_str_prefix (profile,
+			if (!(profile = r_str_prepend (profile,
 							"=PC	pc\n"
 							"=SP	sp\n" // XXX
 							"=A0	r0\n"
@@ -221,7 +222,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 			break;
 		case 64:
-			if (!(profile = r_str_prefix (profile,
+			if (!(profile = r_str_prepend (profile,
 							"=PC	pc\n"
 							"=SP	sp\n"
 							"=BP	x29\n"
@@ -242,7 +243,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	case R_SYS_ARCH_X86:
 		switch (g->target.bits) {
 		case 32:
-			if (!(profile = r_str_prefix (profile,
+			if (!(profile = r_str_prepend (profile,
 						     "=PC	eip\n"
 						     "=SP	esp\n"
 						     "=BP	ebp\n"))) {
@@ -250,7 +251,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 			break;
 		case 64:
-			if (!(profile = r_str_prefix (profile,
+			if (!(profile = r_str_prepend (profile,
 						     "=PC	rip\n"
 						     "=SP	rsp\n"
 						     "=BP	rbp\n"))) {
@@ -259,7 +260,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		}
 		break;
 	case R_SYS_ARCH_MIPS:
-		if (!(profile = r_str_prefix (profile,
+		if (!(profile = r_str_prepend (profile,
 						"=PC	pc\n"
 						"=SP	r29\n"))) {
 			goto exit_err;
@@ -268,7 +269,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	default:
 		// TODO others
 		if (*pc_alias) {
-			if (!(profile = r_str_prefix (profile, pc_alias))) {
+			if (!(profile = r_str_prepend (profile, pc_alias))) {
 				goto exit_err;
 			}
 		}

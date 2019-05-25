@@ -7,6 +7,7 @@
 #include <r_anal.h>
 #undef R_IPI
 #define R_IPI static
+#define WASM_NO_ASM // to get rid of a warning
 #include "../../bin/format/wasm/wasm.h"
 #include "../../asm/arch/wasm/wasm.c"
 

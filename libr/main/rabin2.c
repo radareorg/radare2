@@ -907,9 +907,11 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_bin_arch_options_init (&opts, arch, bits);
 		b = r_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
-			if (r_file_dump (file, r_buf_buffer (b), r_buf_size (b), 0)) {
+			ut64 tmpsz;
+			const ut8 *tmp = r_buf_data (b, &tmpsz);
+			if (r_file_dump (file, tmp, tmpsz, 0)) {
 				eprintf ("Dumped %" PFMT64d " bytes in '%s'\n",
-					r_buf_size (b), file);
+					tmpsz, file);
 				r_file_chmod (file, "+x", 0);
 			} else {
 				eprintf ("Error dumping into a.out\n");

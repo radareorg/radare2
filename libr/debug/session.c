@@ -431,6 +431,10 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 			if (fread (&arena_size, sizeof (int), 1, fd) != 1) {
 				break;
 			}
+			if (arena_size < 1 || arena_size > 1024*1024) {
+				eprintf ("Invalid arena size?\n");
+				break;
+			}
 			ut8 *arena_raw = calloc (arena_size, 1);
 			if (!arena_raw) {
 				break;

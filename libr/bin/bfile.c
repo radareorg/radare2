@@ -54,14 +54,14 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 		r_name_filter (f_name, 512);
 		if (bin->prefix) {
 			nstr = r_str_newf ("%s.str.%s", bin->prefix, f_name);
-			io->cb_printf ("f %s.str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
+					"Cs %u @ 0x%08"PFMT64x"\n",
 					bin->prefix, f_name, string->size, addr,
 					string->size, addr);
 		} else {
 			nstr = r_str_newf ("str.%s", f_name);
-			io->cb_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+			io->cb_printf ("f str.%s %u @ 0x%08"PFMT64x"\n"
+					"Cs %u @ 0x%08"PFMT64x"\n",
 					f_name, string->size, addr,
 					string->size, addr);
 		}
@@ -354,9 +354,7 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut
 	binfile->xtr_obj = NULL;
 
 	if (!binfile->buf) {
-		//r_bin_file_free (binfile);
 		binfile->buf = r_buf_new ();
-		//	return NULL;
 	}
 
 	if (sdb) {
@@ -408,7 +406,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 sz = data->size;
 
 	RBinPlugin *plugin = get_plugin_with_buffer (bin, data->buf);
-	bf->buf = r_buf_new_with_bufref (data->buf);
+	bf->buf = r_buf_ref (data->buf);
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	if (!o) {
@@ -449,10 +447,15 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 	if (!xtr_data->metadata || !xtr_data->metadata->arch) {
 		return false;
 	}
-
-	char *iter_arch = xtr_data->metadata->arch;
+	const char *iter_arch = xtr_data->metadata->arch;
 	int iter_bits = xtr_data->metadata->bits;
 	return bits == iter_bits && !strcmp (iter_arch, arch) && !xtr_data->loaded;
+}
+
+R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
+	ut64 sz;
+	const ut8 *bytes = r_buf_data (buf, &sz);
+	return r_bin_file_new_from_bytes (bin, file, bytes, sz, file_sz, rawstr, baseaddr, loadaddr, fd, pluginname, offset);
 }
 
 R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
@@ -516,7 +519,7 @@ R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id
 	return NULL;
 }
 
-R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
+R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
 	RListIter *iter;
 	RBinFile *binfile;
 	r_list_foreach (bin->binfiles, iter, binfile) {
@@ -698,6 +701,12 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	free (a);
 }
 
+R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
+	ut64 sz;
+	const ut8 *bytes = r_buf_data (buf, &sz);
+	return r_bin_file_xtr_load_bytes (bin, xtr, filename, bytes, sz, file_sz, baseaddr, loadaddr, idx, fd, rawstr);
+}
+
 // This function populate RBinFile->xtr_data, that information is enough to
 // create RBinObject when needed using r_bin_file_object_new_from_xtr_data
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
@@ -714,9 +723,7 @@ R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 			bin->cur = bf;
 		}
 	}
-	if (bf->xtr_data) {
-		r_list_free (bf->xtr_data);
-	}
+	r_list_free (bf->xtr_data);
 	bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
 	if (bf->xtr_data) {
 		RListIter *iter;
@@ -737,7 +744,6 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 	r_return_val_if_fail (bf && bytes, false);
 
 	r_buf_free (bf->buf);
-	bf->buf = r_buf_new ();
 #if LIMIT_SIZE
 	if (sz > 1024 * 1024) {
 		eprintf ("Too big\n");
@@ -746,9 +752,9 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 	}
 #else
 	if (steal_ptr) {
-		r_buf_set_bytes_steal (bf->buf, bytes, sz);
+		bf->buf = r_buf_new_with_pointers (bytes, sz, true);
 	} else {
-		r_buf_set_bytes (bf->buf, bytes, sz);
+		bf->buf = r_buf_new_with_bytes (bytes, sz);
 	}
 #endif
 	return bf->buf != NULL;

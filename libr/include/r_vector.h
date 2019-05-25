@@ -158,6 +158,16 @@ static inline bool r_pvector_empty(RPVector *vec) {
 	return r_pvector_len (vec) == 0;
 }
 
+// returns a pointer to the offset inside the array where the element of the index lies.
+static inline void **r_pvector_index_ptr(RPVector *vec, size_t index) {
+	return ((void **)vec->v.a) + index;
+}
+
+// same as r_pvector_index_ptr(<vec>, 0)
+static inline void **r_pvector_data(RPVector *vec) {
+	return (void **)vec->v.a;
+}
+
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
 R_API void **r_pvector_contains(RPVector *vec, void *x);
 

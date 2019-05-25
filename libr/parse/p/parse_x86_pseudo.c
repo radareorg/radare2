@@ -65,6 +65,9 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "jne", "if (var) goto #", {1}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
+		{ "movq",  "# = #", {1, 2}},
+		{ "movaps",  "# = #", {1, 2}},
+		{ "movups",  "# = #", {1, 2}},
 		{ "movsd",  "# = #", {1, 2}},
 		{ "movsx","# = #", {1, 2}},
 		{ "movsxd","# = #", {1, 2}},
@@ -72,11 +75,14 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "movntdq", "# = #", {1, 2}},
 		{ "movnti", "# = #", {1, 2}},
 		{ "movntpd", "# = #", {1, 2}},
+		{ "pcmpeqb", "# == #", {1, 2}},
+
 		{ "movdqu", "# = #", {1, 2}},
 		{ "movdqa", "# = #", {1, 2}},
 		{ "pextrb", "# = (byte) # [#]", {1, 2, 3}},
 		{ "palignr", "# = # align #", {1, 2, 3}},
 		{ "pxor", "# ^= #", {1, 2}},
+		{ "xorps", "# ^= #", {1, 2}},
 		{ "mul",  "# = # * #", {1, 2, 3}},
 		{ "mulss",  "# = # * #", {1, 2, 3}},
 		{ "neg",  "# ~= #", {1, 1}},
@@ -354,6 +360,7 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 
 static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *bpargs, *spargs;
+	RAnal *anal = p->analb.anal;
 	RAnalVar *bparg, *sparg;
 	RListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
@@ -418,8 +425,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
                 free (tstr);
 		return false;
         }
-	bpargs = p->varlist (p->anal, f, 'b');
-	spargs = p->varlist (p->anal, f, 's');
+	bpargs = p->varlist (anal, f, 'b');
+	spargs = p->varlist (anal, f, 's');
 	/*iterate over stack pointer arguments/variables*/
 	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
 	if (ucase && tstr[1]) {
@@ -431,12 +438,12 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 	r_list_foreach (spargs, spiter, sparg) {
 		// assuming delta always positive?
-		mk_reg_str (p->anal->reg->name[R_REG_NAME_SP], sparg->delta, true, att, ireg, oldstr, sizeof (oldstr));
+		mk_reg_str (anal->reg->name[R_REG_NAME_SP], sparg->delta, true, att, ireg, oldstr, sizeof (oldstr));
 
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), sparg->name, p->anal->reg->name[R_REG_NAME_SP], '+', ireg, att);
+		parse_localvar (p, newstr, sizeof (newstr), sparg->name, anal->reg->name[R_REG_NAME_SP], '+', ireg, att);
 		if (ucase) {
 			char *plus = strchr (newstr, '+');
 			if (plus) {
@@ -467,11 +474,11 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			sign = '-';
 			bparg->delta = -bparg->delta;
 		}
-		mk_reg_str (p->anal->reg->name[R_REG_NAME_BP], bparg->delta, sign=='+', att, ireg, oldstr, sizeof (oldstr));
+		mk_reg_str (anal->reg->name[R_REG_NAME_BP], bparg->delta, sign=='+', att, ireg, oldstr, sizeof (oldstr));
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		parse_localvar (p, newstr, sizeof (newstr), bparg->name, p->anal->reg->name[R_REG_NAME_BP], sign, ireg, att);
+		parse_localvar (p, newstr, sizeof (newstr), bparg->name, anal->reg->name[R_REG_NAME_BP], sign, ireg, att);
 		if (ucase) {
 			char *plus = strchr (newstr, sign);
 			if (plus) {
@@ -495,7 +502,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			}
 		}
 		// Try with no spaces
-		snprintf (oldstr, sizeof (oldstr)-1, "[%s%c0x%x]", p->anal->reg->name[R_REG_NAME_BP], sign, bparg->delta);
+		snprintf (oldstr, sizeof (oldstr)-1, "[%s%c0x%x]", anal->reg->name[R_REG_NAME_BP], sign, bparg->delta);
 		if (strstr (tstr, oldstr) != NULL) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
@@ -503,8 +510,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	}
 
 	char bp[32];
-	if (p->anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, p->anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
+	if (anal->reg->name[R_REG_NAME_BP]) {
+		strncpy (bp, anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
 		if (isupper ((ut8)*str)) {
 			r_str_case (bp, true);
 		}

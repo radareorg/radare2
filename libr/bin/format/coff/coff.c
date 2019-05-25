@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2019 pancake, inisider */
 
 #include <r_util.h>
 
@@ -20,11 +20,6 @@ bool r_coff_supported_arch(const ut8 *buf) {
 	}
 }
 
-int r_coff_is_stripped(struct r_bin_coff_obj *obj) {
-	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
-		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
-}
-
 char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0, offset = 0;
@@ -39,7 +34,7 @@ char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 		return NULL;
 	}
 	if (p->zero) {
-		return strdup (p->name);
+		return r_str_ndup (p->name, 8);
 	}
 	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
 	if (offset > obj->size) {
@@ -93,16 +88,21 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 			}
 		}
 	}
+#if 0
 	/* Still clueless ? Let's just use the address of .text */
 	if (obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			//avoid doing string matching and use x bit from the section
+			// avoid doing string matching and use x bit from the section
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
 				addr->paddr = obj->scn_hdrs[i].s_scnptr;
 				return addr;
 			}
 		}
 	}
+#else
+	free (addr);
+	return NULL;
+#endif
 	return addr;
 }
 
@@ -115,7 +115,7 @@ static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
 		return false;
 	}
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
-		ret = r_buf_fread_at (obj->b, R_BUF_CUR, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
+		ret = r_buf_fread (obj->b, (ut8 *)&obj->target_id, obj->endian? "S": "s", 1);
 		if (ret != sizeof (ut16)) {
 			return false;
 		}

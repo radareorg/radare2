@@ -31,6 +31,7 @@ extern "C" {
 #define R_PRINT_FLAGS_NONASCII 0x00020000
 #define R_PRINT_FLAGS_ALIGN    0x00040000
 #define R_PRINT_FLAGS_UNALLOC  0x00080000
+#define R_PRINT_FLAGS_BGFILL   0x00100000
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
@@ -50,6 +51,7 @@ typedef struct r_print_zoom_t {
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
+	bool pava;
 	RCoreBind coreb;
 	const char *cfmt;
 	char datefmt[32];
@@ -155,7 +157,7 @@ R_API void r_print_cursor(RPrint *p, int cur, int len, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API int r_print_get_cursor(RPrint *p);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
-R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
+R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang);
 #define SEEFLAG -2
 #define JSONOUTPUT -3
 
@@ -188,6 +190,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_get_now(RPrint *p, char *str);
 R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
+R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);

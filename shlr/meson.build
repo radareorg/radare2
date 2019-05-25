@@ -16,11 +16,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    #CS_TIP = '3a660df88c30685cccf6ff68b4d6d4337b5caf7e'
-    #CS_BRA = 'next'
-    #cs5#CS_TIP = '472845db9c2666ab66b3f517dda21f2b026a06c1'
-    CS_TIP = '7090f081b17a5293a2c185a06513fede18065d3c'
-    CS_BRA = 'v4'
+    use_capstone5 = get_option('use_capstone5')
+    if use_capstone5
+      CS_TIP = 'f9ebfae858fa8a3b14efe838249a94cd99a4797d'
+      CS_BRA = 'next'
+    else
+      CS_TIP = '6cae0faf5a374966d6b48eb8f79dc2015cfb18c8'
+      CS_BRA = 'v4'
+    endif
 
     capstone_git_user = 'aquynh'
 
@@ -93,7 +96,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/X86/X86Disassembler.c',
     'arch/X86/X86DisassemblerDecoder.c',
     'arch/X86/X86IntelInstPrinter.c',
-    # cs5-only 'arch/X86/X86InstPrinterCommon.c',
     'arch/X86/X86Mapping.c',
     'arch/X86/X86Module.c',
     'arch/XCore/XCoreDisassembler.c',
@@ -112,6 +114,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
+  if get_option('use_capstone5')
+    cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
+  endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 

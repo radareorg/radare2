@@ -8,7 +8,10 @@ static int cmd_colon(void *_core, const char *cmd) {
 		// parse json here, and retrieve arguments
 		return 1;
 	}
-	if (!*cmd || *cmd == '?') {
+	if (!*cmd) {
+		return 1;
+	}
+	if (*cmd == '?') {
 		eprintf ("Usage: :<command> <arguments\n");
 		eprintf ("Usage: :{json-goes-here}\n");
 		eprintf ("See: T command to save/replay/. long commands\n");

@@ -56,9 +56,9 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->buf || !bf->o) {
 		return false;
 	}
-	const ut64 sz = r_buf_size (bf->buf);
+	ut64 sz;
 	const ut64 la = bf->o->loadaddr;
-	const ut8 *bytes = r_buf_buffer (bf->buf);
+	const ut8 *bytes = r_buf_data (bf->buf, &sz);
 	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 	return bf->o->bin_obj != NULL;
 }

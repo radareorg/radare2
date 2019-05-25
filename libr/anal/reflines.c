@@ -476,7 +476,8 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		}
 	}
 	add_spaces (b, 0, pos, wide);
-	str = r_buf_free_to_string (b);
+	str = r_buf_to_string (b);
+	r_buf_free (b);
 	b = NULL;
 	if (!str) {
 		r_list_free (lvls);
@@ -500,7 +501,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 			if (lw > 0) {
 				pfx[lw] = 0;
-				str = r_str_prefix (str, pfx);
+				str = r_str_prepend (str, pfx);
 			}
 		}
 	}

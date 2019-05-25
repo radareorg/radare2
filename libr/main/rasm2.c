@@ -165,7 +165,7 @@ static const char *has_esil(RAsmState *as, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
 	r_list_foreach (as->anal->plugins, iter, h) {
-		if (!strcmp (name, h->name)) {
+		if (h->name && !strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
 		}
 	}

@@ -1121,7 +1121,9 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		ut64 map_addr;
 
 		r_reg_arena_push (dbg->reg);
-		map_addr = r_debug_execute (dbg, r_buf_buffer (buf), r_buf_size (buf), 1);
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_data (buf, &tmpsz);
+		map_addr = r_debug_execute (dbg, tmp, tmpsz, 1);
 		r_reg_arena_pop (dbg->reg);
 		if (map_addr != (ut64)-1) {
 			r_debug_map_sync (dbg);
@@ -1145,8 +1147,9 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 
 	snprintf (code, sizeof (code),
 		"sc_munmap@syscall(%d);\n"
-		"main@naked(0) { .rarg0 = sc_munmap(0x%08"PFMT64x",%d);break;\n"
-		"}\n", num, addr, size);
+		"main@naked(0) { .rarg0 = sc_munmap(0x%08" PFMT64x ",%d);break;\n"
+		"}\n",
+		num, addr, size);
 	r_egg_reset (dbg->egg);
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
@@ -1161,7 +1164,9 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		ret = r_debug_execute (dbg, r_buf_buffer (buf), r_buf_size (buf), 1) == 0;
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_data (buf, &tmpsz);
+		ret = r_debug_execute (dbg, tmp, tmpsz, 1) == 0;
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_dealloc:
@@ -2008,7 +2013,9 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
 		r_reg_arena_push (dbg->reg);
-		r_debug_execute (dbg, r_buf_buffer (buf), r_buf_size (buf), 1);
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_data (buf, &tmpsz);
+		r_debug_execute (dbg, tmp, tmpsz, 1);
 		r_reg_arena_pop (dbg->reg);
 		return true;
 	}

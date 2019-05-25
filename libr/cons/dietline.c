@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -202,11 +202,9 @@ static ut8 *r_line_readchar_win(int *vch) { // this function handle the input in
 		int rsz = read (0, buf, 1);
 		r_cons_sleep_end (bed);
 		if (rsz != 1)
-			return -1;
+			return NULL;
 		return buf;
 	}
-
-	*buf = '\0';
 
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
@@ -224,7 +222,7 @@ do_it_again:
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
 				free (buf);
-				buf = r_sys_conv_win_to_utf8_l (&irInBuf.Event.KeyEvent.uChar, 1);
+				buf = r_sys_conv_win_to_utf8_l ((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
 				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
 			} else {
 				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
@@ -257,7 +255,7 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistor
 	return 1;
 }
 
-R_API int cmd_history_up(RLine *line) {
+R_API int r_line_hist_cmd_up(RLine *line) {
 	if (line->hist_up) {
 		return line->hist_up (line->user);
 	}
@@ -272,7 +270,7 @@ R_API int cmd_history_up(RLine *line) {
 	return false;
 }
 
-R_API int cmd_history_down(RLine *line) {
+R_API int r_line_hist_cmd_down(RLine *line) {
 	if (line->hist_down) {
 		return line->hist_down (line->user);
 	}
@@ -326,14 +324,14 @@ R_API int r_line_hist_add(const char *line) {
 
 static int r_line_hist_up() {
 	if (!I.cb_history_up) {
-		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
+		r_line_set_hist_callback (&I, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	}
 	return I.cb_history_up (&I);
 }
 
 static int r_line_hist_down() {
 	if (!I.cb_history_down) {
-		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
+		r_line_set_hist_callback (&I, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	}
 	return I.cb_history_down (&I);
 }
@@ -444,10 +442,19 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 static void selection_widget_draw() {
 	RCons *cons = r_cons_singleton ();
 	RSelWidget *sel_widget = I.sel_widget;
-	int y, pos_y = cons->rows, pos_x = r_str_ansi_len (I.prompt);
-
+	int y, pos_y, pos_x = r_str_ansi_len (I.prompt);
+	sel_widget->h = R_MIN (sel_widget->h, R_SELWIDGET_MAXH);
 	for (y = 0; y < sel_widget->options_len; y++) {
 		sel_widget->w = R_MAX (sel_widget->w, strlen (sel_widget->options[y]));
+	}
+	if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+		pos_y = cons->rows;
+	} else {
+		pos_y = r_cons_get_cur_line ();
+		if (pos_y + sel_widget->h > cons->rows) {
+			printf ("%s\n", r_str_pad('\n', sel_widget->h));
+			pos_y = cons->rows - sel_widget->h;
+		}
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
@@ -460,8 +467,12 @@ static void selection_widget_draw() {
 		scrollbar_l = (R_SELWIDGET_MAXH * R_SELWIDGET_MAXH) / sel_widget->options_len;
 	}
 
-	for (y = 0; y < R_MIN (sel_widget->h, R_SELWIDGET_MAXH); y++) {
-		r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
+	for (y = 0; y < sel_widget->h; y++) {
+		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+			r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
+		} else {
+			r_cons_gotoxy (pos_x + 1, pos_y + y + 1);
+		}
 		int scroll = R_MAX (0, sel_widget->selection - sel_widget->scroll);
 		const char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
 		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
@@ -481,12 +492,21 @@ static void selection_widget_draw() {
 static void selection_widget_up(int steps) {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
-		int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
-		sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
-		if (steps == 1) {
-			sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
-		} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
-			sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+			int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
+			sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
+			if (steps == 1) {
+				sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+			} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+				sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+			}
+		} else {
+			sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
+			if (steps == 1) {
+				sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+			} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+				sel_widget->scroll = sel_widget->selection;
+			}
 		}
 	}
 }
@@ -494,11 +514,21 @@ static void selection_widget_up(int steps) {
 static void selection_widget_down(int steps) {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
-		sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
-		if (steps == 1) {
-			sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
-		} else if (sel_widget->selection - sel_widget->scroll <= 0) {
-			sel_widget->scroll = sel_widget->selection;
+		if (sel_widget->direction == R_SELWIDGET_DIR_UP) {
+			sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
+			if (steps == 1) {
+				sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+			} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+				sel_widget->scroll = sel_widget->selection;
+			}
+		} else {
+			int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
+			sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
+			if (steps == 1) {
+				sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+			} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+				sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+			}
 		}
 	}
 }
@@ -521,12 +551,21 @@ static void selection_widget_erase() {
 			cons->event_resize (cons->event_data);
 			cons->cb_task_oneshot (cons->user, print_rline_task, NULL);
 		}
+		printf ("%s", R_CONS_CLEAR_FROM_CURSOR_TO_END);
 	}
 }
 
 static void selection_widget_select() {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
+		char *sp = strchr (I.buffer.data, ' ');
+		if (sp) {
+			int delta = sp - I.buffer.data + 1;
+			I.buffer.length = R_MIN (delta + strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
+			memcpy (I.buffer.data + delta, sel_widget->options[sel_widget->selection], I.buffer.length);
+			I.buffer.index = I.buffer.length;
+			return;
+		}
 		I.buffer.length = R_MIN (strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
 		memcpy (I.buffer.data, sel_widget->options[sel_widget->selection], I.buffer.length);
 		I.buffer.data[I.buffer.length] = '\0';
@@ -536,8 +575,9 @@ static void selection_widget_select() {
 }
 
 static void selection_widget_update() {
-	if (I.completion.argc == 0 ||
-		(I.completion.argc == 1 && I.buffer.length >= strlen (I.completion.argv[0]))) {
+	int argc = r_pvector_len (&I.completion.args);
+	const char **argv = (const char **)r_pvector_data (&I.completion.args);
+	if (argc == 0 || (argc == 1 && I.buffer.length >= strlen (argv[0]))) {
 		selection_widget_erase ();
 		return;
 	}
@@ -547,9 +587,15 @@ static void selection_widget_update() {
 	}
 	I.sel_widget->scroll = 0;
 	I.sel_widget->selection = 0;
-	I.sel_widget->options_len = I.completion.argc;
-	I.sel_widget->options = I.completion.argv;
-	I.sel_widget->h = R_MAX (I.sel_widget->h, I.completion.argc);
+	I.sel_widget->options_len = argc;
+	I.sel_widget->options = argv;
+	I.sel_widget->h = R_MAX (I.sel_widget->h, I.sel_widget->options_len);
+
+	if (I.prompt_type ==  R_LINE_PROMPT_DEFAULT) {
+		I.sel_widget->direction = R_SELWIDGET_DIR_DOWN;
+	} else {
+		I.sel_widget->direction = R_SELWIDGET_DIR_UP;
+	}
 	selection_widget_draw ();
 	r_cons_flush ();
 	return;
@@ -561,13 +607,14 @@ R_API void r_line_autocomplete() {
 	int argc = 0, i, j, plen, len = 0;
 	bool opt = false;
 	int cols = (int)(r_cons_get_size (NULL) * 0.82);
+	RCons *cons = r_cons_singleton ();
 
 	/* prepare argc and argv */
 	if (I.completion.run) {
 		I.completion.opt = false;
-		I.completion.run (&I);
-		argc = I.completion.argc;
-		argv = I.completion.argv;
+		I.completion.run (&I.completion, &I.buffer, I.prompt_type, I.completion.run_user);
+		argc = r_pvector_len (&I.completion.args);
+		argv = (const char **)r_pvector_data (&I.completion.args);
 		opt = I.completion.opt;
 	}
 	if (I.sel_widget && !I.sel_widget->complete_common) {
@@ -653,7 +700,8 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
-	if (I.offset_prompt || I.file_prompt) {
+	if (I.prompt_type != R_LINE_PROMPT_DEFAULT || cons->show_autocomplete_widget) {
+
 		selection_widget_update ();
 		if (I.sel_widget) {
 			I.sel_widget->complete_common = false;
@@ -665,7 +713,11 @@ R_API void r_line_autocomplete() {
 	if (argc > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
+#ifdef __WINDOWS__
+		r_cons_win_printf (false, "%s%s\n", I.prompt, I.buffer.data);
+#else
 		printf ("%s%s\n", I.prompt, I.buffer.data);
+#endif
 		for (i = 0; i < argc && argv[i]; i++) {
 			int l = strlen (argv[i]);
 			if (sep + l > col) {
@@ -731,11 +783,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	if (I.echo) {
 		if (I.ansicon) {
 			printf ("\r%s", R_CONS_CLEAR_LINE);
-			printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		} else {
 			r_cons_clear_line (0);
-			printf ("%s%s", I.prompt, I.buffer.data);
 		}
+		r_cons_win_printf (false, "%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 	r_cons_break_push (NULL, NULL);
@@ -746,7 +797,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 		}
 		ch = r_line_readchar_win (&vch);
-		if (ch == -1) {
+		if (!ch) {
 			r_cons_break_pop ();
 			return NULL;
 		}
@@ -784,7 +835,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 40:// down arrow
 			if (I.sel_widget) {
-				selection_widget_up (1);
+				selection_widget_down (1);
 				selection_widget_draw ();
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
@@ -1105,14 +1156,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				int chars = R_MAX (1, strlen (I.buffer.data));	// wtf?
 				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 				/* print line */
-				if (I.ansicon) {
-					printf ("\r%s%s", Color_RESET, I.prompt);
-				} else {
-					printf ("\r%s", I.prompt);
-				}
+				r_cons_win_printf (false, "\r%s%s", Color_RESET, I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
-				printf ("\r%s", I.prompt);
+				r_cons_win_printf (false, "\r%s", I.prompt);
 				if (I.buffer.index > cols) {
 					printf ("< ");
 					i = I.buffer.index - cols;
@@ -1134,7 +1181,7 @@ _end:
 	r_cons_break_pop ();
 	r_cons_set_raw (0);
 	if (I.echo) {
-		printf ("\r%s%s\n", I.prompt, I.buffer.data);
+		r_cons_win_printf (false, "\r%s%s\n", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 
@@ -1349,6 +1396,9 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			fflush (stdout);
 			break;
 		case 18:// ^R -- autocompletion
+			if (gcomp) {
+				gcomp_idx++;
+			}
 			gcomp = 1;
 			break;
 		case 19:// ^S -- backspace
@@ -1745,16 +1795,20 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (I.echo) {
 			if (gcomp) {
 				gcomp_line = "";
+				int counter = 0;
 				if (I.history.data != NULL) {
-					for (i = 0; i < I.history.size; i++) {
+					for (i = I.history.size-1; i >= 0; i--) {
 						if (!I.history.data[i]) {
-							break;
+							continue;
 						}
 						if (strstr (I.history.data[i], I.buffer.data)) {
 							gcomp_line = I.history.data[i];
-							if (!gcomp_idx--) {
+							if (++counter > gcomp_idx) {
 								break;
 							}
+						}
+						if (i == 0) {
+							gcomp_idx--;
 						}
 					}
 				}

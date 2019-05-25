@@ -299,7 +299,7 @@ V: View ascii-art basic block graph of current function
 W: WebUI
 x, X: XREFs to current function. ("u" to go back)
 t: track flags (browse symbols, functions..)
-gG: Begging or end of file
+gG: Begin or end of file
 HUD
 	_ Show HUD
 	backspace: Exits HUD

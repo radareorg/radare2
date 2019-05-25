@@ -93,19 +93,21 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 	return res;
 }
 
-static void gprobe_frame_i2c (RBuffer *frame) {
+static void gprobe_frame_i2c(RBuffer *frame) {
 	ut8 size = r_buf_size (frame) + 1;
 	ut8 header[] = {0x51, 0x80 + size + 3, 0xc2, 0x00, 0x00};
 
 	r_buf_prepend_bytes (frame, &size, 1);
 	r_buf_prepend_bytes (frame, header, sizeof (header));
 
-	ut8 checksum = gprobe_checksum_i2c (r_buf_buffer (frame), r_buf_size (frame), GPROBE_I2C_ADDR);
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_data (frame, &tmpsz);
+	ut8 checksum = gprobe_checksum_i2c (tmp, tmpsz, GPROBE_I2C_ADDR);
 
 	r_buf_append_bytes (frame, &checksum, 1);
 }
 
-static int gprobe_get_reply_i2c (struct gport *port, ut8 cmd, RBuffer *reply) {
+static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 	ut8 buf[131];
 	int count;
 	int ddc2bi3_len;
@@ -144,14 +146,16 @@ static int gprobe_get_reply_i2c (struct gport *port, ut8 cmd, RBuffer *reply) {
 	return 0;
 }
 
-static int gprobe_send_request_i2c (struct gport *port, RBuffer *request) {
-	if (write (port->fd, r_buf_buffer (request), r_buf_size (request)) != r_buf_size (request)) {
+static int gprobe_send_request_i2c(struct gport *port, RBuffer *request) {
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_data (request, &tmpsz);
+	if (write (port->fd, tmp, tmpsz) != r_buf_size (request)) {
 		return -1;
 	}
 	return 0;
 }
 
-static int i2c_open (struct gport *port) {
+static int i2c_open(struct gport *port) {
 	char *end, filename[32];
 	int i2cbus = strtol (port->name + 4, &end, 0);
 
@@ -180,7 +184,7 @@ static int i2c_open (struct gport *port) {
 }
 #endif
 
-static int sp_close (struct gport *port) {
+static int sp_close(struct gport *port) {
 #if __WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
 	if (CloseHandle (port->hdl) == 0){
@@ -192,7 +196,7 @@ static int sp_close (struct gport *port) {
 #define CLOSE_OVERLAPPED(ovl)                                   \
 	do {                                                    \
 		if (port->ovl.hEvent != INVALID_HANDLE_VALUE && \
-		    CloseHandle (port->ovl.hEvent) == 0)        \
+			CloseHandle (port->ovl.hEvent) == 0)    \
 			return -1;                              \
 	} while (0)
 	CLOSE_OVERLAPPED (read_ovl);
@@ -653,17 +657,19 @@ static ut8 gprobe_checksum (const ut8 *p, unsigned int size) {
 	return res;
 }
 
-static void gprobe_frame_sp (RBuffer *frame) {
-	ut8 size = r_buf_size (frame) + 2;
+static void gprobe_frame_sp(RBuffer *frame) {
+	ut64 size;
+	const ut8 *tmp = r_buf_data (frame, &size);
+	size += 2;
 	ut8 checksum;
 
-	r_buf_prepend_bytes (frame, &size, 1);
-	checksum = gprobe_checksum (r_buf_buffer (frame), size - 1);
+	r_buf_prepend_bytes (frame, (const ut8 *)&size, 1);
+	checksum = gprobe_checksum (tmp, size - 1);
 
 	r_buf_append_bytes (frame, &checksum, 1);
 }
 
-static int gprobe_get_reply_sp (struct gport *port, ut8 cmd, RBuffer *reply) {
+static int gprobe_get_reply_sp(struct gport *port, ut8 cmd, RBuffer *reply) {
 	ut8 buf[256];
 	int count = sp_blocking_read (port, buf, 2, 50);
 
@@ -697,18 +703,19 @@ static int gprobe_get_reply_sp (struct gport *port, ut8 cmd, RBuffer *reply) {
 	return 0;
 }
 
-static int gprobe_send_request_sp (struct gport *port, RBuffer *request) {
+static int gprobe_send_request_sp(struct gport *port, RBuffer *request) {
 	sp_flush (port);
 
-	if (sp_blocking_write (port, r_buf_buffer (request), r_buf_size (request),
-			       100) != r_buf_size (request)) {
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_data (request, &tmpsz);
+	if (sp_blocking_write (port, tmp, tmpsz, 100) != tmpsz) {
 		return -1;
 	}
 
 	return 0;
 }
 
-static int gprobe_read (struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
+static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_RAM_READ_2;
@@ -1001,7 +1008,9 @@ static int gprobe_getinformation (struct gport *port) {
 		goto fail;
 	}
 
-	r_print_hexdump (NULL, 0, r_buf_buffer (reply), r_buf_size (reply), 16, 1, 1);
+	ut64 tmpsz;
+	const ut8 *tmp = r_buf_data (reply, &tmpsz);
+	r_print_hexdump (NULL, 0, tmp, tmpsz, 16, 1, 1);
 
 	r_buf_free (request);
 	r_buf_free (reply);
@@ -1014,7 +1023,7 @@ fail:
 	return -1;
 }
 
-static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOGprobe *gprobe;
 	int res;
 	int has_written = 0;

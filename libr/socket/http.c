@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2019 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
 
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
+	r_return_val_if_fail (s, NULL);
 	const char *p;
 	int ret, olen, len = 0, bufsz = 32768, delta = 0;
 	char *dn, *res, *buf = malloc (bufsz + 32); // XXX: use r_buffer here
@@ -61,6 +62,7 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	}
 fail:
 	free (buf);
+eprintf ("CARITODA\n");
 // is 's' free'd? isnt this going to cause a double free?
 	r_socket_close (s);
 	if (rlen) {
@@ -131,7 +133,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
 	int ssl = !memcmp (url, "https://", 8);
-	char *response, *host, *path, *port = "80";
+	char *host, *path, *port = "80";
 	char *uri = strdup (url);
 	if (!uri) {
 		return NULL;
@@ -175,9 +177,9 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 			"Host: %s\r\n"
 			"Content-Length: %i\r\n"
 			"Content-Type: application/x-www-form-urlencoded\r\n"
-			"\r\n", path, host, strlen (data));
+			"\r\n", path, host, (int)strlen (data));
 	r_socket_write (s, (void *)data, strlen (data));
-	response = r_socket_http_answer (s, code, rlen);
+	char *response = r_socket_http_answer (s, code, rlen);
 	free (uri);
 	return response;
 }

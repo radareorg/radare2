@@ -139,7 +139,7 @@ static inline void __cons_write(const char *buf, int len) {
 		(void) write (I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
-			r_cons_w32_print ((const ut8*)buf, len, 0);
+			r_cons_w32_print ((const ut8*)buf, len, false);
 		} else {
 			(void) write (I.fdout, buf, len);
 		}
@@ -357,6 +357,34 @@ R_API bool r_cons_is_breaked() {
 		}
 	}
 	return I.context->breaked;
+}
+
+R_API int r_cons_get_cur_line () {
+	int curline = 0;
+#if __WINDOWS__
+	POINT point;
+		if (GetCursorPos (&point)) {
+			curline = point.y;
+		}
+#endif
+#if __UNIX__
+		char buf[8];
+		struct termios save,raw;
+		(void) tcgetattr (0, &save);
+		cfmakeraw (&raw);
+		(void) tcsetattr (0, TCSANOW, &raw);
+		if (isatty (fileno (stdin))){
+			write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION));
+			read (0, buf, sizeof (buf));
+			if (isdigit (buf[2])) {
+				curline = (buf[2] - '0');
+			} if (isdigit (buf[3])) {
+				curline = curline * 10 + (buf[3] - '0');
+			}
+		}
+		(void) tcsetattr (0, TCSANOW, &save);
+#endif
+	return curline;
 }
 
 R_API void r_cons_break_timeout(int timeout) {
@@ -929,7 +957,7 @@ R_API void r_cons_visual_flush() {
 		if (I.ansicon) {
 			r_cons_visual_write (I.context->buffer);
 		} else {
-			r_cons_w32_print ((const ut8*)I.context->buffer, I.context->buffer_len, 1);
+			r_cons_w32_print ((const ut8*)I.context->buffer, I.context->buffer_len, true);
 		}
 #else
 		r_cons_visual_write (I.context->buffer);
@@ -952,7 +980,16 @@ R_API void r_cons_visual_flush() {
 		} else {
 			prev = r_sys_now ();
 		}
-		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
+#ifdef __WINDOWS__
+		if (I.ansicon) {
+#endif
+			eprintf ("\x1b[0;%dH[%d FPS] \n", w - 10, fps);
+#ifdef __WINDOWS__
+		} else {
+			r_cons_w32_gotoxy (2, w - 10, 0);
+			eprintf ("[%d FPS] \n", fps);
+		}
+#endif
 	}
 }
 
@@ -1051,18 +1088,20 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 		return;
 	}
 	if (strchr (format, '%')) {
-		palloc (MOAR + strlen (format) * 20);
+		if (palloc (MOAR + strlen (format) * 20)) {
 club:
-		size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
-		written = vsnprintf (I.context->buffer + I.context->buffer_len, size, format, ap3);
-		if (written >= size) { /* not all bytes were written */
-			palloc (written);
-			va_end (ap3);
-			va_copy (ap3, ap2);
-			goto club;
+			size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
+			written = vsnprintf (I.context->buffer + I.context->buffer_len, size, format, ap3);
+			if (written >= size) { /* not all bytes were written */
+				if (palloc (written)) {
+					va_end (ap3);
+					va_copy (ap3, ap2);
+					goto club;
+				}
+			}
+			I.context->buffer_len += written;
+			I.context->buffer[I.context->buffer_len] = 0;
 		}
-		I.context->buffer_len += written;
-		I.context->buffer[I.context->buffer_len] = 0;
 	} else {
 		r_cons_strcat (format);
 	}
@@ -1123,10 +1162,11 @@ R_API int r_cons_memcat(const char *str, int len) {
 
 R_API void r_cons_memset(char ch, int len) {
 	if (!I.null && len > 0) {
-		palloc (len + 1);
-		memset (I.context->buffer + I.context->buffer_len, ch, len);
-		I.context->buffer_len += len;
-		I.context->buffer[I.context->buffer_len] = 0;
+		if (palloc (len + 1)) {
+			memset (I.context->buffer + I.context->buffer_len, ch, len);
+			I.context->buffer_len += len;
+			I.context->buffer[I.context->buffer_len] = 0;
+		}
 	}
 }
 
@@ -1301,12 +1341,24 @@ R_API int r_cons_get_size(int *rows) {
 
 R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
-	// TODO
-#else
-	if (cursor) {
-		write (1, "\x1b[?25h", 6);
+	if (I.ansicon) {
+#endif
+		write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+#if __WINDOWS__
 	} else {
-		write (1, "\x1b[?25l", 6);
+		static HANDLE hStdout = NULL;
+		static DWORD size = -1;
+		CONSOLE_CURSOR_INFO cursor_info;
+		if (!hStdout) {
+			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+		}
+		if (size == -1) {
+			GetConsoleCursorInfo (hStdout, &cursor_info);
+			size = cursor_info.dwSize;
+		}
+		cursor_info.dwSize = size;
+		cursor_info.bVisible = cursor ? TRUE : FALSE;
+		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
 }

@@ -49,13 +49,15 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	if (!op || sz >= len) {
 		return sz;
 	}
+#if 0
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->ptr = UT64_MAX;
 	op->val = UT64_MAX;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
-	op->refptr = 0;
+	op->refptr = UT64_MAX;
+#endif
 	op->size = sz;
 	op->nopcode = 1; // Necessary??
 	op->id = data[0];
@@ -83,10 +85,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		{
 			ut32 vB = (data[1] & 0x0f);
 			ut32 vA = (data[1] & 0xf0) >> 4;
+			ut32 vC = (len > 4)? r_read_le32 (data + 2): 0x22;
 			// op->stackop = R_ANAL_STACK_SET;
-			op->ptr = -vA; // why
-			op->val = vA;
-			esilprintf (op, "0x%"PFMT64x",v%d,=", vA, vB);
+			// op->ptr = vC; // why
+			ut32 val = vC?vC:vA;
+			op->val = val;
+	//		op->reg = vB;
+			op->nopcode = 2;
+			esilprintf (op, "0x%"PFMT64x",v%d,=", val, vB);
 		}
 		break;
 	case 0x01: // move
@@ -145,7 +151,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			ut32 vB = (data[3]<<8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 			op->ptr = offset;
-			op->refptr = 0;
+			// op->refptr = 0;
 			esilprintf (op, "0x%"PFMT64x",v%d,=", offset, vA);
 		}
 		break;
@@ -480,34 +486,49 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->stackptr = -1;
 		esilprintf (op, ",");
 		break;
+	case 0x73: // invalid
+		break;
 	case 0x6f: // invoke-super
-	case 0xfa: // invoke-super-quick
 	case 0x70: // invoke-direct
 	case 0x71: // invoke-static
 	case 0x72: // invoke-interface
-	case 0x73: //
-	case 0x74: //
-	case 0x75: //
-	case 0x76: // invoke-direct
 	case 0x77: //
-	case 0x78: // invokeinterface/range
 	case 0xb9: // invokeinterface
 	case 0xb7: // invokespecial
 	case 0xb8: // invokestatic
 	case 0xb6: // invokevirtual
 	case 0x6e: // invoke-virtual
-	case 0xf0: // invoke-object-init-range
-	case 0xf9: // invoke-virtual-quick/range
-	case 0xfb: // invoke-super-quick/range
 		if (len > 2) {
 			//XXX fix this better since the check avoid an oob
 			//but the jump will be incorrect
 			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-			op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
-			op->fail = addr + sz;
+			ut64 dst = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+
 			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = dst;
+			op->fail = addr + sz;
 			// TODO: handle /range instructions
-			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
+			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
+		}
+		break;
+	case 0x78: // invokeinterface/range
+	case 0xf0: // invoke-object-init-range
+	case 0xf9: // invoke-virtual-quick/range
+	case 0xfb: // invoke-super-quick/range
+	case 0x74: // invoke-virtual/range
+	case 0x75: // invoke-super/range
+	case 0x76: // invoke-direct/range
+	case 0xfa: // invoke-super-quick // invoke-polymorphic
+		if (len > 2) {
+			//XXX fix this better since the check avoid an oob
+			//but the jump will be incorrect
+			ut32 vB = len > 3?(data[3] << 8) | data[2] : 3;
+			//op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+			op->fail = addr + sz;
+			// op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = R_ANAL_OP_TYPE_UCALL;
+			// TODO: handle /range instructions
+			// NOP esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
 		}
 		break;
 	case 0x27: // throw
@@ -652,14 +673,6 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static bool is_valid_offset(RAnal *anal, ut64 addr, int hasperm) {
-	RBinDexObj *bin_dex = (RBinDexObj*) anal->binb.bin->cur->o->bin_obj;
-	if (!bin_dex) {
-		return false;
-	}
-	return addr >= bin_dex->code_from && addr <= bin_dex->code_to;
-}
-
 RAnalPlugin r_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
@@ -668,7 +681,6 @@ RAnalPlugin r_anal_plugin_dalvik = {
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.op = &dalvik_op,
-	.is_valid_offset = &is_valid_offset
 };
 
 #ifndef CORELIB

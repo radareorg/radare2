@@ -424,6 +424,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_CSWI  = 11 | R_ANAL_OP_TYPE_COND,  /* syscall, software interrupt */
 	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
+	R_ANAL_OP_TYPE_RPUSH = R_ANAL_OP_TYPE_UPUSH | R_ANAL_OP_TYPE_REG, /* push register */
 	R_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
 	R_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
 	R_ANAL_OP_TYPE_CMP   = 15,  /* compare something */
@@ -714,14 +715,8 @@ typedef struct r_anal_t {
 	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
+	bool use_ex;
 } RAnal;
-
-typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
-
-typedef struct r_anal_bind_t {
-	RAnal *anal;
-	RAnalGetFcnIn get_fcn_in;
-} RAnalBind;
 
 typedef struct r_anal_hint_t {
 	ut64 addr;
@@ -745,12 +740,23 @@ typedef struct r_anal_hint_t {
 	int immbase;
 	bool high; // highlight hint
 	int nword;
+	ut64 stackframe;
 } RAnalHint;
 
 typedef struct r_anal_var_access_t {
 	ut64 addr;
 	int set;
 } RAnalVarAccess;
+
+typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
+typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
+
+typedef struct r_anal_bind_t {
+	RAnal *anal;
+	RAnalGetFcnIn get_fcn_in;
+	RAnalGetHint get_hint;
+} RAnalBind;
+
 
 #define R_ANAL_VAR_KIND_ANY 0
 #define R_ANAL_VAR_KIND_ARG 'a'
@@ -1284,8 +1290,6 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 
-	RAnalIsValidOffsetCB is_valid_offset;
-
 	RAnalEsilCB esil_init; // initialize esil-related stuff
 	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
 	RAnalEsilTrapCB esil_trap; // traps / exceptions
@@ -1649,6 +1653,7 @@ R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
 
 R_API void r_meta_free(RAnal *m);
+R_API RList *r_meta_find_list_in(RAnal *a, ut64 at, int type, int where);
 R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space);
 R_API int r_meta_space_count_for(RAnal *a, const RSpace *space_name);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
@@ -1684,8 +1689,6 @@ R_API void r_anal_merge_hint_ranges(RAnal *a);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
 R_API void r_anal_hint_clear (RAnal *a);
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str);
-R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from);
-R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_syntax (RAnal *a, ut64 addr, const char *syn);
@@ -1704,6 +1707,7 @@ R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val);
 R_API void r_anal_hint_set_high(RAnal *a, ut64 addr);
+R_API void r_anal_hint_set_stackframe(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr);
@@ -1717,6 +1721,7 @@ R_API void r_anal_hint_unset_ret(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_jump(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_fail(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_stackframe(RAnal *a, ut64 addr);
 
 R_API int r_anal_hint_get_bits_at(RAnal *a, ut64 addr, const char *str);
 R_API int r_anal_range_tree_find_bits_at(RBNode *root, ut64 addr);
@@ -1912,6 +1917,7 @@ extern RAnalPlugin r_anal_plugin_ppc_cs;
 extern RAnalPlugin r_anal_plugin_ppc_gnu;
 extern RAnalPlugin r_anal_plugin_propeller;
 extern RAnalPlugin r_anal_plugin_riscv;
+extern RAnalPlugin r_anal_plugin_riscv_cs;
 extern RAnalPlugin r_anal_plugin_rsp;
 extern RAnalPlugin r_anal_plugin_sh;
 extern RAnalPlugin r_anal_plugin_snes;

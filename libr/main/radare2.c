@@ -434,7 +434,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
-	int do_connect = 0;
+	bool do_connect = false;
 	bool fullfile = false;
 	int has_project;
 	bool zerosep = false;
@@ -833,7 +833,6 @@ R_API int r_main_radare2(int argc, char **argv) {
 		r_config_set (r.config, "bin.strings", "false");
 	}
 
-	//cverify_version (0);
 	if (do_connect) {
 		const char *uri = argv[r_optind];
 		if (r_optind >= argc) {
@@ -841,13 +840,14 @@ R_API int r_main_radare2(int argc, char **argv) {
 			LISTS_FREE ();
 			return 1;
 		}
-		if (!strncmp (uri, "http://", 7)) {
+		if (strstr (uri, "://")) {
 			r_core_cmdf (&r, "=+%s", uri);
 		} else {
 			r_core_cmdf (&r, "=+http://%s/cmd/", argv[r_optind]);
 		}
-		LISTS_FREE ();
-		return 0;
+		r_core_cmd0 (&r, "=!=");
+		//LISTS_FREE ();
+	//	return 0;
 	}
 
 	switch (zflag) {
@@ -1025,7 +1025,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 					} else {
 						// f is a filename
 						if (r_file_exists (f)) {
-							path = r_str_prefix (strdup (f), "./");
+							path = r_str_prepend (strdup (f), "./");
 						} else {
 							path = r_file_path (f);
 						}
@@ -1162,7 +1162,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
 				if (r_config_get_i (r.config, "file.info")) {
 					// load symbols when using r2 -m 0x1000 /bin/ls
-					r_core_cmdf (&r, "oba 0x%"PFMT64x, mapaddr);
+					r_core_cmdf (&r, "oba 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (&r, ".ies*");
 				}
 			}
@@ -1276,8 +1276,25 @@ R_API int r_main_radare2(int argc, char **argv) {
 		if (debug) {
 			r_core_setup_debugger (&r, debugbackend, baddr == UT64_MAX);
 		}
-		if (!debug && r_flag_get (r.flags, "entry0")) {
-			r_core_cmd0 (&r, "s entry0");
+		if (!debug) {
+			RFlagItem *fi = r_flag_get (r.flags, "entry0");
+			if (fi) {
+				r_core_seek (&r, fi->offset, 1);
+			} else {
+				RBinObject *o = r_bin_cur_object (r.bin);
+				if (o) {
+					RList *sections = r_bin_get_sections (r.bin);
+					RListIter *iter;
+					RBinSection *s;
+					r_list_foreach (sections, iter, s) {
+						if (s->perm & R_PERM_X) {
+							ut64 addr = s->vaddr? s->vaddr: s->paddr;
+							r_core_seek (&r, addr, 1);
+							break;
+						}
+					}
+				}
+			}
 		}
 		if (s_seek) {
 			seek = r_num_math (r.num, s_seek);
@@ -1506,6 +1523,12 @@ R_API int r_main_radare2(int argc, char **argv) {
 						r_core_project_save (&r, prj);
 					}
 					free (question);
+				}
+
+				if (r_config_get_i (r.config, "scr.confirmquit")) {
+					if (!r_cons_yesno ('n', "Do you want to quit? (Y/n)")) {
+						continue;
+					}
 				}
 			} else {
 				// r_core_project_save (&r, prj);

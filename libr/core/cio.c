@@ -106,7 +106,8 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	int i, j, len, ret = false;
+	int i, j, ret = false;
+	ut64 len;
 	char *str = NULL;
 	ut8 *buf;
 
@@ -134,12 +135,8 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				goto beach;
 			}
 		} else {  // use clipboard as key
-			len = r_buf_size (core->yank_buf);
-			if (len <= 0) {
-				eprintf ("Clipboard is empty and no value argument(s) given\n");
-				goto beach;
-			}
-			str = r_mem_dup (r_buf_buffer (core->yank_buf), len);
+			const ut8 *tmp = r_buf_data (core->yank_buf, &len);
+			str = r_mem_dup (tmp, len);
 			if (!str) {
 				goto beach;
 			}
@@ -321,12 +318,13 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	return ret;
 }
 
+// TODO: kill this wrapper
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
-	bool ret;
-	if (!core) {
+	r_return_val_if_fail (core && buf && addr != UT64_MAX, false);
+	if (size < 1) {
 		return false;
 	}
-	ret = r_io_write_at (core->io, addr, buf, size);
+	bool ret = r_io_write_at (core->io, addr, buf, size);
 	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
 		r_core_block_read (core);
 	}

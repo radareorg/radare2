@@ -2,14 +2,13 @@
 
 static void headers32(RBinFile *bf) {
 #define p bf->rbin->cb_printf
-	const ut8 *buf = r_buf_get_at (bf->buf, 0, NULL);
-	p ("0x00000000  ELF MAGIC   0x%08x\n", r_read_le32 (buf));
-	p ("0x00000010  Type        0x%04x\n", r_read_le16 (buf + 0x10));
-	p ("0x00000012  Machine     0x%04x\n", r_read_le16 (buf + 0x12));
-	p ("0x00000014  Version     0x%08x\n", r_read_le32 (buf + 0x14));
-	p ("0x00000018  Entrypoint  0x%08x\n", r_read_le32 (buf + 0x18));
-	p ("0x0000001c  PhOff       0x%08x\n", r_read_le32 (buf + 0x1c));
-	p ("0x00000020  ShOff       0x%08x\n", r_read_le32 (buf + 0x20));
+	p ("0x00000000  ELF MAGIC   0x%08x\n", r_buf_read_le32_at (bf->buf, 0));
+	p ("0x00000010  Type        0x%04x\n", r_buf_read_le16_at (bf->buf, 0x10));
+	p ("0x00000012  Machine     0x%04x\n", r_buf_read_le16_at (bf->buf, 0x12));
+	p ("0x00000014  Version     0x%08x\n", r_buf_read_le32_at (bf->buf, 0x14));
+	p ("0x00000018  Entrypoint  0x%08x\n", r_buf_read_le32_at (bf->buf, 0x18));
+	p ("0x0000001c  PhOff       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x1c));
+	p ("0x00000020  ShOff       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x20));
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {

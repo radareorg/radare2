@@ -1,12 +1,10 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
+
 #include "bin_pe.inc"
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int idx;
-	if (!buf) {
-		return false;
-	}
-	if (length <= 0x3d) {
+	if (!buf || length <= 0x3d) {
 		return false;
 	}
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
@@ -118,10 +116,8 @@ static char *signature (RBinFile *bf, bool json) {
 }
 
 static RList *fields(RBinFile *bf) {
-	const ut8 *buf = bf ? r_buf_buffer (bf->buf) : NULL;
 	RList *ret  = r_list_new ();
-
-	if (!buf || !ret) {
+	if (!ret) {
 		return NULL;
 	}
 

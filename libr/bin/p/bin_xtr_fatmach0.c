@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,13 +13,16 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 static int free_xtr (void *xtr_obj) ;
 
-static bool checkHeader(const ut8 *h, ut64 sz) {
+static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
-	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
-		// XXX assuming BE
-		ut64 off = (ut64)r_read_at_be32 (h, 4 * sizeof (ut32));
+	const ut64 sz = r_buf_size (b);
+	r_buf_read_at (b, 0, buf, 4);
+	if (sz >= 0x300 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+		ut64 addr = 4 * sizeof (32);
+		ut64 off = r_buf_read_be32_at (b, addr);
 		if (off > 0 && off + 4 < sz) {
-			memcpy (buf, h + off, 4);
+			ut64 h = 0;
+			r_buf_read_at (b, h + off, buf, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
@@ -31,11 +34,9 @@ static bool checkHeader(const ut8 *h, ut64 sz) {
 	return false;
 }
 
-static bool check_bytes(const ut8* bytes, ut64 sz) {
-	if (!bytes || sz < 0x300) {
-		return false;
-	}
-	return checkHeader (bytes, sz);
+static bool check_buffer (RBuffer *buf) {
+	r_return_val_if_fail (buf, false);
+	return checkHeader (buf);
 }
 
 // TODO: destroy must be void?
@@ -198,7 +199,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,
 	.free_xtr = &free_xtr,
-	.check_bytes = &check_bytes,
+	.check_buffer = check_buffer,
 };
 
 #ifndef CORELIB

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 typedef void (*RPanelDirectionCallback)(void *user, int direction);
+typedef void (*RPanelRotateCallback)(void *user, bool rev);
 
 typedef enum {
 	PANEL_TYPE_DEFAULT = 0,
@@ -27,6 +28,7 @@ typedef enum {
 
 typedef struct r_panel_model_t {
 	RPanelDirectionCallback directionCb;
+	RPanelRotateCallback rotateCb;
 	RPanelType type;
 	char *cmd;
 	char *title;
@@ -34,7 +36,11 @@ typedef struct r_panel_model_t {
 	ut64 addr;
 	bool cache;
 	char *cmdStrCache;
+	char *readOnly;
 	char *funcName;
+	char **filter;
+	int n_filter;
+	int rotate;
 } RPanelModel;
 
 typedef struct r_panel_view_t {

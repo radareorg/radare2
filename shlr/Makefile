@@ -13,7 +13,7 @@ else
 CS_RELEASE=1
 endif
 
-CS_NEXT=0
+CS_NEXT=${CSNEXT}
 
 CAPSTONE_CFLAGS?=-g
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
@@ -32,14 +32,21 @@ CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
 CS_PATCHES=0
 else
 CS_TAR=
-CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20190411
+CS_URL_BASE=github.com/aquynh/capstone
+CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
+CS_ARCHIVE=https://$(CS_URL_BASE)/archive
+CS_UPD=20190515
 ifeq ($(CS_NEXT),1)
-CS_TIP=3a660df88c30685cccf6ff68b4d6d4337b5caf7e
+CS_TIP=f9ebfae858fa8a3b14efe838249a94cd99a4797d
 CS_BRA=next
 else
-CS_TIP=7090f081b17a5293a2c185a06513fede18065d3c
+CS_TIP=6cae0faf5a374966d6b48eb8f79dc2015cfb18c8
 CS_BRA=v4
+endif
+ifeq ($(CS_COMMIT_ARCHIVE),1)
+CS_ARCHIVE_URL=$(CS_ARCHIVE)/$(CS_TIP).zip
+else
+CS_ARCHIVE_URL=
 endif
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 #CS_BRA=next
@@ -266,7 +273,9 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+	if [ -d capstone/.git ]; then \
+		cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
+	fi
 endif
 	mkdir -p capstone/include/capstone
 	cp -rf capstone/include/*.h capstone/include/capstone
@@ -281,16 +290,10 @@ capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
-	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
-	@echo "[capstone] Applying patches"
-ifeq ($(CS_PATCHES),1)
-	-cd capstone ; if [ -d .git ]; then $(GIT) reset --hard ; fi
-	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
-endif
+	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
 endif
 
-.PHONY: capstone
+.PHONY: capstone capstone-sync
 endif
 
 ifeq (${EXT_AR},)
@@ -347,7 +350,7 @@ spp-sync sync-spp:
 	git add spp
 
 spp: spp-sync
-	CFLAGS="-DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp
+	CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp r2lib
 
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a

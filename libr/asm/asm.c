@@ -5,6 +5,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#define USE_R2 1
 #include <spp/spp.h>
 #include <config.h>
 
@@ -678,21 +679,29 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	char *buf_token = NULL;
 	int tokens_size = 32;
 	char **tokens = calloc (sizeof (char*), tokens_size);
+	if (!tokens) {
+		return NULL;
+	}
 	if (!assembly) {
+		free (tokens);
 		return NULL;
 	}
 	ht_pp_free (a->flags);
 	if (!(a->flags = ht_pp_new (dup_val, flag_free_kv, NULL))) {
+		free (tokens);
 		return NULL;
 	}
 	if (!(acode = r_asm_code_new ())) {
+		free (tokens);
 		return NULL;
 	}
 	if (!(acode->assembly = malloc (strlen (assembly) + 16))) {
+		free (tokens);
 		return r_asm_code_free (acode);
 	}
 	r_str_ncpy (acode->assembly, assembly, sizeof (acode->assembly) - 1);
 	if (!(acode->bytes = calloc (1, 64))) {
+		free (tokens);
 		return r_asm_code_free (acode);
 	}
 	lbuf = strdup (assembly);
@@ -933,6 +942,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
+					free (tokens);
 					free(lbuf);
 					return r_asm_code_free (acode);
 				}
@@ -941,6 +951,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				}
 				if (ret < 0) {
 					eprintf ("!!! Oops (%s)\n", ptr);
+					free (tokens);
 					free (lbuf);
 					return r_asm_code_free (acode);
 				}
@@ -968,19 +979,22 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					free (lbuf);
+					free (tokens);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->bytes, (idx + ret) * 2);
 				if (!newbuf) {
 					free (lbuf);
+					free (tokens);
 					return r_asm_code_free (acode);
 				}
 				acode->bytes = (ut8*)newbuf;
 				memcpy (acode->bytes + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf));
 				memset (acode->bytes + idx + ret, 0, idx + ret);
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
-					char *inc = r_buf_free_to_string (op.buf_inc);
+					char *inc = r_buf_to_string (op.buf_inc);
+					r_buf_free (op.buf_inc);
 					if (inc) {
 						ret += r_hex_str2bin (inc, acode->bytes + idx + ret);
 						free (inc);

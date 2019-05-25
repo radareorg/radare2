@@ -46,8 +46,6 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
-	ut64 seek_val = UT64_MAX;
-
 	if (!mmo) {
 		return UT64_MAX;
 	}
@@ -58,21 +56,8 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 		return UT64_MAX;
 	}
 
-	seek_val = r_buf_tell (mmo->buf);
-	switch (whence) {
-	case SEEK_SET:
-		seek_val = R_MIN (r_buf_size (mmo->buf), offset);
-		break;
-	case SEEK_CUR:
-		seek_val = R_MIN (r_buf_size (mmo->buf),
-			(offset + r_buf_tell (mmo->buf)));
-		break;
-	case SEEK_END:
-		seek_val = r_buf_size (mmo->buf);
-		break;
-	}
-	r_buf_seek (mmo->buf, io->off = seek_val, 0);
-	return seek_val;
+	io->off = r_buf_seek (mmo->buf, offset, whence);
+	return io->off;
 }
 
 static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
@@ -99,7 +84,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		}
 		return (mmo->fd != -1);
 	}
-	mmo->buf = r_buf_mmap (mmo->filename, mmo->perm);
+	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;
@@ -237,7 +222,12 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (r_buf_size (mmo->buf) < io->off) {
 		io->off = r_buf_size (mmo->buf);
 	}
-	return r_buf_read_at (mmo->buf, io->off, buf, count);
+	int r = r_buf_read_at (mmo->buf, io->off, buf, count);
+	if (r < 0) {
+		return r;
+	}
+	io->off += r;
+	return r;
 }
 
 static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -323,8 +313,9 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 		d->name = strdup (file);
 	}
 	if (r_str_startswith (d->name, "file://")) {
-		free (d->name);
-		d->name = strdup (d->name + strlen ("file://"));
+		char *oldname = d->name;
+		d->name = strdup (oldname + strlen ("file://"));
+		free (oldname);
 	}
 	return d;
 }

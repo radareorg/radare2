@@ -228,8 +228,11 @@ RAnalPlugin r_anal_plugin_6502_cs = {
 	.arch = "6502",
 	.bits = 8,
 };
+
+#ifndef CORELIB
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.version = R2_VERSION
 };
+#endif
 #endif

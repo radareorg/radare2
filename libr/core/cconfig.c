@@ -68,7 +68,7 @@ static int compareDist(const RAnalFunction *a, const RAnalFunction *b) {
 	return a && b && a->diff->dist && b->diff->dist && a->diff->dist > b->diff->dist;
 }
 
-static int cb_diff_sort(void *_core, void *_node) {
+static bool cb_diff_sort(void *_core, void *_node) {
 	RConfigNode *node = _node;
 	const char *column = node->value;
 	RCore *core = _core;
@@ -200,62 +200,62 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
-static int cb_debug_hitinfo(void *user, void *data) {
+static bool cb_debug_hitinfo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->hitinfo = node->i_value;
 	return true;
 }
 
-static int cb_analarmthumb(void *user, void *data) {
+static bool cb_analarmthumb(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.armthumb = node->i_value;
 	return true;
 }
 
-static int cb_analeobjmp(void *user, void *data) {
+static bool cb_analeobjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.eobjmp = node->i_value;
 	return true;
 }
 
-static int cb_analdepth(void *user, void *data) {
+static bool cb_analdepth(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.depth = node->i_value;
 	return true;
 }
 
-static int cb_analgraphdepth(void *user, void *data) {
+static bool cb_analgraphdepth(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	core->anal->opt.graph_depth = node->i_value;
 	return true;
 }
 
-static int cb_analafterjmp(void *user, void *data) {
+static bool cb_analafterjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.afterjmp = node->i_value;
 	return true;
 }
 
-static int cb_anal_endsize(void *user, void *data) {
+static bool cb_anal_endsize(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.endsize = node->i_value;
 	return true;
 }
-static int cb_analvars(void *user, void *data) {
+static bool cb_analvars(void *user, void *data) {
         RCore *core = (RCore*) user;
         RConfigNode *node = (RConfigNode*) data;
         core->anal->opt.vars = node->i_value;
         return true;
 }
 
-static int cb_analstrings(void *user, void *data) {
+static bool cb_analstrings(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value) {
@@ -264,35 +264,35 @@ static int cb_analstrings(void *user, void *data) {
 	return true;
 }
 
-static int cb_anal_ignbithints(void *user, void *data) {
+static bool cb_anal_ignbithints(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.ignbithints = node->i_value;
 	return true;
 }
 
-static int cb_analsleep(void *user, void *data) {
+static bool cb_analsleep(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->sleep = node->i_value;
 	return true;
 }
 
-static int cb_analmaxrefs(void *user, void *data) {
+static bool cb_analmaxrefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->maxreflines = node->i_value;
 	return true;
 }
 
-static int cb_analnopskip(void *user, void *data) {
+static bool cb_analnopskip(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.nopskip = node->i_value;
 	return true;
 }
 
-static int cb_analhpskip(void *user, void *data) {
+static bool cb_analhpskip(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.hpskip = node->i_value;
@@ -310,7 +310,7 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 	}
 }
 
-static int cb_analarch(void *user, void *data) {
+static bool cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -333,7 +333,7 @@ static int cb_analarch(void *user, void *data) {
 	return false;
 }
 
-static int cb_analcpu(void *user, void *data) {
+static bool cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	r_anal_set_cpu (core->anal, node->value);
@@ -345,48 +345,48 @@ static int cb_analcpu(void *user, void *data) {
 	return true;
 }
 
-static int cb_analrecont(void *user, void *data) {
+static bool cb_analrecont(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.recont = node->i_value;
 	return true;
 }
 
-static int cb_analijmp(void *user, void *data) {
+static bool cb_analijmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.ijmp = node->i_value;
 	return true;
 }
 
-static int cb_asmvarsubmin(void *user, void *data) {
+static bool cb_asmvarsubmin(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->parser->minval = node->i_value;
 	return true;
 }
 
-static int cb_asmtailsub(void *user, void *data) {
+static bool cb_asmtailsub(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->parser->tailsub = node->i_value;
 	return true;
 }
 
-static int cb_scrlast(void *user, void *data) {
+static bool cb_scrlast(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->context->lastEnabled = node->i_value;
 	return true;
 }
 
-static int cb_scr_wideoff(void *user, void *data) {
+static bool cb_scr_wideoff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->wide_offsets = node->i_value;
 	return true;
 }
 
-static int cb_scrrainbow(void *user, void *data) {
+static bool cb_scrrainbow(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -400,7 +400,7 @@ static int cb_scrrainbow(void *user, void *data) {
 	return true;
 }
 
-static int cb_asmsecsub(void *user, void *data) {
+static bool cb_asmsecsub(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -412,7 +412,7 @@ static int cb_asmsecsub(void *user, void *data) {
 	return true;
 }
 
-static int cb_asmassembler(void *user, void *data) {
+static bool cb_asmassembler(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	r_asm_use_assembler (core->assembler, node->value);
@@ -442,7 +442,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	}
 }
 
-static int cb_asmcpu(void *user, void *data) {
+static bool cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -467,7 +467,7 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	}
 }
 
-static int cb_asmarch(void *user, void *data) {
+static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -598,21 +598,21 @@ static int cb_asmarch(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbgbpsize(void *user, void *data) {
+static bool cb_dbgbpsize(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->bpsize = node->i_value;
 	return true;
 }
 
-static int cb_dbgbtdepth(void *user, void *data) {
+static bool cb_dbgbtdepth(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->btdepth = node->i_value;
 	return true;
 }
 
-static int cb_asmbits(void *user, void *data) {
+static bool cb_asmbits(void *user, void *data) {
 	const char *asmos, *asmarch, *asmcpu;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -691,11 +691,10 @@ static int cb_asmbits(void *user, void *data) {
 
 static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 	int i, argc;
-	char *features;
 
 	if (core && core->assembler && core->assembler->cur) {
 		if (core->assembler->cur->features) {
-			features = strdup (core->assembler->cur->features);
+			char *features = strdup (core->assembler->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
@@ -707,14 +706,14 @@ static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 	}
 }
 
-static int cb_flag_realnames(void *user, void *data) {
+static bool cb_flag_realnames(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->flags->realnames = node->i_value;
 	return true;
 }
 
-static int cb_asmfeatures(void *user, void *data) {
+static bool cb_asmfeatures(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -729,14 +728,14 @@ static int cb_asmfeatures(void *user, void *data) {
 	return 1;
 }
 
-static int cb_asmlineswidth(void *user, void *data) {
+static bool cb_asmlineswidth(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->anal->lineswidth = node->i_value;
 	return true;
 }
 
-static int cb_emustr(void *user, void *data) {
+static bool cb_emustr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -745,7 +744,7 @@ static int cb_emustr(void *user, void *data) {
 	return true;
 }
 
-static int cb_emuskip(void *user, void *data) {
+static bool cb_emuskip(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
@@ -761,21 +760,21 @@ static int cb_emuskip(void *user, void *data) {
 	return true;
 }
 
-static int cb_asm_armimm(void *user, void *data) {
+static bool cb_asm_armimm(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->immdisp = node->i_value ? true : false;
 	return true;
 }
 
-static int cb_asm_invhex(void *user, void *data) {
+static bool cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->invhex = node->i_value;
 	return true;
 }
 
-static int cb_asm_pcalign(void *user, void *data) {
+static bool cb_asm_pcalign(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int align = node->i_value;
@@ -787,7 +786,7 @@ static int cb_asm_pcalign(void *user, void *data) {
 	return true;
 }
 
-static int cb_asmos(void *user, void *data) {
+static bool cb_asmos(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
 	RConfigNode *asmarch, *node = (RConfigNode*) data;
@@ -811,13 +810,13 @@ static int cb_asmos(void *user, void *data) {
 	return true;
 }
 
-static int cb_asmparser(void *user, void *data) {
+static bool cb_asmparser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	return r_parse_use (core->parser, node->value);
 }
 
-static int cb_binstrenc (void *user, void *data) {
+static bool cb_binstrenc (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
@@ -829,7 +828,7 @@ static int cb_binstrenc (void *user, void *data) {
 	return true;
 }
 
-static int cb_binfilter(void *user, void *data) {
+static bool cb_binfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->bin->filter = node->i_value;
@@ -837,28 +836,28 @@ static int cb_binfilter(void *user, void *data) {
 }
 
 /* BinDemangleCmd */
-static int cb_bdc(void *user, void *data) {
+static bool cb_bdc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->bin->demanglercmd = node->i_value;
 	return true;
 }
 
-static int cb_useldr(void *user, void *data) {
+static bool cb_useldr(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->bin->use_ldr = node->i_value;
 	return true;
 }
 
-static int cb_usextr(void *user, void *data) {
+static bool cb_usextr(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->bin->use_xtr = node->i_value;
 	return true;
 }
 
-static int cb_strpurge(void *user, void *data) {
+static bool cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -887,7 +886,14 @@ static int cb_strpurge(void *user, void *data) {
 	return true;
 }
 
-static int cb_midflags (void *user, void *data) {
+static bool cb_maxname (void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = (RCore *) user;
+	core->parser->maxflagnamelen = node->i_value;
+	return true;
+}
+
+static bool cb_midflags (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
@@ -896,7 +902,7 @@ static int cb_midflags (void *user, void *data) {
 	return true;
 }
 
-static int cb_strfilter(void *user, void *data) {
+static bool cb_strfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
@@ -920,14 +926,14 @@ static int cb_strfilter(void *user, void *data) {
 	return true;
 }
 
-static int cb_binforce(void *user, void *data) {
+static bool cb_binforce(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	r_bin_force_plugin (core->bin, node->value);
 	return true;
 }
 
-static int cb_asmsyntax(void *user, void *data) {
+static bool cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -943,7 +949,7 @@ static int cb_asmsyntax(void *user, void *data) {
 	return true;
 }
 
-static int cb_dirzigns(void *user, void *data) {
+static bool cb_dirzigns(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	free (core->anal->zign_path);
@@ -951,7 +957,7 @@ static int cb_dirzigns(void *user, void *data) {
 	return true;
 }
 
-static int cb_bigendian(void *user, void *data) {
+static bool cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	// Try to set endian based on preference, restrict by RAsmPlugin
@@ -967,28 +973,28 @@ static int cb_bigendian(void *user, void *data) {
 	return true;
 }
 
-static int cb_cfgdatefmt(void *user, void *data) {
+static bool cb_cfgdatefmt(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	snprintf (core->print->datefmt, 32, "%s", node->value);
 	return true;
 }
 
-static int cb_timezone(void *user, void *data) {
+static bool cb_timezone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->print->datezone = node->i_value;
 	return true;
 }
 
-static int cb_cfgcorelog(void *user, void *data) {
+static bool cb_cfgcorelog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cfglog = node->i_value;
 	return true;
 }
 
-static int cb_cfgdebug(void *user, void *data) {
+static bool cb_cfgdebug(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!core) {
@@ -1019,7 +1025,7 @@ static int cb_cfgdebug(void *user, void *data) {
 	return true;
 }
 
-static int cb_dirhome(void *user, void *data) {
+static bool cb_dirhome(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value) {
 		r_sys_setenv (R_SYS_HOME, node->value);
@@ -1027,7 +1033,7 @@ static int cb_dirhome(void *user, void *data) {
 	return true;
 }
 
-static int cb_dirtmp (void *user, void *data) {
+static bool cb_dirtmp (void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value) {
 		r_sys_setenv (R_SYS_TMP, node->value);
@@ -1035,7 +1041,7 @@ static int cb_dirtmp (void *user, void *data) {
 	return true;
 }
 
-static int cb_dirsrc(void *user, void *data) {
+static bool cb_dirsrc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore *)user;
 	free (core->bin->srcdir);
@@ -1043,7 +1049,7 @@ static int cb_dirsrc(void *user, void *data) {
 	return true;
 }
 
-static int cb_cfgsanbox(void *user, void *data) {
+static bool cb_cfgsanbox(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int ret = r_sandbox_enable (node->i_value);
 	if (node->i_value != ret) {
@@ -1052,14 +1058,14 @@ static int cb_cfgsanbox(void *user, void *data) {
 	return (!node->i_value && ret)? 0: 1;
 }
 
-static int cb_str_escbslash(void *user, void *data) {
+static bool cb_str_escbslash(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->print->esc_bslash = node->i_value;
 	return true;
 }
 
-static int cb_cfg_fortunes(void *user, void *data) {
+static bool cb_cfg_fortunes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
@@ -1070,7 +1076,7 @@ static int cb_cfg_fortunes(void *user, void *data) {
 	return true;
 }
 
-static int cb_cfg_fortunes_type(void *user, void *data) {
+static bool cb_cfg_fortunes_type(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		r_core_fortune_list_types ();
@@ -1079,7 +1085,7 @@ static int cb_cfg_fortunes_type(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmdpdc(void *user, void *data) {
+static bool cb_cmdpdc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		r_cons_printf ("pdc\n");
@@ -1088,7 +1094,7 @@ static int cb_cmdpdc(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmdlog(void *user, void *data) {
+static bool cb_cmdlog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	R_FREE (core->cmdlog);
@@ -1096,28 +1102,28 @@ static int cb_cmdlog(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmdtimes(void *user, void *data) {
+static bool cb_cmdtimes(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cmdtimes = node->value;
 	return true;
 }
 
-static int cb_cmdrepeat(void *user, void *data) {
+static bool cb_cmdrepeat(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cmdrepeat = node->i_value;
 	return true;
 }
 
-static int cb_scrnull(void *user, void *data) {
+static bool cb_scrnull(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->null = node->i_value;
 	return true;
 }
 
-static int cb_color(void *user, void *data) {
+static bool cb_color(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1137,7 +1143,7 @@ static int cb_color(void *user, void *data) {
 	return true;
 }
 
-static int cb_color_getter(void *user, RConfigNode *node) {
+static bool cb_color_getter(void *user, RConfigNode *node) {
 	(void)user;
 	node->i_value = r_cons_singleton ()->context->color;
 	char buf[128];
@@ -1149,7 +1155,7 @@ static int cb_color_getter(void *user, RConfigNode *node) {
 	return true;
 }
 
-static int cb_decoff(void *user, void *data) {
+static bool cb_decoff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1161,7 +1167,7 @@ static int cb_decoff(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbgbep(void *user, void *data) {
+static bool cb_dbgbep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
 		print_node_options (node);
@@ -1170,7 +1176,7 @@ static int cb_dbgbep(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_btalgo(void *user, void *data) {
+static bool cb_dbg_btalgo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -1182,7 +1188,7 @@ static int cb_dbg_btalgo(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_libs(void *user, void *data) {
+static bool cb_dbg_libs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	free (core->dbg->glob_libs);
@@ -1190,7 +1196,7 @@ static int cb_dbg_libs(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_unlibs(void *user, void *data) {
+static bool cb_dbg_unlibs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	free (core->dbg->glob_unlibs);
@@ -1198,7 +1204,7 @@ static int cb_dbg_unlibs(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_forks(void *user, void *data) {
+static bool cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
@@ -1208,7 +1214,7 @@ static int cb_dbg_forks(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_gdb_page_size(void *user, void *data) {
+static bool cb_dbg_gdb_page_size(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value < 64) { // 64 is hardcoded min packet size
@@ -1222,7 +1228,7 @@ static int cb_dbg_gdb_page_size(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_gdb_retries(void *user, void *data) {
+static bool cb_dbg_gdb_retries(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value <= 0) {
@@ -1236,7 +1242,7 @@ static int cb_dbg_gdb_retries(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_execs(void *user, void *data) {
+static bool cb_dbg_execs(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 #if __linux__
 	RCore *core = (RCore*) user;
@@ -1246,14 +1252,13 @@ static int cb_dbg_execs(void *user, void *data) {
 	}
 #else
 	if (node->i_value) {
-		eprintf ("Option not supported.\n");
+		eprintf ("Warning: dbg.execs is not supported in this platform.\n");
 	}
-	return false;
 #endif
 	return true;
 }
 
-static int cb_dbg_clone(void *user, void *data) {
+static bool cb_dbg_clone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
@@ -1263,14 +1268,14 @@ static int cb_dbg_clone(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_follow_child(void *user, void *data) {
+static bool cb_dbg_follow_child(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->follow_child = node->i_value;
 	return true;
 }
 
-static int cb_dbg_aftersc(void *user, void *data) {
+static bool cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_aftersyscall = node->i_value;
@@ -1280,7 +1285,7 @@ static int cb_dbg_aftersc(void *user, void *data) {
 	return true;
 }
 
-static int cb_runprofile(void *user, void *data) {
+static bool cb_runprofile(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	free ((void*)r->io->runprofile);
@@ -1292,7 +1297,7 @@ static int cb_runprofile(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbg_args(void *user, void *data) {
+static bool cb_dbg_args(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!node || !*(node->value)) {
@@ -1303,7 +1308,7 @@ static int cb_dbg_args(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbgstatus(void *user, void *data) {
+static bool cb_dbgstatus(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (r_config_get_i (r->config, "cfg.debug")) {
@@ -1317,7 +1322,7 @@ static int cb_dbgstatus(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbgbackend(void *user, void *data) {
+static bool cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!strcmp (node->value, "?")) {
@@ -1332,7 +1337,7 @@ static int cb_dbgbackend(void *user, void *data) {
 	return true;
 }
 
-static int cb_gotolimit(void *user, void *data) {
+static bool cb_gotolimit(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (r_sandbox_enable (0)) {
@@ -1345,7 +1350,7 @@ static int cb_gotolimit(void *user, void *data) {
 	return true;
 }
 
-static int cb_esilverbose (void *user, void *data) {
+static bool cb_esilverbose (void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (core->anal->esil) {
@@ -1354,7 +1359,7 @@ static int cb_esilverbose (void *user, void *data) {
 	return true;
 }
 
-static int cb_esilstackdepth (void *user, void *data) {
+static bool cb_esilstackdepth (void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value < 3) {
 		eprintf ("esil.stack.depth must be greater than 2\n");
@@ -1363,32 +1368,32 @@ static int cb_esilstackdepth (void *user, void *data) {
 	return true;
 }
 
-static int cb_fixrows(void *user, void *data) {
+static bool cb_fixrows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->fix_rows = (int)node->i_value;
 	return true;
 }
 
-static int cb_fixcolumns(void *user, void *data) {
+static bool cb_fixcolumns(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->fix_columns = atoi (node->value);
 	return true;
 }
 
-static int cb_rows(void *user, void *data) {
+static bool cb_rows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->force_rows = node->i_value;
 	return true;
 }
 
-static int cb_cmd_hexcursor(void *user, void *data) {
+static bool cb_cmd_hexcursor(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->cfmt = node->value;
 	return true;
 }
 
-static int cb_hexcompact(void *user, void *data) {
+static bool cb_hexcompact(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1399,14 +1404,14 @@ static int cb_hexcompact(void *user, void *data) {
 	return true;
 }
 
-static int cb_hex_pairs(void *user, void *data) {
+static bool cb_hex_pairs(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pairs = node->i_value;
 	return true;
 }
 
-static int cb_hex_align(void *user, void *data) {
+static bool cb_hex_align(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1417,7 +1422,7 @@ static int cb_hex_align(void *user, void *data) {
 	return true;
 }
 
-static int cb_io_unalloc(void *user, void *data) {
+static bool cb_io_unalloc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1428,14 +1433,14 @@ static int cb_io_unalloc(void *user, void *data) {
 	return true;
 }
 
-static int cb_io_unalloc_ch(void *user, void *data) {
+static bool cb_io_unalloc_ch(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->io_unalloc_ch = *node->value ? node->value[0] : ' ';
 	return true;
 }
 
-static int cb_hex_header(void *user, void *data) {
+static bool cb_hex_header(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1446,7 +1451,7 @@ static int cb_hex_header(void *user, void *data) {
 	return true;
 }
 
-static int cb_hex_bytes(void *user, void *data) {
+static bool cb_hex_bytes(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1457,7 +1462,7 @@ static int cb_hex_bytes(void *user, void *data) {
 	return true;
 }
 
-static int cb_hex_ascii(void *user, void *data) {
+static bool cb_hex_ascii(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1468,7 +1473,7 @@ static int cb_hex_ascii(void *user, void *data) {
 	return true;
 }
 
-static int cb_hex_style(void *user, void *data) {
+static bool cb_hex_style(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1479,7 +1484,7 @@ static int cb_hex_style(void *user, void *data) {
 	return true;
 }
 
-static int cb_hex_hdroff(void *user, void *data) {
+static bool cb_hex_hdroff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1490,14 +1495,14 @@ static int cb_hex_hdroff(void *user, void *data) {
 	return true;
 }
 
-static int cb_log_events (void *user, void *data) {
+static bool cb_log_events (void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->log_events = node->i_value;
 	return true;
 }
 
-static int cb_hexcomments(void *user, void *data) {
+static bool cb_hexcomments(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -1508,7 +1513,7 @@ static int cb_hexcomments(void *user, void *data) {
 	return true;
 }
 
-static int cb_iopcache(void *user, void *data) {
+static bool cb_iopcache(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if ((bool)node->i_value) {
@@ -1526,7 +1531,7 @@ static int cb_iopcache(void *user, void *data) {
 	return true;
 }
 
-static int cb_iopcacheread(void *user, void *data) {
+static bool cb_iopcacheread(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if ((bool)node->i_value) {
@@ -1545,7 +1550,7 @@ static int cb_iopcacheread(void *user, void *data) {
 	return true;
 }
 
-static int cb_iopcachewrite(void *user, void *data) {
+static bool cb_iopcachewrite(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if ((bool)node->i_value) {
@@ -1573,7 +1578,7 @@ R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	return false;
 }
 
-static int cb_cmd_esil_ioer(void *user, void *data) {
+static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1584,7 +1589,7 @@ static int cb_cmd_esil_ioer(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmd_esil_todo(void *user, void *data) {
+static bool cb_cmd_esil_todo(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1595,7 +1600,7 @@ static int cb_cmd_esil_todo(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmd_esil_intr(void *user, void *data) {
+static bool cb_cmd_esil_intr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1606,7 +1611,7 @@ static int cb_cmd_esil_intr(void *user, void *data) {
 	return true;
 }
 
-static int cb_mdevrange(void *user, void *data) {
+static bool cb_mdevrange(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1617,7 +1622,7 @@ static int cb_mdevrange(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmd_esil_step(void *user, void *data) {
+static bool cb_cmd_esil_step(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1628,7 +1633,7 @@ static int cb_cmd_esil_step(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmd_esil_mdev(void *user, void *data) {
+static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1639,7 +1644,7 @@ static int cb_cmd_esil_mdev(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmd_esil_trap(void *user, void *data) {
+static bool cb_cmd_esil_trap(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
@@ -1649,7 +1654,7 @@ static int cb_cmd_esil_trap(void *user, void *data) {
 	return true;
 }
 
-static int cb_fsview(void *user, void *data) {
+static bool cb_fsview(void *user, void *data) {
 	int type = R_FS_VIEW_NORMAL;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1670,7 +1675,7 @@ static int cb_fsview(void *user, void *data) {
 	return true;
 }
 
-static int cb_cmddepth(void *user, void *data) {
+static bool cb_cmddepth(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	int c = R_MAX (((RConfigNode*)data)->i_value, 0);
 	core->max_cmd_depth = c;
@@ -1678,7 +1683,7 @@ static int cb_cmddepth(void *user, void *data) {
 	return true;
 }
 
-static int cb_hexcols(void *user, void *data) {
+static bool cb_hexcols(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	int c = R_MIN (1024, R_MAX (((RConfigNode*)data)->i_value, 0));
 	core->print->cols = c; // & ~1;
@@ -1686,20 +1691,20 @@ static int cb_hexcols(void *user, void *data) {
 	return true;
 }
 
-static int cb_hexstride(void *user, void *data) {
+static bool cb_hexstride(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	((RCore *)user)->print->stride = node->i_value;
 	return true;
 }
 
-static int cb_search_kwidx(void *user, void *data) {
+static bool cb_search_kwidx(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->search->n_kws = node->i_value;
 	return true;
 }
 
-static int cb_io_cache_mode(void *user, void *data) {
+static bool cb_io_cache_mode(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
@@ -1710,7 +1715,7 @@ static int cb_io_cache_mode(void *user, void *data) {
 	return true;
 }
 
-static int cb_io_cache_read(void *user, void *data) {
+static bool cb_io_cache_read(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
@@ -1721,7 +1726,7 @@ static int cb_io_cache_read(void *user, void *data) {
 	return true;
 }
 
-static int cb_io_cache_write(void *user, void *data) {
+static bool cb_io_cache_write(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
@@ -1732,13 +1737,13 @@ static int cb_io_cache_write(void *user, void *data) {
 	return true;
 }
 
-static int cb_io_cache(void *user, void *data) {
+static bool cb_io_cache(void *user, void *data) {
 	(void)cb_io_cache_read (user, data);
 	(void)cb_io_cache_write (user, data);
 	return true;
 }
 
-static int cb_ioaslr(void *user, void *data) {
+static bool cb_ioaslr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->aslr) {
@@ -1747,17 +1752,17 @@ static int cb_ioaslr(void *user, void *data) {
 	return true;
 }
 
-static int cb_io_pava(void *user, void *data) {
+static bool cb_io_pava(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->pava = node->i_value;
+	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
 		eprintf ("WARNING: You may probably want to disable io.va too\n");
 	}
 	return true;
 }
 
-static int cb_iova(void *user, void *data) {
+static bool cb_iova(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->va) {
@@ -1776,21 +1781,21 @@ static int cb_iova(void *user, void *data) {
 	return true;
 }
 
-static int cb_ioff(void *user, void *data) {
+static bool cb_ioff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->ff = node->i_value;
 	return true;
 }
 
-static int cb_io_oxff(void *user, void *data) {
+static bool cb_io_oxff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->Oxff = node->i_value;
 	return true;
 }
 
-static int cb_filepath(void *user, void *data) {
+static bool cb_filepath(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	char *pikaboo = strstr (node->value, "://");
@@ -1808,14 +1813,14 @@ static int cb_filepath(void *user, void *data) {
 	return true;
 }
 
-static int cb_ioautofd(void *user, void *data) {
+static bool cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->autofd = node->i_value;
 	return true;
 }
 
-static int cb_scr_color_grep(void *user, void *data) {
+static bool cb_scr_color_grep(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 
@@ -1824,14 +1829,14 @@ static int cb_scr_color_grep(void *user, void *data) {
 	return true;
 }
 
-static int cb_scr_color_grep_highlight(void *user, void *data) {
+static bool cb_scr_color_grep_highlight(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->grep_highlight = node->i_value;
 	return true;
 }
 
-static int cb_pager(void *user, void *data) {
+static bool cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (!strcmp (node->value, "?")) {
@@ -1844,26 +1849,26 @@ static int cb_pager(void *user, void *data) {
 	return true;
 }
 
-static int cb_breaklines(void *user, void *data) {
+static bool cb_breaklines(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->break_lines = node->i_value;
 	return true;
 }
 
-static int cb_scr_gadgets(void *user, void *data) {
+static bool cb_scr_gadgets(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->scr_gadgets = node->i_value;
 	return true;
 }
 
-static int cb_fps(void *user, void *data) {
+static bool cb_fps(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->fps = node->i_value;
 	return true;
 }
 
-static int cb_scrbreakword(void* user, void* data) {
+static bool cb_scrbreakword(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value) {
 		r_cons_breakword (node->value);
@@ -1873,7 +1878,7 @@ static int cb_scrbreakword(void* user, void* data) {
 	return true;
 }
 
-static int cb_scrcolumns(void* user, void* data) {
+static bool cb_scrcolumns(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore*) user;
 	int n = atoi (node->value);
@@ -1882,7 +1887,7 @@ static int cb_scrcolumns(void* user, void* data) {
 	return true;
 }
 
-static int cb_scrfgets(void* user, void* data) {
+static bool cb_scrfgets(void* user, void* data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->cons->user_fgets = node->i_value
@@ -1890,14 +1895,14 @@ static int cb_scrfgets(void* user, void* data) {
 	return true;
 }
 
-static int cb_scrhtml(void *user, void *data) {
+static bool cb_scrhtml(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->is_html = node->i_value;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return true;
 }
 
-static int cb_scrhighlight(void *user, void *data) {
+static bool cb_scrhighlight(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_highlight (node->value);
 	return true;
@@ -1906,36 +1911,57 @@ static int cb_scrhighlight(void *user, void *data) {
 #if __WINDOWS__
 static int scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->ansicon = node->i_value;
+	if (!strcmp (node->value, "true")) {
+		node->i_value = 1;
+	}
+	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
+# ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
+	DWORD mode;
+	int i;
+	if (node->i_value == 1) {  // scr.ansicon=2 to show esc seqs (for debugging) if using non-ConEmu-hosted cmd.exe
+		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+			GetConsoleMode (streams[i], &mode);
+			SetConsoleMode (streams[i],
+			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+		}
+	} else {
+		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+			GetConsoleMode (streams[i], &mode);
+			SetConsoleMode (streams[i],
+			                mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+		}
+	}
+# endif
 	return true;
 }
 #endif
 
-static int cb_screcho(void *user, void *data) {
+static bool cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->echo = node->i_value;
 	return true;
 }
 
-static int cb_scrlinesleep(void *user, void *data) {
+static bool cb_scrlinesleep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->linesleep = node->i_value;
 	return true;
 }
 
-static int cb_scrpagesize(void *user, void *data) {
+static bool cb_scrpagesize(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->pagesize= node->i_value;
 	return true;
 }
 
-static int cb_scrflush(void *user, void *data) {
+static bool cb_scrflush(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->flush = node->i_value;
 	return true;
 }
 
-static int cb_scrstrconv(void *user, void *data) {
+static bool cb_scrstrconv(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
@@ -1959,7 +1985,7 @@ static int cb_scrstrconv(void *user, void *data) {
 	return true;
 }
 
-static int cb_graphformat(void *user, void *data) {
+static bool cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (!strcmp (node->value, "?")) {
 		r_cons_printf ("png\njpg\npdf\nps\nsvg\njson\n");
@@ -1969,7 +1995,7 @@ static int cb_graphformat(void *user, void *data) {
 }
 
 
-static int cb_exectrap(void *user, void *data) {
+static bool cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore*) user;
 	if (core->anal && core->anal->esil) {
@@ -1978,7 +2004,7 @@ static int cb_exectrap(void *user, void *data) {
 	return true;
 }
 
-static int cb_iotrap(void *user, void *data) {
+static bool cb_iotrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore*) user;
 	if (core->anal && core->anal->esil) {
@@ -1987,7 +2013,19 @@ static int cb_iotrap(void *user, void *data) {
 	return true;
 }
 
-static int cb_scrint(void *user, void *data) {
+static bool cb_scr_bgfill(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_BGFILL;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_BGFILL);
+	}
+	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
+static bool cb_scrint(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value && r_sandbox_enable (0)) {
 		return false;
@@ -1996,7 +2034,7 @@ static int cb_scrint(void *user, void *data) {
 	return true;
 }
 
-static int cb_scrnkey(void *user, void *data) {
+static bool cb_scrnkey(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (!strcmp (node->value, "help") || *node->value == '?') {
 		print_node_options (node);
@@ -2005,7 +2043,7 @@ static int cb_scrnkey(void *user, void *data) {
 	return true;
 }
 
-static int cb_scrprompt(void *user, void *data) {
+static bool cb_scrprompt(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->scr_prompt = node->i_value;
@@ -2013,21 +2051,21 @@ static int cb_scrprompt(void *user, void *data) {
 	return true;
 }
 
-static int cb_scrrows(void* user, void* data) {
+static bool cb_scrrows(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int n = atoi (node->value);
 	((RCore *)user)->cons->force_rows = n;
 	return true;
 }
 
-static int cb_contiguous(void *user, void *data) {
+static bool cb_contiguous(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->search->contiguous = node->i_value;
 	return true;
 }
 
-static int cb_searchalign(void *user, void *data) {
+static bool cb_searchalign(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->search->align = node->i_value;
@@ -2035,7 +2073,7 @@ static int cb_searchalign(void *user, void *data) {
 	return true;
 }
 
-static int cb_segoff(void *user, void *data) {
+static bool cb_segoff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -2046,7 +2084,7 @@ static int cb_segoff(void *user, void *data) {
 	return true;
 }
 
-static int cb_seggrn(void *user, void *data) {
+static bool cb_seggrn(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->seggrn = node->i_value;
@@ -2056,69 +2094,76 @@ static int cb_seggrn(void *user, void *data) {
 }
 
 
-static int cb_stopthreads(void *user, void *data) {
+static bool cb_stopthreads(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->stop_all_threads = node->i_value;
 	return true;
 }
 
-static int cb_swstep(void *user, void *data) {
+static bool cb_scr_prompt_popup(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cons->show_autocomplete_widget = node->i_value;
+	return true;
+}
+
+static bool cb_swstep(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->swstep = node->i_value;
 	return true;
 }
 
-static int cb_consbreak(void *user, void *data) {
+static bool cb_consbreak(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->consbreak = node->i_value;
 	return true;
 }
 
-static int cb_teefile(void *user, void *data) {
+static bool cb_teefile(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->teefile = node->value;
 	return true;
 }
 
-static int cb_trace(void *user, void *data) {
+static bool cb_trace(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->trace->enabled = node->i_value;
 	return true;
 }
 
-static int cb_tracetag(void *user, void *data) {
+static bool cb_tracetag(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->dbg->trace->tag = node->i_value;
 	return true;
 }
 
-static int cb_utf8(void *user, void *data) {
+static bool cb_utf8(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->use_utf8 = node->i_value;
 	return true;
 }
 
-static int cb_utf8_curvy(void *user, void *data) {
+static bool cb_utf8_curvy(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->use_utf8_curvy = node->i_value;
 	return true;
 }
 
-static int cb_dotted(void *user, void *data) {
+static bool cb_dotted(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cons->dotted_lines = node->i_value;
 	return true;
 }
 
-static int cb_zoombyte(void *user, void *data) {
+static bool cb_zoombyte(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	switch (*node->value) {
@@ -2134,35 +2179,42 @@ static int cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
-static int cb_analverbose(void *user, void *data) {
+static bool cb_analex(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->anal->use_ex = node->i_value;
+	return true;
+}
+
+static bool cb_analverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->anal->verbose = node->i_value;
 	return true;
 }
 
-static int cb_binverbose(void *user, void *data) {
+static bool cb_binverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->bin->verbose = node->i_value;
 	return true;
 }
 
-static int cb_rawstr(void *user, void *data) {
+static bool cb_rawstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->bin->rawstr = node->i_value;
 	return true;
 }
 
-static int cb_debase64(void *user, void *data) {
+static bool cb_debase64(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->bin->debase64 = node->i_value;
 	return true;
 }
 
-static int cb_binstrings(void *user, void *data) {
+static bool cb_binstrings(void *user, void *data) {
 	const ut32 req = R_BIN_REQ_STRINGS;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2174,7 +2226,7 @@ static int cb_binstrings(void *user, void *data) {
 	return true;
 }
 
-static int cb_bindbginfo(void *user, void *data) {
+static bool cb_bindbginfo(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (!core || !core->bin) {
@@ -2184,7 +2236,7 @@ static int cb_bindbginfo(void *user, void *data) {
 	return true;
 }
 
-static int cb_binprefix(void *user, void *data) {
+static bool cb_binprefix(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (!core || !core->bin) {
@@ -2209,7 +2261,7 @@ static int cb_binprefix(void *user, void *data) {
 	return true;
 }
 
-static int cb_binmaxstrbuf(void *user, void *data) {
+static bool cb_binmaxstrbuf(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
@@ -2227,7 +2279,7 @@ static int cb_binmaxstrbuf(void *user, void *data) {
 	return true;
 }
 
-static int cb_binmaxstr(void *user, void *data) {
+static bool cb_binmaxstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
@@ -2243,7 +2295,7 @@ static int cb_binmaxstr(void *user, void *data) {
 	return true;
 }
 
-static int cb_binminstr(void *user, void *data) {
+static bool cb_binminstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
@@ -2259,7 +2311,7 @@ static int cb_binminstr(void *user, void *data) {
 	return true;
 }
 
-static int cb_searchin(void *user, void *data) {
+static bool cb_searchin(void *user, void *data) {
 	RCore *core = (RCore*)user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
@@ -2268,11 +2320,9 @@ static int cb_searchin(void *user, void *data) {
 			"raw                search in raw io (ignoring bounds)\n"
 			"block              search in the current block\n"
 			"io.map             search in current map\n"
+			"io.sky.[rwx]       search in all skyline segments\n"
 			"io.maps            search in all maps\n"
 			"io.maps.[rwx]      search in all r-w-x io maps\n"
-			// "io.section        search in current mapped section\n"
-			// "io.sections       search in all mapped sections\n"
-			// "io.sections.[rwx] search in all r-w-x sections\n"
 			"bin.section        search in current mapped section\n"
 			"bin.sections       search in all mapped sections\n"
 			"bin.sections.[rwx] search in all r-w-x sections\n"
@@ -2301,17 +2351,25 @@ static int __dbg_swstep_getter(void *user, RConfigNode *node) {
 	return true;
 }
 
-static int cb_dirpfx(RCore *core, RConfigNode *node) {
+static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 	r_sys_prefix (node->value);
 	return true;
 }
 
-static int cb_anal_gp(RCore *core, RConfigNode *node) {
+static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
+	if (core && core->anal && core->anal->reg) {
+		r_list_free (core->anal->reg->roregs);
+		core->anal->reg->roregs = r_str_split_duplist (node->value, ",");
+	}
+	return true;
+}
+
+static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 	core->anal->gp = node->i_value;
 	return true;
 }
 
-static int cb_anal_from(RCore *core, RConfigNode *node) {
+static bool cb_anal_from(RCore *core, RConfigNode *node) {
 	if (r_config_get_i (core->config, "anal.limits")) {
 		r_anal_set_limits (core->anal,
 				r_config_get_i (core->config, "anal.from"),
@@ -2320,7 +2378,7 @@ static int cb_anal_from(RCore *core, RConfigNode *node) {
 	return true;
 }
 
-static int cb_anal_limits(void *user, RConfigNode *node) {
+static bool cb_anal_limits(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
 	if (node->i_value) {
 		r_anal_set_limits (core->anal,
@@ -2332,90 +2390,90 @@ static int cb_anal_limits(void *user, RConfigNode *node) {
 	return 1;
 }
 
-static int cb_anal_rnr(void *user, RConfigNode *node) {
+static bool cb_anal_rnr(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
 	core->anal->recursive_noreturn = node->i_value;
 	return 1;
 }
 
-static int cb_anal_jmptbl(void *user, void *data) {
+static bool cb_anal_jmptbl(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.jmptbl = node->i_value;
 	return true;
 }
 
-static int cb_anal_cjmpref(void *user, void *data) {
+static bool cb_anal_cjmpref(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.cjmpref = node->i_value;
 	return true;
 }
 
-static int cb_anal_jmpref(void *user, void *data) {
+static bool cb_anal_jmpref(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.jmpref = node->i_value;
 	return true;
 }
 
-static int cb_anal_jmpabove(void *user, void *data) {
+static bool cb_anal_jmpabove(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.jmpabove = node->i_value;
 	return true;
 }
 
-static int cb_anal_loads(void *user, void *data) {
+static bool cb_anal_loads(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.loads = node->i_value;
 	return true;
 }
 
-static int cb_anal_followdatarefs(void *user, void *data) {
+static bool cb_anal_followdatarefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.followdatarefs = node->i_value;
 	return true;
 }
 
-static int cb_anal_jmpmid(void *user, void *data) {
+static bool cb_anal_jmpmid(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.jmpmid = node->i_value;
 	return true;
 }
 
-static int cb_anal_searchstringrefs(void *user, void *data) {
+static bool cb_anal_searchstringrefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.searchstringrefs = node->i_value;
 	return true;
 }
 
-static int cb_anal_pushret(void *user, void *data) {
+static bool cb_anal_pushret(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.pushret = node->i_value;
 	return true;
 }
 
-static int cb_anal_brokenrefs(void *user, void *data) {
+static bool cb_anal_brokenrefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.followbrokenfcnsrefs = node->i_value;
 	return true;
 }
 
-static int cb_anal_bb_max_size(void *user, void *data) {
+static bool cb_anal_bb_max_size(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.bb_max_size = node->i_value;
 	return true;
 }
 
-static int cb_anal_cpp_abi(void *user, void *data) {
+static bool cb_anal_cpp_abi(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 
@@ -2437,7 +2495,7 @@ static int cb_anal_cpp_abi(void *user, void *data) {
 	return false;
 }
 
-static int cb_linesto(void *user, void *data) {
+static bool cb_linesto(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	ut64 from = (ut64)r_config_get_i (core->config, "lines.from");
@@ -2445,9 +2503,9 @@ static int cb_linesto(void *user, void *data) {
 	ut64 to = r_num_math (core->num, node->value);
 	if (to == 0) {
 		core->print->lines_cache_sz = -1; //r_core_lines_initcache (core, from, to);
-		return false;
+		return true;
 	}
-	if (to > from+io_sz) {
+	if (to > from + io_sz) {
 		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
 			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
 		return true;
@@ -2461,7 +2519,7 @@ static int cb_linesto(void *user, void *data) {
 	return true;
 }
 
-static int cb_linesabs(void *user, void *data) {
+static bool cb_linesabs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->print->lines_abs = node->i_value;
@@ -2478,7 +2536,7 @@ static int cb_linesabs(void *user, void *data) {
 	return true;
 }
 
-static int cb_malloc(void *user, void *data) {
+static bool cb_malloc(void *user, void *data) {
  	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
 
@@ -2493,7 +2551,7 @@ static int cb_malloc(void *user, void *data) {
 	return true;
 }
 
-static int cb_dbgsnap(void *user, void *data) {
+static bool cb_dbgsnap(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 
@@ -2503,7 +2561,7 @@ static int cb_dbgsnap(void *user, void *data) {
 	return true;
 }
 
-static int cb_log_config_level(void *coreptr, void *nodeptr) {
+static bool cb_log_config_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	char *bad_data = NULL;
@@ -2515,7 +2573,7 @@ static int cb_log_config_level(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static int cb_log_config_traplevel(void *coreptr, void *nodeptr) {
+static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	char *bad_data = NULL;
@@ -2527,14 +2585,14 @@ static int cb_log_config_traplevel(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static int cb_log_config_file(void *coreptr, void *nodeptr) {
+static bool cb_log_config_file(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	r_log_set_file (value);
 	return true;
 }
 
-static int cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
+static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	switch (value[0]) {
@@ -2548,7 +2606,7 @@ static int cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static int cb_log_config_colors(void *coreptr, void *nodeptr) {
+static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	switch (value[0]) {
@@ -2562,7 +2620,7 @@ static int cb_log_config_colors(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static int cb_dbg_verbose(void *user, void *data) {
+static bool cb_dbg_verbose(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	const char *value = node->value;
@@ -2627,8 +2685,10 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* anal */
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
+	SETCB ("anal.ex", "true", &cb_analex, "Use the anal extension methods from the selected plugin if available");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
+	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETI ("anal.gp2", 0, "Set anal.gp before emulating each instruction (workaround)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
@@ -2731,8 +2791,9 @@ R_API int r_core_config_init(RCore *core) {
 	//asm.os needs to be first, since other asm.* depend on it
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
-	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
+	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", NULL);
 	SETI ("asm.xrefs.fold", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
+	SETPREF ("asm.xrefs.code", "true",  "Show the code xrefs (generated by jumps instead of calls)");
 	SETI ("asm.xrefs.max", 20,  "Maximum number of xrefs to be displayed without folding");
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETPREF ("asm.instr", "true", "Display the disassembled instruction");
@@ -2750,7 +2811,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
 	SETPREF ("asm.jmpsub", "true", "Always substitute jump, call and branch targets in disassembly");
 	SETPREF ("asm.hints", "true", "Disable all asm.hint* if false");
-	SETPREF ("asm.hint.jmp", "true", "Show jump hints [numbers] in disasm");
+	SETPREF ("asm.hint.jmp", "false", "Show jump hints [numbers] in disasm");
+	SETPREF ("asm.hint.call", "true", "Show call hints [numbers] in disarm");
 	SETPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
 	SETPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
 	SETI ("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
@@ -2783,10 +2845,14 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "d", "c", "s", "f", "m", "h", "C", "r", NULL);
 	SETPREF ("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
+	SETPREF ("asm.optype", "false", "show opcode type next to the instruction bytes");
 	SETPREF ("asm.lines.fcn", "true", "Show function boundary lines");
 	SETPREF ("asm.flags", "true", "Show flags");
+	SETICB ("asm.flags.maxname", 0, &cb_maxname, "Maximum length of flag name with smart chopping");
+	SETI ("asm.flags.limit", 0, "Maximum number of flags to show in a single offset");
 	SETPREF ("asm.flags.offset", "false", "Show offset in flags");
 	SETPREF ("asm.flags.inbytes", "false",  "Display flags inside the bytes space");
+	SETPREF ("asm.flags.inline", "false",  "Display flags in line separated by commas instead of newlines");
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
@@ -2804,12 +2870,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.lines.wide", "false", "Put a space between lines");
 	SETPREF ("asm.fcnsig", "true", "Show function signature in disasm");
 	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
-	SETI ("asm.maxflags", 0, "Maximum number of flags to show in a single offset");
 	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
 	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
+	SETPREF ("scr.square", "true", "Use square pixels or not");
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
@@ -2946,7 +3012,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-
+	
 	/* log */
 	// R2_LOGLEVEL / log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
@@ -3037,7 +3103,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB ("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB ("dbg.aftersyscall", "true", &cb_dbg_aftersc, "Stop execution before the syscall is executed (see dcs)");
-	SETCB ("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETCB ("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	SETCB ("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "Continue tracing the child process on fork. By default the parent process is traced");
@@ -3062,6 +3127,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dbg.trace.libs", "true", "Trace library code too");
 	SETPREF ("dbg.exitkills", "true", "Kill process on exit");
 	SETPREF ("dbg.exe.path", NULL, "Path to binary being debugged");
+	SETCB ("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETICB ("dbg.gdb.page_size", 4096, &cb_dbg_gdb_page_size, "Page size on gdb target (useful for QEMU)");
 	SETICB ("dbg.gdb.retries", 10, &cb_dbg_gdb_retries, "Number of retries before gdb packet read times out");
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
@@ -3128,7 +3194,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cmd.hexcursor", "", &cb_cmd_hexcursor, "If set and cursor is enabled display given pf format string");
 	SETI ("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");
 	SETICB ("hex.cols", 16, &cb_hexcols, "Number of columns in hexdump");
-	SETI ("hex.pcols", 40, "Number of pixel columns for prc");
 	SETI ("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETPREF ("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB ("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");
@@ -3192,6 +3257,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* graph */
 	SETPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
+	SETPREF ("graph.dummy", "true", "Create dummy nodes in the graph for better layout (20% slower)");
 	SETPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
@@ -3210,6 +3276,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF ("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF ("graph.title", "", "Title of the graph");
+	SETPREF ("graph.ntitles", "true", "Display title of node");
 	SETPREF ("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF ("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");
 	SETPREF ("graph.gv.spline", "", "Graphviz spline style. (splines=\"ortho\")");
@@ -3241,8 +3308,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
+	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
-	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
+	SETICB ("scr.ansicon", r_cons_singleton ()->ansicon,
 		&scr_ansicon, "Use ANSICON mode or not on Windows");
 #endif
 #if __ANDROID__
@@ -3257,7 +3325,7 @@ R_API int r_core_config_init(RCore *core) {
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
-	SETCB ("scr.gadgets", "false", &cb_scr_gadgets, "Run pg in prompt, visual and panels");
+	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "Run pg in prompt, visual and panels");
 	SETICB ("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
@@ -3267,6 +3335,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB ("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RCons level");
 	SETCB ("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
+	SETCB ("scr.bgfill", "false", &cb_scr_bgfill, "Fill background for ascii art when possible");
 	SETI ("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB ("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
@@ -3298,6 +3367,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
+	SETPREF ("scr.confirmquit", "false", "Confirm on quit");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");

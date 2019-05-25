@@ -18,7 +18,6 @@ typedef struct {
 static int readline_callback(void *_a, const char *str) {
 	RCoreVisualAsm *a = _a;
 	RCore *core = a->core;
-	int xlen;
 	r_cons_clear00 ();
 	r_cons_printf ("Write some %s-%d assembly...\n\n",
 		r_config_get (a->core->config, "asm.arch"),
@@ -33,20 +32,23 @@ static int readline_callback(void *_a, const char *str) {
 		r_asm_code_free (a->acode);
 		r_asm_set_pc (a->core->assembler, a->off);
 		a->acode = r_asm_massemble (a->core->assembler, str);
-		char* hex = r_asm_code_get_hex (a->acode);
-		r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
-		if (a->acode && a->acode->len) {
-			r_cons_printf ("* %s\n\n", hex);
-		} else {
-			r_cons_print ("\n\n");
-		}
 		if (a->acode) {
-			xlen = R_MIN (strlen (hex), R_VISUAL_ASM_BUFSIZE - 2);
+			char* hex = r_asm_code_get_hex (a->acode);
+			r_cons_printf ("[VA:%d]> %s\n", a->acode? a->acode->len: 0, str);
+			if (a->acode && a->acode->len) {
+				r_cons_printf ("* %s\n\n", hex);
+			} else {
+				r_cons_print ("\n\n");
+			}
+			int xlen = R_MIN (strlen (hex), R_VISUAL_ASM_BUFSIZE - 2);
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, hex, xlen);
 			if (xlen >= strlen (a->blockbuf)) {
 				a->codebuf[xlen] = '\0';
 			}
+			free (hex);
+		} else {
+			r_cons_printf ("[VA:0]> %s\n* ?\n\n", str);
 		}
 		{
 			int rows = 0;
@@ -62,7 +64,6 @@ static int readline_callback(void *_a, const char *str) {
 			free (res);
 			free (cmd);
 		}
-		free (hex);
 	}
 	r_cons_flush ();
 	return 1;
@@ -86,9 +87,11 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 			}
 			// r_core_cmdf (core, "wx %s @ 0x%"PFMT64x, cva.acode->buf_hex, off);
 		}
+#if 0
 	} else if (!cva.acode || cva.acode->len == 0) {
 		eprintf ("ERROR: Cannot assemble those instructions\n");
-		r_cons_any_key (NULL);
+//		r_cons_any_key (NULL);
+#endif
 	}
 	r_asm_code_free (cva.acode);
 }

@@ -13,10 +13,12 @@ static void loadGP(RCore *core) {
 	if (strstr (core->assembler->cur->arch, "mips")) {
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
-			eprintf ("[mips] Finding out GP by emulating few instructions in the entrypoint...\n");
+			r_config_set (core->config, "anal.roregs", "zero");
 			r_core_cmd0 (core, "10aes@entry0");
+			r_config_set (core->config, "anal.roregs", "zero,gp");
 			gp = r_reg_getv (core->anal->reg, "gp");
 		}
+		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		r_config_set_i (core->config, "anal.gp", gp);
 	}
 }
@@ -40,6 +42,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		} else if (odesc->uri) {
 			ofilepath = odesc->uri;
 		}
+	}
+
+	ut64 new_baddr = UT64_MAX;
+	if (args) {
+		new_baddr = r_num_math (core->num, args);
+		if (new_baddr && new_baddr != UT64_MAX) {
+			r_config_set_i (core->config, "bin.baddr", new_baddr);
+		} else {
+			new_baddr = UT64_MAX;
+		}
+	}
+	if (new_baddr == UT64_MAX) {
+		new_baddr = r_config_get_i (core->config, "bin.baddr");
 	}
 
 	if (r_sandbox_enable (0)) {
@@ -96,11 +111,15 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+			if (new_baddr != UT64_MAX) {
+				baddr = new_baddr;
+			}
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
 				eprintf ("Error: Failed to reload rbin for: %s", path);
 			}
+			origoff = r_num_math (core->num, "entry0");
 		}
 
 		if (core->bin->cur && core->io && r_io_desc_get (core->io, file->fd) && !loadbin) {
@@ -127,7 +146,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			core->dbg->main_pid = newpid;
 			newtid = newpid;
 #endif
-#pragma message ("fix debugger-concept in core")
+// TODO: fix debugger-concept in core
 #if __WINDOWS__
 			r_debug_select (core->dbg, newpid, newtid);
 			core->dbg->reason.type = R_DEBUG_REASON_NONE;
@@ -567,8 +586,12 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (plugin && plugin->name) {
-		if (!strncmp (plugin->name, "any", 3)) {
-			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+		if (!strcmp (plugin->name, "any")) {
+			if (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")) {
+				r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, UT64_MAX);
+			} else {
+				r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+			}
 			// set use of raw strings
 			//r_config_set (r->config, "bin.rawstr", "true");
 			// r_config_set_i (r->config, "io.va", false);
@@ -644,7 +667,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_config_set (r->config, "asm.arch", inf->arch);
 			r_config_set_i (r->config, "asm.bits", inf->bits);
 			r_bin_info_free (inf);
-                }
+		}
 		if (binfile->o->regstate) {
 			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
 				eprintf ("Setting up coredump: Problem while setting the registers\n");
@@ -658,8 +681,16 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 						stack_map = r_io_map_get (r->io, sp_addr);
 					}
 				}
+				regname = r_reg_get_name (r->anal->reg, R_REG_NAME_PC);
+				if (regname) {
+					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
+					if (reg) {
+						ut64 seek = r_reg_get_value (r->anal->reg, reg);
+						r_core_seek (r, seek, 1);
+					}
+				}
 			}
-                }
+		}
 
 		RBinObject *o = binfile->o;
 		int map = 0;
@@ -803,7 +834,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	//used by r_core_bin_load otherwise won't load correctly
 	//this should be argument of r_core_bin_load <shrug>
-	r_config_set_i (r->config, "bin.laddr", loadaddr);
+	if (loadaddr != UT64_MAX) {
+		r_config_set_i (r->config, "bin.laddr", loadaddr);
+	}
 beach:
 	r->times->file_open_time = r_sys_now () - prev;
 	return fh;
@@ -925,9 +958,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		case 'j':
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
 				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
-				core->io->desc->fd == f->fd ? "true": "false",
+				r_str_bool (core->io->desc->fd == f->fd),
 				(int) f->fd, desc->uri, (ut64) from,
-				desc->perm & R_PERM_W? "true": "false",
+				r_str_bool (desc->perm & R_PERM_W),
 				(int) r_io_desc_size (desc),
 				iter->n? ",": "");
 			break;

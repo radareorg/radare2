@@ -31,11 +31,11 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, 
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
-	ut64 size = bf? r_buf_size (bf->buf): 0;
 	if (!bf || !bf->o) {
 		return false;
 	}
+	ut64 size;
+	const ut8 *bytes = r_buf_data (bf->buf, &size);
 	return load_bytes (bf, &bf->o->bin_obj, bytes, size, bf->o->loadaddr, bf->sdb);
 }
 

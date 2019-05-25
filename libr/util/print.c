@@ -66,13 +66,21 @@ R_API void r_print_columns (RPrint *p, const ut8 *buf, int len, int height) {
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
+	RConsPrintablePalette *pal = &p->cons->context->pal;
+	const char *kol[5];
+	kol[0] = pal->call;
+	kol[1] = pal->jmp;
+	kol[2] = pal->cjmp;
+	kol[3] = pal->mov;
+	kol[4] = pal->nop;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
 			int threshold = i * (0xff / rows);
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					p->cb_printf (Color_BGRED"_" Color_RESET);
+	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
+					int koli = i * 5 / rows;
+					p->cb_printf ("%s|" Color_RESET, kol[koli]);
 				} else {
 					p->cb_printf (" ");
 				}
@@ -401,6 +409,12 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char ch = p? ((p->addrmod && mod)? ((addr % p->addrmod)? ' ': ','): ' '): ' ';
 	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
+	}
+	if (p->pava) {
+		ut64 va = p->iob.p2v (p->iob.io, addr);
+		if (va != UT64_MAX) {
+			addr = va;
+		}
 	}
 	if (use_segoff) {
 		ut32 s, a;
@@ -997,7 +1011,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		if (use_offset && !isPxr) {
-			r_print_addr (p, addr + j * zoomsz);
+			ut64 at = addr + (j * zoomsz);
+			r_print_addr (p, at);
 		}
 		int row_have_cursor = -1;
 		ut64 row_have_addr = UT64_MAX;
@@ -1536,7 +1551,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	p->cb_printf ("|");
 }
 
-R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;
 	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
@@ -1586,21 +1601,26 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 		p->zoom->to = to;
 		p->zoom->size = len; // size;
 	}
+}
+
+R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+	ut64 size = (to - from);
+	r_print_zoom_buf (p, user, cb, from, to, len, maxlen);
+	size = len? size / len: 0;
 	p->flags &= ~R_PRINT_FLAGS_HEADER;
-	r_print_hexdump (p, from, bufz, len, 16, 1, size);
+	r_print_hexdump (p, from, p->zoom->buf, p->zoom->size, 16, 1, size);
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
-	if (!p || !arr) {
-		return;
-	}
+	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	const bool bgFill = (p && (p->flags & R_PRINT_FLAGS_BGFILL));
 	char *firebow[6];
 	int i = 0, j;
 
 	for (i = 0; i < 6; i++) {
-		firebow[i] = p->cb_color (i, 6, true);
+		firebow[i] = p->cb_color (i, 6, bgFill);
 	}
 #define INC 5
 #if TOPLINE
@@ -1647,10 +1667,13 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 			base = 1;
 		}
 		if (next < arr[i]) {
-			//if (arr[i]>0 && i>0) p->cb_printf ("  ");
 			if (arr[i] > INC) {
 				for (j = 0; j < next + base; j += INC) {
-					p->cb_printf (i ? " " : "'");
+					if (bgFill) {
+						p->cb_printf (i ? " " : "'");
+					} else {
+						p->cb_printf (i ? "." : "'");
+					}
 				}
 			}
 			for (j = next + INC; j + base < arr[i]; j += INC) {
@@ -1663,11 +1686,10 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 				}
 			} else {
 				for (j = INC; j < arr[i] + base; j += INC) {
-					p->cb_printf (" ");
+					p->cb_printf (".");
 				}
 			}
 		}
-		//for (j=1;j<arr[i]; j+=INC) p->cb_printf (under);
 		if (show_colors) {
 			p->cb_printf ("|" Color_RESET);
 		} else {
@@ -1818,6 +1840,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut64 anal_type) {
 		return pal->mov;
 	case R_ANAL_OP_TYPE_PUSH:
 	case R_ANAL_OP_TYPE_UPUSH:
+	case R_ANAL_OP_TYPE_RPUSH:
 	case R_ANAL_OP_TYPE_LOAD:
 		return pal->push;
 	case R_ANAL_OP_TYPE_POP:
@@ -1886,6 +1909,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
 	char previous = '\0';
+	const char *color_flag = print->cons->context->pal.flag;
 
 	if (!p || !*p) {
 		return NULL;
@@ -1903,12 +1927,18 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		/* colorize numbers */
 		if ((ishexprefix (&p[i]) && previous != ':') \
 		     || (isdigit ((ut8)p[i]) && issymbol (previous))) {
-			int nlen = strlen (num);
+			const char *num2 = num;
+			ut64 n = r_num_get (NULL, p + i);
+			const char *name = print->offname (print->user, n)? color_flag: NULL;
+			if (name) {
+				num2 = name;
+			}
+			int nlen = strlen (num2);
 			if (nlen + j >= sizeof (o)) {
 				eprintf ("Colorize buffer is too small\n");
 				break;
 			}
-			memcpy (o + j, num, nlen + 1);
+			memcpy (o + j, num2, nlen + 1);
 			j += nlen;
 		}
 		previous = p[i];

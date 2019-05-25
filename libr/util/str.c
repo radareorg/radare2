@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -263,13 +263,6 @@ R_API const char *r_str_rwx_i(int rwx) {
 		rwx = 0;
 	}
 	return rwxstr[rwx % 24]; // 15 for srwx
-}
-
-// Returns "true" or "false" as a string given an input integer. The returned
-// value is consistant with C's definition of 0 is false, and all other values
-// are true.
-R_API const char *r_str_bool(int b) {
-	return b? "true": "false";
 }
 
 // If up is true, upcase all characters in the string, otherwise downcase all
@@ -832,8 +825,7 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 	va_end (ap);
 }
 
-// TODO: rename to prepend
-R_API char *r_str_prefix(char *ptr, const char *string) {
+R_API char *r_str_prepend(char *ptr, const char *string) {
 	int slen, plen;
 	if (!ptr) {
 		return strdup (string);
@@ -1431,7 +1423,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	if (!buf) {
 		return NULL;
 	}
-	len = strlen (buf);
+	len = buf_size < 0 ? strlen (buf) : buf_size;
 	end = buf + len;
 	/* Worst case scenario, we convert every byte to \u00hh */
 	new_buf = malloc (1 + (len * 6));
@@ -1778,7 +1770,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	const char *s, *s_start;
 	size_t r_len, str_len = 0, nr_of_lines = 0;
 	ut32 ch = 0, cw = 0;
-	if (x2 < 1 || y2 < 1 || !str) {
+	if ((x2 - x) < 1 || (y2 - y) < 1 || !str) {
 		return strdup ("");
 	}
 	s = s_start = str;
@@ -3038,8 +3030,8 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 
 // Splits the string <str> by string <c> and returns the result in a list.
 R_API RList *r_str_split_list(char *str, const char *c)  {
+	r_return_val_if_fail (str && c, NULL);
 	RList *lst = r_list_new ();
-	r_return_val_if_fail (str && c, lst);
 
 	char *aux;
 	bool first_loop = true;
@@ -3059,6 +3051,32 @@ R_API RList *r_str_split_list(char *str, const char *c)  {
 		r_list_append (lst, aux);
 	}
 
+	return lst;
+}
+
+R_API RList *r_str_split_duplist(const char *_str, const char *c)  {
+	r_return_val_if_fail (_str && c, NULL);
+	RList *lst = r_list_newf (free);
+	char *str = strdup (_str);
+
+	char *aux;
+	bool first_loop = true;
+
+	for (;;) {
+		if (first_loop) {
+			aux = strtok (str, c);
+			first_loop = false;
+		} else {
+			aux = strtok (NULL, c);
+		}
+		if (!aux) {
+			break;
+		}
+		r_str_trim (aux);
+		r_list_append (lst, strdup (aux));
+	}
+
+	free (str);
 	return lst;
 }
 
@@ -3419,3 +3437,33 @@ R_API int r_str_fmtargs(const char *fmt) {
 	}
 	return n;
 }
+
+// str-bool
+
+// Returns "true" or "false" as a string given an input integer. The returned
+// value is consistant with C's definition of 0 is false, and all other values
+// are true.
+R_API const char *r_str_bool(int b) {
+	return b? "true": "false";
+}
+
+R_API bool r_str_is_true(const char *s) {
+	return !r_str_casecmp ("yes", s) \
+		|| !r_str_casecmp ("on", s) \
+		|| !r_str_casecmp ("true", s) \
+		|| !r_str_casecmp ("1", s);
+}
+
+R_API bool r_str_is_bool(const char *val) {
+	if (!r_str_casecmp (val, "true") || !r_str_casecmp (val, "false")) {
+		return true;
+	}
+	if (!r_str_casecmp (val, "on") || !r_str_casecmp (val, "off")) {
+		return true;
+	}
+	if (!r_str_casecmp (val, "yes") || !r_str_casecmp (val, "no")) {
+		return true;
+	}
+	return false;
+}
+

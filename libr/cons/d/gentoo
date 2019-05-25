@@ -63,3 +63,6 @@ ec gui.alt_background rgb:ffffff
 ec gui.border rgb:000000
 ec wordhl rgb:ff0000
 ec linehl rgb:101010
+
+ec widget_bg cyan rgb:3030f0
+ec widget_sel yellow rgb:090

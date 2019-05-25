@@ -315,6 +315,7 @@ parse_plugins = [
 
 include_files =[
   'include/r2naked.h',
+  'include/r_agraph.h',
   'include/r_anal_ex.h',
   'include/r_anal.h',
   'include/r_asm.h',

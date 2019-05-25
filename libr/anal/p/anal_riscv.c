@@ -7,8 +7,19 @@
 #include <r_anal.h>
 #include "../../asm/arch/riscv/riscv-opc.c"
 #include "../../asm/arch/riscv/riscv.h"
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
+#define RISCVARGSMAX (8)
+#define RISCVARGSIZE (64)
+#define RISCVARGN(x) ((x)->arg[(x)->num++])
 
 static bool init = false;
+static const char * const *riscv_gpr_names = riscv_gpr_names_abi;
+static const char * const *riscv_fpr_names = riscv_fpr_names_abi;
+
+typedef struct riscv_args {
+	int num;
+	char arg[RISCVARGSMAX][RISCVARGSIZE];
+} riscv_args_t;
 
 #define is_any(...) _is_any(o->name, __VA_ARGS__, NULL)
 static bool _is_any(const char *str, ...) {
@@ -29,6 +40,11 @@ static bool _is_any(const char *str, ...) {
 	return false;
 }
 
+static void arg_p2 (char *buf, unsigned long val, const char* const* array, size_t size) {
+	const char *s = val >= size || array[val] ? array[val] : "unknown";
+	snprintf (buf, RISCVARGSIZE, "%s", s);
+}
+
 static struct riscv_opcode *get_opcode (insn_t word) {
 	struct riscv_opcode *op = NULL;
 	static const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
@@ -40,7 +56,7 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 		for (i=0;i<OP_MASK_OP+1; i++) {
 			riscv_hash[i] = 0;
 		}
-		for (op=riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
+		for (op=riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
@@ -50,8 +66,235 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
 }
 
+/* Print insn arguments for 32/64-bit code.  */
+static void get_insn_args (riscv_args_t *args, const char *d, insn_t l, uint64_t pc) {
+	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
+	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
+	uint64_t target;
+	args->num = 0;
+
+	for (; *d != '\0' && args->num < RISCVARGSMAX; d++) {
+		switch (*d) {
+			/* Xcustom */
+		case '^':
+			switch (*++d) {
+			case 'd':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", rd);
+				break;
+			case 's':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", rs1);
+				break;
+			case 't':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (RS2, l));
+				break;
+			case 'j':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (CUSTOM_IMM, l));
+				break;
+			}
+			break;
+
+		case 'C': /* RVC */
+			switch (*++d) {
+			case 's': /* RS1 x8-x15 */
+			case 'w': /* RS1 x8-x15 */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
+				  riscv_gpr_names[EXTRACT_OPERAND (CRS1S, l) + 8]);
+				break;
+			case 't': /* RS2 x8-x15 */
+			case 'x': /* RS2 x8-x15 */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
+				  riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
+				break;
+			case 'U': /* RS1, constrained to equal RD */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
+				break;
+			case 'c': /* RS1, constrained to equal sp */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[X_SP]);
+				break;
+			case 'V': /* RS2 */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
+				  riscv_gpr_names[EXTRACT_OPERAND (CRS2, l)]);
+				break;
+			case 'i':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SIMM3 (l));
+				break;
+			case 'j':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_IMM (l));
+				break;
+			case 'k':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LW_IMM (l));
+				break;
+			case 'l':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LD_IMM (l));
+				break;
+			case 'm':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LWSP_IMM (l));
+				break;
+			case 'n':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LDSP_IMM (l));
+				break;
+			case 'K':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI4SPN_IMM (l));
+				break;
+			case 'L':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI16SP_IMM (l));
+				break;
+			case 'M':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SWSP_IMM (l));
+				break;
+			case 'N':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SDSP_IMM (l));
+				break;
+			case 'p':
+				target = EXTRACT_RVC_B_IMM (l) + pc;
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64) target);
+				break;
+			case 'a':
+				target = EXTRACT_RVC_J_IMM (l) + pc;
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+				break;
+			case 'u':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x",
+				  (int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH-1)));
+				break;
+			case '>':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x3f);
+				break;
+			case '<':
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x1f);
+				break;
+			case 'T': /* floating-point RS2 */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
+				  riscv_fpr_names[EXTRACT_OPERAND (CRS2, l)]);
+				break;
+			case 'D': /* floating-point RS2 x8-x15 */
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
+				  riscv_fpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
+				break;
+			}
+			break;
+
+		case ',':
+		case '(':
+		case ')':
+		case '[':
+		case ']':
+			break;
+		case '0':
+			/* Only print constant 0 if it is the last argument */
+			if (!d[1]) {
+				snprintf (RISCVARGN(args), RISCVARGSIZE , "0");
+			}
+			break;
+
+		case 'b':
+		case 's':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rs1]);
+			break;
+
+		case 't':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
+			  riscv_gpr_names[EXTRACT_OPERAND (RS2, l)]);
+			break;
+
+		case 'u':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x",
+			  (unsigned) EXTRACT_UTYPE_IMM (l) >> RISCV_IMM_BITS);
+			break;
+
+		case 'm':
+			arg_p2 (RISCVARGN(args), EXTRACT_OPERAND (RM, l),
+			  riscv_rm, ARRAY_SIZE (riscv_rm));
+			break;
+
+		case 'P':
+			arg_p2 (RISCVARGN(args), EXTRACT_OPERAND (PRED, l),
+			  riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
+			break;
+
+		case 'Q':
+			arg_p2 (RISCVARGN(args), EXTRACT_OPERAND (SUCC, l),
+			  riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
+			break;
+		case 'o':
+		case 'j':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_ITYPE_IMM (l));
+			break;
+		case 'q':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_STYPE_IMM (l));
+			break;
+		case 'a':
+			target = EXTRACT_UJTYPE_IMM (l) + pc;
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+			break;
+		case 'p':
+			target = EXTRACT_SBTYPE_IMM (l) + pc;
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+			break;
+		case 'd':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
+			break;
+		case 'z':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[0]);
+			break;
+		case '>':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMT, l));
+			break;
+		case '<':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMTW, l));
+			break;
+		case 'S':
+		case 'U':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[rs1]);
+			break;
+		case 'T':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS2, l)]);
+			break;
+		case 'D':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[rd]);
+			break;
+		case 'R':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS3, l)]);
+			break;
+		case 'E':
+			{
+				const char* csr_name = NULL;
+				unsigned int csr = EXTRACT_OPERAND (CSR, l);
+				switch (csr)
+				 {
+#define DECLARE_CSR(name, num) case num: csr_name = #name; break;
+#include "../../asm/arch/riscv/riscv-opc.h"
+#undef DECLARE_CSR
+				 }
+				if (csr_name) {
+					snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", csr_name);
+				} else {
+					snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", csr);
+				}
+				break;
+			}
+		case 'Z':
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", rs1);
+			break;
+		default:
+			/* xgettext:c-format */
+			snprintf (RISCVARGN(args), RISCVARGSIZE , "# internal error, undefined modifier (%c)",
+			  *d);
+			return;
+		}
+	}
+}
+
+static const char* arg_n(riscv_args_t* args, int n) {
+	if (n >= args->num || !strcmp (args->arg[n], "zero")) {
+		return "0";
+	}
+	return args->arg[n];
+}
+
 static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const int no_alias = 1;
+	riscv_args_t args = {0};
 	struct riscv_opcode *o = NULL;
 	ut64 word = 0;
 	int xlen = anal->bits;
@@ -78,21 +321,181 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return op->size;
 	}
 
-	for (; o < &riscv_opcodes[NUMOPCODES]; o++) {
-		// XXX ASAN segfault if ( !(o->match_func)(o, word) ) continue;
+	for (; o <= &riscv_opcodes[NUMOPCODES - 1]; o++) {
 		if (no_alias && (o->pinfo & INSN_ALIAS)) {
 			continue;
 		}
 		if (isdigit ((ut8)(o->subset[0])) && atoi (o->subset) != xlen) {
 			continue;
-		} else {
-			break;
 		}
+		if (o->match_func && !(o->match_func)(o, word)) {
+			continue;
+		}
+		break;
 	}
 
-	if (!o || !o->name) {
+	if (o > &riscv_opcodes[NUMOPCODES - 1]) {
 		return -1;
 	}
+
+	if (o->args) {
+		const char* name = o->name;
+		if (o->name[0] == 'c' && o->name[1] == '.') {
+			name += 2;
+		}
+#define ARG(x) (arg_n (&args, (x)))
+		get_insn_args (&args, o->args, word, addr);
+		if (!strcmp (name, "nop")) {
+			esilprintf (op, ",");
+		}
+		// math
+		else if (!strncmp (name, "addi16sp", 8)) {
+			esilprintf (op, "%s,sp,+,%s,=", ARG (1), ARG (0));
+		} else if (!strncmp (name, "add", 3)) {
+			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "sub", 3)) {
+			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "mul", 3)) {
+			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "div", 3)) {
+			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "rem", 3)) {
+			esilprintf (op, "%s,%s,%%,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "xor", 3)) {
+			esilprintf (op, "%s,%s,^,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "or", 2)) {
+			esilprintf (op, "%s,%s,|,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "and", 3)) {
+			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "auipc")) {
+			esilprintf (op, "%s,pc,+,%s,=", ARG (1), ARG (0));
+		} else if (!strncmp (name, "sll", 3)) {
+			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "srl", 3)) {
+			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "sra", 3)) {
+			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+		}
+		// assigns
+		else if (!strcmp (name, "mv")) {
+			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
+		} else if (!strcmp (name, "li")) {
+			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
+		} else if (!strcmp (name, "lui")) {
+			esilprintf (op, "%s0000,%s,=", ARG (1), ARG (0));
+		}
+		// csr instrs
+		// <csr op> rd, rs1, CSR
+		else if (!strncmp (name, "csrrw", 5)) {
+			// Writes rs1 into CSR, places the old value in rd
+			esilprintf (op, "%s,0,+,%s,%s,=,%s,=", ARG (1), ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "csrrs", 5)) {
+			// Ors rs1 with CSR, places old value in rd
+			esilprintf (op, "%s,0,+,%s,%s,|=,%s,=", ARG (1), ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "csrrc", 5)) {
+			// Ands the inverse of rs1 with CSR, places old value in rd
+			esilprintf (op, "%s,0,+,%s,1,+,0,-,%s,&=,%s,=", ARG (1), ARG (1), ARG (2), ARG (0));
+		}
+		// stores
+		else if (!strcmp (name, "sd") || !strcmp (name, "sdsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[8]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "sw") || !strcmp (name, "swsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[4]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "sh") || !strcmp (name, "shsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[2]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "sb") || !strcmp (name, "sbsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[1]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "fsq") || !strcmp (name, "fsqsp")) {
+			esilprintf (op, "%s,%s,+,[16],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "fsd") || !strcmp (name, "fsdsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[8]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "fsw") || !strcmp (name, "fswsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[4]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "fsh") || !strcmp (name, "fshsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[2]", ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "fsb") || !strcmp (name, "fsbsp")) {
+			esilprintf (op, "%s,%s,%s,+,=[1]", ARG (0), ARG (2), ARG (1));
+		}
+		// loads
+		else if (!strcmp (name, "ld") || !strcmp (name, "ldsp")) {
+			esilprintf (op, "%s,%s,+,[8],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "lw") || !strcmp (name, "lwu") || !strcmp (name, "lwsp")) {
+			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "lh") || !strcmp (name, "lhu") || !strcmp (name, "lhsp")) {
+			esilprintf (op, "%s,%s,+,[2],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "lb") || !strcmp (name, "lbu") || !strcmp (name, "lbsp")) {
+			esilprintf (op, "%s,%s,+,[1],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "flq") || !strcmp (name, "flqsp")) {
+			esilprintf (op, "%s,%s,+,[16],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "fld") || !strcmp (name, "fldsp")) {
+			esilprintf (op, "%s,%s,+,[8],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "flw") || !strcmp (name, "flwsp")) {
+			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "flh") || !strcmp (name, "flhsp")) {
+			esilprintf (op, "%s,%s,+,[2],%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "flb") || !strcmp (name, "flbsp")) {
+			esilprintf (op, "%s,%s,+,[1],%s,=", ARG (2), ARG (1), ARG (0));
+		}
+		// jumps
+		else if (!strcmp (name, "jalr")) {
+			esilprintf (op, "%d,pc,+,%s,=,%s,%s,+,pc,=", op->size, ARG (0), ARG (2), ARG (1));
+		} else if (!strcmp (name, "jal")) {
+			esilprintf (op, "%d,pc,+,%s,=,%s,pc,+,pc,=", op->size, ARG (0), ARG (1));
+		} else if (!strcmp (name, "jr") || !strcmp (name, "j")) {
+			esilprintf (op, "%s,pc,=", ARG (0));
+		} else if (!strcmp (name, "ecall") || !strcmp (name, "ebreak")) {
+			esilprintf (op, "TRAP", ARG (0));
+		}
+		// Branches & cmps
+		else if (!strcmp (name, "beq")) {
+			esilprintf (op, "%s,%s,==,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+		} else if (!strcmp (name, "bne")) {
+			esilprintf (op, "%s,%s,!=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+		} else if (!strcmp (name, "ble") || !strcmp (name, "bleu")) {
+			esilprintf (op, "%s,%s,<=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+		} else if (!strcmp (name, "blt") || !strcmp (name, "bltu")) {
+			esilprintf (op, "%s,%s,<,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+		} else if (!strcmp (name, "bge") || !strcmp (name, "bgeu")) {
+			esilprintf (op, "%s,%s,>=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+		} else if (!strcmp (name, "bgt") || !strcmp (name, "bgtu")) {
+			esilprintf (op, "%s,%s,>,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+		} else if (!strcmp (name, "beqz")) {
+			esilprintf (op, "%s,0,==,?{,%s,pc,=,},", ARG (0), ARG (1));
+		} else if (!strcmp (name, "bnez")) {
+			esilprintf (op, "%s,0,!=,?{,%s,pc,=,},", ARG (0), ARG (1));
+		} else if (!strcmp (name, "blez")) {
+			esilprintf (op, "%s,0,<=,?{,%s,pc,=,},", ARG (0), ARG (1));
+		} else if (!strcmp (name, "bltz")) {
+			esilprintf (op, "%s,0,<,?{,%s,pc,=,},", ARG (0), ARG (1));
+		} else if (!strcmp (name, "bgez")) {
+			esilprintf (op, "%s,0,>=,?{,%s,pc,=,},", ARG (0), ARG (1));
+		} else if (!strcmp (name, "bgtz")) {
+			esilprintf (op, "%s,0,>,?{,%s,pc,=,},", ARG (0), ARG (1));
+		} else if (!strncmp (name, "seq", 3)) {
+			esilprintf (op, "%s,%s,==,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "sne", 3)) {
+			esilprintf (op, "%s,%s,!=,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "sle", 3)) {
+			esilprintf (op, "%s,%s,<=,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "slt", 3)) {
+			esilprintf (op, "%s,%s,<,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "sge", 3)) {
+			esilprintf (op, "%s,%s,>=,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strncmp (name, "sgt", 3)) {
+			esilprintf (op, "%s,%s,>,%s,=", ARG (2), ARG (1), ARG (0));
+		}
+		// debug
+		//else if (strcmp (name, "unimp") != 0 && name[0] != 'f' && name[1] != 'm') {
+		//	int i;
+		//	eprintf("[esil] missing risc v esil: %s", name);
+		//	for (i = 0; i < args.num; ++i) {
+		//		eprintf(" %s", ARG(i));
+		//	}
+		//	eprintf("\n");
+		//}
+#undef ARG
+	}
+
 // branch/jumps/calls/rets
 	if (is_any ("jal")) {
 		// decide wether it's ret or call

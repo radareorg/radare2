@@ -1257,15 +1257,16 @@ static int cmd_write(void *data, const char *input) {
 					poff = map ? poff - map->itv.addr + map->delta : poff;
 					str++;
 				}
-				if (*str == 'f') {
+				if (*str == 'f') { // "wtff"
 					if (str[1] == '?') {
 						r_core_cmd_help (core, help_msg_wt);
 						return 0;
 					}
-					const char *prefix = r_str_trim_ro (str + 1);
+					const char *prefix = r_str_trim_ro (str + 2);
 					if (!*prefix) {
 						prefix = "dump";
 					}
+					str++;
 					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
 					if (*str) {
@@ -1304,6 +1305,9 @@ static int cmd_write(void *data, const char *input) {
 			if (tmp) {
 				if (toend) {
 					sz = r_io_fd_size (core->io, core->file->fd) - core->offset;
+					if (sz < 0) {
+						eprintf ("Warning: File size is unknown.");
+					}
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					*tmp = 0;
@@ -1317,6 +1321,9 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				if (toend) {
 					sz = r_io_fd_size (core->io, core->file->fd);
+					if (sz < 0) {
+						eprintf ("Warning: File size is unknown.");
+					}
 					if (sz != -1 && core->offset <= sz) {
 						sz -= core->offset;
 						if (!r_core_dump (core, filename, core->offset, (ut64)sz, append)) {
@@ -1455,21 +1462,25 @@ static int cmd_write(void *data, const char *input) {
 					r_anal_op_fini (&analop);
 					r_core_cmd0 (core, "wao nop");
 				}
-				char* hex = r_asm_code_get_hex (acode);
-				if (input[1] == '*') {
-					cmd_write_hexpair (core, hex);
-				} else {
-					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
-						cmd_write_fail ();
+				if (acode->len > 0) {
+					char* hex = r_asm_code_get_hex (acode);
+					if (input[1] == '*') {
+						r_cons_printf ("wx %s\n", hex);
 					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
+						if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
+							cmd_write_fail ();
+						} else {
+							if (r_config_get_i (core->config, "scr.prompt")) {
+								eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, hex);
+							}
+							WSEEK (core, acode->len);
 						}
-						WSEEK (core, acode->len);
+						r_core_block_read (core);
 					}
-					r_core_block_read (core);
+					free (hex);
+				} else {
+					eprintf ("Nothing to do.\n");
 				}
-				free (hex);
 				r_asm_code_free (acode);
 			}
 		}

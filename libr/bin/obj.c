@@ -48,6 +48,7 @@ static void object_delete_items(RBinObject *o) {
 	ht_up_free (o->strings_db);
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
+	ht_pp_free (o->classes_ht);
 	r_list_free (o->lines);
 	sdb_free (o->kv);
 	if (o->mem) {
@@ -244,6 +245,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 
 static void filter_classes(RBinFile *bf, RList *list) {
 	Sdb *db = sdb_new0 ();
+	HtPP *ht = ht_pp_new0 ();
 	RListIter *iter, *iter2;
 	RBinClass *cls;
 	RBinSymbol *sym;
@@ -264,7 +266,7 @@ static void filter_classes(RBinFile *bf, RList *list) {
 			cls->name = namepad;
 			r_list_foreach (cls->methods, iter2, sym) {
 				if (sym->name) {
-					r_bin_filter_sym (bf, db, sym->vaddr, sym);
+					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 				}
 			}
 		} else {
@@ -272,6 +274,7 @@ static void filter_classes(RBinFile *bf, RList *list) {
 		}
 	}
 	sdb_free (db);
+	ht_pp_free (ht);
 }
 
 static RBNode *list2rbtree(RList *relocs) {

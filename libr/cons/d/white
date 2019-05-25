@@ -54,3 +54,6 @@ ec ai.write magenta
 ec ai.exec blue
 ec ai.seq black
 ec ai.ascii black
+
+ec widget_bg blue white
+ec widget_sel black yellow

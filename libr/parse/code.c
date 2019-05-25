@@ -92,7 +92,7 @@ static void error_func(void *opaque, const char *msg) {
 	}
 }
 
-R_API char *r_parse_c_file(RAnal *anal, const char *path, char **error_msg) {
+R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
@@ -101,7 +101,7 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, char **error_msg) {
 	tcc_set_callback (T, &appendstring, &str);
 	tcc_set_error_func (T, (void *)error_msg, error_func);
 	sdb_foreach (anal->sdb_types, typeload, anal);
-	if (tcc_add_file (T, path) == -1) {
+	if (tcc_add_file (T, path, dir) == -1) {
 		free (str);
 		str = NULL;
 	}

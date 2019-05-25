@@ -40,9 +40,9 @@ ifeq ($(WITHPIC),1)
 endif
 
 ios_sign ios-sign ios-sdk-sign:
-	-for a in $(BINS) ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2.xml $$a ; done
-	-for a in ../libr/*/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2.xml $$a ; done
-	-for a in ../libr/*/p/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2.xml $$a ; done
+	-for a in $(BINS) ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2_ios.xml $$a ; done
+	-for a in ../libr/*/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2_ios.xml $$a ; done
+	-for a in ../libr/*/p/*.${EXT_SO} ; do xcrun --sdk iphoneos codesign -s- --entitlements radare2/radare2_ios.xml $$a ; done
 
 symstall install-symlink:
 	cd .. && \

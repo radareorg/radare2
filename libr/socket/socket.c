@@ -23,12 +23,6 @@ R_API RSocket *r_socket_new (int is_ssl) {
 R_API bool r_socket_is_connected (RSocket *s) {
 	return false;
 }
-static int r_socket_unix_connect(RSocket *s, const char *file) {
-	return -1;
-}
-R_API int r_socket_unix_listen (RSocket *s, const char *file) {
-	return -1;
-}
 R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	return false;
 }
@@ -121,7 +115,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 }
 
 #if __UNIX__
-static int r_socket_unix_connect(RSocket *s, const char *file) {
+static bool __connect_unix(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -142,7 +136,7 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 	return true;
 }
 
-R_API int r_socket_unix_listen (RSocket *s, const char *file) {
+static bool __listen_unix (RSocket *s, const char *file) {
 	struct sockaddr_un unix_name;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -258,6 +252,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 }
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+	r_return_val_if_fail (s, false);
 #if __WINDOWS__
 	struct sockaddr_in sa;
 	struct hostent *he;
@@ -284,7 +279,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	if (iResult != NO_ERROR) {
 		eprintf ("ioctlsocket error: %d\n", iResult);
 	}
-	memset (&sa, 0, sizeof(sa));
+	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
 	he = (struct hostent *)gethostbyname (host);
 	if (he == (struct hostent*)0) {
@@ -297,6 +292,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	}
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	s->port = r_socket_port_by_name (port);
+	s->proto = proto;
 	sa.sin_port = htons (s->port);
 	if (!connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 #ifdef _MSC_VER
@@ -333,7 +329,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	}
 	signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
-		if (!r_socket_unix_connect (s, host)) {
+		if (!__connect_unix (s, host)) {
 			return false;
 		}
 	} else {
@@ -341,7 +337,8 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		hints.ai_protocol = proto;
 		int gai = getaddrinfo (host, port, &hints, &res);
 		if (gai != 0) {
-			eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
+			eprintf ("r_socket_connect: Error in getaddrinfo: %s (%s:%s)\n",
+				gai_strerror (gai), host, port);
 			return false;
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next) {
@@ -455,6 +452,7 @@ R_API int r_socket_close(RSocket *s) {
 #else
 		ret = close (s->fd);
 #endif
+		s->fd = -1;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -491,6 +489,13 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
+
+	if (s->proto == R_SOCKET_PROTO_UNIX) {
+#if __UNIX__
+		return __listen_unix (s, port);
+#endif
+		return false;
+	}
 
 	if (r_sandbox_enable (0)) {
 		return false;
@@ -802,7 +807,9 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 rep:
 	{
 	int ret = recv (s->fd, (void *)buf, len, 0);
-	if (ret == -1) goto rep;
+	if (ret == -1) {
+		goto rep;
+	}
 	return ret;
 	}
 #else

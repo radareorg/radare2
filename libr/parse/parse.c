@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -80,7 +80,7 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 			}
 			if (s) {
 				str = s + 1;
-				o = o + strlen (data);
+				o += strlen (data);
 				o[0] = '\n';
 				o[1] = '\0';
 				o++;
@@ -91,8 +91,10 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 	return ret;
 }
 
+// parse 'data' and generate pseudocode disassemble in 'str'
+// TODO: refactooring, this should return char * instead
 R_API int r_parse_parse(RParse *p, const char *data, char *str) {
-	if (p->cur && p->cur->parse) {
+	if (p && data && *data && p->cur && p->cur->parse) {
 		return p->cur->parse (p, data, str);
 	}
 	return false;
@@ -225,7 +227,7 @@ static void replaceRegisters (RReg *reg, char *s, bool x86) {
 	}
 }
 
-static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian) {
+static int filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
@@ -252,9 +254,9 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 	replaceWords (ptr, "qword ", src);
 #endif
 	if (p->regsub) {
-		replaceRegisters (p->anal->reg, ptr, false);
+		replaceRegisters (p->analb.anal->reg, ptr, false);
 		if (x86) {
-			replaceRegisters (p->anal->reg, ptr, true);
+			replaceRegisters (p->analb.anal->reg, ptr, true);
 		}
 	}
 	ptr2 = NULL;
@@ -274,7 +276,7 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 		}
 		off = r_num_math (NULL, ptr);
 		if (off >= p->minval) {
-			fcn = p->analb.get_fcn_in (p->anal, off, 0);
+			fcn = p->analb.get_fcn_in (p->analb.anal, off, 0);
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;
 				// hack to realign pointer for colours
@@ -324,8 +326,36 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 						}
 					}
 					*ptr = 0;
-					snprintf (str, len, "%s%s%s", data, f->realnames? flag->realname : flag->name,
-							(ptr != ptr2) ? ptr2 : "");
+					char *flagname = strdup (f->realnames? flag->realname : flag->name);
+					int maxflagname = p->maxflagnamelen;
+					if (maxflagname > 0 && strlen (flagname) > maxflagname) {
+						char *doublelower = (char *)r_str_rstr (flagname, "__");
+						char *doublecolon = (char *)r_str_rstr (flagname, "::");
+						char *token = NULL;
+						if (doublelower && doublecolon) {
+							token = R_MAX (doublelower, doublecolon);
+						} else {
+							token = doublelower? doublelower: doublecolon;
+						}
+						if (token) {
+							const char *mod = doublecolon? "(cxx)": "(...)";
+							char *newstr = r_str_newf ("%s%s", mod, token);
+							free (flagname);
+							flagname = newstr;
+						} else {
+							const char *lower = r_str_rstr (flagname, "_");
+							char *newstr;
+							if (lower) {
+								newstr = r_str_newf ("..%s", lower + 1);
+							} else {
+								newstr = r_str_newf ("..%s", flagname + (strlen (flagname) - maxflagname));
+							}
+							free (flagname);
+							flagname = newstr;
+						}
+					}
+					snprintf (str, len, "%s%s%s", data, flagname, (ptr != ptr2) ? ptr2 : "");
+					free (flagname);
 					bool banned = false;
 					{
 						const char *p = strchr (str, '[');
@@ -410,19 +440,19 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 				}
 			}
 		}
-		if (p->hint) {
-			const int nw = p->hint->nword;
+		if (hint) {
+			const int nw = hint->nword;
 			if (count != nw) {
 				ptr = ptr2;
 				continue;
 			}
-			int pnumleft, immbase = p->hint->immbase;
+			int pnumleft, immbase = hint->immbase;
 			char num[256] = {0}, *pnum, *tmp;
 			bool is_hex = false;
 			int tmp_count;
-			if (p->hint->offset) {
+			if (hint->offset) {
 				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, p->hint->offset, (ptr != ptr2)? ptr2: "");
+				snprintf (str, len, "%s%s%s", data, hint->offset, (ptr != ptr2)? ptr2: "");
 				return true;
 			}
 			strncpy (num, ptr, sizeof (num)-2);
@@ -535,9 +565,9 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 				}
 				break;
 			case 80:
-				if (p && p->anal && p->anal->syscall) {
+				if (p && p->analb.anal && p->analb.anal->syscall) {
 					RSyscallItem *si;
-					si = r_syscall_get (p->anal->syscall, off, -1);
+					si = r_syscall_get (p->analb.anal->syscall, off, -1);
 					if (si) {
 						snprintf (num, sizeof (num), "%s()", si->name);
 					} else {
@@ -591,12 +621,26 @@ R_API char *r_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
-R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len, bool big_endian) {
-	filter (p, addr, f, data, str, len, big_endian);
+/// filter the opcode in data into str by following the flags and hints information
+// XXX this function have too many parameters, we need to simplify this
+R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, addr, f, data, str, len, big_endian);
 	}
 	return false;
+}
+
+R_API char *r_parse_new_filter(RParse *p, ut64 addr, const char *opstr) {
+#if 0
+	RAnalHint *hint = p->analb.get_hint (p->analb.anal, addr);
+	RFlag *f = NULL;
+	filter (p, addr, f, hint, data, str, len, big_endian);
+	if (p->cur && p->cur->filter) {
+		return p->cur->filter (p, addr, f, data, str, len, big_endian);
+	}
+#endif
+	return NULL;
 }
 
 R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {

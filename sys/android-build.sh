@@ -34,7 +34,7 @@ case "$1" in
 #	FLAGS="-mlong-calls"
 #	export LDFLAGS="-fuse-ld=gold"
 	;;
-"arm")
+arm)
 	NDK_ARCH=arm
 	STATIC_BUILD=0
 	STRIP=arm-eabi-strip
@@ -44,10 +44,20 @@ arm64|aarch64)
 	STATIC_BUILD=0
 	STRIP=aarch64-linux-android-strip
 	;;
-"x86")
+x64|x86_64)
+	NDK_ARCH=x86_64
+	export NDK_ARCH
+	STATIC_BUILD=0
+	STRIP=strip
+	;;
+x86)
 	NDK_ARCH=x86
 	STATIC_BUILD=0
 	STRIP=strip
+	;;
+x64-static|static-x64)
+	NDK_ARCH=x86
+	STATIC_BUILD=1
 	;;
 arm64-static|static-arm64)
 	NDK_ARCH=arm64
@@ -79,7 +89,7 @@ local)
 	NDK_ARCH=local
 	;;
 ""|"-h")
-	echo "Usage: android-build.sh [local|arm|arm64|x86|mips|mips64][-static]"
+	echo "Usage: android-build.sh [local|arm|arm64|x86|x64|mips|mips64][-static]"
 	exit 1
 	;;
 *)
