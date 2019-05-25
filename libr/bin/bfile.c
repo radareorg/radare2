@@ -633,36 +633,36 @@ R_API bool r_bin_file_deref(RBin *bin, RBinFile *a) {
 	return res;
 }
 
-R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
-	if (!bf_) {
+R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
+	if (!_bf) {
 		return;
 	}
-	RBinFile *a = bf_;
-	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+	RBinFile *bf = _bf;
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	// Binary format objects are connected to the
 	// RBinObject, so the plugin must destroy the
 	// format data first
 	if (plugin && plugin->destroy) {
-		plugin->destroy (a);
+		plugin->destroy (bf);
 	}
-	r_buf_free (a->buf);
-	if (a->curxtr && a->curxtr->destroy && a->xtr_obj) {
-		a->curxtr->free_xtr ((void *)(a->xtr_obj));
+	r_buf_free (bf->buf);
+	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
+		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
 	// TODO: unset related sdb namespaces
-	if (a && a->sdb_addrinfo) {
-		sdb_free (a->sdb_addrinfo);
-		a->sdb_addrinfo = NULL;
+	if (bf->sdb_addrinfo) {
+		sdb_free (bf->sdb_addrinfo);
+		bf->sdb_addrinfo = NULL;
 	}
-	free (a->file);
-	a->o = NULL;
-	r_list_free (a->objs);
-	r_list_free (a->xtr_data);
-	if (a->id != -1) {
+	free (bf->file);
+	bf->o = NULL;
+	r_list_free (bf->objs);
+	r_list_free (bf->xtr_data);
+	if (bf->id != -1) {
 		// TODO: use r_storage api
-		r_id_pool_kick_id (a->rbin->ids->pool, a->id);
+		r_id_pool_kick_id (bf->rbin->ids->pool, bf->id);
 	}
-	free (a);
+	free (bf);
 }
 
 R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {

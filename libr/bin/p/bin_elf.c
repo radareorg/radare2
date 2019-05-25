@@ -12,9 +12,9 @@ static void headers32(RBinFile *bf) {
 }
 
 static bool check_buffer(RBuffer *buf) {
-	ut8 b[SELFMAG] = {0};
+	ut8 b[5] = {0};
 	r_buf_read_at (buf, 0, b, sizeof (b));
-	return !memcmp (b, ELFMAG, SELFMAG);
+	return !memcmp (b, ELFMAG, SELFMAG) && b[4] != 2;
 }
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;

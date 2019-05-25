@@ -8,7 +8,7 @@ static bool check_buffer(RBuffer *b) {
 	ut8 buf[5] = {0};
 	if (r_buf_size (b) > 4) {
 		r_buf_read_at (b, 0, buf, sizeof (buf));
-		if (!memcmp (b, "\x7F\x45\x4c\x46\x02", 5)) {
+		if (!memcmp (buf, "\x7F\x45\x4c\x46\x02", 5)) {
 			return true;
 		}
 	}
@@ -121,9 +121,9 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.desc = "elf64 bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
+	.check_buffer = &check_buffer,
 	.load_buffer= &load_buffer,
 	.destroy = &destroy,
-	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
