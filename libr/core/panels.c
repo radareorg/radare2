@@ -259,7 +259,7 @@ static bool checkPanelNum(RCore *core);
 static bool checkFunc(RCore *core);
 static bool checkFuncDiff(RCore *core, RPanel *p);
 static bool findCmdStrCache(RCore *core, RPanel *panel, char **str);
-static bool exec_almighty(RCore *core, RPanel *panel, int idx, char **title, char **cmd);
+static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, char **title, char **cmd);
 static char *handleCmdStrCache(RCore *core, RPanel *panel);
 static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
@@ -402,7 +402,7 @@ static bool moveToDirection(RCore *core, Direction direction);
 static void toggleHelp(RCore *core);
 static void createDefaultPanels(RCore *core);
 static void createNewPanel(RCore *core, bool vertical);
-static void create_widget(RCore *core, RPanel *panel, int *idx, int *offset);
+static void create_widget(RCore *core, int *idx, int *offset);
 static void create_almighty(RCore *core, RPanel *panel);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
@@ -4255,11 +4255,16 @@ static void createNewPanel(RCore *core, bool vertical) {
 	free (res);
 }
 
-static void create_widget(RCore *core, RPanel *panel, int *idx, int *offset) {
+static void create_widget(RCore *core, int *idx, int *offset) {
 	const int WIDGET_WIDTH = 30;
 	const int WIDGET_HEIGHT = 20;
 	RPanels *panels = core->panels;
-	int count = sdb_count (panels->db) + 2;
+	const char *sub[] = {
+		"Add the current panel", "Create New",
+		NULL
+	};
+	int sub_count = COUNT (sub);
+	int count = sdb_count (panels->db) + sub_count;
 	if (*idx >= count) {
 		*idx = 0;
 		*offset = 0;
@@ -4301,18 +4306,22 @@ static void create_widget(RCore *core, RPanel *panel, int *idx, int *offset) {
 		r_strbuf_append (buf, "          \n");
 		i++;
 	}
-	if (i++ == *idx) {
-		r_strbuf_appendf (buf, ">  %sAdd the current panel"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
-	} else {
-		r_strbuf_append (buf, "   Add the current panel");
+	const int prev = i;
+	for (i = 0; i < sub_count; i++) {
+		if (i + prev < *offset) {
+			i++;
+			continue;
+		}
+		if (i + prev >= max_h) {
+			break;
+		}
+		if (i + prev == *idx) {
+			r_strbuf_appendf (buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, sub[i]);
+		} else {
+			r_strbuf_appendf (buf, "   %s", sub[i]);
+		}
+		r_strbuf_append (buf, "          \n");
 	}
-	r_strbuf_append (buf, "          \n");
-	if (i == *idx) {
-		r_strbuf_appendf (buf, ">  %sCreate New"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
-	} else {
-		r_strbuf_append (buf, "   Create New");
-	}
-	r_strbuf_append (buf, "          \n");
 	RConsCanvas *can = panels->can;
 	int x, y;
 	x = (can->w - WIDGET_WIDTH) / 2;
@@ -4330,7 +4339,7 @@ static void create_widget(RCore *core, RPanel *panel, int *idx, int *offset) {
 
 static void create_almighty(RCore *core, RPanel *panel) {
 	int idx = 0, offset = 0, okey, key;
-	create_widget (core, panel, &idx, &offset);
+	create_widget (core, &idx, &offset);
 	char *title;
 	char *cmd;
 	while (true) {
@@ -4339,42 +4348,46 @@ static void create_almighty(RCore *core, RPanel *panel) {
 		switch (key) {
 		case 'j':
 			idx++;
-			create_widget (core, panel, &idx, &offset);
+			create_widget (core, &idx, &offset);
+			r_sys_usleep (25000);
+			r_cons_readflush ();
 			break;
 		case 'k':
 			idx--;
-			create_widget (core, panel, &idx, &offset);
+			create_widget (core, &idx, &offset);
+			r_sys_usleep (25000);
+			r_cons_readflush ();
 			break;
 		case 'v':
-			if (exec_almighty (core, panel, idx, &title, &cmd)) {
+			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
 				splitPanelVertical (core, panel, title, cmd, false);
 				return;
 			}
-			create_widget (core, panel, &idx, &offset);
+			create_widget (core, &idx, &offset);
 			break;
 		case 'h':
-			if (exec_almighty (core, panel, idx, &title, &cmd)) {
+			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
 				splitPanelHorizontal (core, panel, title, cmd, false);
 				return;
 			}
-			create_widget (core, panel, &idx, &offset);
+			create_widget (core, &idx, &offset);
 			break;
 		case 0x0d:
-			if (exec_almighty (core, panel, idx, &title, &cmd)) {
+			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
 				replaceCmd (core, title, cmd, false);
 				return;
 			}
-			create_widget (core, panel, &idx, &offset);
+			create_widget (core, &idx, &offset);
 		case '-':
 			{
 				int count = sdb_count (core->panels->db) + 2;
 				int last =  count - 1;
 				if (idx != last && idx != last - 1) {
-					if (exec_almighty (core, panel, idx, &title, &cmd)) {
+					if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
 						sdb_set (core->panels->del_db, title, cmd, 0);
 						sdb_remove (core->panels->db, title, 0);
 					}
-					create_widget (core, panel, &idx, &offset);
+					create_widget (core, &idx, &offset);
 				}
 			}
 			break;
@@ -4386,28 +4399,30 @@ static void create_almighty(RCore *core, RPanel *panel) {
 	}
 }
 
-static bool exec_almighty(RCore *core, RPanel *panel, int idx, char **title, char **cmd) {
+static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, char **title, char **cmd) {
 	SdbList *l = sdb_foreach_list (core->panels->db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
 	int i = 0;
 	ls_foreach (l, iter, kv) {
-		if (i++ == idx) {
+		if (i++ == *idx) {
 			*title = sdbkv_key (kv);
 			*cmd = sdbkv_value (kv);
 			return true;
 		}
 	}
-	if (i++ == idx) {
+	if (i++ == *idx) {
+		*idx += 1;
+		*offset += 1;
 		*title = show_status_input (core, "Name: ");
-		*cmd = panel->model->cmd;
-		sdb_set (core->panels->db, *title, *cmd, 0);
+		*cmd = r_str_new (panel->model->cmd);
+		sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
 		return false;
 	}
-	if (i == idx) {
+	if (i == *idx) {
 		*title = show_status_input (core, "New name: ");
 		*cmd = show_status_input (core, "New command: ");
-		sdb_set (core->panels->db, *title, *cmd, 0);
+		sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
 		return true;
 	}
 	return false;
@@ -5021,7 +5036,6 @@ repeat:
 	case '"':
 		r_cons_switchbuf (false);
 		create_almighty (core, cur);
-		r_cons_switchbuf (true);
 		break;
 	case 'n':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
