@@ -1,3 +1,5 @@
+#include "windows_maps.h"
+#include "../w32.h"
 
 typedef struct {
 	RDebugMap *map;
@@ -73,7 +75,7 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 	return add_map (list, name, (ut64)(size_t)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
 }
 
-static RList *w32_dbg_modules(RDebug *dbg) {
+R_API RList *w32_dbg_modules(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
 	RList *list = r_list_new ();
@@ -232,7 +234,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 	}
 }
 
-static RList *w32_dbg_maps(RDebug *dbg) {
+R_API RList *w32_dbg_maps(RDebug *dbg) {
 	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;

@@ -27,6 +27,45 @@ static char *getexe(const char *str) {
 	return argv0;
 }
 
+R_API ut32 r_sys_get_winver() {
+	HKEY key;
+	DWORD type;
+	DWORD size;
+	DWORD major;
+	DWORD minor;
+	ut32 version = 0;
+	char release[25];
+	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
+		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
+		r_sys_perror ("r_sys_get_winver/RegOpenKeyExA");
+		return 0;
+	}
+	size = sizeof (major);
+	if (RegQueryValueExA (key, "CurrentMajorVersionNumber", NULL, &type,
+		(LPBYTE)&major, &size) != ERROR_SUCCESS
+		|| type != REG_DWORD) {
+		goto beach;
+	}
+	version += major * 1000000;
+	size = sizeof (minor);
+	if (RegQueryValueExA (key, "CurrentMinorVersionNumber", NULL, &type,
+		(LPBYTE)&minor, &size) != ERROR_SUCCESS
+		|| type != REG_DWORD) {
+		goto beach;
+	}
+	version += minor * 100000;
+	size = sizeof (release);
+	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
+		(LPBYTE)release, &size) != ERROR_SUCCESS
+		|| type != REG_SZ) {
+		goto beach;
+	}
+	version += atoi (release);
+beach:
+	RegCloseKey (key);
+	return version;
+}
+
 R_API int r_sys_get_src_dir_w32(char *buf) {
 	int i = 0;
 	TCHAR fullpath[MAX_PATH + 1];

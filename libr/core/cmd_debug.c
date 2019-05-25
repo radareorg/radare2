@@ -1430,6 +1430,10 @@ beach:
 static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input);
 static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input);
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+#if __WINDOWS__
+static int cmd_debug_map_heap_win(RCore *core, const char *input);
+#endif // __WINDOWS__
+
 
 static ut64 addroflib(RCore *core, const char *libname) {
 	RListIter *iter;
@@ -1493,8 +1497,12 @@ static int r_debug_heap(RCore *core, const char *input) {
 		}
 #endif
 	} else {
+#if __WINDOWS__
+		cmd_debug_map_heap_win(core, input + 1);
+#else
 		eprintf ("MALLOC algorithm not supported\n");
 		return false;
+#endif
 	}
 	return true;
 }
@@ -1837,6 +1845,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "linux_heap_glibc.c"
+#elif __WINDOWS__
+#include "windows_heap.c"
 #endif
 
 // move into basic_types.h
