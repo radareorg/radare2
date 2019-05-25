@@ -30,6 +30,61 @@
 #define CONTEXT_ALL 1048607
 #endif
 
+typedef struct _SYSTEM_HANDLE {
+	ULONG ProcessId;
+	BYTE ObjectTypeNumber;
+	BYTE Flags;
+	USHORT Handle;
+	PVOID Object;
+	ACCESS_MASK GrantedAccess;
+} SYSTEM_HANDLE, *PSYSTEM_HANDLE;
+
+typedef struct _SYSTEM_HANDLE_INFORMATION {
+	ULONG HandleCount;
+	SYSTEM_HANDLE Handles[1];
+} SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
+
+typedef enum _POOL_TYPE {
+	NonPagedPool,
+	PagedPool,
+	NonPagedPoolMustSucceed,
+	DontUseThisType,
+	NonPagedPoolCacheAligned,
+	PagedPoolCacheAligned,
+	NonPagedPoolCacheAlignedMustS
+} POOL_TYPE, *PPOOL_TYPE;
+
+typedef struct _UNICODE_STRING {
+	USHORT Length;
+	USHORT MaximumLength;
+	PWSTR Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
+
+typedef struct _OBJECT_TYPE_INFORMATION {
+	UNICODE_STRING Name;
+	ULONG TotalNumberOfObjects;
+	ULONG TotalNumberOfHandles;
+	ULONG TotalPagedPoolUsage;
+	ULONG TotalNonPagedPoolUsage;
+	ULONG TotalNamePoolUsage;
+	ULONG TotalHandleTableUsage;
+	ULONG HighWaterNumberOfObjects;
+	ULONG HighWaterNumberOfHandles;
+	ULONG HighWaterPagedPoolUsage;
+	ULONG HighWaterNonPagedPoolUsage;
+	ULONG HighWaterNamePoolUsage;
+	ULONG HighWaterHandleTableUsage;
+	ULONG InvalidAttributes;
+	GENERIC_MAPPING GenericMapping;
+	ULONG ValidAccess;
+	BOOLEAN SecurityRequired;
+	BOOLEAN MaintainHandleCount;
+	USHORT MaintainTypeList;
+	POOL_TYPE PoolType;
+	ULONG PagedPoolUsage;
+	ULONG NonPagedPoolUsage;
+} OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
+
 typedef struct {
 	// bool dbgpriv;
 	HANDLE ph;
@@ -43,6 +98,9 @@ static PVOID(WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD) =
 static BOOL (WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NULL;
 
 static NTSTATUS (WINAPI *w32_NtQueryInformationThread)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
+static NTSTATUS (WINAPI *w32_NtQuerySystemInformation)(ULONG, PVOID, ULONG, PULONG) = NULL;
+static NTSTATUS (WINAPI *w32_NtDuplicateObject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) = NULL;
+static NTSTATUS (WINAPI *w32_NtQueryObject)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
 
 bool setup_debug_privileges(bool b) {
 	HANDLE tok;
@@ -87,6 +145,9 @@ int w32_init(RDebug *dbg) {
 		return false;
 	}
 	w32_NtQueryInformationThread = GetProcAddress (lib, "NtQueryInformationThread");
+	w32_NtQuerySystemInformation = GetProcAddress (lib, "NtQuerySystemInformation");
+	w32_NtDuplicateObject = GetProcAddress (lib, "NtDuplicateObject");
+	w32_NtQueryObject = GetProcAddress (lib, "NtQueryObject");
 
 	setup_debug_privileges (true);
 	// rio->dbgpriv = setup_debug_privileges (true);
@@ -1148,4 +1209,87 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	}
 	CloseHandle (sh);
 	return list;
+}
+
+RList *w32_desc_list(int pid) {
+	RDebugDesc *desc;
+	RList *ret = r_list_new ();
+	int i;
+	HANDLE ph;
+	PSYSTEM_HANDLE_INFORMATION handleInfo;
+	NTSTATUS status;
+	ULONG handleInfoSize = 0x10000;
+	LPVOID buff;
+	if (!(ph = OpenProcess (PROCESS_DUP_HANDLE, FALSE, pid))) {
+		r_sys_perror ("win_desc_list/OpenProcess");
+		return NULL;
+	}
+	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc (handleInfoSize);
+	#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
+	#define SystemHandleInformation 16
+	while ((status = w32_NtQuerySystemInformation (SystemHandleInformation, handleInfo, handleInfoSize, NULL)) == STATUS_INFO_LENGTH_MISMATCH)
+		handleInfo = (PSYSTEM_HANDLE_INFORMATION)realloc (handleInfo, handleInfoSize *= 2);
+	if (status) {
+		r_sys_perror ("win_desc_list/NtQuerySystemInformation");
+		return NULL;
+	}
+	for (i = 0; i < handleInfo->HandleCount; i++) {
+		SYSTEM_HANDLE handle = handleInfo->Handles[i];
+		HANDLE dupHandle = NULL;
+		POBJECT_TYPE_INFORMATION objectTypeInfo;
+		PVOID objectNameInfo;
+		UNICODE_STRING objectName;
+		ULONG returnLength;
+		if (handle.ProcessId != pid) {
+			continue;
+		}
+		if (handle.ObjectTypeNumber != 0x1c) {
+			continue;
+		}
+		if (w32_NtDuplicateObject (ph, &handle.Handle, GetCurrentProcess (), &dupHandle, 0, 0, 0)) {
+			continue;
+		}
+		objectTypeInfo = (POBJECT_TYPE_INFORMATION)malloc (0x1000);
+		if (w32_NtQueryObject (dupHandle, 2, objectTypeInfo, 0x1000, NULL)) {
+			CloseHandle (dupHandle);
+			continue;
+		}
+		objectNameInfo = malloc (0x1000);
+		if (w32_NtQueryObject (dupHandle, 1, objectNameInfo, 0x1000, &returnLength)) {
+			objectNameInfo = realloc (objectNameInfo, returnLength);
+			if (w32_NtQueryObject (dupHandle, 1, objectNameInfo, returnLength, NULL)) {
+				free (objectTypeInfo);
+				free (objectNameInfo);
+				CloseHandle (dupHandle);
+				continue;
+			}
+		}
+		objectName = *(PUNICODE_STRING)objectNameInfo;
+		if (objectName.Length) {
+			//objectTypeInfo->Name.Length ,objectTypeInfo->Name.Buffer, objectName.Length / 2, objectName.Buffer
+			buff = malloc ((objectName.Length / 2) + 1);
+			wcstombs (buff, objectName.Buffer, objectName.Length / 2);
+			desc = r_debug_desc_new (handle.Handle, buff, 0, '?', 0);
+			if (!desc) {
+				break;
+			}
+			r_list_append (ret, desc);
+			free (buff);
+		} else {
+			buff = malloc ((objectTypeInfo->Name.Length / 2) + 1);
+			wcstombs (buff, objectTypeInfo->Name.Buffer, objectTypeInfo->Name.Length);
+			desc = r_debug_desc_new (handle.Handle, buff, 0, '?', 0);
+			if (!desc) {
+				break;
+			}
+			r_list_append (ret, desc);
+			free (buff);
+		}
+		free (objectTypeInfo);
+		free (objectNameInfo);
+		CloseHandle (dupHandle);
+	}
+	free (handleInfo);
+	CloseHandle (ph);
+	return ret;
 }

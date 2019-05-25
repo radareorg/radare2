@@ -1702,94 +1702,12 @@ static RList *xnu_desc_list (int pid) {
 }
 #endif
 
-#if __WINDOWS__
-static RList *win_desc_list (int pid) {
-	return NULL;
-	// Disabling this for now
-	/*RDebugDesc *desc;
-	RList *ret = r_list_new();
-	int i;
-	HANDLE processHandle;
-	PSYSTEM_HANDLE_INFORMATION handleInfo;
-	NTSTATUS status;
-	ULONG handleInfoSize = 0x10000;
-	LPVOID buff;
-	if (!(processHandle = w32_OpenProcess (0x0040, FALSE, pid))) {
-		eprintf ("win_desc_list: Error opening process.\n");
-		return NULL;
-	}
-	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc(handleInfoSize);
-	#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
-	#define SystemHandleInformation 16
-	while ((status = w32_NtQuerySystemInformation(SystemHandleInformation,handleInfo,handleInfoSize,NULL)) == STATUS_INFO_LENGTH_MISMATCH)
-		handleInfo = (PSYSTEM_HANDLE_INFORMATION)realloc(handleInfo, handleInfoSize *= 2);
-	if (status) {
-		eprintf("win_desc_list: NtQuerySystemInformation failed!\n");
-		return NULL;
-	}
-	for (i = 0; i < handleInfo->HandleCount; i++) {
-		SYSTEM_HANDLE handle = handleInfo->Handles[i];
-		HANDLE dupHandle = NULL;
-		POBJECT_TYPE_INFORMATION objectTypeInfo;
-		PVOID objectNameInfo;
-		UNICODE_STRING objectName;
-		ULONG returnLength;
-		if (handle.ProcessId != pid)
-			continue;
-		if (handle.ObjectTypeNumber != 0x1c)
-			continue;
-		if (w32_NtDuplicateObject (processHandle, &handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0))
-			continue;
-		objectTypeInfo = (POBJECT_TYPE_INFORMATION)malloc(0x1000);
-		if (w32_NtQueryObject(dupHandle,2,objectTypeInfo,0x1000,NULL)) {
-			CloseHandle(dupHandle);
-			continue;
-		}
-		objectNameInfo = malloc(0x1000);
-		if (w32_NtQueryObject(dupHandle,1,objectNameInfo,0x1000,&returnLength)) {
-			objectNameInfo = realloc(objectNameInfo, returnLength);
-			if (w32_NtQueryObject(dupHandle, 1, objectNameInfo, returnLength, NULL)) {
-				free(objectTypeInfo);
-				free(objectNameInfo);
-				CloseHandle(dupHandle);
-				continue;
-			}
-		}
-		objectName = *(PUNICODE_STRING)objectNameInfo;
-		if (objectName.Length) {
-			//objectTypeInfo->Name.Length ,objectTypeInfo->Name.Buffer,objectName.Length / 2,objectName.Buffer
-			buff=malloc((objectName.Length/2)+1);
-			wcstombs(buff,objectName.Buffer,objectName.Length/2);
-			desc = r_debug_desc_new (handle.Handle,
-					buff, 0, '?', 0);
-			if (!desc) break;
-			r_list_append (ret, desc);
-			free(buff);
-		} else {
-			buff=malloc((objectTypeInfo->Name.Length / 2)+1);
-			wcstombs(buff,objectTypeInfo->Name.Buffer,objectTypeInfo->Name.Length);
-			desc = r_debug_desc_new (handle.Handle,
-					buff, 0, '?', 0);
-			if (!desc) break;
-			r_list_append (ret, desc);
-			free(buff);
-		}
-		free(objectTypeInfo);
-		free(objectNameInfo);
-		CloseHandle(dupHandle);
-	}
-	free(handleInfo);
-	CloseHandle(processHandle);
-	return ret;*/
-}
-#endif
-
 static RList *r_debug_desc_native_list (int pid) {
 // TODO: windows
 #if __APPLE__
 	return xnu_desc_list (pid);
 #elif __WINDOWS__
-	return win_desc_list(pid);
+	return w32_desc_list (pid);
 #elif __KFBSD__
 	RList *ret = NULL;
 	int perm, type, mib[4];

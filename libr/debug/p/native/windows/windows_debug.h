@@ -51,3 +51,5 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list);
 RDebugInfo *w32_info(RDebug *dbg, const char *arg);
 
 RList *w32_pid_list(RDebug *dbg, int pid, RList *list);
+
+RList *w32_desc_list(int pid);
