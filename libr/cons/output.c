@@ -319,17 +319,17 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				ptr = ptr + 2;
 				str = ptr + 1;
 				continue;
-			} else if (!strncmp (ptr, "1;30m", 5)) {
+			} else if (!strncmp (ptr, "90m", 3)) {
 				fg = 8;
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
-				ptr = ptr + 4;
+				ptr = ptr + 2;
 				str = ptr + 1;
-			} else if (!strncmp (ptr, "48;5;8m", 7)) {
+			} else if (!strncmp (ptr, "100m", 4)) {
 				bg = 0x80;
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
-				ptr = ptr + 6;
+				ptr = ptr + 3;
 				str = ptr + 1;
 				continue;
 			}

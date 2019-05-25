@@ -560,8 +560,8 @@ typedef struct r_cons_t {
 #define Color_BGCYAN     "\x1b[46m"
 #define Color_BLUE       "\x1b[34m"
 #define Color_BGBLUE     "\x1b[44m"
-#define Color_GRAY       "\x1b[1;30m"
-#define Color_BGGRAY     "\x1b[48;5;8m"
+#define Color_GRAY       "\x1b[90m"
+#define Color_BGGRAY     "\x1b[100m"
 /* bright colors */
 #define Color_BBLACK    "\x1b[1;30m"
 #define Color_BRED      "\x1b[1;31m"
