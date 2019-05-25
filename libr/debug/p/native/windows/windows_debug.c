@@ -102,6 +102,8 @@ static NTSTATUS (WINAPI *w32_NtQuerySystemInformation)(ULONG, PVOID, ULONG, PULO
 static NTSTATUS (WINAPI *w32_NtDuplicateObject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) = NULL;
 static NTSTATUS (WINAPI *w32_NtQueryObject)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
 
+const DWORD wait_time = 1000;
+
 bool setup_debug_privileges(bool b) {
 	HANDLE tok;
 	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) {
@@ -496,7 +498,7 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 	bool cont = true;
 	do {
 		if ((cont = ContinueDebugEvent (de.dwProcessId, de.dwThreadId, DBG_CONTINUE))) {
-			if ((cont = WaitForDebugEvent (&de, 1000))) {
+			if ((cont = WaitForDebugEvent (&de, wait_time))) {
 				switch (de.dwDebugEventCode) {
 				//case CREATE_PROCESS_DEBUG_EVENT:
 				//case CREATE_THREAD_DEBUG_EVENT:
@@ -536,7 +538,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	bool ret = false;
 	if (TerminateProcess (rio->ph, 1)) {
-		if (WaitForSingleObject (rio->ph, 1000) != WAIT_OBJECT_0) {
+		if (WaitForSingleObject (rio->ph, wait_time) != WAIT_OBJECT_0) {
 			r_sys_perror ("w32_kill/WaitForSingleObject");
 		} else {
 			ret = true;
