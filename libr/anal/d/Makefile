@@ -29,6 +29,41 @@ F+= cc-powerpc-64
 F+= cc-xtensa-32
 F+= cc-riscv-64
 
+WIN_TYPES=
+WIN_TYPES+= bcrypt
+WIN_TYPES+= cfgmgr32
+WIN_TYPES+= combaseapi
+WIN_TYPES+= commctrl
+WIN_TYPES+= consoleapi2
+WIN_TYPES+= dbghelp
+WIN_TYPES+= evntrace
+WIN_TYPES+= fileapi
+WIN_TYPES+= libloaderapi
+WIN_TYPES+= memoryapi
+WIN_TYPES+= ncrypt
+WIN_TYPES+= objbase
+WIN_TYPES+= oleauto
+WIN_TYPES+= processthreadsapi
+WIN_TYPES+= psapi
+WIN_TYPES+= securitybaseapi
+WIN_TYPES+= shellapi
+WIN_TYPES+= shlwapi
+WIN_TYPES+= synchapi
+WIN_TYPES+= sysinfoapi
+WIN_TYPES+= threadpoolapiset
+WIN_TYPES+= userenv
+WIN_TYPES+= winbase
+WIN_TYPES+= wincred
+WIN_TYPES+= wincrypt
+WIN_TYPES+= winhttp
+WIN_TYPES+= winldap
+WIN_TYPES+= winnls
+WIN_TYPES+= winreg
+WIN_TYPES+= winsock2
+WIN_TYPES+= winsvc
+WIN_TYPES+= winuser
+WIN_TYPES+= ws2spi
+
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 
@@ -51,15 +86,17 @@ compile: ${F_SDB}
 
 linux-x86-32.sdb: linux-x86-32
 
-%.sdb:%.sdb.txt
+types-windows.sdb: EXTRA_FILES = $(addsuffix .sdb.txt,$(addprefix types-windows_,$(WIN_TYPES)))
+
+%.sdb:%.sdb.txt $(EXTRA_FILES)
 ifneq ($(SILENT),)
 	@echo SDB $@
 	@rm -f $@
-	@cat $< | ${SDB} $@ =
+	@cat $< $(EXTRA_FILES) | ${SDB} $@ =
 	@test -f $@
 else
 	rm -f $@
-	cat $< | ${SDB} $@ =
+	cat $< $(EXTRA_FILES) | ${SDB} $@ =
 	test -f $@
 endif
 

@@ -1,0 +1,299 @@
+### objbase.h ###
+
+BindMoniker=func
+func.BindMoniker.args=4
+func.BindMoniker.arg.0=LPMONIKER,pmk
+func.BindMoniker.arg.1=DWORD,grfOpt
+func.BindMoniker.arg.2=REFIID,iidResult
+func.BindMoniker.arg.3=LPVOID *,ppvResult
+func.BindMoniker.ret=HRESULT
+
+CLSIDFromProgIDEx=func
+func.CLSIDFromProgIDEx.args=2
+func.CLSIDFromProgIDEx.arg.0=LPCOLESTR,lpszProgID
+func.CLSIDFromProgIDEx.arg.1=LPCLSID,lpclsid
+func.CLSIDFromProgIDEx.ret=HRESULT
+
+CoAllowSetForegroundWindow=func
+func.CoAllowSetForegroundWindow.args=2
+func.CoAllowSetForegroundWindow.arg.0=IUnknown *,pUnk
+func.CoAllowSetForegroundWindow.arg.1=LPVOID,lpvReserved
+func.CoAllowSetForegroundWindow.ret=HRESULT
+
+CoBuildVersion=func
+func.CoBuildVersion.args=0
+func.CoBuildVersion.ret=DWORD
+
+CoCreateStandardMalloc=func
+func.CoCreateStandardMalloc.args=2
+func.CoCreateStandardMalloc.arg.0=DWORD,memctx
+func.CoCreateStandardMalloc.arg.1=IMalloc **,ppMalloc
+func.CoCreateStandardMalloc.ret=HRESULT
+
+CoDosDateTimeToFileTime=func
+func.CoDosDateTimeToFileTime.args=3
+func.CoDosDateTimeToFileTime.arg.0=WORD,nDosDate
+func.CoDosDateTimeToFileTime.arg.1=WORD,nDosTime
+func.CoDosDateTimeToFileTime.arg.2=FILETIME *,lpFileTime
+func.CoDosDateTimeToFileTime.ret=BOOL
+
+CoFileTimeNow=func
+func.CoFileTimeNow.args=1
+func.CoFileTimeNow.arg.0=FILETIME *,lpFileTime
+func.CoFileTimeNow.ret=HRESULT
+
+CoFileTimeToDosDateTime=func
+func.CoFileTimeToDosDateTime.args=3
+func.CoFileTimeToDosDateTime.arg.0=FILETIME *,lpFileTime
+func.CoFileTimeToDosDateTime.arg.1=LPWORD,lpDosDate
+func.CoFileTimeToDosDateTime.arg.2=LPWORD,lpDosTime
+func.CoFileTimeToDosDateTime.ret=BOOL
+
+CoFreeAllLibraries=func
+func.CoFreeAllLibraries.args=0
+func.CoFreeAllLibraries.ret=void
+
+CoFreeLibrary=func
+func.CoFreeLibrary.args=1
+func.CoFreeLibrary.arg.0=HINSTANCE,hInst
+func.CoFreeLibrary.ret=void
+
+CoGetInstanceFromFile=func
+func.CoGetInstanceFromFile.args=8
+func.CoGetInstanceFromFile.arg.0=COSERVERINFO *,pServerInfo
+func.CoGetInstanceFromFile.arg.1=CLSID *,pClsid
+func.CoGetInstanceFromFile.arg.2=IUnknown *,punkOuter
+func.CoGetInstanceFromFile.arg.3=DWORD,dwClsCtx
+func.CoGetInstanceFromFile.arg.4=DWORD,grfMode
+func.CoGetInstanceFromFile.arg.5=OLECHAR *,pwszName
+func.CoGetInstanceFromFile.arg.6=DWORD,dwCount
+func.CoGetInstanceFromFile.arg.7=MULTI_QI *,pResults
+func.CoGetInstanceFromFile.ret=HRESULT
+
+CoGetInstanceFromIStorage=func
+func.CoGetInstanceFromIStorage.args=7
+func.CoGetInstanceFromIStorage.arg.0=COSERVERINFO *,pServerInfo
+func.CoGetInstanceFromIStorage.arg.1=CLSID *,pClsid
+func.CoGetInstanceFromIStorage.arg.2=IUnknown *,punkOuter
+func.CoGetInstanceFromIStorage.arg.3=DWORD,dwClsCtx
+func.CoGetInstanceFromIStorage.arg.4=struct IStorage *,pstg
+func.CoGetInstanceFromIStorage.arg.5=DWORD,dwCount
+func.CoGetInstanceFromIStorage.arg.6=MULTI_QI *,pResults
+func.CoGetInstanceFromIStorage.ret=HRESULT
+
+CoGetObject=func
+func.CoGetObject.args=4
+func.CoGetObject.arg.0=LPCWSTR,pszName
+func.CoGetObject.arg.1=BIND_OPTS *,pBindOptions
+func.CoGetObject.arg.2=REFIID,riid
+func.CoGetObject.arg.3=void **,ppv
+func.CoGetObject.ret=HRESULT
+
+CoGetSystemSecurityPermissions=func
+func.CoGetSystemSecurityPermissions.args=2
+func.CoGetSystemSecurityPermissions.arg.0=COMSD,comSDType
+func.CoGetSystemSecurityPermissions.arg.1=PSECURITY_DESCRIPTOR *,ppSD
+func.CoGetSystemSecurityPermissions.ret=HRESULT
+
+CoInitialize=func
+func.CoInitialize.args=1
+func.CoInitialize.arg.0=LPVOID,pvReserved
+func.CoInitialize.ret=HRESULT
+
+CoInstall=func
+func.CoInstall.args=5
+func.CoInstall.arg.0=IBindCtx *,pbc
+func.CoInstall.arg.1=DWORD,dwFlags
+func.CoInstall.arg.2=uCLSSPEC *,pClassSpec
+func.CoInstall.arg.3=QUERYCONTEXT *,pQuery
+func.CoInstall.arg.4=LPWSTR,pszCodeBase
+func.CoInstall.ret=HRESULT
+
+CoIsOle1Class=func
+func.CoIsOle1Class.args=1
+func.CoIsOle1Class.arg.0=REFCLSID,rclsid
+func.CoIsOle1Class.ret=BOOL
+
+CoLoadLibrary=func
+func.CoLoadLibrary.args=2
+func.CoLoadLibrary.arg.0=LPOLESTR,lpszLibName
+func.CoLoadLibrary.arg.1=BOOL,bAutoFree
+func.CoLoadLibrary.ret=HINSTANCE
+
+CoRegisterChannelHook=func
+func.CoRegisterChannelHook.args=2
+func.CoRegisterChannelHook.arg.0=REFGUID,ExtensionUuid
+func.CoRegisterChannelHook.arg.1=IChannelHook *,pChannelHook
+func.CoRegisterChannelHook.ret=HRESULT
+
+CoRegisterInitializeSpy=func
+func.CoRegisterInitializeSpy.args=2
+func.CoRegisterInitializeSpy.arg.0=IInitializeSpy *,pSpy
+func.CoRegisterInitializeSpy.arg.1=ULARGE_INTEGER *,puliCookie
+func.CoRegisterInitializeSpy.ret=HRESULT
+
+CoRegisterMallocSpy=func
+func.CoRegisterMallocSpy.args=1
+func.CoRegisterMallocSpy.arg.0=LPMALLOCSPY,pMallocSpy
+func.CoRegisterMallocSpy.ret=HRESULT
+
+CoRegisterMessageFilter=func
+func.CoRegisterMessageFilter.args=2
+func.CoRegisterMessageFilter.arg.0=LPMESSAGEFILTER,lpMessageFilter
+func.CoRegisterMessageFilter.arg.1=LPMESSAGEFILTER *,lplpMessageFilter
+func.CoRegisterMessageFilter.ret=HRESULT
+
+CoRevokeInitializeSpy=func
+func.CoRevokeInitializeSpy.args=1
+func.CoRevokeInitializeSpy.arg.0=ULARGE_INTEGER,uliCookie
+func.CoRevokeInitializeSpy.ret=HRESULT
+
+CoRevokeMallocSpy=func
+func.CoRevokeMallocSpy.args=0
+func.CoRevokeMallocSpy.ret=HRESULT
+
+CoTreatAsClass=func
+func.CoTreatAsClass.args=2
+func.CoTreatAsClass.arg.0=REFCLSID,clsidOld
+func.CoTreatAsClass.arg.1=REFCLSID,clsidNew
+func.CoTreatAsClass.ret=HRESULT
+
+CreateAntiMoniker=func
+func.CreateAntiMoniker.args=1
+func.CreateAntiMoniker.arg.0=LPMONIKER *,ppmk
+func.CreateAntiMoniker.ret=HRESULT
+
+CreateBindCtx=func
+func.CreateBindCtx.args=2
+func.CreateBindCtx.arg.0=DWORD,reserved
+func.CreateBindCtx.arg.1=LPBC *,ppbc
+func.CreateBindCtx.ret=HRESULT
+
+CreateClassMoniker=func
+func.CreateClassMoniker.args=2
+func.CreateClassMoniker.arg.0=REFCLSID,rclsid
+func.CreateClassMoniker.arg.1=LPMONIKER *,ppmk
+func.CreateClassMoniker.ret=HRESULT
+
+CreateDataAdviseHolder=func
+func.CreateDataAdviseHolder.args=1
+func.CreateDataAdviseHolder.arg.0=LPDATAADVISEHOLDER *,ppDAHolder
+func.CreateDataAdviseHolder.ret=HRESULT
+
+CreateDataCache=func
+func.CreateDataCache.args=4
+func.CreateDataCache.arg.0=LPUNKNOWN,pUnkOuter
+func.CreateDataCache.arg.1=REFCLSID,rclsid
+func.CreateDataCache.arg.2=REFIID,iid
+func.CreateDataCache.arg.3=LPVOID *,ppv
+func.CreateDataCache.ret=HRESULT
+
+CreateFileMoniker=func
+func.CreateFileMoniker.args=2
+func.CreateFileMoniker.arg.0=LPCOLESTR,lpszPathName
+func.CreateFileMoniker.arg.1=LPMONIKER *,ppmk
+func.CreateFileMoniker.ret=HRESULT
+
+CreateGenericComposite=func
+func.CreateGenericComposite.args=3
+func.CreateGenericComposite.arg.0=LPMONIKER,pmkFirst
+func.CreateGenericComposite.arg.1=LPMONIKER,pmkRest
+func.CreateGenericComposite.arg.2=LPMONIKER *,ppmkComposite
+func.CreateGenericComposite.ret=HRESULT
+
+CreateItemMoniker=func
+func.CreateItemMoniker.args=3
+func.CreateItemMoniker.arg.0=LPCOLESTR,lpszDelim
+func.CreateItemMoniker.arg.1=LPCOLESTR,lpszItem
+func.CreateItemMoniker.arg.2=LPMONIKER *,ppmk
+func.CreateItemMoniker.ret=HRESULT
+
+CreateObjrefMoniker=func
+func.CreateObjrefMoniker.args=2
+func.CreateObjrefMoniker.arg.0=LPUNKNOWN,punk
+func.CreateObjrefMoniker.arg.1=LPMONIKER *,ppmk
+func.CreateObjrefMoniker.ret=HRESULT
+
+CreatePointerMoniker=func
+func.CreatePointerMoniker.args=2
+func.CreatePointerMoniker.arg.0=LPUNKNOWN,punk
+func.CreatePointerMoniker.arg.1=LPMONIKER *,ppmk
+func.CreatePointerMoniker.ret=HRESULT
+
+CreateStdProgressIndicator=func
+func.CreateStdProgressIndicator.args=4
+func.CreateStdProgressIndicator.arg.0=HWND,hwndParent
+func.CreateStdProgressIndicator.arg.1=LPCOLESTR,pszTitle
+func.CreateStdProgressIndicator.arg.2=IBindStatusCallback *,pIbscCaller
+func.CreateStdProgressIndicator.arg.3=IBindStatusCallback **,ppIbsc
+func.CreateStdProgressIndicator.ret=HRESULT
+
+DcomChannelSetHResult=func
+func.DcomChannelSetHResult.args=3
+func.DcomChannelSetHResult.arg.0=LPVOID,pvReserved
+func.DcomChannelSetHResult.arg.1=ULONG *,pulReserved
+func.DcomChannelSetHResult.arg.2=HRESULT,appsHR
+func.DcomChannelSetHResult.ret=HRESULT
+
+GetClassFile=func
+func.GetClassFile.args=2
+func.GetClassFile.arg.0=LPCOLESTR,szFilename
+func.GetClassFile.arg.1=CLSID *,pclsid
+func.GetClassFile.ret=HRESULT
+
+GetRunningObjectTable=func
+func.GetRunningObjectTable.args=2
+func.GetRunningObjectTable.arg.0=DWORD,reserved
+func.GetRunningObjectTable.arg.1=LPRUNNINGOBJECTTABLE *,pprot
+func.GetRunningObjectTable.ret=HRESULT
+
+MkParseDisplayName=func
+func.MkParseDisplayName.args=4
+func.MkParseDisplayName.arg.0=LPBC,pbc
+func.MkParseDisplayName.arg.1=LPCOLESTR,szUserName
+func.MkParseDisplayName.arg.2=ULONG *,pchEaten
+func.MkParseDisplayName.arg.3=LPMONIKER *,ppmk
+func.MkParseDisplayName.ret=HRESULT
+
+MonikerCommonPrefixWith=func
+func.MonikerCommonPrefixWith.args=3
+func.MonikerCommonPrefixWith.arg.0=LPMONIKER,pmkThis
+func.MonikerCommonPrefixWith.arg.1=LPMONIKER,pmkOther
+func.MonikerCommonPrefixWith.arg.2=LPMONIKER *,ppmkCommon
+func.MonikerCommonPrefixWith.ret=HRESULT
+
+MonikerRelativePathTo=func
+func.MonikerRelativePathTo.args=4
+func.MonikerRelativePathTo.arg.0=LPMONIKER,pmkSrc
+func.MonikerRelativePathTo.arg.1=LPMONIKER,pmkDest
+func.MonikerRelativePathTo.arg.2=LPMONIKER *,ppmkRelPath
+func.MonikerRelativePathTo.arg.3=BOOL,dwReserved
+func.MonikerRelativePathTo.ret=HRESULT
+
+StgGetIFillLockBytesOnFile=func
+func.StgGetIFillLockBytesOnFile.args=2
+func.StgGetIFillLockBytesOnFile.arg.0=OLECHAR const *,pwcsName
+func.StgGetIFillLockBytesOnFile.arg.1=IFillLockBytes **,ppflb
+func.StgGetIFillLockBytesOnFile.ret=HRESULT
+
+StgGetIFillLockBytesOnILockBytes=func
+func.StgGetIFillLockBytesOnILockBytes.args=2
+func.StgGetIFillLockBytesOnILockBytes.arg.0=ILockBytes *,pilb
+func.StgGetIFillLockBytesOnILockBytes.arg.1=IFillLockBytes **,ppflb
+func.StgGetIFillLockBytesOnILockBytes.ret=HRESULT
+
+StgOpenAsyncDocfileOnIFillLockBytes=func
+func.StgOpenAsyncDocfileOnIFillLockBytes.args=4
+func.StgOpenAsyncDocfileOnIFillLockBytes.arg.0=IFillLockBytes *,pflb
+func.StgOpenAsyncDocfileOnIFillLockBytes.arg.1=DWORD,grfMode
+func.StgOpenAsyncDocfileOnIFillLockBytes.arg.2=DWORD,asyncFlags
+func.StgOpenAsyncDocfileOnIFillLockBytes.arg.3=IStorage **,ppstgOpen
+func.StgOpenAsyncDocfileOnIFillLockBytes.ret=HRESULT
+
+StgOpenLayoutDocfile=func
+func.StgOpenLayoutDocfile.args=4
+func.StgOpenLayoutDocfile.arg.0=OLECHAR const *,pwcsDfName
+func.StgOpenLayoutDocfile.arg.1=DWORD,grfMode
+func.StgOpenLayoutDocfile.arg.2=DWORD,reserved
+func.StgOpenLayoutDocfile.arg.3=IStorage **,ppstgOpen
+func.StgOpenLayoutDocfile.ret=HRESULT

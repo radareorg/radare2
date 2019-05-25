@@ -203,10 +203,24 @@ sdb_exe = executable('sdb', 'sdb/src/main.c',
   implicit_include_directories: false
 )
 
+sdb_gen_cmd_script = '''#script
+import os
+import sys
+sdb_exe = r'@0@'
+outfile = sys.argv[1]
+infiles = sys.argv[2:]
+if os.name == 'nt':
+    infiles = ','.join(infiles)
+    os.system(f'powershell -c "Get-Content {infiles} | {sdb_exe} {outfile} ="')
+else:
+    infiles = ' '.join(infiles)
+    os.system(f'cat {infiles} | {sdb_exe} {outfile} =')
+'''.format(sdb_exe.full_path())
+
 sdb_gen_cmd = [
   py3_exe,
   '-c',
-  'from sys import argv; __import__("os").system("@0@ %s = <%s" % (argv[1], argv[2]))'.format(sdb_exe.full_path()),
+  sdb_gen_cmd_script,
   '@OUTPUT@',
   '@INPUT@'
 ]
