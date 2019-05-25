@@ -173,7 +173,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
 	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (ehdr));
-	if (len != sizeof (Elf_(Ehdr))) {
+	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
 		bprintf ("read (ehdr)\n");
 		return false;
 	}
@@ -1204,7 +1204,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 	return false;
 }
 
-static int elf_init(ELFOBJ *bin) {
+static bool elf_init(ELFOBJ *bin) {
 	/* bin is not an ELF */
 	if (!init_ehdr (bin)) {
 		return false;
@@ -1235,7 +1235,6 @@ static int elf_init(ELFOBJ *bin) {
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
-
 	return true;
 }
 
