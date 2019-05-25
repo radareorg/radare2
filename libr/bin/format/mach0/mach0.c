@@ -546,20 +546,20 @@ static char *readString (ut8 *p, int off, int len) {
 
 static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	typedef struct __CodeDirectory {
-		uint32_t magic;					/* magic number (CSMAGIC_CODEDIRECTORY) */
-		uint32_t length;				/* total length of CodeDirectory blob */
-		uint32_t version;				/* compatibility version */
-		uint32_t flags;					/* setup and mode flags */
-		uint32_t hashOffset;			/* offset of hash slot element at index zero */
-		uint32_t identOffset;			/* offset of identifier string */
-		uint32_t nSpecialSlots;			/* number of special hash slots */
-		uint32_t nCodeSlots;			/* number of ordinary (code) hash slots */
-		uint32_t codeLimit;				/* limit to main image signature range */
-		uint8_t hashSize;				/* size of each hash in bytes */
-		uint8_t hashType;				/* type of hash (cdHashType* constants) */
-		uint8_t platform;					/* unused (must be zero) */
-		uint8_t	pageSize;				/* log2(page size in bytes); 0 => infinite */
-		uint32_t spare2;				/* unused (must be zero) */
+		uint32_t magic;		/* magic number (CSMAGIC_CODEDIRECTORY) */
+		uint32_t length;	/* total length of CodeDirectory blob */
+		uint32_t version;	/* compatibility version */
+		uint32_t flags;		/* setup and mode flags */
+		uint32_t hashOffset;	/* offset of hash slot element at index zero */
+		uint32_t identOffset;	/* offset of identifier string */
+		uint32_t nSpecialSlots;	/* number of special hash slots */
+		uint32_t nCodeSlots;	/* number of ordinary (code) hash slots */
+		uint32_t codeLimit;	/* limit to main image signature range */
+		uint8_t hashSize;	/* size of each hash in bytes */
+		uint8_t hashType;	/* type of hash (cdHashType* constants) */
+		uint8_t platform;	/* unused (must be zero) */
+		uint8_t	pageSize;	/* log2(page size in bytes); 0 => infinite */
+		uint32_t spare2;	/* unused (must be zero) */
 		/* followed by dynamic content as located by offset fields above */
 		uint32_t scatterOffset;
 		uint32_t teamIDOffset;
