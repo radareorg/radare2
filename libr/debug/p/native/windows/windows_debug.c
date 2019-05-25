@@ -928,18 +928,18 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
-	LPVOID base = VirtualAllocEx (rio->ph, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
+	LPVOID base = VirtualAllocEx (rio->ph, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
 		r_sys_perror ("w32_map_alloc/VirtualAllocEx\n");
 		return NULL;
 	}
 	r_debug_map_sync (dbg);
-	return r_debug_map_get (dbg, (ut64)(size_t)base);
+	return r_debug_map_get (dbg, (ut64)base);
 }
 
 int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RIOW32Dbg *rio = dbg->user;
-	if (!VirtualFreeEx (rio->ph, (LPVOID)(size_t)addr, (SIZE_T)size, MEM_DECOMMIT)) {
+	if (!VirtualFreeEx (rio->ph, (LPVOID)addr, (SIZE_T)size, MEM_DECOMMIT)) {
 		r_sys_perror ("w32_map_dealloc/VirtualFreeEx\n");
 		return false;
 	}
