@@ -4349,10 +4349,14 @@ static void create_almighty(RCore *core, RPanel *panel) {
 		case 'j':
 			idx++;
 			create_widget (core, &idx, &offset);
+			r_sys_usleep (25000);
+			r_cons_readflush ();
 			break;
 		case 'k':
 			idx--;
 			create_widget (core, &idx, &offset);
+			r_sys_usleep (25000);
+			r_cons_readflush ();
 			break;
 		case 'v':
 			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
