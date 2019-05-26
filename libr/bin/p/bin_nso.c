@@ -50,7 +50,9 @@ static ut64 baddr(RBinFile *bf) {
 static bool check_buffer(RBuffer *b) {
 	if (r_buf_size (b) >= 0x20) {
 		ut8 magic[4];
-		r_buf_read_at (b, 0, magic, sizeof (magic);
+		if (r_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
+			return false;
+		}
 		return fileType (magic) != NULL;
 	}
 	return false;

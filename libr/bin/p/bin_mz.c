@@ -7,7 +7,7 @@
 
 
 /* half-magic */
-#define HM(x) (int)((x[0]<<8)|x[1])
+#define HM(x) (int)((int)(x[0]<<8)|(int)(x[1]))
 
 static Sdb *get_sdb(RBinFile *bf) {
 	const struct r_bin_mz_obj_t *bin;
