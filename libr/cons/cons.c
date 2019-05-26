@@ -115,10 +115,10 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 	context->log_callback = NULL;
 
 	if (parent) {
-		context->color = parent->color;
+		context->color_mode = parent->color_mode;
 		r_cons_pal_copy (context, parent);
 	} else {
-		context->color = COLOR_MODE_DISABLED;
+		context->color_mode = COLOR_MODE_DISABLED;
 		r_cons_pal_init (context);
 	}
 }
@@ -165,7 +165,7 @@ static inline void r_cons_write(const char *obuf, int olen) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
-	if (I.context->color > COLOR_MODE_16) {
+	if (I.context->color_mode > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);

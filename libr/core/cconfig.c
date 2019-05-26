@@ -1136,7 +1136,7 @@ static bool cb_color(void *user, void *data) {
 	} else if (!strcmp (node->value, "false")) {
 		node->i_value = 0;
 	}
-	r_cons_singleton ()->context->color = (node->i_value > COLOR_MODE_16M)
+	r_cons_singleton ()->context->color_mode = (node->i_value > COLOR_MODE_16M)
 		? COLOR_MODE_16M: node->i_value;
 	r_cons_pal_update_event ();
 	r_print_set_flags (core->print, core->print->flags);
@@ -1145,9 +1145,9 @@ static bool cb_color(void *user, void *data) {
 
 static bool cb_color_getter(void *user, RConfigNode *node) {
 	(void)user;
-	node->i_value = r_cons_singleton ()->context->color;
+	node->i_value = r_cons_singleton ()->context->color_mode;
 	char buf[128];
-	r_config_node_value_format_i (buf, sizeof (buf), r_cons_singleton ()->context->color, node);
+	r_config_node_value_format_i (buf, sizeof (buf), r_cons_singleton ()->context->color_mode, node);
 	if (!node->value || strcmp (node->value, buf) != 0) {
 		free (node->value);
 		node->value = strdup (buf);
