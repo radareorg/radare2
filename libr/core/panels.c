@@ -4312,11 +4312,11 @@ static void createNewPanel(RCore *core, bool vertical) {
 
 const int WIDGET_WIDTH = 30;
 const int WIDGET_HEIGHT = 20;
-const char *sub[] = {
+const char *sub_menu[] = {
 	"Add the current panel", "Create New",
 	NULL
 };
-const int sub_count = COUNT (sub);
+const int sub_count = COUNT (sub_menu);
 
 static void create_widget(RCore *core, int *idx, int *offset) {
 	RStrBuf *buf = r_strbuf_new (NULL);
@@ -4353,7 +4353,7 @@ static void create_widget(RCore *core, int *idx, int *offset) {
 	}
 	const int prev = i;
 	for (i = 0; i < sub_count; i++) {
-		if (!draw_widget (core, *idx, i + prev, *offset, max_h, &buf, sub[i])) {
+		if (!draw_widget (core, *idx, i + prev, *offset, max_h, &buf, sub_menu[i])) {
 			break;
 		}
 	}
