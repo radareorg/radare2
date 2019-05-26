@@ -377,8 +377,8 @@ typedef struct r_bin_xtr_plugin_t {
 
 	bool (*load)(RBin *bin);
 	int (*size)(RBin *bin);
-	int (*destroy)(RBin *bin);
-	int (*free_xtr)(void *xtr_obj);
+	void (*destroy)(RBin *bin);
+	void (*free_xtr)(void *xtr_obj);
 } RBinXtrPlugin;
 
 typedef struct r_bin_ldr_plugin_t {
