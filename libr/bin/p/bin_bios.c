@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -86,7 +86,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
-	ptr->paddr = r_buf_size (obj) - ptr->size;
+	ptr->paddr = r_buf_size (bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
