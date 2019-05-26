@@ -475,9 +475,12 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return buf && (length > sizeof (struct minidump_header))
-		&& (!memcmp (buf, MDMP_MAGIC, 6));
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[6];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
+		return !memcmp (magic, MDMP_MAGIC, 6);
+	}
+	return false;
 }
 
 RBinPlugin r_bin_plugin_mdmp = {
@@ -485,7 +488,6 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.desc = "Minidump format r_bin plugin",
 	.license = "LGPL3",
 	.baddr = &baddr,
-	.check_bytes = &check_bytes,
 	.destroy = &destroy,
 	.entries = entries,
 	.get_sdb = &get_sdb,

@@ -871,20 +871,6 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4) {
-		if (memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return false;
-		}
-		return is_kernelcache (buf, length);
-	}
-	return false;
-}
-
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return (bool) check_bytes (buf, sz);
-}
-
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinObject *obj = bf ? bf->o : NULL;
@@ -1633,9 +1619,8 @@ static ut64 baddr(RBinFile *bf) {
 	return MACH0_(get_baddr)(obj->mach0);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_kernel_cache_free ((RKernelCacheObj*) bf->o->bin_obj);
-	return true;
 }
 
 static void r_kernel_cache_free(RKernelCacheObj *obj) {
@@ -1955,7 +1940,6 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.desc = "kernelcache bin plugin",
 	.license = "LGPL3",
 	.destroy = &destroy,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
 	.entries = &entries,
 	.baddr = &baddr,

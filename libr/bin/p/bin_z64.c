@@ -94,10 +94,6 @@ static bool load(RBinFile *bf) {
 	return check_buffer (bf->buf);
 }
 
-static int destroy(RBinFile *bf) {
-	return true;
-}
-
 static RList *entries(RBinFile *bf) {
 	RList /*<RBinAddr>*/ *ret = r_list_newf (free);
 	if (!ret) {
@@ -163,7 +159,6 @@ RBinPlugin r_bin_plugin_z64 = {
 	.license = "LGPL3",
 	.load = &load,
 	.load_buffer = &load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = baddr,
 	.boffset = &boffset,

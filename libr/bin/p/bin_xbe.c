@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2017 - thatlemon@gmail.com, pancake */
+/* radare - LGPL - 2014-2019 - thatlemon@gmail.com, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,15 +11,16 @@ static const char *kt_name[] = {
 #include "../format/xbe/kernel.h"
 };
 
-static bool check_bytes(const ut8 *buf, ut64 size) {
-	xbe_header *header = (xbe_header *) buf;
-	return (size > sizeof (xbe_header) && header->magic == XBE_MAGIC);
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[4];
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
+		return !memcmp (magic, "XBEH", 4);
+	}
+	return false;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
+	r_return_val_if_fail (bf && bf->o, false);
 	r_bin_xbe_obj_t *obj = NULL;
 	const ut8 *bytes = r_buf_data (bf->buf, NULL);
 	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
@@ -44,21 +45,18 @@ static bool load(RBinFile *bf) {
 	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	R_FREE (bf->o->bin_obj);
 	r_buf_free (bf->buf);
 	bf->buf = NULL;
-	return true;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
-	RBinAddr *ret;
-	r_bin_xbe_obj_t *obj;
 	if (!bf || !bf->buf || type != R_BIN_SYM_MAIN) {
 		return NULL;
 	}
-	obj = bf->o->bin_obj;
-	ret = R_NEW0 (RBinAddr);
+	r_bin_xbe_obj_t *obj = bf->o->bin_obj;
+	RBinAddr *ret = R_NEW0 (RBinAddr);
 	if (!ret) {
 		return NULL;
 	}
@@ -362,7 +360,7 @@ RBinPlugin r_bin_plugin_xbe = {
 	.license = "LGPL3",
 	.load = &load,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
