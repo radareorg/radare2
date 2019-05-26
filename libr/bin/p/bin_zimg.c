@@ -7,9 +7,7 @@
 #include "zimg/zimg.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o, false);
 	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->o->bin_obj;
 	return bin? bin->kv: NULL;
 }
@@ -19,26 +17,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return *bin_obj != NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || size == 0 || size == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new_with_bytes (buf, size);
-	if (!tbuf) {
-		return false;
-	}
-	res = r_bin_zimg_new_buf (tbuf);
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
-
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
+	r_return_val_if_fail (bf && bf->o, false);
 	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 

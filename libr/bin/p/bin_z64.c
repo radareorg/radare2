@@ -70,16 +70,17 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static bool check_buffer(RBuffer *b) {
-	ut32 magic = 0x80371240;
+	ut8 magic[4];
 	if (r_buf_size (b) < N64_ROM_START) {
 		return false;
 	}
-	return magic == r_buf_read_be32 (b);
+	(void)r_buf_read_at (b, 0, magic, sizeof (magic));
+	return !memcmp (magic, "\x80\x37\x12\x40", 4);
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	if (check_buffer (b)) {
-		ut8 buf[sizeof (N64Header)];
+		ut8 buf[sizeof (N64Header)] = {0};
 		r_buf_read_at (b, 0, buf, sizeof (buf));
 		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;
@@ -88,9 +89,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
+	r_return_val_if_fail (bf && bf->o, false);
 	return check_buffer (bf->buf);
 }
 
