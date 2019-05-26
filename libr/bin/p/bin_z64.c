@@ -1,4 +1,4 @@
-/* radare2 - LGPL 3 - Copyright 2018 - lowlyw */
+/* radare2 - LGPL 3 - Copyright 2018-2019 - lowlyw */
 
 /*
  * info comes from here.
@@ -69,16 +69,18 @@ static ut64 baddr(RBinFile *bf) {
 	return (ut64) r_read_be32(&n64_header.BootAddress);
 }
 
-static bool check_bytes (const ut8 *buf, ut64 length) {
+static bool check_buffer(RBuffer *b) {
 	ut32 magic = 0x80371240;
-	if (length < N64_ROM_START) {
+	if (r_buf_size (b) < N64_ROM_START) {
 		return false;
 	}
-	return magic == r_read_be32 (buf);
+	return magic == r_buf_read_be32 (b);
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	if (check_bytes (buf, sz)) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	if (check_buffer (b)) {
+		ut8 buf[sizeof (N64Header)];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
 		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
 		return true;
 	}
@@ -89,10 +91,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return check_bytes (bytes, sz);
+	return check_buffer (bf->buf);
 }
 
 static int destroy(RBinFile *bf) {
@@ -163,9 +162,9 @@ RBinPlugin r_bin_plugin_z64 = {
 	.desc = "Nintendo 64 binaries big endian r_bin plugin",
 	.license = "LGPL3",
 	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = baddr,
 	.boffset = &boffset,
 	.entries = &entries,
