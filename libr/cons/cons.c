@@ -515,7 +515,7 @@ R_API RCons *r_cons_new() {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.ansicon = r_sys_getenv ("ANSICON");
+	I.ansicon = r_cons_get_ansicon ();
 #if UNICODE
 	if (IsValidCodePage (CP_UTF8)) {
 		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
@@ -1338,6 +1338,49 @@ R_API int r_cons_get_size(int *rows) {
 	I.rows = R_MAX (0, I.rows);
 	return R_MAX (0, I.columns);
 }
+
+#if __WINDOWS__
+R_API int r_cons_get_ansicon() {
+	HKEY key;
+	DWORD type;
+	DWORD size;
+	DWORD major;
+	DWORD minor;
+	char release[25];
+	bool win_support = false;
+	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, TEXT ("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"), 0,
+	                   KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
+		goto ANSICON;
+	}
+	size = sizeof (major);
+	if (RegQueryValueExA (key, TEXT ("CurrentMajorVersionNumber"), NULL, &type,
+	                     (LPBYTE)&major, &size) != ERROR_SUCCESS
+	    || type != REG_DWORD) {
+		goto beach;
+	}
+	size = sizeof (minor);
+	if (RegQueryValueExA (key, TEXT ("CurrentMinorVersionNumber"), NULL, &type,
+	                     (LPBYTE)&minor, &size) != ERROR_SUCCESS
+	    || type != REG_DWORD) {
+		goto beach;
+	}
+	size = sizeof (release);
+	if (RegQueryValueExA (key, TEXT ("ReleaseId"), NULL, &type,
+	                     (LPBYTE)release, &size) != ERROR_SUCCESS
+	    || type != REG_SZ) {
+		goto beach;
+	}
+	if (major > 10
+	    || major == 10 && minor > 0
+	    || major == 10 && minor == 0 && atoi (release) >= 1703) {
+		win_support = true;
+	}
+beach:
+	RegCloseKey (key);
+ANSICON:
+	return win_support || !!r_sys_getenv ("ANSICON");
+}
+#endif
 
 R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
