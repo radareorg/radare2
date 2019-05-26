@@ -21,19 +21,26 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
-	switch (r_buf_read_be16_at (b, offset)) {
-	case HM("PE"):
+	ut8 h[2];
+	if (r_buf_read_at (b, 0, h, sizeof (h)) != 2) {
+		return false;
+	}
+	if (!memcmp (h, "PE", 2)) {
 		if (offset + 0x20 < r_buf_size (b)) {
-			if (r_buf_read_be16_at (b, offset + 0x18) == HM ("\x0b\x01")) {
+			if (r_buf_read_at (b, offset + 0x18, h, sizeof (h)) != 2) {
+				return false;
+			}
+			if (!memcmp (h, "\x0b\x01", 2)) {
 				return false;
 			}
 		}
-		break;
-	case HM("NE"):
-	case HM("LE"):
-	case HM("LX"):
-	case HM("PL"):
-		return false;
+	} else {
+		if (!memcmp (h, "NE", 2)
+		 || !memcmp (h, "LE", 2)
+		 || !memcmp (h, "LX", 2)
+		 || !memcmp (h, "PL", 2)) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -53,8 +60,11 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	if (pa >= 0x20 && pa + 1 < length) {
 		ut16 pe = r_buf_read_le16_at (b,  0x3c);
 		if (pe + 2 < length && length > 0x104) {
-			if (r_buf_read_be16_at (b, pe) == HM("PE")) {
-				return false;
+			ut8 h[2];
+			if (r_buf_read_at (b, pe, h, 2) == 2) {
+				if (!memcmp (h, "PE", 2)) {
+					return false;
+				}
 			}
 		}
 		return true;
@@ -70,7 +80,11 @@ static bool check_buffer(RBuffer *b) {
 	}
 
 	// Check for MZ magic.
-	if (r_buf_read_be16_at (b, 0) != HM ("MZ")) {
+	ut8 h[2];
+	if (r_buf_read_at (b, 0, h, 2) != 2) {
+		return false;
+	}
+	if (memcmp (h, "PE", 2)) {
 		return false;
 	}
 
@@ -86,7 +100,6 @@ static bool check_buffer(RBuffer *b) {
 	if (!checkEntrypointBuffer (b)) {
 		return false;
 	}
-
 	return true;
 }
 
@@ -100,9 +113,8 @@ static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb 
 	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_mz_free ((struct r_bin_mz_obj_t *)bf->o->bin_obj);
-	return true;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
