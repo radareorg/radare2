@@ -353,8 +353,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	}
 	bin->file = fname;
 	opt->sz = R_MIN (file_sz, opt->sz);
-	ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
-	if (seekaddr > 0 && seekaddr != UT64_MAX) {
+	ut64 seekaddr = opt->loadaddr;
+
+	if (!is_debugger && seekaddr > 0 && seekaddr != UT64_MAX) {
 		// slice buffer if necessary
 		RBuffer *nb = r_buf_new_slice (buf, seekaddr, opt->sz);
 		if (nb) {
@@ -362,6 +363,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			buf = nb;
 		}
 	}
+
 	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
