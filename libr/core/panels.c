@@ -404,6 +404,7 @@ static void createDefaultPanels(RCore *core);
 static void createNewPanel(RCore *core, bool vertical);
 static void create_widget(RCore *core, int *idx, int *offset);
 static void create_almighty(RCore *core, RPanel *panel);
+static bool draw_widget (RCore *core, int idx, int start, int range_begin, int range_end, RStrBuf **buf, const char *name);
 static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 static void checkEdge(RPanels *panels);
@@ -4255,15 +4256,20 @@ static void createNewPanel(RCore *core, bool vertical) {
 	free (res);
 }
 
+const int WIDGET_WIDTH = 30;
+const int WIDGET_HEIGHT = 20;
+const char *sub[] = {
+	"Add the current panel", "Create New",
+	NULL
+};
+const int sub_count = COUNT (sub);
+
 static void create_widget(RCore *core, int *idx, int *offset) {
-	const int WIDGET_WIDTH = 30;
-	const int WIDGET_HEIGHT = 20;
+	RStrBuf *buf = r_strbuf_new (NULL);
+	if (!buf) {
+		return;
+	}
 	RPanels *panels = core->panels;
-	const char *sub[] = {
-		"Add the current panel", "Create New",
-		NULL
-	};
-	int sub_count = COUNT (sub);
 	int count = sdb_count (panels->db) + sub_count;
 	if (*idx >= count) {
 		*idx = 0;
@@ -4284,43 +4290,18 @@ static void create_widget(RCore *core, int *idx, int *offset) {
 	SdbList *l = sdb_foreach_list (panels->db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
-	RStrBuf *buf = r_strbuf_new (NULL);
-	if (!buf) {
-		return;
-	}
 	int i = 0;
 	int max_h = R_MIN (*offset + WIDGET_HEIGHT, count);
 	ls_foreach (l, iter, kv) {
-		if (i < *offset) {
+		if (draw_widget (core, *idx, i, *offset, max_h, &buf, sdbkv_key (kv))) {
 			i++;
-			continue;
 		}
-		if (i >= max_h) {
-			break;
-		}
-		if (i == *idx) {
-			r_strbuf_appendf (buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, sdbkv_key (kv));
-		} else {
-			r_strbuf_appendf (buf, "   %s", sdbkv_key (kv));
-		}
-		r_strbuf_append (buf, "          \n");
-		i++;
 	}
 	const int prev = i;
 	for (i = 0; i < sub_count; i++) {
-		if (i + prev < *offset) {
-			i++;
-			continue;
-		}
-		if (i + prev >= max_h) {
+		if (!draw_widget (core, *idx, i + prev, *offset, max_h, &buf, sub[i])) {
 			break;
 		}
-		if (i + prev == *idx) {
-			r_strbuf_appendf (buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, sub[i]);
-		} else {
-			r_strbuf_appendf (buf, "   %s", sub[i]);
-		}
-		r_strbuf_append (buf, "          \n");
 	}
 	RConsCanvas *can = panels->can;
 	int x, y;
@@ -4335,6 +4316,22 @@ static void create_widget(RCore *core, int *idx, int *offset) {
 
 	r_cons_canvas_print (panels->can);
 	r_cons_flush ();
+}
+
+static bool draw_widget (RCore *core, int idx, int start, int range_begin, int range_end, RStrBuf **buf, const char *name) {
+	if (start < range_begin) {
+		return true;
+	}
+	if (start >= range_end) {
+		return false;
+	}
+	if (start == idx) {
+		r_strbuf_appendf (*buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, name);
+	} else {
+		r_strbuf_appendf (*buf, "   %s", name);
+	}
+	r_strbuf_append (*buf, "          \n");
+	return true;
 }
 
 static void create_almighty(RCore *core, RPanel *panel) {
@@ -4403,7 +4400,7 @@ static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, cha
 	SdbList *l = sdb_foreach_list (core->panels->db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
-	int i = 0;
+	int i = 0, j;
 	ls_foreach (l, iter, kv) {
 		if (i++ == *idx) {
 			*title = sdbkv_key (kv);
@@ -4411,19 +4408,32 @@ static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, cha
 			return true;
 		}
 	}
-	if (i++ == *idx) {
-		*idx += 1;
-		*offset += 1;
-		*title = show_status_input (core, "Name: ");
-		*cmd = r_str_new (panel->model->cmd);
-		sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
-		return false;
-	}
-	if (i == *idx) {
-		*title = show_status_input (core, "New name: ");
-		*cmd = show_status_input (core, "New command: ");
-		sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
-		return true;
+	for (j = 0; j < sub_count; j++) {
+		if (i + j == *idx) {
+			switch (j) {
+			case 0:
+				*title = show_status_input (core, "Name: ");
+				if (R_STR_ISEMPTY (*title)) {
+					return false;
+				}
+				*cmd = r_str_new (panel->model->cmd);
+				sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
+				*idx += 1;
+				*offset += 1;
+				return false;
+			case 1:
+				*title = show_status_input (core, "New name: ");
+				if (R_STR_ISEMPTY (*title)) {
+					return false;
+				}
+				*cmd = show_status_input (core, "New command: ");
+				if (R_STR_ISEMPTY (*cmd)) {
+					return false;
+				}
+				sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
+				return true;
+			}
+		}
 	}
 	return false;
 }
