@@ -3069,7 +3069,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 	int num_version = 0;
 	int num_stringtable = 0;
 	int num_string = 0;
-	const char *format_version = "bin/cur/vs_version_info/VS_VERSIONINFO%d";
+	const char *format_version = "bin/cur/info/vs_version_info/VS_VERSIONINFO%d";
 	const char *format_stringtable = "%s/string_file_info/stringtable%d";
 	const char *format_string = "%s/string%d";
 	if (!IS_MODE_JSON (mode)) {
@@ -3191,7 +3191,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 }
 
 static void bin_elf_versioninfo(RCore *r, int mode) {
-	const char *format = "bin/cur/versioninfo/%s%d";
+	const char *format = "bin/cur/info/versioninfo/%s%d";
 	int num_versym;
 	int num_verneed = 0;
 	int num_version = 0;
@@ -3359,7 +3359,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 	Sdb *sdb = NULL;
 	int index = 0;
 	PJ *pj = NULL;
-	const char *pe_path = "bin/cur/pe_resource";
+	const char *pe_path = "bin/cur/info/pe_resource";
 	if (!(sdb = sdb_ns_path (r->sdb, pe_path, 0))) {
 		return;
 	}

@@ -1109,7 +1109,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	if (!binfile_sdb) {
 		eprintf ("Cannot find SDB!\n");
 		return;
-	} else if (!binfile) {
+	}
+	if (!binfile) {
 		eprintf ("Binary format not currently loaded!\n");
 		return;
 	}

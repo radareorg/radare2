@@ -345,6 +345,9 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	bf->xtr_obj = NULL;
+	bf->sdb = sdb_new0 ();
+	bf->sdb_addrinfo = sdb_new0 (); //ns (bf->sdb, "addrinfo", 1);
+	// bf->sdb_addrinfo->refs++;
 	return bf;
 }
 
