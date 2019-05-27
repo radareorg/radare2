@@ -27,7 +27,6 @@ enum {
 	R2_ARCH_ARM64
 } R2Arch;
 
-
 static void add_string_ref(RCore *core, ut64 xref_to);
 static int cmpfcn(const void *_a, const void *_b);
 
@@ -1725,7 +1724,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		r_flag_space_pop (core->flags);
 		return result;
 	}
-	if (from != UT64_MAX && !at || at == UT64_MAX) {
+	if ((from != UT64_MAX && !at) || at == UT64_MAX) {
 		eprintf ("Invalid address from 0x%08"PFMT64x"\n", from);
 		return false;
 	}
@@ -3083,15 +3082,15 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	return ret;
 }
 
+// TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
-	RAnalOp *op = NULL;
 	int count = 0;
 	int reg_set[10] = {0};
-	ut64 pos;
 
-	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
+	r_return_if_fail (core && core->anal && fcn);
+	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
 	const int max_bb_size = core->anal->opt.bb_max_size;
@@ -3105,12 +3104,12 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		if (bb->size > max_bb_size) {
 			continue;
 		}
-		pos = bb->addr;
+		ut64 pos = bb->addr;
 		while (pos < bb->addr + bb->size) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
+			RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
 			if (!op) {
 				//eprintf ("Cannot get op\n");
 				break;
@@ -3127,7 +3126,6 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			pos += opsize;
 		}
 	}
-	return;
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
