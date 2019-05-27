@@ -343,7 +343,6 @@ static int rabin_do_operation(const char *op) {
 	if (!(arg = strdup (op))) {
 		return false;
 	}
-
 	if ((ptr = strchr (arg, '/'))) {
 		*ptr++ = 0;
 		if ((ptr2 = strchr (ptr, '/'))) {
@@ -353,6 +352,12 @@ static int rabin_do_operation(const char *op) {
 	}
 	if (!output) {
 		output = file;
+	}
+	RBinFile *bf = r_bin_cur (bin);
+	if (bf) {
+		RBuffer *nb = r_buf_new_with_buf (bf->buf);
+		r_buf_free (bf->buf);
+		bf->buf = nb;
 	}
 
 	switch (arg[0]) {
@@ -1133,8 +1138,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		} else {
 			eprintf (
 				"Cannot extract bins from '%s'. No supported "
-				"plugins found!\n",
-				bin->file);
+				"plugins found!\n", bin->file);
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {

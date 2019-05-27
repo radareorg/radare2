@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+
 #include "bin_elf.inc"
 
 static void headers32(RBinFile *bf) {

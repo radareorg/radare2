@@ -119,31 +119,6 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	return NULL;
 }
 
-static RList * extractall(RBin *bin) {
-	RList *res = NULL;
-	int narch, i = 0;
-	RBinXtrData *data = NULL;
-
-	data = extract (bin, i);
-	if (!data) {
-		return res;
-	}
-
-	// XXX - how do we validate a valid narch?
-	narch = data->file_count;
-	res = r_list_newf (r_bin_xtrdata_free);
-	if (!res) {
-		r_bin_xtrdata_free (data);
-		return NULL;
-	}
-	r_list_append (res, data);
-	for (i = 1; data && i < narch; i++) {
-		data = extract (bin, i);
-		r_list_append (res, data);
-	}
-	return res;
-}
-
 static RList * oneshotall_buffer(RBin *bin, RBuffer *b) {
 	RBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {

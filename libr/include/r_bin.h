@@ -297,7 +297,7 @@ typedef struct r_bin_file_options_t {
 
 typedef struct r_bin_t {
 	const char *file;
-	RBinFile *cur;
+	RBinFile *cur; // TODO: deprecate
 	int narch;
 	void *user;
 	/* preconfigured values */
@@ -590,11 +590,11 @@ typedef struct r_bin_dbginfo_t {
 } RBinDbgInfo;
 
 typedef struct r_bin_write_t {
-	ut64 (*scn_resize)(RBinFile *arch, const char *name, ut64 size);
-	bool (*scn_perms)(RBinFile *arch, const char *name, int perms);
-	int (*rpath_del)(RBinFile *arch);
-	bool (*entry)(RBinFile *arch, ut64 addr);
-	bool (*addlib)(RBinFile *arch, const char *lib);
+	ut64 (*scn_resize)(RBinFile *bf, const char *name, ut64 size);
+	bool (*scn_perms)(RBinFile *bf, const char *name, int perms);
+	int (*rpath_del)(RBinFile *bf);
+	bool (*entry)(RBinFile *bf, ut64 addr);
+	bool (*addlib)(RBinFile *bf, const char *lib);
 } RBinWrite;
 
 // TODO: deprecate r_bin_is_big_endian

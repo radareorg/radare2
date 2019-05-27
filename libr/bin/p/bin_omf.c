@@ -33,7 +33,7 @@ static bool check_buffer(RBuffer *b) {
 		return false;
 	}
 	ut64 length = 0;
-	ut8 *buf = r_buf_data (b, &length);
+	const ut8 *buf = r_buf_data (b, &length);
 	ut16 rec_size = ut8p_bw (buf + 1);
 	ut8 str_size = *(buf + 3);
 	if (str_size + 2 != rec_size || length < rec_size + 3) {
