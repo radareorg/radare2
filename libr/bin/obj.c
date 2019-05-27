@@ -211,9 +211,9 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		RBinObject *old_o = bf->o;
 		bf->o = o;
 		if (plugin->load (bf)) {
-			bf->sdb_info = o->kv;
+			//bf->sdb_info = o->kv;
 			// mark as do not walk
-			sdb_ns_set (bf->sdb, "info", o->kv);
+			//sdb_ns_set (bf->sdb, "info", o->kv);
 		} else {
 			bf->o = old_o;
 		}
@@ -233,10 +233,11 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	r_list_append (bf->objs, o);
 	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
 
+	bf->sdb_info = o->kv;
 	sdb = bf->rbin->sdb;
 	if (sdb) {
 		Sdb *okv = o->kv;
-		Sdb *bdb = sdb_new0 ();
+		Sdb *bdb = bf->sdb; // sdb_new0 ();
 		sdb_ns_set (bdb, "info", o->kv);
 		sdb_ns_set (bdb, "addrinfo", bf->sdb_addrinfo);
 		o->kv = bdb;

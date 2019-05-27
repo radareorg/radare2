@@ -476,22 +476,22 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->actual_checksum  = strdup (sdb_fmt ("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
-
-	sdb_bool_set (bf->sdb, "pe.canary", has_canary(bf), 0);
-	sdb_bool_set (bf->sdb, "pe.highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set (bf->sdb, "pe.aslr", haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set (bf->sdb, "pe.forceintegrity", haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (bf->sdb, "pe.nx", haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set (bf->sdb, "pe.isolation", !haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (bf->sdb, "pe.seh", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set (bf->sdb, "pe.bind", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set (bf->sdb, "pe.appcontainer", haschr(bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set (bf->sdb, "pe.wdmdriver", haschr(bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set (bf->sdb, "pe.guardcf", haschr(bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set (bf->sdb, "pe.terminalserveraware", haschr(bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
-	sdb_num_set (bf->sdb, "pe.bits", ret->bits, 0);
-	sdb_set (bf->sdb, "pe.claimed_checksum", ret->claimed_checksum, 0);
-	sdb_set (bf->sdb, "pe.actual_checksum", ret->actual_checksum, 0);
+	Sdb *db = sdb_ns (bf->sdb, "pe", true);
+	sdb_bool_set (db, "canary", has_canary (bf), 0);
+	sdb_bool_set (db, "highva", haschr (bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
+	sdb_bool_set (db, "aslr", haschr (bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
+	sdb_bool_set (db, "forceintegrity", haschr (bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (db, "nx", haschr (bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
+	sdb_bool_set (db, "isolation", !haschr (bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (db, "seh", !haschr (bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
+	sdb_bool_set (db, "bind", !haschr (bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
+	sdb_bool_set (db, "appcontainer", haschr (bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
+	sdb_bool_set (db, "wdmdriver", haschr (bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
+	sdb_bool_set (db, "guardcf", haschr (bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
+	sdb_bool_set (db, "terminalserveraware", haschr (bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
+	sdb_num_set (db, "bits", ret->bits, 0);
+	sdb_set (db, "claimed_checksum", ret->claimed_checksum, 0);
+	sdb_set (db, "actual_checksum", ret->actual_checksum, 0);
 
 	ret->has_va = true;
 

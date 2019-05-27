@@ -2694,12 +2694,13 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 	return addr;
 }
 
-void MACH0_(mach_headerfields)(RBinFile *file) {
-	PrintfCallback cb_printf = file->rbin->cb_printf;
+void MACH0_(mach_headerfields)(RBinFile *bf) {
+	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	if (!cb_printf) {
 		cb_printf = printf;
 	}
-	RBuffer *buf = file->buf;
+	RBuffer *buf = bf->buf;
+	ut64 length = r_buf_size (buf);
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
 	if (!mh) {
@@ -2717,13 +2718,20 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	ut64 addr = 0x20 - 4;
 	ut32 word = 0;
 	ut8 wordbuf[sizeof (word)];
+	bool isBe = false;
+	switch (mh->cputype) {
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64:
+		isBe = true;
+		break;
+	}
 #define READWORD() \
-		if (!r_buf_read_at (buf, addr, (ut8*)wordbuf, 4)) { \
+		if (r_buf_read_at (buf, addr, (ut8*)wordbuf, 4) != 4) { \
 			eprintf ("Invalid address in buffer."); \
 			break; \
 		} \
 		addr += 4; \
-		word = r_read_le32 (wordbuf);
+		word = isBe? r_read_be32 (wordbuf): r_read_le32 (wordbuf);
 	if (is64) {
 		addr += 4;
 	}
@@ -2733,6 +2741,9 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		cb_printf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
 			addr, n, lcType, cmd_to_string (lcType));
 		READWORD ();
+		if (addr > length) {
+			break;
+		}
 		int lcSize = word;
 		word &= 0xFFFFFF;
 		cb_printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
