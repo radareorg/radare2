@@ -1348,24 +1348,24 @@ R_API int r_cons_get_ansicon() {
 	DWORD minor;
 	char release[25];
 	bool win_support = false;
-	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, TEXT ("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"), 0,
+	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
 	                   KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
 		goto ANSICON;
 	}
 	size = sizeof (major);
-	if (RegQueryValueExA (key, TEXT ("CurrentMajorVersionNumber"), NULL, &type,
+	if (RegQueryValueExA (key, "CurrentMajorVersionNumber", NULL, &type,
 	                     (LPBYTE)&major, &size) != ERROR_SUCCESS
 	    || type != REG_DWORD) {
 		goto beach;
 	}
 	size = sizeof (minor);
-	if (RegQueryValueExA (key, TEXT ("CurrentMinorVersionNumber"), NULL, &type,
+	if (RegQueryValueExA (key, "CurrentMinorVersionNumber", NULL, &type,
 	                     (LPBYTE)&minor, &size) != ERROR_SUCCESS
 	    || type != REG_DWORD) {
 		goto beach;
 	}
 	size = sizeof (release);
-	if (RegQueryValueExA (key, TEXT ("ReleaseId"), NULL, &type,
+	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
 	                     (LPBYTE)release, &size) != ERROR_SUCCESS
 	    || type != REG_SZ) {
 		goto beach;
