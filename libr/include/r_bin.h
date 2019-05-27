@@ -297,7 +297,7 @@ typedef struct r_bin_file_options_t {
 
 typedef struct r_bin_t {
 	const char *file;
-	RBinFile *cur;
+	RBinFile *cur; // TODO: deprecate
 	int narch;
 	void *user;
 	/* preconfigured values */
@@ -369,14 +369,16 @@ typedef struct r_bin_xtr_plugin_t {
 	bool (*check_buffer)(RBuffer *b);
 
 	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
+	RBinXtrData * (*extract_from_buffer)(RBin *bin, RBuffer *buf, int idx);
 	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
+	RList * (*extractall_from_buffer)(RBin *bin, RBuffer *buf);
 	RBinXtrData * (*extract)(RBin *bin, int idx);
 	RList * (*extractall)(RBin *bin);
 
 	bool (*load)(RBin *bin);
 	int (*size)(RBin *bin);
-	int (*destroy)(RBin *bin);
-	int (*free_xtr)(void *xtr_obj);
+	void (*destroy)(RBin *bin);
+	void (*free_xtr)(void *xtr_obj);
 } RBinXtrPlugin;
 
 typedef struct r_bin_ldr_plugin_t {
@@ -404,9 +406,9 @@ typedef struct r_bin_plugin_t {
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load)(RBinFile *arch);
 	bool (*load_bytes)(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
-	void *(*load_buffer)(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
+	bool (*load_buffer)(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
-	int (*destroy)(RBinFile *arch);
+	void (*destroy)(RBinFile *arch);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	bool (*check_buffer)(RBuffer *buf);
 	ut64 (*baddr)(RBinFile *arch);
@@ -588,11 +590,11 @@ typedef struct r_bin_dbginfo_t {
 } RBinDbgInfo;
 
 typedef struct r_bin_write_t {
-	ut64 (*scn_resize)(RBinFile *arch, const char *name, ut64 size);
-	bool (*scn_perms)(RBinFile *arch, const char *name, int perms);
-	int (*rpath_del)(RBinFile *arch);
-	bool (*entry)(RBinFile *arch, ut64 addr);
-	bool (*addlib)(RBinFile *arch, const char *lib);
+	ut64 (*scn_resize)(RBinFile *bf, const char *name, ut64 size);
+	bool (*scn_perms)(RBinFile *bf, const char *name, int perms);
+	int (*rpath_del)(RBinFile *bf);
+	bool (*entry)(RBinFile *bf, ut64 addr);
+	bool (*addlib)(RBinFile *bf, const char *lib);
 } RBinWrite;
 
 // TODO: deprecate r_bin_is_big_endian
@@ -650,6 +652,7 @@ R_API int r_bin_list_plugin(RBin *bin, const char *name, int json);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz);
+R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 
 // get/set various bin information

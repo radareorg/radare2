@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 - ampotos, pancake */
+/* radare - LGPL - Copyright 2015-2019 - ampotos, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,29 +6,47 @@
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
-	if (!buf || !size || size == UT64_MAX) {
-		return false;
-	}
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	ut64 size;
+	const ut8 *buf = r_buf_data (b, &size);
 	*bin_obj = r_bin_internal_omf_load (buf, size);
-	return true;
+	return *bin_obj != NULL;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-	ut64 size;
-	const ut8 *byte = r_buf_data (bf->buf, &size);
-	return load_bytes (bf, &bf->o->bin_obj, byte, size, bf->o->loadaddr, bf->sdb);
+	r_return_val_if_fail (bf && bf->o, false);
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_free_all_omf_obj (bf->o->bin_obj);
 	bf->o->bin_obj = NULL;
-	return true;
 }
 
+static bool check_buffer(RBuffer *b) {
+	int i;
+	ut8 ch;
+	if (r_buf_read_at (b, 0, &ch, 1) != 1) {
+		return false;
+	}
+	if (ch != 0x80 && ch != 0x82) {
+		return false;
+	}
+	ut64 length = 0;
+	const ut8 *buf = r_buf_data (b, &length);
+	ut16 rec_size = ut8p_bw (buf + 1);
+	ut8 str_size = *(buf + 3);
+	if (str_size + 2 != rec_size || length < rec_size + 3) {
+		return false;
+	}
+	// check that the string is ASCII
+	for (i = 4; i < str_size + 4; ++i) {
+		if (buf[i] > 0x7f) {
+			return false;
+		}
+	}
+	return r_bin_checksum_omf_ok (buf, length);
+}
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	int i;
 	if (!buf || length < 4) {
@@ -158,9 +176,9 @@ RBinPlugin r_bin_plugin_omf = {
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
 	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

@@ -164,13 +164,13 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *fbuf = r_buf_ref (buf);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	struct MACH0_(obj_t) *main_mach0 = MACH0_(new_buf) (fbuf, &opts);
 	if (!main_mach0) {
-		return NULL;
+		return false;
 	}
 
 	RRebaseInfo *rebase_info = r_rebase_info_new_from_mach0 (fbuf, main_mach0);
@@ -216,13 +216,13 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	}
 
 	obj->kexts = r_kext_index_new (kexts);
-
-	return obj;
+	*bin_obj = obj;
+	return true;
 
 beach:
 	r_buf_free (fbuf);
 	MACH0_(mach0_free) (main_mach0);
-	return NULL;
+	return false;
 }
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0) {
@@ -860,18 +860,15 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 	return ptr;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4) {
-		if (memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return false;
+static bool check_buffer(RBuffer *b) {
+	if (r_buf_size (b) > 4) {
+		ut8 buf[4];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+			return is_kernelcache_buffer (b);
 		}
-		return is_kernelcache (buf, length);
 	}
 	return false;
-}
-
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return (bool) check_bytes (buf, sz);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -1622,9 +1619,8 @@ static ut64 baddr(RBinFile *bf) {
 	return MACH0_(get_baddr)(obj->mach0);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_kernel_cache_free ((RKernelCacheObj*) bf->o->bin_obj);
-	return true;
 }
 
 static void r_kernel_cache_free(RKernelCacheObj *obj) {
@@ -1944,13 +1940,12 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.desc = "kernelcache bin plugin",
 	.license = "LGPL3",
 	.destroy = &destroy,
-	.load_bytes = &load_bytes,
 	.load_buffer = &load_buffer,
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.info = &info
 };
 

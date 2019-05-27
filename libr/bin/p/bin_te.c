@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2015 - xvilka */
+/* radare - LGPL - Copyright 2013-2019 - xvilka */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,38 +16,27 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	struct r_bin_te_obj_t *res = NULL;
-	RBuffer *tbuf = NULL;
-
-	if (!buf || sz == 0 || sz == UT64_MAX) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (bf && bin_obj && b, false);
+	ut64 sz = r_buf_size (b);
+	if (sz == 0 || sz == UT64_MAX) {
 		return false;
 	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	res = r_bin_te_new_buf (tbuf);
+	struct r_bin_te_obj_t *res = r_bin_te_new_buf (b);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
-	r_buf_free (tbuf);
 	*bin_obj = res;
 	return true;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj? true: false;
+	r_return_val_if_fail (bf && bf->o, false);
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_te_free ((struct r_bin_te_obj_t *) bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -68,23 +57,19 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	RBinAddr *entry = NULL;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		RBinAddr *entry = r_bin_te_get_entrypoint (bf->o->bin_obj);
+		if (entry) {
+			RBinAddr *ptr = R_NEW0 (RBinAddr);
+			if (ptr) {
+				ptr->paddr = entry->paddr;
+				ptr->vaddr = entry->vaddr;
+				r_list_append (ret, ptr);
+			}
+			free (entry);
+		}
 	}
-	ret->free = free;
-	if (!(entry = r_bin_te_get_entrypoint (bf->o->bin_obj))) {
-		return ret;
-	}
-	if ((ptr = R_NEW (RBinAddr))) {
-		ptr->paddr = entry->paddr;
-		ptr->vaddr = entry->vaddr;
-		r_list_append (ret, ptr);
-	}
-	free (entry);
 	return ret;
 }
 
@@ -159,8 +144,12 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length > 2 && !memcmp (buf, "\x56\x5a", 2));
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[2];
+	if (r_buf_read_at (b, 0, buf, 2) == 2) {
+		return !memcmp (buf, "\x56\x5a", 2);
+	}
+	return false;
 }
 
 RBinPlugin r_bin_plugin_te = {
@@ -169,9 +158,9 @@ RBinPlugin r_bin_plugin_te = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

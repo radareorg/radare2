@@ -1096,48 +1096,44 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 	return accel;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = R_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = r_buf_new_with_io (&bf->rbin->iob, bf->fd);
 	if (!cache->buf) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
 	cache->hdr = read_cache_header (cache->buf);
 	if (!cache->hdr) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->maps = read_cache_maps (cache->buf, cache->hdr);
 	if (!cache->maps) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps);
 	if (!cache->accel) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->bins = create_cache_bins (bf, cache->buf, cache->hdr, cache->maps, cache->accel);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	cache->rebase_info = get_rebase_info (bf, cache);
 	if (!cache->rebase_info) {
 		r_dyldcache_free (cache);
-		return NULL;
+		return false;
 	}
-
 	if (!cache->rebase_info->slide) {
 		swizzle_io_read (cache, bf->rbin->iob.io);
 	}
-	return cache;
+	*bin_obj = cache;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -1387,11 +1383,10 @@ static RList *symbols(RBinFile *bf) {
 	cache->original_io_read = NULL;
 } */
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	// unswizzle_io_read (cache, bf->rbin->iob.io); // XXX io may be dead here
 	r_dyldcache_free (cache);
-	return true;
 }
 
 static RList *classes(RBinFile *bf) {

@@ -1,12 +1,8 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_util.h>
 #include "i/private.h"
-
-#define bprintf                     \
-	if (binfile->rbin->verbose) \
-	eprintf
 
 static void mem_free(void *data) {
 	RBinMem *mem = (RBinMem *)data;
@@ -126,10 +122,8 @@ static RList *classes_from_symbols(RBinFile *bf) {
 				free (fn);
 			} else {
 				char *mn = strstr (dn, "..");
-				if (mn) {
-					// eprintf ("META %s  %s\n", sym->classname, mn);
-				} else {
-					char *mn = strstr (dn, cn);
+				if (!mn) {
+					mn = strstr (dn, cn);
 					if (mn && mn[strlen (cn)] == '.') {
 						mn += strlen (cn) + 1;
 						// eprintf ("METHOD %s  %s\n", sym->classname, mn);
@@ -146,18 +140,11 @@ static RList *classes_from_symbols(RBinFile *bf) {
 	return classes;
 }
 
-static bool file_object_add(RBinFile *binfile, RBinObject *o) {
-	r_return_val_if_fail (binfile && o, false);
-	r_list_append (binfile->objs, o);
-	r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, o);
-	return true;
-}
-
-R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
-	r_return_val_if_fail (binfile && plugin, NULL);
-
-	ut64 bytes_sz = r_buf_size (binfile->buf);
-	Sdb *sdb = binfile->sdb;
+// TODO: kill offset and sz, because those should be infered from binfile->buf
+R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
+	r_return_val_if_fail (bf && plugin, NULL);
+	ut64 bytes_sz = r_buf_size (bf->buf);
+	Sdb *sdb = bf->sdb;
 	RBinObject *o = R_NEW0 (RBinObject);
 	if (!o) {
 		return NULL;
@@ -166,7 +153,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	o->boffset = offset;
 	o->strings_db = ht_up_new0 ();
 	o->regstate = NULL;
-	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
+	if (!r_id_pool_grab_id (bf->rbin->ids->pool, &o->id)) {
 		free (o);
 		eprintf ("Cannot grab an id\n");
 		return NULL;
@@ -178,14 +165,16 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	o->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 
 	if (plugin && plugin->load_buffer) {
-		o->bin_obj = plugin->load_buffer (binfile, binfile->buf, loadaddr, sdb); // bytes + offset, sz, loadaddr, sdb);
-		if (!o->bin_obj) {
-			bprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n", plugin->name);
+		if (!plugin->load_buffer (bf, &o->bin_obj, bf->buf, loadaddr, sdb)) {
+			if (bf->rbin->verbose) {
+				eprintf ("Error in r_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
+			}
 			sdb_free (o->kv);
 			free (o);
 			return NULL;
 		}
 	} else if (plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
+		// DEPRECATE
 		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load_bytes.\n", plugin->name);
 		// XXX more checking will be needed here
 		// only use LoadBytes if buffer offset != 0
@@ -201,10 +190,12 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 			free (o);
 			return NULL;
 		}
-		r_buf_read_at (binfile->buf, offset, bytes, sz);
-		if (!plugin->load_bytes (binfile, &o->bin_obj, bytes, sz,
-					 loadaddr, sdb)) {
-			bprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n", plugin->name);
+		r_buf_read_at (bf->buf, offset, bytes, sz);
+		// TODO: use r_buf_data meanwhile.. meh just kill it with fire
+		if (!plugin->load_bytes (bf, &o->bin_obj, bytes, sz, loadaddr, sdb)) {
+			if (bf->rbin->verbose) {
+				eprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n", plugin->name);
+			}
 			sdb_free (o->kv);
 			free (bytes);
 			free (o);
@@ -212,18 +203,19 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		}
 		free (bytes);
 	} else if (plugin->load) {
+		// DEPRECATE
 		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load.\n", plugin->name);
 		// XXX - haha, this is a hack.
 		// switching out the current object for the new
 		// one to be processed
-		RBinObject *old_o = binfile->o;
-		binfile->o = o;
-		if (plugin->load (binfile)) {
-			binfile->sdb_info = o->kv;
+		RBinObject *old_o = bf->o;
+		bf->o = o;
+		if (plugin->load (bf)) {
+			//bf->sdb_info = o->kv;
 			// mark as do not walk
-			sdb_ns_set (binfile->sdb, "info", o->kv);
+			//sdb_ns_set (bf->sdb, "info", o->kv);
 		} else {
-			binfile->o = old_o;
+			bf->o = old_o;
 		}
 		o->obj_size = sz;
 	} else {
@@ -237,9 +229,36 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	// the object is created from. The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
-	r_bin_object_set_items (binfile, o);
-	file_object_add (binfile, o);
+	r_bin_object_set_items (bf, o);
+	r_list_append (bf->objs, o);
+	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
 
+	bf->sdb_info = o->kv;
+	sdb = bf->rbin->sdb;
+	if (sdb) {
+		Sdb *okv = o->kv;
+		Sdb *bdb = bf->sdb; // sdb_new0 ();
+		sdb_ns_set (bdb, "info", o->kv);
+		sdb_ns_set (bdb, "addrinfo", bf->sdb_addrinfo);
+		o->kv = bdb;
+		// bf->sdb = o->kv;
+		// bf->sdb_info = o->kv;
+		// sdb_ns_set (bf->sdb, "info", o->kv);
+		//sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
+		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
+		/* NOTE */
+		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
+		 * sub-namespaces */
+		/* And if any namespace is referenced backwards it gets
+		 * double-freed */
+		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
+	//	bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
+	//	bf->sdb_addrinfo->refs++;
+		sdb_ns_set (sdb, "cur", bdb); // bf->sdb);
+		const char *fdns = sdb_fmt ("fd.%d", bf->fd);
+		sdb_ns_set (sdb, fdns, bdb); // bf->sdb);
+		bf->sdb->refs++;
+	}
 	return o;
 }
 

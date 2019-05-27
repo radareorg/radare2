@@ -100,12 +100,12 @@ static bool is_bin_etrel(ELFOBJ *bin) {
 	return bin->ehdr.e_type == ET_REL;
 }
 
-static int handle_e_ident(ELFOBJ *bin) {
+static bool __is_valid_ident(ELFOBJ *bin) {
 	return !strncmp ((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG) ||
 		!strncmp ((char *)bin->ehdr.e_ident, CGCMAG, SCGCMAG);
 }
 
-static int init_ehdr(ELFOBJ *bin) {
+static bool init_ehdr(ELFOBJ *bin) {
 	ut8 e_ident[EI_NIDENT];
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = { 0 };
 	int i, len;
@@ -172,14 +172,18 @@ static int init_ehdr(ELFOBJ *bin) {
 #endif
 	bin->endian = (e_ident[EI_DATA] == ELFDATA2MSB)? 1: 0;
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
-
-	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (Elf_(Ehdr)));
-	if (len < 1) {
+	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (ehdr));
+	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
 		bprintf ("read (ehdr)\n");
 		return false;
 	}
+	// XXX no need to check twice
 	memcpy (&bin->ehdr.e_ident, ehdr, 16);
+	if (!__is_valid_ident (bin)) {
+		return false;
+	}
 	i = 16;
+	// TODO: use r_read or r_buf_read_ apis instead
 	bin->ehdr.e_type = READ16 (ehdr, i);
 	bin->ehdr.e_machine = READ16 (ehdr, i);
 	bin->ehdr.e_version = READ32 (ehdr, i);
@@ -199,7 +203,7 @@ static int init_ehdr(ELFOBJ *bin) {
 	bin->ehdr.e_shentsize = READ16 (ehdr, i);
 	bin->ehdr.e_shnum = READ16 (ehdr, i);
 	bin->ehdr.e_shstrndx = READ16 (ehdr, i);
-	return handle_e_ident (bin);
+	return true;
 	// [Outdated] Usage example:
 	// > td `k bin/cur/info/elf_type.cparse`; td `k bin/cur/info/elf_machine.cparse`
 	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
@@ -1200,20 +1204,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 	return false;
 }
 
-static int elf_init(ELFOBJ *bin) {
-	bin->phdr = NULL;
-	bin->shdr = NULL;
-	bin->strtab = NULL;
-	bin->shstrtab = NULL;
-	bin->strtab_size = 0;
-	bin->strtab_section = NULL;
-	bin->dyn_buf = NULL;
-	bin->dynstr = NULL;
-	ZERO_FILL (bin->version_info);
-
-	bin->g_sections = NULL;
-	bin->g_symbols = NULL;
-	bin->g_imports = NULL;
+static bool elf_init(ELFOBJ *bin) {
 	/* bin is not an ELF */
 	if (!init_ehdr (bin)) {
 		return false;
@@ -1244,7 +1235,6 @@ static int elf_init(ELFOBJ *bin) {
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
-
 	return true;
 }
 
@@ -1876,13 +1866,14 @@ static ut64 getmainsymbol(ELFOBJ *bin) {
 
 ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
-	ut8 buf[512];
+	ut8 buf[256];
 	if (!bin || entry == UT64_MAX) {
 		return UT64_MAX;
 	}
 	if (entry > bin->size || (entry + sizeof (buf)) > bin->size) {
 		return UT64_MAX;
 	}
+	// unnecessary to read 512 bytes imho
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) < 1) {
 		bprintf ("read (main)\n");
 		return UT64_MAX;
@@ -3475,9 +3466,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	}
 	if (!ret) {
 		return Elf_(get_phdr_symbols) (bin, type);
-	} else {
-		ret[ret_ctr].last = 1; // ugly dirty hack :D
 	}
+	ret[ret_ctr].last = 1; // ugly dirty hack :D
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
 	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
@@ -3566,10 +3556,10 @@ RBinElfField* Elf_(r_bin_elf_get_fields)(ELFOBJ *bin) {
 	return ret;
 }
 
-void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
+void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	int i;
 	if (!bin) {
-		return NULL;
+		return;
 	}
 	free (bin->phdr);
 	free (bin->shdr);
@@ -3603,44 +3593,19 @@ void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
 	free (bin);
-	return NULL;
-}
-
-ELFOBJ* Elf_(r_bin_elf_new)(const char* file, bool verbose) {
-	ut8 *buf;
-	int size;
-	ELFOBJ *bin = R_NEW0 (ELFOBJ);
-	if (!bin) {
-		return NULL;
-	}
-	memset (bin, 0, sizeof (ELFOBJ));
-	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &size))) {
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	bin->size = size;
-	bin->verbose = verbose;
-	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
-		free (buf);
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	if (!elf_init (bin)) {
-		free (buf);
-		return Elf_(r_bin_elf_free) (bin);
-	}
-	free (buf);
-	return bin;
 }
 
 ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	ELFOBJ *bin = R_NEW0 (ELFOBJ);
-	bin->kv = sdb_new0 ();
-	bin->size = (ut32)r_buf_size (buf);
-	bin->verbose = verbose;
-	bin->b = r_buf_ref (buf);
-	if (!elf_init (bin)) {
-		return Elf_(r_bin_elf_free) (bin);
+	if (bin) {
+		bin->kv = sdb_new0 ();
+		bin->size = (ut32)r_buf_size (buf);
+		bin->verbose = verbose;
+		bin->b = r_buf_ref (buf);
+		if (!elf_init (bin)) {
+			Elf_(r_bin_elf_free) (bin);
+			return NULL;
+		}
 	}
 	return bin;
 }

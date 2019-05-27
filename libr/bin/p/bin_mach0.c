@@ -28,31 +28,26 @@ static char *entitlements(RBinFile *bf, bool json) {
 }
 
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
-	struct MACH0_(obj_t) *res = NULL;
-	if (!buf) {
-		return NULL;
-	}
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
+	r_return_val_if_fail (bf && bin_obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
-	res = MACH0_(new_buf) (buf, &opts);
+	struct MACH0_(obj_t) *res = MACH0_(new_buf) (buf, &opts);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	return res;
+	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	MACH0_(mach0_free) (bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return 0LL;
-	}
-	bin = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, UT64_MAX);
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	return MACH0_(get_baddr)(bin);
 }
 
@@ -557,16 +552,19 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 #if !R_BIN_MACH064
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 4) {
-		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-			!memcmp (buf, "\xfe\xed\xfa\xce", 4)) {
-			return true;
+
+static bool check_buffer(RBuffer *b) {
+	if (r_buf_size (b) >= 4) {
+		ut8 buf[4] = {0};
+		if (r_buf_read_at (b, 0, buf, 4)) {
+			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+				!memcmp (buf, "\xfe\xed\xfa\xce", 4)) {
+				return true;
+			}
 		}
 	}
 	return false;
 }
-
 static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
@@ -876,7 +874,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

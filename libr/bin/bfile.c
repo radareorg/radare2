@@ -325,78 +325,46 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	string_scan_range (list, bf, min, from, to, -1, raw, section);
 }
 
-R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
-	RBinFile *binfile = R_NEW0 (RBinFile);
-	if (!binfile) {
+R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
+	ut32 bf_id;
+	if (!r_id_pool_grab_id (bin->ids->pool, &bf_id)) {
 		return NULL;
 	}
-	// TODO: use r_id_storage api
-	if (!r_id_pool_grab_id (bin->ids->pool, &binfile->id)) {
-		if (steal_ptr) { // we own the ptr, free on error
-			free ((void*) bytes);
-		}
-		free (binfile);		//no id means no binfile
+	RBinFile *bf = R_NEW0 (RBinFile);
+	if (!bf) {
 		return NULL;
 	}
-	int res = r_bin_file_set_bytes (binfile, bytes, sz, steal_ptr);
-	if (!res && steal_ptr) { // we own the ptr, free on error
-		free ((void *)bytes);
-	}
-	binfile->rbin = bin;
-	binfile->file = file ? strdup (file) : NULL;
-	binfile->rawstr = rawstr;
-	binfile->fd = fd;
-	binfile->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
-	binfile->sdb = sdb;
-	binfile->size = file_sz;
-	binfile->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
-	binfile->objs = r_list_newf ((RListFree)r_bin_object_free);
-	binfile->xtr_obj = NULL;
-
-	if (!binfile->buf) {
-		binfile->buf = r_buf_new ();
-	}
-
-	if (sdb) {
-		binfile->sdb = sdb_ns (sdb, sdb_fmt ("fd.%d", fd), 1);
-		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0); // x86??
-		/* NOTE */
-		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
-		 * sub-namespaces */
-		/* And if any namespace is referenced backwards it gets
-		 * double-freed */
-		binfile->sdb_addrinfo = sdb_ns (binfile->sdb, "addrinfo", 1);
-		binfile->sdb_addrinfo->refs++;
-		sdb_ns_set (sdb, "cur", binfile->sdb);
-		binfile->sdb->refs++;
-	}
-	return binfile;
+	bf->id = bf_id;
+	bf->rbin = bin;
+	bf->file = file ? strdup (file) : NULL;
+	bf->rawstr = rawstr;
+	bf->fd = fd;
+	bf->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
+	bf->sdb = sdb;
+	bf->size = file_sz;
+	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
+	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
+	bf->xtr_obj = NULL;
+	bf->sdb = sdb_new0 ();
+	bf->sdb_addrinfo = sdb_new0 (); //ns (bf->sdb, "addrinfo", 1);
+	// bf->sdb_addrinfo->refs++;
+	return bf;
 }
 
-static RBinPlugin *get_plugin(RBin *bin, const char *pluginname, const ut8 *bytes, ut64 sz) {
+static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBuffer *buf) {
 	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
 	if (plugin) {
 		return plugin;
 	}
-
 	plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
 	if (plugin) {
 		return plugin;
 	}
-
-	plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
+	plugin = r_bin_get_binplugin_by_buffer (bin, buf);
 	if (plugin) {
 		return plugin;
 	}
-
 	return r_bin_get_binplugin_any (bin);
-}
-
-static RBinPlugin * get_plugin_with_buffer (RBin *bin, RBuffer *buf) {
-	ut8 bytes[4096];
-	// XXX this must be removed to make get_plugin work with RBuffer instead of char*+sz
-	r_buf_read_at (buf, 0, bytes, sizeof (bytes));
-	return get_plugin (bin, NULL, (const ut8 *)bytes, sizeof (bytes));
 }
 
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
@@ -405,7 +373,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 offset = data->offset;
 	ut64 sz = data->size;
 
-	RBinPlugin *plugin = get_plugin_with_buffer (bin, data->buf);
+	RBinPlugin *plugin = get_plugin_from_buffer (bin, NULL, data->buf);
 	bf->buf = r_buf_ref (data->buf);
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
@@ -435,14 +403,6 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	return true;
 }
 
-static RBinFile *file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, bool steal_ptr) {
-	RBinFile *bf = r_bin_file_new (bin, file, bytes, sz, file_sz, rawstr, fd, xtrname, bin->sdb, steal_ptr);
-	if (bf) {
-		r_list_append (bin->binfiles, bf);
-	}
-	return bf;
-}
-
 static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits) {
 	if (!xtr_data->metadata || !xtr_data->metadata->arch) {
 		return false;
@@ -453,29 +413,23 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 }
 
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (buf, &sz);
-	return r_bin_file_new_from_bytes (bin, file, bytes, sz, file_sz, rawstr, baseaddr, loadaddr, fd, pluginname, offset);
-}
+	r_return_val_if_fail (file_sz != UT64_MAX, NULL);
 
-R_IPI RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, ut64 offset) {
-	r_return_val_if_fail (sz != UT64_MAX, NULL);
-
-	RBinPlugin *plugin = get_plugin (bin, pluginname, bytes, sz);
-	RBinFile *bf = file_create_append (bin, file, bytes, sz, file_sz, rawstr, fd, NULL, true);
-	if (!bf) {
-		return NULL;
-	}
-
-	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
-	if (!o) {
-		r_list_delete_data (bin->binfiles, bf);
-		return NULL;
-	}
-	// size is set here because the reported size of the object depends on
-	// if loaded from xtr plugin or partially read
-	if (!o->size) {
-		o->size = file_sz;
+	RBinFile *bf = r_bin_file_new (bin, file, file_sz, rawstr, fd, pluginname, NULL, false);
+	if (bf) {
+		bf->buf = r_buf_ref (buf);
+		RBinPlugin *plugin = get_plugin_from_buffer (bin, pluginname, bf->buf);
+		RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
+		if (!o) {
+			r_bin_file_free (bf);
+			return NULL;
+		}
+		// size is set here because the reported size of the object depends on
+		// if loaded from xtr plugin or partially read
+		if (!o->size) {
+			o->size = file_sz;
+		}
+		r_list_append (bin->binfiles, bf);
 	}
 	return bf;
 }
@@ -669,94 +623,85 @@ R_API bool r_bin_file_deref(RBin *bin, RBinFile *a) {
 	return res;
 }
 
-R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
-	RBinFile *a = bf_;
-	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
-	if (!a) {
+R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
+	if (!_bf) {
 		return;
 	}
+	RBinFile *bf = _bf;
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	// Binary format objects are connected to the
 	// RBinObject, so the plugin must destroy the
 	// format data first
 	if (plugin && plugin->destroy) {
-		plugin->destroy (a);
+		plugin->destroy (bf);
 	}
-	r_buf_free (a->buf);
-	if (a->curxtr && a->curxtr->destroy && a->xtr_obj) {
-		a->curxtr->free_xtr ((void *)(a->xtr_obj));
+	r_buf_free (bf->buf);
+	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
+		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
 	// TODO: unset related sdb namespaces
-	if (a && a->sdb_addrinfo) {
-		sdb_free (a->sdb_addrinfo);
-		a->sdb_addrinfo = NULL;
+	if (bf->sdb_addrinfo) {
+		sdb_free (bf->sdb_addrinfo);
+		bf->sdb_addrinfo = NULL;
 	}
-	free (a->file);
-	a->o = NULL;
-	r_list_free (a->objs);
-	r_list_free (a->xtr_data);
-	if (a->id != -1) {
+	free (bf->file);
+	bf->o = NULL;
+	r_list_free (bf->objs);
+	r_list_free (bf->xtr_data);
+	if (bf->id != -1) {
 		// TODO: use r_storage api
-		r_id_pool_kick_id (a->rbin->ids->pool, a->id);
+		r_id_pool_kick_id (bf->rbin->ids->pool, bf->id);
 	}
-	free (a);
+	free (bf);
 }
 
 R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (buf, &sz);
-	return r_bin_file_xtr_load_bytes (bin, xtr, filename, bytes, sz, file_sz, baseaddr, loadaddr, idx, fd, rawstr);
-}
-
-// This function populate RBinFile->xtr_data, that information is enough to
-// create RBinObject when needed using r_bin_file_object_new_from_xtr_data
-R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
-	r_return_val_if_fail (bin && xtr && bytes, NULL);
+	r_return_val_if_fail (bin && xtr && buf, NULL);
 
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		bf = file_create_append (bin, filename, bytes, sz,
-			file_sz, rawstr, fd, xtr->name, false);
+		bf = r_bin_file_new (bin, filename, file_sz, rawstr, fd, xtr->name, bin->sdb, false);
 		if (!bf) {
 			return NULL;
 		}
+		r_list_append (bin->binfiles, bf);
 		if (!bin->cur) {
 			bin->cur = bf;
 		}
 	}
 	r_list_free (bf->xtr_data);
-	bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
+	bf->xtr_data = NULL;
+	if (xtr->extractall_from_buffer) {
+		bf->xtr_data = xtr->extractall_from_buffer (bin, buf);
+	} else if (xtr->extractall_from_bytes) {
+		ut64 sz = 0;
+		const ut8 *bytes = r_buf_data (buf, &sz);
+		eprintf ("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin\n", xtr->name);
+		bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
+	}
 	if (bf->xtr_data) {
 		RListIter *iter;
-		RBinXtrData *xtr;
+		RBinXtrData *x;
 		//populate xtr_data with baddr and laddr that will be used later on
 		//r_bin_file_object_new_from_xtr_data
-		r_list_foreach (bf->xtr_data, iter, xtr) {
-			xtr->baddr = baseaddr? baseaddr : UT64_MAX;
-			xtr->laddr = loadaddr? loadaddr : UT64_MAX;
+		r_list_foreach (bf->xtr_data, iter, x) {
+			x->baddr = baseaddr? baseaddr : UT64_MAX;
+			x->laddr = loadaddr? loadaddr : UT64_MAX;
 		}
 	}
 	bf->loadaddr = loadaddr;
 	return bf;
 }
 
-#define LIMIT_SIZE 0
+// XXX deprecate this function imho.. wee can just access bf->buf directly
 R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool steal_ptr) {
 	r_return_val_if_fail (bf && bytes, false);
-
 	r_buf_free (bf->buf);
-#if LIMIT_SIZE
-	if (sz > 1024 * 1024) {
-		eprintf ("Too big\n");
-		// TODO: use r_buf_io instead of setbytes all the time to save memory
-		return NULL;
-	}
-#else
 	if (steal_ptr) {
 		bf->buf = r_buf_new_with_pointers (bytes, sz, true);
 	} else {
 		bf->buf = r_buf_new_with_bytes (bytes, sz);
 	}
-#endif
 	return bf->buf != NULL;
 }
 
@@ -768,17 +713,8 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 	r_return_val_if_fail (a, NULL);
 	RListIter *iter;
 	RBinSection *section;
-	RList *ret;
+	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
-	if (dump) {
-		/* dump to stdout, not stored in list */
-		ret = NULL;
-	} else {
-		ret = r_list_newf (r_bin_string_free);
-		if (!ret) {
-			return NULL;
-		}
-	}
 	if (!raw && a->o && a->o && a->o->sections && !r_list_empty (a->o->sections)) {
 		RBinObject *o = a->o;
 		r_list_foreach (o->sections, iter, section) {
@@ -794,7 +730,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 			const int cfstr_offs = (bits == 64) ? 16 :  8;
 			if (strstr (section->name, "__cfstring")) {
 				int i;
-// XXX do not walk if bin.strings == 0
+				// XXX do not walk if bin.strings == 0
 				ut8 *p;
 				if (section->size > a->size) {
 					continue;

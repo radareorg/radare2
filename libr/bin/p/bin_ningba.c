@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2015 - condret@runas-racer.com */
+/* radare - LGPL - 2014-2019 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,29 +7,16 @@
 #include <string.h>
 #include "../format/nin/gba.h"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
+static bool check_buffer(RBuffer *b) {
 	ut8 lict[156];
-	if (!buf || length < 160) {
-		return 0;
-	}
-	memcpy (lict, buf + 0x4, 156);
-	return (!memcmp (lict, lic_gba, 156))? 1: 0;
+	r_return_val_if_fail (b, false);
+	r_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
+	return !memcmp (lict, lic_gba, 156);
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	bf->rbin->maxstrbuf = 0x20000000;
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	r_buf_free (bf->buf);
-	bf->buf = NULL;
-	return true;
+	r_return_val_if_fail (bf && bf->o, false);
+	return check_buffer (bf->buf);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -101,8 +88,7 @@ RBinPlugin r_bin_plugin_ningba = {
 	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
 	.load = &load,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
 	.sections = &sections,

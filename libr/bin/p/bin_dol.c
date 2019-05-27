@@ -51,15 +51,15 @@ static bool check_bytes(const ut8 *b, ut64 length) {
 	return res;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	DolHeader *dol = NULL;
 	char *lowername = NULL, *ext;
 	if (r_buf_size (buf) < sizeof (DolHeader)) {
-		return NULL;
+		return false;
 	}
 	dol = R_NEW0 (DolHeader);
 	if (!dol) {
-		return NULL;
+		return false;
 	}
 	lowername = strdup (bf->file);
 	if (!lowername) {
@@ -72,13 +72,14 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	}
 	free (lowername);
 	r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
-	return dol;
+	*bin_obj = dol;
+	return true;
 
 lowername_err:
 	free (lowername);
 dol_err:
 	free (dol);
-	return NULL;
+	return false;
 }
 
 static RList *sections(RBinFile *bf) {

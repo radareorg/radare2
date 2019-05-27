@@ -7,34 +7,17 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return true;
-}
-
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	ut8 lict[48];
-	if (!buf || length < (0x104 + 48)) {
-		return 0;
+static bool check_buffer(RBuffer *b) {
+	ut8 lict[sizeof (lic)];
+	if (r_buf_read_at (b, 0x104, lict, sizeof (lict)) == sizeof (lict)) {
+		return !memcmp (lict, lic, sizeof (lict));
 	}
-	memcpy (lict, buf + 0x104, 48);
-	return (!memcmp (lict, lic, 48))? 1: 0;
+	return false;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	ut64 la = bf->o->loadaddr;
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	r_buf_free (bf->buf);
-	bf->buf = NULL;
-	return true;
+	r_return_val_if_fail (bf && bf->o, false);
+	return check_buffer (bf->buf);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -306,9 +289,7 @@ RBinPlugin r_bin_plugin_ningb = {
 	.desc = "Gameboy format r_bin plugin",
 	.license = "LGPL3",
 	.load = &load,
-	.load_bytes = &load_bytes,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

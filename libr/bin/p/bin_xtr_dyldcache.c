@@ -11,7 +11,6 @@ static RBinXtrData * extract(RBin *bin, int idx);
 static RList * extractall(RBin *bin);
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
-static int free_xtr (void *xtr_obj);
 
 static bool check_buffer(RBuffer *buf) {
 	ut8 b[4] = {0};
@@ -19,14 +18,12 @@ static bool check_buffer(RBuffer *buf) {
 	return !memcmp (buf, "dyld", 4);
 }
 
-// TODO: destroy must be void?
-static int destroy(RBin *bin) {
-	return free_xtr (bin->cur->xtr_obj);
+static void free_xtr(void *xtr_obj) {
+	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)xtr_obj);
 }
 
-static int free_xtr(void *xtr_obj) {
-	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)xtr_obj);
-	return true;
+static void destroy(RBin *bin) {
+	free_xtr (bin->cur->xtr_obj);
 }
 
 static bool load(RBin *bin) {
@@ -85,7 +82,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 			free (lib);
 			return NULL;
 		}
-		hdr = MACH0_(get_hdr_from_bytes) (lib->b);
+		hdr = MACH0_(get_hdr_from_buffer) (lib->b);
 		if (!hdr) {
 			free (lib);
 			R_FREE (metadata);
@@ -128,7 +125,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		free (lib);
 		return NULL;
 	}
-	hdr = MACH0_(get_hdr_from_bytes) (lib->b);
+	hdr = MACH0_(get_hdr_from_buffer) (lib->b);
 	if (!hdr) {
 		free (lib);
 		free (metadata);
