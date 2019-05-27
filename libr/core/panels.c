@@ -269,6 +269,9 @@ static void setCursor(RCore *core, bool cur);
 static void setdcb(RCore *core, RPanel *p);
 static void setrcb(RPanels *ps, RPanel *p);
 static void setReadOnly(RPanel *p, char *s);
+static void set_pos(RPanelPos *pos, int x, int y);
+static void set_size(RPanelPos *pos, int w, int h);
+static void set_geometry(RPanelPos *pos, int x, int y, int w, int h);
 
 /* reset */
 static void resetScrollPos(RPanel *p);
@@ -371,7 +374,7 @@ static void toggleWindowMode(RPanels *panels);
 
 /* modal */
 static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **title, char **cmd);
-static void create_almighty(RCore *core, RPanel *panel);
+static void create_almighty(RCore *core, RPanel *panel, const int x, const int y, const int w, const int h);
 static void update_modal(RCore *core, RModal *modal);
 static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, const char *name);
 static RModal *init_modal();
@@ -572,6 +575,21 @@ static void setCmdStrCache(RCore *core, RPanel *p, char *s) {
 static void setReadOnly(RPanel *p, char *s) {
 	free (p->model->readOnly);
 	p->model->readOnly = s;
+}
+
+static void set_pos(RPanelPos *pos, int x, int y) {
+	pos->x = x;
+	pos->y = y;
+}
+
+static void set_size(RPanelPos *pos, int w, int h) {
+	pos->w = w;
+	pos->h = h;
+}
+
+static void set_geometry(RPanelPos *pos, int x, int y, int w, int h) {
+	set_pos (pos, x, y);
+	set_size (pos, w, h);
 }
 
 static RPanel *getPanel(RPanels *panels, int i) {
@@ -3449,6 +3467,8 @@ static RModal *init_modal() {
 	if (!modal) {
 		return NULL;
 	}
+	modal->pos.x = 0;
+	modal->pos.y = 0;
 	modal->idx = 0;
 	modal->offset = 0;
 	return modal;
@@ -4330,8 +4350,6 @@ static void createNewPanel(RCore *core, bool vertical) {
 	free (res);
 }
 
-const int WIDGET_WIDTH = 30;
-const int WIDGET_HEIGHT = 20;
 const char *sub_modal_menu[] = {
 	"Add the current panel", "Create New",
 	NULL
@@ -4345,15 +4363,15 @@ static void update_modal(RCore *core, RModal *modal) {
 	if (modal->idx >= count) {
 		modal->idx = 0;
 		modal->offset = 0;
-	} else if (modal->idx >= modal->offset + WIDGET_HEIGHT) {
-		if (modal->offset + WIDGET_HEIGHT >= count) {
+	} else if (modal->idx >= modal->offset + modal->pos.h) {
+		if (modal->offset + modal->pos.h >= count) {
 			modal->offset = 0;
 			modal->idx = 0;
 		} else {
 			modal->offset += 1;
 		}
 	} else if (modal->idx < 0) {
-		modal->offset = R_MAX (count - WIDGET_HEIGHT, 0);
+		modal->offset = R_MAX (count - modal->pos.h, 0);
 		modal->idx = count - 1;
 	} else if (modal->idx < modal->offset) {
 		modal->offset -= 1;
@@ -4362,7 +4380,7 @@ static void update_modal(RCore *core, RModal *modal) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	int i = 0;
-	int max_h = R_MIN (modal->offset + WIDGET_HEIGHT, count);
+	int max_h = R_MIN (modal->offset + modal->pos.h, count);
 	ls_foreach (l, iter, kv) {
 		if (draw_modal (core, modal, max_h, i, sdbkv_key (kv))) {
 			i++;
@@ -4374,16 +4392,11 @@ static void update_modal(RCore *core, RModal *modal) {
 			break;
 		}
 	}
-	RConsCanvas *can = panels->can;
-	int x, y;
-	x = (can->w - WIDGET_WIDTH) / 2;
-	y = (can->h - WIDGET_HEIGHT) / 2;
-
-	r_cons_canvas_fill (panels->can, x, y, WIDGET_WIDTH + 2, WIDGET_HEIGHT + 2, ' ');
-	(void)r_cons_canvas_gotoxy (panels->can, x + 2, y + 1);
+	r_cons_canvas_fill (panels->can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
+	(void)r_cons_canvas_gotoxy (panels->can, modal->pos.x + 2, modal->pos.y + 1);
 	r_cons_canvas_write (panels->can, r_strbuf_drain (modal->data));
 
-	r_cons_canvas_box (panels->can, x, y, WIDGET_WIDTH + 2, WIDGET_HEIGHT + 2, core->cons->context->pal.graph_box2);
+	r_cons_canvas_box (panels->can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
 
 	r_cons_canvas_print (panels->can);
 	r_cons_flush ();
@@ -4405,8 +4418,9 @@ static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, co
 	return true;
 }
 
-static void create_almighty(RCore *core, RPanel *panel) {
+static void create_almighty(RCore *core, RPanel *panel, const int x, const int y, const int w, const int h) {
 	RModal *modal = init_modal ();
+	set_geometry (&modal->pos, x, y, w, h);
 	const int usleep = 25000;
 	int okey, key;
 	update_modal (core, modal);
@@ -5120,7 +5134,13 @@ repeat:
 		break;
 	case '"':
 		r_cons_switchbuf (false);
-		create_almighty (core, cur);
+		{
+			const int w = 30;
+			const int h = 20;
+			const int x = (can->w - w) / 2;
+			const int y = (can->h - h) / 2;
+			create_almighty (core, cur, x, y, w, h);
+		}
 		break;
 	case 'n':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {

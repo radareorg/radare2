@@ -1020,6 +1020,7 @@ typedef struct {
 
 typedef struct {
 	RStrBuf *data;
+	RPanelPos pos;
 	int idx;
 	int offset;
 } RModal;
