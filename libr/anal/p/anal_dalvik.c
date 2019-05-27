@@ -47,7 +47,7 @@ static const char *getCondz(ut8 cond) {
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz >= len) {
-		return sz;
+		return -1;
 	}
 #if 0
 	memset (op, '\0', sizeof (RAnalOp));
@@ -109,8 +109,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 				}
 			} else {
 				op->type = R_ANAL_OP_TYPE_MOV;
-				op->stackop = R_ANAL_STACK_SET;
-				op->ptr = -vA;
+				//op->stackop = R_ANAL_STACK_SET;
+				//op->ptr = -vA;
 				if (mask & R_ANAL_OP_MASK_ESIL) {
 					esilprintf (op, "v%d,v%d,=", vA, vB);
 				}
@@ -327,10 +327,17 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		/* fall through */
 	case 0xcd:
-	case 0xd2:
+	case 0xd2: // mul-int/lit16
 	case 0x92:
 	case 0xb2:
 		op->type = R_ANAL_OP_TYPE_MUL;
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			ut32 vA = (data[1] & 0x0f);
+			ut32 vB = (data[1] & 0xf0) >> 4;
+			ut32 vC = (data[2] << 8) | data[3];
+			esilprintf (op, "%d,v%d,*,v%d,=", vC, vB, vA);
+			op->val = vC;
+		}
 		break;
 	case 0x7c: // not-int
 	case 0x7e: // not-long
@@ -526,7 +533,6 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x77: //
 	case 0xb9: // invokeinterface
 	case 0xb7: // invokespecial
-	case 0xb8: // invokestatic
 	case 0xb6: // invokevirtual
 	case 0x6e: // invoke-virtual
 		if (len > 2) {
@@ -674,11 +680,19 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xc1: // or-long/2addr
 	case 0xa1: // or-long
 		op->type = R_ANAL_OP_TYPE_OR;
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			ut32 vA = (data[1] & 0x0f);
+			ut32 vB = (data[1] & 0xf0) >> 4;
+			ut32 vC = (data[2] << 8) | data[3];
+			esilprintf (op, "%d,v%d,|,v%d,=", vC, vB, vA);
+			op->val = vC;
+		}
 		break;
 	case 0xe0: //lshl
 	case 0xc3: //lshl
 	case 0xa3: // shl-long
 	case 0x98: // shl-long
+	case 0xb8: // shl-int/2addr
 		op->type = R_ANAL_OP_TYPE_SHL;
 		break;
 	}

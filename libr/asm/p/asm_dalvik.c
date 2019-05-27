@@ -512,7 +512,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	if (payload < 0) {
 		op->payload = 0;
-	} else if (payload >= len) {
+	} else if (len > 0 && payload >= len) {
 		op->payload = len;
 	} else {
 		op->payload = payload;
