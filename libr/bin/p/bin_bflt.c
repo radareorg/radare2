@@ -297,9 +297,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return res;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_bflt_free (bf->o->bin_obj);
-	return true;
 }
 
 RBinPlugin r_bin_plugin_bflt = {

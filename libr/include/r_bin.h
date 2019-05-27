@@ -369,7 +369,7 @@ typedef struct r_bin_xtr_plugin_t {
 	bool (*check_buffer)(RBuffer *b);
 
 	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
-	RBinXtrData * (*extract_from_buffer)(RBin *bin, RBuffer *buf);
+	RBinXtrData * (*extract_from_buffer)(RBin *bin, RBuffer *buf, int idx);
 	RList * (*extractall_from_bytes)(RBin *bin, const ut8 *buf, ut64 size);
 	RList * (*extractall_from_buffer)(RBin *bin, RBuffer *buf);
 	RBinXtrData * (*extract)(RBin *bin, int idx);

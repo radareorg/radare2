@@ -1383,11 +1383,10 @@ static RList *symbols(RBinFile *bf) {
 	cache->original_io_read = NULL;
 } */
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	// unswizzle_io_read (cache, bf->rbin->iob.io); // XXX io may be dead here
 	r_dyldcache_free (cache);
-	return true;
 }
 
 static RList *classes(RBinFile *bf) {

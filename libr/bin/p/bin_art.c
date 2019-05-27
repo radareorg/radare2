@@ -80,11 +80,10 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
 	r_buf_free (obj->buf);
 	free (obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -97,16 +96,12 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	ArtObj *ao;
-	RBinInfo *ret;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	ret = R_NEW0 (RBinInfo);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ao = bf->o->bin_obj;
+	ArtObj *ao = bf->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");

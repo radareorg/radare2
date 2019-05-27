@@ -41,17 +41,13 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	MACH0_(mach0_free) (bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return 0LL;
-	}
-	bin = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, UT64_MAX);
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	return MACH0_(get_baddr)(bin);
 }
 

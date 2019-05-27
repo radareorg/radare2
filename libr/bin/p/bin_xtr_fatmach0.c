@@ -9,8 +9,6 @@
 
 static RBinXtrData * extract(RBin *bin, int idx);
 static RList * extractall(RBin *bin);
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
-static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
@@ -64,16 +62,13 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->xtr_type = "fat";
 }
 
-static RBinXtrData * extract(RBin* bin, int idx) {
+// XXX deprecate
+static RBinXtrData *extract(RBin* bin, int idx) {
 	int narch;
-	RBinXtrData * res = NULL;
 	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
-	struct r_bin_fatmach0_arch_t *arch;
-	struct MACH0_(mach_header) *hdr = NULL;
-
-	arch = r_bin_fatmach0_extract (fb, idx, &narch);
+	struct r_bin_fatmach0_arch_t *arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) {
-		return res;
+		return NULL;
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
@@ -81,7 +76,7 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 		free (arch);
 		return NULL;
 	}
-	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
+	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr_from_buffer) (arch->b);
 	if (!hdr) {
 		free (metadata);
 		free (arch);
@@ -89,50 +84,39 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
-	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size,
-		narch, metadata);
+	RBinXtrData * res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
 	r_buf_free (arch->b);
 	free (arch);
 	free (hdr);
 	return res;
 }
 
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
-	struct r_bin_fatmach0_obj_t *fb;
-	struct r_bin_fatmach0_arch_t *arch;
-	RBinXtrData *res = NULL;
-	int narch;
-	struct MACH0_(mach_header) *hdr;
-
+static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	r_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
-		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
+		bin->cur->xtr_obj = r_bin_fatmach0_from_buffer_new (b);
 	}
-
-	fb = bin->cur->xtr_obj;
-	arch = r_bin_fatmach0_extract (fb, idx, &narch);
-	if (!arch) {
-		return res;
-	}
-
-	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	if (!metadata) {
+	int narch;
+	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
+	struct r_bin_fatmach0_arch_t *arch = r_bin_fatmach0_extract (fb, idx, &narch);
+	if (arch) {
+		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+		if (metadata) {
+			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr_from_buffer) (arch->b);
+			if (hdr) {
+				fill_metadata_info_from_hdr (metadata, hdr);
+				RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
+				r_buf_free (arch->b);
+				free (arch);
+				free (hdr);
+				return res;
+			}
+			free (metadata);
+		}
 		free (arch);
-		return NULL;
 	}
-	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
-	if (!hdr) {
-		free (arch);
-		free (metadata);
-		return NULL;
-	}
-	fill_metadata_info_from_hdr (metadata, hdr);
-	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
-	r_buf_free (arch->b);
-	free (arch);
-	free (hdr);
-	return res;
+	return NULL;
 }
 
 static RList * extractall(RBin *bin) {
@@ -160,28 +144,25 @@ static RList * extractall(RBin *bin) {
 	return res;
 }
 
-static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
-	RList *res = NULL;
-	int narch, i = 0;
-	RBinXtrData *data = oneshot (bin, buf, size, i);
-
-	if (!data) {
+static RList * oneshotall_buffer(RBin *bin, RBuffer *b) {
+	RBinXtrData *data = oneshot_buffer (bin, b, 0);
+	if (data) {
+		// XXX - how do we validate a valid narch?
+		int  narch = data->file_count;
+		RList *res = r_list_newf (r_bin_xtrdata_free);
+		if (!res) {
+			r_bin_xtrdata_free (data);
+			return NULL;
+		}
+		r_list_append (res, data);
+		int i = 0;
+		for (i = 1; data && i < narch; i++) {
+			data = oneshot_buffer (bin, b, i);
+			r_list_append (res, data);
+		}
 		return res;
 	}
-	// XXX - how do we validate a valid narch?
-	narch = data->file_count;
-	res = r_list_newf (r_bin_xtrdata_free);
-	if (!res) {
-		r_bin_xtrdata_free (data);
-		return NULL;
-	}
-	r_list_append (res, data);
-	for (i = 1; data && i < narch; i++) {
-		data = oneshot (bin, buf, size, i);
-		r_list_append (res, data);
-	}
-
-	return res;
+	return NULL;
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
@@ -191,10 +172,10 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 	.load = &load,
 	.size = &size,
 	.extract = &extract,
-	.extractall = &extractall,
+	// DEPRECATE .extractall = &extractall,
 	.destroy = &destroy,
-	.extract_from_bytes = &oneshot,
-	.extractall_from_bytes = &oneshotall,
+	.extract_from_buffer = &oneshot_buffer,
+	.extractall_from_buffer = &oneshotall_buffer,
 	.free_xtr = &free_xtr,
 	.check_buffer = check_buffer,
 };

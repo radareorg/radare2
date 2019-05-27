@@ -505,11 +505,10 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	struct r_bin_vsf_obj *obj = (struct r_bin_vsf_obj *)bf->o->bin_obj;
 	free (obj->maincpu);
 	free (obj);
-	return true;
 }
 
 static RList* entries(RBinFile *bf) {

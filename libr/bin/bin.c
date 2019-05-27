@@ -58,17 +58,15 @@ static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
-	if (!data) {
-		return NULL;
+	if (data) {
+		data->offset = offset;
+		data->size = size;
+		data->file_count = file_count;
+		data->metadata = metadata;
+		data->loaded = 0;
+// dont slice twice TODO. review this
+		data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
 	}
-	data->offset = offset;
-	data->size = size;
-	data->file_count = file_count;
-	data->metadata = metadata;
-	data->loaded = 0;
-	// TODO: USE RBuffer *buf inside RBinXtrData*
-	data->buf = r_buf_ref (buf);
-	// TODO. subbuffer?
 	return data;
 }
 
@@ -121,13 +119,11 @@ R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int b
 }
 
 R_API void r_bin_file_hash_free(RBinFileHash *fhash) {
-	if (!fhash) {
-		return;
+	if (fhash) {
+		R_FREE (fhash->type);
+		R_FREE (fhash->hex);
+		free (fhash);
 	}
-
-	R_FREE (fhash->type);
-	R_FREE (fhash->hex);
-	free (fhash);
 }
 
 R_API void r_bin_info_free(RBinInfo *rb) {
@@ -322,7 +318,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
 	RBinXtrPlugin *xtr;
-	RBinFile *binfile = NULL;
 	int tfd = opt->fd;
 
 	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
@@ -364,6 +359,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		}
 	}
 
+	RBinFile *bf = NULL;
 	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
@@ -374,7 +370,8 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 				continue;
 			}
 			if (xtr->check_buffer (buf)) {
-				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
+				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
+				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					if (is_debugger && opt->sz != file_sz) {
 						if (tfd < 0) {
 							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
@@ -387,7 +384,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
 						tfd = -1; // marking it closed
 					}
-					binfile = r_bin_file_xtr_load_buffer (bin, xtr,
+					bf = r_bin_file_xtr_load_buffer (bin, xtr,
 						fname, buf, file_sz,
 						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
 						opt->fd, bin->rawstr);
@@ -395,17 +392,18 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			}
 		}
 	}
-	if (!binfile) {
-		binfile = r_bin_file_new_from_buffer (
+	if (!bf) {
+		bf = r_bin_file_new_from_buffer (
 			bin, fname, buf, file_sz, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
+		if (!bf) {
+			return false;
+		}
 	}
-
-	if (!binfile || !r_bin_file_set_cur_binfile (bin, binfile)) {
+	if (!r_bin_file_set_cur_binfile (bin, bf)) {
 		return false;
 	}
-
-	r_id_storage_set (bin->ids, bin->cur, binfile->id);
+	r_id_storage_set (bin->ids, bin->cur, bf->id);
 	return true;
 }
 

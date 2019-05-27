@@ -32,13 +32,12 @@ static bool check_buffer(RBuffer *buf) {
 }
 
 // Frees the bin_obj of the binary file
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	r_list_free (qo->sections);
 	r_list_free (qo->fixups);
 	bf->o->bin_obj = NULL;
 	free (qo);
-	return true;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {

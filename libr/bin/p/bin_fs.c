@@ -47,7 +47,6 @@ static bool check_buffer(RBuffer *b) {
 	return hasFs;
 }
 
-
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
@@ -58,9 +57,8 @@ static bool load(RBinFile *bf) {
 	return load_buffer (bf, &bf->o->bin_obj, bf->buf, la, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {

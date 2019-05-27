@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2017 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2019 - Fedor Sakharov */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -29,9 +29,8 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return *bin_obj != NULL;
 }
 
-static int destroy(RBinFile *bf) {
-	r_bin_coff_free((struct r_bin_coff_obj*)bf->o->bin_obj);
-	return true;
+static void destroy(RBinFile *bf) {
+	r_bin_coff_free ((struct r_bin_coff_obj*)bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {

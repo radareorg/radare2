@@ -135,11 +135,10 @@ static bool load(RBinFile *bf) {
 	return result;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_java_free ((struct r_bin_java_obj_t *) bf->o->bin_obj);
 	sdb_free (DB);
 	DB = NULL;
-	return true;
 }
 
 static RList *entries(RBinFile *bf) {

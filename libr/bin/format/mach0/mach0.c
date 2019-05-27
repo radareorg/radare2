@@ -2702,7 +2702,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	RBuffer *buf = bf->buf;
 	ut64 length = r_buf_size (buf);
 	int n = 0;
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_buffer)(buf);
 	if (!mh) {
 		return;
 	}
@@ -2840,7 +2840,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 }
 
 RList *MACH0_(mach_fields)(RBinFile *bf) {
-	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(bf->buf);
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_buffer)(bf->buf);
 	if (!mh) {
 		return NULL;
 	}
@@ -2865,7 +2865,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	return ret;
 }
 
-struct MACH0_(mach_header) *MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
+struct MACH0_(mach_header) *MACH0_(get_hdr_from_buffer)(RBuffer *buf) {
 	ut8 magicbytes[sizeof (ut32)] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;

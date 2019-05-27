@@ -40,9 +40,8 @@ static bool load(RBinFile *bf) {
 	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_wasm_destroy (bf);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {

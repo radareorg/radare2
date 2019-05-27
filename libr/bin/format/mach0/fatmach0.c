@@ -51,9 +51,6 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 }
 
 struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin, int idx, int *narch) {
-	struct r_bin_fatmach0_arch_t *ret;
-	ut8 *buf = NULL;
-
 	if (!bin || (idx < 0) || (idx > bin->nfat_arch)) {
 		return NULL;
 	}
@@ -61,44 +58,20 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		bin->archs[idx].offset + bin->archs[idx].size > bin->size) {
 		return NULL;
 	}
-
 	if (narch) {
 		*narch = bin->nfat_arch;
 	}
-	if (!(ret = R_NEW0 (struct r_bin_fatmach0_arch_t))) {
-		perror ("malloc (ret)");
-		return NULL;
+	struct r_bin_fatmach0_arch_t *ret = R_NEW0 (struct r_bin_fatmach0_arch_t);
+	if (ret) {
+		ret->size = bin->archs[idx].size;
+		if (!ret->size || ret->size > bin->size) {
+			eprintf ("Skipping corrupted sub-bin %d arch %d\n", idx, bin->archs[idx].size);
+			free (ret);
+			return NULL;
+		}
+		ret->offset = bin->archs[idx].offset;
+		ret->b = r_buf_new_slice (bin->b, ret->offset, ret->size);
 	}
-	if (!bin->archs[idx].size || bin->archs[idx].size > bin->size) {
-		eprintf ("Skipping corrupted sub-bin %d arch %d\n", idx, bin->archs[idx].size);
-		free (ret);
-		return NULL;
-	}
-	if (!(buf = malloc (1 + bin->archs[idx].size))) {
-		perror ("malloc (buf)");
-		free (ret);
-		return NULL;
-	}
-	if (r_buf_read_at (bin->b, bin->archs[idx].offset, buf, bin->archs[idx].size) != bin->archs[idx].size) {
-		perror ("read (buf)");
-		free (buf);
-		free (ret);
-		return NULL;
-	}
-	if (!(ret->b = r_buf_new ())) {
-		free (buf);
-		free (ret);
-		return NULL;
-	}
-	if (!r_buf_set_bytes (ret->b, buf, bin->archs[idx].size)) {
-		free (buf);
-		r_buf_free (ret->b);
-		free (ret);
-		return NULL;
-	}
-	free (buf);
-	ret->offset = bin->archs[idx].offset;
-	ret->size = bin->archs[idx].size;
 	return ret;
 }
 
@@ -132,6 +105,19 @@ struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
 		return r_bin_fatmach0_free (bin);
 	}
 	return bin;
+}
+
+struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_buffer_new(RBuffer *b) {
+	r_return_val_if_fail (b, NULL);
+	struct r_bin_fatmach0_obj_t *bo = R_NEW0 (struct r_bin_fatmach0_obj_t);
+	if (bo) {
+		bo->b = r_buf_ref (b);
+		bo->size = r_buf_size (bo->b); // XXX implicit in bo->b
+		if (!r_bin_fatmach0_init (bo)) {
+			return r_bin_fatmach0_free (bo);
+		}
+	}
+	return bo;
 }
 
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_bytes_new(const ut8* buf, ut64 size) {

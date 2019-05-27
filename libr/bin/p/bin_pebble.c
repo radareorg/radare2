@@ -51,11 +51,6 @@ static bool load(RBinFile *bf) {
 	return check_buffer (bf->buf);
 }
 
-static int destroy(RBinFile *bf) {
-	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)bf->o->bin_obj);
-	return true;
-}
-
 static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
@@ -198,7 +193,6 @@ RBinPlugin r_bin_plugin_pebble = {
 	.license = "LGPL",
 	.load = &load,
 	.load_buffer = &load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,

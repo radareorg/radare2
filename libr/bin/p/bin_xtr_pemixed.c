@@ -8,8 +8,14 @@
 
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
-static int destroy(RBin *bin);
-static int free_xtr (void *xtr_obj);
+
+static void free_xtr (void *xtr_obj) {
+	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
+}
+
+static void destroy(RBin *bin) {
+	free_xtr (bin->cur->xtr_obj);
+}
 
 static bool check_buffer(RBuffer *b) {
 	return false;
@@ -94,15 +100,6 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	}
 	fill_metadata_info_from_hdr (metadata, pe);
 	return r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
-}
-
-static int destroy(RBin *bin) {
-	return free_xtr (bin->cur->xtr_obj);
-}
-
-static int free_xtr (void *xtr_obj) {
-	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
-	return true;
 }
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
