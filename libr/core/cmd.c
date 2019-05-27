@@ -1171,7 +1171,7 @@ static int cmd_kuery(void *data, const char *input) {
 		sdb_foreach (s, callback_foreach_kv, NULL);
 		break;
 	// TODO: add command to list all namespaces // sdb_ns_foreach ?
-	case 's':
+	case 's': // "ks"
 		if (core->http_up) {
 			return false;
 		}
@@ -1217,6 +1217,7 @@ static int cmd_kuery(void *data, const char *input) {
 			out = sdb_querys (s, NULL, 0, buf);
 			if (out) {
 				r_cons_println (out);
+				r_cons_flush ();
 			}
 		}
 		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);

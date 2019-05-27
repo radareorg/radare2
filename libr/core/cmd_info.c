@@ -928,7 +928,6 @@ static int cmd_info(void *data, const char *input) {
 							if (radare2) {
 								r_cons_printf ("ac %s\n", cls->name);
 								r_list_foreach (cls->methods, iter2, sym) {
-									const char *comma = iter2->p? " ": "";
 									r_cons_printf ("ac %s %s 0x%08"PFMT64x"\n", cls->name, sym->name, sym->vaddr);
 								}
 								continue;
