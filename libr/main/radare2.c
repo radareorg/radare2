@@ -399,6 +399,18 @@ static bool mustSaveHistory(RConfig *c) {
 
 // Try to set the correct scr.color for the current terminal.
 static void set_color_default(void) {
+#ifdef __WINDOWS__
+	char *alacritty = r_sys_getenv ("ALACRITTY_LOG");
+	if (alacritty) {
+		// Despite the setting of env vars to the contrary, Alacritty on
+		// Windows may not actually support >16 colors out-of-the-box
+		// (https://github.com/jwilm/alacritty/issues/1662).
+		// TODO: Windows 10 version check.
+		r_config_set_i (r.config, "scr.color", COLOR_MODE_16);
+		free (alacritty);
+		return;
+	}
+#endif
 	char *tmp = r_sys_getenv ("COLORTERM");
 	if (tmp) {
 		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {

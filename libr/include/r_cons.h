@@ -419,7 +419,7 @@ typedef struct r_cons_context_t {
 	bool is_interactive;
 	bool pageable;
 
-	RConsColorMode color;
+	int color_mode;
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 } RConsContext;

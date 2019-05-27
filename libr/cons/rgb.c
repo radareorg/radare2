@@ -272,7 +272,7 @@ R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RC
 
 /* Return the computed color string for the specified color */
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
-	return r_cons_rgb_str_mode (r_cons_singleton ()->context->color, outstr, sz, rcolor);
+	return r_cons_rgb_str_mode (r_cons_singleton ()->context->color_mode, outstr, sz, rcolor);
 }
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
