@@ -345,19 +345,6 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	bf->xtr_obj = NULL;
-	if (sdb) {
-		bf->sdb = sdb_ns (sdb, sdb_fmt ("fd.%d", fd), 1);
-		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
-		/* NOTE */
-		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
-		 * sub-namespaces */
-		/* And if any namespace is referenced backwards it gets
-		 * double-freed */
-		bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
-		bf->sdb_addrinfo->refs++;
-		sdb_ns_set (sdb, "cur", bf->sdb);
-		bf->sdb->refs++;
-	}
 	return bf;
 }
 

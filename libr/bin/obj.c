@@ -233,6 +233,24 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	r_list_append (bf->objs, o);
 	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
 
+	sdb = bf->rbin->sdb;
+	if (sdb) {
+		// bf->sdb = o->kv;
+		// bf->sdb_info = o->kv;
+		// sdb_ns_set (bf->sdb, "info", o->kv);
+		bf->sdb = sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
+		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
+		/* NOTE */
+		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
+		 * sub-namespaces */
+		/* And if any namespace is referenced backwards it gets
+		 * double-freed */
+		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
+		bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
+		bf->sdb_addrinfo->refs++;
+		sdb_ns_set (sdb, "cur", o->kv); // bf->sdb);
+		bf->sdb->refs++;
+	}
 	return o;
 }
 
