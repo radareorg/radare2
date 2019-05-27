@@ -31,9 +31,8 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_mdmp_free ((struct r_bin_mdmp_obj*)bf->o->bin_obj);
-	return true;
 }
 
 static RList* entries(RBinFile *bf) {
@@ -477,7 +476,7 @@ static RList* symbols(RBinFile *bf) {
 
 static bool check_buffer(RBuffer *b) {
 	ut8 magic[6];
-	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
+	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
 		return !memcmp (magic, MDMP_MAGIC, 6);
 	}
 	return false;
@@ -496,6 +495,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.libs = &libs,
 	.load = &load,
 	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
