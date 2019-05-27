@@ -275,9 +275,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			ut32 vB = (data[1] & 0xf0) >> 4;
-			ut32 vC = (data[2] & 0x0f);
+			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
 			const char *vT = "-object";
-			esilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
+			op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+			esilprintf (op, "%d,v%d,=", op->ptr, vA);
+			// c:wesilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
 		}
 		break;
 	case 0x6b: //sput-byte
@@ -309,10 +311,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x6c: // sput-wide
 	case 0xfe: // sput
 		op->type = R_ANAL_OP_TYPE_STORE;
+		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			ut32 vB = (data[1] & 0xf0) >> 4;
-			esilprintf (op, "TODO,v%d,v%d,=", vA, vB);
+			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
+			esilprintf (op, "%d,v%d,=", op->ptr, vA);
 		}
 		break;
 	case 0xad: // mul-double

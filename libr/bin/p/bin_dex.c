@@ -1891,15 +1891,22 @@ static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int 
 	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
 
+static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
+	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
+}
+
 // TODO: change all return type for all getoffset
-static int getoffset(RBinFile *bf, int type, int idx) {
+static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
 		return offset_of_method_idx (bf, dex, idx);
+	case 'f':
+		return dex_field_offset (dex, idx);
 	case 'o': // objects
-		break;
+		eprintf ("TODO: getoffset object\n");
+		return 0; // //chdex_object_offset (dex, idx);
 	case 's': // strings
 		if (dex->header.strings_size > idx) {
 			if (dex->strings) {
