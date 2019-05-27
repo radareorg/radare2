@@ -84,7 +84,7 @@ static bool check_buffer(RBuffer *b) {
 	if (r_buf_read_at (b, 0, h, 2) != 2) {
 		return false;
 	}
-	if (memcmp (h, "PE", 2)) {
+	if (!memcmp (h, "PE", 2)) {
 		return false;
 	}
 
