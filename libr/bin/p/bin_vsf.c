@@ -31,8 +31,8 @@ static Sdb* get_sdb (RBinFile *bf) {
 }
 
 static bool check_buffer(RBuffer *b) {
-	ut8 magic[4];
-	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
+	ut8 magic[VICE_MAGIC_LEN];
+	if (r_buf_read_at (b, 0, magic, VICE_MAGIC_LEN) == VICE_MAGIC_LEN) {
 		return !memcmp (magic, VICE_MAGIC, VICE_MAGIC_LEN);
 	}
 	return false;
