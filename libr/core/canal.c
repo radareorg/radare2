@@ -1725,11 +1725,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		r_flag_space_pop (core->flags);
 		return result;
 	}
-	if (from != UT64_MAX && !at) {
-		eprintf ("invalid address\n");
+	if (from != UT64_MAX && !at || at == UT64_MAX) {
+		eprintf ("Invalid address from 0x%08"PFMT64x"\n", from);
 		return false;
 	}
-	if (at == UT64_MAX || depth < 0) {
+	if (depth < 0) {
 		return false;
 	}
 	if (r_cons_is_breaked ()) {

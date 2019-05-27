@@ -503,9 +503,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//but the jump will be incorrect
 			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
 			ut64 dst = anal->binb.get_offset (anal->binb.bin, 'm', vB);
-
-			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = dst;
+			if (dst == 0) {
+				op->type = R_ANAL_OP_TYPE_UCALL;
+			} else {
+				op->type = R_ANAL_OP_TYPE_CALL;
+				op->jump = dst;
+			}
 			op->fail = addr + sz;
 			// TODO: handle /range instructions
 			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
