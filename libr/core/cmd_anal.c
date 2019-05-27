@@ -3215,9 +3215,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		char *uaddr = NULL, *name = NULL;
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
-		RAnalFunction *fcn;
-		RAnalFunction *fcni;
-		RListIter *iter;
+		RAnalFunction *fcn = NULL;
+		RAnalFunction *fcni = NULL;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
 			input++;
@@ -3242,6 +3241,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		if (fcn) {
 			/* ensure we use a proper name */
 			setFunctionName (core, addr, fcn->name, false);
+			if (core->anal->opt.vars) {
+				r_core_recover_vars (core, fcn, true);
+			}
 		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
@@ -3296,6 +3298,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 #endif
 				}
 				r_list_free (refs);
+				if (core->anal->opt.vars) {
+					r_core_recover_vars (core, fcn, true);
+				}
 			}
 		}
 		if (name) {
@@ -3304,7 +3309,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
+#if 0
+		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
+			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				if (r_cons_is_breaked ()) {
 					break;
@@ -3312,8 +3320,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_core_recover_vars (core, fcni, true);
 			}
 		}
+#endif
 		flag_every_function (core);
 	}
+		break;
 	default:
 		return false;
 		break;
@@ -8233,6 +8243,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			}
 			r_core_seek (core, curseek, 1);
 		jacuzzi:
+			// XXX this shouldnt be called. flags muts be created wheen the function is registered
 			flag_every_function (core);
 			r_cons_break_pop ();
 			R_FREE (dh_orig);

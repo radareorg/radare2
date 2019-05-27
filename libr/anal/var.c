@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2019 - pancake, oddcoder */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -69,8 +69,7 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 }
 
 R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_IFNULL("int32_t") const char *type, int size, bool isarg, R_NONNULL const char *name) {
-	r_return_val_if_fail (a, false);
-	r_return_val_if_fail (name, false);
+	r_return_val_if_fail (a && name, false);
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
@@ -230,8 +229,8 @@ R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int
 			delta = -delta;
 		}
 	} else {
-		char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
-		char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, av->type, av->size, av->name);
+		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
+		const char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, av->type, av->size, av->name);
 		sdb_array_remove (DB, var_global, var_def, 0);
 	}
 	r_anal_var_free (av);
@@ -307,7 +306,6 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 }
 
 R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int delta) {
-	RAnalVar *av;
 	struct VarType vt = {
 		0
 	};
@@ -333,7 +331,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 	free (vardef);
 
-	av = R_NEW0 (RAnalVar);
+	RAnalVar *av = R_NEW0 (RAnalVar);
 	if (!av) {
 		sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 		return NULL;
@@ -393,8 +391,7 @@ R_API bool r_anal_var_check_name(const char *name) {
 
 // afvn local_48 counter
 R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const char *old_name, const char *new_name, bool verbose) {
-	char key[128], *stored_name;
-	int delta;
+	char key[128];
 
 	if (!r_anal_var_check_name (new_name)) {
 		return 0;
@@ -419,7 +416,7 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 		}
 		char *comma = strchr (name_val, ',');
 		if (comma) {
-			delta = r_num_math (NULL, comma + 1);
+			int delta = r_num_math (NULL, comma + 1);
 			sdb_unset (DB, key, 0);
 			SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, new_name);
 			sdb_set (DB, key, name_val, 0);
@@ -433,7 +430,7 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 		}
 	} else { // global
 		SETKEY ("var.0x%"PFMT64x, addr);
-		stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
+		char *stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
 		if (!stored_name) {
 			return 0;
 		}
@@ -607,13 +604,11 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 }
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	char sigstr[16] = { 0 };
 	st64 ptr;
 	char *addr;
 
 	r_return_if_fail (anal && fcn && op);
 
-	snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
 	const char *op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
 		return;
@@ -622,7 +617,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	if (!esil_buf) {
 		return;
 	}
-	char *ptr_end = strstr (esil_buf, sigstr);
+	char *ptr_end = strstr (esil_buf, sdb_fmt (",%s,%s", reg, sign));
 	if (!ptr_end) {
 		free (esil_buf);
 		return;
@@ -650,14 +645,18 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		const bool isarg = fcn->bp_frame && ((ptr >= fcn->maxstack) || (type != 's'));
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, isarg, varname);
-		r_anal_var_access (anal, fcn->addr, type, 1, ptr, rw, op->addr);
-		free (varname);
+		if (varname) {
+			r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, isarg, varname);
+			r_anal_var_access (anal, fcn->addr, type, 1, ptr, rw, op->addr);
+			free (varname);
+		}
 	} else {
 		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, 0, varname);
-		r_anal_var_access (anal, fcn->addr, type, 1, -ptr, rw, op->addr);
-		free (varname);
+		if (varname) {
+			r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, 0, varname);
+			r_anal_var_access (anal, fcn->addr, type, 1, -ptr, rw, op->addr);
+			free (varname);
+		}
 	}
 beach:
 	free (esil_buf);
