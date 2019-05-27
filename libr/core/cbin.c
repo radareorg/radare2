@@ -751,7 +751,8 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		}
 		pair_bool ("pic", info->has_pi, mode, false);
 		pair_bool ("relocs", R_BIN_DBG_RELOCS & info->dbg_info, mode, false);
-		tmp_buf = sdb_get (obj->kv, "elf.relro", 0);
+		Sdb *sdb_info = sdb_ns (obj->kv, "info", false);
+		tmp_buf = sdb_get (sdb_info, "elf.relro", 0);
 		if (tmp_buf) {
 			pair_str ("relro", tmp_buf, mode, false);
 			free (tmp_buf);
