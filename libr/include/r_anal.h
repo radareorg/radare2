@@ -1051,6 +1051,11 @@ typedef struct r_anal_reil_arg {
 	char name[32];         // Name of the argument
 } RAnalReilArg;
 
+typedef struct r_anal_ref_char {
+	char *str;
+	char *cols;
+} RAnalRefStr;
+
 // Instruction arg1, arg2, arg3
 typedef struct r_anal_reil_inst {
 	RAnalReilOpcode opcode;
@@ -1614,7 +1619,7 @@ R_API const char *r_anal_cond_tostring(int cc);
 R_API RList* /*<RAnalRefline>*/ r_anal_reflines_get(RAnal *anal,
 		ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API int r_anal_reflines_middle(RAnal *anal, RList *list, ut64 addr, int len);
-R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
+R_API RAnalRefStr *r_anal_reflines_str(void *core, ut64 addr, int opts);
 R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);

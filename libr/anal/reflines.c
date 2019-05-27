@@ -398,11 +398,12 @@ static inline bool refline_kept(RAnalRefline *ref, bool middle_after, ut64 addr)
 
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
-R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
+R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RCore *core = _core;
-	RCons *c = core->cons;
+	RCons *cons = core->cons;
 	RAnal *anal = core->anal;
 	RBuffer *b;
+	RBuffer *c;
 	RListIter *iter;
 	RAnalRefline *ref;
 	int l;
@@ -411,10 +412,9 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	bool middle_before = opts & R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
 	bool middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
 	char *str = NULL;
+	char *col_str = NULL;
 
-	if (!c || !anal || !anal->reflines) {
-		return NULL;
-	}
+	r_return_val_if_fail (cons && anal && anal->reflines, NULL);
 
 	RList *lvls = r_list_new ();
 	if (!lvls) {
@@ -430,29 +430,38 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		}
 	}
 	b = r_buf_new ();
+	c = r_buf_new ();
+	r_buf_append_string (c, " ");
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
 		if (core->cons && core->cons->context->breaked) {
 			r_list_free (lvls);
 			r_buf_free (b);
+			r_buf_free (c);
 			return NULL;
 		}
 		if ((ref->from == addr || ref->to == addr) && !middle_after) {
 			const char *corner = get_corner_char (ref, addr, middle_before);
 			const char ch = ref->from == addr ? '=' : '-';
-
+			const char ch_col = ref->from >= ref->to ? 't': 'd';
+			const char *col = (ref->from >= ref->to) ? "t" : "d";
 			if (!pos) {
 				int ch_pos = max_level + 1 - ref->level;
 				if (wide) {
 					ch_pos = ch_pos * 2 - 1;
 				}
 				r_buf_write_at (b, ch_pos, (ut8 *)corner, 1);
+				r_buf_write_at (c, ch_pos, (ut8 *)col, 1);
 				fill_level (b, ch_pos + 1, ch, ref, wide);
+				fill_level (c, ch_pos + 1, ch_col, ref, wide);
 			} else {
 				add_spaces (b, ref->level, pos, wide);
+				add_spaces (c, ref->level, pos, wide);
 				r_buf_append_string (b, corner);
+				r_buf_append_string (c, col);
 				if (!middle_before) {
 					fill_level (b, -1, ch, ref, wide);
+					fill_level (c, -1, ch_col, ref, wide);
 				}
 			}
 			if (!middle_before) {
@@ -464,10 +473,13 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 				continue;
 			}
 			add_spaces (b, ref->level, pos, wide);
-			if (ref->direction < 0) {
+			add_spaces (c, ref->level, pos, wide);
+			if (ref->from >= ref->to) {
 				r_buf_append_string (b, ":");
+				r_buf_append_string (c, "t");
 			} else {
 				r_buf_append_string (b, "|");
+				r_buf_append_string (c, "d");
 			}
 			pos = ref->level;
 		}
@@ -475,16 +487,21 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			max_level = ref->level;
 		}
 	}
+	add_spaces (c, 0, pos, wide);
 	add_spaces (b, 0, pos, wide);
 	str = r_buf_to_string (b);
+	col_str = r_buf_to_string (c);
 	r_buf_free (b);
+	r_buf_free (c);
 	b = NULL;
-	if (!str) {
+	c = NULL;
+	if (!str || !col_str) {
 		r_list_free (lvls);
 		//r_buf_free_to_string already free b and if that is the case
 		//b will be NULL and r_buf_free will return but if there was
 		//an error we free b here so in other words is safe
 		r_buf_free (b);
+		r_buf_free (c);
 		return NULL;
 	}
 	if (core->anal->lineswidth > 0) {
@@ -492,6 +509,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		l = strlen (str);
 		if (l > lw) {
 			r_str_cpy (str, str + l - lw);
+			r_str_cpy (col_str, col_str + l - lw);
 		} else {
 			char pfx[128];
 			lw -= l;
@@ -502,23 +520,19 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			if (lw > 0) {
 				pfx[lw] = 0;
 				str = r_str_prepend (str, pfx);
+				col_str = r_str_prepend (col_str, pfx);
 			}
 		}
 	}
+	const char prev_col = col_str[strlen (col_str) - 1];
+	const char *arr_col = prev_col == 't' ? "tt ": "dd ";
 	str = r_str_append (str, (dir == 1) ? "-> "
 		: (dir == 2) ? "=< " : "   ");
+	col_str = r_str_append (col_str, arr_col);
 
-	if (core->cons->use_utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
-		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
-		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
-		str = r_str_replace (str, ":", c->vline[LINE_UP], 1);
-		str = r_str_replace (str, "|", c->vline[LINE_VERT], 1);
-		str = r_str_replace (str, "=", c->vline[LINE_HORIZ], 1);
-		str = r_str_replace (str, "-", c->vline[LINE_HORIZ], 1);
-		str = r_str_replace (str, ",", c->vline[CORNER_TL], 1);
-		str = r_str_replace (str, ".", c->vline[CORNER_TR], 1);
-		str = r_str_replace (str, "`", c->vline[CORNER_BL], 1);
-	}
 	r_list_free (lvls);
-	return str;
+	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
+	out->cols = col_str;
+	out->str = str;
+	return out;
 }
