@@ -31,9 +31,8 @@ static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 				return false;
 			}
 			if (!memcmp (h, "\x0b\x01", 2)) {
-				return false;
+				return true;
 			}
-			return true;
 		}
 	} else {
 		if (!memcmp (h, "NE", 2)
@@ -85,14 +84,14 @@ static bool check_buffer(RBuffer *b) {
 	if (r_buf_read_at (b, 0, h, 2) != 2) {
 		return false;
 	}
-	if (!memcmp (h, "PE", 2)) {
+	if (memcmp (h, "MZ", 2)) {
 		return false;
 	}
 
 	// See if there is a new exe header.
 	ut16 new_exe_header_offset = r_buf_read_le16_at (b, 0x3c);
 	if (b_size > new_exe_header_offset + 2) {
-		if (!knownHeaderBuffer (b, new_exe_header_offset)) {
+		if (knownHeaderBuffer (b, new_exe_header_offset)) {
 			return false;
 		}
 	}

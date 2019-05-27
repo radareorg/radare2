@@ -8,9 +8,9 @@
 #include "../format/nin/nin.h"
 
 static bool check_buffer(RBuffer *b) {
-	ut8 lict[48];
+	ut8 lict[sizeof (lic)];
 	if (r_buf_read_at (b, 0x104, lict, sizeof (lict)) == sizeof (lict)) {
-		return (!memcmp (lict, lic, 48))? 1: 0;
+		return !memcmp (lict, lic, sizeof (lict));
 	}
 	return false;
 }
