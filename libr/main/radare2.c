@@ -407,6 +407,7 @@ static void set_color_default(void) {
 		// (https://github.com/jwilm/alacritty/issues/1662).
 		// TODO: Windows 10 version check.
 		r_config_set_i (r.config, "scr.color", COLOR_MODE_16);
+		free (alacritty);
 		return;
 	}
 #endif
