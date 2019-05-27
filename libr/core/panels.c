@@ -197,6 +197,7 @@ static const char *help_msg_panels[] = {
 static const char *help_msg_panels_window[] = {
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
+	"\"",       "create a panel from the list and replace the current one",
 	"?",        "show this help",
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
@@ -217,6 +218,7 @@ static const char *help_msg_panels_zoom[] = {
 	"?",        "show this help",
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
+	"\"",       "create a panel from the list and replace the current one",
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
 	"b",        "browse symbols, flags, configurations, classes, ...",
@@ -367,11 +369,13 @@ static bool handleCursorMode(RCore *core, const int key);
 static void toggleZoomMode(RCore *core);
 static void toggleWindowMode(RPanels *panels);
 
-/* widget */
-static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, char **title, char **cmd);
+/* modal */
+static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **title, char **cmd);
 static void create_almighty(RCore *core, RPanel *panel);
-static void create_widget(RCore *core, int *idx, int *offset);
-static bool draw_widget (RCore *core, int idx, int start, int range_begin, int range_end, RStrBuf **buf, const char *name);
+static void update_modal(RCore *core, RModal *modal);
+static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, const char *name);
+static RModal *init_modal();
+static void free_modal(RModal **modal);
 
 /* callback */
 static int openMenuCb(void *user);
@@ -1160,6 +1164,7 @@ static bool handleZoomMode(RCore *core, const int key) {
 	case 'C':
 	case ';':
 	case ' ':
+	case '"':
 	case 'b':
 	case 'd':
 	case 'n':
@@ -1326,7 +1331,6 @@ static bool handleWindowMode(RCore *core, const int key) {
 		r_cons_switchbuf (false);
 		resizePanelUp (panels);
 		break;
-	case '"':
 	case 'n':
 		createNewPanel (core, true);
 		break;
@@ -1337,6 +1341,7 @@ static bool handleWindowMode(RCore *core, const int key) {
 		dismantleDelPanel (core, cur, panels->curnode);
 		setRefreshAll (core, false);
 		break;
+	case '"':
 	case ':':
 	case ';':
 	case 'd':
@@ -3439,12 +3444,27 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	return true;
 }
 
+static RModal *init_modal() {
+	RModal *modal = R_NEW0 (RModal);
+	if (!modal) {
+		return NULL;
+	}
+	modal->idx = 0;
+	modal->offset = 0;
+	return modal;
+}
+
 static void freePanelModel(RPanel *panel) {
 	free (panel->model->title);
 	free (panel->model->cmd);
 	free (panel->model->cmdStrCache);
 	free (panel->model->readOnly);
 	free (panel->model);
+}
+
+static void free_modal(RModal **modal) {
+	free (*modal);
+	*modal = NULL;
 }
 
 static void freePanelView(RPanel *panel) {
@@ -4312,48 +4332,45 @@ static void createNewPanel(RCore *core, bool vertical) {
 
 const int WIDGET_WIDTH = 30;
 const int WIDGET_HEIGHT = 20;
-const char *sub_menu[] = {
+const char *sub_modal_menu[] = {
 	"Add the current panel", "Create New",
 	NULL
 };
-const int sub_count = COUNT (sub_menu);
+const int sub_modal_count = COUNT (sub_modal_menu);
 
-static void create_widget(RCore *core, int *idx, int *offset) {
-	RStrBuf *buf = r_strbuf_new (NULL);
-	if (!buf) {
-		return;
-	}
+static void update_modal(RCore *core, RModal *modal) {
 	RPanels *panels = core->panels;
-	int count = sdb_count (panels->db) + sub_count;
-	if (*idx >= count) {
-		*idx = 0;
-		*offset = 0;
-	} else if (*idx >= *offset + WIDGET_HEIGHT) {
-		if (*offset + WIDGET_HEIGHT >= count) {
-			*offset = 0;
-			*idx = 0;
+	modal->data = r_strbuf_new (NULL);
+	int count = sdb_count (panels->db) + sub_modal_count;
+	if (modal->idx >= count) {
+		modal->idx = 0;
+		modal->offset = 0;
+	} else if (modal->idx >= modal->offset + WIDGET_HEIGHT) {
+		if (modal->offset + WIDGET_HEIGHT >= count) {
+			modal->offset = 0;
+			modal->idx = 0;
 		} else {
-			*offset += 1;
+			modal->offset += 1;
 		}
-	} else if (*idx < 0) {
-		*offset = R_MAX (count - WIDGET_HEIGHT, 0);
-		*idx = count - 1;
-	} else if (*idx < *offset) {
-		*offset -= 1;
+	} else if (modal->idx < 0) {
+		modal->offset = R_MAX (count - WIDGET_HEIGHT, 0);
+		modal->idx = count - 1;
+	} else if (modal->idx < modal->offset) {
+		modal->offset -= 1;
 	}
 	SdbList *l = sdb_foreach_list (panels->db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
 	int i = 0;
-	int max_h = R_MIN (*offset + WIDGET_HEIGHT, count);
+	int max_h = R_MIN (modal->offset + WIDGET_HEIGHT, count);
 	ls_foreach (l, iter, kv) {
-		if (draw_widget (core, *idx, i, *offset, max_h, &buf, sdbkv_key (kv))) {
+		if (draw_modal (core, modal, max_h, i, sdbkv_key (kv))) {
 			i++;
 		}
 	}
 	const int prev = i;
-	for (i = 0; i < sub_count; i++) {
-		if (!draw_widget (core, *idx, i + prev, *offset, max_h, &buf, sub_menu[i])) {
+	for (i = 0; i < sub_modal_count; i++) {
+		if (!draw_modal (core, modal, max_h, i + prev, sub_modal_menu[i])) {
 			break;
 		}
 	}
@@ -4364,7 +4381,7 @@ static void create_widget(RCore *core, int *idx, int *offset) {
 
 	r_cons_canvas_fill (panels->can, x, y, WIDGET_WIDTH + 2, WIDGET_HEIGHT + 2, ' ');
 	(void)r_cons_canvas_gotoxy (panels->can, x + 2, y + 1);
-	r_cons_canvas_write (panels->can, r_strbuf_drain (buf));
+	r_cons_canvas_write (panels->can, r_strbuf_drain (modal->data));
 
 	r_cons_canvas_box (panels->can, x, y, WIDGET_WIDTH + 2, WIDGET_HEIGHT + 2, core->cons->context->pal.graph_box2);
 
@@ -4372,98 +4389,102 @@ static void create_widget(RCore *core, int *idx, int *offset) {
 	r_cons_flush ();
 }
 
-static bool draw_widget (RCore *core, int idx, int start, int range_begin, int range_end, RStrBuf **buf, const char *name) {
-	if (start < range_begin) {
+static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, const char *name) {
+	if (start < modal->offset) {
 		return true;
 	}
 	if (start >= range_end) {
 		return false;
 	}
-	if (start == idx) {
-		r_strbuf_appendf (*buf, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, name);
+	if (start == modal->idx) {
+		r_strbuf_appendf (modal->data, ">  %s%s"Color_RESET, core->cons->context->pal.graph_box2, name);
 	} else {
-		r_strbuf_appendf (*buf, "   %s", name);
+		r_strbuf_appendf (modal->data, "   %s", name);
 	}
-	r_strbuf_append (*buf, "          \n");
+	r_strbuf_append (modal->data, "          \n");
 	return true;
 }
 
 static void create_almighty(RCore *core, RPanel *panel) {
-	int idx = 0, offset = 0, okey, key;
-	create_widget (core, &idx, &offset);
-	char *title;
-	char *cmd;
-	while (true) {
+	RModal *modal = init_modal ();
+	const int usleep = 25000;
+	int okey, key;
+	update_modal (core, modal);
+	char *title, *cmd;
+	while (modal) {
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
 		switch (key) {
 		case 'j':
-			idx++;
-			create_widget (core, &idx, &offset);
-			r_sys_usleep (25000);
+			modal->idx++;
+			update_modal (core, modal);
+			r_sys_usleep (usleep);
 			r_cons_readflush ();
 			break;
 		case 'k':
-			idx--;
-			create_widget (core, &idx, &offset);
-			r_sys_usleep (25000);
+			modal->idx--;
+			update_modal (core, modal);
+			r_sys_usleep (usleep);
 			r_cons_readflush ();
 			break;
 		case 'v':
-			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
+			if (exec_almighty (core, panel, modal, &title, &cmd)) {
 				splitPanelVertical (core, panel, title, cmd, false);
-				return;
+				free_modal (&modal);
+				break;
 			}
-			create_widget (core, &idx, &offset);
+			update_modal (core, modal);
 			break;
 		case 'h':
-			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
+			if (exec_almighty (core, panel, modal, &title, &cmd)) {
 				splitPanelHorizontal (core, panel, title, cmd, false);
-				return;
+				free_modal (&modal);
+				break;
 			}
-			create_widget (core, &idx, &offset);
+			update_modal (core, modal);
 			break;
 		case 0x0d:
-			if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
+			if (exec_almighty (core, panel, modal, &title, &cmd)) {
 				replaceCmd (core, title, cmd, false);
-				return;
+				free_modal (&modal);
+				break;
 			}
-			create_widget (core, &idx, &offset);
+			update_modal (core, modal);
 		case '-':
 			{
 				int count = sdb_count (core->panels->db) + 2;
 				int last =  count - 1;
-				if (idx != last && idx != last - 1) {
-					if (exec_almighty (core, panel, &idx, &offset, &title, &cmd)) {
+				if (modal->idx != last && modal->idx != last - 1) {
+					if (exec_almighty (core, panel, modal, &title, &cmd)) {
 						sdb_set (core->panels->del_db, title, cmd, 0);
 						sdb_remove (core->panels->db, title, 0);
 					}
-					create_widget (core, &idx, &offset);
+					update_modal (core, modal);
 				}
 			}
 			break;
 		case 'q':
 		case '"':
-			panel->view->refresh = true;
-			return;
+			free_modal (&modal);
 		}
 	}
+	setRefreshAll (core, false);
 }
 
-static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, char **title, char **cmd) {
+static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **title, char **cmd) {
 	SdbList *l = sdb_foreach_list (core->panels->db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
 	int i = 0, j;
 	ls_foreach (l, iter, kv) {
-		if (i++ == *idx) {
+		if (i++ == modal->idx) {
 			*title = sdbkv_key (kv);
 			*cmd = sdbkv_value (kv);
 			return true;
 		}
 	}
-	for (j = 0; j < sub_count; j++) {
-		if (i + j == *idx) {
+	for (j = 0; j < sub_modal_count; j++) {
+		if (i + j == modal->idx) {
 			switch (j) {
 			case 0:
 				*title = show_status_input (core, "Name: ");
@@ -4472,8 +4493,8 @@ static bool exec_almighty(RCore *core, RPanel *panel, int *idx, int *offset, cha
 				}
 				*cmd = r_str_new (panel->model->cmd);
 				sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
-				*idx += 1;
-				*offset += 1;
+				modal->idx += 1;
+				modal->offset += 1;
 				return false;
 			case 1:
 				*title = show_status_input (core, "New name: ");

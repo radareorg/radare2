@@ -1018,6 +1018,12 @@ typedef struct {
 	int y;
 } RPanelsSnow;
 
+typedef struct {
+	RStrBuf *data;
+	int idx;
+	int offset;
+} RModal;
+
 typedef struct r_panels_t {
 	RConsCanvas *can;
 	RPanel **panel;
