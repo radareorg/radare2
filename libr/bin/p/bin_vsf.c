@@ -6,7 +6,7 @@
 #include "vsf/vsf_specs.h"
 
 static const char VICE_MAGIC[] = "VICE Snapshot File\032";
-static const int VICE_MAGIC_LEN = sizeof(VICE_MAGIC)-1;
+static const int VICE_MAGIC_LEN = sizeof (VICE_MAGIC) - 1;
 static const char VICE_MAINCPU[] = "MAINCPU";
 static const char VICE_C64MEM[] = "C64MEM";
 static const char VICE_C64ROM[] = "C64ROM";

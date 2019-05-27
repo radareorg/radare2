@@ -22,7 +22,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 	ut8 h[2];
-	if (r_buf_read_at (b, 0, h, sizeof (h)) != 2) {
+	if (r_buf_read_at (b, 0, h, sizeof (h)) != sizeof (h)) {
 		return false;
 	}
 	if (!memcmp (h, "PE", 2)) {
@@ -33,16 +33,17 @@ static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 			if (!memcmp (h, "\x0b\x01", 2)) {
 				return false;
 			}
+			return true;
 		}
 	} else {
 		if (!memcmp (h, "NE", 2)
 		 || !memcmp (h, "LE", 2)
 		 || !memcmp (h, "LX", 2)
 		 || !memcmp (h, "PL", 2)) {
-			return false;
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
 static bool checkEntrypointBuffer(RBuffer *b) {
