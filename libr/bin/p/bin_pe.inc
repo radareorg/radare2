@@ -17,23 +17,6 @@ static Sdb* get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	struct PE_(r_bin_pe_obj_t) *res = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	res = PE_(r_bin_pe_new_buf) (tbuf, bf->rbin->verbose);
-	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
-
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && buf, false);
 	struct PE_(r_bin_pe_obj_t) *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
@@ -46,19 +29,12 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes;
-	ut64 sz;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	bytes = r_buf_data (bf->buf, &sz);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	r_return_val_if_fail (bf && bf->o, false);
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
