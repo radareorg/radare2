@@ -3216,7 +3216,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
 		RAnalFunction *fcn = NULL;
-		RAnalFunction *fcni = NULL;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
 			input++;
@@ -3313,6 +3312,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
 			RListIter *iter;
+			RAnalFunction *fcni = NULL;
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				if (r_cons_is_breaked ()) {
 					break;

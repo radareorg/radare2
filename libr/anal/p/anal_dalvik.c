@@ -56,7 +56,6 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	op->val = UT64_MAX;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
-	op->refptr = UT64_MAX;
 #endif
 	op->size = sz;
 	op->nopcode = 1; // Necessary??
