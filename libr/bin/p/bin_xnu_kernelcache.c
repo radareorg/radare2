@@ -25,6 +25,9 @@ typedef struct _RKernelCacheObj {
 	struct MACH0_(obj_t) *mach0;
 	struct _RRebaseInfo *rebase_info;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
+	bool rebase_info_populated;
+	bool rebasing_buffer;
+	bool kexts_initialized;
 } RKernelCacheObj;
 
 typedef struct _RFileRange {
@@ -161,8 +164,11 @@ static void process_kmod_init_term(RKernelCacheObj *obj, RKext *kext, RList *ret
 static void create_initterm_syms(RKext *kext, RList *ret, int type, ut64 *pointers);
 static void process_constructors(RKernelCacheObj *obj, struct MACH0_(obj_t) *mach0, RList *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
+static void ensure_kexts_initialized(RKernelCacheObj *obj);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
+
+static RList * pending_bin_files = NULL;
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *fbuf = r_buf_ref (buf);
@@ -192,6 +198,15 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		goto beach;
 	}
 
+	if (!pending_bin_files) {
+		pending_bin_files = r_list_new ();
+		if (!pending_bin_files) {
+			R_FREE (obj);
+			R_FREE (prelink_info);
+			goto beach;
+		}
+	}
+
 	obj->mach0 = main_mach0;
 	obj->rebase_info = rebase_info;
 	obj->prelink_info = prelink_info;
@@ -199,10 +214,28 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	obj->pa2va_exec = prelink_range->pa2va_exec;
 	obj->pa2va_data = prelink_range->pa2va_data;
 
+	*bin_obj = obj;
+
+	r_list_push (pending_bin_files, bf);
+
 	if (rebase_info) {
 		RIO *io = bf->rbin->iob.io;
 		swizzle_io_read (obj, io);
 	}
+
+	return true;
+
+beach:
+	r_buf_free (fbuf);
+	MACH0_(mach0_free) (main_mach0);
+	return false;
+}
+
+static void ensure_kexts_initialized(RKernelCacheObj *obj) {
+	if (obj->kexts_initialized) {
+		return;
+	}
+	obj->kexts_initialized = true;
 
 	RList *kexts = filter_kexts (obj);
 
@@ -216,13 +249,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	}
 
 	obj->kexts = r_kext_index_new (kexts);
-	*bin_obj = obj;
-	return true;
-
-beach:
-	r_buf_free (fbuf);
-	MACH0_(mach0_free) (main_mach0);
-	return false;
 }
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) *mach0) {
@@ -648,7 +674,7 @@ static RKext *r_kext_index_vget(RKextIndex *index, ut64 vaddr) {
 }
 
 static struct MACH0_(obj_t) *create_kext_mach0(RKernelCacheObj *obj, RKext *kext) {
-	RBuffer *buf = r_buf_new_slice (obj->cache_buf, kext->range.offset, UT64_MAX);
+	RBuffer *buf = r_buf_new_slice (obj->cache_buf, kext->range.offset, r_buf_size (obj->cache_buf) - kext->range.offset);
 	struct MACH0_(opts_t) opts;
 	opts.verbose = true;
 	opts.header_at = 0;
@@ -880,6 +906,7 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	RKernelCacheObj *kobj = (RKernelCacheObj*) obj->bin_obj;
+	ensure_kexts_initialized (kobj);
 
 	int iter;
 	RKext *kext;
@@ -1038,6 +1065,8 @@ static RList *symbols(RBinFile *bf) {
 		subsystem->free = NULL;
 		r_list_free (subsystem);
 	}
+
+	ensure_kexts_initialized (obj);
 
 	RKext *kext;
 	int kiter;
@@ -1509,6 +1538,7 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 			continue;
 		}
 
+		ensure_kexts_initialized (obj);
 		RKext *remote_kext = r_kext_index_vget (obj->kexts, target_addr);
 		if (!remote_kext) {
 			continue;
@@ -1754,6 +1784,11 @@ static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj) {
 	struct section_t *sections = NULL;
 	int i = 0;
 
+	if (obj->rebase_info_populated) {
+		return;
+	}
+	obj->rebase_info_populated = true;
+
 	for (; i < info->n_ranges; i++) {
 		if (info->ranges[i].size != UT64_MAX) {
 			goto cleanup;
@@ -1840,11 +1875,33 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf->fd == fd->fd ) {
 			cache = bf->o->bin_obj;
+			if (pending_bin_files) {
+				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
+				if (to_remove) {
+					r_list_delete (pending_bin_files, to_remove);
+					if (!r_list_length (pending_bin_files)) {
+						r_list_free (pending_bin_files);
+						pending_bin_files = NULL;
+					}
+				}
+			}
 			break;
 		}
 	}
 
-	if (!cache || !cache->original_io_read) {
+	if (!cache) {
+		r_list_foreach (pending_bin_files, iter, bf) {
+			if (bf->fd == fd->fd && bf->o) {
+				cache = bf->o->bin_obj;
+				break;
+			}
+		}
+	}
+
+	if (!cache || !cache->original_io_read || cache->rebasing_buffer) {
+		if (fd->plugin->read == &kernelcache_io_read) {
+			return -1;
+		}
 		return fd->plugin->read (io, fd, buf, count);
 	}
 
@@ -1872,6 +1929,11 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static void rebase_buffer(RKernelCacheObj *obj, RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	if (obj->rebasing_buffer) {
+		return;
+	}
+	obj->rebasing_buffer = true;
+
 	ut64 off = io->off;
 	ut64 eob = off + count;
 	int i = 0;
@@ -1891,6 +1953,8 @@ static void rebase_buffer(RKernelCacheObj *obj, RIO *io, RIODesc *fd, ut8 *buf, 
 				(ROnRebaseFunc) on_rebase_pointer, &ctx);
 		}
 	}
+
+	obj->rebasing_buffer = false;
 }
 
 static bool on_rebase_pointer (ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx) {
