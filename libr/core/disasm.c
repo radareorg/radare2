@@ -2720,7 +2720,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 
 static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	int ret = 0;
-	RAnalMetaItem *mi;
+	RAnalMetaItem *mi, *fmi;
 	RCore *core = ds->core;
 	RListIter *iter;
 	if (!ds->asm_meta) {
@@ -2738,92 +2738,100 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	RList *list = r_meta_find_list_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 
 	if (list) {
+		fmi = NULL;
+		r_list_foreach (list, iter, mi) {
+			if (mi->type == R_META_TYPE_STRING) {
+				fmi = mi;
+				break;
+			}
+		}
 		r_list_foreach (list, iter, mi) {
 			char *out = NULL;
 			int hexlen;
 			int delta;
-			if (mi) {
-				ret = mi->type;
-				switch (mi->type) {
-				case R_META_TYPE_STRING:
-				{
-					bool esc_bslash = core->print->esc_bslash;
+			if (fmi && mi != fmi) {
+				continue;
+			}
+			ret = mi->type;
+			switch (mi->type) {
+			case R_META_TYPE_STRING:
+			{
+				bool esc_bslash = core->print->esc_bslash;
 
-					switch (mi->subtype) {
-					case R_STRING_ENC_UTF8:
-						out = r_str_escape_utf8 (mi->str, false, esc_bslash);
-						break;
-					case 0:  /* temporary legacy workaround */
-						esc_bslash = false;
-						/* fallthrough */
-					default:
-						out = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
-					}
-					if (!out) {
-						break;
-					}
-					r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
-							COLOR (ds, color_btext), out, COLOR_RESET (ds),
-							mi->size);
-					free (out);
-					delta = ds->at - mi->from;
-					ds->oplen = mi->size - delta;
-					ds->asmop.size = (int)mi->size;
-					//i += mi->size-1; // wtf?
-					R_FREE (ds->line);
-					R_FREE (ds->line_col);
-					R_FREE (ds->refline);
-					R_FREE (ds->refline2);
-					ds->mi_found = true;
+				switch (mi->subtype) {
+				case R_STRING_ENC_UTF8:
+					out = r_str_escape_utf8 (mi->str, false, esc_bslash);
+					break;
+				case 0:  /* temporary legacy workaround */
+					esc_bslash = false;
+					/* fallthrough */
+				default:
+					out = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
+				}
+				if (!out) {
 					break;
 				}
-				case R_META_TYPE_HIDE:
-					r_cons_printf ("(%"PFMT64d" bytes hidden)", mi->size);
-					ds->asmop.size = mi->size;
-					ds->oplen = mi->size;
-					ds->mi_found = true;
-					break;
-				case R_META_TYPE_RUN:
-					r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
-					ds->asmop.size = mi->size;
-					ds->oplen = mi->size;
-					ds->mi_found = true;
-					break;
-				case R_META_TYPE_DATA:
-					hexlen = len - idx;
-					delta = ds->at - mi->from;
-					if (mi->size < hexlen) {
-						hexlen = mi->size;
-					}
-					ds->oplen = mi->size - delta;
-					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-					// TODO do not pass a copy in parameter buf that is possibly to small for this
-					// print operation
-					int size = R_MIN (mi->size, len - idx);
-					if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
-						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
-						r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1, 1);
-					}
-					core->inc = 16; // ds->oplen; //
-					core->print->flags |= R_PRINT_FLAGS_HEADER;
-					ds->asmop.size = (int)mi->size;
-					R_FREE (ds->line);
-					R_FREE (ds->line_col);
-					R_FREE (ds->refline);
-					R_FREE (ds->refline2);
-					ds->mi_found = true;
-					break;
-				case R_META_TYPE_FORMAT:
-					r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
-					r_print_format (core->print, ds->at, buf + idx,
-						len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
-					ds->oplen = ds->asmop.size = (int)mi->size;
-					R_FREE (ds->line);
-					R_FREE (ds->refline);
-					R_FREE (ds->refline2);
-					ds->mi_found = true;
-					break;
+				r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
+						COLOR (ds, color_btext), out, COLOR_RESET (ds),
+						mi->size);
+				free (out);
+				delta = ds->at - mi->from;
+				ds->oplen = mi->size - delta;
+				ds->asmop.size = (int)mi->size;
+				//i += mi->size-1; // wtf?
+				R_FREE (ds->line);
+				R_FREE (ds->line_col);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
+				ds->mi_found = true;
+				break;
+			}
+			case R_META_TYPE_HIDE:
+				r_cons_printf ("(%"PFMT64d" bytes hidden)", mi->size);
+				ds->asmop.size = mi->size;
+				ds->oplen = mi->size;
+				ds->mi_found = true;
+				break;
+			case R_META_TYPE_RUN:
+				r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
+				ds->asmop.size = mi->size;
+				ds->oplen = mi->size;
+				ds->mi_found = true;
+				break;
+			case R_META_TYPE_DATA:
+				hexlen = len - idx;
+				delta = ds->at - mi->from;
+				if (mi->size < hexlen) {
+					hexlen = mi->size;
 				}
+				ds->oplen = mi->size - delta;
+				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+				// TODO do not pass a copy in parameter buf that is possibly to small for this
+				// print operation
+				int size = R_MIN (mi->size, len - idx);
+				if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
+					r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
+					r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1, 1);
+				}
+				core->inc = 16; // ds->oplen; //
+				core->print->flags |= R_PRINT_FLAGS_HEADER;
+				ds->asmop.size = (int)mi->size;
+				R_FREE (ds->line);
+				R_FREE (ds->line_col);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
+				ds->mi_found = true;
+				break;
+			case R_META_TYPE_FORMAT:
+				r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
+				r_print_format (core->print, ds->at, buf + idx,
+					len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
+				ds->oplen = ds->asmop.size = (int)mi->size;
+				R_FREE (ds->line);
+				R_FREE (ds->refline);
+				R_FREE (ds->refline2);
+				ds->mi_found = true;
+				break;
 			}
 		}
 	}
