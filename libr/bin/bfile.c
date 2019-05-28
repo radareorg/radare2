@@ -705,8 +705,8 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 	return bf->buf != NULL;
 }
 
-R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile) {
-	return (binfile && binfile->o)? binfile->o->plugin: NULL;
+R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
+	return (bf && bf->o)? bf->o->plugin: NULL;
 }
 
 R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {

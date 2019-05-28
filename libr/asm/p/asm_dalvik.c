@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - earada, pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2019 - earada, pancake, h4ng3r */
 
 #include <stdio.h>
 #include <string.h>
