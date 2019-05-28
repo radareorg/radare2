@@ -1981,6 +1981,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->vsize = ptr->size;
+		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
 		ptr->perm = R_PERM_R;
 		ptr->add = true;
 		r_list_append (ret, ptr);
