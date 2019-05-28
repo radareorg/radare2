@@ -1378,7 +1378,10 @@ R_API int r_cons_get_ansicon() {
 beach:
 	RegCloseKey (key);
 ANSICON:
-	return win_support || !!r_sys_getenv ("ANSICON");
+	char *env_ansicon_str = r_sys_getenv ("ANSICON");
+	bool env_ansicon = !!env_ansicon_str;
+	free (env_ansicon_str);
+	return win_support || env_ansicon;
 }
 #endif
 
