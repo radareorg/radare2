@@ -717,6 +717,7 @@ static int set_reg_profile(RAnal *anal) {
 	"=A1	v1\n"
 	"=A2	v2\n"
 	"=A3	v3\n"
+	"=SN	v0\n"
 	"gpr	v0	.32	0	0\n"
 	"gpr	v1	.32	4	0\n"
 	"gpr	v2	.32	8	0\n"
