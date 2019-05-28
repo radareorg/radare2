@@ -2012,6 +2012,15 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
+	if ((ptr = R_NEW0 (RBinSection))) {
+		ptr->name = strdup ("file");
+		ptr->vaddr = ptr->paddr = 0;
+		ptr->size = r_buf_size (bf->buf);
+		ptr->vsize = ptr->size;
+		ptr->perm = R_PERM_R;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
