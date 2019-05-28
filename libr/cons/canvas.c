@@ -148,7 +148,11 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 	}
 
 	if (p != s) {
-		char tmp[256];
+		//since sometimes ANSI takes up too much buf
+		//this should be big enough
+		//at any time when the glitch comes back
+		//just tweak the size
+		char tmp[4096];
 		const int slen = R_MIN (p - s, sizeof (tmp) - 1);
 		if (slen > 0) {
 			memcpy (tmp, s, slen);
@@ -588,7 +592,8 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 			W (vline);
 		}
 		if (G (x + w - 1, y + i)) {
-			W (Color_RESET_ALL);
+			//I wanna properly fix this so let me comment this out just for now.
+			//W (Color_RESET_ALL);
 			W (vline);
 		}
 	}
