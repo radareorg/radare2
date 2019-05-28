@@ -968,7 +968,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
 				if (to_remove) {
 					r_list_delete (pending_bin_files, to_remove);
-					if (!r_list_length (pending_bin_files)) {
+					if (r_list_empty (pending_bin_files)) {
 						r_list_free (pending_bin_files);
 						pending_bin_files = NULL;
 					}
