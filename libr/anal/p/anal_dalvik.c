@@ -270,16 +270,18 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x62: // sget-object
-		op->datatype = R_ANAL_DATATYPE_OBJECT;
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
-			ut32 vA = (data[1] & 0x0f);
-			ut32 vB = (data[1] & 0xf0) >> 4;
+		{
+			op->datatype = R_ANAL_DATATYPE_OBJECT;
+			op->type = R_ANAL_OP_TYPE_LOAD;
 			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
-			const char *vT = "-object";
 			op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
-			esilprintf (op, "%d,v%d,=", op->ptr, vA);
-			// c:wesilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
+			if (mask & R_ANAL_OP_MASK_ESIL) {
+				ut32 vA = (data[1] & 0x0f);
+				// ut32 vB = (data[1] & 0xf0) >> 4;
+				const char *vT = "-object";
+				esilprintf (op, "%d,v%d,=", op->ptr, vA);
+				// esilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
+			}
 		}
 		break;
 	case 0x6b: //sput-byte
@@ -310,8 +312,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x6a: // sput-boolean
 	case 0x6c: // sput-wide
 	case 0xfe: // sput
-		op->type = R_ANAL_OP_TYPE_STORE;
-		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+{
+	op->type = R_ANAL_OP_TYPE_STORE;
+	ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
+	op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+}
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			ut32 vB = (data[1] & 0xf0) >> 4;

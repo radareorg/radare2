@@ -792,7 +792,7 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("DEX CLASS");
-	ret->has_va = false;
+	ret->has_va = true;
 	ret->has_lit = true;
 	ret->bclass = r_bin_dex_get_version (bf->o->bin_obj);
 	ret->rclass = strdup ("class");

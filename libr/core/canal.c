@@ -3450,6 +3450,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			     (!bckwrds && i < core->blocksize - OPSZ) ||
 			     (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
+				// TODO: honor anal.align
 				if (r_cons_is_breaked ()) {
 					break;
 				}
@@ -3464,7 +3465,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case 'w':
 				case 'x':
 					{
-						RAnalOp op ={0};
 						r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ANAL_OP_MASK_BASIC);
 						int mask = mode=='r' ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
 						if (op.direction == mask) {
@@ -3485,7 +3485,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_CJMP:
 				case R_ANAL_OP_TYPE_CALL:
 				case R_ANAL_OP_TYPE_CCALL:
-					if (op.jump != -1 &&
+					if (op.jump != UT64_MAX &&
 						core_anal_followptr (core, 'C', at + i, op.jump, ref, true, 0)) {
 						count ++;
 					}
@@ -3496,7 +3496,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_RJMP:
 				case R_ANAL_OP_TYPE_IRJMP:
 				case R_ANAL_OP_TYPE_MJMP:
-					if (op.ptr != -1 &&
+					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'c', at + i, op.ptr, ref, true ,1)) {
 						count ++;
 					}
@@ -3506,13 +3506,19 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_RCALL:
 				case R_ANAL_OP_TYPE_IRCALL:
 				case R_ANAL_OP_TYPE_UCCALL:
-					if (op.ptr != -1 &&
+					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'C', at + i, op.ptr, ref, true ,1)) {
 						count ++;
 					}
 					break;
 				default:
-					if (op.ptr != -1 &&
+					{
+						if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ANAL_OP_MASK_BASIC)) {
+							r_anal_op_fini (&op);
+							continue;
+						}
+					}
+					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'd', at + i, op.ptr, ref, false, ptrdepth)) {
 						count ++;
 					}
