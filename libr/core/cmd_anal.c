@@ -113,6 +113,16 @@ static const char *help_msg_ac[] = {
 	NULL
 };
 
+static const char *help_msg_acr[] = {
+	"Usage:", "acr", "anal classes RTTI-specific commands",
+	"See avr for searching and parsing RTTI"
+	"acrmc", " [class name] [addr]", "set MSVC Complete Object Locator",
+	"acrmc", " [class name] [addr]", "set MSVC Complete Object Locator",
+	"acrmc-", " [class name]", "unset MSVC Complete Object Locator",
+	"acr?", "", "show this help",
+	NULL
+};
+
 static const char *help_msg_ad[] = {
 	"Usage:", "ad", "[kt] [...]",
 	"ad", " [N] [D]", "analyze N data words at D depth",
@@ -8646,6 +8656,50 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_class_rtti(RCore *core, const char *input) {
+	switch (input[0]) {
+	case 'm': // "acrm" MSVC specific
+		switch (input[1]) {
+		case 'c': {
+			const char *str = r_str_trim_ro (input + 2);
+			if (!*str) {
+				eprintf ("No class name given.\n");
+				return;
+			}
+			char *cstr = strdup (str);
+			if (!cstr) {
+				break;
+			}
+			char *end = strchr (cstr, ' ');
+			if (end) {
+				*end = '\0';
+				end++;
+			}
+
+			//if (!end || *end == '\0') {
+			//	if (c == ' ') {
+			//		r_anal_class_list_vtables (core->anal, cstr);
+			//	} else /*if (c == '-')*/ {
+			//		eprintf ("No vtable id given. See acv [class name].\n");
+			//	}
+			//	free (cstr);
+			//	break;
+			//}
+	//
+			//char *arg1_str = end;
+			//end = strchr (arg1_str, ' ');
+			//if (end) {
+			//	*end = '\0';
+			//}
+		}
+		}
+		break;
+	default: // "acr?"
+		r_core_cmd_help (core, help_msg_acr);
+		break;
+	}
+}
+
 static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "acl"
@@ -8699,6 +8753,8 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'm': // "acm"
 		cmd_anal_class_method (core, input + 1);
 		break;
+	case 'r': // "acr"
+		cmd_anal_class_rtti (core, input + 1);
 	default: // "ac?"
 		r_core_cmd_help (core, help_msg_ac);
 		break;

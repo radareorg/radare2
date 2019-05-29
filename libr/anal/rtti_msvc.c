@@ -296,10 +296,10 @@ static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator
 				   prefix, col->object_base);
 }
 
-static void rtti_msvc_print_complete_object_locator_json(rtti_complete_object_locator *col) {
-	r_cons_printf ("{\"signature\":%"PFMT32u",\"vftable_offset\":%"PFMT32u",\"cd_offset\":%"PFMT32u","
+static void rtti_msvc_print_complete_object_locator_json(rtti_complete_object_locator *col, ut64 addr) {
+	r_cons_printf ("{\"addr\":%"PFMT64u",\"signature\":%"PFMT32u",\"vftable_offset\":%"PFMT32u",\"cd_offset\":%"PFMT32u","
 				   "\"type_desc_addr\":%"PFMT32u",\"class_desc_addr\":%"PFMT32u",\"object_base\":%"PFMT32u"}",
-				   col->signature, col->vtable_offset, col->cd_offset, col->type_descriptor_addr,
+				   addr, col->signature, col->vtable_offset, col->cd_offset, col->type_descriptor_addr,
 				   col->class_descriptor_addr, col->object_base);
 }
 
@@ -417,7 +417,7 @@ R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *contex
 	}
 
 	if (mode == 'j') {
-		rtti_msvc_print_complete_object_locator_json (&col);
+		rtti_msvc_print_complete_object_locator_json (&col, addr);
 	} else {
 		rtti_msvc_print_complete_object_locator (&col, addr, "");
 	}
@@ -526,7 +526,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	// print
 	if (use_json) {
 		r_cons_print ("{\"complete_object_locator\":");
-		rtti_msvc_print_complete_object_locator_json (&col);
+		rtti_msvc_print_complete_object_locator_json (&col, colAddr);
 		r_cons_print (",\"type_desc\":");
 		rtti_msvc_print_type_descriptor_json (&td);
 		r_cons_print (",\"class_hierarchy_desc\":");
