@@ -38,8 +38,8 @@ static int _cmp_map_event(const void *a_, const void *b_) {
 }
 
 static void __invalidate_memoization(RIO *io, RIOMap *map) {
-	if (!map || map == io->last_map) {
-		io->last_map = NULL;
+	if (!map || map == io->last_map.map) {
+		io->last_map.map = NULL;
 	}
 }
 
@@ -365,32 +365,56 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 #else
 	r_return_val_if_fail (io, false);
 #if 0
-XXX this is buggy!
 	if (!r_io_map_is_mapped (io, addr)) {
 		return NULL;
 	}
 #endif
-	if (io->last_map) {
-		if (r_itv_contain (io->last_map->itv, addr)) {
-			return io->last_map;
+	if (io->last_map.map) {
+		if (addr > io->last_map.from && addr < io->last_map.to) {
+			// if (r_itv_contain (io->last_map.map->itv, addr)) {
+			return io->last_map.map;
 		}
-	}
+		}
 	RIOMap* map;
 	SdbListIter* iter;
-	ls_foreach_prev (io->maps, iter, map) {
+	// find map
+	ls_foreach (io->maps, iter, map) {
 		if (r_itv_contain (map->itv, addr)) {
-			io->last_map = map;
-			return map;
+			// if there's another map partially overlapping this one we should not cache it
+			io->last_map.map = map;
+			io->last_map.from = map->itv.addr;
+			io->last_map.to = map->itv.addr + map->itv.size;
 		}
 	}
-	return NULL;
+	if (io->last_map.map) {
+		// find overlapping bounds
+		ls_foreach (io->maps, iter, map) {
+			if (map->itv.addr == UT64_MAX) {
+				continue;
+			}
+			if (r_itv_include (io->last_map.map->itv, map->itv)) {
+				ut64 f1, f2;
+				f1 = map->itv.addr + map->itv.size;
+				f2 = io->last_map.from;
+				if (f1 < io->last_map.to) {
+					io->last_map.from = R_MAX (f1, f2);
+				}
+				f1 = map->itv.addr;
+				f2 = io->last_map.to;
+				if (f1 < f2) {
+					io->last_map.to = R_MIN (f1, f2);
+				}
+			}
+		}
+	}
+	return io->last_map.map;
 #endif
 }
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, false);
-	if (io->last_map) {
-		if (r_itv_contain (io->last_map->itv, addr)) {
+	if (io->last_map.map) {
+		if (r_itv_contain (io->last_map.map->itv, addr)) {
 			return true;
 		}
 	}
@@ -623,6 +647,7 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	if (!newsize || !(map = r_io_map_resolve (io, id))) {
 		return false;
 	}
+	__invalidate_memoization (io, NULL);
 	ut64 addr = map->itv.addr;
 	if (UT64_MAX - newsize + 1 < addr) {
 		map->itv.size = -addr;

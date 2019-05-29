@@ -83,6 +83,13 @@ typedef struct r_io_map_t {
 	char *name;
 } RIOMap;
 
+typedef struct {
+	// valid range in case of overlap
+	ut64 from;
+	ut64 to;
+	RIOMap *map;
+} RIOMapCache;
+
 typedef struct r_io_t {
 	struct r_io_desc_t *desc;
 	ut64 off;
@@ -99,7 +106,7 @@ typedef struct r_io_t {
 	int debug;
 //#warning remove debug from RIO
 	RIDPool *map_ids;
-	RIOMap *last_map;
+	RIOMapCache last_map;
 	SdbList *maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
 	RPVector map_skyline_shadow; // map parts that are not covered by others
