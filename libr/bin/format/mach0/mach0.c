@@ -1503,6 +1503,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (!mo) {
 		return NULL;
 	}
+	free (mo->symbols);
 	free (mo->segs);
 	free (mo->sects);
 	free (mo->symtab);
@@ -1591,6 +1592,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 	if (!bin) {
 		return NULL;
 	}
+	bin->main_addr = UT64_MAX;
 	bin->kv = sdb_new (NULL, "bin.mach0", 0);
 	bin->size = r_buf_size (buf_ref);
 	if (options) {
@@ -1796,10 +1798,14 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	return NULL;
 }
 
-struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
+const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	struct symbol_t *symbols;
 	int j, s, stridx, symbols_size, symbols_count;
 	ut32 to, from, i;
+
+	if (bin->symbols) {
+		return bin->symbols;
+	}
 
 	r_return_val_if_fail (bin, NULL);
 	if (!bin->symtab || !bin->symstr) {
@@ -1825,6 +1831,7 @@ struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		return NULL;
 	}
 	j = 0; // symbol_idx
+	bin->main_addr = 0;
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -1872,6 +1879,18 @@ struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 			}
 			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
 			symbols[j].last = 0;
+			if (bin->main_addr == 0) {
+				const char *name = symbols[j].name;
+				if (!strcmp (name, "__Dmain")) {
+					bin->main_addr = symbols[j].addr;
+				} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+					bin->main_addr = symbols[j].addr;
+				} else if (!strcmp (name, "_main")) {
+					bin->main_addr = symbols[j].addr;
+				} else if (!strcmp (name, "main")) {
+					bin->main_addr = symbols[j].addr;
+				}
+			}
 			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 				j--;
@@ -1920,10 +1939,21 @@ struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 			} else {
 				j++;
 			}
+			if (bin->main_addr == 0) {
+				const char *name = symbols[j-1].name;
+				if (!strcmp (name, "__Dmain")) {
+					bin->main_addr = symbols[i].addr;
+				} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+					bin->main_addr = symbols[i].addr;
+				} else if (!strcmp (symbols[i].name, "_main")) {
+					bin->main_addr = symbols[i].addr;
+				}
+			}
 		}
 	}
 	ht_pp_free (hash);
 	symbols[j].last = 1;
+	bin->symbols = symbols;
 	return symbols;
 }
 
@@ -2639,54 +2669,51 @@ char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin) {
 }
 
 ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
-	ut64 addr = 0LL;
-	struct symbol_t *symbols;
+	ut64 addr = UT64_MAX;
 	int i;
 
-	if (!(symbols = MACH0_(get_symbols) (bin))) {
-		return 0;
+	// 0 = sscanned but no main found
+	// -1 = not scanned, so no main
+	// other = valid main addr
+	if (bin->main_addr == UT64_MAX) {
+		MACH0_(get_symbols) (bin);
 	}
-	for (i = 0; !symbols[i].last; i++) {
-		const char *name = symbols[i].name;
-		if (!strcmp (name, "__Dmain")) {
-			addr = symbols[i].addr;
-			break;
-		}
-		if (strstr (name, "4main") && !strstr (name, "STATIC")) {
-			addr = symbols[i].addr;
-			break;
-		}
-		if (!strcmp (symbols[i].name, "_main")) {
-			addr = symbols[i].addr;
-	//		break;
-		}
+	if (bin->main_addr != 0 && bin->main_addr != UT64_MAX) {
+		return bin->main_addr;
 	}
-	free (symbols);
+	struct addr_t *entry = MACH0_(get_entrypoint)(bin);
+	if (entry) {
+		free (entry);
+	}
+	bin->main_addr = 0;
 
-	if (!addr && bin->main_cmd.cmd == LC_MAIN) {
+	if (addr == UT64_MAX && bin->main_cmd.cmd == LC_MAIN) {
 		addr = bin->entry + bin->baddr;
 	}
 
 	if (!addr) {
 		ut8 b[128];
-		ut64 entry = addr_to_offset(bin, bin->entry);
+		ut64 entry = addr_to_offset (bin, bin->entry);
 		// XXX: X86 only and hacky!
 		if (entry > bin->size || entry + sizeof (b) > bin->size) {
-			return 0;
+			return UT64_MAX;
 		}
 		i = r_buf_read_at (bin->b, entry, b, sizeof (b));
-		if (i < 1) {
-			return 0;
+		if (i < 80) {
+			return UT64_MAX;
 		}
 		for (i = 0; i < 64; i++) {
-			if (b[i] == 0xe8 && !b[i+3] && !b[i+4]) {
-				int delta = b[i+1] | (b[i+2] << 8) | (b[i+3] << 16) | (b[i+4] << 24);
-				return bin->entry + i + 5 + delta;
-
+			if (b[i] == 0xe8 && !b[i + 3] && !b[i + 4]) {
+				int delta = b[i + 1] | (b[i + 2] << 8) | (b[i + 3] << 16) | (b[i + 4] << 24);
+				addr = bin->entry + i + 5 + delta;
+				break;
 			}
 		}
+		if (!addr) {
+			addr = entry;
+		}
 	}
-	return addr;
+	return bin->main_addr = addr;
 }
 
 void MACH0_(mach_headerfields)(RBinFile *bf) {
