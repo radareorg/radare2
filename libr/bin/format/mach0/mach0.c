@@ -90,7 +90,7 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
 	return 0;
 }
 
-static int init_hdr(struct MACH0_(obj_t) *bin) {
+static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	ut8 magicbytes[4] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;
@@ -153,7 +153,7 @@ static int init_hdr(struct MACH0_(obj_t) *bin) {
 	return true;
 }
 
-static int parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
+static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	int i, j, k, sect, len;
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = {0};
@@ -308,7 +308,7 @@ static int parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 }
 
 #define Error(x) errorMessage = x; goto error;
-static int parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
+static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct symtab_command st;
 	ut32 size_sym;
 	int i;
@@ -1849,15 +1849,10 @@ struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
 		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
 
-		int maxsymbols = symbols_size / sizeof (struct symbol_t);
-		if (to > 0x500000) {
-			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
-			free (symbols);
-			ht_pp_free (hash);
-			return NULL;
-		}
+		ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
 		if (symbols_count >= maxsymbols) {
 			symbols_count = maxsymbols - 1;
+			eprintf ("macho warning: Symbol table truncated\n");
 		}
 		for (i = from; i < to && j < symbols_count; i++, j++) {
 			symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
