@@ -507,8 +507,10 @@ static bool cb_asmarch(void *user, void *data) {
 				char *nac = strdup (newAsmCPU);
 				char *comma = strchr (nac, ',');
 				if (comma) {
-					*comma = 0;
-					r_config_set (core->config, "asm.cpu", nac);
+					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
+						*comma = 0;
+						r_config_set (core->config, "asm.cpu", nac);
+					}
 				}
 				free (nac);
 			} else {
