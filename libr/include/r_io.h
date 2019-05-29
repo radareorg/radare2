@@ -74,6 +74,15 @@ typedef struct r_io_undo_w_t {
 	int len;  /* length */
 } RIOUndoWrite;
 
+typedef struct r_io_map_t {
+	int fd;
+	int perm;
+	ut32 id;
+	RInterval itv;
+	ut64 delta; // paddr = itv.addr + delta
+	char *name;
+} RIOMap;
+
 typedef struct r_io_t {
 	struct r_io_desc_t *desc;
 	ut64 off;
@@ -90,6 +99,7 @@ typedef struct r_io_t {
 	int debug;
 //#warning remove debug from RIO
 	RIDPool *map_ids;
+	RIOMap *last_map;
 	SdbList *maps; //from tail backwards maps with higher priority are found
 	RPVector map_skyline; // map parts that are not covered by others
 	RPVector map_skyline_shadow; // map parts that are not covered by others
@@ -181,15 +191,6 @@ typedef struct r_io_plugin_t {
 	int (*create)(RIO *io, const char *file, int mode, int type);
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
-
-typedef struct r_io_map_t {
-	int fd;
-	int perm;
-	ut32 id;
-	RInterval itv;
-	ut64 delta; // paddr = itv.addr + delta
-	char *name;
-} RIOMap;
 
 typedef struct r_io_map_skyline_t {
 	RIOMap *map;

@@ -37,6 +37,12 @@ static int _cmp_map_event(const void *a_, const void *b_) {
 	return 0;
 }
 
+static void __invalidate_memoization(RIO *io, RIOMap *map) {
+	if (!map || map == io->last_map) {
+		io->last_map = NULL;
+	}
+}
+
 static int _cmp_map_event_by_id(const void *a_, const void *b_) {
 	struct map_event_t *a = (void *)a_, *b = (void *)b_;
 	return a->id - b->id;
@@ -196,11 +202,12 @@ out:
 }
 
 RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
-	if (!size || !io || !io->maps || !io->map_ids) {
+	r_return_val_if_fail (io && io->maps && io->map_ids, NULL);
+	if (!size) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
-	if (!map || !io->map_ids || !r_id_pool_grab_id (io->map_ids, &map->id)) {
+	if (!map || !r_id_pool_grab_id (io->map_ids, &map->id)) {
 		free (map);
 		return NULL;
 	}
@@ -279,9 +286,7 @@ R_API void r_io_map_init(RIO* io) {
 R_API bool r_io_map_exists(RIO* io, RIOMap* map) {
 	SdbListIter* iter;
 	RIOMap* m;
-	if (!io || !io->maps || !map) {
-		return false;
-	}
+	r_return_val_if_fail (io && io->maps && map, false);
 	ls_foreach (io->maps, iter, m) {
 		if (!memcmp (m, map, sizeof (RIOMap))) {
 			return true;
@@ -298,12 +303,12 @@ R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
 R_API RIOMap* r_io_map_resolve(RIO* io, ut32 id) {
 	SdbListIter* iter;
 	RIOMap* map;
-	if (!io || !io->maps || !id) {
-		return NULL;
-	}
-	ls_foreach (io->maps, iter, map) {
-		if (map->id == id) {
-			return map;
+	r_return_val_if_fail (io && io->maps, NULL);
+	if (id) {
+		ls_foreach (io->maps, iter, map) {
+			if (map->id == id) {
+				return map;
+			}
 		}
 	}
 	return NULL;
@@ -343,9 +348,11 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	}
 	return NULL;
 }
+#define SLOW_MAP_GET 0
 
 // gets first map where addr fits in
 R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
+#if SLOW_MAP_GET
 	r_return_val_if_fail (io, NULL);
 	RIOMap* map;
 	SdbListIter* iter;
@@ -355,10 +362,38 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 		}
 	}
 	return NULL;
+#else
+	r_return_val_if_fail (io, false);
+#if 0
+XXX this is buggy!
+	if (!r_io_map_is_mapped (io, addr)) {
+		return NULL;
+	}
+#endif
+	if (io->last_map) {
+		if (r_itv_contain (io->last_map->itv, addr)) {
+			return io->last_map;
+		}
+	}
+	RIOMap* map;
+	SdbListIter* iter;
+	ls_foreach_prev (io->maps, iter, map) {
+		if (r_itv_contain (map->itv, addr)) {
+			io->last_map = map;
+			return map;
+		}
+	}
+	return NULL;
+#endif
 }
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, false);
+	if (io->last_map) {
+		if (r_itv_contain (io->last_map->itv, addr)) {
+			return true;
+		}
+	}
 	const RPVector *shadow = &io->map_skyline_shadow;
 	size_t i, len = r_pvector_len (shadow);
 	r_pvector_lower_bound (shadow, addr, i, CMP_END_GTE);
@@ -384,6 +419,7 @@ R_API bool r_io_map_del(RIO* io, ut32 id) {
 	SdbListIter* iter;
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id) {
+			__invalidate_memoization (io, map);
 			ls_delete (io->maps, iter);
 			r_id_pool_kick_id (io->map_ids, id);
 			io_map_calculate_skyline (io);
@@ -400,9 +436,8 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 	RIOMap* map;
 	bool ret = false;
 	ls_foreach_safe (io->maps, iter, ator, map) {
-		if (!map) {
-			ls_delete (io->maps, iter);
-		} else if (map->fd == fd) {
+		if (map->fd == fd) {
+			__invalidate_memoization (io, map);
 			r_id_pool_kick_id (io->map_ids, map->id);
 			//delete iter and map
 			ls_delete (io->maps, iter);
@@ -424,6 +459,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	ls_foreach (io->maps, iter, map) {
 		// search for iter with the correct map
 		if (map->id == id) {
+			__invalidate_memoization (io, NULL);
 			ls_split_iter (io->maps, iter);
 			ls_append (io->maps, map);
 			io_map_calculate_skyline (io);
@@ -441,6 +477,7 @@ R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 	ls_foreach (io->maps, iter, map) {
 		// search for iter with the correct map
 		if (map->id == id) {
+			__invalidate_memoization (io, NULL);
 			ls_split_iter (io->maps, iter);
 			ls_prepend (io->maps, map);
 			io_map_calculate_skyline (io);
@@ -454,13 +491,12 @@ R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	SdbListIter* iter, * ator;
 	RIOMap *map;
-	SdbList* list;
-	if (!io || !io->maps) {
+	r_return_val_if_fail (io && io->maps, false);
+	SdbList* list = ls_new ();;
+	if (!list) {
 		return false;
 	}
-	if (!(list = ls_new ())) {
-		return false;
-	}
+
 	//we need a clean list for this, or this becomes a segfault-field
 	r_io_map_cleanup (io);
 	//tempory set to avoid free the map and to speed up ls_delete a bit
@@ -469,6 +505,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 		if (map->fd == fd) {
 			ls_prepend (list, map);
 			ls_delete (io->maps, iter);
+			__invalidate_memoization (io, NULL);
 		}
 	}
 	ls_join (io->maps, list);
@@ -480,25 +517,20 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 
 //may fix some inconsistencies in io->maps
 R_API void r_io_map_cleanup(RIO* io) {
-	SdbListIter* iter, * ator;
-	RIOMap* map;
-	if (!io || !io->maps) {
-		return;
-	}
+	r_return_if_fail (io && io->maps);
 	//remove all maps if no descs exist
 	if (!io->files) {
 		r_io_map_fini (io);
 		r_io_map_init (io);
 		return;
 	}
+	RIOMap* map;
+	SdbListIter* iter, * ator;
 	bool del = false;
 	ls_foreach_safe (io->maps, iter, ator, map) {
-		//remove iter if the map is a null-ptr, this may fix some segfaults
-		if (!map) {
-			ls_delete (io->maps, iter);
-			del = true;
-		} else if (!r_io_desc_get (io, map->fd)) {
+		if (!r_io_desc_get (io, map->fd)) {
 			//delete map and iter if no desc exists for map->fd in io->files
+			__invalidate_memoization (io, map);
 			r_id_pool_kick_id (io->map_ids, map->id);
 			ls_delete (io->maps, iter);
 			del = true;
@@ -517,20 +549,17 @@ R_API void r_io_map_fini(RIO* io) {
 	io->map_ids = NULL;
 	r_pvector_clear (&io->map_skyline);
 	r_pvector_clear (&io->map_skyline_shadow);
+	__invalidate_memoization (io, NULL);
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
-	if (!map || !name) {
-		return;
-	}
+	r_return_if_fail (map && name);
 	free (map->name);
 	map->name = strdup (name);
 }
 
 R_API void r_io_map_del_name(RIOMap* map) {
-	if (map) {
-		R_FREE (map->name);
-	}
+	r_return_if_fail (map);
 }
 
 //TODO: Kill it with fire
