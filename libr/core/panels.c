@@ -851,32 +851,18 @@ static void layoutDefault(RPanels *panels) {
 	int i;
 	int colpos = w - panels->columnWidth;
 	RPanel *p0 = getPanel (panels, 0);
-	p0->view->pos.x = 0;
-	p0->view->pos.y = 1;
 	if (panels->n_panels <= 1) {
-		p0->view->pos.w = w;
-		p0->view->pos.h = h - 1;
+		set_geometry (&p0->view->pos, 0, 1, w, h - 1);
 		return;
 	}
-	p0->view->pos.w = colpos + 1;
-	p0->view->pos.h = h - 1;
+	set_geometry (&p0->view->pos, 0, 1, colpos + 1, h - 1);
 
 	int pos_x = p0->view->pos.x + p0->view->pos.w - 1;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		p->view->pos.x = pos_x;
-		p->view->pos.y = 2 + (ph * (i - 1));
-		p->view->pos.w = w - colpos;
-		if (p->view->pos.w < 0) {
-			p->view->pos.w = 0;
-		}
-		if ((i + 1) == panels->n_panels) {
-			p->view->pos.h = h - p->view->pos.y;
-		} else {
-			p->view->pos.h = ph;
-		}
-		p->view->pos.y--;
-		p->view->pos.h++;
+		int tmp_w = R_MAX (w - colpos, 0);
+		int tmp_h = (i + 1) == panels->n_panels ? h - p->view->pos.y : ph;
+		set_geometry(&p->view->pos, pos_x, 2 + (ph * (i - 1)) - 1, tmp_w, tmp_h + 1);
 	}
 }
 
@@ -914,10 +900,7 @@ static int addCmdPanel(void *user) {
 	adjustSidePanels (core);
 	insertPanel (core, 0, child->name, cmd, cache);
 	RPanel *p0 = getPanel (panels, 0);
-	p0->view->pos.x = 0;
-	p0->view->pos.y = 1;
-	p0->view->pos.w = PANEL_CONFIG_SIDEPANEL_W;
-	p0->view->pos.h = h - 1;
+	set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	set_curnode (core, 0);
 	setRefreshAll (core, false);
 	setMode (panels, PANEL_MODE_DEFAULT);
@@ -933,10 +916,7 @@ static void addHelpPanel(RCore *core) {
 	adjustSidePanels (core);
 	insertPanel (core, 0, help, help, true);
 	RPanel *p0 = getPanel (ps, 0);
-	p0->view->pos.x = 0;
-	p0->view->pos.y = 1;
-	p0->view->pos.w = PANEL_CONFIG_SIDEPANEL_W;
-	p0->view->pos.h = h - 1;
+	set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	set_curnode (core, 0);
 	setRefreshAll (core, false);
 }
@@ -965,10 +945,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	adjustSidePanels (core);
 	insertPanel (core, 0, child->name, "", true);
 	RPanel *p0 = getPanel (panels, 0);
-	p0->view->pos.x = 0;
-	p0->view->pos.y = 1;
-	p0->view->pos.w = PANEL_CONFIG_SIDEPANEL_W;
-	p0->view->pos.h = h - 1;
+	set_geometry (&p0->view->pos, 0, 1, PANEL_CONFIG_SIDEPANEL_W, h - 1);
 	setCmdStrCache (core, p0, loadCmdf (core, p0, input, str));
 	set_curnode (core, 0);
 	setRefreshAll (core, false);
@@ -985,10 +962,8 @@ static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const c
 	RPanel *next = getPanel (panels, panels->curnode + 1);
 	int owidth = p->view->pos.w;
 	p->view->pos.w = owidth / 2 + 1;
-	next->view->pos.x = p->view->pos.x + p->view->pos.w - 1;
-	next->view->pos.y = p->view->pos.y;
-	next->view->pos.w = owidth - p->view->pos.w + 1;
-	next->view->pos.h = p->view->pos.h;
+	set_geometry (&next->view->pos, p->view->pos.x + p->view->pos.w - 1,
+			p->view->pos.y, owidth - p->view->pos.w + 1, p->view->pos.h);
 	setRefreshAll (core, false);
 }
 
@@ -1002,10 +977,8 @@ static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const
 	int oheight = p->view->pos.h;
 	p->view->curpos = 0;
 	p->view->pos.h = oheight / 2 + 1;
-	next->view->pos.x = p->view->pos.x;
-	next->view->pos.y = p->view->pos.y + p->view->pos.h - 1;
-	next->view->pos.w = p->view->pos.w;
-	next->view->pos.h = oheight - p->view->pos.h + 1;
+	set_geometry (&next->view->pos, p->view->pos.x, p->view->pos.y + p->view->pos.h - 1,
+			p->view->pos.w, oheight - p->view->pos.h + 1);
 	setRefreshAll (core, false);
 }
 
@@ -3091,13 +3064,12 @@ static int openMenuCb (void *user) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	if (menu->depth < 2) {
-		child->p->view->pos.x = menu->root->selectedIndex * 6;
-		child->p->view->pos.y = 1;
+		set_pos (&child->p->view->pos, menu->root->selectedIndex * 6, 1);
 	} else {
 		RPanelsMenuItem *p = menu->history[menu->depth - 2];
 		RPanelsMenuItem *parent2 = p->sub[p->selectedIndex];
-		child->p->view->pos.x = parent2->p->view->pos.x + parent2->p->view->pos.w - 1;
-		child->p->view->pos.y = menu->depth == 2 ? parent2->p->view->pos.y + parent2->selectedIndex : parent2->p->view->pos.y;
+		set_pos (&child->p->view->pos, parent2->p->view->pos.x + parent2->p->view->pos.w - 1,
+				menu->depth == 2 ? parent2->p->view->pos.y + parent2->selectedIndex : parent2->p->view->pos.y);
 	}
 	RStrBuf *buf = drawMenu (core, child);
 	if (!buf) {
@@ -3467,8 +3439,7 @@ static RModal *init_modal() {
 	if (!modal) {
 		return NULL;
 	}
-	modal->pos.x = 0;
-	modal->pos.y = 0;
+	set_pos (&modal->pos, 0, 0);
 	modal->idx = 0;
 	modal->offset = 0;
 	return modal;
@@ -3989,17 +3960,13 @@ static void handleTabKey(RCore *core, bool shift) {
 }
 
 static void savePanelPos(RPanel* panel) {
-	panel->view->prevPos.x = panel->view->pos.x;
-	panel->view->prevPos.y = panel->view->pos.y;
-	panel->view->prevPos.w = panel->view->pos.w;
-	panel->view->prevPos.h = panel->view->pos.h;
+	set_geometry (&panel->view->prevPos, panel->view->pos.x, panel->view->pos.y,
+			panel->view->pos.w, panel->view->pos.h);
 }
 
 static void restorePanelPos(RPanel* panel) {
-	panel->view->pos.x = panel->view->prevPos.x;
-	panel->view->pos.y = panel->view->prevPos.y;
-	panel->view->pos.w = panel->view->prevPos.w;
-	panel->view->pos.h = panel->view->prevPos.h;
+	set_geometry (&panel->view->pos, panel->view->prevPos.x, panel->view->prevPos.y,
+			panel->view->prevPos.w, panel->view->prevPos.h);
 }
 
 static char *getPanelsConfigPath() {
@@ -4108,10 +4075,7 @@ static int loadSavedPanelsLayout(RCore *core) {
 		h = sdb_json_get_str (p_cfg, "h");
 		cache = sdb_json_get_bool (p_cfg, "cache");
 		RPanel *p = getPanel (panels, panels->n_panels);
-		p->view->pos.x = atoi (x);
-		p->view->pos.y = atoi (y);
-		p->view->pos.w = atoi (w);
-		p->view->pos.h = atoi (h);
+		set_geometry (&p->view->pos, atoi (x), atoi (y), atoi (w),atoi (h));
 		init_panel_param (core, p, title, cmd, cache);
 		//TODO: Super hacky and refactoring is needed
 		if (r_str_endswith (cmd, "Help")) {
@@ -4136,10 +4100,7 @@ static int loadSavedPanelsLayout(RCore *core) {
 
 static void maximizePanelSize(RPanels *panels) {
 	RPanel *cur = getCurPanel (panels);
-	cur->view->pos.x = 0;
-	cur->view->pos.y = 1;
-	cur->view->pos.w = panels->can->w;
-	cur->view->pos.h = panels->can->h - 1;
+	set_geometry (&cur->view->pos, 0, 1, panels->can->w, panels->can->h - 1);
 	cur->view->refresh = true;
 }
 
