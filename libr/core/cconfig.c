@@ -1917,7 +1917,6 @@ static int scr_ansicon(void *user, void *data) {
 		node->i_value = 1;
 	}
 	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
-# ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	DWORD mode;
 	int i;
@@ -1934,7 +1933,6 @@ static int scr_ansicon(void *user, void *data) {
 			                mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	}
-# endif
 	return true;
 }
 #endif
