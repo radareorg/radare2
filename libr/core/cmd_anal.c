@@ -6209,7 +6209,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		free (fInput);
 	} break;
 	case 'm': { // "axm"
-		RList *list = NULL;
+		RList *list;
 		RAnalRef *ref;
 		RListIter *iter;
 		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
@@ -6230,12 +6230,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		//get all xrefs pointing to addr
 		list = r_anal_xrefs_get (core->anal, addr);
 		r_list_foreach (list, iter, ref) {
-			r_cons_printf ("0x%p %s\n", ref->addr, r_anal_xrefs_type_tostring(ref->type));
+			r_cons_printf ("0x%"PFMT64x" %s\n", ref->addr, r_anal_xrefs_type_tostring (ref->type));
 			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
 		}
 		r_list_free (list);
 		free (ptr);
-
 	} break;
 	case 't': { // "axt"
 		RList *list = NULL;
