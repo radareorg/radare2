@@ -34,7 +34,8 @@ static char *key_attr_content_specific(const char *class_name, const char *attr_
 typedef enum {
 	R_ANAL_CLASS_ATTR_TYPE_METHOD,
 	R_ANAL_CLASS_ATTR_TYPE_VTABLE,
-	R_ANAL_CLASS_ATTR_TYPE_BASE
+	R_ANAL_CLASS_ATTR_TYPE_BASE,
+	R_ANAL_CLASS_ATTR_TYPE_MSVC_COL
 } RAnalClassAttrType;
 
 static const char *attr_type_id(RAnalClassAttrType attr_type) {
@@ -45,6 +46,8 @@ static const char *attr_type_id(RAnalClassAttrType attr_type) {
 		return "vtable";
 	case R_ANAL_CLASS_ATTR_TYPE_BASE:
 		return "base";
+	case R_ANAL_CLASS_ATTR_TYPE_MSVC_COL:
+		return "msvc_col";
 	default:
 		return NULL;
 	}
@@ -207,17 +210,16 @@ beach:
 }
 
 // all ids must be sanitized
-static char *r_anal_class_get_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, bool specific) {
+static const char *r_anal_class_get_attr_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, bool specific) {
 	const char *attr_type_str = attr_type_id (attr_type);
 	char *key = specific
 			? key_attr_content_specific (class_name, attr_type_str, attr_id)
 			: key_attr_content (class_name, attr_type_str, attr_id);
-	char *ret = sdb_get (anal->sdb_classes_attrs, key, 0);
-	return ret;
+	return sdb_const_get (anal->sdb_classes_attrs, key, 0);
 }
 
 // ids will be sanitized automatically
-static char *r_anal_class_get_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, bool specific) {
+static const char *r_anal_class_const_get_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, bool specific) {
 	char *class_name_sanitized = r_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
 		return false;
@@ -228,12 +230,17 @@ static char *r_anal_class_get_attr(RAnal *anal, const char *class_name, RAnalCla
 		return false;
 	}
 
-	char *ret = r_anal_class_get_attr_raw (anal, class_name_sanitized, attr_type, attr_id_sanitized, specific);
+	const char *ret = r_anal_class_get_attr_raw (anal, class_name_sanitized, attr_type, attr_id_sanitized, specific);
 
 	free (class_name_sanitized);
 	free (attr_id_sanitized);
 
 	return ret;
+}
+
+static char *r_anal_class_get_attr(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *attr_id, bool specific) {
+	const char *s = r_anal_class_const_get_attr (anal, class_name, attr_type, attr_id, specific);
+	return s ? strdup (s) : NULL;
 }
 
 // all ids must be sanitized
@@ -927,6 +934,25 @@ R_API RAnalClassErr r_anal_class_vtable_delete(RAnal *anal, const char *class_na
 }
 
 
+// ---- MSVC RTTI ----
+
+R_API ut64 r_anal_class_msvc_col_get(RAnal *anal, const char *class_name) {
+	const char *val = r_anal_class_const_get_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_MSVC_COL, "0", false);
+	if (!val) {
+		return UT64_MAX;
+	}
+	return r_num_math (NULL, val);
+}
+
+R_API void r_anal_class_msvc_col_set(RAnal *anal, const char *class_name, ut64 addr) {
+	if (addr == UT64_MAX) {
+		r_anal_class_delete_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_MSVC_COL, "0");
+		return;
+	}
+	r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_MSVC_COL, "0", sdb_fmt ("%"PFMT64u, addr));
+}
+
+
 // ---- PRINT ----
 
 
@@ -953,6 +979,11 @@ static void r_anal_class_print(RAnal *anal, const char *class_name, bool lng) {
 
 
 	if (lng) {
+		ut64 msvc_col_addr = r_anal_class_msvc_col_get (anal, class_name);
+		if (msvc_col_addr != UT64_MAX) {
+			r_cons_printf ("  (MSVC Complete Object Locator at 0x%"PFMT64x")\n", msvc_col_addr);
+		}
+
 		RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
 		if (vtables) {
 			RAnalVTable *vtable;

@@ -673,9 +673,9 @@ typedef struct rtti_msvc_anal_context_t {
 } RRTTIMSVCAnalContext;
 
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
+static RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
 
-RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
+static RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
 	RecoveryCompleteObjectLocator *col = ht_up_find (context->addr_col, addr, NULL);
 	if (col) {
 		return col;
@@ -746,7 +746,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	return col;
 }
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
+static RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
 	RecoveryTypeDescriptor *td = ht_up_find (context->addr_td, addr, NULL);
 	if (td) {
 		if (col != NULL) {
@@ -886,6 +886,8 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 
 	r_anal_class_create (anal, name);
 	ht_up_insert (context->col_td_classes, col->addr, name);
+
+	r_anal_class_msvc_col_set (anal, name, col->addr);
 
 	recovery_apply_vtable (anal, name, col->vtable);
 	recovery_apply_bases (context, name, &col->base_td);
