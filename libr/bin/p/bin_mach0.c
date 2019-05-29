@@ -340,7 +340,7 @@ static RList *symbols(RBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
-	free (symbols);
+	// free (symbols);
 	sdb_free (symcache);
 	return ret;
 }
@@ -837,7 +837,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
 		addr = MACH0_(get_main) (bf->o->bin_obj);
-		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
+		if (addr == UT64_MAX || !(ret = R_NEW0 (RBinAddr))) {
 			return NULL;
 		}
 		//if (bf->o->info && bf->o->info->bits == 16) {
