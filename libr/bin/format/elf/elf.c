@@ -1340,20 +1340,14 @@ static HtUP *rel_cache_new(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	rel_cache = ht_up_new_size (nrel, NULL, rel_cache_free, NULL);
+	const int htsize = R_MIN (nrel, 1024);
+	rel_cache = ht_up_new_size (htsize, NULL, rel_cache_free, NULL);
 
 	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
-		if (rel_sec->offset + j > bin->size) {
-			goto out;
-		}
-		if (rel_sec->offset + j + tsize > bin->size) {
-			goto out;
-		}
 		int len = r_buf_read_at (bin->b, rel_sec->offset + j, rl, tsize);
-		if (len < 1) {
-			goto out;
+		if (len != tsize) {
+			break;
 		}
-
 		struct ht_rel_t *rel = read_ht_rel (bin, rl, k);
 		if (!rel) {
 			goto out;
