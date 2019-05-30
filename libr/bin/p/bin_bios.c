@@ -34,7 +34,11 @@ static bool check_buffer(RBuffer *buf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+	if (!check_buffer (buf)) {
+		return false;
+	}
+	*bin_obj = r_buf_ref (buf);
+	return true;
 }
 
 static void destroy(RBinFile *bf) {
