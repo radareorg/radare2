@@ -49,17 +49,17 @@ static ut64 buf_file_get_size(RBuffer *b) {
 	return (ut64)res;
 }
 
-static int buf_file_read(RBuffer *b, ut8 *buf, size_t len) {
+static st64 buf_file_read(RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_file_priv *priv = get_priv_file (b);
 	return r_sandbox_read (priv->fd, buf, len);
 }
 
-static int buf_file_write(RBuffer *b, const ut8 *buf, size_t len) {
+static st64 buf_file_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_file_priv *priv = get_priv_file (b);
 	return r_sandbox_write (priv->fd, buf, len);
 }
 
-static int buf_file_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_file_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_file_priv *priv = get_priv_file (b);
 	switch (whence) {
 	case R_BUF_CUR: whence = SEEK_CUR; break;

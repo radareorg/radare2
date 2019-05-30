@@ -70,15 +70,15 @@ static bool buf_bytes_resize(RBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static int buf_bytes_read(RBuffer *b, ut8 *buf, size_t len) {
+static st64 buf_bytes_read(RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
-	size_t real_len = priv->length < priv->offset? 0: R_MIN (priv->length - priv->offset, len);
+	ut64 real_len = priv->length < priv->offset? 0: R_MIN (priv->length - priv->offset, len);
 	memmove (buf, priv->buf + priv->offset, real_len);
 	priv->offset += real_len;
 	return real_len;
 }
 
-static int buf_bytes_write(RBuffer *b, const ut8 *buf, size_t len) {
+static st64 buf_bytes_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (priv->offset > priv->length || priv->offset + len >= priv->length) {
 		bool r = r_buf_resize (b, priv->offset + len);
@@ -96,7 +96,7 @@ static ut64 buf_bytes_get_size(RBuffer *b) {
 	return priv->length;
 }
 
-static int buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_bytes_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_bytes_priv *priv = get_priv_bytes (b);
 	if (addr < 0 && (-addr) > (st64)priv->offset) {
 		return -1;

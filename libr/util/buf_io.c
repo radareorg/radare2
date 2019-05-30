@@ -35,7 +35,7 @@ static bool buf_io_fini(RBuffer *b) {
 	return true;
 }
 
-static int buf_io_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_io_priv *priv = get_priv_io (b);
 	int io_whence;
 
@@ -65,12 +65,12 @@ static bool buf_io_resize(RBuffer *b, ut64 newsize) {
 	return priv->iob->fd_resize (priv->iob->io, priv->fd, newsize);
 }
 
-static int buf_io_read(RBuffer *b, ut8 *buf, size_t len) {
+static st64 buf_io_read(RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_io_priv *priv = get_priv_io (b);
 	return priv->iob->fd_read (priv->iob->io, priv->fd, buf, len);
 }
 
-static int buf_io_write(RBuffer *b, const ut8 *buf, size_t len) {
+static st64 buf_io_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_io_priv *priv = get_priv_io (b);
 	return priv->iob->fd_write (priv->iob->io, priv->fd, buf, len);
 }

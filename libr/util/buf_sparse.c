@@ -31,8 +31,8 @@ static bool sparse_limits(RList *l, ut64 *max) {
 	return set;
 }
 
-static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
-	if (l && data && len > 0) {
+static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, ut64 len) {
+	if (l && data) {
 		RBufferSparse *s = R_NEW0 (RBufferSparse);
 		if (s) {
 			s->data = calloc (1, len);
@@ -50,15 +50,15 @@ static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int le
 }
 
 //ret -1 if failed; # of bytes copied if success
-static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
+static st64 sparse_write(RList *l, ut64 addr, const ut8 *data, ut64 len) {
 	RBufferSparse *s;
 	RListIter *iter;
-	int olen = len;
+	ut64 olen = len;
 
 	r_list_foreach (l, iter, s) {
 		if (addr >= s->from && addr < s->to) {
-			int delta = addr - s->from;
-			int reallen = s->size - delta >= len? len: s->size - delta;
+			ut64 delta = addr - s->from;
+			ut64 reallen = s->size - delta >= len? len: s->size - delta;
 			memcpy (s->data + delta, data, reallen);
 			data += reallen;
 			len -= reallen;
@@ -139,7 +139,7 @@ static ut64 buf_sparse_size(RBuffer *b) {
 	return sparse_limits (priv->sparse, &max)? max: 0;
 }
 
-static int buf_sparse_read(RBuffer *b, ut8 *buf, size_t len) {
+static st64 buf_sparse_read(RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_sparse_priv *priv = get_priv_sparse (b);
 	RBufferSparse *c;
 	RListIter *iter;
@@ -152,10 +152,10 @@ static int buf_sparse_read(RBuffer *b, ut8 *buf, size_t len) {
 		}
 		if (priv->offset < c->to && c->from < priv->offset + len) {
 			if (priv->offset < c->from) {
-				int l = R_MIN (priv->offset + len - c->from, c->size);
+				ut64 l = R_MIN (priv->offset + len - c->from, c->size);
 				memcpy (buf + c->from - priv->offset, c->data, l);
 			} else {
-				int l = R_MIN (c->to - priv->offset, len);
+				ut64 l = R_MIN (c->to - priv->offset, len);
 				memcpy (buf, c->data + priv->offset - c->from, l);
 			}
 		}
@@ -163,19 +163,19 @@ static int buf_sparse_read(RBuffer *b, ut8 *buf, size_t len) {
 	if (priv->offset > max) {
 		return -1;
 	}
-	int r = R_MIN (max - priv->offset, len);
+	ut64 r = R_MIN (max - priv->offset, len);
 	priv->offset += r;
 	return r;
 }
 
-static int buf_sparse_write(RBuffer *b, const ut8 *buf, size_t len) {
+static st64 buf_sparse_write(RBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_sparse_priv *priv = get_priv_sparse (b);
-	int r = sparse_write (priv->sparse, priv->offset, buf, len);
+	st64 r = sparse_write (priv->sparse, priv->offset, buf, len);
 	priv->offset += r;
 	return r;
 }
 
-static int buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_sparse_priv *priv = get_priv_sparse (b);
 	ut64 max;
 	if (addr < 0 && (-addr) > (st64)priv->offset) {

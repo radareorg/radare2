@@ -74,15 +74,13 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct r_bin_java_obj_t *tmp_bin_obj = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || sz == 0 || sz == UT64_MAX) {
+	RBuffer *tbuf = r_buf_ref (buf);
+	tmp_bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
+	if (!tmp_bin_obj) {
 		return false;
 	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	tmp_bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
 	*bin_obj = tmp_bin_obj;
 	add_bin_obj_to_sdb (tmp_bin_obj);
 	if (bf && bf->file) {
@@ -90,49 +88,6 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	}
 	r_buf_free (tbuf);
 	return true;
-}
-
-static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-
-	int result = false;
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	struct r_bin_java_obj_t *bin_obj = NULL;
-
-	load_bytes (bf, (void **)&bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-
-	if (bin_obj) {
-		if (!bf->o->kv) {
-			bf->o->kv = bin_obj->kv;
-		}
-		bf->o->bin_obj = bin_obj;
-		bin_obj->AllJavaBinObjs = DB;
-		// XXX - /\ this is a hack, but (one way but) necessary to get access to
-		// the object addrs from anal. If only global variables are used,
-		// they get "lost" somehow after they are initialized and go out of
-		// scope.
-		//
-		// There are several points of indirection, but here is the gist:
-		// 1) RAnal->(through RBinBind) RBin->RBinJavaObj->DB
-		//
-		// The purpose is to ensure that information about a give class file
-		// can be grabbed at any time from RAnal.  This was tried with global
-		// variables, but failed when attempting to access the DB
-		// in the class.c scope.  Once DB  was moved here, it is initialized
-		// once here and assigned to each of the other RBinJavaObjs.
-		//
-		// Now, the RAnal component of radare can get to each of the
-		// RBinJavaObjs for analysing functions and dependencies using an Sdb.
-		add_bin_obj_to_sdb (bin_obj);
-		if (bf->file) {
-			bin_obj->file = strdup (bf->file);
-		}
-		result = true;
-	}
-	return result;
 }
 
 static void destroy(RBinFile *bf) {
@@ -266,8 +221,7 @@ RBinPlugin r_bin_plugin_java = {
 	.init = init,
 	.fini = fini,
 	.get_sdb = &get_sdb,
-	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,

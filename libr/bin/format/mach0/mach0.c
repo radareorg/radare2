@@ -2097,7 +2097,10 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			bin->dyld_info->lazy_bind_off + lazy_size > bin->size) {
 			return NULL;
 		}
-		if (bin->dyld_info->bind_off+bind_size+lazy_size > bin->size) {
+		if (bin->dyld_info->bind_off + bind_size + lazy_size > bin->size) {
+			return NULL;
+		}
+		if (bin->dyld_info->weak_bind_off + weak_size > bin->size) {
 			return NULL;
 		}
 		ut64 amount = bind_size + lazy_size + weak_size;

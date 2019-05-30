@@ -50,13 +50,13 @@ static bool buf_ref_resize(RBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static int buf_ref_read(RBuffer *b, ut8 *buf, size_t len) {
+static st64 buf_ref_read(RBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	if (priv->size < priv->cur) {
 		return -1;
 	}
 	len = R_MIN (len, priv->size - priv->cur);
-	int r = r_buf_read_at (priv->parent, priv->base + priv->cur, buf, len);
+	st64 r = r_buf_read_at (priv->parent, priv->base + priv->cur, buf, len);
 	if (r < 0) {
 		return r;
 	}
@@ -69,7 +69,7 @@ static ut64 buf_ref_get_size(RBuffer *b) {
 	return priv->size;
 }
 
-static int buf_ref_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_ref_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	switch (whence) {
 	case R_BUF_CUR:

@@ -2468,7 +2468,7 @@ static void bin_pe_get_certificate(struct PE_ (r_bin_pe_obj_t) * bin) {
 	bin->cms = NULL;
 	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
 	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
-	if (size == 0) {
+	if (size < 8) {
 		return;
 	}
 	data = calloc (1, size);
