@@ -9,6 +9,9 @@
 
 R_LIB_VERSION (r_sign);
 
+#define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
+#define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
+
 const char *getRealRef(RCore *core, ut64 off) {
 	RFlagItem *item;
 	RListIter *iter;
@@ -837,38 +840,63 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	return sdb_remove (a->sdb_zigns, k, 0);
 }
 
-static bool matchBytes(RSignItem *a, RSignItem *b) {
-	if (a->bytes && b->bytes) {
-		if (a->bytes->size == b->bytes->size) {
-			return !memcmp (a->bytes->bytes, b->bytes->bytes, b->bytes->size);
+static double matchBytes(RSignItem *a, RSignItem *b) {
+	double result = 0.0;
+
+	if (!a->bytes || !b->bytes) {
+		return result;
+	}
+
+	size_t min_size = R_MIN ((size_t) a->bytes->size, (size_t) b->bytes->size);
+	if (!min_size) {
+		return result;
+	}
+
+	ut8 *combined_mask = NULL;
+	if (a->bytes->mask || b->bytes->mask) {
+		combined_mask = (ut8*) malloc (min_size);
+		if (!combined_mask) {
+			return result;
+		}
+		memcpy (combined_mask, a->bytes->mask, min_size);
+		if (b->bytes->mask) {
+			int i;
+			for (i = 0; i != min_size; i++) {
+				combined_mask[i] &= b->bytes->mask[i];
+			}
 		}
 	}
-	return false;
-}
 
-static bool matchGraph(RSignItem *a, RSignItem *b) {
-	if (a->graph && b->graph) {
-		if (a->graph->cc != b->graph->cc) {
-			return false;
-		}
-		if (a->graph->nbbs != b->graph->nbbs) {
-			return false;
-		}
-		if (a->graph->ebbs != b->graph->ebbs) {
-			return false;
-		}
-		if (a->graph->edges != b->graph->edges) {
-			return false;
-		}
-		if (a->graph->bbsum!= b->graph->bbsum) {
-			return false;
-		}
-		return true;
+	if ((combined_mask && !r_mem_cmp_mask (a->bytes->bytes, b->bytes->bytes, combined_mask, min_size)) ||
+		(!combined_mask && !memcmp (a->bytes->bytes, b->bytes->bytes, min_size))) {
+		result = (double) min_size / (double) R_MAX (a->bytes->size, b->bytes->size);
 	}
-	return false;
+
+	free (combined_mask);
+
+	return result;
 }
 
-R_API bool r_sign_diff(RAnal *a, const char *other_space_name) {
+#define SIMILARITY(a,b) \
+	((a) == (b) ? 1.0 : (R_MAX ((a),(b)) == 0.0 ? 0.0 : (double) R_MIN ((a), (b)) / (double) R_MAX ((a), (b))))
+
+static double matchGraph(RSignItem *a, RSignItem *b) {
+	if (!a->graph || !b->graph) {
+		return 0.0;
+	}
+
+	double total = 0.0;
+
+	total += SIMILARITY (a->graph->cc, b->graph->cc);
+	total += SIMILARITY (a->graph->nbbs, b->graph->nbbs);
+	total += SIMILARITY (a->graph->ebbs, b->graph->ebbs);
+	total += SIMILARITY (a->graph->edges, b->graph->edges);
+	total += SIMILARITY (a->graph->bbsum, b->graph->bbsum);
+
+	return total / 5.0;
+}
+
+R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_name) {
 	char k[R_SIGN_KEY_MAXSZ];
 
 	r_return_val_if_fail (a && other_space_name, false);
@@ -941,11 +969,17 @@ R_API bool r_sign_diff(RAnal *a, const char *other_space_name) {
 			if (strstr (si2->name, "imp.")) {
 				continue;
 			}
-			if (matchBytes (si, si2)) {
-				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
+			double bytesScore = matchBytes (si, si2);
+			double graphScore = matchGraph (si, si2);
+			bool bytesMatch = bytesScore >= (options ? options->bytes_diff_threshold : SIGN_DIFF_MATCH_BYTES_THRESHOLD);
+			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
+
+			if (bytesMatch) {
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x " %02.5lf B %s\n", si->addr, si2->addr, bytesScore, si->name);
 			}
-			if (matchGraph (si, si2)) {
-				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
+
+			if (graphMatch) {
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5lf G %s\n", si->addr, si2->addr, graphScore, si->name);
 			}
 		}
 	}
@@ -963,7 +997,7 @@ beach:
 	return false;
 }
 
-R_API bool r_sign_diff_by_name(RAnal *a, const char *other_space_name, bool not_matching) {
+R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions * options, const char *other_space_name, bool not_matching) {
 	char k[R_SIGN_KEY_MAXSZ];
 
 	r_return_val_if_fail (a && other_space_name, false);
@@ -1037,13 +1071,16 @@ R_API bool r_sign_diff_by_name(RAnal *a, const char *other_space_name, bool not_
 			if (strcmp (si->name + current_space_name_len + 1, si2->name + other_space_name_len + 1)) {
 				continue;
 			}
-			bool bytesMatch = matchBytes (si, si2);
-			bool graphMatch = matchGraph (si, si2);
+			// TODO: add config variable for threshold
+			double bytesScore = matchBytes (si, si2);
+			double graphScore = matchGraph (si, si2);
+			bool bytesMatch = bytesScore >= (options ? options->bytes_diff_threshold : SIGN_DIFF_MATCH_BYTES_THRESHOLD);
+			bool graphMatch = graphScore >= (options ? options->graph_diff_threshold : SIGN_DIFF_MATCH_GRAPH_THRESHOLD);
 			if ((bytesMatch && !not_matching) || (!bytesMatch && not_matching)) {
-				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" B %s\n", si->addr, si2->addr, si->name);
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5f B %s\n", si->addr, si2->addr, bytesScore, si->name);
 			}
 			if ((graphMatch && !not_matching) || (!graphMatch && not_matching)) {
-				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" G %s\n", si->addr, si2->addr, si->name);
+				a->cb_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %02.5f G %s\n", si->addr, si2->addr, graphScore, si->name);
 			}
 		}
 	}
@@ -1060,6 +1097,7 @@ beach:
 
 	return false;
 }
+
 struct ctxListCB {
 	RAnal *anal;
 	int idx;
@@ -2158,4 +2196,33 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	sdb_free (db);
 
 	return retval;
+}
+
+R_API RSignOptions *r_sign_options_new(const char *bytes_thresh, const char *graph_thresh) {
+	RSignOptions *options = R_NEW0 (RSignOptions);
+	if (!options) {
+		return NULL;
+	}
+
+	options->bytes_diff_threshold = r_num_get_float (NULL, bytes_thresh);
+	options->graph_diff_threshold = r_num_get_float (NULL, graph_thresh);
+
+	if (options->bytes_diff_threshold > 1.0) {
+		options->bytes_diff_threshold = 1.0;
+	}
+	if (options->bytes_diff_threshold < 0) {
+		options->bytes_diff_threshold = 0.0;
+	}
+	if (options->graph_diff_threshold > 1.0) {
+		options->graph_diff_threshold = 1.0;
+	}
+	if (options->graph_diff_threshold < 0) {
+		options->graph_diff_threshold = 0.0;
+	}
+
+	return options;
+}
+
+R_API void r_sign_options_free(RSignOptions *options) {
+	R_FREE (options);
 }

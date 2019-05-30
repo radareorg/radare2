@@ -75,7 +75,7 @@ static const char *help_msg_zs[] = {
 };
 
 static const char *help_msg_zc[] = {
-	"Usage:", "zc[n!] other_space ", "# Compare zignspaces",
+	"Usage:", "zc[n!] other_space ", "# Compare zignspaces, match >= threshold (e zign.diff.*)",
 	"zc", " other_space", "compare all current space with other_space",
 	"zcn", " other_space", "compare current space with zigns with same name on other_space",
 	"zcn!", " other_space", "same as above but show the ones not matching",
@@ -829,35 +829,42 @@ TODO: add useXRefs, useName
 }
 
 static int cmdCompare(void *data, const char *input) {
+	int result = true;
 	RCore *core = (RCore *) data;
+	const char *raw_bytes_thresh = r_config_get (core->config, "zign.diff.bthresh");
+	const char *raw_graph_thresh = r_config_get (core->config, "zign.diff.gthresh");
+	RSignOptions *options = r_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
 
 	switch (*input) {
 	case ' ':
 		if (!input[1]) {
 			eprintf ("usage: zc other_space\n");
-			return false;
+			result = false;
+			break;
 		}
-		return r_sign_diff (core->anal, input + 1);
+		result = r_sign_diff (core->anal, options, input + 1);
 		break;
 	case 'n':
 		switch (input[1]) {
 		case ' ':
 			if (!input[2]) {
 				eprintf ("usage: zcn other_space\n");
-				return false;
+				result = false;
+				break;
 			}
-			return r_sign_diff_by_name (core->anal, input + 2, false);
+			result = r_sign_diff_by_name (core->anal, options, input + 2, false);
 			break;
 		case '!':
 			if (input[2] != ' ' || !input[3]) {
 				eprintf ("usage: zcn! other_space\n");
-				return false;
+				result = false;
+				break;
 			}
-			return r_sign_diff_by_name (core->anal, input + 3, true);
+			result = r_sign_diff_by_name (core->anal, options, input + 3, true);
 			break;
 		default:
 			eprintf ("usage: zcn! other_space\n");
-			return false;
+			result = false;
 		}
 		break;
 	case '?':
@@ -865,10 +872,12 @@ static int cmdCompare(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: zc[?n!] other_space\n");
-		return false;
+		result = false;
 	}
 
-	return true;
+	r_sign_options_free (options);
+
+	return result;
 }
 
 static int cmdCheck(void *data, const char *input) {
