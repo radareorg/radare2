@@ -24,16 +24,16 @@ matrix:
     # Linux with clang
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
-    # Linux with meson and coverage
+    # Linux with meson and coverage and asserts
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1 CFLAGS="-DR2_ASSERT_STDOUT=1"
     # OS X with clang
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
     # ASAN as a best effort on every push
     - if: (not head_branch =~ ^release-* AND not head_branch =~ ^prerelease-* AND not branch =~ ^release-* AND not branch =~ ^prerelease-*) AND (head_branch =~ ^asan-* OR type = push)
       os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1" ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
     # release-only: meson build with system libraries
     - if: head_branch =~ ^release-* OR head_branch =~ ^prerelease-* OR branch =~ ^release-* OR branch =~ ^prerelease-*
       os: linux
@@ -60,7 +60,7 @@ matrix:
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_TESTS_DISABLE=1
   allow_failures:
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-DR2_ASSERT_STDOUT=1" ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
 cache:
   - ccache
 
