@@ -1099,7 +1099,7 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, int ordinal) {
-	struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
+	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
 	if (!symbols) {
 		return;
 	}
@@ -1142,7 +1142,6 @@ static void symbols_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile
 		sym->ordinal = ordinal + i;
 		r_list_append (ret, sym);
 	}
-	free (symbols);
 }
 
 #define IS_KERNEL_ADDR(x) ((x & 0xfffffff000000000L) == 0xfffffff000000000L)

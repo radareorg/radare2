@@ -20,18 +20,6 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4) {
-		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4)) {
-			return true;
-		}
-		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return !is_kernelcache (buf, length);
-		}
-	}
-	return false;
-}
-
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
@@ -298,7 +286,6 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = binsym,

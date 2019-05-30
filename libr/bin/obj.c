@@ -236,7 +236,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bf->sdb_info = o->kv;
 	sdb = bf->rbin->sdb;
 	if (sdb) {
-		Sdb *okv = o->kv;
 		Sdb *bdb = bf->sdb; // sdb_new0 ();
 		sdb_ns_set (bdb, "info", o->kv);
 		sdb_ns_set (bdb, "addrinfo", bf->sdb_addrinfo);

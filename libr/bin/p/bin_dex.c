@@ -1895,8 +1895,7 @@ static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
 	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
 }
 
-// TODO: change all return type for all getoffset
-static ut64 getoffset(RBinFile *bf, int type, int idx) {
+static int getoffset(RBinFile *bf, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods

@@ -224,9 +224,9 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 static RList *symbols(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
-	struct symbol_t *symbols = NULL;
+	const struct symbol_t *symbols = NULL;
 	RBinSymbol *ptr = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
+	RBinObject *obj = bf? bf->o: NULL;
 	RList *ret = r_list_newf (free);
 	const char *lang = "c";
 	int wordsize = 0;
@@ -340,7 +340,6 @@ static RList *symbols(RBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
-	// free (symbols);
 	sdb_free (symcache);
 	return ret;
 }
