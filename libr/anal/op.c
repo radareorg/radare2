@@ -33,6 +33,7 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->jump = UT64_MAX;
 		op->fail = UT64_MAX;
 		op->ptr = UT64_MAX;
+		op->refptr = 0;
 		op->val = UT64_MAX;
 	}
 }
@@ -346,6 +347,7 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_MOD, "mod" },
 	{ R_ANAL_OP_TYPE_CMOV, "cmov" },
 	{ R_ANAL_OP_TYPE_MOV, "mov" },
+	{ R_ANAL_OP_TYPE_CAST, "cast" },
 	{ R_ANAL_OP_TYPE_MUL, "mul" },
 	{ R_ANAL_OP_TYPE_DIV, "div" },
 	{ R_ANAL_OP_TYPE_NOP, "nop" },
@@ -403,7 +405,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	switch (t) {
 	case R_ANAL_OP_TYPE_RPUSH:
 		return "rpush";
-	defalt:
+	default:
 		/* nothing */
 		break;
 	}
@@ -440,6 +442,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_MOD   : return "mod";
 	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
 	case R_ANAL_OP_TYPE_MOV   : return "mov";
+	case R_ANAL_OP_TYPE_CAST  : return "cast";
 	case R_ANAL_OP_TYPE_MUL   : return "mul";
 	case R_ANAL_OP_TYPE_NOP   : return "nop";
 	case R_ANAL_OP_TYPE_NOT   : return "not";

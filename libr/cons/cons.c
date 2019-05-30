@@ -115,10 +115,10 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 	context->log_callback = NULL;
 
 	if (parent) {
-		context->color = parent->color;
+		context->color_mode = parent->color_mode;
 		r_cons_pal_copy (context, parent);
 	} else {
-		context->color = COLOR_MODE_DISABLED;
+		context->color_mode = COLOR_MODE_DISABLED;
 		r_cons_pal_init (context);
 	}
 }
@@ -165,7 +165,7 @@ static inline void r_cons_write(const char *obuf, int olen) {
 
 R_API RColor r_cons_color_random(ut8 alpha) {
 	RColor rcolor = {0};
-	if (I.context->color > COLOR_MODE_16) {
+	if (I.context->color_mode > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);
 		rcolor.b = r_num_rand (0xff);
@@ -515,7 +515,7 @@ R_API RCons *r_cons_new() {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.ansicon = r_sys_getenv ("ANSICON");
+	I.ansicon = r_cons_get_ansicon ();
 #if UNICODE
 	if (IsValidCodePage (CP_UTF8)) {
 		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
@@ -1339,14 +1339,72 @@ R_API int r_cons_get_size(int *rows) {
 	return R_MAX (0, I.columns);
 }
 
+#if __WINDOWS__
+R_API int r_cons_get_ansicon() {
+	HKEY key;
+	DWORD type;
+	DWORD size;
+	DWORD major;
+	DWORD minor;
+	char release[25];
+	bool win_support = false;
+	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
+	                   KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
+		goto ANSICON;
+	}
+	size = sizeof (major);
+	if (RegQueryValueExA (key, "CurrentMajorVersionNumber", NULL, &type,
+	                     (LPBYTE)&major, &size) != ERROR_SUCCESS
+	    || type != REG_DWORD) {
+		goto beach;
+	}
+	size = sizeof (minor);
+	if (RegQueryValueExA (key, "CurrentMinorVersionNumber", NULL, &type,
+	                     (LPBYTE)&minor, &size) != ERROR_SUCCESS
+	    || type != REG_DWORD) {
+		goto beach;
+	}
+	size = sizeof (release);
+	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
+	                     (LPBYTE)release, &size) != ERROR_SUCCESS
+	    || type != REG_SZ) {
+		goto beach;
+	}
+	if (major > 10
+	    || major == 10 && minor > 0
+	    || major == 10 && minor == 0 && atoi (release) >= 1703) {
+		win_support = true;
+	}
+beach:
+	RegCloseKey (key);
+ANSICON:
+	char *env_ansicon_str = r_sys_getenv ("ANSICON");
+	bool env_ansicon = !!env_ansicon_str;
+	free (env_ansicon_str);
+	return win_support || env_ansicon;
+}
+#endif
+
 R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
-	// TODO
-#else
-	if (cursor) {
-		write (1, "\x1b[?25h", 6);
+	if (I.ansicon) {
+#endif
+		write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+#if __WINDOWS__
 	} else {
-		write (1, "\x1b[?25l", 6);
+		static HANDLE hStdout = NULL;
+		static DWORD size = -1;
+		CONSOLE_CURSOR_INFO cursor_info;
+		if (!hStdout) {
+			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+		}
+		if (size == -1) {
+			GetConsoleCursorInfo (hStdout, &cursor_info);
+			size = cursor_info.dwSize;
+		}
+		cursor_info.dwSize = size;
+		cursor_info.bVisible = cursor ? TRUE : FALSE;
+		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
 }

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2018 - pancake */
+/* radare2 - LGPL - Copyright 2016-2019 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -49,8 +49,12 @@
 
 #endif
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 32 && !memcmp (buf, "MENUET0", 7)) {
+static bool check_buffer(RBuffer *b) {
+	ut8 buf[8];
+	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	if (r_buf_size (b) >= 32 && !memcmp (buf, "MENUET0", 7)) {
 		switch (buf[7]) {
 		case '0':
 		case '1':
@@ -62,15 +66,13 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
+static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	return check_buffer (b);
 }
 
 static bool load(RBinFile *bf) {
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
 	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
-	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
+	return load_buffer (bf, bf->o->bin_obj, bf->buf, la, bf->sdb);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -211,9 +213,9 @@ RBinPlugin r_bin_plugin_menuet = {
 	.desc = "Menuet/KolibriOS bin plugin",
 	.license = "LGPL3",
 	.load = &load,
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.size = &size,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,

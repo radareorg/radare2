@@ -135,11 +135,10 @@ static bool load(RBinFile *bf) {
 	return result;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_java_free ((struct r_bin_java_obj_t *) bf->o->bin_obj);
 	sdb_free (DB);
 	DB = NULL;
-	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -183,6 +182,21 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->big_endian = 0;
 	ret->dbg_info = 4 | 8; /* LineNums | Syms */
 	return ret;
+}
+
+static bool check_buffer(RBuffer *b) {
+	if (r_buf_size (b) > 32) {
+		ut8 buf[4];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+			int off = r_buf_read_be32_at (b, 4 * sizeof (int));
+			int version = r_buf_read_be16_at (b, 6);
+			if (off > 0 && version < 1024) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
@@ -256,6 +270,7 @@ RBinPlugin r_bin_plugin_java = {
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,

@@ -17,49 +17,24 @@ static Sdb* get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	struct PE_(r_bin_pe_obj_t) *res = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || !sz || sz == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new ();
-	r_buf_set_bytes (tbuf, buf, sz);
-	res = PE_(r_bin_pe_new_buf) (tbuf, bf->rbin->verbose);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	r_return_val_if_fail (bf && bin_obj && buf, false);
+	struct PE_(r_bin_pe_obj_t) *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+		*bin_obj = res;
+		return true;
 	}
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
-}
-
-static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct PE_(r_bin_pe_obj_t) *res;
-	if (!buf) {
-		return NULL;
-	}
-	res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
-	if (res) {
-		sdb_ns_set (sdb, "info", res->kv);
-	}
-	return res;
+	return false;
 }
 
 static bool load(RBinFile *bf) {
-	const ut8 *bytes;
-	ut64 sz;
-
-	if (!bf || !bf->o) {
-		return false;
-	}
-	bytes = r_buf_data (bf->buf, &sz);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	r_return_val_if_fail (bf && bf->o, false);
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -501,22 +476,22 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->actual_checksum  = strdup (sdb_fmt ("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
-
-	sdb_bool_set (bf->sdb, "pe.canary", has_canary(bf), 0);
-	sdb_bool_set (bf->sdb, "pe.highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set (bf->sdb, "pe.aslr", haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set (bf->sdb, "pe.forceintegrity", haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (bf->sdb, "pe.nx", haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set (bf->sdb, "pe.isolation", !haschr(bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set (bf->sdb, "pe.seh", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set (bf->sdb, "pe.bind", !haschr(bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set (bf->sdb, "pe.appcontainer", haschr(bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set (bf->sdb, "pe.wdmdriver", haschr(bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set (bf->sdb, "pe.guardcf", haschr(bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set (bf->sdb, "pe.terminalserveraware", haschr(bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
-	sdb_num_set (bf->sdb, "pe.bits", ret->bits, 0);
-	sdb_set (bf->sdb, "pe.claimed_checksum", ret->claimed_checksum, 0);
-	sdb_set (bf->sdb, "pe.actual_checksum", ret->actual_checksum, 0);
+	Sdb *db = sdb_ns (bf->sdb, "pe", true);
+	sdb_bool_set (db, "canary", has_canary (bf), 0);
+	sdb_bool_set (db, "highva", haschr (bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
+	sdb_bool_set (db, "aslr", haschr (bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
+	sdb_bool_set (db, "forceintegrity", haschr (bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (db, "nx", haschr (bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
+	sdb_bool_set (db, "isolation", !haschr (bf, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
+	sdb_bool_set (db, "seh", !haschr (bf, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
+	sdb_bool_set (db, "bind", !haschr (bf, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
+	sdb_bool_set (db, "appcontainer", haschr (bf, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
+	sdb_bool_set (db, "wdmdriver", haschr (bf, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
+	sdb_bool_set (db, "guardcf", haschr (bf, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
+	sdb_bool_set (db, "terminalserveraware", haschr (bf, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
+	sdb_num_set (db, "bits", ret->bits, 0);
+	sdb_set (db, "claimed_checksum", ret->claimed_checksum, 0);
+	sdb_set (db, "actual_checksum", ret->actual_checksum, 0);
 
 	ret->has_va = true;
 

@@ -165,6 +165,8 @@ struct MACH0_(obj_t) {
 	ut64 header_at;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
+	struct symbol_t *symbols;
+	ut64 main_addr;
 };
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf);
@@ -172,7 +174,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
-struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
+const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin);
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
@@ -194,7 +196,7 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
 ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
-struct MACH0_(mach_header) *MACH0_(get_hdr_from_bytes)(RBuffer *buf);
+struct MACH0_(mach_header) *MACH0_(get_hdr_from_buffer)(RBuffer *buf);
 void MACH0_(mach_headerfields)(RBinFile *bf);
 RList *MACH0_(mach_fields)(RBinFile *bf);
 #endif

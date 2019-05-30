@@ -35,6 +35,9 @@ extern "C" {
 #include <windows.h>
 #include <wincon.h>
 #include <winuser.h>
+# ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+# define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+# endif
 #else
 #include <unistd.h>
 #endif
@@ -419,7 +422,7 @@ typedef struct r_cons_context_t {
 	bool is_interactive;
 	bool pageable;
 
-	RConsColorMode color;
+	int color_mode;
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
 } RConsContext;
@@ -475,7 +478,7 @@ typedef struct r_cons_t {
 	int refcnt;
 	bool newline;
 #if __WINDOWS__
-	bool ansicon;
+	int ansicon;
 #endif
 	bool flush;
 	bool use_utf8; // use utf8 features
@@ -560,8 +563,8 @@ typedef struct r_cons_t {
 #define Color_BGCYAN     "\x1b[46m"
 #define Color_BLUE       "\x1b[34m"
 #define Color_BGBLUE     "\x1b[44m"
-#define Color_GRAY       "\x1b[1;30m"
-#define Color_BGGRAY     "\x1b[48;5;8m"
+#define Color_GRAY       "\x1b[90m"
+#define Color_BGGRAY     "\x1b[100m"
 /* bright colors */
 #define Color_BBLACK    "\x1b[1;30m"
 #define Color_BRED      "\x1b[1;31m"
@@ -714,6 +717,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
+R_API int r_cons_get_ansicon();
 R_API void r_cons_w32_gotoxy(int fd, int x, int y);
 R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
@@ -936,7 +940,7 @@ struct r_line_t {
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
 #if __WINDOWS__
-	bool ansicon;
+	int ansicon;
 #endif
 }; /* RLine */
 
@@ -1017,6 +1021,13 @@ typedef struct {
 	int y;
 } RPanelsSnow;
 
+typedef struct {
+	RStrBuf *data;
+	RPanelPos pos;
+	int idx;
+	int offset;
+} RModal;
+
 typedef struct r_panels_t {
 	RConsCanvas *can;
 	RPanel **panel;
@@ -1027,6 +1038,7 @@ typedef struct r_panels_t {
 	bool autoUpdate;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
+	Sdb *del_db;
 	Sdb *rotate_db;
 	HtPP *mht;
 	RPanelsMode mode;

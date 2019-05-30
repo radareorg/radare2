@@ -507,8 +507,10 @@ static bool cb_asmarch(void *user, void *data) {
 				char *nac = strdup (newAsmCPU);
 				char *comma = strchr (nac, ',');
 				if (comma) {
-					*comma = 0;
-					r_config_set (core->config, "asm.cpu", nac);
+					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
+						*comma = 0;
+						r_config_set (core->config, "asm.cpu", nac);
+					}
 				}
 				free (nac);
 			} else {
@@ -1136,7 +1138,7 @@ static bool cb_color(void *user, void *data) {
 	} else if (!strcmp (node->value, "false")) {
 		node->i_value = 0;
 	}
-	r_cons_singleton ()->context->color = (node->i_value > COLOR_MODE_16M)
+	r_cons_singleton ()->context->color_mode = (node->i_value > COLOR_MODE_16M)
 		? COLOR_MODE_16M: node->i_value;
 	r_cons_pal_update_event ();
 	r_print_set_flags (core->print, core->print->flags);
@@ -1145,9 +1147,9 @@ static bool cb_color(void *user, void *data) {
 
 static bool cb_color_getter(void *user, RConfigNode *node) {
 	(void)user;
-	node->i_value = r_cons_singleton ()->context->color;
+	node->i_value = r_cons_singleton ()->context->color_mode;
 	char buf[128];
-	r_config_node_value_format_i (buf, sizeof (buf), r_cons_singleton ()->context->color, node);
+	r_config_node_value_format_i (buf, sizeof (buf), r_cons_singleton ()->context->color_mode, node);
 	if (!node->value || strcmp (node->value, buf) != 0) {
 		free (node->value);
 		node->value = strdup (buf);
@@ -1911,11 +1913,14 @@ static bool cb_scrhighlight(void *user, void *data) {
 #if __WINDOWS__
 static int scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
+	if (!strcmp (node->value, "true")) {
+		node->i_value = 1;
+	}
 	r_line_singleton ()->ansicon = r_cons_singleton ()->ansicon = node->i_value;
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	DWORD mode;
 	int i;
-	if (node->i_value) {
+	if (node->i_value == 1) {  // scr.ansicon=2 to show esc seqs (for debugging) if using non-ConEmu-hosted cmd.exe
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
@@ -3305,7 +3310,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
 	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
-	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
+	SETICB ("scr.ansicon", r_cons_singleton ()->ansicon,
 		&scr_ansicon, "Use ANSICON mode or not on Windows");
 #endif
 #if __ANDROID__

@@ -742,8 +742,9 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin->kv;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return r_bin_dex_new_buf (buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	*bin_obj = r_bin_dex_new_buf (buf);
+	return *bin_obj != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -791,7 +792,7 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("DEX CLASS");
-	ret->has_va = false;
+	ret->has_va = true;
 	ret->has_lit = true;
 	ret->bclass = r_bin_dex_get_version (bf->o->bin_obj);
 	ret->rclass = strdup ("class");
@@ -936,9 +937,8 @@ static char *dex_class_name(RBinDexObj *bin, RBinDexClass *c) {
 
 static char *dex_field_name(RBinDexObj *bin, int fid) {
 	int cid, tid, type_id;
-	if (!bin || !bin->fields) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->fields, NULL);
+
 	if (fid < 0 || fid >= bin->header.fields_size) {
 		return NULL;
 	}
@@ -1891,15 +1891,22 @@ static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int 
 	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
 
+static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
+	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
+}
+
 // TODO: change all return type for all getoffset
-static int getoffset(RBinFile *bf, int type, int idx) {
+static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
 		return offset_of_method_idx (bf, dex, idx);
+	case 'f':
+		return dex_field_offset (dex, idx);
 	case 'o': // objects
-		break;
+		eprintf ("TODO: getoffset object\n");
+		return 0; // //chdex_object_offset (dex, idx);
 	case 's': // strings
 		if (dex->header.strings_size > idx) {
 			if (dex->strings) {
@@ -1974,9 +1981,11 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->vsize = ptr->size;
+		ptr->format = r_str_newf ("Cd %d[%d]", 4, ptr->vsize / 4);
 		ptr->perm = R_PERM_R;
 		ptr->add = true;
 		r_list_append (ret, ptr);
+		// Define as dwords!
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		ptr->name = strdup ("code");
@@ -2003,6 +2012,15 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
+	if ((ptr = R_NEW0 (RBinSection))) {
+		ptr->name = strdup ("file");
+		ptr->vaddr = ptr->paddr = 0;
+		ptr->size = r_buf_size (bf->buf);
+		ptr->vsize = ptr->size;
+		ptr->perm = R_PERM_R;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
@@ -2014,7 +2032,8 @@ static void dex_header(RBinFile *bf) {
 	rbin->cb_printf ("DEX file header:\n");
 	rbin->cb_printf ("magic               : 'dex\\n035\\0'\n");
 	rbin->cb_printf ("checksum            : %x\n", bin->header.checksum);
-	rbin->cb_printf ("signature           : %02x%02x...%02x%02x\n", bin->header.signature[0], bin->header.signature[1], bin->header.signature[18], bin->header.signature[19]);
+	rbin->cb_printf ("signature           : %02x%02x...%02x%02x\n",
+		bin->header.signature[0], bin->header.signature[1], bin->header.signature[18], bin->header.signature[19]);
 	rbin->cb_printf ("file_size           : %d\n", bin->header.size);
 	rbin->cb_printf ("header_size         : %d\n", bin->header.header_size);
 	rbin->cb_printf ("link_size           : %d\n", bin->header.linksection_size);
@@ -2023,8 +2042,8 @@ static void dex_header(RBinFile *bf) {
 	rbin->cb_printf ("string_ids_off      : %d (0x%06x)\n", bin->header.strings_offset, bin->header.strings_offset);
 	rbin->cb_printf ("type_ids_size       : %d\n", bin->header.types_size);
 	rbin->cb_printf ("type_ids_off        : %d (0x%06x)\n", bin->header.types_offset, bin->header.types_offset);
-	rbin->cb_printf ("proto_ids_size       : %d\n", bin->header.prototypes_size);
-	rbin->cb_printf ("proto_ids_off        : %d (0x%06x)\n", bin->header.prototypes_offset, bin->header.prototypes_offset);
+	rbin->cb_printf ("proto_ids_size      : %d\n", bin->header.prototypes_size);
+	rbin->cb_printf ("proto_ids_off       : %d (0x%06x)\n", bin->header.prototypes_offset, bin->header.prototypes_offset);
 	rbin->cb_printf ("field_ids_size      : %d\n", bin->header.fields_size);
 	rbin->cb_printf ("field_ids_off       : %d (0x%06x)\n", bin->header.fields_offset, bin->header.fields_offset);
 	rbin->cb_printf ("method_ids_size     : %d\n", bin->header.method_size);
@@ -2103,20 +2122,12 @@ static RList *dex_fields(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_bytes(const ut8 *bytes, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 RBinPlugin r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
-	.check_bytes = check_bytes,
 	.check_buffer = check_buffer,
 	.baddr = baddr,
 	.entries = entries,

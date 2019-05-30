@@ -1,4 +1,4 @@
-/* radare - LGPL - 2018 - a0rtega */
+/* radare - LGPL - 2018-2019 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -10,31 +10,24 @@
 
 static struct n3ds_firm_hdr loaded_header;
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < sizeof (struct n3ds_firm_hdr)) {
-		return false;
-	}
-	return (!memcmp (buf, "FIRM", 4));
+static bool check_buffer(RBuffer *b) {
+	ut8 magic[4];
+	r_buf_read_at (b, 0, magic, sizeof (magic));
+	return (!memcmp (magic, "FIRM", 4));
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return memcpy (&loaded_header, buf, sizeof (struct n3ds_firm_hdr));
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	if (r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
+		*bin_obj = &loaded_header;
+		return true;
+	}
+	return false;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-	ut64 sz;
-	const ut8 *bytes = r_buf_data (bf->buf, &sz);
-	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return check_bytes (bytes, sz);
-}
-
-static int destroy(RBinFile *bf) {
-	r_buf_free (bf->buf);
-	bf->buf = NULL;
-	return true;
+	r_return_val_if_fail (bf && bf->o, false);
+	load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
+	return check_buffer (bf->buf);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -145,9 +138,8 @@ RBinPlugin r_bin_plugin_nin3ds = {
 	.desc = "Nintendo 3DS FIRM format r_bin plugin",
 	.license = "LGPL3",
 	.load = &load,
-	.load_bytes = &load_bytes,
-	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,

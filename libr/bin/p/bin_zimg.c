@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2017 - ninjahacker */
+/* radare - LGPL - Copyright 2011-2019 - ninjahacker */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,50 +7,33 @@
 #include "zimg/zimg.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o, false);
 	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->o->bin_obj;
 	return bin? bin->kv: NULL;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
-	void *res = NULL;
-	RBuffer *tbuf = NULL;
-	if (!buf || size == 0 || size == UT64_MAX) {
-		return false;
-	}
-	tbuf = r_buf_new_with_bytes (buf, size);
-	if (!tbuf) {
-		return false;
-	}
-	res = r_bin_zimg_new_buf (tbuf);
-	r_buf_free (tbuf);
-	*bin_obj = res;
-	return true;
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	*bin_obj = r_bin_zimg_new_buf (b);
+	return *bin_obj != NULL;
 }
 
 static bool load(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	}
-	ut64 size;
-	const ut8 *bytes = r_buf_data (bf->buf, &size);
-	return load_bytes (bf, &bf->o->bin_obj, bytes, size, bf->o->loadaddr, bf->sdb);
+	r_return_val_if_fail (bf && bf->o, false);
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
 static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 8) {
+static bool check_buffer(RBuffer *b) {
+	ut8 zimghdr[8];
+	if (r_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
 		// Checking ARM zImage kernel
-		if (!memcmp (buf, "\x00\x00\xa0\xe1\x00\x00\xa0\xe1", 8)) {
+		if (!memcmp (zimghdr, "\x00\x00\xa0\xe1\x00\x00\xa0\xe1", 8)) {
 			return true;
 		}
 	}
-	// TODO: Add other architectures
 	return false;
 }
 
@@ -81,8 +64,8 @@ RBinPlugin r_bin_plugin_zimg = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
-	.load_bytes = &load_bytes,
-	.check_bytes = &check_bytes,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.info = &info,
 };

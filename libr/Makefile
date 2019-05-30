@@ -101,9 +101,6 @@ _libr.${EXT_AR}: .libr
 libr.${EXT_AR}: .libr2
 	${AR} crs $@ .libr2/*/*.o
 
-#libr.${EXT_AR}: .libr
-#	${AR} crs $@ .libr/*.o
-
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif

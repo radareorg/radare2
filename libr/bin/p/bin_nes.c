@@ -1,27 +1,21 @@
-/* radare - LGPL3 - 2015-2016 - maijin */
+/* radare - LGPL3 - 2015-2019 - maijin */
 
 #include <r_bin.h>
 #include <r_lib.h>
 #include "nes/nes_specs.h"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 4) {
-		return false;
+
+static bool check_buffer(RBuffer *b) {
+	if (r_buf_size (b) > 4) {
+		ut8 buf[4];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		return (!memcmp (buf, INES_MAGIC, sizeof (buf)));
 	}
-	return (!memcmp (buf, INES_MAGIC, 4));
+	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz);
-}
-
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ut64 tmpsz;
-	const ut8 *tmp = r_buf_data (buf, &tmpsz);
-	if (!check_bytes (tmp, tmpsz)) {
-		return NULL;
-	}
-	return r_buf_new ();
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -217,11 +211,10 @@ static ut64 baddr(RBinFile *bf) {
 RBinPlugin r_bin_plugin_nes = {
 	.name = "nes",
 	.desc = "NES",
-	.license = "LGPL3",
-	.load_bytes = &load_bytes,
+	.license = "MIT",
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = sections,
 	.symbols = &symbols,

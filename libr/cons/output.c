@@ -61,6 +61,33 @@ static int wrapline(const char *s, int len) {
 	return n - (n > len)? l: 1;
 }
 
+// Dupe from canvas.c
+static int utf8len_fixed(const char *s, int n) {
+	int i = 0, j = 0, fullwidths = 0;
+	while (s[i] && n > 0) {
+		if ((s[i] & 0xc0) != 0x80) {
+			j++;
+			if (r_str_char_fullwidth (s + i, n)) {
+				fullwidths++;
+			}
+		}
+		n--;
+		i++;
+	}
+	return j + fullwidths;
+}
+
+static int bytes_utf8len(const char *s, int n) {
+	int ret = 0;
+	while (n > 0) {
+		int sz = r_str_utf8_charsize (s);
+		ret += sz;
+		s += sz;
+		n--;
+	}
+	return ret;
+}
+
 R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	int esc = 0;
@@ -70,6 +97,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	int inv = 0;
 	int linelen = 0;
 	int ll = 0;
+	int raw_ll = 0;
 	int lines, cols = r_cons_get_size (&lines);
 	if (I->is_wine==-1) {
 		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
@@ -81,16 +109,16 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	if (ptr && hConsole)
 	for (; *ptr && ptr < ptr_end; ptr++) {
 		if (ptr[0] == 0xa) {
-			ll = (size_t)(ptr - str);
+			raw_ll = (size_t)(ptr - str);
+			ll = utf8len_fixed (str, raw_ll);
 			lines--;
 			if (vmode && lines < 0) {
 				break;
 			}
-			if (ll < 1) {
+			if (raw_ll < 1) {
 				continue;
 			}
 			if (vmode) {
-				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
 				if (ll + linelen >= cols) {
 					// chop line if too long
@@ -101,7 +129,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (ll > 0) {
-				write (1, str, ll);
+				raw_ll = bytes_utf8len (str, ll, strlen (str));
+				write (1, str, raw_ll);
 				linelen += ll;
 			}
 			esc = 0;
@@ -121,7 +150,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 			continue;
 		}
 		if (ptr[0] == 0x1b) {
-			ll = (size_t)(ptr-str);
+			raw_ll = (size_t)(ptr - str);
+			ll = utf8len_fixed (str, raw_ll);
 			if (str[0] == '\n') {
 				str++;
 				ll--;
@@ -142,7 +172,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 			if (vmode) {
 				if (linelen + ll >= cols) {
 					// chop line if too long
-					ll = (cols-linelen) - 1;
+					ll = (cols - linelen) - 1;
 					if (ll > 0) {
 						// fix utf8 len here
 						ll = wrapline ((const char*)str, cols - linelen - 1);
@@ -150,7 +180,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				}
 			}
 			if (ll > 0) {
-				write (1, str, ll);
+				raw_ll = bytes_utf8len (str, ll, strlen (str));
+				write (1, str, raw_ll);
 				linelen += ll;
 			}
 			esc = 1;
@@ -319,17 +350,17 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				ptr = ptr + 2;
 				str = ptr + 1;
 				continue;
-			} else if (!strncmp (ptr, "1;30m", 5)) {
+			} else if (!strncmp (ptr, "90m", 3)) {
 				fg = 8;
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
-				ptr = ptr + 4;
+				ptr = ptr + 2;
 				str = ptr + 1;
-			} else if (!strncmp (ptr, "48;5;8m", 7)) {
+			} else if (!strncmp (ptr, "100m", 4)) {
 				bg = 0x80;
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
-				ptr = ptr + 6;
+				ptr = ptr + 3;
 				str = ptr + 1;
 				continue;
 			}

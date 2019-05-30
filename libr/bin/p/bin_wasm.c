@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - pancake, cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2019 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -9,13 +9,9 @@
 
 #include "wasm/wasm.h"
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	return (buf && length >= 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4));
-}
-
-static bool check_bytes_buf(RBuffer* rbuf) {
+static bool check_buffer(RBuffer* rbuf) {
 	ut8 buf[4] = {0};
-	return rbuf && r_buf_read (rbuf, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
+	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 
 static bool find_symbol(const ut32 *p, const RBinWasmSymbol* q) {
@@ -29,25 +25,23 @@ static bool find_export(const ut32 *p, const RBinWasmExportEntry* q) {
 	return q->index != (*p);
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, NULL);
 
-	if (!check_bytes_buf (buf)) {
-		return NULL;
+	if (check_buffer (buf)) {
+		*bin_obj = r_bin_wasm_init (bf, buf);
+		return true;
 	}
-	return r_bin_wasm_init (bf, buf);
+	return false;
 }
 
 static bool load(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, false);
-
-	bf->o->bin_obj = load_buffer (bf, bf->buf, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_wasm_destroy (bf);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -333,7 +327,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,

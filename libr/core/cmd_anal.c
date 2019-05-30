@@ -522,6 +522,7 @@ static const char *help_msg_ah[] = {
 	"ahc", " 0x804804", "override call/jump address",
 	"ahe", " 3,eax,+=", "set vm analysis string",
 	"ahf", " 0x804840", "override fallback address for call",
+	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (1, 8, 10, 16, s)",
 	"ahj", "", "list hints in JSON",
@@ -3214,9 +3215,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		char *uaddr = NULL, *name = NULL;
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
-		RAnalFunction *fcn;
-		RAnalFunction *fcni;
-		RListIter *iter;
+		RAnalFunction *fcn = NULL;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
 			input++;
@@ -3241,6 +3240,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		if (fcn) {
 			/* ensure we use a proper name */
 			setFunctionName (core, addr, fcn->name, false);
+			if (core->anal->opt.vars) {
+				r_core_recover_vars (core, fcn, true);
+			}
 		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
@@ -3295,6 +3297,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 #endif
 				}
 				r_list_free (refs);
+				if (core->anal->opt.vars) {
+					r_core_recover_vars (core, fcn, true);
+				}
 			}
 		}
 		if (name) {
@@ -3303,7 +3308,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			free (name);
 		}
+#if 0
+		// XXX THIS IS VERY SLOW
 		if (core->anal->opt.vars) {
+			RListIter *iter;
+			RAnalFunction *fcni = NULL;
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				if (r_cons_is_breaked ()) {
 					break;
@@ -3311,8 +3320,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_core_recover_vars (core, fcni, true);
 			}
 		}
+#endif
 		flag_every_function (core);
 	}
+		break;
 	default:
 		return false;
 		break;
@@ -6715,6 +6726,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_fail (core->anal, core->offset);
 		}
 		break;
+	case 'F': // "ahF" set stackframe size
+		if (input[1] == ' ') {
+			r_anal_hint_set_stackframe (
+				core->anal, core->offset,
+				r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_stackframe (core->anal, core->offset);
+		}
+		break;
 	case 's': // "ahs" set size (opcode length)
 		if (input[1] == ' ') {
 			r_anal_hint_set_size (core->anal, core->offset, atoi (input + 1));
@@ -6724,7 +6744,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			eprintf ("Usage: ahs 16\n");
 		}
 		break;
-	case 'S': // "ahS" set size (opcode length)
+	case 'S': // "ahS" set asm.syntax
 		if (input[1] == ' ') {
 			r_anal_hint_set_syntax (core->anal, core->offset, input + 2);
 		} else if (input[1] == '-') {
@@ -8223,6 +8243,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			}
 			r_core_seek (core, curseek, 1);
 		jacuzzi:
+			// XXX this shouldnt be called. flags muts be created wheen the function is registered
 			flag_every_function (core);
 			r_cons_break_pop ();
 			R_FREE (dh_orig);

@@ -65,27 +65,25 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = R_NEW0 (ArtObj);
-	if (!ao) {
-		return NULL;
+	if (ao) {
+		ao->kv = sdb_new0 ();
+		if (ao->kv) {
+			ao->buf = r_buf_ref (buf);
+			art_header_load (ao, ao->kv);
+			sdb_ns_set (sdb, "info", ao->kv);
+			*bin_obj = ao;
+			return true;
+		}
 	}
-	ao->kv = sdb_new0 ();
-	if (!ao->kv) {
-		free (ao);
-		return NULL;
-	}
-	ao->buf = r_buf_ref (buf);
-	art_header_load (ao, ao->kv);
-	sdb_ns_set (sdb, "info", ao->kv);
-	return ao;
+	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
 	r_buf_free (obj->buf);
 	free (obj);
-	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -98,16 +96,12 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	ArtObj *ao;
-	RBinInfo *ret;
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	ret = R_NEW0 (RBinInfo);
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ao = bf->o->bin_obj;
+	ArtObj *ao = bf->o->bin_obj;
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");

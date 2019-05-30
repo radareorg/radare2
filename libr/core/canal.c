@@ -27,7 +27,6 @@ enum {
 	R2_ARCH_ARM64
 } R2Arch;
 
-
 static void add_string_ref(RCore *core, ut64 xref_to);
 static int cmpfcn(const void *_a, const void *_b);
 
@@ -990,6 +989,9 @@ static void print_hint_h_format(RAnalHint* hint) {
 	if (hint->high) {
 		r_cons_printf (" high=true");
 	}
+	if (hint->stackframe != UT64_MAX) {
+		r_cons_printf (" stackframe=0x%"PFMT64x, hint->stackframe);
+	}
 	r_cons_newline ();
 }
 
@@ -1022,6 +1024,9 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		}
 		if (hint->high) {
 			r_cons_printf ("ahh @ 0x%"PFMT64x"\n", hint->addr);
+		}
+		if (hint->stackframe != UT64_MAX) {
+			r_cons_printf ("ahF 0x%"PFMT64x" @ 0x%"PFMT64x"\n", hint->stackframe, hint->addr);
 		}
 		break;
 	case 'j':
@@ -1069,6 +1074,9 @@ static void anal_hint_print(RAnalHint *hint, int mode, PJ *pj) {
 		}
 		if (hint->high) {
 			pj_kb (pj, "high", true);
+		}
+		if (hint->stackframe != UT64_MAX) {
+			pj_kn (pj, "stackframe", hint->stackframe);
 		}
 		pj_end (pj);
 		break;
@@ -1716,11 +1724,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		r_flag_space_pop (core->flags);
 		return result;
 	}
-	if (from != UT64_MAX && !at) {
-		eprintf ("invalid address\n");
+	if ((from != UT64_MAX && !at) || at == UT64_MAX) {
+		eprintf ("Invalid address from 0x%08"PFMT64x"\n", from);
 		return false;
 	}
-	if (at == UT64_MAX || depth < 0) {
+	if (depth < 0) {
 		return false;
 	}
 	if (r_cons_is_breaked ()) {
@@ -3074,15 +3082,15 @@ static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	return ret;
 }
 
+// TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
-	RAnalOp *op = NULL;
 	int count = 0;
 	int reg_set[10] = {0};
-	ut64 pos;
 
-	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
+	r_return_if_fail (core && core->anal && fcn);
+	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
 	const int max_bb_size = core->anal->opt.bb_max_size;
@@ -3096,12 +3104,12 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		if (bb->size > max_bb_size) {
 			continue;
 		}
-		pos = bb->addr;
+		ut64 pos = bb->addr;
 		while (pos < bb->addr + bb->size) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
+			RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
 			if (!op) {
 				//eprintf ("Cannot get op\n");
 				break;
@@ -3118,7 +3126,6 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			pos += opsize;
 		}
 	}
-	return;
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
@@ -3443,6 +3450,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			     (!bckwrds && i < core->blocksize - OPSZ) ||
 			     (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
+				// TODO: honor anal.align
 				if (r_cons_is_breaked ()) {
 					break;
 				}
@@ -3457,7 +3465,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case 'w':
 				case 'x':
 					{
-						RAnalOp op ={0};
 						r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ANAL_OP_MASK_BASIC);
 						int mask = mode=='r' ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
 						if (op.direction == mask) {
@@ -3478,7 +3485,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_CJMP:
 				case R_ANAL_OP_TYPE_CALL:
 				case R_ANAL_OP_TYPE_CCALL:
-					if (op.jump != -1 &&
+					if (op.jump != UT64_MAX &&
 						core_anal_followptr (core, 'C', at + i, op.jump, ref, true, 0)) {
 						count ++;
 					}
@@ -3489,7 +3496,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_RJMP:
 				case R_ANAL_OP_TYPE_IRJMP:
 				case R_ANAL_OP_TYPE_MJMP:
-					if (op.ptr != -1 &&
+					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'c', at + i, op.ptr, ref, true ,1)) {
 						count ++;
 					}
@@ -3499,13 +3506,19 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case R_ANAL_OP_TYPE_RCALL:
 				case R_ANAL_OP_TYPE_IRCALL:
 				case R_ANAL_OP_TYPE_UCCALL:
-					if (op.ptr != -1 &&
+					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'C', at + i, op.ptr, ref, true ,1)) {
 						count ++;
 					}
 					break;
 				default:
-					if (op.ptr != -1 &&
+					{
+						if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ANAL_OP_MASK_BASIC)) {
+							r_anal_op_fini (&op);
+							continue;
+						}
+					}
+					if (op.ptr != UT64_MAX &&
 						core_anal_followptr (core, 'd', at + i, op.ptr, ref, false, ptrdepth)) {
 						count ++;
 					}

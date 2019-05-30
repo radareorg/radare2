@@ -1,9 +1,13 @@
-/* radare - LGPL - Copyright 2015-2018 nodepad */
+/* radare - LGPL - Copyright 2015-2019 nodepad */
 
 #include <r_types.h>
 #include <r_bin.h>
 #include <r_lib.h>
 #include "mz/mz.h"
+
+
+/* half-magic */
+#define HM(x) (int)((int)(x[0]<<8)|(int)(x[1]))
 
 static Sdb *get_sdb(RBinFile *bf) {
 	const struct r_bin_mz_obj_t *bin;
@@ -16,27 +20,35 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool knownHeader(const ut8 *buf,ut16 offset,ut64 length){
-	// check for PE
-	if (!memcmp (buf + offset, "PE", 2) &&
-		(length > offset + 0x20) &&
-		!memcmp (buf + offset + 0x18, "\x0b\x01", 2)) {
+static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
+	ut8 h[2];
+	if (r_buf_read_at (b, 0, h, sizeof (h)) != sizeof (h)) {
 		return false;
 	}
-	// Check for New Executable, LE/LX or Phar Lap executable
-	if (!memcmp (buf + offset, "NE", 2) ||
-		!memcmp (buf + offset, "LE", 2) ||
-		!memcmp (buf + offset, "LX", 2) ||
-		!memcmp (buf + offset, "PL", 2)) {
-		return false;
+	if (!memcmp (h, "PE", 2)) {
+		if (offset + 0x20 < r_buf_size (b)) {
+			if (r_buf_read_at (b, offset + 0x18, h, sizeof (h)) != 2) {
+				return false;
+			}
+			if (!memcmp (h, "\x0b\x01", 2)) {
+				return true;
+			}
+		}
+	} else {
+		if (!memcmp (h, "NE", 2)
+		 || !memcmp (h, "LE", 2)
+		 || !memcmp (h, "LX", 2)
+		 || !memcmp (h, "PL", 2)) {
+			return true;
+		}
 	}
-	return true;
+	return false;
 }
 
-static bool checkEntrypoint(const ut8 *buf, ut64 length) {
-	st16 cs = r_read_ble16 (buf + 0x16, false);
-	ut16 ip = r_read_ble16 (buf + 0x14, false);
-	ut32 pa = ((r_read_ble16 (buf + 8, false) + cs) << 4) + ip;
+static bool checkEntrypointBuffer(RBuffer *b) {
+	st16 cs = r_buf_read_le16_at (b, 0x16);
+	ut16 ip = r_buf_read_le16_at (b, 0x14);
+	ut32 pa = ((r_buf_read_le16_at (b, 0x08) + cs) << 4) + ip;
 
 	/* A minimal MZ header is 0x1B bytes.  Header length is measured in
 	 * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
@@ -44,56 +56,65 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	 * cleverly fit a few instructions inside the header.
 	 */
 	pa &= 0xffff;
+	ut64 length = r_buf_size (b);
 	if (pa >= 0x20 && pa + 1 < length) {
-		ut16 pe = r_read_ble16 (buf + 0x3c, false);
-		if (pe + 2 < length && length > 0x104 && !memcmp (buf + pe, "PE", 2)) {
-			return false;
+		ut16 pe = r_buf_read_le16_at (b,  0x3c);
+		if (pe + 2 < length && length > 0x104) {
+			ut8 h[2];
+			if (r_buf_read_at (b, pe, h, 2) == 2) {
+				if (!memcmp (h, "PE", 2)) {
+					return false;
+				}
+			}
 		}
 		return true;
 	}
 	return false;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	ut16 new_exe_header_offset;
-	if (!buf || length <= 0x3d) {
+static bool check_buffer(RBuffer *b) {
+	r_return_val_if_fail (b, false);
+	ut64 b_size = r_buf_size (b);
+	if (b_size <= 0x3d) {
 		return false;
 	}
 
 	// Check for MZ magic.
-	if (memcmp (buf, "MZ", 2) && memcmp (buf, "ZM", 2)) {
+	ut8 h[2];
+	if (r_buf_read_at (b, 0, h, 2) != 2) {
+		return false;
+	}
+	if (memcmp (h, "MZ", 2)) {
 		return false;
 	}
 
 	// See if there is a new exe header.
-	new_exe_header_offset = r_read_ble16 (buf + 0x3c, false);
-	if (length > new_exe_header_offset + 2) {
-		if (!knownHeader (buf,new_exe_header_offset, length)) {
+	ut16 new_exe_header_offset = r_buf_read_le16_at (b, 0x3c);
+	if (b_size > new_exe_header_offset + 2) {
+		if (knownHeaderBuffer (b, new_exe_header_offset)) {
 			return false;
 		}
 	}
 
 	// Raw plain MZ executable (watcom)
-	if (!checkEntrypoint (buf, length)) {
+	if (!checkEntrypointBuffer (b)) {
 		return false;
 	}
-
 	return true;
 }
 
-static void *load(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct r_bin_mz_obj_t *mz_obj;
-
-	mz_obj = r_bin_mz_new_buf (buf);
+static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	struct r_bin_mz_obj_t *mz_obj = r_bin_mz_new_buf (buf);
 	if (mz_obj) {
 		sdb_ns_set (sdb, "info", mz_obj->kv);
+		*bin_obj = mz_obj;
+		return true;
 	}
-	return mz_obj;
+	return false;
 }
 
-static int destroy(RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_mz_free ((struct r_bin_mz_obj_t *)bf->o->bin_obj);
-	return true;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
@@ -220,7 +241,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
+	.check_buffer = &check_buffer,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

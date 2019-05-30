@@ -128,7 +128,7 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 				r_list_append (res, r_str_newf (" %c %s", first_line? '-': ' ', p));
 			} else {
 				// otherwise we need to emphasize the matching part
-				if (I (context->color)) {
+				if (I (context->color_mode)) {
 					int last_color_change = 0;
 					int last_mask = 0;
 					char *str = r_str_newf (" %c ", first_line? '-': ' ');

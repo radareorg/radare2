@@ -462,7 +462,7 @@ R_API void r_cons_pal_show() {
 			colors[i].bgcode,
 			colors[i].name);
 	}
-	switch (r_cons_singleton ()->context->color) {
+	switch (r_cons_singleton ()->context->color_mode) {
 	case COLOR_MODE_256: // 256 color palette
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_256 ();
@@ -595,7 +595,7 @@ static void cons_pal_update_event(RConsContext *ctx) {
 		if (*color) {
 			R_FREE (*color);
 		}
-		*color = r_cons_rgb_str_mode (ctx->color, NULL, 0, rcolor);
+		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
 		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);
 	}

@@ -58,17 +58,15 @@ static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
-	if (!data) {
-		return NULL;
+	if (data) {
+		data->offset = offset;
+		data->size = size;
+		data->file_count = file_count;
+		data->metadata = metadata;
+		data->loaded = 0;
+// dont slice twice TODO. review this
+		data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
 	}
-	data->offset = offset;
-	data->size = size;
-	data->file_count = file_count;
-	data->metadata = metadata;
-	data->loaded = 0;
-	// TODO: USE RBuffer *buf inside RBinXtrData*
-	data->buf = r_buf_ref (buf);
-	// TODO. subbuffer?
 	return data;
 }
 
@@ -121,13 +119,11 @@ R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int b
 }
 
 R_API void r_bin_file_hash_free(RBinFileHash *fhash) {
-	if (!fhash) {
-		return;
+	if (fhash) {
+		R_FREE (fhash->type);
+		R_FREE (fhash->hex);
+		free (fhash);
 	}
-
-	R_FREE (fhash->type);
-	R_FREE (fhash->hex);
-	free (fhash);
 }
 
 R_API void r_bin_info_free(RBinInfo *rb) {
@@ -322,7 +318,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
 	RBinXtrPlugin *xtr;
-	RBinFile *binfile = NULL;
 	int tfd = opt->fd;
 
 	bool is_debugger = iob->fd_is_dbg (io, opt->fd);
@@ -353,8 +348,9 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 	}
 	bin->file = fname;
 	opt->sz = R_MIN (file_sz, opt->sz);
-	ut64 seekaddr = is_debugger? opt->baseaddr: opt->loadaddr;
-	if (seekaddr > 0 && seekaddr != UT64_MAX) {
+	ut64 seekaddr = opt->loadaddr;
+
+	if (!is_debugger && seekaddr > 0 && seekaddr != UT64_MAX) {
 		// slice buffer if necessary
 		RBuffer *nb = r_buf_new_slice (buf, seekaddr, opt->sz);
 		if (nb) {
@@ -362,6 +358,8 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			buf = nb;
 		}
 	}
+
+	RBinFile *bf = NULL;
 	if (bin->use_xtr && !opt->pluginname && (st64)opt->sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
@@ -372,7 +370,8 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 				continue;
 			}
 			if (xtr->check_buffer (buf)) {
-				if (xtr->extract_from_bytes || xtr->extractall_from_bytes) {
+				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
+				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					if (is_debugger && opt->sz != file_sz) {
 						if (tfd < 0) {
 							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
@@ -385,7 +384,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
 						tfd = -1; // marking it closed
 					}
-					binfile = r_bin_file_xtr_load_buffer (bin, xtr,
+					bf = r_bin_file_xtr_load_buffer (bin, xtr,
 						fname, buf, file_sz,
 						opt->baseaddr, opt->loadaddr, opt->xtr_idx,
 						opt->fd, bin->rawstr);
@@ -393,17 +392,18 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 			}
 		}
 	}
-	if (!binfile) {
-		binfile = r_bin_file_new_from_buffer (
+	if (!bf) {
+		bf = r_bin_file_new_from_buffer (
 			bin, fname, buf, file_sz, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname, opt->offset);
+		if (!bf) {
+			return false;
+		}
 	}
-
-	if (!binfile || !r_bin_file_set_cur_binfile (bin, binfile)) {
+	if (!r_bin_file_set_cur_binfile (bin, bf)) {
 		return false;
 	}
-
-	r_id_storage_set (bin->ids, bin->cur, binfile->id);
+	r_id_storage_set (bin->ids, bin->cur, bf->id);
 	return true;
 }
 
@@ -426,6 +426,7 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 	RBinPlugin *plugin;
 	RListIter *it;
 
+eprintf ("r_bin_get_binplugin_by_bytes is deprecated. Use r_bin_get_binplugin_by_buffer instead\n");
 	r_return_val_if_fail (bin && bytes, NULL);
 
 	r_list_foreach (bin->plugins, it, plugin) {
@@ -440,6 +441,29 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 			}
 		} else if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
 			return plugin;
+		}
+	}
+	return NULL;
+}
+
+R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
+	RBinPlugin *plugin;
+	RListIter *it;
+
+	r_return_val_if_fail (bin && buf, NULL);
+
+	r_list_foreach (bin->plugins, it, plugin) {
+		if (plugin->check_buffer) {
+			if (plugin->check_buffer (buf)) {
+				return plugin;
+			}
+		} else if (plugin->check_bytes) {
+			eprintf ("Deprecate plugin->check_bytes for '%s' please\n", plugin->name);
+			ut64 sz;
+			const ut8 *bytes = r_buf_data (buf, &sz);
+			if (plugin->check_bytes (bytes, sz)) {
+				return plugin;
+			}
 		}
 	}
 	return NULL;
@@ -1083,7 +1107,8 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	if (!binfile_sdb) {
 		eprintf ("Cannot find SDB!\n");
 		return;
-	} else if (!binfile) {
+	}
+	if (!binfile) {
 		eprintf ("Binary format not currently loaded!\n");
 		return;
 	}

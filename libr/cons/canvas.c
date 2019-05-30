@@ -148,13 +148,14 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 	}
 
 	if (p != s) {
-		char tmp[256];
-		const int slen = R_MIN (p - s, sizeof (tmp) - 1);
+		RStrBuf *tmp = r_strbuf_new (NULL);
+		if (!tmp) {
+			return NULL;
+		}
+		const int slen = p - s;
 		if (slen > 0) {
-			memcpy (tmp, s, slen);
-			tmp[slen] = 0;
-			// could be faster
-			c->attr = r_str_const (tmp);
+			r_strbuf_append_n (tmp, s, slen);
+			c->attr = r_str_const (r_strbuf_drain (tmp));
 		}
 	}
 	return p;
@@ -588,7 +589,8 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 			W (vline);
 		}
 		if (G (x + w - 1, y + i)) {
-			W (Color_RESET_ALL);
+			//I wanna properly fix this so let me comment this out just for now.
+			//W (Color_RESET_ALL);
 			W (vline);
 		}
 	}
