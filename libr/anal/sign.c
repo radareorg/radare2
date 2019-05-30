@@ -1017,7 +1017,7 @@ R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions * options, const char *oth
 	serializeKey (a, other_space, "", k);
 	SdbList *other_zigns = sdb_foreach_match (a->sdb_zigns, k, false);
 
-	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (current_zigns), (int)ls_length (other_zigns), not_matching ? "not maching" : "matching");
+	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (current_zigns), (int)ls_length (other_zigns), not_matching ? "not matching" : "matching");
 
 	SdbListIter *iter;
 	SdbKv *kv;
