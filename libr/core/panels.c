@@ -2239,14 +2239,16 @@ static void setdcb(RCore *core, RPanel *p) {
 	if (!p->model->cmd) {
 		return;
 	}
+	if (check_panel_type (p, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
+		p->model->directionCb = directionGraphCb;
+		return;
+	}
 	if (p->model->cmdStrCache || p->model->readOnly) {
 		p->model->directionCb = directionDefaultCb;
 		return;
 	}
 	if (check_panel_type (p, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		p->model->directionCb = directionStackCb;
-	} else if (check_panel_type (p, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
-		p->model->directionCb = directionGraphCb;
 	} else if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
 			strcmp (p->model->cmd, "pdc")) {
 		p->model->directionCb = directionDisassemblyCb;
@@ -2767,22 +2769,23 @@ static void directionGraphCb(void *user, int direction) {
 	RPanels *panels = core->panels;
 	RPanel *cur = getCurPanel (panels);
 	cur->view->refresh = true;
+	const int speed = r_config_get_i (core->config, "graph.scroll") * 2;
 	switch ((Direction)direction) {
 	case LEFT:
 		if (cur->view->sx > 0) {
-			cur->view->sx -= r_config_get_i (core->config, "graph.scroll");
+			cur->view->sx -= speed;
 		}
 		return;
 	case RIGHT:
-		cur->view->sx += r_config_get_i (core->config, "graph.scroll");
+		cur->view->sx +=  speed;
 		return;
 	case UP:
 		if (cur->view->sy > 0) {
-			cur->view->sy -= r_config_get_i (core->config, "graph.scroll");
+			cur->view->sy -= speed;
 		}
 		return;
 	case DOWN:
-		cur->view->sy += r_config_get_i (core->config, "graph.scroll");
+		cur->view->sy += speed;
 		return;
 	}
 }
@@ -4842,6 +4845,8 @@ static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 		prev = core->panels;
 		panels = *r_panels;
 		core->panels = panels;
+		int h, w = r_cons_get_size (&h);
+		panels->can = createNewCanvas (core, w, h);
 		updateAddr (core);
 	}
 
