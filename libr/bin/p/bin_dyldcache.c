@@ -1232,7 +1232,7 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		return;
 	}
 
-	struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
+	const struct symbol_t *symbols = MACH0_(get_symbols) (mach0);
 	if (!symbols) {
 		return;
 	}
@@ -1278,7 +1278,6 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		sym->ordinal = i;
 		r_list_append (ret, sym);
 	}
-	free (symbols);
 	MACH0_(mach0_free) (mach0);
 }
 

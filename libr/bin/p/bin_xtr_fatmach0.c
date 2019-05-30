@@ -8,7 +8,6 @@
 #include "mach0/mach0.h"
 
 static RBinXtrData * extract(RBin *bin, int idx);
-static RList * extractall(RBin *bin);
 
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
@@ -147,7 +146,6 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
 	.load = &load,
 	.size = &size,
 	.extract = &extract,
-	// DEPRECATE .extractall = &extractall,
 	.destroy = &destroy,
 	.extract_from_buffer = &oneshot_buffer,
 	.extractall_from_buffer = &oneshotall_buffer,

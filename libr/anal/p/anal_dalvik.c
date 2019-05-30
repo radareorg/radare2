@@ -277,10 +277,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				ut32 vA = (data[1] & 0x0f);
-				// ut32 vB = (data[1] & 0xf0) >> 4;
-				const char *vT = "-object";
 				esilprintf (op, "%d,v%d,=", op->ptr, vA);
-				// esilprintf (op, "%d,%d,sget%s,v%d,=", vC, vB, vT, vA);
 			}
 		}
 		break;
@@ -319,8 +316,6 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
-			ut32 vB = (data[1] & 0xf0) >> 4;
-			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
 			esilprintf (op, "%d,v%d,=", op->ptr, vA);
 		}
 		break;

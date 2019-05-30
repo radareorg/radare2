@@ -273,7 +273,7 @@ bool Elf_(r_bin_elf_entry_write)(RBinFile *bf, ut64 addr) {
 	const int patchoff = 0x18;
 #if R_BIN_ELF64
 	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
-	eprintf ("%d\n", r_buf_write_at (bf->buf, patchoff, (ut8*)&addr, sizeof (addr)));
+	r_buf_write_at (bf->buf, patchoff, (ut8*)&addr, sizeof (addr));
 #else
 	ut32 addr32 = (ut32)addr;
 	printf ("wv4 0x%x @ 0x%x\n", addr32, patchoff);
