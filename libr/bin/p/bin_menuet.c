@@ -70,11 +70,6 @@ static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr
 	return check_buffer (b);
 }
 
-static bool load(RBinFile *bf) {
-	ut64 la = (bf && bf->o)? bf->o->loadaddr: 0;
-	return load_buffer (bf, bf->o->bin_obj, bf->buf, la, bf->sdb);
-}
-
 static ut64 baddr(RBinFile *bf) {
 	return 0; // 0x800000;
 }
@@ -212,7 +207,6 @@ RBinPlugin r_bin_plugin_menuet = {
 	.name = "menuet",
 	.desc = "Menuet/KolibriOS bin plugin",
 	.license = "LGPL3",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.check_buffer = &check_buffer,

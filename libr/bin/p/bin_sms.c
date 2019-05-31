@@ -32,8 +32,8 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (bf->buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -103,7 +103,7 @@ RBinPlugin r_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
 	.license = "LGPL3",
-	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.info = &info,
 	.minstrlen = 10,

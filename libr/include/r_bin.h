@@ -404,8 +404,6 @@ typedef struct r_bin_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	Sdb * (*get_sdb)(RBinFile *obj);
-	bool (*load)(RBinFile *arch);
-	bool (*load_bytes)(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
 	bool (*load_buffer)(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	void (*destroy)(RBinFile *arch);

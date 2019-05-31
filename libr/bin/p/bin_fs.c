@@ -51,12 +51,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return check_buffer (buf);
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	ut64 la = bf->o->loadaddr;
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, la, bf->sdb);
-}
-
 static void destroy(RBinFile *bf) {
 	//r_bin_fs_free ((struct r_bin_fs_obj_t*)bf->o->bin_obj);
 }
@@ -99,7 +93,6 @@ RBinPlugin r_bin_plugin_fs = {
 	.author = "pancake",
 	.version = "1.0",
 	.license = "LGPL3",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

@@ -30,11 +30,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-}
-
 static void destroy(RBinFile *bf) {
 	r_bin_te_free ((struct r_bin_te_obj_t *) bf->o->bin_obj);
 }
@@ -157,7 +152,6 @@ RBinPlugin r_bin_plugin_te = {
 	.desc = "TE bin plugin", // Terse Executable format
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

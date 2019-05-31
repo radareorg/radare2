@@ -14,9 +14,8 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return check_buffer (bf->buf);
+static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -87,7 +86,7 @@ RBinPlugin r_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
+	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,

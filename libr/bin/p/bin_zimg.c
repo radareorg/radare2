@@ -17,11 +17,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return *bin_obj != NULL;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-}
-
 static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
@@ -63,7 +58,6 @@ RBinPlugin r_bin_plugin_zimg = {
 	.desc = "zimg format bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,

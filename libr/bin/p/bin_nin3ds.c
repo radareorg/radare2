@@ -24,12 +24,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return false;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-	return check_buffer (bf->buf);
-}
-
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *sections[4] = {
@@ -137,7 +131,6 @@ RBinPlugin r_bin_plugin_nin3ds = {
 	.name = "nin3ds",
 	.desc = "Nintendo 3DS FIRM format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,

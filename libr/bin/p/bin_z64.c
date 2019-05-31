@@ -88,11 +88,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return false;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return check_buffer (bf->buf);
-}
-
 static RList *entries(RBinFile *bf) {
 	RList /*<RBinAddr>*/ *ret = r_list_newf (free);
 	if (!ret) {
@@ -156,7 +151,6 @@ RBinPlugin r_bin_plugin_z64 = {
 	.name = "z64",
 	.desc = "Nintendo 64 binaries big endian r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = baddr,

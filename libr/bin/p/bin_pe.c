@@ -395,7 +395,6 @@ RBinPlugin r_bin_plugin_pe = {
 	.desc = "PE bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

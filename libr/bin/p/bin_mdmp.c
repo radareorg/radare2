@@ -194,11 +194,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-}
-
 static RList *sections(RBinFile *bf) {
 	struct minidump_memory_descriptor *memory;
 	struct minidump_memory_descriptor64 *memory64;
@@ -493,7 +488,6 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.mem = &mem,

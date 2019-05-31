@@ -35,11 +35,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-}
-
 static void destroy(RBinFile *bf) {
 	r_bin_wasm_destroy (bf);
 }
@@ -323,7 +318,6 @@ RBinPlugin r_bin_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly bin plugin",
 	.license = "MIT",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
