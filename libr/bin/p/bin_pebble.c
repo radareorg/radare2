@@ -47,10 +47,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return check_buffer (b);
 }
 
-static bool load(RBinFile *bf) {
-	return check_buffer (bf->buf);
-}
-
 static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
@@ -191,7 +187,6 @@ RBinPlugin r_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,

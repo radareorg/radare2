@@ -173,51 +173,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 			free (o);
 			return NULL;
 		}
-	} else if (plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
-		// DEPRECATE
-		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load_bytes.\n", plugin->name);
-		// XXX more checking will be needed here
-		// only use LoadBytes if buffer offset != 0
-		// if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz
-		// >= sz + offset) ) {
-		ut64 bsz = bytes_sz - offset;
-		if (sz < bsz) {
-			bsz = sz;
-		}
-		ut8 *bytes = malloc (sz);
-		if (!bytes) {
-			eprintf ("Cannot allocate %" PFMT64u " bytes\n", sz);
-			free (o);
-			return NULL;
-		}
-		r_buf_read_at (bf->buf, offset, bytes, sz);
-		// TODO: use r_buf_data meanwhile.. meh just kill it with fire
-		if (!plugin->load_bytes (bf, &o->bin_obj, bytes, sz, loadaddr, sdb)) {
-			if (bf->rbin->verbose) {
-				eprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n", plugin->name);
-			}
-			sdb_free (o->kv);
-			free (bytes);
-			free (o);
-			return NULL;
-		}
-		free (bytes);
-	} else if (plugin->load) {
-		// DEPRECATE
-		R_LOG_WARN ("Plugin %s should implement load_buffer method instead of load.\n", plugin->name);
-		// XXX - haha, this is a hack.
-		// switching out the current object for the new
-		// one to be processed
-		RBinObject *old_o = bf->o;
-		bf->o = o;
-		if (plugin->load (bf)) {
-			//bf->sdb_info = o->kv;
-			// mark as do not walk
-			//sdb_ns_set (bf->sdb, "info", o->kv);
-		} else {
-			bf->o = old_o;
-		}
-		o->obj_size = sz;
 	} else {
 		R_LOG_WARN ("Plugin %s should implement load_buffer method.\n", plugin->name);
 		sdb_free (o->kv);

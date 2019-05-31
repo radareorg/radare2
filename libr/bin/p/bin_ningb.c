@@ -15,9 +15,8 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return check_buffer (bf->buf);
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (buf);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -288,7 +287,7 @@ RBinPlugin r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
 	.license = "LGPL3",
-	.load = &load,
+	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,

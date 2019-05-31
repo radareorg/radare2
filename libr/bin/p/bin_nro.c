@@ -53,12 +53,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->buf && bf->o, false);
-	const ut64 la = bf->o->loadaddr;
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, la, bf->sdb);
-}
-
 static RBinAddr *binsym(RBinFile *bf, int type) {
 	return NULL; // TODO
 }
@@ -262,7 +256,6 @@ RBinPlugin r_bin_plugin_nro = {
 	.name = "nro",
 	.desc = "Nintendo Switch NRO0 binaries",
 	.license = "MIT",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,

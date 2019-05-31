@@ -135,7 +135,6 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.desc = "PE64 (PE32+) bin plugin",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

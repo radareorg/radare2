@@ -28,11 +28,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-}
-
 static void destroy(RBinFile *bf) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj);
 }

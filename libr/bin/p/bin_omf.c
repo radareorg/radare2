@@ -13,11 +13,6 @@ static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr
 	return *bin_obj != NULL;
 }
 
-static bool load(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->o, false);
-	return load_buffer (bf, &bf->o->bin_obj, bf->buf, bf->o->loadaddr, bf->sdb);
-}
-
 static void destroy(RBinFile *bf) {
 	r_bin_free_all_omf_obj (bf->o->bin_obj);
 	bf->o->bin_obj = NULL;
@@ -154,7 +149,6 @@ RBinPlugin r_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
-	.load = &load,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
