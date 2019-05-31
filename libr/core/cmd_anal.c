@@ -7591,6 +7591,10 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			if (!list) {
 				return 0;
 			}
+			if (rad == 'j') {
+				r_cons_printf ("{");
+			}
+			int nth = 0;
 			r_list_foreach (list, iter, map) {
 				from = map->itv.addr;
 				to = r_itv_end (map->itv);
@@ -7602,8 +7606,18 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				} else if (to - from > UT32_MAX) {
 					eprintf ("Skipping huge range\n");
 				} else {
+					if (rad == 'j') {
+						r_cons_printf ("%s\"mapid\":\"%d\",\"refs\":{", nth? ",": "", map->id);
+					}
 					r_core_anal_search_xrefs (core, from, to, rad);
+					if (rad == 'j') {
+						r_cons_printf ("}");
+					}
+					nth++;
 				}
+			}
+			if (rad == 'j') {
+				r_cons_printf ("}\n");
 			}
 			free (ptr);
 			r_list_free (list);
@@ -7626,7 +7640,14 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	if (to - from > r_io_size (core->io)) {
 		return false;
 	}
-	return r_core_anal_search_xrefs (core, from, to, rad);
+	if (rad == 'j') {
+		r_cons_printf ("{");
+	}
+	bool res = r_core_anal_search_xrefs (core, from, to, rad);
+	if (rad == 'j') {
+		r_cons_printf ("}\n");
+	}
+	return res;
 }
 
 static const char *oldstr = NULL;
