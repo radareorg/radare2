@@ -69,7 +69,7 @@ static const char *menus_loadLayout[] = {
 };
 
 static const char *menus_Edit[] = {
-	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache",
+	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache", "Colors",
 	NULL
 };
 
@@ -79,7 +79,7 @@ static const char *menus_iocache[] = {
 };
 
 static const char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire", "Colors",
+	"Console", "Hexdump", "Disassembly", "Decompiler", "Graph", "Functions", "Breakpoints", "Comments", "Entropy", "Entropy Fire",
 	"Stack", "Var READ address", "Var WRITE address", "Summary",
 	NULL
 };
@@ -3234,7 +3234,8 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Edit[i], assembleCb);
 		} else if (!strcmp (menus_Edit[i], "Fill")) {
 			addMenu (core, parent, menus_Edit[i], fillCb);
-		} else if (!strcmp (menus_Edit[i], "io.cache")) {
+		} else if (!strcmp (menus_Edit[i], "io.cache") ||
+				!strcmp (menus_Edit[i], "Colors")) {
 			addMenu (core, parent, menus_Edit[i], openMenuCb);
 		} else {
 			addMenu (core, parent, menus_Edit[i], addCmdPanel);
@@ -3245,11 +3246,7 @@ static bool initPanelsMenu(RCore *core) {
 	parent = "View";
 	i = 0;
 	while (menus_View[i]) {
-		if (!strcmp (menus_View[i], "Colors")) {
-			addMenu (core, parent, menus_View[i], openMenuCb);
-		} else {
-			addMenu (core, parent, menus_View[i], addCmdPanel);
-		}
+		addMenu (core, parent, menus_View[i], addCmdPanel);
 		i++;
 	}
 
@@ -3385,7 +3382,7 @@ static bool initPanelsMenu(RCore *core) {
 		i++;
 	}
 
-	parent = "View.Colors";
+	parent = "Edit.Colors";
 	i = 0;
 	while (menus_Colors[i]) {
 		addMenu (core, parent, menus_Colors[i], colorsCb);
