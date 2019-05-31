@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2018 - pancake */
+/* radare - LGPL - Copyright 2017-2019 - pancake */
 
 #include "r_types_base.h"
 #include "r_io.h"
@@ -36,7 +36,7 @@ static char *runcmd (const char *cmd) {
 	}
 	int timeout = 1000000;
 	char *str = NULL;
-	r_socket_block_time (gs, 1, timeout);
+	r_socket_block_time (gs, 1, timeout, 0);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
 		r_socket_read (gs, (ut8*)buf, sizeof (buf) - 1); // NULL-terminate the string always

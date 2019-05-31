@@ -50,7 +50,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
-R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+R_API int r_socket_block_time (RSocket *s, int block, int sec, int usec) {
 	return -1;
 }
 R_API int r_socket_flush(RSocket *s) {
@@ -99,13 +99,13 @@ WSACleanup: closes all network connections
 R_API bool r_socket_is_connected(RSocket *s) {
 #if __WINDOWS__
 	char buf[2];
-	r_socket_block_time (s, 0, 0);
+	r_socket_block_time (s, 0, 0, 0);
 #ifdef _MSC_VER
 	int ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 #else
 	ssize_t ret = recv (s->fd, (char*)&buf, 1, MSG_PEEK);
 #endif
-	r_socket_block_time (s, 1, 0);
+	r_socket_block_time (s, 1, 0, 0);
 	return ret? true: false;
 #else
 	char buf[2];
@@ -308,7 +308,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		eprintf ("ioctlsocket error: %d\n", iResult);
 	}
 	if (timeout > 0) {
-		r_socket_block_time (s, 1, timeout);
+		r_socket_block_time (s, 1, timeout, 0);
 	}
 	fd_set Write, Err;
 	FD_ZERO (&Write);
@@ -357,7 +357,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				continue;
 			}
 			if (timeout > 0) {
-				r_socket_block_time (s, 1, timeout);
+				r_socket_block_time (s, 1, timeout, 0);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
 			}
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
@@ -646,7 +646,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	return NULL;
 }
 
-R_API int r_socket_block_time(RSocket *s, int block, int sec) {
+R_API int r_socket_block_time(RSocket *s, int block, int sec, int usec) {
 #if __UNIX__
 	int ret, flags;
 #endif
@@ -667,12 +667,11 @@ R_API int r_socket_block_time(RSocket *s, int block, int sec) {
 #elif __WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
-	if (sec > 0) {
+	if (sec > 0 || usec > 0) {
 		struct timeval tv = {0};
 		tv.tv_sec = sec;
-		tv.tv_usec = 0;
-		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO,
-			    (char *)&tv, sizeof (tv)) < 0) {
+		tv.tv_usec = usec;
+		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof (tv)) < 0) {
 			return false;
 		}
 	}

@@ -49,7 +49,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		rURL(fd), count, io->off);
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen>0) {
-		ut8 *tmp = malloc (rlen+1);
+		ut8 *tmp = calloc (1, rlen+1);
 		if (!tmp) {
 			goto beach;
 		}
