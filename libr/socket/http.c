@@ -11,9 +11,10 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	if (!buf) {
 		return NULL;
 	}
-	r_socket_block_time (s, 5, 5);
+	r_socket_block_time (s, 1, 0);
 	res = NULL;
-	olen = r_socket_read (s, (unsigned char*) buf, bufsz);
+	olen = r_socket_read_block (s, (unsigned char*) buf, 1);
+	olen += r_socket_read (s, (unsigned char*) buf + 1, bufsz - 1);
 	if (olen < 1) {
 		goto fail;
 	}
