@@ -11,10 +11,9 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	if (!buf) {
 		return NULL;
 	}
-
-	r_socket_block_time (s, 1, 5);
+	r_socket_block_time (s, 5, 5);
 	res = NULL;
-	olen = r_socket_read_block (s, (unsigned char*) buf, bufsz);
+	olen = r_socket_read (s, (unsigned char*) buf, bufsz);
 	if (olen < 1) {
 		goto fail;
 	}
@@ -62,7 +61,6 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	}
 fail:
 	free (buf);
-eprintf ("CARITODA\n");
 // is 's' free'd? isnt this going to cause a double free?
 	r_socket_close (s);
 	if (rlen) {
