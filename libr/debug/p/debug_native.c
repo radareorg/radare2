@@ -33,7 +33,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #if __WINDOWS__
 //#include <windows.h>
 #include "native/windows/windows_debug.h"
+// TODO: Move these onto windows.h?
 RList *w32_dbg_modules(RDebug *); //ugly!
+RList *w32_dbg_maps(RDebug *);
 #define R_DEBUG_REG_T CONTEXT
 #ifdef NTSTATUS
 #undef NTSTATUS
