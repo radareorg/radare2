@@ -651,6 +651,7 @@ static const char *help_msg_ax[] = {
 	"axq", "", "list refs in quiet/human-readable format",
 	"axj", "", "list refs in json format",
 	"axF", " [flg-glob]", "find data/code references of flags",
+	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
 	"ax.", " [addr]", "find data/code references from and to this address",
@@ -6281,6 +6282,34 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		free (tInput);
 		free (fInput);
+	} break;
+	case 'm': { // "axm"
+		RList *list;
+		RAnalRef *ref;
+		RListIter *iter;
+		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
+		int n = r_str_word_set0 (ptr);
+		ut64 at = core->offset;
+		ut64 addr = UT64_MAX;
+		switch (n) {
+		case 2: // get at
+			at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+		/* fall through */
+		case 1: // get addr
+			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			break;
+		default:
+			free (ptr);
+			return false;
+		}
+		//get all xrefs pointing to addr
+		list = r_anal_xrefs_get (core->anal, addr);
+		r_list_foreach (list, iter, ref) {
+			r_cons_printf ("0x%"PFMT64x" %s\n", ref->addr, r_anal_xrefs_type_tostring (ref->type));
+			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
+		}
+		r_list_free (list);
+		free (ptr);
 	} break;
 	case 't': { // "axt"
 		RList *list = NULL;
