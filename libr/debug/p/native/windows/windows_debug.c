@@ -501,7 +501,9 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 			if ((cont = WaitForDebugEvent (&de, wait_time))) {
 				switch (de.dwDebugEventCode) {
 				//case CREATE_PROCESS_DEBUG_EVENT:
-				//case CREATE_THREAD_DEBUG_EVENT:
+				case CREATE_THREAD_DEBUG_EVENT:
+					cont = false;
+					break;
 				case LOAD_DLL_DEBUG_EVENT:
 					{
 						HANDLE hf = de.u.LoadDll.hFile;
@@ -509,12 +511,14 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 							CloseHandle (hf);
 						}
 					} break;
+#if 0
 				case EXCEPTION_DEBUG_EVENT:
 					// TODO: check for the type of exception?
 					cont = false;
 					break;
+#endif
 				default:
-					eprintf ("Unhandled debug event %d\n", de.dwDebugEventCode);
+					eprintf ("w32_select/Unhandled debug event %d\n", de.dwDebugEventCode);
 					break;
 				}
 			}
