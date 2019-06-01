@@ -539,7 +539,9 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
 	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
-	const char *vline = useUtf8? RUNECODESTR_LINE_VERT : "|";
+	const char *vtmp = useUtf8? RUNECODESTR_LINE_VERT : "|";
+	RStrBuf *vline = r_strbuf_new (NULL);
+	r_strbuf_appendf (vline, Color_RESET"%s%s", color, vtmp);
 	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
 	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
 	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
@@ -586,15 +588,14 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	}
 	for (i = 1; i < h - 1; i++) {
 		if (G (x, y + i)) {
-			W (vline);
+			W (r_strbuf_get (vline));
 		}
 		if (G (x + w - 1, y + i)) {
-			//I wanna properly fix this so let me comment this out just for now.
-			//W (Color_RESET_ALL);
-			W (vline);
+			W (r_strbuf_get (vline));
 		}
 	}
 	free (row);
+	r_strbuf_free (vline);
 	if (color) {
 		c->attr = Color_RESET;
 	}
