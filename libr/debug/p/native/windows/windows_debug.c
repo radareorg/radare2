@@ -132,7 +132,7 @@ int w32_init(RDebug *dbg) {
 		return false;
 	}
 
-	HMODULE lib = GetModuleHandle ("kernel32"); //Always loaded
+	HMODULE lib = GetModuleHandle (TEXT ("kernel32")); //Always loaded
 	if (!lib) {
 		return false;
 	}
@@ -142,7 +142,7 @@ int w32_init(RDebug *dbg) {
 	w32_LocateXStateFeature = GetProcAddress (lib, "LocateXStateFeature");
 	w32_SetXStateFeaturesMask = GetProcAddress (lib, "SetXStateFeaturesMask");
 
-	lib = GetModuleHandle ("ntdll"); //Always loaded
+	lib = GetModuleHandle (TEXT ("ntdll")); //Always loaded
 	if (!lib) {
 		return false;
 	}
