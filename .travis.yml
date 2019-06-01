@@ -30,6 +30,9 @@ matrix:
     # OS X with clang
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
+    # Run Fuzzing Sanity Test on every push
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang R2_TESTS_DISABLE=1 FUZZIT=1 INSTALL_SYSTEM=static CXXFLAGS="-fsanitize=fuzzer"
     # ASAN as a best effort on every push
     - if: (not head_branch =~ ^release-* AND not head_branch =~ ^prerelease-* AND not branch =~ ^release-* AND not branch =~ ^prerelease-*) AND (head_branch =~ ^asan-* OR type = push)
       os: linux
@@ -61,6 +64,7 @@ matrix:
   allow_failures:
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+
 cache:
   - ccache
 
@@ -71,7 +75,14 @@ addons:
      - cabextract
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis . ; else rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3; fi
+  - |
+    if [ "${FUZZIT}" == "1" ]; then
+      docker pull gcr.io/fuzzit-public/builders:llvm9.v1
+    elif [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
+    else
+      rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3
+    fi
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
@@ -82,8 +93,18 @@ script:
   - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
   - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then bash ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh ; fi
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR} --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"; else bash travis-script; fi
+  - |
+    if [ "$TRAVIS_OS_NAME" != "osx" ]; then
+      $SHELL ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh
+    fi
+  - |
+    if [ "${FUZZIT}" == "1" ] ; then
+      docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" gcr.io/fuzzit-public/builders:llvm9.v1 -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
+    elif [ "$TRAVIS_OS_NAME" != "osx" ] ; then
+      docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
+    else
+      $SHELL travis-script
+    fi
 
 notifications:
   irc: "chat.freenode.net#radare"
