@@ -328,11 +328,17 @@ R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
 		opt->loadaddr = 0;
 	}
 	ut64 file_sz = iob->fd_size (io, opt->fd);
-	// file_sz = UT64_MAX happens when attaching to frida:// and other non-debugger io plugins which results in double opening
-	if (is_debugger && file_sz == UT64_MAX) {
-		tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
-		if (tfd >= 1) {
-			file_sz = iob->fd_size (io, tfd);
+	if (file_sz == UT64_MAX) {
+		if (is_debugger) {
+			tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
+			if (tfd >= 1) {
+				file_sz = iob->fd_size (io, tfd);
+			}
+		} else {
+			if (bin->verbose) {
+				eprintf ("r_bin_open_io: unknown filesize may fail here..\n");
+			}
+			return false;
 		}
 	}
 	if (!opt->sz) {
