@@ -457,13 +457,14 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bf && arch && name, NULL);
 	RBinObject *obj = bf->o;
-
-	RBinInfo *info = obj->info;
-	if (info && info->arch && info->file &&
-		(bits == info->bits) &&
-		!strcmp (info->arch, arch) &&
-		!strcmp (info->file, name)) {
-		return obj;
+	if (obj) {
+		RBinInfo *info = obj->info;
+		if (info && info->arch && info->file &&
+				(bits == info->bits) &&
+				!strcmp (info->arch, arch) &&
+				!strcmp (info->file, name)) {
+			return obj;
+		}
 	}
 	return NULL;
 }
