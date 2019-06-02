@@ -1201,9 +1201,12 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 				RDebugPid *dbg_pid = __build_debug_pid (pe.th32ProcessID, b ? rio->ph : NULL, pe.szExeFile);
 				if (dbg_pid) {
 					r_list_append (list, dbg_pid);
-				}/* else {
+				}
+#if 0
+				else {
 					eprintf ("w32_pid_list: failed to process pid %d\n", pe.th32ProcessID);
-				}*/
+				}
+#endif
 			}
 		} while (Process32Next (sh, &pe));
 	} else {
@@ -1215,7 +1218,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 
 RList *w32_desc_list(int pid) {
 	RDebugDesc *desc;
-	RList *ret = r_list_new ();
+	RList *ret;
 	int i;
 	HANDLE ph;
 	PSYSTEM_HANDLE_INFORMATION handleInfo;
@@ -1235,6 +1238,7 @@ RList *w32_desc_list(int pid) {
 		r_sys_perror ("win_desc_list/NtQuerySystemInformation");
 		return NULL;
 	}
+	ret = r_list_new ();
 	for (i = 0; i < handleInfo->HandleCount; i++) {
 		SYSTEM_HANDLE handle = handleInfo->Handles[i];
 		HANDLE dupHandle = NULL;
