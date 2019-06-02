@@ -138,7 +138,7 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 		if (dos_hdr) {
 			nt_hdrs = (IMAGE_NT_HEADERS *)((char *)dos_hdr + dos_hdr->e_lfanew);
 			if (nt_hdrs) {
-				if (nt_hdrs->FileHeader.Machine == 0x014c) { // check for x32 pefile
+				if (nt_hdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_I386) { // check for x32 pefile
 					nt_hdrs32 = (IMAGE_NT_HEADERS32 *)((char *)dos_hdr + dos_hdr->e_lfanew);
 					mod->sect_count = nt_hdrs32->FileHeader.NumberOfSections;
 					sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs32 + sizeof (IMAGE_NT_HEADERS32));

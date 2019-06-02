@@ -1334,7 +1334,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	}
 	fclose (fd);
 #endif // __sun
-#endif // __APPLE
+#endif // __APPLE__
 	return list;
 }
 
