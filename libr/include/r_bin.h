@@ -278,7 +278,6 @@ typedef struct r_bin_file_t {
 	int narch;
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
-	RList *objs; // should be always 1
 	RList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
@@ -637,7 +636,7 @@ R_API RBin *r_bin_new(void);
 R_API void *r_bin_free(RBin *bin);
 R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt);
-R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
+R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 
 // plugins/bind functions
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);

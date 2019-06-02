@@ -159,12 +159,10 @@ static const char *help_msg_oonn[] = {
 static RBinObject *find_binfile_by_id(RBin *bin, ut32 id) {
 	RListIter *it, *it2;
 	RBinFile *bf;
-	RBinObject *obj;
 	r_list_foreach (bin->binfiles, it, bf) {
-		r_list_foreach (bf->objs, it2, obj) {
-			if (obj->id == id) {
-				return obj;
-			}
+		RBinObject *obj = bf->o;
+		if (obj->id == id) {
+			return obj;
 		}
 	}
 	return NULL;

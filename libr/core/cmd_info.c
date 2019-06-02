@@ -333,6 +333,16 @@ static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool 
 	return true;
 }
 
+static int __r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
+	int result = 0;
+	RCoreFile *cf = r_core_file_cur (r);
+	if (cf) {
+		result = r_bin_reload (r->bin, cf->fd, baseaddr);
+	}
+	r_core_bin_set_env (r, r_bin_cur (r->bin));
+	return result;
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	bool newline = r_cons_is_interactive ();
@@ -391,7 +401,7 @@ static int cmd_info(void *data, const char *input) {
 			// An assumption is made that assumes there is an underlying
 			// plugin that will be used to load the bin (e.g. malloc://)
 			// TODO: Might be nice to reload a bin at a specified offset?
-			r_core_bin_reload (core, NULL, baddr);
+			__r_core_bin_reload (core, NULL, baddr);
 			r_core_block_read (core);
 			newline = false;
 		}

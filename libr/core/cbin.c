@@ -3756,9 +3756,8 @@ R_API bool r_core_bin_delete(RCore *core, ut32 binfile_idx, ut32 binobj_idx) {
 	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core);
 }
 
-static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
-	RListIter *iter;
-	RBinObject *obj;
+static bool r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
+	r_return_val_if_fail (core && binfile && binfile->o, NULL);
 	const char *name = binfile ? binfile->file : NULL;
 	(void)r_bin_get_info (core->bin); // XXX is this necssary for proper iniitialization
 	ut32 id = binfile ? binfile->id : 0;
@@ -3771,19 +3770,17 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 	}
 	switch (mode) {
 	case '*':
-		r_list_foreach (binfile->objs, iter, obj) {
-			r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", obj->boffset, name, obj->id);
-		}
+		r_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", binfile->o->boffset, name, binfile->o->id);
 		break;
 	case 'q':
-		r_list_foreach (binfile->objs, iter, obj) {
-			r_cons_printf ("%d\n", obj->id);
-		}
+		r_cons_printf ("%d\n", binfile->o->id);
 		break;
 	case 'j':
+		// XXX there's only one binobj for each binfile...so we should change that json
 		r_cons_printf ("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"size\":%d,\"objs\":[",
 			name? name: "", fd, id, bin_sz);
-		r_list_foreach (binfile->objs, iter, obj) {
+		{
+			RBinObject *obj = binfile->o;
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = r_config_get (core->config, "asm.arch");
@@ -3791,14 +3788,12 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 			r_cons_printf ("{\"objid\":%d,\"arch\":\"%s\",\"bits\":%d,\"binoffset\":%"
 					PFMT64d",\"objsize\":%"PFMT64d"}",
 					obj->id, arch, bits, obj->boffset, obj->obj_size);
-			if (iter->n) {
-				r_cons_print (",");
-			}
 		}
 		r_cons_print ("]}");
 		break;
 	default:
-		r_list_foreach (binfile->objs, iter, obj) {
+		{
+			RBinObject *obj = binfile->o;
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = r_config_get (core->config, "asm.arch");
@@ -3838,11 +3833,9 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 }
 
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
-	char *str;
-	RStrBuf *buf;
 	int i, len = 0;
 
-	buf = r_strbuf_new ("");
+	RStrBuf *buf = r_strbuf_new ("");
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
 		if (!flags) {
 			goto out;
@@ -3905,10 +3898,6 @@ padding:
 			r_strbuf_append (buf, " ");
 		}
 	}
-
 out:
-	str = strdup (r_strbuf_get (buf));
-	r_strbuf_free (buf);
-
-	return str;
+	return r_strbuf_drain (buf);
 }

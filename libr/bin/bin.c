@@ -217,14 +217,9 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 	return r_bin_open_io (bin, opt);
 }
 
-static void bin_options_from_bo(RBinOptions *opt, RBin *bin, RBinObject *bo, int fd, ut64 baseaddr) {
-	r_bin_options_init (opt, fd, baseaddr, bo->loadaddr, bin->rawstr);
-	opt->offset = bo->boffset;
-}
-
-R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
+// XXX this function is full of mess, shuold be rewritten after the refactorings
+R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
-	RList *the_obj_list = NULL;
 	int res = false;
 	ut8 *buf_bytes = NULL;
 
@@ -233,11 +228,15 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	const char *name = iob->fd_get_name (iob->io, fd);
 	RBinFile *bf = r_bin_file_find_by_name (bin, name);
 	if (!bf) {
-		res = false;
+		eprintf ("r_bin_reload: No file to reopen\n");
 		goto error;
 	}
-	the_obj_list = bf->objs;
-	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baseaddr, bf->loadaddr, bin->rawstr);
+	if (bf->o) {
+		opt.offset = bf->o->boffset;
+	}
+
 	// invalidate current object reference
 	bf->o = NULL;
 	ut64 sz = iob->fd_size (iob->io, fd);
@@ -249,7 +248,6 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		if (!iob->fd_is_dbg (iob->io, fd)) {
 			// too big, probably wrong
 			eprintf ("Warning: file is too big and not in debugger\n");
-			res = false;
 			goto error;
 		}
 		// attempt a local open and read
@@ -262,52 +260,32 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		// stream based loaders
 		int tfd = iob->fd_open (iob->io, name, R_PERM_R, 0);
 		if (tfd < 0) {
-			res = false;
 			goto error;
 		}
 		sz = iob->fd_size (iob->io, tfd);
 		if (sz == UT64_MAX) {
 			iob->fd_close (iob->io, tfd);
-			res = false;
 			goto error;
 		}
-		if (r_list_length (the_obj_list) == 1) {
-			RBinObject *bo = (RBinObject *)r_list_get_n (the_obj_list, 0);
-			RBinOptions opt;
-			bin_options_from_bo (&opt, bin, bo, fd, baseaddr);
-			res = r_bin_open_io (bin, &opt);
-		}
+		res = r_bin_open_io (bin, &opt);
 		iob->fd_close (iob->io, tfd);
 		goto error;
 	} else {
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
-			res = false;
 			goto error;
 		}
 		if (!iob->fd_read_at (iob->io, fd, 0LL, buf_bytes, sz)) {
 			free (buf_bytes);
-			res = false;
 			goto error;
 		}
 	}
 	r_bin_file_set_bytes (bf, buf_bytes, sz, false);
-
-	RListIter *iter = NULL;
-	RBinObject *bo;
-	r_list_foreach (the_obj_list, iter, bo) {
-		// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-		// TODO: use of bo->plugin->name seems to  be bad
-		RBinOptions opt;
-		bin_options_from_bo (&opt, bin, bo, fd, baseaddr);
-		res = r_bin_open_io (bin, &opt);
-	}
-	bf->o = r_list_get_n (bf->objs, 0);
 	free (buf_bytes);
-error:
-	r_list_free (the_obj_list);
 
-	return res;
+	return r_bin_open_io (bin, &opt);
+error:
+	return false;
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
@@ -989,7 +967,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 				return false;
 			}
 		}
-		obj = r_list_get_n (binfile->objs, 0);
+		obj = binfile->o;
 	}
 	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
@@ -1101,7 +1079,6 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	char unk[128];
 	char archline[128];
 	RBinFile *binfile = r_bin_cur (bin);
-	RBinObject *obj = NULL;
 	const char *name = binfile? binfile->file: NULL;
 	int narch = binfile? binfile->narch: 0;
 
@@ -1128,21 +1105,43 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		return;
 	}
 	i = -1;
-	r_list_foreach (nbinfile->objs, iter, obj) {
-		RBinInfo *info = obj->info;
-		char bits = info? info->bits: 0;
-		ut64 boffset = obj->boffset;
-		ut32 obj_size = obj->obj_size;
-		const char *arch = info? info->arch: NULL;
-		const char *machine = info? info->machine: "unknown_machine";
+	RBinObject *obj = nbinfile->o;
+	RBinInfo *info = obj->info;
+	char bits = info? info->bits: 0;
+	ut64 boffset = obj->boffset;
+	ut32 obj_size = obj->obj_size;
+	const char *arch = info? info->arch: NULL;
+	const char *machine = info? info->machine: "unknown_machine";
 
-		i++;
-		if (!arch) {
-			snprintf (unk, sizeof (unk), "unk_%d", i);
-			arch = unk;
+	i++;
+	if (!arch) {
+		snprintf (unk, sizeof (unk), "unk_%d", i);
+		arch = unk;
+	}
+
+	if (info && narch > 1) {
+		switch (mode) {
+		case 'q':
+			bin->cb_printf ("%s\n", arch);
+			break;
+		case 'j':
+			bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+					"\"offset\":%" PFMT64d ",\"size\":%d,"
+					"\"machine\":\"%s\"}",
+					i? ",": "", arch, bits,
+					boffset, obj_size, machine);
+			break;
+		default:
+			bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
+					boffset, obj_size, arch, bits, machine);
 		}
-
-		if (info && narch > 1) {
+		snprintf (archline, sizeof (archline) - 1,
+			"0x%08" PFMT64x ":%d:%s:%d:%s",
+			boffset, obj_size, arch, bits, machine);
+		/// xxx machine not exported?
+		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
+	} else {
+		if (info) {
 			switch (mode) {
 			case 'q':
 				bin->cb_printf ("%s\n", arch);
@@ -1155,58 +1154,35 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 						boffset, obj_size, machine);
 				break;
 			default:
-				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
-						boffset, obj_size, arch, bits, machine);
+				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
+						boffset, obj_size, arch, bits);
 			}
-			snprintf (archline, sizeof (archline) - 1,
-				"0x%08" PFMT64x ":%d:%s:%d:%s",
-				boffset, obj_size, arch, bits, machine);
-			/// xxx machine not exported?
-			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
+			snprintf (archline, sizeof (archline),
+				"0x%08" PFMT64x ":%d:%s:%d",
+				boffset, obj_size, arch, bits);
+		} else if (nbinfile && mode) {
+			switch (mode) {
+			case 'q':
+				bin->cb_printf ("%s\n", arch);
+				break;
+			case 'j':
+				bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
+						"\"offset\":%" PFMT64d ",\"size\":%d,"
+						"\"machine\":\"%s\"}",
+						i? ",": "", i, bits,
+						boffset, obj_size, machine);
+				break;
+			default:
+				bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
+						boffset, obj_size);
+			}
+			snprintf (archline, sizeof (archline),
+				"0x%08" PFMT64x ":%d:%s:%d",
+				boffset, obj_size, "unk", 0);
 		} else {
-			if (info) {
-				switch (mode) {
-				case 'q':
-					bin->cb_printf ("%s\n", arch);
-					break;
-				case 'j':
-					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-							"\"offset\":%" PFMT64d ",\"size\":%d,"
-							"\"machine\":\"%s\"}",
-							i? ",": "", arch, bits,
-							boffset, obj_size, machine);
-					break;
-				default:
-					bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
-							boffset, obj_size, arch, bits);
-				}
-				snprintf (archline, sizeof (archline),
-					"0x%08" PFMT64x ":%d:%s:%d",
-					boffset, obj_size, arch, bits);
-			} else if (nbinfile && mode) {
-				switch (mode) {
-				case 'q':
-					bin->cb_printf ("%s\n", arch);
-					break;
-				case 'j':
-					bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
-							"\"offset\":%" PFMT64d ",\"size\":%d,"
-							"\"machine\":\"%s\"}",
-							i? ",": "", i, bits,
-							boffset, obj_size, machine);
-					break;
-				default:
-					bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
-							boffset, obj_size);
-				}
-				snprintf (archline, sizeof (archline),
-					"0x%08" PFMT64x ":%d:%s:%d",
-					boffset, obj_size, "unk", 0);
-			} else {
-				eprintf ("Error: Invalid RBinFile.\n");
-			}
-			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
+			eprintf ("Error: Invalid RBinFile.\n");
 		}
+		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 	}
 	if (mode == 'j') {
 		bin->cb_printf ("]");
