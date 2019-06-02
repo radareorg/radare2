@@ -156,13 +156,12 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static RBinObject *find_binfile_by_id(RBin *bin, ut32 id) {
-	RListIter *it, *it2;
+static RBinFile *find_binfile_by_id(RBin *bin, ut32 id) {
+	RListIter *it;
 	RBinFile *bf;
 	r_list_foreach (bin->binfiles, it, bf) {
-		RBinObject *obj = bf->o;
-		if (obj->id == id) {
-			return obj;
+		if (bf->id == id) {
+			return bf;
 		}
 	}
 	return NULL;
@@ -210,7 +209,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			RBinFile *bf = r_bin_file_at (core->bin, at);
 			if (bf) {
-				r_cons_printf ("%d\n", bf->o->id);
+				r_cons_printf ("%d\n", bf->id);
 			}
 		}
 		break;
@@ -304,7 +303,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				eprintf ("Invalid fd number.");
 				break;
 			}
-			r_core_bin_raise (core, bf->id, -1);
+			r_core_bin_raise (core, bf->id);
 	} break;
 	case ' ': // "ob "
 	{
@@ -332,11 +331,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)
 				? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			RBinFile *bf = r_bin_file_find_by_object_id (core->bin, fd);
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
 			binfile_num = fd;
 			binobj_num = bf? bf->id: UT32_MAX;
 		}
-		r_core_bin_raise (core, binfile_num, binobj_num);
+		r_core_bin_raise (core, binfile_num);
 		free (v);
 		break;
 	}
@@ -358,14 +357,16 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			eprintf ("Invalid argument");
 			break;
 		}
-		if (*value == ' ') value ++;
-		binobj_num  = *value && r_is_valid_input_num_value (core->num, value) ?
-				r_get_input_num_value (core->num, value) : UT32_MAX;
-		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid binobj_num");
-			break;
+		if (*value == ' ') {
+			value++;
 		}
-		r_core_bin_raise (core, -1, binobj_num);
+		binobj_num = *value && r_is_valid_input_num_value (core->num, value) ?
+				r_get_input_num_value (core->num, value) : UT32_MAX;
+		if (binobj_num != UT32_MAX) {
+			r_core_bin_raise (core, binobj_num);
+		} else {
+			eprintf ("Invalid binobj_num");
+		}
 		break;
 	case '-': // "ob-"
 		if (input[2] == '*') {
@@ -379,12 +380,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			fd  = *value && r_is_valid_input_num_value (core->num, value) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
-			RBinObject *bo = find_binfile_by_id (core->bin, fd);
-			if (!bo) {
+			RBinFile *bf = find_binfile_by_id (core->bin, fd);
+			if (!bf) {
 				eprintf ("Invalid binid\n");
 				break;
 			}
-			if (r_core_bin_delete (core, binfile_num, bo->id)) {
+			if (r_core_bin_delete (core, bf->id)) {
 				if (!r_bin_file_delete (core->bin, fd)) {
 					eprintf ("Cannot find an RBinFile associated with that fd.\n");
 				}
@@ -1338,7 +1339,6 @@ static int cmd_open(void *data, const char *input) {
 	case 'u': { // "ou"
 		RListIter *iter = NULL;
 		RCoreFile *f;
-		int binfile_num;
 		core->switch_file_view = 0;
 		int num = atoi (input + 2);
 
@@ -1349,9 +1349,10 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_io_use_fd (core->io, num);
 		RBinFile *bf = r_bin_file_find_by_fd (core->bin, num);
-		binfile_num = bf? bf->id: UT32_MAX;
-		r_core_bin_raise (core, binfile_num, -1);
-		r_core_block_read (core);
+		if (bf) {
+			r_core_bin_raise (core, bf->id);
+			r_core_block_read (core);
+		}
 		break;
 	}
 	case 'b': // "ob"

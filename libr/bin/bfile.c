@@ -459,21 +459,6 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bi
 	return binfile;
 }
 
-R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *bf, ut32 binobj_id) {
-	return (bf && bf->o->id == binobj_id)? bf->o: NULL;
-}
-
-R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
-	RListIter *iter;
-	RBinFile *binfile;
-	r_list_foreach (bin->binfiles, iter, binfile) {
-		if (r_bin_file_object_find_by_id (binfile, binobj_id)) {
-			return binfile;
-		}
-	}
-	return NULL;
-}
-
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id) {
 	RBinFile *binfile = NULL;
 	RListIter *iter = NULL;
@@ -581,7 +566,9 @@ R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *o
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
-	bf->o = obj;
+	if (obj) {
+		bf->o = obj;
+	}
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (bin->minstrlen < 1) {
 		bin->minstrlen = plugin? plugin->minstrlen: bin->minstrlen;

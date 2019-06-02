@@ -293,9 +293,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		RBinFile *bf = r_bin_file_at (core->bin, core->offset);
 		if (bf) {
 			core->bin->cur = bf;
-			ut32 bfid = bf->id;
-			ut32 boid = bf->o->id;
-			r_bin_select_by_ids (core->bin, bfid, boid);
+			r_bin_select_by_ids (core->bin, bf->id);
 		} else {
 			core->bin->cur = NULL;
 		}

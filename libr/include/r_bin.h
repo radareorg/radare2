@@ -227,7 +227,6 @@ typedef struct r_bin_info_t {
 } RBinInfo;
 
 typedef struct r_bin_object_t {
-	ut32 id;
 	ut64 baddr;
 	ut64 baddr_shift;
 	ut64 loadaddr;
@@ -683,9 +682,9 @@ R_API RBinFile *r_bin_cur(RBin *bin);
 R_API RBinObject *r_bin_cur_object(RBin *bin);
 
 // select/list binfiles functions
-R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
-R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id);
-R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
+R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
+R_API bool r_bin_select_by_ids(RBin *bin, ut32 binfile_id);
+R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API void r_bin_list_archs(RBin *bin, int mode);
 R_API RBuffer *r_bin_create(RBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files);
@@ -717,7 +716,7 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr);
 
 // binobject functions
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
-R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id);
+R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id);
 
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
