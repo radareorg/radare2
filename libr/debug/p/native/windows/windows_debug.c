@@ -1218,15 +1218,20 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 
 RList *w32_desc_list(int pid) {
 	RDebugDesc *desc;
-	RList *ret;
+	RList *ret = r_list_new ();
 	int i;
 	HANDLE ph;
 	PSYSTEM_HANDLE_INFORMATION handleInfo;
 	NTSTATUS status;
 	ULONG handleInfoSize = 0x10000;
 	LPVOID buff;
+	if (!ret) {
+		r_sys_perror ("win_desc_list/r_list_new");
+		return NULL;
+	}
 	if (!(ph = OpenProcess (PROCESS_DUP_HANDLE, FALSE, pid))) {
 		r_sys_perror ("win_desc_list/OpenProcess");
+		r_list_free (ret);
 		return NULL;
 	}
 	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc (handleInfoSize);
@@ -1236,9 +1241,9 @@ RList *w32_desc_list(int pid) {
 		handleInfo = (PSYSTEM_HANDLE_INFORMATION)realloc (handleInfo, handleInfoSize *= 2);
 	if (status) {
 		r_sys_perror ("win_desc_list/NtQuerySystemInformation");
+		r_list_free (ret);
 		return NULL;
 	}
-	ret = r_list_new ();
 	for (i = 0; i < handleInfo->HandleCount; i++) {
 		SYSTEM_HANDLE handle = handleInfo->Handles[i];
 		HANDLE dupHandle = NULL;
