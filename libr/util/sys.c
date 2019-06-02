@@ -116,8 +116,12 @@ R_API int r_sys_fork() {
 #endif
 }
 
-R_API void r_sys_exit_immediately(int status) {
-	_exit (status);
+R_API void r_sys_exit(int status, bool immediately) {
+	if (immediately) {
+		_exit (status);
+	} else {
+		exit (status);
+	}
 }
 
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */

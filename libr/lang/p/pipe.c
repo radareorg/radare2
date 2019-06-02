@@ -158,7 +158,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		close (output[1]);
 		fflush (stdout);
 		fflush (stderr);
-		r_sys_exit_immediately (0);
+		r_sys_exit (0, true);
 		return false;
 	} else {
 		/* parent */
