@@ -65,7 +65,7 @@ static const char *help_msg_ob[] = {
 	"ob", " [objid]", "Switch to open given objid",
 	"ob.", " ([addr])", "Show objid at current address",
 	"obo", " [objid]", "Switch to open binary file by objid (DEPRECATED)",
-	"obb", " [fd]", "Switch to open binfile by fd number (DEPRECATED)",
+	"obb", " [fd]", "Switch to open binfile by fd number (WORKS)",
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
