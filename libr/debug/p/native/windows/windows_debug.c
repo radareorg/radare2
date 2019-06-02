@@ -1229,7 +1229,7 @@ RList *w32_desc_list(int pid) {
 	ULONG handleInfoSize = 0x10000;
 	LPVOID buff;
 	if (!ret) {
-		r_sys_perror ("win_desc_list/r_list_new");
+		perror ("win_desc_list/r_list_new");
 		return NULL;
 	}
 	if (!(ph = OpenProcess (PROCESS_DUP_HANDLE, FALSE, pid))) {

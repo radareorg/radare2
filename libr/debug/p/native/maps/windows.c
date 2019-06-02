@@ -135,25 +135,21 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	ReadProcessMemory (h_proc, (LPCVOID)(size_t)map->addr, (LPVOID)pe_hdr, sizeof (pe_hdr), &len);
 	if (len == (SIZE_T)sizeof (pe_hdr) && is_pe_hdr (pe_hdr)) {
 		dos_hdr = (IMAGE_DOS_HEADER *)pe_hdr;
-		if (dos_hdr) {
-			nt_hdrs = (IMAGE_NT_HEADERS *)((char *)dos_hdr + dos_hdr->e_lfanew);
-			if (nt_hdrs) {
-				if (nt_hdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_I386) { // check for x32 pefile
-					nt_hdrs32 = (IMAGE_NT_HEADERS32 *)((char *)dos_hdr + dos_hdr->e_lfanew);
-					mod->sect_count = nt_hdrs32->FileHeader.NumberOfSections;
-					sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs32 + sizeof (IMAGE_NT_HEADERS32));
-				} else {
-					mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
-					sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
-				}
-				mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-				if (mod->sect_hdr) {
-					memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-					mod_inf_fill = 0;
-				} else {
-					perror ("malloc set_mod_inf()");
-				}
-			}
+		nt_hdrs = (IMAGE_NT_HEADERS *)((char *)dos_hdr + dos_hdr->e_lfanew);
+		if (nt_hdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_I386) { // check for x32 pefile
+			nt_hdrs32 = (IMAGE_NT_HEADERS32 *)((char *)dos_hdr + dos_hdr->e_lfanew);
+			mod->sect_count = nt_hdrs32->FileHeader.NumberOfSections;
+			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs32 + sizeof (IMAGE_NT_HEADERS32));
+		} else {
+			mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
+			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
+		}
+		mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+		if (mod->sect_hdr) {
+			memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+			mod_inf_fill = 0;
+		} else {
+			perror ("malloc set_mod_inf()");
 		}
 	}
 	if (mod_inf_fill == -1) {
