@@ -753,8 +753,31 @@ static int lang_run_file(RCore *core, RLang *lang, const char *file) {
 	return r_lang_run_file (core->lang, file);
 }
 
-R_API int r_core_run_script(RCore *core, const char *file) {
-	int ret = false;
+static char *langFromHashbang (RCore *core, const char *file) {
+	int fd = r_sandbox_open (file, O_RDONLY, 0);
+	if (fd != -1) {
+		char firstLine[128] = {0};
+		int len = r_sandbox_read (fd, (ut8*)firstLine, sizeof (firstLine));
+		firstLine[len] = 0;
+		if (!strncmp (firstLine, "#!/", 3)) {
+			// I CAN HAS A HASHBANG
+			char *nl = strchr (firstLine, '\n');
+			if (nl) {
+				*nl = 0;
+			}
+			nl = strchr (firstLine, ' ');
+			if (nl) {
+				*nl = 0;
+			}
+			return strdup (firstLine + 2);
+		}
+		r_sandbox_close (fd);
+	}
+	return NULL;
+}
+
+R_API bool r_core_run_script(RCore *core, const char *file) {
+	bool ret = false;
 	RListIter *iter;
 	RLangPlugin *p;
 	char *name;
@@ -788,6 +811,7 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 			r_lang_use (core->lang, p->name);
 			ret = lang_run_file (core, core->lang, file);
 		} else {
+// XXX this is an ugly hack, we need to use execve here and specify args properly
 #if __WINDOWS__
 #define cmdstr(x) r_str_newf (x" %s", file);
 #else
@@ -881,6 +905,18 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 					free (cmd);
 					ret = 1;
 				}
+			} else {
+				char *abspath = r_file_path (file);
+				char *lang = langFromHashbang (core, file);
+				if (lang) {
+					r_lang_use (core->lang, "pipe");
+					char *cmd = r_str_newf ("%s '%s'", lang, file);
+					lang_run_file (core, core->lang, cmd);
+					free (lang);
+					free (cmd);
+					ret = 1;
+				}
+				free (abspath);
 			}
 			if (!ret) {
 				ret = r_core_cmd_file (core, file);
