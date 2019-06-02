@@ -116,6 +116,14 @@ R_API int r_sys_fork() {
 #endif
 }
 
+R_API void r_sys_exit(int status, bool nocleanup) {
+	if (nocleanup) {
+		_exit (status);
+	} else {
+		exit (status);
+	}
+}
+
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */
 R_API ut64 r_sys_now(void) {
