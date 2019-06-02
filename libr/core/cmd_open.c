@@ -63,6 +63,7 @@ static const char *help_msg_ob[] = {
 	"ob*", "", "List opened binary files and objid (r2 commands)",
 	"ob", " [fd objid]", "Switch to open binary file by fd number and objid (DEPRECATED)",
 	"ob", " [objid]", "Switch to open given objid",
+	"ob.", " ([addr])", "Show objid at current address",
 	"obo", " [objid]", "Switch to open binary file by objid (DEPRECATED)",
 	"obb", " [fd]", "Switch to open binfile by fd number (DEPRECATED)",
 	"oba", " [addr]", "Open bin info from the given address",
@@ -184,6 +185,7 @@ static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, oonn);
 }
 
+// HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -197,6 +199,22 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case 'j': // "obj"
 	case '*': // "ob*"
 		r_core_bin_list (core, input[1]);
+		break;
+	case '.': // "ob."
+		{
+			const char *arg = r_str_trim_ro (input + 2);
+			ut64 at = core->offset;
+			if (*arg) {
+				at = r_num_math (core->num, arg);
+				if (at == 0 && *arg != '0') {
+					at = core->offset;
+				}
+			}
+			RBinFile *bf = r_bin_file_at (core->bin, at);
+			if (bf) {
+				r_cons_printf ("%d\n", bf->o->id);
+			}
+		}
 		break;
 	case 'a': // "oba"
 		if ('?' == input[2]) {

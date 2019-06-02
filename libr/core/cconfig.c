@@ -852,6 +852,13 @@ static bool cb_useldr(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binat(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->binat = node->i_value;
+	return true;
+}
+
 static bool cb_usextr(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2953,6 +2960,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.b64str", "false", "Try to debase64 the strings");
+	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.str.filter", "", &cb_strfilter);
 	SETDESC (n, "Filter strings");

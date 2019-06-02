@@ -310,6 +310,7 @@ typedef struct r_core_t {
 	bool break_loop;
 	RThreadLock *lock;
 	RList *undos;
+	bool binat;
 	bool fixedbits;
 	bool fixedarch;
 	bool fixedblock;
