@@ -674,43 +674,37 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data) {
 }
 
 static int gb_custom_daa (RAnalEsil *esil) {
-	ut8 a, H, C, Z;
-	ut64 n;
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
+	char *v = r_anal_esil_pop(esil);
+	ut64 n;
+	if (!v || !r_anal_esil_get_parm(esil, v, &n)) {
+		return false;
+	}
+	R_FREE (v);
+	ut8 val = (ut8)n;
 	r_anal_esil_reg_read (esil, "H", &n, NULL);
-	H = (ut8)n;
+	const ut8 H = (ut8)n;
 	r_anal_esil_reg_read (esil, "C", &n, NULL);
-	C = (ut8)n;
-	r_anal_esil_reg_read (esil, "a", &n, NULL);
-	esil->old = n;
-	a = (ut8)n;
+	const ut8 C = (ut8)n;
 	r_anal_esil_reg_read (esil, "N", &n, NULL);
 	if (n) {
 		if (C) {
-			a = (a - 0x60) & 0xff;
-		} else {
-			r_anal_esil_reg_write (esil, "C", 0LL);
+			val = (val - 0x60) & 0xff;
 		}
 		if (H) {
-			a = (a - 0x06) & 0xff;
+			val = (val - 0x06) & 0xff;
 		}
 	} else {
-		if (C || (a > 0x99)) {
-			a = (a + 0x60) & 0xff;
-			r_anal_esil_reg_write (esil, "C", 1LL);
+		if (C || (val > 0x99)) {
+			val = (val + 0x60) & 0xff;
 		}
-		if (H || ((a & 0x0f) > 0x09)) {
-			a += 0x06;
+		if (H || ((val & 0x0f) > 0x09)) {
+			val += 0x06;
 		};
 	}
-	esil->cur = a;
-	Z = (a == 0);
-	r_anal_esil_reg_write (esil, "a", (ut64)a);
-	r_anal_esil_reg_write (esil, "Z", (ut64)Z);
-	r_anal_esil_reg_write (esil, "H", 0LL);
-	return true;
+	return r_anal_esil_pushnum(esil, val);
 }
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
@@ -1327,7 +1321,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x27:				//daa
 			op->cycles = 4;
 			op->type = R_ANAL_OP_TYPE_XOR;
-			r_strbuf_set (&op->esil, "daa");
+			r_strbuf_set (&op->esil, "a,daa,a,=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=");
 			break;
 		case 0x10:				//stop
 			op->type = R_ANAL_OP_TYPE_NULL;
@@ -1518,7 +1512,7 @@ static int set_reg_profile(RAnal *anal) {
 
 static int esil_gb_init (RAnalEsil *esil) {
 	GBUser *user = R_NEW0 (GBUser);
-	r_anal_esil_set_op (esil, "daa", gb_custom_daa);
+	r_anal_esil_set_op (esil, "daa", gb_custom_daa, 1, 1);
 	if (user) {
 		if (esil->anal) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
