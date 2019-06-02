@@ -144,12 +144,14 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 			mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
 			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
 		}
-		mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-		if (mod->sect_hdr) {
-			memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-			mod_inf_fill = 0;
-		} else {
-			perror ("malloc set_mod_inf()");
+		if ((char *)sect_hdr + (char *)(sizeof (IMAGE_SECTION_HEADER) * mod->sect_count) < ((char *)pe_hdr + sizeof (pe_hdr))) {
+			mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+			if (mod->sect_hdr) {
+				memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
+				mod_inf_fill = 0;
+			} else {
+				perror ("malloc set_mod_inf()");
+			}
 		}
 	}
 	if (mod_inf_fill == -1) {
