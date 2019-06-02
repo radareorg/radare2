@@ -776,8 +776,8 @@ static char *langFromHashbang (RCore *core, const char *file) {
 	return NULL;
 }
 
-R_API int r_core_run_script(RCore *core, const char *file) {
-	int ret = false;
+R_API bool r_core_run_script(RCore *core, const char *file) {
+	bool ret = false;
 	RListIter *iter;
 	RLangPlugin *p;
 	char *name;
@@ -820,7 +820,16 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 			const char *p = r_str_lchr (file, '.');
 			if (!p) {
 				char *abspath = r_file_path (file);
-				p = abspath; // memleak
+				char *lang = langFromHashbang (core, file);
+				if (lang) {
+					r_lang_use (core->lang, "pipe");
+					char *cmd = r_str_newf ("%s '%s'", lang, file);
+					lang_run_file (core, core->lang, cmd);
+					free (lang);
+					free (cmd);
+					ret = 1;
+				}
+				free (abspath);
 			}
 			if (p) {
 				const char *ext = p + 1;
@@ -908,16 +917,6 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
-				} else {
-					char *lang = langFromHashbang (core, file);
-					if (lang) {
-						r_lang_use (core->lang, "pipe");
-						char *cmd = r_str_newf ("%s '%s'", lang, file);
-						lang_run_file (core, core->lang, cmd);
-						free (lang);
-						free (cmd);
-						ret = 1;
-					}
 				}
 			}
 			if (!ret) {
