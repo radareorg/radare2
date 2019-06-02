@@ -32,20 +32,20 @@ void edf_node_free (EsilDataFlowNode *free_me) {
 	free (free_me);
 }
 
-static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string);
-static int edf_consume_2_push_1 (RAnalEsil *esil, const char *op_string);
-static int edf_consume_1_push_1 (RAnalEsil *esil, const char *op_string);
+static bool edf_consume_2_set_reg (RAnalEsil *esil);
+static bool edf_consume_2_push_1 (RAnalEsil *esil);
+static bool edf_consume_1_push_1 (RAnalEsil *esil);
 typedef void (*AddConstraintStringUseNewCB)(RStrBuf *result, const char *new_node_str);
-static int edf_use_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringUseNewCB cb);
+static bool edf_use_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringUseNewCB cb);
 typedef void (*AddConstraintStringConsume1UseOldNewCB)(RStrBuf *result, const char *consume_str, const char *old_node_str, const char *new_node_str);
-static int edf_consume_1_use_old_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringConsume1UseOldNewCB cb);
+static bool edf_consume_1_use_old_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringConsume1UseOldNewCB cb);
 
-static int edf_eq_weak (RAnalEsil *esil) {
+static bool edf_eq_weak (RAnalEsil *esil) {
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	RGraphNode *o_old = sdb_ptr_get (edf->latest_nodes, "old", 0);	//node for esil->old
 	RGraphNode *o_new = sdb_ptr_get (edf->latest_nodes, "new", 0);	//node for esil->cur
-	if (!edf_consume_2_set_reg (esil, ":=")) {
-		return 0;
+	if (!edf_consume_2_set_reg (esil)) {
+		return false;
 	}
 	//work-around
 	if (o_old) {
@@ -58,97 +58,7 @@ static int edf_eq_weak (RAnalEsil *esil) {
 	} else {
 		sdb_remove (edf->latest_nodes, "new", 0);
 	}
-	return 1;
-}
-
-static int edf_eq (RAnalEsil *esil) {
-	return edf_consume_2_set_reg (esil, "=");
-}
-
-static int edf_xoreq (RAnalEsil *esil) {
-	return edf_consume_2_set_reg (esil, "^=");
-}
-
-static int edf_subeq (RAnalEsil *esil) {
-	return edf_consume_2_set_reg (esil, "-=");
-}
-
-static int edf_addeq (RAnalEsil *esil) {
-	return edf_consume_2_set_reg (esil, "+=");
-}
-
-static int edf_add (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "+");
-}
-
-static int edf_sub (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "-");
-}
-
-#if 0
-static int edf_and (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "&");
-}
-
-static int edf_or (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "|");
-}
-#endif
-
-static int edf_xor (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "^");
-}
-
-static int edf_mod (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "%");
-}
-
-static int edf_mul (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "*");
-}
-
-static int edf_div (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "/");
-}
-
-static int edf_shr (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, ">>");
-}
-
-static int edf_shl (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "<<");
-}
-
-static int edf_rotr (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, ">>>");
-}
-
-static int edf_rotl (RAnalEsil *esil) {
-	return edf_consume_2_push_1 (esil, "<<<");
-}
-
-static int edf_not (RAnalEsil *esil) {
-	return edf_consume_1_push_1 (esil, "!");
-}
-
-static int edf_peek_1 (RAnalEsil *esil) {
-	return edf_consume_1_push_1 (esil, "[1]");
-}
-
-static int edf_peek_2 (RAnalEsil *esil) {
-	return edf_consume_1_push_1 (esil, "[2]");
-}
-
-static int edf_peek_4 (RAnalEsil *esil) {
-	return edf_consume_1_push_1 (esil, "[4]");
-}
-
-static int edf_peek_8 (RAnalEsil *esil) {
-	return edf_consume_1_push_1 (esil, "[8]");
-}
-
-static int edf_peek_16 (RAnalEsil *esil) {
-	return edf_consume_1_push_1 (esil, "[16]");
+	return true;
 }
 
 static void edf_zf_constraint (RStrBuf *result, const char *new_node_str) {
@@ -168,21 +78,17 @@ static int edf_cf (RAnalEsil *esil) {
 	return edf_consume_1_use_old_new_push_1 (esil, "$c", edf_cf_constraint);
 }
 
-#if 0
 static void edf_bf_constraint (RStrBuf *result, const char *consume, const char *o, const char *n) {
 	r_strbuf_appendf (result, ":((%s&mask((%s+0x3f)&0x3f))<(%s& mask((%s+0x3f)&0x3f)))",
 			o, consume, n, consume);
 }
-#endif
 
 static int edf_bf (RAnalEsil *esil) {
-	return edf_consume_1_use_old_new_push_1 (esil, "$b", edf_cf_constraint);
+	return edf_consume_1_use_old_new_push_1 (esil, "$b", edf_bf_constraint);
 }
 
-static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
-	if (!esil) {
-		return 0;
-	}
+static bool edf_consume_2_set_reg (RAnalEsil *esil) {
+	const char *op_string = esil->current_opstr;
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
@@ -197,7 +103,7 @@ static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
 	if (dst_type == R_ANAL_ESIL_PARM_INVALID) {
 		free (dst);
 		free (src);
-		return 0;
+		return false;
 	}
 	
 	// could be an abstract value
@@ -207,7 +113,7 @@ static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
 		if (src_type == R_ANAL_ESIL_PARM_INVALID) {
 			free (dst);
 			free (src);
-			return 0;
+			return false;
 		}
 	
 		if (src_type == R_ANAL_ESIL_PARM_NUM) {
@@ -245,7 +151,7 @@ static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
 	if (!src_node || !dst_node) {
 		free (src);
 		free (dst);
-		return 0;
+		return false;
 	}
 
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
@@ -263,17 +169,18 @@ static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
 	sdb_ptr_set (edf->latest_nodes, dst, dst_node, 0);
 	sdb_ptr_set (edf->latest_nodes, "new", dst_node, 0);		//esil->new
 	free (dst);
-	return 1;
+	return true;
 }
 
-static int edf_consume_2_push_1 (RAnalEsil *esil, const char *op_string) {
+static bool edf_consume_2_push_1 (RAnalEsil *esil) {
+	const char *op_string = esil->current_opstr;
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	char *src[2] = {r_anal_esil_pop (esil), r_anal_esil_pop (esil)};
 
 	if (!src[0] || !src[1]) {
 		free (src[0]);
 		free (src[1]);
-		return 0;
+		return false;
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src[0]);
 	r_strbuf_appendf (eop_node->content, ",%s,%s", src[1], op_string);
@@ -321,15 +228,16 @@ static int edf_consume_2_push_1 (RAnalEsil *esil, const char *op_string) {
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
 	sdb_ptr_set (edf->latest_nodes, r_strbuf_get (result->content), result_node, 0);
-	r_anal_esil_push (esil, r_strbuf_get (result->content));
-	return 1;
+	r_anal_esil_push (esil, r_strbuf_get(result->content));
+	return true;
 }
 
-static int edf_consume_1_push_1(RAnalEsil *esil, const char *op_string) {
+static bool edf_consume_1_push_1(RAnalEsil *esil) {
+	const char *op_string = esil->current_opstr;
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	char *src = r_anal_esil_pop (esil);
 	if (!src) {
-		return 0;
+		return false;
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
 	r_strbuf_appendf (eop_node->content, ",%s", op_string);
@@ -372,11 +280,11 @@ static int edf_consume_1_push_1(RAnalEsil *esil, const char *op_string) {
 	RGraphNode *result_node = r_graph_add_node (edf->flow, result);
 	r_graph_add_edge (edf->flow, op_node, result_node);
 	sdb_ptr_set (edf->latest_nodes, r_strbuf_get (result->content), result_node, 0);
-	r_anal_esil_push (esil, r_strbuf_get (result->content));
-	return 1;
+	r_anal_esil_push (esil, r_strbuf_get(result->content));
+	return true;
 }
 
-static int edf_use_new_push_1(RAnalEsil *esil, const char *op_string, AddConstraintStringUseNewCB cb) {
+static bool edf_use_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringUseNewCB cb) {
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	RGraphNode *op_node = r_graph_add_node (edf->flow, new_edf_node (edf, op_string));
 	RGraphNode *latest_new = sdb_ptr_get (edf->latest_nodes, "new", 0);	//node for esil->cur
@@ -396,12 +304,12 @@ static int edf_use_new_push_1(RAnalEsil *esil, const char *op_string, AddConstra
 	return r_anal_esil_push (esil, r_strbuf_get(result->content));
 }
 
-static int edf_consume_1_use_old_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringConsume1UseOldNewCB cb) {
+static bool edf_consume_1_use_old_new_push_1 (RAnalEsil *esil, const char *op_string, AddConstraintStringConsume1UseOldNewCB cb) {
 	EsilDataFlow *edf = (EsilDataFlow *)esil->user;
 	char *src = r_anal_esil_pop (esil);
 
 	if (!src) {
-		return 0;
+		return false;
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
 	r_strbuf_appendf (eop_node->content, ",%s", op_string);
@@ -458,63 +366,57 @@ static int edf_consume_1_use_old_new_push_1 (RAnalEsil *esil, const char *op_str
 	return r_anal_esil_push (esil, r_strbuf_get(result->content));
 }
 
-#if 0
-void entry(void *user) {
-	RCore *core = (RCore *)user;
-#if 0
-	RAnal *anal = r_anal_new();
-	RAnalEsil *esil = r_anal_esil_new(256, 0, 64);
-	
-	r_anal_use (anal, "x86");
-	r_anal_set_bits(anal, 64);
-	r_anal_esil_setup (esil, anal, 0, 0, 0);
-#endif
-#endif
 R_API void r_core_anal_esil_graph(RCore *core, const char *expr) {
+	if (!expr) {
+		return;
+	}
 	RAnalEsil *esil = r_anal_esil_new (4096, 0, 1);
-	esil->anal = core->anal;
+	if (!esil) {
+		return;
+	}
 	EsilDataFlow *edf = R_NEW0 (EsilDataFlow);
 	if (!edf) {
 		return;
 	}
+	esil->anal = core->anal;
 	edf->latest_nodes = sdb_new0 ();
 	edf->flow = r_graph_new();
 
-	r_anal_esil_set_op (esil, "=", edf_eq);
-	r_anal_esil_set_op (esil, ":=", edf_eq_weak);
-	r_anal_esil_set_op (esil, "$z", edf_zf);
-	r_anal_esil_set_op (esil, "$c", edf_cf);
-	r_anal_esil_set_op (esil, "$b", edf_bf);
-	r_anal_esil_set_op (esil, "^=", edf_xoreq);
-	r_anal_esil_set_op (esil, "-=", edf_subeq);
-	r_anal_esil_set_op (esil, "+=", edf_addeq);
-	r_anal_esil_set_op (esil, "+", edf_add);
-	r_anal_esil_set_op (esil, "-", edf_sub);
-	r_anal_esil_set_op (esil, "&", edf_sub);
-	r_anal_esil_set_op (esil, "|", edf_sub);
-	r_anal_esil_set_op (esil, "^", edf_xor);
-	r_anal_esil_set_op (esil, "%", edf_mod);
-	r_anal_esil_set_op (esil, "*", edf_mul);
-	r_anal_esil_set_op (esil, "/", edf_div);
-	r_anal_esil_set_op (esil, ">>", edf_shr);
-	r_anal_esil_set_op (esil, "<<", edf_shl);
-	r_anal_esil_set_op (esil, ">>>", edf_rotr);
-	r_anal_esil_set_op (esil, ">>>", edf_rotl);
-	r_anal_esil_set_op (esil, "!", edf_not);
-	r_anal_esil_set_op (esil, "[1]", edf_peek_1);
-	r_anal_esil_set_op (esil, "[2]", edf_peek_2);
-	r_anal_esil_set_op (esil, "[4]", edf_peek_4);
-	r_anal_esil_set_op (esil, "[8]", edf_peek_8);
-	r_anal_esil_set_op (esil, "[16]", edf_peek_16);
+	r_anal_esil_set_op(esil, "=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, ":=", edf_eq_weak, 0, 2);
+	r_anal_esil_set_op(esil, "$z", edf_zf, 1, 0);
+	r_anal_esil_set_op(esil, "$c", edf_cf, 1, 1);
+	r_anal_esil_set_op(esil, "$b", edf_bf, 1, 1);
+	r_anal_esil_set_op(esil, "^=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "-=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "+=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "*=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "/=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "&=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "|=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "^=", edf_consume_2_set_reg, 0, 2);
+	r_anal_esil_set_op(esil, "+", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "-", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "&", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "|", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "^", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "%", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "*", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "/", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, ">>", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "<<", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, ">>>", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, ">>>", edf_consume_2_push_1, 1, 2);
+	r_anal_esil_set_op(esil, "!", edf_consume_1_push_1, 1, 1);
+	r_anal_esil_set_op(esil, "[1]", edf_consume_1_push_1, 1, 1);
+	r_anal_esil_set_op(esil, "[2]", edf_consume_1_push_1, 1, 1);
+	r_anal_esil_set_op(esil, "[4]", edf_consume_1_push_1, 1, 1);
+	r_anal_esil_set_op(esil, "[8]", edf_consume_1_push_1, 1, 1);
+	r_anal_esil_set_op(esil, "[16]", edf_consume_1_push_1, 1, 1);
 
 	esil->user = edf;
 
 	r_anal_esil_parse (esil, expr);
-//	r_anal_esil_parse (esil, "1,c,+=,3,$c,H,:=,$z,Z,:=,0,N,:=");			//inc c
-//	r_anal_esil_parse (esil, "1,a,<<,C,|,a,=,7,$c,C,:=,$z,Z,:=,0,H,:=,0,N,:=");	//rla
-//	r_anal_esil_parse (esil, "rsp,[8],rsi,=,8,rsp,+=");
-//	r_anal_esil_parse (esil, "rsp,[8],rax,=,8,rsp,+=");
-//	r_anal_esil_parse (esil, "rsi,rax,-,[8],!,!,rbx,=");
 
 	RListIter *iter, *ator;
 	RGraphNode *node, *edon;
