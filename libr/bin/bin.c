@@ -217,11 +217,7 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 	return r_bin_open_io (bin, opt);
 }
 
-static void __bin_options_from_bo(RBinOptions *opt, RBin *bin, RBinObject *bo, int fd, ut64 baseaddr) {
-	r_bin_options_init (opt, fd, baseaddr, bo->loadaddr, bin->rawstr);
-	opt->offset = bo->boffset;
-}
-
+// XXX this function is full of mess, shuold be rewritten after the refactorings
 R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
 	int res = false;
@@ -232,10 +228,15 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	const char *name = iob->fd_get_name (iob->io, fd);
 	RBinFile *bf = r_bin_file_find_by_name (bin, name);
 	if (!bf) {
-		res = false;
+		eprintf ("r_bin_reload: No file to reopen\n");
 		goto error;
 	}
-	RBinObject *oldo = bf->o;
+	RBinOptions opt;
+	r_bin_options_init (&opt, fd, baseaddr, bf->loadaddr, bin->rawstr);
+	if (bf->o) {
+		opt.offset = bf->o->boffset;
+	}
+
 	// invalidate current object reference
 	bf->o = NULL;
 	ut64 sz = iob->fd_size (iob->io, fd);
@@ -247,7 +248,6 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		if (!iob->fd_is_dbg (iob->io, fd)) {
 			// too big, probably wrong
 			eprintf ("Warning: file is too big and not in debugger\n");
-			res = false;
 			goto error;
 		}
 		// attempt a local open and read
@@ -260,44 +260,32 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		// stream based loaders
 		int tfd = iob->fd_open (iob->io, name, R_PERM_R, 0);
 		if (tfd < 0) {
-			res = false;
 			goto error;
 		}
 		sz = iob->fd_size (iob->io, tfd);
 		if (sz == UT64_MAX) {
 			iob->fd_close (iob->io, tfd);
-			res = false;
 			goto error;
 		}
-		if (oldo) {
-			RBinOptions opt;
-			__bin_options_from_bo (&opt, bin, oldo, fd, baseaddr);
-			res = r_bin_open_io (bin, &opt);
-		}
+		res = r_bin_open_io (bin, &opt);
 		iob->fd_close (iob->io, tfd);
 		goto error;
 	} else {
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
-			res = false;
 			goto error;
 		}
 		if (!iob->fd_read_at (iob->io, fd, 0LL, buf_bytes, sz)) {
 			free (buf_bytes);
-			res = false;
 			goto error;
 		}
 	}
 	r_bin_file_set_bytes (bf, buf_bytes, sz, false);
-
-	RListIter *iter = NULL;
-
-	RBinOptions opt;
-	__bin_options_from_bo (&opt, bin, oldo, fd, baseaddr);
-	res = r_bin_open_io (bin, &opt);
 	free (buf_bytes);
+
+	return r_bin_open_io (bin, &opt);
 error:
-	return res;
+	return false;
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {

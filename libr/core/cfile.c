@@ -282,16 +282,6 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 }
 #endif
 
-R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
-	int result = 0;
-	RCoreFile *cf = r_core_file_cur (r);
-	if (cf) {
-		result = r_bin_reload (r->bin, cf->fd, baseaddr);
-	}
-	r_core_bin_set_env (r, r_bin_cur (r->bin));
-	return result;
-}
-
 #if __linux__ || __APPLE__
 static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	RBreakpointItem *bp;
