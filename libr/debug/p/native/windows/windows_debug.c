@@ -1137,6 +1137,9 @@ static void __w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 
 RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
+	if (!rdi) {
+		return NULL;
+	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
@@ -1283,6 +1286,7 @@ RList *w32_desc_list(int pid) {
 			wcstombs (buff, objectName.Buffer, objectName.Length / 2);
 			desc = r_debug_desc_new (handle.Handle, buff, 0, '?', 0);
 			if (!desc) {
+				free (buff);
 				break;
 			}
 			r_list_append (ret, desc);
@@ -1292,6 +1296,7 @@ RList *w32_desc_list(int pid) {
 			wcstombs (buff, objectTypeInfo->Name.Buffer, objectTypeInfo->Name.Length);
 			desc = r_debug_desc_new (handle.Handle, buff, 0, '?', 0);
 			if (!desc) {
+				free (buff);
 				break;
 			}
 			r_list_append (ret, desc);
