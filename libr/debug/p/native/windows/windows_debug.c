@@ -1042,7 +1042,7 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 		}
 		if (!path) {
 			// TODO: enum processes to get binary's name
-			path = strdup ("???");
+			path = _tcsdup ("???");
 		}
 		do {
 			if (te.th32OwnerProcessID == pid) {
@@ -1156,7 +1156,7 @@ RDebugInfo *w32_info(RDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-static RDebugPid *__build_debug_pid(int pid, HANDLE ph, const char* name) {
+static RDebugPid *__build_debug_pid(int pid, HANDLE ph, const TCHAR* name) {
 	char *path = NULL;
 	int uid = -1;
 	if (!ph) {
