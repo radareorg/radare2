@@ -994,11 +994,11 @@ static const char *__resolve_path(HANDLE ph) {
 		return NULL;
 	}
 	// Convert NT path to win32 path
-	char *tmp = strchr (filename + 1, '\\');
+	TCHAR *tmp = _tcschr (filename + 1, '\\');
 	if (!tmp) {
 		return NULL;
 	}
-	tmp = strchr (tmp + 1, '\\');
+	tmp = _tcschr (tmp + 1, '\\');
 	if (!tmp) {
 		return NULL;
 	}
@@ -1007,9 +1007,9 @@ static const char *__resolve_path(HANDLE ph) {
 	const char *ret = NULL;
 	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
 		if (QueryDosDevice (drv, device, maxlength) > 0) {
-			if (!strncmp (filename, device, length)) {
+			if (!_tcsncmp (filename, device, length)) {
 				TCHAR path[MAX_PATH];
-				snprintf (path, maxlength, "%s%s", drv, &tmp[1]);
+				_sntprintf (path, maxlength, "%s%s", drv, &tmp[1]);
 				ret = r_sys_conv_win_to_utf8 (path);
 				break;
 			}
