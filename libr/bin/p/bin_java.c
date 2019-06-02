@@ -154,22 +154,6 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	bool ret = false;
-	int off, version = 0;
-	if (buf && length > 32 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-		// XXX not sure about endianness here
-		memcpy (&off, buf + 4 * sizeof (int), sizeof (int));
-		version = buf[6] | (buf[7] << 8);
-		if (version > 1024) {
-			// XXX is this correct in all cases? opposite of prev?
-			r_mem_swapendian ((ut8 *) &off, (ut8 *) &off, sizeof (int));
-			ret = true;
-		}
-	}
-	return ret;
-}
-
 static int retdemangle(const char *str) {
 	return R_BIN_NM_JAVA;
 }
@@ -223,7 +207,6 @@ RBinPlugin r_bin_plugin_java = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = binsym,

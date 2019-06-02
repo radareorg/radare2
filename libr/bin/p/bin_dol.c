@@ -44,13 +44,6 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	DolHeader *dol = NULL;
 	char *lowername = NULL, *ext;
@@ -187,7 +180,6 @@ RBinPlugin r_bin_plugin_dol = {
 	.license = "BSD",
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.sections = &sections,

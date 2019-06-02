@@ -580,13 +580,6 @@ static bool check_buffer(RBuffer *buf) {
 	return true;
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->imagesCount || !hdr->imagesOffset) {
 		return NULL;
@@ -1607,7 +1600,6 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.destroy = &destroy,
 	.classes = &classes,

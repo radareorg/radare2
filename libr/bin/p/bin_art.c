@@ -130,26 +130,15 @@ static bool check_buffer(RBuffer *buf) {
 	return r == 4 && !strncmp (tmp, "art\n", 4);
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		if (ptr) {
+			ptr->paddr = ptr->vaddr = 0;
+			r_list_append (ret, ptr);
+		}
 	}
-	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = ptr->vaddr = 0;
-	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -225,7 +214,6 @@ RBinPlugin r_bin_plugin_art = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.sections = &sections,

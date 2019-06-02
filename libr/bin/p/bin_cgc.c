@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2019 - ret2libc, pancake */
 
 #define R_BIN_CGC 1
 #include "bin_elf.inc"
@@ -10,13 +10,6 @@ static bool check_buffer(RBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r > SCGCMAG && !memcmp (tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;
-}
-
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
@@ -107,7 +100,6 @@ RBinPlugin r_bin_plugin_cgc = {
 	.get_sdb = &get_sdb,
 	.load_buffer = load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,

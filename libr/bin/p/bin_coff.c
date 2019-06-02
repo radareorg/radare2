@@ -384,13 +384,6 @@ ut16 CHARACTERISTICS
 	return r >= 20 && r_coff_supported_arch (tmp);
 }
 
-static bool check_bytes(const ut8 *bytes, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (bytes, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 RBinPlugin r_bin_plugin_coff = {
 	.name = "coff",
 	.desc = "COFF format r_bin plugin",
@@ -398,7 +391,6 @@ RBinPlugin r_bin_plugin_coff = {
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,

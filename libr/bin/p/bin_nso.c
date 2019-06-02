@@ -60,9 +60,11 @@ static bool check_buffer(RBuffer *b) {
 
 static RBinNXOObj *nso_new () {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
-	bin->methods_list = r_list_newf ((RListFree)free);
-	bin->imports_list = r_list_newf ((RListFree)free);
-	bin->classes_list = r_list_newf ((RListFree)free);
+	if (bin) {
+		bin->methods_list = r_list_newf ((RListFree)free);
+		bin->imports_list = r_list_newf ((RListFree)free);
+		bin->classes_list = r_list_newf ((RListFree)free);
+	}
 	return bin;
 }
 
@@ -140,8 +142,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
 	const ut8 *bytes = r_buf_data (buf, &sz);
-	bool res = load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
-	return res;
+	return load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {

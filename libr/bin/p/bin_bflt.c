@@ -290,13 +290,6 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	RBuffer *b = r_buf_new_with_bytes (buf, length);
-	bool res = check_buffer (b);
-	r_buf_free (b);
-	return res;
-}
-
 static void destroy(RBinFile *bf) {
 	r_bin_bflt_free (bf->o->bin_obj);
 }
@@ -307,7 +300,6 @@ RBinPlugin r_bin_plugin_bflt = {
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,

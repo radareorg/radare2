@@ -10,13 +10,6 @@ static bool check_buffer(RBuffer *buf) {
 	return r_bin_p9_get_arch (buf, NULL, NULL);
 }
 
-static bool check_bytes(const ut8 *b, ut64 length) {
-	RBuffer *buf = r_buf_new_with_bytes (b, length);
-	bool res = check_buffer (buf);
-	r_buf_free (buf);
-	return res;
-}
-
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
@@ -228,7 +221,6 @@ RBinPlugin r_bin_plugin_p9 = {
 	.load_buffer = &load_buffer,
 	.size = &size,
 	.destroy = &destroy,
-	.check_bytes = &check_bytes,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
