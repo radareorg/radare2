@@ -18,6 +18,7 @@
 #define PANEL_CMD_STACK          "px"
 #define PANEL_CMD_REGISTERS      "dr"
 #define PANEL_CMD_DISASSEMBLY    "pd"
+#define PANEL_CMD_DECOMPILER     "pdc"
 #define PANEL_CMD_FUNCTION       "afl"
 #define PANEL_CMD_GRAPH          "agf"
 #define PANEL_CMD_HEXDUMP        "xc"
@@ -272,6 +273,7 @@ static void setReadOnly(RPanel *p, char *s);
 static void set_pos(RPanelPos *pos, int x, int y);
 static void set_size(RPanelPos *pos, int w, int h);
 static void set_geometry(RPanelPos *pos, int x, int y, int w, int h);
+static void set_panel_addr(RCore *core, RPanel *panel, ut64 addr);
 
 /* reset */
 static void resetScrollPos(RPanel *p);
@@ -354,7 +356,7 @@ static char *apply_filter_cmd(RCore *core, RPanel *panel);
 static int addCmdPanel(void *user);
 static int addCmdfPanel(RCore *core, char *input, char *str);
 static void setCmdStrCache(RCore *core, RPanel *p, char *s);
-static char *handleCmdStrCache(RCore *core, RPanel *panel);
+static char *handleCmdStrCache(RCore *core, RPanel *panel, bool force_cache);
 static bool findCmdStrCache(RCore *core, RPanel *panel, char **str);
 static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str);
 static void replaceCmd(RCore *core, const char *title, const char *cmd, const bool cache);
@@ -538,7 +540,7 @@ static bool check_panel_type(RPanel *panel, const char *type, int len) {
 	}
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
 		if (!strncmp (panel->model->cmd, type, len) &&
-				strcmp (panel->model->cmd, "pdc")) {
+				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER)) {
 			return true;
 		}
 		return false;
@@ -592,6 +594,15 @@ static void set_geometry(RPanelPos *pos, int x, int y, int w, int h) {
 	set_size (pos, w, h);
 }
 
+static void set_panel_addr(RCore *core, RPanel *panel, ut64 addr) {
+	panel->model->addr = addr;
+	if (core->panels->autoUpdate) {
+		setRefreshAll (core, false);
+		return;
+	}
+	panel->view->refresh = true;
+}
+
 static RPanel *getPanel(RPanels *panels, int i) {
 	if (i >= PANEL_NUM_LIMIT) {
 		return NULL;
@@ -609,7 +620,7 @@ static void handlePrompt(RCore *core, RPanels *panels) {
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
 		if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-			p->model->addr = core->offset;
+			set_panel_addr (core, p, core->offset);
 			break;
 		}
 	}
@@ -656,34 +667,6 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	int graph_pad = 0;
 	bool o_cur = core->print->cur_enabled;
 	core->print->cur_enabled = o_cur & (getCurPanel (core->panels) == panel);
-	if (color) {
-		if (!strcmp (panel->model->title, cmd_title)) {
-			snprintf (title, sizeof (title) - 1,
-					"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
-		}  else {
-			snprintf (title, sizeof (title) - 1,
-					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
-		}
-		snprintf (cache_title, sizeof (cache_title) - 1,
-				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
-	} else {
-		if (!strcmp (panel->model->title, cmd_title)) {
-			snprintf (title, sizeof (title) - 1,
-					"   %s   ", panel->model->title);
-		} else {
-			snprintf (title, sizeof (title) - 1,
-					"   %s (%s)  ", panel->model->title, cmd_title);
-		}
-		snprintf (cache_title, sizeof (cache_title) - 1,
-				"[Cache] %s", readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
-	}
-	free (cmd_title);
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, title);
-	}
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (cache_title) - 2, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, cache_title);
-	}
 	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
 	if (readOnly) {
 		cmdStr = readOnly;
@@ -700,7 +683,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 					if (r_config_get_i (core->config, "cfg.debug")) {
 						r_core_cmd (core, ".dr*", 0);
 					}
-					cmdStr = handleCmdStrCache (core, panel);
+					cmdStr = handleCmdStrCache (core, panel, false);
 					core->offset = o_offset;
 					free (panel->model->cmd);
 					panel->model->cmd = ocmd;
@@ -718,23 +701,39 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 						r_core_seek (core, core->offset, 1);
 						r_core_block_read (core);
 					}
-					cmdStr = handleCmdStrCache (core, panel);
+					cmdStr = handleCmdStrCache (core, panel, false);
 					core->offset = o_offset;
 				}
-			} else {
+			} else if (check_panel_type (panel, PANEL_CMD_DECOMPILER, strlen (PANEL_CMD_DECOMPILER))) {
 				if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCmdStrCache (core, panel, &cmdStr)) {
-					cmdStr = handleCmdStrCache (core, panel);
+					cmdStr = handleCmdStrCache (core, panel, true);
 					if (panel->model->cmdStrCache) {
 						x = 0;
 						y = 0;
 						resetScrollPos (panel);
 					}
 				}
-				if (check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
-					graph_pad = 1;
-					core->cons->event_resize = NULL; // avoid running old event with new data
-					core->cons->event_data = core;
-					core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
+			} else if (check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
+				if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCmdStrCache (core, panel, &cmdStr)) {
+					cmdStr = handleCmdStrCache (core, panel, true);
+					if (panel->model->cmdStrCache) {
+						x = 0;
+						y = 0;
+						resetScrollPos (panel);
+					}
+				}
+				graph_pad = 1;
+				core->cons->event_resize = NULL; // avoid running old event with new data
+				core->cons->event_data = core;
+				core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
+			} else {
+				if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCmdStrCache (core, panel, &cmdStr)) {
+					cmdStr = handleCmdStrCache (core, panel, false);
+					if (panel->model->cmdStrCache) {
+						x = 0;
+						y = 0;
+						resetScrollPos (panel);
+					}
 				}
 			}
 		}
@@ -773,6 +772,34 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	if (!panel->model->cmdStrCache && !readOnly) {
 		free (cmdStr);
 	}
+	if (color) {
+		if (!strcmp (panel->model->title, cmd_title)) {
+			snprintf (title, sizeof (title) - 1,
+					"%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+		}  else {
+			snprintf (title, sizeof (title) - 1,
+					"%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
+		}
+		snprintf (cache_title, sizeof (cache_title) - 1,
+				"%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
+	} else {
+		if (!strcmp (panel->model->title, cmd_title)) {
+			snprintf (title, sizeof (title) - 1,
+					"   %s   ", panel->model->title);
+		} else {
+			snprintf (title, sizeof (title) - 1,
+					"   %s (%s)  ", panel->model->title, cmd_title);
+		}
+		snprintf (cache_title, sizeof (cache_title) - 1,
+				"[Cache] %s", readOnly ? "N/A" : panel->model->cache ? "On" : "Off");
+	}
+	free (cmd_title);
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, title);
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (cache_title) - 2, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, cache_title);
+	}
 	core->print->cur_enabled = o_cur;
 }
 
@@ -807,7 +834,7 @@ char *apply_filter_cmd(RCore *core, RPanel *panel) {
 	return out;
 }
 
-char *handleCmdStrCache(RCore *core, RPanel *panel) {
+char *handleCmdStrCache(RCore *core, RPanel *panel, bool force_cache) {
 	char *out;
 	char *cmd = apply_filter_cmd (core, panel);
 	bool b = core->print->cur_enabled && getCurPanel (core->panels) != panel;
@@ -815,6 +842,9 @@ char *handleCmdStrCache(RCore *core, RPanel *panel) {
 		core->print->cur_enabled = false;
 	}
 	out = r_core_cmd_str (core, cmd);
+	if (force_cache) {
+		panel->model->cache = true;
+	}
 	if (panel->model->cache && R_STR_ISNOTEMPTY (out)) {
 		setCmdStrCache (core, panel, out);
 	}
@@ -1379,8 +1409,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 	case '*':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + print->cur);
-			cur->model->addr = core->offset + print->cur;
-			cur->view->refresh = true;
+			set_panel_addr (core, cur, core->offset + print->cur);
 		}
 		break;
 	case '-':
@@ -1497,8 +1526,7 @@ static void handle_visual_mark(RCore *core) {
 			r_cons_flush ();
 			int ch = r_cons_readchar ();
 			r_core_visual_mark_seek (core, ch);
-			cur->model->addr = core->offset;
-			cur->view->refresh = true;
+			set_panel_addr (core, cur, core->offset);
 		}
 	}
 	return;
@@ -2082,7 +2110,7 @@ static void replaceCmd(RCore *core, const char *title, const char *cmd, const bo
 	cur->model->cmd = r_str_dup (cur->model->cmd, cmd);
 	cur->model->cache = cache;
 	setCmdStrCache (core, cur, NULL);
-	cur->model->addr = core->offset;
+	set_panel_addr (core, cur, core->offset);
 	cur->model->type = PANEL_TYPE_DEFAULT;
 	setdcb (core, cur);
 	setrcb (panels, cur);
@@ -2201,7 +2229,7 @@ static void init_panel_param(RCore *core, RPanel *p, const char *title, const ch
 	m->type = PANEL_TYPE_DEFAULT;
 	m->rotate = 0;
 	v->curpos = 0;
-	m->addr = core->offset;
+	set_panel_addr (core, p, core->offset);
 	m->rotateCb = NULL;
 	setCmdStrCache (core, p, NULL);
 	setReadOnly(p, NULL);
@@ -2228,7 +2256,7 @@ static void init_panel_param(RCore *core, RPanel *p, const char *title, const ch
 			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 			const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
 			m->baseAddr = stackbase;
-			m->addr = stackbase - r_config_get_i (core->config, "stack.delta");
+			set_panel_addr (core, p, stackbase - r_config_get_i (core->config, "stack.delta"));
 		}
 	}
 	core->panels->n_panels++;
@@ -2250,7 +2278,7 @@ static void setdcb(RCore *core, RPanel *p) {
 	if (check_panel_type (p, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		p->model->directionCb = directionStackCb;
 	} else if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-			strcmp (p->model->cmd, "pdc")) {
+			strcmp (p->model->cmd, PANEL_CMD_DECOMPILER)) {
 		p->model->directionCb = directionDisassemblyCb;
 	} else if (check_panel_type (p, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
 		p->model->directionCb = directionRegisterCb;
@@ -2485,7 +2513,7 @@ static void updateDisassemblyAddr (RCore *core) {
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
 		if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-			p->model->addr = core->offset;
+			set_panel_addr (core, p, core->offset);
 		}
 	}
 	setRefreshAll (core, false);
@@ -2496,7 +2524,7 @@ static void updateAddr (RCore *core) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
-		p->model->addr = core->offset;
+		set_panel_addr (core, p, core->offset);
 	}
 	setRefreshAll (core, true);
 }
@@ -2717,7 +2745,7 @@ static void directionDisassemblyCb(void *user, int direction) {
 		if (core->print->cur_enabled) {
 			cursorLeft (core);
 			r_core_block_read (core);
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		} else if (panels->mode == PANEL_MODE_ZOOM) {
 			cur->model->addr--;
 		} else if (cur->view->sx > 0) {
@@ -2728,7 +2756,7 @@ static void directionDisassemblyCb(void *user, int direction) {
 		if (core->print->cur_enabled) {
 			cursorRight (core);
 			r_core_block_read (core);
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		} else if (panels->mode == PANEL_MODE_ZOOM) {
 			cur->model->addr++;
 		} else {
@@ -2740,7 +2768,7 @@ static void directionDisassemblyCb(void *user, int direction) {
 		if (core->print->cur_enabled) {
 			cursorUp (core);
 			r_core_block_read (core);
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		} else {
 			r_core_visual_disasm_up (core, &cols);
 			r_core_seek_delta (core, -cols);
@@ -2752,13 +2780,13 @@ static void directionDisassemblyCb(void *user, int direction) {
 		if (core->print->cur_enabled) {
 			cursorDown (core);
 			r_core_block_read (core);
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		} else {
 			RAsmOp op;
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->offset + cols, 1);
 			r_core_block_read (core);
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		}
 		return;
 	}
@@ -2911,7 +2939,7 @@ static void directionHexdumpCb(void *user, int direction) {
 				}
 			} else {
 				if (cur->model->addr <= cols) {
-					cur->model->addr = 0;
+					set_panel_addr (core, cur, 0);
 				} else {
 					cur->model->addr -= cols;
 				}
@@ -3002,13 +3030,13 @@ static void hudstuff(RCore *core) {
 	r_core_visual_hudstuff (core);
 
 	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-		cur->model->addr = core->offset;
+		set_panel_addr (core, cur, core->offset);
 	} else {
 		int i;
 		for (i = 0; i < panels->n_panels; i++) {
 			RPanel *panel = getPanel (panels, i);
-			if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-				panel->model->addr = core->offset;
+			if (check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+				set_panel_addr (core, panel, core->offset);
 				break;
 			}
 		}
@@ -3663,8 +3691,7 @@ static void panels_check_stackbase(RCore *core) {
 		RPanel *panel = getPanel (panels, i);
 		if (panel->model->cmd && check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK)) && panel->model->baseAddr != stackbase) {
 			panel->model->baseAddr = stackbase;
-			panel->model->addr = stackbase - r_config_get_i (core->config, "stack.delta") + core->print->cur;
-			panel->view->refresh = true;
+			set_panel_addr (core, panel, stackbase - r_config_get_i (core->config, "stack.delta") + core->print->cur);
 		}
 	}
 }
@@ -4187,7 +4214,7 @@ static void insertValue(RCore *core) {
 			cur->view->refresh = true;
 		}
 	} else if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-					strcmp (cur->model->cmd, "pdc")) {
+					strcmp (cur->model->cmd, PANEL_CMD_DECOMPILER)) {
 		const char *prompt = "insert hex: ";
 		panelPrompt (prompt, buf, sizeof (buf));
 		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
@@ -4539,7 +4566,7 @@ static void rotateDisasCb(void *user, bool rev) {
 	RPanel *p = getCurPanel (core->panels);
 
 	//TODO: need to come up with a better solution but okay for now
-	if (!strcmp (p->model->cmd, "pdc")) {
+	if (!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER)) {
 		return;
 	}
 
@@ -4619,8 +4646,7 @@ static void undoSeek(RCore *core) {
 	RIOUndos *undo = r_io_sundo (core->io, core->offset);
 	if (undo) {
 		r_core_visual_seek_animation (core, undo->off);
-		cur->model->addr = core->offset;
-		cur->view->refresh = true;
+		set_panel_addr (core, cur, core->offset);
 	}
 }
 
@@ -4654,8 +4680,7 @@ static void redoSeek(RCore *core) {
 	RIOUndos *undo = r_io_sundo_redo (core->io);
 	if (undo) {
 		r_core_visual_seek_animation (core, undo->off);
-		cur->model->addr = core->offset;
-		cur->view->refresh = true;
+		set_panel_addr (core, cur, core->offset);
 	}
 }
 
@@ -4918,8 +4943,7 @@ repeat:
 	if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) && '0' < key && key <= '9') {
 		ut8 ch = key;
 		r_core_visual_jump (core, ch);
-		cur->model->addr = core->offset;
-		cur->view->refresh = true;
+		set_panel_addr (core, cur, core->offset);
 		goto repeat;
 	}
 
@@ -4952,8 +4976,7 @@ repeat:
 					r_core_seek (core, addr, 1);
 				}
 			}
-			cur->model->addr = core->offset;
-			cur->view->refresh = true;
+			set_panel_addr (core, cur, core->offset);
 		}
 		break;
 	case '?':
@@ -4968,14 +4991,14 @@ repeat:
 	case 's':
 		panelSingleStepIn (core);
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		}
 		setRefreshAll (core, false);
 		break;
 	case 'S':
 		panelSingleStepOver (core);
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		}
 		setRefreshAll (core, false);
 		break;
@@ -4988,7 +5011,7 @@ repeat:
 		break;
 	case ':':
 		r_core_visual_prompt_input (core);
-		cur->model->addr = core->offset;
+		set_panel_addr (core, cur, core->offset);
 		setRefreshAll (core, false);
 		break;
 	case 'c':
@@ -5108,20 +5131,18 @@ repeat:
 	case 'n':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
-			cur->model->addr = core->offset;
-			cur->view->refresh = true;
+			set_panel_addr (core, cur, core->offset);
 		}
 		break;
 	case 'N':
 		if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
-			cur->model->addr = core->offset;
-			cur->view->refresh = true;
+			set_panel_addr (core, cur, core->offset);
 		}
 		break;
 	case 'x':
 		r_core_visual_refs (core, true, true);
-		cur->model->addr = core->offset;
+		set_panel_addr (core, cur, core->offset);
 		setRefreshAll (core, false);
 		break;
 	case 'X':
@@ -5164,8 +5185,7 @@ repeat:
 		r_core_visual_showcursor (core, true);
 		r_core_visual_offset (core);
 		r_core_visual_showcursor (core, false);
-		cur->model->addr = core->offset;
-		cur->view->refresh = true;
+		set_panel_addr (core, cur, core->offset);
 		break;
 	case 'G':
 		if (checkFunc (core)) {
@@ -5255,7 +5275,7 @@ repeat:
 			r_cons_canvas_free (can);
 			panels->can = NULL;
 
-			replaceCmd (core, PANEL_TITLE_DECOMPILER, "pdc", 1);
+			replaceCmd (core, PANEL_TITLE_DECOMPILER, PANEL_CMD_DECOMPILER, 1);
 
 			int h, w = r_cons_get_size (&h);
 			panels->can = createNewCanvas (core, w, h);
@@ -5341,7 +5361,7 @@ repeat:
 		} else {
 			if (check_panel_type (cur, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 				panelContinue (core);
-				cur->model->addr = core->offset;
+				set_panel_addr (core, cur, core->offset);
 				setRefreshAll (core, false);
 			}
 		}
