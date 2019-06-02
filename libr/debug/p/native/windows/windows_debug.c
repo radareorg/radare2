@@ -476,7 +476,7 @@ int w32_detach(RDebug *dbg, int pid) {
 		return false;
 	}
 	RIOW32Dbg *rio = dbg->user;
-	bool ret;
+	bool ret = false;
 	if (rio->debug) {
 		ret = DebugActiveProcessStop (pid);
 	}
@@ -1021,7 +1021,7 @@ static const char *__resolve_path(HANDLE ph) {
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
-	if(th == INVALID_HANDLE_VALUE) {
+	if (th == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("w32_thread_list/CreateToolhelp32Snapshot");
 		return list;
 	}
