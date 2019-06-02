@@ -1013,6 +1013,7 @@ R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, con
 	return r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, obj);
 }
 
+// NOTE: this functiona works as expected, but  we need to merge bfid and boid
 R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	r_return_val_if_fail (bin, false);
 
