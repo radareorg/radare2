@@ -105,17 +105,29 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 	return esil;
 }
 
-R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) {
+R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop) {
 	char t[128];
 	if (!code || !op || !strlen (op) || !esil || !esil->ops) {
 		return false;
 	}
 	char *h = sdb_itoa (sdb_hash (op), t, 16);
-	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
-	if (!sdb_num_exists (esil->ops, h)) {
-		eprintf ("can't set esil-op %s\n", op);
-		return false;
+	RAnalEsilOp *operation = sdb_num_get (esil->ops, h, 0);
+	if (!operation) {
+		operation = R_NEW (RAnalEsilOpCb);
+		if (!operation) {
+			eprintf ("cannot allocate esil-operation %s\n", op);
+			return false;
+		}
+		sdb_num_set (esil->ops, h, (ut64)(size_t)operation, 0);
+		if (!sdb_num_exists (esil->ops, h)) {
+			eprintf ("cannot set esil-operation %s\n", op);
+			free (operation);
+			return false;
+		}
 	}
+	operation->push = push;
+	operation->pop = pop;
+	operation->code = code;
 	return true;
 }
 
@@ -150,6 +162,12 @@ R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
 	return false;
 }
 
+static int esil_ops_free_cb(void *user, const char *k, const char *v) {
+	RAnalEsilOp *op = (RAnalEsilOp *)(size_t)sdb_atoi (v);
+	free (op);
+	return true;
+}
+
 R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (!esil) {
 		return;
@@ -157,6 +175,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
+	sdb_foreach (esil->ops, esil_ops_free_cb, NULL);
 	sdb_free (esil->ops);
 	esil->ops = NULL;
 	r_anal_esil_interrupts_fini (esil);
@@ -2740,14 +2759,14 @@ static int iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 	char t[128];
 	char *h = sdb_itoa (sdb_hash (word), t, 16);
 	if (sdb_num_exists (esil->ops, h)) {
-		*op = (RAnalEsilOp)(size_t)sdb_num_get (esil->ops, h, 0);
+		op = (RAnalEsilOp *)(size_t)sdb_num_get (esil->ops, h, 0);
 		return true;
 	}
 	return false;
 }
 
 static int runword(RAnalEsil *esil, const char *word) {
-	RAnalEsilOp op = NULL;
+	RAnalEsilOp *op = NULL;
 	if (!word) {
 		return 0;
 	}
@@ -2777,7 +2796,7 @@ static int runword(RAnalEsil *esil, const char *word) {
 			r_anal_esil_parse (esil, esil->Reil->if_buf);
 			return 1;
 		}
-		if (iscommand (esil, word, &op)) {
+		if (iscommand (esil, word, op)) {
 			esil->Reil->cmd_count++;
 		}
 		return 1;
@@ -2801,7 +2820,7 @@ static int runword(RAnalEsil *esil, const char *word) {
 		return 1;
 	}
 
-	if (iscommand (esil, word, &op)) {
+	if (iscommand (esil, word, op)) {
 		// run action
 		if (op) {
 			if (esil->cb.hook_command) {
@@ -2809,7 +2828,9 @@ static int runword(RAnalEsil *esil, const char *word) {
 					return 1; // XXX cannot return != 1
 				}
 			}
-			const ut64 ret = op (esil);
+			esil->current_opstr = word;
+			const ut64 ret = op->code (esil);
+			esil->current_opstr = NULL;
 			if (!ret) {
 				if (esil->verbose) {
 					eprintf ("%s returned 0\n", word);
@@ -3050,149 +3071,149 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 }
 
 static void r_anal_esil_setup_ops(RAnalEsil *esil) {
-#define OP(x, y) r_anal_esil_set_op (esil, x, y)
-	OP ("$", esil_interrupt);
-	OP ("$z", esil_zf);
-	OP ("$c", esil_cf);
-	OP ("$b", esil_bf);
-	OP ("$p", esil_pf);
-	OP ("$s", esil_sf);
-	OP ("$o", esil_of);
-	OP ("$ds", esil_ds);
-	OP ("$jt", esil_jt);
-	OP ("$js", esil_js);
-	OP ("$r", esil_rs);
-	OP ("$$", esil_address);
-	OP ("==", esil_cmp);
-	OP ("<", esil_smaller);
-	OP (">", esil_bigger);
-	OP ("<=", esil_smaller_equal);
-	OP (">=", esil_bigger_equal);
-	OP ("?{", esil_if);
-	OP ("<<", esil_lsl);
-	OP ("<<=", esil_lsleq);
-	OP (">>", esil_lsr);
-	OP (">>=", esil_lsreq);
-	OP (">>>>", esil_asr);
-	OP (">>>>=", esil_asreq);
-	OP (">>>", esil_ror);
-	OP ("<<<", esil_rol);
-	OP ("&", esil_and);
-	OP ("&=", esil_andeq);
-	OP ("}", esil_nop); // just to avoid push
-	OP ("|", esil_or);
-	OP ("|=", esil_oreq);
-	OP ("!", esil_neg);
-	OP ("!=", esil_negeq);
-	OP ("=", esil_eq);
-	OP (":=", esil_weak_eq);
-	OP ("*", esil_mul);
-	OP ("*=", esil_muleq);
-	OP ("^", esil_xor);
-	OP ("^=", esil_xoreq);
-	OP ("+", esil_add);
-	OP ("+=", esil_addeq);
-	OP ("++", esil_inc);
-	OP ("++=", esil_inceq);
-	OP ("-", esil_sub);
-	OP ("-=", esil_subeq);
-	OP ("--", esil_dec);
-	OP ("--=", esil_deceq);
-	OP ("/", esil_div);
-	OP ("/=", esil_diveq);
-	OP ("%", esil_mod);
-	OP ("%=", esil_modeq);
-	OP ("=[]", esil_poke);
-	OP ("=[1]", esil_poke1);
-	OP ("=[2]", esil_poke2);
-	OP ("=[3]", esil_poke3);
-	OP ("=[4]", esil_poke4);
-	OP ("=[8]", esil_poke8);
-	OP ("=[16]", esil_poke16);
-	OP ("|=[]", esil_mem_oreq);
-	OP ("|=[1]", esil_mem_oreq1);
-	OP ("|=[2]", esil_mem_oreq2);
-	OP ("|=[4]", esil_mem_oreq4);
-	OP ("|=[8]", esil_mem_oreq8);
-	OP ("^=[]", esil_mem_xoreq);
-	OP ("^=[1]", esil_mem_xoreq1);
-	OP ("^=[2]", esil_mem_xoreq2);
-	OP ("^=[4]", esil_mem_xoreq4);
-	OP ("^=[8]", esil_mem_xoreq8);
-	OP ("&=[]", esil_mem_andeq);
-	OP ("&=[1]", esil_mem_andeq1);
-	OP ("&=[2]", esil_mem_andeq2);
-	OP ("&=[4]", esil_mem_andeq4);
-	OP ("&=[8]", esil_mem_andeq8);
-	OP ("+=[]", esil_mem_addeq);
-	OP ("+=[1]", esil_mem_addeq1);
-	OP ("+=[2]", esil_mem_addeq2);
-	OP ("+=[4]", esil_mem_addeq4);
-	OP ("+=[8]", esil_mem_addeq8);
-	OP ("-=[]", esil_mem_subeq);
-	OP ("-=[1]", esil_mem_subeq1);
-	OP ("-=[2]", esil_mem_subeq2);
-	OP ("-=[4]", esil_mem_subeq4);
-	OP ("-=[8]", esil_mem_subeq8);
-	OP ("%=[]", esil_mem_modeq);
-	OP ("%=[1]", esil_mem_modeq1);
-	OP ("%=[2]", esil_mem_modeq2);
-	OP ("%=[4]", esil_mem_modeq4);
-	OP ("%=[8]", esil_mem_modeq8);
-	OP ("/=[]", esil_mem_diveq);
-	OP ("/=[1]", esil_mem_diveq1);
-	OP ("/=[2]", esil_mem_diveq2);
-	OP ("/=[4]", esil_mem_diveq4);
-	OP ("/=[8]", esil_mem_diveq8);
-	OP ("*=[]", esil_mem_muleq);
-	OP ("*=[1]", esil_mem_muleq1);
-	OP ("*=[2]", esil_mem_muleq2);
-	OP ("*=[4]", esil_mem_muleq4);
-	OP ("*=[8]", esil_mem_muleq8);
-	OP ("++=[]", esil_mem_inceq);
-	OP ("++=[1]", esil_mem_inceq1);
-	OP ("++=[2]", esil_mem_inceq2);
-	OP ("++=[4]", esil_mem_inceq4);
-	OP ("++=[8]", esil_mem_inceq8);
-	OP ("--=[]", esil_mem_deceq);
-	OP ("--=[1]", esil_mem_deceq1);
-	OP ("--=[2]", esil_mem_deceq2);
-	OP ("--=[4]", esil_mem_deceq4);
-	OP ("--=[8]", esil_mem_deceq8);
-        OP ("<<=[]", esil_mem_lsleq);
-	OP ("<<=[1]", esil_mem_lsleq1);
-	OP ("<<=[2]", esil_mem_lsleq2);
-	OP ("<<=[4]", esil_mem_lsleq4);
-	OP ("<<=[8]", esil_mem_lsleq8);
-	OP (">>=[]", esil_mem_lsreq);
-	OP (">>=[1]", esil_mem_lsreq1);
-	OP (">>=[2]", esil_mem_lsreq2);
-	OP (">>=[4]", esil_mem_lsreq4);
-	OP (">>=[8]", esil_mem_lsreq8);
-	OP ("[]", esil_peek);
-	OP ("[*]", esil_peek_some);
-	OP ("=[*]", esil_poke_some);
-	OP ("[1]", esil_peek1);
-	OP ("[2]", esil_peek2);
-	OP ("[3]", esil_peek3);
-	OP ("[4]", esil_peek4);
-	OP ("[8]", esil_peek8);
-	OP ("[16]", esil_peek16);
-	OP ("STACK", r_anal_esil_dumpstack);
-	OP ("REPEAT", esil_repeat);
-	OP ("POP", esil_pop);
-	OP ("TODO", esil_todo);
-	OP ("GOTO", esil_goto);
-	OP ("BREAK", esil_break);
-	OP ("CLEAR", esil_clear);
-	OP ("DUP", esil_dup);
-	OP ("NUM", esil_num);
-	OP ("SWAP", esil_swap);
-	OP ("TRAP", esil_trap);
-	OP ("BITS", esil_bits);
-	OP ("SETJT", esil_set_jump_target);
-	OP ("SETJTS", esil_set_jump_target_set);
-	OP ("SETD", esil_set_delay_slot);
+#define OP(w, x, y, z) r_anal_esil_set_op (esil, w, x, y, z)
+	OP ("$", esil_interrupt, 0, 1);
+	OP ("$z", esil_zf, 1, 0);
+	OP ("$c", esil_cf, 1, 1);
+	OP ("$b", esil_bf, 1, 1);
+	OP ("$p", esil_pf, 1, 0);
+	OP ("$s", esil_sf, 1, 0);
+	OP ("$o", esil_of, 1, 0);
+	OP ("$ds", esil_ds, 1, 0);
+	OP ("$jt", esil_jt, 1, 0);
+	OP ("$js", esil_js, 1, 0);
+	OP ("$r", esil_rs, 1, 0);
+	OP ("$$", esil_address, 1, 0);
+	OP ("==", esil_cmp, 0, 2);
+	OP ("<", esil_smaller, 1, 2);
+	OP (">", esil_bigger, 1, 2);
+	OP ("<=", esil_smaller_equal, 1, 2);
+	OP (">=", esil_bigger_equal, 1, 2);
+	OP ("?{", esil_if, 0, 1);
+	OP ("<<", esil_lsl, 1, 2);
+	OP ("<<=", esil_lsleq, 0, 2);
+	OP (">>", esil_lsr, 1, 2);
+	OP (">>=", esil_lsreq, 0, 2);
+	OP (">>>>", esil_asr, 1, 2);
+	OP (">>>>=", esil_asreq, 0, 2);
+	OP (">>>", esil_ror, 1, 2);
+	OP ("<<<", esil_rol, 1, 2);
+	OP ("&", esil_and, 1, 2);
+	OP ("&=", esil_andeq, 0, 2);
+	OP ("}", esil_nop, 0, 0); // just to avoid push
+	OP ("|", esil_or, 1, 2);
+	OP ("|=", esil_oreq, 0, 2);
+	OP ("!", esil_neg, 1, 1);
+	OP ("!=", esil_negeq, 0, 1);
+	OP ("=", esil_eq, 0, 2);
+	OP (":=", esil_weak_eq, 0, 2);
+	OP ("*", esil_mul, 1, 2);
+	OP ("*=", esil_muleq, 0, 2);
+	OP ("^", esil_xor, 1, 2);
+	OP ("^=", esil_xoreq, 0, 2);
+	OP ("+", esil_add, 1, 2);
+	OP ("+=", esil_addeq, 0, 2);
+	OP ("++", esil_inc, 1, 1);
+	OP ("++=", esil_inceq, 0, 1);
+	OP ("-", esil_sub, 1, 2);
+	OP ("-=", esil_subeq, 0, 2);
+	OP ("--", esil_dec, 1, 1);
+	OP ("--=", esil_deceq, 0, 1);
+	OP ("/", esil_div, 1, 2);
+	OP ("/=", esil_diveq, 0, 2);
+	OP ("%", esil_mod, 1, 2);
+	OP ("%=", esil_modeq, 0, 2);
+	OP ("=[]", esil_poke, 0, 2);
+	OP ("=[1]", esil_poke1, 0, 2);
+	OP ("=[2]", esil_poke2, 0, 2);
+	OP ("=[3]", esil_poke3, 0, 2);
+	OP ("=[4]", esil_poke4, 0, 2);
+	OP ("=[8]", esil_poke8, 0, 2);
+	OP ("=[16]", esil_poke16, 0, 2);
+	OP ("|=[]", esil_mem_oreq, 0, 2);
+	OP ("|=[1]", esil_mem_oreq1, 0, 2);
+	OP ("|=[2]", esil_mem_oreq2, 0, 2);
+	OP ("|=[4]", esil_mem_oreq4, 0, 2);
+	OP ("|=[8]", esil_mem_oreq8, 0, 2);
+	OP ("^=[]", esil_mem_xoreq, 0, 2);
+	OP ("^=[1]", esil_mem_xoreq1, 0, 2);
+	OP ("^=[2]", esil_mem_xoreq2, 0, 2);
+	OP ("^=[4]", esil_mem_xoreq4, 0, 2);
+	OP ("^=[8]", esil_mem_xoreq8, 0, 2);
+	OP ("&=[]", esil_mem_andeq, 0, 2);
+	OP ("&=[1]", esil_mem_andeq1, 0, 2);
+	OP ("&=[2]", esil_mem_andeq2, 0, 2);
+	OP ("&=[4]", esil_mem_andeq4, 0, 2);
+	OP ("&=[8]", esil_mem_andeq8, 0, 2);
+	OP ("+=[]", esil_mem_addeq, 0, 2);
+	OP ("+=[1]", esil_mem_addeq1, 0, 2);
+	OP ("+=[2]", esil_mem_addeq2, 0, 2);
+	OP ("+=[4]", esil_mem_addeq4, 0, 2);
+	OP ("+=[8]", esil_mem_addeq8, 0, 2);
+	OP ("-=[]", esil_mem_subeq, 0, 2);
+	OP ("-=[1]", esil_mem_subeq1, 0, 2);
+	OP ("-=[2]", esil_mem_subeq2, 0, 2);
+	OP ("-=[4]", esil_mem_subeq4, 0, 2);
+	OP ("-=[8]", esil_mem_subeq8, 0, 2);
+	OP ("%=[]", esil_mem_modeq, 0, 2);
+	OP ("%=[1]", esil_mem_modeq1, 0, 2);
+	OP ("%=[2]", esil_mem_modeq2, 0, 2);
+	OP ("%=[4]", esil_mem_modeq4, 0, 2);
+	OP ("%=[8]", esil_mem_modeq8, 0, 2);
+	OP ("/=[]", esil_mem_diveq, 0, 2);
+	OP ("/=[1]", esil_mem_diveq1, 0, 2);
+	OP ("/=[2]", esil_mem_diveq2, 0, 2);
+	OP ("/=[4]", esil_mem_diveq4, 0, 2);
+	OP ("/=[8]", esil_mem_diveq8, 0, 2);
+	OP ("*=[]", esil_mem_muleq, 0, 2);
+	OP ("*=[1]", esil_mem_muleq1, 0, 2);
+	OP ("*=[2]", esil_mem_muleq2, 0, 2);
+	OP ("*=[4]", esil_mem_muleq4, 0, 2);
+	OP ("*=[8]", esil_mem_muleq8, 0, 2);
+	OP ("++=[]", esil_mem_inceq, 0, 1);
+	OP ("++=[1]", esil_mem_inceq1, 0, 1);
+	OP ("++=[2]", esil_mem_inceq2, 0, 1);
+	OP ("++=[4]", esil_mem_inceq4, 0, 1);
+	OP ("++=[8]", esil_mem_inceq8, 0, 1);
+	OP ("--=[]", esil_mem_deceq, 0, 1);
+	OP ("--=[1]", esil_mem_deceq1, 0, 1);
+	OP ("--=[2]", esil_mem_deceq2, 0, 1);
+	OP ("--=[4]", esil_mem_deceq4, 0, 1);
+	OP ("--=[8]", esil_mem_deceq8, 0, 1);
+        OP ("<<=[]", esil_mem_lsleq, 0, 2);
+	OP ("<<=[1]", esil_mem_lsleq1, 0, 2);
+	OP ("<<=[2]", esil_mem_lsleq2, 0, 2);
+	OP ("<<=[4]", esil_mem_lsleq4, 0, 2);
+	OP ("<<=[8]", esil_mem_lsleq8, 0, 2);
+	OP (">>=[]", esil_mem_lsreq, 0, 2);
+	OP (">>=[1]", esil_mem_lsreq1, 0, 2);
+	OP (">>=[2]", esil_mem_lsreq2, 0, 2);
+	OP (">>=[4]", esil_mem_lsreq4, 0, 2);
+	OP (">>=[8]", esil_mem_lsreq8, 0, 2);
+	OP ("[]", esil_peek, 1, 1);
+	OP ("[*]", esil_peek_some, 0, 0);
+	OP ("=[*]", esil_poke_some, 0, 0);
+	OP ("[1]", esil_peek1, 1, 1);
+	OP ("[2]", esil_peek2, 1, 1);
+	OP ("[3]", esil_peek3, 1, 1);
+	OP ("[4]", esil_peek4, 1, 1);
+	OP ("[8]", esil_peek8, 1, 1);
+	OP ("[16]", esil_peek16, 1, 1);
+	OP ("STACK", r_anal_esil_dumpstack, 0, 0);
+	OP ("REPEAT", esil_repeat, 0, 0);
+	OP ("POP", esil_pop, 0, 1);
+	OP ("TODO", esil_todo, 0, 0);
+	OP ("GOTO", esil_goto, 0, 1);
+	OP ("BREAK", esil_break, 0, 0);
+	OP ("CLEAR", esil_clear, 0, 0);
+	OP ("DUP", esil_dup, 1, 0);
+	OP ("NUM", esil_num, 1, 1);
+	OP ("SWAP", esil_swap, 2, 2);
+	OP ("TRAP", esil_trap, 0, 0);
+	OP ("BITS", esil_bits, 1, 0);
+	OP ("SETJT", esil_set_jump_target, 0, 1);
+	OP ("SETJTS", esil_set_jump_target_set, 0, 1);
+	OP ("SETD", esil_set_delay_slot, 0, 1);
 }
 
 /* register callbacks using this anal module. */
