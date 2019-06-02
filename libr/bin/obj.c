@@ -432,8 +432,7 @@ R_IPI RBNode *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 
 	static bool first = true;
 	// r_bin_object_set_items set o->relocs but there we don't have access
-	// to io
-	// so we need to be run from bin_relocs, free the previous reloc and get
+	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
 	if (first && o->plugin && o->plugin->patch_relocs) {
 		RList *tmp = o->plugin->patch_relocs (bin);
@@ -455,16 +454,14 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (bf && arch && name, NULL);
+	r_return_val_if_fail (bf && bf->o && arch && name, NULL);
 	RBinObject *obj = bf->o;
-	if (obj) {
-		RBinInfo *info = obj->info;
-		if (info && info->arch && info->file &&
-				(bits == info->bits) &&
-				!strcmp (info->arch, arch) &&
-				!strcmp (info->file, name)) {
-			return obj;
-		}
+	RBinInfo *info = obj->info;
+	if (info && info->arch && info->file &&
+			(bits == info->bits) &&
+			!strcmp (info->arch, arch) &&
+			!strcmp (info->file, name)) {
+		return obj;
 	}
 	return NULL;
 }
@@ -474,32 +471,32 @@ R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
 	return o->baddr + o->baddr_shift;
 }
 
-R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
-	RBinFile *binfile = NULL;
+R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id, ut32 bo_id) {
+	RBinFile *bf = NULL;
 	RBinObject *obj = NULL;
 	bool res = false;
 
 	r_return_val_if_fail (bin, false);
 
-	if (binfile_id == UT32_MAX) {
-		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
-		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
-	} else if (binobj_id == UT32_MAX) {
-		binfile = r_bin_file_find_by_id (bin, binfile_id);
-		obj = binfile ? binfile->o : NULL;
+	if (bf_id == UT32_MAX) {
+		bf = r_bin_file_find_by_object_id (bin, bo_id);
+		obj = bf ? r_bin_file_object_find_by_id (bf, bo_id) : NULL;
+	} else if (bo_id == UT32_MAX) {
+		bf = r_bin_file_find_by_id (bin, bf_id);
+		obj = bf ? bf->o : NULL;
 	} else {
-		binfile = r_bin_file_find_by_id (bin, binfile_id);
-		obj = binfile ? r_bin_file_object_find_by_id (binfile, binobj_id) : NULL;
+		bf = r_bin_file_find_by_id (bin, bf_id);
+		obj = bf ? r_bin_file_object_find_by_id (bf, bo_id) : NULL;
 	}
-	if (binfile && bin->cur == binfile) {
+	if (bf && bin->cur == bf) {
 		bin->cur = NULL;
 	}
 
-	if (binfile) {
-		binfile->o = NULL;
+	if (bf) {
+		bf->o = NULL;
 	}
-	if (binfile && obj && !binfile->o) {
-		r_list_delete_data (bin->binfiles, binfile);
+	if (bf && obj && !bf->o) {
+		r_list_delete_data (bin->binfiles, bf);
 	}
 	return res;
 }
@@ -545,15 +542,13 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 }
 
 R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
-	RListIter *it, *it2, *it3;
+	RListIter *it, *it2;
 	RBinFile *bf;
-	RBinObject *obj;
 	RBinSection *s;
 	r_list_foreach (bin->binfiles, it, bf) {
-		RBinObject *obj = bf->o;
-		r_list_foreach (obj->sections, it3, s) {
+		r_list_foreach (bf->o->sections, it2, s) {
 			if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
-				return bf; // obj;
+				return bf;
 			}
 		}
 	}
