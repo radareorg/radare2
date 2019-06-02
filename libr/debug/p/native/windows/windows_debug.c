@@ -1241,6 +1241,7 @@ RList *w32_desc_list(int pid) {
 		handleInfo = (PSYSTEM_HANDLE_INFORMATION)realloc (handleInfo, handleInfoSize *= 2);
 	if (status) {
 		r_sys_perror ("win_desc_list/NtQuerySystemInformation");
+		CloseHandle (ph);
 		r_list_free (ret);
 		return NULL;
 	}
