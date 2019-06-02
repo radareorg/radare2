@@ -343,7 +343,6 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 	bf->sdb = sdb;
 	bf->size = file_sz;
 	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
-	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	bf->xtr_obj = NULL;
 	bf->sdb = sdb_new0 ();
 	bf->sdb_addrinfo = sdb_new0 (); //ns (bf->sdb, "addrinfo", 1);
@@ -460,17 +459,8 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bi
 	return binfile;
 }
 
-R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id) {
-	RBinObject *obj;
-	RListIter *iter;
-	if (binfile) {
-		r_list_foreach (binfile->objs, iter, obj) {
-			if (obj->id == binobj_id) {
-				return obj;
-			}
-		}
-	}
-	return NULL;
+R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *bf, ut32 binobj_id) {
+	return (bf && bf->o->id == binobj_id)? bf->o: NULL;
 }
 
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id) {
@@ -646,7 +636,6 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 	}
 	free (bf->file);
 	bf->o = NULL;
-	r_list_free (bf->objs);
 	r_list_free (bf->xtr_data);
 	if (bf->id != -1) {
 		// TODO: use r_storage api

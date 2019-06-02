@@ -185,7 +185,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
 	r_bin_object_set_items (bf, o);
-	r_list_append (bf->objs, o);
 	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
 
 	bf->sdb_info = o->kv;
@@ -262,17 +261,15 @@ static RBNode *list2rbtree(RList *relocs) {
 }
 
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
-	RBinObject *old_o;
-	RBinPlugin *cp;
-	int i, minlen;
+	int i;
 	bool isSwift = false;
 
 	r_return_val_if_fail (binfile && o && o->plugin, false);
 
 	RBin *bin = binfile->rbin;
-	old_o = binfile->o;
-	cp = o->plugin;
-	minlen = (binfile->rbin->minstrlen > 0) ? binfile->rbin->minstrlen : cp->minstrlen;
+	RBinObject *old_o = binfile->o;
+	RBinPlugin *cp = o->plugin;
+	int minlen = (binfile->rbin->minstrlen > 0) ? binfile->rbin->minstrlen : cp->minstrlen;
 	binfile->o = o;
 
 	if (cp->file_type) {
@@ -457,20 +454,16 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 	return bin->cur->o;
 }
 
-R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {
-	RBinObject *obj = NULL;
-	RListIter *iter = NULL;
+R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
+	r_return_val_if_fail (bf && arch && name, NULL);
+	RBinObject *obj = bf->o;
 
-	r_return_val_if_fail (binfile && arch && name, NULL);
-
-	r_list_foreach (binfile->objs, iter, obj) {
-		RBinInfo *info = obj->info;
-		if (info && info->arch && info->file &&
-			(bits == info->bits) &&
-			!strcmp (info->arch, arch) &&
-			!strcmp (info->file, name)) {
-			return obj;
-		}
+	RBinInfo *info = obj->info;
+	if (info && info->arch && info->file &&
+		(bits == info->bits) &&
+		!strcmp (info->arch, arch) &&
+		!strcmp (info->file, name)) {
+		return obj;
 	}
 	return NULL;
 }
@@ -503,12 +496,8 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 
 	if (binfile) {
 		binfile->o = NULL;
-		r_list_delete_data (binfile->objs, obj);
-		RBinObject *newObj = (RBinObject *)r_list_get_n (binfile->objs, 0);
-		res = newObj && binfile &&
-		      r_bin_file_set_cur_binfile_obj (bin, binfile, newObj);
 	}
-	if (binfile && obj && r_list_length (binfile->objs) == 0) {
+	if (binfile && obj && !binfile->o) {
 		r_list_delete_data (bin->binfiles, binfile);
 	}
 	return res;
@@ -560,11 +549,10 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
 	RBinObject *obj;
 	RBinSection *s;
 	r_list_foreach (bin->binfiles, it, bf) {
-		r_list_foreach (bf->objs, it2, obj) {
-			r_list_foreach (obj->sections, it3, s) {
-				if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
-					return bf; // obj;
-				}
+		RBinObject *obj = bf->o;
+		r_list_foreach (obj->sections, it3, s) {
+			if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
+				return bf; // obj;
 			}
 		}
 	}
