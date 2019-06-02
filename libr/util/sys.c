@@ -116,8 +116,8 @@ R_API int r_sys_fork() {
 #endif
 }
 
-R_API void r_sys_exit(int status, bool immediately) {
-	if (immediately) {
+R_API void r_sys_exit(int status, bool nocleanup) {
+	if (nocleanup) {
 		_exit (status);
 	} else {
 		exit (status);
