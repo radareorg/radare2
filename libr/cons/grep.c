@@ -789,7 +789,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		if (!unsorted_lines) {
 			unsorted_lines = r_list_newf (free);
 		}
-		if (cons->lines > grep->sort_row) {
+		if (cons->lines >= grep->sort_row) {
 			r_list_append (sorted_lines, strdup (buf));
 		} else {
 			r_list_append (unsorted_lines, strdup (buf));
