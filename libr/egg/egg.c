@@ -343,6 +343,10 @@ R_API int r_egg_compile(REgg *egg) {
 	r_egg_lang_init (egg);
 	for (; b; ) {
 		r_egg_lang_parsechar (egg, b);
+		if (egg->lang.elem_n >= sizeof (egg->lang.elem)) {
+			eprintf ("ERROR: elem too large.\n");
+			break;
+		}
 		int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
 		if (r != sizeof (b)) {
 			break;
