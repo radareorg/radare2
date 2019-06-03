@@ -491,8 +491,7 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 	if (rio->ph) {
 		return true;
 	}
-	// TODO: implement proper support
-#if 0
+	// hack to support w32dbg:// and attach://
 	DEBUG_EVENT de;
 	de.dwProcessId = pid;
 	de.dwThreadId = tid;
@@ -513,7 +512,9 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 						}
 					} break;
 				case EXCEPTION_DEBUG_EVENT:
-					// TODO: check for the type of exception?
+					if (de.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) {
+						eprintf ("w32_select/Unhandled exception %d\n", de.u.Exception.ExceptionRecord.ExceptionCode);
+					}
 					cont = false;
 					break;
 				default:
@@ -523,7 +524,6 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 			}
 		}
 	} while (cont);
-#endif
 	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (!rio->ph) {
 		return false;
@@ -837,7 +837,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DEBUG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
-			dllname = __get_file_name_from_handle (de.u.LoadDll.hFile);
+			dllname = __resolve_path (de.u.LoadDll.hFile); //__get_file_name_from_handle
 			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
 			__r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 			if (dllname) {
