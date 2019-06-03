@@ -2552,6 +2552,12 @@ static const char *cpusubtype_tostring (ut32 cputype, ut32 cpusubtype) {
 		default:			return "Unknown hppa subtype";
 		}
 	case CPU_TYPE_ARM64:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_ARM64_ALL:	return "all";
+		case CPU_SUBTYPE_ARM64_V8:	return "arm64v8";
+		case CPU_SUBTYPE_ARM64E:	return "arm64e";
+		default:			return "Unknown arm64 subtype";
+		}
 		return "v8";
 	case CPU_TYPE_ARM:
 		switch (cpusubtype & 0xff) {
