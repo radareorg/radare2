@@ -776,6 +776,44 @@ static void *__r_debug_findthread(int pid, int tid) {
 	return NULL;
 }
 
+static const char *__resolve_path(HANDLE ph) {
+	// TODO: add maximum path length support
+	const DWORD maxlength = MAX_PATH;
+	TCHAR filename[MAX_PATH];
+	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
+	if (length > 0) {
+		return r_sys_conv_win_to_utf8 (filename);
+	}
+	// Upon failure fallback to GetProcessImageFileName
+	length = GetProcessImageFileName (ph, filename, maxlength);
+	if (length == 0) {
+		return NULL;
+	}
+	// Convert NT path to win32 path
+	TCHAR *tmp = _tcschr (filename + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	tmp = _tcschr (tmp + 1, '\\');
+	if (!tmp) {
+		return NULL;
+	}
+	length = tmp - filename;
+	TCHAR device[MAX_PATH];
+	const char *ret = NULL;
+	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+		if (QueryDosDevice (drv, device, maxlength) > 0) {
+			if (!_tcsncmp (filename, device, length)) {
+				TCHAR path[MAX_PATH];
+				_sntprintf (path, maxlength, "%s%s", drv, &tmp[1]);
+				ret = r_sys_conv_win_to_utf8 (path);
+				break;
+			}
+		}
+	}
+	return ret;
+}
+
 int w32_dbg_wait(RDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
@@ -978,44 +1016,6 @@ int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 	RIOW32Dbg *rio = dbg->user;
 	return VirtualProtectEx (rio->ph, (LPVOID)(size_t)addr,
 		size, __io_perms_to_prot (perms), &old);
-}
-
-static const char *__resolve_path(HANDLE ph) {
-	// TODO: add maximum path length support
-	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
-	DWORD length = GetModuleFileNameEx (ph, NULL, filename, maxlength);
-	if (length > 0) {
-		return r_sys_conv_win_to_utf8 (filename);
-	}
-	// Upon failure fallback to GetProcessImageFileName
-	length = GetProcessImageFileName (ph, filename, maxlength);
-	if (length == 0) {
-		return NULL;
-	}
-	// Convert NT path to win32 path
-	TCHAR *tmp = _tcschr (filename + 1, '\\');
-	if (!tmp) {
-		return NULL;
-	}
-	tmp = _tcschr (tmp + 1, '\\');
-	if (!tmp) {
-		return NULL;
-	}
-	length = tmp - filename;
-	TCHAR device[MAX_PATH];
-	const char *ret = NULL;
-	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-		if (QueryDosDevice (drv, device, maxlength) > 0) {
-			if (!_tcsncmp (filename, device, length)) {
-				TCHAR path[MAX_PATH];
-				_sntprintf (path, maxlength, "%s%s", drv, &tmp[1]);
-				ret = r_sys_conv_win_to_utf8 (path);
-				break;
-			}
-		}
-	}
-	return ret;
 }
 
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
