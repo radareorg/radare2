@@ -4,10 +4,11 @@ ec b0x00 rgb:431
 ec b0x7f rgb:fd9
 ec b0xff rgb:960
 ec bin rgb:fec
+ec crypto bblue
 ec other rgb:ba6
 ec btext rgb:fec
-ec ucall white
-ec call white
+ec ucall bwhite
+ec call bwhite
 ec ujmp rgb:fec
 ec cjmp rgb:fec
 ec jmp rgb:fec
@@ -16,6 +17,7 @@ ec comment rgb:fd9
 ec usrcmt rgb:fff
 ec ret rgb:ab7
 ec fline rgb:ca6
+ec floc bcyan
 ec flow rgb:ca6
 ec flow2 rgb:fec
 ec fname rgb:bb7
@@ -37,16 +39,20 @@ ec trap rgb:431
 ec swi rgb:bb7
 ec creg rgb:960
 ec flag rgb:ffd
+ec wordhl bred
 ec linehl rgb:210
 ec graph.true rgb:fd9
 ec graph.false rgb:431
 ec graph.trufae rgb:fd9
-ec graph.current blue
-ec graph.traced blue
+ec graph.current bblue
+ec graph.traced bblue
 ec graph.box rgb:431
 ec graph.box2 rgb:ca6
 ec graph.box3 rgb:ca6
 ec graph.box4 rgb:ca6
+ec gui.cflow byellow
+ec gui.dataoffset byellow
+ec gui.alt_background bwhite
 
 ec func_var rgb:fd9
 ec func_var_type rgb:850
