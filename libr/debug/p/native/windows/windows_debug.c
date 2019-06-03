@@ -491,7 +491,8 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 	if (rio->ph) {
 		return true;
 	}
-	// hack to support w32dbg:// and attach://
+	// TODO: implement proper support
+#if 0
 	DEBUG_EVENT de;
 	de.dwProcessId = pid;
 	de.dwThreadId = tid;
@@ -511,12 +512,10 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 							CloseHandle (hf);
 						}
 					} break;
-#if 0
 				case EXCEPTION_DEBUG_EVENT:
 					// TODO: check for the type of exception?
 					cont = false;
 					break;
-#endif
 				default:
 					eprintf ("w32_select/Unhandled debug event %d\n", de.dwDebugEventCode);
 					break;
@@ -524,6 +523,7 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 			}
 		}
 	} while (cont);
+#endif
 	rio->ph = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 	if (!rio->ph) {
 		return false;
