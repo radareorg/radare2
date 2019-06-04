@@ -2752,7 +2752,7 @@ static void directionDisassemblyCb(void *user, int direction) {
 		} else {
 			r_core_visual_disasm_up (core, &cols);
 			r_core_seek_delta (core, -cols);
-			cur->model->addr = core->offset;
+			set_panel_addr (core, cur, core->offset);
 		}
 		return;
 	case DOWN:
