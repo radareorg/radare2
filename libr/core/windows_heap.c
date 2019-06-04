@@ -107,9 +107,15 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 	hb->extraInfo = NULL;
 
 	block = (PHeapBlockBasicInfo)heapInfo->Blocks;
+	if (!block) {
+		return false;
+	}
+
 	SIZE_T index = hb->index;
 	do {
-		if (index > heapInfo->BlockCount) return false;
+		if (index > heapInfo->BlockCount) {
+			return false;
+		}
 		hb->dwAddress = (void *)block[index].address;
 		hb->dwSize = block->size;
 		if (block[index].extra & EXTRA_FLAG) {
@@ -256,7 +262,7 @@ static PDEBUG_BUFFER InitHeapInfo(DWORD pid, DWORD mask) {
 		PVOID tmp = blocks;\
 		blocks = realloc (blocks, allocated);\
 		if (!blocks) {\
-			free (tmp);\
+			blocks = tmp;\
 			goto err;\
 		}\
 		memset ((BYTE *)blocks + old_alloc, 0, old_alloc);\
