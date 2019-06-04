@@ -454,7 +454,10 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin) {
 }
 
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
-	r_return_val_if_fail (bf && bf->o && arch && name, NULL);
+	r_return_val_if_fail (bf && arch && name, NULL);
+	if (!bf->o) {
+		return NULL;
+	}
 	RBinObject *obj = bf->o;
 	RBinInfo *info = obj->info;
 	if (info && info->arch && info->file &&
