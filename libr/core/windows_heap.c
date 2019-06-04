@@ -312,8 +312,10 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 		return false;
 	}
 
+	WPARAM RtlpHpHeapGlobalsOffset = ntdllOffset + 0x44A0; // ntdll!RtlpHpHeapGlobals
+
 	WPARAM lfhKey;
-	WPARAM lfhKeyLocation = ntdllOffset + 0x44A8; // ntdll!RtlpHpHeapGlobals + 0x8
+	WPARAM lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
 	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), &bytesRead)) {
 		r_sys_perror ("ReadProcessMemory");
 		eprintf ("LFH key not found.\n");
@@ -321,7 +323,8 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 	}
 
 	// LFH
-	for (int j = 0; j < 129; j++) {
+	byte numBuckets = _countof (segheapHeader.LfhContext.Buckets);
+	for (int j = 0; j < numBuckets; j++) {
 		if ((WPARAM)segheapHeader.LfhContext.Buckets[j] & 1) continue;
 		HEAP_LFH_BUCKET bucket;
 		ReadProcessMemory (h_proc, segheapHeader.LfhContext.Buckets[j], &bucket, sizeof (HEAP_LFH_BUCKET), &bytesRead);
@@ -367,7 +370,7 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 	}
 
 	WPARAM RtlpHpHeapGlobal;
-	ReadProcessMemory (h_proc, (PVOID)(lfhKeyLocation - sizeof (WPARAM)), &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
+	ReadProcessMemory (h_proc, (PVOID)(RtlpHpHeapGlobalsOffset), &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
 	// Backend Blocks (And VS)
 	for (int i = 0; i < 2; i++) {
 		HEAP_SEG_CONTEXT ctx = segheapHeader.SegContexts[i];
