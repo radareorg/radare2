@@ -100,6 +100,14 @@ struct {
 	{ "cyan",     RColor_CYAN,     Color_CYAN,     Color_BGCYAN },
 	{ "blue",     RColor_BLUE,     Color_BLUE,     Color_BGBLUE },
 	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
+	{ "bblack",   RColor_BBLACK,   Color_BBLACK,   Color_BBGBLACK },
+	{ "bred",     RColor_BRED,     Color_BRED,     Color_BBGRED },
+	{ "bwhite",   RColor_BWHITE,   Color_BWHITE,   Color_BBGWHITE },
+	{ "bgreen",   RColor_BGREEN,   Color_BGREEN,   Color_BBGGREEN },
+	{ "bmagenta", RColor_BMAGENTA, Color_BMAGENTA, Color_BBGMAGENTA },
+	{ "byellow",  RColor_BYELLOW,  Color_BYELLOW,  Color_BBGYELLOW },
+	{ "bcyan",    RColor_BCYAN,    Color_BCYAN,    Color_BBGCYAN },
+	{ "bblue",    RColor_BBLUE,    Color_BBLUE,    Color_BBGBLUE },
 	{ "none",     RColor_NULL,     Color_RESET,    Color_RESET },
 	{ NULL, RColor_NULL, NULL, NULL }
 };
@@ -173,7 +181,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.gui_alt_background = (RColor) RColor_WHITE;
 	ctx->cpal.gui_border         = (RColor) RColor_BLACK;
 	ctx->cpal.wordhl             = (RColor) RColor_BGRED;
-	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
+	ctx->cpal.linehl             = (RColor) RColor_BGBLUE;
 
 	ctx->cpal.func_var           = (RColor) RColor_WHITE;
 	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;

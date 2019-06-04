@@ -221,6 +221,8 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 		break;
 	case COLOR_MODE_16: // ansi 16 colors
 		{
+		ut8 bright = (r == 0x80 && g == 0x80 && b == 0x80) ? 53
+		             : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0;
 		fgbg -= 8;
 		if (r == g && g == b) {
 			r = (r > 0x7f) ? 1 : 0;
@@ -233,7 +235,7 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 			b = (b >= k) ? 1 : 0;
 		}
 		ut8 c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		written = snprintf (outstr + i, sz - i, "%dm", fgbg + c);
+		written = snprintf (outstr + i, sz - i, "%dm", fgbg + bright + c);
 		}
 		break;
 	default:
