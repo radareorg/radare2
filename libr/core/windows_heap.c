@@ -71,7 +71,9 @@
 
 static bool init_func() {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
-	if (!ntdll) return false;
+	if (!ntdll) {
+		return false;
+	}
 	if (!RtlCreateQueryDebugBuffer) {
 		RtlCreateQueryDebugBuffer = GetProcAddress (ntdll, "RtlCreateQueryDebugBuffer");
 	}
@@ -129,7 +131,6 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 	return true;
 }
 
-
 static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 	r_return_val_if_fail (heapInfo && hb, false);
 	PHeapBlockBasicInfo block;
@@ -137,11 +138,15 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 	block = (PHeapBlockBasicInfo)heapInfo->Blocks;
 	SIZE_T index = hb->index;
 
-	if (index > heapInfo->BlockCount) return false;
+	if (index > heapInfo->BlockCount) {
+		return false;
+	}
 
 	if (block[index].flags & 2) {
 		do {
-			if (index > heapInfo->BlockCount) return false;
+			if (index > heapInfo->BlockCount) {
+				return false;
+			}
 
 			// new address = curBlockAddress + Granularity;
 			hb->dwAddress = (void *)(block[index].address + heapInfo->Granularity);
@@ -290,6 +295,9 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 				(*blocks)[*count].size = subsegment.BlockOffsets.BlockSize;
 				(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
 				PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+				if (!extra) {
+					return false;
+				}
 				extra->segment = next;
 				extra->granularity = sizeof (HEAP_ENTRY);
 				(*blocks)[*count].extra = EXTRA_FLAG | (WPARAM)extra;
@@ -334,10 +342,14 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 		ReadProcessMemory (h_proc, paffinitySlot, &affinitySlot, sizeof (HEAP_LFH_AFFINITY_SLOT), &bytesRead);
 		WPARAM first = (WPARAM)paffinitySlot + offsetof (HEAP_LFH_SUBSEGMENT_OWNER, AvailableSubsegmentList);
 		WPARAM next = (WPARAM)affinitySlot.State.AvailableSubsegmentList.Flink;
-		if (!__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next)) return false;
+		if (!__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next)) {
+			return false;
+		}
 		first = (WPARAM)paffinitySlot + offsetof (HEAP_LFH_SUBSEGMENT_OWNER, FullSubsegmentList);
 		next = (WPARAM)affinitySlot.State.FullSubsegmentList.Flink;
-		if (!__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next)) return false;
+		if (!__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next)) {
+			return false;
+		}
 	}
 
 	// Large Blocks
@@ -378,7 +390,9 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 		HEAP_PAGE_SEGMENT pageSegment;
 		WPARAM currPageSegment = (WPARAM)ctx.SegmentListHead.Flink;
 		do {
-			if (!ReadProcessMemory (h_proc, (PVOID)currPageSegment, &pageSegment, sizeof (HEAP_PAGE_SEGMENT), &bytesRead)) break;
+			if (!ReadProcessMemory (h_proc, (PVOID)currPageSegment, &pageSegment, sizeof (HEAP_PAGE_SEGMENT), &bytesRead)) {
+				break;
+			}
 			for (int j = 2; j < 256; j++) {
 				if ((pageSegment.DescArray[j].RangeFlags &
 					(PAGE_RANGE_FLAGS_FIRST | PAGE_RANGE_FLAGS_ALLOCATED)) ==
