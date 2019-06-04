@@ -140,6 +140,6 @@ int w32_dbg_wait(RDebug *dbg, int pid);
 RDebugInfo *w32_info(RDebug *dbg, const char *arg);
 RList *w32_pids(int pid, RList *list);
 RList *w32_thread_list(int pid, RList *list);
-int is_pe_hdr(unsigned char *pe_hdr);
+bool is_pe_hdr(unsigned char *pe_hdr);
 #include "maps/windows_maps.h"
 #endif

@@ -527,7 +527,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 	return ret;
 }
 
-int is_pe_hdr(unsigned char *pe_hdr) {
+bool is_pe_hdr(unsigned char *pe_hdr) {
 	IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER *)pe_hdr;
 	IMAGE_NT_HEADERS *nt_headers;
 
@@ -535,12 +535,12 @@ int is_pe_hdr(unsigned char *pe_hdr) {
 		nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header
 				+ dos_header->e_lfanew);
 		if (nt_headers->Signature==IMAGE_NT_SIGNATURE)
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
-static HANDLE w32_open_thread (int pid, int tid) {
+static HANDLE w32_open_thread(int pid, int tid) {
 	HANDLE thread = w32_OpenThread (THREAD_ALL_ACCESS, 0, tid);
 	if (thread == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("w32_open_thread/OpenThread");
@@ -621,7 +621,7 @@ RList *w32_pids(int pid, RList *list) {
 	HANDLE process_snapshot;
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof (PROCESSENTRY32);
-	int show_all_pids = pid == 0;
+	bool show_all_pids = pid == 0;
 
 	process_snapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (process_snapshot == INVALID_HANDLE_VALUE) {
@@ -683,7 +683,7 @@ err_w32_terminate_process:
 	return ret;
 }
 
-void w32_break_process (void *d) {
+void w32_break_process(void *d) {
 	RDebug *dbg = (RDebug *)d;
 	HANDLE h_proc = w32_OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
 	if (!h_proc) {
@@ -700,7 +700,7 @@ err_w32_break_process:
 	}
 }
 
-static int GetAVX (HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
+static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	BOOL Success;
 	int nRegs = 0, Index = 0;
 	DWORD ContextSize = 0;
@@ -848,7 +848,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	}
 }
 
-static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+static int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #ifdef _MSC_VER
 	CONTEXT ctx;
 #else
@@ -886,7 +886,7 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	return size;
 }
 
-static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
+static int w32_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
 	BOOL ret = false;
 	HANDLE thread;
 #if _MSC_VER
