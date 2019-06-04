@@ -50,24 +50,24 @@
 #define PDI_HEAP_BLOCKS			0x10
 #define PDI_HEAP_ENTRIES_EX		0x200
 
-#define CHECK_INFO(heapInfo)											\
-	if (!heapInfo) {													\
-		eprintf ("It wasn't possible to get the heap information\n");	\
-		return;															\
-	}																	\
-	if (!heapInfo->count) {												\
-		r_cons_print ("No heaps for this process\n");					\
-		return;															\
-	}																	\
+#define CHECK_INFO(heapInfo)\
+	if (!heapInfo) {\
+		eprintf ("It wasn't possible to get the heap information\n");\
+		return;\
+	}\
+	if (!heapInfo->count) {\
+		r_cons_print ("No heaps for this process\n");\
+		return;\
+	}
 
-#define UPDATE_FLAGS(hb, flags)					\
-	if ((flags & 0xf1) || (flags & 0x0200)) {	\
-		hb->dwFlags = LF32_FIXED;				\
-	} else if ((flags & 0x20)) {				\
-		hb->dwFlags = LF32_MOVEABLE;			\
-	} else if ((flags & 0x0100)) {				\
-		hb->dwFlags = LF32_FREE;				\
-	}											\
+#define UPDATE_FLAGS(hb, flags)\
+	if ((flags & 0xf1) || (flags & 0x0200)) {\
+		hb->dwFlags = LF32_FIXED;\
+	} else if ((flags & 0x20)) {\
+		hb->dwFlags = LF32_MOVEABLE;\
+	} else if ((flags & 0x0100)) {\
+		hb->dwFlags = LF32_FREE;\
+	}
 
 static bool init_func() {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
@@ -244,31 +244,31 @@ static PDEBUG_BUFFER InitHeapInfo(DWORD pid, DWORD mask) {
 	return db;
 }
 
-#define GROW_BLOCKS()										\
-	if (allocated <= count * sizeof (HeapBlockBasicInfo)) {	\
-		SIZE_T old_alloc = allocated;						\
-		allocated *= 2;										\
-		PVOID tmp = blocks;									\
-		blocks = realloc (blocks, allocated);				\
-		if (!blocks) {										\
-			free (tmp);										\
-			goto err;										\
-		}													\
-		memset ((BYTE *)blocks + old_alloc, 0, old_alloc);	\
-	}														\
+#define GROW_BLOCKS()\
+	if (allocated <= count * sizeof (HeapBlockBasicInfo)) {\
+		SIZE_T old_alloc = allocated;\
+		allocated *= 2;\
+		PVOID tmp = blocks;\
+		blocks = realloc (blocks, allocated);\
+		if (!blocks) {\
+			free (tmp);\
+			goto err;\
+		}\
+		memset ((BYTE *)blocks + old_alloc, 0, old_alloc);\
+	}
 
-#define GROW_PBLOCKS()											\
-	if (*allocated <= *count * sizeof (HeapBlockBasicInfo)) {	\
-		SIZE_T old_alloc = *allocated;							\
-		*allocated *= 2;										\
-		PVOID tmp = *blocks;									\
-		tmp = realloc (*blocks, *allocated);					\
-		if (!tmp) {												\
-			return false;										\
-		}														\
-		*blocks = tmp;											\
-		memset ((BYTE *)(*blocks) + old_alloc, 0, old_alloc);	\
-	}															\
+#define GROW_PBLOCKS()\
+	if (*allocated <= *count * sizeof (HeapBlockBasicInfo)) {\
+		SIZE_T old_alloc = *allocated;\
+		*allocated *= 2;\
+		PVOID tmp = *blocks;\
+		tmp = realloc (*blocks, *allocated);\
+		if (!tmp) {\
+			return false;\
+		}\
+		*blocks = tmp;\
+		memset ((BYTE *)(*blocks) + old_alloc, 0, old_alloc);\
+	}
 
 static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_T *allocated, WPARAM lfhKey, WPARAM *count, WPARAM first, WPARAM next) {
 	while ((first != next) && next) {
