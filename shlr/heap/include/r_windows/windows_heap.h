@@ -462,9 +462,11 @@ typedef struct _HEAP_LFH_SUBSEGMENT_OWNER {
 } HEAP_LFH_SUBSEGMENT_OWNER, *PHEAP_LFH_SUBSEGMENT_OWNER;
 
 typedef struct _HEAP_LFH_FAST_REF {
-	PVOID Target;
-	WPARAM Value;
-	UINT16 RefCount : 12;
+	union {
+		PVOID Target;
+		WPARAM Value;
+		UINT16 RefCount : 12;
+	};
 } HEAP_LFH_FAST_REF, *PHEAP_LFH_FAST_REF;
 
 typedef struct _HEAP_LFH_AFFINITY_SLOT {
