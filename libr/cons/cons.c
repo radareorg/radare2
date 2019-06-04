@@ -1346,7 +1346,7 @@ R_API int r_cons_get_ansicon() {
 	DWORD minor;
 	DWORD release;
 	bool win_support = false;
-	ut32 version = r_sys_get_winver();
+	ut32 version = r_sys_get_winver ();
 	if (version) {
 		release = version % 10000;
 		major = version / 1000000;

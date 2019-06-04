@@ -1498,7 +1498,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 #endif
 	} else {
 #if __WINDOWS__
-		cmd_debug_map_heap_win(core, input + 1);
+		cmd_debug_map_heap_win (core, input + 1);
 #else
 		eprintf ("MALLOC algorithm not supported\n");
 		return false;

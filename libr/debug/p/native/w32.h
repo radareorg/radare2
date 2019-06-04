@@ -133,7 +133,7 @@ HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)(DWORD, DWORD);
 #ifndef CONTEXT_ALL
 #define CONTEXT_ALL 1048607
 #endif
-void w32_break_process (void *d);
+void w32_break_process(void *d);
 bool w32_terminate_process(RDebug *dbg, int pid);
 int w32_first_thread(int pid);
 int w32_dbg_wait(RDebug *dbg, int pid);
