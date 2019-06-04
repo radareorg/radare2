@@ -579,6 +579,9 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 					userdata.EncodedOffsets.StrideAndOffset ^= PtrToInt (subsegment.UserBlocks) ^ PtrToInt (heapHeader.FrontEndHeap) ^ (WPARAM)lfhKey;
 					size_t bitmapsz = (userdata.BusyBitmap.SizeOfBitMap + 8 - userdata.BusyBitmap.SizeOfBitMap % 8) / 8;
 					WPARAM *bitmap = calloc (bitmapsz > sizeof (WPARAM) ? bitmapsz : sizeof (WPARAM), 1);
+					if (!bitmap) {
+						goto err;
+					}
 					ReadProcessMemory (h_proc, userdata.BusyBitmap.Buffer, bitmap, bitmapsz, &bytesRead);
 					WPARAM mask = 1;
 					// Walk through the busy bitmap
