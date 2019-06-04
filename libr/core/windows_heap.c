@@ -107,6 +107,7 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 	block = (PHeapBlockBasicInfo)heapInfo->Blocks;
 	SIZE_T index = hb->index;
 	do {
+		if (index > heapInfo->BlockCount) return false;
 		hb->dwAddress = (void *)block[index].address;
 		hb->dwSize = block->size;
 		if (block[index].extra & EXTRA_FLAG) {
@@ -134,19 +135,16 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 	PHeapBlockBasicInfo block;
 
 	block = (PHeapBlockBasicInfo)heapInfo->Blocks;
-
-	if (hb->index > heapInfo->BlockCount) {
-		return false;
-	}
 	SIZE_T index = hb->index;
+
+	if (index > heapInfo->BlockCount) return false;
+
 	if (block[index].flags & 2) {
 		do {
+			if (index > heapInfo->BlockCount) return false;
+
 			// new address = curBlockAddress + Granularity;
 			hb->dwAddress = (void *)(block[index].address + heapInfo->Granularity);
-
-			if (index > heapInfo->BlockCount) {
-				return false;
-			}
 
 			index++;
 			hb->dwSize = block->size;
@@ -333,10 +331,10 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 		ReadProcessMemory (h_proc, paffinitySlot, &affinitySlot, sizeof (HEAP_LFH_AFFINITY_SLOT), &bytesRead);
 		WPARAM first = (WPARAM)paffinitySlot + offsetof (HEAP_LFH_SUBSEGMENT_OWNER, AvailableSubsegmentList);
 		WPARAM next = (WPARAM)affinitySlot.State.AvailableSubsegmentList.Flink;
-		__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next);
+		if (!__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next)) return false;
 		first = (WPARAM)paffinitySlot + offsetof (HEAP_LFH_SUBSEGMENT_OWNER, FullSubsegmentList);
 		next = (WPARAM)affinitySlot.State.FullSubsegmentList.Flink;
-		__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next);
+		if (!__lfh_segment_loop (h_proc, blocks, allocated, lfhKey, count, first, next)) return false;
 	}
 
 	// Large Blocks
@@ -356,7 +354,7 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 			ReadProcessMemory (h_proc, curr, &entry, sizeof (HEAP_LARGE_ALLOC_DATA), &bytesRead);
 			(*blocks)[*count].address = entry.VirtualAddess - entry.UnusedBytes;
 			(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LARGE_BLOCK;
-			(*blocks)[*count].size = ((entry.AllocatedPages >> 12) << 12); // Is this right?
+			(*blocks)[*count].size = ((entry.AllocatedPages >> 12) << 12);
 			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
 			extra->unusedBytes = entry.UnusedBytes;
 			ReadProcessMemory(h_proc, (void *)(*blocks)[*count].address, &extra->granularity, sizeof (USHORT), &bytesRead);
@@ -484,9 +482,10 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 
 		// SEGMENT_HEAP
 		if (heapHeader.SegmentSignature == 0xddeeddee) {
-			GetSegmentHeapBlocks (h_proc, heap->Base, &blocks, &count, &allocated, ntdllOffset);
+			bool ret = GetSegmentHeapBlocks (h_proc, heap->Base, &blocks, &count, &allocated, ntdllOffset);
 			heap->Blocks = blocks;
 			heap->BlockCount = count;
+			if (!ret) goto err;
 			continue;
 		}
 
