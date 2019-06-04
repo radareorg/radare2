@@ -50,8 +50,6 @@
 #define PDI_HEAP_BLOCKS			0x10
 #define PDI_HEAP_ENTRIES_EX		0x200
 
-#pragma comment (lib, "ntdll")
-
 #define CHECK_INFO(heapInfo)											\
 	if (!heapInfo) {													\
 		eprintf ("It wasn't possible to get the heap information\n");	\
@@ -70,6 +68,21 @@
 	} else if ((flags & 0x0100)) {				\
 		hb->dwFlags = LF32_FREE;				\
 	}											\
+
+static bool init_func() {
+	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
+	if (!ntdll) return false;
+	if (!RtlCreateQueryDebugBuffer) {
+		RtlCreateQueryDebugBuffer = GetProcAddress (ntdll, "RtlCreateQueryDebugBuffer");
+	}
+	if (!RtlQueryProcessDebugInformation) {
+		RtlQueryProcessDebugInformation = GetProcAddress (ntdll, "RtlQueryProcessDebugInformation");
+	}
+	if (!RtlDestroyQueryDebugBuffer) {
+		RtlDestroyQueryDebugBuffer = GetProcAddress (ntdll, "RtlDestroyQueryDebugBuffer");
+	}
+	return true;
+}
 
 static bool is_segment_heap(HANDLE h_proc, PVOID heapBase) {
 	HEAP heap;
@@ -807,6 +820,7 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 }
 
 static int cmd_debug_map_heap_win(RCore *core, const char *input) {
+	init_func ();
 	switch (input[0]) {
 	case '?': // dmh?
 		r_core_cmd_help (core, help_msg);

@@ -985,20 +985,18 @@ typedef struct _HeapInformation {
 	DEBUG_HEAP_INFORMATION heaps[/* count */];
 } HeapInformation, *PHeapInformation;
 
-extern PDEBUG_BUFFER NTAPI RtlCreateQueryDebugBuffer(
+PDEBUG_BUFFER (NTAPI *RtlCreateQueryDebugBuffer)(
 	IN DWORD Size,
 	IN BOOLEAN EventPair
 );
 
-extern NTSTATUS NTAPI
-RtlQueryProcessDebugInformation(
+NTSTATUS (NTAPI *RtlQueryProcessDebugInformation)(
 	IN DWORD ProcessId,
 	IN DWORD DebugInfoClassMask,
 	IN OUT PDEBUG_BUFFER DebugBuffer
 );
 
-extern NTSTATUS NTAPI
-RtlDestroyQueryDebugBuffer(
+NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)(
 	IN PDEBUG_BUFFER DebugBuffer
 );
 #endif
