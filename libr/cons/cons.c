@@ -1357,7 +1357,12 @@ R_API int r_cons_get_ansicon() {
 			win_support = true;
 		}
 	}
-	return win_support || !!r_sys_getenv ("ANSICON");
+	char *ansicon = r_sys_getenv ("ANSICON");
+	if (ansicon) {
+		free (ansicon);
+		win_support = true;
+	}
+	return win_support;
 }
 #endif
 
