@@ -75,13 +75,13 @@ static bool init_func() {
 		return false;
 	}
 	if (!RtlCreateQueryDebugBuffer) {
-		RtlCreateQueryDebugBuffer = GetProcAddress (ntdll, "RtlCreateQueryDebugBuffer");
+		RtlCreateQueryDebugBuffer = (PDEBUG_BUFFER (NTAPI *)(DWORD, BOOLEAN))GetProcAddress (ntdll, "RtlCreateQueryDebugBuffer");
 	}
 	if (!RtlQueryProcessDebugInformation) {
-		RtlQueryProcessDebugInformation = GetProcAddress (ntdll, "RtlQueryProcessDebugInformation");
+		RtlQueryProcessDebugInformation = (NTSTATUS (NTAPI *)(DWORD, DWORD, PDEBUG_BUFFER))GetProcAddress (ntdll, "RtlQueryProcessDebugInformation");
 	}
 	if (!RtlDestroyQueryDebugBuffer) {
-		RtlDestroyQueryDebugBuffer = GetProcAddress (ntdll, "RtlDestroyQueryDebugBuffer");
+		RtlDestroyQueryDebugBuffer = (NTSTATUS (NTAPI *)(PDEBUG_BUFFER))GetProcAddress (ntdll, "RtlDestroyQueryDebugBuffer");
 	}
 	return true;
 }
