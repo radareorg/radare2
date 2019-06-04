@@ -75,7 +75,7 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 	return add_map (list, name, (ut64)(size_t)mbi->BaseAddress, (ut64)mbi->RegionSize, mbi);
 }
 
-R_API RList *w32_dbg_modules(RDebug *dbg) {
+R_API RList *r_w32_dbg_modules(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
 	RList *list = r_list_new ();
@@ -83,7 +83,7 @@ R_API RList *w32_dbg_modules(RDebug *dbg) {
 	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (flags, dbg->pid);
 
 	if (!h_mod_snap) {
-		r_sys_perror ("w32_dbg_modules/CreateToolhelp32Snapshot");
+		r_sys_perror ("r_w32_dbg_modules/CreateToolhelp32Snapshot");
 		goto err_w32_dbg_modules;
 	}
 	me32.dwSize = sizeof (MODULEENTRY32);
@@ -234,7 +234,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 	}
 }
 
-R_API RList *w32_dbg_maps(RDebug *dbg) {
+R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
 	MEMORY_BASIC_INFORMATION mbi;
@@ -245,12 +245,12 @@ R_API RList *w32_dbg_maps(RDebug *dbg) {
 	GetSystemInfo (&si);
 	h_proc = w32_OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 	if (!h_proc) {
-		r_sys_perror ("w32_dbg_maps/w32_OpenProcess");
+		r_sys_perror ("r_w32_dbg_maps/w32_OpenProcess");
 		goto err_w32_dbg_maps;
 	}
 	cur_addr = si.lpMinimumApplicationAddress;
 	/* get process modules list */
-	mod_list = w32_dbg_modules (dbg);
+	mod_list = r_w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {

@@ -462,7 +462,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	}
 
 	WPARAM lfhKey;
-	RList  *map_list = w32_dbg_maps (dbg);
+	RList  *map_list = r_w32_dbg_maps (dbg);
 	RListIter *iter;
 	RDebugMap *map;
 	WPARAM lfhKeyLocation;
