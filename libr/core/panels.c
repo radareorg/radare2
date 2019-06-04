@@ -269,6 +269,7 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache);
 static void setCursor(RCore *core, bool cur);
 static void setdcb(RCore *core, RPanel *p);
 static void setrcb(RPanels *ps, RPanel *p);
+static void setpcb(RPanel *p);
 static void setReadOnly(RPanel *p, char *s);
 static void set_pos(RPanelPos *pos, int x, int y);
 static void set_size(RPanelPos *pos, int w, int h);
@@ -311,7 +312,7 @@ static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const c
 static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
-static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
+static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, int h, int color);
 static void resizePanelLeft(RPanels *panels);
 static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
@@ -357,7 +358,7 @@ static int addCmdPanel(void *user);
 static int addCmdfPanel(RCore *core, char *input, char *str);
 static void setCmdStrCache(RCore *core, RPanel *p, char *s);
 static char *handleCmdStrCache(RCore *core, RPanel *panel, bool force_cache);
-static bool findCmdStrCache(RCore *core, RPanel *panel, char **str);
+static char *findCmdStrCache(RCore *core, RPanel *panel);
 static char *loadCmdf(RCore *core, RPanel *p, char *input, char *str);
 static void replaceCmd(RCore *core, const char *title, const char *cmd, const bool cache);
 
@@ -382,7 +383,7 @@ static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, co
 static RModal *init_modal();
 static void free_modal(RModal **modal);
 
-/* callback */
+/* menu callback */
 static int openMenuCb(void *user);
 static int openFileCb(void *user);
 static int rwCb(void *user);
@@ -425,6 +426,8 @@ static int versionCb(void *user);
 static int quitCb(void *user);
 static int ioCacheOnCb(void *user);
 static int ioCacheOffCb(void *user);
+
+/* direction callback */
 static void directionDefaultCb(void *user, int direction);
 static void directionDisassemblyCb(void *user, int direction);
 static void directionGraphCb(void *user, int direction);
@@ -432,12 +435,22 @@ static void directionRegisterCb(void *user, int direction);
 static void directionStackCb(void *user, int direction);
 static void directionHexdumpCb(void *user, int direction);
 static void direction_panels_cursor_cb(void *user, int direction);
+
+/* rotate callback */
 static void rotateDisasCb(void *user, bool rev);
 static void rotateEntropyVCb(void *user, bool rev);
 static void rotateEntropyHCb(void *user, bool rev);
 static void rotateHexdumpCb (void *user, bool rev);
 static void rotateRegisterCb (void *user, bool rev);
 static void rotateFunctionCb (void *user, bool rev);
+
+/* print callback */
+static char *print_default_cb(void *user, void *p);
+static char *print_decompiler_cb(void *user, void *p);
+static char *print_disassembly_cb(void *user, void *p);
+static char *print_graph_cb(void *user, void *p);
+static char *print_stack_cb(void *user, void *p);
+static char *print_hexdump_cb(void *user, void *p);
 
 /* menu */
 static void del_menu(RCore *core);
@@ -572,6 +585,7 @@ static void setCmdStrCache(RCore *core, RPanel *p, char *s) {
 	free (p->model->cmdStrCache);
 	p->model->cmdStrCache = s;
 	setdcb (core, p);
+	setpcb (p);
 }
 
 static void setReadOnly(RPanel *p, char *s) {
@@ -640,7 +654,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	if (panel->model->type == PANEL_TYPE_MENU) {
 		menuPanelPrint (can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h);
 	} else {
-		defaultPanelPrint (core, can, panel, panel->view->sx, panel->view->sy, panel->view->pos.w, panel->view->pos.h, color);
+		defaultPanelPrint (core, can, panel, panel->view->pos.w, panel->view->pos.h, color);
 	}
 	if (color) {
 		r_cons_canvas_box (can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, core->cons->context->pal.graph_box2);
@@ -660,11 +674,11 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 	}
 }
 
-static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
+static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, int h, int color) {
 	char title[128], cache_title[128], *text, *cmdStr = NULL;
 	char *readOnly = panel->model->readOnly;
 	char *cmd_title  = apply_filter_cmd (core, panel);
-	int graph_pad = 0;
+	int graph_pad = check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH)) ? 1 : 0;
 	bool o_cur = core->print->cur_enabled;
 	core->print->cur_enabled = o_cur & (getCurPanel (core->panels) == panel);
 	(void) r_cons_canvas_gotoxy (can, panel->view->pos.x + 2, panel->view->pos.y + 2);
@@ -672,72 +686,11 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 		cmdStr = readOnly;
 	} else {
 		if (panel->model->cmd) {
-			if (check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
-				core->print->screen_bounds = 1LL;
-				if (!findCmdStrCache (core, panel, &cmdStr)) {
-					char *ocmd = panel->model->cmd;
-					panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
-					ut64 o_offset = core->offset;
-					core->offset = panel->model->addr;
-					r_core_seek (core, panel->model->addr, 1);
-					if (r_config_get_i (core->config, "cfg.debug")) {
-						r_core_cmd (core, ".dr*", 0);
-					}
-					cmdStr = handleCmdStrCache (core, panel, false);
-					core->offset = o_offset;
-					free (panel->model->cmd);
-					panel->model->cmd = ocmd;
-				}
-			} else if (check_panel_type (panel, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
-				const int delta = r_config_get_i (core->config, "stack.delta");
-				const char sign = (delta < 0)? '+': '-';
-				const int absdelta = R_ABS (delta);
-				cmdStr = r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
-			} else if (check_panel_type (panel, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
-				if (!findCmdStrCache (core, panel, &cmdStr)) {
-					ut64 o_offset = core->offset;
-					if (!panel->model->cache) {
-						core->offset = panel->model->addr;
-						r_core_seek (core, core->offset, 1);
-						r_core_block_read (core);
-					}
-					cmdStr = handleCmdStrCache (core, panel, false);
-					core->offset = o_offset;
-				}
-			} else if (check_panel_type (panel, PANEL_CMD_DECOMPILER, strlen (PANEL_CMD_DECOMPILER))) {
-				if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCmdStrCache (core, panel, &cmdStr)) {
-					cmdStr = handleCmdStrCache (core, panel, true);
-					if (panel->model->cmdStrCache) {
-						x = 0;
-						y = 0;
-						resetScrollPos (panel);
-					}
-				}
-			} else if (check_panel_type (panel, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
-				if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCmdStrCache (core, panel, &cmdStr)) {
-					cmdStr = handleCmdStrCache (core, panel, true);
-					if (panel->model->cmdStrCache) {
-						x = 0;
-						y = 0;
-						resetScrollPos (panel);
-					}
-				}
-				graph_pad = 1;
-				core->cons->event_resize = NULL; // avoid running old event with new data
-				core->cons->event_data = core;
-				core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
-			} else {
-				if ((core->panels->autoUpdate && checkFuncDiff (core, panel)) || !findCmdStrCache (core, panel, &cmdStr)) {
-					cmdStr = handleCmdStrCache (core, panel, false);
-					if (panel->model->cmdStrCache) {
-						x = 0;
-						y = 0;
-						resetScrollPos (panel);
-					}
-				}
-			}
+			cmdStr = panel->model->print_cb (core, panel);
 		}
 	}
+	int x = panel->view->sx;
+	int y = panel->view->sy;
 	if (y < 0) {
 		y = 0;
 	}
@@ -808,12 +761,11 @@ static void resetScrollPos(RPanel *p) {
 	p->view->sy = 0;
 }
 
-bool findCmdStrCache(RCore *core, RPanel* panel, char **str) {
+char *findCmdStrCache(RCore *core, RPanel* panel) {
 	if (panel->model->cmdStrCache) {
-		*str = panel->model->cmdStrCache;
-		return true;
+		return panel->model->cmdStrCache;
 	}
-	return false;
+	return NULL;
 }
 
 char *apply_filter_cmd(RCore *core, RPanel *panel) {
@@ -2113,6 +2065,7 @@ static void replaceCmd(RCore *core, const char *title, const char *cmd, const bo
 	set_panel_addr (core, cur, core->offset);
 	cur->model->type = PANEL_TYPE_DEFAULT;
 	setdcb (core, cur);
+	setpcb (cur);
 	setrcb (panels, cur);
 	setRefreshAll (core, false);
 }
@@ -2249,6 +2202,7 @@ static void init_panel_param(RCore *core, RPanel *p, const char *title, const ch
 		m->title = r_str_dup (m->title, "");
 		m->cmd = r_str_dup (m->cmd, "");
 	}
+	setpcb (p);
 	if (R_STR_ISNOTEMPTY (m->cmd)) {
 		setdcb (core, p);
 		setrcb (core->panels, p);
@@ -2277,8 +2231,7 @@ static void setdcb(RCore *core, RPanel *p) {
 	}
 	if (check_panel_type (p, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
 		p->model->directionCb = directionStackCb;
-	} else if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY)) &&
-			strcmp (p->model->cmd, PANEL_CMD_DECOMPILER)) {
+	} else if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 		p->model->directionCb = directionDisassemblyCb;
 	} else if (check_panel_type (p, PANEL_CMD_REGISTERS, strlen (PANEL_CMD_REGISTERS))) {
 		p->model->directionCb = directionRegisterCb;
@@ -2304,6 +2257,33 @@ static void setrcb(RPanels *ps, RPanel *p) {
 		break;
 	}
 	ls_free (sdb_list);
+}
+
+static void setpcb(RPanel *p) {
+	if (!p->model->cmd) {
+		return;
+	}
+	if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+		p->model->print_cb = print_disassembly_cb;
+		return;
+	}
+	if (check_panel_type (p, PANEL_CMD_STACK, strlen (PANEL_CMD_STACK))) {
+		p->model->print_cb = print_stack_cb;
+		return;
+	}
+	if (check_panel_type (p, PANEL_CMD_HEXDUMP, strlen (PANEL_CMD_HEXDUMP))) {
+		p->model->print_cb = print_hexdump_cb;
+		return;
+	}
+	if (check_panel_type (p, PANEL_CMD_DECOMPILER, strlen (PANEL_CMD_DECOMPILER))) {
+		p->model->print_cb = print_decompiler_cb;
+		return;
+	}
+	if (check_panel_type (p, PANEL_CMD_GRAPH, strlen (PANEL_CMD_GRAPH))) {
+		p->model->print_cb = print_graph_cb;
+		return;
+	}
+	p->model->print_cb = print_default_cb;
 }
 
 static int openFileCb(void *user) {
@@ -3022,6 +3002,100 @@ static void direction_panels_cursor_cb(void *user, int direction) {
 		}
 		return;
 	}
+}
+
+static char *print_default_cb(void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	bool update = core->panels->autoUpdate && checkFuncDiff (core, panel);
+	char *cmdstr = findCmdStrCache (core, panel);
+	if (update || !cmdstr) {
+		cmdstr = handleCmdStrCache (core, panel, false);
+		if (panel->model->cmdStrCache) {
+			resetScrollPos (panel);
+		}
+	}
+	return cmdstr;
+}
+
+static char *print_decompiler_cb(void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	bool update = core->panels->autoUpdate && checkFuncDiff (core, panel);
+	char *cmdstr = findCmdStrCache (core, panel);
+	if (update || !cmdstr) {
+		cmdstr = handleCmdStrCache (core, panel, true);
+		if (panel->model->cmdStrCache) {
+			resetScrollPos (panel);
+		}
+	}
+	return cmdstr;
+}
+
+static char *print_disassembly_cb(void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	core->print->screen_bounds = 1LL;
+	char *cmdstr = findCmdStrCache (core, panel);
+	if (cmdstr) {
+		return cmdstr;
+	}
+	char *ocmd = panel->model->cmd;
+	panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
+	ut64 o_offset = core->offset;
+	core->offset = panel->model->addr;
+	r_core_seek (core, panel->model->addr, 1);
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		r_core_cmd (core, ".dr*", 0);
+	}
+	cmdstr = handleCmdStrCache (core, panel, false);
+	core->offset = o_offset;
+	free (panel->model->cmd);
+	panel->model->cmd = ocmd;
+	return cmdstr;
+}
+
+static char *print_graph_cb(void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	bool update = core->panels->autoUpdate && checkFuncDiff (core, panel);
+	char *cmdstr = findCmdStrCache (core, panel);
+	if (update || !cmdstr) {
+		cmdstr = handleCmdStrCache (core, panel, true);
+		if (panel->model->cmdStrCache) {
+			resetScrollPos (panel);
+		}
+	}
+	core->cons->event_resize = NULL;
+	core->cons->event_data = core;
+	core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
+	return cmdstr;
+}
+
+static char *print_stack_cb(void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	const int delta = r_config_get_i (core->config, "stack.delta");
+	const char sign = (delta < 0)? '+': '-';
+	const int absdelta = R_ABS (delta);
+	return r_core_cmd_strf (core, "%s%c%d", panel->model->cmd, sign, absdelta);
+}
+
+static char *print_hexdump_cb(void *user, void *p) {
+	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	char *cmdstr = findCmdStrCache (core, panel);
+	if (!cmdstr) {
+		ut64 o_offset = core->offset;
+		if (!panel->model->cache) {
+			core->offset = panel->model->addr;
+			r_core_seek (core, core->offset, 1);
+			r_core_block_read (core);
+		}
+		cmdstr = handleCmdStrCache (core, panel, false);
+		core->offset = o_offset;
+	}
+	return cmdstr;
 }
 
 static void hudstuff(RCore *core) {
