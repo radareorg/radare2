@@ -371,6 +371,9 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 			(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LARGE_BLOCK;
 			(*blocks)[*count].size = ((entry.AllocatedPages >> 12) << 12);
 			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+			if (!extra) {
+				return false;
+			}
 			extra->unusedBytes = entry.UnusedBytes;
 			ReadProcessMemory(h_proc, (void *)(*blocks)[*count].address, &extra->granularity, sizeof (USHORT), &bytesRead);
 			(*blocks)[*count].extra = EXTRA_FLAG | (WPARAM)extra;
@@ -402,6 +405,9 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 					(*blocks)[*count].size = pageSegment.DescArray[j].UnitSize * 0x1000;
 					(*blocks)[*count].flags = SEGMENT_HEAP_BLOCK | 1;
 					PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+					if (!extra) {
+						return false;
+					}
 					extra->segment = currPageSegment;
 					extra->unusedBytes = pageSegment.DescArray[j].UnusedBytes;
 					(*blocks)[*count].extra = EXTRA_FLAG | (WPARAM)extra;
@@ -425,6 +431,9 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 							(*blocks)[*count].size = sz;
 							(*blocks)[*count].flags = VS_BLOCK | SEGMENT_HEAP_BLOCK | 1;
 							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+							if (!extra) {
+								return false;
+							}
 							extra->granularity = sizeof (HEAP_VS_CHUNK_HEADER) * 2;
 							(*blocks)[*count].extra = EXTRA_FLAG | (WPARAM)extra;
 							*count += 1;
@@ -502,7 +511,9 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			bool ret = GetSegmentHeapBlocks (h_proc, heap->Base, &blocks, &count, &allocated, ntdllOffset);
 			heap->Blocks = blocks;
 			heap->BlockCount = count;
-			if (!ret) goto err;
+			if (!ret) {
+				goto err;
+			}
 			continue;
 		}
 
@@ -518,6 +529,9 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | LARGE_BLOCK) & ~2ULL;
 			blocks[count].size = vAlloc.CommitSize;
 			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+			if (!extra) {
+				goto err;
+			}
 			extra->granularity = sizeof (HEAP_VIRTUAL_ALLOC_ENTRY);
 			blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
 			count++;
@@ -584,6 +598,9 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 							blocks[count].flags = 1 | LFH_BLOCK;
 							blocks[count].size = sz;
 							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+							if (!extra) {
+								goto err;
+							}
 							extra->granularity = sizeof (HEAP_ENTRY);
 							extra->segment = curSubsegment;
 							blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
@@ -626,6 +643,9 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 
 				GROW_BLOCKS ();
 				PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+				if (!extra) {
+					goto err;
+				}
 				extra->granularity = sizeof (HEAP_ENTRY);
 				extra->segment = (WPARAM)segment.BaseAddress;
 				blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
