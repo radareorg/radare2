@@ -163,6 +163,40 @@ R_API int r_sys_truncate(const char *file, int sz) {
 #endif
 }
 
+R_API os_info *r_sys_get_osinfo() {
+#if __WINDOWS__
+	return r_sys_get_winver();
+#endif
+	os_info *info = calloc (1, sizeof (os_info));
+	if (!info) {
+		return NULL;
+	}
+	int len = 0;
+	char *output = r_sys_cmd_str ("uname -s", NULL, &len);
+	if (len) {
+		strncpy (info->name, output, sizeof (info->name));
+		info->name[31] = '\0';
+	}
+	free (output);
+	output = r_sys_cmd_str ("uname -r", NULL, &len);
+	if (len) {
+		char *dot = strtok (output, ".");
+		if (dot) {
+			info->major = atoi (dot);
+		}
+		dot = strtok (NULL, ".");
+		if (dot) {
+			info->minor = atoi (dot);
+		}
+		dot = strtok (NULL, ".");
+		if (dot) {
+			info->patch = atoi (dot);
+		}
+	}
+	free (output);
+	return info;
+}
+
 R_API RList *r_sys_dir(const char *path) {
 	RList *list = NULL;
 #if __WINDOWS__

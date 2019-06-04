@@ -693,10 +693,11 @@ static void w32_list_heaps(RCore *core, const char format) {
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
-		ut32 major = r_sys_get_winver () / 1000000;
-		if (major >= 10) {
+		os_info *info = r_sys_get_osinfo ();
+		if (info->major >= 10) {
 			db = GetHeapBlocks (pid, core->dbg);
 		}
+		free (info);
 		if (!db) {
 			eprintf ("Couldn't get heap info.\n");
 			return;
@@ -743,10 +744,11 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS | PDI_HEAP_ENTRIES_EX);
 	if (!db) {
 		// Too many blocks or segment heap (will block if segment heap)
-		ut32 major = r_sys_get_winver () / 1000000;
-		if (major >= 10) { // Only tested on 10. Maybe works on 8
+		os_info *info = r_sys_get_osinfo ();
+		if (info->major >= 10) { // Only tested on 10. Maybe works on 8
 			db = GetHeapBlocks (pid, core->dbg);
 		}
+		free (info);
 		if (!db) {
 			eprintf ("Couldn't get heap info.\n");
 			return;
