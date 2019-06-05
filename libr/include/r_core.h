@@ -470,7 +470,7 @@ R_API bool r_core_file_close_fd(RCore *core, int fd);
 R_API bool r_core_file_close_all_but(RCore *core);
 R_API int r_core_file_list(RCore *core, int mode);
 R_API int r_core_file_binlist(RCore *core);
-R_API int r_core_file_bin_raise(RCore *core, ut32 num);
+R_API bool r_core_file_bin_raise(RCore *core, ut32 num);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
@@ -616,12 +616,8 @@ R_API int r_core_get_prc_cols(RCore *core);
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
+R_API bool r_core_bin_raise (RCore *core, ut32 bfid);
 
-// XXX WTF :D dupped apis
-R_API int r_core_file_bin_raise (RCore *core, ut32 binfile_idx);
-R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx);
-
-//R_API int r_core_bin_bind(RCore *core, RBinFile *bf);
 R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile);
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
 R_API int r_core_bin_set_by_name (RCore *core, const char *name);

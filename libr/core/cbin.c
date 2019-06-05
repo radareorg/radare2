@@ -3723,13 +3723,8 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	return r_core_bin_set_arch_bits (r, name, arch, bits);
 }
 
-R_API int r_core_bin_raise(RCore *core, ut32 binfile_idx) {
-	RBin *bin = core->bin;
-
-	if (binfile_idx == UT32_MAX) {
-		return false;
-	}
-	if (!r_bin_select_by_ids (bin, binfile_idx)) {
+R_API bool r_core_bin_raise(RCore *core, ut32 bfid) {
+	if (!r_bin_select_bfid (core->bin, bfid)) {
 		return false;
 	}
 	RBinFile *bf = r_core_bin_cur (core);
@@ -3760,8 +3755,6 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 	r_return_val_if_fail (core && bf && bf->o, NULL);
 	const char *name = bf ? bf->file : NULL;
 	(void)r_bin_get_info (core->bin); // XXX is this necssary for proper iniitialization
-	ut32 id = bf ? bf->id : 0;
-	ut32 fd = bf ? bf->fd : 0;
 	ut32 bin_sz = bf ? bf->size : 0;
 	// TODO: handle mode to print in json and r2 commands
 
@@ -3777,8 +3770,9 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 		break;
 	case 'j':
 		// XXX there's only one binobj for each bf...so we should change that json
-		r_cons_printf ("{\"name\":\"%s\",\"fd\":%d,\"id\":%d,\"size\":%d,\"objs\":[",
-			name? name: "", fd, id, bin_sz);
+		// TODO: use pj API
+		r_cons_printf ("{\"name\":\"%s\",\"iofd\":%d,\"bfid\":%d,\"size\":%d,\"objs\":[",
+			name? name: "", bf->fd, bf->id, bin_sz);
 		{
 			RBinObject *obj = bf->o;
 			RBinInfo *info = obj->info;
@@ -3797,8 +3791,8 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = r_config_get (core->config, "asm.arch");
 			const char *arch = info ? info->arch ? info->arch: asmarch: "unknown";
-			r_cons_printf ("%4d  %s-%d at:0x%08"PFMT64x" sz:%"PFMT64d" fd:%d %s\n",
-				bf->id, arch, bits, bf->o->boffset, bf->o->obj_size, fd, name);
+			r_cons_printf ("%d %d %s-%d at:0x%08"PFMT64x" sz:%"PFMT64d" %s\n",
+				bf->id, bf->fd, arch, bits, bf->o->boffset, bf->o->obj_size, name);
 		}
 		break;
 	}

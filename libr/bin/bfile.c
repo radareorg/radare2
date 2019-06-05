@@ -459,16 +459,15 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bi
 	return binfile;
 }
 
-R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id) {
-	RBinFile *binfile = NULL;
+R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 bf_id) {
+	RBinFile *bf = NULL;
 	RListIter *iter = NULL;
-	r_list_foreach (bin->binfiles, iter, binfile) {
-		if (binfile->id == binfile_id) {
-			break;
+	r_list_foreach (bin->binfiles, iter, bf) {
+		if (bf->id == bf_id) {
+			return bf;
 		}
-		binfile = NULL;
 	}
-	return binfile;
+	return NULL;
 }
 
 R_API int r_bin_file_delete_all(RBin *bin) {
@@ -560,9 +559,6 @@ R_API bool r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 
 R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	r_return_val_if_fail (bin && bf, false);
-	if (!obj) {
-		return false;
-	}
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;

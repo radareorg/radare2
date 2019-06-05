@@ -992,12 +992,9 @@ R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, con
 }
 
 // NOTE: this functiona works as expected, but  we need to merge bfid and boid
-R_API bool r_bin_select_by_ids(RBin *bin, ut32 binfile_id) {
+R_API bool r_bin_select_bfid (RBin *bin, ut32 bf_id) {
 	r_return_val_if_fail (bin, false);
-	if (binfile_id == UT32_MAX) {
-		return false;
-	}
-	RBinFile *bf = r_bin_file_find_by_id (bin, binfile_id);
+	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	return bf? r_bin_file_set_cur_binfile_obj (bin, bf, NULL): false;
 }
 
