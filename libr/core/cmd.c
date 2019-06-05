@@ -753,11 +753,11 @@ static int lang_run_file(RCore *core, RLang *lang, const char *file) {
 	return r_lang_run_file (core->lang, file);
 }
 
-static char *langFromHashbang (RCore *core, const char *file) {
+static char *langFromHashbang(RCore *core, const char *file) {
 	int fd = r_sandbox_open (file, O_RDONLY, 0);
 	if (fd != -1) {
 		char firstLine[128] = {0};
-		int len = r_sandbox_read (fd, (ut8*)firstLine, sizeof (firstLine));
+		int len = r_sandbox_read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
 		firstLine[len] = 0;
 		if (!strncmp (firstLine, "#!/", 3)) {
 			// I CAN HAS A HASHBANG
