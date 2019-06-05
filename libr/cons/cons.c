@@ -1340,48 +1340,28 @@ R_API int r_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
+R_API os_info *r_sys_get_osinfo();
 R_API int r_cons_get_ansicon() {
-	HKEY key;
-	DWORD type;
-	DWORD size;
 	DWORD major;
 	DWORD minor;
-	char release[25];
 	bool win_support = false;
-	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
-	                   KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
-		goto ANSICON;
+	os_info *info = r_sys_get_osinfo ();
+	if (info) {
+		major = info->major;
+		minor = info->minor;
+		if (major > 10
+			|| major == 10 && minor > 0
+			|| major == 10 && minor == 0 && info->compilation >= 1703) {
+			win_support = true;
+		}
 	}
-	size = sizeof (major);
-	if (RegQueryValueExA (key, "CurrentMajorVersionNumber", NULL, &type,
-	                     (LPBYTE)&major, &size) != ERROR_SUCCESS
-	    || type != REG_DWORD) {
-		goto beach;
-	}
-	size = sizeof (minor);
-	if (RegQueryValueExA (key, "CurrentMinorVersionNumber", NULL, &type,
-	                     (LPBYTE)&minor, &size) != ERROR_SUCCESS
-	    || type != REG_DWORD) {
-		goto beach;
-	}
-	size = sizeof (release);
-	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
-	                     (LPBYTE)release, &size) != ERROR_SUCCESS
-	    || type != REG_SZ) {
-		goto beach;
-	}
-	if (major > 10
-	    || major == 10 && minor > 0
-	    || major == 10 && minor == 0 && atoi (release) >= 1703) {
+	free (info);
+	char *ansicon = r_sys_getenv ("ANSICON");
+	if (ansicon) {
+		free (ansicon);
 		win_support = true;
 	}
-beach:
-	RegCloseKey (key);
-ANSICON:
-	char *env_ansicon_str = r_sys_getenv ("ANSICON");
-	bool env_ansicon = !!env_ansicon_str;
-	free (env_ansicon_str);
-	return win_support || env_ansicon;
+	return win_support;
 }
 #endif
 

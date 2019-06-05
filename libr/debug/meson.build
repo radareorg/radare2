@@ -60,6 +60,12 @@ if host_machine.system() == 'linux'
   ]
 endif
 
+if host_machine.system() == 'windows'
+ r_debug_sources += [
+  'p/native/maps/windows_maps.c'
+ ]
+endif
+
 if host_machine.system() != 'windows'
  r_debug_sources += [
   'p/native/procfs.c'

@@ -1274,7 +1274,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #if __APPLE__
 	list = xnu_dbg_maps (dbg, 0);
 #elif __WINDOWS__
-	list = w32_dbg_maps (dbg); // TODO: moar?
+	list = r_w32_dbg_maps (dbg);
 #else
 #if __sun
 	char path[1024];
@@ -1427,7 +1427,7 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 	}
 #endif
 #if __WINDOWS__
-	list = w32_dbg_modules (dbg);
+	list = r_w32_dbg_modules (dbg);
 	if (list && !r_list_empty (list)) {
 		return list;
 	}
