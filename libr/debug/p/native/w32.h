@@ -23,10 +23,12 @@ typedef struct _SYSTEM_HANDLE {
 	PVOID Object;
 	ACCESS_MASK GrantedAccess;
 } SYSTEM_HANDLE, *PSYSTEM_HANDLE;
+
 typedef struct _SYSTEM_HANDLE_INFORMATION {
 	ULONG HandleCount;
 	SYSTEM_HANDLE Handles[1];
 } SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
+
 typedef enum _POOL_TYPE {
 	NonPagedPool,
 	PagedPool,
@@ -36,11 +38,13 @@ typedef enum _POOL_TYPE {
 	PagedPoolCacheAligned,
 	NonPagedPoolCacheAlignedMustS
 } POOL_TYPE, *PPOOL_TYPE;
+
 typedef struct _UNICODE_STRING {
 	USHORT Length;
 	USHORT MaximumLength;
 	PWSTR Buffer;
 } UNICODE_STRING, *PUNICODE_STRING;
+
 typedef struct _OBJECT_TYPE_INFORMATION {
 	UNICODE_STRING Name;
 	ULONG TotalNumberOfObjects;
@@ -105,7 +109,7 @@ NTSTATUS (WINAPI *w32_NtQueryObject)(HANDLE, ULONG, PVOID, ULONG, PULONG);
 ut64 (WINAPI *w32_GetEnabledXStateFeatures)();
 BOOL (WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD);
 BOOL (WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
-PVOID(WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD);
+PVOID (WINAPI *w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD);
 BOOL (WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64);
 DWORD (WINAPI *w32_GetModuleFileNameEx)(HANDLE, HMODULE, LPTSTR, DWORD);
 HANDLE (WINAPI *w32_CreateToolhelp32Snapshot)(DWORD, DWORD);
