@@ -27,19 +27,22 @@ static bool check_buffer(RBuffer *b) {
 	if (ch != 0x80 && ch != 0x82) {
 		return false;
 	}
-	ut64 length = 0;
-	const ut8 *buf = r_buf_data (b, &length);
-	ut16 rec_size = ut8p_bw (buf + 1);
-	ut8 str_size = *(buf + 3);
+	ut16 rec_size = r_buf_read_le16_at (b, 1);
+	ut8 str_size; (void)r_buf_read_at (b, 3, &str_size, 1);
+	ut64 length = r_buf_size (b);
 	if (str_size + 2 != rec_size || length < rec_size + 3) {
 		return false;
 	}
 	// check that the string is ASCII
-	for (i = 4; i < str_size + 4; ++i) {
-		if (buf[i] > 0x7f) {
+	for (i = 4; i < str_size + 4; i++) {
+		if (r_buf_read_at (b, i, &ch, 1) != 1) {
+			break;
+		}
+		if (ch > 0x7f) {
 			return false;
 		}
 	}
+	const ut8 *buf = r_buf_data (b, NULL);
 	return r_bin_checksum_omf_ok (buf, length);
 }
 
