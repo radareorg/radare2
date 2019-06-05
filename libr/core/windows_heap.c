@@ -818,7 +818,6 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 					break;
 				}
 				case 'j':
-				{
 					pj_o (pj);
 					pj_kN (pj, "address", (ut64)block->dwAddress - granularity);
 					pj_kN (pj, "data_address", (ut64)block->dwAddress);
@@ -826,14 +825,11 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 					pj_ks (pj, "type", type);
 					pj_end (pj);
 					break;
-				}
-				default: 
-					{
-						r_cons_printf ("\tBlock @ 0x%"PFMT64x" %s:\n", (ut64)block->dwAddress - granularity, type);
-						r_cons_printf ("\t\tSize 0x%"PFMT64x"\n", (ut64)block->dwSize);
-						r_cons_printf ("\t\tData address @ 0x%"PFMT64x"\n", (ut64)block->dwAddress);
-						break;
-					}
+				default:
+					r_cons_printf ("\tBlock @ 0x%"PFMT64x" %s:\n", (ut64)block->dwAddress - granularity, type);
+					r_cons_printf ("\t\tSize 0x%"PFMT64x"\n", (ut64)block->dwSize);
+					r_cons_printf ("\t\tData address @ 0x%"PFMT64x"\n", (ut64)block->dwAddress);
+					break;
 				}
 			} while (GetNextHeapBlock (&heapInfo->heaps[i], block));
 		}
