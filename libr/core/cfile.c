@@ -1024,11 +1024,10 @@ R_API int r_core_file_list(RCore *core, int mode) {
 }
 
 // XXX - needs to account for binfile index and bin object index
-R_API int r_core_file_bin_raise(RCore *core, ut32 binfile_idx) {
+R_API bool r_core_file_bin_raise(RCore *core, ut32 bfid) {
 	RBin *bin = core->bin;
-	int v = binfile_idx > 1? binfile_idx: 1;
-	RBinFile *bf = r_list_get_n (bin->binfiles, v);
-	int res = false;
+	RBinFile *bf = r_list_get_n (bin->binfiles, bfid);
+	bool res = false;
 	if (bf) {
 		res = r_bin_file_set_cur_binfile (bin, bf);
 		if (res) {

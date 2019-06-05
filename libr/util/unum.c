@@ -674,23 +674,26 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	}
 	if (ret) {
 		return strdup (str);
-	} else if (!printable_only) {
+	}
+	if (!printable_only) {
 		return strdup ("\\0");
 	}
 	return NULL;
 }
 
+// SHITTY API
 R_API int r_is_valid_input_num_value(RNum *num, const char *input_value){
 	ut64 value = input_value ? r_num_math (num, input_value) : 0;
 	return !(value == 0 && input_value && *input_value == '0');
 }
 
-R_API ut64 r_get_input_num_value(RNum *num, const char *input_value){
-	ut64 value = input_value ? r_num_math (num, input_value) : 0;
-	return value;
+// SHITTY API
+R_API ut64 r_get_input_num_value(RNum *num, const char *str) {
+	return (str && *str)? r_num_math (num, str) : 0;
 }
 
-static inline int get_nth_nibble (ut64 n, int i) {
+// SHITTY API
+static inline ut64 __nth_nibble (ut64 n, ut32 i) {
 	int sz = (sizeof (n) << 1) - 1;
 	int s = (sz - i) * 4;
 	return (n >> s) & 0xf;
@@ -701,9 +704,9 @@ R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off) {
 	bool ready = false;
 	ut64 res = 0;
 	for (i = 0; i < 16; i++) {
-		ut64 o = get_nth_nibble (off, i);
+		ut64 o = __nth_nibble (off, i);
 		if (!ready) {
-			bool iseq = get_nth_nibble (addr, i) == o;
+			bool iseq = __nth_nibble (addr, i) == o;
 			if (i == 0 && !iseq) {
 				return UT64_MAX;
 			}
@@ -747,14 +750,12 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 
 static ut64 r_num_tailff(RNum *num, const char *hex) {
 	ut64 n = 0;
-	char *p;
-	int i;
 
 	while (*hex && (*hex == ' ' || *hex=='.')) {
 		hex++;
 	}
-	i = strlen (hex) * 4;
-	p = malloc (strlen (hex) + 10);
+	int i = strlen (hex) * 4;
+	char *p = malloc (strlen (hex) + 10);
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p + 2, hex);

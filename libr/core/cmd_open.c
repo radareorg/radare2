@@ -61,12 +61,12 @@ static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
-	"ob", " [fd objid]", "Switch to open binary file by fd number and objid (DEPRECATED)",
-	"ob", " [objid]", "Switch to open given objid",
-	"ob.", " ([addr])", "Show objid at current address",
-	"obo", " [objid]", "Switch to open binary file by objid (DEPRECATED)",
-	"obb", " [fd]", "Switch to open binfile by fd number (WORKS)",
+	"ob", " [bfid]", "Switch to open given objid",
+	"ob.", " ([addr])", "Show bfid at current address",
+	"obo", " [iofd]", "Switch to open binary file by objid (DEPRECATED)",
+	"obb", " [bfid]", "Switch to open binfile by fd number (Same as op)",
 	"oba", " [addr]", "Open bin info from the given address",
+	"obn", " [name]", "Select binfile by name",
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
@@ -156,13 +156,12 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static RBinObject *find_binfile_by_id(RBin *bin, ut32 id) {
-	RListIter *it, *it2;
+static RBinFile *find_binfile_by_id(RBin *bin, ut32 id) {
+	RListIter *it;
 	RBinFile *bf;
 	r_list_foreach (bin->binfiles, it, bf) {
-		RBinObject *obj = bf->o;
-		if (obj->id == id) {
-			return obj;
+		if (bf->id == id) {
+			return bf;
 		}
 	}
 	return NULL;
@@ -210,7 +209,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			RBinFile *bf = r_bin_file_at (core->bin, at);
 			if (bf) {
-				r_cons_printf ("%d\n", bf->o->id);
+				r_cons_printf ("%d\n", bf->id);
 			}
 		}
 		break;
@@ -287,25 +286,15 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "obb"
-		{
-			ut32 fd;
-			if (input[2] && input[3]) {
-				value = *(input + 3) ? input + 3 : NULL;
-			} else {
-				value = NULL;
+		if (input[2] == ' ') {
+			ut32 id = r_num_math (core->num, input + 3);
+			if (!r_core_bin_raise (core, id)) {
+				eprintf ("Invalid RBinFile.id number.\n");
 			}
-			if (!value) {
-				eprintf ("Invalid fd number.");
-				break;
-			}
-			fd = *value && r_is_valid_input_num_value (core->num, value)? r_get_input_num_value (core->num, value): UT32_MAX;
-			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
-			if (!bf) {
-				eprintf ("Invalid fd number.");
-				break;
-			}
-			r_core_bin_raise (core, bf->id, -1);
-	} break;
+		} else {
+			eprintf ("Usage: obb [bfid]\n");
+		}
+		break;
 	case ' ': // "ob "
 	{
 		ut32 fd;
@@ -319,8 +308,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
-			eprintf ("Invalid arguments\n");
-			eprintf ("usage: ob fd obj\n");
+			eprintf ("Usage: ob [file|objid]\n");
 			free (v);
 			break;
 		}
@@ -332,11 +320,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)
 				? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			RBinFile *bf = r_bin_file_find_by_object_id (core->bin, fd);
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
 			binfile_num = fd;
 			binobj_num = bf? bf->id: UT32_MAX;
 		}
-		r_core_bin_raise (core, binfile_num, binobj_num);
+		r_core_bin_raise (core, binfile_num);
 		free (v);
 		break;
 	}
@@ -353,19 +341,15 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'o': // "obo"
-		value = input[2] ? input + 2 : NULL;
-		if (!value) {
-			eprintf ("Invalid argument");
-			break;
+		if (input[2] == ' ') {
+			ut32 fd = r_num_math (core->num, input + 3);
+			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
+			if (!bf || !r_core_bin_raise (core, bf->id)) {
+				eprintf ("Invalid RBinFile.id number.\n");
+			}
+		} else {
+			eprintf ("Usage: obb [bfid]\n");
 		}
-		if (*value == ' ') value ++;
-		binobj_num  = *value && r_is_valid_input_num_value (core->num, value) ?
-				r_get_input_num_value (core->num, value) : UT32_MAX;
-		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid binobj_num");
-			break;
-		}
-		r_core_bin_raise (core, -1, binobj_num);
 		break;
 	case '-': // "ob-"
 		if (input[2] == '*') {
@@ -377,14 +361,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				eprintf ("Invalid argument\n");
 				break;
 			}
-			fd  = *value && r_is_valid_input_num_value (core->num, value) ?
+			fd = (*value && r_is_valid_input_num_value (core->num, value)) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
-			RBinObject *bo = find_binfile_by_id (core->bin, fd);
-			if (!bo) {
+			RBinFile *bf = find_binfile_by_id (core->bin, fd);
+			if (!bf) {
 				eprintf ("Invalid binid\n");
 				break;
 			}
-			if (r_core_bin_delete (core, binfile_num, bo->id)) {
+			if (r_core_bin_delete (core, bf->id)) {
 				if (!r_bin_file_delete (core->bin, fd)) {
 					eprintf ("Cannot find an RBinFile associated with that fd.\n");
 				}
@@ -1182,18 +1166,24 @@ static int cmd_open(void *data, const char *input) {
 		/* handle prioritize */
 		if (input[1]) {
 			int fd = r_num_math (core->num, input + 1);
-			if (fd) {
+			if (fd >= 0 || input[1] == '0') {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					// only useful for io.va=0
 					// load bininfo for given fd
-					r_core_cmdf (core, "obb %d", fd);
-					core->io->desc = desc;
+					r_core_cmdf (core, "obo %d", fd);
+					core->io->desc = desc; // XXX we should use fd here, not *pointer
+					r_core_block_read (core);
+				} else {
+					eprintf ("Cannot find RBinFile associated with fd %d\n", fd);
 				}
+			} else {
+				eprintf ("Invalid fd number\n");
 			}
-			r_core_block_read (core);
 		} else {
-			r_cons_printf ("%d\n", core->io->desc->fd);
+			if (core->io && core->io->desc) {
+				r_cons_printf ("%d\n", core->io->desc->fd);
+			}
 		}
 		return 0;
 		break;
@@ -1338,7 +1328,6 @@ static int cmd_open(void *data, const char *input) {
 	case 'u': { // "ou"
 		RListIter *iter = NULL;
 		RCoreFile *f;
-		int binfile_num;
 		core->switch_file_view = 0;
 		int num = atoi (input + 2);
 
@@ -1349,9 +1338,10 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_io_use_fd (core->io, num);
 		RBinFile *bf = r_bin_file_find_by_fd (core->bin, num);
-		binfile_num = bf? bf->id: UT32_MAX;
-		r_core_bin_raise (core, binfile_num, -1);
-		r_core_block_read (core);
+		if (bf) {
+			r_core_bin_raise (core, bf->id);
+			r_core_block_read (core);
+		}
 		break;
 	}
 	case 'b': // "ob"

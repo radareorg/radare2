@@ -949,7 +949,7 @@ R_API RBin *r_bin_new() {
 	return bin;
 }
 
-R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
+R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bin && arch, false);
 
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (bin, arch, bits);
@@ -972,7 +972,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
 }
 
-R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
+R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (bin, false);
 
 	RBinFile *cur = r_bin_cur (bin);
@@ -992,33 +992,10 @@ R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, con
 }
 
 // NOTE: this functiona works as expected, but  we need to merge bfid and boid
-R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
+R_API bool r_bin_select_bfid (RBin *bin, ut32 bf_id) {
 	r_return_val_if_fail (bin, false);
-
-	RBinFile *binfile = NULL;
-	RBinObject *obj = NULL;
-
-	if (binfile_id == UT32_MAX && binobj_id == UT32_MAX) {
-		return false;
-	}
-	if (binfile_id == -1) {
-		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
-		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
-	} else if (binobj_id == -1) {
-		binfile = r_bin_file_find_by_id (bin, binfile_id);
-		obj = binfile? binfile->o: NULL;
-	} else {
-		binfile = r_bin_file_find_by_id (bin, binfile_id);
-		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
-		if (!binfile || !obj) {
-			/// binobj_id : holds the binobj counter which should die
-			// binfile_id contains the actual binobj_id
-			// workaround to fix the binid, objid, binfd mess :facepalm:
-			binfile = r_bin_file_find_by_object_id (bin, binfile_id);
-			obj = binfile? r_bin_file_object_find_by_id (binfile, binfile_id): NULL;
-		}
-	}
-	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
+	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
+	return bf? r_bin_file_set_cur_binfile_obj (bin, bf, NULL): false;
 }
 
 static void list_xtr_archs(RBin *bin, int mode) {
@@ -1074,7 +1051,6 @@ static void list_xtr_archs(RBin *bin, int mode) {
 R_API void r_bin_list_archs(RBin *bin, int mode) {
 	r_return_if_fail (bin);
 
-	RListIter *iter;
 	int i = 0;
 	char unk[128];
 	char archline[128];

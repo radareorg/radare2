@@ -153,11 +153,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	o->boffset = offset;
 	o->strings_db = ht_up_new0 ();
 	o->regstate = NULL;
-	if (!r_id_pool_grab_id (bf->rbin->ids->pool, &o->id)) {
-		free (o);
-		eprintf ("Cannot grab an id\n");
-		return NULL;
-	}
 	o->kv = sdb_new0 ();
 	o->baddr = baseaddr;
 	o->baddr_shift = 0;
@@ -474,32 +469,20 @@ R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
 	return o->baddr + o->baddr_shift;
 }
 
-R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id, ut32 bo_id) {
-	RBinFile *bf = NULL;
-	RBinObject *obj = NULL;
+R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 	bool res = false;
 
 	r_return_val_if_fail (bin, false);
 
-	if (bf_id == UT32_MAX) {
-		bf = r_bin_file_find_by_object_id (bin, bo_id);
-		obj = bf ? r_bin_file_object_find_by_id (bf, bo_id) : NULL;
-	} else if (bo_id == UT32_MAX) {
-		bf = r_bin_file_find_by_id (bin, bf_id);
-		obj = bf ? bf->o : NULL;
-	} else {
-		bf = r_bin_file_find_by_id (bin, bf_id);
-		obj = bf ? r_bin_file_object_find_by_id (bf, bo_id) : NULL;
-	}
-	if (bf && bin->cur == bf) {
-		bin->cur = NULL;
-	}
-
+	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	if (bf) {
-		bf->o = NULL;
-	}
-	if (bf && obj && !bf->o) {
-		r_list_delete_data (bin->binfiles, bf);
+		if (bin->cur == bf) {
+			bin->cur = NULL;
+		}
+		// wtf
+		if (!bf->o) {
+			r_list_delete_data (bin->binfiles, bf);
+		}
 	}
 	return res;
 }
