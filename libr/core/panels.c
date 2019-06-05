@@ -91,7 +91,7 @@ static const char *menus_Tools[] = {
 };
 
 static const char *menus_Search[] = {
-	"String", "ROP", "Code", "Hexpairs",
+	"String (Whole Bin)", "String (Data Sections)", "ROP", "Code", "Hexpairs",
 	NULL
 };
 
@@ -402,7 +402,8 @@ static int colorsCb(void *user);
 static int calculatorCb(void *user);
 static int r2shellCb(void *user);
 static int systemShellCb(void *user);
-static int stringCb(void *user);
+static int string_whole_bin_Cb(void *user);
+static int string_data_sec_Cb(void *user);
 static int ropCb(void *user);
 static int codeCb(void *user);
 static int hexpairsCb(void *user);
@@ -2426,9 +2427,15 @@ static int systemShellCb(void *user) {
 	return 0;
 }
 
-static int stringCb(void *user) {
+static int string_whole_bin_Cb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search string: ", "\"/ %s\"");
+	addCmdfPanel (core, "search strings in the whole binary: ", "izz~%s");
+	return 0;
+}
+
+static int string_data_sec_Cb(void *user) {
+	RCore *core = (RCore *)user;
+	addCmdfPanel (core, "search string in data sections: ", "iz~%s");
 	return 0;
 }
 
@@ -3368,8 +3375,10 @@ static bool initPanelsMenu(RCore *core) {
 	parent = "Search";
 	i = 0;
 	while (menus_Search[i]) {
-		if (!strcmp (menus_Search[i], "String")) {
-			addMenu (core, parent, menus_Search[i], stringCb);
+		if (!strcmp (menus_Search[i], "String (Whole Bin)")) {
+			addMenu (core, parent, menus_Search[i], string_whole_bin_Cb);
+		} else if (!strcmp (menus_Search[i], "String (Data Sections)")) {
+			addMenu (core, parent, menus_Search[i], string_data_sec_Cb);
 		} else if (!strcmp (menus_Search[i], "ROP")) {
 			addMenu (core, parent, menus_Search[i], ropCb);
 		} else if (!strcmp (menus_Search[i], "Code")) {
@@ -4413,7 +4422,7 @@ static void createNewPanel(RCore *core, bool vertical) {
 }
 
 const char *sub_modal_menu[] = {
-	"Add the current panel", "Create New",
+	"Search strings in the whole bin", "Search strings in data sections", "Add the current panel", "Create New",
 	NULL
 };
 const int sub_modal_count = COUNT (sub_modal_menu);
@@ -4563,6 +4572,20 @@ static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **titl
 		if (i + j == modal->idx) {
 			switch (j) {
 			case 0:
+				{
+					*title = "Search strings in the whole bin";
+					const char *str = show_status_input (core, "Search Strings: ");
+					*cmd = r_str_newf ("izz~%s", str);
+				}
+				return true;
+			case 1:
+				{
+					*title = "Search strings in data sections";
+					const char *str = show_status_input (core, "Search Strings: ");
+					*cmd = r_str_newf ("iz~%s", str);
+				}
+				return true;
+			case 2:
 				*title = show_status_input (core, "Name: ");
 				if (R_STR_ISEMPTY (*title)) {
 					return false;
@@ -4572,7 +4595,7 @@ static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **titl
 				modal->idx += 1;
 				modal->offset += 1;
 				return false;
-			case 1:
+			case 3:
 				*title = show_status_input (core, "New name: ");
 				if (R_STR_ISEMPTY (*title)) {
 					return false;
@@ -5195,7 +5218,7 @@ repeat:
 	case '"':
 		r_cons_switchbuf (false);
 		{
-			const int w = 30;
+			const int w = 40;
 			const int h = 20;
 			const int x = (can->w - w) / 2;
 			const int y = (can->h - h) / 2;
