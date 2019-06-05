@@ -644,10 +644,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			}
 			break;
 		case WASM_OP_F64CONST:
-			{
-				if (buf_len < 8) {
-					goto err;
-				}
+			if (buf_len > 8) {
 				union di {
 					ut64   v;
 					double f;
@@ -655,6 +652,8 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				u.v = r_read_at_le64 (buf, 1);
 				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
 				op->len += 8;
+			} else {
+				goto err;
 			}
 			break;
 		default:
