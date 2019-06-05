@@ -31,6 +31,10 @@ try to keep the codebase consistent and clean.
   master. NOTE: when merging PRs, *always* merge the radare2-regressions PR
   first.
 
+## Issue triage [![Open Source Helpers](https://www.codetriage.com/radare/radare2/badges/users.svg)](https://www.codetriage.com/radare/radare2)
+
+You can contribute by triaging issues which may include reproducing bug reports or asking for vital information, such as version numbers or reproduction instructions. If you would like to start triaging issues, one easy way to get started is to [subscribe to radare2 on CodeTriage](https://www.codetriage.com/radare/radare2).
+
 # Additional resources
 
 * [README.md](https://github.com/radare/radare2/blob/master/README.md)
