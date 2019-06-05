@@ -70,7 +70,6 @@ typedef struct _OBJECT_TYPE_INFORMATION {
 	ULONG NonPagedPoolUsage;
 } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
 
-
 typedef struct {
 	int pid;
 	HANDLE hFile;
