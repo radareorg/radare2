@@ -232,6 +232,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				str = ptr; // + i-2;
 				continue;
 			}
+			bool bright = false;
 			if (ptr[0]=='0' && ptr[1] == ';' && ptr[2]=='0') {
 				// \x1b[0;0H
 				/** clear screen if gotoxy **/
@@ -278,8 +279,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				str = ptr + 1;
 				continue;
 				// invert
-			} else if (ptr[0]=='3' && (ptr[2]=='m' || ptr[2] == ';')) {
-				// http://www.betarun.com/Pages/ConsoleColor/
+			} else if ((ptr[0] == '3' || (bright = ptr[0] == '9')) && (ptr[2] == 'm' || ptr[2] == ';')) {
 				switch (ptr[1]) {
 				case '0': // BLACK
 					fg = 0;
@@ -299,8 +299,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				case '5': // MAGENTA
 					fg = 1|4;
 					break;
-				case '6': // TURQOISE
-					fg = 1|2|8;
+				case '6': // CYAN
+					fg = 1|2;
 					break;
 				case '7': // WHITE
 					fg = 1|2|4;
@@ -309,14 +309,19 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				case '9':
 					break;
 				}
+				if (bright) {
+					fg |= 8;
+				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
 				ptr = ptr + 2;
 				str = ptr + 1;
 				continue;
-			} else if (ptr[0]=='4' && ptr[2]=='m') {
+			} else if ((ptr[0] == '4' && ptr[2] == 'm')
+			           || (bright = ptr[0] == '1' && ptr[1] == '0' && ptr[3] == 'm')) {
 				/* background color */
-				switch (ptr[1]) {
+				ut8 col = bright ? ptr[2] : ptr[1];
+				switch (col) {
 				case '0': // BLACK
 					bg = 0x0;
 					break;
@@ -335,8 +340,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				case '5': // MAGENTA
 					bg = 0x10|0x40;
 					break;
-				case '6': // TURQOISE
-					bg = 0x10|0x20|0x80;
+				case '6': // CYAN
+					bg = 0x10|0x20;
 					break;
 				case '7': // WHITE
 					bg = 0x10|0x20|0x40;
@@ -345,22 +350,12 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				case '9':
 					break;
 				}
+				if (bright) {
+					bg |= 0x80;
+				}
 				SetConsoleTextAttribute (hConsole, bg|fg|inv);
 				esc = 0;
-				ptr = ptr + 2;
-				str = ptr + 1;
-				continue;
-			} else if (!strncmp (ptr, "90m", 3)) {
-				fg = 8;
-				SetConsoleTextAttribute (hConsole, bg|fg|inv);
-				esc = 0;
-				ptr = ptr + 2;
-				str = ptr + 1;
-			} else if (!strncmp (ptr, "100m", 4)) {
-				bg = 0x80;
-				SetConsoleTextAttribute (hConsole, bg|fg|inv);
-				esc = 0;
-				ptr = ptr + 3;
+				ptr = ptr + (bright ? 3 : 2);
 				str = ptr + 1;
 				continue;
 			}
