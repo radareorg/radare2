@@ -38,7 +38,6 @@
 *		Var to select algorithm?
 *		x86 vs x64 vs WOW64
 *		Graphs
-*		Use the flags field for extra info
 *		Print structures
 *		Make sure GetHeapBlocks actually works
 *		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
