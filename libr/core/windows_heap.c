@@ -67,7 +67,8 @@
 		hb->dwFlags = LF32_MOVEABLE;\
 	} else if ((flags & 0x0100)) {\
 		hb->dwFlags = LF32_FREE;\
-	}
+	}\
+	hb->dwFlags |= (flags >> SHIFT) << SHIFT;\
 
 static bool init_func() {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
@@ -132,7 +133,7 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 
 	hb->index = index;
 
-	USHORT flags = block[hb->index].flags;
+	WPARAM flags = block[hb->index].flags;
 	UPDATE_FLAGS (hb, flags);
 	return true;
 }
@@ -175,7 +176,7 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 		hb->index++;
 	}
 
-	USHORT flags = block[index].flags;
+	WPARAM flags = block[index].flags;
 	UPDATE_FLAGS (hb, flags);
 
 	return true;
@@ -409,7 +410,7 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 					GROW_PBLOCKS ();
 					(*blocks)[*count].address = currPageSegment + j * 0x1000;
 					(*blocks)[*count].size = pageSegment.DescArray[j].UnitSize * 0x1000;
-					(*blocks)[*count].flags = SEGMENT_HEAP_BLOCK | 1;
+					(*blocks)[*count].flags = SEGMENT_HEAP_BLOCK | BACKEND_BLOCK | 1;
 					PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
 					if (!extra) {
 						return false;
@@ -532,7 +533,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			DecodeHeapEntry (&heapHeader, &vAlloc.BusyBlock);
 			GROW_BLOCKS ();
 			blocks[count].address = (WPARAM)entry + offsetof (HEAP_VIRTUAL_ALLOC_ENTRY, BusyBlock);
-			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | LARGE_BLOCK) & ~2ULL;
+			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
 			blocks[count].size = vAlloc.CommitSize;
 			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
 			if (!extra) {
@@ -604,7 +605,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 							ReadProcessMemory (h_proc, (PVOID)from, &heapEntry, sz_entry, &bytesRead);
 							DecodeLFHEntry (&heapHeader, &heapEntry, subsegment.UserBlocks, lfhKey, from);
 							blocks[count].address = from;
-							blocks[count].flags = 1 | LFH_BLOCK;
+							blocks[count].flags = 1 | NT_BLOCK | LFH_BLOCK;
 							blocks[count].size = sz;
 							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
 							if (!extra) {
@@ -659,7 +660,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 				extra->segment = (WPARAM)segment.BaseAddress;
 				blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
 				blocks[count].address = from;
-				blocks[count].flags = heapEntry.Flags | NT_BLOCK;
+				blocks[count].flags = heapEntry.Flags | NT_BLOCK | BACKEND_BLOCK;
 				blocks[count].size = real_sz;
 				from += real_sz;
 				count++;
@@ -777,19 +778,34 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		default:
 			r_cons_printf ("Heap @ 0x%"PFMT64x":\n", heapInfo->heaps[i].Base);
 		}
+		char type[128];
 		if (GetFirstHeapBlock (&heapInfo->heaps[i], block) & go) {
 			do {
-				char *type = "";
-				switch (block->dwFlags) {
+				memset (type, 0, sizeof (type));
+				switch (block->dwFlags & 0xFFFF) {
 				case LF32_FIXED:
-					type = "(FIXED)";
+					strncpy (type, "(FIXED)", 8);
 					break;
 				case LF32_FREE:
-					type = "(FREE)";
+					strncpy (type, "(FREE)", 7);
 					break;
 				case LF32_MOVEABLE:
-					type = "(MOVEABLE)";
+					strncpy (type, "(MOVEABLE)", 11);
 					break;
+				}
+				if (block->dwFlags & SEGMENT_HEAP_BLOCK) {
+					strncat (type, "Segment", 8);
+				} else if (block->dwFlags & NT_BLOCK) {
+					strncat (type, "NT", 3);
+				}
+				if (block->dwFlags & LFH_BLOCK) {
+					strncat (type, "/LFH", 5);
+				} else if (block->dwFlags & LARGE_BLOCK) {
+					strncat (type, "/LARGE", 7);
+				} else if (block->dwFlags & BACKEND_BLOCK) {
+					strncat (type, "/BACKEND", 9);
+				} else if (block->dwFlags & VS_BLOCK) {
+					strncat (type, "/VS", 4);
 				}
 				unsigned short granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
 				switch (format) {
