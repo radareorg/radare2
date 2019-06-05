@@ -840,16 +840,16 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 }
 
 static const char* help_msg[] = {
-	"Usage:", " dmh[b|f][?]", " # Memory map heap",
+	"Usage:", " dmh[?|b][f|j]", " # Memory map heap",
 	"dmh[j]", "", "List process heaps",
-	"dmhb[f|?]", "", "List process heap blocks",
-	"dmh?", "", "Show map heap help",
+	"dmhb[?]", "", "List process heap blocks",
 	NULL
 };
 
 static const char* help_msg_block[] = {
 	"Usage:", " dmhb[f|j]", " # Memory map heap",
-	"dmhbf", "", "Create flags for each allocation block",
+	"dmhb", "", "List all allocated heap blocks",
+	"dmhbf", "", "Create flags for each allocated block",
 	"dmhbj", "", "Print output in JSON format",
 	NULL
 };
