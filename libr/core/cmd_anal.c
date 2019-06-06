@@ -6825,7 +6825,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case '*': // "ah*"
 	case 'j': // "ahj"
 	case '\0': // "ah"
-		if (input[1] == ' ') {
+		if (input[0] && input[1] == ' ') {
 			char *ptr = strdup (r_str_trim_ro (input + 2));
 			r_str_word_set0 (ptr);
 			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
