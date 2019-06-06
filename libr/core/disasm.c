@@ -1071,8 +1071,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 						if (fi) {
 							strcpy (ox, fi->name);
 							strcat (ox, e);
-							free (e);
 						}
+						free (e);
 					}
 				}
 			}
