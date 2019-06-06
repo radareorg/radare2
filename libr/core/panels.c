@@ -13,6 +13,9 @@
 #define PANEL_TITLE_DECOMPILER   "Decompiler"
 #define PANEL_TITLE_GRAPH        "Graph"
 #define PANEL_TITLE_FUNCTIONS    "Functions"
+#define PANEL_TITLE_FUNCTIONS    "Functions"
+#define PANEL_TITLE_STRINGS_DATA "Strings in data sections"
+#define PANEL_TITLE_STRINGS_BIN  "Strings in the whole bin"
 
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px"
@@ -55,7 +58,7 @@ static const char *menus[] = {
 };
 
 static const char *menus_File[] = {
-	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
+	"New", "Open", "ReOpen", "Close", "Sections", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
 	NULL
 };
 
@@ -333,6 +336,7 @@ static void swapPanels(RPanels *panels, int p0, int p1);
 static bool is_abnormal_cursor_type(RCore *core, RPanel *panel);
 static bool is_normal_cursor_type(RPanel *panel);
 static void activateCursor(RCore *core);
+static ut64 parse_string_on_cursor(RCore *core, RPanel *panel, int idx);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void cursorDown(RCore *core);
@@ -340,10 +344,6 @@ static void cursorUp(RCore *core);
 static void fix_cursor_up(RCore *core);
 static void fix_cursor_down(RCore *core);
 static void delegate_cursor(RCore *core, RPanel *panel);
-static void cursor_function(RCore *core, RPanel *panel);
-static void cursor_symbols(RCore *core, RPanel *panel);
-static void cursor_strings(RCore *core, RPanel *panel);
-static void cursor_breakpoints(RCore *core, RPanel *panel);
 static void cursor_del_breakpoints(RCore *core, RPanel *panel);
 static void insertValue(RCore *core);
 
@@ -565,7 +565,8 @@ static bool check_panel_type(RPanel *panel, const char *type, int len) {
 static bool is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS)) ||
 			check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION)) ||
-			check_panel_type (panel, search_db (core, "Strings"), strlen (search_db (core, "Strings"))) ||
+			check_panel_type (panel, search_db (core, PANEL_TITLE_STRINGS_DATA), strlen (search_db (core, PANEL_TITLE_STRINGS_DATA))) ||
+			check_panel_type (panel, search_db (core, PANEL_TITLE_STRINGS_BIN), strlen (search_db (core, PANEL_TITLE_STRINGS_BIN))) ||
 			check_panel_type (panel, search_db (core, "Breakpoints"), strlen (search_db (core, "Breakpoints")))) {
 		return true;
 	}
@@ -763,7 +764,7 @@ static void resetScrollPos(RPanel *p) {
 }
 
 char *findCmdStrCache(RCore *core, RPanel* panel) {
-	if (panel->model->cmdStrCache) {
+	if (panel->model->cache && panel->model->cmdStrCache) {
 		return panel->model->cmdStrCache;
 	}
 	return NULL;
@@ -798,7 +799,7 @@ char *handleCmdStrCache(RCore *core, RPanel *panel, bool force_cache) {
 	if (force_cache) {
 		panel->model->cache = true;
 	}
-	if (panel->model->cache && R_STR_ISNOTEMPTY (out)) {
+	if (R_STR_ISNOTEMPTY (out)) {
 		setCmdStrCache (core, panel, out);
 	}
 	free (cmd);
@@ -1025,6 +1026,33 @@ static void activateCursor(RCore *core) {
 	} else {
 		(void)show_status (core, "Cursor is not available for the current panel.");
 	}
+}
+
+static ut64 parse_string_on_cursor(RCore *core, RPanel *panel, int idx) {
+	if (!panel->model->cmdStrCache) {
+		return UT64_MAX;
+	}
+	RStrBuf *buf = r_strbuf_new (NULL);
+	char *s = panel->model->cmdStrCache;
+	int l = 0;
+	while (R_STR_ISNOTEMPTY (s) && l != idx) {
+		if (*s == '\n') {
+			l++;
+		}
+		s++;
+	}
+	while (R_STR_ISNOTEMPTY (s) && R_STR_ISNOTEMPTY (s + 1)) {
+		if (*s == '0' && *(s + 1) == 'x') {
+			r_strbuf_append_n (buf, s, 2);
+			while (*s != ' ') {
+				r_strbuf_append_n (buf, s, 1);
+				s++;
+			}
+			return r_num_math (core->num, r_strbuf_drain (buf));
+		}
+		s++;
+	}
+	return UT64_MAX;
 }
 
 static void cursorLeft(RCore *core) {
@@ -1378,68 +1406,12 @@ static bool handleCursorMode(RCore *core, const int key) {
 }
 
 static void delegate_cursor (RCore *core, RPanel *panel) {
-	if (check_panel_type (panel, PANEL_CMD_FUNCTION, strlen (PANEL_CMD_FUNCTION))) {
-		cursor_function (core, panel);
+	ut64 addr = parse_string_on_cursor (core, panel, panel->view->curpos);
+	if (addr == UT64_MAX) {
+		return;
 	}
-	if (check_panel_type (panel, PANEL_CMD_SYMBOLS, strlen (PANEL_CMD_SYMBOLS))) {
-		cursor_symbols (core, panel);
-	}
-	if (check_panel_type (panel, search_db (core, "Strings"), strlen (search_db (core, "Strings")))) {
-		cursor_strings (core, panel);
-	}
-	if (check_panel_type (panel, search_db (core, "Breakpoints"), strlen (search_db (core, "Breakpoints")))) {
-		cursor_breakpoints (core, panel);
-	}
-}
-
-static void cursor_function(RCore *core, RPanel *panel) {
-	RListIter *iter;
-	RAnalFunction *fcn;
-	int i = 0;
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (panel->view->curpos == i++) {
-			core->offset = fcn->addr;
-			updateDisassemblyAddr (core);
-		}
-	}
-}
-
-static void cursor_symbols(RCore *core, RPanel *panel) {
-	RListIter *iter;
-	RBinSymbol *s;
-	RList *syms = r_bin_get_symbols (core->bin);
-	int i = 0;
-	r_list_foreach (syms, iter, s) {
-		if (panel->view->curpos == i++) {
-			core->offset = s->vaddr;
-			updateDisassemblyAddr (core);
-		}
-	}
-}
-
-static void cursor_strings(RCore *core, RPanel *panel) {
-	RListIter *iter;
-	RBinString *s;
-	RList *strings = r_bin_get_strings (core->bin);
-	int i = 0;
-	r_list_foreach (strings, iter, s) {
-		if (panel->view->curpos == i++) {
-			core->offset = s->vaddr;
-			updateDisassemblyAddr (core);
-		}
-	}
-}
-
-static void cursor_breakpoints(RCore *core, RPanel *panel) {
-	RListIter *iter;
-	RBreakpointItem *b;
-	int i = 0;
-	r_list_foreach (core->dbg->bp->bps, iter, b) {
-		if (panel->view->curpos == i++) {
-			core->offset = b->addr;
-			updateDisassemblyAddr (core);
-		}
-	}
+	core->offset = addr;
+	updateDisassemblyAddr (core);
 }
 
 static void cursor_del_breakpoints(RCore *core, RPanel *panel) {
@@ -2226,7 +2198,7 @@ static void setdcb(RCore *core, RPanel *p) {
 		p->model->directionCb = directionGraphCb;
 		return;
 	}
-	if (p->model->cmdStrCache || p->model->readOnly) {
+	if ((p->model->cache && p->model->cmdStrCache) || p->model->readOnly) {
 		p->model->directionCb = directionDefaultCb;
 		return;
 	}
@@ -2429,13 +2401,13 @@ static int systemShellCb(void *user) {
 
 static int string_whole_bin_Cb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search strings in the whole binary: ", "izz~%s");
+	addCmdfPanel (core, "search strings in the whole binary: ", "izzq~%s");
 	return 0;
 }
 
 static int string_data_sec_Cb(void *user) {
 	RCore *core = (RCore *)user;
-	addCmdfPanel (core, "search string in data sections: ", "iz~%s");
+	addCmdfPanel (core, "search string in data sections: ", "izq~%s");
 	return 0;
 }
 
@@ -3018,7 +2990,7 @@ static char *print_default_cb(void *user, void *p) {
 	char *cmdstr = findCmdStrCache (core, panel);
 	if (update || !cmdstr) {
 		cmdstr = handleCmdStrCache (core, panel, false);
-		if (panel->model->cmdStrCache) {
+		if (panel->model->cache && panel->model->cmdStrCache) {
 			resetScrollPos (panel);
 		}
 	}
@@ -3807,7 +3779,8 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Entropy Fire", "p==e", 0);
 	sdb_set (panels->db, "DRX", "drx", 0);
 	sdb_set (panels->db, "Sections", "iSq", 0);
-	sdb_set (panels->db, "Strings", "izq", 0);
+	sdb_set (panels->db, PANEL_TITLE_STRINGS_DATA, "izq", 0);
+	sdb_set (panels->db, PANEL_TITLE_STRINGS_BIN, "izzq", 0);
 	sdb_set (panels->db, "Maps", "dm", 0);
 	sdb_set (panels->db, "Modules", "dmm", 0);
 	sdb_set (panels->db, "Backtrace", "dbt", 0);
@@ -4422,7 +4395,7 @@ static void createNewPanel(RCore *core, bool vertical) {
 }
 
 const char *sub_modal_menu[] = {
-	"Search strings in the whole bin", "Search strings in data sections", "Add the current panel", "Create New",
+	"Search strings in data sections", "Search strings in the whole bin", "Add the current panel to this", "Create New",
 	NULL
 };
 const int sub_modal_count = COUNT (sub_modal_menu);
@@ -4573,16 +4546,16 @@ static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **titl
 			switch (j) {
 			case 0:
 				{
-					*title = "Search strings in the whole bin";
+					*title = "Search strings in data sections";
 					const char *str = show_status_input (core, "Search Strings: ");
-					*cmd = r_str_newf ("izz~%s", str);
+					*cmd = r_str_newf ("%s~%s", search_db (core, PANEL_TITLE_STRINGS_DATA), str);
 				}
 				return true;
 			case 1:
 				{
-					*title = "Search strings in data sections";
+					*title = "Search strings in the whole bin";
 					const char *str = show_status_input (core, "Search Strings: ");
-					*cmd = r_str_newf ("iz~%s", str);
+					*cmd = r_str_newf ("%s~%s", search_db (core, PANEL_TITLE_STRINGS_BIN), str);
 				}
 				return true;
 			case 2:
