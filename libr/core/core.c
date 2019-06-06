@@ -1127,9 +1127,7 @@ static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, 
 			break;
 		}
 		autocomplete_process_path (completion, buf->data, s);
-		free (buf);
 	}
-
 out:
 	free (args);
 	free (input);
