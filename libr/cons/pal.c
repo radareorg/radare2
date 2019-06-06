@@ -131,8 +131,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.args               = (RColor) RColor_YELLOW;
 	ctx->cpal.bin                = (RColor) RColor_CYAN;
 	ctx->cpal.btext              = (RColor) RColor_YELLOW;
-	ctx->cpal.call               = (RColor) RColor_GREEN;
-	ctx->cpal.call.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.call               = (RColor) RColor_BGREEN;
 	ctx->cpal.cjmp               = (RColor) RColor_GREEN;
 	ctx->cpal.cmp                = (RColor) RColor_CYAN;
 	ctx->cpal.comment            = (RColor) RColor_RED;
@@ -146,8 +145,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.fname              = (RColor) RColor_RED;
 	ctx->cpal.help               = (RColor) RColor_GREEN;
 	ctx->cpal.input              = (RColor) RColor_WHITE;
-	ctx->cpal.invalid            = (RColor) RColor_RED;
-	ctx->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
+	ctx->cpal.invalid            = (RColor) RColor_BRED;
 	ctx->cpal.jmp                = (RColor) RColor_GREEN;
 	ctx->cpal.label              = (RColor) RColor_CYAN;
 	ctx->cpal.math               = (RColor) RColor_YELLOW;
@@ -156,16 +154,14 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.num                = (RColor) RColor_YELLOW;
 	ctx->cpal.offset             = (RColor) RColor_GREEN;
 	ctx->cpal.other              = (RColor) RColor_WHITE;
-	ctx->cpal.pop                = (RColor) RColor_MAGENTA;
-	ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
+	ctx->cpal.pop                = (RColor) RColor_BMAGENTA;
 	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
 	ctx->cpal.push               = (RColor) RColor_MAGENTA;
 	ctx->cpal.crypto             = (RColor) RColor_BGBLUE;
 	ctx->cpal.reg                = (RColor) RColor_CYAN;
 	ctx->cpal.ret                = (RColor) RColor_RED;
 	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
-	ctx->cpal.trap               = (RColor) RColor_RED;
-	ctx->cpal.trap.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.trap               = (RColor) RColor_BRED;
 	ctx->cpal.ucall              = (RColor) RColor_GREEN;
 	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 
