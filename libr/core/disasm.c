@@ -1011,10 +1011,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	char *asm_str = colorize_asm_string (core, ds, print_color);
 	if (ds->pseudo) {
-		r_parse_parse (core->parser, ds->opstr
-				? ds->opstr
-				: r_asm_op_get_asm (&ds->asmop),
-				ds->str);
+		const char *opstr = ds->opstr ? ds->opstr : r_asm_op_get_asm (&ds->asmop);
+		r_parse_parse (core->parser, opstr, ds->str);
 		asm_str = strdup (ds->str);
 	}
 	asm_str = ds_sub_jumps (ds, asm_str);
@@ -1060,7 +1058,24 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				}
 			}
 			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
-				ds->str, sizeof (ds->str), core->print->big_endian);
+					ds->str, sizeof (ds->str), core->print->big_endian);
+			if (ds->varsub) {
+				// HACK to do varsub outside rparse becacuse the whole rparse api must be rewritten
+				char *ox = strstr (ds->str, "0x");
+				if (ox) {
+					char *e = strstr (ox, "]");
+					if (e) {
+						e = strdup (e);
+						ut64 addr = r_num_math (NULL, ox);
+						RFlagItem *fi = r_flag_get_i (ds->core->flags, addr);
+						if (fi) {
+							strcpy (ox, fi->name);
+							strcat (ox, e);
+							free (e);
+						}
+					}
+				}
+			}
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
