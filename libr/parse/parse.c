@@ -587,7 +587,11 @@ static int filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, c
 		}
 		ptr = ptr2;
 	}
-	strncpy (str, data, len);
+	if (data != str) {
+		strncpy (str, data, len);
+	} else {
+		eprintf ("Invalid str/data inputs\n");
+	}
 	return false;
 }
 
