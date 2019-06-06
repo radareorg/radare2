@@ -3,6 +3,7 @@ r_hash_sources = [
   'calc.c',
   'crca.c',
   'entropy.c',
+  'fletcher.c',
   'hamdist.c',
   'hash.c',
   'luhn.c',
