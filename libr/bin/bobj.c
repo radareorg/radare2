@@ -45,6 +45,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->symbols);
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
+	ht_pp_free (o->methods_ht);
 	r_list_free (o->lines);
 	sdb_free (o->kv);
 	if (o->mem) {
@@ -108,7 +109,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 		}
 		const char *cn = sym->classname;
 		if (cn) {
-			RBinClass *c = r_bin_class_new (bf, sym->classname, NULL, 0);
+			RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
 			if (!c) {
 				continue;
 			}
@@ -155,6 +156,9 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	o->regstate = NULL;
 	o->kv = sdb_new0 ();
 	o->baddr = baseaddr;
+	o->classes = r_list_new ();
+	o->classes_ht = ht_pp_new0 ();
+	o->methods_ht = ht_pp_new0 ();
 	o->baddr_shift = 0;
 	o->plugin = plugin;
 	o->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;

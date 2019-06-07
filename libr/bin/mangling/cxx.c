@@ -16,10 +16,10 @@ static inline bool is_cxx_symbol (const char *name) {
 }
 
 // TODO: deprecate
-R_API bool r_bin_is_cxx (RBinFile *binfile) {
+R_API bool r_bin_is_cxx (RBinFile *bf) {
 	RListIter *iter;
 	RBinImport *import;
-	RBinObject *o = binfile->o;
+	RBinObject *o = bf->o;
 	r_list_foreach (o->imports, iter, import) {
 		if (is_cxx_symbol (import->name)) {
 			return true;
@@ -28,7 +28,7 @@ R_API bool r_bin_is_cxx (RBinFile *binfile) {
 	return false;
 }
 
-R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
+R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
 	int i;
@@ -91,8 +91,8 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 			}
 			if (nerd && *nerd) {
 				*nerd = 0;
-				if (binfile) {
-					RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
+				if (bf) {
+					RBinSymbol *sym = r_bin_file_add_method (bf, out, nerd + 2, 0);
 					if (sym) {
 						sym->vaddr = vaddr;
 					}

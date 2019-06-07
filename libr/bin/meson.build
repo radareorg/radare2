@@ -7,7 +7,7 @@ r_bin_sources = [
   'blang.c',
   'filter.c',
   'bfile.c',
-  'obj.c',
+  'bobj.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',

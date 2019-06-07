@@ -34,7 +34,6 @@ R_IPI const char *r_bin_lang_tostring(int lang);
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_IPI bool r_bin_lang_swift(RBinFile *binfile);
 
-R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view);
 R_IPI void r_bin_class_free(RBinClass *c);
 R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_IPI void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name);

@@ -604,6 +604,30 @@ static int r_bin_print_xtrplugin_details(RBin *bin, RBinXtrPlugin *bx, int json)
 	return true;
 }
 
+R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
+	RListIter *it;
+	RBinPlugin *bp;
+	RBinXtrPlugin *bx;
+
+	r_return_val_if_fail (bin && name, false);
+
+	r_list_foreach (bin->plugins, it, bp) {
+		if (!r_str_cmp (name, bp->name, strlen (name))) {
+			continue;
+		}
+		return r_bin_print_plugin_details (bin, bp, json);
+	}
+	r_list_foreach (bin->binxtrs, it, bx) {
+		if (!r_str_cmp (name, bx->name, strlen (name))) {
+			continue;
+		}
+		return r_bin_print_xtrplugin_details (bin, bx, json);
+	}
+
+	eprintf ("cannot find plugin %s\n", name);
+	return false;
+}
+
 R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
 	RBinPlugin *bp;
@@ -668,30 +692,6 @@ R_API int r_bin_list(RBin *bin, int json) {
 				ld->desc, ld->license? ld->license: "???");
 		}
 	}
-	return false;
-}
-
-R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
-	RListIter *it;
-	RBinPlugin *bp;
-	RBinXtrPlugin *bx;
-
-	r_return_val_if_fail (bin && name, false);
-
-	r_list_foreach (bin->plugins, it, bp) {
-		if (!r_str_cmp (name, bp->name, strlen (name))) {
-			continue;
-		}
-		return r_bin_print_plugin_details (bin, bp, json);
-	}
-	r_list_foreach (bin->binxtrs, it, bx) {
-		if (!r_str_cmp (name, bx->name, strlen (name))) {
-			continue;
-		}
-		return r_bin_print_xtrplugin_details (bin, bx, json);
-	}
-
-	eprintf ("cannot find plugin %s\n", name);
 	return false;
 }
 
@@ -1170,7 +1170,8 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 }
 
 static RBinSection* _get_vsection_at(RBin *bin, ut64 vaddr) {
-	if (!bin || !bin->cur) {
+	r_return_val_if_fail (bin, NULL);
+	if (!bin->cur) {
 		return NULL;
 	}
 	RBinObject *cur = bin->cur->o;
@@ -1217,6 +1218,8 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		// XXX: implement me
 		r_warn_if_reached ();
 	} else if (!strcmp (type, "fat")) {
+		// XXX: this should be implemented in the fat plugin, not here
+		// XXX should pick the callback from the plugin list
 		const char *f;
 		RListIter *iter;
 		ut32 num;
@@ -1283,102 +1286,7 @@ R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	return o ? o->classes : NULL;
 }
 
-R_IPI void r_bin_class_free(RBinClass *c) {
-	free (c->name);
-	free (c->super);
-	r_list_free (c->methods);
-	r_list_free (c->fields);
-	free (c);
-}
 
-static RBinClass *class_get(RBinFile *binfile, const char *name) {
-	r_return_val_if_fail (binfile && binfile->o && name, NULL);
-	if (!binfile->o->classes_ht) {
-		return NULL;
-	}
-	return ht_pp_find (binfile->o->classes_ht, name, NULL);
-}
-
-R_IPI RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view) {
-	if (!binfile || !binfile->o) {
-		return NULL;
-	}
-	RBinObject *o = binfile->o;
-	RList *list = o->classes;
-	if (!name) {
-		return NULL;
-	}
-	RBinClass *c = class_get (binfile, name);
-	if (c) {
-		if (super) {
-			free (c->super);
-			c->super = strdup (super);
-		}
-		return c;
-	}
-	c = R_NEW0 (RBinClass);
-	if (!c) {
-		return NULL;
-	}
-	if (!list) {
-		list = o->classes = r_list_new ();
-	}
-	if (!o->classes_ht) {
-		o->classes_ht = ht_pp_new0 ();
-	}
-	c->name = strdup (name);
-	c->super = super? strdup (super): NULL;
-	c->index = r_list_length (list);
-	c->methods = r_list_new ();
-	c->fields = r_list_new ();
-	c->visibility = view;
-	r_list_append (list, c);
-	ht_pp_insert (o->classes_ht, name, c);
-	return c;
-}
-
-R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
-	r_return_val_if_fail (binfile, NULL);
-
-	RBinClass *c = class_get (binfile, classname);
-	if (!c) {
-		c = r_bin_class_new (binfile, classname, NULL, 0);
-		if (!c) {
-			eprintf ("Cannot allocate class %s\n", classname);
-			return NULL;
-		}
-	}
-	RBinSymbol *m;
-	RListIter *iter;
-	r_list_foreach (c->methods, iter, m) {
-		if (!strcmp (m->name, name)) {
-			return NULL;
-		}
-	}
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym) {
-		return NULL;
-	}
-	sym->name = strdup (name);
-	r_list_append (c->methods, sym);
-	return sym;
-}
-
-R_IPI void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
-	//TODO: add_field into class
-	//eprintf ("TODO add field: %s \n", name);
-}
-
-/* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
- * bin, paddr otherwise */
-R_API ut64 r_bin_file_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
-	r_return_val_if_fail (binfile, paddr);
-
-	if (binfile->o && binfile->o->info && binfile->o->info->has_va) {
-		return binobj_a2b (binfile->o, vaddr);
-	}
-	return paddr;
-}
 
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise */
@@ -1456,29 +1364,32 @@ R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
 
 /* RBinField */
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format) {
-	RBinField *ptr;
-	if (!(ptr = R_NEW0 (RBinField))) {
-		return NULL;
+	RBinField *ptr = R_NEW0 (RBinField);
+	if (ptr) {
+		ptr->name = strdup (name);
+		ptr->comment = (comment && *comment)? strdup (comment): NULL;
+		ptr->format = (format && *format)? strdup (format): NULL;
+		ptr->paddr = paddr;
+		ptr->size = size;
+	//	ptr->visibility = any default visibility?
+		ptr->vaddr = vaddr;
 	}
-	ptr->name = strdup (name);
-	ptr->comment = (comment && *comment)? strdup (comment): NULL;
-	ptr->format = (format && *format)? strdup (format): NULL;
-	ptr->paddr = paddr;
-	ptr->size = size;
-//	ptr->visibility = ???
-	ptr->vaddr = vaddr;
 	return ptr;
 }
 
 // use void* to honor the RListFree signature
 R_API void r_bin_field_free(void *_field) {
 	RBinField *field = (RBinField*) _field;
-	free (field->name);
-	free (field->comment);
-	free (field->format);
-	free (field);
+	if (field) {
+		free (field->name);
+		free (field->comment);
+		free (field->format);
+		free (field);
+	}
 }
 
+// method name too long
+// RBin.methFlagToString(RBin.Method.CLASS)
 R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	switch (flag) {
 	case R_BIN_METH_CLASS:
@@ -1531,7 +1442,9 @@ R_API const char *r_bin_get_meth_flag_string(ut64 flag, bool compact) {
 }
 
 R_IPI void r_bin_section_free(RBinSection *bs) {
-	free (bs->name);
-	free (bs->format);
-	free (bs);
+	if (bs) {
+		free (bs->name);
+		free (bs->format);
+		free (bs);
+	}
 }
