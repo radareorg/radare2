@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -20,6 +20,7 @@ R_API bool r_bin_is_cxx (RBinFile *bf) {
 	RListIter *iter;
 	RBinImport *import;
 	RBinObject *o = bf->o;
+	// XXX this is too slow
 	r_list_foreach (o->imports, iter, import) {
 		if (is_cxx_symbol (import->name)) {
 			return true;
@@ -94,7 +95,14 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 				if (bf) {
 					RBinSymbol *sym = r_bin_file_add_method (bf, out, nerd + 2, 0);
 					if (sym) {
-						sym->vaddr = vaddr;
+						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
+							if (bf && bf->rbin && bf->rbin->verbose) {
+								eprintf ("Dupped method found: %s\n", sym->name);
+							}
+						}
+						if (sym->vaddr == 0) {
+							sym->vaddr = vaddr;
+						}
 					}
 				}
 				*nerd = ':';

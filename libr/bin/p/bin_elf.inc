@@ -1013,6 +1013,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
+	// XXX this is very slow. we shouldnt walk the imports all the time, just set the bit when loading them
 	ret->lang = r_bin_is_cxx (bf) ? "c++" : "c";
 	ret->file = bf->file
 		? strdup (bf->file)

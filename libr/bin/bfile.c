@@ -14,7 +14,7 @@ static RBinClass *__getClass(RBinFile *bf, const char *name) {
 }
 
 static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *method) {
-	r_return_val_if_fail (bf && bf->o && bf->o->classes_ht && klass && method, NULL);
+	r_return_val_if_fail (bf && bf->o && bf->o->methods_ht && klass && method, NULL);
 	const char *name = sdb_fmt ("%s::%s", klass, method);
 	return ht_pp_find (bf->o->methods_ht, name, NULL);
 }
@@ -934,7 +934,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 			sym->name = strdup (method);
 			r_list_append (c->methods, sym);
 			const char *name = sdb_fmt ("%s::%s", klass, method);
-			ht_pp_insert (bf->o->classes_ht, name, sym);
+			ht_pp_insert (bf->o->methods_ht, name, sym);
 		}
 	}
 	return sym;
