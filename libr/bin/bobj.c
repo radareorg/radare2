@@ -95,15 +95,9 @@ static char *swiftField(const char *dn, const char *cn) {
 }
 
 static RList *classes_from_symbols(RBinFile *bf) {
-	RBinObject *o = bf->o;
 	RBinSymbol *sym;
 	RListIter *iter;
-	RList *symbols = o->symbols;
-	RList *classes = o->classes;
-	if (!classes) {
-		classes = r_list_newf ((RListFree)r_bin_class_free);
-	}
-	r_list_foreach (symbols, iter, sym) {
+	r_list_foreach (bf->o->symbols, iter, sym) {
 		if (sym->name[0] != '_') {
 			continue;
 		}
@@ -134,11 +128,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 			}
 		}
 	}
-	if (r_list_empty (classes)) {
-		r_list_free (classes);
-		return NULL;
-	}
-	return classes;
+	return bf->o->classes;
 }
 
 // TODO: kill offset and sz, because those should be infered from binfile->buf
@@ -156,7 +146,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	o->regstate = NULL;
 	o->kv = sdb_new0 ();
 	o->baddr = baseaddr;
-	o->classes = r_list_new ();
+	o->classes = r_list_newf ((RListFree)r_bin_class_free);
 	o->classes_ht = ht_pp_new0 ();
 	o->methods_ht = ht_pp_new0 ();
 	o->baddr_shift = 0;
