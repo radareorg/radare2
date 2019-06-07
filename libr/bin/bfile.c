@@ -929,7 +929,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 	}
 	RBinSymbol *sym = __getMethod (bf, klass, method);
 	if (!sym) {
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		sym = R_NEW0 (RBinSymbol);
 		if (sym) {
 			sym->name = strdup (method);
 			r_list_append (c->methods, sym);
