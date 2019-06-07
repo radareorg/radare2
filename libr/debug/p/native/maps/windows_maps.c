@@ -78,7 +78,7 @@ static inline RDebugMap *add_map_reg(RList *list, const char *name, MEMORY_BASIC
 R_API RList *r_w32_dbg_modules(RDebug *dbg) {
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
-	RList *list = r_list_new ();
+	RList *list = r_list_newf (free);
 	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
 	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (flags, dbg->pid);
 
