@@ -874,7 +874,7 @@ R_API bool r_bin_file_hash(RBin *bin, ut64 limit, const char *file, RList/*<RBin
 	return true;
 }
 
-R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
+R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) {
 	r_return_val_if_fail (name, NULL);
 	RBinClass *c = R_NEW0 (RBinClass);
 	if (c) {
@@ -887,7 +887,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 	return c;
 }
 
-R_API void r_bin_class_free(RBinClass *k) {
+R_IPI void r_bin_class_free(RBinClass *k) {
 	if (k) {
 		free (k->name);
 		free (k->super);
