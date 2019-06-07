@@ -95,7 +95,7 @@ static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 
 R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
-		r_core_bin_set_cur (core, r_core_bin_cur (core));
+		r_core_bin_set_cur (core, r_bin_cur (core->bin));
 		return true;
 	}
 	return false;
@@ -103,7 +103,7 @@ R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 
 R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
 	if (r_bin_file_set_cur_by_name (core->bin, name)) {
-		r_core_bin_set_cur (core, r_core_bin_cur (core));
+		r_core_bin_set_cur (core, r_bin_cur (core->bin));
 		return true;
 	}
 	return false;
@@ -157,10 +157,6 @@ R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
 	return r_bin_reset_strings (r->bin)? true: false;
-}
-
-R_API RBinFile *r_core_bin_cur(RCore *core) {
-	return r_bin_cur (core->bin);
 }
 
 static void _print_strings(RCore *r, RList *list, int mode, int va) {
@@ -418,7 +414,7 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 
 static bool bin_strings(RCore *r, int mode, int va) {
 	RList *list;
-	RBinFile *binfile = r_core_bin_cur (r);
+	RBinFile *binfile = r_bin_cur (r->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	int rawstr = r_config_get_i (r->config, "bin.rawstr");
 	if (!binfile) {
@@ -584,19 +580,19 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
 	RBinInfo *info = r_bin_get_info (r->bin);
-	RBinFile *binfile = r_core_bin_cur (r);
-	RBinObject *obj = r_bin_cur_object (r->bin);
+	RBinFile *bf = r_bin_cur (r->bin);
+	RBinObject *obj = bf->o;
 	const char *compiled = NULL;
 	bool havecode;
 
-	if (!binfile || !info || !obj) {
+	if (!bf || !info || !obj) {
 		if (mode & R_MODE_JSON) {
 			r_cons_printf ("{}");
 		}
 		return false;
 	}
 	havecode = is_executable (obj) | (obj->entries != NULL);
-	compiled = get_compile_time (binfile->sdb);
+	compiled = get_compile_time (bf->sdb);
 
 	if (IS_MODE_SET (mode)) {
 		r_config_set (r->config, "file.type", info->rclass);
@@ -714,7 +710,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		pair_str ("dbg_file", info->debug_file_name, mode, false);
 		pair_str ("endian", info->big_endian ? "big" : "little", mode, false);
 		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
-			tmp_buf = sdb_get (binfile->sdb, "mdmp.flags", 0);
+			tmp_buf = sdb_get (bf->sdb, "mdmp.flags", 0);
 			if (tmp_buf) {
 				pair_str ("flags", tmp_buf, mode, false);
 				free (tmp_buf);
@@ -765,7 +761,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_bool ("static", r_bin_is_static (r->bin), mode, false);
 		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
-			v = sdb_num_get (binfile->sdb, "mdmp.streams", 0);
+			v = sdb_num_get (bf->sdb, "mdmp.streams", 0);
 			if (v != -1) {
 				pair_int ("streams", v, mode, false);
 			}
@@ -783,7 +779,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				if (!tmp) {
 					return false;
 				}
-				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				r_buf_read_at (bf->buf, h->from, tmp, h->to);
 				int len = r_hash_calculate (rh, hash, tmp, h->to);
 				free (tmp);
 				if (len < 1) {
@@ -807,7 +803,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				if (!tmp) {
 					return false;
 				}
-				r_buf_read_at (binfile->buf, h->from, tmp, h->to);
+				r_buf_read_at (bf->buf, h->from, tmp, h->to);
 				int len = r_hash_calculate (rh, hash, tmp, h->to);
 				free (tmp);
 				if (len < 1) {
@@ -840,7 +836,7 @@ static int bin_dwarf(RCore *core, int mode) {
 	if (!r_config_get_i (core->config, "bin.dbginfo")) {
 		return false;
 	}
-	RBinFile *binfile = r_core_bin_cur (core);
+	RBinFile *binfile = r_bin_cur (core->bin);
 	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
 	if (!binfile) {
 		return false;
@@ -2143,7 +2139,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 						// we dont want unnamed symbol flags
 					}
 				}
-				binfile = r_core_bin_cur (r);
+				binfile = r_bin_cur (r->bin);
 				plugin = r_bin_file_cur_plugin (binfile);
 				if (plugin && plugin->name) {
 					if (r_str_startswith (plugin->name, "pe")) {
@@ -2671,7 +2667,6 @@ static int bin_fields(RCore *r, int mode, int va) {
 	RBinField *field;
 	int i = 0;
 	RBin *bin = r->bin;
-	//  RBinFile *binfile = r_core_bin_cur (r);
 
 	if (!(fields = r_bin_get_fields (bin))) {
 		return false;
@@ -3484,7 +3479,7 @@ static int bin_signature(RCore *r, int mode) {
 R_API void r_core_bin_export_info_rad(RCore *core) {
 	Sdb *db = NULL;
 	char *flagname = NULL, *offset = NULL;
-	RBinFile *bf = r_core_bin_cur (core);
+	RBinFile *bf = r_bin_cur (core->bin);
 	if (!bf) {
 		return;
 	}
@@ -3715,7 +3710,7 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 			arch = r->assembler->cur->arch;
 		}
 	}
-	binfile = r_core_bin_cur (r);
+	binfile = r_bin_cur (r->bin);
 	name = binfile ? binfile->file : NULL;
 	if (binfile && binfile->curxtr) {
 		r_anal_hint_clear (r->anal);
@@ -3727,7 +3722,7 @@ R_API bool r_core_bin_raise(RCore *core, ut32 bfid) {
 	if (!r_bin_select_bfid (core->bin, bfid)) {
 		return false;
 	}
-	RBinFile *bf = r_core_bin_cur (core);
+	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf) {
 		r_io_use_fd (core->io, bf->fd);
 	}
@@ -3743,7 +3738,7 @@ R_API bool r_core_bin_delete(RCore *core, ut32 binfile_idx) {
 	if (!r_bin_object_delete (core->bin, binfile_idx)) {
 		return false;
 	}
-	RBinFile *binfile = r_core_bin_cur (core);
+	RBinFile *binfile = r_bin_cur (core->bin);
 	if (binfile) {
 		r_io_use_fd (core->io, binfile->fd);
 	}
@@ -3803,7 +3798,7 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 	// list all binfiles and there objects and there archs
 	int count = 0;
 	RListIter *iter;
-	RBinFile *binfile = NULL; //, *cur_bf = r_core_bin_cur (core) ;
+	RBinFile *binfile = NULL; //, *cur_bf = r_bin_cur (core->bin) ;
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 	if (!binfiles) {

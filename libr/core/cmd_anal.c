@@ -5577,7 +5577,6 @@ static void cmd_anal_jumps(RCore *core, const char *input) {
 static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	int bufi, minop = 1; // 4
 	ut8 *buf;
-	RBinFile *binfile;
 	RAnalOp op = {0};
 	ut64 addr, addr_end;
 	ut64 len = r_num_math (core->num, input);
@@ -5585,9 +5584,8 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		eprintf ("Too big\n");
 		return;
 	}
-	binfile = r_core_bin_cur (core);
-	if (!binfile) {
-		eprintf ("cur binfile NULL\n");
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf) {
 		return;
 	}
 	addr = core->offset;
@@ -5596,10 +5594,10 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		RIOMap *map = r_io_map_get (core->io, addr);
 		if (map && (map->perm & R_PERM_X)) {
 			// search in current section
-			if (map->itv.size > binfile->size) {
+			if (map->itv.size > bf->size) {
 				addr = map->itv.addr;
-				if (binfile->size > map->delta) {
-					len = binfile->size - map->delta;
+				if (bf->size > map->delta) {
+					len = bf->size - map->delta;
 				} else {
 					eprintf ("Opps something went wrong aac\n");
 					return;
@@ -5609,11 +5607,11 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 				len = map->itv.size;
 			}
 		} else {
-			if (map && map->itv.addr != map->delta && binfile->size > (core->offset - map->itv.addr + map->delta)) {
-				len = binfile->size - (core->offset - map->itv.addr + map->delta);
+			if (map && map->itv.addr != map->delta && bf->size > (core->offset - map->itv.addr + map->delta)) {
+				len = bf->size - (core->offset - map->itv.addr + map->delta);
 			} else {
-				if (binfile->size > core->offset) {
-					len = binfile->size - core->offset;
+				if (bf->size > core->offset) {
+					len = bf->size - core->offset;
 				} else {
 					eprintf ("Oops invalid range\n");
 					len = 0;
@@ -5810,14 +5808,13 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, bool importsOnly) {
 	RList *ranges = NULL;
 	RIOMap *r;
-	RBinFile *binfile;
 	ut64 addr;
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
 		eprintf ("Too big\n");
 		return;
 	}
-	binfile = r_core_bin_cur (core);
+	RBinFile *binfile = r_bin_cur (core->bin);
 	addr = core->offset;
 	if (binfile) {
 		if (len) {

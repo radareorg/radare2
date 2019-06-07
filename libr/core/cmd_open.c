@@ -1500,7 +1500,7 @@ static int cmd_open(void *data, const char *input) {
 					fd = core->io->desc->fd;
 				}
 				if (r_config_get_i (core->config, "cfg.debug")) {
-					RBinFile *bf = r_core_bin_cur (core);
+					RBinFile *bf = r_bin_cur (core->bin);
 					if (bf && r_file_exists (bf->file)) {
 						char *file = strdup (bf->file);
 						r_core_cmd0 (core, "ob-*");
