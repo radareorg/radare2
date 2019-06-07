@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake, cgvwzq */
+/* radare - LGPL - Copyright 2017-2019 - pancake, cgvwzq */
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -630,10 +630,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			}
 			break;
 		case WASM_OP_F32CONST:
-			{
-				if (buf_len < 4) {
-					goto err;
-				}
+			if (buf_len > 4) {
 				union fi {
 					ut32  v;
 					float f;
@@ -641,6 +638,8 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				u.v = r_read_at_le32 (buf, 1);
 				r_strbuf_setf (sb, "%s %f", opdef->txt, u.f);
 				op->len += 4;
+			} else {
+				goto err;
 			}
 			break;
 		case WASM_OP_F64CONST:
