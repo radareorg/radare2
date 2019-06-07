@@ -1066,11 +1066,13 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					char *e = strstr (ox, "]");
 					if (e) {
 						e = strdup (e);
-						ut64 addr = r_num_math (NULL, ox);
-						RFlagItem *fi = r_flag_get_i (ds->core->flags, addr);
-						if (fi) {
-							strcpy (ox, fi->name);
-							strcat (ox, e);
+						ut64 addr = r_num_get (NULL, ox);
+						if (addr > ds->min_ref_addr) {
+							RFlagItem *fi = r_flag_get_i (ds->core->flags, addr);
+							if (fi) {
+								strcpy (ox, fi->name);
+								strcat (ox, e);
+							}
 						}
 						free (e);
 					}
