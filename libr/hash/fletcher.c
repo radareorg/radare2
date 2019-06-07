@@ -41,24 +41,22 @@ R_API ut32 r_hash_fletcher32(const ut8 *data, size_t len) {
 	size_t i;
 	ut8 word[sizeof (ut16)];
 	for (c0 = c1 = 0; len >= 360; len -= 360) {
-		for (i = 0; i < 360; i++) {
+		for (i = 0; i < 360; i+=2) {
 			size_t left = 360 - i;
 			memset (word, 0, sizeof (word));
 			memcpy (word, data, R_MIN (sizeof (word), left));
-			ut16 w = r_read_le16 (word);
-			c0 += w;
+			c0 += r_read_le16 (word);
 			c1 += c0;
 			data += 2;
 		}
 		c0 %= UT16_MAX;
 		c1 %= UT16_MAX;
 	}
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len; i+=2) {
 		size_t left = len - i;
 		memset (word, 0, sizeof (word));
 		memcpy (word, data, R_MIN (sizeof (word), left));
-		ut16 w = r_read_le16 (word);
-		c0 += w;
+		c0 += r_read_le16 (word);
 		c1 += c0;
 		data += 2;
 	}
