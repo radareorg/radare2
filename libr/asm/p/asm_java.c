@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	RBin *bin = a->binb.bin;
 	RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
 		bin->cur->o->plugin : NULL;
-	if (plugin) {
+	if (plugin && plugin->name) {
 		if (!strcmp (plugin->name, "java")) { // XXX slow
 			obj = bin->cur->o->bin_obj; //o;
 			//eprintf("Handling: %s disasm.\n", b->cur.file);

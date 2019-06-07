@@ -1033,7 +1033,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		r_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
-		RBinFile *bf = r_core_bin_cur (&core);
+		RBinFile *bf = r_bin_cur (core.bin);
 		if (bf) {
 			bf->strmode = rad;
 			r_bin_dump_strings (bf, bin->minstrlen, bf->rawstr);

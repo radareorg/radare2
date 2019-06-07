@@ -2540,6 +2540,14 @@ func.snprintf.arg.2=const char *,format
 func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
+snprintf_chk=func
+func.snprintf_chk.args=4
+func.snprintf_chk.arg.0=char *,s
+func.snprintf_chk.arg.1=size_t,size
+func.snprintf_chk.arg.2=const char *,format
+func.snprintf_chk.arg.3=,...
+func.snprintf_chk.ret=int
+
 sprintf=func
 func.sprintf.args=3
 func.sprintf.arg.0=char *,s
