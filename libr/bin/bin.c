@@ -220,7 +220,6 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 // XXX this function is full of mess, shuold be rewritten after the refactorings
 R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RIOBind *iob = &(bin->iob);
-	int res = false;
 	ut8 *buf_bytes = NULL;
 
 	r_return_val_if_fail (bin && iob && iob->io, false);
@@ -267,7 +266,6 @@ R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			iob->fd_close (iob->io, tfd);
 			goto error;
 		}
-		res = r_bin_open_io (bin, &opt);
 		iob->fd_close (iob->io, tfd);
 		goto error;
 	} else {
@@ -1447,4 +1445,18 @@ R_IPI void r_bin_section_free(RBinSection *bs) {
 		free (bs->format);
 		free (bs);
 	}
+}
+
+R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
+	RListIter *it, *it2;
+	RBinFile *bf;
+	RBinSection *s;
+	r_list_foreach (bin->binfiles, it, bf) {
+		r_list_foreach (bf->o->sections, it2, s) {
+			if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
+				return bf;
+			}
+		}
+	}
+	return NULL;
 }

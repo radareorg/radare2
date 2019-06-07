@@ -52,14 +52,16 @@ static void print_string(RBinFile *bf, RBinString *string, int raw) {
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
-	case R_MODE_JSON: 
+	case R_MODE_JSON:
 		{
 			PJ *pj = pj_new ();
-			pj_o (pj);
-			pj_ks (pj, "string", string->string);
-			pj_end (pj);
-			io->cb_printf ("%s\n", pj_string (pj));
-			pj_free (pj);
+			if (pj) {
+				pj_o (pj);
+				pj_ks (pj, "string", string->string);
+				pj_end (pj);
+				io->cb_printf ("%s\n", pj_string (pj));
+				pj_free (pj);
+			}
 		}
 		break;
 	case R_MODE_SIMPLEST: 
@@ -493,33 +495,32 @@ R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 bf_id) {
 	return NULL;
 }
 
-R_API int r_bin_file_delete_all(RBin *bin) {
-	int counter = 0;
+R_API ut64 r_bin_file_delete_all(RBin *bin) {
 	if (bin) {
-		counter = r_list_length (bin->binfiles);
+		ut64 counter = r_list_length (bin->binfiles);
 		r_list_purge (bin->binfiles);
 		bin->cur = NULL;
+		return counter;
 	}
-	return counter;
+	return 0;
 }
 
-R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd) {
+R_API bool r_bin_file_delete(RBin *bin, ut32 bin_fd) {
 	RListIter *iter;
-	RBinFile *bf;
-	RBinFile *cur = r_bin_cur (bin);
-	if (bin && cur) {
+	RBinFile *bf = r_bin_cur (bin);
+	if (bin && bf) {
 		r_list_foreach (bin->binfiles, iter, bf) {
 			if (bf && bf->fd == bin_fd) {
-				if (cur->fd == bin_fd) {
+				if (bf->fd == bin_fd) {
 					//avoiding UaF due to dead reference
 					bin->cur = NULL;
 				}
 				r_list_delete (bin->binfiles, iter);
-				return 1;
+				return true;
 			}
 		}
 	}
-	return 0;
+	return false;
 }
 
 R_API RBinFile *r_bin_file_find_by_fd(RBin *bin, ut32 bin_fd) {
@@ -643,6 +644,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		// TODO: use r_storage api
 		r_id_pool_kick_id (bf->rbin->ids->pool, bf->id);
 	}
+	(void) r_bin_object_delete (bf->rbin, bf->id);
 	free (bf);
 }
 

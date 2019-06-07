@@ -531,16 +531,3 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 	}
 }
 
-R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
-	RListIter *it, *it2;
-	RBinFile *bf;
-	RBinSection *s;
-	r_list_foreach (bin->binfiles, it, bf) {
-		r_list_foreach (bf->o->sections, it2, s) {
-			if (at >= s->vaddr  && at < (s->vaddr + s->vsize)) {
-				return bf;
-			}
-		}
-	}
-	return NULL;
-}

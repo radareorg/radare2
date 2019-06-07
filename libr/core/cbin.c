@@ -3731,19 +3731,27 @@ R_API bool r_core_bin_raise(RCore *core, ut32 bfid) {
 	return bf && r_core_bin_set_env (core, bf) && r_core_block_read (core);
 }
 
-R_API bool r_core_bin_delete(RCore *core, ut32 binfile_idx) {
-	if (binfile_idx == UT32_MAX) {
+R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
+	if (bf_id == UT32_MAX) {
 		return false;
 	}
-	if (!r_bin_object_delete (core->bin, binfile_idx)) {
+#if 0
+	if (!r_bin_object_delete (core->bin, bf_id)) {
 		return false;
 	}
-	RBinFile *binfile = r_bin_cur (core->bin);
-	if (binfile) {
-		r_io_use_fd (core->io, binfile->fd);
+// TODO: use rbinat()
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (bf) {
+		r_io_use_fd (core->io, bf->fd);
+	}
+#endif
+	r_bin_file_delete (core->bin, bf_id);
+	RBinFile *bf = r_bin_file_at (core->bin, core->offset);
+	if (bf) {
+		r_io_use_fd (core->io, bf->fd);
 	}
 	core->switch_file_view = 0;
-	return binfile && r_core_bin_set_env (core, binfile) && r_core_block_read (core);
+	return bf && r_core_bin_set_env (core, bf) && r_core_block_read (core);
 }
 
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
