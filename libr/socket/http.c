@@ -82,6 +82,22 @@ fail:
 }
 
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
+	char *curl_env = r_sys_getenv ("R2_CURL");
+	if (curl_env && *curl_env) {
+		char *encoded_url = r_str_escape (url);
+		char *res = r_sys_cmd_strf ("curl '%s'", encoded_url);
+		free (encoded_url);
+		if (res) {
+			if (code) {
+				*code = 200;
+			}
+			if (rlen) {
+				*rlen = strlen (res);
+			}
+		}
+		return res;
+	}
+	free (curl_env);
 	RSocket *s;
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
