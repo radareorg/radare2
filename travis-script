@@ -42,6 +42,27 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     ninja install || exit 1
     popd
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
+elif [ "${INSTALL_SYSTEM}" == "static" ]; then
+	echo "Compiling static with sys/static.sh"
+	./sys/static.sh || exit 1
+	echo "Compiling Fuzzing Target"
+	export RADARE2_STATIC_BUILD=$(pwd)/r2-static
+	cd radare2-regressions/fuzz/targets
+	git remote -v
+	git branch
+	git rev-parse HEAD
+	# workaround for now
+	export LIB_FUZZING_ENGINE=" "
+	VERBOSE=1 make -j2 || exit 1
+	# This is a test key (change to production environment key later)
+	export FUZZIT_KEY=055d9d3ba41a36fe7e33fee3bf411b2102703c60e16b1756a7222ab529f16dbf8c687a35313f0b1666d8687e891e5c83
+	export ORG_ID=2zv5qI33roZkRm0oO2Mi
+	export TARGET_ID=YVkkS6RPVpKhSixyFWcT
+	wget -O fuzzit https://bin.fuzzit.dev/fuzzit-1.0
+	chmod a+x fuzzit
+	./fuzzit auth $FUZZIT_KEY $ORG_ID
+	echo "Creating fuzzing sanity job on fuzzit.dev:"
+	./fuzzit create job --type sanity --args "-fork=1 -close_fd_mask=3" --revision $TRAVIS_COMMIT --branch $TRAVIS_BRANCH $TARGET_ID ia_fuzz || exit 1
 else
     echo "Installing with acr + make"
     if [ "${R2_PLUGINS_FILE}" != "" ] ; then

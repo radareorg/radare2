@@ -18,6 +18,7 @@
 | **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radare/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radare/radare2/alerts/)
 | **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
 | **Codecov** | [![codecov](https://codecov.io/gh/radare/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radare/radare2)
+| **Fuzzit** | [![fuzzit](https://app.fuzzit.dev/badge?org_id=2zv5qI33roZkRm0oO2Mi&target_id=YVkkS6RPVpKhSixyFWcT&branch=master)](https://app.fuzzit.dev/admin/2zv5qI33roZkRm0oO2Mi/target)
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
 </a>
