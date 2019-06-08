@@ -187,6 +187,12 @@ static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
+	if (!src || !dst) {
+		free (dst);
+		free (src);
+		return 0;
+	}
+
 	int dst_type = r_anal_esil_get_parm_type (esil, dst);
 	if (dst_type == R_ANAL_ESIL_PARM_INVALID) {
 		free (dst);
@@ -194,10 +200,6 @@ static int edf_consume_2_set_reg (RAnalEsil *esil, const char *op_string) {
 		return 0;
 	}
 	
-	if (!src) {
-		free (dst);
-		return 0;
-	}
 	// could be an abstract value
 	RGraphNode *src_node = sdb_ptr_get (edf->latest_nodes, src, 0);
 	if (!src_node) {
@@ -399,7 +401,6 @@ static int edf_consume_1_use_old_new_push_1 (RAnalEsil *esil, const char *op_str
 	char *src = r_anal_esil_pop (esil);
 
 	if (!src) {
-		free (src);
 		return 0;
 	}
 	EsilDataFlowNode *eop_node = new_edf_node (edf, src);
