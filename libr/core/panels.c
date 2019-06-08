@@ -268,7 +268,8 @@ static RPanels *get_cur_panels(RPanelsRoot *panels_root);
 /* set */
 static void set_curnode(RCore *core, int idx);
 static void setRefreshAll(RCore *core, bool clearCache);
-static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache);
+static void setAddrByType(RCore *core, const char *cmd, ut64 addr);
+static void setRefreshByType(RCore *core, const char *cmd, bool clearCache);
 static void setCursor(RCore *core, bool cur);
 static void setdcb(RCore *core, RPanel *p);
 static void setrcb(RPanels *ps, RPanel *p);
@@ -343,7 +344,7 @@ static void cursorDown(RCore *core);
 static void cursorUp(RCore *core);
 static void fix_cursor_up(RCore *core);
 static void fix_cursor_down(RCore *core);
-static void delegate_cursor(RCore *core, RPanel *panel);
+static void jmp_to_cursor_addr(RCore *core, RPanel *panel);
 static void cursor_del_breakpoints(RCore *core, RPanel *panel);
 static void insertValue(RCore *core);
 
@@ -512,6 +513,7 @@ static char *search_db(RCore *core, const char *title);
 static void handle_visual_mark(RCore *core);
 static void fitToCanvas(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
+static void handle_refs(RCore *core, RPanel *panel, ut64 tmp);
 static void undoSeek(RCore *core);
 static void redoSeek(RCore *core);
 
@@ -1263,7 +1265,7 @@ static void handleComment(RCore *core) {
 			r_core_seek (core, orig, 1);
 		}
 	}
-	setRefreshByType (core->panels, p->model->cmd, true);
+	setRefreshByType (core, p->model->cmd, true);
 }
 
 static bool handleWindowMode(RCore *core, const int key) {
@@ -1399,13 +1401,16 @@ static bool handleCursorMode(RCore *core, const int key) {
 			break;
 		}
 		return false;
+	case 'x':
+		handle_refs (core, cur, parse_string_on_cursor (core, cur, cur->view->curpos));
+		break;
 	case 0x0d:
-		delegate_cursor (core, cur);
+		jmp_to_cursor_addr (core, cur);
 	}
 	return true;
 }
 
-static void delegate_cursor (RCore *core, RPanel *panel) {
+static void jmp_to_cursor_addr (RCore *core, RPanel *panel) {
 	ut64 addr = parse_string_on_cursor (core, panel, panel->view->curpos);
 	if (addr == UT64_MAX) {
 		return;
@@ -1455,6 +1460,29 @@ static void handle_visual_mark(RCore *core) {
 		}
 	}
 	return;
+}
+
+static void handle_refs(RCore *core, RPanel *panel, ut64 tmp) {
+	if (tmp != UT64_MAX) {
+		core->offset = tmp;
+	}
+	int key = show_status(core, "xrefs:x refs:X ");
+	switch (key) {
+	case 'x':
+		(void)r_core_visual_refs(core, true, false);
+		break;
+	case 'X':
+		(void)r_core_visual_refs(core, false, false);
+		break;
+	default:
+		break;
+	}
+	if (check_panel_type (panel, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
+		set_panel_addr (core, panel, core->offset);
+		setRefreshAll (core, false);
+		return;
+	}
+	setAddrByType (core, PANEL_CMD_DISASSEMBLY, core->offset);
 }
 
 static void add_visual_mark(RCore *core) {
@@ -2111,7 +2139,8 @@ static void setRefreshAll(RCore *core, bool clearCache) {
 	}
 }
 
-static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) {
+static void setRefreshByType(RCore *core, const char *cmd, bool clearCache) {
+	RPanels *panels = core->panels;
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
@@ -2120,9 +2149,20 @@ static void setRefreshByType(RPanels *panels, const char *cmd, bool clearCache) 
 		}
 		p->view->refresh = true;
 		if (clearCache) {
-			free (p->model->cmdStrCache);
-			p->model->cmdStrCache = NULL;
+			setCmdStrCache (core, p, NULL);
 		}
+	}
+}
+
+static void setAddrByType(RCore *core, const char *cmd, ut64 addr) {
+	RPanels *panels = core->panels;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = getPanel (panels, i);
+		if (!check_panel_type (p, cmd, strlen (cmd))) {
+			continue;
+		}
+		set_panel_addr (core, p, addr);
 	}
 }
 
@@ -2931,7 +2971,7 @@ static void direction_panels_cursor_cb(void *user, int direction) {
 	RPanel *cur = getCurPanel (panels);
 	cur->view->refresh = true;
 	const int THRESHOLD = cur->view->pos.h / 3;
-	int n, sub;
+	int sub;
 	switch ((Direction)direction) {
 	case LEFT:
 		if (core->print->cur_enabled) {
@@ -2960,9 +3000,8 @@ static void direction_panels_cursor_cb(void *user, int direction) {
 			}
 		} else {
 			if (cur->view->sy > 0) {
-				n = r_config_get_i (core->config, "graph.scroll");
-				cur->view->curpos -= n;
-				cur->view->sy -= n;
+				cur->view->curpos -= 1;
+				cur->view->sy -= 1;
 			}
 		}
 		return;
@@ -2975,9 +3014,8 @@ static void direction_panels_cursor_cb(void *user, int direction) {
 				cur->view->sy++;
 			}
 		} else {
-			n = r_config_get_i (core->config, "graph.scroll");
-			cur->view->curpos += n;
-			cur->view->sy += n;
+			cur->view->curpos += 1;
+			cur->view->sy += 1;
 		}
 		return;
 	}
@@ -5211,9 +5249,7 @@ repeat:
 		}
 		break;
 	case 'x':
-		r_core_visual_refs (core, true, true);
-		set_panel_addr (core, cur, core->offset);
-		setRefreshAll (core, false);
+		handle_refs (core, cur, UT64_MAX);
 		break;
 	case 'X':
 #if 0
