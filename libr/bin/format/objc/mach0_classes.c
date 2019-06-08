@@ -1057,7 +1057,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
 	ut32 i = 0, size = 0;
 	RList *sctns = NULL;
 	bool is_found = false;
@@ -1069,10 +1068,12 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	bool bigendian;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
-	if (!bf || !obj || !obj->bin_obj || !obj->info) {
+	r_return_val_if_fail (bf && bf->o, NULL);
+
+	if (!bf->o->bin_obj || !bf->o->info) {
 		return NULL;
 	}
-	bigendian = obj->info->big_endian;
+	bigendian = bf->o->info->big_endian;
 
 	ret = MACH0_(parse_categories) (bf);
 
@@ -1082,7 +1083,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	// sebfing of section with name __objc_classlist
 
 	struct section_t *sections = NULL;
-	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {
+	if (!(sections = MACH0_(get_sections) (bf->o->bin_obj))) {
 		return ret;
 	}
 

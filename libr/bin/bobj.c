@@ -362,13 +362,21 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
 		if (cp->classes) {
-			o->classes = cp->classes (binfile);
+			RList *classes = cp->classes (binfile);
+			if (classes) {
+				// XXX we should probably merge them instead
+				r_list_free (o->classes);
+				o->classes = classes;
+			}
 			isSwift = r_bin_lang_swift (binfile);
 			if (isSwift) {
 				o->classes = classes_from_symbols (binfile);
 			}
 		} else {
-			o->classes = classes_from_symbols (binfile);
+			RList *classes = classes_from_symbols (binfile);
+			if (classes) {
+				o->classes = classes;
+			}
 		}
 		if (bin->filter) {
 			filter_classes (binfile, o->classes);
