@@ -45,10 +45,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	url = r_str_newf ("%s/p8%%20%d@%"PFMT64d,
+	url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
 		rURL(fd), count, io->off);
 	out = r_socket_http_get (url, &code, &rlen);
-	if (out && rlen>0) {
+	if (out && rlen > 0) {
 		ut8 *tmp = calloc (1, rlen+1);
 		if (!tmp) {
 			goto beach;
@@ -104,14 +104,22 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (!mal) {
 			return NULL;
 		}
-		char *url = r_str_newf ("http://%s/?V", pathname+8);
+		char *path = strdup (pathname + 8);
+		int path_len = strlen (path);
+		if (path_len > 0) {
+			if (path[path_len - 1] == '/') {
+				path[path_len - 1] = 0;
+			}
+		}
+		char *url = r_str_newf ("http://%s/?V", path);
 		//eprintf  ("URL:(%s)\n", url);
 		out = r_socket_http_get (url, &code, &rlen);
 		//eprintf ("RES %d %d\n", code, rlen);
 		//eprintf ("OUT(%s)\n", out);
-		if (out && rlen>0) {
+		if (out && rlen > 0) {
 			mal->fd = getmalfd (mal);
-			mal->url = r_str_newf ("http://%s", pathname+8);
+			mal->url = r_str_newf ("http://%s", path);
+			free (path);
 			free (out);
 			free (url);
 			return r_io_desc_new (io, &r_io_plugin_r2web,
@@ -120,6 +128,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free (url);
 		free (mal);
 		free (out);
+		free (path);
+		eprintf ("Error: Try http://localhost:9090/cmd/");
 	}
 	return NULL;
 }
@@ -127,13 +137,15 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
 	int code, rlen;
 	char *out;
-	char *url = r_str_newf ("%s/%s", rURL(fd), command);
+	char *cmd = r_str_uri_encode (command);
+	char *url = r_str_newf ("%s/%s", rURL(fd), cmd);
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen > 0) {
 		io->cb_printf ("%s", out);
 	}
 	free (out);
 	free (url);
+	free (cmd);
 	return NULL;
 }
 
