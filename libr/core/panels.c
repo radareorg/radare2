@@ -242,6 +242,7 @@ static const char *help_msg_panels_zoom[] = {
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static void initRotatedb(RPanels *panels);
+static void init_almighty_db(RPanels *panels);
 static bool initPanelsMenu(RCore *core);
 static bool initPanels(RCore *core, RPanels *panels);
 static void init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
@@ -249,8 +250,13 @@ static RPanels *panels_new(RCore *core);
 
 /* create */
 static void createDefaultPanels(RCore *core);
-static void createNewPanel(RCore *core, bool vertical);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
+static void create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd);
+static void create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static void create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static void search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static void search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static char *search_strings (RCore *core, bool whole);
 
 /* free */
 static void panels_free(RPanelsRoot *panels_root, int i, RPanels *panels);
@@ -312,8 +318,8 @@ static void panels_layout(RPanels *panels);
 static void layoutDefault(RPanels *panels);
 static void savePanelsLayout(RPanels* panels);
 static int loadSavedPanelsLayout(RCore *core);
-static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache);
-static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache);
+static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
+static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int w, int h, int color);
@@ -377,9 +383,10 @@ static void toggleZoomMode(RCore *core);
 static void toggleWindowMode(RPanels *panels);
 
 /* modal */
-static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **title, char **cmd);
-static void create_almighty(RCore *core, RPanel *panel, const int x, const int y, const int w, const int h);
-static void update_modal(RCore *core, RModal *modal);
+static void exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir);
+static void delete_almighty(RCore *core, RModal *modal, Sdb *menu_db);
+static void create_almighty(RCore *core, RPanel *panel, Sdb *menu_db, const int x, const int y, const int w, const int h);
+static void update_modal(RCore *core, Sdb *menu_db, RModal *modal);
 static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, const char *name);
 static RModal *init_modal();
 static void free_modal(RModal **modal);
@@ -519,13 +526,12 @@ static void redoSeek(RCore *core);
 
 
 static char *search_db(RCore *core, const char *title) {
-	char *out;
 	RPanels *panels = core->panels;
-	out = sdb_get (panels->db, title, 0);
+	char *out = sdb_get (panels->db, title, 0);
 	if (out) {
 		return out;
 	}
-	return sdb_get (panels->del_db, title, 0);
+	return NULL;
 }
 
 static int show_status(RCore *core, const char *msg) {
@@ -882,7 +888,7 @@ static int addCmdPanel(void *user) {
 	}
 	int h;
 	(void)r_cons_get_size (&h);
-	bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
+	bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n) ");
 	adjustSidePanels (core);
 	insertPanel (core, 0, child->name, cmd, cache);
 	RPanel *p0 = getPanel (panels, 0);
@@ -939,7 +945,7 @@ static int addCmdfPanel(RCore *core, char *input, char *str) {
 	return 0;
 }
 
-static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache) {
+static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache) {
 	RPanels *panels = core->panels;
 	if (!checkPanelNum (core)) {
 		return;
@@ -953,7 +959,7 @@ static void splitPanelVertical(RCore *core, RPanel *p, const char *name, const c
 	setRefreshAll (core, false);
 }
 
-static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char*cmd, bool cache) {
+static void splitPanelHorizontal(RCore *core, RPanel *p, const char *name, const char *cmd, bool cache) {
 	RPanels *panels = core->panels;
 	if (!checkPanelNum (core)) {
 		return;
@@ -1336,10 +1342,10 @@ static bool handleWindowMode(RCore *core, const int key) {
 		resizePanelUp (panels);
 		break;
 	case 'n':
-		createNewPanel (core, true);
+		create_panel_input (core, cur, VERTICAL, NULL);
 		break;
 	case 'N':
-		createNewPanel (core, false);
+		create_panel_input (core, cur, HORIZONTAL, NULL);
 		break;
 	case 'X':
 		dismantleDelPanel (core, cur, panels->curnode);
@@ -3831,6 +3837,72 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Summary", "pdsf", 0);
 }
 
+static void init_almighty_db(RPanels *panels) {
+	SdbKv *kv;
+	SdbListIter *sdb_iter;
+	SdbList *sdb_list = sdb_foreach_list (panels->db, true);
+	ls_foreach (sdb_list, sdb_iter, kv) {
+		char *key =  sdbkv_key (kv);
+		sdb_ptr_set (panels->almighty_db, r_str_new (key), &create_panel_db, 0);
+	}
+	sdb_ptr_set (panels->almighty_db, "Search strings in data sections", &search_strings_data_create, 0);
+	sdb_ptr_set (panels->almighty_db, "Search strings in the whole bin", &search_strings_bin_create, 0);
+	sdb_ptr_set (panels->almighty_db, "Create New", &create_panel_input, 0);
+}
+
+static void create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+	RCore *core = (RCore *)user;
+	char *cmd = sdb_get (core->panels->db, title, 0);
+	if (!cmd) {
+		return;
+	}
+	create_panel (core, panel, dir, title, cmd);
+}
+
+static void create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+	RCore *core = (RCore *)user;
+	char *name = show_status_input (core, "Name: ");
+	char *cmd = show_status_input (core, "Command: ");
+	if (!cmd) {
+		return;
+	}
+	create_panel (core, panel, dir, name, cmd);
+}
+
+static void create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd) {
+	if (!checkPanelNum (core)) {
+		return;
+	}
+	bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n) ");
+	switch (dir) {
+	case VERTICAL:
+		splitPanelVertical (core, panel, title, cmd, cache);
+		break;
+	case HORIZONTAL:
+		splitPanelHorizontal (core, panel, title, cmd, cache);
+		break;
+	case NONE:
+		replaceCmd (core, title, cmd, false);
+		break;
+	}
+}
+
+static void search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+	RCore *core = (RCore *)user;
+	create_panel (core, panel, dir, title, search_strings (core, false));
+}
+
+static void search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
+	RCore *core = (RCore *)user;
+	create_panel (core, panel, dir, title, search_strings (core, true));
+}
+
+static char *search_strings (RCore *core, bool whole) {
+	const char *title = whole ? PANEL_TITLE_STRINGS_BIN : PANEL_TITLE_STRINGS_DATA;
+	const char *str = show_status_input (core, "Search Strings: ");
+	return r_str_newf ("%s~%s", search_db (core, title), str);
+}
+
 static void mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
@@ -3849,14 +3921,15 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->autoUpdate = true;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
-	panels->del_db = sdb_new0 ();
 	panels->rotate_db = sdb_new0 ();
+	panels->almighty_db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
 	setMode (panels, PANEL_MODE_DEFAULT);
 	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
 	initSdb (panels);
+	init_almighty_db (panels);
 	initRotatedb (panels);
 
 	if (w < 140) {
@@ -4351,6 +4424,7 @@ static void panels_free(RPanelsRoot *panels_root, int i, RPanels *panels) {
 		r_cons_canvas_free (panels->can);
 		sdb_free (panels->db);
 		sdb_free (panels->rotate_db);
+		sdb_free (panels->almighty_db);
 		ht_pp_free (panels->mht);
 		free (panels);
 		panels_root->panels[i] = NULL;
@@ -4413,35 +4487,10 @@ static bool moveToDirection(RCore *core, Direction direction) {
 	return false;
 }
 
-static void createNewPanel(RCore *core, bool vertical) {
-	RPanels *panels = core->panels;
-	if (!checkPanelNum (core)) {
-		return;
-	}
-	char *name = show_status_input (core, "Name: ");
-	char *res = show_status_input (core, "Command: ");
-	if (R_STR_ISEMPTY (res)) {
-		return;
-	}
-	bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
-	if (vertical) {
-		splitPanelVertical (core, getCurPanel (panels), name, res, cache);
-	} else {
-		splitPanelHorizontal (core, getCurPanel (panels), name, res, cache);
-	}
-	free (res);
-}
-
-const char *sub_modal_menu[] = {
-	"Search strings in data sections", "Search strings in the whole bin", "Add the current panel to this", "Create New",
-	NULL
-};
-const int sub_modal_count = COUNT (sub_modal_menu);
-
-static void update_modal(RCore *core, RModal *modal) {
+static void update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 	RPanels *panels = core->panels;
 	modal->data = r_strbuf_new (NULL);
-	int count = sdb_count (panels->db) + sub_modal_count;
+	int count = sdb_count (menu_db);
 	if (modal->idx >= count) {
 		modal->idx = 0;
 		modal->offset = 0;
@@ -4458,7 +4507,7 @@ static void update_modal(RCore *core, RModal *modal) {
 	} else if (modal->idx < modal->offset) {
 		modal->offset -= 1;
 	}
-	SdbList *l = sdb_foreach_list (panels->db, true);
+	SdbList *l = sdb_foreach_list (menu_db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
 	int i = 0;
@@ -4466,12 +4515,6 @@ static void update_modal(RCore *core, RModal *modal) {
 	ls_foreach (l, iter, kv) {
 		if (draw_modal (core, modal, max_h, i, sdbkv_key (kv))) {
 			i++;
-		}
-	}
-	const int prev = i;
-	for (i = 0; i < sub_modal_count; i++) {
-		if (!draw_modal (core, modal, max_h, i + prev, sub_modal_menu[i])) {
-			break;
 		}
 	}
 	r_cons_canvas_fill (panels->can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
@@ -4500,127 +4543,76 @@ static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, co
 	return true;
 }
 
-static void create_almighty(RCore *core, RPanel *panel, const int x, const int y, const int w, const int h) {
+static void create_almighty(RCore *core, RPanel *panel, Sdb *menu_db, const int x, const int y, const int w, const int h) {
 	RModal *modal = init_modal ();
 	set_geometry (&modal->pos, x, y, w, h);
 	const int usleep = 25000;
 	int okey, key;
-	update_modal (core, modal);
-	char *title, *cmd;
+	update_modal (core, menu_db, modal);
 	while (modal) {
 		okey = r_cons_readchar ();
 		key = r_cons_arrow_to_hjkl (okey);
 		switch (key) {
 		case 'j':
 			modal->idx++;
-			update_modal (core, modal);
+			update_modal (core, menu_db, modal);
 			r_sys_usleep (usleep);
 			r_cons_readflush ();
 			break;
 		case 'k':
 			modal->idx--;
-			update_modal (core, modal);
+			update_modal (core, menu_db, modal);
 			r_sys_usleep (usleep);
 			r_cons_readflush ();
 			break;
 		case 'v':
-			if (exec_almighty (core, panel, modal, &title, &cmd)) {
-				splitPanelVertical (core, panel, title, cmd, false);
-				free_modal (&modal);
-				break;
-			}
-			update_modal (core, modal);
+			exec_almighty (core, panel, modal, menu_db, VERTICAL);
+			free_modal (&modal);
 			break;
 		case 'h':
-			if (exec_almighty (core, panel, modal, &title, &cmd)) {
-				splitPanelHorizontal (core, panel, title, cmd, false);
-				free_modal (&modal);
-				break;
-			}
-			update_modal (core, modal);
+			exec_almighty (core, panel, modal, menu_db, HORIZONTAL);
+			free_modal (&modal);
 			break;
 		case 0x0d:
-			if (exec_almighty (core, panel, modal, &title, &cmd)) {
-				replaceCmd (core, title, cmd, false);
-				free_modal (&modal);
-				break;
-			}
-			update_modal (core, modal);
+			exec_almighty (core, panel, modal, menu_db, NONE);
+			free_modal (&modal);
+			break;
 		case '-':
-			{
-				int count = sdb_count (core->panels->db) + 2;
-				int last =  count - 1;
-				if (modal->idx != last && modal->idx != last - 1) {
-					if (exec_almighty (core, panel, modal, &title, &cmd)) {
-						sdb_set (core->panels->del_db, title, cmd, 0);
-						sdb_remove (core->panels->db, title, 0);
-					}
-					update_modal (core, modal);
-				}
-			}
+			delete_almighty (core, modal, menu_db);
+			update_modal (core, menu_db, modal);
 			break;
 		case 'q':
 		case '"':
 			free_modal (&modal);
+			break;
 		}
 	}
 	setRefreshAll (core, false);
 }
 
-static bool exec_almighty(RCore *core, RPanel *panel, RModal *modal, char **title, char **cmd) {
-	SdbList *l = sdb_foreach_list (core->panels->db, true);
+static void exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir) {
+	SdbList *l = sdb_foreach_list (menu_db, true);
 	SdbKv *kv;
 	SdbListIter *iter;
-	int i = 0, j;
+	int i = 0;
 	ls_foreach (l, iter, kv) {
 		if (i++ == modal->idx) {
-			*title = sdbkv_key (kv);
-			*cmd = sdbkv_value (kv);
-			return true;
+			((RPanelAlmightyCallback)(sdb_ptr_get (menu_db, sdbkv_key (kv), 0))) (core, panel, dir, sdbkv_key (kv));
+			return;
 		}
 	}
-	for (j = 0; j < sub_modal_count; j++) {
-		if (i + j == modal->idx) {
-			switch (j) {
-			case 0:
-				{
-					*title = "Search strings in data sections";
-					const char *str = show_status_input (core, "Search Strings: ");
-					*cmd = r_str_newf ("%s~%s", search_db (core, PANEL_TITLE_STRINGS_DATA), str);
-				}
-				return true;
-			case 1:
-				{
-					*title = "Search strings in the whole bin";
-					const char *str = show_status_input (core, "Search Strings: ");
-					*cmd = r_str_newf ("%s~%s", search_db (core, PANEL_TITLE_STRINGS_BIN), str);
-				}
-				return true;
-			case 2:
-				*title = show_status_input (core, "Name: ");
-				if (R_STR_ISEMPTY (*title)) {
-					return false;
-				}
-				*cmd = r_str_new (panel->model->cmd);
-				sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
-				modal->idx += 1;
-				modal->offset += 1;
-				return false;
-			case 3:
-				*title = show_status_input (core, "New name: ");
-				if (R_STR_ISEMPTY (*title)) {
-					return false;
-				}
-				*cmd = show_status_input (core, "New command: ");
-				if (R_STR_ISEMPTY (*cmd)) {
-					return false;
-				}
-				sdb_set (core->panels->db, r_str_new (*title), r_str_new (*cmd), 0);
-				return true;
-			}
+}
+
+static void delete_almighty(RCore *core, RModal *modal, Sdb *menu_db) {
+	SdbList *l = sdb_foreach_list (menu_db, true);
+	SdbKv *kv;
+	SdbListIter *iter;
+	int i = 0;
+	ls_foreach (l, iter, kv) {
+		if (i++ == modal->idx) {
+			sdb_remove (menu_db, sdbkv_key (kv), 0);
 		}
 	}
-	return false;
 }
 
 static void createDefaultPanels(RCore *core) {
@@ -5233,7 +5225,7 @@ repeat:
 			const int h = 20;
 			const int x = (can->w - w) / 2;
 			const int y = (can->h - h) / 2;
-			create_almighty (core, cur, x, y, w, h);
+			create_almighty (core, cur, panels->almighty_db, x, y, w, h);
 		}
 		break;
 	case 'n':
@@ -5274,7 +5266,7 @@ repeat:
 	{
 		char *new_name = show_status_input (core, "New name: ");
 		char *new_cmd = show_status_input (core, "New command: ");
-		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n)");
+		bool cache = show_status_yesno (core, 'y', "Cache the result? (Y/n) ");
 		if (new_name && *new_name && new_cmd && *new_cmd) {
 			replaceCmd (core, new_name, new_cmd, cache);
 		}
