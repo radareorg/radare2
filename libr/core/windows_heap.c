@@ -205,7 +205,12 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 		hb->index++;
 	}
 
-	WPARAM flags = block[index].flags;
+	WPARAM flags;
+	if (block[index].extra & EXTRA_FLAG) {
+		flags = (WPARAM)block[index].flags;
+	} else {
+		flags = (USHORT)block[index].flags;
+	}
 	UPDATE_FLAGS (hb, flags);
 
 	return true;
