@@ -2330,6 +2330,9 @@ static bool cb_searchin(void *user, void *data) {
 			"io.sky.[rwx]       search in all skyline segments\n"
 			"io.maps            search in all maps\n"
 			"io.maps.[rwx]      search in all r-w-x io maps\n"
+			"bin.segment        search in current mapped segment\n"
+			"bin.segments       search in all mapped segments\n"
+			"bin.segments.[rwx] search in all r-w-x segments\n"
 			"bin.section        search in current mapped section\n"
 			"bin.sections       search in all mapped sections\n"
 			"bin.sections.[rwx] search in all r-w-x sections\n"
@@ -2706,7 +2709,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
 	SETOPTIONS (n, "raw", "block",
-		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
+		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
