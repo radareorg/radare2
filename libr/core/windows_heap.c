@@ -276,7 +276,7 @@ static bool DecodeLFHEntry(PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER 
 	}
 
 	if (heap->EncodeFlagMask) {
-		*(DWORD *)entry ^= PtrToInt (heap->BaseAddress) ^ (DWORD)(((DWORD)addr - PtrToInt (userBlocks)) << 0xC) ^ (DWORD)key ^ ((DWORD)addr >> 4);
+		*(DWORD *)entry ^= PtrToInt (heap->BaseAddress) ^ (DWORD)(((DWORD)addr - PtrToInt (userBlocks)) << 0xC) ^ (DWORD)key ^ (addr >> 4);
 	}
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
 }
@@ -588,14 +588,15 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			ReadProcessMemory (h_proc, entry, &vAlloc, sizeof (HEAP_VIRTUAL_ALLOC_ENTRY), &bytesRead);
 			DecodeHeapEntry (&heapHeader, &vAlloc.BusyBlock, dbg->bits);
 			GROW_BLOCKS ();
-			blocks[count].address = (WPARAM)entry + offsetof (HEAP_VIRTUAL_ALLOC_ENTRY, BusyBlock);
+			blocks[count].address = (WPARAM)entry;
 			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
-			blocks[count].size = vAlloc.CommitSize;
+			blocks[count].size = vAlloc.ReserveSize;
 			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
 			if (!extra) {
 				goto err;
 			}
 			extra->granularity = sizeof (HEAP_VIRTUAL_ALLOC_ENTRY);
+			extra->unusedBytes = vAlloc.ReserveSize - vAlloc.CommitSize;
 			blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
 			count++;
 			entry = vAlloc.Entry.Flink;
@@ -779,7 +780,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 				curr = (WPARAM)node.Left;
 			} else {
 				hb->dwAddress = (PVOID)VirtualAddess;
-				hb->dwSize = ((entry.AllocatedPages >> 12) << 12);
+				hb->dwSize = ((entry.AllocatedPages >> 12) << 12) - entry.UnusedBytes;
 				hb->dwFlags = SEGMENT_HEAP_BLOCK | LARGE_BLOCK | 1;
 				extra->unusedBytes = entry.UnusedBytes;
 				ReadProcessMemory (h_proc, hb->dwAddress, &extra->granularity, sizeof (USHORT), NULL);
@@ -846,10 +847,15 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 				entry = tmpEntry;
 				hb->dwAddress = (PVOID)offset;
 				UPDATE_FLAGS (hb, (DWORD)entry.Flags | NT_BLOCK);
-				hb->dwSize = (WPARAM)entry.Size * heap.Granularity;
-				if (entry.Size > h.VirtualMemoryThreshold) {
-					hb->dwFlags |= LARGE_BLOCK;
+				if (entry.UnusedBytes == 0x4) {
+					HEAP_VIRTUAL_ALLOC_ENTRY largeEntry;
+					if (ReadProcessMemory (h_proc, (PVOID)(offset - sizeof (HEAP_VIRTUAL_ALLOC_ENTRY)), &largeEntry, sizeof (HEAP_VIRTUAL_ALLOC_ENTRY), NULL)) {
+						hb->dwSize = largeEntry.CommitSize;
+						hb->dwFlags |= LARGE_BLOCK;
+						extra->unusedBytes = largeEntry.ReserveSize - largeEntry.CommitSize;
+					}
 				} else {
+					hb->dwSize = (WPARAM)entry.Size * heap.Granularity;
 					hb->dwFlags |= BACKEND_BLOCK;
 				}
 				break;
@@ -859,11 +865,11 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 				tmpEntry = entry;
 				WPARAM userBlocksOffset;
 				if (dbg->bits == R_SYS_BITS_64) {
-					*(((WPARAM *)&tmpEntry) + 1) ^= PtrToInt (h.BaseAddress) ^ ((DWORD)(entryOffset) >> 0x4) ^ (DWORD)NtLFHKey;
-					userBlocksOffset = entryOffset - ((DWORD)*(((WPARAM *)&tmpEntry) + 1) >> 0xC);
+					*(((WPARAM *)&tmpEntry) + 1) ^= PtrToInt (h.BaseAddress) ^ (entryOffset >> 0x4) ^ (DWORD)NtLFHKey;
+					userBlocksOffset = entryOffset - (USHORT)((*(((WPARAM *)&tmpEntry) + 1)) >> 0xC);
 				} else {
 					*((WPARAM *)&tmpEntry) ^= PtrToInt (h.BaseAddress) ^ ((DWORD)(entryOffset) >> 0x4) ^ (DWORD)NtLFHKey;
-					userBlocksOffset = entryOffset - ((DWORD)*((WPARAM *)&tmpEntry) >> 0xC);
+					userBlocksOffset = entryOffset - (USHORT)(*((WPARAM *)&tmpEntry) >> 0xC);
 				}
 				// Confirm it is LFH
 				if (DecodeLFHEntry (&h, &entry, (PVOID)userBlocksOffset, NtLFHKey, entryOffset, dbg->bits)) {
