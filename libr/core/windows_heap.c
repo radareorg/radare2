@@ -231,6 +231,7 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 }
 
 static WPARAM GetNtDllOffset(RDebug *dbg) {
+	r_return_val_if_fail (dbg, 0);
 	RList *map_list = r_w32_dbg_maps (dbg);
 	RListIter *iter;
 	RDebugMap *map;
@@ -247,6 +248,7 @@ static WPARAM GetNtDllOffset(RDebug *dbg) {
 }
 
 static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
+	r_return_val_if_fail (dbg, 0);
 	WPARAM lfhKey = 0;
 	WPARAM lfhKeyLocation;
 	WPARAM ntdllOffset = GetNtDllOffset (dbg);
@@ -266,22 +268,24 @@ static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
 	return lfhKey;
 }
 
-static bool DecodeHeapEntry(PHEAP heap, PHEAP_ENTRY entry, int bitness) {
-	if (bitness == R_SYS_BITS_64) {
-		(WPARAM) entry += sizeof (PVOID);
+static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
+	r_return_val_if_fail (heap && entry, false);
+	if (dbg->bits == R_SYS_BITS_64) {
+		(WPARAM)entry += dbg->bits;
 	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
-		if (bitness == R_SYS_BITS_64) {
-			(WPARAM) heap += sizeof (PVOID);
+		if (dbg->bits == R_SYS_BITS_64) {
+			(WPARAM)heap += dbg->bits;
 		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
 	}
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
 }
 
-static bool DecodeLFHEntry(PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr, int bitness) {
-	if (bitness == R_SYS_BITS_64) {
-		(WPARAM) entry += sizeof (PVOID);
+static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
+	r_return_val_if_fail (heap && entry, false);
+	if (dbg->bits == R_SYS_BITS_64) {
+		(WPARAM)entry += dbg->bits;
 	}
 
 	if (heap->EncodeFlagMask) {
@@ -595,7 +599,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 		while (entry && (entry != fentry)) {
 			HEAP_VIRTUAL_ALLOC_ENTRY vAlloc;
 			ReadProcessMemory (h_proc, entry, &vAlloc, sizeof (HEAP_VIRTUAL_ALLOC_ENTRY), &bytesRead);
-			DecodeHeapEntry (&heapHeader, &vAlloc.BusyBlock, dbg->bits);
+			DecodeHeapEntry (dbg, &heapHeader, &vAlloc.BusyBlock);
 			GROW_BLOCKS ();
 			blocks[count].address = (WPARAM)entry;
 			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
@@ -663,7 +667,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 							WPARAM off = userdata.EncodedOffsets.FirstAllocationOffset + sz * j;
 							from = (WPARAM)subsegment.UserBlocks + off;
 							ReadProcessMemory (h_proc, (PVOID)from, &heapEntry, sz_entry, &bytesRead);
-							DecodeLFHEntry (&heapHeader, &heapEntry, subsegment.UserBlocks, lfhKey, from, dbg->bits);
+							DecodeLFHEntry (dbg, &heapHeader, &heapEntry, subsegment.UserBlocks, lfhKey, from);
 							blocks[count].address = from;
 							blocks[count].flags = 1 | NT_BLOCK | LFH_BLOCK;
 							blocks[count].size = sz;
@@ -702,7 +706,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 				if (!ReadProcessMemory (h_proc, (PVOID)from, &heapEntry, sz_entry, &bytesRead)) {
 					break;
 				}
-				DecodeHeapEntry (&heapHeader, &heapEntry, dbg->bits);
+				DecodeHeapEntry (dbg, &heapHeader, &heapEntry);
 				if (!heapEntry.Size) {
 					// Last Heap block
 					count--;
@@ -852,7 +856,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 			extra->granularity = heap.Granularity;
 			hb->extraInfo = extra;
 			HEAP_ENTRY tmpEntry = entry;
-			if (DecodeHeapEntry (&h, &tmpEntry, dbg->bits)) {
+			if (DecodeHeapEntry (dbg, &h, &tmpEntry)) {
 				entry = tmpEntry;
 				hb->dwAddress = (PVOID)offset;
 				UPDATE_FLAGS (hb, (DWORD)entry.Flags | NT_BLOCK);
@@ -882,7 +886,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 					userBlocksOffset = entryOffset - (USHORT)(*((WPARAM *)&tmpEntry) >> 0xC);
 				}
 				// Confirm it is LFH
-				if (DecodeLFHEntry (&h, &entry, (PVOID)userBlocksOffset, NtLFHKey, entryOffset, dbg->bits)) {
+				if (DecodeLFHEntry (dbg, &h, &entry, (PVOID)userBlocksOffset, NtLFHKey, entryOffset)) {
 					HEAP_USERDATA_HEADER UserBlocks;
 					HEAP_SUBSEGMENT subsegment;
 					if (!ReadProcessMemory (h_proc, (PVOID)userBlocksOffset, &UserBlocks, sizeof (HEAP_USERDATA_HEADER), NULL)) {
