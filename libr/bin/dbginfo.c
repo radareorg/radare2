@@ -37,6 +37,9 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 				line = atoi (token);
 				out = r_file_slurp_line (file_line, line, 0);
 				*token ++ = ':';
+			} else {
+				out = strdup (file_line);
+				return out;
 			}
 		}
 		free (key);
