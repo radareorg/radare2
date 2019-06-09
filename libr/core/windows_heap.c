@@ -71,33 +71,37 @@
 	}\
 	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;
 
-#define FILL_TYPE(type, flags)\
-	memset (type, 0, sizeof (type));\
-	switch (flags & 0xFFFF) {\
-	case LF32_FIXED:\
-		strncpy (type, "(FIXED)", 8);\
-		break;\
-	case LF32_FREE:\
-		strncpy (type, "(FREE)", 7);\
-		break;\
-	case LF32_MOVEABLE:\
-		strncpy (type, "(MOVEABLE)", 11);\
-		break;\
-	}\
-	if (flags & SEGMENT_HEAP_BLOCK) {\
-		strncat (type, "Segment", 8);\
-	} else if (flags & NT_BLOCK) {\
-		strncat (type, "NT", 3);\
-	}\
-	if (flags & LFH_BLOCK) {\
-		strncat (type, "/LFH", 5);\
-	} else if (flags & LARGE_BLOCK) {\
-		strncat (type, "/LARGE", 7);\
-	} else if (flags & BACKEND_BLOCK) {\
-		strncat (type, "/BACKEND", 9);\
-	} else if (flags & VS_BLOCK) {\
-		strncat (type, "/VS", 4);\
+static char *get_type(WPARAM flags) {
+	char *state = "";
+	switch (flags & 0xFFFF) {
+	case LF32_FIXED:
+		state = "(FIXED)";
+		break;
+	case LF32_FREE:
+		state = "(FREE)";
+		break;
+	case LF32_MOVEABLE:
+		state = "(MOVEABLE)";
+		break;
 	}
+	char *heaptype = "";
+	if (flags & SEGMENT_HEAP_BLOCK) {
+		heaptype = "Segment";
+	} else if (flags & NT_BLOCK) {
+		heaptype =  "NT";
+	}
+	char *type = "";
+	if (flags & LFH_BLOCK) {
+		type = "/LFH";
+	} else if (flags & LARGE_BLOCK) {
+		type = "/LARGE";
+	} else if (flags & BACKEND_BLOCK) {
+		type = "/BACKEND";
+	} else if (flags & VS_BLOCK) {
+		type = "/VS";
+	}
+	return r_str_newf ("%s %s%s", state, heaptype, type);
+}
 
 static bool init_func() {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
@@ -1002,10 +1006,13 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		default:
 			r_cons_printf ("Heap @ 0x%"PFMT64x":\n", heapInfo->heaps[i].Base);
 		}
-		char type[128];
+		char *type;
 		if (GetFirstHeapBlock (&heapInfo->heaps[i], block) & go) {
 			do {
-				FILL_TYPE (type, block->dwFlags);
+				type = get_type (block->dwFlags);
+				if (!type) {
+					type = "";
+				}
 				unsigned short granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
 				switch (format) {
 				case 'f':
@@ -1074,8 +1081,10 @@ static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
 		PHeapBlock hb = GetSingleBlock (core->dbg, off);
 		if (hb) {
 			ut64 granularity = hb->extraInfo->granularity;
-			char type[128];
-			FILL_TYPE (type, hb->dwFlags);
+			char *type = get_type (hb->dwFlags);
+			if (!type) {
+				type = "";
+			}
 			PJ *pj = pj_new ();
 			switch (input[0]) {
 			case ' ':
