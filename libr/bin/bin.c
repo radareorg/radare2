@@ -824,6 +824,9 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	r_return_val_if_fail (o, NULL);
 	// TODO: must be O(1) .. use sdb here
 	r_list_foreach (o->sections, iter, section) {
+		if (section->add) {
+			continue;
+		}
 		from = va ? binobj_a2b (o, section->vaddr) : section->paddr;
 		to = va ? (binobj_a2b (o, section->vaddr) + section->vsize) : (section->paddr + section->size);
 		if (off >= from && off < to) {

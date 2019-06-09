@@ -1551,18 +1551,18 @@ static size_t ptr_size(void *c) {
 	return 8;
 }
 
+// XXX should be deprecated its never called
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options) {
-	ut8 *buf;
-	struct MACH0_(obj_t) *bin;
-	if (!(bin = malloc (sizeof (struct MACH0_(obj_t))))) {
+	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
+	if (!bin) {
 		return NULL;
 	}
-	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
 	if (options) {
 		bin->verbose = options->verbose;
 		bin->header_at = options->header_at;
 	}
 	bin->file = file;
+	ut8 *buf;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
 		return MACH0_(mach0_free)(bin);
 	}
@@ -1583,32 +1583,27 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 }
 
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
-	if (!buf) {
-		return NULL;
-	}
-
-	RBuffer *buf_ref = r_buf_ref (buf);
+	r_return_val_if_fail (buf, NULL);
 	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
-	if (!bin) {
-		return NULL;
-	}
-	bin->main_addr = UT64_MAX;
-	bin->kv = sdb_new (NULL, "bin.mach0", 0);
-	bin->size = r_buf_size (buf_ref);
-	if (options) {
-		bin->verbose = options->verbose;
-		bin->header_at = options->header_at;
-	}
-	bin->b = buf_ref;
-	if (!init (bin)) {
-		return MACH0_(mach0_free)(bin);
+	bin->b = r_buf_ref (buf);
+	if (bin) {
+		bin->main_addr = UT64_MAX;
+		bin->kv = sdb_new (NULL, "bin.mach0", 0);
+		bin->size = r_buf_size (bin->b);
+		if (options) {
+			bin->verbose = options->verbose;
+			bin->header_at = options->header_at;
+		}
+		if (!init (bin)) {
+			return MACH0_(mach0_free)(bin);
+		}
 	}
 	return bin;
 }
 
 // prot: r = 1, w = 2, x = 4
 // perm: r = 4, w = 2, x = 1
-static int prot2perm (int x) {
+static int prot2perm(int x) {
 	int r = 0;
 	if (x & 1) {
 		r |= 4;
@@ -1622,6 +1617,66 @@ static int prot2perm (int x) {
 	return r;
 }
 
+RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin) {
+	RList *list = r_list_newf (free); // r_bin_section_free);
+
+	int i, j, to;
+
+	/* for core files */
+	if (bin->nsegs > 0) {
+		struct MACH0_(segment_command) *seg;
+		for (i = 0; i < bin->nsegs; i++) {
+			seg = &bin->segs[i];
+			RBinSection *s = R_NEW0 (RBinSection);
+			if (!s) {
+				break;
+			}
+			s->vaddr = seg->vmaddr;
+			s->vsize = seg->vmsize;
+			s->size = seg->vmsize;
+			s->paddr = seg->fileoff;
+			//TODO s->flags = seg->flags;
+			s->name = r_str_ndup (seg->segname, 16);
+			s->is_segment = true;
+			r_str_filter (s->name, -1);
+			s->perm = prot2perm (seg->initprot);
+			s->add = true;
+			r_list_append (list, s);
+		}
+	}
+	if (bin->nsects > 0) {
+		int last_section = R_MIN (bin->nsects, 128); // maybe drop this limit?
+		if (to < 1) {
+			return list;
+		}
+		for (i = 0; i < last_section; i++) {
+			RBinSection *s = R_NEW0 (RBinSection);
+			s->vaddr = (ut64)bin->sects[i].addr;
+			s->vsize = (ut64)bin->sects[i].size;
+			s->is_segment = false;
+			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+			// XXX flags
+			s->paddr = (ut64)bin->sects[i].offset;
+			int segment_index = 0;
+			//s->perm =prot2perm (bin->segs[j].initprot);
+			for (j = 0; j < bin->nsegs; j++) {
+				if (s->vaddr >= bin->segs[j].vmaddr &&
+						s->vaddr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
+					s->perm = prot2perm (bin->segs[j].initprot);
+					segment_index = j;
+					break;
+				}
+			}
+			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
+			char *segment_name = r_str_newf ("%d.%s", i, bin->segs[segment_index].segname);
+			s->name = r_str_newf ("%s.%s", segment_name, section_name);
+			r_list_append (list, s);
+		}
+	}
+	return list;
+}
+
+// XXX this function is called so many times
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	struct section_t *sections;
 	char segname[32], sectname[32], raw_segname[17];
@@ -2638,10 +2693,7 @@ char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 }
 
 char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) *bin) {
-	if (bin) {
-		return MACH0_(get_cpusubtype_from_hdr) (&bin->hdr);
-	}
-	return strdup ("Unknown");
+	return bin? MACH0_(get_cpusubtype_from_hdr) (&bin->hdr): strdup ("Unknown");
 }
 
 bool MACH0_(is_pie)(struct MACH0_(obj_t) *bin) {
@@ -2671,10 +2723,7 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 }
 
 char *MACH0_(get_filetype)(struct MACH0_(obj_t) *bin) {
-	if (bin) {
-		return MACH0_(get_filetype_from_hdr) (&bin->hdr);
-	}
-	return strdup ("Unknown");
+	return bin? MACH0_(get_filetype_from_hdr) (&bin->hdr): strdup ("Unknown");
 }
 
 ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
@@ -2690,10 +2739,9 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 	if (bin->main_addr != 0 && bin->main_addr != UT64_MAX) {
 		return bin->main_addr;
 	}
-	struct addr_t *entry = MACH0_(get_entrypoint)(bin);
-	if (entry) {
-		free (entry);
-	}
+	// dummy call to initialize things
+	free (MACH0_(get_entrypoint)(bin));
+
 	bin->main_addr = 0;
 
 	if (addr == UT64_MAX && bin->main_cmd.cmd == LC_MAIN) {
