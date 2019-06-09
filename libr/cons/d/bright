@@ -1,0 +1,72 @@
+# r2 default palette but with bright colors for all
+
+ec b0x00 bgreen
+ec b0x7f bcyan
+ec b0xff bred
+ec args byellow
+ec bin bcyan
+ec btext byellow
+ec call bgreen
+ec cjmp bgreen
+ec cmp bcyan
+ec comment bred
+ec usrcmt bwhite
+ec creg bcyan
+ec flag bcyan
+ec fline bcyan
+ec floc bcyan
+ec flow bcyan
+ec flow2 bblue
+ec fname bred
+ec help bgreen
+ec input bwhite
+ec invalid bred
+ec jmp bgreen
+ec label bcyan
+ec math byellow
+ec mov bwhite
+ec nop bblue
+ec num byellow
+ec offset bgreen
+ec other bwhite
+ec pop bmagenta
+ec prompt byellow
+ec push bmagenta
+ec crypto bblue
+ec reg bcyan
+ec ret bred
+ec swi bmagenta
+ec trap bred
+ec ucall bgreen
+ec ujmp bgreen
+
+ec ai.read bgreen
+ec ai.write bblue
+ec ai.exec bred
+ec ai.seq bmagenta
+ec ai.ascii byellow
+
+ec gui.cflow byellow
+ec gui.dataoffset byellow
+ec gui.background black
+ec gui.alt_background bwhite
+ec gui.border black
+ec wordhl bred
+ec linehl bblue
+
+ec func_var bwhite
+ec func_var_type bblue
+ec func_var_addr bcyan
+
+ec widget_bg rgb:333
+ec widget_sel bred
+
+ec graph.box null
+ec graph.box2 bblue
+ec graph.box3 bmagenta
+ec graph.box4 gray
+ec graph.true bgreen
+ec graph.false bred
+ec graph.trufae bblue    # single jump
+ec graph.traced byellow
+ec graph.current bblue
