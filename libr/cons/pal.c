@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2019 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 
@@ -590,15 +590,12 @@ R_API int r_cons_pal_len() {
 static void cons_pal_update_event(RConsContext *ctx) {
 	Sdb *db = sdb_new0 ();
 	int i, n = 0;
-	char **color;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
 		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
-		color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
+		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
-		if (*color) {
-			R_FREE (*color);
-		}
+		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
 		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);

@@ -56,7 +56,7 @@ R_API char *r_cons_hud_string(const char *s) {
    entry. If all words are present, the function returns true.
    The mask is a character buffer wich is filled by 'x' to mark those characters
    that match the filter */
-static bool strmatch(char *entry, char *filter, char *mask, const int mask_size) {
+static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen (filter);
 	// first we separate the filter in words (include the terminator char
@@ -109,7 +109,7 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	RList *res = r_list_newf (free);
 	r_list_foreach (list, iter, current_entry) {
 		memset (mask, 0, HUD_BUF_SIZE);
-		if (*user_input && !strmatch (current_entry, user_input, mask, HUD_BUF_SIZE)) {
+		if (*user_input && !__matchString (current_entry, user_input, mask, HUD_BUF_SIZE)) {
 			continue;
 		}
 		if (++counter == rows + top_entry_n) {

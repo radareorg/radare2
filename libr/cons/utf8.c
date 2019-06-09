@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 - pancake */
+/* radare - LGPL - Copyright 2015-2019 - pancake */
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
@@ -9,8 +9,8 @@
 #include <termios.h>
 #include <errno.h>
 
-#define   RD_EOF   (-1)
-#define   RD_EIO   (-2)
+#define RD_EOF   (-1)
+#define RD_EIO   (-2)
 
 /* select utf8 terminal detection method */
 #define UTF8_DETECT_ENV 1
@@ -40,27 +40,6 @@ static inline int rd(const int fd) {
 			return RD_EIO;
 		}
 	}
-}
-
-static inline int wr(const int fd, const char *const data, const size_t bytes) {
-	write (fd, data, bytes);
-	return 0;
-	const char       *head = data;
-	const char *const tail = data + bytes;
-	ssize_t           n;
-	while (head < tail) {
-		n = write(fd, head, (size_t)(tail - head));
-		if (n > (ssize_t)0) {
-			head += n;
-			continue;
-		}
-		if (n != (ssize_t)-1)
-			return EIO;
-		if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
-			return errno;
-	}
-
-	return 0;
 }
 #endif
 
@@ -144,7 +123,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		}
 
 		/* Request cursor coordinates from the terminal. */
-		ret = wr(tty, "\033[6n", 4);
+		ret = write (tty, "\033[6n", 4);
 		if (ret)
 			break;
 

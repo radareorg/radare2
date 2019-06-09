@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake, xarkes */
+/* radare - LGPL - Copyright 2013-2019 - pancake, xarkes */
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
@@ -42,7 +42,7 @@ static void init_color_table() {
 	}
 }
 
-static int lookup_rgb(int r, int g, int b) {
+static int __lookup_rgb(int r, int g, int b) {
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
 	for (i = 16; i < 256; ++i) {
@@ -53,7 +53,7 @@ static int lookup_rgb(int r, int g, int b) {
 	return -1;
 }
 
-static ut32 approximate_rgb(int r, int g, int b) {
+static ut32 __approximate_rgb(int r, int g, int b) {
 	bool grey = (r > 0 && r < 255 && r == g && r == b);
 	if (grey) {
 		return 232 + (int)((double)r / (255 / 24.1));
@@ -83,22 +83,22 @@ static ut32 approximate_rgb(int r, int g, int b) {
 }
 
 static int rgb(int r, int g, int b) {
-	int c = lookup_rgb (r, g, b);
+	int c = __lookup_rgb (r, g, b);
 	if (c == -1) {
-		return approximate_rgb (r, g, b);
+		return __approximate_rgb (r, g, b);
 	}
 	return c;
 }
 
-static void unrgb(int color, int *r, int *g, int *b) {
+static void __unrgb(int color, int *r, int *g, int *b) {
 	if (color < 0 || color > 256) {
 		*r = *g = *b = 0;
-		return;
+	} else {
+		int rgb = color_table[color];
+		*r = (rgb >> 16) & 0xff;
+		*g = (rgb >> 8) & 0xff;
+		*b = rgb & 0xff;
 	}
-	int rgb = color_table[color];
-	*r = (rgb >> 16) & 0xff;
-	*g = (rgb >> 8) & 0xff;
-	*b = rgb & 0xff;
 }
 
 R_API void r_cons_rgb_init(void) {
@@ -130,7 +130,7 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 		if (p[4] == '5')  { // \x1b[%d;5;%dm is 256 colors
 			int x, y, z;
 			int n = atoi (p + 6);
-			unrgb (n, &x, &y, &z);
+			__unrgb (n, &x, &y, &z);
 			SETRGB (x, y, z);
 		} else { // 16M colors (truecolor)
 			/* complex rgb */

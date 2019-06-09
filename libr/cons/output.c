@@ -1,25 +1,25 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
 #define I r_cons_singleton ()
 
 #if __WINDOWS__
-static void fill_tail(int cols, int lines) {
+static void __fill_tail(int cols, int lines) {
 	lines++;
 	if (lines > 0) {
 		char white[1024];
-		memset (white, ' ', sizeof (white));
 		cols = R_MIN (cols, sizeof (white));
+		memset (white, ' ', cols - 1);
 		lines--;
-		white[cols]='\n';
+		white[cols] = '\n';
 		while (lines-- > 0) {
 			write (1, white, cols);
 		}
 	}
 }
 
-static void w32_clear() {
+static void __clear_w32() {
 	static HANDLE hStdout = NULL;
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
 	const COORD startCoords = { 0, 0 };
@@ -53,7 +53,7 @@ R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
 }
 
 static int wrapline(const char *s, int len) {
-	int l, n = 0;
+	int l = 0, n = 0;
 	for (; n < len; ) {
 		l = r_str_len_utf8char (s+n, (len-n));
 		n += l;
@@ -238,7 +238,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				/** clear screen if gotoxy **/
 				if (vmode) {
 					// fill row here
-					fill_tail (cols, lines);
+					__fill_tail (cols, lines);
 				}
 				r_cons_w32_gotoxy (1, 0, 0);
 				lines = 0;
@@ -247,8 +247,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 				str = ptr + 1;
 				continue;
 			} else if (ptr[0]=='2'&&ptr[1]=='J') {
-				//fill_tail(cols, lines);
-				w32_clear (); //r_cons_clear ();
+				__clear_w32 ();
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
@@ -364,14 +363,14 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode) {
 	}
 	if (vmode) {
 		/* fill partial line */
-		int wlen = cols-linelen - 1;
+		int wlen = cols - linelen - 1;
 		if (wlen > 0) {
 			char white[1024];
 			memset (white, ' ', sizeof (white));
 			write (1, white, wlen);
 		}
 		/* fill tail */
-		fill_tail (cols, lines);
+		__fill_tail (cols, lines);
 	} else {
 		int ll = (size_t)(ptr - str);
 		if (ll > 0) {

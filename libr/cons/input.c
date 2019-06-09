@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2019 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -11,10 +11,15 @@
 
 #define I r_cons_singleton ()
 
+// TODO: Support binary, use RBuffer and remove globals
+static char *readbuffer = NULL;
+static int readbuffer_length = 0;
+static bool bufactive = true;
+
 #if 0
 //__UNIX__
 #include <poll.h>
-static int is_fd_ready(int fd) {
+static int __is_fd_ready(int fd) {
 	fd_set rfds;
 	struct timeval tv;
 	if (fd==-1)
@@ -42,7 +47,7 @@ R_API int r_cons_controlz(int ch) {
 	return ch;
 }
 
-static int parseMouseEvent() {
+static int __parseMouseEvent() {
 	int ch = r_cons_readchar ();
 	/* Skip the x/y coordinates */
 #if USE_CLICK
@@ -223,7 +228,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case 'b': ch = 'J'; break; // shift+down
 		case 'c': ch = 'L'; break; // shift+right
 		case 'd': ch = 'H'; break; // shift+left
-		case 'M': ch = parseMouseEvent (); break;
+		case 'M': ch = __parseMouseEvent (); break;
 		}
 		break;
 	}
@@ -296,7 +301,7 @@ R_API int r_cons_any_key(const char *msg) {
 extern void resizeWin(void);
 
 #if __WINDOWS__
-static int readchar_win(ut32 usec) {
+static int __cons_readchar_w32 (ut32 usec) {
 	int ch = 0;
 	BOOL ret;
 	BOOL bCtrl = FALSE;
@@ -445,14 +450,9 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 	// timeout
 	return -1;
 #else
-	return  readchar_win (usec);
+	return  __cons_readchar_w32 (usec);
 #endif
 }
-
-// TODO: support binary? buf+len
-static char *readbuffer = NULL;
-static int readbuffer_length = 0;
-static bool bufactive = true;
 
 R_API bool r_cons_readpush(const char *str, int len) {
 	char *res = (len + readbuffer_length > 0) ? realloc (readbuffer, len + readbuffer_length) : NULL;
@@ -489,23 +489,7 @@ R_API int r_cons_readchar() {
 		return ch;
 	}
 #if __WINDOWS__
-	#if 1   // if something goes wrong set this to 0. skuater.....
-	return readchar_win(0);
-	#endif
-	BOOL ret;
-	DWORD out;
-	DWORD mode;
-	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &mode);
-	SetConsoleMode (h, 0); // RAW
-	bed = r_cons_sleep_begin ();
-	ret = ReadConsole (h, buf, 1, &out, NULL);
-	r_cons_sleep_end (bed);
-	FlushConsoleInputBuffer (h);
-	if (!ret) {
-		return -1;
-	}
-	SetConsoleMode (h, mode);
+	return __cons_readchar_w32 (0);
 #else
 	r_cons_set_raw (1);
 	bed = r_cons_sleep_begin ();
@@ -541,8 +525,8 @@ R_API int r_cons_readchar() {
 	if (bufactive) {
 		r_cons_set_raw (0);
 	}
-#endif
 	return r_cons_controlz (buf[0]);
+#endif
 }
 
 R_API bool r_cons_yesno(int def, const char *fmt, ...) {
