@@ -375,7 +375,7 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 				(*blocks)[*count].address = next + off;
 				(*blocks)[*count].size = subsegment.BlockOffsets.BlockSize;
 				(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
-				PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+				PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 				if (!extra) {
 					return false;
 				}
@@ -453,7 +453,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 			(*blocks)[*count].address = entry.VirtualAddess - entry.UnusedBytes; // This is a union
 			(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LARGE_BLOCK;
 			(*blocks)[*count].size = ((entry.AllocatedPages >> 12) << 12);
-			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
 				return false;
 			}
@@ -487,7 +487,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 					(*blocks)[*count].address = currPageSegment + j * 0x1000;
 					(*blocks)[*count].size = (WPARAM)pageSegment.DescArray[j].UnitSize * 0x1000;
 					(*blocks)[*count].flags = SEGMENT_HEAP_BLOCK | BACKEND_BLOCK | 1;
-					PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+					PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 					if (!extra) {
 						return false;
 					}
@@ -513,7 +513,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 							(*blocks)[*count].address = from;
 							(*blocks)[*count].size = sz;
 							(*blocks)[*count].flags = VS_BLOCK | SEGMENT_HEAP_BLOCK | 1;
-							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+							PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 							if (!extra) {
 								return false;
 							}
@@ -600,7 +600,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			blocks[count].address = (WPARAM)entry;
 			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
 			blocks[count].size = vAlloc.ReserveSize;
-			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
 				goto err;
 			}
@@ -667,7 +667,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 							blocks[count].address = from;
 							blocks[count].flags = 1 | NT_BLOCK | LFH_BLOCK;
 							blocks[count].size = sz;
-							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+							PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 							if (!extra) {
 								goto err;
 							}
@@ -712,7 +712,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 				SIZE_T real_sz = heapEntry.Size * sz_entry;
 
 				GROW_BLOCKS ();
-				PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+				PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 				if (!extra) {
 					goto err;
 				}
@@ -757,12 +757,12 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	*		- VS
 	*		- Backend
 	*/
-	PHeapBlock hb = calloc (1, sizeof (HeapBlock));
+	PHeapBlock hb = R_NEW0 (HeapBlock);
 	if (!hb) {
 		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
 		return NULL;
 	}
-	PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+	PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
 		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
 		goto err;
@@ -807,7 +807,7 @@ err:
 }
 
 static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
-	PHeapBlock hb = calloc (1, sizeof (HeapBlock));
+	PHeapBlock hb = R_NEW0 (HeapBlock);
 	PDEBUG_BUFFER db = NULL;
 	PHeapBlockExtraInfo extra = NULL;
 
@@ -824,7 +824,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 	if (!db) {
 		goto err;
 	}
-	extra = calloc (1, sizeof (HeapBlockExtraInfo));
+	extra = R_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
 		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
 		goto err;
