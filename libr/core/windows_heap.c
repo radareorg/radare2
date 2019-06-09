@@ -858,6 +858,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 						hb->dwSize = largeEntry.CommitSize;
 						hb->dwFlags |= LARGE_BLOCK;
 						extra->unusedBytes = largeEntry.ReserveSize - largeEntry.CommitSize;
+						extra->granularity = sizeof (HEAP_VIRTUAL_ALLOC_ENTRY);
 					}
 				} else {
 					hb->dwSize = (WPARAM)entry.Size * heap.Granularity;
@@ -887,7 +888,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 					if (!ReadProcessMemory (h_proc, (PVOID)UserBlocks.SubSegment, &subsegment, sizeof (HEAP_SUBSEGMENT), NULL)) {
 						continue;
 					}
-					hb->dwAddress = offset;
+					hb->dwAddress = (PVOID)offset;
 					hb->dwSize = (WPARAM)subsegment.BlockSize * heap.Granularity;
 					hb->dwFlags = 1 | LFH_BLOCK | NT_BLOCK;
 					break;
