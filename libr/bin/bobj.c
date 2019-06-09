@@ -274,12 +274,12 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	}
 
 	// TODO: kill the baddr_shift and split into {user/file}-baddr
-	if (p->baddr) {
+	if (o->baddr != UT64_MAX) {
 		ut64 file_baddr = p->baddr (bf);
-		if (o->baddr == UT64_MAX) {
+		if (o->baddr != UT64_MAX) {
+			o->baddr_shift = o->baddr - file_baddr;
+		} else {
 			o->baddr = file_baddr;
-		}
-		if (file_baddr != UT64_MAX) {
 			o->baddr_shift = o->baddr - file_baddr;
 		}
 	}
@@ -492,14 +492,6 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 		}
 	}
 	return res;
-}
-
-// XXX deprecate
-R_IPI void r_bin_object_set_baddr(RBinObject *o, ut64 baddr) {
-	r_return_if_fail (o);
-	if (baddr != UT64_MAX) {
-		o->baddr_shift = baddr - o->baddr;
-	}
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
