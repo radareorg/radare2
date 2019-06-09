@@ -64,6 +64,8 @@ static void handle_data_sections(RBinSection *sect) {
 }
 
 static RList *sections(RBinFile *bf) {
+	return MACH0_(get_segments) (bf->o->bin_obj);
+#if 0
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct section_t *sections = NULL;
@@ -81,6 +83,7 @@ static RList *sections(RBinFile *bf) {
 			break;
 		}
 		ptr->name = strdup ((char*)sections[i].name);
+// TODO: this is not translated
 		if (strstr (ptr->name, "la_symbol_ptr")) {
 #ifndef R_BIN_MACH064
 			const int sz = 4;
@@ -110,6 +113,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	free (sections);
 	return ret;
+#endif
 }
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
@@ -175,21 +179,22 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
+	r_return_val_if_fail (bf && bf->o, NULL);
+
 	RBinAddr *ptr = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
 	struct addr_t *entry = NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
 
-	int bits = MACH0_(get_bits) (obj->bin_obj);
-	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj))) {
+	int bits = MACH0_(get_bits) (bf->o->bin_obj);
+	if (!(entry = MACH0_(get_entrypoint) (bf->o->bin_obj))) {
 		return ret;
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entry->offset + obj->boffset;
+		ptr->paddr = entry->offset + bf->o->boffset;
 		ptr->vaddr = entry->addr;
 		ptr->hpaddr = entry->haddr;
 		ptr->bits = bits;
