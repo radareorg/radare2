@@ -240,23 +240,18 @@ static const char *help_msg_panels_zoom[] = {
 
 /* init */
 static bool init(RCore *core, RPanels *panels, int w, int h);
-static void initSdb(RPanels *panels);
-static void initRotatedb(RPanels *panels);
-static void init_almighty_db(RPanels *panels);
+static void initSdb(RCore *core);
+static void initRotatedb(RCore *core);
+static void init_almighty_db(RCore *core);
 static bool initPanelsMenu(RCore *core);
 static bool initPanels(RCore *core, RPanels *panels);
+static void init_all_dbs(RCore *core);
 static void init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd, bool cache);
 static RPanels *panels_new(RCore *core);
 
 /* create */
 static void createDefaultPanels(RCore *core);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
-static void create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd);
-static void create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
-static void create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
-static void search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
-static void search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
-static char *search_strings (RCore *core, bool whole);
 
 /* free */
 static void panels_free(RPanelsRoot *panels_root, int i, RPanels *panels);
@@ -460,6 +455,18 @@ static char *print_disassembly_cb(void *user, void *p);
 static char *print_graph_cb(void *user, void *p);
 static char *print_stack_cb(void *user, void *p);
 static char *print_hexdump_cb(void *user, void *p);
+
+/* almighty callback */
+static void create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd);
+static void create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static void create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static void search_strings_data_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static void search_strings_bin_create(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+static char *search_strings (RCore *core, bool whole);
+static void put_breakpoints_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
+static void continue_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
+static void step_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
+static void step_over_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title);
 
 /* menu */
 static void del_menu(RCore *core);
@@ -3795,7 +3802,8 @@ static void panels_check_stackbase(RCore *core) {
 	}
 }
 
-static void initRotatedb(RPanels *panels) {
+static void initRotatedb(RCore *core) {
+	RPanels *panels = core->panels;
 	sdb_ptr_set (panels->rotate_db, "pd", &rotateDisasCb, 0);
 	sdb_ptr_set (panels->rotate_db, "p==", &rotateEntropyHCb, 0);
 	sdb_ptr_set (panels->rotate_db, "p=", &rotateEntropyVCb, 0);
@@ -3804,7 +3812,8 @@ static void initRotatedb(RPanels *panels) {
 	sdb_ptr_set (panels->rotate_db, "af", &rotateFunctionCb, 0);
 }
 
-static void initSdb(RPanels *panels) {
+static void initSdb(RCore *core) {
+	RPanels *panels = core->panels;
 	sdb_set (panels->db, "Symbols", "isq", 0);
 	sdb_set (panels->db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (panels->db, "Locals", "afvd", 0);
@@ -3837,7 +3846,8 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Summary", "pdsf", 0);
 }
 
-static void init_almighty_db(RPanels *panels) {
+static void init_almighty_db(RCore *core) {
+	RPanels *panels = core->panels;
 	SdbKv *kv;
 	SdbListIter *sdb_iter;
 	SdbList *sdb_list = sdb_foreach_list (panels->db, true);
@@ -3848,6 +3858,18 @@ static void init_almighty_db(RPanels *panels) {
 	sdb_ptr_set (panels->almighty_db, "Search strings in data sections", &search_strings_data_create, 0);
 	sdb_ptr_set (panels->almighty_db, "Search strings in the whole bin", &search_strings_bin_create, 0);
 	sdb_ptr_set (panels->almighty_db, "Create New", &create_panel_input, 0);
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		sdb_ptr_set (panels->almighty_db, "Put Breakpoints", &put_breakpoints_cb, 0);
+		sdb_ptr_set (panels->almighty_db, "Continue", &continue_cb, 0);
+		sdb_ptr_set (panels->almighty_db, "Step", &step_cb, 0);
+		sdb_ptr_set (panels->almighty_db, "Step Over", &step_over_cb, 0);
+	}
+}
+
+static void init_all_dbs(RCore *core) {
+	initSdb (core);
+	init_almighty_db (core);
+	initRotatedb (core);
 }
 
 static void create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
@@ -3903,6 +3925,23 @@ static char *search_strings (RCore *core, bool whole) {
 	return r_str_newf ("%s~%s", search_db (core, title), str);
 }
 
+static void put_breakpoints_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+	breakpointsCb (user);
+}
+
+static void continue_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+	continueCb (user);
+	updateDisassemblyAddr ((RCore *)user);
+}
+
+static void step_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+	stepCb (user);
+}
+
+static void step_over_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
+	stepoverCb (user);
+}
+
 static void mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	free (kv->value);
@@ -3928,9 +3967,6 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
-	initSdb (panels);
-	init_almighty_db (panels);
-	initRotatedb (panels);
 
 	if (w < 140) {
 		panels->columnWidth = w / 3;
@@ -4956,6 +4992,7 @@ static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 		}
 		prev = core->panels;
 		core->panels = panels;
+		init_all_dbs (core);
 		if (!initPanelsMenu (core)) {
 			return true;
 		}
