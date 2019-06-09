@@ -760,7 +760,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	}
 	PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
 		goto err;
 	}
 	hb->extraInfo = extra;
