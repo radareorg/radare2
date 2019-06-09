@@ -895,6 +895,9 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 			}
 		}
 	}
+	if (!hb->dwSize) {
+		goto err;
+	}
 	RtlDestroyQueryDebugBuffer (db);
 	CloseHandle (h_proc);
 	return hb;
