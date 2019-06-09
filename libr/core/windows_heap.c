@@ -45,10 +45,10 @@
 *		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
 */
 
-#define PDI_MODULES 0x01
-#define PDI_HEAPS 0x04
-#define PDI_HEAP_TAGS 0x08
-#define PDI_HEAP_BLOCKS 0x10
+#define PDI_MODULES         0x01
+#define PDI_HEAPS           0x04
+#define PDI_HEAP_TAGS       0x08
+#define PDI_HEAP_BLOCKS     0x10
 #define PDI_HEAP_ENTRIES_EX 0x200
 
 #define CHECK_INFO(heapInfo)\
