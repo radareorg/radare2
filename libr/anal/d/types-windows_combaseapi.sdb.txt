@@ -1,0 +1,551 @@
+### combaseapi.h ###
+
+AgileReferenceOptions=typedef
+typedef.AgileReferenceOptions=int
+
+
+
+CLSIDFromProgID=func
+func.CLSIDFromProgID.args=2
+func.CLSIDFromProgID.arg.0=LPCOLESTR,lpszProgID
+func.CLSIDFromProgID.arg.1=LPCLSID,lpclsid
+func.CLSIDFromProgID.ret=HRESULT
+
+CLSIDFromProgIDEx=func
+func.CLSIDFromProgIDEx.args=2
+func.CLSIDFromProgIDEx.arg.0=LPCOLESTR,lpszProgID
+func.CLSIDFromProgIDEx.arg.1=LPCLSID,lpclsid
+func.CLSIDFromProgIDEx.ret=HRESULT
+
+CLSIDFromString=func
+func.CLSIDFromString.args=2
+func.CLSIDFromString.arg.0=LPCOLESTR,lpsz
+func.CLSIDFromString.arg.1=LPCLSID,pclsid
+func.CLSIDFromString.ret=HRESULT
+
+CoAddRefServerProcess=func
+func.CoAddRefServerProcess.args=0
+func.CoAddRefServerProcess.ret=ULONG
+
+CoAllowUnmarshalerCLSID=func
+func.CoAllowUnmarshalerCLSID.args=1
+func.CoAllowUnmarshalerCLSID.arg.0=REFCLSID,clsid
+func.CoAllowUnmarshalerCLSID.ret=HRESULT
+
+CoCancelCall=func
+func.CoCancelCall.args=2
+func.CoCancelCall.arg.0=DWORD,dwThreadId
+func.CoCancelCall.arg.1=ULONG,ulTimeout
+func.CoCancelCall.ret=HRESULT
+
+CoCopyProxy=func
+func.CoCopyProxy.args=2
+func.CoCopyProxy.arg.0=IUnknown *,pProxy
+func.CoCopyProxy.arg.1=IUnknown **,ppCopy
+func.CoCopyProxy.ret=HRESULT
+
+CoCreateFreeThreadedMarshaler=func
+func.CoCreateFreeThreadedMarshaler.args=2
+func.CoCreateFreeThreadedMarshaler.arg.0=LPUNKNOWN,punkOuter
+func.CoCreateFreeThreadedMarshaler.arg.1=LPUNKNOWN *,ppunkMarshal
+func.CoCreateFreeThreadedMarshaler.ret=HRESULT
+
+CoCreateGuid=func
+func.CoCreateGuid.args=1
+func.CoCreateGuid.arg.0=GUID *,pguid
+func.CoCreateGuid.ret=HRESULT
+
+CoCreateInstance=func
+func.CoCreateInstance.args=5
+func.CoCreateInstance.arg.0=REFCLSID,rclsid
+func.CoCreateInstance.arg.1=LPUNKNOWN,pUnkOuter
+func.CoCreateInstance.arg.2=DWORD,dwClsContext
+func.CoCreateInstance.arg.3=REFIID,riid
+func.CoCreateInstance.arg.4=LPVOID *,ppv
+func.CoCreateInstance.ret=HRESULT
+
+CoCreateInstanceEx=func
+func.CoCreateInstanceEx.args=6
+func.CoCreateInstanceEx.arg.0=REFCLSID,Clsid
+func.CoCreateInstanceEx.arg.1=IUnknown *,punkOuter
+func.CoCreateInstanceEx.arg.2=DWORD,dwClsCtx
+func.CoCreateInstanceEx.arg.3=COSERVERINFO *,pServerInfo
+func.CoCreateInstanceEx.arg.4=DWORD,dwCount
+func.CoCreateInstanceEx.arg.5=MULTI_QI *,pResults
+func.CoCreateInstanceEx.ret=HRESULT
+
+CoCreateInstanceFromApp=func
+func.CoCreateInstanceFromApp.args=6
+func.CoCreateInstanceFromApp.arg.0=REFCLSID,Clsid
+func.CoCreateInstanceFromApp.arg.1=IUnknown *,punkOuter
+func.CoCreateInstanceFromApp.arg.2=DWORD,dwClsCtx
+func.CoCreateInstanceFromApp.arg.3=PVOID,reserved
+func.CoCreateInstanceFromApp.arg.4=DWORD,dwCount
+func.CoCreateInstanceFromApp.arg.5=MULTI_QI *,pResults
+func.CoCreateInstanceFromApp.ret=HRESULT
+
+CoDecodeProxy=func
+func.CoDecodeProxy.args=3
+func.CoDecodeProxy.arg.0=DWORD,dwClientPid
+func.CoDecodeProxy.arg.1=UINT64,ui64ProxyAddress
+func.CoDecodeProxy.arg.2=PServerInformation,pServerInformation
+func.CoDecodeProxy.ret=HRESULT
+
+CoDecrementMTAUsage=func
+func.CoDecrementMTAUsage.args=1
+func.CoDecrementMTAUsage.arg.0=CO_MTA_USAGE_COOKIE,Cookie
+func.CoDecrementMTAUsage.ret=HRESULT
+
+CoDisableCallCancellation=func
+func.CoDisableCallCancellation.args=1
+func.CoDisableCallCancellation.arg.0=LPVOID,pReserved
+func.CoDisableCallCancellation.ret=HRESULT
+
+CoDisconnectContext=func
+func.CoDisconnectContext.args=1
+func.CoDisconnectContext.arg.0=DWORD,dwTimeout
+func.CoDisconnectContext.ret=HRESULT
+
+CoDisconnectObject=func
+func.CoDisconnectObject.args=2
+func.CoDisconnectObject.arg.0=LPUNKNOWN,pUnk
+func.CoDisconnectObject.arg.1=DWORD,dwReserved
+func.CoDisconnectObject.ret=HRESULT
+
+CoEnableCallCancellation=func
+func.CoEnableCallCancellation.args=1
+func.CoEnableCallCancellation.arg.0=LPVOID,pReserved
+func.CoEnableCallCancellation.ret=HRESULT
+
+CoFileTimeNow=func
+func.CoFileTimeNow.args=1
+func.CoFileTimeNow.arg.0=FILETIME *,lpFileTime
+func.CoFileTimeNow.ret=HRESULT
+
+CoFreeUnusedLibraries=func
+func.CoFreeUnusedLibraries.args=0
+func.CoFreeUnusedLibraries.ret=void
+
+CoFreeUnusedLibrariesEx=func
+func.CoFreeUnusedLibrariesEx.args=2
+func.CoFreeUnusedLibrariesEx.arg.0=DWORD,dwUnloadDelay
+func.CoFreeUnusedLibrariesEx.arg.1=DWORD,dwReserved
+func.CoFreeUnusedLibrariesEx.ret=void
+
+CoGetApartmentType=func
+func.CoGetApartmentType.args=2
+func.CoGetApartmentType.arg.0=APTTYPE *,pAptType
+func.CoGetApartmentType.arg.1=APTTYPEQUALIFIER *,pAptQualifier
+func.CoGetApartmentType.ret=HRESULT
+
+CoGetCallContext=func
+func.CoGetCallContext.args=2
+func.CoGetCallContext.arg.0=REFIID,riid
+func.CoGetCallContext.arg.1=void **,ppInterface
+func.CoGetCallContext.ret=HRESULT
+
+CoGetCallerTID=func
+func.CoGetCallerTID.args=1
+func.CoGetCallerTID.arg.0=LPDWORD,lpdwTID
+func.CoGetCallerTID.ret=HRESULT
+
+CoGetCancelObject=func
+func.CoGetCancelObject.args=3
+func.CoGetCancelObject.arg.0=DWORD,dwThreadId
+func.CoGetCancelObject.arg.1=REFIID,iid
+func.CoGetCancelObject.arg.2=void **,ppUnk
+func.CoGetCancelObject.ret=HRESULT
+
+CoGetClassObject=func
+func.CoGetClassObject.args=5
+func.CoGetClassObject.arg.0=REFCLSID,rclsid
+func.CoGetClassObject.arg.1=DWORD,dwClsContext
+func.CoGetClassObject.arg.2=LPVOID,pvReserved
+func.CoGetClassObject.arg.3=REFIID,riid
+func.CoGetClassObject.arg.4=LPVOID *,ppv
+func.CoGetClassObject.ret=HRESULT
+
+CoGetContextToken=func
+func.CoGetContextToken.args=1
+func.CoGetContextToken.arg.0=ULONG_PTR *,pToken
+func.CoGetContextToken.ret=HRESULT
+
+CoGetCurrentLogicalThreadId=func
+func.CoGetCurrentLogicalThreadId.args=1
+func.CoGetCurrentLogicalThreadId.arg.0=GUID *,pguid
+func.CoGetCurrentLogicalThreadId.ret=HRESULT
+
+CoGetCurrentProcess=func
+func.CoGetCurrentProcess.args=0
+func.CoGetCurrentProcess.ret=DWORD
+
+CoGetDefaultContext=func
+func.CoGetDefaultContext.args=3
+func.CoGetDefaultContext.arg.0=APTTYPE,aptType
+func.CoGetDefaultContext.arg.1=REFIID,riid
+func.CoGetDefaultContext.arg.2=void **,ppv
+func.CoGetDefaultContext.ret=HRESULT
+
+CoGetInterfaceAndReleaseStream=func
+func.CoGetInterfaceAndReleaseStream.args=3
+func.CoGetInterfaceAndReleaseStream.arg.0=LPSTREAM,pStm
+func.CoGetInterfaceAndReleaseStream.arg.1=REFIID,iid
+func.CoGetInterfaceAndReleaseStream.arg.2=LPVOID *,ppv
+func.CoGetInterfaceAndReleaseStream.ret=HRESULT
+
+CoGetMalloc=func
+func.CoGetMalloc.args=2
+func.CoGetMalloc.arg.0=DWORD,dwMemContext
+func.CoGetMalloc.arg.1=LPMALLOC *,ppMalloc
+func.CoGetMalloc.ret=HRESULT
+
+CoGetMarshalSizeMax=func
+func.CoGetMarshalSizeMax.args=6
+func.CoGetMarshalSizeMax.arg.0=ULONG *,pulSize
+func.CoGetMarshalSizeMax.arg.1=REFIID,riid
+func.CoGetMarshalSizeMax.arg.2=LPUNKNOWN,pUnk
+func.CoGetMarshalSizeMax.arg.3=DWORD,dwDestContext
+func.CoGetMarshalSizeMax.arg.4=LPVOID,pvDestContext
+func.CoGetMarshalSizeMax.arg.5=DWORD,mshlflags
+func.CoGetMarshalSizeMax.ret=HRESULT
+
+CoGetObjectContext=func
+func.CoGetObjectContext.args=2
+func.CoGetObjectContext.arg.0=REFIID,riid
+func.CoGetObjectContext.arg.1=LPVOID *,ppv
+func.CoGetObjectContext.ret=HRESULT
+
+CoGetPSClsid=func
+func.CoGetPSClsid.args=2
+func.CoGetPSClsid.arg.0=REFIID,riid
+func.CoGetPSClsid.arg.1=CLSID *,pClsid
+func.CoGetPSClsid.ret=HRESULT
+
+CoGetStandardMarshal=func
+func.CoGetStandardMarshal.args=6
+func.CoGetStandardMarshal.arg.0=REFIID,riid
+func.CoGetStandardMarshal.arg.1=LPUNKNOWN,pUnk
+func.CoGetStandardMarshal.arg.2=DWORD,dwDestContext
+func.CoGetStandardMarshal.arg.3=LPVOID,pvDestContext
+func.CoGetStandardMarshal.arg.4=DWORD,mshlflags
+func.CoGetStandardMarshal.arg.5=LPMARSHAL *,ppMarshal
+func.CoGetStandardMarshal.ret=HRESULT
+
+CoGetStdMarshalEx=func
+func.CoGetStdMarshalEx.args=3
+func.CoGetStdMarshalEx.arg.0=LPUNKNOWN,pUnkOuter
+func.CoGetStdMarshalEx.arg.1=DWORD,smexflags
+func.CoGetStdMarshalEx.arg.2=LPUNKNOWN *,ppUnkInner
+func.CoGetStdMarshalEx.ret=HRESULT
+
+CoGetTreatAsClass=func
+func.CoGetTreatAsClass.args=2
+func.CoGetTreatAsClass.arg.0=REFCLSID,clsidOld
+func.CoGetTreatAsClass.arg.1=LPCLSID,pClsidNew
+func.CoGetTreatAsClass.ret=HRESULT
+
+CoImpersonateClient=func
+func.CoImpersonateClient.args=0
+func.CoImpersonateClient.ret=HRESULT
+
+CoIncrementMTAUsage=func
+func.CoIncrementMTAUsage.args=1
+func.CoIncrementMTAUsage.arg.0=CO_MTA_USAGE_COOKIE *,pCookie
+func.CoIncrementMTAUsage.ret=HRESULT
+
+CoInitializeEx=func
+func.CoInitializeEx.args=2
+func.CoInitializeEx.arg.0=LPVOID,pvReserved
+func.CoInitializeEx.arg.1=DWORD,dwCoInit
+func.CoInitializeEx.ret=HRESULT
+
+CoInitializeSecurity=func
+func.CoInitializeSecurity.args=9
+func.CoInitializeSecurity.arg.0=PSECURITY_DESCRIPTOR,pSecDesc
+func.CoInitializeSecurity.arg.1=LONG,cAuthSvc
+func.CoInitializeSecurity.arg.2=SOLE_AUTHENTICATION_SERVICE *,asAuthSvc
+func.CoInitializeSecurity.arg.3=void *,pReserved1
+func.CoInitializeSecurity.arg.4=DWORD,dwAuthnLevel
+func.CoInitializeSecurity.arg.5=DWORD,dwImpLevel
+func.CoInitializeSecurity.arg.6=void *,pAuthList
+func.CoInitializeSecurity.arg.7=DWORD,dwCapabilities
+func.CoInitializeSecurity.arg.8=void *,pReserved3
+func.CoInitializeSecurity.ret=HRESULT
+
+CoInvalidateRemoteMachineBindings=func
+func.CoInvalidateRemoteMachineBindings.args=1
+func.CoInvalidateRemoteMachineBindings.arg.0=LPOLESTR,pszMachineName
+func.CoInvalidateRemoteMachineBindings.ret=HRESULT
+
+CoIsHandlerConnected=func
+func.CoIsHandlerConnected.args=1
+func.CoIsHandlerConnected.arg.0=LPUNKNOWN,pUnk
+func.CoIsHandlerConnected.ret=BOOL
+
+CoLockObjectExternal=func
+func.CoLockObjectExternal.args=3
+func.CoLockObjectExternal.arg.0=LPUNKNOWN,pUnk
+func.CoLockObjectExternal.arg.1=BOOL,fLock
+func.CoLockObjectExternal.arg.2=BOOL,fLastUnlockReleases
+func.CoLockObjectExternal.ret=HRESULT
+
+CoMarshalHresult=func
+func.CoMarshalHresult.args=2
+func.CoMarshalHresult.arg.0=LPSTREAM,pstm
+func.CoMarshalHresult.arg.1=HRESULT,hresult
+func.CoMarshalHresult.ret=HRESULT
+
+CoMarshalInterface=func
+func.CoMarshalInterface.args=6
+func.CoMarshalInterface.arg.0=LPSTREAM,pStm
+func.CoMarshalInterface.arg.1=REFIID,riid
+func.CoMarshalInterface.arg.2=LPUNKNOWN,pUnk
+func.CoMarshalInterface.arg.3=DWORD,dwDestContext
+func.CoMarshalInterface.arg.4=LPVOID,pvDestContext
+func.CoMarshalInterface.arg.5=DWORD,mshlflags
+func.CoMarshalInterface.ret=HRESULT
+
+CoMarshalInterThreadInterfaceInStream=func
+func.CoMarshalInterThreadInterfaceInStream.args=3
+func.CoMarshalInterThreadInterfaceInStream.arg.0=REFIID,riid
+func.CoMarshalInterThreadInterfaceInStream.arg.1=LPUNKNOWN,pUnk
+func.CoMarshalInterThreadInterfaceInStream.arg.2=LPSTREAM *,ppStm
+func.CoMarshalInterThreadInterfaceInStream.ret=HRESULT
+
+CoQueryAuthenticationServices=func
+func.CoQueryAuthenticationServices.args=2
+func.CoQueryAuthenticationServices.arg.0=DWORD *,pcAuthSvc
+func.CoQueryAuthenticationServices.arg.1=SOLE_AUTHENTICATION_SERVICE **,asAuthSvc
+func.CoQueryAuthenticationServices.ret=HRESULT
+
+CoQueryClientBlanket=func
+func.CoQueryClientBlanket.args=7
+func.CoQueryClientBlanket.arg.0=DWORD *,pAuthnSvc
+func.CoQueryClientBlanket.arg.1=DWORD *,pAuthzSvc
+func.CoQueryClientBlanket.arg.2=LPOLESTR *,pServerPrincName
+func.CoQueryClientBlanket.arg.3=DWORD *,pAuthnLevel
+func.CoQueryClientBlanket.arg.4=DWORD *,pImpLevel
+func.CoQueryClientBlanket.arg.5=RPC_AUTHZ_HANDLE *,pPrivs
+func.CoQueryClientBlanket.arg.6=DWORD *,pCapabilities
+func.CoQueryClientBlanket.ret=HRESULT
+
+CoQueryProxyBlanket=func
+func.CoQueryProxyBlanket.args=8
+func.CoQueryProxyBlanket.arg.0=IUnknown *,pProxy
+func.CoQueryProxyBlanket.arg.1=DWORD *,pwAuthnSvc
+func.CoQueryProxyBlanket.arg.2=DWORD *,pAuthzSvc
+func.CoQueryProxyBlanket.arg.3=LPOLESTR *,pServerPrincName
+func.CoQueryProxyBlanket.arg.4=DWORD *,pAuthnLevel
+func.CoQueryProxyBlanket.arg.5=DWORD *,pImpLevel
+func.CoQueryProxyBlanket.arg.6=RPC_AUTH_IDENTITY_HANDLE *,pAuthInfo
+func.CoQueryProxyBlanket.arg.7=DWORD *,pCapabilites
+func.CoQueryProxyBlanket.ret=HRESULT
+
+CoRegisterActivationFilter=func
+func.CoRegisterActivationFilter.args=1
+func.CoRegisterActivationFilter.arg.0=IActivationFilter *,pActivationFilter
+func.CoRegisterActivationFilter.ret=HRESULT
+
+CoRegisterClassObject=func
+func.CoRegisterClassObject.args=5
+func.CoRegisterClassObject.arg.0=REFCLSID,rclsid
+func.CoRegisterClassObject.arg.1=LPUNKNOWN,pUnk
+func.CoRegisterClassObject.arg.2=DWORD,dwClsContext
+func.CoRegisterClassObject.arg.3=DWORD,flags
+func.CoRegisterClassObject.arg.4=LPDWORD,lpdwRegister
+func.CoRegisterClassObject.ret=HRESULT
+
+CoRegisterPSClsid=func
+func.CoRegisterPSClsid.args=2
+func.CoRegisterPSClsid.arg.0=REFIID,riid
+func.CoRegisterPSClsid.arg.1=REFCLSID,rclsid
+func.CoRegisterPSClsid.ret=HRESULT
+
+CoRegisterSurrogate=func
+func.CoRegisterSurrogate.args=1
+func.CoRegisterSurrogate.arg.0=LPSURROGATE,pSurrogate
+func.CoRegisterSurrogate.ret=HRESULT
+
+CoReleaseMarshalData=func
+func.CoReleaseMarshalData.args=1
+func.CoReleaseMarshalData.arg.0=LPSTREAM,pStm
+func.CoReleaseMarshalData.ret=HRESULT
+
+CoReleaseServerProcess=func
+func.CoReleaseServerProcess.args=0
+func.CoReleaseServerProcess.ret=ULONG
+
+CoResumeClassObjects=func
+func.CoResumeClassObjects.args=0
+func.CoResumeClassObjects.ret=HRESULT
+
+CoRevertToSelf=func
+func.CoRevertToSelf.args=0
+func.CoRevertToSelf.ret=HRESULT
+
+CoRevokeClassObject=func
+func.CoRevokeClassObject.args=1
+func.CoRevokeClassObject.arg.0=DWORD,dwRegister
+func.CoRevokeClassObject.ret=HRESULT
+
+CoSetCancelObject=func
+func.CoSetCancelObject.args=1
+func.CoSetCancelObject.arg.0=IUnknown *,pUnk
+func.CoSetCancelObject.ret=HRESULT
+
+CoSetProxyBlanket=func
+func.CoSetProxyBlanket.args=8
+func.CoSetProxyBlanket.arg.0=IUnknown *,pProxy
+func.CoSetProxyBlanket.arg.1=DWORD,dwAuthnSvc
+func.CoSetProxyBlanket.arg.2=DWORD,dwAuthzSvc
+func.CoSetProxyBlanket.arg.3=OLECHAR *,pServerPrincName
+func.CoSetProxyBlanket.arg.4=DWORD,dwAuthnLevel
+func.CoSetProxyBlanket.arg.5=DWORD,dwImpLevel
+func.CoSetProxyBlanket.arg.6=RPC_AUTH_IDENTITY_HANDLE,pAuthInfo
+func.CoSetProxyBlanket.arg.7=DWORD,dwCapabilities
+func.CoSetProxyBlanket.ret=HRESULT
+
+CoSuspendClassObjects=func
+func.CoSuspendClassObjects.args=0
+func.CoSuspendClassObjects.ret=HRESULT
+
+CoSwitchCallContext=func
+func.CoSwitchCallContext.args=2
+func.CoSwitchCallContext.arg.0=IUnknown *,pNewObject
+func.CoSwitchCallContext.arg.1=IUnknown **,ppOldObject
+func.CoSwitchCallContext.ret=HRESULT
+
+CoTaskMemAlloc=func
+func.CoTaskMemAlloc.args=1
+func.CoTaskMemAlloc.arg.0=SIZE_T,cb
+func.CoTaskMemAlloc.ret=LPVOID
+
+CoTaskMemFree=func
+func.CoTaskMemFree.args=1
+func.CoTaskMemFree.arg.0=LPVOID,pv
+func.CoTaskMemFree.ret=void
+
+CoTaskMemRealloc=func
+func.CoTaskMemRealloc.args=2
+func.CoTaskMemRealloc.arg.0=LPVOID,pv
+func.CoTaskMemRealloc.arg.1=SIZE_T,cb
+func.CoTaskMemRealloc.ret=LPVOID
+
+CoTestCancel=func
+func.CoTestCancel.args=0
+func.CoTestCancel.ret=HRESULT
+
+CoUninitialize=func
+func.CoUninitialize.args=0
+func.CoUninitialize.ret=void
+
+CoUnmarshalHresult=func
+func.CoUnmarshalHresult.args=2
+func.CoUnmarshalHresult.arg.0=LPSTREAM,pstm
+func.CoUnmarshalHresult.arg.1=HRESULT *,phresult
+func.CoUnmarshalHresult.ret=HRESULT
+
+CoUnmarshalInterface=func
+func.CoUnmarshalInterface.args=3
+func.CoUnmarshalInterface.arg.0=LPSTREAM,pStm
+func.CoUnmarshalInterface.arg.1=REFIID,riid
+func.CoUnmarshalInterface.arg.2=LPVOID *,ppv
+func.CoUnmarshalInterface.ret=HRESULT
+
+CoWaitForMultipleHandles=func
+func.CoWaitForMultipleHandles.args=5
+func.CoWaitForMultipleHandles.arg.0=DWORD,dwFlags
+func.CoWaitForMultipleHandles.arg.1=DWORD,dwTimeout
+func.CoWaitForMultipleHandles.arg.2=ULONG,cHandles
+func.CoWaitForMultipleHandles.arg.3=LPHANDLE,pHandles
+func.CoWaitForMultipleHandles.arg.4=LPDWORD,lpdwindex
+func.CoWaitForMultipleHandles.ret=HRESULT
+
+CoWaitForMultipleObjects=func
+func.CoWaitForMultipleObjects.args=5
+func.CoWaitForMultipleObjects.arg.0=DWORD,dwFlags
+func.CoWaitForMultipleObjects.arg.1=DWORD,dwTimeout
+func.CoWaitForMultipleObjects.arg.2=ULONG,cHandles
+func.CoWaitForMultipleObjects.arg.3=const HANDLE *,pHandles
+func.CoWaitForMultipleObjects.arg.4=LPDWORD,lpdwindex
+func.CoWaitForMultipleObjects.ret=HRESULT
+
+CreateStreamOnHGlobal=func
+func.CreateStreamOnHGlobal.args=3
+func.CreateStreamOnHGlobal.arg.0=HGLOBAL,hGlobal
+func.CreateStreamOnHGlobal.arg.1=BOOL,fDeleteOnRelease
+func.CreateStreamOnHGlobal.arg.2=LPSTREAM *,ppstm
+func.CreateStreamOnHGlobal.ret=HRESULT
+
+DllCanUnloadNow=func
+func.DllCanUnloadNow.args=0
+func.DllCanUnloadNow.ret=HRESULT
+
+DllGetClassObject=func
+func.DllGetClassObject.args=3
+func.DllGetClassObject.arg.0=REFCLSID,rclsid
+func.DllGetClassObject.arg.1=REFIID,riid
+func.DllGetClassObject.arg.2=LPVOID *,ppv
+func.DllGetClassObject.ret=HRESULT
+
+FreePropVariantArray=func
+func.FreePropVariantArray.args=2
+func.FreePropVariantArray.arg.0=ULONG,cVariants
+func.FreePropVariantArray.arg.1=PROPVARIANT *,rgvars
+func.FreePropVariantArray.ret=HRESULT
+
+GetHGlobalFromStream=func
+func.GetHGlobalFromStream.args=2
+func.GetHGlobalFromStream.arg.0=LPSTREAM,pstm
+func.GetHGlobalFromStream.arg.1=HGLOBAL *,phglobal
+func.GetHGlobalFromStream.ret=HRESULT
+
+IIDFromString=func
+func.IIDFromString.args=2
+func.IIDFromString.arg.0=LPCOLESTR,lpsz
+func.IIDFromString.arg.1=LPIID,lpiid
+func.IIDFromString.ret=HRESULT
+
+ProgIDFromCLSID=func
+func.ProgIDFromCLSID.args=2
+func.ProgIDFromCLSID.arg.0=REFCLSID,clsid
+func.ProgIDFromCLSID.arg.1=LPOLESTR *,lplpszProgID
+func.ProgIDFromCLSID.ret=HRESULT
+
+PropVariantClear=func
+func.PropVariantClear.args=1
+func.PropVariantClear.arg.0=PROPVARIANT *,pvar
+func.PropVariantClear.ret=HRESULT
+
+PropVariantCopy=func
+func.PropVariantCopy.args=2
+func.PropVariantCopy.arg.0=PROPVARIANT *,pvarDest
+func.PropVariantCopy.arg.1=const PROPVARIANT *,pvarSrc
+func.PropVariantCopy.ret=HRESULT
+
+RoGetAgileReference=func
+func.RoGetAgileReference.args=4
+func.RoGetAgileReference.arg.0=AgileReferenceOptions,options
+func.RoGetAgileReference.arg.1=REFIID,riid
+func.RoGetAgileReference.arg.2=IUnknown *,pUnk
+func.RoGetAgileReference.arg.3=IAgileReference **,ppAgileReference
+func.RoGetAgileReference.ret=HRESULT
+
+StringFromCLSID=func
+func.StringFromCLSID.args=2
+func.StringFromCLSID.arg.0=REFCLSID,rclsid
+func.StringFromCLSID.arg.1=LPOLESTR *,lplpsz
+func.StringFromCLSID.ret=HRESULT
+
+StringFromGUID2=func
+func.StringFromGUID2.args=3
+func.StringFromGUID2.arg.0=REFGUID,rguid
+func.StringFromGUID2.arg.1=LPOLESTR,lpsz
+func.StringFromGUID2.arg.2=int,cchMax
+func.StringFromGUID2.ret=int
+
+StringFromIID=func
+func.StringFromIID.args=2
+func.StringFromIID.arg.0=REFIID,rclsid
+func.StringFromIID.arg.1=LPOLESTR *,lplpsz
+func.StringFromIID.ret=HRESULT

@@ -1,0 +1,2410 @@
+### oleauto.h ###
+
+BstrFromVector=func
+func.BstrFromVector.args=2
+func.BstrFromVector.arg.0=SAFEARRAY *,psa
+func.BstrFromVector.arg.1=BSTR *,pbstr
+func.BstrFromVector.ret=HRESULT
+
+ClearCustData=func
+func.ClearCustData.args=1
+func.ClearCustData.arg.0=LPCUSTDATA,pCustData
+func.ClearCustData.ret=void
+
+CreateDispTypeInfo=func
+func.CreateDispTypeInfo.args=3
+func.CreateDispTypeInfo.arg.0=INTERFACEDATA *,pidata
+func.CreateDispTypeInfo.arg.1=LCID,lcid
+func.CreateDispTypeInfo.arg.2=ITypeInfo **,pptinfo
+func.CreateDispTypeInfo.ret=HRESULT
+
+CreateErrorInfo=func
+func.CreateErrorInfo.args=1
+func.CreateErrorInfo.arg.0=ICreateErrorInfo **,pperrinfo
+func.CreateErrorInfo.ret=HRESULT
+
+CreateStdDispatch=func
+func.CreateStdDispatch.args=4
+func.CreateStdDispatch.arg.0=IUnknown *,punkOuter
+func.CreateStdDispatch.arg.1=void *,pvThis
+func.CreateStdDispatch.arg.2=ITypeInfo *,ptinfo
+func.CreateStdDispatch.arg.3=IUnknown **,ppunkStdDisp
+func.CreateStdDispatch.ret=HRESULT
+
+CreateTypeLib=func
+func.CreateTypeLib.args=3
+func.CreateTypeLib.arg.0=SYSKIND,syskind
+func.CreateTypeLib.arg.1=LPCOLESTR,szFile
+func.CreateTypeLib.arg.2=ICreateTypeLib **,ppctlib
+func.CreateTypeLib.ret=HRESULT
+
+CreateTypeLib2=func
+func.CreateTypeLib2.args=3
+func.CreateTypeLib2.arg.0=SYSKIND,syskind
+func.CreateTypeLib2.arg.1=LPCOLESTR,szFile
+func.CreateTypeLib2.arg.2=ICreateTypeLib2 **,ppctlib
+func.CreateTypeLib2.ret=HRESULT
+
+DispCallFunc=func
+func.DispCallFunc.args=8
+func.DispCallFunc.arg.0=void *,pvInstance
+func.DispCallFunc.arg.1=ULONG_PTR,oVft
+func.DispCallFunc.arg.2=CALLCONV,cc
+func.DispCallFunc.arg.3=VARTYPE,vtReturn
+func.DispCallFunc.arg.4=UINT,cActuals
+func.DispCallFunc.arg.5=VARTYPE *,prgvt
+func.DispCallFunc.arg.6=VARIANTARG **,prgpvarg
+func.DispCallFunc.arg.7=VARIANT *,pvargResult
+func.DispCallFunc.ret=HRESULT
+
+DispGetIDsOfNames=func
+func.DispGetIDsOfNames.args=4
+func.DispGetIDsOfNames.arg.0=ITypeInfo *,ptinfo
+func.DispGetIDsOfNames.arg.1=LPOLESTR *,rgszNames
+func.DispGetIDsOfNames.arg.2=UINT,cNames
+func.DispGetIDsOfNames.arg.3=DISPID *,rgdispid
+func.DispGetIDsOfNames.ret=HRESULT
+
+DispGetParam=func
+func.DispGetParam.args=5
+func.DispGetParam.arg.0=DISPPARAMS *,pdispparams
+func.DispGetParam.arg.1=UINT,position
+func.DispGetParam.arg.2=VARTYPE,vtTarg
+func.DispGetParam.arg.3=VARIANT *,pvarResult
+func.DispGetParam.arg.4=UINT *,puArgErr
+func.DispGetParam.ret=HRESULT
+
+DispInvoke=func
+func.DispInvoke.args=8
+func.DispInvoke.arg.0=void *,_this
+func.DispInvoke.arg.1=ITypeInfo *,ptinfo
+func.DispInvoke.arg.2=DISPID,dispidMember
+func.DispInvoke.arg.3=WORD,wFlags
+func.DispInvoke.arg.4=DISPPARAMS *,pparams
+func.DispInvoke.arg.5=VARIANT *,pvarResult
+func.DispInvoke.arg.6=EXCEPINFO *,pexcepinfo
+func.DispInvoke.arg.7=UINT *,puArgErr
+func.DispInvoke.ret=HRESULT
+
+DosDateTimeToVariantTime=func
+func.DosDateTimeToVariantTime.args=3
+func.DosDateTimeToVariantTime.arg.0=USHORT,wDosDate
+func.DosDateTimeToVariantTime.arg.1=USHORT,wDosTime
+func.DosDateTimeToVariantTime.arg.2=DOUBLE *,pvtime
+func.DosDateTimeToVariantTime.ret=INT
+
+GetActiveObject=func
+func.GetActiveObject.args=3
+func.GetActiveObject.arg.0=REFCLSID,rclsid
+func.GetActiveObject.arg.1=void *,pvReserved
+func.GetActiveObject.arg.2=IUnknown **,ppunk
+func.GetActiveObject.ret=HRESULT
+
+GetAltMonthNames=func
+func.GetAltMonthNames.args=2
+func.GetAltMonthNames.arg.0=LCID,lcid
+func.GetAltMonthNames.arg.1=LPOLESTR **,prgp
+func.GetAltMonthNames.ret=HRESULT
+
+GetErrorInfo=func
+func.GetErrorInfo.args=2
+func.GetErrorInfo.arg.0=ULONG,dwReserved
+func.GetErrorInfo.arg.1=IErrorInfo **,pperrinfo
+func.GetErrorInfo.ret=HRESULT
+
+GetRecordInfoFromGuids=func
+func.GetRecordInfoFromGuids.args=6
+func.GetRecordInfoFromGuids.arg.0=REFGUID,rGuidTypeLib
+func.GetRecordInfoFromGuids.arg.1=ULONG,uVerMajor
+func.GetRecordInfoFromGuids.arg.2=ULONG,uVerMinor
+func.GetRecordInfoFromGuids.arg.3=LCID,lcid
+func.GetRecordInfoFromGuids.arg.4=REFGUID,rGuidTypeInfo
+func.GetRecordInfoFromGuids.arg.5=IRecordInfo **,ppRecInfo
+func.GetRecordInfoFromGuids.ret=HRESULT
+
+GetRecordInfoFromTypeInfo=func
+func.GetRecordInfoFromTypeInfo.args=2
+func.GetRecordInfoFromTypeInfo.arg.0=ITypeInfo *,pTypeInfo
+func.GetRecordInfoFromTypeInfo.arg.1=IRecordInfo **,ppRecInfo
+func.GetRecordInfoFromTypeInfo.ret=HRESULT
+
+LHashValOfNameSys=func
+func.LHashValOfNameSys.args=3
+func.LHashValOfNameSys.arg.0=SYSKIND,syskind
+func.LHashValOfNameSys.arg.1=LCID,lcid
+func.LHashValOfNameSys.arg.2=const OLECHAR *,szName
+func.LHashValOfNameSys.ret=ULONG
+
+LHashValOfNameSysA=func
+func.LHashValOfNameSysA.args=3
+func.LHashValOfNameSysA.arg.0=SYSKIND,syskind
+func.LHashValOfNameSysA.arg.1=LCID,lcid
+func.LHashValOfNameSysA.arg.2=LPCSTR,szName
+func.LHashValOfNameSysA.ret=ULONG
+
+LoadRegTypeLib=func
+func.LoadRegTypeLib.args=5
+func.LoadRegTypeLib.arg.0=REFGUID,rguid
+func.LoadRegTypeLib.arg.1=WORD,wVerMajor
+func.LoadRegTypeLib.arg.2=WORD,wVerMinor
+func.LoadRegTypeLib.arg.3=LCID,lcid
+func.LoadRegTypeLib.arg.4=ITypeLib **,pptlib
+func.LoadRegTypeLib.ret=HRESULT
+
+LoadTypeLib=func
+func.LoadTypeLib.args=2
+func.LoadTypeLib.arg.0=LPCOLESTR,szFile
+func.LoadTypeLib.arg.1=ITypeLib **,pptlib
+func.LoadTypeLib.ret=HRESULT
+
+LoadTypeLibEx=func
+func.LoadTypeLibEx.args=3
+func.LoadTypeLibEx.arg.0=LPCOLESTR,szFile
+func.LoadTypeLibEx.arg.1=REGKIND,regkind
+func.LoadTypeLibEx.arg.2=ITypeLib **,pptlib
+func.LoadTypeLibEx.ret=HRESULT
+
+OaBuildVersion=func
+func.OaBuildVersion.args=0
+func.OaBuildVersion.ret=ULONG
+
+OaEnablePerUserTLibRegistration=func
+func.OaEnablePerUserTLibRegistration.args=0
+func.OaEnablePerUserTLibRegistration.ret=void
+
+QueryPathOfRegTypeLib=func
+func.QueryPathOfRegTypeLib.args=5
+func.QueryPathOfRegTypeLib.arg.0=REFGUID,guid
+func.QueryPathOfRegTypeLib.arg.1=USHORT,wMaj
+func.QueryPathOfRegTypeLib.arg.2=USHORT,wMin
+func.QueryPathOfRegTypeLib.arg.3=LCID,lcid
+func.QueryPathOfRegTypeLib.arg.4=LPBSTR,lpbstrPathName
+func.QueryPathOfRegTypeLib.ret=HRESULT
+
+RegisterActiveObject=func
+func.RegisterActiveObject.args=4
+func.RegisterActiveObject.arg.0=IUnknown *,punk
+func.RegisterActiveObject.arg.1=REFCLSID,rclsid
+func.RegisterActiveObject.arg.2=DWORD,dwFlags
+func.RegisterActiveObject.arg.3=DWORD *,pdwRegister
+func.RegisterActiveObject.ret=HRESULT
+
+RegisterTypeLib=func
+func.RegisterTypeLib.args=3
+func.RegisterTypeLib.arg.0=ITypeLib *,ptlib
+func.RegisterTypeLib.arg.1=LPCOLESTR,szFullPath
+func.RegisterTypeLib.arg.2=LPCOLESTR,szHelpDir
+func.RegisterTypeLib.ret=HRESULT
+
+RegisterTypeLibForUser=func
+func.RegisterTypeLibForUser.args=3
+func.RegisterTypeLibForUser.arg.0=ITypeLib *,ptlib
+func.RegisterTypeLibForUser.arg.1=OLECHAR *,szFullPath
+func.RegisterTypeLibForUser.arg.2=OLECHAR *,szHelpDir
+func.RegisterTypeLibForUser.ret=HRESULT
+
+RevokeActiveObject=func
+func.RevokeActiveObject.args=2
+func.RevokeActiveObject.arg.0=DWORD,dwRegister
+func.RevokeActiveObject.arg.1=void *,pvReserved
+func.RevokeActiveObject.ret=HRESULT
+
+SafeArrayAccessData=func
+func.SafeArrayAccessData.args=2
+func.SafeArrayAccessData.arg.0=SAFEARRAY *,psa
+func.SafeArrayAccessData.arg.1=void **,ppvData
+func.SafeArrayAccessData.ret=HRESULT
+
+SafeArrayAddRef=func
+func.SafeArrayAddRef.args=2
+func.SafeArrayAddRef.arg.0=SAFEARRAY *,psa
+func.SafeArrayAddRef.arg.1=PVOID *,ppDataToRelease
+func.SafeArrayAddRef.ret=HRESULT
+
+SafeArrayAllocData=func
+func.SafeArrayAllocData.args=1
+func.SafeArrayAllocData.arg.0=SAFEARRAY *,psa
+func.SafeArrayAllocData.ret=HRESULT
+
+SafeArrayAllocDescriptor=func
+func.SafeArrayAllocDescriptor.args=2
+func.SafeArrayAllocDescriptor.arg.0=UINT,cDims
+func.SafeArrayAllocDescriptor.arg.1=SAFEARRAY **,ppsaOut
+func.SafeArrayAllocDescriptor.ret=HRESULT
+
+SafeArrayAllocDescriptorEx=func
+func.SafeArrayAllocDescriptorEx.args=3
+func.SafeArrayAllocDescriptorEx.arg.0=VARTYPE,vt
+func.SafeArrayAllocDescriptorEx.arg.1=UINT,cDims
+func.SafeArrayAllocDescriptorEx.arg.2=SAFEARRAY **,ppsaOut
+func.SafeArrayAllocDescriptorEx.ret=HRESULT
+
+SafeArrayCopy=func
+func.SafeArrayCopy.args=2
+func.SafeArrayCopy.arg.0=SAFEARRAY *,psa
+func.SafeArrayCopy.arg.1=SAFEARRAY **,ppsaOut
+func.SafeArrayCopy.ret=HRESULT
+
+SafeArrayCopyData=func
+func.SafeArrayCopyData.args=2
+func.SafeArrayCopyData.arg.0=SAFEARRAY *,psaSource
+func.SafeArrayCopyData.arg.1=SAFEARRAY *,psaTarget
+func.SafeArrayCopyData.ret=HRESULT
+
+SafeArrayCreate=func
+func.SafeArrayCreate.args=3
+func.SafeArrayCreate.arg.0=VARTYPE,vt
+func.SafeArrayCreate.arg.1=UINT,cDims
+func.SafeArrayCreate.arg.2=SAFEARRAYBOUND *,rgsabound
+func.SafeArrayCreate.ret=SAFEARRAY *
+
+SafeArrayCreateEx=func
+func.SafeArrayCreateEx.args=4
+func.SafeArrayCreateEx.arg.0=VARTYPE,vt
+func.SafeArrayCreateEx.arg.1=UINT,cDims
+func.SafeArrayCreateEx.arg.2=SAFEARRAYBOUND *,rgsabound
+func.SafeArrayCreateEx.arg.3=PVOID,pvExtra
+func.SafeArrayCreateEx.ret=SAFEARRAY *
+
+SafeArrayCreateVector=func
+func.SafeArrayCreateVector.args=3
+func.SafeArrayCreateVector.arg.0=VARTYPE,vt
+func.SafeArrayCreateVector.arg.1=LONG,lLbound
+func.SafeArrayCreateVector.arg.2=ULONG,cElements
+func.SafeArrayCreateVector.ret=SAFEARRAY *
+
+SafeArrayCreateVectorEx=func
+func.SafeArrayCreateVectorEx.args=4
+func.SafeArrayCreateVectorEx.arg.0=VARTYPE,vt
+func.SafeArrayCreateVectorEx.arg.1=LONG,lLbound
+func.SafeArrayCreateVectorEx.arg.2=ULONG,cElements
+func.SafeArrayCreateVectorEx.arg.3=PVOID,pvExtra
+func.SafeArrayCreateVectorEx.ret=SAFEARRAY *
+
+SafeArrayDestroy=func
+func.SafeArrayDestroy.args=1
+func.SafeArrayDestroy.arg.0=SAFEARRAY *,psa
+func.SafeArrayDestroy.ret=HRESULT
+
+SafeArrayDestroyData=func
+func.SafeArrayDestroyData.args=1
+func.SafeArrayDestroyData.arg.0=SAFEARRAY *,psa
+func.SafeArrayDestroyData.ret=HRESULT
+
+SafeArrayDestroyDescriptor=func
+func.SafeArrayDestroyDescriptor.args=1
+func.SafeArrayDestroyDescriptor.arg.0=SAFEARRAY *,psa
+func.SafeArrayDestroyDescriptor.ret=HRESULT
+
+SafeArrayGetDim=func
+func.SafeArrayGetDim.args=1
+func.SafeArrayGetDim.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetDim.ret=UINT
+
+SafeArrayGetElement=func
+func.SafeArrayGetElement.args=3
+func.SafeArrayGetElement.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetElement.arg.1=LONG *,rgIndices
+func.SafeArrayGetElement.arg.2=void *,pv
+func.SafeArrayGetElement.ret=HRESULT
+
+SafeArrayGetElemsize=func
+func.SafeArrayGetElemsize.args=1
+func.SafeArrayGetElemsize.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetElemsize.ret=UINT
+
+SafeArrayGetIID=func
+func.SafeArrayGetIID.args=2
+func.SafeArrayGetIID.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetIID.arg.1=GUID *,pguid
+func.SafeArrayGetIID.ret=HRESULT
+
+SafeArrayGetLBound=func
+func.SafeArrayGetLBound.args=3
+func.SafeArrayGetLBound.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetLBound.arg.1=UINT,nDim
+func.SafeArrayGetLBound.arg.2=LONG *,plLbound
+func.SafeArrayGetLBound.ret=HRESULT
+
+SafeArrayGetRecordInfo=func
+func.SafeArrayGetRecordInfo.args=2
+func.SafeArrayGetRecordInfo.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetRecordInfo.arg.1=IRecordInfo **,prinfo
+func.SafeArrayGetRecordInfo.ret=HRESULT
+
+SafeArrayGetUBound=func
+func.SafeArrayGetUBound.args=3
+func.SafeArrayGetUBound.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetUBound.arg.1=UINT,nDim
+func.SafeArrayGetUBound.arg.2=LONG *,plUbound
+func.SafeArrayGetUBound.ret=HRESULT
+
+SafeArrayGetVartype=func
+func.SafeArrayGetVartype.args=2
+func.SafeArrayGetVartype.arg.0=SAFEARRAY *,psa
+func.SafeArrayGetVartype.arg.1=VARTYPE *,pvt
+func.SafeArrayGetVartype.ret=HRESULT
+
+SafeArrayLock=func
+func.SafeArrayLock.args=1
+func.SafeArrayLock.arg.0=SAFEARRAY *,psa
+func.SafeArrayLock.ret=HRESULT
+
+SafeArrayPtrOfIndex=func
+func.SafeArrayPtrOfIndex.args=3
+func.SafeArrayPtrOfIndex.arg.0=SAFEARRAY *,psa
+func.SafeArrayPtrOfIndex.arg.1=LONG *,rgIndices
+func.SafeArrayPtrOfIndex.arg.2=void **,ppvData
+func.SafeArrayPtrOfIndex.ret=HRESULT
+
+SafeArrayPutElement=func
+func.SafeArrayPutElement.args=3
+func.SafeArrayPutElement.arg.0=SAFEARRAY *,psa
+func.SafeArrayPutElement.arg.1=LONG *,rgIndices
+func.SafeArrayPutElement.arg.2=void *,pv
+func.SafeArrayPutElement.ret=HRESULT
+
+SafeArrayRedim=func
+func.SafeArrayRedim.args=2
+func.SafeArrayRedim.arg.0=SAFEARRAY *,psa
+func.SafeArrayRedim.arg.1=SAFEARRAYBOUND *,psaboundNew
+func.SafeArrayRedim.ret=HRESULT
+
+SafeArrayReleaseData=func
+func.SafeArrayReleaseData.args=1
+func.SafeArrayReleaseData.arg.0=PVOID,pData
+func.SafeArrayReleaseData.ret=void
+
+SafeArrayReleaseDescriptor=func
+func.SafeArrayReleaseDescriptor.args=1
+func.SafeArrayReleaseDescriptor.arg.0=SAFEARRAY *,psa
+func.SafeArrayReleaseDescriptor.ret=void
+
+SafeArraySetIID=func
+func.SafeArraySetIID.args=2
+func.SafeArraySetIID.arg.0=SAFEARRAY *,psa
+func.SafeArraySetIID.arg.1=REFGUID,guid
+func.SafeArraySetIID.ret=HRESULT
+
+SafeArraySetRecordInfo=func
+func.SafeArraySetRecordInfo.args=2
+func.SafeArraySetRecordInfo.arg.0=SAFEARRAY *,psa
+func.SafeArraySetRecordInfo.arg.1=IRecordInfo *,prinfo
+func.SafeArraySetRecordInfo.ret=HRESULT
+
+SafeArrayUnaccessData=func
+func.SafeArrayUnaccessData.args=1
+func.SafeArrayUnaccessData.arg.0=SAFEARRAY *,psa
+func.SafeArrayUnaccessData.ret=HRESULT
+
+SafeArrayUnlock=func
+func.SafeArrayUnlock.args=1
+func.SafeArrayUnlock.arg.0=SAFEARRAY *,psa
+func.SafeArrayUnlock.ret=HRESULT
+
+SetErrorInfo=func
+func.SetErrorInfo.args=2
+func.SetErrorInfo.arg.0=ULONG,dwReserved
+func.SetErrorInfo.arg.1=IErrorInfo *,perrinfo
+func.SetErrorInfo.ret=HRESULT
+
+SysAddRefString=func
+func.SysAddRefString.args=1
+func.SysAddRefString.arg.0=BSTR,bstrString
+func.SysAddRefString.ret=HRESULT
+
+SysAllocString=func
+func.SysAllocString.args=1
+func.SysAllocString.arg.0=const OLECHAR *,psz
+func.SysAllocString.ret=BSTR
+
+SysAllocStringByteLen=func
+func.SysAllocStringByteLen.args=2
+func.SysAllocStringByteLen.arg.0=LPCSTR,psz
+func.SysAllocStringByteLen.arg.1=UINT,len
+func.SysAllocStringByteLen.ret=BSTR
+
+SysAllocStringLen=func
+func.SysAllocStringLen.args=2
+func.SysAllocStringLen.arg.0=const OLECHAR *,strIn
+func.SysAllocStringLen.arg.1=UINT,ui
+func.SysAllocStringLen.ret=BSTR
+
+SysFreeString=func
+func.SysFreeString.args=1
+func.SysFreeString.arg.0=BSTR,bstrString
+func.SysFreeString.ret=void
+
+SysReAllocString=func
+func.SysReAllocString.args=2
+func.SysReAllocString.arg.0=BSTR *,pbstr
+func.SysReAllocString.arg.1=const OLECHAR *,psz
+func.SysReAllocString.ret=INT
+
+SysReAllocStringLen=func
+func.SysReAllocStringLen.args=3
+func.SysReAllocStringLen.arg.0=BSTR *,pbstr
+func.SysReAllocStringLen.arg.1=const OLECHAR *,psz
+func.SysReAllocStringLen.arg.2=unsigned int,len
+func.SysReAllocStringLen.ret=INT
+
+SysReleaseString=func
+func.SysReleaseString.args=1
+func.SysReleaseString.arg.0=BSTR,bstrString
+func.SysReleaseString.ret=void
+
+SysStringByteLen=func
+func.SysStringByteLen.args=1
+func.SysStringByteLen.arg.0=BSTR,bstr
+func.SysStringByteLen.ret=UINT
+
+SysStringLen=func
+func.SysStringLen.args=1
+func.SysStringLen.arg.0=BSTR,pbstr
+func.SysStringLen.ret=UINT
+
+SystemTimeToVariantTime=func
+func.SystemTimeToVariantTime.args=2
+func.SystemTimeToVariantTime.arg.0=LPSYSTEMTIME,lpSystemTime
+func.SystemTimeToVariantTime.arg.1=DOUBLE *,pvtime
+func.SystemTimeToVariantTime.ret=INT
+
+UnRegisterTypeLib=func
+func.UnRegisterTypeLib.args=5
+func.UnRegisterTypeLib.arg.0=REFGUID,libID
+func.UnRegisterTypeLib.arg.1=WORD,wVerMajor
+func.UnRegisterTypeLib.arg.2=WORD,wVerMinor
+func.UnRegisterTypeLib.arg.3=LCID,lcid
+func.UnRegisterTypeLib.arg.4=SYSKIND,syskind
+func.UnRegisterTypeLib.ret=HRESULT
+
+UnRegisterTypeLibForUser=func
+func.UnRegisterTypeLibForUser.args=5
+func.UnRegisterTypeLibForUser.arg.0=REFGUID,libID
+func.UnRegisterTypeLibForUser.arg.1=WORD,wMajorVerNum
+func.UnRegisterTypeLibForUser.arg.2=WORD,wMinorVerNum
+func.UnRegisterTypeLibForUser.arg.3=LCID,lcid
+func.UnRegisterTypeLibForUser.arg.4=SYSKIND,syskind
+func.UnRegisterTypeLibForUser.ret=HRESULT
+
+VarAbs=func
+func.VarAbs.args=2
+func.VarAbs.arg.0=LPVARIANT,pvarIn
+func.VarAbs.arg.1=LPVARIANT,pvarResult
+func.VarAbs.ret=HRESULT
+
+VarAdd=func
+func.VarAdd.args=3
+func.VarAdd.arg.0=LPVARIANT,pvarLeft
+func.VarAdd.arg.1=LPVARIANT,pvarRight
+func.VarAdd.arg.2=LPVARIANT,pvarResult
+func.VarAdd.ret=HRESULT
+
+VarAnd=func
+func.VarAnd.args=3
+func.VarAnd.arg.0=LPVARIANT,pvarLeft
+func.VarAnd.arg.1=LPVARIANT,pvarRight
+func.VarAnd.arg.2=LPVARIANT,pvarResult
+func.VarAnd.ret=HRESULT
+
+VarBoolFromCy=func
+func.VarBoolFromCy.args=2
+func.VarBoolFromCy.arg.0=CY,cyIn
+func.VarBoolFromCy.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromCy.ret=HRESULT
+
+VarBoolFromDate=func
+func.VarBoolFromDate.args=2
+func.VarBoolFromDate.arg.0=DATE,dateIn
+func.VarBoolFromDate.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromDate.ret=HRESULT
+
+VarBoolFromDec=func
+func.VarBoolFromDec.args=2
+func.VarBoolFromDec.arg.0=const DECIMAL *,pdecIn
+func.VarBoolFromDec.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromDec.ret=HRESULT
+
+VarBoolFromDisp=func
+func.VarBoolFromDisp.args=3
+func.VarBoolFromDisp.arg.0=IDispatch *,pdispIn
+func.VarBoolFromDisp.arg.1=LCID,lcid
+func.VarBoolFromDisp.arg.2=VARIANT_BOOL *,pboolOut
+func.VarBoolFromDisp.ret=HRESULT
+
+VarBoolFromI1=func
+func.VarBoolFromI1.args=2
+func.VarBoolFromI1.arg.0=CHAR,cIn
+func.VarBoolFromI1.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromI1.ret=HRESULT
+
+VarBoolFromI2=func
+func.VarBoolFromI2.args=2
+func.VarBoolFromI2.arg.0=SHORT,sIn
+func.VarBoolFromI2.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromI2.ret=HRESULT
+
+VarBoolFromI4=func
+func.VarBoolFromI4.args=2
+func.VarBoolFromI4.arg.0=LONG,lIn
+func.VarBoolFromI4.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromI4.ret=HRESULT
+
+VarBoolFromI8=func
+func.VarBoolFromI8.args=2
+func.VarBoolFromI8.arg.0=LONG64,i64In
+func.VarBoolFromI8.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromI8.ret=HRESULT
+
+VarBoolFromR4=func
+func.VarBoolFromR4.args=2
+func.VarBoolFromR4.arg.0=FLOAT,fltIn
+func.VarBoolFromR4.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromR4.ret=HRESULT
+
+VarBoolFromR8=func
+func.VarBoolFromR8.args=2
+func.VarBoolFromR8.arg.0=DOUBLE,dblIn
+func.VarBoolFromR8.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromR8.ret=HRESULT
+
+VarBoolFromStr=func
+func.VarBoolFromStr.args=4
+func.VarBoolFromStr.arg.0=LPCOLESTR,strIn
+func.VarBoolFromStr.arg.1=LCID,lcid
+func.VarBoolFromStr.arg.2=ULONG,dwFlags
+func.VarBoolFromStr.arg.3=VARIANT_BOOL *,pboolOut
+func.VarBoolFromStr.ret=HRESULT
+
+VarBoolFromUI1=func
+func.VarBoolFromUI1.args=2
+func.VarBoolFromUI1.arg.0=BYTE,bIn
+func.VarBoolFromUI1.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromUI1.ret=HRESULT
+
+VarBoolFromUI2=func
+func.VarBoolFromUI2.args=2
+func.VarBoolFromUI2.arg.0=USHORT,uiIn
+func.VarBoolFromUI2.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromUI2.ret=HRESULT
+
+VarBoolFromUI4=func
+func.VarBoolFromUI4.args=2
+func.VarBoolFromUI4.arg.0=ULONG,ulIn
+func.VarBoolFromUI4.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromUI4.ret=HRESULT
+
+VarBoolFromUI8=func
+func.VarBoolFromUI8.args=2
+func.VarBoolFromUI8.arg.0=ULONG64,i64In
+func.VarBoolFromUI8.arg.1=VARIANT_BOOL *,pboolOut
+func.VarBoolFromUI8.ret=HRESULT
+
+VarBstrCat=func
+func.VarBstrCat.args=3
+func.VarBstrCat.arg.0=BSTR,bstrLeft
+func.VarBstrCat.arg.1=BSTR,bstrRight
+func.VarBstrCat.arg.2=LPBSTR,pbstrResult
+func.VarBstrCat.ret=HRESULT
+
+VarBstrCmp=func
+func.VarBstrCmp.args=4
+func.VarBstrCmp.arg.0=BSTR,bstrLeft
+func.VarBstrCmp.arg.1=BSTR,bstrRight
+func.VarBstrCmp.arg.2=LCID,lcid
+func.VarBstrCmp.arg.3=ULONG,dwFlags
+func.VarBstrCmp.ret=HRESULT
+
+VarBstrFromBool=func
+func.VarBstrFromBool.args=4
+func.VarBstrFromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarBstrFromBool.arg.1=LCID,lcid
+func.VarBstrFromBool.arg.2=ULONG,dwFlags
+func.VarBstrFromBool.arg.3=BSTR *,pbstrOut
+func.VarBstrFromBool.ret=HRESULT
+
+VarBstrFromCy=func
+func.VarBstrFromCy.args=4
+func.VarBstrFromCy.arg.0=CY,cyIn
+func.VarBstrFromCy.arg.1=LCID,lcid
+func.VarBstrFromCy.arg.2=ULONG,dwFlags
+func.VarBstrFromCy.arg.3=BSTR *,pbstrOut
+func.VarBstrFromCy.ret=HRESULT
+
+VarBstrFromDate=func
+func.VarBstrFromDate.args=4
+func.VarBstrFromDate.arg.0=DATE,dateIn
+func.VarBstrFromDate.arg.1=LCID,lcid
+func.VarBstrFromDate.arg.2=ULONG,dwFlags
+func.VarBstrFromDate.arg.3=BSTR *,pbstrOut
+func.VarBstrFromDate.ret=HRESULT
+
+VarBstrFromDec=func
+func.VarBstrFromDec.args=4
+func.VarBstrFromDec.arg.0=const DECIMAL *,pdecIn
+func.VarBstrFromDec.arg.1=LCID,lcid
+func.VarBstrFromDec.arg.2=ULONG,dwFlags
+func.VarBstrFromDec.arg.3=BSTR *,pbstrOut
+func.VarBstrFromDec.ret=HRESULT
+
+VarBstrFromDisp=func
+func.VarBstrFromDisp.args=4
+func.VarBstrFromDisp.arg.0=IDispatch *,pdispIn
+func.VarBstrFromDisp.arg.1=LCID,lcid
+func.VarBstrFromDisp.arg.2=ULONG,dwFlags
+func.VarBstrFromDisp.arg.3=BSTR *,pbstrOut
+func.VarBstrFromDisp.ret=HRESULT
+
+VarBstrFromI1=func
+func.VarBstrFromI1.args=4
+func.VarBstrFromI1.arg.0=CHAR,cIn
+func.VarBstrFromI1.arg.1=LCID,lcid
+func.VarBstrFromI1.arg.2=ULONG,dwFlags
+func.VarBstrFromI1.arg.3=BSTR *,pbstrOut
+func.VarBstrFromI1.ret=HRESULT
+
+VarBstrFromI2=func
+func.VarBstrFromI2.args=4
+func.VarBstrFromI2.arg.0=SHORT,iVal
+func.VarBstrFromI2.arg.1=LCID,lcid
+func.VarBstrFromI2.arg.2=ULONG,dwFlags
+func.VarBstrFromI2.arg.3=BSTR *,pbstrOut
+func.VarBstrFromI2.ret=HRESULT
+
+VarBstrFromI4=func
+func.VarBstrFromI4.args=4
+func.VarBstrFromI4.arg.0=LONG,lIn
+func.VarBstrFromI4.arg.1=LCID,lcid
+func.VarBstrFromI4.arg.2=ULONG,dwFlags
+func.VarBstrFromI4.arg.3=BSTR *,pbstrOut
+func.VarBstrFromI4.ret=HRESULT
+
+VarBstrFromI8=func
+func.VarBstrFromI8.args=4
+func.VarBstrFromI8.arg.0=LONG64,i64In
+func.VarBstrFromI8.arg.1=LCID,lcid
+func.VarBstrFromI8.arg.2=ULONG,dwFlags
+func.VarBstrFromI8.arg.3=BSTR *,pbstrOut
+func.VarBstrFromI8.ret=HRESULT
+
+VarBstrFromR4=func
+func.VarBstrFromR4.args=4
+func.VarBstrFromR4.arg.0=FLOAT,fltIn
+func.VarBstrFromR4.arg.1=LCID,lcid
+func.VarBstrFromR4.arg.2=ULONG,dwFlags
+func.VarBstrFromR4.arg.3=BSTR *,pbstrOut
+func.VarBstrFromR4.ret=HRESULT
+
+VarBstrFromR8=func
+func.VarBstrFromR8.args=4
+func.VarBstrFromR8.arg.0=DOUBLE,dblIn
+func.VarBstrFromR8.arg.1=LCID,lcid
+func.VarBstrFromR8.arg.2=ULONG,dwFlags
+func.VarBstrFromR8.arg.3=BSTR *,pbstrOut
+func.VarBstrFromR8.ret=HRESULT
+
+VarBstrFromUI1=func
+func.VarBstrFromUI1.args=4
+func.VarBstrFromUI1.arg.0=BYTE,bVal
+func.VarBstrFromUI1.arg.1=LCID,lcid
+func.VarBstrFromUI1.arg.2=ULONG,dwFlags
+func.VarBstrFromUI1.arg.3=BSTR *,pbstrOut
+func.VarBstrFromUI1.ret=HRESULT
+
+VarBstrFromUI2=func
+func.VarBstrFromUI2.args=4
+func.VarBstrFromUI2.arg.0=USHORT,uiIn
+func.VarBstrFromUI2.arg.1=LCID,lcid
+func.VarBstrFromUI2.arg.2=ULONG,dwFlags
+func.VarBstrFromUI2.arg.3=BSTR *,pbstrOut
+func.VarBstrFromUI2.ret=HRESULT
+
+VarBstrFromUI4=func
+func.VarBstrFromUI4.args=4
+func.VarBstrFromUI4.arg.0=ULONG,ulIn
+func.VarBstrFromUI4.arg.1=LCID,lcid
+func.VarBstrFromUI4.arg.2=ULONG,dwFlags
+func.VarBstrFromUI4.arg.3=BSTR *,pbstrOut
+func.VarBstrFromUI4.ret=HRESULT
+
+VarBstrFromUI8=func
+func.VarBstrFromUI8.args=4
+func.VarBstrFromUI8.arg.0=ULONG64,ui64In
+func.VarBstrFromUI8.arg.1=LCID,lcid
+func.VarBstrFromUI8.arg.2=ULONG,dwFlags
+func.VarBstrFromUI8.arg.3=BSTR *,pbstrOut
+func.VarBstrFromUI8.ret=HRESULT
+
+VarCat=func
+func.VarCat.args=3
+func.VarCat.arg.0=LPVARIANT,pvarLeft
+func.VarCat.arg.1=LPVARIANT,pvarRight
+func.VarCat.arg.2=LPVARIANT,pvarResult
+func.VarCat.ret=HRESULT
+
+VarCmp=func
+func.VarCmp.args=4
+func.VarCmp.arg.0=LPVARIANT,pvarLeft
+func.VarCmp.arg.1=LPVARIANT,pvarRight
+func.VarCmp.arg.2=LCID,lcid
+func.VarCmp.arg.3=ULONG,dwFlags
+func.VarCmp.ret=HRESULT
+
+VarCyAbs=func
+func.VarCyAbs.args=2
+func.VarCyAbs.arg.0=CY,cyIn
+func.VarCyAbs.arg.1=LPCY,pcyResult
+func.VarCyAbs.ret=HRESULT
+
+VarCyAdd=func
+func.VarCyAdd.args=3
+func.VarCyAdd.arg.0=CY,cyLeft
+func.VarCyAdd.arg.1=CY,cyRight
+func.VarCyAdd.arg.2=LPCY,pcyResult
+func.VarCyAdd.ret=HRESULT
+
+VarCyCmp=func
+func.VarCyCmp.args=2
+func.VarCyCmp.arg.0=CY,cyLeft
+func.VarCyCmp.arg.1=CY,cyRight
+func.VarCyCmp.ret=HRESULT
+
+VarCyCmpR8=func
+func.VarCyCmpR8.args=2
+func.VarCyCmpR8.arg.0=CY,cyLeft
+func.VarCyCmpR8.arg.1=double,dblRight
+func.VarCyCmpR8.ret=HRESULT
+
+VarCyFix=func
+func.VarCyFix.args=2
+func.VarCyFix.arg.0=CY,cyIn
+func.VarCyFix.arg.1=LPCY,pcyResult
+func.VarCyFix.ret=HRESULT
+
+VarCyFromBool=func
+func.VarCyFromBool.args=2
+func.VarCyFromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarCyFromBool.arg.1=CY *,pcyOut
+func.VarCyFromBool.ret=HRESULT
+
+VarCyFromDate=func
+func.VarCyFromDate.args=2
+func.VarCyFromDate.arg.0=DATE,dateIn
+func.VarCyFromDate.arg.1=CY *,pcyOut
+func.VarCyFromDate.ret=HRESULT
+
+VarCyFromDec=func
+func.VarCyFromDec.args=2
+func.VarCyFromDec.arg.0=const DECIMAL *,pdecIn
+func.VarCyFromDec.arg.1=CY *,pcyOut
+func.VarCyFromDec.ret=HRESULT
+
+VarCyFromDisp=func
+func.VarCyFromDisp.args=3
+func.VarCyFromDisp.arg.0=IDispatch *,pdispIn
+func.VarCyFromDisp.arg.1=LCID,lcid
+func.VarCyFromDisp.arg.2=CY *,pcyOut
+func.VarCyFromDisp.ret=HRESULT
+
+VarCyFromI1=func
+func.VarCyFromI1.args=2
+func.VarCyFromI1.arg.0=CHAR,cIn
+func.VarCyFromI1.arg.1=CY *,pcyOut
+func.VarCyFromI1.ret=HRESULT
+
+VarCyFromI2=func
+func.VarCyFromI2.args=2
+func.VarCyFromI2.arg.0=SHORT,sIn
+func.VarCyFromI2.arg.1=CY *,pcyOut
+func.VarCyFromI2.ret=HRESULT
+
+VarCyFromI4=func
+func.VarCyFromI4.args=2
+func.VarCyFromI4.arg.0=LONG,lIn
+func.VarCyFromI4.arg.1=CY *,pcyOut
+func.VarCyFromI4.ret=HRESULT
+
+VarCyFromI8=func
+func.VarCyFromI8.args=2
+func.VarCyFromI8.arg.0=LONG64,i64In
+func.VarCyFromI8.arg.1=CY *,pcyOut
+func.VarCyFromI8.ret=HRESULT
+
+VarCyFromR4=func
+func.VarCyFromR4.args=2
+func.VarCyFromR4.arg.0=FLOAT,fltIn
+func.VarCyFromR4.arg.1=CY *,pcyOut
+func.VarCyFromR4.ret=HRESULT
+
+VarCyFromR8=func
+func.VarCyFromR8.args=2
+func.VarCyFromR8.arg.0=DOUBLE,dblIn
+func.VarCyFromR8.arg.1=CY *,pcyOut
+func.VarCyFromR8.ret=HRESULT
+
+VarCyFromStr=func
+func.VarCyFromStr.args=4
+func.VarCyFromStr.arg.0=LPCOLESTR,strIn
+func.VarCyFromStr.arg.1=LCID,lcid
+func.VarCyFromStr.arg.2=ULONG,dwFlags
+func.VarCyFromStr.arg.3=CY *,pcyOut
+func.VarCyFromStr.ret=HRESULT
+
+VarCyFromUI1=func
+func.VarCyFromUI1.args=2
+func.VarCyFromUI1.arg.0=BYTE,bIn
+func.VarCyFromUI1.arg.1=CY *,pcyOut
+func.VarCyFromUI1.ret=HRESULT
+
+VarCyFromUI2=func
+func.VarCyFromUI2.args=2
+func.VarCyFromUI2.arg.0=USHORT,uiIn
+func.VarCyFromUI2.arg.1=CY *,pcyOut
+func.VarCyFromUI2.ret=HRESULT
+
+VarCyFromUI4=func
+func.VarCyFromUI4.args=2
+func.VarCyFromUI4.arg.0=ULONG,ulIn
+func.VarCyFromUI4.arg.1=CY *,pcyOut
+func.VarCyFromUI4.ret=HRESULT
+
+VarCyFromUI8=func
+func.VarCyFromUI8.args=2
+func.VarCyFromUI8.arg.0=ULONG64,ui64In
+func.VarCyFromUI8.arg.1=CY *,pcyOut
+func.VarCyFromUI8.ret=HRESULT
+
+VarCyInt=func
+func.VarCyInt.args=2
+func.VarCyInt.arg.0=CY,cyIn
+func.VarCyInt.arg.1=LPCY,pcyResult
+func.VarCyInt.ret=HRESULT
+
+VarCyMul=func
+func.VarCyMul.args=3
+func.VarCyMul.arg.0=CY,cyLeft
+func.VarCyMul.arg.1=CY,cyRight
+func.VarCyMul.arg.2=LPCY,pcyResult
+func.VarCyMul.ret=HRESULT
+
+VarCyMulI4=func
+func.VarCyMulI4.args=3
+func.VarCyMulI4.arg.0=CY,cyLeft
+func.VarCyMulI4.arg.1=LONG,lRight
+func.VarCyMulI4.arg.2=LPCY,pcyResult
+func.VarCyMulI4.ret=HRESULT
+
+VarCyMulI8=func
+func.VarCyMulI8.args=3
+func.VarCyMulI8.arg.0=CY,cyLeft
+func.VarCyMulI8.arg.1=LONG64,lRight
+func.VarCyMulI8.arg.2=LPCY,pcyResult
+func.VarCyMulI8.ret=HRESULT
+
+VarCyNeg=func
+func.VarCyNeg.args=2
+func.VarCyNeg.arg.0=CY,cyIn
+func.VarCyNeg.arg.1=LPCY,pcyResult
+func.VarCyNeg.ret=HRESULT
+
+VarCyRound=func
+func.VarCyRound.args=3
+func.VarCyRound.arg.0=CY,cyIn
+func.VarCyRound.arg.1=int,cDecimals
+func.VarCyRound.arg.2=LPCY,pcyResult
+func.VarCyRound.ret=HRESULT
+
+VarCySub=func
+func.VarCySub.args=3
+func.VarCySub.arg.0=CY,cyLeft
+func.VarCySub.arg.1=CY,cyRight
+func.VarCySub.arg.2=LPCY,pcyResult
+func.VarCySub.ret=HRESULT
+
+VarDateFromBool=func
+func.VarDateFromBool.args=2
+func.VarDateFromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarDateFromBool.arg.1=DATE *,pdateOut
+func.VarDateFromBool.ret=HRESULT
+
+VarDateFromCy=func
+func.VarDateFromCy.args=2
+func.VarDateFromCy.arg.0=CY,cyIn
+func.VarDateFromCy.arg.1=DATE *,pdateOut
+func.VarDateFromCy.ret=HRESULT
+
+VarDateFromDec=func
+func.VarDateFromDec.args=2
+func.VarDateFromDec.arg.0=const DECIMAL *,pdecIn
+func.VarDateFromDec.arg.1=DATE *,pdateOut
+func.VarDateFromDec.ret=HRESULT
+
+VarDateFromDisp=func
+func.VarDateFromDisp.args=3
+func.VarDateFromDisp.arg.0=IDispatch *,pdispIn
+func.VarDateFromDisp.arg.1=LCID,lcid
+func.VarDateFromDisp.arg.2=DATE *,pdateOut
+func.VarDateFromDisp.ret=HRESULT
+
+VarDateFromI1=func
+func.VarDateFromI1.args=2
+func.VarDateFromI1.arg.0=CHAR,cIn
+func.VarDateFromI1.arg.1=DATE *,pdateOut
+func.VarDateFromI1.ret=HRESULT
+
+VarDateFromI2=func
+func.VarDateFromI2.args=2
+func.VarDateFromI2.arg.0=SHORT,sIn
+func.VarDateFromI2.arg.1=DATE *,pdateOut
+func.VarDateFromI2.ret=HRESULT
+
+VarDateFromI4=func
+func.VarDateFromI4.args=2
+func.VarDateFromI4.arg.0=LONG,lIn
+func.VarDateFromI4.arg.1=DATE *,pdateOut
+func.VarDateFromI4.ret=HRESULT
+
+VarDateFromI8=func
+func.VarDateFromI8.args=2
+func.VarDateFromI8.arg.0=LONG64,i64In
+func.VarDateFromI8.arg.1=DATE *,pdateOut
+func.VarDateFromI8.ret=HRESULT
+
+VarDateFromR4=func
+func.VarDateFromR4.args=2
+func.VarDateFromR4.arg.0=FLOAT,fltIn
+func.VarDateFromR4.arg.1=DATE *,pdateOut
+func.VarDateFromR4.ret=HRESULT
+
+VarDateFromR8=func
+func.VarDateFromR8.args=2
+func.VarDateFromR8.arg.0=DOUBLE,dblIn
+func.VarDateFromR8.arg.1=DATE *,pdateOut
+func.VarDateFromR8.ret=HRESULT
+
+VarDateFromStr=func
+func.VarDateFromStr.args=4
+func.VarDateFromStr.arg.0=LPCOLESTR,strIn
+func.VarDateFromStr.arg.1=LCID,lcid
+func.VarDateFromStr.arg.2=ULONG,dwFlags
+func.VarDateFromStr.arg.3=DATE *,pdateOut
+func.VarDateFromStr.ret=HRESULT
+
+VarDateFromUI1=func
+func.VarDateFromUI1.args=2
+func.VarDateFromUI1.arg.0=BYTE,bIn
+func.VarDateFromUI1.arg.1=DATE *,pdateOut
+func.VarDateFromUI1.ret=HRESULT
+
+VarDateFromUI2=func
+func.VarDateFromUI2.args=2
+func.VarDateFromUI2.arg.0=USHORT,uiIn
+func.VarDateFromUI2.arg.1=DATE *,pdateOut
+func.VarDateFromUI2.ret=HRESULT
+
+VarDateFromUI4=func
+func.VarDateFromUI4.args=2
+func.VarDateFromUI4.arg.0=ULONG,ulIn
+func.VarDateFromUI4.arg.1=DATE *,pdateOut
+func.VarDateFromUI4.ret=HRESULT
+
+VarDateFromUI8=func
+func.VarDateFromUI8.args=2
+func.VarDateFromUI8.arg.0=ULONG64,ui64In
+func.VarDateFromUI8.arg.1=DATE *,pdateOut
+func.VarDateFromUI8.ret=HRESULT
+
+VarDateFromUdate=func
+func.VarDateFromUdate.args=3
+func.VarDateFromUdate.arg.0=UDATE *,pudateIn
+func.VarDateFromUdate.arg.1=ULONG,dwFlags
+func.VarDateFromUdate.arg.2=DATE *,pdateOut
+func.VarDateFromUdate.ret=HRESULT
+
+VarDateFromUdateEx=func
+func.VarDateFromUdateEx.args=4
+func.VarDateFromUdateEx.arg.0=UDATE *,pudateIn
+func.VarDateFromUdateEx.arg.1=LCID,lcid
+func.VarDateFromUdateEx.arg.2=ULONG,dwFlags
+func.VarDateFromUdateEx.arg.3=DATE *,pdateOut
+func.VarDateFromUdateEx.ret=HRESULT
+
+VarDecAbs=func
+func.VarDecAbs.args=2
+func.VarDecAbs.arg.0=LPDECIMAL,pdecIn
+func.VarDecAbs.arg.1=LPDECIMAL,pdecResult
+func.VarDecAbs.ret=HRESULT
+
+VarDecAdd=func
+func.VarDecAdd.args=3
+func.VarDecAdd.arg.0=LPDECIMAL,pdecLeft
+func.VarDecAdd.arg.1=LPDECIMAL,pdecRight
+func.VarDecAdd.arg.2=LPDECIMAL,pdecResult
+func.VarDecAdd.ret=HRESULT
+
+VarDecCmp=func
+func.VarDecCmp.args=2
+func.VarDecCmp.arg.0=LPDECIMAL,pdecLeft
+func.VarDecCmp.arg.1=LPDECIMAL,pdecRight
+func.VarDecCmp.ret=HRESULT
+
+VarDecCmpR8=func
+func.VarDecCmpR8.args=2
+func.VarDecCmpR8.arg.0=LPDECIMAL,pdecLeft
+func.VarDecCmpR8.arg.1=double,dblRight
+func.VarDecCmpR8.ret=HRESULT
+
+VarDecDiv=func
+func.VarDecDiv.args=3
+func.VarDecDiv.arg.0=LPDECIMAL,pdecLeft
+func.VarDecDiv.arg.1=LPDECIMAL,pdecRight
+func.VarDecDiv.arg.2=LPDECIMAL,pdecResult
+func.VarDecDiv.ret=HRESULT
+
+VarDecFix=func
+func.VarDecFix.args=2
+func.VarDecFix.arg.0=LPDECIMAL,pdecIn
+func.VarDecFix.arg.1=LPDECIMAL,pdecResult
+func.VarDecFix.ret=HRESULT
+
+VarDecFromBool=func
+func.VarDecFromBool.args=2
+func.VarDecFromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarDecFromBool.arg.1=DECIMAL *,pdecOut
+func.VarDecFromBool.ret=HRESULT
+
+VarDecFromCy=func
+func.VarDecFromCy.args=2
+func.VarDecFromCy.arg.0=CY,cyIn
+func.VarDecFromCy.arg.1=DECIMAL *,pdecOut
+func.VarDecFromCy.ret=HRESULT
+
+VarDecFromDate=func
+func.VarDecFromDate.args=2
+func.VarDecFromDate.arg.0=DATE,dateIn
+func.VarDecFromDate.arg.1=DECIMAL *,pdecOut
+func.VarDecFromDate.ret=HRESULT
+
+VarDecFromDisp=func
+func.VarDecFromDisp.args=3
+func.VarDecFromDisp.arg.0=IDispatch *,pdispIn
+func.VarDecFromDisp.arg.1=LCID,lcid
+func.VarDecFromDisp.arg.2=DECIMAL *,pdecOut
+func.VarDecFromDisp.ret=HRESULT
+
+VarDecFromI1=func
+func.VarDecFromI1.args=2
+func.VarDecFromI1.arg.0=CHAR,cIn
+func.VarDecFromI1.arg.1=DECIMAL *,pdecOut
+func.VarDecFromI1.ret=HRESULT
+
+VarDecFromI2=func
+func.VarDecFromI2.args=2
+func.VarDecFromI2.arg.0=SHORT,uiIn
+func.VarDecFromI2.arg.1=DECIMAL *,pdecOut
+func.VarDecFromI2.ret=HRESULT
+
+VarDecFromI4=func
+func.VarDecFromI4.args=2
+func.VarDecFromI4.arg.0=LONG,lIn
+func.VarDecFromI4.arg.1=DECIMAL *,pdecOut
+func.VarDecFromI4.ret=HRESULT
+
+VarDecFromI8=func
+func.VarDecFromI8.args=2
+func.VarDecFromI8.arg.0=LONG64,i64In
+func.VarDecFromI8.arg.1=DECIMAL *,pdecOut
+func.VarDecFromI8.ret=HRESULT
+
+VarDecFromR4=func
+func.VarDecFromR4.args=2
+func.VarDecFromR4.arg.0=FLOAT,fltIn
+func.VarDecFromR4.arg.1=DECIMAL *,pdecOut
+func.VarDecFromR4.ret=HRESULT
+
+VarDecFromR8=func
+func.VarDecFromR8.args=2
+func.VarDecFromR8.arg.0=DOUBLE,dblIn
+func.VarDecFromR8.arg.1=DECIMAL *,pdecOut
+func.VarDecFromR8.ret=HRESULT
+
+VarDecFromStr=func
+func.VarDecFromStr.args=4
+func.VarDecFromStr.arg.0=LPCOLESTR,strIn
+func.VarDecFromStr.arg.1=LCID,lcid
+func.VarDecFromStr.arg.2=ULONG,dwFlags
+func.VarDecFromStr.arg.3=DECIMAL *,pdecOut
+func.VarDecFromStr.ret=HRESULT
+
+VarDecFromUI1=func
+func.VarDecFromUI1.args=2
+func.VarDecFromUI1.arg.0=BYTE,bIn
+func.VarDecFromUI1.arg.1=DECIMAL *,pdecOut
+func.VarDecFromUI1.ret=HRESULT
+
+VarDecFromUI2=func
+func.VarDecFromUI2.args=2
+func.VarDecFromUI2.arg.0=USHORT,uiIn
+func.VarDecFromUI2.arg.1=DECIMAL *,pdecOut
+func.VarDecFromUI2.ret=HRESULT
+
+VarDecFromUI4=func
+func.VarDecFromUI4.args=2
+func.VarDecFromUI4.arg.0=ULONG,ulIn
+func.VarDecFromUI4.arg.1=DECIMAL *,pdecOut
+func.VarDecFromUI4.ret=HRESULT
+
+VarDecFromUI8=func
+func.VarDecFromUI8.args=2
+func.VarDecFromUI8.arg.0=ULONG64,ui64In
+func.VarDecFromUI8.arg.1=DECIMAL *,pdecOut
+func.VarDecFromUI8.ret=HRESULT
+
+VarDecInt=func
+func.VarDecInt.args=2
+func.VarDecInt.arg.0=LPDECIMAL,pdecIn
+func.VarDecInt.arg.1=LPDECIMAL,pdecResult
+func.VarDecInt.ret=HRESULT
+
+VarDecMul=func
+func.VarDecMul.args=3
+func.VarDecMul.arg.0=LPDECIMAL,pdecLeft
+func.VarDecMul.arg.1=LPDECIMAL,pdecRight
+func.VarDecMul.arg.2=LPDECIMAL,pdecResult
+func.VarDecMul.ret=HRESULT
+
+VarDecNeg=func
+func.VarDecNeg.args=2
+func.VarDecNeg.arg.0=LPDECIMAL,pdecIn
+func.VarDecNeg.arg.1=LPDECIMAL,pdecResult
+func.VarDecNeg.ret=HRESULT
+
+VarDecRound=func
+func.VarDecRound.args=3
+func.VarDecRound.arg.0=LPDECIMAL,pdecIn
+func.VarDecRound.arg.1=int,cDecimals
+func.VarDecRound.arg.2=LPDECIMAL,pdecResult
+func.VarDecRound.ret=HRESULT
+
+VarDecSub=func
+func.VarDecSub.args=3
+func.VarDecSub.arg.0=LPDECIMAL,pdecLeft
+func.VarDecSub.arg.1=LPDECIMAL,pdecRight
+func.VarDecSub.arg.2=LPDECIMAL,pdecResult
+func.VarDecSub.ret=HRESULT
+
+VarDiv=func
+func.VarDiv.args=3
+func.VarDiv.arg.0=LPVARIANT,pvarLeft
+func.VarDiv.arg.1=LPVARIANT,pvarRight
+func.VarDiv.arg.2=LPVARIANT,pvarResult
+func.VarDiv.ret=HRESULT
+
+VarEqv=func
+func.VarEqv.args=3
+func.VarEqv.arg.0=LPVARIANT,pvarLeft
+func.VarEqv.arg.1=LPVARIANT,pvarRight
+func.VarEqv.arg.2=LPVARIANT,pvarResult
+func.VarEqv.ret=HRESULT
+
+VarFix=func
+func.VarFix.args=2
+func.VarFix.arg.0=LPVARIANT,pvarIn
+func.VarFix.arg.1=LPVARIANT,pvarResult
+func.VarFix.ret=HRESULT
+
+VarFormat=func
+func.VarFormat.args=6
+func.VarFormat.arg.0=LPVARIANT,pvarIn
+func.VarFormat.arg.1=LPOLESTR,pstrFormat
+func.VarFormat.arg.2=int,iFirstDay
+func.VarFormat.arg.3=int,iFirstWeek
+func.VarFormat.arg.4=ULONG,dwFlags
+func.VarFormat.arg.5=BSTR *,pbstrOut
+func.VarFormat.ret=HRESULT
+
+VarFormatCurrency=func
+func.VarFormatCurrency.args=7
+func.VarFormatCurrency.arg.0=LPVARIANT,pvarIn
+func.VarFormatCurrency.arg.1=int,iNumDig
+func.VarFormatCurrency.arg.2=int,iIncLead
+func.VarFormatCurrency.arg.3=int,iUseParens
+func.VarFormatCurrency.arg.4=int,iGroup
+func.VarFormatCurrency.arg.5=ULONG,dwFlags
+func.VarFormatCurrency.arg.6=BSTR *,pbstrOut
+func.VarFormatCurrency.ret=HRESULT
+
+VarFormatDateTime=func
+func.VarFormatDateTime.args=4
+func.VarFormatDateTime.arg.0=LPVARIANT,pvarIn
+func.VarFormatDateTime.arg.1=int,iNamedFormat
+func.VarFormatDateTime.arg.2=ULONG,dwFlags
+func.VarFormatDateTime.arg.3=BSTR *,pbstrOut
+func.VarFormatDateTime.ret=HRESULT
+
+VarFormatFromTokens=func
+func.VarFormatFromTokens.args=6
+func.VarFormatFromTokens.arg.0=LPVARIANT,pvarIn
+func.VarFormatFromTokens.arg.1=LPOLESTR,pstrFormat
+func.VarFormatFromTokens.arg.2=LPBYTE,pbTokCur
+func.VarFormatFromTokens.arg.3=ULONG,dwFlags
+func.VarFormatFromTokens.arg.4=BSTR *,pbstrOut
+func.VarFormatFromTokens.arg.5=LCID,lcid
+func.VarFormatFromTokens.ret=HRESULT
+
+VarFormatNumber=func
+func.VarFormatNumber.args=7
+func.VarFormatNumber.arg.0=LPVARIANT,pvarIn
+func.VarFormatNumber.arg.1=int,iNumDig
+func.VarFormatNumber.arg.2=int,iIncLead
+func.VarFormatNumber.arg.3=int,iUseParens
+func.VarFormatNumber.arg.4=int,iGroup
+func.VarFormatNumber.arg.5=ULONG,dwFlags
+func.VarFormatNumber.arg.6=BSTR *,pbstrOut
+func.VarFormatNumber.ret=HRESULT
+
+VarFormatPercent=func
+func.VarFormatPercent.args=7
+func.VarFormatPercent.arg.0=LPVARIANT,pvarIn
+func.VarFormatPercent.arg.1=int,iNumDig
+func.VarFormatPercent.arg.2=int,iIncLead
+func.VarFormatPercent.arg.3=int,iUseParens
+func.VarFormatPercent.arg.4=int,iGroup
+func.VarFormatPercent.arg.5=ULONG,dwFlags
+func.VarFormatPercent.arg.6=BSTR *,pbstrOut
+func.VarFormatPercent.ret=HRESULT
+
+VarI1FromBool=func
+func.VarI1FromBool.args=2
+func.VarI1FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarI1FromBool.arg.1=CHAR *,pcOut
+func.VarI1FromBool.ret=HRESULT
+
+VarI1FromCy=func
+func.VarI1FromCy.args=2
+func.VarI1FromCy.arg.0=CY,cyIn
+func.VarI1FromCy.arg.1=CHAR *,pcOut
+func.VarI1FromCy.ret=HRESULT
+
+VarI1FromDate=func
+func.VarI1FromDate.args=2
+func.VarI1FromDate.arg.0=DATE,dateIn
+func.VarI1FromDate.arg.1=CHAR *,pcOut
+func.VarI1FromDate.ret=HRESULT
+
+VarI1FromDec=func
+func.VarI1FromDec.args=2
+func.VarI1FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarI1FromDec.arg.1=CHAR *,pcOut
+func.VarI1FromDec.ret=HRESULT
+
+VarI1FromDisp=func
+func.VarI1FromDisp.args=3
+func.VarI1FromDisp.arg.0=IDispatch *,pdispIn
+func.VarI1FromDisp.arg.1=LCID,lcid
+func.VarI1FromDisp.arg.2=CHAR *,pcOut
+func.VarI1FromDisp.ret=HRESULT
+
+VarI1FromI2=func
+func.VarI1FromI2.args=2
+func.VarI1FromI2.arg.0=SHORT,uiIn
+func.VarI1FromI2.arg.1=CHAR *,pcOut
+func.VarI1FromI2.ret=HRESULT
+
+VarI1FromI4=func
+func.VarI1FromI4.args=2
+func.VarI1FromI4.arg.0=LONG,lIn
+func.VarI1FromI4.arg.1=CHAR *,pcOut
+func.VarI1FromI4.ret=HRESULT
+
+VarI1FromI8=func
+func.VarI1FromI8.args=2
+func.VarI1FromI8.arg.0=LONG64,i64In
+func.VarI1FromI8.arg.1=CHAR *,pcOut
+func.VarI1FromI8.ret=HRESULT
+
+VarI1FromR4=func
+func.VarI1FromR4.args=2
+func.VarI1FromR4.arg.0=FLOAT,fltIn
+func.VarI1FromR4.arg.1=CHAR *,pcOut
+func.VarI1FromR4.ret=HRESULT
+
+VarI1FromR8=func
+func.VarI1FromR8.args=2
+func.VarI1FromR8.arg.0=DOUBLE,dblIn
+func.VarI1FromR8.arg.1=CHAR *,pcOut
+func.VarI1FromR8.ret=HRESULT
+
+VarI1FromStr=func
+func.VarI1FromStr.args=4
+func.VarI1FromStr.arg.0=LPCOLESTR,strIn
+func.VarI1FromStr.arg.1=LCID,lcid
+func.VarI1FromStr.arg.2=ULONG,dwFlags
+func.VarI1FromStr.arg.3=CHAR *,pcOut
+func.VarI1FromStr.ret=HRESULT
+
+VarI1FromUI1=func
+func.VarI1FromUI1.args=2
+func.VarI1FromUI1.arg.0=BYTE,bIn
+func.VarI1FromUI1.arg.1=CHAR *,pcOut
+func.VarI1FromUI1.ret=HRESULT
+
+VarI1FromUI2=func
+func.VarI1FromUI2.args=2
+func.VarI1FromUI2.arg.0=USHORT,uiIn
+func.VarI1FromUI2.arg.1=CHAR *,pcOut
+func.VarI1FromUI2.ret=HRESULT
+
+VarI1FromUI4=func
+func.VarI1FromUI4.args=2
+func.VarI1FromUI4.arg.0=ULONG,ulIn
+func.VarI1FromUI4.arg.1=CHAR *,pcOut
+func.VarI1FromUI4.ret=HRESULT
+
+VarI1FromUI8=func
+func.VarI1FromUI8.args=2
+func.VarI1FromUI8.arg.0=ULONG64,i64In
+func.VarI1FromUI8.arg.1=CHAR *,pcOut
+func.VarI1FromUI8.ret=HRESULT
+
+VarI2FromBool=func
+func.VarI2FromBool.args=2
+func.VarI2FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarI2FromBool.arg.1=SHORT *,psOut
+func.VarI2FromBool.ret=HRESULT
+
+VarI2FromCy=func
+func.VarI2FromCy.args=2
+func.VarI2FromCy.arg.0=CY,cyIn
+func.VarI2FromCy.arg.1=SHORT *,psOut
+func.VarI2FromCy.ret=HRESULT
+
+VarI2FromDate=func
+func.VarI2FromDate.args=2
+func.VarI2FromDate.arg.0=DATE,dateIn
+func.VarI2FromDate.arg.1=SHORT *,psOut
+func.VarI2FromDate.ret=HRESULT
+
+VarI2FromDec=func
+func.VarI2FromDec.args=2
+func.VarI2FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarI2FromDec.arg.1=SHORT *,psOut
+func.VarI2FromDec.ret=HRESULT
+
+VarI2FromDisp=func
+func.VarI2FromDisp.args=3
+func.VarI2FromDisp.arg.0=IDispatch *,pdispIn
+func.VarI2FromDisp.arg.1=LCID,lcid
+func.VarI2FromDisp.arg.2=SHORT *,psOut
+func.VarI2FromDisp.ret=HRESULT
+
+VarI2FromI1=func
+func.VarI2FromI1.args=2
+func.VarI2FromI1.arg.0=CHAR,cIn
+func.VarI2FromI1.arg.1=SHORT *,psOut
+func.VarI2FromI1.ret=HRESULT
+
+VarI2FromI4=func
+func.VarI2FromI4.args=2
+func.VarI2FromI4.arg.0=LONG,lIn
+func.VarI2FromI4.arg.1=SHORT *,psOut
+func.VarI2FromI4.ret=HRESULT
+
+VarI2FromI8=func
+func.VarI2FromI8.args=2
+func.VarI2FromI8.arg.0=LONG64,i64In
+func.VarI2FromI8.arg.1=SHORT *,psOut
+func.VarI2FromI8.ret=HRESULT
+
+VarI2FromR4=func
+func.VarI2FromR4.args=2
+func.VarI2FromR4.arg.0=FLOAT,fltIn
+func.VarI2FromR4.arg.1=SHORT *,psOut
+func.VarI2FromR4.ret=HRESULT
+
+VarI2FromR8=func
+func.VarI2FromR8.args=2
+func.VarI2FromR8.arg.0=DOUBLE,dblIn
+func.VarI2FromR8.arg.1=SHORT *,psOut
+func.VarI2FromR8.ret=HRESULT
+
+VarI2FromStr=func
+func.VarI2FromStr.args=4
+func.VarI2FromStr.arg.0=LPCOLESTR,strIn
+func.VarI2FromStr.arg.1=LCID,lcid
+func.VarI2FromStr.arg.2=ULONG,dwFlags
+func.VarI2FromStr.arg.3=SHORT *,psOut
+func.VarI2FromStr.ret=HRESULT
+
+VarI2FromUI1=func
+func.VarI2FromUI1.args=2
+func.VarI2FromUI1.arg.0=BYTE,bIn
+func.VarI2FromUI1.arg.1=SHORT *,psOut
+func.VarI2FromUI1.ret=HRESULT
+
+VarI2FromUI2=func
+func.VarI2FromUI2.args=2
+func.VarI2FromUI2.arg.0=USHORT,uiIn
+func.VarI2FromUI2.arg.1=SHORT *,psOut
+func.VarI2FromUI2.ret=HRESULT
+
+VarI2FromUI4=func
+func.VarI2FromUI4.args=2
+func.VarI2FromUI4.arg.0=ULONG,ulIn
+func.VarI2FromUI4.arg.1=SHORT *,psOut
+func.VarI2FromUI4.ret=HRESULT
+
+VarI2FromUI8=func
+func.VarI2FromUI8.args=2
+func.VarI2FromUI8.arg.0=ULONG64,ui64In
+func.VarI2FromUI8.arg.1=SHORT *,psOut
+func.VarI2FromUI8.ret=HRESULT
+
+VarI4FromBool=func
+func.VarI4FromBool.args=2
+func.VarI4FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarI4FromBool.arg.1=LONG *,plOut
+func.VarI4FromBool.ret=HRESULT
+
+VarI4FromCy=func
+func.VarI4FromCy.args=2
+func.VarI4FromCy.arg.0=CY,cyIn
+func.VarI4FromCy.arg.1=LONG *,plOut
+func.VarI4FromCy.ret=HRESULT
+
+VarI4FromDate=func
+func.VarI4FromDate.args=2
+func.VarI4FromDate.arg.0=DATE,dateIn
+func.VarI4FromDate.arg.1=LONG *,plOut
+func.VarI4FromDate.ret=HRESULT
+
+VarI4FromDec=func
+func.VarI4FromDec.args=2
+func.VarI4FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarI4FromDec.arg.1=LONG *,plOut
+func.VarI4FromDec.ret=HRESULT
+
+VarI4FromDisp=func
+func.VarI4FromDisp.args=3
+func.VarI4FromDisp.arg.0=IDispatch *,pdispIn
+func.VarI4FromDisp.arg.1=LCID,lcid
+func.VarI4FromDisp.arg.2=LONG *,plOut
+func.VarI4FromDisp.ret=HRESULT
+
+VarI4FromI1=func
+func.VarI4FromI1.args=2
+func.VarI4FromI1.arg.0=CHAR,cIn
+func.VarI4FromI1.arg.1=LONG *,plOut
+func.VarI4FromI1.ret=HRESULT
+
+VarI4FromI2=func
+func.VarI4FromI2.args=2
+func.VarI4FromI2.arg.0=SHORT,sIn
+func.VarI4FromI2.arg.1=LONG *,plOut
+func.VarI4FromI2.ret=HRESULT
+
+VarI4FromI8=func
+func.VarI4FromI8.args=2
+func.VarI4FromI8.arg.0=LONG64,i64In
+func.VarI4FromI8.arg.1=LONG *,plOut
+func.VarI4FromI8.ret=HRESULT
+
+VarI4FromR4=func
+func.VarI4FromR4.args=2
+func.VarI4FromR4.arg.0=FLOAT,fltIn
+func.VarI4FromR4.arg.1=LONG *,plOut
+func.VarI4FromR4.ret=HRESULT
+
+VarI4FromR8=func
+func.VarI4FromR8.args=2
+func.VarI4FromR8.arg.0=DOUBLE,dblIn
+func.VarI4FromR8.arg.1=LONG *,plOut
+func.VarI4FromR8.ret=HRESULT
+
+VarI4FromStr=func
+func.VarI4FromStr.args=4
+func.VarI4FromStr.arg.0=LPCOLESTR,strIn
+func.VarI4FromStr.arg.1=LCID,lcid
+func.VarI4FromStr.arg.2=ULONG,dwFlags
+func.VarI4FromStr.arg.3=LONG *,plOut
+func.VarI4FromStr.ret=HRESULT
+
+VarI4FromUI1=func
+func.VarI4FromUI1.args=2
+func.VarI4FromUI1.arg.0=BYTE,bIn
+func.VarI4FromUI1.arg.1=LONG *,plOut
+func.VarI4FromUI1.ret=HRESULT
+
+VarI4FromUI2=func
+func.VarI4FromUI2.args=2
+func.VarI4FromUI2.arg.0=USHORT,uiIn
+func.VarI4FromUI2.arg.1=LONG *,plOut
+func.VarI4FromUI2.ret=HRESULT
+
+VarI4FromUI4=func
+func.VarI4FromUI4.args=2
+func.VarI4FromUI4.arg.0=ULONG,ulIn
+func.VarI4FromUI4.arg.1=LONG *,plOut
+func.VarI4FromUI4.ret=HRESULT
+
+VarI4FromUI8=func
+func.VarI4FromUI8.args=2
+func.VarI4FromUI8.arg.0=ULONG64,ui64In
+func.VarI4FromUI8.arg.1=LONG *,plOut
+func.VarI4FromUI8.ret=HRESULT
+
+VarI8FromBool=func
+func.VarI8FromBool.args=2
+func.VarI8FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarI8FromBool.arg.1=LONG64 *,pi64Out
+func.VarI8FromBool.ret=HRESULT
+
+VarI8FromCy=func
+func.VarI8FromCy.args=2
+func.VarI8FromCy.arg.0=CY,cyIn
+func.VarI8FromCy.arg.1=LONG64 *,pi64Out
+func.VarI8FromCy.ret=HRESULT
+
+VarI8FromDate=func
+func.VarI8FromDate.args=2
+func.VarI8FromDate.arg.0=DATE,dateIn
+func.VarI8FromDate.arg.1=LONG64 *,pi64Out
+func.VarI8FromDate.ret=HRESULT
+
+VarI8FromDec=func
+func.VarI8FromDec.args=2
+func.VarI8FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarI8FromDec.arg.1=LONG64 *,pi64Out
+func.VarI8FromDec.ret=HRESULT
+
+VarI8FromDisp=func
+func.VarI8FromDisp.args=3
+func.VarI8FromDisp.arg.0=IDispatch *,pdispIn
+func.VarI8FromDisp.arg.1=LCID,lcid
+func.VarI8FromDisp.arg.2=LONG64 *,pi64Out
+func.VarI8FromDisp.ret=HRESULT
+
+VarI8FromI1=func
+func.VarI8FromI1.args=2
+func.VarI8FromI1.arg.0=CHAR,cIn
+func.VarI8FromI1.arg.1=LONG64 *,pi64Out
+func.VarI8FromI1.ret=HRESULT
+
+VarI8FromI2=func
+func.VarI8FromI2.args=2
+func.VarI8FromI2.arg.0=SHORT,sIn
+func.VarI8FromI2.arg.1=LONG64 *,pi64Out
+func.VarI8FromI2.ret=HRESULT
+
+VarI8FromR4=func
+func.VarI8FromR4.args=2
+func.VarI8FromR4.arg.0=FLOAT,fltIn
+func.VarI8FromR4.arg.1=LONG64 *,pi64Out
+func.VarI8FromR4.ret=HRESULT
+
+VarI8FromR8=func
+func.VarI8FromR8.args=2
+func.VarI8FromR8.arg.0=DOUBLE,dblIn
+func.VarI8FromR8.arg.1=LONG64 *,pi64Out
+func.VarI8FromR8.ret=HRESULT
+
+VarI8FromStr=func
+func.VarI8FromStr.args=4
+func.VarI8FromStr.arg.0=LPCOLESTR,strIn
+func.VarI8FromStr.arg.1=LCID,lcid
+func.VarI8FromStr.arg.2=ULONG,dwFlags
+func.VarI8FromStr.arg.3=LONG64 *,pi64Out
+func.VarI8FromStr.ret=HRESULT
+
+VarI8FromUI1=func
+func.VarI8FromUI1.args=2
+func.VarI8FromUI1.arg.0=BYTE,bIn
+func.VarI8FromUI1.arg.1=LONG64 *,pi64Out
+func.VarI8FromUI1.ret=HRESULT
+
+VarI8FromUI2=func
+func.VarI8FromUI2.args=2
+func.VarI8FromUI2.arg.0=USHORT,uiIn
+func.VarI8FromUI2.arg.1=LONG64 *,pi64Out
+func.VarI8FromUI2.ret=HRESULT
+
+VarI8FromUI4=func
+func.VarI8FromUI4.args=2
+func.VarI8FromUI4.arg.0=ULONG,ulIn
+func.VarI8FromUI4.arg.1=LONG64 *,pi64Out
+func.VarI8FromUI4.ret=HRESULT
+
+VarI8FromUI8=func
+func.VarI8FromUI8.args=2
+func.VarI8FromUI8.arg.0=ULONG64,ui64In
+func.VarI8FromUI8.arg.1=LONG64 *,pi64Out
+func.VarI8FromUI8.ret=HRESULT
+
+VarIdiv=func
+func.VarIdiv.args=3
+func.VarIdiv.arg.0=LPVARIANT,pvarLeft
+func.VarIdiv.arg.1=LPVARIANT,pvarRight
+func.VarIdiv.arg.2=LPVARIANT,pvarResult
+func.VarIdiv.ret=HRESULT
+
+VarImp=func
+func.VarImp.args=3
+func.VarImp.arg.0=LPVARIANT,pvarLeft
+func.VarImp.arg.1=LPVARIANT,pvarRight
+func.VarImp.arg.2=LPVARIANT,pvarResult
+func.VarImp.ret=HRESULT
+
+VarInt=func
+func.VarInt.args=2
+func.VarInt.arg.0=LPVARIANT,pvarIn
+func.VarInt.arg.1=LPVARIANT,pvarResult
+func.VarInt.ret=HRESULT
+
+VarMod=func
+func.VarMod.args=3
+func.VarMod.arg.0=LPVARIANT,pvarLeft
+func.VarMod.arg.1=LPVARIANT,pvarRight
+func.VarMod.arg.2=LPVARIANT,pvarResult
+func.VarMod.ret=HRESULT
+
+VarMonthName=func
+func.VarMonthName.args=4
+func.VarMonthName.arg.0=int,iMonth
+func.VarMonthName.arg.1=int,fAbbrev
+func.VarMonthName.arg.2=ULONG,dwFlags
+func.VarMonthName.arg.3=BSTR *,pbstrOut
+func.VarMonthName.ret=HRESULT
+
+VarMul=func
+func.VarMul.args=3
+func.VarMul.arg.0=LPVARIANT,pvarLeft
+func.VarMul.arg.1=LPVARIANT,pvarRight
+func.VarMul.arg.2=LPVARIANT,pvarResult
+func.VarMul.ret=HRESULT
+
+VarNeg=func
+func.VarNeg.args=2
+func.VarNeg.arg.0=LPVARIANT,pvarIn
+func.VarNeg.arg.1=LPVARIANT,pvarResult
+func.VarNeg.ret=HRESULT
+
+VarNot=func
+func.VarNot.args=2
+func.VarNot.arg.0=LPVARIANT,pvarIn
+func.VarNot.arg.1=LPVARIANT,pvarResult
+func.VarNot.ret=HRESULT
+
+VarNumFromParseNum=func
+func.VarNumFromParseNum.args=4
+func.VarNumFromParseNum.arg.0=NUMPARSE *,pnumprs
+func.VarNumFromParseNum.arg.1=BYTE *,rgbDig
+func.VarNumFromParseNum.arg.2=ULONG,dwVtBits
+func.VarNumFromParseNum.arg.3=VARIANT *,pvar
+func.VarNumFromParseNum.ret=HRESULT
+
+VarOr=func
+func.VarOr.args=3
+func.VarOr.arg.0=LPVARIANT,pvarLeft
+func.VarOr.arg.1=LPVARIANT,pvarRight
+func.VarOr.arg.2=LPVARIANT,pvarResult
+func.VarOr.ret=HRESULT
+
+VarParseNumFromStr=func
+func.VarParseNumFromStr.args=5
+func.VarParseNumFromStr.arg.0=LPCOLESTR,strIn
+func.VarParseNumFromStr.arg.1=LCID,lcid
+func.VarParseNumFromStr.arg.2=ULONG,dwFlags
+func.VarParseNumFromStr.arg.3=NUMPARSE *,pnumprs
+func.VarParseNumFromStr.arg.4=BYTE *,rgbDig
+func.VarParseNumFromStr.ret=HRESULT
+
+VarPow=func
+func.VarPow.args=3
+func.VarPow.arg.0=LPVARIANT,pvarLeft
+func.VarPow.arg.1=LPVARIANT,pvarRight
+func.VarPow.arg.2=LPVARIANT,pvarResult
+func.VarPow.ret=HRESULT
+
+VarR4CmpR8=func
+func.VarR4CmpR8.args=2
+func.VarR4CmpR8.arg.0=float,fltLeft
+func.VarR4CmpR8.arg.1=double,dblRight
+func.VarR4CmpR8.ret=HRESULT
+
+VarR4FromBool=func
+func.VarR4FromBool.args=2
+func.VarR4FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarR4FromBool.arg.1=FLOAT *,pfltOut
+func.VarR4FromBool.ret=HRESULT
+
+VarR4FromCy=func
+func.VarR4FromCy.args=2
+func.VarR4FromCy.arg.0=CY,cyIn
+func.VarR4FromCy.arg.1=FLOAT *,pfltOut
+func.VarR4FromCy.ret=HRESULT
+
+VarR4FromDate=func
+func.VarR4FromDate.args=2
+func.VarR4FromDate.arg.0=DATE,dateIn
+func.VarR4FromDate.arg.1=FLOAT *,pfltOut
+func.VarR4FromDate.ret=HRESULT
+
+VarR4FromDec=func
+func.VarR4FromDec.args=2
+func.VarR4FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarR4FromDec.arg.1=FLOAT *,pfltOut
+func.VarR4FromDec.ret=HRESULT
+
+VarR4FromDisp=func
+func.VarR4FromDisp.args=3
+func.VarR4FromDisp.arg.0=IDispatch *,pdispIn
+func.VarR4FromDisp.arg.1=LCID,lcid
+func.VarR4FromDisp.arg.2=FLOAT *,pfltOut
+func.VarR4FromDisp.ret=HRESULT
+
+VarR4FromI1=func
+func.VarR4FromI1.args=2
+func.VarR4FromI1.arg.0=CHAR,cIn
+func.VarR4FromI1.arg.1=FLOAT *,pfltOut
+func.VarR4FromI1.ret=HRESULT
+
+VarR4FromI2=func
+func.VarR4FromI2.args=2
+func.VarR4FromI2.arg.0=SHORT,sIn
+func.VarR4FromI2.arg.1=FLOAT *,pfltOut
+func.VarR4FromI2.ret=HRESULT
+
+VarR4FromI4=func
+func.VarR4FromI4.args=2
+func.VarR4FromI4.arg.0=LONG,lIn
+func.VarR4FromI4.arg.1=FLOAT *,pfltOut
+func.VarR4FromI4.ret=HRESULT
+
+VarR4FromI8=func
+func.VarR4FromI8.args=2
+func.VarR4FromI8.arg.0=LONG64,i64In
+func.VarR4FromI8.arg.1=FLOAT *,pfltOut
+func.VarR4FromI8.ret=HRESULT
+
+VarR4FromR8=func
+func.VarR4FromR8.args=2
+func.VarR4FromR8.arg.0=DOUBLE,dblIn
+func.VarR4FromR8.arg.1=FLOAT *,pfltOut
+func.VarR4FromR8.ret=HRESULT
+
+VarR4FromStr=func
+func.VarR4FromStr.args=4
+func.VarR4FromStr.arg.0=LPCOLESTR,strIn
+func.VarR4FromStr.arg.1=LCID,lcid
+func.VarR4FromStr.arg.2=ULONG,dwFlags
+func.VarR4FromStr.arg.3=FLOAT *,pfltOut
+func.VarR4FromStr.ret=HRESULT
+
+VarR4FromUI1=func
+func.VarR4FromUI1.args=2
+func.VarR4FromUI1.arg.0=BYTE,bIn
+func.VarR4FromUI1.arg.1=FLOAT *,pfltOut
+func.VarR4FromUI1.ret=HRESULT
+
+VarR4FromUI2=func
+func.VarR4FromUI2.args=2
+func.VarR4FromUI2.arg.0=USHORT,uiIn
+func.VarR4FromUI2.arg.1=FLOAT *,pfltOut
+func.VarR4FromUI2.ret=HRESULT
+
+VarR4FromUI4=func
+func.VarR4FromUI4.args=2
+func.VarR4FromUI4.arg.0=ULONG,ulIn
+func.VarR4FromUI4.arg.1=FLOAT *,pfltOut
+func.VarR4FromUI4.ret=HRESULT
+
+VarR4FromUI8=func
+func.VarR4FromUI8.args=2
+func.VarR4FromUI8.arg.0=ULONG64,ui64In
+func.VarR4FromUI8.arg.1=FLOAT *,pfltOut
+func.VarR4FromUI8.ret=HRESULT
+
+VarR8FromBool=func
+func.VarR8FromBool.args=2
+func.VarR8FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarR8FromBool.arg.1=DOUBLE *,pdblOut
+func.VarR8FromBool.ret=HRESULT
+
+VarR8FromCy=func
+func.VarR8FromCy.args=2
+func.VarR8FromCy.arg.0=CY,cyIn
+func.VarR8FromCy.arg.1=DOUBLE *,pdblOut
+func.VarR8FromCy.ret=HRESULT
+
+VarR8FromDate=func
+func.VarR8FromDate.args=2
+func.VarR8FromDate.arg.0=DATE,dateIn
+func.VarR8FromDate.arg.1=DOUBLE *,pdblOut
+func.VarR8FromDate.ret=HRESULT
+
+VarR8FromDec=func
+func.VarR8FromDec.args=2
+func.VarR8FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarR8FromDec.arg.1=DOUBLE *,pdblOut
+func.VarR8FromDec.ret=HRESULT
+
+VarR8FromDisp=func
+func.VarR8FromDisp.args=3
+func.VarR8FromDisp.arg.0=IDispatch *,pdispIn
+func.VarR8FromDisp.arg.1=LCID,lcid
+func.VarR8FromDisp.arg.2=DOUBLE *,pdblOut
+func.VarR8FromDisp.ret=HRESULT
+
+VarR8FromI1=func
+func.VarR8FromI1.args=2
+func.VarR8FromI1.arg.0=CHAR,cIn
+func.VarR8FromI1.arg.1=DOUBLE *,pdblOut
+func.VarR8FromI1.ret=HRESULT
+
+VarR8FromI2=func
+func.VarR8FromI2.args=2
+func.VarR8FromI2.arg.0=SHORT,sIn
+func.VarR8FromI2.arg.1=DOUBLE *,pdblOut
+func.VarR8FromI2.ret=HRESULT
+
+VarR8FromI4=func
+func.VarR8FromI4.args=2
+func.VarR8FromI4.arg.0=LONG,lIn
+func.VarR8FromI4.arg.1=DOUBLE *,pdblOut
+func.VarR8FromI4.ret=HRESULT
+
+VarR8FromI8=func
+func.VarR8FromI8.args=2
+func.VarR8FromI8.arg.0=LONG64,i64In
+func.VarR8FromI8.arg.1=DOUBLE *,pdblOut
+func.VarR8FromI8.ret=HRESULT
+
+VarR8FromR4=func
+func.VarR8FromR4.args=2
+func.VarR8FromR4.arg.0=FLOAT,fltIn
+func.VarR8FromR4.arg.1=DOUBLE *,pdblOut
+func.VarR8FromR4.ret=HRESULT
+
+VarR8FromStr=func
+func.VarR8FromStr.args=4
+func.VarR8FromStr.arg.0=LPCOLESTR,strIn
+func.VarR8FromStr.arg.1=LCID,lcid
+func.VarR8FromStr.arg.2=ULONG,dwFlags
+func.VarR8FromStr.arg.3=DOUBLE *,pdblOut
+func.VarR8FromStr.ret=HRESULT
+
+VarR8FromUI1=func
+func.VarR8FromUI1.args=2
+func.VarR8FromUI1.arg.0=BYTE,bIn
+func.VarR8FromUI1.arg.1=DOUBLE *,pdblOut
+func.VarR8FromUI1.ret=HRESULT
+
+VarR8FromUI2=func
+func.VarR8FromUI2.args=2
+func.VarR8FromUI2.arg.0=USHORT,uiIn
+func.VarR8FromUI2.arg.1=DOUBLE *,pdblOut
+func.VarR8FromUI2.ret=HRESULT
+
+VarR8FromUI4=func
+func.VarR8FromUI4.args=2
+func.VarR8FromUI4.arg.0=ULONG,ulIn
+func.VarR8FromUI4.arg.1=DOUBLE *,pdblOut
+func.VarR8FromUI4.ret=HRESULT
+
+VarR8FromUI8=func
+func.VarR8FromUI8.args=2
+func.VarR8FromUI8.arg.0=ULONG64,ui64In
+func.VarR8FromUI8.arg.1=DOUBLE *,pdblOut
+func.VarR8FromUI8.ret=HRESULT
+
+VarR8Pow=func
+func.VarR8Pow.args=3
+func.VarR8Pow.arg.0=double,dblLeft
+func.VarR8Pow.arg.1=double,dblRight
+func.VarR8Pow.arg.2=double *,pdblResult
+func.VarR8Pow.ret=HRESULT
+
+VarR8Round=func
+func.VarR8Round.args=3
+func.VarR8Round.arg.0=double,dblIn
+func.VarR8Round.arg.1=int,cDecimals
+func.VarR8Round.arg.2=double *,pdblResult
+func.VarR8Round.ret=HRESULT
+
+VarRound=func
+func.VarRound.args=3
+func.VarRound.arg.0=LPVARIANT,pvarIn
+func.VarRound.arg.1=int,cDecimals
+func.VarRound.arg.2=LPVARIANT,pvarResult
+func.VarRound.ret=HRESULT
+
+VarSub=func
+func.VarSub.args=3
+func.VarSub.arg.0=LPVARIANT,pvarLeft
+func.VarSub.arg.1=LPVARIANT,pvarRight
+func.VarSub.arg.2=LPVARIANT,pvarResult
+func.VarSub.ret=HRESULT
+
+VarTokenizeFormatString=func
+func.VarTokenizeFormatString.args=7
+func.VarTokenizeFormatString.arg.0=LPOLESTR,pstrFormat
+func.VarTokenizeFormatString.arg.1=LPBYTE,rgbTok
+func.VarTokenizeFormatString.arg.2=int,cbTok
+func.VarTokenizeFormatString.arg.3=int,iFirstDay
+func.VarTokenizeFormatString.arg.4=int,iFirstWeek
+func.VarTokenizeFormatString.arg.5=LCID,lcid
+func.VarTokenizeFormatString.arg.6=int *,pcbActual
+func.VarTokenizeFormatString.ret=HRESULT
+
+VarUI1FromBool=func
+func.VarUI1FromBool.args=2
+func.VarUI1FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarUI1FromBool.arg.1=BYTE *,pbOut
+func.VarUI1FromBool.ret=HRESULT
+
+VarUI1FromCy=func
+func.VarUI1FromCy.args=2
+func.VarUI1FromCy.arg.0=CY,cyIn
+func.VarUI1FromCy.arg.1=BYTE *,pbOut
+func.VarUI1FromCy.ret=HRESULT
+
+VarUI1FromDate=func
+func.VarUI1FromDate.args=2
+func.VarUI1FromDate.arg.0=DATE,dateIn
+func.VarUI1FromDate.arg.1=BYTE *,pbOut
+func.VarUI1FromDate.ret=HRESULT
+
+VarUI1FromDec=func
+func.VarUI1FromDec.args=2
+func.VarUI1FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarUI1FromDec.arg.1=BYTE *,pbOut
+func.VarUI1FromDec.ret=HRESULT
+
+VarUI1FromDisp=func
+func.VarUI1FromDisp.args=3
+func.VarUI1FromDisp.arg.0=IDispatch *,pdispIn
+func.VarUI1FromDisp.arg.1=LCID,lcid
+func.VarUI1FromDisp.arg.2=BYTE *,pbOut
+func.VarUI1FromDisp.ret=HRESULT
+
+VarUI1FromI1=func
+func.VarUI1FromI1.args=2
+func.VarUI1FromI1.arg.0=CHAR,cIn
+func.VarUI1FromI1.arg.1=BYTE *,pbOut
+func.VarUI1FromI1.ret=HRESULT
+
+VarUI1FromI2=func
+func.VarUI1FromI2.args=2
+func.VarUI1FromI2.arg.0=SHORT,sIn
+func.VarUI1FromI2.arg.1=BYTE *,pbOut
+func.VarUI1FromI2.ret=HRESULT
+
+VarUI1FromI4=func
+func.VarUI1FromI4.args=2
+func.VarUI1FromI4.arg.0=LONG,lIn
+func.VarUI1FromI4.arg.1=BYTE *,pbOut
+func.VarUI1FromI4.ret=HRESULT
+
+VarUI1FromI8=func
+func.VarUI1FromI8.args=2
+func.VarUI1FromI8.arg.0=LONG64,i64In
+func.VarUI1FromI8.arg.1=BYTE *,pbOut
+func.VarUI1FromI8.ret=HRESULT
+
+VarUI1FromR4=func
+func.VarUI1FromR4.args=2
+func.VarUI1FromR4.arg.0=FLOAT,fltIn
+func.VarUI1FromR4.arg.1=BYTE *,pbOut
+func.VarUI1FromR4.ret=HRESULT
+
+VarUI1FromR8=func
+func.VarUI1FromR8.args=2
+func.VarUI1FromR8.arg.0=DOUBLE,dblIn
+func.VarUI1FromR8.arg.1=BYTE *,pbOut
+func.VarUI1FromR8.ret=HRESULT
+
+VarUI1FromStr=func
+func.VarUI1FromStr.args=4
+func.VarUI1FromStr.arg.0=LPCOLESTR,strIn
+func.VarUI1FromStr.arg.1=LCID,lcid
+func.VarUI1FromStr.arg.2=ULONG,dwFlags
+func.VarUI1FromStr.arg.3=BYTE *,pbOut
+func.VarUI1FromStr.ret=HRESULT
+
+VarUI1FromUI2=func
+func.VarUI1FromUI2.args=2
+func.VarUI1FromUI2.arg.0=USHORT,uiIn
+func.VarUI1FromUI2.arg.1=BYTE *,pbOut
+func.VarUI1FromUI2.ret=HRESULT
+
+VarUI1FromUI4=func
+func.VarUI1FromUI4.args=2
+func.VarUI1FromUI4.arg.0=ULONG,ulIn
+func.VarUI1FromUI4.arg.1=BYTE *,pbOut
+func.VarUI1FromUI4.ret=HRESULT
+
+VarUI1FromUI8=func
+func.VarUI1FromUI8.args=2
+func.VarUI1FromUI8.arg.0=ULONG64,ui64In
+func.VarUI1FromUI8.arg.1=BYTE *,pbOut
+func.VarUI1FromUI8.ret=HRESULT
+
+VarUI2FromBool=func
+func.VarUI2FromBool.args=2
+func.VarUI2FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarUI2FromBool.arg.1=USHORT *,puiOut
+func.VarUI2FromBool.ret=HRESULT
+
+VarUI2FromCy=func
+func.VarUI2FromCy.args=2
+func.VarUI2FromCy.arg.0=CY,cyIn
+func.VarUI2FromCy.arg.1=USHORT *,puiOut
+func.VarUI2FromCy.ret=HRESULT
+
+VarUI2FromDate=func
+func.VarUI2FromDate.args=2
+func.VarUI2FromDate.arg.0=DATE,dateIn
+func.VarUI2FromDate.arg.1=USHORT *,puiOut
+func.VarUI2FromDate.ret=HRESULT
+
+VarUI2FromDec=func
+func.VarUI2FromDec.args=2
+func.VarUI2FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarUI2FromDec.arg.1=USHORT *,puiOut
+func.VarUI2FromDec.ret=HRESULT
+
+VarUI2FromDisp=func
+func.VarUI2FromDisp.args=3
+func.VarUI2FromDisp.arg.0=IDispatch *,pdispIn
+func.VarUI2FromDisp.arg.1=LCID,lcid
+func.VarUI2FromDisp.arg.2=USHORT *,puiOut
+func.VarUI2FromDisp.ret=HRESULT
+
+VarUI2FromI1=func
+func.VarUI2FromI1.args=2
+func.VarUI2FromI1.arg.0=CHAR,cIn
+func.VarUI2FromI1.arg.1=USHORT *,puiOut
+func.VarUI2FromI1.ret=HRESULT
+
+VarUI2FromI2=func
+func.VarUI2FromI2.args=2
+func.VarUI2FromI2.arg.0=SHORT,uiIn
+func.VarUI2FromI2.arg.1=USHORT *,puiOut
+func.VarUI2FromI2.ret=HRESULT
+
+VarUI2FromI4=func
+func.VarUI2FromI4.args=2
+func.VarUI2FromI4.arg.0=LONG,lIn
+func.VarUI2FromI4.arg.1=USHORT *,puiOut
+func.VarUI2FromI4.ret=HRESULT
+
+VarUI2FromI8=func
+func.VarUI2FromI8.args=2
+func.VarUI2FromI8.arg.0=LONG64,i64In
+func.VarUI2FromI8.arg.1=USHORT *,puiOut
+func.VarUI2FromI8.ret=HRESULT
+
+VarUI2FromR4=func
+func.VarUI2FromR4.args=2
+func.VarUI2FromR4.arg.0=FLOAT,fltIn
+func.VarUI2FromR4.arg.1=USHORT *,puiOut
+func.VarUI2FromR4.ret=HRESULT
+
+VarUI2FromR8=func
+func.VarUI2FromR8.args=2
+func.VarUI2FromR8.arg.0=DOUBLE,dblIn
+func.VarUI2FromR8.arg.1=USHORT *,puiOut
+func.VarUI2FromR8.ret=HRESULT
+
+VarUI2FromStr=func
+func.VarUI2FromStr.args=4
+func.VarUI2FromStr.arg.0=LPCOLESTR,strIn
+func.VarUI2FromStr.arg.1=LCID,lcid
+func.VarUI2FromStr.arg.2=ULONG,dwFlags
+func.VarUI2FromStr.arg.3=USHORT *,puiOut
+func.VarUI2FromStr.ret=HRESULT
+
+VarUI2FromUI1=func
+func.VarUI2FromUI1.args=2
+func.VarUI2FromUI1.arg.0=BYTE,bIn
+func.VarUI2FromUI1.arg.1=USHORT *,puiOut
+func.VarUI2FromUI1.ret=HRESULT
+
+VarUI2FromUI4=func
+func.VarUI2FromUI4.args=2
+func.VarUI2FromUI4.arg.0=ULONG,ulIn
+func.VarUI2FromUI4.arg.1=USHORT *,puiOut
+func.VarUI2FromUI4.ret=HRESULT
+
+VarUI2FromUI8=func
+func.VarUI2FromUI8.args=2
+func.VarUI2FromUI8.arg.0=ULONG64,i64In
+func.VarUI2FromUI8.arg.1=USHORT *,puiOut
+func.VarUI2FromUI8.ret=HRESULT
+
+VarUI4FromBool=func
+func.VarUI4FromBool.args=2
+func.VarUI4FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarUI4FromBool.arg.1=ULONG *,pulOut
+func.VarUI4FromBool.ret=HRESULT
+
+VarUI4FromCy=func
+func.VarUI4FromCy.args=2
+func.VarUI4FromCy.arg.0=CY,cyIn
+func.VarUI4FromCy.arg.1=ULONG *,pulOut
+func.VarUI4FromCy.ret=HRESULT
+
+VarUI4FromDate=func
+func.VarUI4FromDate.args=2
+func.VarUI4FromDate.arg.0=DATE,dateIn
+func.VarUI4FromDate.arg.1=ULONG *,pulOut
+func.VarUI4FromDate.ret=HRESULT
+
+VarUI4FromDec=func
+func.VarUI4FromDec.args=2
+func.VarUI4FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarUI4FromDec.arg.1=ULONG *,pulOut
+func.VarUI4FromDec.ret=HRESULT
+
+VarUI4FromDisp=func
+func.VarUI4FromDisp.args=3
+func.VarUI4FromDisp.arg.0=IDispatch *,pdispIn
+func.VarUI4FromDisp.arg.1=LCID,lcid
+func.VarUI4FromDisp.arg.2=ULONG *,pulOut
+func.VarUI4FromDisp.ret=HRESULT
+
+VarUI4FromI1=func
+func.VarUI4FromI1.args=2
+func.VarUI4FromI1.arg.0=CHAR,cIn
+func.VarUI4FromI1.arg.1=ULONG *,pulOut
+func.VarUI4FromI1.ret=HRESULT
+
+VarUI4FromI2=func
+func.VarUI4FromI2.args=2
+func.VarUI4FromI2.arg.0=SHORT,uiIn
+func.VarUI4FromI2.arg.1=ULONG *,pulOut
+func.VarUI4FromI2.ret=HRESULT
+
+VarUI4FromI4=func
+func.VarUI4FromI4.args=2
+func.VarUI4FromI4.arg.0=LONG,lIn
+func.VarUI4FromI4.arg.1=ULONG *,pulOut
+func.VarUI4FromI4.ret=HRESULT
+
+VarUI4FromI8=func
+func.VarUI4FromI8.args=2
+func.VarUI4FromI8.arg.0=LONG64,i64In
+func.VarUI4FromI8.arg.1=ULONG *,plOut
+func.VarUI4FromI8.ret=HRESULT
+
+VarUI4FromR4=func
+func.VarUI4FromR4.args=2
+func.VarUI4FromR4.arg.0=FLOAT,fltIn
+func.VarUI4FromR4.arg.1=ULONG *,pulOut
+func.VarUI4FromR4.ret=HRESULT
+
+VarUI4FromR8=func
+func.VarUI4FromR8.args=2
+func.VarUI4FromR8.arg.0=DOUBLE,dblIn
+func.VarUI4FromR8.arg.1=ULONG *,pulOut
+func.VarUI4FromR8.ret=HRESULT
+
+VarUI4FromStr=func
+func.VarUI4FromStr.args=4
+func.VarUI4FromStr.arg.0=LPCOLESTR,strIn
+func.VarUI4FromStr.arg.1=LCID,lcid
+func.VarUI4FromStr.arg.2=ULONG,dwFlags
+func.VarUI4FromStr.arg.3=ULONG *,pulOut
+func.VarUI4FromStr.ret=HRESULT
+
+VarUI4FromUI1=func
+func.VarUI4FromUI1.args=2
+func.VarUI4FromUI1.arg.0=BYTE,bIn
+func.VarUI4FromUI1.arg.1=ULONG *,pulOut
+func.VarUI4FromUI1.ret=HRESULT
+
+VarUI4FromUI2=func
+func.VarUI4FromUI2.args=2
+func.VarUI4FromUI2.arg.0=USHORT,uiIn
+func.VarUI4FromUI2.arg.1=ULONG *,pulOut
+func.VarUI4FromUI2.ret=HRESULT
+
+VarUI4FromUI8=func
+func.VarUI4FromUI8.args=2
+func.VarUI4FromUI8.arg.0=ULONG64,ui64In
+func.VarUI4FromUI8.arg.1=ULONG *,plOut
+func.VarUI4FromUI8.ret=HRESULT
+
+VarUI8FromBool=func
+func.VarUI8FromBool.args=2
+func.VarUI8FromBool.arg.0=VARIANT_BOOL,boolIn
+func.VarUI8FromBool.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromBool.ret=HRESULT
+
+VarUI8FromCy=func
+func.VarUI8FromCy.args=2
+func.VarUI8FromCy.arg.0=CY,cyIn
+func.VarUI8FromCy.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromCy.ret=HRESULT
+
+VarUI8FromDate=func
+func.VarUI8FromDate.args=2
+func.VarUI8FromDate.arg.0=DATE,dateIn
+func.VarUI8FromDate.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromDate.ret=HRESULT
+
+VarUI8FromDec=func
+func.VarUI8FromDec.args=2
+func.VarUI8FromDec.arg.0=const DECIMAL *,pdecIn
+func.VarUI8FromDec.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromDec.ret=HRESULT
+
+VarUI8FromDisp=func
+func.VarUI8FromDisp.args=3
+func.VarUI8FromDisp.arg.0=IDispatch *,pdispIn
+func.VarUI8FromDisp.arg.1=LCID,lcid
+func.VarUI8FromDisp.arg.2=ULONG64 *,pi64Out
+func.VarUI8FromDisp.ret=HRESULT
+
+VarUI8FromI1=func
+func.VarUI8FromI1.args=2
+func.VarUI8FromI1.arg.0=CHAR,cIn
+func.VarUI8FromI1.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromI1.ret=HRESULT
+
+VarUI8FromI2=func
+func.VarUI8FromI2.args=2
+func.VarUI8FromI2.arg.0=SHORT,sIn
+func.VarUI8FromI2.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromI2.ret=HRESULT
+
+VarUI8FromI4=func
+func.VarUI8FromI4.args=2
+func.VarUI8FromI4.arg.0=LONG,lIn
+func.VarUI8FromI4.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromI4.ret=HRESULT
+
+VarUI8FromI8=func
+func.VarUI8FromI8.args=2
+func.VarUI8FromI8.arg.0=LONG64,ui64In
+func.VarUI8FromI8.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromI8.ret=HRESULT
+
+VarUI8FromR4=func
+func.VarUI8FromR4.args=2
+func.VarUI8FromR4.arg.0=FLOAT,fltIn
+func.VarUI8FromR4.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromR4.ret=HRESULT
+
+VarUI8FromR8=func
+func.VarUI8FromR8.args=2
+func.VarUI8FromR8.arg.0=DOUBLE,dblIn
+func.VarUI8FromR8.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromR8.ret=HRESULT
+
+VarUI8FromStr=func
+func.VarUI8FromStr.args=4
+func.VarUI8FromStr.arg.0=LPCOLESTR,strIn
+func.VarUI8FromStr.arg.1=LCID,lcid
+func.VarUI8FromStr.arg.2=ULONG,dwFlags
+func.VarUI8FromStr.arg.3=ULONG64 *,pi64Out
+func.VarUI8FromStr.ret=HRESULT
+
+VarUI8FromUI1=func
+func.VarUI8FromUI1.args=2
+func.VarUI8FromUI1.arg.0=BYTE,bIn
+func.VarUI8FromUI1.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromUI1.ret=HRESULT
+
+VarUI8FromUI2=func
+func.VarUI8FromUI2.args=2
+func.VarUI8FromUI2.arg.0=USHORT,uiIn
+func.VarUI8FromUI2.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromUI2.ret=HRESULT
+
+VarUI8FromUI4=func
+func.VarUI8FromUI4.args=2
+func.VarUI8FromUI4.arg.0=ULONG,ulIn
+func.VarUI8FromUI4.arg.1=ULONG64 *,pi64Out
+func.VarUI8FromUI4.ret=HRESULT
+
+VarUdateFromDate=func
+func.VarUdateFromDate.args=3
+func.VarUdateFromDate.arg.0=DATE,dateIn
+func.VarUdateFromDate.arg.1=ULONG,dwFlags
+func.VarUdateFromDate.arg.2=UDATE *,pudateOut
+func.VarUdateFromDate.ret=HRESULT
+
+VarWeekdayName=func
+func.VarWeekdayName.args=5
+func.VarWeekdayName.arg.0=int,iWeekday
+func.VarWeekdayName.arg.1=int,fAbbrev
+func.VarWeekdayName.arg.2=int,iFirstDay
+func.VarWeekdayName.arg.3=ULONG,dwFlags
+func.VarWeekdayName.arg.4=BSTR *,pbstrOut
+func.VarWeekdayName.ret=HRESULT
+
+VarXor=func
+func.VarXor.args=3
+func.VarXor.arg.0=LPVARIANT,pvarLeft
+func.VarXor.arg.1=LPVARIANT,pvarRight
+func.VarXor.arg.2=LPVARIANT,pvarResult
+func.VarXor.ret=HRESULT
+
+VariantChangeType=func
+func.VariantChangeType.args=4
+func.VariantChangeType.arg.0=VARIANTARG *,pvargDest
+func.VariantChangeType.arg.1=const VARIANTARG *,pvarSrc
+func.VariantChangeType.arg.2=USHORT,wFlags
+func.VariantChangeType.arg.3=VARTYPE,vt
+func.VariantChangeType.ret=HRESULT
+
+VariantChangeTypeEx=func
+func.VariantChangeTypeEx.args=5
+func.VariantChangeTypeEx.arg.0=VARIANTARG *,pvargDest
+func.VariantChangeTypeEx.arg.1=const VARIANTARG *,pvarSrc
+func.VariantChangeTypeEx.arg.2=LCID,lcid
+func.VariantChangeTypeEx.arg.3=USHORT,wFlags
+func.VariantChangeTypeEx.arg.4=VARTYPE,vt
+func.VariantChangeTypeEx.ret=HRESULT
+
+VariantClear=func
+func.VariantClear.args=1
+func.VariantClear.arg.0=VARIANTARG *,pvarg
+func.VariantClear.ret=HRESULT
+
+VariantCopy=func
+func.VariantCopy.args=2
+func.VariantCopy.arg.0=VARIANTARG *,pvargDest
+func.VariantCopy.arg.1=const VARIANTARG *,pvargSrc
+func.VariantCopy.ret=HRESULT
+
+VariantCopyInd=func
+func.VariantCopyInd.args=2
+func.VariantCopyInd.arg.0=VARIANT *,pvarDest
+func.VariantCopyInd.arg.1=const VARIANTARG *,pvargSrc
+func.VariantCopyInd.ret=HRESULT
+
+VariantInit=func
+func.VariantInit.args=1
+func.VariantInit.arg.0=VARIANTARG *,pvarg
+func.VariantInit.ret=void
+
+VariantTimeToDosDateTime=func
+func.VariantTimeToDosDateTime.args=3
+func.VariantTimeToDosDateTime.arg.0=DOUBLE,vtime
+func.VariantTimeToDosDateTime.arg.1=USHORT *,pwDosDate
+func.VariantTimeToDosDateTime.arg.2=USHORT *,pwDosTime
+func.VariantTimeToDosDateTime.ret=INT
+
+VariantTimeToSystemTime=func
+func.VariantTimeToSystemTime.args=2
+func.VariantTimeToSystemTime.arg.0=DOUBLE,vtime
+func.VariantTimeToSystemTime.arg.1=LPSYSTEMTIME,lpSystemTime
+func.VariantTimeToSystemTime.ret=INT
+
+VectorFromBstr=func
+func.VectorFromBstr.args=2
+func.VectorFromBstr.arg.0=BSTR,bstr
+func.VectorFromBstr.arg.1=SAFEARRAY **,ppsa
+func.VectorFromBstr.ret=HRESULT

@@ -1,0 +1,1863 @@
+### winldap.h ###
+
+l_timeval=struct
+struct.l_timeval=tv_sec,tv_usec
+struct.l_timeval.tv_sec=LONG,0,0
+struct.l_timeval.tv_usec=LONG,4,0
+
+
+
+LDAP_TIMEVAL=typedef
+typedef.LDAP_TIMEVAL=l_timeval
+
+
+
+PLDAP=type
+type.PLDAP=p
+
+PLDAP_TIMEVAL=type
+type.PLDAP_TIMEVAL=p
+type.PLDAP_TIMEVAL.pointto=LDAP_TIMEVAL
+
+PLDAPControlA=type
+type.PLDAPControlA=p
+
+PLDAPControlW=type
+type.PLDAPControlW=p
+
+PLDAPMessage=type
+type.PLDAPMessage=p
+
+PLDAPSearch=type
+type.PLDAPSearch=p
+
+PLDAPSortKeyA=type
+type.PLDAPSortKeyA=p
+
+PLDAPSortKeyW=type
+type.PLDAPSortKeyW=p
+
+PLDAPVLVInfo=type
+type.PLDAPVLVInfo=p
+
+
+
+LdapGetLastError=func
+func.LdapGetLastError.args=0
+func.LdapGetLastError.ret=ULONG
+
+LdapMapErrorToWin32=func
+func.LdapMapErrorToWin32.args=1
+func.LdapMapErrorToWin32.arg.0=ULONG,LdapError
+func.LdapMapErrorToWin32.ret=ULONG
+
+LdapUTF8ToUnicode=func
+func.LdapUTF8ToUnicode.args=4
+func.LdapUTF8ToUnicode.arg.0=LPCSTR,lpSrcStr
+func.LdapUTF8ToUnicode.arg.1=int,cchSrc
+func.LdapUTF8ToUnicode.arg.2=LPWSTR,lpDestStr
+func.LdapUTF8ToUnicode.arg.3=int,cchDest
+func.LdapUTF8ToUnicode.ret=int
+
+LdapUnicodeToUTF8=func
+func.LdapUnicodeToUTF8.args=4
+func.LdapUnicodeToUTF8.arg.0=LPCWSTR,lpSrcStr
+func.LdapUnicodeToUTF8.arg.1=int,cchSrc
+func.LdapUnicodeToUTF8.arg.2=LPSTR,lpDestStr
+func.LdapUnicodeToUTF8.arg.3=int,cchDest
+func.LdapUnicodeToUTF8.ret=int
+
+cldap_open=func
+func.cldap_open.args=2
+func.cldap_open.arg.0=PSTR,HostName
+func.cldap_open.arg.1=ULONG,PortNumber
+func.cldap_open.ret=LDAP *
+
+cldap_openA=func
+func.cldap_openA.args=2
+func.cldap_openA.arg.0=PSTR,HostName
+func.cldap_openA.arg.1=ULONG,PortNumber
+func.cldap_openA.ret=LDAP *
+
+cldap_openW=func
+func.cldap_openW.args=2
+func.cldap_openW.arg.0=PWSTR,HostName
+func.cldap_openW.arg.1=ULONG,PortNumber
+func.cldap_openW.ret=LDAP *
+
+ldap_abandon=func
+func.ldap_abandon.args=2
+func.ldap_abandon.arg.0=LDAP *,ld
+func.ldap_abandon.arg.1=ULONG,msgid
+func.ldap_abandon.ret=ULONG
+
+ldap_add=func
+func.ldap_add.args=3
+func.ldap_add.arg.0=LDAP *,ld
+func.ldap_add.arg.1=PSTR,dn
+func.ldap_add.arg.2=LDAPMod **,attrs
+func.ldap_add.ret=ULONG
+
+ldap_addA=func
+func.ldap_addA.args=3
+func.ldap_addA.arg.0=LDAP *,ld
+func.ldap_addA.arg.1=PSTR,dn
+func.ldap_addA.arg.2=LDAPModA **,attrs
+func.ldap_addA.ret=ULONG
+
+ldap_addW=func
+func.ldap_addW.args=3
+func.ldap_addW.arg.0=LDAP *,ld
+func.ldap_addW.arg.1=PWSTR,dn
+func.ldap_addW.arg.2=LDAPModW **,attrs
+func.ldap_addW.ret=ULONG
+
+ldap_add_ext=func
+func.ldap_add_ext.args=6
+func.ldap_add_ext.arg.0=LDAP *,ld
+func.ldap_add_ext.arg.1=const PSTR,dn
+func.ldap_add_ext.arg.2=LDAPModA **,attrs
+func.ldap_add_ext.arg.3=PLDAPControlA *,ServerControls
+func.ldap_add_ext.arg.4=PLDAPControlA *,ClientControls
+func.ldap_add_ext.arg.5=ULONG *,MessageNumber
+func.ldap_add_ext.ret=ULONG
+
+ldap_add_extA=func
+func.ldap_add_extA.args=6
+func.ldap_add_extA.arg.0=LDAP *,ld
+func.ldap_add_extA.arg.1=const PSTR,dn
+func.ldap_add_extA.arg.2=LDAPModA **,attrs
+func.ldap_add_extA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_add_extA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_add_extA.arg.5=ULONG *,MessageNumber
+func.ldap_add_extA.ret=ULONG
+
+ldap_add_extW=func
+func.ldap_add_extW.args=6
+func.ldap_add_extW.arg.0=LDAP *,ld
+func.ldap_add_extW.arg.1=const PWSTR,dn
+func.ldap_add_extW.arg.2=LDAPModW **,attrs
+func.ldap_add_extW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_add_extW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_add_extW.arg.5=ULONG *,MessageNumber
+func.ldap_add_extW.ret=ULONG
+
+ldap_add_ext_s=func
+func.ldap_add_ext_s.args=5
+func.ldap_add_ext_s.arg.0=LDAP *,ld
+func.ldap_add_ext_s.arg.1=const PSTR,dn
+func.ldap_add_ext_s.arg.2=LDAPModA **,attrs
+func.ldap_add_ext_s.arg.3=PLDAPControlA *,ServerControls
+func.ldap_add_ext_s.arg.4=PLDAPControlA *,ClientControls
+func.ldap_add_ext_s.ret=ULONG
+
+ldap_add_ext_sA=func
+func.ldap_add_ext_sA.args=5
+func.ldap_add_ext_sA.arg.0=LDAP *,ld
+func.ldap_add_ext_sA.arg.1=const PSTR,dn
+func.ldap_add_ext_sA.arg.2=LDAPModA **,attrs
+func.ldap_add_ext_sA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_add_ext_sA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_add_ext_sA.ret=ULONG
+
+ldap_add_ext_sW=func
+func.ldap_add_ext_sW.args=5
+func.ldap_add_ext_sW.arg.0=LDAP *,ld
+func.ldap_add_ext_sW.arg.1=const PWSTR,dn
+func.ldap_add_ext_sW.arg.2=LDAPModW **,attrs
+func.ldap_add_ext_sW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_add_ext_sW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_add_ext_sW.ret=ULONG
+
+ldap_add_s=func
+func.ldap_add_s.args=3
+func.ldap_add_s.arg.0=LDAP *,ld
+func.ldap_add_s.arg.1=PSTR,dn
+func.ldap_add_s.arg.2=LDAPMod **,attrs
+func.ldap_add_s.ret=ULONG
+
+ldap_add_sA=func
+func.ldap_add_sA.args=3
+func.ldap_add_sA.arg.0=LDAP *,ld
+func.ldap_add_sA.arg.1=PSTR,dn
+func.ldap_add_sA.arg.2=LDAPModA **,attrs
+func.ldap_add_sA.ret=ULONG
+
+ldap_add_sW=func
+func.ldap_add_sW.args=3
+func.ldap_add_sW.arg.0=LDAP *,ld
+func.ldap_add_sW.arg.1=PWSTR,dn
+func.ldap_add_sW.arg.2=LDAPModW **,attrs
+func.ldap_add_sW.ret=ULONG
+
+ldap_bind=func
+func.ldap_bind.args=4
+func.ldap_bind.arg.0=LDAP *,ld
+func.ldap_bind.arg.1=const PSTR,dn
+func.ldap_bind.arg.2=const PCHAR,cred
+func.ldap_bind.arg.3=ULONG,method
+func.ldap_bind.ret=ULONG
+
+ldap_bindA=func
+func.ldap_bindA.args=4
+func.ldap_bindA.arg.0=LDAP *,ld
+func.ldap_bindA.arg.1=PSTR,dn
+func.ldap_bindA.arg.2=PCHAR,cred
+func.ldap_bindA.arg.3=ULONG,method
+func.ldap_bindA.ret=ULONG
+
+ldap_bindW=func
+func.ldap_bindW.args=4
+func.ldap_bindW.arg.0=LDAP *,ld
+func.ldap_bindW.arg.1=PWSTR,dn
+func.ldap_bindW.arg.2=PWCHAR,cred
+func.ldap_bindW.arg.3=ULONG,method
+func.ldap_bindW.ret=ULONG
+
+ldap_bind_s=func
+func.ldap_bind_s.args=4
+func.ldap_bind_s.arg.0=LDAP *,ld
+func.ldap_bind_s.arg.1=const PSTR,dn
+func.ldap_bind_s.arg.2=const PCHAR,cred
+func.ldap_bind_s.arg.3=ULONG,method
+func.ldap_bind_s.ret=ULONG
+
+ldap_bind_sA=func
+func.ldap_bind_sA.args=4
+func.ldap_bind_sA.arg.0=LDAP *,ld
+func.ldap_bind_sA.arg.1=PSTR,dn
+func.ldap_bind_sA.arg.2=PCHAR,cred
+func.ldap_bind_sA.arg.3=ULONG,method
+func.ldap_bind_sA.ret=ULONG
+
+ldap_bind_sW=func
+func.ldap_bind_sW.args=4
+func.ldap_bind_sW.arg.0=LDAP *,ld
+func.ldap_bind_sW.arg.1=PWSTR,dn
+func.ldap_bind_sW.arg.2=PWCHAR,cred
+func.ldap_bind_sW.arg.3=ULONG,method
+func.ldap_bind_sW.ret=ULONG
+
+ldap_check_filterA=func
+func.ldap_check_filterA.args=2
+func.ldap_check_filterA.arg.0=LDAP *,ld
+func.ldap_check_filterA.arg.1=PSTR,SearchFilter
+func.ldap_check_filterA.ret=ULONG
+
+ldap_check_filterW=func
+func.ldap_check_filterW.args=2
+func.ldap_check_filterW.arg.0=LDAP *,ld
+func.ldap_check_filterW.arg.1=PWSTR,SearchFilter
+func.ldap_check_filterW.ret=ULONG
+
+ldap_cleanup=func
+func.ldap_cleanup.args=1
+func.ldap_cleanup.arg.0=HANDLE,hInstance
+func.ldap_cleanup.ret=ULONG
+
+ldap_close_extended_op=func
+func.ldap_close_extended_op.args=2
+func.ldap_close_extended_op.arg.0=LDAP *,ld
+func.ldap_close_extended_op.arg.1=ULONG,MessageNumber
+func.ldap_close_extended_op.ret=ULONG
+
+ldap_compare=func
+func.ldap_compare.args=4
+func.ldap_compare.arg.0=LDAP *,ld
+func.ldap_compare.arg.1=const PSTR,dn
+func.ldap_compare.arg.2=const PSTR,attr
+func.ldap_compare.arg.3=PSTR,value
+func.ldap_compare.ret=ULONG
+
+ldap_compareA=func
+func.ldap_compareA.args=4
+func.ldap_compareA.arg.0=LDAP *,ld
+func.ldap_compareA.arg.1=const PSTR,dn
+func.ldap_compareA.arg.2=const PSTR,attr
+func.ldap_compareA.arg.3=PSTR,value
+func.ldap_compareA.ret=ULONG
+
+ldap_compareW=func
+func.ldap_compareW.args=4
+func.ldap_compareW.arg.0=LDAP *,ld
+func.ldap_compareW.arg.1=const PWSTR,dn
+func.ldap_compareW.arg.2=const PWSTR,attr
+func.ldap_compareW.arg.3=PWSTR,value
+func.ldap_compareW.ret=ULONG
+
+ldap_compare_ext=func
+func.ldap_compare_ext.args=8
+func.ldap_compare_ext.arg.0=LDAP *,ld
+func.ldap_compare_ext.arg.1=const PSTR,dn
+func.ldap_compare_ext.arg.2=const PSTR,Attr
+func.ldap_compare_ext.arg.3=const PSTR,Value
+func.ldap_compare_ext.arg.4=struct berval *,Data
+func.ldap_compare_ext.arg.5=PLDAPControlA *,ServerControls
+func.ldap_compare_ext.arg.6=PLDAPControlA *,ClientControls
+func.ldap_compare_ext.arg.7=ULONG *,MessageNumber
+func.ldap_compare_ext.ret=ULONG
+
+ldap_compare_extA=func
+func.ldap_compare_extA.args=8
+func.ldap_compare_extA.arg.0=LDAP *,ld
+func.ldap_compare_extA.arg.1=const PSTR,dn
+func.ldap_compare_extA.arg.2=const PSTR,Attr
+func.ldap_compare_extA.arg.3=const PSTR,Value
+func.ldap_compare_extA.arg.4=struct berval *,Data
+func.ldap_compare_extA.arg.5=PLDAPControlA *,ServerControls
+func.ldap_compare_extA.arg.6=PLDAPControlA *,ClientControls
+func.ldap_compare_extA.arg.7=ULONG *,MessageNumber
+func.ldap_compare_extA.ret=ULONG
+
+ldap_compare_extW=func
+func.ldap_compare_extW.args=8
+func.ldap_compare_extW.arg.0=LDAP *,ld
+func.ldap_compare_extW.arg.1=const PWSTR,dn
+func.ldap_compare_extW.arg.2=const PWSTR,Attr
+func.ldap_compare_extW.arg.3=const PWSTR,Value
+func.ldap_compare_extW.arg.4=struct berval *,Data
+func.ldap_compare_extW.arg.5=PLDAPControlW *,ServerControls
+func.ldap_compare_extW.arg.6=PLDAPControlW *,ClientControls
+func.ldap_compare_extW.arg.7=ULONG *,MessageNumber
+func.ldap_compare_extW.ret=ULONG
+
+ldap_compare_ext_s=func
+func.ldap_compare_ext_s.args=7
+func.ldap_compare_ext_s.arg.0=LDAP *,ld
+func.ldap_compare_ext_s.arg.1=const PSTR,dn
+func.ldap_compare_ext_s.arg.2=const PSTR,Attr
+func.ldap_compare_ext_s.arg.3=const PSTR,Value
+func.ldap_compare_ext_s.arg.4=struct berval *,Data
+func.ldap_compare_ext_s.arg.5=PLDAPControlA *,ServerControls
+func.ldap_compare_ext_s.arg.6=PLDAPControlA *,ClientControls
+func.ldap_compare_ext_s.ret=ULONG
+
+ldap_compare_ext_sA=func
+func.ldap_compare_ext_sA.args=7
+func.ldap_compare_ext_sA.arg.0=LDAP *,ld
+func.ldap_compare_ext_sA.arg.1=const PSTR,dn
+func.ldap_compare_ext_sA.arg.2=const PSTR,Attr
+func.ldap_compare_ext_sA.arg.3=const PSTR,Value
+func.ldap_compare_ext_sA.arg.4=struct berval *,Data
+func.ldap_compare_ext_sA.arg.5=PLDAPControlA *,ServerControls
+func.ldap_compare_ext_sA.arg.6=PLDAPControlA *,ClientControls
+func.ldap_compare_ext_sA.ret=ULONG
+
+ldap_compare_ext_sW=func
+func.ldap_compare_ext_sW.args=7
+func.ldap_compare_ext_sW.arg.0=LDAP *,ld
+func.ldap_compare_ext_sW.arg.1=const PWSTR,dn
+func.ldap_compare_ext_sW.arg.2=const PWSTR,Attr
+func.ldap_compare_ext_sW.arg.3=const PWSTR,Value
+func.ldap_compare_ext_sW.arg.4=struct berval *,Data
+func.ldap_compare_ext_sW.arg.5=PLDAPControlW *,ServerControls
+func.ldap_compare_ext_sW.arg.6=PLDAPControlW *,ClientControls
+func.ldap_compare_ext_sW.ret=ULONG
+
+ldap_compare_s=func
+func.ldap_compare_s.args=4
+func.ldap_compare_s.arg.0=LDAP *,ld
+func.ldap_compare_s.arg.1=const PSTR,dn
+func.ldap_compare_s.arg.2=const PSTR,attr
+func.ldap_compare_s.arg.3=PSTR,value
+func.ldap_compare_s.ret=ULONG
+
+ldap_compare_sA=func
+func.ldap_compare_sA.args=4
+func.ldap_compare_sA.arg.0=LDAP *,ld
+func.ldap_compare_sA.arg.1=const PSTR,dn
+func.ldap_compare_sA.arg.2=const PSTR,attr
+func.ldap_compare_sA.arg.3=PSTR,value
+func.ldap_compare_sA.ret=ULONG
+
+ldap_compare_sW=func
+func.ldap_compare_sW.args=4
+func.ldap_compare_sW.arg.0=LDAP *,ld
+func.ldap_compare_sW.arg.1=const PWSTR,dn
+func.ldap_compare_sW.arg.2=const PWSTR,attr
+func.ldap_compare_sW.arg.3=PWSTR,value
+func.ldap_compare_sW.ret=ULONG
+
+ldap_conn_from_msg=func
+func.ldap_conn_from_msg.args=2
+func.ldap_conn_from_msg.arg.0=LDAP *,PrimaryConn
+func.ldap_conn_from_msg.arg.1=LDAPMessage *,res
+func.ldap_conn_from_msg.ret=LDAP *
+
+ldap_connect=func
+func.ldap_connect.args=2
+func.ldap_connect.arg.0=LDAP *,ld
+func.ldap_connect.arg.1=struct l_timeval *,timeout
+func.ldap_connect.ret=ULONG
+
+ldap_control_free=func
+func.ldap_control_free.args=1
+func.ldap_control_free.arg.0=LDAPControlA *,Control
+func.ldap_control_free.ret=ULONG
+
+ldap_control_freeA=func
+func.ldap_control_freeA.args=1
+func.ldap_control_freeA.arg.0=LDAPControlA *,Controls
+func.ldap_control_freeA.ret=ULONG
+
+ldap_control_freeW=func
+func.ldap_control_freeW.args=1
+func.ldap_control_freeW.arg.0=LDAPControlW *,Control
+func.ldap_control_freeW.ret=ULONG
+
+ldap_controls_free=func
+func.ldap_controls_free.args=1
+func.ldap_controls_free.arg.0=LDAPControlA **,Controls
+func.ldap_controls_free.ret=ULONG
+
+ldap_controls_freeA=func
+func.ldap_controls_freeA.args=1
+func.ldap_controls_freeA.arg.0=LDAPControlA **,Controls
+func.ldap_controls_freeA.ret=ULONG
+
+ldap_controls_freeW=func
+func.ldap_controls_freeW.args=1
+func.ldap_controls_freeW.arg.0=LDAPControlW **,Control
+func.ldap_controls_freeW.ret=ULONG
+
+ldap_count_entries=func
+func.ldap_count_entries.args=2
+func.ldap_count_entries.arg.0=LDAP *,ld
+func.ldap_count_entries.arg.1=LDAPMessage *,res
+func.ldap_count_entries.ret=ULONG
+
+ldap_count_references=func
+func.ldap_count_references.args=2
+func.ldap_count_references.arg.0=LDAP *,ld
+func.ldap_count_references.arg.1=LDAPMessage *,res
+func.ldap_count_references.ret=ULONG
+
+ldap_count_values=func
+func.ldap_count_values.args=1
+func.ldap_count_values.arg.0=PCHAR *,vals
+func.ldap_count_values.ret=ULONG
+
+ldap_count_valuesA=func
+func.ldap_count_valuesA.args=1
+func.ldap_count_valuesA.arg.0=PCHAR *,vals
+func.ldap_count_valuesA.ret=ULONG
+
+ldap_count_valuesW=func
+func.ldap_count_valuesW.args=1
+func.ldap_count_valuesW.arg.0=PWCHAR *,vals
+func.ldap_count_valuesW.ret=ULONG
+
+ldap_count_values_len=func
+func.ldap_count_values_len.args=1
+func.ldap_count_values_len.arg.0=struct berval **,vals
+func.ldap_count_values_len.ret=ULONG
+
+ldap_create_page_control=func
+func.ldap_create_page_control.args=5
+func.ldap_create_page_control.arg.0=PLDAP,ExternalHandle
+func.ldap_create_page_control.arg.1=ULONG,PageSize
+func.ldap_create_page_control.arg.2=struct berval *,Cookie
+func.ldap_create_page_control.arg.3=UCHAR,IsCritical
+func.ldap_create_page_control.arg.4=PLDAPControlA *,Control
+func.ldap_create_page_control.ret=ULONG
+
+ldap_create_page_controlA=func
+func.ldap_create_page_controlA.args=5
+func.ldap_create_page_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_create_page_controlA.arg.1=ULONG,PageSize
+func.ldap_create_page_controlA.arg.2=struct berval *,Cookie
+func.ldap_create_page_controlA.arg.3=UCHAR,IsCritical
+func.ldap_create_page_controlA.arg.4=PLDAPControlA *,Control
+func.ldap_create_page_controlA.ret=ULONG
+
+ldap_create_page_controlW=func
+func.ldap_create_page_controlW.args=5
+func.ldap_create_page_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_create_page_controlW.arg.1=ULONG,PageSize
+func.ldap_create_page_controlW.arg.2=struct berval *,Cookie
+func.ldap_create_page_controlW.arg.3=UCHAR,IsCritical
+func.ldap_create_page_controlW.arg.4=PLDAPControlW *,Control
+func.ldap_create_page_controlW.ret=ULONG
+
+ldap_create_sort_control=func
+func.ldap_create_sort_control.args=4
+func.ldap_create_sort_control.arg.0=PLDAP,ExternalHandle
+func.ldap_create_sort_control.arg.1=PLDAPSortKeyA *,SortKeys
+func.ldap_create_sort_control.arg.2=UCHAR,IsCritical
+func.ldap_create_sort_control.arg.3=PLDAPControlA *,Control
+func.ldap_create_sort_control.ret=ULONG
+
+ldap_create_sort_controlA=func
+func.ldap_create_sort_controlA.args=4
+func.ldap_create_sort_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_create_sort_controlA.arg.1=PLDAPSortKeyA *,SortKeys
+func.ldap_create_sort_controlA.arg.2=UCHAR,IsCritical
+func.ldap_create_sort_controlA.arg.3=PLDAPControlA *,Control
+func.ldap_create_sort_controlA.ret=ULONG
+
+ldap_create_sort_controlW=func
+func.ldap_create_sort_controlW.args=4
+func.ldap_create_sort_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_create_sort_controlW.arg.1=PLDAPSortKeyW *,SortKeys
+func.ldap_create_sort_controlW.arg.2=UCHAR,IsCritical
+func.ldap_create_sort_controlW.arg.3=PLDAPControlW *,Control
+func.ldap_create_sort_controlW.ret=ULONG
+
+ldap_create_vlv_controlA=func
+func.ldap_create_vlv_controlA.args=4
+func.ldap_create_vlv_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_create_vlv_controlA.arg.1=PLDAPVLVInfo,VlvInfo
+func.ldap_create_vlv_controlA.arg.2=UCHAR,IsCritical
+func.ldap_create_vlv_controlA.arg.3=PLDAPControlA *,Control
+func.ldap_create_vlv_controlA.ret=INT
+
+ldap_create_vlv_controlW=func
+func.ldap_create_vlv_controlW.args=4
+func.ldap_create_vlv_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_create_vlv_controlW.arg.1=PLDAPVLVInfo,VlvInfo
+func.ldap_create_vlv_controlW.arg.2=UCHAR,IsCritical
+func.ldap_create_vlv_controlW.arg.3=PLDAPControlW *,Control
+func.ldap_create_vlv_controlW.ret=INT
+
+ldap_delete=func
+func.ldap_delete.args=2
+func.ldap_delete.arg.0=LDAP *,ld
+func.ldap_delete.arg.1=PSTR,dn
+func.ldap_delete.ret=ULONG
+
+ldap_deleteA=func
+func.ldap_deleteA.args=2
+func.ldap_deleteA.arg.0=LDAP *,ld
+func.ldap_deleteA.arg.1=const PSTR,dn
+func.ldap_deleteA.ret=ULONG
+
+ldap_deleteW=func
+func.ldap_deleteW.args=2
+func.ldap_deleteW.arg.0=LDAP *,ld
+func.ldap_deleteW.arg.1=const PWSTR,dn
+func.ldap_deleteW.ret=ULONG
+
+ldap_delete_ext=func
+func.ldap_delete_ext.args=5
+func.ldap_delete_ext.arg.0=LDAP *,ld
+func.ldap_delete_ext.arg.1=const PSTR,dn
+func.ldap_delete_ext.arg.2=PLDAPControlA *,ServerControls
+func.ldap_delete_ext.arg.3=PLDAPControlA *,ClientControls
+func.ldap_delete_ext.arg.4=ULONG *,MessageNumber
+func.ldap_delete_ext.ret=ULONG
+
+ldap_delete_extA=func
+func.ldap_delete_extA.args=5
+func.ldap_delete_extA.arg.0=LDAP *,ld
+func.ldap_delete_extA.arg.1=const PSTR,dn
+func.ldap_delete_extA.arg.2=PLDAPControlA *,ServerControls
+func.ldap_delete_extA.arg.3=PLDAPControlA *,ClientControls
+func.ldap_delete_extA.arg.4=ULONG *,MessageNumber
+func.ldap_delete_extA.ret=ULONG
+
+ldap_delete_extW=func
+func.ldap_delete_extW.args=5
+func.ldap_delete_extW.arg.0=LDAP *,ld
+func.ldap_delete_extW.arg.1=const PWSTR,dn
+func.ldap_delete_extW.arg.2=PLDAPControlW *,ServerControls
+func.ldap_delete_extW.arg.3=PLDAPControlW *,ClientControls
+func.ldap_delete_extW.arg.4=ULONG *,MessageNumber
+func.ldap_delete_extW.ret=ULONG
+
+ldap_delete_ext_s=func
+func.ldap_delete_ext_s.args=4
+func.ldap_delete_ext_s.arg.0=LDAP *,ld
+func.ldap_delete_ext_s.arg.1=const PSTR,dn
+func.ldap_delete_ext_s.arg.2=PLDAPControlA *,ServerControls
+func.ldap_delete_ext_s.arg.3=PLDAPControlA *,ClientControls
+func.ldap_delete_ext_s.ret=ULONG
+
+ldap_delete_ext_sA=func
+func.ldap_delete_ext_sA.args=4
+func.ldap_delete_ext_sA.arg.0=LDAP *,ld
+func.ldap_delete_ext_sA.arg.1=const PSTR,dn
+func.ldap_delete_ext_sA.arg.2=PLDAPControlA *,ServerControls
+func.ldap_delete_ext_sA.arg.3=PLDAPControlA *,ClientControls
+func.ldap_delete_ext_sA.ret=ULONG
+
+ldap_delete_ext_sW=func
+func.ldap_delete_ext_sW.args=4
+func.ldap_delete_ext_sW.arg.0=LDAP *,ld
+func.ldap_delete_ext_sW.arg.1=const PWSTR,dn
+func.ldap_delete_ext_sW.arg.2=PLDAPControlW *,ServerControls
+func.ldap_delete_ext_sW.arg.3=PLDAPControlW *,ClientControls
+func.ldap_delete_ext_sW.ret=ULONG
+
+ldap_delete_s=func
+func.ldap_delete_s.args=2
+func.ldap_delete_s.arg.0=LDAP *,ld
+func.ldap_delete_s.arg.1=PSTR,dn
+func.ldap_delete_s.ret=ULONG
+
+ldap_delete_sA=func
+func.ldap_delete_sA.args=2
+func.ldap_delete_sA.arg.0=LDAP *,ld
+func.ldap_delete_sA.arg.1=const PSTR,dn
+func.ldap_delete_sA.ret=ULONG
+
+ldap_delete_sW=func
+func.ldap_delete_sW.args=2
+func.ldap_delete_sW.arg.0=LDAP *,ld
+func.ldap_delete_sW.arg.1=const PWSTR,dn
+func.ldap_delete_sW.ret=ULONG
+
+ldap_dn2ufn=func
+func.ldap_dn2ufn.args=1
+func.ldap_dn2ufn.arg.0=const PSTR,dn
+func.ldap_dn2ufn.ret=PCHAR
+
+ldap_dn2ufnA=func
+func.ldap_dn2ufnA.args=1
+func.ldap_dn2ufnA.arg.0=const PSTR,dn
+func.ldap_dn2ufnA.ret=PCHAR
+
+ldap_dn2ufnW=func
+func.ldap_dn2ufnW.args=1
+func.ldap_dn2ufnW.arg.0=const PWSTR,dn
+func.ldap_dn2ufnW.ret=PWCHAR
+
+ldap_encode_sort_control=func
+func.ldap_encode_sort_control.args=4
+func.ldap_encode_sort_control.arg.0=PLDAP,ExternalHandle
+func.ldap_encode_sort_control.arg.1=PLDAPSortKeyA *,SortKeys
+func.ldap_encode_sort_control.arg.2=PLDAPControlA,Control
+func.ldap_encode_sort_control.arg.3=BOOLEAN,Criticality
+func.ldap_encode_sort_control.ret=ULONG
+
+ldap_encode_sort_controlA=func
+func.ldap_encode_sort_controlA.args=4
+func.ldap_encode_sort_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_encode_sort_controlA.arg.1=PLDAPSortKeyA *,SortKeys
+func.ldap_encode_sort_controlA.arg.2=PLDAPControlA,Control
+func.ldap_encode_sort_controlA.arg.3=BOOLEAN,Criticality
+func.ldap_encode_sort_controlA.ret=ULONG
+
+ldap_encode_sort_controlW=func
+func.ldap_encode_sort_controlW.args=4
+func.ldap_encode_sort_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_encode_sort_controlW.arg.1=PLDAPSortKeyW *,SortKeys
+func.ldap_encode_sort_controlW.arg.2=PLDAPControlW,Control
+func.ldap_encode_sort_controlW.arg.3=BOOLEAN,Criticality
+func.ldap_encode_sort_controlW.ret=ULONG
+
+ldap_err2string=func
+func.ldap_err2string.args=1
+func.ldap_err2string.arg.0=ULONG,err
+func.ldap_err2string.ret=PCHAR
+
+ldap_err2stringA=func
+func.ldap_err2stringA.args=1
+func.ldap_err2stringA.arg.0=ULONG,err
+func.ldap_err2stringA.ret=PCHAR
+
+ldap_err2stringW=func
+func.ldap_err2stringW.args=1
+func.ldap_err2stringW.arg.0=ULONG,err
+func.ldap_err2stringW.ret=PWCHAR
+
+ldap_escape_filter_element=func
+func.ldap_escape_filter_element.args=4
+func.ldap_escape_filter_element.arg.0=PCHAR,sourceFilterElement
+func.ldap_escape_filter_element.arg.1=ULONG,sourceLength
+func.ldap_escape_filter_element.arg.2=PCHAR,destFilterElement
+func.ldap_escape_filter_element.arg.3=ULONG,destLength
+func.ldap_escape_filter_element.ret=ULONG
+
+ldap_escape_filter_elementA=func
+func.ldap_escape_filter_elementA.args=4
+func.ldap_escape_filter_elementA.arg.0=PCHAR,sourceFilterElement
+func.ldap_escape_filter_elementA.arg.1=ULONG,sourceLength
+func.ldap_escape_filter_elementA.arg.2=PCHAR,destFilterElement
+func.ldap_escape_filter_elementA.arg.3=ULONG,destLength
+func.ldap_escape_filter_elementA.ret=ULONG
+
+ldap_escape_filter_elementW=func
+func.ldap_escape_filter_elementW.args=4
+func.ldap_escape_filter_elementW.arg.0=PCHAR,sourceFilterElement
+func.ldap_escape_filter_elementW.arg.1=ULONG,sourceLength
+func.ldap_escape_filter_elementW.arg.2=PWCHAR,destFilterElement
+func.ldap_escape_filter_elementW.arg.3=ULONG,destLength
+func.ldap_escape_filter_elementW.ret=ULONG
+
+ldap_explode_dn=func
+func.ldap_explode_dn.args=2
+func.ldap_explode_dn.arg.0=const PSTR,dn
+func.ldap_explode_dn.arg.1=ULONG,notypes
+func.ldap_explode_dn.ret=PCHAR *
+
+ldap_explode_dnA=func
+func.ldap_explode_dnA.args=2
+func.ldap_explode_dnA.arg.0=const PSTR,dn
+func.ldap_explode_dnA.arg.1=ULONG,notypes
+func.ldap_explode_dnA.ret=PCHAR *
+
+ldap_explode_dnW=func
+func.ldap_explode_dnW.args=2
+func.ldap_explode_dnW.arg.0=const PWSTR,dn
+func.ldap_explode_dnW.arg.1=ULONG,notypes
+func.ldap_explode_dnW.ret=PWCHAR *
+
+ldap_extended_operation=func
+func.ldap_extended_operation.args=6
+func.ldap_extended_operation.arg.0=LDAP *,ld
+func.ldap_extended_operation.arg.1=const PSTR,Oid
+func.ldap_extended_operation.arg.2=struct berval *,Data
+func.ldap_extended_operation.arg.3=PLDAPControlA *,ServerControls
+func.ldap_extended_operation.arg.4=PLDAPControlA *,ClientControls
+func.ldap_extended_operation.arg.5=ULONG *,MessageNumber
+func.ldap_extended_operation.ret=ULONG
+
+ldap_extended_operationA=func
+func.ldap_extended_operationA.args=6
+func.ldap_extended_operationA.arg.0=LDAP *,ld
+func.ldap_extended_operationA.arg.1=const PSTR,Oid
+func.ldap_extended_operationA.arg.2=struct berval *,Data
+func.ldap_extended_operationA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_extended_operationA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_extended_operationA.arg.5=ULONG *,MessageNumber
+func.ldap_extended_operationA.ret=ULONG
+
+ldap_extended_operationW=func
+func.ldap_extended_operationW.args=6
+func.ldap_extended_operationW.arg.0=LDAP *,ld
+func.ldap_extended_operationW.arg.1=const PWSTR,Oid
+func.ldap_extended_operationW.arg.2=struct berval *,Data
+func.ldap_extended_operationW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_extended_operationW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_extended_operationW.arg.5=ULONG *,MessageNumber
+func.ldap_extended_operationW.ret=ULONG
+
+ldap_extended_operation_sA=func
+func.ldap_extended_operation_sA.args=7
+func.ldap_extended_operation_sA.arg.0=LDAP *,ExternalHandle
+func.ldap_extended_operation_sA.arg.1=PSTR,Oid
+func.ldap_extended_operation_sA.arg.2=struct berval *,Data
+func.ldap_extended_operation_sA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_extended_operation_sA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_extended_operation_sA.arg.5=PCHAR *,ReturnedOid
+func.ldap_extended_operation_sA.arg.6=struct berval **,ReturnedData
+func.ldap_extended_operation_sA.ret=ULONG
+
+ldap_extended_operation_sW=func
+func.ldap_extended_operation_sW.args=7
+func.ldap_extended_operation_sW.arg.0=LDAP *,ExternalHandle
+func.ldap_extended_operation_sW.arg.1=PWSTR,Oid
+func.ldap_extended_operation_sW.arg.2=struct berval *,Data
+func.ldap_extended_operation_sW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_extended_operation_sW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_extended_operation_sW.arg.5=PWCHAR *,ReturnedOid
+func.ldap_extended_operation_sW.arg.6=struct berval **,ReturnedData
+func.ldap_extended_operation_sW.ret=ULONG
+
+ldap_first_attribute=func
+func.ldap_first_attribute.args=3
+func.ldap_first_attribute.arg.0=LDAP *,ld
+func.ldap_first_attribute.arg.1=LDAPMessage *,entry
+func.ldap_first_attribute.arg.2=BerElement **,ptr
+func.ldap_first_attribute.ret=PCHAR
+
+ldap_first_attributeA=func
+func.ldap_first_attributeA.args=3
+func.ldap_first_attributeA.arg.0=LDAP *,ld
+func.ldap_first_attributeA.arg.1=LDAPMessage *,entry
+func.ldap_first_attributeA.arg.2=BerElement **,ptr
+func.ldap_first_attributeA.ret=PCHAR
+
+ldap_first_attributeW=func
+func.ldap_first_attributeW.args=3
+func.ldap_first_attributeW.arg.0=LDAP *,ld
+func.ldap_first_attributeW.arg.1=LDAPMessage *,entry
+func.ldap_first_attributeW.arg.2=BerElement **,ptr
+func.ldap_first_attributeW.ret=PWCHAR
+
+ldap_first_entry=func
+func.ldap_first_entry.args=2
+func.ldap_first_entry.arg.0=LDAP *,ld
+func.ldap_first_entry.arg.1=LDAPMessage *,res
+func.ldap_first_entry.ret=LDAPMessage *
+
+ldap_first_reference=func
+func.ldap_first_reference.args=2
+func.ldap_first_reference.arg.0=LDAP *,ld
+func.ldap_first_reference.arg.1=LDAPMessage *,res
+func.ldap_first_reference.ret=LDAPMessage *
+
+ldap_free_controls=func
+func.ldap_free_controls.args=1
+func.ldap_free_controls.arg.0=LDAPControlA **,Controls
+func.ldap_free_controls.ret=ULONG
+
+ldap_free_controlsA=func
+func.ldap_free_controlsA.args=1
+func.ldap_free_controlsA.arg.0=LDAPControlA **,Controls
+func.ldap_free_controlsA.ret=ULONG
+
+ldap_free_controlsW=func
+func.ldap_free_controlsW.args=1
+func.ldap_free_controlsW.arg.0=LDAPControlW **,Controls
+func.ldap_free_controlsW.ret=ULONG
+
+ldap_get_dn=func
+func.ldap_get_dn.args=2
+func.ldap_get_dn.arg.0=LDAP *,ld
+func.ldap_get_dn.arg.1=LDAPMessage *,entry
+func.ldap_get_dn.ret=PCHAR
+
+ldap_get_dnA=func
+func.ldap_get_dnA.args=2
+func.ldap_get_dnA.arg.0=LDAP *,ld
+func.ldap_get_dnA.arg.1=LDAPMessage *,entry
+func.ldap_get_dnA.ret=PCHAR
+
+ldap_get_dnW=func
+func.ldap_get_dnW.args=2
+func.ldap_get_dnW.arg.0=LDAP *,ld
+func.ldap_get_dnW.arg.1=LDAPMessage *,entry
+func.ldap_get_dnW.ret=PWCHAR
+
+ldap_get_next_page=func
+func.ldap_get_next_page.args=4
+func.ldap_get_next_page.arg.0=PLDAP,ExternalHandle
+func.ldap_get_next_page.arg.1=PLDAPSearch,SearchHandle
+func.ldap_get_next_page.arg.2=ULONG,PageSize
+func.ldap_get_next_page.arg.3=ULONG *,MessageNumber
+func.ldap_get_next_page.ret=ULONG
+
+ldap_get_next_page_s=func
+func.ldap_get_next_page_s.args=6
+func.ldap_get_next_page_s.arg.0=PLDAP,ExternalHandle
+func.ldap_get_next_page_s.arg.1=PLDAPSearch,SearchHandle
+func.ldap_get_next_page_s.arg.2=struct l_timeval *,timeout
+func.ldap_get_next_page_s.arg.3=ULONG,PageSize
+func.ldap_get_next_page_s.arg.4=ULONG *,TotalCount
+func.ldap_get_next_page_s.arg.5=LDAPMessage **,Results
+func.ldap_get_next_page_s.ret=ULONG
+
+ldap_get_option=func
+func.ldap_get_option.args=3
+func.ldap_get_option.arg.0=LDAP *,ld
+func.ldap_get_option.arg.1=int,option
+func.ldap_get_option.arg.2=void *,outvalue
+func.ldap_get_option.ret=ULONG
+
+ldap_get_optionW=func
+func.ldap_get_optionW.args=3
+func.ldap_get_optionW.arg.0=LDAP *,ld
+func.ldap_get_optionW.arg.1=int,option
+func.ldap_get_optionW.arg.2=void *,outvalue
+func.ldap_get_optionW.ret=ULONG
+
+ldap_get_paged_count=func
+func.ldap_get_paged_count.args=4
+func.ldap_get_paged_count.arg.0=PLDAP,ExternalHandle
+func.ldap_get_paged_count.arg.1=PLDAPSearch,SearchBlock
+func.ldap_get_paged_count.arg.2=ULONG *,TotalCount
+func.ldap_get_paged_count.arg.3=PLDAPMessage,Results
+func.ldap_get_paged_count.ret=ULONG
+
+ldap_get_values=func
+func.ldap_get_values.args=3
+func.ldap_get_values.arg.0=LDAP *,ld
+func.ldap_get_values.arg.1=LDAPMessage *,entry
+func.ldap_get_values.arg.2=const PSTR,attr
+func.ldap_get_values.ret=PCHAR *
+
+ldap_get_valuesA=func
+func.ldap_get_valuesA.args=3
+func.ldap_get_valuesA.arg.0=LDAP *,ld
+func.ldap_get_valuesA.arg.1=LDAPMessage *,entry
+func.ldap_get_valuesA.arg.2=const PSTR,attr
+func.ldap_get_valuesA.ret=PCHAR *
+
+ldap_get_valuesW=func
+func.ldap_get_valuesW.args=3
+func.ldap_get_valuesW.arg.0=LDAP *,ld
+func.ldap_get_valuesW.arg.1=LDAPMessage *,entry
+func.ldap_get_valuesW.arg.2=const PWSTR,attr
+func.ldap_get_valuesW.ret=PWCHAR *
+
+ldap_get_values_len=func
+func.ldap_get_values_len.args=3
+func.ldap_get_values_len.arg.0=LDAP *,ExternalHandle
+func.ldap_get_values_len.arg.1=LDAPMessage *,Message
+func.ldap_get_values_len.arg.2=const PSTR,attr
+func.ldap_get_values_len.ret=struct berval **
+
+ldap_get_values_lenA=func
+func.ldap_get_values_lenA.args=3
+func.ldap_get_values_lenA.arg.0=LDAP *,ExternalHandle
+func.ldap_get_values_lenA.arg.1=LDAPMessage *,Message
+func.ldap_get_values_lenA.arg.2=const PSTR,attr
+func.ldap_get_values_lenA.ret=struct berval **
+
+ldap_get_values_lenW=func
+func.ldap_get_values_lenW.args=3
+func.ldap_get_values_lenW.arg.0=LDAP *,ExternalHandle
+func.ldap_get_values_lenW.arg.1=LDAPMessage *,Message
+func.ldap_get_values_lenW.arg.2=const PWSTR,attr
+func.ldap_get_values_lenW.ret=struct berval **
+
+ldap_init=func
+func.ldap_init.args=2
+func.ldap_init.arg.0=PSTR,HostName
+func.ldap_init.arg.1=ULONG,PortNumber
+func.ldap_init.ret=LDAP *
+
+ldap_initA=func
+func.ldap_initA.args=2
+func.ldap_initA.arg.0=const PSTR,HostName
+func.ldap_initA.arg.1=ULONG,PortNumber
+func.ldap_initA.ret=LDAP *
+
+ldap_initW=func
+func.ldap_initW.args=2
+func.ldap_initW.arg.0=const PWSTR,HostName
+func.ldap_initW.arg.1=ULONG,PortNumber
+func.ldap_initW.ret=LDAP *
+
+ldap_memfree=func
+func.ldap_memfree.args=1
+func.ldap_memfree.arg.0=PCHAR,Block
+func.ldap_memfree.ret=VOID
+
+ldap_memfreeA=func
+func.ldap_memfreeA.args=1
+func.ldap_memfreeA.arg.0=PCHAR,Block
+func.ldap_memfreeA.ret=VOID
+
+ldap_memfreeW=func
+func.ldap_memfreeW.args=1
+func.ldap_memfreeW.arg.0=PWCHAR,Block
+func.ldap_memfreeW.ret=VOID
+
+ldap_modify=func
+func.ldap_modify.args=3
+func.ldap_modify.arg.0=LDAP *,ld
+func.ldap_modify.arg.1=PSTR,dn
+func.ldap_modify.arg.2=LDAPModA **,mods
+func.ldap_modify.ret=ULONG
+
+ldap_modifyA=func
+func.ldap_modifyA.args=3
+func.ldap_modifyA.arg.0=LDAP *,ld
+func.ldap_modifyA.arg.1=PSTR,dn
+func.ldap_modifyA.arg.2=LDAPModA **,mods
+func.ldap_modifyA.ret=ULONG
+
+ldap_modifyW=func
+func.ldap_modifyW.args=3
+func.ldap_modifyW.arg.0=LDAP *,ld
+func.ldap_modifyW.arg.1=PWSTR,dn
+func.ldap_modifyW.arg.2=LDAPModW **,mods
+func.ldap_modifyW.ret=ULONG
+
+ldap_modify_ext=func
+func.ldap_modify_ext.args=6
+func.ldap_modify_ext.arg.0=LDAP *,ld
+func.ldap_modify_ext.arg.1=const PSTR,dn
+func.ldap_modify_ext.arg.2=LDAPModA **,mods
+func.ldap_modify_ext.arg.3=PLDAPControlA *,ServerControls
+func.ldap_modify_ext.arg.4=PLDAPControlA *,ClientControls
+func.ldap_modify_ext.arg.5=ULONG *,MessageNumber
+func.ldap_modify_ext.ret=ULONG
+
+ldap_modify_extA=func
+func.ldap_modify_extA.args=6
+func.ldap_modify_extA.arg.0=LDAP *,ld
+func.ldap_modify_extA.arg.1=const PSTR,dn
+func.ldap_modify_extA.arg.2=LDAPModA **,mods
+func.ldap_modify_extA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_modify_extA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_modify_extA.arg.5=ULONG *,MessageNumber
+func.ldap_modify_extA.ret=ULONG
+
+ldap_modify_extW=func
+func.ldap_modify_extW.args=6
+func.ldap_modify_extW.arg.0=LDAP *,ld
+func.ldap_modify_extW.arg.1=const PWSTR,dn
+func.ldap_modify_extW.arg.2=LDAPModW **,mods
+func.ldap_modify_extW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_modify_extW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_modify_extW.arg.5=ULONG *,MessageNumber
+func.ldap_modify_extW.ret=ULONG
+
+ldap_modify_ext_s=func
+func.ldap_modify_ext_s.args=5
+func.ldap_modify_ext_s.arg.0=LDAP *,ld
+func.ldap_modify_ext_s.arg.1=const PSTR,dn
+func.ldap_modify_ext_s.arg.2=LDAPModA **,mods
+func.ldap_modify_ext_s.arg.3=PLDAPControlA *,ServerControls
+func.ldap_modify_ext_s.arg.4=PLDAPControlA *,ClientControls
+func.ldap_modify_ext_s.ret=ULONG
+
+ldap_modify_ext_sA=func
+func.ldap_modify_ext_sA.args=5
+func.ldap_modify_ext_sA.arg.0=LDAP *,ld
+func.ldap_modify_ext_sA.arg.1=const PSTR,dn
+func.ldap_modify_ext_sA.arg.2=LDAPModA **,mods
+func.ldap_modify_ext_sA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_modify_ext_sA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_modify_ext_sA.ret=ULONG
+
+ldap_modify_ext_sW=func
+func.ldap_modify_ext_sW.args=5
+func.ldap_modify_ext_sW.arg.0=LDAP *,ld
+func.ldap_modify_ext_sW.arg.1=const PWSTR,dn
+func.ldap_modify_ext_sW.arg.2=LDAPModW **,mods
+func.ldap_modify_ext_sW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_modify_ext_sW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_modify_ext_sW.ret=ULONG
+
+ldap_modify_s=func
+func.ldap_modify_s.args=3
+func.ldap_modify_s.arg.0=LDAP *,ld
+func.ldap_modify_s.arg.1=PSTR,dn
+func.ldap_modify_s.arg.2=LDAPModA **,mods
+func.ldap_modify_s.ret=ULONG
+
+ldap_modify_sA=func
+func.ldap_modify_sA.args=3
+func.ldap_modify_sA.arg.0=LDAP *,ld
+func.ldap_modify_sA.arg.1=PSTR,dn
+func.ldap_modify_sA.arg.2=LDAPModA **,mods
+func.ldap_modify_sA.ret=ULONG
+
+ldap_modify_sW=func
+func.ldap_modify_sW.args=3
+func.ldap_modify_sW.arg.0=LDAP *,ld
+func.ldap_modify_sW.arg.1=PWSTR,dn
+func.ldap_modify_sW.arg.2=LDAPModW **,mods
+func.ldap_modify_sW.ret=ULONG
+
+ldap_modrdn=func
+func.ldap_modrdn.args=3
+func.ldap_modrdn.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn.ret=ULONG
+
+ldap_modrdn2=func
+func.ldap_modrdn2.args=4
+func.ldap_modrdn2.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn2.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn2.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn2.arg.3=INT,DeleteOldRdn
+func.ldap_modrdn2.ret=ULONG
+
+ldap_modrdn2A=func
+func.ldap_modrdn2A.args=4
+func.ldap_modrdn2A.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn2A.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn2A.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn2A.arg.3=INT,DeleteOldRdn
+func.ldap_modrdn2A.ret=ULONG
+
+ldap_modrdn2W=func
+func.ldap_modrdn2W.args=4
+func.ldap_modrdn2W.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn2W.arg.1=const PWSTR,DistinguishedName
+func.ldap_modrdn2W.arg.2=const PWSTR,NewDistinguishedName
+func.ldap_modrdn2W.arg.3=INT,DeleteOldRdn
+func.ldap_modrdn2W.ret=ULONG
+
+ldap_modrdn2_s=func
+func.ldap_modrdn2_s.args=4
+func.ldap_modrdn2_s.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn2_s.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn2_s.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn2_s.arg.3=INT,DeleteOldRdn
+func.ldap_modrdn2_s.ret=ULONG
+
+ldap_modrdn2_sA=func
+func.ldap_modrdn2_sA.args=4
+func.ldap_modrdn2_sA.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn2_sA.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn2_sA.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn2_sA.arg.3=INT,DeleteOldRdn
+func.ldap_modrdn2_sA.ret=ULONG
+
+ldap_modrdn2_sW=func
+func.ldap_modrdn2_sW.args=4
+func.ldap_modrdn2_sW.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn2_sW.arg.1=const PWSTR,DistinguishedName
+func.ldap_modrdn2_sW.arg.2=const PWSTR,NewDistinguishedName
+func.ldap_modrdn2_sW.arg.3=INT,DeleteOldRdn
+func.ldap_modrdn2_sW.ret=ULONG
+
+ldap_modrdnA=func
+func.ldap_modrdnA.args=3
+func.ldap_modrdnA.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdnA.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdnA.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdnA.ret=ULONG
+
+ldap_modrdnW=func
+func.ldap_modrdnW.args=3
+func.ldap_modrdnW.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdnW.arg.1=const PWSTR,DistinguishedName
+func.ldap_modrdnW.arg.2=const PWSTR,NewDistinguishedName
+func.ldap_modrdnW.ret=ULONG
+
+ldap_modrdn_s=func
+func.ldap_modrdn_s.args=3
+func.ldap_modrdn_s.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn_s.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn_s.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn_s.ret=ULONG
+
+ldap_modrdn_sA=func
+func.ldap_modrdn_sA.args=3
+func.ldap_modrdn_sA.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn_sA.arg.1=const PSTR,DistinguishedName
+func.ldap_modrdn_sA.arg.2=const PSTR,NewDistinguishedName
+func.ldap_modrdn_sA.ret=ULONG
+
+ldap_modrdn_sW=func
+func.ldap_modrdn_sW.args=3
+func.ldap_modrdn_sW.arg.0=LDAP *,ExternalHandle
+func.ldap_modrdn_sW.arg.1=const PWSTR,DistinguishedName
+func.ldap_modrdn_sW.arg.2=const PWSTR,NewDistinguishedName
+func.ldap_modrdn_sW.ret=ULONG
+
+ldap_msgfree=func
+func.ldap_msgfree.args=1
+func.ldap_msgfree.arg.0=LDAPMessage *,res
+func.ldap_msgfree.ret=ULONG
+
+ldap_next_attribute=func
+func.ldap_next_attribute.args=3
+func.ldap_next_attribute.arg.0=LDAP *,ld
+func.ldap_next_attribute.arg.1=LDAPMessage *,entry
+func.ldap_next_attribute.arg.2=BerElement *,ptr
+func.ldap_next_attribute.ret=PCHAR
+
+ldap_next_attributeA=func
+func.ldap_next_attributeA.args=3
+func.ldap_next_attributeA.arg.0=LDAP *,ld
+func.ldap_next_attributeA.arg.1=LDAPMessage *,entry
+func.ldap_next_attributeA.arg.2=BerElement *,ptr
+func.ldap_next_attributeA.ret=PCHAR
+
+ldap_next_attributeW=func
+func.ldap_next_attributeW.args=3
+func.ldap_next_attributeW.arg.0=LDAP *,ld
+func.ldap_next_attributeW.arg.1=LDAPMessage *,entry
+func.ldap_next_attributeW.arg.2=BerElement *,ptr
+func.ldap_next_attributeW.ret=PWCHAR
+
+ldap_next_entry=func
+func.ldap_next_entry.args=2
+func.ldap_next_entry.arg.0=LDAP *,ld
+func.ldap_next_entry.arg.1=LDAPMessage *,entry
+func.ldap_next_entry.ret=LDAPMessage *
+
+ldap_next_reference=func
+func.ldap_next_reference.args=2
+func.ldap_next_reference.arg.0=LDAP *,ld
+func.ldap_next_reference.arg.1=LDAPMessage *,entry
+func.ldap_next_reference.ret=LDAPMessage *
+
+ldap_open=func
+func.ldap_open.args=2
+func.ldap_open.arg.0=PSTR,HostName
+func.ldap_open.arg.1=ULONG,PortNumber
+func.ldap_open.ret=LDAP *
+
+ldap_openA=func
+func.ldap_openA.args=2
+func.ldap_openA.arg.0=const PSTR,HostName
+func.ldap_openA.arg.1=ULONG,PortNumber
+func.ldap_openA.ret=LDAP *
+
+ldap_openW=func
+func.ldap_openW.args=2
+func.ldap_openW.arg.0=const PWSTR,HostName
+func.ldap_openW.arg.1=ULONG,PortNumber
+func.ldap_openW.ret=LDAP *
+
+ldap_parse_extended_resultA=func
+func.ldap_parse_extended_resultA.args=5
+func.ldap_parse_extended_resultA.arg.0=LDAP *,Connection
+func.ldap_parse_extended_resultA.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_extended_resultA.arg.2=PSTR *,ResultOID
+func.ldap_parse_extended_resultA.arg.3=struct berval **,ResultData
+func.ldap_parse_extended_resultA.arg.4=BOOLEAN,Freeit
+func.ldap_parse_extended_resultA.ret=ULONG
+
+ldap_parse_extended_resultW=func
+func.ldap_parse_extended_resultW.args=5
+func.ldap_parse_extended_resultW.arg.0=LDAP *,Connection
+func.ldap_parse_extended_resultW.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_extended_resultW.arg.2=PWSTR *,ResultOID
+func.ldap_parse_extended_resultW.arg.3=struct berval **,ResultData
+func.ldap_parse_extended_resultW.arg.4=BOOLEAN,Freeit
+func.ldap_parse_extended_resultW.ret=ULONG
+
+ldap_parse_page_control=func
+func.ldap_parse_page_control.args=4
+func.ldap_parse_page_control.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_page_control.arg.1=PLDAPControlA *,ServerControls
+func.ldap_parse_page_control.arg.2=ULONG *,TotalCount
+func.ldap_parse_page_control.arg.3=struct berval **,Cookie
+func.ldap_parse_page_control.ret=ULONG
+
+ldap_parse_page_controlA=func
+func.ldap_parse_page_controlA.args=4
+func.ldap_parse_page_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_page_controlA.arg.1=PLDAPControlA *,ServerControls
+func.ldap_parse_page_controlA.arg.2=ULONG *,TotalCount
+func.ldap_parse_page_controlA.arg.3=struct berval **,Cookie
+func.ldap_parse_page_controlA.ret=ULONG
+
+ldap_parse_page_controlW=func
+func.ldap_parse_page_controlW.args=4
+func.ldap_parse_page_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_page_controlW.arg.1=PLDAPControlW *,ServerControls
+func.ldap_parse_page_controlW.arg.2=ULONG *,TotalCount
+func.ldap_parse_page_controlW.arg.3=struct berval **,Cookie
+func.ldap_parse_page_controlW.ret=ULONG
+
+ldap_parse_reference=func
+func.ldap_parse_reference.args=3
+func.ldap_parse_reference.arg.0=LDAP *,Connection
+func.ldap_parse_reference.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_reference.arg.2=PCHAR **,Referrals
+func.ldap_parse_reference.ret=ULONG
+
+ldap_parse_referenceA=func
+func.ldap_parse_referenceA.args=3
+func.ldap_parse_referenceA.arg.0=LDAP *,Connection
+func.ldap_parse_referenceA.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_referenceA.arg.2=PCHAR **,Referrals
+func.ldap_parse_referenceA.ret=ULONG
+
+ldap_parse_referenceW=func
+func.ldap_parse_referenceW.args=3
+func.ldap_parse_referenceW.arg.0=LDAP *,Connection
+func.ldap_parse_referenceW.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_referenceW.arg.2=PWCHAR **,Referrals
+func.ldap_parse_referenceW.ret=ULONG
+
+ldap_parse_result=func
+func.ldap_parse_result.args=8
+func.ldap_parse_result.arg.0=LDAP *,Connection
+func.ldap_parse_result.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_result.arg.2=ULONG *,ReturnCode
+func.ldap_parse_result.arg.3=PSTR *,MatchedDNs
+func.ldap_parse_result.arg.4=PSTR *,ErrorMessage
+func.ldap_parse_result.arg.5=PSTR **,Referrals
+func.ldap_parse_result.arg.6=PLDAPControlA **,ServerControls
+func.ldap_parse_result.arg.7=BOOLEAN,Freeit
+func.ldap_parse_result.ret=ULONG
+
+ldap_parse_resultA=func
+func.ldap_parse_resultA.args=8
+func.ldap_parse_resultA.arg.0=LDAP *,Connection
+func.ldap_parse_resultA.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_resultA.arg.2=ULONG *,ReturnCode
+func.ldap_parse_resultA.arg.3=PSTR *,MatchedDNs
+func.ldap_parse_resultA.arg.4=PSTR *,ErrorMessage
+func.ldap_parse_resultA.arg.5=PZPSTR *,Referrals
+func.ldap_parse_resultA.arg.6=PLDAPControlA **,ServerControls
+func.ldap_parse_resultA.arg.7=BOOLEAN,Freeit
+func.ldap_parse_resultA.ret=ULONG
+
+ldap_parse_resultW=func
+func.ldap_parse_resultW.args=8
+func.ldap_parse_resultW.arg.0=LDAP *,Connection
+func.ldap_parse_resultW.arg.1=LDAPMessage *,ResultMessage
+func.ldap_parse_resultW.arg.2=ULONG *,ReturnCode
+func.ldap_parse_resultW.arg.3=PWSTR *,MatchedDNs
+func.ldap_parse_resultW.arg.4=PWSTR *,ErrorMessage
+func.ldap_parse_resultW.arg.5=PZPWSTR *,Referrals
+func.ldap_parse_resultW.arg.6=PLDAPControlW **,ServerControls
+func.ldap_parse_resultW.arg.7=BOOLEAN,Freeit
+func.ldap_parse_resultW.ret=ULONG
+
+ldap_parse_sort_control=func
+func.ldap_parse_sort_control.args=4
+func.ldap_parse_sort_control.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_sort_control.arg.1=PLDAPControlA *,Control
+func.ldap_parse_sort_control.arg.2=ULONG *,Result
+func.ldap_parse_sort_control.arg.3=PCHAR *,Attribute
+func.ldap_parse_sort_control.ret=ULONG
+
+ldap_parse_sort_controlA=func
+func.ldap_parse_sort_controlA.args=4
+func.ldap_parse_sort_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_sort_controlA.arg.1=PLDAPControlA *,Control
+func.ldap_parse_sort_controlA.arg.2=ULONG *,Result
+func.ldap_parse_sort_controlA.arg.3=PCHAR *,Attribute
+func.ldap_parse_sort_controlA.ret=ULONG
+
+ldap_parse_sort_controlW=func
+func.ldap_parse_sort_controlW.args=4
+func.ldap_parse_sort_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_sort_controlW.arg.1=PLDAPControlW *,Control
+func.ldap_parse_sort_controlW.arg.2=ULONG *,Result
+func.ldap_parse_sort_controlW.arg.3=PWCHAR *,Attribute
+func.ldap_parse_sort_controlW.ret=ULONG
+
+ldap_parse_vlv_controlA=func
+func.ldap_parse_vlv_controlA.args=6
+func.ldap_parse_vlv_controlA.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_vlv_controlA.arg.1=PLDAPControlA *,Control
+func.ldap_parse_vlv_controlA.arg.2=PULONG,TargetPos
+func.ldap_parse_vlv_controlA.arg.3=PULONG,ListCount
+func.ldap_parse_vlv_controlA.arg.4=PBERVAL *,Context
+func.ldap_parse_vlv_controlA.arg.5=PINT,ErrCode
+func.ldap_parse_vlv_controlA.ret=INT
+
+ldap_parse_vlv_controlW=func
+func.ldap_parse_vlv_controlW.args=6
+func.ldap_parse_vlv_controlW.arg.0=PLDAP,ExternalHandle
+func.ldap_parse_vlv_controlW.arg.1=PLDAPControlW *,Control
+func.ldap_parse_vlv_controlW.arg.2=PULONG,TargetPos
+func.ldap_parse_vlv_controlW.arg.3=PULONG,ListCount
+func.ldap_parse_vlv_controlW.arg.4=PBERVAL *,Context
+func.ldap_parse_vlv_controlW.arg.5=PINT,ErrCode
+func.ldap_parse_vlv_controlW.ret=INT
+
+ldap_perror=func
+func.ldap_perror.args=2
+func.ldap_perror.arg.0=LDAP *,ld
+func.ldap_perror.arg.1=const PCHAR,msg
+func.ldap_perror.ret=void
+
+ldap_rename_ext=func
+func.ldap_rename_ext.args=8
+func.ldap_rename_ext.arg.0=LDAP *,ld
+func.ldap_rename_ext.arg.1=const PSTR,dn
+func.ldap_rename_ext.arg.2=const PSTR,NewRDN
+func.ldap_rename_ext.arg.3=const PSTR,NewParent
+func.ldap_rename_ext.arg.4=INT,DeleteOldRdn
+func.ldap_rename_ext.arg.5=PLDAPControlA *,ServerControls
+func.ldap_rename_ext.arg.6=PLDAPControlA *,ClientControls
+func.ldap_rename_ext.arg.7=ULONG *,MessageNumber
+func.ldap_rename_ext.ret=ULONG
+
+ldap_rename_extA=func
+func.ldap_rename_extA.args=8
+func.ldap_rename_extA.arg.0=LDAP *,ld
+func.ldap_rename_extA.arg.1=const PSTR,dn
+func.ldap_rename_extA.arg.2=const PSTR,NewRDN
+func.ldap_rename_extA.arg.3=const PSTR,NewParent
+func.ldap_rename_extA.arg.4=INT,DeleteOldRdn
+func.ldap_rename_extA.arg.5=PLDAPControlA *,ServerControls
+func.ldap_rename_extA.arg.6=PLDAPControlA *,ClientControls
+func.ldap_rename_extA.arg.7=ULONG *,MessageNumber
+func.ldap_rename_extA.ret=ULONG
+
+ldap_rename_extW=func
+func.ldap_rename_extW.args=8
+func.ldap_rename_extW.arg.0=LDAP *,ld
+func.ldap_rename_extW.arg.1=const PWSTR,dn
+func.ldap_rename_extW.arg.2=const PWSTR,NewRDN
+func.ldap_rename_extW.arg.3=const PWSTR,NewParent
+func.ldap_rename_extW.arg.4=INT,DeleteOldRdn
+func.ldap_rename_extW.arg.5=PLDAPControlW *,ServerControls
+func.ldap_rename_extW.arg.6=PLDAPControlW *,ClientControls
+func.ldap_rename_extW.arg.7=ULONG *,MessageNumber
+func.ldap_rename_extW.ret=ULONG
+
+ldap_rename_ext_s=func
+func.ldap_rename_ext_s.args=7
+func.ldap_rename_ext_s.arg.0=LDAP *,ld
+func.ldap_rename_ext_s.arg.1=const PSTR,dn
+func.ldap_rename_ext_s.arg.2=const PSTR,NewRDN
+func.ldap_rename_ext_s.arg.3=const PSTR,NewParent
+func.ldap_rename_ext_s.arg.4=INT,DeleteOldRdn
+func.ldap_rename_ext_s.arg.5=PLDAPControlA *,ServerControls
+func.ldap_rename_ext_s.arg.6=PLDAPControlA *,ClientControls
+func.ldap_rename_ext_s.ret=ULONG
+
+ldap_rename_ext_sA=func
+func.ldap_rename_ext_sA.args=7
+func.ldap_rename_ext_sA.arg.0=LDAP *,ld
+func.ldap_rename_ext_sA.arg.1=const PSTR,dn
+func.ldap_rename_ext_sA.arg.2=const PSTR,NewRDN
+func.ldap_rename_ext_sA.arg.3=const PSTR,NewParent
+func.ldap_rename_ext_sA.arg.4=INT,DeleteOldRdn
+func.ldap_rename_ext_sA.arg.5=PLDAPControlA *,ServerControls
+func.ldap_rename_ext_sA.arg.6=PLDAPControlA *,ClientControls
+func.ldap_rename_ext_sA.ret=ULONG
+
+ldap_rename_ext_sW=func
+func.ldap_rename_ext_sW.args=7
+func.ldap_rename_ext_sW.arg.0=LDAP *,ld
+func.ldap_rename_ext_sW.arg.1=const PWSTR,dn
+func.ldap_rename_ext_sW.arg.2=const PWSTR,NewRDN
+func.ldap_rename_ext_sW.arg.3=const PWSTR,NewParent
+func.ldap_rename_ext_sW.arg.4=INT,DeleteOldRdn
+func.ldap_rename_ext_sW.arg.5=PLDAPControlW *,ServerControls
+func.ldap_rename_ext_sW.arg.6=PLDAPControlW *,ClientControls
+func.ldap_rename_ext_sW.ret=ULONG
+
+ldap_result=func
+func.ldap_result.args=5
+func.ldap_result.arg.0=LDAP *,ld
+func.ldap_result.arg.1=ULONG,msgid
+func.ldap_result.arg.2=ULONG,all
+func.ldap_result.arg.3=PLDAP_TIMEVAL,timeout
+func.ldap_result.arg.4=PLDAPMessage *,res
+func.ldap_result.ret=ULONG
+
+ldap_result2error=func
+func.ldap_result2error.args=3
+func.ldap_result2error.arg.0=LDAP *,ld
+func.ldap_result2error.arg.1=LDAPMessage *,res
+func.ldap_result2error.arg.2=ULONG,freeit
+func.ldap_result2error.ret=ULONG
+
+ldap_sasl_bindA=func
+func.ldap_sasl_bindA.args=7
+func.ldap_sasl_bindA.arg.0=LDAP *,ExternalHandle
+func.ldap_sasl_bindA.arg.1=const PSTR,DistName
+func.ldap_sasl_bindA.arg.2=const PSTR,AuthMechanism
+func.ldap_sasl_bindA.arg.3=const BERVAL *,cred
+func.ldap_sasl_bindA.arg.4=PLDAPControlA *,ServerCtrls
+func.ldap_sasl_bindA.arg.5=PLDAPControlA *,ClientCtrls
+func.ldap_sasl_bindA.arg.6=int *,MessageNumber
+func.ldap_sasl_bindA.ret=INT
+
+ldap_sasl_bindW=func
+func.ldap_sasl_bindW.args=7
+func.ldap_sasl_bindW.arg.0=LDAP *,ExternalHandle
+func.ldap_sasl_bindW.arg.1=const PWSTR,DistName
+func.ldap_sasl_bindW.arg.2=const PWSTR,AuthMechanism
+func.ldap_sasl_bindW.arg.3=const BERVAL *,cred
+func.ldap_sasl_bindW.arg.4=PLDAPControlW *,ServerCtrls
+func.ldap_sasl_bindW.arg.5=PLDAPControlW *,ClientCtrls
+func.ldap_sasl_bindW.arg.6=int *,MessageNumber
+func.ldap_sasl_bindW.ret=INT
+
+ldap_sasl_bind_sA=func
+func.ldap_sasl_bind_sA.args=7
+func.ldap_sasl_bind_sA.arg.0=LDAP *,ExternalHandle
+func.ldap_sasl_bind_sA.arg.1=const PSTR,DistName
+func.ldap_sasl_bind_sA.arg.2=const PSTR,AuthMechanism
+func.ldap_sasl_bind_sA.arg.3=const BERVAL *,cred
+func.ldap_sasl_bind_sA.arg.4=PLDAPControlA *,ServerCtrls
+func.ldap_sasl_bind_sA.arg.5=PLDAPControlA *,ClientCtrls
+func.ldap_sasl_bind_sA.arg.6=PBERVAL *,ServerData
+func.ldap_sasl_bind_sA.ret=INT
+
+ldap_sasl_bind_sW=func
+func.ldap_sasl_bind_sW.args=7
+func.ldap_sasl_bind_sW.arg.0=LDAP *,ExternalHandle
+func.ldap_sasl_bind_sW.arg.1=const PWSTR,DistName
+func.ldap_sasl_bind_sW.arg.2=const PWSTR,AuthMechanism
+func.ldap_sasl_bind_sW.arg.3=const BERVAL *,cred
+func.ldap_sasl_bind_sW.arg.4=PLDAPControlW *,ServerCtrls
+func.ldap_sasl_bind_sW.arg.5=PLDAPControlW *,ClientCtrls
+func.ldap_sasl_bind_sW.arg.6=PBERVAL *,ServerData
+func.ldap_sasl_bind_sW.ret=INT
+
+ldap_search=func
+func.ldap_search.args=6
+func.ldap_search.arg.0=LDAP *,ld
+func.ldap_search.arg.1=PSTR,base
+func.ldap_search.arg.2=ULONG,scope
+func.ldap_search.arg.3=PSTR,filter
+func.ldap_search.arg.4=PZPSTR,attrs
+func.ldap_search.arg.5=ULONG,attrsonly
+func.ldap_search.ret=ULONG
+
+ldap_searchA=func
+func.ldap_searchA.args=6
+func.ldap_searchA.arg.0=LDAP *,ld
+func.ldap_searchA.arg.1=const PSTR,base
+func.ldap_searchA.arg.2=ULONG,scope
+func.ldap_searchA.arg.3=const PSTR,filter
+func.ldap_searchA.arg.4=PZPSTR,attrs
+func.ldap_searchA.arg.5=ULONG,attrsonly
+func.ldap_searchA.ret=ULONG
+
+ldap_searchW=func
+func.ldap_searchW.args=6
+func.ldap_searchW.arg.0=LDAP *,ld
+func.ldap_searchW.arg.1=const PWSTR,base
+func.ldap_searchW.arg.2=ULONG,scope
+func.ldap_searchW.arg.3=const PWSTR,filter
+func.ldap_searchW.arg.4=PZPWSTR,attrs
+func.ldap_searchW.arg.5=ULONG,attrsonly
+func.ldap_searchW.ret=ULONG
+
+ldap_search_abandon_page=func
+func.ldap_search_abandon_page.args=2
+func.ldap_search_abandon_page.arg.0=PLDAP,ExternalHandle
+func.ldap_search_abandon_page.arg.1=PLDAPSearch,SearchBlock
+func.ldap_search_abandon_page.ret=ULONG
+
+ldap_search_ext=func
+func.ldap_search_ext.args=11
+func.ldap_search_ext.arg.0=LDAP *,ld
+func.ldap_search_ext.arg.1=PSTR,base
+func.ldap_search_ext.arg.2=ULONG,scope
+func.ldap_search_ext.arg.3=PSTR,filter
+func.ldap_search_ext.arg.4=PZPSTR,attrs
+func.ldap_search_ext.arg.5=ULONG,attrsonly
+func.ldap_search_ext.arg.6=PLDAPControlA *,ServerControls
+func.ldap_search_ext.arg.7=PLDAPControlA *,ClientControls
+func.ldap_search_ext.arg.8=ULONG,TimeLimit
+func.ldap_search_ext.arg.9=ULONG,SizeLimit
+func.ldap_search_ext.arg.10=ULONG *,MessageNumber
+func.ldap_search_ext.ret=ULONG
+
+ldap_search_extA=func
+func.ldap_search_extA.args=11
+func.ldap_search_extA.arg.0=LDAP *,ld
+func.ldap_search_extA.arg.1=const PSTR,base
+func.ldap_search_extA.arg.2=ULONG,scope
+func.ldap_search_extA.arg.3=const PSTR,filter
+func.ldap_search_extA.arg.4=PZPSTR,attrs
+func.ldap_search_extA.arg.5=ULONG,attrsonly
+func.ldap_search_extA.arg.6=PLDAPControlA *,ServerControls
+func.ldap_search_extA.arg.7=PLDAPControlA *,ClientControls
+func.ldap_search_extA.arg.8=ULONG,TimeLimit
+func.ldap_search_extA.arg.9=ULONG,SizeLimit
+func.ldap_search_extA.arg.10=ULONG *,MessageNumber
+func.ldap_search_extA.ret=ULONG
+
+ldap_search_extW=func
+func.ldap_search_extW.args=11
+func.ldap_search_extW.arg.0=LDAP *,ld
+func.ldap_search_extW.arg.1=const PWSTR,base
+func.ldap_search_extW.arg.2=ULONG,scope
+func.ldap_search_extW.arg.3=const PWSTR,filter
+func.ldap_search_extW.arg.4=PZPWSTR,attrs
+func.ldap_search_extW.arg.5=ULONG,attrsonly
+func.ldap_search_extW.arg.6=PLDAPControlW *,ServerControls
+func.ldap_search_extW.arg.7=PLDAPControlW *,ClientControls
+func.ldap_search_extW.arg.8=ULONG,TimeLimit
+func.ldap_search_extW.arg.9=ULONG,SizeLimit
+func.ldap_search_extW.arg.10=ULONG *,MessageNumber
+func.ldap_search_extW.ret=ULONG
+
+ldap_search_ext_s=func
+func.ldap_search_ext_s.args=11
+func.ldap_search_ext_s.arg.0=LDAP *,ld
+func.ldap_search_ext_s.arg.1=PSTR,base
+func.ldap_search_ext_s.arg.2=ULONG,scope
+func.ldap_search_ext_s.arg.3=PSTR,filter
+func.ldap_search_ext_s.arg.4=PZPSTR,attrs
+func.ldap_search_ext_s.arg.5=ULONG,attrsonly
+func.ldap_search_ext_s.arg.6=PLDAPControlA *,ServerControls
+func.ldap_search_ext_s.arg.7=PLDAPControlA *,ClientControls
+func.ldap_search_ext_s.arg.8=struct l_timeval *,timeout
+func.ldap_search_ext_s.arg.9=ULONG,SizeLimit
+func.ldap_search_ext_s.arg.10=PLDAPMessage *,res
+func.ldap_search_ext_s.ret=ULONG
+
+ldap_search_ext_sA=func
+func.ldap_search_ext_sA.args=11
+func.ldap_search_ext_sA.arg.0=LDAP *,ld
+func.ldap_search_ext_sA.arg.1=const PSTR,base
+func.ldap_search_ext_sA.arg.2=ULONG,scope
+func.ldap_search_ext_sA.arg.3=const PSTR,filter
+func.ldap_search_ext_sA.arg.4=PZPSTR,attrs
+func.ldap_search_ext_sA.arg.5=ULONG,attrsonly
+func.ldap_search_ext_sA.arg.6=PLDAPControlA *,ServerControls
+func.ldap_search_ext_sA.arg.7=PLDAPControlA *,ClientControls
+func.ldap_search_ext_sA.arg.8=struct l_timeval *,timeout
+func.ldap_search_ext_sA.arg.9=ULONG,SizeLimit
+func.ldap_search_ext_sA.arg.10=PLDAPMessage *,res
+func.ldap_search_ext_sA.ret=ULONG
+
+ldap_search_ext_sW=func
+func.ldap_search_ext_sW.args=11
+func.ldap_search_ext_sW.arg.0=LDAP *,ld
+func.ldap_search_ext_sW.arg.1=const PWSTR,base
+func.ldap_search_ext_sW.arg.2=ULONG,scope
+func.ldap_search_ext_sW.arg.3=const PWSTR,filter
+func.ldap_search_ext_sW.arg.4=PZPWSTR,attrs
+func.ldap_search_ext_sW.arg.5=ULONG,attrsonly
+func.ldap_search_ext_sW.arg.6=PLDAPControlW *,ServerControls
+func.ldap_search_ext_sW.arg.7=PLDAPControlW *,ClientControls
+func.ldap_search_ext_sW.arg.8=struct l_timeval *,timeout
+func.ldap_search_ext_sW.arg.9=ULONG,SizeLimit
+func.ldap_search_ext_sW.arg.10=PLDAPMessage *,res
+func.ldap_search_ext_sW.ret=ULONG
+
+ldap_search_init_page=func
+func.ldap_search_init_page.args=11
+func.ldap_search_init_page.arg.0=PLDAP,ExternalHandle
+func.ldap_search_init_page.arg.1=const PSTR,DistinguishedName
+func.ldap_search_init_page.arg.2=ULONG,ScopeOfSearch
+func.ldap_search_init_page.arg.3=const PSTR,SearchFilter
+func.ldap_search_init_page.arg.4=PZPSTR,AttributeList
+func.ldap_search_init_page.arg.5=ULONG,AttributesOnly
+func.ldap_search_init_page.arg.6=PLDAPControl *,ServerControls
+func.ldap_search_init_page.arg.7=PLDAPControl *,ClientControls
+func.ldap_search_init_page.arg.8=ULONG,PageTimeLimit
+func.ldap_search_init_page.arg.9=ULONG,TotalSizeLimit
+func.ldap_search_init_page.arg.10=PLDAPSortKey *,SortKeys
+func.ldap_search_init_page.ret=PLDAPSearch
+
+ldap_search_init_pageA=func
+func.ldap_search_init_pageA.args=11
+func.ldap_search_init_pageA.arg.0=PLDAP,ExternalHandle
+func.ldap_search_init_pageA.arg.1=const PSTR,DistinguishedName
+func.ldap_search_init_pageA.arg.2=ULONG,ScopeOfSearch
+func.ldap_search_init_pageA.arg.3=const PSTR,SearchFilter
+func.ldap_search_init_pageA.arg.4=PZPSTR,AttributeList
+func.ldap_search_init_pageA.arg.5=ULONG,AttributesOnly
+func.ldap_search_init_pageA.arg.6=PLDAPControlA *,ServerControls
+func.ldap_search_init_pageA.arg.7=PLDAPControlA *,ClientControls
+func.ldap_search_init_pageA.arg.8=ULONG,PageTimeLimit
+func.ldap_search_init_pageA.arg.9=ULONG,TotalSizeLimit
+func.ldap_search_init_pageA.arg.10=PLDAPSortKeyA *,SortKeys
+func.ldap_search_init_pageA.ret=PLDAPSearch
+
+ldap_search_init_pageW=func
+func.ldap_search_init_pageW.args=11
+func.ldap_search_init_pageW.arg.0=PLDAP,ExternalHandle
+func.ldap_search_init_pageW.arg.1=const PWSTR,DistinguishedName
+func.ldap_search_init_pageW.arg.2=ULONG,ScopeOfSearch
+func.ldap_search_init_pageW.arg.3=const PWSTR,SearchFilter
+func.ldap_search_init_pageW.arg.4=PZPWSTR,AttributeList
+func.ldap_search_init_pageW.arg.5=ULONG,AttributesOnly
+func.ldap_search_init_pageW.arg.6=PLDAPControlW *,ServerControls
+func.ldap_search_init_pageW.arg.7=PLDAPControlW *,ClientControls
+func.ldap_search_init_pageW.arg.8=ULONG,PageTimeLimit
+func.ldap_search_init_pageW.arg.9=ULONG,TotalSizeLimit
+func.ldap_search_init_pageW.arg.10=PLDAPSortKeyW *,SortKeys
+func.ldap_search_init_pageW.ret=PLDAPSearch
+
+ldap_search_s=func
+func.ldap_search_s.args=7
+func.ldap_search_s.arg.0=LDAP *,ld
+func.ldap_search_s.arg.1=PSTR,base
+func.ldap_search_s.arg.2=ULONG,scope
+func.ldap_search_s.arg.3=PSTR,filter
+func.ldap_search_s.arg.4=PZPSTR,attrs
+func.ldap_search_s.arg.5=ULONG,attrsonly
+func.ldap_search_s.arg.6=PLDAPMessage *,res
+func.ldap_search_s.ret=ULONG
+
+ldap_search_sA=func
+func.ldap_search_sA.args=7
+func.ldap_search_sA.arg.0=LDAP *,ld
+func.ldap_search_sA.arg.1=const PSTR,base
+func.ldap_search_sA.arg.2=ULONG,scope
+func.ldap_search_sA.arg.3=const PSTR,filter
+func.ldap_search_sA.arg.4=PZPSTR,attrs
+func.ldap_search_sA.arg.5=ULONG,attrsonly
+func.ldap_search_sA.arg.6=LDAPMessage **,res
+func.ldap_search_sA.ret=ULONG
+
+ldap_search_sW=func
+func.ldap_search_sW.args=7
+func.ldap_search_sW.arg.0=LDAP *,ld
+func.ldap_search_sW.arg.1=const PWSTR,base
+func.ldap_search_sW.arg.2=ULONG,scope
+func.ldap_search_sW.arg.3=const PWSTR,filter
+func.ldap_search_sW.arg.4=PZPWSTR,attrs
+func.ldap_search_sW.arg.5=ULONG,attrsonly
+func.ldap_search_sW.arg.6=LDAPMessage **,res
+func.ldap_search_sW.ret=ULONG
+
+ldap_search_st=func
+func.ldap_search_st.args=8
+func.ldap_search_st.arg.0=LDAP *,ld
+func.ldap_search_st.arg.1=PSTR,base
+func.ldap_search_st.arg.2=ULONG,scope
+func.ldap_search_st.arg.3=PSTR,filter
+func.ldap_search_st.arg.4=PZPSTR,attrs
+func.ldap_search_st.arg.5=ULONG,attrsonly
+func.ldap_search_st.arg.6=struct l_timeval *,timeout
+func.ldap_search_st.arg.7=PLDAPMessage *,res
+func.ldap_search_st.ret=ULONG
+
+ldap_search_stA=func
+func.ldap_search_stA.args=8
+func.ldap_search_stA.arg.0=LDAP *,ld
+func.ldap_search_stA.arg.1=const PSTR,base
+func.ldap_search_stA.arg.2=ULONG,scope
+func.ldap_search_stA.arg.3=const PSTR,filter
+func.ldap_search_stA.arg.4=PZPSTR,attrs
+func.ldap_search_stA.arg.5=ULONG,attrsonly
+func.ldap_search_stA.arg.6=struct l_timeval *,timeout
+func.ldap_search_stA.arg.7=PLDAPMessage *,res
+func.ldap_search_stA.ret=ULONG
+
+ldap_search_stW=func
+func.ldap_search_stW.args=8
+func.ldap_search_stW.arg.0=LDAP *,ld
+func.ldap_search_stW.arg.1=const PWSTR,base
+func.ldap_search_stW.arg.2=ULONG,scope
+func.ldap_search_stW.arg.3=const PWSTR,filter
+func.ldap_search_stW.arg.4=PZPWSTR,attrs
+func.ldap_search_stW.arg.5=ULONG,attrsonly
+func.ldap_search_stW.arg.6=struct l_timeval *,timeout
+func.ldap_search_stW.arg.7=PLDAPMessage *,res
+func.ldap_search_stW.ret=ULONG
+
+ldap_set_dbg_flags=func
+func.ldap_set_dbg_flags.args=1
+func.ldap_set_dbg_flags.arg.0=ULONG,NewFlags
+func.ldap_set_dbg_flags.ret=ULONG
+
+ldap_set_dbg_routine=func
+func.ldap_set_dbg_routine.args=1
+func.ldap_set_dbg_routine.arg.0=DBGPRINT,DebugPrintRoutine
+func.ldap_set_dbg_routine.ret=VOID
+
+ldap_set_option=func
+func.ldap_set_option.args=3
+func.ldap_set_option.arg.0=LDAP *,ld
+func.ldap_set_option.arg.1=int,option
+func.ldap_set_option.arg.2=const void *,invalue
+func.ldap_set_option.ret=ULONG
+
+ldap_set_optionW=func
+func.ldap_set_optionW.args=3
+func.ldap_set_optionW.arg.0=LDAP *,ld
+func.ldap_set_optionW.arg.1=int,option
+func.ldap_set_optionW.arg.2=const void *,invalue
+func.ldap_set_optionW.ret=ULONG
+
+ldap_simple_bind=func
+func.ldap_simple_bind.args=3
+func.ldap_simple_bind.arg.0=LDAP *,ld
+func.ldap_simple_bind.arg.1=const PSTR,dn
+func.ldap_simple_bind.arg.2=const PSTR,passwd
+func.ldap_simple_bind.ret=ULONG
+
+ldap_simple_bindA=func
+func.ldap_simple_bindA.args=3
+func.ldap_simple_bindA.arg.0=LDAP *,ld
+func.ldap_simple_bindA.arg.1=PSTR,dn
+func.ldap_simple_bindA.arg.2=PSTR,passwd
+func.ldap_simple_bindA.ret=ULONG
+
+ldap_simple_bindW=func
+func.ldap_simple_bindW.args=3
+func.ldap_simple_bindW.arg.0=LDAP *,ld
+func.ldap_simple_bindW.arg.1=PWSTR,dn
+func.ldap_simple_bindW.arg.2=PWSTR,passwd
+func.ldap_simple_bindW.ret=ULONG
+
+ldap_simple_bind_s=func
+func.ldap_simple_bind_s.args=3
+func.ldap_simple_bind_s.arg.0=LDAP *,ld
+func.ldap_simple_bind_s.arg.1=const PSTR,dn
+func.ldap_simple_bind_s.arg.2=const PSTR,passwd
+func.ldap_simple_bind_s.ret=ULONG
+
+ldap_simple_bind_sA=func
+func.ldap_simple_bind_sA.args=3
+func.ldap_simple_bind_sA.arg.0=LDAP *,ld
+func.ldap_simple_bind_sA.arg.1=PSTR,dn
+func.ldap_simple_bind_sA.arg.2=PSTR,passwd
+func.ldap_simple_bind_sA.ret=ULONG
+
+ldap_simple_bind_sW=func
+func.ldap_simple_bind_sW.args=3
+func.ldap_simple_bind_sW.arg.0=LDAP *,ld
+func.ldap_simple_bind_sW.arg.1=PWSTR,dn
+func.ldap_simple_bind_sW.arg.2=PWSTR,passwd
+func.ldap_simple_bind_sW.ret=ULONG
+
+ldap_sslinit=func
+func.ldap_sslinit.args=3
+func.ldap_sslinit.arg.0=PSTR,HostName
+func.ldap_sslinit.arg.1=ULONG,PortNumber
+func.ldap_sslinit.arg.2=int,secure
+func.ldap_sslinit.ret=LDAP *
+
+ldap_sslinitA=func
+func.ldap_sslinitA.args=3
+func.ldap_sslinitA.arg.0=PSTR,HostName
+func.ldap_sslinitA.arg.1=ULONG,PortNumber
+func.ldap_sslinitA.arg.2=int,secure
+func.ldap_sslinitA.ret=LDAP *
+
+ldap_sslinitW=func
+func.ldap_sslinitW.args=3
+func.ldap_sslinitW.arg.0=PWSTR,HostName
+func.ldap_sslinitW.arg.1=ULONG,PortNumber
+func.ldap_sslinitW.arg.2=int,secure
+func.ldap_sslinitW.ret=LDAP *
+
+ldap_start_tls_sA=func
+func.ldap_start_tls_sA.args=5
+func.ldap_start_tls_sA.arg.0=PLDAP,ExternalHandle
+func.ldap_start_tls_sA.arg.1=PULONG,ServerReturnValue
+func.ldap_start_tls_sA.arg.2=LDAPMessage **,result
+func.ldap_start_tls_sA.arg.3=PLDAPControlA *,ServerControls
+func.ldap_start_tls_sA.arg.4=PLDAPControlA *,ClientControls
+func.ldap_start_tls_sA.ret=ULONG
+
+ldap_start_tls_sW=func
+func.ldap_start_tls_sW.args=5
+func.ldap_start_tls_sW.arg.0=PLDAP,ExternalHandle
+func.ldap_start_tls_sW.arg.1=PULONG,ServerReturnValue
+func.ldap_start_tls_sW.arg.2=LDAPMessage **,result
+func.ldap_start_tls_sW.arg.3=PLDAPControlW *,ServerControls
+func.ldap_start_tls_sW.arg.4=PLDAPControlW *,ClientControls
+func.ldap_start_tls_sW.ret=ULONG
+
+ldap_startup=func
+func.ldap_startup.args=2
+func.ldap_startup.arg.0=PLDAP_VERSION_INFO,version
+func.ldap_startup.arg.1=HANDLE *,Instance
+func.ldap_startup.ret=ULONG
+
+ldap_stop_tls_s=func
+func.ldap_stop_tls_s.args=1
+func.ldap_stop_tls_s.arg.0=PLDAP,ExternalHandle
+func.ldap_stop_tls_s.ret=BOOLEAN
+
+ldap_ufn2dn=func
+func.ldap_ufn2dn.args=2
+func.ldap_ufn2dn.arg.0=const PSTR,ufn
+func.ldap_ufn2dn.arg.1=PSTR *,pDn
+func.ldap_ufn2dn.ret=ULONG
+
+ldap_ufn2dnA=func
+func.ldap_ufn2dnA.args=2
+func.ldap_ufn2dnA.arg.0=const PSTR,ufn
+func.ldap_ufn2dnA.arg.1=PSTR *,pDn
+func.ldap_ufn2dnA.ret=ULONG
+
+ldap_ufn2dnW=func
+func.ldap_ufn2dnW.args=2
+func.ldap_ufn2dnW.arg.0=const PWSTR,ufn
+func.ldap_ufn2dnW.arg.1=PWSTR *,pDn
+func.ldap_ufn2dnW.ret=ULONG
+
+ldap_unbind=func
+func.ldap_unbind.args=1
+func.ldap_unbind.arg.0=LDAP *,ld
+func.ldap_unbind.ret=ULONG
+
+ldap_unbind_s=func
+func.ldap_unbind_s.args=1
+func.ldap_unbind_s.arg.0=LDAP *,ld
+func.ldap_unbind_s.ret=ULONG
+
+ldap_value_free=func
+func.ldap_value_free.args=1
+func.ldap_value_free.arg.0=PCHAR *,vals
+func.ldap_value_free.ret=ULONG
+
+ldap_value_freeA=func
+func.ldap_value_freeA.args=1
+func.ldap_value_freeA.arg.0=PCHAR *,vals
+func.ldap_value_freeA.ret=ULONG
+
+ldap_value_freeW=func
+func.ldap_value_freeW.args=1
+func.ldap_value_freeW.arg.0=PWCHAR *,vals
+func.ldap_value_freeW.ret=ULONG
+
+ldap_value_free_len=func
+func.ldap_value_free_len.args=1
+func.ldap_value_free_len.arg.0=struct berval **,vals
+func.ldap_value_free_len.ret=ULONG
