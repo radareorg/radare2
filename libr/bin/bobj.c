@@ -249,98 +249,103 @@ static RBNode *list2rbtree(RList *relocs) {
 	return res;
 }
 
-R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
+R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	int i;
 	bool isSwift = false;
 
-	r_return_val_if_fail (binfile && o && o->plugin, false);
+	r_return_val_if_fail (bf && o && o->plugin, false);
 
-	RBin *bin = binfile->rbin;
-	RBinObject *old_o = binfile->o;
-	RBinPlugin *cp = o->plugin;
-	int minlen = (binfile->rbin->minstrlen > 0) ? binfile->rbin->minstrlen : cp->minstrlen;
-	binfile->o = o;
+	RBin *bin = bf->rbin;
+	RBinObject *old_o = bf->o;
+	RBinPlugin *p = o->plugin;
+	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
+	bf->o = o;
 
-	if (cp->file_type) {
-		int type = cp->file_type (binfile);
+	if (p->file_type) {
+		int type = p->file_type (bf);
 		if (type == R_BIN_TYPE_CORE) {
-			if (cp->regstate) {
-				o->regstate = cp->regstate (binfile);
+			if (p->regstate) {
+				o->regstate = p->regstate (bf);
 			}
-			if (cp->maps) {
-				o->maps = cp->maps (binfile);
+			if (p->maps) {
+				o->maps = p->maps (bf);
 			}
 		}
 	}
 
-	if (cp->baddr) {
-		ut64 old_baddr = o->baddr;
-		o->baddr = cp->baddr (binfile);
-		r_bin_object_set_baddr (o, old_baddr);
+	// TODO: kill the baddr_shift and split into {user/file}-baddr
+	if (p->baddr) {
+		ut64 file_baddr = p->baddr (bf);
+		if (o->baddr == UT64_MAX) {
+			o->baddr = file_baddr;
+		}
+		if (file_baddr != UT64_MAX) {
+			o->baddr_shift = o->baddr - file_baddr;
+		}
 	}
-	if (cp->boffset) {
-		o->boffset = cp->boffset (binfile);
+	if (p->boffset) {
+		o->boffset = p->boffset (bf);
 	}
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential
 	// inconsistencies
-	if (cp->size) {
-		o->size = cp->size (binfile);
+	if (p->size) {
+		o->size = p->size (bf);
 	}
 	// XXX this is expensive because is O(n^n)
-	if (cp->binsym) {
+	if (p->binsym) {
 		for (i = 0; i < R_BIN_SYM_LAST; i++) {
-			o->binsym[i] = cp->binsym (binfile, i);
+			o->binsym[i] = p->binsym (bf, i);
 			if (o->binsym[i]) {
 				o->binsym[i]->paddr += o->loadaddr;
 			}
 		}
 	}
-	if (cp->entries) {
-		o->entries = cp->entries (binfile);
+	if (p->entries) {
+		o->entries = p->entries (bf);
 		REBASE_PADDR (o, o->entries, RBinAddr);
 	}
-	if (cp->fields) {
-		o->fields = cp->fields (binfile);
+	if (p->fields) {
+		o->fields = p->fields (bf);
 		if (o->fields) {
 			o->fields->free = r_bin_field_free;
 			REBASE_PADDR (o, o->fields, RBinField);
 		}
 	}
-	if (cp->imports) {
+	if (p->imports) {
 		r_list_free (o->imports);
-		o->imports = cp->imports (binfile);
+		o->imports = p->imports (bf);
 		if (o->imports) {
 			o->imports->free = r_bin_import_free;
 		}
 	}
-	if (cp->symbols) {
-		o->symbols = cp->symbols (binfile); // 5s
+	if (p->symbols) {
+		o->symbols = p->symbols (bf); // 5s
 		if (o->symbols) {
 			o->symbols->free = r_bin_symbol_free;
 			REBASE_PADDR (o, o->symbols, RBinSymbol);
 			if (bin->filter) {
-				r_bin_filter_symbols (binfile, o->symbols); // 5s
+				r_bin_filter_symbols (bf, o->symbols); // 5s
 			}
 		}
 	}
-	o->info = cp->info? cp->info (binfile): NULL;
-	if (cp->libs) {
-		o->libs = cp->libs (binfile);
+	o->info = p->info? p->info (bf): NULL;
+	if (p->libs) {
+		o->libs = p->libs (bf);
 	}
-	if (cp->sections) {
+	if (p->sections) {
 		// XXX sections are populated by call to size
 		if (!o->sections) {
-			o->sections = cp->sections (binfile);
+			o->sections = p->sections (bf);
 		}
 		REBASE_PADDR (o, o->sections, RBinSection);
 		if (bin->filter) {
-			r_bin_filter_sections (binfile, o->sections);
+			r_bin_filter_sections (bf, o->sections);
 		}
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
-		if (cp->relocs) {
-			RList *l = cp->relocs (binfile);
+		if (p->relocs) {
+			RList *l = p->relocs (bf);
 			if (l) {
 				REBASE_PADDR (o, l, RBinReloc);
 				o->relocs = list2rbtree (l);
@@ -350,10 +355,10 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		if (cp->strings) {
-			o->strings = cp->strings (binfile);
+		if (p->strings) {
+			o->strings = p->strings (bf);
 		} else {
-			o->strings = r_bin_file_get_strings (binfile, minlen, 0, binfile->rawstr);
+			o->strings = r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
 		}
 		if (bin->debase64) {
 			r_bin_object_filter_strings (o);
@@ -361,25 +366,25 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		REBASE_PADDR (o, o->strings, RBinString);
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
-		if (cp->classes) {
-			RList *classes = cp->classes (binfile);
+		if (p->classes) {
+			RList *classes = p->classes (bf);
 			if (classes) {
 				// XXX we should probably merge them instead
 				r_list_free (o->classes);
 				o->classes = classes;
 			}
-			isSwift = r_bin_lang_swift (binfile);
+			isSwift = r_bin_lang_swift (bf);
 			if (isSwift) {
-				o->classes = classes_from_symbols (binfile);
+				o->classes = classes_from_symbols (bf);
 			}
 		} else {
-			RList *classes = classes_from_symbols (binfile);
+			RList *classes = classes_from_symbols (bf);
 			if (classes) {
 				o->classes = classes;
 			}
 		}
 		if (bin->filter) {
-			filter_classes (binfile, o->classes);
+			filter_classes (bf, o->classes);
 		}
 		// cache addr=class+method
 		if (o->classes) {
@@ -400,27 +405,27 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			}
 		}
 	}
-	if (cp->lines) {
-		o->lines = cp->lines (binfile);
+	if (p->lines) {
+		o->lines = p->lines (bf);
 	}
-	if (cp->get_sdb) {
-		Sdb* new_kv = cp->get_sdb (binfile);
+	if (p->get_sdb) {
+		Sdb* new_kv = p->get_sdb (bf);
 		if (new_kv != o->kv) {
 			sdb_free (o->kv);
 		}
 		o->kv = new_kv;
 	}
-	if (cp->mem)  {
-		o->mem = cp->mem (binfile);
+	if (p->mem)  {
+		o->mem = p->mem (bf);
 	}
 	if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		if (isSwift) {
 			o->lang = R_BIN_NM_SWIFT;
 		} else {
-			o->lang = r_bin_load_languages (binfile);
+			o->lang = r_bin_load_languages (bf);
 		}
 	}
-	binfile->o = old_o;
+	bf->o = old_o;
 	return true;
 }
 
@@ -489,6 +494,7 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 	return res;
 }
 
+// XXX deprecate
 R_IPI void r_bin_object_set_baddr(RBinObject *o, ut64 baddr) {
 	r_return_if_fail (o);
 	if (baddr != UT64_MAX) {

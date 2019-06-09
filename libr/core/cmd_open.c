@@ -1227,7 +1227,10 @@ static int cmd_open(void *data, const char *input) {
 				if (!silence) {
 					eprintf ("%d\n", fd);
 				}
-				r_core_bin_load (core, argv0, baddr);
+				if (addr == 0) { // if no baddr defined, use the one provided by the file
+					addr = UT64_MAX;
+				}
+				r_core_bin_load (core, argv0, addr);
 			} else {
 				eprintf ("cannot open file %s\n", argv0);
 			}
