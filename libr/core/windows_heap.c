@@ -1,4 +1,6 @@
-﻿#include <r_core.h>
+/* radare - LGPL - Copyright 2019 - GustavoLCR */
+
+#include <r_core.h>
 #include <TlHelp32.h>
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"
@@ -43,11 +45,11 @@
 *		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
 */
 
-#define PDI_MODULES				0x01
-#define PDI_HEAPS				0x04
-#define PDI_HEAP_TAGS			0x08
-#define PDI_HEAP_BLOCKS			0x10
-#define PDI_HEAP_ENTRIES_EX		0x200
+#define PDI_MODULES         0x01
+#define PDI_HEAPS           0x04
+#define PDI_HEAP_TAGS       0x08
+#define PDI_HEAP_BLOCKS     0x10
+#define PDI_HEAP_ENTRIES_EX 0x200
 
 #define CHECK_INFO(heapInfo)\
 	if (!heapInfo) {\
@@ -60,14 +62,46 @@
 	}
 
 #define UPDATE_FLAGS(hb, flags)\
-	if ((flags & 0xf1) || (flags & 0x0200)) {\
+	if (((flags) & 0xf1) || ((flags) & 0x0200)) {\
 		hb->dwFlags = LF32_FIXED;\
-	} else if ((flags & 0x20)) {\
+	} else if ((flags) & 0x20) {\
 		hb->dwFlags = LF32_MOVEABLE;\
-	} else if ((flags & 0x0100)) {\
+	} else if ((flags) & 0x0100) {\
 		hb->dwFlags = LF32_FREE;\
 	}\
-	hb->dwFlags |= (flags >> SHIFT) << SHIFT;\
+	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;
+
+static char *get_type(WPARAM flags) {
+	char *state = "";
+	switch (flags & 0xFFFF) {
+	case LF32_FIXED:
+		state = "(FIXED)";
+		break;
+	case LF32_FREE:
+		state = "(FREE)";
+		break;
+	case LF32_MOVEABLE:
+		state = "(MOVEABLE)";
+		break;
+	}
+	char *heaptype = "";
+	if (flags & SEGMENT_HEAP_BLOCK) {
+		heaptype = "Segment";
+	} else if (flags & NT_BLOCK) {
+		heaptype =  "NT";
+	}
+	char *type = "";
+	if (flags & LFH_BLOCK) {
+		type = "/LFH";
+	} else if (flags & LARGE_BLOCK) {
+		type = "/LARGE";
+	} else if (flags & BACKEND_BLOCK) {
+		type = "/BACKEND";
+	} else if (flags & VS_BLOCK) {
+		type = "/VS";
+	}
+	return r_str_newf ("%s %s%s", state, heaptype, type);
+}
 
 static bool init_func() {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
@@ -175,7 +209,12 @@ static bool GetNextHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 		hb->index++;
 	}
 
-	WPARAM flags = block[index].flags;
+	WPARAM flags;
+	if (block[index].extra & EXTRA_FLAG) {
+		flags = block[index].flags;
+	} else {
+		flags = (USHORT)block[index].flags;
+	}
 	UPDATE_FLAGS (hb, flags);
 
 	return true;
@@ -191,26 +230,66 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 	}
 }
 
-static bool DecodeHeapEntry(PHEAP heap, PHEAP_ENTRY entry) {
-#if defined(_M_X64)
-	(WPARAM)entry += sizeof (PVOID);
-#endif
+static WPARAM GetNtDllOffset(RDebug *dbg) {
+	r_return_val_if_fail (dbg, 0);
+	RList *map_list = r_w32_dbg_maps (dbg);
+	RListIter *iter;
+	RDebugMap *map;
+	WPARAM ntdllOffset = 0;
+	// Get ntdll .data location
+	r_list_foreach (map_list, iter, map) {
+		if (strstr (map->name, "ntdll.dll | .data")) {
+			ntdllOffset = map->addr;
+			break;
+		}
+	}
+	r_list_free (map_list);
+	return ntdllOffset;
+}
+
+static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
+	r_return_val_if_fail (dbg, 0);
+	WPARAM lfhKey = 0;
+	WPARAM lfhKeyLocation;
+	WPARAM ntdllOffset = GetNtDllOffset (dbg);
+
+	if (ntdllOffset) {
+		if (segment) {
+			WPARAM RtlpHpHeapGlobalsOffset = ntdllOffset + 0x44A0; // ntdll!RtlpHpHeapGlobals
+			lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
+		} else {
+			lfhKeyLocation = ntdllOffset + 0x7508; // ntdll!RtlpLFHKey
+		}
+		if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), NULL)) {
+			r_sys_perror ("ReadProcessMemory");
+			eprintf ("LFH key not found.\n");
+		}
+	}
+	return lfhKey;
+}
+
+static bool DecodeHeapEntry(RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
+	r_return_val_if_fail (heap && entry, false);
+	if (dbg->bits == R_SYS_BITS_64) {
+		(WPARAM)entry += dbg->bits;
+	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
-#if defined(_M_X64)
-		(WPARAM)heap += sizeof (PVOID);
-#endif
+		if (dbg->bits == R_SYS_BITS_64) {
+			(WPARAM)heap += dbg->bits;
+		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
 	}
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
 }
 
-// Is this right?
-static bool DecodeLFHEntry(PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
-#if defined(_M_X64)
-	(WPARAM)entry += sizeof (PVOID);
-#endif
+static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
+	r_return_val_if_fail (heap && entry, false);
+	if (dbg->bits == R_SYS_BITS_64) {
+		(WPARAM)entry += dbg->bits;
+	}
+
 	if (heap->EncodeFlagMask) {
-		*(DWORD *)entry ^= PtrToInt (heap->BaseAddress) ^ (DWORD)(((DWORD)addr - PtrToInt (userBlocks)) << 0xC) ^ (DWORD)key ^ ((DWORD)addr >> 4);
+		*(DWORD *)entry ^= PtrToInt (heap->BaseAddress) ^ (DWORD)(((DWORD)addr - PtrToInt (userBlocks)) << 0xC) ^ (DWORD)key ^ (addr >> 4);
 	}
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
 }
@@ -296,11 +375,11 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 			}
 			if (subsegment.BlockBitmap[0] & mask) {
 				GROW_PBLOCKS ();
-				WPARAM off = subsegment.BlockOffsets.FirstBlockOffset + l * subsegment.BlockOffsets.BlockSize;
+				WPARAM off = (WPARAM)subsegment.BlockOffsets.FirstBlockOffset + l * (WPARAM)subsegment.BlockOffsets.BlockSize;
 				(*blocks)[*count].address = next + off;
 				(*blocks)[*count].size = subsegment.BlockOffsets.BlockSize;
 				(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
-				PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+				PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 				if (!extra) {
 					return false;
 				}
@@ -316,7 +395,7 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 	return true;
 }
 
-static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicInfo *blocks, WPARAM *count, SIZE_T *allocated, WPARAM ntdllOffset) {
+static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHeapBlockBasicInfo *blocks, WPARAM *count, SIZE_T *allocated) {
 	r_return_val_if_fail (h_proc && blocks && count && allocated, false);
 	WPARAM bytesRead;
 	SEGMENT_HEAP segheapHeader;
@@ -326,7 +405,7 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 		return false;
 	}
 
-	WPARAM RtlpHpHeapGlobalsOffset = ntdllOffset + 0x44A0; // ntdll!RtlpHpHeapGlobals
+	WPARAM RtlpHpHeapGlobalsOffset = GetNtDllOffset (dbg) + 0x44A0; // ntdll!RtlpHpHeapGlobals
 
 	WPARAM lfhKey;
 	WPARAM lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
@@ -339,7 +418,9 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 	// LFH
 	byte numBuckets = _countof (segheapHeader.LfhContext.Buckets);
 	for (int j = 0; j < numBuckets; j++) {
-		if ((WPARAM)segheapHeader.LfhContext.Buckets[j] & 1) continue;
+		if ((WPARAM)segheapHeader.LfhContext.Buckets[j] & 1) {
+			continue;
+		}
 		HEAP_LFH_BUCKET bucket;
 		ReadProcessMemory (h_proc, segheapHeader.LfhContext.Buckets[j], &bucket, sizeof (HEAP_LFH_BUCKET), &bytesRead);
 		HEAP_LFH_AFFINITY_SLOT affinitySlot, *paffinitySlot;
@@ -373,25 +454,25 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 			curr = (PRTL_BALANCED_NODE)r_stack_pop (s);
 			HEAP_LARGE_ALLOC_DATA entry;
 			ReadProcessMemory (h_proc, curr, &entry, sizeof (HEAP_LARGE_ALLOC_DATA), &bytesRead);
-			(*blocks)[*count].address = entry.VirtualAddess - entry.UnusedBytes;
+			(*blocks)[*count].address = entry.VirtualAddess - entry.UnusedBytes; // This is a union
 			(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LARGE_BLOCK;
 			(*blocks)[*count].size = ((entry.AllocatedPages >> 12) << 12);
-			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
 				return false;
 			}
 			extra->unusedBytes = entry.UnusedBytes;
-			ReadProcessMemory(h_proc, (void *)(*blocks)[*count].address, &extra->granularity, sizeof (USHORT), &bytesRead);
+			ReadProcessMemory (h_proc, (void *)(*blocks)[*count].address, &extra->granularity, sizeof (USHORT), &bytesRead);
 			(*blocks)[*count].extra = EXTRA_FLAG | (WPARAM)extra;
 			curr = entry.TreeNode.Right;
 			*count += 1;
-		} while (curr || !r_stack_is_empty(s));
+		} while (curr || !r_stack_is_empty (s));
 		r_stack_free (s);
 		free (node);
 	}
 
 	WPARAM RtlpHpHeapGlobal;
-	ReadProcessMemory (h_proc, (PVOID)(RtlpHpHeapGlobalsOffset), &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
+	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOffset, &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
 	// Backend Blocks (And VS)
 	for (int i = 0; i < 2; i++) {
 		HEAP_SEG_CONTEXT ctx = segheapHeader.SegContexts[i];
@@ -402,15 +483,15 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 			if (!ReadProcessMemory (h_proc, (PVOID)currPageSegment, &pageSegment, sizeof (HEAP_PAGE_SEGMENT), &bytesRead)) {
 				break;
 			}
-			for (int j = 2; j < 256; j++) {
+			for (WPARAM j = 2; j < 256; j++) {
 				if ((pageSegment.DescArray[j].RangeFlags &
 					(PAGE_RANGE_FLAGS_FIRST | PAGE_RANGE_FLAGS_ALLOCATED)) ==
 					(PAGE_RANGE_FLAGS_FIRST | PAGE_RANGE_FLAGS_ALLOCATED)) {
 					GROW_PBLOCKS ();
 					(*blocks)[*count].address = currPageSegment + j * 0x1000;
-					(*blocks)[*count].size = pageSegment.DescArray[j].UnitSize * 0x1000;
+					(*blocks)[*count].size = (WPARAM)pageSegment.DescArray[j].UnitSize * 0x1000;
 					(*blocks)[*count].flags = SEGMENT_HEAP_BLOCK | BACKEND_BLOCK | 1;
-					PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+					PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 					if (!extra) {
 						return false;
 					}
@@ -436,7 +517,7 @@ static bool GetSegmentHeapBlocks(HANDLE h_proc, PVOID heapBase, PHeapBlockBasicI
 							(*blocks)[*count].address = from;
 							(*blocks)[*count].size = sz;
 							(*blocks)[*count].flags = VS_BLOCK | SEGMENT_HEAP_BLOCK | 1;
-							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+							PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 							if (!extra) {
 								return false;
 							}
@@ -463,7 +544,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	if (_M_X64 && dbg->bits == R_SYS_BITS_32) {
 		return NULL; // Nope nope nope
 	}
-	WPARAM bytesRead, ntdllOffset = 0;
+	WPARAM bytesRead;
 	HANDLE h_proc = NULL;
 	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
 	if (!db || !db->HeapInformation) {
@@ -476,21 +557,10 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 		goto err;
 	}
 
-	WPARAM lfhKey;
-	RList  *map_list = r_w32_dbg_maps (dbg);
-	RListIter *iter;
-	RDebugMap *map;
-	WPARAM lfhKeyLocation;
-	// Get ntdll .data location
-	r_list_foreach (map_list, iter, map) {
-		if (strstr (map->name, "ntdll.dll | .data")) {
-			ntdllOffset = map->addr;
-			break;
-		}
-	}
-	r_list_free (map_list);
-	if (!ntdllOffset) {
-		eprintf ("ntdll not loaded\n");
+	WPARAM lfhKey = GetLFHKey (dbg, h_proc, false);
+
+	if (!lfhKey) {
+		eprintf ("GetHeapBlocks: Failed to get LFH key.\n");
 		goto err;
 	}
 
@@ -514,7 +584,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 
 		// SEGMENT_HEAP
 		if (heapHeader.SegmentSignature == 0xddeeddee) {
-			bool ret = GetSegmentHeapBlocks (h_proc, heap->Base, &blocks, &count, &allocated, ntdllOffset);
+			bool ret = GetSegmentHeapBlocks (dbg, h_proc, heap->Base, &blocks, &count, &allocated);
 			heap->Blocks = blocks;
 			heap->BlockCount = count;
 			if (!ret) {
@@ -529,16 +599,17 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 		while (entry && (entry != fentry)) {
 			HEAP_VIRTUAL_ALLOC_ENTRY vAlloc;
 			ReadProcessMemory (h_proc, entry, &vAlloc, sizeof (HEAP_VIRTUAL_ALLOC_ENTRY), &bytesRead);
-			DecodeHeapEntry (&heapHeader, &vAlloc.BusyBlock);
+			DecodeHeapEntry (dbg, &heapHeader, &vAlloc.BusyBlock);
 			GROW_BLOCKS ();
-			blocks[count].address = (WPARAM)entry + offsetof (HEAP_VIRTUAL_ALLOC_ENTRY, BusyBlock);
+			blocks[count].address = (WPARAM)entry;
 			blocks[count].flags = 1 | (vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL;
-			blocks[count].size = vAlloc.CommitSize;
-			PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+			blocks[count].size = vAlloc.ReserveSize;
+			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
 				goto err;
 			}
 			extra->granularity = sizeof (HEAP_VIRTUAL_ALLOC_ENTRY);
+			extra->unusedBytes = vAlloc.ReserveSize - vAlloc.CommitSize;
 			blocks[count].extra = EXTRA_FLAG | (WPARAM)extra;
 			count++;
 			entry = vAlloc.Entry.Flink;
@@ -546,12 +617,6 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 
 		// LFH Activated
 		if (heapHeader.FrontEndHeap && heapHeader.FrontEndHeapType == 0x2) {
-			lfhKeyLocation = ntdllOffset + 0x7508; // ntdll!RtlpLFHKey
-			if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), &bytesRead)) {
-				r_sys_perror ("ReadProcessMemory");
-				eprintf ("LFH key not found.\n");
-				goto err;
-			}
 			LFH_HEAP lfhHeader;
 			if (!ReadProcessMemory (h_proc, heapHeader.FrontEndHeap, &lfhHeader, sizeof (LFH_HEAP), &bytesRead)) {
 				r_sys_perror ("ReadProcessMemory");
@@ -602,11 +667,11 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 							WPARAM off = userdata.EncodedOffsets.FirstAllocationOffset + sz * j;
 							from = (WPARAM)subsegment.UserBlocks + off;
 							ReadProcessMemory (h_proc, (PVOID)from, &heapEntry, sz_entry, &bytesRead);
-							DecodeLFHEntry (&heapHeader, &heapEntry, subsegment.UserBlocks, lfhKey, from);
+							DecodeLFHEntry (dbg, &heapHeader, &heapEntry, subsegment.UserBlocks, lfhKey, from);
 							blocks[count].address = from;
 							blocks[count].flags = 1 | NT_BLOCK | LFH_BLOCK;
 							blocks[count].size = sz;
-							PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+							PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 							if (!extra) {
 								goto err;
 							}
@@ -641,7 +706,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 				if (!ReadProcessMemory (h_proc, (PVOID)from, &heapEntry, sz_entry, &bytesRead)) {
 					break;
 				}
-				DecodeHeapEntry (&heapHeader, &heapEntry);
+				DecodeHeapEntry (dbg, &heapHeader, &heapEntry);
 				if (!heapEntry.Size) {
 					// Last Heap block
 					count--;
@@ -651,7 +716,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 				SIZE_T real_sz = heapEntry.Size * sz_entry;
 
 				GROW_BLOCKS ();
-				PHeapBlockExtraInfo extra = calloc (1, sizeof (HeapBlockExtraInfo));
+				PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 				if (!extra) {
 					goto err;
 				}
@@ -686,6 +751,174 @@ err:
 		}
 		RtlDestroyQueryDebugBuffer (db);
 	}
+	return NULL;
+}
+
+static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEAP heapBase, WPARAM offset) {
+	/*
+	*	TODO:
+	*		- LFH
+	*		- VS
+	*		- Backend
+	*/
+	PHeapBlock hb = R_NEW0 (HeapBlock);
+	if (!hb) {
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
+		return NULL;
+	}
+	PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+	if (!extra) {
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
+		goto err;
+	}
+	hb->extraInfo = extra;
+	SEGMENT_HEAP heap;
+	ReadProcessMemory (h_proc, heapBase, &heap, sizeof (SEGMENT_HEAP), NULL);
+	// Try Large Blocks
+	if ((offset & 0xFFFF) < 0x100) {
+		if (!heap.LargeAllocMetadata.Root) {
+			goto err;
+		}
+		RTL_BALANCED_NODE node;
+		WPARAM curr = (WPARAM)heap.LargeAllocMetadata.Root;
+		ReadProcessMemory (h_proc, (PVOID)curr, &node, sizeof (RTL_BALANCED_NODE), NULL);
+
+		while (curr) {
+			HEAP_LARGE_ALLOC_DATA entry;
+			ReadProcessMemory (h_proc, (PVOID)curr, &entry, sizeof (HEAP_LARGE_ALLOC_DATA), NULL);
+			WPARAM VirtualAddess = entry.VirtualAddess - entry.UnusedBytes;
+			if ((offset & ~0xFFFFULL) > VirtualAddess) {
+				curr = (WPARAM)node.Right;
+			} else if ((offset & ~0xFFFFULL) < VirtualAddess) {
+				curr = (WPARAM)node.Left;
+			} else {
+				hb->dwAddress = (PVOID)VirtualAddess;
+				hb->dwSize = ((entry.AllocatedPages >> 12) << 12) - entry.UnusedBytes;
+				hb->dwFlags = SEGMENT_HEAP_BLOCK | LARGE_BLOCK | 1;
+				extra->unusedBytes = entry.UnusedBytes;
+				ReadProcessMemory (h_proc, hb->dwAddress, &extra->granularity, sizeof (USHORT), NULL);
+				return hb;
+			}
+			if (curr) {
+				ReadProcessMemory (h_proc, (PVOID)curr, &node, sizeof (RTL_BALANCED_NODE), NULL);
+			}
+		}
+	}
+err:
+	free (hb);
+	free (extra);
+	return NULL;
+}
+
+static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
+	PHeapBlock hb = R_NEW0 (HeapBlock);
+	PDEBUG_BUFFER db = NULL;
+	PHeapBlockExtraInfo extra = NULL;
+
+	if (!hb) {
+		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		return NULL;
+	}
+	HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
+	if (!h_proc) {
+		r_sys_perror ("GetSingleBlock/OpenProcess");
+		goto err;
+	}
+	db = InitHeapInfo (dbg->pid, PDI_HEAPS);
+	if (!db) {
+		goto err;
+	}
+	extra = R_NEW0 (HeapBlockExtraInfo);
+	if (!extra) {
+		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		goto err;
+	}
+	WPARAM NtLFHKey = GetLFHKey (dbg, h_proc, false);
+	PHeapInformation heapInfo = db->HeapInformation;
+	for (int i = 0; i < heapInfo->count; i++) {
+		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
+		if (is_segment_heap (h_proc, heap.Base)) {
+			free (hb);
+			R_FREE (extra);
+			hb = GetSingleSegmentBlock (dbg, h_proc, heap.Base, offset);
+			if (!hb) {
+				goto err;
+			}
+			break;
+		} else {
+			HEAP h;
+			HEAP_ENTRY entry;
+			WPARAM entryOffset = offset - heap.Granularity;
+			if (!ReadProcessMemory (h_proc, heap.Base, &h, sizeof (HEAP), NULL) ||
+				!ReadProcessMemory (h_proc, (PVOID)entryOffset, &entry, sizeof (HEAP_ENTRY), NULL)) {
+				goto err;
+			}
+			extra->granularity = heap.Granularity;
+			hb->extraInfo = extra;
+			HEAP_ENTRY tmpEntry = entry;
+			if (DecodeHeapEntry (dbg, &h, &tmpEntry)) {
+				entry = tmpEntry;
+				hb->dwAddress = (PVOID)offset;
+				UPDATE_FLAGS (hb, (DWORD)entry.Flags | NT_BLOCK);
+				if (entry.UnusedBytes == 0x4) {
+					HEAP_VIRTUAL_ALLOC_ENTRY largeEntry;
+					if (ReadProcessMemory (h_proc, (PVOID)(offset - sizeof (HEAP_VIRTUAL_ALLOC_ENTRY)), &largeEntry, sizeof (HEAP_VIRTUAL_ALLOC_ENTRY), NULL)) {
+						hb->dwSize = largeEntry.CommitSize;
+						hb->dwFlags |= LARGE_BLOCK;
+						extra->unusedBytes = largeEntry.ReserveSize - largeEntry.CommitSize;
+						extra->granularity = sizeof (HEAP_VIRTUAL_ALLOC_ENTRY);
+					}
+				} else {
+					hb->dwSize = (WPARAM)entry.Size * heap.Granularity;
+					hb->dwFlags |= BACKEND_BLOCK;
+				}
+				break;
+			}
+			// LFH
+			if (entry.UnusedBytes & 0x80) {
+				tmpEntry = entry;
+				WPARAM userBlocksOffset;
+				if (dbg->bits == R_SYS_BITS_64) {
+					*(((WPARAM *)&tmpEntry) + 1) ^= PtrToInt (h.BaseAddress) ^ (entryOffset >> 0x4) ^ (DWORD)NtLFHKey;
+					userBlocksOffset = entryOffset - (USHORT)((*(((WPARAM *)&tmpEntry) + 1)) >> 0xC);
+				} else {
+					*((WPARAM *)&tmpEntry) ^= PtrToInt (h.BaseAddress) ^ ((DWORD)(entryOffset) >> 0x4) ^ (DWORD)NtLFHKey;
+					userBlocksOffset = entryOffset - (USHORT)(*((WPARAM *)&tmpEntry) >> 0xC);
+				}
+				// Confirm it is LFH
+				if (DecodeLFHEntry (dbg, &h, &entry, (PVOID)userBlocksOffset, NtLFHKey, entryOffset)) {
+					HEAP_USERDATA_HEADER UserBlocks;
+					HEAP_SUBSEGMENT subsegment;
+					if (!ReadProcessMemory (h_proc, (PVOID)userBlocksOffset, &UserBlocks, sizeof (HEAP_USERDATA_HEADER), NULL)) {
+						r_sys_perror ("GetSingleBlock/ReadProcessMemory");
+						continue;
+					}
+					if (!ReadProcessMemory (h_proc, (PVOID)UserBlocks.SubSegment, &subsegment, sizeof (HEAP_SUBSEGMENT), NULL)) {
+						continue;
+					}
+					hb->dwAddress = (PVOID)offset;
+					hb->dwSize = (WPARAM)subsegment.BlockSize * heap.Granularity;
+					hb->dwFlags = 1 | LFH_BLOCK | NT_BLOCK;
+					break;
+				}
+			}
+		}
+	}
+	if (!hb->dwSize) {
+		goto err;
+	}
+	RtlDestroyQueryDebugBuffer (db);
+	CloseHandle (h_proc);
+	return hb;
+err:
+	if (h_proc) {
+		CloseHandle (h_proc);
+	}
+	if (db) {
+		RtlDestroyQueryDebugBuffer (db);
+	}
+	free (hb);
+	free (extra);
 	return NULL;
 }
 
@@ -741,18 +974,17 @@ static void w32_list_heaps(RCore *core, const char format) {
 
 static void w32_list_heaps_blocks(RCore *core, const char format) {
 	DWORD pid = core->dbg->pid;
-	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS | PDI_HEAP_ENTRIES_EX);
+	os_info *info = r_sys_get_osinfo ();
+	PDEBUG_BUFFER db;
+	if (info->major >= 10) {
+		db = GetHeapBlocks (pid, core->dbg);
+	} else {
+		db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	}
+	free (info);
 	if (!db) {
-		// Too many blocks or segment heap (will block if segment heap)
-		os_info *info = r_sys_get_osinfo ();
-		if (info->major >= 10) { // Only tested on 10. Maybe works on 8
-			db = GetHeapBlocks (pid, core->dbg);
-		}
-		free (info);
-		if (!db) {
-			eprintf ("Couldn't get heap info.\n");
-			return;
-		}
+		eprintf ("Couldn't get heap info.\n");
+		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
 	HeapBlock *block = malloc (sizeof (HeapBlock));
@@ -777,34 +1009,12 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		default:
 			r_cons_printf ("Heap @ 0x%"PFMT64x":\n", heapInfo->heaps[i].Base);
 		}
-		char type[128];
+		char *type;
 		if (GetFirstHeapBlock (&heapInfo->heaps[i], block) & go) {
 			do {
-				memset (type, 0, sizeof (type));
-				switch (block->dwFlags & 0xFFFF) {
-				case LF32_FIXED:
-					strncpy (type, "(FIXED)", 8);
-					break;
-				case LF32_FREE:
-					strncpy (type, "(FREE)", 7);
-					break;
-				case LF32_MOVEABLE:
-					strncpy (type, "(MOVEABLE)", 11);
-					break;
-				}
-				if (block->dwFlags & SEGMENT_HEAP_BLOCK) {
-					strncat (type, "Segment", 8);
-				} else if (block->dwFlags & NT_BLOCK) {
-					strncat (type, "NT", 3);
-				}
-				if (block->dwFlags & LFH_BLOCK) {
-					strncat (type, "/LFH", 5);
-				} else if (block->dwFlags & LARGE_BLOCK) {
-					strncat (type, "/LARGE", 7);
-				} else if (block->dwFlags & BACKEND_BLOCK) {
-					strncat (type, "/BACKEND", 9);
-				} else if (block->dwFlags & VS_BLOCK) {
-					strncat (type, "/VS", 4);
+				type = get_type (block->dwFlags);
+				if (!type) {
+					type = "";
 				}
 				unsigned short granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
 				switch (format) {
@@ -850,22 +1060,61 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	RtlDestroyQueryDebugBuffer (db);
 }
 
-static const char* help_msg[] = {
+static const char *help_msg[] = {
 	"Usage:", " dmh[?|b][f|j]", " # Memory map heap",
 	"dmh[j]", "", "List process heaps",
-	"dmhb[?]", "", "List process heap blocks",
+	"dmhb[?] [addr]", "", "List process heap blocks",
 	NULL
 };
 
-static const char* help_msg_block[] = {
+static const char *help_msg_block[] = {
 	"Usage:", " dmhb[f|j]", " # Memory map heap",
-	"dmhb", "", "List all allocated heap blocks",
+	"dmhb [addr]", "", "List allocated heap blocks",
 	"dmhbf", "", "Create flags for each allocated block",
-	"dmhbj", "", "Print output in JSON format",
+	"dmhbj [addr]", "", "Print output in JSON format",
 	NULL
 };
 
 static void cmd_debug_map_heap_block_win(RCore *core, const char *input) {
+	char *space = strchr (input, ' ');
+	ut64 off = 0;
+	PHeapBlock hb = NULL;
+	if (space) {
+		off = r_num_math (core->num, space + 1);
+		PHeapBlock hb = GetSingleBlock (core->dbg, off);
+		if (hb) {
+			ut64 granularity = hb->extraInfo->granularity;
+			char *type = get_type (hb->dwFlags);
+			if (!type) {
+				type = "";
+			}
+			PJ *pj = pj_new ();
+			switch (input[0]) {
+			case ' ':
+				r_cons_printf ("Block @ 0x%"PFMT64x" %s\n", off - granularity, type);
+				r_cons_printf ("\tSize: 0x%"PFMT64x"\n", hb->dwSize);
+				if (hb->extraInfo->unusedBytes) {
+					r_cons_printf ("\tUnused: 0x%"PFMT64x"\n", hb->extraInfo->unusedBytes);
+				}
+				r_cons_printf ("\tGranularity: 0x%"PFMT64x"\n", granularity);
+				break;
+			case 'j':
+				pj_o (pj);
+				pj_kN (pj, "address", off - granularity);
+				pj_ks (pj, "type", type);
+				pj_kN (pj, "size", hb->dwSize);
+				if (hb->extraInfo->unusedBytes) {
+					pj_kN (pj, "unused", hb->extraInfo->unusedBytes);
+				}
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+			}
+			free (hb->extraInfo);
+			free (hb);
+			pj_free (pj);
+		}
+		return;
+	}
 	switch (input[0]) {
 	case '\0':
 	case 'f':
