@@ -970,18 +970,17 @@ static void w32_list_heaps(RCore *core, const char format) {
 
 static void w32_list_heaps_blocks(RCore *core, const char format) {
 	DWORD pid = core->dbg->pid;
-	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS | PDI_HEAP_ENTRIES_EX);
+	os_info *info = r_sys_get_osinfo ();
+	PDEBUG_BUFFER db;
+	if (info->major >= 10) {
+		db = GetHeapBlocks (pid, core->dbg);
+	} else {
+		db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	}
+	free (info);
 	if (!db) {
-		// Too many blocks or segment heap (will block if segment heap)
-		os_info *info = r_sys_get_osinfo ();
-		if (info->major >= 10) { // Only tested on 10. Maybe works on 8
-			db = GetHeapBlocks (pid, core->dbg);
-		}
-		free (info);
-		if (!db) {
-			eprintf ("Couldn't get heap info.\n");
-			return;
-		}
+		eprintf ("Couldn't get heap info.\n");
+		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
 	HeapBlock *block = malloc (sizeof (HeapBlock));
