@@ -713,14 +713,9 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
-		if (baddr) {
-			ut64 file_baddr = o->plugin->baddr (bf);
-			o->baddr_shift = baddr - file_baddr;
-			o->baddr = baddr;
-		} else {
-			o->baddr_shift = 0;
-			o->baddr = baddr;
-		}
+		ut64 file_baddr = o->plugin->baddr (bf);
+		o->baddr_shift = baddr - file_baddr;
+		o->baddr = baddr;
 	}
 	// XXX - update all the infos?
 	// maybe in RBinFile.rebase() ?
