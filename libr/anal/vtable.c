@@ -84,9 +84,12 @@ static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAdd
 }
 
 static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSection *section) {
-	return !strcmp(section->name, ".rodata") ||
-		   !strcmp(section->name, ".rdata") ||
-		   !strcmp(section->name, ".data.rel.ro");
+	if (section->is_segment) {
+		return false;
+	}
+	return !strcmp (section->name, ".rodata") ||
+		   !strcmp (section->name, ".rdata") ||
+		   !strcmp (section->name, ".data.rel.ro");
 }
 
 

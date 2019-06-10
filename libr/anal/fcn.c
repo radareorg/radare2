@@ -545,6 +545,12 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBLSZ;
 	}
+	if (jmptbl_loc == UT64_MAX) {
+		if (anal->verbose) {
+			eprintf ("Warning: Invalid JumpTable location 0x%08"PFMT64x"\n", jmptbl_loc);
+		}
+		return 0;
+	}
 	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
 		if (anal->verbose) {
 			eprintf ("Warning: Invalid JumpTable size at 0x%08"PFMT64x"\n", ip);

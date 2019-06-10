@@ -305,7 +305,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	return count;
 }
 
-static int is_data_section(RBinFile *a, RBinSection *s) {
+static bool __isDataSection(RBinFile *a, RBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
 	}
@@ -703,46 +703,46 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
-	r_return_val_if_fail (a, NULL);
+R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+	r_return_val_if_fail (bf, NULL);
 	RListIter *iter;
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
-	if (!raw && a->o && a->o && a->o->sections && !r_list_empty (a->o->sections)) {
-		RBinObject *o = a->o;
+	if (!raw && bf->o && bf->o && bf->o->sections && !r_list_empty (bf->o->sections)) {
+		RBinObject *o = bf->o;
 		r_list_foreach (o->sections, iter, section) {
-			if (is_data_section (a, section)) {
-				get_strings_range (a, ret, min, raw, section->paddr,
+			if (__isDataSection (bf, section)) {
+				get_strings_range (bf, ret, min, raw, section->paddr,
 						section->paddr + section->size, section);
 			}
 		}
 		r_list_foreach (o->sections, iter, section) {
 			/* load objc/swift strings */
-			const int bits = (a->o && a->o->info) ? a->o->info->bits : 32;
+			const int bits = (bf->o && bf->o->info) ? bf->o->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;
 			const int cfstr_offs = (bits == 64) ? 16 :  8;
 			if (strstr (section->name, "__cfstring")) {
 				int i;
 				// XXX do not walk if bin.strings == 0
 				ut8 *p;
-				if (section->size > a->size) {
+				if (section->size > bf->size) {
 					continue;
 				}
 				ut8 *sbuf = malloc (section->size);
 				if (!sbuf) {
 					continue;
 				}
-				r_buf_read_at (a->buf, section->paddr + cfstr_offs, sbuf, section->size);
+				r_buf_read_at (bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
 				for (i = 0; i < section->size; i += cfstr_size) {
 					ut8 *buf = sbuf;
 					p = buf + i;
-					if ((i + ((bits==64)? 8:4)) >= section->size) {
+					if ((i + ((bits == 64)? 8: 4)) >= section->size) {
 						break;
 					}
 					ut64 cfstr_vaddr = section->vaddr + i;
 					ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
-					RBinString *s = __stringAt (a, ret, cstr_vaddr);
+					RBinString *s = __stringAt (bf, ret, cstr_vaddr);
 					if (s) {
 						RBinString *bs = R_NEW0 (RBinString);
 						if (bs) {
@@ -762,7 +762,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 			}
 		}
 	} else {
-		get_strings_range (a, ret, min, raw, 0, a->size, NULL);
+		get_strings_range (bf, ret, min, raw, 0, bf->size, NULL);
 	}
 	return ret;
 }

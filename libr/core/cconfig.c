@@ -98,11 +98,8 @@ fail:
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
-	if (!core || !core->anal || !name) {
-		return NULL;
-	}
-	RAnal *a = core->anal;
-	r_list_foreach (a->plugins, iter, h) {
+	r_return_val_if_fail (core && core->anal && name, NULL);
+	r_list_foreach (core->anal->plugins, iter, h) {
 		if (!strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
 		}
