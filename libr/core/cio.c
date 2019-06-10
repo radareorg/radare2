@@ -52,6 +52,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 		}
 	}
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
+	r_config_set (r->config, "cmd.gprompt", ".dr*");
 	return true;
 }
 
