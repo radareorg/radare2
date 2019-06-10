@@ -653,7 +653,7 @@ R_API void r_bin_force_plugin(RBin *bin, const char *pname);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBinInfo *r_bin_get_info(RBin *bin);
 R_API ut64 r_bin_get_baddr(RBin *bin);
-R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
+R_API void r_bin_set_baddr(RBin *bin, ut64 baddr, RBinObject *o);
 R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_size(RBin *bin);
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym);

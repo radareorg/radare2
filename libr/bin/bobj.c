@@ -175,6 +175,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	// extracted from a set of bytes in the file
 	r_bin_object_set_items (bf, o);
 	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
+	r_bin_set_baddr (bf->rbin, o->baddr, bf->o);
 
 	bf->sdb_info = o->kv;
 	sdb = bf->rbin->sdb;
@@ -274,15 +275,23 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	}
 
 	// TODO: kill the baddr_shift and split into {user/file}-baddr
+// compute baddr_shift
+#if 0
 	if (o->baddr != UT64_MAX) {
 		ut64 file_baddr = p->baddr (bf);
-		if (o->baddr != UT64_MAX) {
-			o->baddr_shift = o->baddr - file_baddr;
-		} else {
-			o->baddr = file_baddr;
+		if (file_baddr != UT64_MAX && o->baddr != UT64_MAX) {
 			o->baddr_shift = o->baddr - file_baddr;
 		}
+		if (o->baddr != UT64_MAX) {
+			o->baddr_shift = 0; // o->baddr - file_baddr;
+		} else {
+if (o->baddr != UT64_MAX && file_baddr != UT64_MAX) {
+			o->baddr = file_baddr;
+			o->baddr_shift = 0; // o->baddr - file_baddr;
+}
+		}
 	}
+#endif
 	if (p->boffset) {
 		o->boffset = p->boffset (bf);
 	}
@@ -473,7 +482,7 @@ R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch,
 
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
 	r_return_val_if_fail (o, UT64_MAX);
-	return o->baddr + o->baddr_shift;
+	return o->baddr; //  + o->baddr_shift;
 }
 
 R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {

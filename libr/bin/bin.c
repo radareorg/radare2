@@ -708,14 +708,24 @@ R_API ut64 r_bin_get_laddr(RBin *bin) {
 }
 
 // TODO: should be RBinFile specific imho
-R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
+R_API void r_bin_set_baddr(RBin *bin, ut64 baddr, RBinObject *o) {
 	r_return_if_fail (bin);
 	RBinFile *bf = r_bin_cur (bin);
-	RBinObject *o = r_bin_cur_object (bin);
+	if (!o) {
+		o = r_bin_cur_object (bin);
+	}
 	if (o) {
 		ut64 file_baddr = o->plugin->baddr (bf);
-		o->baddr_shift = baddr - file_baddr;
-		o->baddr = baddr;
+		if (baddr == UT64_MAX) {
+			o->baddr_shift = o->baddr - file_baddr;
+		} else {
+			if (file_baddr != UT64_MAX) {
+				o->baddr = baddr;
+				o->baddr_shift = baddr - file_baddr;
+			}
+		}
+	} else {
+		eprintf ("Warning: This should be an assert probably.\n");
 	}
 	// XXX - update all the infos?
 	// maybe in RBinFile.rebase() ?
