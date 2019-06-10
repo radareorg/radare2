@@ -2382,13 +2382,13 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		RBinSection *s;
 		r_list_foreach (sections, iter, s) {
 			char humansz[8];
+			if (print_segments != s->is_segment) {
+				continue;
+			}
 			RInterval pitv = (RInterval){s->paddr, s->size};
 			RInterval vitv = (RInterval){s->vaddr, s->vsize};
 			r_num_units (humansz, sizeof (humansz), s->size);
 			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
-			if (!info) {
-				break;
-			}
 			r_list_append (list, info);
 		}
 		r_core_visual_list (r, list, r->offset, -1, cols, r->print->flags & R_PRINT_FLAGS_COLOR);
@@ -2481,7 +2481,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		if (!bits) {
 			bits = R_SYS_BITS;
 		}
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_RAD (mode)) {
+			r_cons_printf ("f %s.%s = 0x%08"PFMT64x"\n", type, section->name, section->vaddr);
+		} else if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
 			if (!strcmp (section->name, ".bss")) {
 				// check if there's already a file opened there
