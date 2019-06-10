@@ -775,7 +775,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 		goto err;
 	}
 	hb->extraInfo = extra;
-	extra->heap = heapBase;
+	extra->heap = (WPARAM)heapBase;
 	WPARAM granularity = (WPARAM)dbg->bits * 2;
 	WPARAM headerOff = offset - granularity;
 	SEGMENT_HEAP heap;
@@ -805,7 +805,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 				HEAP_VS_CHUNK_HEADER header;
 				ReadProcessMemory (h_proc, (PVOID)(headerOff - sizeof (HEAP_VS_CHUNK_HEADER)), &header, sizeof (HEAP_VS_CHUNK_HEADER), NULL);
 				header.Sizes.HeaderBits ^= RtlpHpHeapGlobal ^ headerOff;
-				hb->dwAddress = offset;
+				hb->dwAddress = (PVOID)offset;
 				hb->dwSize = header.Sizes.UnsafeSize * sizeof (HEAP_VS_CHUNK_HEADER);
 				hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | VS_BLOCK;
 				extra->granularity = granularity + sizeof (HEAP_VS_CHUNK_HEADER);
@@ -818,7 +818,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 			HEAP_LFH_SUBSEGMENT subsegment;
 			ReadProcessMemory (h_proc, (PVOID)subsegmentOffset, &subsegment, sizeof (HEAP_LFH_SUBSEGMENT), NULL);
 			subsegment.BlockOffsets.EncodedData ^= (DWORD)GetLFHKey (dbg, h_proc, true) ^ ((DWORD)subsegmentOffset >> 0xC);
-			hb->dwAddress = offset;
+			hb->dwAddress = (PVOID)offset;
 			hb->dwSize = subsegment.BlockOffsets.BlockSize;
 			hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
 			extra->granularity = granularity;
