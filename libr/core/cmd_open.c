@@ -75,6 +75,7 @@ static const char *help_msg_ob[] = {
 	"obL", "", "Same as iL or Li",
 	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob-", "*", "Delete all binfiles",
+	"ob=", "", "Show ascii art table having the list of open files",
 	NULL
 };
 
