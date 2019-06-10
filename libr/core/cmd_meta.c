@@ -151,13 +151,13 @@ static int remove_meta_offset(RCore *core, ut64 offset) {
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
 }
 
-static void print_meta_offset(RCore *core, ut64 offset) {
+static bool print_meta_offset(RCore *core, ut64 addr) {
 	int line, line_old, i;
 	char file[1024];
 
-	int ret = r_bin_addr2line (core->bin, offset, file, sizeof (file)-1, &line);
+	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line);
 	if (ret) {
-		r_cons_printf ("file %s\nline %d\n", file, line);
+		r_cons_printf ("file: %s\nline: %d\n", file, line);
 		line_old = line;
 		if (line >= 2) {
 			line -= 2;
@@ -174,6 +174,7 @@ static void print_meta_offset(RCore *core, ut64 offset) {
 			eprintf ("Cannot open '%s'\n", file);
 		}
 	}
+	return ret;
 }
 
 static int remove_meta_fileline(RCore *core, const char *file_line) {
@@ -191,22 +192,31 @@ static int print_meta_fileline(RCore *core, const char *file_line) {
 }
 
 static ut64 filter_offset = UT64_MAX;
+static int filter_format = 0;
+static size_t filter_count = 0;
 
 static int print_addrinfo (void *user, const char *k, const char *v) {
-	char *colonpos, *subst;
-
 	ut64 offset = sdb_atoi (k);
-	if (!offset) {
+	if (!offset || offset == UT64_MAX) {
 		return true;
 	}
-	subst = strdup (v);
-	colonpos = strchr (subst, '|'); // XXX lets keep : for simplicity
-
-	if (colonpos) {
-		*colonpos = ':';
+	char *subst = strdup (v);
+	char *colonpos = strchr (subst, '|'); // XXX keep only : for simplicity?
+	if (!colonpos) {
+		colonpos = strchr (subst, ':');
+	}
+	if (!colonpos) {
+		r_cons_printf ("%s\n", subst);
 	}
 	if (filter_offset == UT64_MAX || filter_offset == offset) {
-		r_cons_printf ("CL %s %s\n", k, subst);
+		if (filter_format) {
+			*colonpos = ':';
+			r_cons_printf ("CL %s %s\n", k, subst);
+		} else {
+			*colonpos = 0;
+			r_cons_printf ("file: %s\nline: %s\n", subst, colonpos + 1);
+		}
+		filter_count++;
 	}
 	free (subst);
 
@@ -235,7 +245,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	bool remove = false;
 	int all = false;
 	const char *p = input;
-	char *colon, *space, *file_line = NULL;
+	char *file_line = NULL;
 
 	if (*p == '?') {
 		eprintf ("Usage: CL[.-*?] [addr] [file:line]\n");
@@ -249,10 +259,20 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		p++;
 		offset = core->offset;
 	}
+	if (*p == ' ') {
+		p = r_str_trim_ro (p + 1);
+		if (!strchr (p, ' ')) {
+			offset = r_num_math (core->num, p);
+			p = "";
+		}
+	}
 
 	if (*p == '*') {
 		p++;
 		all = true;
+		filter_format = '*';
+	} else {
+		filter_format = 0;
 	}
 
 	if (all) {
@@ -283,9 +303,11 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	} else {
 		// taken from r2 // TODO: we should move this addrinfo sdb logic into RBin.. use HT
 		filter_offset = offset;
+		filter_count = 0;
 		sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
-		// taken from rbin
-		print_meta_offset (core, offset);
+		if (filter_count == 0) {
+			print_meta_offset (core, offset);
+		}
 	}
 	return 0;
 }
