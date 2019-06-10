@@ -291,8 +291,14 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		offset = r_num_math (core->num, myp);
 		*sp = 0;
 		sp++;
-		ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
-				sp, offset);
+		RBinFile *bf = r_bin_cur (core->bin);
+		ret = 0;
+		if (bf && bf->sdb_addrinfo) {
+			ret = cmd_meta_add_fileline (bf->sdb_addrinfo,
+					sp, offset);
+		} else {
+			eprintf ("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case\n");
+		}
 		free (file_line);
 		free (myp);
 		return ret;
