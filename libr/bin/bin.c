@@ -713,6 +713,9 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	RBinFile *bf = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
+		if (!o->plugin || !o->plugin->baddr) {
+			return;
+		}
 		ut64 file_baddr = o->plugin->baddr (bf);
 		if (baddr == UT64_MAX) {
 			o->baddr = file_baddr;
