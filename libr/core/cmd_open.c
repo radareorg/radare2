@@ -375,6 +375,28 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case '=': // "ob="
+		{
+			RListIter *iter;
+			RList *list = r_list_newf ((RListFree) r_listinfo_free);
+			RBinFile *bf = NULL;
+			RBin *bin = core->bin;
+			if (!bin) {
+				return;
+			}
+			r_list_foreach (bin->binfiles, iter, bf) {
+				char temp[4];
+				RInterval inter = (RInterval) {bf->o->baddr, bf->o->size};
+				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1,  sdb_itoa (bf->fd, temp, 10));
+				if (!info) {
+					break;
+				}
+				r_list_append (list, info);
+			}
+			r_core_visual_list (core, list, core->offset, core->blocksize,
+				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+			r_list_free (list);
+		} break;
 	case '?': // "ob?"
 		r_core_cmd_help (core, help_msg_ob);
 		break;
@@ -771,7 +793,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case '=': // "om=" 
 		{
-		RList *list = r_list_new ();
+		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
 			return;
 		}
@@ -779,15 +801,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 		RIOMap *map;
 		ls_foreach_prev (core->io->maps, iter, map) {
 			char temp[4];
-			ListInfo *info = R_NEW (ListInfo);
+			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, sdb_itoa (map->fd, temp, 10));
 			if (!info) {
-				return;
+				break;
 			}
-			info->name = map->name;
-			info->pitv = map->itv;
-			info->vitv = map->itv;
-			info->perm = map->perm;
-			info->extra = sdb_itoa (map->fd, temp, 10);
 			r_list_append (list, info);
 		}
 		r_core_visual_list (core, list, core->offset, core->blocksize,

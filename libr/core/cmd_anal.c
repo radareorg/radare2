@@ -1884,20 +1884,16 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	}
 	r_list_sort (fcn->bbs, bb_cmp);
 	if (mode == '=') { // afb
-		RList *flist = r_list_new ();
+		RList *flist = r_list_newf ((RListFree) r_listinfo_free);
 		if (!flist) {
 			return false;
 		}
 		ls_foreach (fcn->bbs, iter, b) {
-			ListInfo *info = R_NEW (ListInfo);
+			RInterval inter = (RInterval) {b->addr, b->size};
+			RListInfo *info = r_listinfo_new (b->label, inter, inter, -1, NULL);
 			if (!info) {
-				return false;
+				break;
 			}
-			info->name = b->label;
-			info->pitv = (RInterval) {b->addr, b->size};
-			info->vitv = info->pitv;
-			info->perm = -1;
-			info->extra = NULL;
 			r_list_append (flist, info);
 		}
 		r_core_visual_list (core, flist, core->offset, core->blocksize,

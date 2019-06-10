@@ -103,10 +103,10 @@ typedef struct {
 	RInterval vitv;
 	int perm;
 	char *extra;
-} ListInfo;
+} RListInfo;
 
 static int cmpaddr (const void *_a, const void *_b) {
-	const ListInfo *a = _a, *b = _b;
+	const RListInfo *a = _a, *b = _b;
 	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
 		 (r_itv_begin (a->pitv) < r_itv_begin (b->pitv))? -1: 0;
 }
@@ -115,7 +115,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 void visual_list(RDebug *dbg, RList *list, ut64 seek, ut64 len, int width, int use_color) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
-	ListInfo *info;
+	RListInfo *info;
 	int j, i;
 	RIO *io = dbg->iob.io;
 	width -= 80;
@@ -218,7 +218,7 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 				dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
 				break;
 			case '=': {
-				ListInfo *info = R_NEW0 (ListInfo);
+				RListInfo *info = R_NEW0 (RListInfo);
 				if (!info) {
 					return;
 				}
