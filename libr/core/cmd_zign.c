@@ -267,7 +267,7 @@ static bool addHashZign(RCore *core, const char *name, int type, const char *arg
 
 static bool addBytesZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
 	const char *hexbytes = NULL;
-	ut8 *mask = NULL, *bytes = NULL;
+	ut8 *mask = NULL, *bytes = NULL, *sep = NULL;
 	int size = 0, blen = 0;
 	bool retval = true;
 
@@ -278,15 +278,34 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 	}
 
 	hexbytes = r_str_word_get0 (args0, 0);
-	blen = strlen (hexbytes) + 4;
-	bytes = malloc (blen);
-	mask = malloc (blen);
+	if ((sep = (ut8*) strchr (hexbytes, ':'))) {
+		blen = sep - (ut8*) hexbytes;
+		if (!blen || (blen & 1) || strlen ((char*) ++sep) != blen) {
+			eprintf ("error: cannot parse hexpairs\n");
+			retval = false;
+			goto out;
+		}
+		bytes = calloc (1, blen + 1);
+		mask = calloc (1, blen + 1);
+		memcpy (bytes, hexbytes, blen);
+		memcpy (mask, sep, blen);
+		size = r_hex_str2bin ((char*) bytes, bytes);
+		if (size != blen / 2 || r_hex_str2bin ((char*) mask, mask) != size) {
+			eprintf ("error: cannot parse hexpairs\n");
+			retval = false;
+			goto out;
+		}
+	} else {
+		blen = strlen (hexbytes) + 4;
+		bytes = malloc (blen);
+		mask = malloc (blen);
 
-	size = r_hex_str2binmask (hexbytes, bytes, mask);
-	if (size <= 0) {
-		eprintf ("error: cannot parse hexpairs\n");
-		retval = false;
-		goto out;
+		size = r_hex_str2binmask (hexbytes, bytes, mask);
+		if (size <= 0) {
+			eprintf ("error: cannot parse hexpairs\n");
+			retval = false;
+			goto out;
+		}
 	}
 
 	switch (type) {
@@ -740,7 +759,40 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 	return retval;
 }
 
-static bool search(RCore *core, bool rad) {
+static bool searchRange2(RCore *core, RSignSearch *ss, ut64 from, ut64 to, bool rad, struct ctxSearchCB *ctx) {
+	ut8 *buf = malloc (core->blocksize);
+	ut64 at;
+	int rlen;
+	bool retval = true;
+
+	if (!buf) {
+		return false;
+	}
+	r_cons_break_push (NULL, NULL);
+	for (at = from; at < to; at += core->blocksize) {
+		if (r_cons_is_breaked ()) {
+			retval = false;
+			break;
+		}
+		rlen = R_MIN (core->blocksize, to - at);
+		if (!r_io_is_valid_offset (core->io, at, 0)) {
+			retval = false;
+			break;
+		}
+		(void)r_io_read_at (core->io, at, buf, rlen);
+		if (r_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
+			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+			retval = false;
+			break;
+		}
+	}
+	r_cons_break_pop ();
+	free (buf);
+
+	return retval;
+}
+
+static bool search(RCore *core, bool rad, bool only_func) {
 	RList *list;
 	RListIter *iter;
 	RAnalFunction *fcni = NULL;
@@ -762,6 +814,7 @@ static bool search(RCore *core, bool rad) {
 	bool useOffset = r_config_get_i (core->config, "zign.offset");
 	bool useRefs = r_config_get_i (core->config, "zign.refs");
 	bool useHash = r_config_get_i (core->config, "zign.hash");
+	int maxsz = r_config_get_i (core->config, "zign.maxsz");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -773,7 +826,7 @@ static bool search(RCore *core, bool rad) {
 	}
 
 	// Bytes search
-	if (useBytes) {
+	if (useBytes && !only_func) {
 		list = r_core_get_boundaries_prot (core, -1, mode, "search");
 		if (!list) {
 			return false;
@@ -786,9 +839,20 @@ static bool search(RCore *core, bool rad) {
 	}
 
 	// Function search
-	if (useGraph || useOffset || useRefs || useHash) {
+	if (useGraph || useOffset || useRefs || useHash || (useBytes && only_func)) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
+		int count = 0;
+
+		RSignSearch *ss = NULL;
+
+		if (useBytes && only_func) {
+			ss = r_sign_search_new ();
+			ss->search->align = r_config_get_i (core->config, "search.align");
+			int minsz = r_config_get_i (core->config, "zign.minsz");
+			r_sign_search_init (core->anal, ss, minsz, searchHitCB, &bytes_search_ctx);
+		}
+
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -805,11 +869,19 @@ static bool search(RCore *core, bool rad) {
 			if (useHash) {
 				r_sign_match_hash (core->anal, fcni, fcnMatchCB, &hash_match_ctx);
 			}
+			if (useBytes && only_func) {
+				eprintf ("Matching func %d / %d (hits %d)\n", count, r_list_length (core->anal->fcns), bytes_search_ctx.count);
+				int fcnlen = r_anal_fcn_realsize (fcni);
+				int len = R_MIN (core->io->addrbytes * fcnlen, maxsz);
+				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
+			}
+			count ++;
 #if 0
 TODO: add useXRefs, useName
 #endif
 		}
 		r_cons_break_pop ();
+		r_sign_search_free (ss);
 	}
 
 	if (rad) {
@@ -975,7 +1047,16 @@ static int cmdSearch(void *data, const char *input) {
 	switch (*input) {
 	case 0:
 	case '*':
-		return search (core, input[0] == '*');
+		return search (core, input[0] == '*', false);
+	case 'f':
+		switch (input[1]) {
+		case 0:
+		case '*':
+			return search (core, input[1] == '*', true);
+		default:
+			eprintf ("usage: z/[f*]\n");
+			return false;
+		}
 	case '?':
 		r_core_cmd_help (core, help_msg_z_slash);
 		break;
