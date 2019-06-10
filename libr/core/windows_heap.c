@@ -762,7 +762,6 @@ err:
 static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEAP heapBase, WPARAM offset) {
 	/*
 	*	TODO:
-	*		- LFH
 	*		- Backend (Is this needed?)
 	*/
 	PHeapBlock hb = R_NEW0 (HeapBlock);
@@ -776,6 +775,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 		goto err;
 	}
 	hb->extraInfo = extra;
+	extra->heap = heapBase;
 	WPARAM granularity = (WPARAM)dbg->bits * 2;
 	WPARAM headerOff = offset - granularity;
 	SEGMENT_HEAP heap;
@@ -784,7 +784,6 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	WPARAM RtlpHpHeapGlobal;
 	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOff, &RtlpHpHeapGlobal, sizeof (WPARAM), NULL);
 
-	// VS
 	WPARAM pgSegOff = headerOff & heap.SegContexts[0].SegmentMask;
 	WPARAM segSignature;
 	ReadProcessMemory (h_proc, (PVOID)(pgSegOff + sizeof (LIST_ENTRY)), &segSignature, sizeof (WPARAM), NULL); // HEAP_PAGE_SEGMENT.Signature
@@ -797,9 +796,11 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 		if (!(segment.DescArray[pageIndex].RangeFlags & PAGE_RANGE_FLAGS_FIRST)) {
 			pageIndex -= segment.DescArray[pageIndex].UnitOffset;
 		}
+		// VS
+		WPARAM subsegmentOffset = pgSegOff + pageIndex * 0x1000;
 		if (segment.DescArray[pageIndex].RangeFlags & 0xF && segment.DescArray[pageIndex].UnusedBytes == 0x1000) {
 			HEAP_VS_SUBSEGMENT subsegment;
-			ReadProcessMemory (h_proc, (PVOID)(pgSegOff + pageIndex * 0x1000), &subsegment, sizeof (HEAP_VS_SUBSEGMENT), NULL);
+			ReadProcessMemory (h_proc, (PVOID)subsegmentOffset, &subsegment, sizeof (HEAP_VS_SUBSEGMENT), NULL);
 			if ((subsegment.Size ^ 0x2BED) == subsegment.Signature) {
 				HEAP_VS_CHUNK_HEADER header;
 				ReadProcessMemory (h_proc, (PVOID)(headerOff - sizeof (HEAP_VS_CHUNK_HEADER)), &header, sizeof (HEAP_VS_CHUNK_HEADER), NULL);
@@ -808,10 +809,21 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 				hb->dwSize = header.Sizes.UnsafeSize * sizeof (HEAP_VS_CHUNK_HEADER);
 				hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | VS_BLOCK;
 				extra->granularity = granularity + sizeof (HEAP_VS_CHUNK_HEADER);
-				extra->segment = pgSegOff + pageIndex * 0x1000;
-				extra->heap = heapBase;
+				extra->segment = subsegmentOffset;
 				return hb;
 			}
+		}
+		// LFH
+		if (segment.DescArray[pageIndex].RangeFlags & PAGE_RANGE_FLAGS_LFH_SUBSEGMENT) {
+			HEAP_LFH_SUBSEGMENT subsegment;
+			ReadProcessMemory (h_proc, (PVOID)subsegmentOffset, &subsegment, sizeof (HEAP_LFH_SUBSEGMENT), NULL);
+			subsegment.BlockOffsets.EncodedData ^= (DWORD)GetLFHKey (dbg, h_proc, true) ^ ((DWORD)subsegmentOffset >> 0xC);
+			hb->dwAddress = offset;
+			hb->dwSize = subsegment.BlockOffsets.BlockSize;
+			hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
+			extra->granularity = granularity;
+			extra->segment = subsegmentOffset;
+			return hb;
 		}
 	}
 
