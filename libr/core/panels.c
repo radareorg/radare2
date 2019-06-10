@@ -4525,6 +4525,7 @@ static bool moveToDirection(RCore *core, Direction direction) {
 
 static void update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 	RPanels *panels = core->panels;
+	RConsCanvas *can = panels->can;
 	modal->data = r_strbuf_new (NULL);
 	int count = sdb_count (menu_db);
 	if (modal->idx >= count) {
@@ -4553,13 +4554,14 @@ static void update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 			i++;
 		}
 	}
-	r_cons_canvas_fill (panels->can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
-	(void)r_cons_canvas_gotoxy (panels->can, modal->pos.x + 2, modal->pos.y + 1);
-	r_cons_canvas_write (panels->can, r_strbuf_drain (modal->data));
+	r_cons_gotoxy (0, 0);
+	r_cons_canvas_fill (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, ' ');
+	(void)r_cons_canvas_gotoxy (can, modal->pos.x + 2, modal->pos.y + 1);
+	r_cons_canvas_write (can, r_strbuf_drain (modal->data));
 
-	r_cons_canvas_box (panels->can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
+	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
 
-	r_cons_canvas_print (panels->can);
+	r_cons_canvas_print (can);
 	r_cons_flush ();
 }
 
@@ -4582,7 +4584,6 @@ static bool draw_modal (RCore *core, RModal *modal, int range_end, int start, co
 static void create_almighty(RCore *core, RPanel *panel, Sdb *menu_db, const int x, const int y, const int w, const int h) {
 	RModal *modal = init_modal ();
 	set_geometry (&modal->pos, x, y, w, h);
-	const int usleep = 25000;
 	int okey, key;
 	update_modal (core, menu_db, modal);
 	while (modal) {
@@ -4592,14 +4593,10 @@ static void create_almighty(RCore *core, RPanel *panel, Sdb *menu_db, const int 
 		case 'j':
 			modal->idx++;
 			update_modal (core, menu_db, modal);
-			r_sys_usleep (usleep);
-			r_cons_readflush ();
 			break;
 		case 'k':
 			modal->idx--;
 			update_modal (core, menu_db, modal);
-			r_sys_usleep (usleep);
-			r_cons_readflush ();
 			break;
 		case 'v':
 			exec_almighty (core, panel, modal, menu_db, VERTICAL);
