@@ -151,13 +151,13 @@ static int remove_meta_offset(RCore *core, ut64 offset) {
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
 }
 
-static void print_meta_offset(RCore *core, ut64 offset) {
-	int ret, line, line_old, i;
+static bool print_meta_offset(RCore *core, ut64 addr) {
+	int line, line_old, i;
 	char file[1024];
 
-	ret = r_bin_addr2line (core->bin, offset, file, sizeof (file)-1, &line);
+	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line);
 	if (ret) {
-		r_cons_printf ("file %s\nline %d\n", file, line);
+		r_cons_printf ("file: %s\nline: %d\n", file, line);
 		line_old = line;
 		if (line >= 2) {
 			line -= 2;
@@ -173,10 +173,8 @@ static void print_meta_offset(RCore *core, ut64 offset) {
 		} else {
 			eprintf ("Cannot open '%s'\n", file);
 		}
-	} else {
-		eprintf ("Cannot find meta information at 0x%08"
-			PFMT64x"\n", offset);
 	}
+	return ret;
 }
 
 static int remove_meta_fileline(RCore *core, const char *file_line) {
@@ -193,20 +191,33 @@ static int print_meta_fileline(RCore *core, const char *file_line) {
 	return 0;
 }
 
-static int print_addrinfo (void *user, const char *k, const char *v) {
-	char *colonpos, *subst;
+static ut64 filter_offset = UT64_MAX;
+static int filter_format = 0;
+static size_t filter_count = 0;
 
+static int print_addrinfo (void *user, const char *k, const char *v) {
 	ut64 offset = sdb_atoi (k);
-	if (!offset) {
+	if (!offset || offset == UT64_MAX) {
 		return true;
 	}
-	subst = strdup (v);
-	colonpos = strchr (subst, '|');
-
-	if (colonpos) {
-		*colonpos = ':';
+	char *subst = strdup (v);
+	char *colonpos = strchr (subst, '|'); // XXX keep only : for simplicity?
+	if (!colonpos) {
+		colonpos = strchr (subst, ':');
 	}
-	r_cons_printf ("CL %s %s\n", subst, k);
+	if (!colonpos) {
+		r_cons_printf ("%s\n", subst);
+	}
+	if (filter_offset == UT64_MAX || filter_offset == offset) {
+		if (filter_format) {
+			*colonpos = ':';
+			r_cons_printf ("CL %s %s\n", k, subst);
+		} else {
+			*colonpos = 0;
+			r_cons_printf ("file: %s\nline: %s\n", subst, colonpos + 1);
+		}
+		filter_count++;
+	}
 	free (subst);
 
 	return true;
@@ -231,24 +242,37 @@ static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
 static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
-	int remove = false;
+	bool remove = false;
 	int all = false;
 	const char *p = input;
-	char *colon, *space, *file_line = 0;
+	char *file_line = NULL;
 
 	if (*p == '?') {
-		eprintf ("Usage: CL[-][*] [file:line] [addr]");
+		eprintf ("Usage: CL[.-*?] [addr] [file:line]\n");
 		return 0;
 	}
-
 	if (*p == '-') {
 		p++;
 		remove = true;
+	}
+	if (*p == '.') {
+		p++;
+		offset = core->offset;
+	}
+	if (*p == ' ') {
+		p = r_str_trim_ro (p + 1);
+		if (!strchr (p, ' ')) {
+			offset = r_num_math (core->num, p);
+			p = "";
+		}
 	}
 
 	if (*p == '*') {
 		p++;
 		all = true;
+		filter_format = '*';
+	} else {
+		filter_format = 0;
 	}
 
 	if (all) {
@@ -260,78 +284,38 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		return 0;
 	}
 
-	while (*p == ' ') {
-		p++;
-	}
-
-	if (*p) {
-		offset = r_num_math (core->num, p);
-		if (!offset)
-			offset = core->offset;
-	} else {
-		offset = core->offset;
-	}
-	colon = strchr (p, ':');
-	if (colon) {
-		space = strchr (p, ' ');
-		if (!space) {
-			file_line = strdup (p);
-		} else if (space > colon) {
-			file_line = r_str_ndup (p, space - p);
+	p = r_str_trim_ro (p);
+	char *myp = strdup (p);
+	char *sp = strchr (myp, ' ');
+	if (sp) {
+		offset = r_num_math (core->num, myp);
+		*sp = 0;
+		sp++;
+		RBinFile *bf = r_bin_cur (core->bin);
+		ret = 0;
+		if (bf && bf->sdb_addrinfo) {
+			ret = cmd_meta_add_fileline (bf->sdb_addrinfo,
+					sp, offset);
 		} else {
-			goto error;
-		}
-		if (!file_line) {
-			return -1;
-		}
-		colon = strchr (file_line, ':');
-		if (!colon) {
-			goto error;
-		}
-		*colon = '|';
-		while (*p && *p != ' ') {
-			p++;
-		}
-		while (*p == ' ') {
-			p++;
-		}
-		if (*p != '\0') {
-			// TODO: use r_num_math here or something less rusty than sscanf
-			ret = sscanf (p, "0x%"PFMT64x, &offset);
-			if (ret != 1) {
-				remove = 0;
-				eprintf ("Failed to parse addr at %s\n", p);
-				// goto error;
-			} else {
-				ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
-						file_line, offset);
-				goto error;
-			}
-		}
-		if (remove) {
-			remove_meta_fileline (core, file_line);
-		} else {
-			print_meta_fileline (core, file_line);
+			eprintf ("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case\n");
 		}
 		free (file_line);
-		return 0;
+		free (myp);
+		return ret;
 	}
-	offset = core->offset;
-
-	if (offset != UT64_MAX) {
-		if (remove) {
-			remove_meta_offset (core, offset);
-		} else {
+	free (myp);
+	if (remove) {
+		remove_meta_offset (core, offset);
+	} else {
+		// taken from r2 // TODO: we should move this addrinfo sdb logic into RBin.. use HT
+		filter_offset = offset;
+		filter_count = 0;
+		sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+		if (filter_count == 0) {
 			print_meta_offset (core, offset);
 		}
-	} else {
-		goto error;
 	}
 	return 0;
-
-error:
-	free (file_line);
-	return -1;
 }
 
 static int cmd_meta_comment(RCore *core, const char *input) {
