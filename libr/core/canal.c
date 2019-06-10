@@ -89,14 +89,7 @@ static int is_string(const ut8 *buf, int size, int *len) {
 static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 	ut8 rstr[128] = {0};
 	int ret = 0, len = 0;
-	ut8 *str;
-	//there can be strings in code section
-#if 0
-	if (iscodesection (core, addr)) {
-		return NULL;
-	}
-#endif
-	str = calloc (256, 1);
+	ut8 *str = calloc (256, 1);
 	if (!str) {
 		if (olen) {
 			*olen = 0;

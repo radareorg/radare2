@@ -18,15 +18,14 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
 // when io.va is false it only checks for the desc
 R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	r_return_val_if_fail (io, false);
-	RIOMap* map;
 	if (io->va) {
 		if (!hasperm) {
-			return r_io_map_is_mapped (io, offset);
+			// return r_io_map_is_mapped (io, offset);
+			RIOMap* map = r_io_map_get (io, offset);
+			return map? map->perm & R_PERM_R: false;
 		}
-		if ((map = r_io_map_get (io, offset))) {
-			return ((map->perm & hasperm) == hasperm);
-		}
-		return false;
+		RIOMap* map = r_io_map_get (io, offset);
+		return map? (map->perm & hasperm) == hasperm: false;
 	}
 	if (!io->desc) {
 		return false;
@@ -61,8 +60,5 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	size = R_DIM (size, 1, 8);
 	//size says the number of bytes to read transform to bits for r_read_ble
 	r_write_ble (buf, *val, endian, size * 8);
-	if (!r_io_write_at (io, addr, buf, size)) {
-		return false;
-	}
-	return true;
+	return r_io_write_at (io, addr, buf, size) == size;
 }
