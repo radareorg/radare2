@@ -375,6 +375,33 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case '=': // "ob="
+		{
+			RListIter *iter;
+			RList *list = r_list_new ();
+			RBinFile *binfile = NULL;
+			RBin *bin = core->bin;
+			const RList *binfiles = bin ? bin->binfiles: NULL;
+			if (!binfiles) {
+				return;
+			}
+			r_list_foreach (binfiles, iter, binfile) {
+				char temp[4];
+				ListInfo *info = R_NEW (ListInfo);
+				if (!info) {
+					return;
+				}
+				info->name = binfile->file;
+				info->pitv = (RInterval) {binfile->o->baddr, binfile->o->size};
+				info->vitv = info->pitv;
+				info->perm = -1;
+				info->extra = sdb_itoa (binfile->fd, temp, 10);
+				r_list_append (list, info);
+			}
+			r_core_visual_list (core, list, core->offset, core->blocksize,
+				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+			r_list_free (list);
+		} break;
 	case '?': // "ob?"
 		r_core_cmd_help (core, help_msg_ob);
 		break;
