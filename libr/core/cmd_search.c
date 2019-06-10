@@ -1577,7 +1577,7 @@ bad:
 	return result;
 }
 
-static int esil_addrinfo(RAnalEsil *esil) {
+static bool esil_addrinfo(RAnalEsil *esil) {
 	RCore *core = (RCore *) esil->cb.user;
 	ut64 num = 0;
 	char *src = r_anal_esil_pop (esil);
@@ -1586,10 +1586,10 @@ static int esil_addrinfo(RAnalEsil *esil) {
 		r_anal_esil_pushnum (esil, num);
 	} else {
 // error. empty stack?
-		return 0;
+		return false;
 	}
 	free (src);
-	return 1;
+	return true;
 }
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
