@@ -1111,41 +1111,44 @@ struct ctxGetListCB {
 
 static void listBytes(RAnal *a, RSignItem *it, int format) {
 	RSignBytes *bytes = it->bytes;
-	char *strbytes = NULL;
-	int i = 0;
 
-	int masked = 0;
 	if (!bytes->bytes) {
 		return;
 	}
-	for (i = 0; i < bytes->size; i++) {
-		if (bytes->mask[i] & 0xf0) {
-			masked++;
-			strbytes = r_str_appendf (strbytes, "%x", (bytes->bytes[i] & 0xf0) >> 4);
-		} else {
-			strbytes = r_str_appendf (strbytes, ".");
-		}
-		if (bytes->mask[i] & 0xf) {
-			masked++;
-			strbytes = r_str_appendf (strbytes, "%x", bytes->bytes[i] & 0xf);
-		} else {
-			strbytes = r_str_appendf (strbytes, ".");
-		}
-	}
-	masked /= 2; /* nibbles to bytes */
 
-	if (strbytes) {
-		if (format == '*') {
-			a->cb_printf ("za %s b %s\n", it->name, strbytes);
-		} else if (format == 'q') {
-			a->cb_printf (" b(%d/%d)", masked, bytes->size);
-		} else if (format == 'j') {
-			a->cb_printf ("\"bytes\":\"%s\",", strbytes);
-		} else {
-			a->cb_printf ("  bytes: %s\n", strbytes);
-		}
-		free (strbytes);
+	int masked = 0, i = 0;
+	for (i = 0; i < bytes->size; i++) {
+		masked += bytes->mask[i] != 0;
 	}
+
+	char * strbytes = r_hex_bin2strdup (bytes->bytes, bytes->size);
+	if (!strbytes) {
+		return;
+	}
+	char * strmask = r_hex_bin2strdup (bytes->mask, bytes->size);
+	if (!strmask) {
+		free (strbytes);
+		return;
+	}
+
+	if (format == '*') {
+		if (masked == bytes->size) {
+			a->cb_printf ("za %s b %s\n", it->name, strbytes);
+		} else {
+			a->cb_printf ("za %s b %s:%s\n", it->name, strbytes, strmask);
+		}
+	} else if (format == 'q') {
+		a->cb_printf (" b(%d/%d)", masked, bytes->size);
+	} else if (format == 'j') {
+		a->cb_printf ("\"bytes\":\"%s\",", strbytes);
+		a->cb_printf ("\"mask\":\"%s\",", strmask);
+	} else {
+		a->cb_printf ("  bytes: %s\n", strbytes);
+		a->cb_printf ("  mask: %s\n", strmask);
+	}
+
+	free (strbytes);
+	free (strmask);
 }
 
 static void listGraph(RAnal *a, RSignItem *it, int format) {
@@ -1186,7 +1189,7 @@ static void listRealname(RAnal *a, RSignItem *it, int format) {
 		if (format == 'q') {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
 		} else if (format == '*') {
-			a->cb_printf ("za %s %s\n", it->name, it->realname);
+			a->cb_printf ("za %s n %s\n", it->name, it->realname);
 			a->cb_printf ("afn %s @ 0x%08"PFMT64x"\n", it->realname, it->addr);
 		} else if (format == 'j') {
 			a->cb_printf ("\"realname\":\"%s\",", it->realname);
