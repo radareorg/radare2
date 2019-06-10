@@ -468,7 +468,11 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 			memcpy (mask + ilen, "f0", 3);
 		}
 		for (ptr = mask; *ptr; ptr++) {
-			*ptr = (*ptr == '.') ? '0' : 'f';
+			if (IS_HEXCHAR (*ptr)) {
+				*ptr = 'f';
+			} else if (*ptr == '.') {
+				*ptr = '0';
+			}
 		}
 		len = r_hex_str2bin ((char*)mask, mask);
 		if (len < 0) {
