@@ -4307,9 +4307,7 @@ R_API void r_listinfo_free (RListInfo *info) {
 	if (!info) {
 		return;
 	}
-	free (info->name);
-	free (info->extra);
-	free (info);
+	R_FREE (info);
 }
 
 // TODO: move this to the table api
