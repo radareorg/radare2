@@ -620,12 +620,15 @@ static int cmd_info(void *data, const char *input) {
 				int param_shift = 0;
 				if (input[1] == 'S') {
 					name = "segments";
+					input++;
 					action = R_CORE_BIN_ACC_SEGMENTS;
 					param_shift = 1;
 				}
 				// case for iS=
 				if (input[1] == '=') {
 					mode = R_MODE_EQUAL;
+				} else if (input[1] == '*') {
+					mode = R_MODE_RADARE;
 				} else if (input[1] == 'q' && input[2] == '.') {
 					mode = R_MODE_SIMPLE;
 				} else if (input[1] == 'j' && input[2] == '.') {
