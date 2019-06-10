@@ -1627,7 +1627,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		}
 		/* hook addrinfo */
 		core->anal->esil->cb.user = core;
-		r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo, 1, 1);
+		r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo, 1, 1, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
 		/* hook addrinfo */
 		r_anal_esil_setup (core->anal->esil, core->anal, 1, 0, nonull);
 		r_anal_esil_stack_free (core->anal->esil);
