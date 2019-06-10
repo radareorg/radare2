@@ -716,6 +716,10 @@ R_API int r_main_radare2(int argc, char **argv) {
 		default:
 			help++;
 		}
+		// Treat the rest arguments as arguments for a debugged program
+		if (debug == 1) {
+			break;
+		}
 	}
 	if (noStderr) {
 		if (-1 == close (2)) {
