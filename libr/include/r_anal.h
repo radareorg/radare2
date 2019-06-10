@@ -1209,8 +1209,8 @@ typedef bool (*RAnalEsilOpCb)(RAnalEsil *esil);
 
 typedef struct r_anal_esil_operation_t {
 	RAnalEsilOpCb code;
-	ut32 push;
-	ut32 pop;
+	ut32 push;		// amount of operands pushed
+	ut32 pop;		// amount of operands popped
 	ut32 type;
 } RAnalEsilOp;
 
@@ -1426,7 +1426,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len);
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len);
 R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size);
 R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num);
-R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
+R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);
 R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop, ut32 type);
