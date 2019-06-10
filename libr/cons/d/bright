@@ -6,7 +6,7 @@ ec b0xff bred
 ec args byellow
 ec bin bcyan
 ec btext byellow
-ec call bgreen
+ec call bgreen . bold
 ec cjmp bgreen
 ec cmp bcyan
 ec comment bred
@@ -20,7 +20,7 @@ ec flow2 bblue
 ec fname bred
 ec help bgreen
 ec input bwhite
-ec invalid bred
+ec invalid bred . bold
 ec jmp bgreen
 ec label bcyan
 ec math byellow
@@ -29,14 +29,14 @@ ec nop bblue
 ec num byellow
 ec offset bgreen
 ec other bwhite
-ec pop bmagenta
+ec pop bmagenta . bold
 ec prompt byellow
 ec push bmagenta
 ec crypto bblue
 ec reg bcyan
 ec ret bred
 ec swi bmagenta
-ec trap bred
+ec trap bred . bold
 ec ucall bgreen
 ec ujmp bgreen
 
