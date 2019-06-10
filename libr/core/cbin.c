@@ -2382,16 +2382,13 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		RBinSection *s;
 		r_list_foreach (sections, iter, s) {
 			char humansz[8];
-			ListInfo *info = R_NEW (ListInfo);
-			if (!info) {
-				return false;
-			}
-			info->name = s->name;
-			info->pitv = (RInterval){s->paddr, s->size};
-			info->vitv = (RInterval){s->vaddr, s->vsize};
-			info->perm = s->perm;
+			RInterval pitv = (RInterval){s->paddr, s->size};
+			RInterval vitv = (RInterval){s->vaddr, s->vsize};
 			r_num_units (humansz, sizeof (humansz), s->size);
-			info->extra = strdup (humansz);
+			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
+			if (!info) {
+				break;
+			}
 			r_list_append (list, info);
 		}
 		r_core_visual_list (r, list, r->offset, -1, cols, r->print->flags & R_PRINT_FLAGS_COLOR);

@@ -379,23 +379,18 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		{
 			RListIter *iter;
 			RList *list = r_list_new ();
-			RBinFile *binfile = NULL;
+			RBinFile *bf = NULL;
 			RBin *bin = core->bin;
-			const RList *binfiles = bin ? bin->binfiles: NULL;
-			if (!binfiles) {
+			if (!bin) {
 				return;
 			}
-			r_list_foreach (binfiles, iter, binfile) {
+			r_list_foreach (bin->binfiles, iter, bf) {
 				char temp[4];
-				ListInfo *info = R_NEW (ListInfo);
+				RInterval inter = (RInterval) {bf->o->baddr, bf->o->size};
+				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1,  sdb_itoa (bf->fd, temp, 10));
 				if (!info) {
-					return;
+					break;
 				}
-				info->name = binfile->file;
-				info->pitv = (RInterval) {binfile->o->baddr, binfile->o->size};
-				info->vitv = info->pitv;
-				info->perm = -1;
-				info->extra = sdb_itoa (binfile->fd, temp, 10);
 				r_list_append (list, info);
 			}
 			r_core_visual_list (core, list, core->offset, core->blocksize,
@@ -806,15 +801,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 		RIOMap *map;
 		ls_foreach_prev (core->io->maps, iter, map) {
 			char temp[4];
-			ListInfo *info = R_NEW (ListInfo);
+			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, sdb_itoa (map->fd, temp, 10));
 			if (!info) {
-				return;
+				break;
 			}
-			info->name = map->name;
-			info->pitv = map->itv;
-			info->vitv = map->itv;
-			info->perm = map->perm;
-			info->extra = sdb_itoa (map->fd, temp, 10);
 			r_list_append (list, info);
 		}
 		r_core_visual_list (core, list, core->offset, core->blocksize,

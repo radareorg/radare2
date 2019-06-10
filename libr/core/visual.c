@@ -4290,11 +4290,24 @@ dodo:
 	return 0;
 }
 
+R_API RListInfo *r_listinfo_new(char *name, RInterval pitv, RInterval vitv, int perm, char *extra) {
+	RListInfo *info = R_NEW (RListInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->name = name;
+	info->pitv = pitv;
+	info->vitv = vitv;
+	info->perm = perm;
+	info->extra = extra;
+	return info;
+}
+
 // TODO: move this to the table api
 R_API void r_core_visual_list(RCore *core, RList *list, ut64 seek, ut64 len, int width, int use_color) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
-	ListInfo *info;
+	RListInfo *info;
 	int j, i;
 	RIO *io = core->io;
 	width -= 80;

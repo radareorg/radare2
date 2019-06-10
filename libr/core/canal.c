@@ -2998,15 +2998,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		}
 		ls_foreach (fcns, iter, fcn) {
 			char temp[4];
-			ListInfo *info = R_NEW (ListInfo);
+			RInterval inter = (RInterval) {fcn->addr, r_anal_fcn_size (fcn)};
+			RListInfo *info = r_listinfo_new (r_core_anal_fcn_name (core, fcn), inter, inter, -1, sdb_itoa (fcn->bits, temp, 10));
 			if (!info) {
-				return -1;
+				break;
 			}
-			info->name = r_core_anal_fcn_name (core, fcn);
-			info->pitv = (RInterval) {fcn->addr, r_anal_fcn_size (fcn)};
-			info->vitv = info->pitv;
-			info->extra = sdb_itoa (fcn->bits, temp, 10); 
-			info->perm  = -1;
 			r_list_append (flist, info);
 		}
 		r_core_visual_list (core, flist, core->offset, core->blocksize,
