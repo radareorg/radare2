@@ -243,7 +243,7 @@ typedef struct {
 	int indent_level;
 	int indent_space;
 	char *line;
-	char *line_col;
+	char *line_col, *prev_line_col;
 	char *refline, *refline2;
 	char *comment;
 	char *opstr;
@@ -856,6 +856,7 @@ static void ds_reflines_fini(RDisasmState *ds) {
 	anal->reflines = NULL;
 	R_FREE (ds->refline);
 	R_FREE (ds->refline2);
+	R_FREE (ds->prev_line_col);
 }
 
 static void ds_reflines_init(RDisasmState *ds) {
@@ -897,6 +898,7 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->line_col);
 	free (ds->refline);
 	free (ds->refline2);
+	free (ds->prev_line_col);
 	free (ds->opstr);
 	free (ds->osl);
 	free (ds->sl);
@@ -1168,9 +1170,12 @@ static void ds_pre_line(RDisasmState *ds) {
 	ds_setup_pre (ds, false, false);
 	ds_print_pre (ds);
 	char *tmp = ds->line;
+	char *tmp_col = ds->line_col;
 	ds->line = ds->refline2;
+	ds->line_col = ds->prev_line_col;
 	ds_print_lines_left (ds);
 	ds->line = tmp;
+	ds->line_col = tmp_col;
 }
 
 static void ds_begin_line(RDisasmState *ds) {
@@ -1549,12 +1554,15 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 	}
 	ds_print_pre (ds);
 	char *tmp = ds->line;
+	char *tmp_col = ds->line_col;
 	ds->line = ds->refline2;
+	ds->line_col = ds->prev_line_col;
 	ds_print_lines_left (ds);
 	if (!ds->show_offset && ds->show_marks) {
 		ds_print_show_cursor (ds);
 	}
 	ds->line = tmp;
+	ds->line_col = tmp_col;
 }
 
 static void ds_begin_comment(RDisasmState *ds) {
@@ -2189,10 +2197,12 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);
+		free (ds->prev_line_col);
 		free (line);
 		line = r_anal_reflines_str (ds->core, ds->at,
 			ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE);
 		ds->refline2 = line->str;
+		ds->prev_line_col = line->cols;
 		if (ds->line) {
 			if (strchr (ds->line, '<')) {
 				ds->indent_level++;
@@ -2207,10 +2217,13 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 	} else {
 		R_FREE (ds->line);
 		R_FREE (ds->line_col);
+		R_FREE (ds->prev_line_col);
 		free (ds->refline);
 		free (ds->refline2);
+		free (ds->prev_line_col);
 		ds->refline = strdup ("");
 		ds->refline2 = strdup ("");
+		ds->prev_line_col = strdup ("");
 	}
 }
 
@@ -2800,6 +2813,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				R_FREE (ds->line_col);
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
+				R_FREE (ds->prev_line_col);
 				ds->mi_found = true;
 				break;
 			}
@@ -2837,6 +2851,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				R_FREE (ds->line_col);
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
+				R_FREE (ds->prev_line_col);
 				ds->mi_found = true;
 				break;
 			case R_META_TYPE_FORMAT:
@@ -2847,6 +2862,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				R_FREE (ds->line);
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
+				R_FREE (ds->prev_line_col);
 				ds->mi_found = true;
 				break;
 			}
@@ -4234,6 +4250,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 				} else {
 					ds_update_ref_lines (ds);
 					refline = ds->refline2;
+					reflinecol = ds->prev_line_col;
 				}
 				ds_print_ref_lines (refline, reflinecol, ds);
 
@@ -5254,14 +5271,13 @@ toro:
 				ds_print_pre (ds);
 				ds_print_ref_lines (ds->line, ds->line_col, ds);
 				r_cons_printf ("; --------------------------------------");
-				// r_cons_printf ("%s%s%s; --------------------------------------",
-				// 	COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 				ds_newline (ds);
 			}
 			R_FREE (ds->line);
 			R_FREE (ds->line_col);
 			R_FREE (ds->refline);
 			R_FREE (ds->refline2);
+			R_FREE (ds->prev_line_col);
 		}
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
