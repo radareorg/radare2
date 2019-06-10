@@ -378,7 +378,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case '=': // "ob="
 		{
 			RListIter *iter;
-			RList *list = r_list_new ();
+			RList *list = r_list_newf ((RListFree) r_listinfo_free);
 			RBinFile *bf = NULL;
 			RBin *bin = core->bin;
 			if (!bin) {
@@ -793,7 +793,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case '=': // "om=" 
 		{
-		RList *list = r_list_new ();
+		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
 			return;
 		}

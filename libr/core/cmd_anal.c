@@ -1884,7 +1884,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	}
 	r_list_sort (fcn->bbs, bb_cmp);
 	if (mode == '=') { // afb
-		RList *flist = r_list_new ();
+		RList *flist = r_list_newf ((RListFree) r_listinfo_free);
 		if (!flist) {
 			return false;
 		}

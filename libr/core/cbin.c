@@ -2375,7 +2375,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_EQUAL (mode)) {
 		int cols = r_cons_get_size (NULL);
-		RList *list = r_list_new ();
+		RList *list = r_list_newf ((RListFree) r_listinfo_free);
 		if (!list) {
 			return false;
 		}

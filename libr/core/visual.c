@@ -4303,6 +4303,15 @@ R_API RListInfo *r_listinfo_new(char *name, RInterval pitv, RInterval vitv, int 
 	return info;
 }
 
+R_API void r_listinfo_free (RListInfo *info) {
+	if (!info) {
+		return;
+	}
+	free (info->name);
+	free (info->extra);
+	free (info);
+}
+
 // TODO: move this to the table api
 R_API void r_core_visual_list(RCore *core, RList *list, ut64 seek, ut64 len, int width, int use_color) {
 	ut64 mul, min = -1, max = -1;

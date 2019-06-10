@@ -2992,7 +2992,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		break;
 	case '=': { // afl=
 		r_list_sort (fcns, cmpaddr);
-		RList *flist = r_list_new ();
+		RList *flist = r_list_newf ((RListFree) r_listinfo_free);
 		if (!flist) {
 			return -1;
 		}
