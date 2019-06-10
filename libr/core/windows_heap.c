@@ -51,6 +51,8 @@
 #define PDI_HEAP_BLOCKS     0x10
 #define PDI_HEAP_ENTRIES_EX 0x200
 
+#define RtlpHpHeapGlobalsOffset 0x44A0
+
 #define CHECK_INFO(heapInfo)\
 	if (!heapInfo) {\
 		eprintf ("It wasn't possible to get the heap information\n");\
@@ -255,8 +257,8 @@ static WPARAM GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment) {
 
 	if (ntdllOffset) {
 		if (segment) {
-			WPARAM RtlpHpHeapGlobalsOffset = ntdllOffset + 0x44A0; // ntdll!RtlpHpHeapGlobals
-			lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
+			WPARAM RtlpHpHeapGlobals = ntdllOffset + RtlpHpHeapGlobalsOffset; // ntdll!RtlpHpHeapGlobals
+			lfhKeyLocation = RtlpHpHeapGlobals + sizeof (WPARAM);
 		} else {
 			lfhKeyLocation = ntdllOffset + 0x7508; // ntdll!RtlpLFHKey
 		}
@@ -302,6 +304,9 @@ static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_US
 *			Some LFH allocations seem misaligned
 */
 static PDEBUG_BUFFER InitHeapInfo(DWORD pid, DWORD mask) {
+	// Check:
+	//	RtlpQueryProcessDebugInformationFromWow64
+	//	RtlpQueryProcessDebugInformationRemote
 	// Make sure it is not segment heap to avoid lockups
 	if (mask & PDI_HEAP_BLOCKS) {
 		PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
@@ -405,10 +410,10 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 		return false;
 	}
 
-	WPARAM RtlpHpHeapGlobalsOffset = GetNtDllOffset (dbg) + 0x44A0; // ntdll!RtlpHpHeapGlobals
+	WPARAM RtlpHpHeapGlobals = GetNtDllOffset (dbg) + RtlpHpHeapGlobalsOffset; // ntdll!RtlpHpHeapGlobals
 
 	WPARAM lfhKey;
-	WPARAM lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof (WPARAM);
+	WPARAM lfhKeyLocation = RtlpHpHeapGlobals + sizeof (WPARAM);
 	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof (WPARAM), &bytesRead)) {
 		r_sys_perror ("ReadProcessMemory");
 		eprintf ("LFH key not found.\n");
@@ -472,7 +477,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 	}
 
 	WPARAM RtlpHpHeapGlobal;
-	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOffset, &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
+	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobals, &RtlpHpHeapGlobal, sizeof (WPARAM), &bytesRead);
 	// Backend Blocks (And VS)
 	for (int i = 0; i < 2; i++) {
 		HEAP_SEG_CONTEXT ctx = segheapHeader.SegContexts[i];
@@ -758,8 +763,7 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	/*
 	*	TODO:
 	*		- LFH
-	*		- VS
-	*		- Backend
+	*		- Backend (Is this needed?)
 	*/
 	PHeapBlock hb = R_NEW0 (HeapBlock);
 	if (!hb) {
@@ -772,8 +776,45 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 		goto err;
 	}
 	hb->extraInfo = extra;
+	WPARAM granularity = (WPARAM)dbg->bits * 2;
+	WPARAM headerOff = offset - granularity;
 	SEGMENT_HEAP heap;
 	ReadProcessMemory (h_proc, heapBase, &heap, sizeof (SEGMENT_HEAP), NULL);
+	WPARAM RtlpHpHeapGlobalsOff = GetNtDllOffset (dbg) + RtlpHpHeapGlobalsOffset;
+	WPARAM RtlpHpHeapGlobal;
+	ReadProcessMemory (h_proc, (PVOID)RtlpHpHeapGlobalsOff, &RtlpHpHeapGlobal, sizeof (WPARAM), NULL);
+
+	// VS
+	WPARAM pgSegOff = headerOff & heap.SegContexts[0].SegmentMask;
+	WPARAM segSignature;
+	ReadProcessMemory (h_proc, (PVOID)(pgSegOff + sizeof (LIST_ENTRY)), &segSignature, sizeof (WPARAM), NULL); // HEAP_PAGE_SEGMENT.Signature
+	WPARAM test = RtlpHpHeapGlobal ^ pgSegOff ^ segSignature ^ ((WPARAM)heapBase + offsetof (SEGMENT_HEAP, SegContexts));
+	if (test == 0xa2e64eada2e64ead) { // Hardcoded in ntdll
+		HEAP_PAGE_SEGMENT segment;
+		ReadProcessMemory (h_proc, (PVOID)pgSegOff, &segment, sizeof (HEAP_PAGE_SEGMENT), NULL);
+		WPARAM pgRangeDescOff = ((headerOff - pgSegOff) >> heap.SegContexts[0].UnitShift) << 5;
+		WPARAM pageIndex = pgRangeDescOff / sizeof (HEAP_PAGE_RANGE_DESCRIPTOR);
+		if (!(segment.DescArray[pageIndex].RangeFlags & PAGE_RANGE_FLAGS_FIRST)) {
+			pageIndex -= segment.DescArray[pageIndex].UnitOffset;
+		}
+		if (segment.DescArray[pageIndex].RangeFlags & 0xF && segment.DescArray[pageIndex].UnusedBytes == 0x1000) {
+			HEAP_VS_SUBSEGMENT subsegment;
+			ReadProcessMemory (h_proc, (PVOID)(pgSegOff + pageIndex * 0x1000), &subsegment, sizeof (HEAP_VS_SUBSEGMENT), NULL);
+			if ((subsegment.Size ^ 0x2BED) == subsegment.Signature) {
+				HEAP_VS_CHUNK_HEADER header;
+				ReadProcessMemory (h_proc, (PVOID)(headerOff - sizeof (HEAP_VS_CHUNK_HEADER)), &header, sizeof (HEAP_VS_CHUNK_HEADER), NULL);
+				header.Sizes.HeaderBits ^= RtlpHpHeapGlobal ^ headerOff;
+				hb->dwAddress = offset;
+				hb->dwSize = header.Sizes.UnsafeSize * sizeof (HEAP_VS_CHUNK_HEADER);
+				hb->dwFlags = 1 | SEGMENT_HEAP_BLOCK | VS_BLOCK;
+				extra->granularity = granularity + sizeof (HEAP_VS_CHUNK_HEADER);
+				extra->segment = pgSegOff + pageIndex * 0x1000;
+				extra->heap = heapBase;
+				return hb;
+			}
+		}
+	}
+
 	// Try Large Blocks
 	if ((offset & 0xFFFF) < 0x100) {
 		if (!heap.LargeAllocMetadata.Root) {
