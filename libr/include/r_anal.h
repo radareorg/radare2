@@ -1175,6 +1175,8 @@ typedef struct r_anal_esil_t {
 	int trace_idx;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
+	// this is so cursed, can we please remove external commands from esil internals.
+	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
 	char *cmd_step_out; // r2 (external) command to run after a step is performed
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
@@ -1191,16 +1193,17 @@ typedef struct r_anal_esil_t {
 
 #undef ESIL
 
-#if 0
+
 enum {
-	R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW = 0x1,
-	R_ANAL_ESIL_OP_TYPE_MEM_READ,
-	R_ANAL_ESIL_OP_TYPE_MEM_WRITE = 0x4,
-	R_ANAL_ESIL_OP_TYPE_REG_WRITE = 0x8,
-	R_ANAL_ESIL_OP_TYPE_MATH = 0x10,
-	R_ANAL_ESIL_OP_TYPE_CUSTOM = 0x20
+	R_ANAL_ESIL_OP_TYPE_UNKNOWN = 0x1,
+	R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW,
+	R_ANAL_ESIL_OP_TYPE_MEM_READ = 0x4,
+	R_ANAL_ESIL_OP_TYPE_MEM_WRITE = 0x8,
+	R_ANAL_ESIL_OP_TYPE_REG_WRITE = 0x10,
+	R_ANAL_ESIL_OP_TYPE_MATH = 0x20,
+	R_ANAL_ESIL_OP_TYPE_CUSTOM = 0x40
 };
-#endif
+
 
 typedef bool (*RAnalEsilOpCb)(RAnalEsil *esil);
 
@@ -1208,11 +1211,9 @@ typedef struct r_anal_esil_operation_t {
 	RAnalEsilOpCb code;
 	ut32 push;
 	ut32 pop;
-//	ut32 type;
+	ut32 type;
 } RAnalEsilOp;
 
-
-//typedef int (*RAnalEsilOp)(RAnalEsil *esil);
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
@@ -1428,7 +1429,7 @@ R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num);
 R_API int r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);
-R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop);
+R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop, ut32 type);
 R_API void r_anal_esil_stack_free(RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm(RAnalEsil *esil, const char *str, ut64 *num);

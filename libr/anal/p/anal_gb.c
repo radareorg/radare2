@@ -1512,7 +1512,7 @@ static int set_reg_profile(RAnal *anal) {
 
 static int esil_gb_init (RAnalEsil *esil) {
 	GBUser *user = R_NEW0 (GBUser);
-	r_anal_esil_set_op (esil, "daa", gb_custom_daa, 1, 1);
+	r_anal_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
 		if (esil->anal) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
