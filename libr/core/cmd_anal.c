@@ -7838,7 +7838,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
-	r_config_set (core->config, "anal.in", "io.maps");
+	r_config_set (core->config, "anal.in", "io.maps.x");
 	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in=io.maps");
 	r_print_rowlog_done (core->print, oldstr);
 
