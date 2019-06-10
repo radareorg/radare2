@@ -51,20 +51,8 @@ static ut64 baddr(RBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
-static void handle_data_sections(RBinSection *sect) {
-	if (strstr (sect->name, "_cstring")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_methname")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_classname")) {
-		sect->is_data = true;
-	} else if (strstr (sect->name, "_objc_methtype")) {
-		sect->is_data = true;
-	}
-}
-
 static RList *sections(RBinFile *bf) {
-	return MACH0_(get_segments) (bf->o->bin_obj);
+	return MACH0_(get_segments) (bf); // bf->o->bin_obj, bf->o->boffset);
 #if 0
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -846,7 +834,7 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 		}
 		//if (bf->o->info && bf->o->info->bits == 16) {
 		// align for thumb
-		ret->vaddr = ((addr >>1)<<1);
+		ret->vaddr = ((addr >> 1) << 1);
 		//}
 		ret->paddr = ret->vaddr;
 		break;

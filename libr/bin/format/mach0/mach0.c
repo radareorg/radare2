@@ -1617,16 +1617,37 @@ static int prot2perm(int x) {
 	return r;
 }
 
-RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin) {
+static bool __isDataSection(RBinSection *sect) {
+	if (strstr (sect->name, "_cstring")) {
+		return true;
+	}
+	if (strstr (sect->name, "_objc_methname")) {
+		return true;
+	}
+	if (strstr (sect->name, "_objc_classname")) {
+		return true;
+	}
+	if (strstr (sect->name, "_objc_methtype")) {
+		return true;
+	}
+	return false;
+}
+
+RList *MACH0_(get_segments)(RBinFile *bf) {
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	
 	RList *list = r_list_newf (free); // r_bin_section_free);
 
-	int i, j, to;
+	int i, j;
 
 	/* for core files */
 	if (bin->nsegs > 0) {
 		struct MACH0_(segment_command) *seg;
 		for (i = 0; i < bin->nsegs; i++) {
 			seg = &bin->segs[i];
+			if (!seg->initprot) {
+				continue;
+			}
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
 				break;
@@ -1635,6 +1656,7 @@ RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin) {
 			s->vsize = seg->vmsize;
 			s->size = seg->vmsize;
 			s->paddr = seg->fileoff;
+			s->paddr += bf->o->boffset;
 			//TODO s->flags = seg->flags;
 			s->name = r_str_ndup (seg->segname, 16);
 			s->is_segment = true;
@@ -1646,11 +1668,11 @@ RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin) {
 	}
 	if (bin->nsects > 0) {
 		int last_section = R_MIN (bin->nsects, 128); // maybe drop this limit?
-		if (to < 1) {
-			return list;
-		}
 		for (i = 0; i < last_section; i++) {
 			RBinSection *s = R_NEW0 (RBinSection);
+			if (!s) {
+				break;
+			}
 			s->vaddr = (ut64)bin->sects[i].addr;
 			s->vsize = (ut64)bin->sects[i].size;
 			s->is_segment = false;
@@ -1670,6 +1692,7 @@ RList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin) {
 			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
 			char *segment_name = r_str_newf ("%d.%s", i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
+			s->is_data = __isDataSection (s);
 			r_list_append (list, s);
 		}
 	}

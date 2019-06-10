@@ -782,7 +782,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			RBinSection *s;
 			RListIter *iter;
 			r_list_foreach (obj->sections, iter, s) {
-				if (!s->add) {
+				if (!s->is_segment) {
 					continue;
 				}
 				if (maskMatches (s->perm, mask, only)) {
@@ -802,7 +802,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			RBinSection *s;
 			RListIter *iter;
 			r_list_foreach (obj->sections, iter, s) {
-				if (s->add) {
+				if (s->is_segment) {
 					continue;
 				}
 				if (maskMatches (s->perm, mask, only)) {
@@ -819,7 +819,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			RBinSection *s;
 			RListIter *iter;
 			r_list_foreach (obj->sections, iter, s) {
-				if (!s->add) {
+				if (!s->is_segment) {
 					continue;
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
@@ -835,7 +835,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			RBinSection *s;
 			RListIter *iter;
 			r_list_foreach (obj->sections, iter, s) {
-				if (s->add) {
+				if (s->is_segment) {
 					continue;
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
