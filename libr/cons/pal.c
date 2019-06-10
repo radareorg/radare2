@@ -112,13 +112,37 @@ struct {
 	{ NULL, RColor_NULL, NULL, NULL }
 };
 
-static void cons_pal_update_event(RConsContext *ctx);
-
 static inline ut8 rgbnum(const char ch1, const char ch2) {
 	ut8 r = 0, r2 = 0;
 	r_hex_to_byte (&r, ch1);
 	r_hex_to_byte (&r2, ch2);
 	return r << 4 | r2;
+}
+
+static void __cons_pal_update_event(RConsContext *ctx) {
+	Sdb *db = sdb_new0 ();
+	int i, n = 0;
+	/* Compute cons->pal values */
+	for (i = 0; keys[i].name; i++) {
+		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
+		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
+		// Color is dynamically allocated, needs to be freed
+		R_FREE (*color);
+		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
+		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		sdb_set (db, rgb, "1", 0);
+	}
+	SdbList *list = sdb_foreach_list (db, true);
+	SdbListIter *iter;
+	SdbKv *kv;
+	r_cons_rainbow_free (ctx);
+	r_cons_rainbow_new (ctx, list->length);
+	ls_foreach (list, iter, kv) {
+		ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
+	}
+	ctx->pal.rainbow_sz = n;
+	ls_free (list);
+	sdb_free (db);
 }
 
 R_API void r_cons_pal_init(RConsContext *ctx) {
@@ -132,6 +156,8 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.bin                = (RColor) RColor_CYAN;
 	ctx->cpal.btext              = (RColor) RColor_YELLOW;
 	ctx->cpal.call               = (RColor) RColor_BGREEN;
+	ctx->cpal.ucall              = (RColor) RColor_GREEN;
+	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 	ctx->cpal.cjmp               = (RColor) RColor_GREEN;
 	ctx->cpal.cmp                = (RColor) RColor_CYAN;
 	ctx->cpal.comment            = (RColor) RColor_RED;
@@ -162,8 +188,6 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.ret                = (RColor) RColor_RED;
 	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
 	ctx->cpal.trap               = (RColor) RColor_BRED;
-	ctx->cpal.ucall              = (RColor) RColor_GREEN;
-	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 
 	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
 	ctx->cpal.ai_write           = (RColor) RColor_BLUE;
@@ -196,12 +220,9 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
 
-	ctx->pal.rainbow = NULL;
-	ctx->pal.rainbow_sz = 0;
 	r_cons_pal_free (ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
-
-	cons_pal_update_event (ctx);
+	__cons_pal_update_event (ctx);
 }
 
 R_API void r_cons_pal_free(RConsContext *ctx) {
@@ -224,7 +245,7 @@ R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
 
 	dst->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 
-	cons_pal_update_event (dst);
+	__cons_pal_update_event (dst);
 }
 
 R_API void r_cons_pal_random() {
@@ -556,7 +577,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 			return true;
 		}
 	}
-	eprintf ("Invalid color %s\n", key);
+	eprintf ("r_cons_pal_set: Invalid color %s\n", key);
 	return false;
 }
 
@@ -587,34 +608,8 @@ R_API int r_cons_pal_len() {
 	return keys_len;
 }
 
-static void cons_pal_update_event(RConsContext *ctx) {
-	Sdb *db = sdb_new0 ();
-	int i, n = 0;
-	/* Compute cons->pal values */
-	for (i = 0; keys[i].name; i++) {
-		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
-		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
-		// Color is dynamically allocated, needs to be freed
-		R_FREE (*color);
-		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
-		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-		sdb_set (db, rgb, "1", 0);
-	}
-	SdbList *list = sdb_foreach_list (db, true);
-	SdbListIter *iter;
-	SdbKv *kv;
-	r_cons_rainbow_free (ctx);
-	r_cons_rainbow_new (ctx, list->length);
-	ls_foreach (list, iter, kv) {
-		ctx->pal.rainbow[n++] = strdup (sdbkv_key (kv));
-	}
-	ctx->pal.rainbow_sz = n;
-	ls_free (list);
-	sdb_free (db);
-}
-
 R_API void r_cons_pal_update_event() {
-	cons_pal_update_event (r_cons_singleton ()->context);
+	__cons_pal_update_event (r_cons_singleton ()->context);
 }
 
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {
@@ -626,7 +621,7 @@ R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {
 R_API void r_cons_rainbow_free(RConsContext *ctx) {
 	int i, sz = ctx->pal.rainbow_sz;
 	if (ctx->pal.rainbow) {
-		for (i = 0; i < sz ; i++) {
+		for (i = 0; i < sz; i++) {
 			free (ctx->pal.rainbow[i]);
 		}
 	}

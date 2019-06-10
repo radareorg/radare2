@@ -228,7 +228,7 @@ typedef struct r_bin_info_t {
 
 typedef struct r_bin_object_t {
 	ut64 baddr;
-	ut64 baddr_shift;
+	st64 baddr_shift;
 	ut64 loadaddr;
 	ut64 boffset;
 	ut64 size;

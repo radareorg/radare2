@@ -707,13 +707,30 @@ R_API ut64 r_bin_get_laddr(RBin *bin) {
 	return o ? o->loadaddr : UT64_MAX;
 }
 
+// TODO: should be RBinFile specific imho
 R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	r_return_if_fail (bin);
+	RBinFile *bf = r_bin_cur (bin);
 	RBinObject *o = r_bin_cur_object (bin);
 	if (o) {
-		r_bin_object_set_baddr (o, baddr);
+		if (!o->plugin || !o->plugin->baddr) {
+			return;
+		}
+		ut64 file_baddr = o->plugin->baddr (bf);
+		if (baddr == UT64_MAX) {
+			o->baddr = file_baddr;
+			o->baddr_shift = 0; // o->baddr; // - file_baddr;
+		} else {
+			if (file_baddr != UT64_MAX) {
+				o->baddr = baddr;
+				o->baddr_shift = baddr - file_baddr;
+			}
+		}
+	} else {
+		eprintf ("Warning: This should be an assert probably.\n");
 	}
 	// XXX - update all the infos?
+	// maybe in RBinFile.rebase() ?
 }
 
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {

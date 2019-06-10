@@ -24,7 +24,6 @@ R_IPI void r_bin_section_free(RBinSection *bs);
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);
 R_IPI void r_bin_object_filter_strings(RBinObject *bo);
-R_IPI void r_bin_object_set_baddr(RBinObject *o, ut64 baddr);
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin);
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);

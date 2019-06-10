@@ -3794,8 +3794,8 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, int mode) {
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = r_config_get (core->config, "asm.arch");
 			const char *arch = info ? info->arch ? info->arch: asmarch: "unknown";
-			r_cons_printf ("%d %d %s-%d at:0x%08"PFMT64x" sz:%"PFMT64d" %s\n",
-				bf->id, bf->fd, arch, bits, bf->o->boffset, bf->o->obj_size, name);
+			r_cons_printf ("%d %d %s-%d ba:0x%08"PFMT64x" sz:%"PFMT64d" %s\n",
+				bf->id, bf->fd, arch, bits, bf->o->baddr, bf->o->size, name);
 		}
 		break;
 	}
