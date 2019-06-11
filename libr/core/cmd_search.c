@@ -2675,7 +2675,79 @@ static void incBuffer(ut8 *buf, int bufsz) {
 	// may overflow/hang/end/stop/whatever here
 }
 
-static void search_collisions(RCore *core, const char *hashName, const ut8 *hashValue, int hashLength) {
+static void incPrintBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+		if (IS_PRINTABLE (buf[i])) {
+			break;
+		}
+	}
+}
+
+static void incLowerBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isalpha (buf[i]) && islower (buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+}
+
+static void incUpperBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isalpha (buf[i]) && isupper (buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+}
+
+static void incAlphaBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isalpha (buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
+static void incDigitBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isdigit (buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
+static void search_collisions(RCore *core, const char *hashName, const ut8 *hashValue, int hashLength, int mode) {
 	ut8 R_ALIGNED(8) cmphash[128];
 	int i, algoType = R_HASH_CRC32;
 	int bufsz = core->blocksize;
@@ -2716,19 +2788,46 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 			amount = 0;
 			prev = now;
 		}
-		incBuffer (buf, bufsz);
+		switch (mode) {
+		case 'p': // digits+alpha
+			incPrintBuffer (buf, bufsz);
+			break;
+		case 'a': // lowercase alpha
+			incLowerBuffer (buf, bufsz);
+			break;
+		case 'A': // uppercase alpha
+			incUpperBuffer (buf, bufsz);
+			break;
+		case 'l': // letters
+			incAlphaBuffer (buf, bufsz);
+			break;
+		case 'd': // digits
+			incDigitBuffer (buf, bufsz);
+			break;
+		default: // binary
+			incBuffer (buf, bufsz);
+			break;
+		}
+
+		eprintf ("0x%08" PFMT64x " input:", inc);
+		for (i = 0; i < bufsz; i++) {
+			eprintf ("%02x", buf[i]);
+		}
+		if (mode) {
+			eprintf (" \"%s\"", buf);
+		}
 
 		r_hash_do_begin (ctx, hashBits);
 		(void)r_hash_calculate (ctx, hashBits, buf, bufsz);
 		r_hash_do_end (ctx, hashBits);
 
-		eprintf ("0x%08" PFMT64x " ", inc);
+		eprintf (" digest:");
 		for (i = 0; i < hashLength; i++) {
 			eprintf ("%02x", ctx->digest[i]);
 		}
 		eprintf (" (%d h/s)  \r", mount);
 		if (!memcmp (hashValue, ctx->digest, hashLength)) {
-			eprintf ("\nCOLLISION!\n");
+			eprintf ("\nCOLLISION FOUND!\n");
 			r_print_hexdump (core->print, core->offset, buf, bufsz, 0, 16, 0);
 			r_cons_flush ();
 		}
@@ -3139,13 +3238,21 @@ reread:
 		case 'c': // "Cc"
 			{
 				ret = false;
-				const char *arg = r_str_trim_ro (input + 2);
-				if (!arg) {
-					eprintf ("Usage: /Cc [hashname] [hexpairhashvalue]\n");
+				char *space = strchr (input, ' ');
+				const char *arg = space? r_str_trim_ro (space + 1): NULL;
+				if (!arg || input[2] == '?') {
+					eprintf ("Usage: /Cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
+					eprintf (" /Cca - lowercase alphabet chars only\n");
+					eprintf (" /CcA - uppercase alphabet chars only\n");
+					eprintf (" /Ccl - letters (lower + upper alphabet chars)\n");
+					eprintf (" /Ccd - digits (only numbers)\n");
+					eprintf (" /Ccp - printable (alpha + digit)\n");
+					eprintf (" /Ccb - binary (any number is valid)\n");
 					goto beach;
 				}
 				char *s = strdup (arg);
 				char *sp = strchr (s, ' ');
+				int mode = input[2];
 				if (sp) {
 					*sp = 0;
 					sp++;
@@ -3154,7 +3261,7 @@ reread:
 					if (hashValue) {
 						int hashLength = r_hex_str2bin (sp, hashValue);
 						if (hashLength > 0) {
-							search_collisions (core, hashName, hashValue, hashLength);
+							search_collisions (core, hashName, hashValue, hashLength, mode);
 						} else {
 							eprintf ("Invalid expected hash hexpairs.\n");
 						}
@@ -3166,6 +3273,7 @@ reread:
 					goto beach;
 				} else {
 					eprintf ("Usage: /Cc [hashname] [hexpairhashvalue]\n");
+					eprintf ("Usage: /CC to search ascii collisions\n");
 					goto beach;
 				}
 				free (s);
