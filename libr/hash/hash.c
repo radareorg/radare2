@@ -194,6 +194,10 @@ R_API int r_hash_size(ut64 algo) {
 	if (algo & R_HASH_##x) {\
 		return R_HASH_SIZE_##x;\
 	}
+	ALGOBIT (FLETCHER8);
+	ALGOBIT (FLETCHER16);
+	ALGOBIT (FLETCHER32);
+	ALGOBIT (FLETCHER64);
 	ALGOBIT (MD4);
 	ALGOBIT (MD5);
 	ALGOBIT (SHA1);
