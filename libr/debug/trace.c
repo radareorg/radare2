@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2019 - pancake */
 
 #include <r_debug.h>
 #define R_DEBUG_SDB_TRACES 1
@@ -62,6 +62,10 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	}
 	if (dbg->anal->esil && dbg->trace->enabled) {
 		r_anal_esil_trace (dbg->anal->esil, &op);
+	} else {
+		if (dbg->verbose) {
+			eprintf ("Run aeim to get dbg->anal->esil initialized\n");
+		}
 	}
 	if (oldpc != UT64_MAX) {
 		r_debug_trace_add (dbg, oldpc, op.size); //XXX review what this line really do
