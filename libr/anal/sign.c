@@ -1118,7 +1118,7 @@ static void listBytes(RAnal *a, RSignItem *it, int format) {
 
 	int masked = 0, i = 0;
 	for (i = 0; i < bytes->size; i++) {
-		masked += bytes->mask[i] != 0;
+		masked += bytes->mask[i] == 0xff;
 	}
 
 	char * strbytes = r_hex_bin2strdup (bytes->bytes, bytes->size);
