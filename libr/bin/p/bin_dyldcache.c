@@ -1319,7 +1319,6 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].offset + bf->o->boffset;
 		ptr->vaddr = sections[i].addr;
-		ptr->add = true;
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
@@ -1359,6 +1358,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr = cache->maps[i].fileOffset;// + bf->o->boffset;
 		ptr->vaddr = cache->maps[i].address;
 		ptr->add = true;
+		ptr->is_segment = true;
 		ptr->perm = prot2perm (cache->maps[i].initProt);
 		r_list_append (ret, ptr);
 	}
