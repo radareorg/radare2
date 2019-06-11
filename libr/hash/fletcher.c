@@ -12,7 +12,7 @@ R_API ut16 r_hash_fletcher8(const ut8 *d, size_t length) {
 		b += a;
 		b = (b & 0xff) + (b >> 8);
 	}
-	return a << 8 | b;
+	return (a & 0xff);
 }
 
 R_API ut16 r_hash_fletcher16(const ut8 *data, size_t len) {
