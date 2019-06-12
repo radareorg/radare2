@@ -175,6 +175,13 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	// extracted from a set of bytes in the file
 	r_bin_object_set_items (bf, o);
 	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
+	if (!o->info->lang) {
+		// XXX maybe a bitmask?
+		o->info->lang = r_bin_lang_tostring (o->lang);
+		if (!o->info->lang) {
+			o->info->lang = "c";
+		}
+	}
 	r_bin_set_baddr (bf->rbin, o->baddr);
 
 	bf->sdb_info = o->kv;
@@ -434,7 +441,6 @@ if (o->baddr != UT64_MAX && file_baddr != UT64_MAX) {
 			o->lang = r_bin_load_languages (bf);
 		}
 	}
-	bf->o = old_o;
 	return true;
 }
 
