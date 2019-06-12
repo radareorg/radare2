@@ -4977,29 +4977,36 @@ static void handle_tab_new_with_cur_panel (RCore *core) {
 	}
 
 	RPanelsRoot *root = core->panels_root;
-	if (root->n_panels >= PANEL_NUM_LIMIT) {
+	if (root->n_panels + 1 >= PANEL_NUM_LIMIT) {
 		return;
 	}
 
 	RPanel *cur = getCurPanel (panels);
 
-	root->n_panels++;
-	root->panels[root->n_panels - 1] = panels_new (core);
-	RPanels *new_panels = root->panels[root->n_panels - 1];
+	RPanels *new_panels =  panels_new (core);
+	if (!new_panels) {
+		return;
+	}
+	root->panels[root->n_panels] = new_panels;
 
 	RPanels *prev = core->panels;
 	core->panels = new_panels;
 
+	if (!initPanelsMenu (core) || !initPanels (core, new_panels)) {
+		core->panels = prev;
+		return;
+	}
 	init_all_dbs (core);
-	initPanelsMenu (core);
-	initPanels (core, new_panels);
+
 	RPanel *new_panel = getPanel (new_panels, 0);
 	init_panel_param (core, new_panel, cur->model->title, cur->model->cmd, false);
 	maximizePanelSize (new_panels);
 
 	core->panels = prev;
 	dismantleDelPanel (core, cur, panels->curnode);
-	root->cur_panels = root->n_panels - 1;
+
+	root->cur_panels = root->n_panels;
+	root->n_panels++;
 }
 
 static void panelPrompt(const char *prompt, char *buf, int len) {
@@ -5411,9 +5418,8 @@ repeat:
 			if (handle_tab (core, &del_tab)) {
 				if (del_tab) {
 					goto exit;
-				} else {
-					return false;
 				}
+				return false;
 			}
 		}
 		break;
