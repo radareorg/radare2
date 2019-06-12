@@ -777,8 +777,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_sparse = 0;
 	bool use_header = true;
 	bool use_hdroff = true;
-	int use_pair = 1;
-	int use_offset = 1;
+	bool use_pair = true;
+	bool use_offset = true;
 	bool compact = false;
 	int use_segoff = 0;
 	int pairs = 0;
@@ -788,6 +788,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_hexa = true;
 	bool use_align = false;
 	bool use_unalloc = false;
+	bool use_section = false;
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
@@ -802,6 +803,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_align = p->flags & R_PRINT_FLAGS_ALIGN;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
+		use_section = p->flags & R_PRINT_FLAGS_SECTION;
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		use_unalloc = p->flags & R_PRINT_FLAGS_UNALLOC;
@@ -1010,8 +1012,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				last_sparse = 0;
 			}
 		}
+		ut64 at = addr + (j * zoomsz);
+		if (use_section) {
+			const char *s = p->get_section_name (p->user, at);
+			if (!s) {
+				s = strdup ("");
+			}
+			char *tail = r_str_ndup (s, 19);
+			p->cb_printf ("%20s ", tail);
+			free (tail);
+		}
 		if (use_offset && !isPxr) {
-			ut64 at = addr + (j * zoomsz);
 			r_print_addr (p, at);
 		}
 		int row_have_cursor = -1;
