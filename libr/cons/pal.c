@@ -211,7 +211,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
 	ctx->cpal.func_var_addr      = (RColor) RColor_CYAN;
 
-	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00);
+	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, -1);
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
 
 	ctx->cpal.graph_box          = (RColor) RColor_NULL;
@@ -266,6 +266,7 @@ R_API void r_cons_pal_random() {
 R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	int i;
 	RColor rcolor = (RColor) RColor_BLACK;
+	rcolor.id256 = -1;
 	char *fgcolor;
 	char *bgcolor;
 	char *attr = NULL;
@@ -350,6 +351,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.r = colors[i].rcolor.r;
 			rcolor.g = colors[i].rcolor.g;
 			rcolor.b = colors[i].rcolor.b;
+			rcolor.id256 = colors[i].rcolor.id256;
 			if (!outcol) {
 				strncat (out, colors[i].code,
 					sizeof (out) - strlen (out) - 1);
@@ -360,6 +362,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.r2 = colors[i].rcolor.r; // Initial color doesn't
 			rcolor.g2 = colors[i].rcolor.g; // have r2, g2, b2
 			rcolor.b2 = colors[i].rcolor.b;
+			rcolor.id256 = colors[i].rcolor.id256;
 			if (!outcol) {
 				strncat (out, colors[i].bgcode,
 					sizeof (out) - strlen (out) - 1);
