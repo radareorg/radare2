@@ -40,14 +40,19 @@ static bool check_swift(RBinSymbol *sym) {
 	return false;
 }
 
-static bool check_cxx(RBinSymbol *sym) {
-	if (!strncmp (sym->name, "_Z", 2)) {
+static inline bool is_cxx_symbol (const char *name) {
+	r_return_val_if_fail (name, false);
+	if (!strncmp (name, "_Z", 2)) {
 		return true;
 	}
-	if (!strncmp (sym->name, "__Z", 3)) {
+	if (!strncmp (name, "__Z", 3)) {
 		return true;
 	}
 	return false;
+}
+
+static bool check_cxx(RBinSymbol *sym) {
+	return is_cxx_symbol (sym->name);
 }
 
 static bool check_msvc(RBinSymbol *sym) {
@@ -188,3 +193,18 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	}
 	return type;
 }
+
+// TODO: deprecate because we dont want to iterate for something that must be done once
+R_API bool r_bin_is_cxx (RBinFile *bf) {
+	RListIter *iter;
+	RBinImport *import;
+	RBinObject *o = bf->o;
+	// XXX this is too slow
+	r_list_foreach (o->imports, iter, import) {
+		if (is_cxx_symbol (import->name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
