@@ -1,72 +1,72 @@
 # r2 default palette but with bright colors for all
 
-ec b0x00 bgreen
-ec b0x7f bcyan
-ec b0xff bred
-ec args byellow
-ec bin bcyan
-ec btext byellow
-ec call bgreen . bold
-ec cjmp bgreen
-ec cmp bcyan
-ec comment bred
-ec usrcmt bwhite
-ec creg bcyan
-ec flag bcyan
-ec fline bcyan
-ec floc bcyan
-ec flow bcyan
-ec flow2 bblue
-ec fname bred
-ec help bgreen
-ec input bwhite
-ec invalid bred . bold
-ec jmp bgreen
-ec label bcyan
-ec math byellow
-ec mov bwhite
-ec nop bblue
-ec num byellow
-ec offset bgreen
-ec other bwhite
-ec pop bmagenta . bold
-ec prompt byellow
-ec push bmagenta
-ec crypto bblue
-ec reg bcyan
-ec ret bred
-ec swi bmagenta
-ec trap bred . bold
-ec ucall bgreen
-ec ujmp bgreen
+ec b0x00 rgb:00ff00
+ec b0x7f rgb:00ffff
+ec b0xff rgb:ff0000
+ec args rgb:ffff00
+ec bin rgb:00ffff
+ec btext rgb:ffff00
+ec call rgb:00ff00 . bold
+ec cjmp rgb:00ff00
+ec cmp rgb:00ffff
+ec comment rgb:ff0000
+ec usrcmt rgb:ffffff
+ec creg rgb:00ffff
+ec flag rgb:00ffff
+ec fline rgb:00ffff
+ec floc rgb:00ffff
+ec flow rgb:00ffff
+ec flow2 rgb:0000ff
+ec fname rgb:ff0000
+ec help rgb:00ff00
+ec input rgb:ffffff
+ec invalid rgb:ff0000 . bold
+ec jmp rgb:00ff00
+ec label rgb:00ffff
+ec math rgb:ffff00
+ec mov rgb:ffffff
+ec nop rgb:0000ff
+ec num rgb:ffff00
+ec offset rgb:00ff00
+ec other rgb:ffffff
+ec pop rgb:ff00ff . bold
+ec prompt rgb:ffff00
+ec push rgb:ff00ff
+ec crypto rgb:0000ff
+ec reg rgb:00ffff
+ec ret rgb:ff0000
+ec swi rgb:ff00ff
+ec trap rgb:ff0000 . bold
+ec ucall rgb:00ff00
+ec ujmp rgb:00ff00
 
-ec ai.read bgreen
-ec ai.write bblue
-ec ai.exec bred
-ec ai.seq bmagenta
-ec ai.ascii byellow
+ec ai.read rgb:00ff00
+ec ai.write rgb:0000ff
+ec ai.exec rgb:ff0000
+ec ai.seq rgb:ff00ff
+ec ai.ascii rgb:ffff00
 
-ec gui.cflow byellow
-ec gui.dataoffset byellow
-ec gui.background black
-ec gui.alt_background bwhite
-ec gui.border black
-ec wordhl bred
-ec linehl bblue
+ec gui.cflow rgb:ffff00
+ec gui.dataoffset rgb:ffff00
+ec gui.background rgb:000000
+ec gui.alt_background rgb:ffffff
+ec gui.border rgb:000000
+ec wordhl rgb:ff0000
+ec linehl rgb:0000ff
 
-ec func_var bwhite
-ec func_var_type bblue
-ec func_var_addr bcyan
+ec func_var rgb:ffffff
+ec func_var_type rgb:0000ff
+ec func_var_addr rgb:00ffff
 
-ec widget_bg rgb:333
-ec widget_sel bred
+ec widget_bg rgb:303030
+ec widget_sel rgb:ff0000
 
 ec graph.box null
-ec graph.box2 bblue
-ec graph.box3 bmagenta
-ec graph.box4 gray
-ec graph.true bgreen
-ec graph.false bred
-ec graph.trufae bblue    # single jump
-ec graph.traced byellow
-ec graph.current bblue
+ec graph.box2 rgb:0000ff
+ec graph.box3 rgb:ff00ff
+ec graph.box4 rgb:808080
+ec graph.true rgb:00ff00
+ec graph.false rgb:ff0000
+ec graph.trufae rgb:0000ff    # single jump
+ec graph.traced rgb:ffff00
+ec graph.current rgb:0000ff
