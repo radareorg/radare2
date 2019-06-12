@@ -358,7 +358,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 			break;
 		}
 		d = c;
-		if (*ptr!='.' && r_hex_to_byte (&c, *ptr)) {
+		if (*ptr != '.' && r_hex_to_byte (&c, *ptr)) {
 			eprintf ("Invalid hexa string at char '%c' (%s).\n",
 				*ptr, arg);
 			return -1;

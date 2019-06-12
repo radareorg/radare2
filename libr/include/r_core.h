@@ -348,6 +348,7 @@ typedef struct {
 //#define r_core_ncast(x) (RCore*)(size_t)(x)
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(void);
+R_API const char *r_core_get_section_name(RCore *core, ut64 addr);
 R_API RCons *r_core_get_cons(RCore *core);
 R_API RBin *r_core_get_bin(RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);

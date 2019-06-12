@@ -32,11 +32,13 @@ extern "C" {
 #define R_PRINT_FLAGS_ALIGN    0x00040000
 #define R_PRINT_FLAGS_UNALLOC  0x00080000
 #define R_PRINT_FLAGS_BGFILL   0x00100000
+#define R_PRINT_FLAGS_SECTION  0x00200000
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
+typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
 typedef char *(*RPrintHasRefs)(void *user, ut64 addr, bool verbose);
 
@@ -90,6 +92,7 @@ typedef struct r_print_t {
 	RPrintColorFor colorfor;
 	RPrintHasRefs hasrefs;
 	RPrintCommentCallback get_comments;
+	RPrintSectionGet get_section_name;
 	Sdb *formats;
 	Sdb *sdb_types;
 	RCons *cons;
