@@ -175,6 +175,7 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 
 R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 	RColor rc = RColor_BLACK;
+	rc.id256 = -1;
 	rc.r = (off >> 2) & 0xff;
 	rc.g = (off >> 6) & 0xff;
 	rc.b = (off >> 12) & 0xff;
@@ -182,7 +183,8 @@ R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
+static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b,
+                           st16 id256) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
@@ -219,25 +221,30 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 	case COLOR_MODE_16M: // 16M (truecolor)
 		written = snprintf (outstr + i, sz - i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
 		break;
-	case COLOR_MODE_16: // ansi 16 colors
-		{
-		ut8 bright = (r == 0x80 && g == 0x80 && b == 0x80) ? 53
-		             : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0;
+	case COLOR_MODE_16: { // ansi 16 colors
+		ut8 bright, c;
 		fgbg -= 8;
-		if (r == g && g == b) {
-			r = (r > 0x7f) ? 1 : 0;
-			g = (g > 0x7f) ? 1 : 0;
-			b = (b > 0x7f) ? 1 : 0;
+		if (id256 != -1) {
+			c = id256 % 8;
+			bright = (id256 >= 8 && id256 <= 15) ? 60 : 0;
 		} else {
-			ut8 k = (r + g + b) / 3;
-			r = (r >= k) ? 1 : 0;
-			g = (g >= k) ? 1 : 0;
-			b = (b >= k) ? 1 : 0;
+			bright = (r == 0x80 && g == 0x80 && b == 0x80) ? 53
+			         : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0;  // eco bright-specific
+			if (r == g && g == b) {
+				r = (r > 0x7f) ? 1 : 0;
+				g = (g > 0x7f) ? 1 : 0;
+				b = (b > 0x7f) ? 1 : 0;
+			} else {
+				ut8 k = (r + g + b) / 3;
+				r = (r >= k) ? 1 : 0;
+				g = (g >= k) ? 1 : 0;
+				b = (b >= k) ? 1 : 0;
+			}
+			c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
 		}
-		ut8 c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
 		written = snprintf (outstr + i, sz - i, "%dm", fgbg + bright + c);
-		}
 		break;
+	}
 	default:
 		break;
 	}
@@ -263,11 +270,12 @@ R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RC
 	}
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
-		r_cons_rgb_gen (mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
+		r_cons_rgb_gen (mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, rcolor->id256);
 	}
 	// APPEND
 	size_t len = strlen (outstr);
-	r_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
+	r_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b,
+	                rcolor->id256);
 
 	return outstr;
 }
