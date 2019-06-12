@@ -2256,6 +2256,10 @@ static char *hasrefs_cb(void *user, ut64 addr, bool verbose) {
 	return r_core_anal_hasrefs ((RCore *)user, addr, verbose);
 }
 
+static const char *get_section_name(void *user, ut64 addr) {
+	return r_core_get_section_name ((RCore *)user, addr);
+}
+
 static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
@@ -2379,6 +2383,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->colorfor = colorfor_cb;
 	core->print->hasrefs = hasrefs_cb;
 	core->print->get_comments = get_comments_cb;
+	core->print->get_section_name = get_section_name;
 	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;

@@ -1417,6 +1417,17 @@ static bool cb_hex_pairs(void *user, void *data) {
 	return true;
 }
 
+static bool cb_hex_section(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_SECTION;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_SECTION;
+	}
+	return true;
+}
+
 static bool cb_hex_align(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3198,6 +3209,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.style", "false", &cb_hex_style, "Improve the hexdump header style");
 	SETCB ("hex.pairs", "true", &cb_hex_pairs, "Show bytes paired in 'px' hexdump");
 	SETCB ("hex.align", "false", &cb_hex_align, "Align hexdump with flag + flagsize");
+	SETCB ("hex.section", "false", &cb_hex_section, "Show section name before the offset");
 	SETCB ("io.unalloc", "false", &cb_io_unalloc, "Check each byte if it's allocated");
 	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Hexdump char if byte is unallocated");
 	SETCB ("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");

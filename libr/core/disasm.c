@@ -428,7 +428,7 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 	}
 }
 
-static const char *get_section_name(RCore *core, ut64 addr) {
+R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
 	if (oaddr == addr) {
@@ -469,11 +469,11 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 		return;
 	}
 	//XXX fix this generate many dupes with section name
-	const char *sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
+	const char *sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
 	// if (ds->cmtcount == 0) {
 		ds_align_comment (ds);
 	// }
-	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
+	sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
 	r_cons_print (COLOR_RESET (ds));
 	ds_print_pre (ds);
@@ -2459,7 +2459,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			str = strdup (map? r_str_rwx_i (map->perm): "---");
 		}
 		if (ds->show_section_name) {
-			str = r_str_appendf (str, " %s", get_section_name (core, ds->at));
+			str = r_str_appendf (str, " %s", r_core_get_section_name (core, ds->at));
 		}
 		char *sect = str? str: strdup ("");
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
