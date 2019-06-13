@@ -194,20 +194,6 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	return type;
 }
 
-// TODO: deprecate because we dont want to iterate for something that must be done once
-R_API bool r_bin_is_cxx (RBinFile *bf) {
-	RListIter *iter;
-	RBinImport *import;
-	RBinObject *o = bf->o;
-	// XXX this is too slow
-	r_list_foreach (o->imports, iter, import) {
-		if (is_cxx_symbol (import->name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 R_API const char *r_bin_lang_tostring(int lang) {
 	switch (lang) {
 	case R_BIN_NM_SWIFT:
