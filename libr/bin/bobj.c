@@ -178,9 +178,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	if (!o->info->lang) {
 		// XXX maybe a bitmask?
 		o->info->lang = r_bin_lang_tostring (o->lang);
-		if (!o->info->lang) {
-			o->info->lang = "c";
-		}
 	}
 	r_bin_set_baddr (bf->rbin, o->baddr);
 
