@@ -4507,30 +4507,19 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 	}
 }
 
-static void get_string_section(RCore *core, const char** section_name, ut64* address) {
-	RBinObject *obj = r_bin_cur_object (core->bin);
-	ut64 vaddr = UT64_MAX;
-	RBinSection *section = NULL;
-	/* try to get the section that contains the
-	* string, by considering current offset as
-	* paddr and if it isn't, trying to consider it
-	* as vaddr. */
-	if ((section = r_bin_get_section_at (obj, core->offset, true))) {
-		vaddr = core->offset + section->vaddr - section->paddr;
-	}
-	if (address) {
-		*address = vaddr;
-	}
-	if (section_name) {
-		*section_name = (vaddr == UT64_MAX) ? "unknown" : section->name;
-	}
-}
-
 static void print_json_string(RCore *core, const char* block, int len, const char* type) {
-	const char* section_name = "unknown";
 	char *str;
-
-	get_string_section (core, &section_name, NULL);
+	const char* section_name = r_core_get_section_name (core, core->offset);
+	if (!section_name) {
+		section_name = "unknown";
+	} else {
+		// cleaning useless spaces in section name in json data.
+		char* p = (char*) section_name;
+		for (; *p == ' '; p++) {}
+		section_name = p;
+		for (; *p != ' '; p++) {}
+		*p = '\0';
+	}
 
 	r_cons_printf ("{\"string\":");
 	str = r_str_utf16_encode (block, len);
