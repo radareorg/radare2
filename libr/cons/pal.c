@@ -205,13 +205,14 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.gui_alt_background = (RColor) RColor_WHITE;
 	ctx->cpal.gui_border         = (RColor) RColor_BLACK;
 	ctx->cpal.wordhl             = (RColor) RColor_BGRED;
-	ctx->cpal.linehl             = (RColor) RColor_BGBLUE;
+	// No good choice for fallback ansi16 color
+	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
 
 	ctx->cpal.func_var           = (RColor) RColor_WHITE;
 	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
 	ctx->cpal.func_var_addr      = (RColor) RColor_CYAN;
 
-	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, -1);
+	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
 
 	ctx->cpal.graph_box          = (RColor) RColor_NULL;
