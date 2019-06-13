@@ -1316,8 +1316,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		st64 shift = LSHIFT2_64 (1);
 		if (shift < 0) {
 			shift = 0;
-		} else if (shift >= 48) {
-			shift = 47;
+		} else if (shift > 48) {
+			shift = 48;
 		}
 		ut64 shifted_imm = IMM64(1) << shift;
 		ut64 mask = ~(0xffffLL << shift);
