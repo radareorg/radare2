@@ -546,9 +546,11 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 			Break this behemoth
 			x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
 	*/
-	if (_M_X64 && dbg->bits == R_SYS_BITS_32) {
+#if defined (_M_X64)
+	if (dbg->bits == R_SYS_BITS_32) {
 		return NULL; // Nope nope nope
 	}
+#endif
 	WPARAM bytesRead;
 	HANDLE h_proc = NULL;
 	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
