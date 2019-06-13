@@ -272,26 +272,21 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 		return NULL;
 	}
 	r_anal_trace_bb (dbg->anal, addr);
-	tp = r_debug_trace_get (dbg, addr);
+	tp = R_NEW0 (RDebugTracepoint);
 	if (!tp) {
-		tp = R_NEW0 (RDebugTracepoint);
-		if (!tp) {
-			return NULL;
-		}
-		tp->stamp = r_sys_now ();
-		tp->addr = addr;
-		tp->tags = tag;
-		tp->size = size;
-		tp->count = ++dbg->trace->count;
-		tp->times = 1;
-		r_list_append (dbg->trace->traces, tp);
-#if R_DEBUG_SDB_TRACES
-		sdb_num_set (dbg->trace->db, sdb_fmt ("trace.%d.%"PFMT64x, tag, addr),
-			(ut64)(size_t)tp, 0);
-#endif
-	} else {
-		tp->times++;
+		return NULL;
 	}
+	tp->stamp = r_sys_now ();
+	tp->addr = addr;
+	tp->tags = tag;
+	tp->size = size;
+	tp->count = ++dbg->trace->count;
+	tp->times = 1;
+	r_list_append (dbg->trace->traces, tp);
+#if R_DEBUG_SDB_TRACES
+	sdb_num_set (dbg->trace->db, sdb_fmt ("trace.%d.%"PFMT64x, tag, addr),
+		(ut64)(size_t)tp, 0);
+#endif
 	return tp;
 }
 
