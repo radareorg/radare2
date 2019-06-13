@@ -14,7 +14,7 @@ OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
 OBJS+=esil_data_flow.o
 
 CFLAGS+=-I../../shlr/heap/include
-CFLAGS+=-DCORELIB -I../../shlr
+CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
 
 ifeq ($(shell uname),OpenBSD)

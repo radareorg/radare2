@@ -2136,7 +2136,7 @@ RCorePlugin r_core_plugin_java = {
 	.call = r_cmd_java_call,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
 	.data = &r_core_plugin_java,

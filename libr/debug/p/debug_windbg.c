@@ -252,7 +252,7 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.threads = &r_debug_windbg_threads
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_windbg,

@@ -169,7 +169,7 @@ RCryptoPlugin r_crypto_plugin_des = {
 	.final = final
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_des,

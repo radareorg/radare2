@@ -736,7 +736,7 @@ RAnalPlugin r_anal_plugin_h8300 = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_h8300,

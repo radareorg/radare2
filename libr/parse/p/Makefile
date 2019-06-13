@@ -4,7 +4,7 @@ include ../../../shlr/zip/deps.mk
 
 CFLAGS+=-I../../include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # -D__UNIX__
-CFLAGS+=-DCORELIB
+CFLAGS+=-DR2_PLUGIN_INCORE
 LDFLAGS+=${LINK}
 
 ifeq ($(WITHPIC),1)

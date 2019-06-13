@@ -64,7 +64,7 @@ RAsmPlugin r_asm_plugin_riscv_cs = {
 	.mnemonics = mnemonics,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_riscv_cs,
@@ -76,7 +76,7 @@ R_API RLibStruct radare_plugin = {
 RAsmPlugin r_asm_plugin_riscv_cs = {
 	0
 };
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.version = R2_VERSION
