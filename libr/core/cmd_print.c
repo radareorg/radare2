@@ -4514,10 +4514,9 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 		section_name = "unknown";
 	} else {
 		// cleaning useless spaces in section name in json data.
-		char* p = (char*) section_name;
-		for (; *p == ' '; p++) {}
-		section_name = p;
-		for (; *p != ' '; p++) {}
+		section_name = r_str_trim_ro (section_name);
+		char* p;
+		for (p = (char*) section_name; *p && *p != ' '; p++) {}
 		*p = '\0';
 	}
 
