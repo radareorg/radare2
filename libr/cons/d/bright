@@ -52,7 +52,7 @@ ec gui.background rgb:000000
 ec gui.alt_background rgb:ffffff
 ec gui.border rgb:000000
 ec wordhl rgb:ff0000
-ec linehl rgb:0000ff
+ec linehl rgb:000080
 
 ec func_var rgb:ffffff
 ec func_var_type rgb:0000ff
