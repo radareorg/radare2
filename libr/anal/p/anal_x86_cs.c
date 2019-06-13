@@ -2922,7 +2922,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #endif
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 	} else {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = r_str_newf ("%s%s%s",
+				insn->mnemonic,
+				insn->op_str[0]?" ":"",
+				insn->op_str);
+		}
 		// int rs = a->bits / 8;
 		//const char *pc = (a->bits==16)?"ip": (a->bits==32)?"eip":"rip";
 		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";

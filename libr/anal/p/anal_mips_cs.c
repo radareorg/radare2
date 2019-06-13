@@ -747,7 +747,16 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	}
 	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 		goto beach;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s%s%s",
+			insn->mnemonic,
+			insn->op_str[0]?" ":"",
+			insn->op_str);
 	}
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
