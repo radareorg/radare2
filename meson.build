@@ -119,7 +119,7 @@ if get_option('default_library') == 'shared'
   endif
 endif
 
-library_cflags = ['-DCORELIB=1']
+library_cflags = ['-DR2_PLUGIN_INCORE=1']
 
 if host_machine.system() == 'windows'
   r2_prefix = '.'

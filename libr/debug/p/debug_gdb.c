@@ -1124,7 +1124,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	//.bp_read = &r_debug_gdb_bp_read,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_gdb,

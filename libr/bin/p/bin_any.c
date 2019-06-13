@@ -73,7 +73,7 @@ RBinPlugin r_bin_plugin_any = {
 	.minstrlen = 0,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_any,

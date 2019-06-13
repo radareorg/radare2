@@ -84,7 +84,7 @@ RAsmPlugin r_asm_plugin_tms320c64x = {
 
 #endif
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_tms320c64x,

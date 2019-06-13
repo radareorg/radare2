@@ -2012,7 +2012,7 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.info = &info
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_kernelcache,

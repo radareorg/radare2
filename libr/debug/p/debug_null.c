@@ -10,7 +10,7 @@ RDebugPlugin r_debug_plugin_null = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_null,

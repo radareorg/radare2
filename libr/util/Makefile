@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_util
-CFLAGS+=-DCORELIB -I$(TOP)/shlr
+CFLAGS+=-DR2_PLUGIN_INCORE -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
 
 ifneq ($(OSTYPE),darwin)
