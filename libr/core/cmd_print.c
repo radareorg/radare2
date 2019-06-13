@@ -4510,7 +4510,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 static void print_json_string(RCore *core, const char* block, int len, const char* type) {
 	char *str;
 	const char* section_name = r_core_get_section_name (core, core->offset);
-	if (!section_name) {
+	if (section_name && strlen (section_name) < 1) {
 		section_name = "unknown";
 	} else {
 		// cleaning useless spaces in section name in json data.
