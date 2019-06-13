@@ -140,7 +140,7 @@ RFSPlugin r_fs_plugin_posix = {
 	.umount = fs_posix_umount,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_FS,
         .data = &r_fs_plugin_posix,
