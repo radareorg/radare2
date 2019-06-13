@@ -280,6 +280,7 @@ static void set_pos(RPanelPos *pos, int x, int y);
 static void set_size(RPanelPos *pos, int w, int h);
 static void set_geometry(RPanelPos *pos, int x, int y, int w, int h);
 static void set_panel_addr(RCore *core, RPanel *panel, ut64 addr);
+static void set_root_state(RCore *core, RPanelsRootState state);
 
 /* reset */
 static void resetScrollPos(RPanel *p);
@@ -500,10 +501,10 @@ static void restorePanelPos(RPanel* panel);
 static void maximizePanelSize(RPanels *panels);
 
 /* tab */
-static bool handle_tab(RCore *core, bool *del_tab);
-static bool handle_tab_nth(RCore *core, int ch);
-static bool handle_tab_next(RCore *core);
-static bool handle_tab_prev(RCore *core);
+static void handle_tab(RCore *core);
+static void handle_tab_nth(RCore *core, int ch);
+static void handle_tab_next(RCore *core);
+static void handle_tab_prev(RCore *core);
 static void handle_tab_name(RCore *core);
 static void handle_tab_new(RCore *core);
 static void handle_tab_new_with_cur_panel(RCore *core);
@@ -514,7 +515,7 @@ static void printSnow(RPanels *panels);
 static void resetSnow(RPanels *panels);
 
 /* other */
-static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit);
+static void panels_process(RCore *core, RPanels **r_panels);
 static bool handle_console(RCore *core, RPanel *panel, const int key);
 static void toggleCache (RCore *core, RPanel *p);
 static bool moveToDirection(RCore *core, Direction direction);
@@ -4842,31 +4843,36 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		panels_root->panels = calloc (sizeof (RPanels *), PANEL_NUM_LIMIT);
 		panels_root->n_panels = 1;
 		panels_root->cur_panels = 0;
+		set_root_state (core, DEFAULT);
 	} else {
 		if (!panels_root->n_panels) {
 			panels_root->n_panels = 1;
 			panels_root->cur_panels = 0;
 		}
 	}
-	bool force_quit = false;
 	while (panels_root->n_panels) {
-		if (panels_process (core, &(panels_root->panels[panels_root->cur_panels]), &force_quit)) {
-			if (force_quit) {
-				return true;
-			} else {
-				if (panels_root->n_panels > 1) {
-					del_panels (core);
-				} else {
-					return true;
-				}
-			}
+		set_root_state (core, DEFAULT);
+		panels_process (core, &(panels_root->panels[panels_root->cur_panels]));
+		if (panels_root->root_state == DEL) {
+			del_panels (core);
+		}
+		if (panels_root->root_state == QUIT) {
+			break;
 		}
 	}
 	return true;
 }
 
+static void set_root_state(RCore *core, RPanelsRootState state) {
+	core->panels_root->root_state = state;
+}
+
 static void del_panels(RCore *core) {
 	RPanelsRoot *panels_root = core->panels_root;
+	if (panels_root->n_panels <= 1) {
+		core->panels_root->root_state = QUIT;
+		return;
+	}
 	panels_free (panels_root, panels_root->cur_panels, get_cur_panels (panels_root));
 	int i;
 	for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
@@ -4889,74 +4895,78 @@ static RPanels *get_cur_panels(RPanelsRoot *panels_root) {
 	return get_panels (panels_root, panels_root->cur_panels);
 }
 
-static bool handle_tab(RCore *core, bool *del_tab) {
+static void handle_tab(RCore *core) {
 	r_cons_gotoxy (0, 0);
 	if (core->panels_root->n_panels <= 1) {
-		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] t:new -:del =:name"Color_RESET, core->cons->context->pal.graph_box2);
+		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] t:new T:new with current panel -:del =:name"Color_RESET, core->cons->context->pal.graph_box2);
 	} else {
 		int min = 1;
 		int max = core->panels_root->n_panels;
-		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new -:del =:name"Color_RESET, core->cons->context->pal.graph_box2, min, max);
+		r_cons_printf (R_CONS_CLEAR_LINE"%s[Tab] [%d..%d]:select; p:prev; n:next; t:new T:new with current panel -:del =:name"Color_RESET, core->cons->context->pal.graph_box2, min, max);
 	}
 	r_cons_flush ();
 	int ch = r_cons_readchar ();
-	if (handle_tab_nth (core, ch)) {
-		return true;
+
+	if (isdigit (ch)) {
+		handle_tab_nth (core, ch);
+		return;
 	}
+
 	switch (ch) {
 	case 'n':
-		return handle_tab_next (core);
+		handle_tab_next (core);
+		return;
 	case 'p':
-		return handle_tab_prev (core);
+		handle_tab_prev (core);
+		return;
 	case '-':
-		*del_tab = true;
-		return true;
+		set_root_state (core, DEL);
+		return;
 	case '=':
 		handle_tab_name (core);
-		break;
+		return;
 	case 't':
 		handle_tab_new (core);
-		break;
+		return;
 	case 'T':
 		handle_tab_new_with_cur_panel (core);
-		return true;
+		return;
 	}
-	return false;
 }
 
-static bool handle_tab_nth(RCore *core, int ch) {
-	if (isdigit (ch)) {
-		ch -= '0' + 1;
-		if (ch < 0) {
-			return  false;
-		}
-		if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
-			core->panels_root->cur_panels = ch;
-			return true;
-		}
+static void handle_tab_nth(RCore *core, int ch) {
+	ch -= '0' + 1;
+	if (ch < 0) {
+		return;
 	}
-	return false;
+	if (ch != core->panels_root->cur_panels && ch < core->panels_root->n_panels) {
+		core->panels_root->cur_panels = ch;
+		set_root_state (core, ROTATE);
+		return;
+	}
 }
 
-static bool handle_tab_next(RCore *core) {
+static void handle_tab_next(RCore *core) {
 	if (core->panels_root->n_panels <= 1) {
-		return false;
+		return;
 	}
 	core->panels_root->cur_panels++;
 	core->panels_root->cur_panels %= core->panels_root->n_panels;
-	return true;
+	set_root_state (core, ROTATE);
+	return;
 }
 
 
-static bool handle_tab_prev(RCore *core) {
+static void handle_tab_prev(RCore *core) {
 	if (core->panels_root->n_panels <= 1) {
-		return false;
+		return;
 	}
 	core->panels_root->cur_panels--;
 	if (core->panels_root->cur_panels < 0) {
 		core->panels_root->cur_panels = core->panels_root->n_panels - 1;
 	}
-	return true;
+	set_root_state (core, ROTATE);
+	return;
 }
 
 static void handle_tab_name(RCore *core) {
@@ -5007,6 +5017,8 @@ static void handle_tab_new_with_cur_panel (RCore *core) {
 
 	root->cur_panels = root->n_panels;
 	root->n_panels++;
+
+	set_root_state (core, ROTATE);
 }
 
 static void panelPrompt(const char *prompt, char *buf, int len) {
@@ -5015,7 +5027,7 @@ static void panelPrompt(const char *prompt, char *buf, int len) {
 	r_cons_fgets (buf, len, 0, NULL);
 }
 
-static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
+static void panels_process(RCore *core, RPanels **r_panels) {
 	int i, okey, key;
 	bool first_load = !*r_panels;
 	RPanelsRoot *panels_root = core->panels_root;
@@ -5024,16 +5036,21 @@ static int panels_process(RCore *core, RPanels **r_panels, bool *force_quit) {
 	if (!*r_panels) {
 		panels = panels_new (core);
 		if (!panels) {
-			return true;
+			set_root_state (core, QUIT);
+			return;
 		}
 		prev = core->panels;
 		core->panels = panels;
 		init_all_dbs (core);
 		if (!initPanelsMenu (core)) {
-			return true;
+			set_root_state (core, QUIT);
+			core->panels = prev;
+			return;
 		}
 		if (!initPanels (core, panels)) {
-			return true;
+			set_root_state (core, QUIT);
+			core->panels = prev;
+			return;
 		}
 		*r_panels = panels;
 	} else {
@@ -5090,6 +5107,7 @@ repeat:
 
 	if (panels->mode == PANEL_MODE_MENU) {
 		if (!handleMenu (core, key)) {
+			set_root_state (core, QUIT);
 			goto exit;
 		}
 		goto repeat;
@@ -5413,18 +5431,14 @@ repeat:
 		}
 		break;
 	case 't':
-		{
-			bool del_tab = false;
-			if (handle_tab (core, &del_tab)) {
-				if (del_tab) {
-					goto exit;
-				}
-				return false;
-			}
+		handle_tab (core);
+		if (panels_root->root_state != DEFAULT) {
+			goto exit;
 		}
 		break;
 	case 'T':
 		if (panels_root->n_panels > 1) {
+			set_root_state (core, DEL);
 			goto exit;
 		}
 		break;
@@ -5562,11 +5576,12 @@ repeat:
 		}
 		break;
 	case 'Q':
-		*force_quit = true;
+		set_root_state (core, QUIT);
 		goto exit;
 	case '!':
 	case 'q':
 	case -1: // EOF
+		set_root_state (core, DEL);
 		goto exit;
 #if 0
 	case 27: // ESC
@@ -5589,5 +5604,5 @@ exit:
 	core->print->col = 0;
 	core->vmode = originVmode;
 	core->panels = prev;
-	return true;
+	return;
 }
