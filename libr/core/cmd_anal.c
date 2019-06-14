@@ -1206,7 +1206,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
-	} 
+	}
 		break;
 	case '.':
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0, NULL);
@@ -3403,7 +3403,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
 	if (0) {
-		/* enable this block when dr and ar use the same code but just using 
+		/* enable this block when dr and ar use the same code but just using
 		   core->dbg->reg or core->anal->reg and removing all the debugger
 		   dependent code */
 		RReg *reg = core->dbg->reg;
@@ -3823,8 +3823,13 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	bool breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
+	int esiltimeout = r_config_get_i (core->config, "esil.timeout");
+	ut64 startTime;
 	if (!esil) {
 		initializeEsil (core);
+	}
+	if (esiltimeout) {
+		startTime = r_sys_now ();
 	}
 	ut64 addr = r_reg_getv (core->anal->reg, name);
 	r_cons_break_push (NULL, NULL);
@@ -3832,6 +3837,15 @@ repeat:
 	if (r_cons_is_breaked ()) {
 		eprintf ("[+] ESIL emulation interrupted at 0x%08" PFMT64x "\n", addr);
 		return_tail (0);
+	}
+	//Break if we have exceeded esil.timeout
+	if (esiltimeout) {
+		ut64 elapsedTime = r_sys_now () - startTime;
+		elapsedTime >>= 20;
+		if (elapsedTime >= esiltimeout) {
+			eprintf ("[ESIL] Timeout exceeded.\n");
+			return_tail (0);
+		}
 	}
 	if (!esil) {
 		addr = initializeEsil (core);
@@ -4484,7 +4498,7 @@ static void showmem (RList *list) {
 		RListIter *iter;
 		r_list_foreach (list, iter, item) {
 			r_cons_printf (" 0x%08"PFMT64x, item->addr);
-			
+
 		}
 	}
 	r_cons_newline ();
@@ -4512,7 +4526,7 @@ static void showmem_json (RList *list, PJ *pj) {
 			pj_n (pj, item->addr);
 		}
 	}
-	
+
 	pj_end (pj);
 }
 
@@ -4659,7 +4673,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			pj_k (pj, "@W");
 			showmem_json (mymemxsw, pj);
 		}
-		
+
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
@@ -4687,7 +4701,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			showmem (mymemxsw);
 		}
 	}
-	
+
 	r_list_free (mymemxsr);
 	r_list_free (mymemxsw);
 	mymemxsr = NULL;
@@ -8200,7 +8214,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						goto jacuzzi;
 					}
 				}
-				
+
 				oldstr = r_print_rowlog (core->print, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				r_print_rowlog_done (core->print, oldstr);
