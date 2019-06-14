@@ -2768,6 +2768,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->folded) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	}
+	if (fcn->bits != 0) {
+		r_cons_printf ("afB %d @ 0x%08"PFMT64x"\n", fcn->bits, fcn->addr);
+	}
 	fcn_list_bbs (fcn);
 	/* show variables  and arguments */
 	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
