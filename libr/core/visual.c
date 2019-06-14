@@ -203,7 +203,9 @@ static bool __core_visual_gogo (RCore *core, int ch) {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
 			if (!map) {
 				SdbListIter *i = ls_tail (core->io->maps);
-				map = ls_iter_get (i);
+				if (i) {
+					map = ls_iter_get (i);
+				}
 			}
 			if (map) {
 				r_core_seek (core, r_itv_begin (map->itv), 1);
@@ -217,7 +219,9 @@ static bool __core_visual_gogo (RCore *core, int ch) {
 		map = r_io_map_get (core->io, core->offset);
 		if (!map) {
 			SdbListIter *i = ls_head (core->io->maps);
-			map = ls_iter_get (i);
+			if (i) {
+				map = ls_iter_get (i);
+			}
 		}
 		if (map) {
 			RPrint *p = core->print;
