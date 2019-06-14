@@ -206,7 +206,11 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.gui_border         = (RColor) RColor_BLACK;
 	ctx->cpal.wordhl             = (RColor) RColor_BGRED;
 	// No good choice for fallback ansi16 color
+#if __WINDOWS__
+	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 4);
+#else
 	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
+#endif
 
 	ctx->cpal.func_var           = (RColor) RColor_WHITE;
 	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
