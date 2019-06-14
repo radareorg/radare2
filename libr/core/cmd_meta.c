@@ -208,7 +208,7 @@ static int print_addrinfo (void *user, const char *k, const char *v) {
 	if (!colonpos) {
 		r_cons_printf ("%s\n", subst);
 	}
-	if (filter_offset == UT64_MAX || filter_offset == offset) {
+	if (colonpos && (filter_offset == UT64_MAX || filter_offset == offset)) {
 		if (filter_format) {
 			*colonpos = ':';
 			r_cons_printf ("CL %s %s\n", k, subst);
