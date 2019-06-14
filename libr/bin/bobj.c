@@ -4,10 +4,10 @@
 #include <r_util.h>
 #include "i/private.h"
 
-static void mem_free(void *data) {
+R_API void r_bin_mem_free(void *data) {
 	RBinMem *mem = (RBinMem *)data;
 	if (mem && mem->mirrors) {
-		mem->mirrors->free = mem_free;
+		mem->mirrors->free = r_bin_mem_free;
 		r_list_free (mem->mirrors);
 		mem->mirrors = NULL;
 	}
@@ -48,9 +48,6 @@ static void object_delete_items(RBinObject *o) {
 	ht_pp_free (o->methods_ht);
 	r_list_free (o->lines);
 	sdb_free (o->kv);
-	if (o->mem) {
-		o->mem->free = mem_free;
-	}
 	r_list_free (o->mem);
 	for (i = 0; i < R_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
@@ -59,13 +56,12 @@ static void object_delete_items(RBinObject *o) {
 
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_) {
 	RBinObject *o = o_;
-	if (!o) {
-		return;
+	if (o) {
+		free (o->regstate);
+		r_bin_info_free (o->info);
+		object_delete_items (o);
+		free (o);
 	}
-	free (o->regstate);
-	r_bin_info_free (o->info);
-	object_delete_items (o);
-	free (o);
 }
 
 static char *swiftField(const char *dn, const char *cn) {
@@ -144,7 +140,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	o->boffset = offset;
 	o->strings_db = ht_up_new0 ();
 	o->regstate = NULL;
-	o->kv = sdb_new0 ();
+	o->kv = sdb_new0 (); // XXX bf->sdb bf->o->sdb wtf
 	o->baddr = baseaddr;
 	o->classes = r_list_newf ((RListFree)r_bin_class_free);
 	o->classes_ht = ht_pp_new0 ();
@@ -175,10 +171,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	// extracted from a set of bytes in the file
 	r_bin_object_set_items (bf, o);
 	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
-	if (!o->info->lang) {
-		// XXX maybe a bitmask?
-		o->info->lang = r_bin_lang_tostring (o->lang);
-	}
 	r_bin_set_baddr (bf->rbin, o->baddr);
 
 	bf->sdb_info = o->kv;
@@ -255,13 +247,11 @@ static RBNode *list2rbtree(RList *relocs) {
 }
 
 R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
-	int i;
-	bool isSwift = false;
-
 	r_return_val_if_fail (bf && o && o->plugin, false);
 
+	int i;
+	bool isSwift = false;
 	RBin *bin = bf->rbin;
-	RBinObject *old_o = bf->o;
 	RBinPlugin *p = o->plugin;
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
 	bf->o = o;
@@ -278,24 +268,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 		}
 	}
 
-	// TODO: kill the baddr_shift and split into {user/file}-baddr
-// compute baddr_shift
-#if 0
-	if (o->baddr != UT64_MAX) {
-		ut64 file_baddr = p->baddr (bf);
-		if (file_baddr != UT64_MAX && o->baddr != UT64_MAX) {
-			o->baddr_shift = o->baddr - file_baddr;
-		}
-		if (o->baddr != UT64_MAX) {
-			o->baddr_shift = 0; // o->baddr - file_baddr;
-		} else {
-if (o->baddr != UT64_MAX && file_baddr != UT64_MAX) {
-			o->baddr = file_baddr;
-			o->baddr_shift = 0; // o->baddr - file_baddr;
-}
-		}
-	}
-#endif
 	if (p->boffset) {
 		o->boffset = p->boffset (bf);
 	}
@@ -368,11 +340,9 @@ if (o->baddr != UT64_MAX && file_baddr != UT64_MAX) {
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		if (p->strings) {
-			o->strings = p->strings (bf);
-		} else {
-			o->strings = r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
-		}
+		o->strings = p->strings
+			? p->strings (bf)
+			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
 		if (bin->debase64) {
 			r_bin_object_filter_strings (o);
 		}
@@ -431,12 +401,8 @@ if (o->baddr != UT64_MAX && file_baddr != UT64_MAX) {
 	if (p->mem)  {
 		o->mem = p->mem (bf);
 	}
-	if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		if (isSwift) {
-			o->lang = R_BIN_NM_SWIFT;
-		} else {
-			o->lang = r_bin_load_languages (bf);
-		}
+	if (bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
+		o->lang = isSwift? R_BIN_NM_SWIFT: r_bin_load_languages (bf);
 	}
 	return true;
 }
@@ -472,13 +438,12 @@ R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch,
 	if (!bf->o) {
 		return NULL;
 	}
-	RBinObject *obj = bf->o;
-	RBinInfo *info = obj->info;
+	RBinInfo *info = bf->o->info;
 	if (info && info->arch && info->file &&
 			(bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
 			!strcmp (info->file, name)) {
-		return obj;
+		return bf->o;
 	}
 	return NULL;
 }
@@ -489,10 +454,9 @@ R_IPI ut64 r_bin_object_get_baddr(RBinObject *o) {
 }
 
 R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
-	bool res = false;
-
 	r_return_val_if_fail (bin, false);
 
+	bool res = false;
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	if (bf) {
 		if (bin->cur == bf) {
@@ -538,4 +502,3 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 		}
 	}
 }
-

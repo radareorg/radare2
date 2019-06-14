@@ -137,6 +137,7 @@ enum {
 	R_BIN_NM_DLANG = 1<<6,
 	R_BIN_NM_MSVC = 1<<7,
 	R_BIN_NM_RUST = 1<<8,
+	R_BIN_NM_BLOCKS = 1<<31,
 	R_BIN_NM_ANY = -1,
 };
 
@@ -733,6 +734,7 @@ R_API void r_bin_file_hash_free(RBinFileHash *fhash);
 // binobject functions
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
 R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id);
+R_API void r_bin_mem_free(void *data);
 
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);

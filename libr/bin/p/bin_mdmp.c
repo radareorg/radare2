@@ -8,25 +8,8 @@
 
 #include "mdmp/mdmp.h"
 
-/* FIXME: This is already in r_bin.c but its static, why?! */
-static void r_bbin_mem_free(void *data) {
-	RBinMem *mem = (RBinMem *)data;
-	if (mem && mem->mirrors) {
-		mem->mirrors->free = r_bbin_mem_free;
-		r_list_free (mem->mirrors);
-		mem->mirrors = NULL;
-	}
-	free (mem);
-}
-
-static ut64 baddr(RBinFile *bf) {
-	return 0LL;
-}
-
 static Sdb *get_sdb(RBinFile *bf) {
-	if (!bf || !bf->o) {
-		return NULL;
-	}
+	r_return_val_if_fail (bf && bf->o, NULL);
 	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
@@ -331,7 +314,7 @@ static RList *mem(RBinFile *bf) {
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = r_list_newf (r_bbin_mem_free))) {
+	if (!(ret = r_list_newf (r_bin_mem_free))) {
 		return NULL;
 	}
 
@@ -481,7 +464,6 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.name = "mdmp",
 	.desc = "Minidump format r_bin plugin",
 	.license = "LGPL3",
-	.baddr = &baddr,
 	.destroy = &destroy,
 	.entries = entries,
 	.get_sdb = &get_sdb,
