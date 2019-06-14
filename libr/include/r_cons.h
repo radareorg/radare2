@@ -1110,10 +1110,18 @@ typedef struct r_panels_t {
 	char *name;
 } RPanels;
 
+typedef enum {
+	DEFAULT,
+	ROTATE,
+	DEL,
+	QUIT,
+} RPanelsRootState;
+
 typedef struct r_panels_root_t {
 	int n_panels;
 	int cur_panels;
 	RPanels **panels;
+	RPanelsRootState root_state;
 } RPanelsRoot;
 
 #ifdef __cplusplus
