@@ -3824,12 +3824,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	bool breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
 	int esiltimeout = r_config_get_i (core->config, "esil.timeout");
-	clock_t startTime, endTime;
+	ut64 startTime;
 	if (!esil) {
 		initializeEsil (core);
 	}
 	if (esiltimeout) {
-		startTime = clock();
+		startTime = r_sys_now();
 	}
 	ut64 addr = r_reg_getv (core->anal->reg, name);
 	r_cons_break_push (NULL, NULL);
@@ -3840,9 +3840,8 @@ repeat:
 	}
 	//Break if we have exceeded esil.timeout
 	if (esiltimeout) {
-		endTime = clock();
-		double elapsedTime = ((double)endTime-startTime) / CLOCKS_PER_SEC;
-		if (elapsedTime >= esiltimeout) {
+		ut64 elapsedTime = r_sys_now () - startTime;
+		if (elapsedTime >= (esiltimeout * CLOCKS_PER_SEC)) {
 			eprintf ("[ESIL] Timeout exceeded.\n");
 			return_tail (0);
 		}
