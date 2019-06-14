@@ -2804,7 +2804,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("esil.stack.pattern", "0", "Specify fill pattern to initialize the stack (0, w, d, i)");
 	SETI ("esil.addr.size", 64, "Maximum address size in accessed by the ESIL VM");
 	SETPREF ("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
-
+	SETI ("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
@@ -3031,7 +3031,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	
+
 	/* log */
 	// R2_LOGLEVEL / log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
