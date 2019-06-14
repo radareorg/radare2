@@ -4562,7 +4562,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 				op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 					if (n >= min) {
-						r_cons_printf("%llx %s\n", trace->addr, op->mnemonic);
+						r_cons_printf ("%llx %s\n", trace->addr, op->mnemonic);
 					}
 					n++;
 				}
@@ -4571,7 +4571,7 @@ static int cmd_debug(void *data, const char *input) {
 				//r_core_cmd0 (core, "pd 1 @@= `dtq`");
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 				op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
-					r_cons_printf("%llx %s\n", trace->addr, op->mnemonic);
+					r_cons_printf ("%llx %s\n", trace->addr, op->mnemonic);
 				}
 			}
 			break;
