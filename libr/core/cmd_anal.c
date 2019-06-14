@@ -3841,7 +3841,8 @@ repeat:
 	//Break if we have exceeded esil.timeout
 	if (esiltimeout) {
 		ut64 elapsedTime = r_sys_now () - startTime;
-		if (elapsedTime >= (esiltimeout * 1000000)) {
+		elapsedTime >>= 20;
+		if (elapsedTime >= esiltimeout) {
 			eprintf ("[ESIL] Timeout exceeded.\n");
 			return_tail (0);
 		}
