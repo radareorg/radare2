@@ -545,7 +545,7 @@ typedef struct r_cons_t {
       */
 #define Color_RESET_TERMINAL  "\x1b" "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
-#define Color_RESET_NOBG "\x1b[22;24;25;27;28;39m"  /* Reset everything except background */
+#define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m"  /* Reset everything except background (order is important) */
 #define Color_RESET_BG   "\x1b[49m"
 #define Color_RESET_ALL  "\x1b[0m\x1b[49m"
 #define Color_BLACK      "\x1b[30m"
