@@ -59,7 +59,7 @@ R_API void r_parse_set_user_ptr(RParse *p, void *user);
 R_API int r_parse_add(RParse *p, RParsePlugin *foo);
 R_API int r_parse_list(RParse *p);
 R_API int r_parse_use(RParse *p, const char *name);
-R_API int r_parse_parse(RParse *p, const char *data, char *str);
+R_API bool r_parse_parse(RParse *p, const char *data, char *str);
 R_API int r_parse_assemble(RParse *p, char *data, char *str);
 R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
