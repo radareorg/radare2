@@ -19,6 +19,20 @@ static char *directives[] = {
 
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
+static void parseHeap(RParse *p, RStrBuf *s) {
+	char *op_buf_asm = r_strbuf_get (s);
+	size_t len = r_strbuf_length (s);
+	char *out = malloc (64 + (len * 2));
+	if (out) {
+		*out = 0;
+		strcpy (out , op_buf_asm);
+	// XXX we shouldnt pad here because we have t orefactor the RParse API to handle boundaries and chunks properly
+		r_parse_parse (p, op_buf_asm, out);
+		r_strbuf_set (s, out);
+		free (out);
+	}
+}
+
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
 	acode->code_align = r_num_math (NULL, input);
@@ -456,8 +470,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->ofilter) {
-		char *buf_asm = r_strbuf_get (&op->buf_asm);
-		r_parse_parse (a->ofilter, buf_asm, buf_asm);
+		parseHeap (a->ofilter, &op->buf_asm);
 	}
 	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
 	r_asm_op_set_buf (op, buf, opsz);
@@ -620,8 +633,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 			ret = 1;
 		}
 		if (a->ofilter) {
-			char *op_buf_asm = r_strbuf_get (&op.buf_asm);
-			r_parse_parse (a->ofilter, op_buf_asm, op_buf_asm);
+			parseHeap (a->ofilter, &op.buf_asm);
 		}
 		r_strbuf_append (buf_asm, r_strbuf_get (&op.buf_asm));
 		r_strbuf_append (buf_asm, "\n");
@@ -643,6 +655,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, RParse *p, const char *hexstr
 	}
 	RAsmCode *ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (ret && p) {
+		// XXX this can crash
 		r_parse_parse (p, ret->assembly, ret->assembly);
 	}
 	free (buf);
