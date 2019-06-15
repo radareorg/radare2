@@ -286,7 +286,7 @@ static void set_root_state(RCore *core, RPanelsRootState state);
 static void resetScrollPos(RPanel *p);
 
 /* update */
-static void update_disassembly_or_open (RCore *core);
+static void update_disassembly_or_open(RCore *core);
 static void updateAddr (RCore *core);
 static void updateHelp(RPanels *ps);
 
