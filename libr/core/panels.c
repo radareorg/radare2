@@ -286,7 +286,7 @@ static void set_root_state(RCore *core, RPanelsRootState state);
 static void resetScrollPos(RPanel *p);
 
 /* update */
-static void updateDisassemblyAddr (RCore *core);
+static void update_disassembly_or_open(RCore *core);
 static void updateAddr (RCore *core);
 static void updateHelp(RPanels *ps);
 
@@ -1420,6 +1420,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 		break;
 	case 0x0d:
 		jmp_to_cursor_addr (core, cur);
+		break;
 	}
 	return true;
 }
@@ -1430,7 +1431,7 @@ static void jmp_to_cursor_addr (RCore *core, RPanel *panel) {
 		return;
 	}
 	core->offset = addr;
-	updateDisassemblyAddr (core);
+	update_disassembly_or_open (core);
 }
 
 static void cursor_del_breakpoints(RCore *core, RPanel *panel) {
@@ -2493,14 +2494,14 @@ static int continueCb(void *user) {
 static int stepCb(void *user) {
 	RCore *core = (RCore *)user;
 	panelSingleStepIn (core);
-	updateDisassemblyAddr (core);
+	update_disassembly_or_open (core);
 	return 0;
 }
 
 static int stepoverCb(void *user) {
 	RCore *core = (RCore *)user;
 	panelSingleStepOver (core);
-	updateDisassemblyAddr (core);
+	update_disassembly_or_open (core);
 	return 0;
 }
 
@@ -2520,14 +2521,36 @@ static int ioCacheOffCb(void *user) {
 	return 0;
 }
 
-static void updateDisassemblyAddr (RCore *core) {
+static void update_disassembly_or_open (RCore *core) {
 	RPanels *panels = core->panels;
 	int i;
+	bool create_new = true;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = getPanel (panels, i);
 		if (check_panel_type (p, PANEL_CMD_DISASSEMBLY, strlen (PANEL_CMD_DISASSEMBLY))) {
 			set_panel_addr (core, p, core->offset);
+			create_new = false;
 		}
+	}
+	if (create_new) {
+		RPanel *panel = getPanel (panels, 0);
+		int x0 = panel->view->pos.x;
+		int y0 = panel->view->pos.y;
+		int w0 = panel->view->pos.w;
+		int h0 = panel->view->pos.h;
+		int threshold_w = x0 + panel->view->pos.w;
+		int x1 = x0 + w0 / 2 - 1;
+		int w1 = threshold_w - x1;
+
+		insertPanel (core, 0, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY, false);
+		RPanel *p0 = getPanel (panels, 0);
+		set_geometry (&p0->view->pos, x0, y0, w0 / 2, h0);
+
+		RPanel *p1 = getPanel (panels, 1);
+		set_geometry (&p1->view->pos, x1, y0, w1, h0);
+
+		setCursor (core, false);
+		set_curnode (core, 0);
 	}
 	setRefreshAll (core, false);
 }
@@ -2598,7 +2621,7 @@ static void updateHelp(RPanels *ps) {
 static int reloadCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_file_reopen_debug (core, "");
-	updateDisassemblyAddr (core);
+	update_disassembly_or_open (core);
 	setRefreshAll (core, false);
 	return 0;
 }
@@ -3932,7 +3955,7 @@ static void put_breakpoints_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED cons
 
 static void continue_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
 	continueCb (user);
-	updateDisassemblyAddr ((RCore *)user);
+	update_disassembly_or_open ((RCore *)user);
 }
 
 static void step_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const RPanelLayout dir, R_UNUSED R_NULLABLE const char *title) {
