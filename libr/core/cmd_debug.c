@@ -4480,6 +4480,10 @@ static int cmd_debug(void *data, const char *input) {
 	int follow = 0;
 	const char *ptr;
 	ut64 addr;
+	int min;
+	RListIter *iter;
+	RDebugTracepoint *trace;
+	RAnalOp *op;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -4533,10 +4537,8 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'd': // "dtd"
+			min = r_num_math (core->num, input + 3);
 			if (input[2] == 'q') { // "dtdq"
-				int min = r_num_math (core->num, input + 3);
-				RListIter *iter;
-				RDebugTracepoint *trace;
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 					if (n >= min) {
@@ -4547,31 +4549,30 @@ static int cmd_debug(void *data, const char *input) {
 					n++;
 				}
 			} else if (input[2] == 'i') {
-				int min = r_num_math (core->num, input + 3);
-				RListIter *iter;
-				RDebugTracepoint *trace;
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 					if (n >= min) {
-						r_cons_printf ("%d  ", trace->count);
-						r_core_cmdf (core, "pi 1 @ 0x%08"PFMT64x, trace->addr);
+						r_cons_printf ("%d %s\n", trace->count, op->mnemonic);
 					}
 					n++;
 				}
 			} else if (input[2] == ' ') {
-				int min = r_num_math (core->num, input + 3);
-				RListIter *iter;
-				RDebugTracepoint *trace;
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 					if (n >= min) {
-						r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, trace->addr);
+						r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					}
 					n++;
 				}
 			} else {
 				// TODO: reimplement using the api
-				r_core_cmd0 (core, "pd 1 @@= `dtq`");
+				//r_core_cmd0 (core, "pd 1 @@= `dtq`");
+				r_list_foreach (core->dbg->trace->traces, iter, trace) {
+					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+					r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
+				}
 			}
 			break;
 		case 'g': // "dtg"
