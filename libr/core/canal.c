@@ -2471,7 +2471,7 @@ static int fcn_list_verbose(RCore *core, RList *fcns) {
 	return 0;
 }
 
-static int fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
+static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
@@ -2488,14 +2488,13 @@ static int fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 		free (name);
 		free (msg);
 	}
-	return 0;
 }
 
 static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		fcn_print_default (core, fcn, quiet);
+		__fcn_print_default (core, fcn, quiet);
 		if (quiet) {
 			r_cons_newline ();
 		}
@@ -2950,6 +2949,11 @@ static int cmpaddr (const void *_a, const void *_b) {
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
+		return 0;
+	}
+	if (*rad == '.') {
+		RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+		__fcn_print_default (core, fcn, false);
 		return 0;
 	}
 
