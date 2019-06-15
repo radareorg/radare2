@@ -748,7 +748,9 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		case 'O':
 			op = r_optarg;
 			set_action (R_BIN_REQ_OPERATION);
-			r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
+			if (*op == 'c') {
+				r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
+			}
 			if (isBinopHelp (op)) {
 				printf ("Usage: iO [expression]:\n"
 					" e/0x8048000       change entrypoint\n"
@@ -758,6 +760,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 					" R                 remove RPATH\n"
 					" a/l/libfoo.dylib  add library\n"
 					" p/.data/rwx       change section permissions\n"
+					" c                 show Codesign data\n"
 					" C                 show LDID entitlements\n");
 				r_core_fini (&core);
 				return 0;
