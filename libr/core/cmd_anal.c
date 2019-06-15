@@ -353,6 +353,7 @@ static const char *help_msg_afi[] = {
 static const char *help_msg_afl[] = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
+	"afl.", "", "display function in current offset (see afi.)",
 	"afl+", "", "display sum all function sizes",
 	"afl=", "", "display ascii-art bars with function ranges",
 	"aflc", "", "count of functions",
@@ -2747,6 +2748,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '+': // "afl+"
 		case '=': // "afl="
 		case '*': // "afl*"
+		case '.': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
 		case 'c': // "aflc"
