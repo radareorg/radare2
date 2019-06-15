@@ -91,9 +91,10 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 	return ret;
 }
 
-// parse 'data' and generate pseudocode disassemble in 'str'
+// data is input disasm, str is output pseudo
 // TODO: refactooring, this should return char * instead
-R_API int r_parse_parse(RParse *p, const char *data, char *str) {
+R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
+	r_return_val_if_fail (p && data && str, false);
 	if (p && data && *data && p->cur && p->cur->parse) {
 		return p->cur->parse (p, data, str);
 	}
