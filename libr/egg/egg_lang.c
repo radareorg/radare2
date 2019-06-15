@@ -1312,6 +1312,11 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			break;
 		case '{':
 			if (CTX > 0) {
+				if (CTX > 31 || CTX < 0) {
+					eprintf ("Sinking before overflow\n");
+					CTX = 0;
+					break;
+				}
 				// r_egg_printf (egg, " %s:\n", get_frame_label (0));
 				if (egg->lang.nested_callname[CTX] && strstr (egg->lang.nested_callname[CTX], "if") &&
 				    strstr (egg->lang.elem, "else")) {
