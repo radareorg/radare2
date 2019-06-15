@@ -296,6 +296,20 @@ static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_US
 	return !(((BYTE *)entry)[0] ^ ((BYTE *)entry)[1] ^ ((BYTE *)entry)[2] ^ ((BYTE *)entry)[3]);
 }
 
+typedef struct _th_query_params {
+	RDebug *dbg;
+	DWORD mask;
+	PDEBUG_BUFFER db;
+	DWORD ret;
+	bool fin;
+} th_query_params;
+
+static DWORD WINAPI __th_QueryDebugBuffer (th_query_params *params) {
+	params->ret = RtlQueryProcessDebugInformation (params->dbg->pid, params->mask, params->db);
+	params->fin = true;
+	return 0;
+}
+
 /*
 *	This function may fail with PDI_HEAP_BLOCKS if:
 *		There's too many allocations
@@ -303,38 +317,31 @@ static bool DecodeLFHEntry (RDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_US
 *		Notes:
 *			Some LFH allocations seem misaligned
 */
-static PDEBUG_BUFFER InitHeapInfo(DWORD pid, DWORD mask) {
+static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 	// Check:
 	//	RtlpQueryProcessDebugInformationFromWow64
 	//	RtlpQueryProcessDebugInformationRemote
-	// Make sure it is not segment heap to avoid lockups
-	if (mask & PDI_HEAP_BLOCKS) {
-		PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
-		if (db) {
-			HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-			PHeapInformation heaps = db->HeapInformation;
-			for (int i = 0; i < heaps->count; i++) {
-				DEBUG_HEAP_INFORMATION heap = heaps->heaps[i];
-				if (is_segment_heap (h_proc, heap.Base)) {
-					RtlDestroyQueryDebugBuffer (db);
-					return NULL;
-				}
-			}
-			RtlDestroyQueryDebugBuffer (db);
-		} else {
-			return NULL;
-		}
-	}
-	int res;
 	PDEBUG_BUFFER db = RtlCreateQueryDebugBuffer (0, FALSE);
-	res = RtlQueryProcessDebugInformation (pid, mask, db);
-	if (res) {
+	th_query_params params = { dbg, mask, db, 0, false };
+	HANDLE th = CreateThread (NULL, 0, __th_QueryDebugBuffer, &params, 0, NULL);
+	if (th) {
+		WaitForSingleObject (th, 10000);
+	}
+	if (!params.fin) {
 		// why after it fails the first time it blocks on the second? That's annoying
 		// It stops blocking if i pause radare in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
+		TerminateThread (th, 0);
 		RtlDestroyQueryDebugBuffer (db);
+		eprintf ("RtlCreateQueryDebugBuffer hanged\n");
+		db = NULL;
+	} else if (params.ret){
+		RtlDestroyQueryDebugBuffer (db);
+		db = NULL;
 		r_sys_perror ("InitHeapInfo");
-		return NULL;
+	}
+	if (th) {
+		CloseHandle (th);
 	}
 	return db;
 }
@@ -553,7 +560,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 #endif
 	WPARAM bytesRead;
 	HANDLE h_proc = NULL;
-	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS);
+	PDEBUG_BUFFER db = InitHeapInfo (dbg, PDI_HEAPS);
 	if (!db || !db->HeapInformation) {
 		R_LOG_ERROR ("InitHeapInfo Failed\n");
 		goto err;
@@ -879,7 +886,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 		r_sys_perror ("GetSingleBlock/OpenProcess");
 		goto err;
 	}
-	db = InitHeapInfo (dbg->pid, PDI_HEAPS);
+	db = InitHeapInfo (dbg, PDI_HEAPS);
 	if (!db) {
 		goto err;
 	}
@@ -979,7 +986,7 @@ err:
 
 static void w32_list_heaps(RCore *core, const char format) {
 	ULONG pid = core->dbg->pid;
-	PDEBUG_BUFFER db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	PDEBUG_BUFFER db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
 		os_info *info = r_sys_get_osinfo ();
 		if (info->major >= 10) {
@@ -1034,7 +1041,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 	if (info->major >= 10) {
 		db = GetHeapBlocks (pid, core->dbg);
 	} else {
-		db = InitHeapInfo (pid, PDI_HEAPS | PDI_HEAP_BLOCKS);
+		db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
 	free (info);
 	if (!db) {
