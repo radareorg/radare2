@@ -424,7 +424,8 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 	char mode = input[1];
 	for (; *input && !IS_WHITESPACE (*input); input++) {}
 	char *inp = strdup (input);
-	char *arg = r_str_trim (inp);
+	char *arg = inp;
+	r_str_trim (arg);
 	if (!*arg && !mode) {
 		const char *tag;
 		RListIter *iter;
@@ -1100,7 +1101,7 @@ rep:
 		} else {
 			RFlagItem *fi;
 			const char *ret;
-			char *arg = r_str_trim (strdup (input+2));
+			char *arg = r_str_trim_dup (input + 2);
 			char *color = strchr (arg, ' ');
 			if (color && color[1]) {
 				*color++ = 0;

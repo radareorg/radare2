@@ -3643,7 +3643,7 @@ reread:
 		break;
 	case 'h': // "/h"
 	{
-		char *p, *arg = r_str_trim (strdup (input + 1));
+		char *p, *arg = r_str_trim_dup (input + 1);
 		p = strchr (arg, ' ');
 		if (p) {
 			*p++ = 0;

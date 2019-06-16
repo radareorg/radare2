@@ -23,7 +23,11 @@ R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
 	ts += (time_t)gmtoff;
-	return r_str_trim (strdup (ctime (&ts)));
+	char *res = strdup (ctime (&ts));
+	if (res) {
+		r_str_trim (res); // XXX we probably need an r_str_trim_dup()
+	}
+	return res;
 #endif
 }
 

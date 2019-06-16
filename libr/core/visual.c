@@ -1398,7 +1398,8 @@ repeat:
 				} else {
 					name[0] = 0;
 				}
-				char *cmt = r_str_trim (r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, refi->addr));
+				char *cmt = r_core_cmd_strf (core, "CC.@0x%08"PFMT64x, refi->addr);
+				r_str_trim (cmt);
 				r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
 					idx, cstr, refi->at, refi->addr,
 					r_anal_xrefs_type_tostring (refi->type),
@@ -2577,7 +2578,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_line_set_prompt ("flag name: ");
 			r_core_visual_showcursor (core, true);
 			if (r_cons_fgets (name, sizeof (name), 0, NULL) >= 0 && *name) {
-				n = r_str_trim (name);
+				n = name;
+				r_str_trim (n);
 				if (core->print->ocur != -1) {
 					min = R_MIN (core->print->cur, core->print->ocur);
 					max = R_MAX (core->print->cur, core->print->ocur);

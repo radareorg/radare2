@@ -3465,7 +3465,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 		ds->sl = r_bin_addr2text (ds->core->bin, ds->at, dwarfFile);
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
-				char *chopstr, *line = strdup (ds->sl);
+				char *line = strdup (ds->sl);
 				if (!line) {
 					return;
 				}
@@ -3473,17 +3473,17 @@ static void ds_print_dwarf(RDisasmState *ds) {
 				r_str_replace_char (line, '\x1b', ' ');
 				r_str_replace_char (line, '\r', ' ');
 				r_str_replace_char (line, '\n', '\x00');
-				chopstr = r_str_trim (line);
-				if (!*chopstr) {
+				r_str_trim (line);
+				if (!*line) {
 					free (line);
 					return;
 				}
 				// handle_set_pre (ds, "  ");
 				ds_align_comment (ds);
 				if (ds->show_color) {
-					r_cons_printf ("%s; %s"Color_RESET, ds->pal_comment, chopstr);
+					r_cons_printf ("%s; %s"Color_RESET, ds->pal_comment, line);
 				} else {
-					r_cons_printf ("; %s", chopstr);
+					r_cons_printf ("; %s", line);
 				}
 				free (ds->osl);
 				ds->osl = ds->sl;
@@ -4636,7 +4636,8 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			ds_print_color_reset (ds);
 		}
 		if (ds->show_comment_right && ds->comment) {
-			char *comment = r_str_trim (ds->comment);
+			char *comment = ds->comment;
+			r_str_trim (comment);
 			if (*comment) {
 				if (!desc) {
 					ds_align_comment (ds);

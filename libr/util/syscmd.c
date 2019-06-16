@@ -262,7 +262,7 @@ R_API char *r_syscmd_cat(const char *file) {
 	}
 	if (p && *p) {
 		char *filename = strdup (p);
-		filename = r_str_trim (filename);
+		r_str_trim (filename);
 		char *data = r_file_slurp (filename, &sz);
 		if (!data) {
 			eprintf ("No such file or directory\n");
@@ -276,19 +276,15 @@ R_API char *r_syscmd_cat(const char *file) {
 }
 
 R_API char *r_syscmd_mkdir(const char *dir) {
-	const char *suffix = r_str_trim (strchr (dir, ' '));
+	const char *suffix = r_str_trim_ro (strchr (dir, ' '));
 	if (!suffix || !strncmp (suffix, "-p", 3)) {
 		return r_str_dup (NULL, "Usage: mkdir [-p] [directory]\n");
 	}
 	int ret;
-	char *dirname;
-	if (!strncmp (suffix, "-p ", 3)) {
-		dirname = r_str_trim (strdup (suffix + 3));
-		ret = r_sys_mkdirp (dirname);
-	} else {
-		dirname = r_str_trim (strdup (suffix));
-		ret = r_sys_mkdir (dirname);
-	}
+	char *dirname = (!strncmp (suffix, "-p ", 3))
+		? strdup (suffix + 3): strdup (suffix);
+	r_str_trim (dirname);
+	ret = r_sys_mkdirp (dirname);
 	if (!ret) {
 		if (r_sys_mkdir_failed ()) {
 			char *res = r_str_newf ("Cannot create \"%s\"\n", dirname);

@@ -239,7 +239,7 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
 	RListIter* iter;
 	RFSFile* f = NULL;
 	const char* dir;
-	char* path = r_str_trim (strdup (p));
+	char* path = r_str_trim_dup (p);
 	RList *roots = r_fs_root (fs, path);
 	if (!r_list_empty (roots)) {
 		r_list_foreach (roots, iter, root) {

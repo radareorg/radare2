@@ -580,7 +580,8 @@ R_API bool r_config_eval(RConfig *cfg, const char *str) {
 		return false;
 	}
 	memcpy (names, str, len);
-	str = r_str_trim (names);
+	r_str_trim (names);
+	str = names;
 
 	if (str[0] == '\0' || !strcmp (str, "help")) {
 		r_config_list (cfg, NULL, 0);
@@ -613,15 +614,18 @@ R_API bool r_config_eval(RConfig *cfg, const char *str) {
 			}
 		}
 		val[0] = '\0';
-		val = r_str_trim (val + 1);
+		val++;
+		r_str_trim (val);
 		ptr = strtok (names, "=");
 		while (ptr) {
-			config = r_str_trim (ptr);
+			r_str_trim (ptr);
+			config = ptr;
 			(void) r_config_set (cfg, config, val);
 			ptr = strtok (NULL, "=");
 		}
 	} else {
-		char *foo = r_str_trim (names);
+		char *foo = names;
+		r_str_trim (foo);
 		int foolen = strlen (foo);
 		if (foolen > 0  && foo[foolen - 1] == '.') {
 			r_config_list (cfg, names, 0);

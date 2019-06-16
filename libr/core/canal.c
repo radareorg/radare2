@@ -2624,7 +2624,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	{
 		char *sig = r_core_cmd_strf (core, "afcf @ 0x%"PFMT64x, fcn->addr);
 		if (sig) {
-			sig = r_str_trim (sig);
+			r_str_trim (sig);
 			pj_ks (pj, "signature", sig);
 			free (sig);
 		}

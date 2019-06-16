@@ -9,7 +9,7 @@ static bool handlePipes(RFS *fs, char *msg, const char *cwd) {
 	if (red) {
 		*red++ = 0;
 		r_str_trim (msg);
-		red = strdup (r_str_trim (red));
+		red = r_str_trim_dup (red);
 		if (*red != '/') {
 			char *blu = r_str_newf ("%s/%s", cwd, red);
 			free (red);
@@ -74,7 +74,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (!ptr) {
 				break;
 			}
-			ptr = r_str_trim ((char *)ptr);
+			r_str_trim ((char *)ptr); // XXX abadidea
 			if (shell->hist_add) {
 				shell->hist_add (ptr);
 			}
@@ -100,13 +100,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			// comment
 			continue;
 		} else if (buf[0] == ':') {
-			char *msg = fs->cob.cmdstr (fs->cob.core, buf+1);
+			char *msg = fs->cob.cmdstr (fs->cob.core, buf + 1);
 			printf ("%s\n", msg);
 			free (msg);
 		} else if (buf[0] == '!') {
 			r_sandbox_system (buf + 1, 1);
 		} else if (!strncmp (buf, "echo", 4)) {
-			char *msg = r_str_trim (strdup (buf + 4));
+			char *msg = r_str_trim_dup (buf + 4);
 			if (!handlePipes (fs, msg, path)) {
 				printf ("%s\n", msg);
 			}

@@ -77,7 +77,8 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 	if (!type || !var) {
 		return;
 	}
-	char *trim = r_str_trim (type);
+	char *trim = type;
+	r_str_trim (trim);
 	if (!*trim) {
 		return;
 	}
