@@ -271,7 +271,7 @@ R_API void r_cons_pal_random() {
 R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	int i;
 	RColor rcolor = (RColor) RColor_BLACK;
-	rcolor.id256 = -1;
+	rcolor.id16 = -1;
 	char *fgcolor;
 	char *bgcolor;
 	char *attr = NULL;
@@ -356,7 +356,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.r = colors[i].rcolor.r;
 			rcolor.g = colors[i].rcolor.g;
 			rcolor.b = colors[i].rcolor.b;
-			rcolor.id256 = colors[i].rcolor.id256;
+			rcolor.id16 = colors[i].rcolor.id16;
 			if (!outcol) {
 				strncat (out, colors[i].code,
 					sizeof (out) - strlen (out) - 1);
@@ -367,7 +367,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.r2 = colors[i].rcolor.r; // Initial color doesn't
 			rcolor.g2 = colors[i].rcolor.g; // have r2, g2, b2
 			rcolor.b2 = colors[i].rcolor.b;
-			rcolor.id256 = colors[i].rcolor.id256;
+			rcolor.id16 = colors[i].rcolor.id16;
 			if (!outcol) {
 				strncat (out, colors[i].bgcode,
 					sizeof (out) - strlen (out) - 1);
