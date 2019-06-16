@@ -1143,7 +1143,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 R_API const char *r_sys_prefix(const char *pfx) {
 	static char prefix[1024] = {0};
 	if (!*prefix) {
-#if __WINDOWS__
+#if __WINDOWS__ && !CUTTER
 		char *path = r_sys_cmd_str ("where radare2", NULL, NULL);
 		if (path && *path) {
 			char *dir, *tmp = dir = r_file_dirname (path);
