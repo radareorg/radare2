@@ -169,7 +169,7 @@ typedef struct rcolor_t {
 	ut8 r2; // Background color
 	ut8 g2; // Only used when a &= ALPHA_FGBG
 	ut8 b2;
-	st16 id256;
+	st8 id16; // Mapping to 16-color table
 } RColor;
 
 typedef struct r_cons_palette_t {
@@ -585,9 +585,9 @@ typedef struct r_cons_t {
 #define Color_BBGBLUE    "\x1b[104m"
 
 #ifdef _MSC_VER
-#define RCOLOR(a, r, g, b, bgr, bgg, bgb, id256) {0, a, r, g, b, bgr, bgg, bgb, id256}
+#define RCOLOR(a, r, g, b, bgr, bgg, bgb, id16) {0, a, r, g, b, bgr, bgg, bgb, id16}
 #else
-#define RCOLOR(a, r, g, b, bgr, bgg, bgb, id256) (RColor) {0, a, r, g, b, bgr, bgg, bgb, id256}
+#define RCOLOR(a, r, g, b, bgr, bgg, bgb, id16) (RColor) {0, a, r, g, b, bgr, bgg, bgb, id16}
 #endif
 #define RColor_NULL       RCOLOR(0x00,     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
 #if __WINDOWS__
