@@ -588,7 +588,7 @@ static int cmd_eval(void *data, const char *input) {
 				*v++ = 0;
 				r_config_set (core->config, k, v);
 			} else {
-				k = r_str_trim (k);
+				r_str_trim (k);
 				const char *v = r_config_get (core->config, k);
 				if (v) {
 					r_cons_printf ("%s\n", v);

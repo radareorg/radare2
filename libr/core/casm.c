@@ -81,7 +81,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 
-	char *inp = r_str_trim (strdup (input + 1));
+	char *inp = r_str_trim_dup (input + 1);
 	char *inp_arg = strchr (inp, ' ');
 	if (inp_arg) {
 		*inp_arg++ = 0;

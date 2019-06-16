@@ -2694,8 +2694,10 @@ r_cons_pop();
 					}
 				}
 				if (string && addr != UT64_MAX && addr != UT32_MAX) {
-					string = r_str_trim (string);
-					string2 = r_str_trim (string2);
+					r_str_trim (string);
+					if (string2) {
+						r_str_trim (string2);
+					}
 					//// TODO implememnt avoid duplicated strings
 					// eprintf ("---> %s\n", string);
 					if (use_color) {
@@ -2854,7 +2856,8 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		}
 		break;
 	case 'j': { // "pvj"
-		char *str = r_str_trim (r_core_cmd_str (core, "ps @ [$$]"));
+		char *str = r_core_cmd_str (core, "ps @ [$$]");
+		r_str_trim (str);
 		char *p = str;
 		if (p) {
 			while (*p) {
