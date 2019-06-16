@@ -864,6 +864,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			if (*ptr_start == '.') { /* pseudo */
 				/* TODO: move into a separate function */
 				ptr = ptr_start;
+				r_str_trim (ptr);
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
 					a->syntax = R_ASM_SYNTAX_INTEL;
 				} else if (!strncmp (ptr, ".att_syntax", 11)) {
