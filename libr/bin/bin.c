@@ -1000,20 +1000,20 @@ R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name)
 	if (binfile && name) {
 		obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
 	}
-	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
+	return r_bin_file_set_obj (bin, binfile, obj);
 }
 
 R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, const char *name) {
 	r_return_val_if_fail (binfile, false);
 	RBinObject *obj = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
-	return r_bin_file_set_cur_binfile_obj (binfile->rbin, binfile, obj);
+	return r_bin_file_set_obj (binfile->rbin, binfile, obj);
 }
 
 // NOTE: this functiona works as expected, but  we need to merge bfid and boid
 R_API bool r_bin_select_bfid (RBin *bin, ut32 bf_id) {
 	r_return_val_if_fail (bin, false);
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
-	return bf? r_bin_file_set_cur_binfile_obj (bin, bf, NULL): false;
+	return bf? r_bin_file_set_obj (bin, bf, NULL): false;
 }
 
 static void list_xtr_archs(RBin *bin, int mode) {
