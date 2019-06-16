@@ -1888,6 +1888,8 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int fd_out = -1, cons_out = -1;
 	char *_shell_cmd = NULL;
 	LPTSTR _shell_cmd_ = NULL;
+	DWORD mode;
+	GetConsoleMode (GetStdHandle (STD_OUTPUT_HANDLE), &mode);
 
 	sa.nLength = sizeof (SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
@@ -1950,6 +1952,7 @@ err_r_w32_cmd_pipe:
 		close (cons_out);
 	}
 	free (_shell_cmd_);
+	SetConsoleMode (GetStdHandle (STD_OUTPUT_HANDLE), mode);
 }
 #endif
 
