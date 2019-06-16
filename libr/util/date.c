@@ -11,7 +11,7 @@ R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 	rawtime = (time_t)timeStamp;
 	tminfo = localtime (&rawtime);
 	//tminfo = gmtime (&rawtime);
-	return r_str_trim (strdup (asctime (tminfo)));
+	return r_str_trim_dup (asctime (tminfo));
 #else
 	struct my_timezone {
 		int tz_minuteswest;     /* minutes west of Greenwich */
