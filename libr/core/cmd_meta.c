@@ -244,11 +244,14 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	ut64 offset = UT64_MAX; // use this as error value
 	bool remove = false;
 	int all = false;
-	const char *p = input;
+	const char *p = r_str_trim_ro (input);
 	char *file_line = NULL;
+	char *pheap = NULL;
 
 	if (*p == '?') {
 		eprintf ("Usage: CL[.-*?] [addr] [file:line]\n");
+		eprintf ("or: CL[.-*?] base64:b64encoded-file:linestring\n");
+		free (pheap);
 		return 0;
 	}
 	if (*p == '-') {
@@ -261,7 +264,8 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	}
 	if (*p == ' ') {
 		p = r_str_trim_ro (p + 1);
-		if (!strchr (p, ' ')) {
+		char *arg = strchr (p, ' ');
+		if (!arg) {
 			offset = r_num_math (core->num, p);
 			p = "";
 		}
@@ -281,6 +285,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		} else {
 			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
 		}
+		free (pheap);
 		return 0;
 	}
 
@@ -288,9 +293,19 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	char *myp = strdup (p);
 	char *sp = strchr (myp, ' ');
 	if (sp) {
-		offset = r_num_math (core->num, myp);
 		*sp = 0;
 		sp++;
+		offset = r_num_math (core->num, myp);
+
+		if (!strncmp (sp, "base64:", 7)) {
+			int len = 0;
+			ut8 *o = sdb_decode (sp + 7, &len);
+			if (!o) {
+				eprintf ("Invalid base64\n");
+				return 0;
+			}
+			sp = pheap = (char *)o;
+		}
 		RBinFile *bf = r_bin_cur (core->bin);
 		ret = 0;
 		if (bf && bf->sdb_addrinfo) {
@@ -301,6 +316,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		}
 		free (file_line);
 		free (myp);
+		free (pheap);
 		return ret;
 	}
 	free (myp);
@@ -315,6 +331,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			print_meta_offset (core, offset);
 		}
 	}
+	free (pheap);
 	return 0;
 }
 
