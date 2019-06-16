@@ -651,7 +651,8 @@ static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
 	char *formatcmd = r_str_newf ("type.%s", k);
-	char *format_s = r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd));
+	char *format_s = sdb_querys (sdb, NULL, -1, formatcmd);
+	r_str_trim (format_s);
 	pj_ks (pj, "type", k);
 	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
 	pj_ks (pj, "format", format_s);
@@ -1430,7 +1431,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case 'a': { // "taa"
-			char *off = r_str_trim (strdup (input + 2));
+			char *off = r_str_trim_dup (input + 2);
 			RAnalFunction *fcn;
 			RListIter *it;
 			if (off && *off) {
@@ -1579,7 +1580,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case 's': {
-			char *ptr = r_str_trim (strdup (input + 2));
+			char *ptr = r_str_trim_dup (input + 2);
 			ut64 addr = r_num_math (NULL, ptr);
 			const char *query = sdb_fmt ("link.%08" PFMT64x, addr);
 			const char *link = sdb_const_get (TDB, query, 0);
@@ -1618,14 +1619,15 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd0 (core, "t?~tp\n");
 		} else { // "tp"
 			char *tmp = strdup (input);
-			char *ptr = r_str_trim (strchr (tmp, ' '));
+			char *ptr = strchr (tmp, ' ');
 			if (!ptr) {
 				break;
 			}
+			r_str_trim (ptr);
 			int nargs = r_str_word_set0 (ptr);
 			if (nargs > 0) {
 				const char *type = r_str_word_get0 (ptr, 0);
-				const char *arg = nargs > 1? r_str_word_get0 (ptr, 1): NULL;
+				const char *arg = (nargs > 1)? r_str_word_get0 (ptr, 1): NULL;
 				char *fmt = r_type_format (TDB, type);
 				if (!fmt) {
 					eprintf ("Cannot find '%s' type\n", type);

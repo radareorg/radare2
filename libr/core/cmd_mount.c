@@ -478,7 +478,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'w':
 		if (input[1] == ' ') {
-			char *args = r_str_trim (strdup (input + 1));
+			char *args = r_str_trim_dup (input + 1);
 			char *arg = strchr (args, ' ');
 			if (arg) {
 				data = arg + 1;

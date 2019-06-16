@@ -1138,11 +1138,12 @@ static int var_cmd(RCore *core, const char *str) {
 		return true;
 	case 'd': // "afvd"
 		if (str[1]) {
-			p = r_str_trim (strchr (ostr, ' '));
+			p = strchr (ostr, ' ');
 			if (!p) {
 				free (ostr);
 				return false;
 			}
+			r_str_trim (p);
 			v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
 			if (!v1) {
 				free (ostr);
@@ -1220,7 +1221,7 @@ static int var_cmd(RCore *core, const char *str) {
 				r_anal_var_delete (core->anal, fcn->addr,
 						type, 1, (int)r_num_math (core->num, str + 1));
 			} else {
-				char *name = r_str_trim (strdup (str + 2));
+				char *name = r_str_trim_dup (str + 2);
 				if (name) {
 					r_anal_var_delete_byname (core->anal, fcn, type, name);
 					free (name);
@@ -1240,11 +1241,12 @@ static int var_cmd(RCore *core, const char *str) {
 			int rw = 0; // 0 = read, 1 = write
 			int idx = r_num_math (core->num, str + 2);
 			char *vaddr;
-			char *p = r_str_trim (strchr (ostr, ' '));
+			char *p = strchr (ostr, ' ');
 			if (!p) {
 				var_help (core, type);
 				break;
 			}
+			r_str_trim (p);
 			ut64 addr = core->offset;
 			if ((vaddr = strchr (p , ' '))) {
 				addr = r_num_math (core->num, vaddr);
@@ -2379,7 +2381,7 @@ static void afCc(RCore *core, const char *input) {
 static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 	bool json = (input[0] == 'j');
 	char *p = strchr (input, ' ');
-	char *fcn_name = p ? r_str_trim (strdup (p)): NULL;
+	char *fcn_name = p ? r_str_trim_dup (p): NULL;
 	RListIter *iter;
 	RAnalFuncArg *arg;
 
@@ -2843,7 +2845,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		case ' ': { // "afc "
 			char *argument = strdup (input + 3);
-			char *cc = r_str_trim (argument);
+			char *cc = argument;
+			r_str_trim (cc);
 			if (!r_anal_cc_exist (core->anal, cc)) {
 				eprintf ("Unknown calling convention '%s'\n"
 						"See afcl for available types\n", cc);
@@ -2856,7 +2859,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '=': // "afc="
 			if (input[3]) {
 				char *argument = strdup (input + 3);
-				char *cc = r_str_trim (argument);
+				char *cc = argument;
+				r_str_trim (cc);
 				r_core_cmdf (core, "k anal/cc/default.cc=%s", cc);
 				free (argument);
 			} else {
@@ -2876,7 +2880,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
 			break;
 		case 'o': { // "afco"
-			char *dbpath = r_str_trim (strdup (input + 3));
+			char *dbpath = r_str_trim_dup (input + 3);
 			if (r_file_exists (dbpath)) {
 				Sdb *db = sdb_new (0, dbpath, 0);
 				sdb_merge (core->anal->sdb_cc, db);
@@ -2944,12 +2948,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'R': { // "afcR"
 			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
 			int i;
-			char *cc = r_str_trim (r_core_cmd_str (core, "k anal/cc/default.cc"));
+			char *cc = r_core_cmd_str (core, "k anal/cc/default.cc");
+			r_str_trim (cc);
 			for (i = 0; i < 6; i++) {
 				char *res = r_core_cmd_strf (core, "k anal/cc/cc.%s.arg%d", cc, i);
 				r_str_trim_nc (res);
 				if (*res) {
-					char *row = r_str_trim (r_core_cmd_strf (core, "drr~%s 0x", res));
+					char *row = r_core_cmd_strf (core, "drr~%s 0x", res);
+					r_str_trim (row);
 					r_cons_printf ("arg[%d] %s\n", i, row);
 					free (row);
 				}
@@ -3545,7 +3551,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		int len, type = R_REG_TYPE_GPR;
 		arg = strchr (str, ' ');
 		if (arg) {
-			char *string = r_str_trim (strdup (arg + 1));
+			char *string = r_str_trim_dup (arg + 1);
 			if (string) {
 				type = r_reg_type_by_name (string);
 				if (type == -1 && string[0] != 'a') {
@@ -3714,10 +3720,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case ' ': { // "ar "
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			char *ostr, *regname;
 			*arg = 0;
-			ostr = r_str_trim (strdup (str + 1));
-			regname = r_str_trim_nc (ostr);
+			char *ostr = r_str_trim_dup (str + 1);
+			char *regname = r_str_trim_nc (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (!r) {
 				int role = r_reg_get_name_idx (regname);
@@ -8448,12 +8453,8 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 		r_anal_rtti_recover_all (core->anal);
 		break;
 	case 'D': { // "avrD"
-		char *dup = strdup (input + 1);
-		if (!dup) {
-			break;
-		}
-		char *name = r_str_trim (dup);
-		char *demangled = r_anal_rtti_demangle_class_name (core->anal, dup);
+		char *name = r_str_trim_dup (input + 1);
+		char *demangled = r_anal_rtti_demangle_class_name (core->anal, name);
 		free (name);
 		if (demangled) {
 			r_cons_println (demangled);

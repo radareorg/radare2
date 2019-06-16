@@ -520,7 +520,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 	// XXX: file names cannot contain spaces
 	const char *arg = input + ((input[1] == ' ') ? 2 : 1);
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
-	char *p, *a = r_str_trim (strdup (arg));
+	char *p, *a = r_str_trim_dup (arg);
 	p = strchr (a, ' ');
 	if (p) {
 		*p++ = 0;
@@ -584,7 +584,7 @@ static bool ioMemcpy (RCore *core, ut64 dst, ut64 src, int len) {
 }
 
 static bool cmd_wfs(RCore *core, const char *input) {
-	char * args = r_str_trim (strdup (input + 1));
+	char * args = r_str_trim_dup (input + 1);
 	char *arg = strchr (args, ' ');
 	int len = core->blocksize;
 	if (arg) {
@@ -629,7 +629,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 	if (input[1] == 'f') { // "wff"
 		return cmd_wff (core, input + 1);
 	}
-	char *args = r_str_trim (strdup (input + 1));
+	char *args = r_str_trim_dup (input + 1);
 	char *arg = strchr (args, ' ');
 	int len = core->blocksize;
 	if (arg) {
@@ -1430,7 +1430,7 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'o': // "wao"
 			if (input[2] == ' ') {
-				char *op = r_str_trim (strdup (input + 3));
+				char *op = r_str_trim_dup (input + 3);
 				if (op) {
 					r_core_hack (core, op);
 					free (op);

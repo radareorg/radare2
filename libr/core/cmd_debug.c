@@ -2310,7 +2310,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			int len, type = R_REG_TYPE_GPR;
 			arg = strchr (str, ' ');
 			if (arg) {
-				char *string = r_str_trim (strdup (arg + 1));
+				char *string = r_str_trim_dup (arg + 1);
 				if (string) {
 					type = r_reg_type_by_name (string);
 					if (type == -1 && string[0] != 'a') {
@@ -2362,7 +2362,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			char *eq = strchr (a, '=');
 			if (eq) {
 				*eq++ = 0;
-				char *k = r_str_trim (a);
+				char *k = a;
+				r_str_trim (a);
 				bool v = !strcmp (eq, "true") || atoi (eq);
 				int type = r_reg_cond_from_string (k);
 				if (type != -1) {
@@ -2729,11 +2730,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case ' ': // "dr"
 		arg = strchr (str + 1, '=');
 		if (arg) {
-			char *string;
-			const char *regname;
 			*arg = 0;
-			string = r_str_trim (strdup (str + 1));
-			regname = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (string));
+			char *string = r_str_trim_dup (str + 1);
+			const char *regname = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (string));
 			if (!regname) {
 				regname = string;
 			}
@@ -4272,7 +4271,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 static char *get_corefile_name (const char *raw_name, int pid) {
 	return (!*raw_name)?
 		r_str_newf ("core.%u", pid) :
-		r_str_trim (strdup (raw_name));
+		r_str_trim_dup (raw_name);
 }
 
 static int cmd_debug_step (RCore *core, const char *input) {
@@ -4589,7 +4588,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '+': // "dt+"
 			if (input[2] == '+') { // "dt++"
-				char *a, *s = r_str_trim (strdup (input + 3));
+				char *a, *s = r_str_trim_dup (input + 3);
 				RList *args = r_str_split_list (s, " ");
 				RListIter *iter;
 				r_list_foreach (args, iter, a) {
@@ -4869,7 +4868,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_dL);
 			break;
 		case ' ': {
-			char *str = r_str_trim (strdup (input + 2));
+			char *str = r_str_trim_dup (input + 2);
 			r_config_set (core->config, "dbg.backend", str);
 			// implicit by config.set r_debug_use (core->dbg, str);
 			free (str);

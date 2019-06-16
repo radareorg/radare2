@@ -971,7 +971,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				}
 			} else { /* Instruction */
 				char *str = ptr_start;
-				ptr_start = r_str_trim (str);
+				r_str_trim (str);
 				if (a->ifilter) {
 					r_parse_parse (a->ifilter, ptr_start, ptr_start);
 				}

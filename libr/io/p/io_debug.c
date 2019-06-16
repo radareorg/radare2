@@ -45,8 +45,6 @@
 #endif
 
 
-static void trace_me (void);
-
 /*
  * Creates a new process and returns the result:
  * -1 : error
@@ -206,7 +204,6 @@ static void inferior_abort_handler(int pid) {
 }
 #endif
 
-// UNUSED
 static void trace_me (void) {
 #if __APPLE__
 	signal (SIGTRAP, SIG_IGN); //NEED BY STEP
@@ -226,10 +223,6 @@ static void trace_me (void) {
 		exit (MAGIC_EXIT);
 	}
 #endif
-}
-#else
-static void trace_me (void) {
-	/* empty trace_me */
 }
 #endif
 

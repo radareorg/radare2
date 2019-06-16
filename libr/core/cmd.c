@@ -3550,7 +3550,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 'f': // flags
 		{
 		// TODO: honor ^C
-			char *glob = filter? r_str_trim (strdup (filter)): NULL;
+			char *glob = filter? r_str_trim_dup (filter): NULL;
 			ut64 off = core->offset;
 			ut64 obs = core->blocksize;
 			struct exec_command_t u = { .core = core, .cmd = cmd };
