@@ -2422,6 +2422,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
+	bool asm_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
 	bool asm_emu = r_config_get_i (core->config, "asm.emu");
@@ -2430,11 +2431,12 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
+	r_config_set_i (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.cmt.right", true);
-r_cons_push();
-line = NULL;
+	r_cons_push();
+	line = NULL;
 	s = NULL;
 	if (!strncmp (input, "dsb", 3)) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
@@ -2729,6 +2731,7 @@ r_cons_pop();
 	free (switchcmp);
 restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
+	r_config_set_i (core->config, "asm.dwarf", asm_dwarf);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
 	r_config_set_i (core->config, "asm.emu", asm_emu);
 	r_config_set_i (core->config, "emu.str", emu_str);
