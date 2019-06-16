@@ -402,6 +402,7 @@ static int rabin_do_operation(const char *op) {
 			if (!ptr2 || !r_bin_wr_addlib (bin, ptr2)) {
 				goto error;
 			}
+			rc = r_bin_wr_output (bin, output);
 			break;
 		default:
 			goto _rabin_do_operation_error;

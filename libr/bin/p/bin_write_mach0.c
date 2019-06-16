@@ -4,35 +4,72 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-static size_t findLastCommand(RBinFile *bf) {
+typedef struct machoPointers_t {
+	size_t ncmds;
+	size_t ncmds_off;
+	size_t sizeofcmds;
+	size_t sizeofcmds_off;
+	size_t lastcmd_off;
+} MachoPointers;
+
+static MachoPointers findLastCommand(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	int i = 0;
 	ut64 off;
-	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
-			i < bin->hdr.ncmds; i++) {
+	MachoPointers mp = {0};
+	mp.ncmds = bin->hdr.ncmds;
+	mp.ncmds_off = 0x10;
+	mp.sizeofcmds = bin->hdr.sizeofcmds;
+	mp.sizeofcmds_off = 0x14;
+	
+	for (i = 0, off = 0x20 + bin->header_at; i < mp.ncmds; i++) {
 		ut32 loadc[2] = {0};
-		eprintf ("off %d 0x%llx\n", i, off);
 		r_buf_read_at (bin->b, off, &loadc, sizeof (loadc));
-		eprintf ("off - 0x%llx\n", loadc[0]);
-		eprintf ("off - 0x%llx\n", loadc[1]);
 		//r_buf_seek (bin->b, off, R_BUF_SET);
-		int len = r_buf_read_le32 (&loadc + 8); // bin->b); // 
-eprintf ("%d\n", len);
+		int len = loadc[1]; // r_buf_read_le32 (loadc[1]); // bin->b); // 
 		if (len < 1) {
 			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
-			return false;
+			break;
 		}
-		off += r_read_ble32 (&loadc[4], bin->big_endian);
+		int size = r_read_ble32 (&loadc[1], bin->big_endian);
+		off += size;
 	}
-	eprintf ("___ (0x%x) __\n", off);
+	mp.lastcmd_off = off;
+	return mp;
 }
 
+static const uint8_t sample_dylib[56] = {
+	0x0c, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x18, 0x00,
+	0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x0a, 0xca, 0x04,
+	0x00, 0x00, 0x01, 0x00, 0x2f, 0x75, 0x73, 0x72, 0x2f, 0x6c,
+	0x69, 0x62, 0x2f, 0x6c, 0x69, 0x6f, 0x75, 0x74, 0x69, 0x6c,
+	0x2e, 0x64, 0x79, 0x6c, 0x69, 0x62, 0x00, 0x6c, 0x69, 0x62,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 static bool MACH0_(write_addlib)(RBinFile *bf, const char *lib) {
+	size_t size_of_lib = 56;
 	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
-	size_t lastCommandOffset = findLastCommand (bf);
-eprintf ("NCMDS = %d\n", obj->hdr.ncmds);
-	eprintf ("TODO: addlib\n");
-	return false;
+	MachoPointers mp = findLastCommand (bf);
+
+	ut32 ncmds = mp.ncmds + 1;
+	r_buf_write_at (bf->buf, mp.ncmds_off, &ncmds, sizeof (ncmds));
+
+	ut32 sizeofcmds = mp.sizeofcmds + size_of_lib; // , &ncmds, sizeof (ncmds));
+	r_buf_write_at (bf->buf, mp.sizeofcmds_off, &sizeofcmds, sizeof (sizeofcmds));
+
+	size_t lib_len = strlen (lib);
+	if (lib_len > 22) {
+		eprintf ("Warning: Adjusting cmdsize too long libname\n");
+		size_of_lib += lib_len + 1 - 22;
+		size_of_lib += 8 - (size_of_lib % 8);
+	}
+
+	const size_t sample_dylib_name_off = 24;
+	r_buf_write_at (bf->buf, mp.lastcmd_off, sample_dylib, 56);
+	r_buf_write_at (bf->buf, mp.lastcmd_off + 4, &size_of_lib, 4);
+	r_buf_write_at (bf->buf, mp.lastcmd_off + sample_dylib_name_off, lib, strlen (lib) + 1);
+	return true;
 }
 
 static bool addlib(RBinFile *bf, const char *lib) {
