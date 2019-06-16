@@ -757,7 +757,7 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 		break;
 	case ARM_CC_LS:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,!,zf,&,?{,");
+		r_strbuf_setf (&op->esil, "cf,!,zf,!,|,?{,");
 		break;
 	case ARM_CC_GE:
 		close_type = 1;
@@ -773,9 +773,9 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 		r_strbuf_setf (&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
 	case ARM_CC_LE:
-		// zf == 1 && nf != vf
+		// zf == 1 || nf != vf
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,nf,vf,^,&,?{,");
+		r_strbuf_setf (&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
 	case ARM_CC_AL:
 		// always executed
@@ -1051,6 +1051,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRB:
 	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDURSW:
 		{
 			int size = REGSIZE64 (0);
 			switch (insn->id) {
@@ -1062,6 +1063,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				size = 2;
 				break;
 			case ARM64_INS_LDRSW:
+			case ARM64_INS_LDURSW:
 				size = 4;
 				break;
 			default:
@@ -1206,13 +1208,13 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_TBZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
-		r_strbuf_setf (&op->esil, "%d,1,<<=,%s,&,!,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%d,1,<<,%s,&,!,?{,%"PFMT64d",pc,=,}",
 			IMM64(1), REG64(0), IMM64(2));
 		break;
 	case ARM64_INS_TBNZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
-		r_strbuf_setf (&op->esil, "%d,1,<<=,%s,&,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%d,1,<<,%s,&,?{,%"PFMT64d",pc,=,}",
 			IMM64(1), REG64(0), IMM64(2));
 		break;
 	case ARM64_INS_STP: // stp x6, x7, [x6,0xf90]
