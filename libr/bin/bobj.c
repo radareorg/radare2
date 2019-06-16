@@ -268,6 +268,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 		}
 	}
 
+	if (o->baddr == UT64_MAX) {
+		o->baddr = 0;
+	}
 	if (p->boffset) {
 		o->boffset = p->boffset (bf);
 	}
