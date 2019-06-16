@@ -221,7 +221,7 @@ static RList *symbols(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
 	RBinObject *obj = bf? bf->o: NULL;
 	RList *ret = r_list_newf (free);
-	const char *lang = "c";
+	const char *lang = "c"; // XXX deprecate this
 	int wordsize = 0;
 	if (!ret) {
 		return NULL;
@@ -324,12 +324,13 @@ static RList *symbols(RBinFile *bf) {
 			}
 		}
 	}
-
+#if 0
+// this must be done in bobj.c not here
 	if (bin->has_blocks_ext) {
 		lang = !strcmp (lang, "c++") ? "c++ blocks ext." : "c blocks ext.";
 	}
-
 	bin->lang = lang;
+#endif
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
 	}

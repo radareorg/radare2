@@ -81,6 +81,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	bool isElf = strstr (ft, "elf");
 	bool isPe = strstr (ft, "pe");
 	bool isBlocks = false;
+	bool isObjC = false;
 
 	if (unknownType || !(isMacho || isElf || isPe)) {
 		return R_BIN_NM_NONE;
@@ -88,8 +89,12 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 
 	// check in imports . can be slow
 	r_list_foreach (o->imports, iter, sym) {
-		if (!strcmp (sym->name, "_NSConcreteGlobalBlock")) {
+		const char *name = sym->name;
+		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
 			isBlocks = true;
+		} else if (!strncmp (name, "objc_", 5)) {
+			isObjC = true;
+			cantbe.objc = true;
 		}
 	}
 
@@ -166,6 +171,9 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 			}
 		}
 	}
+	if (isObjC) {
+		return R_BIN_NM_OBJC | (isBlocks?R_BIN_NM_BLOCKS:0);
+	}
 	if (canBeCxx) {
 		return R_BIN_NM_CXX | (isBlocks?R_BIN_NM_BLOCKS:0);
 	}
@@ -214,7 +222,7 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	case R_BIN_NM_DLANG:
 		return "d";
 	case R_BIN_NM_OBJC:
-		return "objc";
+		return (lang & R_BIN_NM_BLOCKS)? "objc with blocks": "objc";
 	case R_BIN_NM_MSVC:
 		return "msvc";
 	case R_BIN_NM_RUST:
