@@ -4,31 +4,6 @@
 #include "../i/private.h"
 #include "./cxx/demangle.h"
 
-static inline bool is_cxx_symbol (const char *name) {
-	r_return_val_if_fail (name, false);
-	if (!strncmp (name, "_Z", 2)) {
-		return true;
-	}
-	if (!strncmp (name, "__Z", 3)) {
-		return true;
-	}
-	return false;
-}
-
-// TODO: deprecate
-R_API bool r_bin_is_cxx (RBinFile *bf) {
-	RListIter *iter;
-	RBinImport *import;
-	RBinObject *o = bf->o;
-	// XXX this is too slow
-	r_list_foreach (o->imports, iter, import) {
-		if (is_cxx_symbol (import->name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;

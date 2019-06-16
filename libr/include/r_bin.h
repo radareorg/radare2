@@ -129,12 +129,15 @@ enum {
 enum {
 	R_BIN_NM_NONE = 0,
 	R_BIN_NM_JAVA = 1,
-	R_BIN_NM_CXX = 1<<1,
-	R_BIN_NM_OBJC = 1<<2,
-	R_BIN_NM_SWIFT = 1<<3,
-	R_BIN_NM_DLANG = 1<<4,
-	R_BIN_NM_MSVC = 1<<5,
-	R_BIN_NM_RUST = 1<<6,
+	R_BIN_NM_C = 1<<1,
+	R_BIN_NM_GO = 1<<2,
+	R_BIN_NM_CXX = 1<<3,
+	R_BIN_NM_OBJC = 1<<4,
+	R_BIN_NM_SWIFT = 1<<5,
+	R_BIN_NM_DLANG = 1<<6,
+	R_BIN_NM_MSVC = 1<<7,
+	R_BIN_NM_RUST = 1<<8,
+	R_BIN_NM_BLOCKS = 1<<31,
 	R_BIN_NM_ANY = -1,
 };
 
@@ -731,6 +734,7 @@ R_API void r_bin_file_hash_free(RBinFileHash *fhash);
 // binobject functions
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
 R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id);
+R_API void r_bin_mem_free(void *data);
 
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
@@ -773,7 +777,6 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 addr, char *name);
 R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym);
 R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 addr);
 R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr);
-R_API bool r_bin_is_cxx(RBinFile *binfile);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;

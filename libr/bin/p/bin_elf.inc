@@ -501,20 +501,17 @@ static RList* symbols(RBinFile *bf) {
 }
 
 static RList* imports(RBinFile *bf) {
-	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RBinElfSymbol *import = NULL;
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 	int i;
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	bin = bf->o->bin_obj;
+	r_return_val_if_fail (bf && bf->o, NULL);
+	struct Elf_(r_bin_elf_obj_t) *elf = bf->o->bin_obj;
 	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
-	if (!(import = Elf_(r_bin_elf_get_imports) (bin))) {
+	if (!(import = Elf_(r_bin_elf_get_imports) (elf))) {
 		r_list_free (ret);
 		return NULL;
 	}
@@ -526,7 +523,7 @@ static RList* imports(RBinFile *bf) {
 		ptr->bind = r_str_const (import[i].bind);
 		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
-		setimpord (bin, ptr->ordinal, ptr);
+		setimpord (elf, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -1013,8 +1010,6 @@ static RBinInfo* info(RBinFile *bf) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	// XXX this is very slow. we shouldnt walk the imports all the time, just set the bit when loading them
-	ret->lang = r_bin_is_cxx (bf) ? "c++" : "c";
 	ret->file = bf->file
 		? strdup (bf->file)
 		: NULL;
