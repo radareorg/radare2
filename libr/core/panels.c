@@ -296,6 +296,7 @@ static void __panels_check_stackbase(RCore *core);
 static bool __checkPanelNum(RCore *core);
 static bool __checkFunc(RCore *core);
 static bool __checkFuncDiff(RCore *core, RPanel *p);
+static bool __check_root_state(RCore *core, RPanelsRootState state);
 
 /* add */
 static void __addHelpPanel(RCore *core);
@@ -381,7 +382,7 @@ static void __toggleWindowMode(RPanels *panels);
 /* modal */
 static void __exec_almighty(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir);
 static void __delete_almighty(RCore *core, RModal *modal, Sdb *menu_db);
-static void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db, const int x, const int y, const int w, const int h);
+static void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db);
 static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal);
 static bool __draw_modal (RCore *core, RModal *modal, int range_end, int start, const char *name);
 static RModal *__init_modal();
@@ -475,7 +476,7 @@ static void __clearPanelsMenu(RCore *core);
 static void __clearPanelsMenuRec(RPanelsMenuItem *pmi);
 static RStrBuf *__drawMenu(RCore *core, RPanelsMenuItem *item);
 static void __moveMenuCursor(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent);
-static bool __handleMenu(RCore *core, const int key);
+static void __handleMenu(RCore *core, const int key);
 
 /* config */
 static char *__getPanelsConfigPath();
@@ -576,6 +577,10 @@ bool __check_panel_type(RPanel *panel, const char *type, int len) {
 		return false;
 	}
 	return !strncmp (panel->model->cmd, type, len);
+}
+
+bool __check_root_state(RCore *core, RPanelsRootState state) {
+	return core->panels_root->root_state == state;
 }
 
 bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
@@ -2743,7 +2748,8 @@ int __writeValueCb(void *user) {
 }
 
 int __quitCb(void *user) {
-	return 1;
+	__set_root_state ((RCore *)user, QUIT);
+	return 0;
 }
 
 void __directionDefaultCb(void *user, int direction) {
@@ -3998,7 +4004,7 @@ bool __init(RCore *core, RPanels *panels, int w, int h) {
 	return true;
 }
 
-static int __file_history_up(RLine *line) {
+int __file_history_up(RLine *line) {
 	RCore *core = line->user;
 	RList *files = r_id_storage_list (core->io->files);
 	int num_files = r_list_length (files);
@@ -4015,7 +4021,7 @@ static int __file_history_up(RLine *line) {
 	return true;
 }
 
-static int __file_history_down(RLine *line) {
+int __file_history_down(RLine *line) {
 	RCore *core = line->user;
 	RList *files = r_id_storage_list (core->io->files);
 	int num_files = r_list_length (files);
@@ -4037,9 +4043,11 @@ static int __file_history_down(RLine *line) {
 	return true;
 }
 
-static bool __handleMenu(RCore *core, const int key) {
+void __handleMenu(RCore *core, const int key) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *menu = panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	r_cons_switchbuf (false);
 	switch (key) {
 	case 'h':
@@ -4052,7 +4060,7 @@ static bool __handleMenu(RCore *core, const int key) {
 			if (menu->depth == 2) {
 				menu->depth = 1;
 				__setRefreshAll (core, false);
-				menu->root->sub[menu->root->selectedIndex]->cb (core);
+				(void)(menu->root->sub[menu->root->selectedIndex]->cb (core));
 			}
 		} else {
 			__del_menu (core);
@@ -4061,10 +4069,8 @@ static bool __handleMenu(RCore *core, const int key) {
 	case 'j':
 		{
 			if (menu->depth == 1) {
-				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-				parent->sub[parent->selectedIndex]->cb(core);
+				(void)(child->cb (core));
 			} else {
-				RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 				parent->selectedIndex = R_MIN (parent->n_sub - 1, parent->selectedIndex + 1);
 				__moveMenuCursor (core, menu, parent);
 			}
@@ -4092,15 +4098,14 @@ static bool __handleMenu(RCore *core, const int key) {
 				menu->root->selectedIndex %= menu->root->n_sub;
 				break;
 			}
-			RPanelsMenuItem *child = menu->history[menu->depth - 1];
-			if (child->sub[child->selectedIndex]->sub) {
-				child->sub[child->selectedIndex]->cb (core);
+			if (parent->sub[parent->selectedIndex]->sub) {
+				(void)(parent->sub[parent->selectedIndex]->cb (core));
 			} else {
 				menu->root->selectedIndex++;
 				menu->root->selectedIndex %= menu->root->n_sub;
 				menu->depth = 1;
 				__setRefreshAll (core, false);
-				menu->root->sub[menu->root->selectedIndex]->cb (core);
+				(void)(menu->root->sub[menu->root->selectedIndex]->cb (core));
 			}
 		}
 		break;
@@ -4121,13 +4126,7 @@ static bool __handleMenu(RCore *core, const int key) {
 	case ' ':
 	case '\r':
 	case '\n':
-		{
-			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-			RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-			if (child->cb (core)) {
-				return false;
-			}
-		}
+		(void)(child->cb (core));
 		break;
 	case 9:
 		__handleTabKey (core, false);
@@ -4140,9 +4139,11 @@ static bool __handleMenu(RCore *core, const int key) {
 		break;
 	case '?':
 		__toggleHelp (core);
+	case '"':
+		__create_almighty (core, __getPanel (panels, 0), panels->almighty_db);
+		__setMode (panels, PANEL_MODE_DEFAULT);
 		break;
 	}
-	return true;
 }
 
 bool __handle_console(RCore *core, RPanel *panel, const int key) {
@@ -4605,7 +4606,11 @@ bool __draw_modal (RCore *core, RModal *modal, int range_end, int start, const c
 	return true;
 }
 
-void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db, const int x, const int y, const int w, const int h) {
+void __create_almighty(RCore *core, RPanel *panel, Sdb *menu_db) {
+	const int w = 40;
+	const int h = 20;
+	const int x = (core->panels->can->w - w) / 2;
+	const int y = (core->panels->can->h - h) / 2;
 	RModal *modal = __init_modal ();
 	__set_geometry (&modal->pos, x, y, w, h);
 	int okey, key;
@@ -4876,10 +4881,10 @@ R_API int r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root) {
 	while (panels_root->n_panels) {
 		__set_root_state (core, DEFAULT);
 		__panels_process (core, &(panels_root->panels[panels_root->cur_panels]));
-		if (panels_root->root_state == DEL) {
+		if (__check_root_state (core, DEL)) {
 			__del_panels (core);
 		}
-		if (panels_root->root_state == QUIT) {
+		if (__check_root_state (core, QUIT)) {
 			break;
 		}
 	}
@@ -5129,8 +5134,8 @@ repeat:
 	r_cons_switchbuf (true);
 
 	if (panels->mode == PANEL_MODE_MENU) {
-		if (!__handleMenu (core, key)) {
-			__set_root_state (core, QUIT);
+		__handleMenu (core, key);
+		if (__check_root_state (core, QUIT)) {
 			goto exit;
 		}
 		goto repeat;
@@ -5335,11 +5340,7 @@ repeat:
 	case '"':
 		r_cons_switchbuf (false);
 		{
-			const int w = 40;
-			const int h = 20;
-			const int x = (can->w - w) / 2;
-			const int y = (can->h - h) / 2;
-			__create_almighty (core, cur, panels->almighty_db, x, y, w, h);
+			__create_almighty (core, cur, panels->almighty_db);
 		}
 		break;
 	case 'n':
