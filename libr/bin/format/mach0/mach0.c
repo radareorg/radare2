@@ -742,31 +742,31 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		switch (idx.type) {
 		case CSSLOT_ENTITLEMENTS:
 			if (true || isVerbose) {
-			ut64 off = data + idx.offset;
-			if (off > bin->size || off + sizeof (struct blob_t) > bin->size) {
-				bin->signature = (ut8 *)strdup ("Malformed entitlement");
-				break;
-			}
-			struct blob_t entitlements = {0};
-			entitlements.magic = r_buf_read_ble32_at (bin->b, off, mach0_endian);
-			entitlements.length = r_buf_read_ble32_at (bin->b, off + 4, mach0_endian);
-			len = entitlements.length - sizeof (struct blob_t);
-			if (len <= bin->size && len > 1) {
-				bin->signature = calloc (1, len + 1);
-				if (!bin->signature) {
+				ut64 off = data + idx.offset;
+				if (off > bin->size || off + sizeof (struct blob_t) > bin->size) {
+					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 					break;
 				}
-				if (off + sizeof (struct blob_t) + len < r_buf_size (bin->b)) {
-					r_buf_read_at (bin->b, off + sizeof (struct blob_t), (ut8 *)bin->signature, len);
-					if (len >= 0) {
-						bin->signature[len] = '\0';
+				struct blob_t entitlements = {0};
+				entitlements.magic = r_buf_read_ble32_at (bin->b, off, mach0_endian);
+				entitlements.length = r_buf_read_ble32_at (bin->b, off + 4, mach0_endian);
+				len = entitlements.length - sizeof (struct blob_t);
+				if (len <= bin->size && len > 1) {
+					bin->signature = calloc (1, len + 1);
+					if (!bin->signature) {
+						break;
+					}
+					if (off + sizeof (struct blob_t) + len < r_buf_size (bin->b)) {
+						r_buf_read_at (bin->b, off + sizeof (struct blob_t), (ut8 *)bin->signature, len);
+						if (len >= 0) {
+							bin->signature[len] = '\0';
+						}
+					} else {
+						bin->signature = (ut8 *)strdup ("Malformed entitlement");
 					}
 				} else {
 					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				}
-			} else {
-				bin->signature = (ut8 *)strdup ("Malformed entitlement");
-			}
 			}
 			break;
 		case CSSLOT_CODEDIRECTORY:
