@@ -70,7 +70,7 @@ R_API char *r_parse_immtrim(char *opstr);
 /* c */
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
-R_API void r_parse_c_reset(void);
+R_API void r_parse_c_reset(RParse *p);
 
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_6502_pseudo;
