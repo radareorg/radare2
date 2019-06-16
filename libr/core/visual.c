@@ -93,7 +93,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	}
 	hold = r_config_hold_new (core->config);
 	r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
-	"asm.indent", "asm.bytes", "asm.comments", "asm.usercomments", "asm.instr", NULL);
+	"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		r_config_set (core->config, "asm.hint.pos", "-1");
 		r_config_set (core->config, "asm.lines", "false");
@@ -105,6 +105,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	}
 	r_config_set (core->config, "asm.cmt.col", "0");
 	r_config_set (core->config, "asm.offset", "false");
+	r_config_set (core->config, "asm.dwarf", "true");
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "asm.comments", "false");
 	r_config_set (core->config, "asm.usercomments", "true");
