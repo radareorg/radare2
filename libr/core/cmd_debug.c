@@ -4556,6 +4556,7 @@ static int cmd_debug(void *data, const char *input) {
 						r_cons_printf ("%d %s\n", trace->count, op->mnemonic);
 					}
 					n++;
+					r_anal_op_free (op);
 				}
 			} else if (input[2] == ' ') {
 				int n = 0;
@@ -4565,6 +4566,7 @@ static int cmd_debug(void *data, const char *input) {
 						r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					}
 					n++;
+					r_anal_op_free (op);
 				}
 			} else {
 				// TODO: reimplement using the api
@@ -4572,6 +4574,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
 					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 					r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
+					r_anal_op_free (op);
 				}
 			}
 			break;
