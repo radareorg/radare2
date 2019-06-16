@@ -286,7 +286,7 @@ R_API char *r_file_path(const char *bin) {
 
 R_API char *r_stdin_slurp (int *sz) {
 #define BS 1024
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 	int i, ret, newfd;
 	char *buf;
 	if ((newfd = dup (0)) < 0) {
@@ -320,11 +320,7 @@ R_API char *r_stdin_slurp (int *sz) {
 	}
 	return buf;
 #else
-#ifdef _MSC_VER
-#pragma message (" TODO r_stdin_slurp")
-#else
 #warning TODO r_stdin_slurp
-#endif
 	return NULL;
 #endif
 }
