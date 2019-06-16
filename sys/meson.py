@@ -164,14 +164,15 @@ def win_dist(args):
     PATH_FMT['BUILDDIR'] = builddir
 
     makedirs(r'{DIST}')
-    copy(r'{BUILDDIR}\binr\*\*.exe', r'{DIST}')
+    makedirs(r'{DIST}\bin')
+    copy(r'{BUILDDIR}\binr\*\*.exe', r'{DIST}\bin')
 
     r2_bat_fname = args.install + r'\r2.bat'
     log.debug('create "%s"', r2_bat_fname)
     with open(r2_bat_fname, 'w') as r2_bat:
         r2_bat.write('@"%s\\radare2" %%*\n' % os.path.abspath(args.install))
 
-    copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}')
+    copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}\bin')
     makedirs(r'{DIST}\{R2_LIBDIR}')
     if args.shared:
         copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\{R2_LIBDIR}')
