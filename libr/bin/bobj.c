@@ -170,7 +170,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
 	r_bin_object_set_items (bf, o);
-	r_bin_file_set_cur_binfile_obj (bf->rbin, bf, o);
+	r_bin_file_set_obj (bf->rbin, bf, o);
 	r_bin_set_baddr (bf->rbin, o->baddr);
 
 	bf->sdb_info = o->kv;

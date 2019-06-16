@@ -987,7 +987,7 @@ R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *nam
 		}
 		obj = binfile->o;
 	}
-	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
+	return r_bin_file_set_obj (bin, binfile, obj);
 }
 
 R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {

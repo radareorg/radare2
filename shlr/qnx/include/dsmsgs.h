@@ -613,13 +613,13 @@ typedef struct {
 	char text[TS_TEXT_MAX_SIZE];
 } TSMsg_text_t;
 
-/* There is no longer a program connected to this console.  */
+/* There is no longer a program connected to this console. */
 typedef struct { struct TShdr hdr; } TSMsg_done_t;
 
-/* TextStart or TextStop flow controlÿ.  */
+/* TextStart or TextStop flow control. */
 typedef struct { struct TShdr hdr; } TSMsg_flowctl_t;
 
-/* Ack a flowctl message.  */
+/* Ack a flowctl message. */
 typedef struct { struct TShdr hdr; } TSMsg_ack_t;
 
 #endif
