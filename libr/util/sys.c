@@ -1141,7 +1141,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 }
 
 R_API const char *r_sys_prefix(const char *pfx) {
-	static char prefix = NULL;
+	static char *prefix = NULL;
 	if (!prefix) {
 #if __WINDOWS__ && !CUTTER
 		char *path = r_sys_cmd_str ("where radare2", NULL, NULL);
