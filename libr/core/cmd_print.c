@@ -2695,7 +2695,9 @@ r_cons_pop();
 				}
 				if (string && addr != UT64_MAX && addr != UT32_MAX) {
 					r_str_trim (string);
-					r_str_trim (string2);
+					if (string2) {
+						r_str_trim (string2);
+					}
 					//// TODO implememnt avoid duplicated strings
 					// eprintf ("---> %s\n", string);
 					if (use_color) {
