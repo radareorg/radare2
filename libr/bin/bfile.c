@@ -588,10 +588,15 @@ R_IPI bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *o
 	bin->narch = bf->narch;
 	if (obj) {
 		bf->o = obj;
+	} else {
+		obj = bf->o;
 	}
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (bin->minstrlen < 1) {
 		bin->minstrlen = plugin? plugin->minstrlen: bin->minstrlen;
+	}
+	if (obj && !obj->info->lang) {
+		obj->info->lang = r_bin_lang_tostring (obj->lang);
 	}
 	return true;
 }

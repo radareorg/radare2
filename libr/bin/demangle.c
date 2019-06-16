@@ -35,26 +35,6 @@ R_API char *r_bin_demangle_plugin(RBin *bin, const char *name, const char *str) 
 	return NULL;
 }
 
-R_IPI const char *r_bin_lang_tostring(int lang) {
-	switch (lang) {
-	case R_BIN_NM_SWIFT:
-		return "swift";
-	case R_BIN_NM_JAVA:
-		return "java";
-	case R_BIN_NM_CXX:
-		return "c++";
-	case R_BIN_NM_DLANG:
-		return "d";
-	case R_BIN_NM_OBJC:
-		return "objc";
-	case R_BIN_NM_MSVC:
-		return "msvc";
-	case R_BIN_NM_RUST:
-		return "rust";
-	}
-	return NULL;
-}
-
 R_API int r_bin_demangle_type(const char *str) {
 	if (!str || !*str) {
 		return R_BIN_NM_NONE;
