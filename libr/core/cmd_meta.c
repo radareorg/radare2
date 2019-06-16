@@ -244,13 +244,13 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	ut64 offset = UT64_MAX; // use this as error value
 	bool remove = false;
 	int all = false;
-	const char *p = r_str_trim_ro (input);
+	const char *p = input;
 	char *file_line = NULL;
 	char *pheap = NULL;
 
 	if (*p == '?') {
 		eprintf ("Usage: CL[.-*?] [addr] [file:line]\n");
-		eprintf ("or: CL[.-*?] base64:b64encoded-file:linestring\n");
+		eprintf ("or: CL [addr] base64:[string]\n");
 		free (pheap);
 		return 0;
 	}
@@ -269,9 +269,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			offset = r_num_math (core->num, p);
 			p = "";
 		}
-	}
-
-	if (*p == '*') {
+	} else if (*p == '*') {
 		p++;
 		all = true;
 		filter_format = '*';
@@ -295,7 +293,9 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	if (sp) {
 		*sp = 0;
 		sp++;
-		offset = r_num_math (core->num, myp);
+		if (offset == UT64_MAX) {
+			offset = r_num_math (core->num, myp);
+		}
 
 		if (!strncmp (sp, "base64:", 7)) {
 			int len = 0;
@@ -309,8 +309,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		RBinFile *bf = r_bin_cur (core->bin);
 		ret = 0;
 		if (bf && bf->sdb_addrinfo) {
-			ret = cmd_meta_add_fileline (bf->sdb_addrinfo,
-					sp, offset);
+			ret = cmd_meta_add_fileline (bf->sdb_addrinfo, sp, offset);
 		} else {
 			eprintf ("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case\n");
 		}
