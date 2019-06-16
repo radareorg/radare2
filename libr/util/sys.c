@@ -1144,22 +1144,12 @@ R_API const char *r_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {
 #if __WINDOWS__ && !CUTTER
-		char *path = r_sys_cmd_str ("where radare2", NULL, NULL);
-		if (path && *path) {
-			char *dir, *tmp = dir = r_file_dirname (path);
-			dir = r_file_dirname (tmp);
-			if (dir) {
-				prefix = strdup (dir);
-			}
-			free (dir);
-			free (tmp);
-		}
-		free (path);
+		prefix = r_sys_get_src_dir_w32 ();
 		if (!prefix) {
 			prefix = strdup (R2_PREFIX);
 		}
 #else
-		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
+		prefix = strdup (R2_PREFIX);
 #endif
 	}
 	if (pfx) {

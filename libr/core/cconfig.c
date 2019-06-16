@@ -2708,8 +2708,8 @@ R_API int r_core_config_init(RCore *core) {
 	{
 		char *pfx = r_sys_getenv("R2_PREFIX");
 #if __WINDOWS__
-		char invoke_dir[MAX_PATH];
-		if (!pfx && r_sys_get_src_dir_w32 (invoke_dir)) {
+		char *invoke_dir = r_sys_prefix (NULL);
+		if (!pfx && invoke_dir) {
 			pfx = strdup (invoke_dir);
 		}
 #endif
