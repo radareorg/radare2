@@ -1854,6 +1854,17 @@ static int cmd_system(void *data, const char *input) {
 	case '?': //!?
 		cmd_help_exclamation (core);
 		break;
+	case '*':
+		// TODO: use the api
+		{
+		char *cmd = r_str_trim_dup (input + 1);
+		cmd = r_str_replace (cmd, " ", "\\ ", true);
+		cmd = r_str_replace (cmd, "\\ ", " ", false);
+		cmd = r_str_replace (cmd, "\"", "'", false);
+		ret = r_core_cmdf (core, "\"#!pipe %s\"", cmd);
+		free (cmd);
+		}
+		break;
 	default:
 		n = atoi (input);
 		if (*input == '0' || n > 0) {

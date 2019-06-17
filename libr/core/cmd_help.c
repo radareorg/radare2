@@ -57,6 +57,7 @@ static const char *help_msg_exclamation[] = {
 	"Usage:", "!<cmd>", "  Run given command as in system(3)",
 	"!", "", "list all historic commands",
 	"!", "ls", "execute 'ls' in shell",
+	"!*", "r2p x", "run r2 command via r2pipe in current session",
 	"!!", "", "save command history to hist file",
 	"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
 	"!!!", "cmd [args|$type]", "adds the autocomplete value",

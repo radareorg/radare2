@@ -1098,17 +1098,17 @@ static bool cb_cmdpdc(void *user, void *data) {
 		// spaguetti
 		char *retdec = r_file_path ("r2retdec");
 		if (retdec) {
-			r_cons_printf ("#!pipe r2retdec\n");
+			r_cons_printf ("!*r2retdec\n");
 			free (retdec);
 		}
 		char *ghidra = r_file_path ("r2ghidra");
 		if (ghidra) {
-			r_cons_printf ("#!pipe r2ghidra\n");
+			r_cons_printf ("!*r2ghidra\n");
 			free (ghidra);
 		}
 		char *r2jadx = r_file_path ("r2jadx");
 		if (r2jadx) {
-			r_cons_printf ("#!pipe r2jadx\n");
+			r_cons_printf ("!*r2jadx\n");
 			free (r2jadx);
 		}
 		char *r2snow = r_file_path ("r2snow");
