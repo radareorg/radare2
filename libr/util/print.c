@@ -2226,7 +2226,7 @@ R_API const char* r_print_rowlog(RPrint *print, const char *str) {
 	}
 	if (use_color
 #if __WINDOWS__
-	    && r_cons_singleton ()->ansicon
+	    && print->cons && print->cons->ansicon
 #endif
 	    ) {
 		eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
@@ -2242,7 +2242,7 @@ R_API void r_print_rowlog_done(RPrint *print, const char *str) {
 	if (verbose) {
 		if (use_color
 #if __WINDOWS__
-		    && r_cons_singleton ()->ansicon
+		    && print->cons && print->cons->ansicon
 #endif
 		    ) {
 			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
