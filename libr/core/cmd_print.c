@@ -2857,6 +2857,8 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 				}
 			}
 		}
+        r_num_math (core->num, ++input);
+        // printf ("%lld\n", core->num->value);
 		break;
 	case 'j': { // "pvj"
 		char *str = r_core_cmd_str (core, "ps @ [$$]");
