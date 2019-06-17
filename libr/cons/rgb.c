@@ -91,7 +91,7 @@ static int rgb(int r, int g, int b) {
 }
 
 static void __unrgb(int color, int *r, int *g, int *b) {
-	if (color < 0 || color > 256) {
+	if (color < 0 || color > 255) {
 		*r = *g = *b = 0;
 	} else {
 		int rgb = color_table[color];
