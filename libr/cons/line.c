@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include <r_util.h>
 #include <r_cons.h>
@@ -6,11 +6,11 @@
 static RLine r_line_instance;
 #define I r_line_instance
 
-R_API RLine *r_line_singleton() {
+R_API RLine *r_line_singleton(void) {
 	return &r_line_instance;
 }
 
-R_API RLine *r_line_new() {
+R_API RLine *r_line_new(void) {
 	I.hist_up = NULL;
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
@@ -25,7 +25,7 @@ R_API RLine *r_line_new() {
 	return &I;
 }
 
-R_API void r_line_free() {
+R_API void r_line_free(void) {
 	// XXX: prompt out of the heap?
 	free ((void *)I.prompt);
 	I.prompt = NULL;
@@ -40,7 +40,7 @@ R_API void r_line_set_prompt(const char *prompt) {
 }
 
 // handle const or dynamic prompts?
-R_API char *r_line_get_prompt() {
+R_API char *r_line_get_prompt(void) {
 	return strdup (I.prompt);
 }
 
@@ -57,14 +57,12 @@ R_API void r_line_completion_fini(RLineCompletion *completion) {
 
 R_API void r_line_completion_push(RLineCompletion *completion, const char *str) {
 	r_return_if_fail (completion && str);
-	if (r_pvector_len (&completion->args) >= completion->args_limit) {
-		return;
+	if (r_pvector_len (&completion->args) < completion->args_limit) {
+		char *s = strdup (str);
+		if (s) {
+			r_pvector_push (&completion->args, (void *)s);
+		}
 	}
-	char *s = strdup (str);
-	if (!s) {
-		return;
-	}
-	r_pvector_push (&completion->args, (void *)s);
 }
 
 R_API void r_line_completion_set(RLineCompletion *completion, int argc, const char **argv) {

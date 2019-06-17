@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include "r_util.h"
 #include "r_types.h"
@@ -7,24 +7,23 @@
 
 /* parse C code and return it in key-value form */
 
-static void appendstring(const char *msg, char **s) {
+static void __appendString(const char *msg, char **s) {
 	if (!s) {
 		printf ("%s\n", msg);
 	} else if (*s) {
 		char *p = malloc (strlen (msg) + strlen (*s) + 1);
-		if (!p) {
-			return;
+		if (p) {
+			strcpy (p, *s);
+			free (*s);
+			*s = p;
+			strcpy (p + strlen (p), msg);
 		}
-		strcpy (p, *s);
-		free (*s);
-		*s = p;
-		strcpy (p + strlen (p), msg);
 	} else {
 		*s = strdup (msg);
 	}
 }
 
-static int typeload(void *p, const char *k, const char *v) {
+static int __typeLoad(void *p, const char *k, const char *v) {
 	if (!p) {
 		return -1;
 	}
@@ -32,7 +31,7 @@ static int typeload(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal*)p;
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
-	if (!strncmp (v, "struct", 6) && strncmp(k, "struct.", 7)) {
+	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
 		// structure
 		btype = VT_STRUCT;
 		const char *typename = k;
@@ -75,8 +74,8 @@ static int typeload(void *p, const char *k, const char *v) {
 	return 0;
 }
 
-static void error_func(void *opaque, const char *msg) {
-	appendstring (msg, opaque);
+static void __errorFunc(void *opaque, const char *msg) {
+	__appendString (msg, opaque);
 	char **p = (char **)opaque;
 	if (p && *p) {
 		int n = strlen(*p);
@@ -98,9 +97,9 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	if (!T) {
 		return NULL;
 	}
-	tcc_set_callback (T, &appendstring, &str);
-	tcc_set_error_func (T, (void *)error_msg, error_func);
-	sdb_foreach (anal->sdb_types, typeload, anal);
+	tcc_set_callback (T, &__appendString, &str);
+	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
+	sdb_foreach (anal->sdb_types, __typeLoad, anal);
 	if (tcc_add_file (T, path, dir) == -1) {
 		free (str);
 		str = NULL;
@@ -115,9 +114,9 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	if (!T) {
 		return NULL;
 	}
-	tcc_set_callback (T, &appendstring, &str);
-	tcc_set_error_func (T, (void *)error_msg, error_func);
-	sdb_foreach (anal->sdb_types, typeload, NULL);
+	tcc_set_callback (T, &__appendString, &str);
+	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
+	sdb_foreach (anal->sdb_types, __typeLoad, NULL);
 	if (tcc_compile_string (T, code) != 0) {
 		free (str);
 		str = NULL;
@@ -126,19 +125,7 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	return str;
 }
 
-R_API int r_parse_is_c_file(const char *file) {
-	const char *ext = r_str_lchr (file, '.');
-	if (ext) {
-		ext = ext + 1;
-		if (!strcmp (ext, "cparse")
-		||  !strcmp (ext, "c")
-		||  !strcmp (ext, "h")) {
-			return true;
-		}
-	}
-	return false;
-}
-
-R_API void r_parse_reset() {
+// XXX do not use globals
+R_API void r_parse_c_reset(RParse *p) {
 	anon_sym = SYM_FIRST_ANOM;
 }

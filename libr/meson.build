@@ -305,7 +305,6 @@ parse_plugins = [
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
-  'mreplace',
   'ppc_pseudo',
   'sh_pseudo',
   'wasm_pseudo',

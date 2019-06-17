@@ -778,7 +778,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-R_API int r_cons_get_ansicon();
+R_API int r_cons_get_ansicon(void);
 R_API void r_cons_w32_gotoxy(int fd, int x, int y);
 R_API int r_cons_w32_print(const ut8 *ptr, int len, bool vmode);
 R_API int r_cons_win_printf(bool vmode, const char *fmt, ...);
@@ -813,7 +813,7 @@ R_API void r_cons_fill_line(void);
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
-R_API int r_cons_get_cur_line ();
+R_API int r_cons_get_cur_line(void);
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
@@ -890,13 +890,13 @@ R_API char *r_cons_hud_string(const char *s);
 R_API char *r_cons_hud_file(const char *f);
 
 R_API const char *r_cons_get_buffer(void);
-R_API int r_cons_get_buffer_len();
+R_API int r_cons_get_buffer_len(void);
 R_API void r_cons_grep_help(void);
 R_API void r_cons_grep_parsecmd(char *cmd, const char *quotestr);
 R_API char * r_cons_grep_strip(char *cmd, const char *quotestr);
 R_API void r_cons_grep_process(char * grep);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
-R_API void r_cons_grepbuf();
+R_API void r_cons_grepbuf(void);
 
 R_API void r_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 R_API void r_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);

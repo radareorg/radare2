@@ -55,17 +55,15 @@ R_API RLang *r_lang_new() {
 	return lang;
 }
 
-R_API void *r_lang_free(RLang *lang) {
-	if (!lang) {
-		return NULL;
+R_API void r_lang_free(RLang *lang) {
+	if (lang) {
+		__lang = NULL;
+		r_lang_undef (lang, NULL);
+		r_list_free (lang->langs);
+		r_list_free (lang->defs);
+		// TODO: remove langs plugins
+		free (lang);
 	}
-	__lang = NULL;
-	r_lang_undef (lang, NULL);
-	r_list_free (lang->langs);
-	r_list_free (lang->defs);
-	// TODO: remove langs plugins
-	free (lang);
-	return NULL;
 }
 
 // XXX: This is only used actually to pass 'core' structure

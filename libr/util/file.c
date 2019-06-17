@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2019 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -111,6 +111,19 @@ R_API char *r_file_dirname (const char *path) {
 		}
 	}
 	return newpath;
+}
+
+R_API bool r_file_is_c(const char *file) {
+	const char *ext = r_str_lchr (file, '.'); // TODO: add api in r_file_extension or r_str_ext for this
+	if (ext) {
+		ext++;
+		if (!strcmp (ext, "cparse")
+		||  !strcmp (ext, "c")
+		||  !strcmp (ext, "h")) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API bool r_file_is_regular(const char *str) {
