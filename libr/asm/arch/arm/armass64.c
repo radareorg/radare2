@@ -736,7 +736,7 @@ static ut32 arithmetic (ArmOp *op, int k) {
 	data += op->operands[0].reg << 24;
 	data += (op->operands[1].reg & 7) << (24 + 5);
 	data += (op->operands[1].reg >> 3) << 16;
-	if (op->operands[2].reg_type & ARM_REG64) {
+	if (op->operands[2].type & ARM_GPR) {
 		data += op->operands[2].reg << 8;
 	} else {
 		data += (op->operands[2].reg & 0x3f) << 18;
@@ -760,7 +760,9 @@ static bool parseOperands(char* str, ArmOp *op) {
 	while (token) {
 		char *next = strchr (token, ',');
 		if (next) {
-			*next++ = 0;
+			// Change the ',' in token to null byte
+			// essentialy split the token by commas
+			*next++ = '\0';
 		}
 		while (token[0] == ' ') {
 			token++;
@@ -837,7 +839,14 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG64;
-			op->operands[operand].reg = r_num_math (NULL, token + 1);
+
+			if (!strncmp(token + 1, "zr", 2)) {
+				// XZR
+				op->operands[operand].reg = 31;
+			} else {
+				op->operands[operand].reg = r_num_math (NULL, token + 1);
+			}
+
 			if (op->operands[operand].reg > 31) {
 				free (t);
 				return false;
@@ -847,7 +856,17 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG32;
-			op->operands[operand].reg = r_num_math (NULL, token + 1);
+
+			if (!strncmp(token + 1, "zr", 2)) {
+				// WZR
+				op->operands[operand].reg = 31;
+			} else if (!strncmp(token + 1, "sp", 2)) {
+				// WSP
+				op->operands[operand].reg = 31;
+			} else {
+				op->operands[operand].reg = r_num_math (NULL, token + 1);
+			}
+
 			if (op->operands[operand].reg > 31) {
 				free (t);
 				return false;
@@ -1004,8 +1023,12 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = arithmetic (&ops, 0xd1);
 		return *op != -1;
 	}
-	if (!strncmp (str, "add", 3)) { // w
+	if (!strncmp (str, "add x", 5)) {
 		*op = arithmetic (&ops, 0x91);
+		return *op != -1;
+	}
+	if (!strncmp (str, "add w", 5)) {
+		*op = arithmetic (&ops, 0x11);
 		return *op != -1;
 	}
 	if (!strncmp (str, "adr x", 5)) { // w
