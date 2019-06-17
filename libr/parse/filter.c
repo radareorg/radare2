@@ -23,8 +23,6 @@ static bool isvalidflag(RFlagItem *flag) {
 	return false;
 }
 
-
-
 static char *findEnd(const char *s) {
 	while (*s == 'x' || IS_HEXCHAR (*s)) {
 		s++;
@@ -77,12 +75,12 @@ static char *findNextNumber(char *op) {
 			}
 			o = p - 1;
 		} else {
-			bool is_space = ansi_found;
+			bool isSpace = ansi_found;
 			ansi_found = false;
-			if (!is_space) {
-				is_space = p == op;
-				if (!is_space && o) {
-					is_space = (*o == ' ' || *o == ',' || *o == '[');
+			if (!isSpace) {
+				isSpace = p == op;
+				if (!isSpace && o) {
+					isSpace = (*o == ' ' || *o == ',' || *o == '[');
 				}
 			}
 			if (*p == '[') {
@@ -104,7 +102,7 @@ static char *findNextNumber(char *op) {
 					}
 				}
 			}
-			if (is_space && IS_DIGIT (*p)) {
+			if (isSpace && IS_DIGIT (*p)) {
 				return p;
 			}
 			o = p++;
@@ -112,7 +110,8 @@ static char *findNextNumber(char *op) {
 	}
 	return NULL;
 }
-static void replaceRegisters (RReg *reg, char *s, bool x86) {
+
+static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	int i;
 	for (i = 0; i < 64; i++) {
 		const char *k = r_reg_get_name (reg, i);
@@ -133,7 +132,8 @@ static void replaceRegisters (RReg *reg, char *s, bool x86) {
 		}
 	}
 }
-static int filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+
+static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
@@ -160,9 +160,9 @@ static int filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, c
 	replaceWords (ptr, "qword ", src);
 #endif
 	if (p->regsub) {
-		replaceRegisters (p->analb.anal->reg, ptr, false);
+		__replaceRegisters (p->analb.anal->reg, ptr, false);
 		if (x86) {
-			replaceRegisters (p->analb.anal->reg, ptr, true);
+			__replaceRegisters (p->analb.anal->reg, ptr, true);
 		}
 	}
 	ptr2 = NULL;
@@ -503,7 +503,11 @@ static int filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, c
 
 /// filter the opcode in data into str by following the flags and hints information
 // XXX this function have too many parameters, we need to simplify this
-R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+// XXX too many arguments here
+// TODO we shouhld use RCoreBind and use the hintGet/flagGet methods, but we can also have rflagbind+ranalbind, but kiss pls
+// TODO: NEW SIGNATURE: R_API char *r_parse_filter(RParse *p, ut64 addr, const char *str)
+// DEPRECATE
+R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
 	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, addr, f, data, str, len, big_endian);
@@ -511,14 +515,14 @@ R_API int r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *
 	return false;
 }
 
-R_API char *r_parse_new_filter(RParse *p, ut64 addr, const char *opstr) {
-#if 0
-	RAnalHint *hint = p->analb.get_hint (p->analb.anal, addr);
-	RFlag *f = NULL;
-	filter (p, addr, f, hint, data, str, len, big_endian);
-	if (p->cur && p->cur->filter) {
-		return p->cur->filter (p, addr, f, data, str, len, big_endian);
+// easier to use, should replace r_parse_filter(), but its not using rflag, analhint, endian, etc
+R_API char *r_parse_filter_dup(RParse *p, ut64 addr, const char *opstr) {
+	const size_t out_len = 256;
+	char *in = strdup (opstr);
+	char *out = calloc (out_len, 1);
+	if (!r_parse_filter (p, addr, NULL, NULL, in, out, out_len, false)) {
+		free (out);
+		return NULL;
 	}
-#endif
-	return NULL;
+	return out;
 }

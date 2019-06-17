@@ -11,7 +11,7 @@ R_LIB_VERSION (r_parse);
 static RParsePlugin *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };
 
-R_API RParse *r_parse_new() {
+R_API RParse *r_parse_new(void) {
 	int i;
 	RParse *p = R_NEW0 (RParse);
 	if (!p) {

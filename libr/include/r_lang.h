@@ -47,7 +47,7 @@ typedef struct r_lang_def_t {
 
 #ifdef R_API
 R_API RLang *r_lang_new(void);
-R_API void *r_lang_free(RLang *lang);
+R_API void r_lang_free(RLang *lang);
 R_API bool r_lang_setup(RLang *lang);
 R_API bool r_lang_add(RLang *lang, RLangPlugin *foo);
 R_API bool r_lang_list(RLang *lang);

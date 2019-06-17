@@ -282,7 +282,7 @@ static int rabin_dump_symbols(int len) {
 	return true;
 }
 
-static int rabin_dump_sections(char *scnname) {
+static bool __dumpSections(const char *scnname) {
 	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
@@ -385,7 +385,7 @@ static int rabin_do_operation(const char *op) {
 			if (!ptr2) {
 				goto _rabin_do_operation_error;
 			}
-			if (!rabin_dump_sections (ptr2)) {
+			if (!__dumpSections (ptr2)) {
 				goto error;
 			}
 			break;
@@ -516,7 +516,7 @@ static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static char *demangleAs(int type) {
+static char *__demangleAs(int type) {
 	char *res = NULL;
 	switch (type) {
 	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
@@ -532,21 +532,14 @@ static char *demangleAs(int type) {
 	return res;
 }
 
-static int rabin_list_plugins(const char* plugin_name) {
-	int json = 0;
-
-	if (rad == R_MODE_JSON) {
-		json = 'j';
-	} else if (rad) {
-		json = 'q';
-	}
-
+static void __listPlugins(const char* plugin_name) {
+	int format = (rad == R_MODE_JSON) ? 'j': rad? 'q': 0;
 	bin->cb_printf = (PrintfCallback)printf;
-
 	if (plugin_name) {
-		return r_bin_list_plugin (bin, plugin_name, json);
+		r_bin_list_plugin (bin, plugin_name, format);
+	} else {
+		r_bin_list (bin, format);
 	}
-	return r_bin_list (bin, json);
 }
 
 R_API int r_main_rabin2(int argc, char **argv) {
@@ -817,7 +810,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 		if (r_optind < argc) {
 			plugin_name = argv[r_optind];
 		}
-		rabin_list_plugins (plugin_name);
+		__listPlugins (plugin_name);
 		r_core_fini (&core);
 		return 0;
 	}
@@ -837,7 +830,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 				if (!file || !*file) {
 					break;
 				}
-				res = demangleAs (type);
+				res = __demangleAs (type);
 				if (!res) {
 					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
 					r_core_fini (&core);
@@ -852,7 +845,7 @@ R_API int r_main_rabin2(int argc, char **argv) {
 				R_FREE (file);
 			}
 		} else {
-			res = demangleAs (type);
+			res = __demangleAs (type);
 			if (res && *res) {
 				printf ("%s\n", res);
 				free(res);

@@ -497,13 +497,9 @@ static RList *libs(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = NULL;
 	char *str;
-	RBinInfo *ret;
 
-	if (!bf || !bf->o) {
-		return NULL;
-	}
-
-	ret = R_NEW0 (RBinInfo);
+	r_return_val_if_fail (bf && bf->o, NULL);
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}

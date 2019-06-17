@@ -636,7 +636,7 @@ R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int b
 
 // open/close/reload functions
 R_API RBin *r_bin_new(void);
-R_API void *r_bin_free(RBin *bin);
+R_API void r_bin_free(RBin *bin);
 R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt);
 R_API bool r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
@@ -646,8 +646,8 @@ R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
-R_API int r_bin_list(RBin *bin, int json);
-R_API int r_bin_list_plugin(RBin *bin, const char *name, int json);
+R_API void r_bin_list(RBin *bin, int format);
+R_API bool r_bin_list_plugin(RBin *bin, const char *name, int json);
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz);
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2019 - pancake */
 
 #include "r_util.h"
 #include "r_types.h"
@@ -12,13 +12,12 @@ static void __appendString(const char *msg, char **s) {
 		printf ("%s\n", msg);
 	} else if (*s) {
 		char *p = malloc (strlen (msg) + strlen (*s) + 1);
-		if (!p) {
-			return;
+		if (p) {
+			strcpy (p, *s);
+			free (*s);
+			*s = p;
+			strcpy (p + strlen (p), msg);
 		}
-		strcpy (p, *s);
-		free (*s);
-		*s = p;
-		strcpy (p + strlen (p), msg);
 	} else {
 		*s = strdup (msg);
 	}
