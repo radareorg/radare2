@@ -100,7 +100,7 @@ static const char *has_esil(RCore *core, const char *name) {
 	RAnalPlugin *h;
 	r_return_val_if_fail (core && core->anal && name, NULL);
 	r_list_foreach (core->anal->plugins, iter, h) {
-		if (!strcmp (name, h->name)) {
+		if (h->name && !strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
 		}
 	}
