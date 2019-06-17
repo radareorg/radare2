@@ -5246,9 +5246,7 @@ toro:
 			}
 		}
 		core->print->resetbg = true;
-		if (miType != R_META_TYPE_FORMAT) {
-			ds_newline (ds);
-		}
+		ds_newline (ds);
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_MJMP:
