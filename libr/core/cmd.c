@@ -796,7 +796,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
 		}
-	} else if (r_parse_is_c_file (file)) {
+	} else if (r_file_is_c (file)) {
 		const char *dir = r_config_get (core->config, "dir.types");
 		char *out = r_parse_c_file (core->anal, file, dir, NULL);
 		if (out) {

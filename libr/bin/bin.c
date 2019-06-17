@@ -542,22 +542,20 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 	return true;
 }
 
-R_API void *r_bin_free(RBin *bin) {
-	if (!bin) {
-		return NULL;
+R_API void r_bin_free(RBin *bin) {
+	if (bin) {
+		bin->file = NULL;
+		free (bin->force);
+		free (bin->srcdir);
+		//r_bin_free_bin_files (bin);
+		r_list_free (bin->binfiles);
+		r_list_free (bin->binxtrs);
+		r_list_free (bin->plugins);
+		r_list_free (bin->binldrs);
+		sdb_free (bin->sdb);
+		r_id_storage_free (bin->ids);
+		free (bin);
 	}
-	bin->file = NULL;
-	free (bin->force);
-	free (bin->srcdir);
-	//r_bin_free_bin_files (bin);
-	r_list_free (bin->binfiles);
-	r_list_free (bin->binxtrs);
-	r_list_free (bin->plugins);
-	r_list_free (bin->binldrs);
-	sdb_free (bin->sdb);
-	r_id_storage_free (bin->ids);
-	free (bin);
-	return NULL;
 }
 
 static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
@@ -584,7 +582,7 @@ static bool r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
 	return true;
 }
 
-static int r_bin_print_xtrplugin_details(RBin *bin, RBinXtrPlugin *bx, int json) {
+static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 	if (json == 'q') {
 		bin->cb_printf ("%s\n", bx->name);
 	} else if (json) {
@@ -599,10 +597,9 @@ static int r_bin_print_xtrplugin_details(RBin *bin, RBinXtrPlugin *bx, int json)
 			bin->cb_printf ("License: %s\n", bx->license);
 		}
 	}
-	return true;
 }
 
-R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
+R_API bool r_bin_list_plugin(RBin *bin, const char* name, int json) {
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
@@ -619,27 +616,28 @@ R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
 		if (!r_str_cmp (name, bx->name, strlen (name))) {
 			continue;
 		}
-		return r_bin_print_xtrplugin_details (bin, bx, json);
+		__printXtrPluginDetails (bin, bx, json);
+		return true;
 	}
 
 	eprintf ("cannot find plugin %s\n", name);
 	return false;
 }
 
-R_API int r_bin_list(RBin *bin, int json) {
+R_API void r_bin_list(RBin *bin, int format) {
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	RBinLdrPlugin *ld;
 
-	if (json == 'q') {
+	if (format == 'q') {
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("%s\n", bp->name);
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf ("%s\n", bx->name);
 		}
-	} else if (json) {
+	} else if (format) {
 		int i;
 
 		i = 0;
@@ -690,7 +688,6 @@ R_API int r_bin_list(RBin *bin, int json) {
 				ld->desc, ld->license? ld->license: "???");
 		}
 	}
-	return false;
 }
 
 /* returns the base address of bin or UT64_MAX in case of errors */

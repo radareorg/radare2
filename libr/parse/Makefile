@@ -18,7 +18,7 @@ foo:
 CFLAGS+=-DR2_PLUGIN_INCORE
 -include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
-OBJS=parse.o code.o ${STATIC_OBJS}
+OBJS=parse.o filter.o code.o ${STATIC_OBJS}
 
 pre:
 

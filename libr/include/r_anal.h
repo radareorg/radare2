@@ -1353,7 +1353,7 @@ R_API const char *r_anal_fcn_type_tostring(int type);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 
 /* fcnsign */
-R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
+R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name);
 R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 
@@ -1776,7 +1776,7 @@ R_API int r_anal_esil_to_reil_setup (RAnalEsil *esil, RAnal *anal, int romem, in
 /* no-return stuff */
 R_API void r_anal_noreturn_list(RAnal *anal, int mode);
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
-R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
+R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
 
 /* zign spaces */

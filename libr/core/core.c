@@ -2618,9 +2618,9 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_asm_free (c->assembler);
 	c->assembler = NULL;
 	c->print = r_print_free (c->print);
-	c->bin = r_bin_free (c->bin); // XXX segfaults rabin2 -c
-	c->lang = r_lang_free (c->lang); // XXX segfaults
-	c->dbg = r_debug_free (c->dbg);
+	c->bin = (r_bin_free (c->bin), NULL);
+	c->lang = (r_lang_free (c->lang), NULL);
+	c->dbg = (r_debug_free (c->dbg), NULL);
 	r_io_free (c->io);
 	r_config_free (c->config);
 	/* after r_config_free, the value of I.teefile is trashed */
