@@ -1358,6 +1358,9 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 	RRegexMatch pmatch[2];
 	bool ret = false;
 
+	// required to get the new list of items to autocomplete for cmd.pdc at least
+	r_core_config_update (core);
+
 	if (r_regex_exec (rx, buf->data, nmatch, pmatch, 1)) {
 		goto out;
 	}
