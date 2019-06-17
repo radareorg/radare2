@@ -595,8 +595,13 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	if (bin->minstrlen < 1) {
 		bin->minstrlen = plugin? plugin->minstrlen: bin->minstrlen;
 	}
-	if (obj && !obj->info->lang) {
-		obj->info->lang = r_bin_lang_tostring (obj->lang);
+	if (obj) {
+		if (!obj->info) {
+			return false;
+		}
+		if (!obj->info->lang) {
+			obj->info->lang = r_bin_lang_tostring (obj->lang);
+		}
 	}
 	return true;
 }
