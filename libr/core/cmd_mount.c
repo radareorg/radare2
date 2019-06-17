@@ -471,7 +471,7 @@ static int cmd_mount(void *data, const char *_input) {
 			rli->completion.run_user = rli->user;
 			r_line_completion_set (&rli->completion, ms_argc, ms_argv);
 			r_fs_shell_prompt (&shell, core->fs, input);
-			free (cwd);
+			R_FREE (cwd);
 			r_pvector_clear (&rli->completion.args);
 			memcpy (&rli->completion, &c, sizeof (c));
 		}
