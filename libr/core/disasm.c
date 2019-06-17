@@ -2854,10 +2854,16 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				R_FREE (ds->prev_line_col);
 				ret = true;
 				break;
-			case R_META_TYPE_FORMAT:
+			case R_META_TYPE_FORMAT: {
 				r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
+				int len_before = r_cons_get_buffer_len ();
 				r_print_format (core->print, ds->at, buf + idx,
 					len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
+				int len_after = r_cons_get_buffer_len ();
+				const char *cons_buf = r_cons_get_buffer ();
+				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
+					r_cons_drop (1);
+				}
 				ds->oplen = ds->asmop.size = (int)mi->size;
 				R_FREE (ds->line);
 				R_FREE (ds->refline);
@@ -2865,6 +2871,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 				R_FREE (ds->prev_line_col);
 				ret = true;
 				break;
+			}
 			}
 		}
 	}
