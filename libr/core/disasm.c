@@ -254,7 +254,6 @@ typedef struct {
 	int tries, cbytes, idx;
 	char chref;
 	bool retry;
-	bool mi_found;
 	RAsmOp asmop;
 	RAnalOp analop;
 	RAnalFunction *fcn;
@@ -2748,13 +2747,13 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	return true;
 }
 
-static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
-	int ret = 0;
+static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, int *mi_type) {
+	bool ret = false;
 	RAnalMetaItem *mi, *fmi;
 	RCore *core = ds->core;
 	RListIter *iter;
 	if (!ds->asm_meta) {
-		return 0;
+		return false;
 	}
 #if 0
 	UNUSED
@@ -2763,7 +2762,6 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, ds->at);
 	const char *infos = sdb_const_get (s, key, 0);
 #endif
-	ds->mi_found = false;
 
 	RList *list = r_meta_find_list_in (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 
@@ -2782,7 +2780,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 			if (fmi && mi != fmi) {
 				continue;
 			}
-			ret = mi->type;
+			if (mi_type) {
+				*mi_type = mi->type;
+			}
 			switch (mi->type) {
 			case R_META_TYPE_STRING:
 			{
@@ -2814,20 +2814,20 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
 				R_FREE (ds->prev_line_col);
-				ds->mi_found = true;
+				ret = true;
 				break;
 			}
 			case R_META_TYPE_HIDE:
 				r_cons_printf ("(%"PFMT64d" bytes hidden)", mi->size);
 				ds->asmop.size = mi->size;
 				ds->oplen = mi->size;
-				ds->mi_found = true;
+				ret = true;
 				break;
 			case R_META_TYPE_RUN:
 				r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
 				ds->asmop.size = mi->size;
 				ds->oplen = mi->size;
-				ds->mi_found = true;
+				ret = true;
 				break;
 			case R_META_TYPE_DATA:
 				hexlen = len - idx;
@@ -2852,19 +2852,26 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
 				R_FREE (ds->prev_line_col);
-				ds->mi_found = true;
+				ret = true;
 				break;
-			case R_META_TYPE_FORMAT:
+			case R_META_TYPE_FORMAT: {
 				r_cons_printf ("pf %s # size=%d\n", mi->str, mi->size);
+				int len_before = r_cons_get_buffer_len ();
 				r_print_format (core->print, ds->at, buf + idx,
 					len - idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
+				int len_after = r_cons_get_buffer_len ();
+				const char *cons_buf = r_cons_get_buffer ();
+				if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
+					r_cons_drop (1);
+				}
 				ds->oplen = ds->asmop.size = (int)mi->size;
 				R_FREE (ds->line);
 				R_FREE (ds->refline);
 				R_FREE (ds->refline2);
 				R_FREE (ds->prev_line_col);
-				ds->mi_found = true;
+				ret = true;
 				break;
+			}
 			}
 		}
 	}
@@ -5175,8 +5182,9 @@ toro:
 		ds_print_cycles (ds);
 		ds_print_family (ds);
 		ds_print_stackptr (ds);
-		int miType = ds_print_meta_infos (ds, buf, len, idx);
-		if (ds->mi_found) {
+		int mi_type;
+		bool mi_found = ds_print_meta_infos (ds, buf, len, idx, &mi_type);
+		if (mi_found) {
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
@@ -5189,12 +5197,12 @@ toro:
 					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
-			if (miType == R_META_TYPE_FORMAT) {
+			if (mi_type == R_META_TYPE_FORMAT) {
 				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 			//		haveMeta = false;
 				}
 			}
-			if (miType != R_META_TYPE_FORMAT) {
+			if (mi_type != R_META_TYPE_FORMAT) {
 				if (ds->asm_hint_pos > 0) {
 					ds_print_core_vmode (ds, ds->asm_hint_pos);
 				}
@@ -5207,7 +5215,6 @@ toro:
 				}
 			}
 		} else {
-			ds->mi_found = false;
 			/* show cursor */
 			ds_print_show_cursor (ds);
 			ds_print_show_bytes (ds);
@@ -5246,9 +5253,7 @@ toro:
 			}
 		}
 		core->print->resetbg = true;
-		if (miType != R_META_TYPE_FORMAT) {
-			ds_newline (ds);
-		}
+		ds_newline (ds);
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
 			switch (ds->analop.type) {
 			case R_ANAL_OP_TYPE_MJMP:
