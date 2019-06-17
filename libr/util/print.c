@@ -1600,6 +1600,9 @@ R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 f
 
 		// TODO: memoize blocks or gtfo
 		for (i = 0; i < len; i++) {
+			if (p->cons->context->breaked) {
+				break;
+			}
 			p->iob.read_at (p->iob.io, from + j, bufz2, size);
 			bufz[i] = cb (user, p->zoom->mode, from + j, bufz2, size);
 			j += size;
