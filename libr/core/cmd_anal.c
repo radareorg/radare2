@@ -6,6 +6,7 @@
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
+	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[b] [addr]", "analyze block at given address",
@@ -9056,6 +9057,11 @@ static int cmd_anal(void *data, const char *input) {
 		if (!cmd_anal_refs (core, input + 1)) {
 			return false;
 		}
+		break;
+	case '*': // "a*"
+		r_core_cmd0 (core, "afl*");
+		r_core_cmd0 (core, "ah*");
+		r_core_cmd0 (core, "ax*");
 		break;
 	case 'a': // "aa"
 		if (!cmd_anal_all (core, input + 1)) {
