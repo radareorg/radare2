@@ -2249,10 +2249,9 @@ static void tmpenvs_free(void *item) {
 }
 
 static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
-	if (tmparch == NULL ) {
+	if (!tmparch) {
 		eprintf ("tmparch should be set\n");
 	}
-
 	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
 	r_config_set (core->config, "asm.arch", arch);
 	core->fixedarch = true;
@@ -2260,10 +2259,9 @@ static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
 }
 
 static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
-	if (tmpbits == NULL) {
+	if (!tmpbits) {
 		eprintf ("tmpbits should be set\n");
 	}
-
 	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;

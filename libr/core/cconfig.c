@@ -416,6 +416,21 @@ static bool cb_asmassembler(void *user, void *data) {
 	return true;
 }
 
+static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
+	r_return_if_fail (core && core->assembler && node);
+	RListIter *iter;
+	r_list_purge (node->options);
+	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
+	RList *optl = r_str_split_list (opts, "\n");
+	char *opt;
+	node->options->free = free;
+	r_list_foreach (optl, iter, opt) {
+		SETOPTIONS (node, strdup (opt), NULL);
+	}
+	r_list_free (optl);
+	free (opts);
+}
+
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
@@ -1092,29 +1107,34 @@ static bool cb_cfg_fortunes_type(void *user, void *data) {
 }
 
 static bool cb_cmdpdc(void *user, void *data) {
+	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
 		r_cons_printf ("pdc\n");
 		// spaguetti
 		char *retdec = r_file_path ("r2retdec");
-		if (retdec) {
+		if (retdec && *retdec == '/') {
 			r_cons_printf ("!*r2retdec\n");
 			free (retdec);
 		}
 		char *ghidra = r_file_path ("r2ghidra");
-		if (ghidra) {
+		if (ghidra && *ghidra == '/') {
 			r_cons_printf ("!*r2ghidra\n");
 			free (ghidra);
 		}
 		char *r2jadx = r_file_path ("r2jadx");
-		if (r2jadx) {
+		if (r2jadx && *r2jadx == '/') {
 			r_cons_printf ("!*r2jadx\n");
 			free (r2jadx);
 		}
 		char *r2snow = r_file_path ("r2snow");
-		if (r2snow) {
+		if (r2snow && *r2snow == '/') {
 			r_cons_printf (".!r2snow\n");
 			free (r2snow);
+		}
+		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
+		if (r2dec) {
+			r_cons_printf ("pdd\n");
 		}
 		return false;
 	}
@@ -3200,7 +3220,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
 	SETPREF ("cmd.load", "", "Run when binary is loaded");
-	SETCB ("cmd.pdc", "", &cb_cmdpdc, "Select pseudo-decompiler command to run after pdc");
+	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
+	SETDESC (cmdpdc, "Select pseudo-decompiler command to run after pdc");
+	update_cmdpdc_options (core, cmdpdc);
 	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
 	SETPREF ("cmd.prompt", "", "Prompt commands");
 	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "Empty command an alias for '..' (repeat last command)");
@@ -3515,4 +3537,9 @@ R_API int r_core_config_init(RCore *core) {
 
 	r_config_lock (cfg, true);
 	return true;
+}
+
+R_API void r_core_config_update(RCore *core) {
+	RConfigNode *cmdpdc = r_config_node_get (core->config, "cmd.pdc");
+	update_cmdpdc_options (core, cmdpdc);
 }
