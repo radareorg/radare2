@@ -1334,7 +1334,7 @@ R_API int r_cons_get_size(int *rows) {
 
 #if __WINDOWS__
 R_API os_info *r_sys_get_osinfo();
-R_API bool r_cons_is_ansicon() {
+R_API bool r_cons_is_ansicon(void) {
 	DWORD major;
 	DWORD minor;
 	bool win_support = false;
