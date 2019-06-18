@@ -64,7 +64,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 		data->file_count = file_count;
 		data->metadata = metadata;
 		data->loaded = 0;
-// dont slice twice TODO. review this
+// don't slice twice TODO. review this
 		data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
 	}
 	return data;
