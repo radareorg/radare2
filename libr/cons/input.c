@@ -535,6 +535,7 @@ R_API bool r_cons_yesno(int def, const char *fmt, ...) {
 	va_start (ap, fmt);
 
 	if (!r_cons_is_interactive ()) {
+		va_end (ap);
 		return def == 'y';
 	}
 	vfprintf (stderr, fmt, ap);
