@@ -53,12 +53,17 @@ static const char *panels_static [] = {
 };
 
 static const char *menus[] = {
-	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Fun", "About", "Help",
+	"File", "Settings", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Fun", "About", "Help",
 	NULL
 };
 
 static const char *menus_File[] = {
 	"New", "Open", "ReOpen", "Close", "Sections", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
+	NULL
+};
+
+static const char *menus_Settings[] = {
+	"Colors", "Decompiler",
 	NULL
 };
 
@@ -73,7 +78,7 @@ static const char *menus_loadLayout[] = {
 };
 
 static const char *menus_Edit[] = {
-	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache", "Colors",
+	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache",
 	NULL
 };
 
@@ -393,6 +398,7 @@ static int __openMenuCb(void *user);
 static int __openFileCb(void *user);
 static int __rwCb(void *user);
 static int __debuggerCb(void *user);
+static int __decompiler_cb(void *user);
 static int __loadLayoutSavedCb(void *user);
 static int __loadLayoutDefaultCb(void *user);
 static int __closeFileCb(void *user);
@@ -2341,6 +2347,17 @@ int __debuggerCb(void *user) {
 	return 0;
 }
 
+int __decompiler_cb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	r_config_set (core->config, "cmd.pdc", child->name);
+	__setRefreshAll (core, false);
+	__setMode (core->panels, PANEL_MODE_DEFAULT);
+	return 0;
+}
+
 int __loadLayoutSavedCb(void *user) {
 	RCore *core = (RCore *)user;
 	if (!__loadSavedPanelsLayout (core)) {
@@ -3379,6 +3396,12 @@ bool __initPanelsMenu(RCore *core) {
 		i++;
 	}
 
+	parent = "Settings";
+	i = 0;
+	while (menus_Settings[i]) {
+		__addMenu (core, parent, menus_Settings[i++], __openMenuCb);
+	}
+
 	parent = "Edit";
 	i = 0;
 	while (menus_Edit[i]) {
@@ -3396,8 +3419,7 @@ bool __initPanelsMenu(RCore *core) {
 			__addMenu (core, parent, menus_Edit[i], __assembleCb);
 		} else if (!strcmp (menus_Edit[i], "Fill")) {
 			__addMenu (core, parent, menus_Edit[i], __fillCb);
-		} else if (!strcmp (menus_Edit[i], "io.cache") ||
-				!strcmp (menus_Edit[i], "Colors")) {
+		} else if (!strcmp (menus_Edit[i], "io.cache")) {
 			__addMenu (core, parent, menus_Edit[i], __openMenuCb);
 		} else {
 			__addMenu (core, parent, menus_Edit[i], __addCmdPanel);
@@ -3408,8 +3430,7 @@ bool __initPanelsMenu(RCore *core) {
 	parent = "View";
 	i = 0;
 	while (menus_View[i]) {
-		__addMenu (core, parent, menus_View[i], __addCmdPanel);
-		i++;
+		__addMenu (core, parent, menus_View[i++], __addCmdPanel);
 	}
 
 	parent = "Tools";
@@ -3535,6 +3556,24 @@ bool __initPanelsMenu(RCore *core) {
 		i++;
 	}
 
+	parent = "Settings.Colors";
+	i = 0;
+	while (menus_Colors[i]) {
+		__addMenu (core, parent, menus_Colors[i], __colorsCb);
+		i++;
+	}
+
+	parent = "Settings.Decompiler";
+	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
+	RList *optl = r_str_split_list (opts, "\n");
+	RListIter *iter;
+	char *opt;
+	r_list_foreach (optl, iter, opt) {
+		__addMenu (core, parent, strdup (opt), __decompiler_cb);
+	}
+	r_list_free (optl);
+	free (opts);
+
 	parent = "Edit.io.cache";
 	i = 0;
 	while (menus_iocache[i]) {
@@ -3543,13 +3582,6 @@ bool __initPanelsMenu(RCore *core) {
 		} else if (!strcmp (menus_iocache[i], "Off")) {
 			__addMenu (core, parent, menus_iocache[i], __ioCacheOffCb);
 		}
-		i++;
-	}
-
-	parent = "Edit.Colors";
-	i = 0;
-	while (menus_Colors[i]) {
-		__addMenu (core, parent, menus_Colors[i], __colorsCb);
 		i++;
 	}
 
