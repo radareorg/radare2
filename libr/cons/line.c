@@ -16,7 +16,7 @@ R_API RLine *r_line_new(void) {
 	I.prompt = strdup ("> ");
 	I.contents = NULL;
 #if __WINDOWS__
-	I.ansicon = r_cons_get_ansicon ();
+	I.ansicon = r_cons_is_ansicon ();
 #endif
 	if (!r_line_dietline_init ()) {
 		eprintf ("error: r_line_dietline_init\n");
