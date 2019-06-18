@@ -26,7 +26,7 @@ static void parseHeap(RParse *p, RStrBuf *s) {
 	if (out) {
 		*out = 0;
 		strcpy (out , op_buf_asm);
-	// XXX we shouldnt pad here because we have t orefactor the RParse API to handle boundaries and chunks properly
+	// XXX we shouldn't pad here because we have t orefactor the RParse API to handle boundaries and chunks properly
 		r_parse_parse (p, op_buf_asm, out);
 		r_strbuf_set (s, out);
 		free (out);
@@ -595,8 +595,8 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 	// XXX delete this block, the ase thing should be setting asm, buf and hex
 	if (op && ret > 0) {
-		op->size = ret; // XXX shouldnt be necessary
-		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isnt?
+		op->size = ret; // XXX shouldn't be necessary
+		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isn't?
 		ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
 		r_asm_op_set_buf (op, opbuf, ret);
 	}

@@ -8,7 +8,7 @@
 #include "elf.h"
 
 // XXX UGLY CODE
-/* TODO: Take care of endianess */
+/* TODO: Take care of endianness */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
 // ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size) {

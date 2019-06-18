@@ -74,7 +74,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 			strncpy (file, nf, sizeof (file) - 1);
 			free (nf);
 		}
-		// TODO: this is slow. must use a cached pool of mmaped files and line:off entries
+		// TODO: this is slow. must use a cached pool of mapped files and line:off entries
 		out = r_file_slurp_line (file, line, 0);
 		if (!out) {
 			return r_str_newf ("%s:%d", file, line);
