@@ -15,7 +15,7 @@ The base address is used to reallocate all vaddr offsets.
 
 Reading/writing ops should be done in a loop checking for the section boundaries.
 
-The sections must be asociated to a file, but we should be able to display/use them all in case of having non forced fd. This is, when not having overlapped files in memory.
+The sections must be associated to a file, but we should be able to display/use them all in case of having non forced fd. This is, when not having overlapped files in memory.
 
 The write ops should only obey to the global io configuration and ignore the section permissions (maybe just throw a warning?)
 

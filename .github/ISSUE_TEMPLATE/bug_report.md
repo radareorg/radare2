@@ -8,7 +8,7 @@ about: Create a report to help us improve
 
 Make sure you are testing using the latest git version of radare2 before submitting any issue.
 
-*If you would like to report a bug, please fill the template bellow*
+*If you would like to report a bug, please fill the template below*
 
 ### Work environment
 

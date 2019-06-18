@@ -8,7 +8,7 @@ following some sane and basic OO concepts.
   - Instances are used to keep states
   - Enforces instance recycling
   - Reduce creation/destruction of objects
-  - Easily interfaced with Vala thru the VAPIs
+  - Easily interfaced with Vala through the VAPIs
 
 Global picture
 --------------

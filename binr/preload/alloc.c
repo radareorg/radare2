@@ -121,7 +121,7 @@ int main() {
 
 	char *a = r_malloc (10);
 	if (!a) {
-		printf ("cant malloc\n");
+		printf ("can't malloc\n");
 		return 1;
 	}
 	strcpy (a, "hello");

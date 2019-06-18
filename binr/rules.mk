@@ -73,7 +73,7 @@ endif
 endif
 endif
 
-# Dummy myclean rule that can be overriden by the t/ Makefile
+# Dummy myclean rule that can be overridden by the t/ Makefile
 # TODO: move to config.mk ? it must be a precondition
 myclean:
 
