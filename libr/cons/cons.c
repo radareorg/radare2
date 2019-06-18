@@ -510,7 +510,7 @@ R_API RCons *r_cons_new() {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.ansicon = r_cons_get_ansicon ();
+	I.ansicon = r_cons_decide_ansicon ();
 #if UNICODE
 	if (IsValidCodePage (CP_UTF8)) {
 		if (!SetConsoleOutputCP (CP_UTF8) || !SetConsoleCP (CP_UTF8)) {
@@ -1334,7 +1334,7 @@ R_API int r_cons_get_size(int *rows) {
 
 #if __WINDOWS__
 R_API os_info *r_sys_get_osinfo();
-R_API int r_cons_get_ansicon() {
+R_API int r_cons_decide_ansicon() {
 	DWORD major;
 	DWORD minor;
 	bool win_support = false;
