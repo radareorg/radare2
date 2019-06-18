@@ -209,8 +209,8 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	}
 	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
-	// check if request addres is mapped , if dont fire trap and esil ioer callback
-	// now with siol, read_at return true/false cant be used to check error vs len
+	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// now with siol, read_at return true/false can't be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
@@ -234,8 +234,8 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 	}
 	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
-	// check if request addres is mapped , if dont fire trap and esil ioer callback
-	// now with siol, read_at return true/false cant be used to check error vs len
+	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// now with siol, read_at return true/false can't be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
@@ -297,8 +297,8 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
 		ret = len;
 	}
-	// check if request addres is mapped , if dont fire trap and esil ioer callback
-	// now with siol, write_at return true/false cant be used to check error vs len
+	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
@@ -323,8 +323,8 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
 		ret = len;
 	}
-	// check if request addres is mapped , if dont fire trap and esil ioer callback
-	// now with siol, write_at return true/false cant be used to check error vs len
+	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!esil->anal->iob.is_valid_offset (esil->anal->iob.io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_WRITE_ERR;
@@ -3190,7 +3190,7 @@ R_API int r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, 
 	if (nonull) {
 		// this is very questionable, most platforms allow accessing NULL
 		// never writes zero to PC, BP, SP, why? because writing
-		// zeros to these registers is equivalent to acessing NULL
+		// zeros to these registers is equivalent to accessing NULL
 		// pointer somehow
 		esil->cb.reg_write = internal_esil_reg_write_no_null;
 		esil->cb.mem_read = internal_esil_mem_read_no_null;

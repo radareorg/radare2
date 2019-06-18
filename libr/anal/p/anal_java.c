@@ -219,7 +219,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 	IFDBG eprintf ("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
 	ut64 control_type = r_anal_ex_map_anal_ex_to_anal_op_type (bb->type2);
 
-	// XXX - transition to type2 control flow condtions
+	// XXX - transition to type2 control flow conditions
 	switch (control_type) {
 	case R_ANAL_OP_TYPE_CALL:
 		IFDBG eprintf (" - Handling a call @ 0x%04"PFMT64x".\n", addr);
@@ -412,7 +412,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 	IFDBG eprintf ("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
 	ut32 control_type = r_anal_ex_map_anal_ex_to_anal_op_type (bb->type2);
 
-	// XXX - transition to type2 control flow condtions
+	// XXX - transition to type2 control flow conditions
 	switch (control_type) {
 		case R_ANAL_OP_TYPE_CALL:
 			IFDBG eprintf (" - Handling a call @ 0x%04"PFMT64x"\n", addr);
@@ -712,7 +712,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 			for (cur_case = 0; cur_case <= max_val - min_val; pos += 4, cur_case++) {
 				//ut32 value = (ut32)(UINT (data, pos));
 				if (pos + 4 >= len) {
-					// switch is too big cant read further
+					// switch is too big can't read further
 					break;
 				}
 				int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));

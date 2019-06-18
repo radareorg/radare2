@@ -239,7 +239,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		if ((fields.format == 1 || fields.format == 2) && fields.b == ARC_REG_PCL) {
 			/* dst = PCL + src */
 			op->ptr = (addr & ~3) + fields.imm;
-			op->refptr = 1; /* HACK! we dont actually know what size it is */
+			op->refptr = 1; /* HACK! we don't actually know what size it is */
 		}
 	case 0x01: /* add with carry */
 	case 0x14: /* add with left shift by 1 */
@@ -454,7 +454,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 	/* no unaligned code */
 	if (addr % 2 != 0) {
-		/* this fixes some of the reverse dissassembly issues */
+		/* this fixes some of the reverse disassembly issues */
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return 0;
 	}
@@ -503,8 +503,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		} else {
 			/* Branch Unconditional Far 0x00 [0x1] */
 			fields.limm |= (fields.c & 0x0f) << 21;
-			/* the  & 0xf clearly shows we dont overflow */
-			/* TODO: dont generate code to show this */
+			/* the  & 0xf clearly shows we don't overflow */
+			/* TODO: don't generate code to show this */
 			fields.limm = SEX_S25 (fields.limm);
 			op->type = R_ANAL_OP_TYPE_JMP;
 		}
@@ -550,8 +550,8 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
 				fields.imm |= (fields.c & 0x0f) << 21;
-				/* the  & 0xf clearly shows we dont overflow */
-				/* TODO: dont generate code to show this */
+				/* the  & 0xf clearly shows we don't overflow */
+				/* TODO: don't generate code to show this */
 				fields.imm = SEX_S25 (fields.imm);
 				op->type = R_ANAL_OP_TYPE_CALL;
 			}
@@ -839,7 +839,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 0x1e:
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			/* TODO: the description sounds more like a */
-			/* R_ANAL_OP_TYPE_SWI, but I dont know what */
+			/* R_ANAL_OP_TYPE_SWI, but I don't know what */
 			/* difference that would make to radare */
 			break;
 		case 0x1f:

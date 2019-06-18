@@ -409,7 +409,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 		/* nothing */
 		break;
 	}
-	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
+	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
 #if 0
 	int i;
 	// this is slower than a switch table :(

@@ -17,7 +17,7 @@ DatabaseName:
   'anal.meta'
 Keys:
   'meta.<type>.count=<int>'     number of added metas where 'type' is a single char
-  'meta.<type>.<last>=<array>'  splitted array, each block contains K elements
+  'meta.<type>.<last>=<array>'  split array, each block contains K elements
   'meta.<type>.<addr>=<string>' string representing extra information of the meta type at given address
   'range.<baddr>=<array>'       store valid addresses in a base range array
 #endif
@@ -452,7 +452,7 @@ static RAnalMetaItem *r_meta_find_(RAnal *a, ut64 at, int type, int where, int e
 	static RAnalMetaItem mi = {0};
 	// XXX: return allocated item? wtf
 	if (where != R_META_WHERE_HERE) {
-		eprintf ("THIS WAS NOT SUPOSED TO HAPPEN\n");
+		eprintf ("THIS WAS NOT SUPPOSED TO HAPPEN\n");
 		return NULL;
 	}
 

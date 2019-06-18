@@ -173,7 +173,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 				char *field_key = r_str_newf ("%s.%s", type_key, field);
 				char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 				ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
-				if (field_offset != 0) { // delete variables which are overlayed by structure
+				if (field_offset != 0) { // delete variables which are overlaid by structure
 					r_anal_var_delete (a, addr, kind, scope, delta + field_offset);
 				}
 				free (field_type);
@@ -201,7 +201,7 @@ R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
 			// r_anal_var_delete (a, addr, kind, v->scope, v->delta);
 			r_anal_var_delete (a, addr, kind, 1, v->delta);
 		}
-		// XXX: i dont think we want to alocate and free by hand. r_anal_var_delete should be the list->free already
+		// XXX: i don't think we want to allocate and free by hand. r_anal_var_delete should be the list->free already
 		r_list_free (list);
 	}
 	return 0;
@@ -291,7 +291,7 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, 1, name);
 	char *name_value = sdb_get (DB, name_key, 0);
 	if (!name_value) {
-		// eprintf ("Cant find key for %s\n", name_key);
+		// eprintf ("Can't find key for %s\n", name_key);
 		return NULL;
 	}
 	const char *comma = strchr (name_value, ',');
@@ -908,7 +908,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		}
 		switch (mode) {
 		case '*':
-			// we cant express all type info here :(
+			// we can't express all type info here :(
 			if (kind == R_ANAL_VAR_KIND_REG) { // registers
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {

@@ -80,7 +80,7 @@ If you don't have root, or just want to install it in your home use:
 	$ sys/user.sh
 
 Note that those scripts will install using configure+make using symlinks, so you
-don't need to reinstall everytime you change something in the builddir.
+don't need to reinstall every time you change something in the builddir.
 
 * If you don't like symlinks use `sys/install.sh --install`
 * To use capstone5 use the `--with-capstone5` flag.

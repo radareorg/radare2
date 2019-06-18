@@ -209,7 +209,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case V850_MOVEA:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		// FIXME: to decide about reading 16/32 bit and use only macroses to access
+		// FIXME: to decide about reading 16/32 bit and use only macros to access
 		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%u,+,%s,=", F6_RN1(word1), word2, F6_RN2(word1));
 		break;
 	case V850_SLDB:

@@ -68,7 +68,7 @@ R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits) {
 	setHint (a, "Bits:", addr, NULL, bits);
 }
 
-// TOOD: add helpers for newendian and newbank
+// TODO: add helpers for newendian and newbank
 
 R_API void r_anal_hint_set_fail(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "fail:", addr, NULL, ptr);

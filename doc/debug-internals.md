@@ -50,7 +50,7 @@ Radare supports a multitude of different types of breakpoints.
 (`??` is there a list? sw, hw, and trace? anything else??)
 
     libr/bp/bp.c            // main breakpoint management code
-    libr/bp/io.c            // setting and reseting(??) breakpoints
+    libr/bp/io.c            // setting and resetting(??) breakpoints
     libr/bp/parser.h        // header for breakpoint parser (??)
     libr/bp/parser.c        // code for breakpoint parser (??)
     libr/bp/plugin.c        // breakpoint plugin management
