@@ -567,6 +567,9 @@ static void printFunctionType(RCore *core, const char *input) {
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
 		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		if (!type) {
+			continue;
+		}
 		char *name = strchr (type, ',');
 		if (name) {
 			*name++ = 0;
