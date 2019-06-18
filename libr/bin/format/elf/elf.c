@@ -3253,7 +3253,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-// TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
+// TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;

@@ -127,7 +127,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 	return bf->o->classes;
 }
 
-// TODO: kill offset and sz, because those should be infered from binfile->buf
+// TODO: kill offset and sz, because those should be inferred from binfile->buf
 R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	r_return_val_if_fail (bf && plugin, NULL);
 	ut64 bytes_sz = r_buf_size (bf->buf);
@@ -165,7 +165,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		return NULL;
 	}
 
-	// XXX - object size cant be set here and needs to be set where where
+	// XXX - object size can't be set here and needs to be set where where
 	// the object is created from. The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file

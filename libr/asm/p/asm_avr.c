@@ -170,7 +170,7 @@ static uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 		// If the mask has a bit in this position
 		if (mask & (1<<i)) {
 			/* If there is a data bit with this mask bit counter(j),
-			 * then toggle that bit in the extracted data (result) by mask offest(i).*/
+			 * then toggle that bit in the extracted data (result) by mask offset(i).*/
 			if ((data & (1<<j)) != 0) {
 				result |= (1<<i);
 			}
@@ -342,7 +342,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	int instr_idx = -1;
 
 	// simple tokenizer -- creates an array of maximum three tokens
-	// the delimeters are ' ' and ','
+	// the delimiters are ' ' and ','
 	token = strtok ((char *)str, TOKEN_DELIM);
 	while (token != NULL && tokens_cnt < 3) {
 		memset (tokens[tokens_cnt], 0, MAX_TOKEN_SIZE);

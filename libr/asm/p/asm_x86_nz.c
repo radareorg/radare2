@@ -4578,7 +4578,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		*pos = 4;
 	}
 
-	// Now read number, possibly with parantheses
+	// Now read number, possibly with parentheses
 	if (*type & (OT_FPUREG | OT_MMXREG | OT_XMMREG) & ~OT_REGALL) {
 		Register reg = X86R_UNDEFINED;
 
