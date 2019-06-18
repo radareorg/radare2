@@ -886,7 +886,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
 		break;
 	case X86_INS_AAA:
-		esilprintf (op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}");	//dont
+		esilprintf (op, "0,cf,:=,0,af,:=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,:=,1,af,:=,}");	//don't
 		break;
 	case X86_INS_AAD:
 		arg0 = "0,zf,:=,0,sf,:=,0,pf,:=,10,ah,*,al,+,ax,=";
@@ -1328,7 +1328,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 			/*
 			 * Similar to BSF, except we naturally don't
-			 * need to substract anything to create
+			 * need to subtract anything to create
 			 * a mask and return the result.
 			 */
 			esilprintf (op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"

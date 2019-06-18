@@ -1216,7 +1216,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x76:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->eob = true;			//halt migth wait for interrupts
+			op->eob = true;			//halt might wait for interrupts
 			op->fail = addr + ilen;
 			if (len > 1) {
 				op->jump = addr + gbOpLength (gb_op[data[1]].type) + ilen;

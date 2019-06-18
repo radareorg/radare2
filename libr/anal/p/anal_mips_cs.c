@@ -853,7 +853,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		case MIPS_INS_BLEZALC:
 		case MIPS_INS_BGEZALC:
 		case MIPS_INS_BGTZALC:
-			// compact vesions (no delay)
+			// compact versions (no delay)
 			op->delay = 0;
 			op->fail = addr+4;
 			break;

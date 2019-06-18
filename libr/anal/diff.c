@@ -292,5 +292,5 @@ R_API int r_anal_diff_eval(RAnal *anal) {
 	if (anal && anal->cur && anal->cur->diff_eval) {
 		return (anal->cur->diff_eval (anal));
 	}
-	return true; // XXX: shouldnt this be false?
+	return true; // XXX: shouldn't this be false?
 }

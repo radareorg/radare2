@@ -67,7 +67,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	switch (data[0]) {
 	case 0xca: // rem-float:
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		/* pass thru */
+		/* pass through */
 	case 0x1b: // const-string/jumbo
 	case 0x14: // const
 	case 0x15: // const
@@ -171,7 +171,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x88: // float-to-long
 	case 0x86: // long-to-double
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		/* pass thru */
+		/* pass through */
 	case 0x81: // int-to-long
 	case 0x82: // int-to-float
 	case 0x85: // long-to-float
@@ -357,7 +357,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xcf: // rem-double
 	case 0xaf: // rem-double
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		/* pass thru */
+		/* pass through */
 	case 0xb4: // rem-int/2addr
 	case 0xdc: // rem-int/lit8
 	case 0xd4: // rem-int
@@ -383,7 +383,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case 0xc9: // div-float
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		/* pass thru */
+		/* pass through */
 	case 0x93: // div-int
 	case 0xd3: // div-int/lit16
 	case 0xdb: // div-int/lit8
@@ -650,7 +650,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xa7: // sub-float
 	case 0xcc: // sub-double
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		/* fall thru */
+		/* fall through */
 	case 0xc7:
 	case 0xbc:
 	case 0x91:

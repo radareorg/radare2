@@ -177,7 +177,7 @@ R_API void public() {}     ## public apis starting with constructor/destructor
 
 * Why return int vs enum
 
-The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
+The reason why many places in r2land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'

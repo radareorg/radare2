@@ -2030,7 +2030,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					(ut64)MEMDISP(1), pc, mask, REG(0));
 			} else {
 				int disp = MEMDISP(1);
-				// not refptr, because we cant grab the reg value statically op->refptr = 4;
+				// not refptr, because we can't grab the reg value statically op->refptr = 4;
 				if (disp < 0) {
 					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
 							(ut64)-disp, MEMBASE(1), mask, REG(0));

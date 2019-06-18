@@ -33,10 +33,10 @@ environment:
 
 # Init
 init:
-  # Build dependant custom commands
+  # Build dependent custom commands
   - cmd: "%init_command%"
 
-# Required softwares for building
+# Required software for building
 install:
   # Update environment variables
   - ps: $env:R2_VERSION = ( python sys\\version.py )

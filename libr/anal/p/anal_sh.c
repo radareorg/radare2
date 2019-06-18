@@ -559,10 +559,10 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 			"0xFFFFFF7F,sr,&=,"
 			"1,r%d,DUP,0x80000000,&,?{,0x80,sr,|=,},<<,sr,0x1,&,|,r%d,=," //shift Q<-Rn<-T
 			"DUP,!,!,?{,"
-			"r%d,NUM,"//Rn_old (before substract)
+			"r%d,NUM,"//Rn_old (before subtract)
 			"r%d,r%d,+=,"
 			"r%d,<,}{," //tmp0
-			"r%d,NUM,"//Rn_old (before substract)
+			"r%d,NUM,"//Rn_old (before subtract)
 			"r%d,r%d,-=,"
 			"r%d,>,}," //tmp0
 			"sr,0x80,&,!,!,^," //Q^tmp0

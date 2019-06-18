@@ -258,9 +258,9 @@ R_API RList* r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines
 				continue;
 			}
 		}
-		// Handles conditonal + unconditional jump
+		// Handles conditional + unconditional jump
 		if ((control_type & R_ANAL_BB_TYPE_CJMP) == R_ANAL_BB_TYPE_CJMP) {
-			// dont need to continue here is opc+len exceed function scope
+			// don't need to continue here is opc+len exceed function scope
 			if (linesout && bb->fail > 0LL && bb->fail != bb->addr + len) {
 				item = R_NEW0 (RAnalRefline);
 				if (!item) {

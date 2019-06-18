@@ -53,7 +53,7 @@ As said before, the signing process can also be done manually following the next
 
 	$ make -C binr/radare2 macossign
 
-But this is not enough. As long as r2 code is splitted into several libraries, you should sign every single dependency (libr*).
+But this is not enough. As long as r2 code is split into several libraries, you should sign every single dependency (libr*).
 
 	$ make -C binr/radare2 macos-sign-libs
 

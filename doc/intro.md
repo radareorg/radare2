@@ -573,7 +573,7 @@ Show differences between original and patched on x86_32
 ## rafind2 - Search
 ```
 -Z: Look for Zero terminated strings
--s str: Look for specifc string
+-s str: Look for specific string
 ```
 
 ## ragg2 - Shellcode generator, C/opcode compiler

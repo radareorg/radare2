@@ -10,7 +10,7 @@ Description
 
 This is the nodejs implementation of a websever
 for radare2. This script can be executed from
-inside r2 by using the following commnad:
+inside r2 by using the following command:
 
 	> #!pipe node .
 
