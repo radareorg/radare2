@@ -15,6 +15,7 @@ typedef struct _ulebr {
 } ulebr;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
+// USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
@@ -1697,6 +1698,14 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			char *segment_name = r_str_newf ("%d.%s", i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			s->is_data = __isDataSection (s);
+			if (strstr (section_name, "interpos")) {
+#if R_BIN_MACH064
+				const int ws = 8;
+#else
+				const int ws = 4;
+#endif
+				s->format = r_str_newf ("Cd %d[%d]", ws, s->vsize / ws);
+			}
 			r_list_append (list, s);
 		}
 	}

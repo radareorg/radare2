@@ -52,56 +52,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	return MACH0_(get_segments) (bf); // bf->o->bin_obj, bf->o->boffset);
-#if 0
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-	struct section_t *sections = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
-	int i;
-
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
-		return NULL;
-	}
-	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {
-		return ret;
-	}
-	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			break;
-		}
-		ptr->name = strdup ((char*)sections[i].name);
-// TODO: this is not translated
-		if (strstr (ptr->name, "la_symbol_ptr")) {
-#ifndef R_BIN_MACH064
-			const int sz = 4;
-#else
-			const int sz = 8;
-#endif
-			int len = sections[i].size / sz;
-			if (len < bf->size) {
-				ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
-			}
-		}
-
-		handle_data_sections (ptr);
-		ptr->size = sections[i].size;
-		ptr->vsize = sections[i].vsize;
-		ptr->paddr = sections[i].offset + obj->boffset;
-		ptr->vaddr = sections[i].addr;
-		ptr->add = true;
-		if (!ptr->vaddr) {
-			// XXX(lowlyw) this is a valid macho, but rarely will anything
-			// be mapped at va = 0
-			// eprintf ("mapping text to va = 0\n");
-			// ptr->vaddr = ptr->paddr;
-		}
-		ptr->perm = sections[i].perm;
-		r_list_append (ret, ptr);
-	}
-	free (sections);
-	return ret;
-#endif
+	return MACH0_(get_segments) (bf);
 }
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
