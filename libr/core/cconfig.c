@@ -434,9 +434,7 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (!core || !core->assembler) {
-		return;
-	}
+	r_return_if_fail (core && core->assembler);
 	const char *arch = r_config_get (core->config, "asm.arch");
 	if (!arch || !*arch) {
 		return;
@@ -447,7 +445,10 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 			char *c = strdup (h->cpus);
 			int i, n = r_str_split (c, ',');
 			for (i = 0; i < n; i++) {
-				SETOPTIONS (node, r_str_word_get0 (c, i), NULL);
+				const char *word = r_str_word_get0 (c, i);
+				if (word && *word) {
+					SETOPTIONS (node, strdup (word), NULL);
+				}
 			}
 			free (c);
 		}
