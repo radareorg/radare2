@@ -152,7 +152,7 @@ return strdup (
 "gpr	w29	.32	232	0\n"
 "gpr	w30	.32	240	0\n"
 "gpr	wsp	.32	248	0\n"
-"gpr	wzr	.32	272	0\n"
+"gpr	wzr	.32	?	0\n"
 
 "gpr	d0	.64	0	0\n"
 "gpr	d1	.64	8	0\n"
