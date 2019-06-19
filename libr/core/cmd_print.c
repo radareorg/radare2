@@ -6195,6 +6195,7 @@ l = use_blocksize;
 						}
 					}
 					if (printOffset) {
+						r_print_section (core->print, core->offset +i);
 						r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s%s%s\n",
 								(ut64) core->offset + i, a, (ut64) v,
 								b, fn? " ": "", fn? fn: "");
@@ -6357,6 +6358,7 @@ l = use_blocksize;
 						}
 					}
 					if (printOffset) {
+						r_print_section (core->print, core->offset +i);
 						r_cons_printf ("0x%08"PFMT64x " %s0x%016"PFMT64x "%s %s\n",
 								(ut64) core->offset + i, a, v, b, fn? fn: "");
 					} else {
