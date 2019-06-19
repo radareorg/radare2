@@ -4505,6 +4505,7 @@ static inline bool canal_isThumb(RCore *core) {
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
+	bool gp_fixed = r_config_get_i (core->config, "anal.gpfixed");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
@@ -4605,6 +4606,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 	}
 
+	ut64 gp = r_config_get_i (core->config, "anal.gp");
+	const char *gp_reg = NULL;
+	if (!strcmp (core->anal->cur->arch, "mips")) {
+		gp_reg = "gp";
+	}
+
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	if (!sn) {
@@ -4696,6 +4703,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 			r_anal_esil_set_pc (ESIL, cur);
 			r_reg_setv (core->anal->reg, pcname, cur + op.size);
+			if (gp_fixed && gp_reg) {
+				r_reg_setv (core->anal->reg, gp_reg, gp);
+			}
 			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
 			//r_anal_esil_dumpstack (ESIL);
