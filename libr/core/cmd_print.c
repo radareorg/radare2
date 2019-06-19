@@ -6045,6 +6045,7 @@ l = use_blocksize;
 								ea = va;
 							}
 						}
+						r_print_section (core->print, ea);
 						r_print_offset (core->print, ea, 0, 0, 0, 0, NULL);
 					}
 					r_str_bits (buf, core->block + i, 8, NULL);

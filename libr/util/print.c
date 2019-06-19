@@ -766,7 +766,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 }
 
-static void __printSection (RPrint *p, ut64 at) {
+R_API void r_print_section(RPrint *p, ut64 at) {
 	bool use_section = p && p->flags & R_PRINT_FLAGS_SECTION;
 	if (use_section) {
 		const char *s = p->get_section_name (p->user, at);
@@ -1027,7 +1027,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		ut64 at = addr + (j * zoomsz);
 		if (use_offset && !isPxr) {
-			__printSection (p, at);
+			r_print_section (p, at);
 			r_print_addr (p, at);
 		}
 		int row_have_cursor = -1;
@@ -1114,7 +1114,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if (printValue) {
 						if (use_offset && !hasNull && isPxr) {
-							__printSection (p, at);
+							r_print_section (p, at);
 							r_print_addr (p, addr + j * zoomsz);
 						}
 						if (base == 64) {
@@ -1127,7 +1127,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					} else {
 						if (hasNull) {
 							const char *n = p->offname (p->user, addr + j);
-							__printSection (p, at);
+							r_print_section (p, at);
 							r_print_addr (p, addr + j * zoomsz);
 							printfmt ("..[ null bytes ]..   00000000 %s\n", n? n: "");
 						}
