@@ -79,7 +79,7 @@ static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	i = r_read_at_be32 (tmp, 1);
 	if (i > count) {
-		eprintf ("__rap_read: Unexpected data size %d\n", i);
+		eprintf ("__rap_read: Unexpected data size %d vs %d\n", i, count);
 		return -1;
 	}
 	r_socket_read_block (s, buf, i);
@@ -116,10 +116,14 @@ static ut64 __rap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	(void)r_socket_write (s, &tmp, 10);
 	r_socket_flush (s);
 	int ret = r_socket_read_block (s, (ut8*)&tmp, 9);
-	if (ret != 9 || tmp[0] != (RMT_SEEK | RMT_REPLY)) {
+	if (ret != 9) {
+		eprintf ("Truncated socket read\n");
+		return -1;
+	}
+	if (tmp[0] != (RMT_SEEK | RMT_REPLY)) {
 		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n",
 		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
-		eprintf ("Unexpected lseek reply\n");
+		eprintf ("Unexpected lseek reply (%02x -> %02x)\n", tmp[0], (RMT_SEEK | RMT_REPLY));
 		return -1;
 	}
 	return r_read_at_be64 (tmp, 1);
