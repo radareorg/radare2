@@ -3464,7 +3464,6 @@ static void ds_align_simple(RDisasmState *ds) {
 			ds_begin_line (ds);
 			ds_pre_line (ds);
 		}
-		ds_align_comment (ds);
 	} else {
 		if (lastnl) {
 			ds_begin_line (ds);
