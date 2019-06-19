@@ -324,7 +324,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void ds_print_sysregs(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
-static void ds_print_core_vmode(RDisasmState *ds, int pos);
+static bool ds_print_core_vmode(RDisasmState *ds, int pos);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
@@ -1184,6 +1184,11 @@ static void ds_begin_line(RDisasmState *ds) {
 		pj_k (ds->pj, "text");
 	}
 	ds->buf_line_begin = r_cons_get_buffer_len ();
+	if (ds->asm_hint_pos == -1) {
+		if (!ds_print_core_vmode (ds, ds->asm_hint_pos)) {
+			r_cons_printf ("    ");
+		}
+	}
 }
 
 static void ds_newline(RDisasmState *ds) {
@@ -3279,14 +3284,15 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	char *shortcut = r_core_add_asmqjmp (ds->core, addr);
 	int slen = shortcut? strlen (shortcut): 0;
-	if (!pos && !shortcut) {
-		//r_cons_printf (" ");
-		//return 0;
+	if (ds->asm_hint_pos > 0) {
+		if (pos) {
+			ds_align_comment (ds);
+		}
 	}
-	if (pos) {
-		ds_align_comment (ds);
+	const char *ch = (pos)? ";": "";
+	if (ds->asm_hint_pos == -1) {
+		ch = " ";
 	}
-	const char *ch = pos? ";": "";
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
@@ -3341,16 +3347,16 @@ static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
 	}
 }
 
-static void ds_print_core_vmode(RDisasmState *ds, int pos) {
+static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	bool gotShortcut = false;
 	int i, slen = 0;
 
 	if (!core->vmode) {
-		return;
+		return false;
 	}
 	if (!ds->asm_hints) {
-		return;
+		return false;
 	}
 	if (ds->asm_hint_lea) {
 		RAnalMetaItem *mi = r_meta_find (ds->core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
@@ -3431,11 +3437,14 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		}
 		break;
 	}
-	int begin = (gotShortcut) ? (ds->asm_hint_pos == 0)? 1: 2: 3;
-	for (i = begin - slen; i > 0; i--) {
-		r_cons_strcat (" ");
+	if (ds->asm_hint_pos > 0) {
+		int begin = (gotShortcut) ? (ds->asm_hint_pos == 0)? 1: 2: 3;
+		for (i = begin - slen; i > 0; i--) {
+			r_cons_strcat (" ");
+		}
 	}
 	ds->hinted_line = gotShortcut;
+	return gotShortcut;
 }
 
 // align for comment
