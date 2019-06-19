@@ -2886,6 +2886,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
+	static bool inCmdStep = false;
 	int wordi = 0;
 	int dorunword;
 	char word[64];
@@ -2893,9 +2894,14 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), 0);
 
 	if (esil->cmd_step) {
-		if (esil->cmd (esil, esil->cmd_step, esil->address, 0)) {
-			// if returns 1 we skip the impl
-			return true;
+		if (!inCmdStep) {
+			inCmdStep = true;
+			if (esil->cmd (esil, esil->cmd_step, esil->address, 0)) {
+				inCmdStep = false;
+				// if returns 1 we skip the impl
+				return true;
+			}
+			inCmdStep = false;
 		}
 	}
 	const char *hashbang = strstr (str, "#!");
