@@ -3478,33 +3478,6 @@ static void ds_align_simple(RDisasmState *ds) {
 	}
 }
 
-static void ds_align_simple(RDisasmState *ds) {
-	const char *p = r_cons_get_buffer ();
-	int l = strlen (p);
-	const bool lastnl = l> 0? (p[l - 1] == '\n'): 0;
-
-	if (ds->show_comment_right) {
-		if (!lastnl && ds->cmtcount > 0) {
-			ds_newline (ds);
-		}
-		if (lastnl || ds->cmtcount > 0) {
-			ds_begin_line (ds);
-			ds_pre_line (ds);
-		}
-		ds_align_comment (ds);
-	} else {
-		if (lastnl) {
-			ds_begin_line (ds);
-			ds_pre_line (ds);
-		} else {
-			ds_newline (ds);
-			ds_begin_line (ds);
-			ds_pre_line (ds);
-			//r_cons_printf ("%s", r_str_pad (' ',  ds->cmtcol));
-		}
-	}
-}
-
 // align for comment
 static void ds_align_comment(RDisasmState *ds) {
 	if (!ds->show_comment_right_default) {
