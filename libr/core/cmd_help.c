@@ -757,9 +757,14 @@ static int cmd_help(void *data, const char *input) {
 				"$FI", "$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$MM", "$o",
 				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
 			};
+			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");
 			while (vars[i]) {
 				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
-				eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				if (wideOffsets) {
+					eprintf ("%s %s 0x%016"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				} else {
+					eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				}
 				i++;
 			}
 		}
