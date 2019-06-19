@@ -5135,12 +5135,18 @@ static int cmd_print(void *data, const char *input) {
 				goto beach;
 			}
 		}
-		const char *sp = strchr (input + 1, ' ');
+		
+		const char *sp = NULL;
+		if (input[1] == '.') {
+			sp = input + 2;
+		} else {
+			sp = strchr (input + 1, ' ');
+		}
 		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
 			sp = input + 1;
 		}
-		if (sp && *sp && sp[1]) {
-			int n = (int) r_num_math (core->num, r_str_trim_ro (sp)); //input + 1));
+		if (sp) {
+			int n = (int) r_num_math (core->num, r_str_trim_ro (sp));
 			if (!n) {
 				goto beach;
 			}
@@ -6475,6 +6481,22 @@ l = use_blocksize;
 				ut64 from = r_config_get_i (core->config, "diff.from");
 				ut64 to = r_config_get_i (core->config, "diff.to");
 				if (from == to && !from) {
+					
+					const char *sp = NULL;
+					if (input[1] == '.') {
+						sp = input + 2;
+					}
+					if (IS_DIGIT(input[1])) {
+						sp = input + 1;
+					}
+					if (sp) {
+						int n = (int) r_num_math (core->num, r_str_trim_ro (sp));
+						if (!n) {
+							goto beach;
+						}
+						len = n;
+					}
+
 					if (!r_core_block_size (core, len)) {
 						len = core->blocksize;
 					}
