@@ -2451,7 +2451,7 @@ R_API bool r_core_init(RCore *core) {
 #else
 		core->cons->user_fgets = (void *)r_core_fgets;
 #endif
-		//r_line_singleton()->user = (void *)core;
+		//r_line_singleton ()->user = (void *)core;
 		r_line_hist_load (R2_HOME_HISTORY);
 	}
 	core->print->cons = core->cons;
