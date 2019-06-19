@@ -3431,7 +3431,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	w29	.32	232	0\n"
 		"gpr	w30	.32	240	0\n"
 		"gpr	wsp	.32	248	0\n"
-		"gpr	wzr	.32	272	0\n"
+		"gpr	wzr	.32	?	0\n"
 
 		/* 32bit float sub-registers */
 		"gpr	s0	.32	0	0\n"
@@ -3536,8 +3536,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	lr	.64	240	0\n" // lr = x30
 		"gpr	sp	.64	248	0\n"
 		"gpr	pc	.64	256	0\n"
-		"gpr	zr	.64	272	0\n"
-		"gpr	xzr	.64	272	0\n"
+		"gpr	zr	.64	?	0\n"
+		"gpr	xzr	.64	?	0\n"
 		"flg	pstate	.64	280	0   _____tfiae_____________j__qvczn\n" // x0
 		//"flg	cpsr	.32	280	0\n" //	_____tfiae_____________j__qvczn\n"
 		"flg	vf	.1	280.28	0	overflow\n" // set if overflows

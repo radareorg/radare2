@@ -79,6 +79,8 @@ return strdup (
 "gpr	w27	.32	216	0\n" // w0
 "gpr	w28	.32	224	0\n" // w0
 "gpr	w29	.32	232	0\n" // w0
+"gpr	wzr	.32	?	0\n" // w0
+"gpr	zr	.64	?	0\n" // w0
 // TODO complete w list ...
 // special registers
 "gpr	fp	.64	236	0\n" // FP
