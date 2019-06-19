@@ -1192,6 +1192,9 @@ static void autocomplete_evals(RCore *core, RLineCompletion *completion, const c
 		str = tmp + 1;
 	}
 	int n = strlen (str);
+	if (n < 1) {
+		return;
+	}
 	r_list_foreach (core->config->nodes, iter, bt) {
 		if (!strncmp (bt->name, str, n)) {
 			r_line_completion_push (completion, bt->name);
@@ -1365,18 +1368,26 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 		goto out;
 	}
 	int i;
-	char *str = NULL;
+	char *str = NULL, *sp;
 	for (i = pmatch[1].rm_so; i < pmatch[1].rm_eo; i++) {
 		str = r_str_appendch (str, buf->data[i]);
 	}
+	if ((sp = strchr (str, ' '))) {
+		// if the name contains a space, just null
+		*sp = 0;
+	}
 	RConfigNode *node = r_config_node_get (core->config, str);
+	if (sp) {
+		// if nulled, then restore.
+		*sp = ' ';
+	}
 	if (!node) {
 		return false;
 	}
 	RListIter *iter;
 	char *option;
-	char *p = (char *) r_sub_str_lchr (buf->data, 0, buf->index, '=');
-	p++;
+	char *p = (char *) strchr (buf->data, '=');
+	p = r_str_ichr (p + 1, ' ');
 	int n = strlen (p);
 	r_list_foreach (node->options, iter, option) {
 		if (!strncmp (option, p, n)) {
