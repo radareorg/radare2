@@ -62,6 +62,7 @@ r_anal_sources = [
   join_paths('p','anal_i4004.c'),
   join_paths('p','anal_i8080.c'),
   join_paths('p','anal_java.c'),
+  join_paths('p','anal_kvx.c'),
   join_paths('p','anal_m680x_cs.c'),
   join_paths('p','anal_m68k_cs.c'),
   join_paths('p','anal_malbolge.c'),
@@ -108,6 +109,8 @@ r_anal_sources = [
   join_paths('arch','hexagon','hexagon.c'),
   join_paths('arch','hexagon','hexagon_anal.c'),
   join_paths('arch','hexagon','hexagon_disas.c'),
+  join_paths('arch','kvx','kvx-dis.c'),
+  join_paths('arch','kvx','kvx-reg.c'),
   join_paths('arch','loongarch','gnu','loongarch-coder.c'),
   join_paths('arch','loongarch','gnu','loongarch-dis.c'),
   join_paths('arch','loongarch','gnu','loongarch-opc.c'),
@@ -146,6 +149,7 @@ r_anal_sources = [
 ]
 incdirs = [
     'arch/gb',
+    'arch/kvx',
     'arch/hexagon'
 ]
 
