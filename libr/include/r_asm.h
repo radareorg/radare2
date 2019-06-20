@@ -223,6 +223,7 @@ extern RAsmPlugin r_asm_plugin_hppa_gnu;
 extern RAsmPlugin r_asm_plugin_i4004;
 extern RAsmPlugin r_asm_plugin_i8080;
 extern RAsmPlugin r_asm_plugin_java;
+extern RAsmPlugin r_asm_plugin_kvx;
 extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_lh5801;
 extern RAsmPlugin r_asm_plugin_lm32;

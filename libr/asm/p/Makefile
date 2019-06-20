@@ -25,6 +25,7 @@ ARCHS+=6502.mk h8300.mk cr16.mk v850.mk propeller.mk i4004.mk
 ARCHS+=lh5801.mk v810.mk mcs96.mk lm32.mk jdh8.mk
 ARCHS+=riscv.mk rsp.mk mcore.mk s390_cs.mk s390_gnu.mk
 # ARCHS+=loongarch_gnu.mk
+ARCHS+=kvx.mk
 include $(ARCHS)
 
 clean:
