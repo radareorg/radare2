@@ -2250,6 +2250,9 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "zfs", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "zfz", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "cat", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "join", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "uniq", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "sort", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wta", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wtf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wxf", R_CORE_AUTOCMPLT_FILE, true);
