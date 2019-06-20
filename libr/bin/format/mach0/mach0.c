@@ -1698,7 +1698,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			char *segment_name = r_str_newf ("%d.%s", i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			s->is_data = __isDataSection (s);
-			if (strstr (section_name, "interpos")) {
+			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
 #if R_BIN_MACH064
 				const int ws = 8;
 #else
