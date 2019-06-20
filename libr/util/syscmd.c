@@ -365,11 +365,12 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 				}
 				r_list_foreach (list2, iter2, str2) {
 					if (r_str_startswith (str2, field)) {
-						char *data = r_str_new ("");
+						char *out = r_str_new (field);
 						char *first = strchr (str1, ' ');
 						char *second = strchr (str2, ' ');
-						r_str_appendf (data, "%s%s%s", field, first ? first : " ", second ? second : " ");
-						r_list_append (list, data);
+						r_str_append (out, first ? first : " ");
+						r_str_append (out, second ? second : " ");
+						r_list_append (list, out);
 					}
 				}
 			}
