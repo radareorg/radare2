@@ -869,7 +869,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	RIODesc *desc = fh && r ? r_io_desc_get (r->io, fh->fd) : NULL;
 	RCoreFile *prev_cf = r && r->file != fh? r->file: NULL;
 
-	// TODO: This is not correclty done. because map and iodesc are
+	// TODO: This is not correctly done. because map and iodesc are
 	// still referenced // we need to fully clear all R_IO structs
 	// related to a file as well as the ones needed for RBin.
 	//

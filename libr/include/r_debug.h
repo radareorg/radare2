@@ -358,7 +358,7 @@ typedef struct r_debug_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	//const char **archs; // MUST BE DEPREACTED!!!!
+	//const char **archs; // MUST BE DEPRECATED!!!!
 	ut32 bits;
 	const char *arch;
 	int canstep;

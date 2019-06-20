@@ -270,7 +270,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
-			// XXX check if cant pop
+			// XXX check if can't pop
 			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
@@ -345,7 +345,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve blcok at 0x%"PFMT64x"\n", jump);
+						eprintf ("failed to retrieve block at 0x%"PFMT64x"\n", jump);
 						break;
 					}
 					if (fail != UT64_MAX) {

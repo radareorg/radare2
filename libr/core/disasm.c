@@ -3512,7 +3512,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->show_varaccess) {
-		// XXX asume analop is filled
+		// XXX assume analop is filled
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
 		switch (ds->analop.stackop) {
@@ -4886,7 +4886,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		pj_a (ds->pj);
 	}
 toro:
-	// uhm... is this necesary? imho can be removed
+	// uhm... is this necessary? imho can be removed
 	r_asm_set_pc (core->assembler, r_core_pava (core, ds->addr + idx));
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 
@@ -5475,7 +5475,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
-			// XXX we probably dont need MASK_ALL
+			// XXX we probably don't need MASK_ALL
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
 			hasanal = true;
 		}

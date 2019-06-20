@@ -88,7 +88,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 #define BAS_IMVA_2_3		((uint32_t)(3u << 7))
 #define BAS_IMVA_ALL		((uint32_t)(0xfu << 5))
 
-// Break only in priveleged or user mode
+// Break only in privileged or user mode
 #define S_RSVD			((uint32_t)(0u << 1))
 #define S_PRIV			((uint32_t)(1u << 1))
 #define S_USER			((uint32_t)(2u << 1))
@@ -376,7 +376,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			reason = R_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
-			eprintf ("message didn't succeded\n");
+			eprintf ("message didn't succeeded\n");
 			break;
 		}
 		ret = validate_mach_message (dbg, &msg);

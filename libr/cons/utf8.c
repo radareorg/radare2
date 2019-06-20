@@ -127,7 +127,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		if (ret)
 			break;
 
-		/* Assume coordinate reponse parsing fails. */
+		/* Assume coordinate response parsing fails. */
 		ret = EIO;
 
 		// Read until ESC is found. previous chars, should be

@@ -115,8 +115,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar ();
 #if defined(__HAIKU__)
-		/* Haiku don use the '[' char for funcion keys */
-		if (ch > 'O') {/* only in f1..f12 funcion keys */
+		/* Haiku't don use the '[' char for function keys */
+		if (ch > 'O') {/* only in f1..f12 function keys */
 			ch = 0xf1 + (ch&0xf);
 			break;
 		}

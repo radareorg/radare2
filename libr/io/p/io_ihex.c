@@ -370,7 +370,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			str = eol;
 			break;
 		case 3:	//undefined rec. Just skip.
-		case 5:	//non-standard, sometimes "start linear adddress"
+		case 5:	//non-standard, sometimes "start linear address"
 			str = strchr (str + 1, ':');
 			break;
 		}

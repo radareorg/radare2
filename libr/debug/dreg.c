@@ -10,7 +10,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
 	}
-	// Theres no point in syncing a dead target
+	// There's no point in syncing a dead target
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
@@ -24,7 +24,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
-	// if request type is positive and the request regset dont have regs
+	// if request type is positive and the request regset don't have regs
 	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
 		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
@@ -76,7 +76,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
 		//   break;
-		// Continue the syncronization or just stop if it was asked only for a single type of regs
+		// Continue the synchronization or just stop if it was asked only for a single type of regs
 		i++;
 	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;

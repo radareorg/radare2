@@ -1269,7 +1269,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
-	// step first, we dont want to check current optype
+	// step first, we don't want to check current optype
 	for (;;) {
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			break;
@@ -1663,7 +1663,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		free (abspath);
 	}
 	// fallback resolution (osx/w32?)
-	// we asume maps to be loaded in order, so lower addresses come first
+	// we assume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (dbg->maps, iter, map) {
 		if (map->perm == 5) { // r-x
 			return map->addr;

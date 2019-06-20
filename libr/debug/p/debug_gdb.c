@@ -418,7 +418,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			}
 		} else {
-			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
+			eprintf ("ERROR: Underlying IO descriptor is not a GDB one..\n");
 		}
 	}
 	return true;

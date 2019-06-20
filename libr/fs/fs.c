@@ -378,7 +378,7 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 		strcat (npath, "/");
 		strcat (npath, file->name);
 		switch (file->type) {
-		// DONT FOLLOW MOUNTPOINTS
+		// DON'T FOLLOW MOUNTPOINTS
 		case R_FS_FILE_TYPE_DIRECTORY:
 			if (!r_fs_dir_dump (fs, npath, str)) {
 				free (npath);

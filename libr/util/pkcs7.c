@@ -50,7 +50,7 @@ static void r_pkcs7_free_certificaterevocationlists(RPKCS7CertificateRevocationL
 			crls->elements[i] = NULL;
 		}
 		R_FREE (crls->elements);
-		// Used internally pkcs #7, so it should't free crls.
+		// Used internally pkcs #7, so it shouldn't free crls.
 	}
 }
 
@@ -81,7 +81,7 @@ static void r_pkcs7_free_extendedcertificatesandcertificates(RPKCS7ExtendedCerti
 			ecac->elements[i] = NULL;
 		}
 		R_FREE (ecac->elements);
-		// Used internally pkcs #7, so it should't free ecac.
+		// Used internally pkcs #7, so it shouldn't free ecac.
 	}
 }
 
@@ -124,7 +124,7 @@ static void r_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentifi
 			}
 		}
 		R_FREE (dai->elements);
-		// Used internally pkcs #7, so it should't free dai.
+		// Used internally pkcs #7, so it shouldn't free dai.
 	}
 }
 
@@ -132,7 +132,7 @@ static void r_pkcs7_free_contentinfo(RPKCS7ContentInfo *ci) {
 	if (ci) {
 		r_asn1_free_binary (ci->content);
 		r_asn1_free_string (ci->contentType);
-		// Used internally pkcs #7, so it should't free ci.
+		// Used internally pkcs #7, so it shouldn't free ci.
 	}
 }
 
@@ -152,7 +152,7 @@ static void r_pkcs7_free_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu
 	if (iasu) {
 		r_x509_free_name (&iasu->issuer);
 		r_asn1_free_binary (iasu->serialNumber);
-		// Used internally pkcs #7, so it should't free iasu.
+		// Used internally pkcs #7, so it shouldn't free iasu.
 	}
 }
 
@@ -213,7 +213,7 @@ static void r_pkcs7_free_attributes(RPKCS7Attributes *attributes) {
 			r_pkcs7_free_attribute (attributes->elements[i]);
 		}
 		R_FREE (attributes->elements);
-		// Used internally pkcs #7, so it should't free attributes.
+		// Used internally pkcs #7, so it shouldn't free attributes.
 	}
 }
 
@@ -260,7 +260,7 @@ static void r_pkcs7_free_signerinfos(RPKCS7SignerInfos *ss) {
 			ss->elements[i] = NULL;
 		}
 		R_FREE (ss->elements);
-		// Used internally pkcs #7, so it should't free ss.
+		// Used internally pkcs #7, so it shouldn't free ss.
 	}
 }
 
@@ -300,7 +300,7 @@ static void r_pkcs7_free_signeddata(RPKCS7SignedData *sd) {
 		r_pkcs7_free_extendedcertificatesandcertificates (&sd->certificates);
 		r_pkcs7_free_certificaterevocationlists (&sd->crls);
 		r_pkcs7_free_signerinfos (&sd->signerinfos);
-		// Used internally pkcs #7, so it should't free sd.
+		// Used internally pkcs #7, so it shouldn't free sd.
 	}
 }
 

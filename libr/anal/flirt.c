@@ -76,7 +76,7 @@
         - if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
 
 
-   More Informations
+   More Information
    -----------------
    Function flags:
    - local functions ((l) with dumpsig) which are static ones.

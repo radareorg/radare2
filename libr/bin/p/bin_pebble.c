@@ -18,7 +18,7 @@ typedef struct  {
 
 R_PACKED (
 typedef struct  {
-	char header[8];               //!< Sentinal value, should always be 'PBLAPP\0\0'
+	char header[8];               //!< Sentinel value, should always be 'PBLAPP\0\0'
 	Version struct_version;       //!< version of this structure's format
 	Version sdk_version;          //!< version of the SDK used to build this app
 	Version app_version;          //!< version of the app

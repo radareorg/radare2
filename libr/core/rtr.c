@@ -961,7 +961,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 				r_cons_singleton ()->context->breaked = true;
 			}
 			r_io_desc_close (fd);
-			// avoid doble free, we are not the owners of this fd so we cant destroy it
+			// avoid double free, we are not the owners of this fd so we can't destroy it
 			//r_io_desc_free (fd);
 		}
 	} else {
