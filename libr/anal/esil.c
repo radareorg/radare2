@@ -111,7 +111,7 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	char *h = sdb_itoa (sdb_hash (op), t, 16);
 	RAnalEsilOp *eop = (RAnalEsilOp *)(size_t)sdb_num_get (esil->ops, h, 0);
 	if (!eop) {
-		eop = R_NEW (RAnalEsilOpCb);
+		eop = R_NEW (RAnalEsilOp);
 		if (!eop) {
 			eprintf ("Cannot allocate esil-operation %s\n", op);
 			return false;
@@ -1828,14 +1828,14 @@ static bool esil_poke_some(RAnalEsil *esil) {
 						// avoid looping out of stack
 						free (dst);
 						free (count);
-						return 1;
+						return true;
 					}
 					isregornum (esil, foo, &num64);
 					/* TODO: implement peek here */
 					// read from $dst
 					r_write_ble (b, num64, esil->anal->big_endian, regsize);
-					ret = r_anal_esil_mem_write (esil, ptr, b, BYTES_SIZE);
-					if (ret != BYTES_SIZE) {
+					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, BYTES_SIZE);
+					if (written != BYTES_SIZE) {
 						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
@@ -1845,11 +1845,11 @@ static bool esil_poke_some(RAnalEsil *esil) {
 			}
 			free (dst);
 			free (count);
-			return 1;
+			return ret;
 		}
 		free (dst);
 	}
-	return 0;
+	return false;
 }
 
 /* PEEK */
@@ -1883,7 +1883,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 		}
 		ut64 bitmask = genmask (bits - 1);
 		ut8 a[sizeof(ut64)] = {0};
-		ret = r_anal_esil_mem_read (esil, addr, a, bytes);
+		ret = !!r_anal_esil_mem_read (esil, addr, a, bytes);
 		ut64 b = r_read_ble64 (a, 0); //esil->anal->big_endian);
 		if (esil->anal->big_endian) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
@@ -1939,15 +1939,15 @@ static bool esil_peek_some(RAnalEsil *esil) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
 				ut32 num32;
-				ut8 a[sizeof (ut32)];
+				ut8 a[4];
 				for (i = 0; i < regs; i++) {
 					char *foo = r_anal_esil_pop (esil);
 					if (!foo) {
 						ERR ("Cannot pop in peek");
 						return 0;
 					}
-					ret = r_anal_esil_mem_read (esil, ptr, a, 4);
-					if (ret == sizeof (ut32)) {
+					const ut32 read = r_anal_esil_mem_read (esil, ptr, a, 4);
+					if (read == 4) {	//this is highly questionabla
 						num32 = r_read_ble32 (a, esil->anal->big_endian);
 						r_anal_esil_reg_write (esil, foo, num32);
 					} else {
@@ -1955,7 +1955,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 							eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
 						}
 					}
-					ptr += sizeof (ut32);
+					ptr += 4;
 					free (foo);
 				}
 			}
@@ -2837,8 +2837,11 @@ static int runword(RAnalEsil *esil, const char *word) {
 					return 1; // XXX cannot return != 1
 				}
 			}
-			esil->current_opstr = word;
+			esil->current_opstr = strdup (word);
+			//so this is basically just sharing what's the operation with the operation
+			//useful for wrappers
 			const bool ret = op->code (esil);
+			free (esil->current_opstr);
 			esil->current_opstr = NULL;
 			if (!ret) {
 				if (esil->verbose) {
