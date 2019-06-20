@@ -111,7 +111,7 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	char *h = sdb_itoa (sdb_hash (op), t, 16);
 	RAnalEsilOp *eop = (RAnalEsilOp *)(size_t)sdb_num_get (esil->ops, h, 0);
 	if (!eop) {
-		eop = R_NEW (RAnalEsilOpCb);
+		eop = R_NEW (RAnalEsilOp);
 		if (!eop) {
 			eprintf ("Cannot allocate esil-operation %s\n", op);
 			return false;
@@ -1828,7 +1828,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 						// avoid looping out of stack
 						free (dst);
 						free (count);
-						return 1;
+						return true;
 					}
 					isregornum (esil, foo, &num64);
 					/* TODO: implement peek here */
@@ -1845,11 +1845,11 @@ static bool esil_poke_some(RAnalEsil *esil) {
 			}
 			free (dst);
 			free (count);
-			return 1;
+			return ret;
 		}
 		free (dst);
 	}
-	return 0;
+	return false;
 }
 
 /* PEEK */
@@ -2838,6 +2838,8 @@ static int runword(RAnalEsil *esil, const char *word) {
 				}
 			}
 			esil->current_opstr = word;
+			//so this is basically just sharing what's the operation with the operation
+			//useful for wrappers
 			const bool ret = op->code (esil);
 			esil->current_opstr = NULL;
 			if (!ret) {
