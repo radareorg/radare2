@@ -753,6 +753,7 @@ static int cmd_seek(void *data, const char *input) {
 		default:
 			return -1;	// invalid command
 		}
+		break;
 	case 'g': // "sg"
 	{
 		RIOMap *map  = r_io_map_get (core->io, core->offset);
