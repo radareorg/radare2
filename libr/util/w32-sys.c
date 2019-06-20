@@ -69,7 +69,7 @@ beach:
 	return info;
 }
 
-R_API int r_sys_get_src_dir_w32(char *buf) {
+R_API char *r_sys_get_src_dir_w32() {
 	int i = 0;
 	TCHAR fullpath[MAX_PATH + 1];
 	TCHAR shortpath[MAX_PATH + 1];
@@ -77,20 +77,13 @@ R_API int r_sys_get_src_dir_w32(char *buf) {
 
 	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
 		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
-		return false;
+		return NULL;
 	}
 	path = r_sys_conv_win_to_utf8 (shortpath);
-	memcpy (buf, path, strlen(path) + 1);
-	free (path);
-	i = strlen (buf);
-	while(i > 0 && buf[i-1] != '/' && buf[i-1] != '\\') {
-		buf[--i] = 0;
-	}
-	// Remove the last separator in the path.
-	if(i > 0) {
-		buf[--i] = 0;
-	}
-	return true;
+	char *dir, *tmp = dir = r_file_dirname (path);
+	dir = r_file_dirname (tmp);
+	free (tmp);
+	return dir;
 }
 
 R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {

@@ -1141,15 +1141,20 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 }
 
 R_API const char *r_sys_prefix(const char *pfx) {
-	static char prefix[1024] = {0};
-	if (!*prefix) {
-		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
+	static char *prefix = NULL;
+	if (!prefix) {
+#if __WINDOWS__ && !CUTTER
+		prefix = r_sys_get_src_dir_w32 ();
+		if (!prefix) {
+			prefix = strdup (R2_PREFIX);
+		}
+#else
+		prefix = strdup (R2_PREFIX);
+#endif
 	}
 	if (pfx) {
-		if (strlen (pfx) >= sizeof (prefix) - 1) {
-			return NULL;
-		}
-		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);
+		free (prefix);
+		prefix = strdup (pfx);
 	}
 	return prefix;
 }
