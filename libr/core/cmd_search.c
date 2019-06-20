@@ -28,6 +28,7 @@ static const char *help_msg_slash[] = {
 	"/ce", "[j] rsp,rbp", "search for esil expressions matching",
 	"/ci", "[j] 0x300", "find all the instructions using that immediate",
 	"/ci", "[j] 0x300 0x500", "find all the instructions using an immediate",
+	"/cc ", "instr", "search for instruction 'instr' ignoring case",
 	"/C", "[ar]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -74,6 +75,7 @@ static const char *help_msg_slash_c[] = {
 	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
 	"/ce ", "esil", "search for esil expressions matching substring",
 	"/ci", "[j] 0x300", "find all the instructions using that immediate",
+	"/cc ", "instr", "search for instruction 'instr' ignoring case",
 	"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
 	"/c/a ", "instr", "search for every byte instruction that matches regexp 'instr'",
 	"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
@@ -3790,6 +3792,8 @@ reread:
 			do_asm_search (core, &param, input + 1, 'i', search_itv);
 		} else if (input[1] == 'e') { // "/ce"
 			do_asm_search (core, &param, input + 1, 'e', search_itv);
+		} else if (input[1] == 'c') { // "/cc"
+			do_asm_search (core, &param, input + 1, 'c', search_itv);
 		} else { // "/c"
 			do_asm_search (core, &param, input, 0, search_itv);
 		}
