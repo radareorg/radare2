@@ -997,25 +997,25 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
-	const char *tmp1 = strchr (input, ' ');
-	if (tmp1) {
-		tmp1 = r_str_trim_ro (tmp1);
+	const char *tmp = strdup (input);
+	const char *arg1 = strchr (tmp, ' ');
+	if (!arg1) {
+		goto beach;
 	}
-	char *tmp2 = strchr (tmp1, ' ');
-	if (!tmp2) {
-		eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
-		return 0;
+	arg1 = r_str_trim_ro (arg1);
+	char *end = strchr (arg1, ' ');
+	if (!end) {
+		goto beach;
 	}
-	const char *arg2 = strdup (tmp2);
-	*tmp2 = '\0';
-	const char *arg1 = strdup (tmp1);
-	if (arg2) {
-		arg2 = r_str_trim_ro (arg2 + 1);
+	*end = '\0';
+	const char *arg2 = end+1;
+	if (!arg2) {
+		goto beach;
 	}
+	arg2 = r_str_trim_ro (arg2);
 	switch (*input) {
 	case '?': // "join?"
-		eprintf ("Usage: join [file1] [file2]# join the contents of the two files\n");
-		break;
+		goto beach;
 	default: // "join"
 		if (!arg1) {
 			arg1 = "";
@@ -1029,9 +1029,13 @@ static int cmd_join(void *data, const char *input) { // "join"
 				r_cons_print (res);
 				free (res);
 			}
+			R_FREE (tmp);
 		}
 		break;
 	}
+	return 0;
+beach:
+	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
 	return 0;
 }
 
