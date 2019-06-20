@@ -98,7 +98,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 	const char *tmp = strstr (expand, "int");
 	bool is_default = tmp? true: false;
 	if (!is_default && strncmp (var->type, "void", 4)) {
-		// return since type is already propgated
+		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
 		return;
 	}
@@ -114,8 +114,8 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		r_strbuf_set (sb, trim);
 	}
 	if (!strncmp (r_strbuf_get (sb), "const ", 6)) {
-		// Droping const from type
-		//TODO: Infering const type
+		// Dropping const from type
+		//TODO: Inferring const type
 		r_strbuf_setf (sb, "%s", type + 6);
 	}
 	if (is_ptr) {
@@ -616,7 +616,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					free (foo);
 				}
 			}
-			// Type Propgation using intruction access pattern
+			// Type propagation using instruction access pattern
 			if (var) {
 				bool sign = false;
 				if ((type == R_ANAL_OP_TYPE_CMP) && next_op) {

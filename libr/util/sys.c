@@ -42,7 +42,7 @@ static char** env = NULL;
 #if HAVE_ENVIRON
 #include <execinfo.h>
 #endif
-// iOS dont have this we cant hardcode
+// iOS don't have this we can't hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
 # ifndef PROC_PIDPATHINFO_MAXSIZE
@@ -124,7 +124,7 @@ R_API void r_sys_exit(int status, bool nocleanup) {
 	}
 }
 
-/* TODO: import stuff fron bininfo/p/bininfo_addr2line */
+/* TODO: import stuff from bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */
 R_API ut64 r_sys_now(void) {
 	ut64 ret;

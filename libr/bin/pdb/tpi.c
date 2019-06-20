@@ -1611,8 +1611,8 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 		{
 			SVal_LF_ULONG lf_ulong;
 			lf_ulong.value = 0;
-			// unsinged long = 4 bytes for Windows, but not in Linux x64,
-			// so here is using unsinged int instead of unsigned long when
+			// unsigned long = 4 bytes for Windows, but not in Linux x64,
+			// so here is using unsigned int instead of unsigned long when
 			// reading ulong value
 			READ4(*read_bytes, len, lf_ulong.value, leaf_data, ut32);
 			parse_sctring (&lf_ulong.name, leaf_data, read_bytes, len);

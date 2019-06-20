@@ -236,7 +236,7 @@ static const char *help_msg_p_equal[] = {
 	"p=", "j", "number of jumps and conditional jumps in block",
 	"p=", "m", "number of flags and marks in block",
 	"p=", "p", "number of printable bytes for each filesize/blocksize",
-	"p=", "s", "number of syscall and priviledged instructions",
+	"p=", "s", "number of syscall and privileged instructions",
 	"p=", "z", "number of chars in strings in block",
 	"p=", "0", "number of 0x00 bytes for each filesize/blocksize",
 	NULL
@@ -394,9 +394,9 @@ static const char *help_detail2_pf[] = {
 	"pf", " ;..x", "Print value located 6 bytes from current offset",
 	"pf", " [10]z[3]i[10]Zb", "Print an fixed size str, widechar, and var",
 	"pfj", " +F @ 0x14","Print the content at given offset with flag",
-	"pf", " n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
+	"pf", " n2", "print signed short (2 bytes) value. Use N instead of n for printing unsigned values",
 	"pf", " [2]? (plop)structname @ 0", "Prints an array of structs",
-	"pf", " eqew bigWord beef", "Swap endianess and print with given labels",
+	"pf", " eqew bigWord beef", "Swap endianness and print with given labels",
 	"pf", ".foo rr (eax)reg1 (eip)reg2", "Create object referencing to register values ",
 	"pf", " tt troll plop", "print time stamps with labels troll and plop",
 	NULL
@@ -1095,7 +1095,7 @@ static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
 }
 
 static void helpCmdTasks(RCore *core) {
-	// TODO: integrate with =h& and bg anal/string/searchs/..
+	// TODO: integrate with =h& and bg anal/string/searches/..
 	r_core_cmd_help (core, help_msg_amper);
 }
 

@@ -117,7 +117,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	return res;
 }
 
-// TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
+// TODO: Move into r_util .. r_print maybe? r_cons dep is annoying
 R_API char *r_syscmd_ls(const char *input) {
 	char *res = NULL;
 	const char *path = ".";

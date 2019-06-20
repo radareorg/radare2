@@ -328,7 +328,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		}
 	}
 	// r_search_reset might also benifet from having an if(s->data) R_FREE(s->data), but im not sure.
-	//add a commit that puts it in there to this PR if it wouldnt break anything. (dont have to worry about this happening again, since all searches start by resetting core->search)
+	//add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
 	//For now we will just use r_search_kw_reset
 	r_search_kw_reset (core->search);
 	free (b);
@@ -678,7 +678,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
-	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
+	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overridden by others (skyline)
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 #define USE_SKYLINE 0

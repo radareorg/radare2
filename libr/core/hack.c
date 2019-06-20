@@ -4,7 +4,7 @@
 
 /* We can not use some kind of structure type with
  * a string for each case, because some architectures (like ARM)
- * have several modes/alignement requirements.
+ * have several modes/alignment requirements.
  */
 
 void r_core_hack_help(const RCore *core) {

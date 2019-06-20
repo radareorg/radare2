@@ -128,7 +128,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			if (!rx) {
 				break;
 			}
-			/* find all occurences */
+			/* find all occurrences */
 			if (pager_all_matches (p, rx, mla, lines, lines_count)) {
 				from = pager_next_match (from, mla, lines_count);
 			}

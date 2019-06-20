@@ -65,7 +65,7 @@ R_API bool r_sandbox_check_path (const char *path) {
         if (path[0]=='.' && path[1]=='/') {
 		return false;
 	}
-	// Properly check for directrory traversal using "..". First, does it start with a .. part?
+	// Properly check for directory traversal using "..". First, does it start with a .. part?
 	if (path[0] == '.' && path[1] == '.' && (path[2] == '\0' || path[2] == '/')) {
 		return 0;
 	}
@@ -114,7 +114,7 @@ R_API bool r_sandbox_disable (bool e) {
 R_API bool r_sandbox_enable (bool e) {
 	if (enabled) {
 		if (!e) {
-			// eprintf ("Cant disable sandbox\n");
+			// eprintf ("Can't disable sandbox\n");
 		}
 		return true;
 	}

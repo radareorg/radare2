@@ -190,7 +190,7 @@ enum {
 };
 
 /*--------------------Function Conventions-----------*/
-//XXX dont use them in the future
+//XXX don't use them in the future
 #define R_ANAL_CC_TYPE_STDCALL 0
 #define R_ANAL_CC_TYPE_PASCAL 1
 #define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
@@ -202,7 +202,7 @@ enum {
 	R_ANAL_FCN_TYPE_LOC = 1 << 1,
 	R_ANAL_FCN_TYPE_SYM = 1 << 2,
 	R_ANAL_FCN_TYPE_IMP = 1 << 3,
-	R_ANAL_FCN_TYPE_INT = 1 << 4, /* priviledged function - ends with iret/reti/.. */
+	R_ANAL_FCN_TYPE_INT = 1 << 4, /* privileged function - ends with iret/reti/.. */
 	R_ANAL_FCN_TYPE_ROOT = 1 << 5  /* matching flag */
 };
 
@@ -345,7 +345,7 @@ enum {
 	R_ANAL_OP_FAMILY_FPU,    /* fpu (floating point) */
 	R_ANAL_OP_FAMILY_MMX,    /* multimedia instruction (packed data) */
 	R_ANAL_OP_FAMILY_SSE,    /* extended multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_PRIV,   /* priviledged instruction */
+	R_ANAL_OP_FAMILY_PRIV,   /* privileged instruction */
 	R_ANAL_OP_FAMILY_CRYPTO, /* cryptographic instructions */
 	R_ANAL_OP_FAMILY_THREAD, /* thread/lock/sync instructions */
 	R_ANAL_OP_FAMILY_VIRT,   /* virtualization instructions */
@@ -355,7 +355,7 @@ enum {
 };
 
 #if 0
-On x86 acording to Wikipedia
+On x86 according to Wikipedia
 
 	Prefix group 1
 	0xF0: LOCK prefix
@@ -462,7 +462,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_SYNC = 47,
 	//R_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
-	R_ANAL_OP_TYPE_PRIV = 40, /* priviledged instruction */
+	R_ANAL_OP_TYPE_PRIV = 40, /* privileged instruction */
 	R_ANAL_OP_TYPE_FPU = 41, /* floating point stuff */
 #endif
 } _RAnalOpType;
@@ -1241,7 +1241,7 @@ typedef struct r_anal_plugin_t {
 	RAnalBbCallback bb;
 	RAnalFnCallback fcn;
 
-	// overide the default analysis function in r_core_anal_fcn
+	// override the default analysis function in r_core_anal_fcn
 	RAnalAnalyzeFunctions analyze_fns;
 
 	// parse elements from a buffer

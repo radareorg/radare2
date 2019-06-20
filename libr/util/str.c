@@ -194,7 +194,7 @@ R_API int r_str_bits64(char* strout, ut64 in) {
  */
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	ut64 out = 0LL;
-	/* return the numberic value associated to a string (rflags) */
+	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
 		char *ch = strchr (bitz, toupper ((const unsigned char)*buf));
 		if (!ch) {
@@ -335,7 +335,7 @@ R_API int r_str_delta(char *p, char a, char b) {
 	return (!_a || !_b)? 0 : (_a - _b);
 }
 
-// In-place split string using ch as a delimeter. Replaces all instances of ch
+// In-place split string using ch as a delimiter. Replaces all instances of ch
 // with a null byte. Returns the number of split strings. For example
 // r_str_split("hello world", ' ') will replace the space with '\0' and
 // return 2.
@@ -557,7 +557,7 @@ R_API int r_str_char_count(const char *string, char ch) {
 	return count;
 }
 
-// Counts the number of words (separted by separator charactors: newlines, tabs,
+// Counts the number of words (separated by separator characters: newlines, tabs,
 // return, space). See r_util.h for more details of the IS_SEPARATOR macro.
 R_API int r_str_word_count(const char *string) {
 	const char *text, *tmp;
@@ -671,7 +671,7 @@ R_API const char * r_str_nstr(const char *s, const char *find, int slen) {
 }
 
 // Returns a new heap-allocated copy of str.
-// XXX whats the diff with r_str_dup ?
+// XXX what's the diff with r_str_dup ?
 R_API char *r_str_new(const char *str) {
 	return str? strdup (str): NULL;
 }
@@ -1025,7 +1025,7 @@ alloc_fail:
  * clen  - number of elements in thunk
  * key   - string to find in the clean string
  * val   - string that replaces key in the str string
- * g     - if true, replace all occurences of key
+ * g     - if true, replace all occurrences of key
  *
  * It returns a pointer to the modified string */
 R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
@@ -1259,7 +1259,7 @@ R_API void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool default
 	*dst = q;
 }
 
-/* Internal function. dot_nl specifies wheter to convert \n into the
+/* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
 static char *r_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
 	r_return_val_if_fail (buf, NULL);
@@ -1710,7 +1710,7 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
  * out - if not NULL write a pointer to the original string there,
  * cposs - if not NULL write a pointer to thunk array there
  * (*cposs)[i] is the offset of the out[i] in str
- * len - lenght of str
+ * len - length of str
  *
  * it returns the number of normal characters found in str
  */
@@ -2312,7 +2312,7 @@ R_API const char *r_strstr_ansi (const char *a, const char *b) {
 }
 
 R_API const char *r_str_casestr(const char *a, const char *b) {
-	// That's a GNUism that works in many places.. but we dont want it
+	// That's a GNUism that works in many places.. but we don't want it
 	// return strcasestr (a, b);
 	size_t hay_len = strlen (a);
 	size_t needle_len = strlen (b);
@@ -3234,7 +3234,7 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color, cons
 		return r_str_newf ("%s%s%s", color, str, color_reset);
 	}
 	ut32 l_word = strlen (word);
-	// XXX dont use static buffers
+	// XXX don't use static buffers
 	char o[1024] = {0};
 	while (start && (start < str + l_str)) {
 		int copied = 0;
@@ -3441,7 +3441,7 @@ R_API int r_str_fmtargs(const char *fmt) {
 // str-bool
 
 // Returns "true" or "false" as a string given an input integer. The returned
-// value is consistant with C's definition of 0 is false, and all other values
+// value is consistent with C's definition of 0 is false, and all other values
 // are true.
 R_API const char *r_str_bool(int b) {
 	return b? "true": "false";

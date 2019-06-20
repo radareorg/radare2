@@ -102,7 +102,7 @@ static bool delete_element(RSkipList* list, void* data, bool by_data) {
 }
 
 // Takes in a pointer to the function to free a list element, and a pointer to
-// a function that retruns 0 on equality between two elements, and -1 or 1
+// a function that returns 0 on equality between two elements, and -1 or 1
 // when unequal (for sorting).
 // Returns a new heap-allocated skiplist.
 R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {

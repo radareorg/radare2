@@ -54,7 +54,7 @@ typedef R_SHA512_CTX R_SHA384_CTX;
 
 
 /*
- * Since we have not enought space in bitmask, you may do fine
+ * Since we have not enough space in bitmask, you may do fine
  * selection of required hash functions by the followed macros.
  *
  * TODO: subject to place in config

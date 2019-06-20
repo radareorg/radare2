@@ -73,7 +73,7 @@ static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	}
 fail:
 	free (buf);
-// is 's' free'd? isnt this going to cause a double free?
+// is 's' free'd? isn't this going to cause a double free?
 	r_socket_close (s);
 	if (rlen) {
 		*rlen = len;

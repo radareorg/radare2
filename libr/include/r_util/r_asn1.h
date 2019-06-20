@@ -78,7 +78,7 @@ typedef struct r_asn1_object_t {
 	ut8 klass; /* class type */
 	ut8 form; /* defines if contains data or objects */
 	ut8 tag; /* tag type */
-	const ut8 *sector; /* Sector containg data */
+	const ut8 *sector; /* Sector containing data */
 	ut32 length; /* Sector Length */
 	ut64 offset; /* Object offset */
 	ASN1List list; /* List of objects contained in the sector */

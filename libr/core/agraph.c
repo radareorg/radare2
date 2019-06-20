@@ -52,7 +52,7 @@ static const char *mousemodes[] = {
 #define hash_get_rnode(sdb, k) ((RGraphNode *) (size_t) hash_get (sdb, k))
 #define hash_get_rlist(sdb, k) ((RList *) (size_t) hash_get (sdb, k))
 #define hash_get_int(sdb, k) ((int) hash_get (sdb, k))
-/* dont use macros for this */
+/* don't use macros for this */
 #define get_anode(gn) ((gn)? (RANode *) (gn)->data: NULL)
 
 #define graph_foreach_anode(list, it, pos, anode)\
@@ -855,7 +855,7 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 	return res;
 }
 
-/* explictly set the distance between two nodes on the same layer */
+/* explicitly set the distance between two nodes on the same layer */
 static void set_dist_nodes(const RAGraph *g, int l, int cur, int next) {
 	struct dist_t *d, find_el;
 	const RGraphNode *vi, *vip;
