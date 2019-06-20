@@ -353,6 +353,34 @@ static int r_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
+static int cmd_uniq(void *data, const char *input) { // "uniq"
+	RCore *core = (RCore *)data;
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1);
+	}
+	switch (*input) {
+	case '?': // "uniq?"
+		eprintf ("Usage: uniq # uniq to list unique strings in file\n");
+		break;
+	default: // "uniq"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_uniq (arg);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	return 0;
+}
+
 static int cmd_uname(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -405,6 +433,11 @@ static int cmd_uname(void *data, const char *input) {
 		return 1;
 	case 'w': // "uw"
 		r_core_cmdf (data, "wc%s", input + 1);
+		return 1;
+	case 'n': // "un"
+		if (input[1] == 'i' && input[2] == 'q') {
+			cmd_uniq (core, input);
+		}
 		return 1;
 	}
 #if __UNIX__
@@ -959,6 +992,50 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		}
 		break;
 	}
+	return 0;
+}
+
+static int cmd_join(void *data, const char *input) { // "join"
+	RCore *core = (RCore *)data;
+	const char *tmp = strdup (input);
+	const char *arg1 = strchr (tmp, ' ');
+	if (!arg1) {
+		goto beach;
+	}
+	arg1 = r_str_trim_ro (arg1);
+	char *end = strchr (arg1, ' ');
+	if (!end) {
+		goto beach;
+	}
+	*end = '\0';
+	const char *arg2 = end+1;
+	if (!arg2) {
+		goto beach;
+	}
+	arg2 = r_str_trim_ro (arg2);
+	switch (*input) {
+	case '?': // "join?"
+		goto beach;
+	default: // "join"
+		if (!arg1) {
+			arg1 = "";
+		}
+		if (!arg2) {
+			arg2 = "";
+		}
+		if (!r_fs_check (core->fs, arg1) && !r_fs_check (core->fs, arg2)) {
+			char *res = r_syscmd_join (arg1, arg2);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+			R_FREE (tmp);
+		}
+		break;
+	}
+	return 0;
+beach:
+	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
 	return 0;
 }
 
@@ -4517,6 +4594,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"info",     "get file info", cmd_info, cmd_info_init},
 		{"kuery",    "perform sdb query", cmd_kuery},
 		{"l",       "list files and directories", cmd_ls},
+		{"join",    "join the contents of the two files", cmd_join},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins},
 		{"mount",    "mount filesystem", cmd_mount, cmd_mount_init},
 		{"open",     "open or map file", cmd_open, cmd_open_init},

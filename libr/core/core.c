@@ -830,7 +830,7 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define radare_argc (sizeof (radare_argv) / sizeof(const char*) - 1)
 static const char *radare_argv[] = {
-	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less", "exit", "quit",
+	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!vala", "#!pipe",
 	"*?", "*", "$",

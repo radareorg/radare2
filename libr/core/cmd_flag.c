@@ -1117,7 +1117,7 @@ rep:
 			free (arg);
 		}
 		break;
-	case 'C':
+	case 'C': // "fC"
 		if (input[1] == ' ') {
 			RFlagItem *item;
 			char *q, *p = strdup (input + 2), *dec = NULL;

@@ -250,6 +250,136 @@ R_API char *r_syscmd_ls(const char *input) {
 	return res;
 }
 
+static int cmpstr (const void *_a, const void *_b) {
+	const char *a = _a, *b = _b;
+	return (int)strcmp (a, b);
+}
+
+R_API char *r_syscmd_sort(const char *file) {
+	int sz;
+	const char *p = NULL;
+	RList *list = NULL;
+	if (file) {
+		if ((p = strchr (file, ' '))) {
+			p = p + 1;
+		} else {
+			p = file;
+		}
+	}
+	if (p && *p) {
+		char *filename = strdup (p);
+		r_str_trim (filename);
+		char *data = r_file_slurp (filename, &sz);
+		if (!data) {
+			eprintf ("No such file or directory\n");
+		} else {
+			list = r_str_split_list (data, "\n");
+			r_list_sort (list, cmpstr);
+			data = r_list_to_str (list, '\n');
+			r_list_free (list);
+		}
+		free (filename);
+		return data;
+	} else {
+		eprintf ("Usage: sort [file]\n");
+	}
+	return NULL;
+}
+
+R_API char *r_syscmd_uniq(const char *file) {
+	int sz;
+	const char *p = NULL;
+	RList *list = NULL;
+	if (file) {
+		if ((p = strchr (file, ' '))) {
+			p = p + 1;
+		} else {
+			p = file;
+		}
+	}
+	if (p && *p) {
+		char *filename = strdup (p);
+		r_str_trim (filename);
+		char *data = r_file_slurp (filename, &sz);
+		if (!data) {
+			eprintf ("No such file or directory\n");
+		} else {
+			list = r_str_split_list (data, "\n");
+			RList *uniq_list = r_list_uniq (list, cmpstr);
+			data = r_list_to_str (uniq_list, '\n');
+			r_list_free (uniq_list);
+			r_list_free (list);
+		}
+		free (filename);
+		return data;
+	} else {
+		eprintf ("Usage: uniq [file]\n");
+	}
+	return NULL;
+}
+
+R_API char *r_syscmd_join(const char *file1, const char *file2) {
+	int sz1, sz2;
+	const char *p1 = NULL, *p2 = NULL;
+	RList *list1, *list2, *list = r_list_newf (NULL);
+	if (!list) {
+		return NULL;
+	}
+	if (file1) {
+		if ((p1 = strchr (file1, ' '))) {
+			p1 = p1 + 1;
+		} else {
+			p1 = file1;
+		}
+	}
+	if (file2) {
+		if ((p2 = strchr (file2, ' '))) {
+			p2 = p2 + 1;
+		} else {
+			p2 = file2;
+		}
+	}
+	if (p1 && *p1 && p2 && *p2 ) {
+		char *filename1 = strdup (p1);
+		char *filename2 = strdup (p2);
+		r_str_trim (filename1);
+		r_str_trim (filename2);
+		char *data1 = r_file_slurp (filename1, &sz1);
+		char *data2 = r_file_slurp (filename2, &sz2);
+		char *data = NULL;
+		RListIter *iter1, *iter2;
+		if (!data1 && !data2) {
+			eprintf ("No such files or directory\n");
+		} else {
+			list1 = r_str_split_list (data1, "\n");
+			list2 = r_str_split_list (data2, "\n");
+			iter2 = list1->head;
+			for (iter1 = list1->head, iter2 = list2->head; iter1 || iter2;) {
+				char *data = r_str_new ("");
+				if (iter1) {
+					r_str_appendf (data, "%s ", (char *)iter1->data);
+					iter1 = iter1->n;
+				}
+				if (iter2) {
+					r_str_append (data, (char *)iter2->data);
+					iter2 = iter2->n;
+				}
+				r_list_append (list, data);
+			}
+			data = r_list_to_str (list, '\n');
+			r_list_free (list);
+			r_list_free (list1);
+			r_list_free (list2);
+		}
+		free (filename1);
+		free (filename2);
+		return data;
+	} else {
+		eprintf ("Usage: join file1 file2\n");
+	}
+	return NULL;
+}
+
 R_API char *r_syscmd_cat(const char *file) {
 	int sz;
 	const char *p = NULL;
