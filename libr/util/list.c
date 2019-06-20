@@ -617,7 +617,7 @@ R_API char *r_list_to_str(RList *list, char ch) {
 	r_list_foreach (list, iter, item) {
 		r_strbuf_appendf (buf, "%s%c", item, ch);
 	}
-	return r_strbuf_get (buf);
+	return r_strbuf_drain (buf);
 }
 
 #if TEST

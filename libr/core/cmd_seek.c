@@ -335,7 +335,7 @@ static int cmd_seek(void *data, const char *input) {
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
-	{
+	if (!strstr (inputnum, "./")) {				// Avoids invalid argument for relative path
 		const char *u_num = inputnum? inputnum + 1: input + 1;
 		off = r_num_math (core->num, u_num);
 		if (*u_num == '-') {
@@ -739,14 +739,19 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	case 'o': // "so"
 		switch (input[1]) {
-			case 'r':
-				if (input[2] == 't') {
-					cmd_sort (core, input);
-				}
-				break;
-			default:
-				cmd_seek_opcode (core, input + 1);
-				break;
+		case 'r':
+			if (input[2] == 't') {
+				cmd_sort (core, input);
+			} else {
+				return -1;
+			}
+			break;
+		case ' ':
+		case '\0':
+			cmd_seek_opcode (core, input + 1);
+			break;
+		default:
+			return -1;	// invalid command
 		}
 	case 'g': // "sg"
 	{
