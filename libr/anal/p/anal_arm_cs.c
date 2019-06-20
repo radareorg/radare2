@@ -1324,7 +1324,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		ut64 shifted_imm = IMM64(1) << shift;
 		ut64 mask = ~(0xffffLL << shift);
 
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,&,%"PFMT64d",|,%s,=",
+		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",|,%s,=",
 			mask,
 			REG64(0),
 			shifted_imm,
@@ -1333,7 +1333,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	}
 	case ARM64_INS_MOVZ:
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=",
+		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,=",
 			IMM64(1) << LSHIFT2_64(1),
 			REG64 (0));
 		break;
@@ -3247,7 +3247,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		omode = mode;
 		obits = a->bits;
 	}
-	op->type = R_ANAL_OP_TYPE_NULL;
+	op->type = R_ANAL_OP_TYPE_NULL; // SHOULD BE ILL but this makes some stuff to fail
 	op->size = (a->bits==16)? 2: 4;
 	op->stackop = R_ANAL_STACK_NULL;
 	op->delay = 0;
