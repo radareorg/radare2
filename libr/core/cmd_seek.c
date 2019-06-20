@@ -335,7 +335,7 @@ static int cmd_seek(void *data, const char *input) {
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
-	{
+	if (r_str_cmp (input, "ort", 3)) {					// hack to handle Invalid Argument for sort
 		const char *u_num = inputnum? inputnum + 1: input + 1;
 		off = r_num_math (core->num, u_num);
 		if (*u_num == '-') {
@@ -748,6 +748,8 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case ' ':
 		case '\0':
+		case '+':
+		case '-':
 			cmd_seek_opcode (core, input + 1);
 			break;
 		default:
