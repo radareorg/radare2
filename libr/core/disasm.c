@@ -3451,7 +3451,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	return gotShortcut;
 }
 
-static void ds_align_simple(RDisasmState *ds) {
+static void ds_begin_nl_comment(RDisasmState *ds) {
 	const char *p = r_cons_get_buffer ();
 	int l = strlen (p);
 	const bool lastnl = l> 0? (p[l - 1] == '\n'): 0;
@@ -3793,11 +3793,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			} else {
 				if (n == UT32_MAX || n == UT64_MAX) {
-					ds_align_simple (ds);
+					ds_begin_nl_comment (ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
 							refaddr, refptr);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
-					ds_align_simple (ds);
+					ds_begin_nl_comment (ds);
 					ds_comment (ds, false, "; [0x%" PFMT64x
 							  ":%d]=%"PFMT64d, refaddr, refptr, n);
 				} else {
@@ -3830,7 +3830,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
-						ds_align_simple (ds);
+						ds_begin_nl_comment (ds);
 						ds_comment_start (ds, "; [");
 						if (f && f2_in_opstr) {
 							ds_comment_middle (ds, "%s", f->name);
@@ -3868,7 +3868,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						if (!aligned) {
 							ds_begin_comment (ds);
 						}
-						ds_align_simple (ds);
+						ds_begin_nl_comment (ds);
 						ds_comment (ds, true, "; 0x%" PFMT64x, refaddr);
 						refaddr_printed = true;
 					}
@@ -3902,7 +3902,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 				ds_begin_comment (ds);
-				ds_align_simple (ds);
+				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "; %s", f->name);
 				ds->printed_flag_addr = refaddr;
 				flag_printed = true;
