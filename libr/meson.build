@@ -144,6 +144,7 @@ anal_plugins += [
   'i4004',
   'i8080',
   'java',
+  'kvx',
   'm68k_cs',
   'm680x_cs',
   'malbolge',
