@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2008-2018 - pancake */
 
-// TODO: implement a more inteligent way to store cached memory
+// TODO: implement a more intelligent way to store cached memory
 
 #include "r_io.h"
 

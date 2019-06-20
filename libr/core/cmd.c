@@ -264,8 +264,8 @@ static const char *help_msg_y[] = {
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y!", "", "open cfg.editor to edit the clipboard",
-	"y*", "", "print in r2 commands whats been yanked",
-	"yj", "", "print in JSON commands whats been yanked",
+	"y*", "", "print in r2 commands what's been yanked",
+	"yj", "", "print in JSON commands what's been yanked",
 	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	"yp", "", "print contents of clipboard",
 	"yq", "", "print contents of clipboard in hexpairs",
@@ -2158,7 +2158,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (rep < 1) {
 		rep = 1;
 	}
-	// XXX if output is a pipe then we dont want to be interactive
+	// XXX if output is a pipe then we don't want to be interactive
 	if (rep > 1 && r_sandbox_enable (0)) {
 		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", cmd);
 		goto beach;
@@ -3925,7 +3925,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	case '.': // "@@."
 		if (each[1] == '(') {
 			char cmd2[1024];
-			// XXX whats this 999 ?
+			// XXX what's this 999 ?
 			i = 0;
 			for (core->rcmd->macro.counter = 0; i < 999; core->rcmd->macro.counter++) {
 				if (r_cons_is_breaked ()) {

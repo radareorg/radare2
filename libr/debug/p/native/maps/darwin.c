@@ -83,7 +83,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 	RList *list = NULL;
 	int i = 0;
 #if __arm64__ || __aarch64__
-	size = osize = 16384; // acording to frida
+	size = osize = 16384; // according to frida
 #else
 	size = osize = 4096;
 #endif
@@ -197,7 +197,7 @@ static RList *osx_dbg_maps (RDebug *dbg) {
 	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
 */
 #if __arm64__ || __aarch64__
-	size = 16384; // acording to frida
+	size = 16384; // according to frida
 #else
 	size = 4096;
 #endif

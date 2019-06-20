@@ -97,7 +97,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	if (so.httpauth) {
 		if (!httpauthfile) {
 			r_socket_free (s);
-			eprintf ("No user list set for HTTP Authentification\n");
+			eprintf ("No user list set for HTTP Authentication\n");
 			return 1;
 		}
 

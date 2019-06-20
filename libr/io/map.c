@@ -463,7 +463,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	}
 	//we need a clean list for this, or this becomes a segfault-field
 	r_io_map_cleanup (io);
-	//tempory set to avoid free the map and to speed up ls_delete a bit
+	//temporary set to avoid free the map and to speed up ls_delete a bit
 	io->maps->free = NULL;
 	ls_foreach_safe (io->maps, iter, ator, map) {
 		if (map->fd == fd) {

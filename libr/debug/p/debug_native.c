@@ -1622,7 +1622,7 @@ static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 		// error reading regs
 	}
 	memcpy (&dreg_state, iov.iov_base, sizeof (dreg_state));
-	// wp is not honored here i think... we cant have more than one wp for now..
+	// wp is not honored here i think... we can't have more than one wp for now..
 	dreg_state.dbg_regs[0].addr = (uintptr_t)(addr - offset);
 	dreg_state.dbg_regs[0].ctrl = control;
 	iov.iov_base = &dreg_state;

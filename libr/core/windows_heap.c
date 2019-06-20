@@ -329,7 +329,7 @@ static PDEBUG_BUFFER InitHeapInfo(DWORD pid, DWORD mask) {
 	PDEBUG_BUFFER db = RtlCreateQueryDebugBuffer (0, FALSE);
 	res = RtlQueryProcessDebugInformation (pid, mask, db);
 	if (res) {
-		// why after it fails the first time it blocks on the second? Thats annoying
+		// why after it fails the first time it blocks on the second? That's annoying
 		// It stops blocking if i pause radare in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
 		RtlDestroyQueryDebugBuffer (db);
@@ -505,7 +505,7 @@ static bool GetSegmentHeapBlocks(RDebug *dbg, HANDLE h_proc, PVOID heapBase, PHe
 					(*blocks)[*count].extra = EXTRA_FLAG | (WPARAM)extra;
 					*count += 1;
 				}
-				// Hack (i dont know if all blocks like this are VS or not)
+				// Hack (i don't know if all blocks like this are VS or not)
 				if (pageSegment.DescArray[j].RangeFlags & 0xF && pageSegment.DescArray[j].UnusedBytes == 0x1000) {
 					HEAP_VS_SUBSEGMENT vsSubsegment;
 					WPARAM start, from = currPageSegment + j * 0x1000;

@@ -171,7 +171,7 @@ R_API char *r_str_trim_nc(char *str) {
 	return r_str_trim_tail (s);
 }
 
-/* suposed to chop a string with ansi controls to max length of n. */
+/* supposed to chop a string with ansi controls to max length of n. */
 R_API int r_str_ansi_trim(char *str, int str_len, int n) {
 	char ch, ch2;
 	int back = 0, i = 0, len = 0;

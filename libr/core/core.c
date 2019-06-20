@@ -550,7 +550,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// TODO: group analop-dependant vars after a char, so i can filter
 		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC);
-		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
+		r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str + 2);
@@ -2541,7 +2541,7 @@ R_API bool r_core_init(RCore *core) {
 	r_core_bind (core, &core->dbg->corebind);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
-// XXX pushing unititialized regstate results in trashed reg values
+// XXX pushing uninitialized regstate results in trashed reg values
 //	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->io->cb_printf = r_cons_printf;
@@ -3024,7 +3024,7 @@ reaccept:
 							r_socket_free (c);
 							goto reaccept;
 						}
-						goto out_of_function; //XXX: Close conection and goto accept
+						goto out_of_function; //XXX: Close connection and goto accept
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;

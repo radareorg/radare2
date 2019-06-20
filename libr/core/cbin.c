@@ -783,7 +783,7 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				int len = r_hash_calculate (rh, hash, tmp, h->to);
 				free (tmp);
 				if (len < 1) {
-					eprintf ("Invaild checksum length\n");
+					eprintf ("Invalid checksum length\n");
 				}
 				r_hash_free (rh);
 				r_cons_printf ("%s\"%s\":{\"hex\":\"", i?",": "", h->type);
@@ -961,7 +961,7 @@ static int bin_dwarf(RCore *core, int mode) {
 	r_cons_break_pop ();
 	R_FREE (lastFileContents);
 	R_FREE (lastFileContents2);
-	// this list is owned by rbin, not us, we shouldnt free it
+	// this list is owned by rbin, not us, we shouldn't free it
 	// r_list_free (list);
 	free (lastFileLines);
 	return true;
@@ -2136,7 +2136,7 @@ static int bin_symbols(RCore *r, int mode, ut64 laddr, int va, ut64 at, const ch
 						r_cons_printf ("f sym.%s %u 0x%08" PFMT64x "\n",
 							r_bin_symbol_name (symbol), symbol->size, addr);
 					} else {
-						// we dont want unnamed symbol flags
+						// we don't want unnamed symbol flags
 					}
 				}
 				binfile = r_bin_cur (r->bin);

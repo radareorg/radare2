@@ -1633,7 +1633,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				switch (i) {
 				case 2:
 					symname = r_str_word_get0 (ptr, 1);
-					// fall thru
+					// fall through
 				case 1:
 					a0 = r_str_word_get0 (ptr, 0);
 					addr = r_num_math (core->num, a0);

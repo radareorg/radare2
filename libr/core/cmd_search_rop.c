@@ -487,7 +487,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 							    	(RListComparator)strcmp)) {
 							continue;
 						}
-						// dont check flags for arithmetic
+						// don't check flags for arithmetic
 						if (isFlag (item_dst)) {
 							continue;
 						}
@@ -608,7 +608,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 						    (RListComparator)strcmp)) {
 						continue;
 					}
-					// dont check flags for arithmetic
+					// don't check flags for arithmetic
 					if (isFlag (item_dst)) {
 						continue;
 					}

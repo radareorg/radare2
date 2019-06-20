@@ -505,7 +505,7 @@ R_API st64 r_hex_bin_truncate (ut64 in, int n) {
 	return in;
 }
 
-// Check if str contains only hexademical characters and return length of bytes
+// Check if str contains only hexadecimal characters and return length of bytes
 R_API int r_hex_str_is_valid(const char* str) {
 	int i;
 	int len = 0;
@@ -519,7 +519,7 @@ R_API int r_hex_str_is_valid(const char* str) {
 		if (IS_HEXCHAR (str[i]) || IS_WHITESPACE (str[i])) {
 			continue;
 		}
-		return -1; //if we're here, then str isnt valid
+		return -1; //if we're here, then str isn't valid
 	}
 	return len;
 }

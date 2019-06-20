@@ -65,7 +65,7 @@ typedef struct r_th_t {
 	R_TH_FUNCTION(fun);
 	void *user;    // user pointer
 	int running;
-	int breaked;   // thread aims to be interruped
+	int breaked;   // thread aims to be interrupted
 	int delay;     // delay the startup of the thread N seconds
 	int ready;     // thread is properly setup
 } RThread;

@@ -782,7 +782,7 @@ static void rcc_context(REgg *egg, int delta) {
 // eprintf ("Callname is (%s)\n", callname);
 		const char *elm = skipspaces (egg->lang.elem);
 		// const char *cn = callname;
-		// seems cn is useless in nowdays content
+		// seems cn is useless in nowadays content
 // if (egg->lang.nested[context-1])
 #if 0
 		if (delta < 0 && context > 0) {
@@ -1050,7 +1050,7 @@ static void rcc_next(REgg *egg) {
 			rcc_printf ("  cmp $0, %%eax\n");	// XXX MUST SUPPORT != 0 COMPARE HERE
 			/* TODO : Simplify!! */
 			// if (pushvar)
-			// printf("  push %s /* wihle push */\n", pushvar);
+			// printf("  push %s /* while push */\n", pushvar);
 			if (egg->lang.lastctxdelta < 0) {
 				rcc_printf ("  jnz %s\n", get_frame_label (1));
 			} else {

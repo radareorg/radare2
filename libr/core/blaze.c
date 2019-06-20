@@ -278,7 +278,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 			block_score = 0;
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
-			// we dont want to add trap stuff
+			// we don't want to add trap stuff
 			if (b_start < start + cur) {
 				addBB (block_list, b_start, start + cur, UT64_MAX, UT64_MAX, NORMAL, block_score);
 			}
@@ -524,7 +524,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 				}
 
 				bool bFound = false;
-				// check if offset dont have into block_list, to end branch analisys
+				// check if offset don't have into block_list, to end branch analisys
 				r_list_foreach (block_list, iter, block) {
 					if ( (block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
 						bFound = true;
@@ -589,7 +589,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 					op = NULL;
 				}
 				else {
-					// we have this offset into previous analized block, exit from this path flow.
+					// we have this offset into previous analyzed block, exit from this path flow.
 					break;
 				}
 			}
@@ -681,9 +681,9 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 		r_list_append (result, block);
 	}
 
-	// finally add bb to fuction
+	// finally add bb to function
 	// we simply assume that non reached blocks
-	// dont are part of the created function
+	// don't are part of the created function
 	if (debug) {
 		eprintf ("Trying to create functions\n");
 	}
@@ -746,9 +746,9 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 
 			// function creation complete
 			if (current_function) {
-				// check for supply fuction address match with current block
+				// check for supply function address match with current block
 				if (current_function->addr == start) {
-					// set supply fuction size
+					// set supply function size
 					current_function->size = size;
 					if (checkFunction (current_function)) {
 						if (input[0] == '*') {

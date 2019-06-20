@@ -93,7 +93,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	case 'j': // "dmj" add JSON opening array brace
 		dbg->cb_printf ("[");
 		break;
-	case '*': // "dm*" dont print a header for r2 commands output
+	case '*': // "dm*" don't print a header for r2 commands output
 		break;
 	default:
 		// TODO: Find a way to only print headers if output isn't being grepped
@@ -230,7 +230,7 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 			dbg->cb_printf (fmtstr, humansz,
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',
-				color_prefix, map->addr, color_suffix); // * indicates map is within our current seeked offset
+				color_prefix, map->addr, color_suffix); // * indicates map is within our current sought offset
 			int col;
 			for (col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
 				ut64 pos = min + (col * mul); // Current address space to check

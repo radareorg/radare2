@@ -590,7 +590,7 @@ R_API int r_isprint(const RRune c) {
 		/*
 		manually copied from top, please update if this ever changes
 		{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
-		could do a linear search, but thats a lot slower than a few compare
+		could do a linear search, but that's a lot slower than a few compare
 		*/
 		return !( c <= 0x1F || ( c >= 0x7F && c <= 0x9F));
 	}
