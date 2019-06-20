@@ -3907,12 +3907,12 @@ repeat:
 	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
-	if (op.size < 1 || ret < 0) {
+	if (op.size < 1 || ret < 1) {
 		if (esil->cmd && esil->cmd_trap) {
 			esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
 		}
 		if (breakoninvalid) {
-			r_cons_printf ("[ESIL] Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
+			eprintf ("[ESIL] Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
 			return_tail (0);
 		}
 		op.size = 1; // avoid inverted stepping
@@ -3987,6 +3987,8 @@ repeat:
 		}
 		tail_return_value = 1;
 	}
+	// esil->verbose ?
+	// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 	if (follow > 0) {

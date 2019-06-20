@@ -2856,7 +2856,8 @@ static const char *gotoWord(const char *str, int n) {
  * 3: normal continuation
  */
 static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
-	if (!esil || !str || !*str) {
+	r_return_val_if_fail (esil && str, 0);
+	if (!*str) {
 		return 0;
 	}
 	if ((*str)[0] && (*str)[1] == ',') {
