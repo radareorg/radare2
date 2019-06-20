@@ -3838,7 +3838,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	if (!esil) {
 		initializeEsil (core);
 	}
-	if (esiltimeout) {
+	if (esiltimeout > 0) {
 		startTime = r_sys_now ();
 	}
 	ut64 addr = r_reg_getv (core->anal->reg, name);
@@ -3849,7 +3849,7 @@ repeat:
 		return_tail (0);
 	}
 	//Break if we have exceeded esil.timeout
-	if (esiltimeout) {
+	if (esiltimeout > 0) {
 		ut64 elapsedTime = r_sys_now () - startTime;
 		elapsedTime >>= 20;
 		if (elapsedTime >= esiltimeout) {
