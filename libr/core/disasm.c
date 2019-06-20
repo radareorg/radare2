@@ -3798,7 +3798,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							refaddr, refptr);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
 					ds_begin_nl_comment (ds);
-					ds_comment (ds, false, "; [0x%" PFMT64x
+					ds_comment (ds, true, "; [0x%" PFMT64x
 							  ":%d]=%"PFMT64d, refaddr, refptr, n);
 				} else {
 					const char *kind, *flag = "";
