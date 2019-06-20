@@ -1692,6 +1692,17 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cmd_esil_step_out(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core && core->anal && core->anal->esil) {
+		core->anal->esil->cmd = r_core_esil_cmd;
+		free (core->anal->esil->cmd_step_out);
+		core->anal->esil->cmd_step_out = strdup (node->value);
+	}
+	return true;
+}
+
 static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3234,6 +3245,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
 
 	SETCB ("cmd.esil.step", "", &cb_cmd_esil_step, "Command to run before performing a step in the emulator");
+	SETCB ("cmd.esil.stepout", "", &cb_cmd_esil_step_out, "Command to run after performing a step in the emulator");
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
 	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");

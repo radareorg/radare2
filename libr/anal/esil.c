@@ -176,6 +176,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	free (esil->cmd_mdev);
 	free (esil->cmd_todo);
 	free (esil->cmd_step);
+	free (esil->cmd_step_out);
 	free (esil->cmd_ioer);
 	free (esil);
 }
@@ -2885,24 +2886,30 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 	return 3;
 }
 
-R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
+static bool __stepOut(RAnalEsil *esil, const char *cmd) {
 	static bool inCmdStep = false;
+	if (cmd && esil && esil->cmd && !inCmdStep) {
+		inCmdStep = true;
+		if (esil->cmd (esil, cmd, esil->address, 0)) {
+			inCmdStep = false;
+			// if returns 1 we skip the impl
+			return true;
+		}
+		inCmdStep = false;
+	}
+	return false;
+}
+
+R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int wordi = 0;
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
 	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), 0);
 
-	if (esil->cmd_step) {
-		if (!inCmdStep) {
-			inCmdStep = true;
-			if (esil->cmd (esil, esil->cmd_step, esil->address, 0)) {
-				inCmdStep = false;
-				// if returns 1 we skip the impl
-				return true;
-			}
-			inCmdStep = false;
-		}
+	if (__stepOut (esil, esil->cmd_step)) {
+		(void)__stepOut (esil, esil->cmd_step_out);
+		return true;
 	}
 	const char *hashbang = strstr (str, "#!");
 	esil->trap = 0;
@@ -2931,6 +2938,7 @@ repeat:
 		}
 		if (wordi > 62) {
 			ERR ("Invalid esil string");
+			__stepOut (esil, esil->cmd_step_out);
 			return -1;
 		}
 		dorunword = 0;
@@ -2945,16 +2953,20 @@ repeat:
 		if (dorunword) {
 			if (*word) {
 				if (!runword (esil, word)) {
+					__stepOut (esil, esil->cmd_step_out);
 					return 0;
 				}
 				word[wordi] = ',';
 				wordi = 0;
 				switch (evalWord (esil, ostr, &str)) {
 				case 0: goto loop;
-				case 1: return 0;
+				case 1:
+					__stepOut (esil, esil->cmd_step_out);
+					return 0;
 				case 2: continue;
 				}
 				if (dorunword == 1) {
+					__stepOut (esil, esil->cmd_step_out);
 					return 0;
 				}
 			}
@@ -2970,14 +2982,17 @@ repeat:
 	word[wordi] = 0;
 	if (*word) {
 		if (!runword (esil, word)) {
+			__stepOut (esil, esil->cmd_step_out);
 			return 0;
 		}
 		switch (evalWord (esil, ostr, &str)) {
 		case 0: goto loop;
-		case 1: return 0;
+		case 1: __stepOut (esil, esil->cmd_step_out);
+			return 0;
 		case 2: goto repeat;
 		}
 	}
+	__stepOut (esil, esil->cmd_step_out);
 	return 1;
 }
 
