@@ -569,78 +569,61 @@ beach:
 	return node;
 }
 
-R_API bool r_config_eval(RConfig *cfg, const char *str) {
-	char *ptr, *config, *val;
-
-	r_return_val_if_fail (cfg && str, false);
-
-	size_t len = strlen (str) + 1;
-	char *names = malloc (sizeof (char) * len);
-	if (!names) {
-		return false;
+static void __evalString(RConfig *cfg, char *name) {
+	if (!*name) {
+		return;
 	}
-	memcpy (names, str, len);
-	r_str_trim (names);
-	str = names;
-
-	if (str[0] == '\0' || !strcmp (str, "help")) {
-		r_config_list (cfg, NULL, 0);
-		free (names);
-		return false;
-	}
-
-	if (str[0] == '-') {
-		r_config_rm (cfg, str + 1);
-		free (names);
-		return false;
-	}
-
-	val = strrchr (names, '=');
-	if (val) {
-		/* set */
-		if (r_str_endswith (names, "\"")) {
-			// Value surrounded by quotes
-			char *q = strchr (names, '"');
-			ptr = names + strlen (names) - 1;
-			if (q != ptr) {
-				q[0] = '\0';
-				ptr[0] = '\0';
-				ptr = strrchr (names, '=');
-				if (!ptr) {
-					return false;
-				}
-				ptr[0] = '\0';
-				val = q;
-			}
-		}
-		val[0] = '\0';
-		val++;
-		r_str_trim (val);
-		ptr = strtok (names, "=");
-		while (ptr) {
-			r_str_trim (ptr);
-			config = ptr;
-			(void) r_config_set (cfg, config, val);
-			ptr = strtok (NULL, "=");
+	char *eq = strchr (name, '=');
+	if (eq) {
+		*eq++ = 0;
+		r_str_trim (name);
+		r_str_trim (eq);
+		if (*name) {
+			(void) r_config_set (cfg, name, eq);
 		}
 	} else {
-		char *foo = names;
-		r_str_trim (foo);
-		int foolen = strlen (foo);
-		if (foolen > 0  && foo[foolen - 1] == '.') {
-			r_config_list (cfg, names, 0);
-			free (names);
-			return false;
+		if (r_str_endswith (name, ".")) {
+			r_config_list (cfg, name, 0);
 		} else {
-			/* get */
-			const char *str = r_config_get (cfg, foo);
-			if (str) {
-				cfg->cb_printf ("%s\n",
-						(((int) (size_t) str) == 1)? "true": str);
+			const char *v = r_config_get (cfg, name);
+			if (v) {
+				cfg->cb_printf ("%s\n", v);
+			} else {
+				eprintf ("Invalid conifg key %s\n", name);
 			}
 		}
 	}
-	free (names);
+}
+
+R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
+	r_return_val_if_fail (cfg && str, false);
+
+	char *s = r_str_trim_dup (str);
+
+	if (!*s || !strcmp (s, "help")) {
+		r_config_list (cfg, NULL, 0);
+		free (s);
+		return false;
+	}
+
+	if (*s == '-') {
+		r_config_rm (cfg, s + 1);
+		free (s);
+		return false;
+	}
+	if (many) {
+		// space separated list of k=v k=v,..
+		// if you want to use spaces go for base64 or e.
+		RList *list = r_str_split_list (s, ",");
+		RListIter *iter;
+		char *name;
+		r_list_foreach (list, iter, name) {
+			__evalString (cfg, name);
+		}
+		free (s);
+		return true;
+	}
+	__evalString (cfg, s);
 	return true;
 }
 

@@ -12,6 +12,8 @@ static const char *help_msg_e[] = {
 	"e", " a=b", "set var 'a' the 'b' value",
 	"e var=?", "", "print all valid values of var",
 	"e var=??", "", "print all valid values of var with description",
+	"e.", "a=b", "same as 'e a=b' but without using a space",
+	"e,", "k=v,k=v,k=v", "comma separated k[=v]",
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
@@ -575,26 +577,16 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
 		}
 		break;
+	case ',': // "e."
+		r_config_eval (core->config, input + 1, true);
+		break;
+	case '.': // "e "
 	case ' ': // "e "
 		if (r_str_endswith (input, ".")) {
 			r_config_list (core->config, input + 1, 0);
-		} else if (strchr (input + 1, ' ')) { // XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-			r_config_eval (core->config, input + 1);
 		} else {
-			// simple get/set of config keys, assuming there are no spaces
-			char *k = strdup (input + 1);
-			char *v = strchr (k, '=');
-			if (v) {
-				*v++ = 0;
-				r_config_set (core->config, k, v);
-			} else {
-				r_str_trim (k);
-				const char *v = r_config_get (core->config, k);
-				if (v) {
-					r_cons_printf ("%s\n", v);
-				}
-			}
-			free (k);
+			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
+			r_config_eval (core->config, input + 1, false);
 		}
 		break;
 	}

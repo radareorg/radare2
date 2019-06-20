@@ -75,7 +75,7 @@ R_API RConfig *r_config_new(void *user);
 R_API RConfig *r_config_clone (RConfig *cfg);
 R_API void r_config_free(RConfig *cfg);
 R_API void r_config_lock(RConfig *cfg, int l);
-R_API bool r_config_eval(RConfig *cfg, const char *str);
+R_API bool r_config_eval(RConfig *cfg, const char *str, bool many);
 R_API void r_config_bump(RConfig *cfg, const char *key);
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i);
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, bool (*callback)(void *user, void *data));

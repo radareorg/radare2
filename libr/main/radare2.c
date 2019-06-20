@@ -596,7 +596,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			if (!strcmp (r_optarg, "q")) {
 				r_core_cmd0 (&r, "eq");
 			} else {
-				r_config_eval (r.config, r_optarg);
+				r_config_eval (r.config, r_optarg, false);
 				r_list_append (evals, r_optarg);
 			}
 			break;
@@ -1263,7 +1263,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 			r_core_seek (&r, mapaddr, 1);
 		}
 		r_list_foreach (evals, iter, cmdn) {
-			r_config_eval (r.config, cmdn);
+			r_config_eval (r.config, cmdn, false);
 			r_cons_flush ();
 		}
 #if 0
@@ -1344,7 +1344,7 @@ R_API int r_main_radare2(int argc, char **argv) {
 		}
 
 		r_list_foreach (evals, iter, cmdn) {
-			r_config_eval (r.config, cmdn);
+			r_config_eval (r.config, cmdn, false);
 			r_cons_flush ();
 		}
 
