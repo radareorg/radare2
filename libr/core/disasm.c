@@ -3452,9 +3452,12 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 }
 
 static void ds_begin_nl_comment(RDisasmState *ds) {
+	bool lastnl = true;
 	const char *p = r_cons_get_buffer ();
-	int l = strlen (p);
-	const bool lastnl = l> 0? (p[l - 1] == '\n'): 0;
+	if (p) {
+		int l = strlen (p);
+		lastnl = l> 0? (p[l - 1] == '\n'): 0;
+	}
 
 	if (ds->show_comment_right) {
 		if (!lastnl && ds->cmtcount > 0) {
@@ -3901,7 +3904,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || !strstr (ds->opstr, f->name))) {
-				ds_begin_comment (ds);
 				ds_begin_nl_comment (ds);
 				ds_comment (ds, true, "; %s", f->name);
 				ds->printed_flag_addr = refaddr;
