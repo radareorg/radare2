@@ -2544,19 +2544,19 @@ int __esil_step_range_cb(void *user) {
 	RStrBuf *rsb = r_strbuf_new (NULL);
 	RCore *core = (RCore *)user;
 	r_strbuf_append (rsb, "start addr: ");
-	char *src = __show_status_input (core, r_strbuf_get (rsb));
-	r_strbuf_append (rsb, src);
+	char *s = __show_status_input (core, r_strbuf_get (rsb));
+	r_strbuf_append (rsb, s);
 	r_strbuf_append (rsb, " end addr: ");
-	char *dst = __show_status_input (core, r_strbuf_drain (rsb));
-	ut64 s_addr = r_num_math (core->num, src);
-	ut64 d_addr = r_num_math (core->num, dst);
-	if (s_addr >= d_addr) {
+	char *d = __show_status_input (core, r_strbuf_drain (rsb));
+	ut64 s_a = r_num_math (core->num, s);
+	ut64 d_a = r_num_math (core->num, d);
+	if (s_a >= d_a) {
 		return 0;
 	}
 	ut64 tmp = core->offset;
-	core->offset = s_addr;
+	core->offset = s_a;
 	__esil_init (core);
-	__esil_step_to (core, d_addr);
+	__esil_step_to (core, d_a);
 	core->offset = tmp;
 	__setRefreshAll ((RCore *)user, false);
 	return 0;
