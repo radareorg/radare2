@@ -603,11 +603,19 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
-					RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
+				if (r_config_get_i (core->config, "cfg.debug")) {
+					if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+						RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
+						if (r) {
+							free (bptr);
+							return r_reg_get_value (core->dbg->reg, r);
+						}
+					}
+				} else {
+					RRegItem *r = r_reg_get (core->anal->reg, bptr, -1);
 					if (r) {
 						free (bptr);
-						return r_reg_get_value (core->dbg->reg, r);
+						return r_reg_get_value (core->anal->reg, r);
 					}
 				}
 				free (bptr);
