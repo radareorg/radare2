@@ -6481,12 +6481,11 @@ l = use_blocksize;
 				ut64 from = r_config_get_i (core->config, "diff.from");
 				ut64 to = r_config_get_i (core->config, "diff.to");
 				if (from == to && !from) {
-					
 					const char *sp = NULL;
 					if (input[1] == '.') {
 						sp = input + 2;
 					}
-					if (IS_DIGIT(input[1])) {
+					if (IS_DIGIT (input[1])) {
 						sp = input + 1;
 					}
 					if (sp) {
@@ -6496,7 +6495,6 @@ l = use_blocksize;
 						}
 						len = n;
 					}
-
 					if (!r_core_block_size (core, len)) {
 						len = core->blocksize;
 					}
