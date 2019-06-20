@@ -1175,6 +1175,7 @@ typedef struct r_anal_esil_t {
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
 	char *cmd_step; // r2 (external) command to run before a step is performed
+	char *cmd_step_out; // r2 (external) command to run after a step is performed
 	char *cmd_intr; // r2 (external) command to run when an interrupt occurs
 	char *cmd_trap; // r2 (external) command to run when a trap occurs
 	char *cmd_mdev; // r2 (external) command to run when an memory mapped device address is used

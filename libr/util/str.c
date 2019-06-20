@@ -3010,9 +3010,7 @@ R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffi
 }
 
 R_API bool r_str_startswith(const char *str, const char *needle) {
-	if (!str || !needle) {
-		return false;
-	}
+	r_return_val_if_fail (str && needle, false);
 	if (str == needle) {
 		return true;
 	}
@@ -3020,6 +3018,10 @@ R_API bool r_str_startswith(const char *str, const char *needle) {
 }
 
 R_API bool r_str_endswith(const char *str, const char *needle) {
+	r_return_val_if_fail (str && needle, false);
+	if (!*needle) {
+		return true;
+	}
 	int slen = strlen (str);
 	int nlen = strlen (needle);
 	if (!slen || !nlen || slen < nlen) {
