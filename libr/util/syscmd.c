@@ -353,18 +353,26 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 		} else {
 			list1 = r_str_split_list (data1, "\n");
 			list2 = r_str_split_list (data2, "\n");
-			iter2 = list1->head;
-			for (iter1 = list1->head, iter2 = list2->head; iter1 || iter2;) {
-				char *data = r_str_new ("");
-				if (iter1) {
-					r_str_appendf (data, "%s ", (char *)iter1->data);
-					iter1 = iter1->n;
+
+			char *str1, *str2;
+			r_list_foreach (list1, iter1, str1) {
+				char *field = strdup (str1);			// extract comman field
+				char *end = strchr (field, ' ');
+				if (end) {
+					*end = '\0';
+				} else {
+					continue;
 				}
-				if (iter2) {
-					r_str_append (data, (char *)iter2->data);
-					iter2 = iter2->n;
+				r_list_foreach (list2, iter2, str2) {
+					if (r_str_startswith (str2, field)) {
+						char *out = r_str_new (field);
+						char *first = strchr (str1, ' ');
+						char *second = strchr (str2, ' ');
+						r_str_append (out, first ? first : " ");
+						r_str_append (out, second ? second : " ");
+						r_list_append (list, out);
+					}
 				}
-				r_list_append (list, data);
 			}
 			data = r_list_to_str (list, '\n');
 			r_list_free (list);
