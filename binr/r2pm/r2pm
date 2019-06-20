@@ -290,7 +290,11 @@ R2PM_TGZ() {
 		elif [ "`echo ${URL} | grep -e .txz -e tar`" ]; then
 			tar xvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .zip`" ]; then
-			unzip -o "${TARBALL}"
+			if [ -n "$2" ]; then
+				unzip -d "${DIR}" -o "${TARBALL}"
+			else
+				unzip "${TARBALL}"
+			fi
 		else
 			echo "Dunno"
 			exit 1
