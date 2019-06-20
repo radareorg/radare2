@@ -216,6 +216,34 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 	}
 }
 
+static int cmd_sort(void *data, const char *input) { // "sort"
+	RCore *core = (RCore *)data;
+	const char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = r_str_trim_ro (arg + 1);
+	}
+	switch (*input) {
+	case '?': // "sort?"
+		eprintf ("Usage: sort # sort the contents of the file\n");
+		break;
+	default: // "ls"
+		if (!arg) {
+			arg = "";
+		}
+		if (r_fs_check (core->fs, arg)) {
+			r_core_cmdf (core, "md %s", arg);
+		} else {
+			char *res = r_syscmd_sort (arg);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
+	}
+	return 0;
+}
+
 static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 	int i, val = 0;
 	// N previous instructions
@@ -307,7 +335,7 @@ static int cmd_seek(void *data, const char *input) {
 		free (dup);
 	}
 	const char *inputnum = strchr (input, ' ');
-	{
+	if (r_str_cmp (input, "ort", 3)) {					// hack to handle Invalid Argument for sort
 		const char *u_num = inputnum? inputnum + 1: input + 1;
 		off = r_num_math (core->num, u_num);
 		if (*u_num == '-') {
@@ -710,7 +738,23 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	}
 	case 'o': // "so"
-		cmd_seek_opcode (core, input + 1);
+		switch (input[1]) {
+		case 'r':
+			if (input[2] == 't') {
+				cmd_sort (core, input);
+			} else {
+				return -1;
+			}
+			break;
+		case ' ':
+		case '\0':
+		case '+':
+		case '-':
+			cmd_seek_opcode (core, input + 1);
+			break;
+		default:
+			return -1;	// invalid command
+		}
 		break;
 	case 'g': // "sg"
 	{
