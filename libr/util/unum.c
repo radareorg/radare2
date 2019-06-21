@@ -112,7 +112,7 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	if (num >= KB) { unit = 'K'; fnum /= KB; } else {
 		unit = '\0';
 	}
-	fmt_str = (ceill (fnum) == fnum)
+	fmt_str = ((double)ceill (fnum) == (double)fnum)
 		? "%.0" LDBLFMT "%c"
 		: "%.1" LDBLFMT "%c";
 	snprintf (buf, len, fmt_str, fnum, unit);
