@@ -571,6 +571,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			// TODO: handle /range instructions
 			// NOP esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
 		}
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			// TODO: handle /range instructions
+			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
+		}
 		break;
 	case 0x27: // throw
 		{
