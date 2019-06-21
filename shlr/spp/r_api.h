@@ -21,6 +21,7 @@ void r_strbuf_free(SStrBuf *sb);
 void r_strbuf_fini(SStrBuf *sb);
 void r_strbuf_init(SStrBuf *sb);
 int r_sys_setenv(const char *key, const char *value);
+char *r_sys_getenv(const char *key);
 #endif
 
 #endif
