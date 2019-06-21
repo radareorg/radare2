@@ -6427,7 +6427,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								pj_s (pj, name_ref);
 								free (name_ref);
 							} else {
-								pj_s (pj, name);
+								pj_s (pj, fi->name);
 							}
 						}
 						if (fi->realname && strcmp (fi->name, fi->realname)) {
