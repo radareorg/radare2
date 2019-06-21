@@ -6377,7 +6377,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					}
 					free (res);
 					free (res1);
-					free (name);
+					R_FREE (name);
 					r_anal_var_free (var);
 					r_list_free (list);
 					r_list_free (list1);
