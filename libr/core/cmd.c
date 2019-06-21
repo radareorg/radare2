@@ -1829,10 +1829,6 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		arg[end - input] = 0;
 		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
 		input = r_str_trim_ro (end);
-		if (!b->cmd) {
-			eprintf ("Invalid command. See usage via !!!?\n");
-			return;
-		}
 		if (input && *input && !a) {
 			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
@@ -1847,6 +1843,9 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
 					b->type = type;
 				} else if (b->locked || b->n_subcmds) {
+					if (!b->cmd) {
+						return;
+					}
 					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
 				}
 			} else {
