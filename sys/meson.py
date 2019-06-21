@@ -167,7 +167,7 @@ def win_dist(args):
     makedirs(r'{DIST}\bin')
     copy(r'{BUILDDIR}\binr\*\*.exe', r'{DIST}\bin')
 
-    r2_bat_fname = args.install + r'\r2.bat'
+    r2_bat_fname = args.install + r'\bin\r2.bat'
     log.debug('create "%s"', r2_bat_fname)
     with open(r2_bat_fname, 'w') as r2_bat:
         r2_bat.write('@"%s\\bin\\radare2" %%*\n' % os.path.abspath(args.install))
