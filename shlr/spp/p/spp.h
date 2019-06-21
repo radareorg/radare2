@@ -4,7 +4,6 @@
 #include <unistd.h>
 #endif
 
-extern char *r_sys_getenv(const char *key);
 static char *spp_var_get(char *var) {
 	return r_sys_getenv (var);
 }
