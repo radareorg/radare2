@@ -186,7 +186,7 @@ static void cmd_open_init(RCore *core) {
 // HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
-	ut32 binfile_num = -1, binobj_num = -1;
+	ut32 binfile_num = -1;
 
 	switch (input[1]) {
 	case 'L': // "obL"
@@ -318,12 +318,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
-			binobj_num = *v && r_is_valid_input_num_value (core->num, tmp)
-				? r_get_input_num_value (core->num, tmp): UT32_MAX;
 		} else {
-			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
 			binfile_num = fd;
-			binobj_num = bf? bf->id: UT32_MAX;
 		}
 		r_core_bin_raise (core, binfile_num);
 		free (v);
