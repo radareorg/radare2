@@ -98,7 +98,7 @@ typedef struct {
 	bool show_lines_ret;
 	bool show_lines_call;
 	bool show_lines_fcn;
-	int linesright;
+	bool linesright;
 	int tracespace;
 	int cyclespace;
 	int cmtfold;
@@ -2453,8 +2453,11 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 }
 
 static void ds_print_lines_left(RDisasmState *ds) {
-	RCore *core = ds->core;
+	if (ds->linesright) {
+		return;
+	}
 
+	RCore *core = ds->core;
 	if (ds->show_section) {
 		char *str = NULL;
 		if (ds->show_section_perm) {
