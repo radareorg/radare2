@@ -2915,8 +2915,8 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					ds_begin_comment (ds);
 					ds_align_comment (ds);
 					ds->cmtcount++;
-					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
-							dst->reg->name, ptr, off, item?item->name: "");
+					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x"%s%s\n",
+							dst->reg->name, ptr, off, item?" ": "", item?item->name: "");
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
 							r_anal_xrefs_set (core->anal, off, ds->addr, R_ANAL_REF_TYPE_DATA);
@@ -3976,9 +3976,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 	if (!ds->show_comment_right && ds->cmtcount > 0) {
 		const char *p = r_cons_get_buffer ();
-		int l = strlen (p);
-		if (p[l - 1] != '\n') {
-			ds_newline (ds);
+		if (p) {
+			int l = strlen (p);
+			if (p[l - 1] != '\n') {
+				ds_newline (ds);
+			}
 		}
 	}
 #if DEADCODE
