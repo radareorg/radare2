@@ -3869,9 +3869,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 					if (print_refaddr) {
 						if (!aligned) {
-							ds_begin_comment (ds);
+							ds_begin_nl_comment (ds);
 						}
-						ds_begin_nl_comment (ds);
 						ds_comment (ds, true, "; 0x%" PFMT64x, refaddr);
 						refaddr_printed = true;
 					}
