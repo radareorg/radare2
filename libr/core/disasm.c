@@ -3467,6 +3467,9 @@ static void ds_begin_nl_comment(RDisasmState *ds) {
 			ds_begin_line (ds);
 			ds_pre_line (ds);
 		}
+		if (ds->show_color) {
+			r_cons_printf (ds->pal_comment);
+		}
 	} else {
 		if (lastnl) {
 			ds_begin_line (ds);
