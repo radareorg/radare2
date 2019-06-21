@@ -3465,7 +3465,7 @@ static void ds_begin_nl_comment(RDisasmState *ds) {
 		}
 		if (lastnl || ds->cmtcount > 0) {
 			ds_begin_line (ds);
-			ds_pre_line (ds);
+			ds_pre_xrefs (ds, false);
 		}
 		if (ds->show_color) {
 			r_cons_printf (ds->pal_comment);
@@ -3473,11 +3473,11 @@ static void ds_begin_nl_comment(RDisasmState *ds) {
 	} else {
 		if (lastnl) {
 			ds_begin_line (ds);
-			ds_pre_line (ds);
+			ds_pre_xrefs (ds, false);
 		} else {
 			ds_newline (ds);
 			ds_begin_line (ds);
-			ds_pre_line (ds);
+			ds_pre_xrefs (ds, false);
 			//r_cons_printf ("%s", r_str_pad (' ',  ds->cmtcol));
 		}
 	}
