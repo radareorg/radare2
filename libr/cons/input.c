@@ -136,6 +136,39 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		ch = r_cons_readchar ();
 #endif
 		switch (ch) {
+		case '<':
+			{
+				char pos[8] = {0};
+				int p = 0;
+				int x = 0;
+				int y = 0;
+				int sc = 0;
+				do {
+					ch = r_cons_readchar ();
+					eprintf ( "%c", ch);
+					if (sc > 0) {
+						if (ch >= '0'&& ch <= '9') {
+							pos[p++] = ch;
+						}
+					}
+					if (ch == ';') {
+						if (sc == 1) {
+							pos[p++] = 0;
+							x = atoi (pos);
+						}
+						sc++;
+						p = 0;
+					}	
+				} while (ch != 'M' && ch != 'm');
+				pos[p++] = 0;
+				y = atoi (pos);
+				// M is mouse down , m is mouse up
+				if (ch == 'M') {
+					r_cons_set_click (x, y);
+				}
+			}
+			return 0;
+			break;
 		case '[':
 			ch = r_cons_readchar ();
 			switch (ch) {
