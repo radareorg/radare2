@@ -1711,7 +1711,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	return op->size;
 }
 
-static int avr_custom_des (RAnalEsil *esil) {
+static bool avr_custom_des (RAnalEsil *esil) {
 	ut64 key, encrypt, text,des_round;
 	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->anal || !esil->anal->reg) {
@@ -1761,7 +1761,7 @@ static int avr_custom_des (RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_ERASE
-static int avr_custom_spm_page_erase(RAnalEsil *esil) {
+static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	ut8 c;
 	ut64 addr, page_size_bits, i;
@@ -1795,7 +1795,7 @@ static int avr_custom_spm_page_erase(RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_FILL
-static int avr_custom_spm_page_fill(RAnalEsil *esil) {
+static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	ut64 addr, page_size_bits, i;
 	ut8 r0, r1;
@@ -1836,7 +1836,7 @@ static int avr_custom_spm_page_fill(RAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_WRITE
-static int avr_custom_spm_page_write(RAnalEsil *esil) {
+static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	char *t = NULL;
 	ut64 addr, page_size_bits, tmp_page;
