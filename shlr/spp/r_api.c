@@ -100,9 +100,6 @@ int r_sys_setenv(const char *key, const char *value) {
 	LPTSTR key_ = r_sys_conv_utf8_to_win (key);
 	LPTSTR value_ = r_sys_conv_utf8_to_win (value);
 	int ret = SetEnvironmentVariable (key_, value_);
-	if (!ret) {
-		r_sys_perror ("r_sys_setenv/SetEnvironmentVariable");
-	}
 	free (key_);
 	free (value_);
 	return ret ? 0 : -1;
