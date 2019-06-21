@@ -87,20 +87,63 @@ void r_strbuf_fini(SStrBuf *sb) {
 
 /* --------- */
 int r_sys_setenv(const char *key, const char *value) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) {
 		return 0;
 	}
+#if __UNIX__
 	if (!value) {
 		unsetenv (key);
 		return 0;
 	}
 	return setenv (key, value, 1);
 #elif __WINDOWS__
-	SetEnvironmentVariable (key, (LPSTR)value);
-	return 0; // TODO. get ret
+	int ret = SetEnvironmentVariableA (key, value);
+	return ret ? 0 : -1;
 #else
-#warning s_sys_setenv : unimplemented for this platform
+#warning r_sys_setenv : unimplemented for this platform
 	return 0;
+#endif
+}
+
+char *r_sys_getenv(const char *key) {
+#if __WINDOWS__
+	DWORD dwRet;
+	char *envbuf = NULL, tmp_ptr;
+	char *val = NULL;
+	const int TMP_BUFSIZE = 4096;
+	if (!key) {
+		return NULL;
+	}
+	envbuf = (envbuf)malloc (sizeof (envbuf) * TMP_BUFSIZE);
+	if (!envbuf) {
+		goto err_r_sys_get_env;
+	}
+	dwRet = GetEnvironmentVariableA (key, envbuf, TMP_BUFSIZE);
+	if (dwRet == 0) {
+		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
+			goto err_r_sys_get_env;
+		}
+	} else if (TMP_BUFSIZE < dwRet) {
+		tmp_ptr = (char *)realloc (envbuf, dwRet);
+		if (!tmp_ptr) {
+			goto err_r_sys_get_env;
+		}
+		envbuf = tmp_ptr;
+		dwRet = GetEnvironmentVariableA (key, envbuf, dwRet);
+		if (!dwRet) {
+			goto err_r_sys_get_env;
+		}
+	}
+	val = strdup (envbuf);
+err_r_sys_get_env:
+	free (envbuf);
+	return val;
+#else
+	char *b;
+	if (!key) {
+		return NULL;
+	}
+	b = getenv (key);
+	return b? strdup (b): NULL;
 #endif
 }
