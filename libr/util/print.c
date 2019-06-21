@@ -801,7 +801,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_hexa = true;
 	bool use_align = false;
 	bool use_unalloc = false;
-	bool use_section = false;
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
@@ -816,7 +815,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_align = p->flags & R_PRINT_FLAGS_ALIGN;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
-		use_section = p->flags & R_PRINT_FLAGS_SECTION;
 		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
 		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		use_unalloc = p->flags & R_PRINT_FLAGS_UNALLOC;

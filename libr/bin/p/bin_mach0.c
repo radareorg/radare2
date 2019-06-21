@@ -172,7 +172,9 @@ static RList *symbols(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
 	RBinObject *obj = bf? bf->o: NULL;
 	RList *ret = r_list_newf (free);
+#if 0
 	const char *lang = "c"; // XXX deprecate this
+#endif
 	int wordsize = 0;
 	if (!ret) {
 		return NULL;
@@ -230,6 +232,7 @@ static RList *symbols(RBinFile *bf) {
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
 		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
+#if 0
 		if (!strncmp (ptr->name, "__Z", 3)) {
 			lang = "c++";
 		}
@@ -238,6 +241,7 @@ static RList *symbols(RBinFile *bf) {
 		} else if (!strcmp (ptr->name, "_rust_oom")) {
 			lang = "rust";
 		}
+#endif
 		r_list_append (ret, ptr);
 	}
 	//functions from LC_FUNCTION_STARTS

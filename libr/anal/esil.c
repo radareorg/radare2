@@ -1926,7 +1926,6 @@ static bool esil_peek(RAnalEsil *esil) {
 };
 
 static bool esil_peek_some(RAnalEsil *esil) {
-	bool ret = false;
 	int i;
 	ut64 ptr, regs;
 	// pop ptr
