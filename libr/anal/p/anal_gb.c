@@ -673,7 +673,7 @@ static inline void gb_anal_cb_srl (RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static int gb_custom_daa (RAnalEsil *esil) {
+static bool gb_custom_daa (RAnalEsil *esil) {
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}

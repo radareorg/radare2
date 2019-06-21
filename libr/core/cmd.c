@@ -2003,9 +2003,14 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	while (*_shell_cmd && isspace ((ut8)*_shell_cmd)) {
 		_shell_cmd++;
 	}
+	char *tmp = r_str_newf ("/Q /c \"%s\"", shell_cmd);
+	if (!tmp) {
+		goto err_r_w32_cmd_pipe;
+	}
+	_shell_cmd = tmp;
 	_shell_cmd_ = r_sys_conv_utf8_to_win (_shell_cmd);
 	// exec windows process
-	if (!CreateProcess (NULL, _shell_cmd_, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+	if (!CreateProcess (TEXT ("C:\\Windows\\System32\\cmd.exe"), _shell_cmd_, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		r_sys_perror ("r_w32_cmd_pipe/CreateProcess");
 		goto err_r_w32_cmd_pipe;
 	}
@@ -2043,6 +2048,7 @@ err_r_w32_cmd_pipe:
 		dup2 (cons_out, 1);
 		close (cons_out);
 	}
+	free (tmp);
 	free (_shell_cmd_);
 	SetConsoleMode (GetStdHandle (STD_OUTPUT_HANDLE), mode);
 }
