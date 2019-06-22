@@ -80,6 +80,7 @@ R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(const char *str);
 R_API int r_snprintf (char *string, int len, const char *fmt, ...);
 R_API bool r_str_is_ascii(const char *str);
+R_API char *r_str_nextword(char *s, char ch);
 R_API int r_str_is_printable(const char *str);
 R_API int r_str_is_printable_limited(const char *str, int size);
 R_API bool r_str_is_printable_incl_newlines(const char *str);
