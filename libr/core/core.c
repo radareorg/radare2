@@ -1160,6 +1160,8 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 		goto out;
 	}
 
+	// the actual shit goes down in here
+
 	list= r_sys_dir (dirname);
 	n = strlen (basename);
 	bool chgdir = !strncmp (str, "cd ", 3);
