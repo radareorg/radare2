@@ -96,7 +96,7 @@ struct getreloc_t {
         int size;
 };
 
-static int getreloc_tree(const void *user, const RBNode *n) {
+static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         struct getreloc_t *gr = (struct getreloc_t *)user;
         const RBinReloc *r = container_of (n, const RBinReloc, vrb);
         if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
@@ -123,7 +123,7 @@ R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
                 return NULL;
         }
         struct getreloc_t gr = { .vaddr = addr, .size = size };
-        RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree);
+        RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree, NULL);
         return res? container_of (res, RBinReloc, vrb): NULL;
 }
 
