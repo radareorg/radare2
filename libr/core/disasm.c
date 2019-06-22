@@ -3452,12 +3452,16 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 }
 
 static void ds_begin_nl_comment(RDisasmState *ds) {
-	if (!ds->show_comment_right || ds->cmtcount > 0) {
+	if (ds->cmtcount > 0 && ds->show_comment_right) {
 		ds_newline (ds);
+	}
+	if (ds->cmtcount > 0 || !ds->show_comment_right) {
 		ds_begin_line (ds);
+	}
+	if (!ds->show_comment_right || ds->cmtcount > 0) {
 		ds_pre_xrefs (ds, false);
 	}
-	if (ds->show_color) {
+	if (ds->show_color && (ds->cmtcount > 0 || ds->show_comment_right)) {
 		r_cons_printf (ds->pal_comment);
 	}
 }
