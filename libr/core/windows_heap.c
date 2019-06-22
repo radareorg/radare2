@@ -333,7 +333,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
 		TerminateThread (th, 0);
 		RtlDestroyQueryDebugBuffer (db);
-		eprintf ("RtlCreateQueryDebugBuffer hanged\n");
+		eprintf ("RtlQueryProcessDebugInformation hanged\n");
 		db = NULL;
 	} else if (params.ret){
 		RtlDestroyQueryDebugBuffer (db);
