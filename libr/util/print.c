@@ -389,6 +389,17 @@ R_API bool r_print_have_cursor(RPrint *p, int cur, int len) {
 	return false;
 }
 
+R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
+	r_return_val_if_fail (p && p->cur_enabled, false);
+	int to = p->cur;
+	do {
+		if (cur + len - 1 == to) {
+			return true;
+		}
+	} while (--len);
+	return false;
+}
+
 R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
 	if (r_print_have_cursor (p, cur, len)) {
 		p->cb_printf ("%s", R_CONS_INVERT (set, 1));
@@ -1042,7 +1053,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 				}
 				if (row_have_cursor == -1) {
-					if (r_print_have_cursor (p, j, 1)) {
+					if (r_print_cursor_pointer (p, j, 1)) {
 						row_have_cursor = j - i;
 						row_have_addr = addr + j;
 					}
@@ -1296,7 +1307,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		rows++;
 		bytes = 0;
-
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
 				int i = 0;
