@@ -2821,7 +2821,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 }
 
 // XXX blocksize is missing
-static void cmd_print_pv(RCore *core, const char *input) {
+static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
@@ -2858,6 +2858,9 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	st64 repeat = r_num_math (core->num, input);
 	if (repeat < 0) {
 		repeat = 1;
+	}
+	if (useBytes) {
+		repeat /= n;
 	}
 	// variables can be
 	switch (input[0]) {
@@ -4844,7 +4847,10 @@ static int cmd_print(void *data, const char *input) {
 		cmd_print_ph (core, input + 1);
 		break;
 	case 'v': // "pv"
-		cmd_print_pv (core, input + 1);
+		cmd_print_pv (core, input + 1, false);
+		break;
+	case 'V': // "pv"
+		cmd_print_pv (core, input + 1, true);
 		break;
 	case '-': // "p-"
 		return cmd_print_blocks (core, input + 1);
