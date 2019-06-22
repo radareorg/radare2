@@ -46,6 +46,7 @@ static const char *help_msg_CC[] = {
 	"CC,", " [file]", "show or set comment file",
 	"CC", " [text]", "append comment at current address",
 	"CCf", "", "list comments in function",
+	"CCf-", "", "delete all comments in current function",
 	"CC+", " [text]", "append comment at current address",
 	"CC!", "", "edit comment using cfg.editor (vim, ..)",
 	"CC-", " @ cmt_addr", "remove comment at given address",
@@ -390,6 +391,26 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
+		case '-': // "CCf-"
+			{
+				ut64 arg = r_num_math (core->num, input + 2);
+				if (!arg) {
+					arg = core->offset;
+				}
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, arg, 0);
+				if (fcn) {
+					RAnalBlock *bb;
+					RListIter *iter;
+					r_list_foreach (fcn->bbs, iter, bb) {
+						int i;
+						for (i = 0; i < bb->size; i++) {
+							ut64 addr = bb->addr + i;
+							r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
+						}
+					}
+				}
+			}
+			break;
 		case 'j': // "CCfj"
 			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
 			break;
@@ -445,13 +466,20 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		free (nc);
 		}
 		break;
-	case '*':
+	case '*': // "CC*"
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
 		break;
 	case '-': // "CC-"
-		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
+		if (input[2] == '*') { // "CC-*"
+			r_meta_del (core->anal, R_META_TYPE_COMMENT, UT64_MAX, UT64_MAX);
+		} else if (input[2]) { // "CC-$$+32"
+			ut64 arg = r_num_math (core->num, input + 2);
+			r_meta_del (core->anal, R_META_TYPE_COMMENT, arg, 1);
+		} else { // "CC-"
+			r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
+		}
 		break;
-	case 'u':
+	case 'u': // "CCu"
 		//
 		{
 		char *newcomment;
@@ -479,7 +507,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case 'a':
+	case 'a': // "CCa"
 		{
 		char *s, *p;
 		s = strchr (input, ' ');
@@ -534,7 +562,6 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		return true;
 		}
 	}
-
 	return true;
 }
 
