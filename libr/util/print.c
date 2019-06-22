@@ -390,7 +390,10 @@ R_API bool r_print_have_cursor(RPrint *p, int cur, int len) {
 }
 
 R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
-	r_return_val_if_fail (p && p->cur_enabled, false);
+	r_return_val_if_fail (p, false);
+	if (!p->cur_enabled) {
+		return false;
+	}
 	int to = p->cur;
 	do {
 		if (cur + len - 1 == to) {
