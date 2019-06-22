@@ -139,7 +139,7 @@ static void set_meta_min_if_needed(RAnalFunction *x) {
 }
 
 // _fcn_tree_{cmp,calc_max_addr,free,probe} are used by interval tree.
-static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
+static int _fcn_tree_cmp(const void *a_, const RBNode *b_, void *user) {
 	const RAnalFunction *a = (const RAnalFunction *)a_;
 	const RAnalFunction *b = FCN_CONTAINER (b_);
 	set_meta_min_if_needed ((RAnalFunction *)a);
@@ -158,7 +158,7 @@ static int _fcn_tree_cmp(const void *a_, const RBNode *b_) {
 	return 0;
 }
 
-static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_) {
+static int _fcn_addr_tree_cmp(const void *a_, const RBNode *b_, void *user) {
 	const RAnalFunction *a = (const RAnalFunction *)a_;
 	const RAnalFunction *b = ADDR_FCN_CONTAINER (b_);
 	ut64 from0 = a->addr, from1 = b->addr;
@@ -230,12 +230,12 @@ R_API bool r_anal_fcn_tree_delete(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_fcn_tree_insert(RAnal *anal, RAnalFunction *fcn) {
-	r_rbtree_aug_insert (&anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr);
-	r_rbtree_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_addr_tree_cmp);
+	r_rbtree_aug_insert (&anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr, NULL);
+	r_rbtree_insert (&anal->fcn_addr_tree, fcn, &(fcn->addr_rb), _fcn_tree_cmp, NULL);
 }
 
 static void _fcn_tree_update_size(RAnal *anal, RAnalFunction *fcn) {
-	r_rbtree_aug_update_sum (anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr);
+	r_rbtree_aug_update_sum (anal->fcn_tree, fcn, &(fcn->rb), _fcn_tree_cmp, _fcn_tree_calc_max_addr, NULL);
 }
 
 #if 0

@@ -79,7 +79,7 @@ static void __anal_hint_tree_calc_max_addr(RBNode *node) {
 }
 #endif
 
-static int __anal_hint_range_tree_cmp(const void *a_, const RBNode *b_) {
+static int __anal_hint_range_tree_cmp(const void *a_, const RBNode *b_, void *user) {
 	const RAnalRange *a = a_;
 	const RAnalRange *b = container_of (b_, const RAnalRange, rb);
 	if (a && b) {
@@ -120,7 +120,7 @@ static bool __anal_range_hint_tree_delete(RBNode **root, RAnalRange *data) {
 static void __anal_range_hint_tree_insert(RBNode **root, RAnalRange *range) {
 	r_rbtree_aug_insert (root, range, &(range->rb),
 			     __anal_hint_range_tree_cmp,
-			     NULL);
+			     NULL, NULL);
 }
 
 static void __anal_add_range_on_hints(RAnal *a, ut64 addr, int bits) {
